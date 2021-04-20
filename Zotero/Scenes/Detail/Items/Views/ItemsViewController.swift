@@ -28,17 +28,14 @@ final class ItemsViewController: UIViewController {
 
     @IBOutlet private weak var tableView: UITableView!
 
-    private static let barButtonItemEmptyTag = 1
-    private static let barButtonItemSingleTag = 2
-    private static let barButtonItemFilterTag = 3
     private static let itemBatchingLimit = 150
 
     private let viewModel: ViewModel<ItemsActionHandler>
     private let controllers: Controllers
     private let disposeBag: DisposeBag
-    private let editingToolbarActions: [ItemAction]
 
     private var tableViewHandler: ItemsTableViewHandler!
+    private var toolbarController: ItemsToolbarController!
     private var resultsToken: NotificationToken?
     private weak var searchBarContainer: SearchBarContainer?
     private var searchBarNeedsReset = false
@@ -46,21 +43,10 @@ final class ItemsViewController: UIViewController {
     private weak var coordinatorDelegate: DetailItemsCoordinatorDelegate?
 
     init(viewModel: ViewModel<ItemsActionHandler>, controllers: Controllers, coordinatorDelegate: DetailItemsCoordinatorDelegate) {
-        var actions: [ItemAction] = []
-        if viewModel.state.type.isTrash {
-            actions = [ItemAction(type: .restore), ItemAction(type: .delete)]
-        } else {
-            actions = [ItemAction(type: .addToCollection), ItemAction(type: .duplicate), ItemAction(type: .trash)]
-            if viewModel.state.type.collectionKey != nil {
-                actions.insert(ItemAction(type: .removeFromCollection), at: 1)
-            }
-        }
-
         self.viewModel = viewModel
         self.controllers = controllers
         self.coordinatorDelegate = coordinatorDelegate
         self.disposeBag = DisposeBag()
-        self.editingToolbarActions = actions
 
         super.init(nibName: "ItemsViewController", bundle: nil)
 
@@ -79,9 +65,8 @@ final class ItemsViewController: UIViewController {
                                                       delegate: self,
                                                       dragDropController: self.controllers.dragDropController,
                                                       fileDownloader: self.controllers.userControllers?.fileDownloader)
+        self.toolbarController = ItemsToolbarController(viewController: self, initialState: self.viewModel.state, delegate: self)
         self.setupRightBarButtonItems(for: self.viewModel.state)
-        self.toolbarItems = self.createToolbarItems(state: self.viewModel.state)
-        self.navigationController?.setToolbarHidden(false, animated: false)
         self.setupTitle()
         // Use `navigationController.view.frame` if available, because the navigation controller is already initialized and layed out, so the view
         // size is already calculated properly.
@@ -168,7 +153,7 @@ final class ItemsViewController: UIViewController {
         if state.changes.contains(.editing) {
             self.tableViewHandler.set(editing: state.isEditing, animated: true)
             self.setupRightBarButtonItems(for: state)
-            self.toolbarItems = self.createToolbarItems(state: state)
+            self.toolbarController.createToolbarItems(for: state)
         }
 
         if state.changes.contains(.selectAll) {
@@ -180,12 +165,12 @@ final class ItemsViewController: UIViewController {
         }
 
         if state.changes.contains(.selection) {
-            self.updateToolbarItems(state: state)
             self.setupRightBarButtonItems(for: state)
+            self.toolbarController.reloadToolbarItems(for: state)
         }
 
         if state.changes.contains(.filters) {
-            self.updateToolbarItems(state: state)
+            self.toolbarController.reloadToolbarItems(for: state)
         }
 
         if let key = state.itemKeyToDuplicate {
@@ -209,11 +194,7 @@ final class ItemsViewController: UIViewController {
 
     // MARK: - Actions
 
-    private func process(action: ItemAction.Kind) {
-        self.process(action: action, for: self.viewModel.state.selectedItems)
-    }
-
-    private func process(action: ItemAction.Kind, for selectedKeys: Set<String>) {
+    private func process(action: ItemAction.Kind, for selectedKeys: Set<String>, button: UIBarButtonItem?) {
         switch action {
         case .addToCollection:
             self.coordinatorDelegate?.showCollectionPicker(in: self.viewModel.state.library, completed: { [weak self] collections in
@@ -225,26 +206,32 @@ final class ItemsViewController: UIViewController {
             self.coordinatorDelegate?.showItemDetail(for: .creation(type: ItemTypes.document, child: attachment, collectionKey: nil), library: self.viewModel.state.library)
 
         case .delete:
-            let question = self.viewModel.state.selectedItems.count == 1 ? L10n.Items.deleteQuestion : L10n.Items.deleteMultipleQuestion
-            self.ask(question: question, title: L10n.delete, isDestructive: true, confirm: { [weak self] in
+            self.coordinatorDelegate?.showDeletionQuestion(count: self.viewModel.state.selectedItems.count) { [weak self] in
                 self?.viewModel.process(action: .deleteItems(selectedKeys))
-            })
+            }
 
         case .duplicate:
             guard let key = selectedKeys.first else { return }
             self.viewModel.process(action: .loadItemToDuplicate(key))
 
         case .removeFromCollection:
-            let question = self.viewModel.state.selectedItems.count == 1 ? L10n.Items.removeFromCollectionQuestion : L10n.Items.removeFromCollectionMultipleQuestion
-            self.ask(question: question, title: L10n.Items.removeFromCollectionTitle, isDestructive: false, confirm: { [weak self] in
+            self.coordinatorDelegate?.showRemoveFromCollectionQuestion(count: self.viewModel.state.selectedItems.count) { [weak self] in
                 self?.viewModel.process(action: .deleteItemsFromCollection(selectedKeys))
-            })
+            }
 
         case .restore:
             self.viewModel.process(action: .restoreItems(selectedKeys))
 
         case .trash:
             self.viewModel.process(action: .trashItems(selectedKeys))
+
+        case .filter:
+            guard let button = button else { return }
+            self.coordinatorDelegate?.showFilters(viewModel: self.viewModel, button: button)
+
+        case .add:
+            guard let button = button else { return }
+            self.coordinatorDelegate?.showAddActions(viewModel: self.viewModel, button: button)
         }
     }
 
@@ -298,41 +285,6 @@ final class ItemsViewController: UIViewController {
                 self.viewModel.process(action: .observingFailed)
             }
         })
-    }
-
-    private func updateToolbarItems(state: ItemsState) {
-        if state.isEditing {
-            self.updateEditingToolbarItems()
-        } else {
-            self.updateFilteringToolbarItems(filters: state.filters)
-        }
-    }
-
-    private func updateEditingToolbarItems() {
-        self.toolbarItems?.forEach({ item in
-            switch item.tag {
-            case ItemsViewController.barButtonItemEmptyTag:
-                item.isEnabled = !self.viewModel.state.selectedItems.isEmpty
-            case ItemsViewController.barButtonItemSingleTag:
-                item.isEnabled = self.viewModel.state.selectedItems.count == 1
-            default: break
-            }
-        })
-    }
-
-    private func updateFilteringToolbarItems(filters: [ItemsState.Filter]) {
-        guard let item = self.toolbarItems?.first(where: { $0.tag == ItemsViewController.barButtonItemFilterTag }) else { return }
-        let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
-        item.image = UIImage(systemName: filterImageName)
-    }
-
-    private func ask(question: String, title: String, isDestructive: Bool, confirm: @escaping () -> Void) {
-        let controller = UIAlertController(title: title, message: question, preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: L10n.yes, style: (isDestructive ? .destructive : .default), handler: { _ in
-            confirm()
-        }))
-        controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: nil))
-        self.present(controller, animated: true, completion: nil)
     }
 
     /// Starts observing progress of sync. The sync progress needs to be observed to optimize `UITableView` reloads for big syncs of items in current library.
@@ -491,57 +443,6 @@ final class ItemsViewController: UIViewController {
         return item
     }
 
-    private func createToolbarItems(state: ItemsState) -> [UIBarButtonItem] {
-        if state.isEditing {
-            return self.createEditingToolbarItems(from: self.editingToolbarActions)
-        } else {
-            return self.createNormalToolbaritems(for: state.filters)
-        }
-    }
-
-    private func createNormalToolbaritems(for filters: [ItemsState.Filter]) -> [UIBarButtonItem] {
-        let fixedSpacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
-        fixedSpacer.width = 16
-        let flexibleSpacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-
-        let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
-        let filterButton = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
-        filterButton.tag = ItemsViewController.barButtonItemFilterTag
-        filterButton.rx.tap.subscribe(onNext: { [weak self] _ in
-            guard let `self` = self else { return }
-            self.coordinatorDelegate?.showFilters(button: filterButton, viewModel: self.viewModel)
-        })
-        .disposed(by: self.disposeBag)
-
-        let addButton = UIBarButtonItem(image: UIImage(systemName: "plus"), style: .plain, target: nil, action: nil)
-        addButton.rx.tap.subscribe(onNext: { [weak self] _ in
-            guard let `self` = self else { return }
-            self.coordinatorDelegate?.showAddActions(viewModel: self.viewModel, button: addButton)
-        })
-        .disposed(by: self.disposeBag)
-
-        return [fixedSpacer, filterButton, flexibleSpacer, addButton, fixedSpacer]
-    }
-
-    private func createEditingToolbarItems(from actions: [ItemAction]) -> [UIBarButtonItem] {
-        let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-        let items = actions.map({ action -> UIBarButtonItem in
-            let item = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
-            switch action.type {
-            case .addToCollection, .trash, .delete, .removeFromCollection, .restore, .createParent:
-                item.tag = ItemsViewController.barButtonItemEmptyTag
-            case .duplicate:
-                item.tag = ItemsViewController.barButtonItemSingleTag
-            }
-            item.rx.tap.subscribe(onNext: { [weak self] _ in
-                self?.process(action: action.type)
-            })
-            .disposed(by: self.disposeBag)
-            return item
-        })
-        return [spacer] + (0..<(2 * items.count)).map({ idx -> UIBarButtonItem in idx % 2 == 0 ? items[idx/2] : spacer })
-    }
-
     /// Setup `searchBar` for current window size. If there is enough space for the `searchBar` in `titleView`, it's added there, otherwise it's added
     /// to `navigationItem`, where it appears under `navigationBar`.
     /// - parameter windowSize: Current window size.
@@ -632,7 +533,7 @@ final class ItemsViewController: UIViewController {
 
 extension ItemsViewController: ItemsTableViewHandlerDelegate {
     func process(action: ItemAction.Kind, for item: RItem) {
-        self.process(action: action, for: [item.key])
+        self.process(action: action, for: [item.key], button: nil)
     }
 
     var isInViewHierarchy: Bool {
@@ -645,6 +546,12 @@ extension ItemsViewController: DetailCoordinatorAttachmentProvider {
         guard let accessory = self.viewModel.state.itemAccessories[parentKey ?? key], let attachment = accessory.attachment else { return nil }
         let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(for: (parentKey ?? key))
         return (attachment, self.viewModel.state.library, sourceView, sourceRect)
+    }
+}
+
+extension ItemsViewController: ItemsToolbarControllerDelegate {
+    func process(action: ItemAction.Kind, button: UIBarButtonItem) {
+        self.process(action: action, for: self.viewModel.state.selectedItems, button: button)
     }
 }
 

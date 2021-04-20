@@ -21,6 +21,8 @@ final class SyncToolbarController {
         self.viewController = parent
         self.disposeBag = DisposeBag()
 
+        parent.setToolbarHidden(false, animated: false)
+
         progressObservable.observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] progress in
                               guard let `self` = self else { return }
@@ -34,9 +36,9 @@ final class SyncToolbarController {
     private func update(progress: SyncProgress, in controller: UINavigationController) {
         self.set(progress: progress, in: controller)
 
-        if controller.isToolbarHidden {
-            controller.setToolbarHidden(false, animated: true)
-        }
+//        if controller.isToolbarHidden {
+//            controller.setToolbarHidden(false, animated: true)
+//        }
 
         self.pendingErrors = nil
 
@@ -44,14 +46,14 @@ final class SyncToolbarController {
             switch error {
             case .cancelled:
                 self.pendingErrors = nil
-                controller.setToolbarHidden(true, animated: true)
+//                controller.setToolbarHidden(true, animated: true)
             default:
                 self.pendingErrors = [error]
             }
         } else if case .finished(let errors) = progress {
             if errors.isEmpty {
                 self.pendingErrors = nil
-                self.hideToolbarWithDelay(in: controller)
+//                self.hideToolbarWithDelay(in: controller)
             } else {
                 self.pendingErrors = errors
             }
@@ -64,7 +66,7 @@ final class SyncToolbarController {
             self?.pendingErrors = nil
         }))
         self.viewController.present(controller, animated: true, completion: nil)
-        self.viewController.setToolbarHidden(true, animated: true)
+//        self.viewController.setToolbarHidden(true, animated: true)
     }
 
     private func alertMessage(from errors: [Error]) -> String {
@@ -114,14 +116,14 @@ final class SyncToolbarController {
         return message
     }
 
-    private func hideToolbarWithDelay(in controller: UINavigationController) {
-        Single<Int>.timer(SyncToolbarController.finishVisibilityTime,
-                          scheduler: MainScheduler.instance)
-                   .subscribe(onSuccess: { [weak controller] _ in
-                       controller?.setToolbarHidden(true, animated: true)
-                   })
-                   .disposed(by: self.disposeBag)
-    }
+//    private func hideToolbarWithDelay(in controller: UINavigationController) {
+//        Single<Int>.timer(SyncToolbarController.finishVisibilityTime,
+//                          scheduler: MainScheduler.instance)
+//                   .subscribe(onSuccess: { [weak controller] _ in
+//                       controller?.setToolbarHidden(true, animated: true)
+//                   })
+//                   .disposed(by: self.disposeBag)
+//    }
 
     private func set(progress: SyncProgress, in controller: UINavigationController) {
         let item = UIBarButtonItem(customView: self.toolbarView(with: self.text(for: progress)))

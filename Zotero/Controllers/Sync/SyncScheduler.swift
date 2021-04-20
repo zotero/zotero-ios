@@ -36,6 +36,7 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
 
     private var inProgress: SchedulerAction?
     private var nextAction: SchedulerAction?
+    private(set) var lastSyncDate: Date?
     private var lastFullSyncDate: Date?
     private var timerDisposeBag: DisposeBag
 
@@ -148,8 +149,9 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
         self.inProgress = self.nextAction
         self.nextAction = nil
 
+        self.lastSyncDate = Date()
         if syncType == .full {
-            self.lastFullSyncDate = Date()
+            self.lastFullSyncDate = self.lastSyncDate
         }
 
         self.syncController.start(type: syncType, libraries: librarySyncType)

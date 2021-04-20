@@ -36,7 +36,9 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showWeb(url: URL)
     func show(doi: String)
-    func showFilters(button: UIBarButtonItem, viewModel: ViewModel<ItemsActionHandler>)
+    func showFilters(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
+    func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void)
+    func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void)
 }
 
 protocol DetailItemDetailCoordinatorDelegate: AnyObject {
@@ -446,12 +448,31 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
-    func showFilters(button: UIBarButtonItem, viewModel: ViewModel<ItemsActionHandler>) {
+    func showFilters(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem) {
         let controller = ItemsFilterViewController(viewModel: viewModel)
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         navigationController.popoverPresentationController?.barButtonItem = button
         self.topViewController.present(navigationController, animated: true, completion: nil)
+    }
+
+    func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void) {
+        let question = count == 1 ? L10n.Items.deleteQuestion : L10n.Items.deleteMultipleQuestion
+        self.ask(question: question, title: L10n.delete, isDestructive: true, confirm: confirmAction)
+    }
+
+    func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void) {
+        let question = count == 1 ? L10n.Items.removeFromCollectionQuestion : L10n.Items.removeFromCollectionMultipleQuestion
+        self.ask(question: question, title: L10n.Items.removeFromCollectionTitle, isDestructive: false, confirm: confirmAction)
+    }
+
+    private func ask(question: String, title: String, isDestructive: Bool, confirm: @escaping () -> Void) {
+        let controller = UIAlertController(title: title, message: question, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.yes, style: (isDestructive ? .destructive : .default), handler: { _ in
+            confirm()
+        }))
+        controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: nil))
+        self.topViewController.present(controller, animated: true, completion: nil)
     }
 }
 
