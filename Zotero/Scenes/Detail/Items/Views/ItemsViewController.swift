@@ -23,7 +23,6 @@ final class ItemsViewController: UIViewController {
         case done
         case selectAll
         case deselectAll
-        case add
         case sort
     }
 
@@ -82,7 +81,7 @@ final class ItemsViewController: UIViewController {
                                                       fileDownloader: self.controllers.userControllers?.fileDownloader)
         self.setupRightBarButtonItems(for: self.viewModel.state)
         self.toolbarItems = self.createToolbarItems(state: self.viewModel.state)
-        self.navigationController?.setToolbarHidden(true, animated: false)
+        self.navigationController?.setToolbarHidden(false, animated: false)
         self.setupTitle()
         // Use `navigationController.view.frame` if available, because the navigation controller is already initialized and layed out, so the view
         // size is already calculated properly.
@@ -169,10 +168,7 @@ final class ItemsViewController: UIViewController {
         if state.changes.contains(.editing) {
             self.tableViewHandler.set(editing: state.isEditing, animated: true)
             self.setupRightBarButtonItems(for: state)
-            if state.isEditing {
-                self.toolbarItems = self.createToolbarItems(state: state)
-            }
-            self.navigationController?.setToolbarHidden(!state.isEditing, animated: true)
+            self.toolbarItems = self.createToolbarItems(state: state)
         }
 
         if state.changes.contains(.selectAll) {
@@ -437,7 +433,7 @@ final class ItemsViewController: UIViewController {
 
     private func rightBarButtonItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
         if !state.isEditing {
-            return [.add, .sort, .select]
+            return [.sort, .select]
         }
         let allSelected = state.selectedItems.count == (state.results?.count ?? 0)
         if allSelected {
@@ -479,12 +475,6 @@ final class ItemsViewController: UIViewController {
                 guard let `self` = self else { return }
                 self.coordinatorDelegate?.showSortActions(viewModel: self.viewModel, button: item)
             }
-        case .add:
-            image = UIImage(systemName: "plus")
-            action = { [weak self] item in
-                guard let `self` = self else { return }
-                self.coordinatorDelegate?.showAddActions(viewModel: self.viewModel, button: item)
-            }
         }
 
         let item: UIBarButtonItem
@@ -503,15 +493,16 @@ final class ItemsViewController: UIViewController {
 
     private func createToolbarItems(state: ItemsState) -> [UIBarButtonItem] {
         if state.isEditing {
-            return self.createToolbarItems(from: self.editingToolbarActions)
+            return self.createEditingToolbarItems(from: self.editingToolbarActions)
         } else {
-            return self.createFilteringToolbarItems(for: state.filters)
+            return self.createNormalToolbaritems(for: state.filters)
         }
     }
 
-    private func createFilteringToolbarItems(for filters: [ItemsState.Filter]) -> [UIBarButtonItem] {
+    private func createNormalToolbaritems(for filters: [ItemsState.Filter]) -> [UIBarButtonItem] {
         let fixedSpacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
         fixedSpacer.width = 16
+        let flexibleSpacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
 
         let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
         let filterButton = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
@@ -522,10 +513,17 @@ final class ItemsViewController: UIViewController {
         })
         .disposed(by: self.disposeBag)
 
-        return [fixedSpacer, filterButton]
+        let addButton = UIBarButtonItem(image: UIImage(systemName: "plus"), style: .plain, target: nil, action: nil)
+        addButton.rx.tap.subscribe(onNext: { [weak self] _ in
+            guard let `self` = self else { return }
+            self.coordinatorDelegate?.showAddActions(viewModel: self.viewModel, button: addButton)
+        })
+        .disposed(by: self.disposeBag)
+
+        return [fixedSpacer, filterButton, flexibleSpacer, addButton, fixedSpacer]
     }
 
-    private func createToolbarItems(from actions: [ItemAction]) -> [UIBarButtonItem] {
+    private func createEditingToolbarItems(from actions: [ItemAction]) -> [UIBarButtonItem] {
         let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
         let items = actions.map({ action -> UIBarButtonItem in
             let item = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)

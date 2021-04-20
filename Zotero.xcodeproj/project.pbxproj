@@ -618,6 +618,7 @@
 		B37491402488FC170042FF85 /* StorageSettingsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B374913F2488FC170042FF85 /* StorageSettingsListView.swift */; };
 		B37491422488FC3D0042FF85 /* StorageSettingsRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37491412488FC3D0042FF85 /* StorageSettingsRow.swift */; };
 		B3764D9D2574F2DE0024274F /* ColorPickerCircleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3764D9C2574F2DE0024274F /* ColorPickerCircleView.swift */; };
+		B37673FB262DB25700C3BFAF /* ItemsToolbarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37673FA262DB25700C3BFAF /* ItemsToolbarController.swift */; };
 		B377F29E2493587900022943 /* AttachmentFileDeletedNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = B377F29D2493587900022943 /* AttachmentFileDeletedNotification.swift */; };
 		B377F29F2493722100022943 /* AttachmentCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B40642491222000FAAF6D /* AttachmentCreator.swift */; };
 		B377F2A02493725E00022943 /* UrlDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3972688247D403200A8B469 /* UrlDetector.swift */; };
@@ -1281,6 +1282,7 @@
 		B374913F2488FC170042FF85 /* StorageSettingsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageSettingsListView.swift; sourceTree = "<group>"; };
 		B37491412488FC3D0042FF85 /* StorageSettingsRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageSettingsRow.swift; sourceTree = "<group>"; };
 		B3764D9C2574F2DE0024274F /* ColorPickerCircleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerCircleView.swift; sourceTree = "<group>"; };
+		B37673FA262DB25700C3BFAF /* ItemsToolbarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsToolbarController.swift; sourceTree = "<group>"; };
 		B377F29D2493587900022943 /* AttachmentFileDeletedNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentFileDeletedNotification.swift; sourceTree = "<group>"; };
 		B377F2A1249373A400022943 /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
 		B377F2A4249373F300022943 /* AttachmentFileCleanupController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentFileCleanupController.swift; sourceTree = "<group>"; };
@@ -2277,6 +2279,7 @@
 			isa = PBXGroup;
 			children = (
 				B3593EE9241A61C700760E20 /* ItemsActionHandler.swift */,
+				B37673FA262DB25700C3BFAF /* ItemsToolbarController.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -3474,6 +3477,7 @@
 				B3593AD424B6007900CA0B57 /* PDFSearchViewController.swift in Sources */,
 				B3DCDF23240945FA0039ED0D /* CollectionPickerAction.swift in Sources */,
 				B3593F5D241A61C700760E20 /* CollectionTreeBuilder.swift in Sources */,
+				B37673FB262DB25700C3BFAF /* ItemsToolbarController.swift in Sources */,
 				B30565DA23FC051E003304F2 /* UpdateVersionsDbRequest.swift in Sources */,
 				B34DF1A1257684590019CCD1 /* AnnotationPageLabelViewController.swift in Sources */,
 				B3593F7E241A76F400760E20 /* CollectionEditingCoordinator.swift in Sources */,
