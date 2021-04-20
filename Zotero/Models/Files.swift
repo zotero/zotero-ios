@@ -147,6 +147,9 @@ struct Files {
     }
 
     static func file(from url: URL) -> File {
+        if url.hasDirectoryPath {
+            return FileData(rootPath: url.deletingLastPathComponent().relativePath, relativeComponents: [url.lastPathComponent], name: "", type: .directory)
+        }
         return FileData(rootPath: url.deletingLastPathComponent().relativePath, relativeComponents: [],
                         name: url.deletingPathExtension().lastPathComponent, ext: url.pathExtension)
     }

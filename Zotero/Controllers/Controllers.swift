@@ -58,7 +58,7 @@ final class Controllers {
         crashReporter.start()
         let secureStorage = KeychainSecureStorage()
         let sessionController = SessionController(secureStorage: secureStorage, defaults: Defaults.shared)
-        let translatorConfiguration = Database.translatorConfiguration(fileStorage: fileStorage, urlDetector: urlDetector)
+        let translatorConfiguration = Database.translatorConfiguration(fileStorage: fileStorage)
         let translatorsController = TranslatorsController(apiClient: apiClient, indexStorage: RealmDbStorage(config: translatorConfiguration), fileStorage: fileStorage)
         let previewSize = CGSize(width: PDFReaderLayout.sidebarWidth, height: PDFReaderLayout.sidebarWidth)
 
@@ -300,6 +300,6 @@ final class UserControllers {
     private class func createDbStorage(for userId: Int, controllers: Controllers) throws -> DbStorage {
         let file = Files.dbFile(for: userId)
         try controllers.fileStorage.createDirectories(for: file)
-        return RealmDbStorage(config: Database.mainConfiguration(url: file.createUrl(), fileStorage: controllers.fileStorage, urlDetector: controllers.urlDetector))
+        return RealmDbStorage(config: Database.mainConfiguration(url: file.createUrl(), fileStorage: controllers.fileStorage))
     }
 }

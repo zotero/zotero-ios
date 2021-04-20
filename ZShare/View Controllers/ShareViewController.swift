@@ -536,10 +536,9 @@ final class ShareViewController: UIViewController {
 
     private func setupControllers(with session: SessionData, apiClient: ApiClient, schemaController: SchemaController) {
         let fileStorage = FileStorageController()
-        let urlDetector = UrlDetector()
         let dbUrl = Files.dbFile(for: session.userId).createUrl()
-        let dbStorage = RealmDbStorage(config: Database.mainConfiguration(url: dbUrl, fileStorage: fileStorage, urlDetector: urlDetector))
-        let configuration = Database.translatorConfiguration(fileStorage: fileStorage, urlDetector: urlDetector)
+        let dbStorage = RealmDbStorage(config: Database.mainConfiguration(url: dbUrl, fileStorage: fileStorage))
+        let configuration = Database.translatorConfiguration(fileStorage: fileStorage)
         let translatorsController = TranslatorsController(apiClient: apiClient, indexStorage: RealmDbStorage(config: configuration), fileStorage: fileStorage)
 
         apiClient.set(authToken: session.apiToken)

@@ -13,20 +13,20 @@ import RealmSwift
 struct Database {
     private static let schemaVersion: UInt64 = 24
 
-    static func mainConfiguration(url: URL, fileStorage: FileStorage, urlDetector: UrlDetector) -> Realm.Configuration {
+    static func mainConfiguration(url: URL, fileStorage: FileStorage) -> Realm.Configuration {
         let shouldDelete = shouldDeleteRealm(url: url)
         return Realm.Configuration(fileURL: url,
                                    schemaVersion: schemaVersion,
-                                   migrationBlock: shouldDelete ? nil : createMigrationBlock(fileStorage: fileStorage, urlDetector: urlDetector),
+                                   migrationBlock: shouldDelete ? nil : createMigrationBlock(fileStorage: fileStorage),
                                    deleteRealmIfMigrationNeeded: shouldDelete)
     }
 
-    static func translatorConfiguration(fileStorage: FileStorage, urlDetector: UrlDetector) -> Realm.Configuration {
+    static func translatorConfiguration(fileStorage: FileStorage) -> Realm.Configuration {
         let url = Files.translatorsDbFile.createUrl()
         let shouldDelete = shouldDeleteRealm(url: url)
         return Realm.Configuration(fileURL: url,
                                    schemaVersion: schemaVersion,
-                                   migrationBlock: shouldDelete ? nil : createMigrationBlock(fileStorage: fileStorage, urlDetector: urlDetector),
+                                   migrationBlock: shouldDelete ? nil : createMigrationBlock(fileStorage: fileStorage),
                                    deleteRealmIfMigrationNeeded: shouldDelete)
     }
 
@@ -36,7 +36,7 @@ struct Database {
         return existingSchemaVersion < 20
     }
 
-    private static func createMigrationBlock(fileStorage: FileStorage, urlDetector: UrlDetector) -> MigrationBlock {
+    private static func createMigrationBlock(fileStorage: FileStorage) -> MigrationBlock {
         return { migration, schemaVersion in
             if schemaVersion < 21 {
                 Database.migrateCollapsibleCollections(migration: migration)
@@ -45,7 +45,7 @@ struct Database {
                 Database.migrateCollectionParentKeys(migration: migration)
             }
             if schemaVersion < 24 {
-                Database.migrateMainAttachmentDownloaded(migration: migration, fileStorage: fileStorage, urlDetector: urlDetector)
+                Database.migrateMainAttachmentDownloaded(migration: migration, fileStorage: fileStorage)
             }
         }
     }
@@ -65,18 +65,18 @@ struct Database {
         }
     }
 
-    private static func migrateMainAttachmentDownloaded(migration: Migration, fileStorage: FileStorage, urlDetector: UrlDetector) {
+    private static func migrateMainAttachmentDownloaded(migration: Migration, fileStorage: FileStorage) {
+        let attachmentMap = self.createAttachmentFileMap(fileStorage: fileStorage)
         migration.enumerateObjects(ofType: "RItem", { old, new in
-            if let key = old?.value(forKey: "key") as? String {
+            if let rawType = old?.value(forKey: "rawType") as? String, rawType == ItemTypes.attachment,
+               let key = old?.value(forKey: "key") as? String {
                 let libraryId: LibraryIdentifier
                 if let groupId = old?.value(forKey: "groupKey") as? Int {
                     libraryId = .group(groupId)
                 } else {
                     libraryId = .custom(.myLibrary)
                 }
-                // Only PDFs are stored as `mainAttachment` currently, check for those instead of trying to check fields for this item.
-                let file = Files.attachmentFile(in: libraryId, key: key, ext: "pdf")
-                new?["fileDownloaded"] = fileStorage.has(file)
+                new?["fileDownloaded"] = attachmentMap[libraryId]?.contains(key) == true
             }
         })
     }
@@ -111,5 +111,37 @@ struct Database {
         }
 
         return correctedModifications
+    }
+
+    /// Creates map of attachment keys from each library which are stored locally.
+    private static func createAttachmentFileMap(fileStorage: FileStorage) -> [LibraryIdentifier: Set<String>] {
+        guard let downloadContents = (try? fileStorage.contentsOfDirectory(at: Files.downloads))?.filter({ $0.isDirectory }) else { return [:] }
+
+        let libraryIdsAndFiles = downloadContents.compactMap({ file in file.relativeComponents.last?.libraryIdFromFolderName.flatMap({ ($0, file) }) })
+
+        var attachmentMap: [LibraryIdentifier: Set<String>] = [:]
+        for (libraryId, file) in libraryIdsAndFiles {
+            guard let files: [File] = try? fileStorage.contentsOfDirectory(at: file) else { continue }
+            var keys: Set<String> = []
+            for file in files {
+                guard !file.isDirectory else { continue }
+                keys.insert(file.name)
+            }
+            attachmentMap[libraryId] = keys
+        }
+        return attachmentMap
+    }
+}
+
+extension String {
+    var libraryIdFromFolderName: LibraryIdentifier? {
+        if self == "custom_my_library" {
+            return .custom(.myLibrary)
+        }
+
+        guard self.count > 6,
+              self[self.startIndex..<self.index(self.startIndex, offsetBy: 5)] == "group",
+              let groupId = Int(self[self.index(self.startIndex, offsetBy: 6)..<self.endIndex]) else { return nil }
+        return .group(groupId)
     }
 }
