@@ -134,7 +134,7 @@ struct Database {
 }
 
 extension String {
-    var libraryIdFromFolderName: LibraryIdentifier? {
+    fileprivate var libraryIdFromFolderName: LibraryIdentifier? {
         if self == "custom_my_library" {
             return .custom(.myLibrary)
         }
