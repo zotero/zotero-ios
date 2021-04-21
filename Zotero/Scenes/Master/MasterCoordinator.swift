@@ -179,10 +179,6 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
                      if let library = state.showDeleteLibraryQuestion {
                          self.showDeleteLibraryStorageAlert(for: library, viewModel: viewModel)
                      }
-
-                    if state.showDeleteCacheQuestion {
-                        self.showDeleteCacheStorageAlert(viewModel: viewModel)
-                    }
                  })
                  .disposed(by: self.disposeBag)
 
@@ -212,16 +208,6 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
                                 },
                                 cancelAction: { [weak viewModel] in
                                     viewModel?.process(action: .showDeleteLibraryQuestion(nil))
-                                })
-    }
-
-    private func showDeleteCacheStorageAlert(viewModel: ViewModel<SettingsActionHandler>) {
-        self.showDeleteQuestion(title: L10n.Settings.Storage.deleteCacheQuestion,
-                                deleteAction: { [weak viewModel] in
-                                    viewModel?.process(action: .deleteCache)
-                                },
-                                cancelAction: { [weak viewModel] in
-                                    viewModel?.process(action: .showDeleteCacheQuestion(false))
                                 })
     }
 

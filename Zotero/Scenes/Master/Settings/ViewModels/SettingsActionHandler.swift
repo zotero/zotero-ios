@@ -108,14 +108,6 @@ struct SettingsActionHandler: ViewModelActionHandler {
                 state.showDeleteLibraryQuestion = library
             }
 
-        case .deleteCache:
-            self.removeCache(in: viewModel)
-
-        case .showDeleteCacheQuestion(let show):
-            self.update(viewModel: viewModel) { state in
-                state.showDeleteCacheQuestion = show
-            }
-
         case .connectToWebSocket:
             guard let apiKey = self.sessionController.sessionData?.apiToken else { return }
             self.webSocketController.connect(apiKey: apiKey)
@@ -133,20 +125,6 @@ struct SettingsActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.includeAttachment = value
             }
-        }
-    }
-
-    private func removeCache(in viewModel: ViewModel<SettingsActionHandler>) {
-        do {
-            try self.fileStorage.remove(Files.cache)
-
-            self.update(viewModel: viewModel) { state in
-                state.cacheData = DirectoryData(fileCount: 0, mbSize: 0)
-                state.showDeleteCacheQuestion = false
-            }
-        } catch let error {
-            DDLogError("SettingsActionHandler: can't remove download directory - \(error)")
-            // TODO: - Show error to user
         }
     }
 
@@ -183,13 +161,12 @@ struct SettingsActionHandler: ViewModelActionHandler {
             let libraries = Array((try coordinator.perform(request: ReadAllCustomLibrariesDbRequest())).map(Library.init)) +
                             (try coordinator.perform(request: ReadAllGroupsDbRequest())).map(Library.init)
 
-            let (storageData, totalData, cacheData) = self.storageData(for: libraries)
+            let (storageData, totalData) = self.storageData(for: libraries)
 
             self.update(viewModel: viewModel) { state in
                 state.libraries = libraries
                 state.storageData = storageData
                 state.totalStorageData = totalData
-                state.cacheData = cacheData
             }
         } catch let error {
             DDLogError("SettingsActionHandler: can't load libraries - \(error)")
@@ -197,7 +174,7 @@ struct SettingsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func storageData(for libraries: [Library]) -> (libraryData: [LibraryIdentifier: DirectoryData], totalData: DirectoryData, cacheData: DirectoryData) {
+    private func storageData(for libraries: [Library]) -> (libraryData: [LibraryIdentifier: DirectoryData], totalData: DirectoryData) {
         var storageData: [LibraryIdentifier: DirectoryData] = [:]
         for library in libraries {
             let libraryId = library.identifier
@@ -205,8 +182,7 @@ struct SettingsActionHandler: ViewModelActionHandler {
             storageData[library.identifier] = data
         }
         let totalData = self.fileStorage.directoryData(for: [Files.downloads, Files.annotationPreviews])
-        let cacheData = self.fileStorage.directoryData(for: [Files.cache])
-        return (storageData, totalData, cacheData)
+        return (storageData, totalData)
     }
 
     private func observeWebSocketConnection(in viewModel: ViewModel<SettingsActionHandler>) {

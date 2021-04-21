@@ -219,9 +219,6 @@
 "settings.storage.delete_all" = "Delete All Local Attachment Files";
 "settings.storage.delete_all_question" = "Are you sure you want to delete all attachment files from this device?\n\nOther synced devices will not be affected.";
 "settings.storage.delete_library_question" = "Are you sure you want to delete all attachment files in %@ from this device?\n\nOther synced devices will not be affected.";
-"settings.storage.delete_cache" = "Delete Temporary Files";
-"settings.storage.delete_cache_question" = "Are you sure you want to delete temporary files?";
-"settings.storage.cache" = "Temporary Files";
 "settings.saving.title" = "Saving";
 "settings.saving.files_title" = "Save Files";
 "settings.saving.files_message" = "Automatically attach associated PDFs and other files when saving items";

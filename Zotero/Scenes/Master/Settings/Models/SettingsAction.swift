@@ -12,7 +12,6 @@ enum SettingsAction {
     case cancelSync
     case connectToWebSocket
     case deleteAllDownloads
-    case deleteCache
     case deleteDownloadsInLibrary(LibraryIdentifier)
     case disconnectFromWebSocket
     case loadStorageData
@@ -24,7 +23,6 @@ enum SettingsAction {
     case setLogoutAlertVisible(Bool)
     case setShowSubcollectionItems(Bool)
     case showDeleteAllQuestion(Bool)
-    case showDeleteCacheQuestion(Bool)
     case showDeleteLibraryQuestion(Library?)
     case startImmediateLogging
     case startLoggingOnNextLaunch

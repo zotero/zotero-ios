@@ -591,16 +591,10 @@ internal enum L10n {
       internal static let title = L10n.tr("Localizable", "settings.saving.title")
     }
     internal enum Storage {
-      /// Temporary Files
-      internal static let cache = L10n.tr("Localizable", "settings.storage.cache")
       /// Delete All Local Attachment Files
       internal static let deleteAll = L10n.tr("Localizable", "settings.storage.delete_all")
       /// Are you sure you want to delete all attachment files from this device?\n\nOther synced devices will not be affected.
       internal static let deleteAllQuestion = L10n.tr("Localizable", "settings.storage.delete_all_question")
-      /// Delete Temporary Files
-      internal static let deleteCache = L10n.tr("Localizable", "settings.storage.delete_cache")
-      /// Are you sure you want to delete temporary files?
-      internal static let deleteCacheQuestion = L10n.tr("Localizable", "settings.storage.delete_cache_question")
       /// Are you sure you want to delete all attachment files in %@ from this device?\n\nOther synced devices will not be affected.
       internal static func deleteLibraryQuestion(_ p1: Any) -> String {
         return L10n.tr("Localizable", "settings.storage.delete_library_question", String(describing: p1))

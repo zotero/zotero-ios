@@ -77,6 +77,7 @@ final class AttachmentFileCleanupController {
                 try self.fileStorage.remove(Files.downloads)
                 // Annotations are not guaranteed to exist
                 try? self.fileStorage.remove(Files.annotationPreviews)
+                try? self.fileStorage.remove(Files.cache)
 
                 try? self.dbStorage.createCoordinator().perform(request: MarkAllFilesAsNotDownloadedDbRequest())
             } catch let error {
