@@ -80,6 +80,10 @@ final class AnnotationViewController: UIViewController {
         self.updatePreferredContentSize()
     }
 
+    deinit {
+        self.coordinatorDelegate?.didFinish()
+    }
+
     // MARK: - Actions
 
     private func updatePreferredContentSize() {
