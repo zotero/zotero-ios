@@ -669,8 +669,10 @@ final class PDFReaderViewController: UIViewController {
             self?.viewModel.process(action: .selectAnnotationFromDocument(key: key, page: Int(context.pageView.pageIndex)))
         }
 
-        interactions.deselectAnnotation.addActivationCallback { [weak self] _, _, _ in
+        interactions.deselectAnnotation.addActivationCondition { [weak self] _, _, _ -> Bool in
+            // `interactions.deselectAnnotation.addActivationCallback` is not always called when highglight annotation tool is enabled.
             self?.viewModel.process(action: .selectAnnotation(nil))
+            return true
         }
 
         // Only Zotero-synced annotations can be edited
