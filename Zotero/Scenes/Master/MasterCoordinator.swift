@@ -186,7 +186,7 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
         view.coordinatorDelegate = self
 
         let controller = UIHostingController(rootView: view.environmentObject(viewModel))
-        controller.isModalInPresentation = true
+        controller.isModalInPresentation = false
         controller.modalPresentationStyle = .formSheet
         self.navigationController.parent?.present(controller, animated: true, completion: nil)
     }
