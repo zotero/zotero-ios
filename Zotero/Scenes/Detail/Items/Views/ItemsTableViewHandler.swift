@@ -331,7 +331,7 @@ extension ItemsTableViewHandler: UITableViewDropDelegate {
               let key = self.snapshot?[indexPath.row].key else { return }
 
         switch coordinator.proposal.operation {
-        case .move:
+        case .copy:
             self.dragDropController.itemKeys(from: coordinator.items) { [weak self] keys in
                 self?.viewModel.process(action: .moveItems(keys, key))
             }
@@ -357,6 +357,6 @@ extension ItemsTableViewHandler: UITableViewDropDelegate {
            return UITableViewDropProposal(operation: .forbidden)
         }
 
-        return UITableViewDropProposal(operation: .move, intent: .insertIntoDestinationIndexPath)
+        return UITableViewDropProposal(operation: .copy, intent: .insertIntoDestinationIndexPath)
     }
 }
