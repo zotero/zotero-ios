@@ -89,7 +89,7 @@ final class AnnotationViewController: UIViewController {
     private func updatePreferredContentSize() {
         guard let size = self.annotationView?.systemLayoutSizeFitting(CGSize(width: AnnotationPopoverLayout.width, height: .greatestFiniteMagnitude)) else { return }
         self.preferredContentSize = size
-        self.navigationController?.preferredContentSize = size
+        self.popoverPresentationController?.presentedViewController.preferredContentSize = size
     }
 
     private func update(state: PDFReaderState) {

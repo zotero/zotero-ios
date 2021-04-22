@@ -28,14 +28,15 @@ protocol AnnotationEditCoordinatorDelegate: class {
 final class AnnotationPopoverCoordinator: NSObject, Coordinator {
     var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
+    var navigationController: UINavigationController { return self.popoverNavController.childNavigationController }
 
-    unowned let navigationController: UINavigationController
+    private unowned let popoverNavController: PopoverNavigationViewController
     private unowned let viewModel: ViewModel<PDFReaderActionHandler>
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
-    init(navigationController: UINavigationController, controllers: Controllers, viewModel: ViewModel<PDFReaderActionHandler>) {
-        self.navigationController = navigationController
+    init(popoverNavController: PopoverNavigationViewController, controllers: Controllers, viewModel: ViewModel<PDFReaderActionHandler>) {
+        self.popoverNavController = popoverNavController
         self.controllers = controllers
         self.viewModel = viewModel
         self.childCoordinators = []
@@ -43,7 +44,7 @@ final class AnnotationPopoverCoordinator: NSObject, Coordinator {
 
         super.init()
 
-        navigationController.delegate = self
+        popoverNavController.childNavigationController.delegate = self
     }
 
     func start(animated: Bool) {

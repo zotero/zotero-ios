@@ -635,8 +635,8 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
             return
         }
 
-        let navigationController = UINavigationController()
-        navigationController.setNavigationBarHidden(true, animated: false)
+        let navigationController = PopoverNavigationViewController()
+        navigationController.childNavigationController.setNavigationBarHidden(true, animated: false)
         if UIDevice.current.userInterfaceIdiom == .pad {
             navigationController.modalPresentationStyle = .popover
             navigationController.popoverPresentationController?.sourceView = self.navigationController.presentedViewController?.view
@@ -645,7 +645,7 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
             navigationController.popoverPresentationController?.delegate = popoverDelegate
         }
 
-        let coordinator = AnnotationPopoverCoordinator(navigationController: navigationController, controllers: self.controllers, viewModel: viewModel)
+        let coordinator = AnnotationPopoverCoordinator(popoverNavController: navigationController, controllers: self.controllers, viewModel: viewModel)
         coordinator.parentCoordinator = self
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)

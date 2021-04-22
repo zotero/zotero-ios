@@ -125,7 +125,7 @@ final class AnnotationEditViewController: UIViewController {
     }
 
     private func updatePreferredContentSize() {
-        var height: CGFloat = 282
+        var height: CGFloat = 366
 
         if let text = self.viewModel.state.annotation.text {
             let width = AnnotationPopoverLayout.width - ((AnnotationPopoverLayout.annotationLayout.horizontalInset * 2) +
@@ -136,12 +136,12 @@ final class AnnotationEditViewController: UIViewController {
             paragraphStyle.maximumLineHeight = AnnotationPopoverLayout.annotationLayout.lineHeight
             let attributedText = NSAttributedString(string: text, attributes: [.font: AnnotationPopoverLayout.annotationLayout.font, .paragraphStyle: paragraphStyle])
             let boundingRect = attributedText.boundingRect(with: CGSize(width: width, height: .greatestFiniteMagnitude), options: .usesLineFragmentOrigin, context: nil)
-            height += boundingRect.height + 56
+            height += boundingRect.height + 22
         }
 
         let size = CGSize(width: AnnotationPopoverLayout.width, height: height)
         self.preferredContentSize = size
-        self.navigationController?.preferredContentSize = size
+        self.popoverPresentationController?.presentedViewController.preferredContentSize = size
     }
 
     // MARK: - Setups

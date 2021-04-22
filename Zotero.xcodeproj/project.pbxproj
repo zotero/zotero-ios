@@ -388,6 +388,7 @@
 		B32AB57E25ADCEED003CF0C6 /* Bundled in Resources */ = {isa = PBXBuildFile; fileRef = B30BA8C3255D415600361D25 /* Bundled */; };
 		B32B4F952475544700F78A05 /* SyncToolbarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32B4F942475544700F78A05 /* SyncToolbarController.swift */; };
 		B32B4F972475636600F78A05 /* RxTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32B4F962475636600F78A05 /* RxTableViewCell.swift */; };
+		B32DE61F26320271000287EC /* PopoverNavigationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32DE61E26320271000287EC /* PopoverNavigationViewController.swift */; };
 		B32EE26124A092B700442974 /* RUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32EE26024A092B700442974 /* RUser.swift */; };
 		B32EE26224A0998700442974 /* RUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32EE26024A092B700442974 /* RUser.swift */; };
 		B330260D25DE9A1100742025 /* RPageIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = B330260C25DE9A1100742025 /* RPageIndex.swift */; };
@@ -1089,6 +1090,7 @@
 		B32AB57A25ADB891003CF0C6 /* CommentIconDrawingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentIconDrawingController.swift; sourceTree = "<group>"; };
 		B32B4F942475544700F78A05 /* SyncToolbarController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncToolbarController.swift; sourceTree = "<group>"; };
 		B32B4F962475636600F78A05 /* RxTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RxTableViewCell.swift; sourceTree = "<group>"; };
+		B32DE61E26320271000287EC /* PopoverNavigationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverNavigationViewController.swift; sourceTree = "<group>"; };
 		B32EE26024A092B700442974 /* RUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RUser.swift; sourceTree = "<group>"; };
 		B330260C25DE9A1100742025 /* RPageIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPageIndex.swift; sourceTree = "<group>"; };
 		B33791D623BF7B2900919210 /* CreateItemWithAttachmentDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CreateItemWithAttachmentDbRequest.swift; sourceTree = "<group>"; };
@@ -2646,6 +2648,7 @@
 				B3F0C3FF250A1DD7002D557A /* LibraryRow.swift */,
 				B361820C24C9B9D900B30D56 /* NoRotationHostingController.swift */,
 				B3DCDF02240912060039ED0D /* NoteEditorViewController.swift */,
+				B32DE61E26320271000287EC /* PopoverNavigationViewController.swift */,
 				B32B4F962475636600F78A05 /* RxTableViewCell.swift */,
 				B361820E24C9B9E800B30D56 /* SelectableTextField.swift */,
 				B3DCDF1A24091EBE0039ED0D /* SinglePickerRow.swift */,
@@ -3321,6 +3324,7 @@
 				B30565C123FC051E003304F2 /* MarkObjectsAsDeletedDbRequest.swift in Sources */,
 				B3830CDC255451AB00910FE0 /* TagPickerState.swift in Sources */,
 				B39D336823FFD96C00EF2ACB /* Note.swift in Sources */,
+				B32DE61F26320271000287EC /* PopoverNavigationViewController.swift in Sources */,
 				B30566B623FC051F003304F2 /* DeletionsResponse.swift in Sources */,
 				B30566C423FC051F003304F2 /* DeleteBatch.swift in Sources */,
 				B3981435257A82D4002C755C /* GrowingTextViewCellDelegate.swift in Sources */,
