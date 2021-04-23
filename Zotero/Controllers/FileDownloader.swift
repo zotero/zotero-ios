@@ -16,7 +16,7 @@ final class FileDownloader {
     struct Update {
         enum Kind {
             case progress(CGFloat)
-            case downloaded
+            case downloaded(isCompressed: Bool)
             case failed(Error)
             case cancelled
 
@@ -85,14 +85,20 @@ final class FileDownloader {
         // Send first update to immediately reflect new state
         self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .progress(0))))
 
+        var isCompressed = false
+
         let request = FileRequest(data: .internal(libraryId, self.userId, key), destination: file)
         self.apiClient.download(request: request)
                       .observeOn(MainScheduler.instance)
                       .do(onNext: { [weak self] request in
                           self?.requests[download] = request
                       })
-                      .flatMap { request in
-                          return request.rx.progress()
+                      .flatMap { request -> Observable<RxProgress> in
+                          let redirector = Redirector(behavior: .modify({ task, request, response -> URLRequest? in
+                              isCompressed = response.value(forHTTPHeaderField: "Zotero-File-Compressed") == "Yes"
+                              return request
+                          }))
+                          return request.redirect(using: redirector).rx.progress()
                       }
                       .subscribe(onNext: { [weak self] progress in
                           guard let `self` = self else { return }
@@ -100,9 +106,14 @@ final class FileDownloader {
                           self.progresses[download] = progress
                           self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .progress(progress))))
                       }, onError: { [weak self] error in
-                          self?.didFinish(download: download, parentKey: parentKey, error: error)
+                          self?.didFinish(download: download, parentKey: parentKey, result: .failure(error))
                       }, onCompleted: { [weak self] in
-                          self?.didFinish(download: download, parentKey: parentKey, error: self?.checkFileResponse(for: file))
+                          guard let `self` = self else { return }
+                          if let error = self.checkFileResponse(for: file) {
+                              self.didFinish(download: download, parentKey: parentKey, result: .failure(error))
+                              return
+                          }
+                          self.didFinish(download: download, parentKey: parentKey, result: .success(isCompressed))
                       })
                       .disposed(by: self.disposeBag)
     }
@@ -118,22 +129,21 @@ final class FileDownloader {
         return nil
     }
 
-    private func didFinish(download: Download, parentKey: String?, error: Error?) {
-        let isCancelError = (error as? Alamofire.AFError)?.isExplicitlyCancelledError == true
-
+    private func didFinish(download: Download, parentKey: String?, result: Result<Bool, Error>) {
         self.requests[download] = nil
         self.progresses[download] = nil
-        self.errors[download] = isCancelError ? nil : error
 
         let updateKind: Update.Kind
-        if let error = error {
-            if isCancelError {
-                updateKind = .cancelled
-            } else {
-                updateKind = .failed(error)
-            }
-        } else {
-            updateKind = .downloaded
+
+        switch result {
+        case .success(let isCompressed):
+            self.errors[download] = nil
+            updateKind = .downloaded(isCompressed: isCompressed)
+
+        case .failure(let error):
+            let isCancelError = (error as? Alamofire.AFError)?.isExplicitlyCancelledError == true
+            self.errors[download] = isCancelError ? nil : error
+            updateKind = isCancelError ? .cancelled : .failed(error)
         }
 
         self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: updateKind)))

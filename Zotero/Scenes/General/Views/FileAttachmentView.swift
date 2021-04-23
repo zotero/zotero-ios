@@ -33,18 +33,18 @@ final class FileAttachmentView: UIView {
     }
 
     enum State {
-        case ready(Attachment.ContentType)
+        case ready(Attachment.Kind)
         case progress(CGFloat)
-        case failed(Attachment.ContentType, Error)
+        case failed(Attachment.Kind, Error)
 
-        static func stateFrom(contentType: Attachment.ContentType, progress: CGFloat?, error: Error?) -> State {
+        static func stateFrom(type: Attachment.Kind, progress: CGFloat?, error: Error?) -> State {
             if let progress = progress {
                 return .progress(progress)
             }
             if let error = error {
-                return .failed(contentType, error)
+                return .failed(type, error)
             }
-            return .ready(contentType)
+            return .ready(type)
         }
     }
     
@@ -209,77 +209,80 @@ final class FileAttachmentView: UIView {
     }
 
     private func layerData(state: State, style: Style) -> LayerData? {
-        let contentType: Attachment.ContentType
+        let type: Attachment.Kind
         let error: Error?
 
         switch state {
         case .progress(let progress):
             return LayerData(border: .progressLine(progress), content: .stopSign, badgeName: nil)
-        case .ready(let _contentType):
-            contentType = _contentType
+        case .ready(let _type):
+            type = _type
             error = nil
-        case .failed(let _contentType, let _error):
-            contentType = _contentType
+        case .failed(let _type, let _error):
+            type = _type
             error = _error
         }
 
         switch style {
         case .list:
-            let image = self.listImage(for: contentType, error: error)
+            let image = self.listImage(for: type, error: error)
             return LayerData(border: .borderLine, content: .image(image), badgeName: nil)
         case .detail:
-            let (image, badge) = self.detailImageData(for: contentType, error: error)
+            let (image, badge) = self.detailImageData(for: type, error: error)
             return LayerData(border: nil, content: .image(image), badgeName: badge)
         }
     }
 
-    private func listImage(for contentType: Attachment.ContentType, error: Error?) -> String {
-        switch contentType {
-        case .file(let file, _, let location, _):
-            let documentType = file.mimeType == "application/pdf" ? "pdf" : "document"
+    private func listImage(for type: Attachment.Kind, error: Error?) -> String {
+        switch type {
+        case .file(_, let contentType, let location, _):
+            let documentType = contentType == "application/pdf" ? "pdf" : "document"
             var state = self.attachmentState(from: location, error: error)
             if !state.isEmpty {
                 state = "-" + state
             }
             return "attachment-list-" + documentType + state
 
-        case .snapshot, .url:
+        case .url:
             // These two are not shown in item list, but just in case return missing document
             return "attachment-list-document-missing"
         }
     }
 
-    private func detailImageData(for contentType: Attachment.ContentType, error: Error?) -> (image: String, badge: String?) {
-        switch contentType {
-        case .file(let file, _, let location, let linkType):
-            let documentType = file.mimeType == "application/pdf" ? "pdf" : "document"
-            let link = linkType == .linked ? "-linked" : ""
+    private func detailImageData(for type: Attachment.Kind, error: Error?) -> (image: String, badge: String?) {
+        switch type {
+        case .file(_, let contentType, let location, let linkType):
+            let documentType = contentType == "application/pdf" ? "pdf" : "document"
             let badge = self.detailBadge(from: location, error: error)
-            return (("attachment-detail" + link + "-" + documentType), badge)
-        case .snapshot(_, _, _, let location):
-            let badge = self.detailBadge(from: location, error: error)
-            return ("attachment-detail-webpage-snapshot", badge)
+
+            switch linkType {
+            case .importedUrl:
+                return ("attachment-detail-webpage-snapshot", badge)
+            case .embeddedImage, .importedFile:
+                return (("attachment-detail-" + documentType), badge)
+            case .linkedFile:
+                return (("attachment-detail-linked-" + documentType), badge)
+            }
         case .url:
             return ("attachment-detail-linked-url", nil)
         }
     }
 
-    private func attachmentState(from location: Attachment.FileLocation?, error: Error?) -> String {
+    private func attachmentState(from location: Attachment.FileLocation, error: Error?) -> String {
         guard error == nil else {
             return "download-failed"
-        }
-        guard let location = location else {
-            return "missing"
         }
         switch location {
         case .local:
             return ""
         case .remote:
             return "download"
+        case .remoteMissing:
+            return "missing"
         }
     }
 
-    private func detailBadge(from location: Attachment.FileLocation?, error: Error?) -> String? {
+    private func detailBadge(from location: Attachment.FileLocation, error: Error?) -> String? {
         let state = self.attachmentState(from: location, error: error)
         if state.isEmpty {
             return nil

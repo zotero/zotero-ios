@@ -108,27 +108,19 @@ extension RItem: Deletable {
     }
 
     private func cleanupAttachmentFiles() {
-        guard let contentType = AttachmentCreator.attachmentContentType(for: self, options: .light, fileStorage: nil, urlDetector: nil) else { return }
+        guard let contentType = AttachmentCreator.attachmentContentType(for: self, options: .light, fileStorage: nil, urlDetector: nil)?.1 else { return }
 
         switch contentType {
         case .url: break
 
-        case .snapshot(let htmlFile, _, let zipFile, _):
-            // Delete the zip
-            NotificationCenter.default.post(name: .attachmentDeleted, object: zipFile)
-            // Delete unzipped html directory
-            NotificationCenter.default.post(name: .attachmentDeleted, object: htmlFile.directory)
-
-        case .file(let file, _, _, let linkType):
+        case .file(_, let contentType, _, let linkType):
             // Don't try to remove linked attachments
-            guard linkType != .linked else { return }
+            guard linkType != .linkedFile, let libraryId = self.libraryId else { return }
 
-            // Delete attachment file
-            NotificationCenter.default.post(name: .attachmentDeleted, object: file)
+            // Delete attachment directory
+            NotificationCenter.default.post(name: .attachmentDeleted, object: Files.newAttachmentDirectory(in: libraryId, key: self.key))
 
-            guard let libraryId = self.libraryId else { return }
-
-            if file.mimeType == "application/pdf" {
+            if contentType == "application/pdf" {
                 // This is a PDF file, remove all annotations.
                 NotificationCenter.default.post(name: .attachmentDeleted, object: Files.annotationPreviews(for: self.key, libraryId: libraryId))
             }

@@ -26,7 +26,7 @@ struct AttachmentCreator {
     /// - parameter urlDetector: Url detector to validate url attachment.
     /// - returns: Attachment if recognized. Nil otherwise.
     static func attachment(for item: RItem, options: Options = .light, fileStorage: FileStorage, urlDetector: UrlDetector) -> Attachment? {
-        return attachmentContentType(for: item, options: options, fileStorage: fileStorage, urlDetector: urlDetector).flatMap({ Attachment(item: item, type: $0) })
+        return attachmentContentType(for: item, options: options, fileStorage: fileStorage, urlDetector: urlDetector).flatMap({ Attachment(item: item, type: $0, type2: $1) })
     }
 
     /// Returns attachment content type type based on attachment item.
@@ -34,9 +34,8 @@ struct AttachmentCreator {
     /// - parameter fileStorage: File storage to check availability of local attachment.
     /// - parameter urlDetector: Url detector to validate url attachment.
     /// - returns: Attachment content type if recognized. Nil otherwise.
-    static func attachmentContentType(for item: RItem, options: Options = .light, fileStorage: FileStorage?, urlDetector: UrlDetector?) -> Attachment.ContentType? {
-        guard let linkMode = item.fields.filter(.key(FieldKeys.Item.Attachment.linkMode)).first
-                                        .flatMap({ LinkMode(rawValue: $0.value) }) else {
+    static func attachmentContentType(for item: RItem, options: Options = .light, fileStorage: FileStorage?, urlDetector: UrlDetector?) -> (Attachment.ContentType, Attachment.Kind)? {
+        guard let linkMode = item.fields.filter(.key(FieldKeys.Item.Attachment.linkMode)).first.flatMap({ LinkMode(rawValue: $0.value) }) else {
             DDLogError("AttachmentCreator: missing link mode for item \(item.key)")
             return nil
         }
@@ -60,7 +59,7 @@ struct AttachmentCreator {
         }
     }
 
-    private static func embeddedImageContentType(for item: RItem, libraryId: LibraryIdentifier, options: Options, fileStorage: FileStorage?) -> Attachment.ContentType? {
+    private static func embeddedImageContentType(for item: RItem, libraryId: LibraryIdentifier, options: Options, fileStorage: FileStorage?) -> (Attachment.ContentType, Attachment.Kind)? {
         guard let parent = item.parent else {
             DDLogError("AttachmentCreator: embedded image without parent \(item.key)")
             return nil
@@ -74,17 +73,22 @@ struct AttachmentCreator {
             return nil
         }
         let file = Files.annotationPreview(annotationKey: parent.key, pdfKey: attachmentItem.key, libraryId: libraryId, isDark: (options == .dark))
-        let location = fileStorage.flatMap({ self.location(for: item, file: file, fileStorage: $0) })
-        let filename = self.filename(for: item, file: file)
-        return .file(file: file, filename: filename, location: location, linkType: .imported)
+        let location = self.location(for: item, file: file, fileStorage: fileStorage)
+        let filename = self.filename(for: item, ext: "png")
+        return (.file(file: file, filename: filename, location: location, linkType: .imported), .file(filename: filename, contentType: "image/png", location: location, linkType: .embeddedImage))
     }
 
-    private static func importedFileContentType(for item: RItem, libraryId: LibraryIdentifier, fileStorage: FileStorage?) -> Attachment.ContentType? {
-        guard let fileType = self.fileType(for: item) else { return nil }
-        return self.fileContentType(for: item, libraryId: libraryId, fileType: fileType, linkType: .imported, fileStorage: fileStorage)
+    private static func importedFileContentType(for item: RItem, libraryId: LibraryIdentifier, fileStorage: FileStorage?) -> (Attachment.ContentType, Attachment.Kind)? {
+        guard let contentType = self.contentType(for: item) else { return nil }
+        let file = Files.attachmentFile(in: libraryId, key: item.key, contentType: contentType)
+        let filename = self.filename(for: item, ext: contentType.extensionFromMimeType)
+        let newFile = Files.newAttachmentFile(in: libraryId, key: item.key, filename: filename, contentType: contentType)
+        let location = self.location(for: item, file: file, fileStorage: fileStorage)
+        let newLocation = self.location(for: item, file: newFile, fileStorage: fileStorage)
+        return (.file(file: file, filename: filename, location: location, linkType: .imported), .file(filename: filename, contentType: contentType, location: newLocation, linkType: .importedFile))
     }
 
-    private static func importedUrlContentType(item: RItem, libraryId: LibraryIdentifier, fileStorage: FileStorage?) -> Attachment.ContentType? {
+    private static func importedUrlContentType(item: RItem, libraryId: LibraryIdentifier, fileStorage: FileStorage?) -> (Attachment.ContentType, Attachment.Kind)? {
         guard let contentType = item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value, !contentType.isEmpty else {
             DDLogError("AttachmentCreator: content type missing for item \(item.key)")
             return nil
@@ -92,10 +96,12 @@ struct AttachmentCreator {
 
         switch contentType {
         case "application/pdf":
-            if let fileType = self.fileType(for: item) {
-                return self.fileContentType(for: item, libraryId: libraryId, fileType: fileType, linkType: .imported, fileStorage: fileStorage)
-            }
-            return nil
+            let file = Files.attachmentFile(in: libraryId, key: item.key, contentType: contentType)
+            let filename = self.filename(for: item, ext: "pdf")
+            let newFile = Files.newAttachmentFile(in: libraryId, key: item.key, filename: filename, contentType: contentType)
+            let location = self.location(for: item, file: file, fileStorage: fileStorage)
+            let newLocation = self.location(for: item, file: newFile, fileStorage: fileStorage)
+            return (.file(file: file, filename: filename, location: location, linkType: .imported), .file(filename: filename, contentType: contentType, location: newLocation, linkType: .importedUrl))
 
         case "text/html":
             guard let filename = item.fields.filter(.key(FieldKeys.Item.Attachment.filename)).first?.value else {
@@ -104,13 +110,58 @@ struct AttachmentCreator {
             }
             let htmlFile = Files.snapshotHtmlFile(in: libraryId, key: item.key, filename: filename)
             let zipFile = Files.snapshotZipFile(in: libraryId, key: item.key)
-            let location = fileStorage.flatMap({ self.location(for: item, file: zipFile, fileStorage: $0) })
-            return .snapshot(htmlFile: htmlFile, filename: filename, zipFile: zipFile, location: location)
+            let location = self.location(for: item, file: zipFile, fileStorage: fileStorage)
+            let newLocation = self.location(for: item, file: Files.newAttachmentFile(in: libraryId, key: item.key, filename: filename, contentType: contentType), fileStorage: fileStorage)
+            return (.snapshot(htmlFile: htmlFile, filename: filename, zipFile: zipFile, location: location), .file(filename: filename, contentType: contentType, location: newLocation, linkType: .importedUrl))
 
         default:
             DDLogError("AttachmentCreator: content type invalid (\(contentType)) for snapshot \(item.key)")
             return nil
         }
+    }
+
+    private static func fileContentType(for item: RItem, libraryId: LibraryIdentifier, fileType: FileType, linkType: Attachment.FileLinkType, fileStorage: FileStorage?) -> Attachment.ContentType {
+        let file: File
+        switch fileType {
+        case .extension(let ext): file = Files.attachmentFile(in: libraryId, key: item.key, ext: ext)
+        case .contentType(let contentType): file = Files.attachmentFile(in: libraryId, key: item.key, contentType: contentType)
+        }
+        let location = fileStorage.flatMap({ self.location(for: item, file: file, fileStorage: $0) })
+        let filename = self.filename(for: item, file: file)
+        return .file(file: file, filename: filename, location: location, linkType: linkType)
+    }
+
+    private static func linkedFileContentType(item: RItem, libraryId: LibraryIdentifier) -> (Attachment.ContentType, Attachment.Kind)? {
+        guard let contentType = item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value, !contentType.isEmpty else {
+            DDLogError("AttachmentCreator: content type missing for item \(item.key)")
+            return nil
+        }
+        guard let path = item.fields.filter(.key(FieldKeys.Item.Attachment.path)).first?.value,
+              !path.isEmpty else {
+            DDLogError("AttachmentCreator: path missing for item \(item.key)")
+            return nil
+        }
+        let file = Files.file(from: URL(fileURLWithPath: path))
+        let filename = self.filename(for: item, file: file)
+        return (.file(file: file, filename: filename, location: .local, linkType: .linked), .file(filename: filename, contentType: contentType, location: .local, linkType: .linkedFile))
+    }
+
+    private static func linkedUrlContentType(for item: RItem, libraryId: LibraryIdentifier, urlDetector: UrlDetector) -> (Attachment.ContentType, Attachment.Kind)? {
+        guard let urlString = item.fields.filter("key = %@", "url").first?.value else {
+            DDLogError("AttachmentCreator: url missing for item \(item.key)")
+            return nil
+        }
+        guard let url = URL(string: urlString), urlDetector.isUrl(string: urlString) else {
+            DDLogError("AttachmentCreator: url invalid '\(urlString)'")
+            return nil
+        }
+        return (.url(url), .url(url))
+    }
+
+    // MARK: - To Remove
+
+    private static func filename(for item: RItem, file: File) -> String {
+        return item.fields.filter(.key(FieldKeys.Item.Attachment.filename)).first?.value ?? (item.displayTitle + "." + file.ext)
     }
 
     private static func fileType(for item: RItem) -> FileType? {
@@ -140,56 +191,48 @@ struct AttachmentCreator {
         return nil
     }
 
-    private static func fileContentType(for item: RItem, libraryId: LibraryIdentifier, fileType: FileType, linkType: Attachment.FileLinkType, fileStorage: FileStorage?) -> Attachment.ContentType {
-        let file: File
-        switch fileType {
-        case .extension(let ext): file = Files.attachmentFile(in: libraryId, key: item.key, ext: ext)
-        case .contentType(let contentType): file = Files.attachmentFile(in: libraryId, key: item.key, contentType: contentType)
+    // MARK: - Helpers
+
+    private static func filename(for item: RItem, ext: String?) -> String {
+        if let filename = item.fields.filter(.key(FieldKeys.Item.Attachment.filename)).first?.value {
+            return filename
         }
-        let location = fileStorage.flatMap({ self.location(for: item, file: file, fileStorage: $0) })
-        let filename = self.filename(for: item, file: file)
-        return .file(file: file, filename: filename, location: location, linkType: linkType)
+        if let ext = ext {
+            return item.displayTitle + "." + ext
+        }
+        return item.displayTitle
     }
 
-    private static func linkedFileContentType(item: RItem, libraryId: LibraryIdentifier) -> Attachment.ContentType? {
-        guard let contentType = item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value,
-              !contentType.isEmpty else {
-            DDLogError("AttachmentCreator: content type missing for item \(item.key)")
-            return nil
+    private static func contentType(for item: RItem) -> String? {
+        if let contentType = item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value, !contentType.isEmpty {
+            return contentType
         }
-        guard let path = item.fields.filter(.key(FieldKeys.Item.Attachment.path)).first?.value,
-              !path.isEmpty else {
-            DDLogError("AttachmentCreator: path missing for item \(item.key)")
-            return nil
+
+        if let filename = item.fields.filter(.key(FieldKeys.Item.Attachment.filename)).first?.value {
+            let split = filename.split(separator: ".")
+            if split.count > 1, let ext = split.last.flatMap(String.init), let contentType = ext.mimeTypeFromExtension {
+                return contentType
+            }
         }
-        let file = Files.file(from: URL(fileURLWithPath: path))
-        let filename = self.filename(for: item, file: file)
-        return .file(file: file, filename: filename, location: .local, linkType: .linked)
+
+        if let title = item.fields.filter(.key(FieldKeys.Item.Attachment.title)).first?.value {
+            let split = title.split(separator: ".")
+            if split.count > 1, let ext = split.last.flatMap(String.init), let contentType = ext.mimeTypeFromExtension {
+                return contentType
+            }
+        }
+
+        DDLogError("AttachmentCreator: contentType can't be found for \(item.key)")
+        return nil
     }
 
-    private static func linkedUrlContentType(for item: RItem, libraryId: LibraryIdentifier, urlDetector: UrlDetector) -> Attachment.ContentType? {
-        guard let urlString = item.fields.filter("key = %@", "url").first?.value else {
-            DDLogError("AttachmentCreator: url missing for item \(item.key)")
-            return nil
-        }
-        guard let url = URL(string: urlString), urlDetector.isUrl(string: urlString) else {
-            DDLogError("AttachmentCreator: url invalid '\(urlString)'")
-            return nil
-        }
-        return .url(url)
-    }
-
-    private static func filename(for item: RItem, file: File) -> String {
-        return item.fields.filter(.key(FieldKeys.Item.Attachment.filename)).first?.value ?? (item.displayTitle + "." + file.ext)
-    }
-
-    private static func location(for item: RItem, file: File, fileStorage: FileStorage) -> Attachment.FileLocation? {
-        if fileStorage.has(file) {
+    private static func location(for item: RItem, file: File, fileStorage: FileStorage?) -> Attachment.FileLocation {
+        if fileStorage?.has(file) == true {
             return .local
         } else if item.links.filter(.linkType(.enclosure)).first != nil {
             return .remote
         } else {
-            return nil
+            return .remoteMissing
         }
     }
 }

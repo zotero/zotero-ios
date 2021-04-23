@@ -239,7 +239,7 @@ final class ShareViewController: UIViewController {
             self.itemIcon.image = UIImage(named: ItemTypes.iconName(for: item.rawType, contentType: nil))
             self.itemTitleLabel.text = itemTitle
             self.attachmentContainerLeft.constant = ShareViewController.childAttachmentLeftOffset
-            self.attachmentIcon.set(state: .stateFrom(contentType: .file(file: file, filename: "", location: .local, linkType: .imported), progress: nil, error: attachmentState.error), style: .detail)
+            self.attachmentIcon.set(state: .stateFrom(type: .file(filename: "", contentType: file.mimeType, location: .local, linkType: .importedFile), progress: nil, error: attachmentState.error), style: .detail)
             self.attachmentTitleLabel.text = (attachment["title"] as? String) ?? title
 
         case .localFile(let file):
@@ -247,7 +247,7 @@ final class ShareViewController: UIViewController {
             self.attachmentContainer.isHidden = false
 
             self.attachmentContainerLeft.constant = 0
-            self.attachmentIcon.set(state: .stateFrom(contentType: .file(file: file, filename: "", location: .local, linkType: .imported), progress: nil, error: nil), style: .detail)
+            self.attachmentIcon.set(state: .stateFrom(type: .file(filename: "", contentType: file.mimeType, location: .local, linkType: .importedFile), progress: nil, error: nil), style: .detail)
             
             self.attachmentTitleLabel.text = file.name
         }

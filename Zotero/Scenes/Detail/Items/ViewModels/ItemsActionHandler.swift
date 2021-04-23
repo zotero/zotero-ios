@@ -200,6 +200,10 @@ struct ItemsActionHandler: ViewModelActionHandler {
                 } else {
                     self.fileDownloader.download(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
                 }
+
+            case .remoteMissing:
+                // TODO: - Show error with causes
+            break
             }
         }
     }
@@ -372,10 +376,11 @@ struct ItemsActionHandler: ViewModelActionHandler {
 
     private func addAttachments(urls: [URL], in viewModel: ViewModel<ItemsActionHandler>) {
         let attachments = urls.map({ Files.file(from: $0) })
-                              .map({
+                              .map({ file -> Attachment in
                                   Attachment(key: KeyGenerator.newKey,
-                                             title: $0.name + "." + $0.ext,
-                                             type: .file(file: $0, filename: ($0.name + "." + $0.ext), location: .local, linkType: .imported),
+                                             title: file.name + "." + file.ext,
+                                             type: .file(file: file, filename: (file.name + "." + file.ext), location: .local, linkType: .imported),
+                                             type2: .file(filename: (file.name + "." + file.ext), contentType: file.mimeType, location: .local, linkType: .importedFile),
                                              libraryId: viewModel.state.library.identifier)
                               })
 

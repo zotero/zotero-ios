@@ -466,35 +466,39 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
         let attachment = viewModel.state.data.attachments[index]
 
-        if !update.kind.isDownloaded {
+        switch update.kind {
+        case .cancelled, .progress:
             self.update(viewModel: viewModel) { state in
                 state.updateAttachmentIndex = index
-                if case .failed(let error) = update.kind {
-                    state.attachmentErrors[attachment.key] = error
-                }
             }
-            return
-        }
 
-        if case .snapshot(let htmlFile, _, let zipFile, _) = attachment.contentType {
-            // If snapshot was downloaded, unzip it
-            self.processSnapshot(from: zipFile, to: htmlFile)
-                .subscribeOn(self.backgroundScheduler)
-                .observeOn(MainScheduler.instance)
-                .subscribe(onCompleted: { [weak viewModel] in
-                    guard let viewModel = viewModel,
-                          let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
-                    self.finishDownload(at: index, in: viewModel)
-                }, onError: { [weak viewModel] error in
-                    guard let viewModel = viewModel,
-                          let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
-                    self.finishFailedDownload(error: error, at: index, in: viewModel)
-                })
-                .disposed(by: self.disposeBag)
-            return
-        }
+        case .failed(let error):
+            self.update(viewModel: viewModel) { state in
+                state.updateAttachmentIndex = index
+                state.attachmentErrors[attachment.key] = error
+            }
 
-        self.finishDownload(at: index, in: viewModel)
+        case .downloaded(let isCompressed):
+            if case .snapshot(let htmlFile, _, let zipFile, _) = attachment.contentType {
+                // If snapshot was downloaded, unzip it
+                self.processSnapshot(from: zipFile, to: htmlFile)
+                    .subscribeOn(self.backgroundScheduler)
+                    .observeOn(MainScheduler.instance)
+                    .subscribe(onCompleted: { [weak viewModel] in
+                        guard let viewModel = viewModel,
+                              let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
+                        self.finishDownload(at: index, in: viewModel)
+                    }, onError: { [weak viewModel] error in
+                        guard let viewModel = viewModel,
+                              let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
+                        self.finishFailedDownload(error: error, at: index, in: viewModel)
+                    })
+                    .disposed(by: self.disposeBag)
+                return
+            }
+
+            self.finishDownload(at: index, in: viewModel)
+        }
     }
 
     private func processSnapshot(from zipFile: File, to htmlFile: File) -> Completable {
@@ -561,6 +565,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             let attachment = Attachment(key: key,
                                         title: nameWithExtension,
                                         type: .file(file: file, filename: nameWithExtension, location: .local, linkType: .imported),
+                                        type2: .file(filename: nameWithExtension, contentType: file.mimeType, location: .local, linkType: .importedFile),
                                         libraryId: viewModel.state.library.identifier)
 
             do {
@@ -632,6 +637,10 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.openAttachment = (attachment, index)
             }
+
+        case .remoteMissing:
+            // TODO: - Show error with causes
+            break
         }
     }
 

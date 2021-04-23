@@ -33,6 +33,15 @@ struct Files {
         return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName])
     }
 
+    static func newAttachmentFile(in libraryId: LibraryIdentifier, key: String, filename: String, contentType: String) -> File {
+        let name = self.split(filename: filename).name
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName, key], name: name, contentType: contentType)
+    }
+
+    static func newAttachmentDirectory(in libraryId: LibraryIdentifier, key: String) -> File {
+        return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName, key])
+    }
+
     static func attachmentFile(in libraryId: LibraryIdentifier, key: String, contentType: String) -> File {
         return FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName], name: key, contentType: contentType)
     }

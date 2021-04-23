@@ -12,7 +12,7 @@ import CocoaLumberjackSwift
 
 struct Attachment: Identifiable, Equatable {
     enum FileLocation {
-        case local, remote
+        case local, remote, remoteMissing
     }
 
     enum FileLinkType {
@@ -49,21 +49,32 @@ struct Attachment: Identifiable, Equatable {
         }
     }
 
+    enum NewFileLinkType {
+        case importedUrl, importedFile, embeddedImage, linkedFile
+    }
+
+    enum Kind: Equatable {
+        case file(filename: String, contentType: String, location: FileLocation, linkType: NewFileLinkType)
+        case url(URL)
+    }
+
     let key: String
     let title: String
     let contentType: ContentType
+    let type: Kind
     let libraryId: LibraryIdentifier
 
     var id: String { return self.key }
 
-    init(key: String, title: String, type: ContentType, libraryId: LibraryIdentifier) {
+    init(key: String, title: String, type: ContentType, type2: Kind, libraryId: LibraryIdentifier) {
         self.key = key
         self.title = title
         self.contentType = type
         self.libraryId = libraryId
+        self.type = type2
     }
 
-    init?(item: RItem, type: ContentType) {
+    init?(item: RItem, type: ContentType, type2: Kind) {
         guard let libraryId = item.libraryId else {
             DDLogError("Attachment: library not assigned to item (\(item.key))")
             return nil
@@ -73,6 +84,7 @@ struct Attachment: Identifiable, Equatable {
         self.key = item.key
         self.title = item.displayTitle
         self.contentType = type
+        self.type = type2
     }
 
     func changed(location: FileLocation?) -> Attachment {
@@ -82,11 +94,13 @@ struct Attachment: Identifiable, Equatable {
             return Attachment(key: self.key,
                               title: self.title,
                               type: .file(file: file, filename: filename, location: location, linkType: linkType),
+                              type2: self.type,
                               libraryId: self.libraryId)
         case .snapshot(let htmlFile, let filename, let zipFile, _):
                 return Attachment(key: self.key,
                                   title: self.title,
                                   type: .snapshot(htmlFile: htmlFile, filename: filename, zipFile: zipFile, location: location),
+                                  type2: self.type,
                                   libraryId: self.libraryId)
         }
     }

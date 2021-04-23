@@ -36,7 +36,7 @@ final class ItemDetailAttachmentCell: UITableViewCell {
     func setup(with attachment: Attachment, progress: CGFloat?, error: Error?, enabled: Bool) {
         switch attachment.contentType {
         case .file, .snapshot:
-            self.fileView.set(state: .stateFrom(contentType: attachment.contentType, progress: progress, error: error), style: .detail)
+            self.fileView.set(state: .stateFrom(type: attachment.type, progress: progress, error: error), style: .detail)
             self.fileView.isHidden = false
             self.attachmentIcon.isHidden = true
         case .url:
