@@ -24,7 +24,7 @@ struct ReadAttachmentUploadsDbRequest: DbResponseRequest {
         let uploads = items.compactMap({ item -> AttachmentUpload? in
             guard let contentType = item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value,
                   // Always upload light version of attachment (applies to embedded_image)
-                  let attachmentType = AttachmentCreator.attachmentContentType(for: item, options: .light, fileStorage: nil, urlDetector: nil)?.1 else { return nil }
+                  let attachmentType = AttachmentCreator.attachmentType(for: item, options: .light, fileStorage: nil, urlDetector: nil) else { return nil }
 
             let filename: String
             let file: File

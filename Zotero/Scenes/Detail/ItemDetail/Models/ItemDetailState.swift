@@ -203,10 +203,10 @@ struct ItemDetailState: ViewModelState {
 
         var mainAttachmentIndex: Int? {
             return self.attachments.firstIndex(where: {
-                switch $0.contentType {
-                case .file(let file, _, let location, _):
-                    return location != nil && file.mimeType == "application/pdf"
-                case .snapshot, .url:
+                switch $0.type {
+                case .file(_, let contentType, let location, _):
+                    return location != .remoteMissing && contentType == "application/pdf"
+                case .url:
                     return false
                 }
             })

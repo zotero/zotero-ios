@@ -108,9 +108,9 @@ extension RItem: Deletable {
     }
 
     private func cleanupAttachmentFiles() {
-        guard let contentType = AttachmentCreator.attachmentContentType(for: self, options: .light, fileStorage: nil, urlDetector: nil)?.1 else { return }
+        guard let type = AttachmentCreator.attachmentType(for: self, options: .light, fileStorage: nil, urlDetector: nil) else { return }
 
-        switch contentType {
+        switch type {
         case .url: break
 
         case .file(_, let contentType, _, let linkType):

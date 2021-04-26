@@ -121,7 +121,7 @@ final class DetailCoordinator: Coordinator {
     }
 
     private func createItemsViewController(collection: Collection, library: Library, dbStorage: DbStorage,
-                                           fileDownloader: FileDownloader) -> ItemsViewController {
+                                           fileDownloader: AttachmentDownloader) -> ItemsViewController {
         let type = self.fetchType(from: collection)
         let state = ItemsState(type: type, library: library, sortType: .default, error: nil)
         let handler = ItemsActionHandler(dbStorage: dbStorage,
@@ -151,23 +151,23 @@ final class DetailCoordinator: Coordinator {
     }
 
     func show(attachment: Attachment, library: Library, sourceView: UIView, sourceRect: CGRect?) {
-        switch attachment.contentType {
+        switch attachment.type {
         case .url(let url):
             self.showWeb(url: url)
 
-        case .file(let file, let filename, let location, _),
-             .snapshot(let file, let filename, _, let location):
-            guard let location = location, location == .local else { return }
+        case .file(let filename, let contentType, let location, _):
+            guard location == .local else { return }
 
+            let file = Files.newAttachmentFile(in: library.identifier, key: attachment.key, filename: filename, contentType: contentType)
             let url = file.createUrl()
 
-            switch file.mimeType {
+            switch contentType {
             case "application/pdf":
                 self.showPdf(at: url, key: attachment.key, library: library)
             case "text/html":
                 self.showWebView(for: url)
-            case _ where file.mimeType.contains("image"):
-                let image = (file.mimeType == "image/gif") ? (try? Data(contentsOf: url)).flatMap({ try? UIImage(gifData: $0) }) :
+            case _ where contentType.contains("image"):
+                let image = (contentType == "image/gif") ? (try? Data(contentsOf: url)).flatMap({ try? UIImage(gifData: $0) }) :
                                                              UIImage(contentsOfFile: url.path)
                 if let image = image {
                     self.show(image: image, title: filename)

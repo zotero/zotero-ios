@@ -35,9 +35,9 @@ final class ItemsTableViewHandler: NSObject {
 
     private var snapshot: Results<RItem>?
     private var reloadAnimationsDisabled: Bool
-    private weak var fileDownloader: FileDownloader?
+    private weak var fileDownloader: AttachmentDownloader?
 
-    init(tableView: UITableView, viewModel: ViewModel<ItemsActionHandler>, delegate: ItemsTableViewHandlerDelegate, dragDropController: DragDropController, fileDownloader: FileDownloader?) {
+    init(tableView: UITableView, viewModel: ViewModel<ItemsActionHandler>, delegate: ItemsTableViewHandlerDelegate, dragDropController: DragDropController, fileDownloader: AttachmentDownloader?) {
         self.tableView = tableView
         self.viewModel = viewModel
         self.delegate = delegate

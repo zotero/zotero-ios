@@ -256,9 +256,9 @@ final class FileAttachmentView: UIView {
             let badge = self.detailBadge(from: location, error: error)
 
             switch linkType {
-            case .importedUrl:
+            case .importedUrl where contentType == "text/html":
                 return ("attachment-detail-webpage-snapshot", badge)
-            case .embeddedImage, .importedFile:
+            case .embeddedImage, .importedFile, .importedUrl:
                 return (("attachment-detail-" + documentType), badge)
             case .linkedFile:
                 return (("attachment-detail-linked-" + documentType), badge)

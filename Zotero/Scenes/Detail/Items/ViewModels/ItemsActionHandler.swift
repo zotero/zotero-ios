@@ -20,9 +20,9 @@ struct ItemsActionHandler: ViewModelActionHandler {
     private unowned let schemaController: SchemaController
     private unowned let urlDetector: UrlDetector
     private unowned let backgroundQueue: DispatchQueue
-    private unowned let fileDownloader: FileDownloader
+    private unowned let fileDownloader: AttachmentDownloader
 
-    init(dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, urlDetector: UrlDetector, fileDownloader: FileDownloader) {
+    init(dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, urlDetector: UrlDetector, fileDownloader: AttachmentDownloader) {
         self.backgroundQueue = DispatchQueue.global(qos: .userInitiated)
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
@@ -178,15 +178,12 @@ struct ItemsActionHandler: ViewModelActionHandler {
     private func openAttachment(for key: String, parentKey: String, in viewModel: ViewModel<ItemsActionHandler>) {
         guard let attachment = viewModel.state.attachments[parentKey] else { return }
 
-        switch attachment.contentType {
+        switch attachment.type {
         case .url:
             self.update(viewModel: viewModel) { state in
                 state.openAttachment = (attachment, parentKey)
             }
-        case .file(let file, _, let location, _),
-             .snapshot(_, _, let file, let location):
-            guard let location = location else { return }
-
+        case .file(_, _, let location, _):
             switch location {
             case .local:
                 self.update(viewModel: viewModel) { state in
@@ -198,7 +195,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
                 if progress != nil {
                     self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
                 } else {
-                    self.fileDownloader.download(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
+                    self.fileDownloader.download(attachment: attachment, parentKey: parentKey)//.download(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
                 }
 
             case .remoteMissing:
@@ -208,7 +205,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func process(downloadUpdate update: FileDownloader.Update, in viewModel: ViewModel<ItemsActionHandler>) {
+    private func process(downloadUpdate update: AttachmentDownloader.Update, in viewModel: ViewModel<ItemsActionHandler>) {
         guard let parentKey = update.parentKey,
               let attachment = viewModel.state.attachments[parentKey],
               attachment.key == update.key else { return }
@@ -216,17 +213,21 @@ struct ItemsActionHandler: ViewModelActionHandler {
         var didDownloadAttachment = false
 
         self.update(viewModel: viewModel) { state in
-            if update.kind.isDownloaded {
+            switch update.kind {
+            case .ready:
                 var newAttachment = attachment
                 // If download finished, mark attachment file location as local
-                if attachment.contentType.fileLocation == .remote {
+                if case .file(_, _, let location, _) = attachment.type, location == .remote {
                     newAttachment = attachment.changed(location: .local)
                     state.attachments[parentKey] = newAttachment
                     didDownloadAttachment = true
                 }
                 state.openAttachment = (newAttachment, parentKey)
+                state.updateItemKey = parentKey
+
+            case .cancelled, .failed, .progress:
+                state.updateItemKey = parentKey
             }
-            state.updateItemKey = parentKey
         }
 
         if didDownloadAttachment {
@@ -375,43 +376,54 @@ struct ItemsActionHandler: ViewModelActionHandler {
     }
 
     private func addAttachments(urls: [URL], in viewModel: ViewModel<ItemsActionHandler>) {
-        let attachments = urls.map({ Files.file(from: $0) })
-                              .map({ file -> Attachment in
-                                  Attachment(key: KeyGenerator.newKey,
-                                             title: file.name + "." + file.ext,
-                                             type: .file(file: file, filename: (file.name + "." + file.ext), location: .local, linkType: .imported),
-                                             type2: .file(filename: (file.name + "." + file.ext), contentType: file.mimeType, location: .local, linkType: .importedFile),
-                                             libraryId: viewModel.state.library.identifier)
-                              })
+        let libraryId = viewModel.state.library.identifier
+        var attachments: [Attachment] = []
 
-        do {
-            try self.fileStorage.copyAttachmentFilesIfNeeded(for: attachments)
+        for url in urls {
+            let key = KeyGenerator.newKey
+            let original = Files.file(from: url)
+            let filename = (original.name + "." + original.ext)
+            let file = Files.newAttachmentFile(in: libraryId, key: key, filename: filename, contentType: original.mimeType)
 
-            let collections: Set<String> = viewModel.state.type.collectionKey.flatMap({ [$0] }) ?? []
-            let type = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
-            let request = CreateAttachmentsDbRequest(attachments: attachments, localizedType: type, collections: collections)
+            do {
+                try self.fileStorage.move(from: original, to: file)
+            } catch let error {
+                DDLogError("ItemsActionHandler: can't move file from \(error)")
+                continue
+            }
 
-            self.perform(request: request,
-                         responseAction: { [weak viewModel] failedTitles in
-                             guard let viewModel = viewModel else { return }
-                             if !failedTitles.isEmpty {
-                                 self.update(viewModel: viewModel) { state in
-                                     state.error = .attachmentAdding(.someFailed(failedTitles))
-                                 }
-                             }
-                         }, errorAction: { [weak viewModel] error in
-                             guard let viewModel = viewModel else { return }
-                             DDLogError("ItemsStore: can't add attachment: \(error)")
-                             self.update(viewModel: viewModel) { state in
-                                 state.error = .attachmentAdding(.couldNotSave)
-                             }
-                         })
-        } catch let error {
-            DDLogError("ItemsStore: can't add attachment: \(error)")
+            attachments.append(Attachment(type: .file(filename: filename, contentType: original.mimeType, location: .local, linkType: .importedFile),
+                                          title: filename,
+                                          key: key,
+                                          libraryId: libraryId))
+        }
+
+        if attachments.isEmpty {
             self.update(viewModel: viewModel) { state in
                 state.error = .attachmentAdding(.couldNotSave)
             }
+            return
         }
+
+        let collections: Set<String> = viewModel.state.type.collectionKey.flatMap({ [$0] }) ?? []
+        let type = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
+        let request = CreateAttachmentsDbRequest(attachments: attachments, localizedType: type, collections: collections)
+
+        self.perform(request: request,
+                     responseAction: { [weak viewModel] failedTitles in
+                         guard let viewModel = viewModel else { return }
+                         if !failedTitles.isEmpty {
+                             self.update(viewModel: viewModel) { state in
+                                 state.error = .attachmentAdding(.someFailed(failedTitles))
+                             }
+                         }
+                     }, errorAction: { [weak viewModel] error in
+                         guard let viewModel = viewModel else { return }
+                         DDLogError("ItemsStore: can't add attachment: \(error)")
+                         self.update(viewModel: viewModel) { state in
+                             state.error = .attachmentAdding(.couldNotSave)
+                         }
+                     })
     }
 
     // MARK: - Searching & Filtering

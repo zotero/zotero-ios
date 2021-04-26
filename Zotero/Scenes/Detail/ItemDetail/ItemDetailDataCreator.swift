@@ -135,21 +135,6 @@ struct ItemDetailDataCreator {
             attachments = Array(mappedAttachments)
         }
 
-        var attachmentErrors: [String: Error] = [:]
-
-        for attachment in attachments {
-            switch attachment.contentType {
-            case .snapshot(let htmlFile, _, _, let location):
-                // Check whether local snapshots are actually unzipped
-                guard location == .local else { continue }
-                if !fileStorage.has(htmlFile) {
-                    attachmentErrors[attachment.key] = ItemDetailError.cantUnzipSnapshot
-                }
-            case .file, .url:
-                continue
-            }
-        }
-
         let tags = item.tags.sorted(byKeyPath: "tag.name").map(Tag.init)
         let data =  ItemDetailState.Data(title: item.baseTitle,
                                          type: item.rawType,
@@ -168,7 +153,7 @@ struct ItemDetailDataCreator {
                                          deletedTags: [],
                                          dateModified: item.dateModified,
                                          dateAdded: item.dateAdded)
-        return (data, attachmentErrors)
+        return (data, [:])
     }
 
     /// Creates field data for given item type with the option of setting values for given fields.

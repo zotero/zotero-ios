@@ -24,12 +24,12 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     private unowned let schemaController: SchemaController
     private unowned let dateParser: DateParser
     private unowned let urlDetector: UrlDetector
-    private unowned let fileDownloader: FileDownloader
+    private unowned let fileDownloader: AttachmentDownloader
     private unowned let fileCleanupController: AttachmentFileCleanupController
     private let backgroundScheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
 
-    init(apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage, schemaController: SchemaController, dateParser: DateParser, urlDetector: UrlDetector, fileDownloader: FileDownloader,
+    init(apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage, schemaController: SchemaController, dateParser: DateParser, urlDetector: UrlDetector, fileDownloader: AttachmentDownloader,
          fileCleanupController: AttachmentFileCleanupController) {
         self.apiClient = apiClient
         self.fileStorage = fileStorage
@@ -460,45 +460,45 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func process(downloadUpdate update: FileDownloader.Update, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        guard viewModel.state.library.identifier == update.libraryId,
-              let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
-
-        let attachment = viewModel.state.data.attachments[index]
-
-        switch update.kind {
-        case .cancelled, .progress:
-            self.update(viewModel: viewModel) { state in
-                state.updateAttachmentIndex = index
-            }
-
-        case .failed(let error):
-            self.update(viewModel: viewModel) { state in
-                state.updateAttachmentIndex = index
-                state.attachmentErrors[attachment.key] = error
-            }
-
-        case .downloaded(let isCompressed):
-            if case .snapshot(let htmlFile, _, let zipFile, _) = attachment.contentType {
-                // If snapshot was downloaded, unzip it
-                self.processSnapshot(from: zipFile, to: htmlFile)
-                    .subscribeOn(self.backgroundScheduler)
-                    .observeOn(MainScheduler.instance)
-                    .subscribe(onCompleted: { [weak viewModel] in
-                        guard let viewModel = viewModel,
-                              let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
-                        self.finishDownload(at: index, in: viewModel)
-                    }, onError: { [weak viewModel] error in
-                        guard let viewModel = viewModel,
-                              let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
-                        self.finishFailedDownload(error: error, at: index, in: viewModel)
-                    })
-                    .disposed(by: self.disposeBag)
-                return
-            }
-
-            self.finishDownload(at: index, in: viewModel)
-        }
+    private func process(downloadUpdate update: AttachmentDownloader.Update, in viewModel: ViewModel<ItemDetailActionHandler>) {
+//        guard viewModel.state.library.identifier == update.libraryId,
+//              let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
+//
+//        let attachment = viewModel.state.data.attachments[index]
+//
+//        switch update.kind {
+//        case .cancelled, .progress:
+//            self.update(viewModel: viewModel) { state in
+//                state.updateAttachmentIndex = index
+//            }
+//
+//        case .failed(let error):
+//            self.update(viewModel: viewModel) { state in
+//                state.updateAttachmentIndex = index
+//                state.attachmentErrors[attachment.key] = error
+//            }
+//
+//        case .downloaded(let isCompressed):
+//            if case .snapshot(let htmlFile, _, let zipFile, _) = attachment.contentType {
+//                // If snapshot was downloaded, unzip it
+//                self.processSnapshot(from: zipFile, to: htmlFile)
+//                    .subscribeOn(self.backgroundScheduler)
+//                    .observeOn(MainScheduler.instance)
+//                    .subscribe(onCompleted: { [weak viewModel] in
+//                        guard let viewModel = viewModel,
+//                              let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
+//                        self.finishDownload(at: index, in: viewModel)
+//                    }, onError: { [weak viewModel] error in
+//                        guard let viewModel = viewModel,
+//                              let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
+//                        self.finishFailedDownload(error: error, at: index, in: viewModel)
+//                    })
+//                    .disposed(by: self.disposeBag)
+//                return
+//            }
+//
+//            self.finishDownload(at: index, in: viewModel)
+//        }
     }
 
     private func processSnapshot(from zipFile: File, to htmlFile: File) -> Completable {
@@ -533,7 +533,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
     private func finishDownload(at index: Int, in viewModel: ViewModel<ItemDetailActionHandler>) {
         var attachment = viewModel.state.data.attachments[index]
-        if attachment.contentType.fileLocation == .remote {
+        if case .file(_, _, let location, _) = attachment.type, location == .remote {
             attachment = attachment.changed(location: .local)
         }
         self.update(viewModel: viewModel) { state in
@@ -558,19 +558,17 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         var errors = 0
 
         for url in urls {
+            let key = KeyGenerator.newKey
             let originalFile = Files.file(from: url)
             let nameWithExtension = originalFile.name + "." + originalFile.ext
-            let key = KeyGenerator.newKey
-            let file = Files.attachmentFile(in: viewModel.state.library.identifier, key: key, ext: originalFile.ext)
-            let attachment = Attachment(key: key,
-                                        title: nameWithExtension,
-                                        type: .file(file: file, filename: nameWithExtension, location: .local, linkType: .imported),
-                                        type2: .file(filename: nameWithExtension, contentType: file.mimeType, location: .local, linkType: .importedFile),
-                                        libraryId: viewModel.state.library.identifier)
+            let file = Files.newAttachmentFile(in: viewModel.state.library.identifier, key: key, filename: nameWithExtension, contentType: originalFile.mimeType)
 
             do {
                 try self.fileStorage.move(from: originalFile, to: file)
-                attachments.append(attachment)
+                attachments.append(Attachment(type: .file(filename: nameWithExtension, contentType: originalFile.mimeType, location: .local, linkType: .importedFile),
+                                              title: nameWithExtension,
+                                              key: key,
+                                              libraryId: viewModel.state.library.identifier))
             } catch let error {
                 DDLogError("ItemDertailStore: can't copy attachment - \(error)")
                 errors += 1
@@ -601,26 +599,18 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         guard index < viewModel.state.data.attachments.count else { return }
 
         let attachment = viewModel.state.data.attachments[index]
-        switch attachment.contentType {
+        switch attachment.type {
         case .url:
             self.update(viewModel: viewModel) { state in
                 state.openAttachment = (attachment, index)
             }
 
-        case .file(let file, _, let location, let linkType):
-            guard let location = location else { return }
-            switch linkType {
-            case .imported:
-                self.open(file: file, location: location, attachment: attachment, index: index, in: viewModel)
-            case .linked, .embeddedImage: break // Dont open linked attachments
-            }
-        case .snapshot(_, _, let file, let location):
-            guard let location = location else { return }
-            self.open(file: file, location: location, attachment: attachment, index: index, in: viewModel)
+        case .file(_, _, let location, _):
+            self.open(location: location, attachment: attachment, index: index, in: viewModel)
         }
     }
 
-    private func open(file: File, location: Attachment.FileLocation, attachment: Attachment, index: Int, in viewModel: ViewModel<ItemDetailActionHandler>) {
+    private func open(location: Attachment.FileLocation, attachment: Attachment, index: Int, in viewModel: ViewModel<ItemDetailActionHandler>) {
         switch location {
         case .remote:
             // Item creation or duplication shouldn't have a .remote location, limit this to preview only
@@ -630,7 +620,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             if progress != nil {
                 self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
             } else {
-                self.fileDownloader.download(file: file, key: attachment.key, parentKey: previewKey, libraryId: attachment.libraryId)
+                self.fileDownloader.download(attachment: attachment, parentKey: previewKey)//.download(file: file, key: attachment.key, parentKey: previewKey, libraryId: attachment.libraryId)
             }
 
         case .local:
@@ -702,8 +692,6 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         let previewKey = state.type.previewKey
         return Single.create { subscriber -> Disposable in
             do {
-                try self.fileStorage.copyAttachmentFilesIfNeeded(for: state.data.attachments)
-
                 var newState = state
                 var newType = state.type
 

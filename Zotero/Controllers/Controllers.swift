@@ -176,7 +176,7 @@ final class UserControllers {
     let dbStorage: DbStorage
     let itemLocaleController: RItemLocaleController
     let backgroundUploader: BackgroundUploader
-    let fileDownloader: FileDownloader
+    let fileDownloader: AttachmentDownloader
     let webSocketController: WebSocketController
     let fileCleanupController: AttachmentFileCleanupController
     private let isFirstLaunch: Bool
@@ -206,7 +206,7 @@ final class UserControllers {
                                             backgroundUploader: backgroundUploader,
                                             syncDelayIntervals: DelayIntervals.sync,
                                             conflictDelays: DelayIntervals.conflict)
-        let fileDownloader = FileDownloader(userId: userId, apiClient: controllers.apiClient, fileStorage: controllers.fileStorage)
+        let fileDownloader = AttachmentDownloader(userId: userId, apiClient: controllers.apiClient, fileStorage: controllers.fileStorage)
         let webSocketController = WebSocketController(dbStorage: dbStorage)
         let fileCleanupController = AttachmentFileCleanupController(fileStorage: controllers.fileStorage, dbStorage: dbStorage)
 

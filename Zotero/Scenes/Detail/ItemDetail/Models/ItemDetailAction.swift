@@ -33,6 +33,6 @@ enum ItemDetailAction {
     case startEditing
     case trashAttachment(Attachment)
     case toggleAbstractDetailCollapsed
-    case updateDownload(FileDownloader.Update)
+    case updateDownload(AttachmentDownloader.Update)
     case updateAttachments(AttachmentFileDeletedNotification)
 }

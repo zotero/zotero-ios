@@ -99,20 +99,16 @@ final class AttachmentFileCleanupController {
 
         case .individual(let attachment, _):
             do {
-                switch attachment.contentType {
-                case .file(let file, _, _, let linkType):
+                switch attachment.type {
+                case .file(_, _, _, let linkType):
                     // Don't try to delete linked files
-                    guard linkType != .linked else { return false }
-                    try self.fileStorage.remove(file)
+                    guard linkType != .linkedFile else { return false }
+
+                    try self.fileStorage.remove(Files.newAttachmentDirectory(in: attachment.libraryId, key: attachment.key))
                     // Annotations are not guaranteed to exist
                     try? self.fileStorage.remove(Files.annotationPreviews(for: attachment.key, libraryId: attachment.libraryId))
 
                     try? self.dbStorage.createCoordinator().perform(request: MarkFileAsDownloadedDbRequest(key: attachment.key, libraryId: attachment.libraryId, downloaded: false))
-                case .snapshot(let htmlFile, _, let zipFile, _):
-                    // Remove downloaded zip
-                    try self.fileStorage.remove(zipFile)
-                    // Remove unzipped html directory
-                    try self.fileStorage.remove(htmlFile.directory)
                 case .url: return false
                 }
             } catch let error {

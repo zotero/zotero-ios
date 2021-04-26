@@ -88,14 +88,14 @@ final class ItemDetailTableViewHandler: NSObject {
     private var titleWidth: CGFloat {
         return self.viewModel.state.isEditing ? self.maxTitleWidth : self.maxNonemptyTitleWidth
     }
-    private weak var fileDownloader: FileDownloader?
+    private weak var fileDownloader: AttachmentDownloader?
     weak var delegate: ItemDetailTableViewHandlerDelegate?
 
     var attachmentSection: Int {
         return self.sections.firstIndex(of: .attachments) ?? 0
     }
 
-    init(tableView: UITableView, containerWidth: CGFloat, viewModel: ViewModel<ItemDetailActionHandler>, fileDownloader: FileDownloader?) {
+    init(tableView: UITableView, containerWidth: CGFloat, viewModel: ViewModel<ItemDetailActionHandler>, fileDownloader: AttachmentDownloader?) {
         self.tableView = tableView
         self.viewModel = viewModel
         self.fileDownloader = fileDownloader
@@ -415,7 +415,7 @@ final class ItemDetailTableViewHandler: NSObject {
 
         var actions: [UIAction] = []
 
-        if attachment.contentType.fileLocation == .local {
+        if case .file(_, _, let location, _) = attachment.type, location == .local {
             actions.append(UIAction(title: L10n.ItemDetail.deleteAttachmentFile, image: UIImage(systemName: "trash"), attributes: []) { [weak self] action in
                 self?.viewModel.process(action: .deleteAttachmentFile(attachment))
             })
@@ -460,10 +460,10 @@ final class ItemDetailTableViewHandler: NSObject {
 
     private func canTap(attachment: Attachment, isEditing: Bool) -> Bool {
         guard !isEditing else { return false }
-        switch attachment.contentType {
-        case . file(_, _, _, let linkType) where linkType == .linked:
+        switch attachment.type {
+        case . file(_, _, _, let linkType) where linkType == .linkedFile:
             return false
-        case .file, .url, .snapshot:
+        case .file, .url:
             return true
         }
     }

@@ -50,60 +50,59 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
             case FieldKeys.Item.title:
                 value = self.attachment.title
             case FieldKeys.Item.Attachment.linkMode:
-                switch self.attachment.contentType {
+                switch self.attachment.type {
                 case .file(_, _, _, let linkType):
                     switch linkType {
                     case .embeddedImage:
                         value = LinkMode.embeddedImage.rawValue
-                    case .imported:
+                    case .importedFile:
                         value = LinkMode.importedFile.rawValue
-                    case .linked:
+                    case .importedUrl:
+                        value = LinkMode.importedUrl.rawValue
+                    case .linkedFile:
                         value = LinkMode.linkedFile.rawValue
                     }
-                case .snapshot:
-                    value = LinkMode.importedUrl.rawValue
                 case .url:
                     value = LinkMode.linkedUrl.rawValue
                 }
             case FieldKeys.Item.Attachment.contentType:
-                switch self.attachment.contentType {
-                case .file(let file, _, _, _),
-                     .snapshot(let file, _, _, _):
-                    value = file.mimeType
+                switch self.attachment.type {
+                case .file(_, let contentType, _, _):
+                    value = contentType
                 case .url: continue
                 }
             case FieldKeys.Item.Attachment.md5:
-                switch self.attachment.contentType {
-                case .file(let file, _, _, _),
-                     .snapshot(let file, _, _, _):
+                switch self.attachment.type {
+                case .file(let filename, let contentType, _, _):
+                    let file = Files.newAttachmentFile(in: self.attachment.libraryId, key: self.attachment.key, filename: filename, contentType: contentType)
                     value = md5(from: file.createUrl()) ?? ""
                 case .url: continue
                 }
             case FieldKeys.Item.Attachment.mtime:
-                switch self.attachment.contentType {
-                case .file, .snapshot:
+                switch self.attachment.type {
+                case .file:
                     let modificationTime = Int(round(Date().timeIntervalSince1970 * 1000))
                     value = "\(modificationTime)"
                 case .url: continue
                 }
             case FieldKeys.Item.Attachment.filename:
-                switch self.attachment.contentType {
-                case .file(_, let filename, _, _),
-                     .snapshot(_, let filename, _, _):
+                switch self.attachment.type {
+                case .file(let filename, _, _, _):
                     value = filename
                 case .url: continue
                 }
             case FieldKeys.Item.Attachment.url:
-                if case .url(let url) = self.attachment.contentType {
+                switch self.attachment.type {
+                case .url(let url):
                     value = url.absoluteString
-                } else {
-                    continue
+                default: continue
                 }
             case FieldKeys.Item.Attachment.path:
-                if case .file(let file, _, _, let linkType) = self.attachment.contentType, linkType == .linked {
+                switch self.attachment.type {
+                case .file(let filename, let contentType, _, let linkType) where linkType == .linkedFile:
+                    let file = Files.newAttachmentFile(in: self.attachment.libraryId, key: self.attachment.key, filename: filename, contentType: contentType)
                     value = file.createUrl().path
-                } else {
-                    continue
+                default: continue
                 }
             default: continue
             }

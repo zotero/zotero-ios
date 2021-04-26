@@ -135,7 +135,10 @@ final class ExtensionStore {
                 let file = Files.attachmentFile(in: libraryId, key: attachmentKey, ext: ExtensionStore.defaultExtension)
                 let title = ((attachmentData["title"] as? String) ?? defaultTitle) + "." + file.ext
                 let filename = FilenameFormatter.filename(from: item, defaultTitle: defaultTitle, ext: file.ext, dateParser: dateParser)
-                let attachment = Attachment(key: attachmentKey, title: title, type: .file(file: file, filename: filename, location: .local, linkType: .imported), type2: .file(filename: filename, contentType: "application/pdf", location: .local, linkType: .importedFile), libraryId: libraryId)
+                let attachment = Attachment(type: .file(filename: filename, contentType: "application/pdf", location: .local, linkType: .importedFile),
+                                            title: title,
+                                            key: attachmentKey,
+                                            libraryId: libraryId)
 
                 self.type = .translated(item: newItem, location: attachmentFile)
                 self.attachment = attachment
@@ -148,7 +151,10 @@ final class ExtensionStore {
             init(localFile: File, attachmentKey: String, collections: Set<String>, libraryId: LibraryIdentifier, userId: Int) {
                 let filename = localFile.name + "." + localFile.ext
                 let file = Files.attachmentFile(in: libraryId, key: attachmentKey, ext: localFile.ext)
-                let attachment = Attachment(key: attachmentKey, title: filename, type: .file(file: file, filename: filename, location: .local, linkType: .imported),  type2: .file(filename: filename, contentType: "application/pdf", location: .local, linkType: .importedFile), libraryId: libraryId)
+                let attachment = Attachment(type: .file(filename: filename, contentType: "application/pdf", location: .local, linkType: .importedFile),
+                                            title: filename,
+                                            key: attachmentKey,
+                                            libraryId: libraryId)
 
                 self.type = .localFile(location: localFile, collections: collections)
                 self.attachment = attachment
