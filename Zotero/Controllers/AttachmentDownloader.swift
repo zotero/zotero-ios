@@ -52,8 +52,9 @@ final class AttachmentDownloader {
     }
 
     private let userId: Int
-    private let apiClient: ApiClient
-    private let fileStorage: FileStorage
+    private unowned let apiClient: ApiClient
+    private unowned let fileStorage: FileStorage
+    private unowned let dbStorage: DbStorage
     private let unzipQueue: DispatchQueue
     private let disposeBag: DisposeBag
     let observable: PublishSubject<Update>
@@ -63,10 +64,11 @@ final class AttachmentDownloader {
     private var progresses: [Download: (Progress, NSKeyValueObservation)]
     private var errors: [Download: Swift.Error]
 
-    init(userId: Int, apiClient: ApiClient, fileStorage: FileStorage) {
+    init(userId: Int, apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage) {
         self.userId = userId
         self.apiClient = apiClient
         self.fileStorage = fileStorage
+        self.dbStorage = dbStorage
         self.downloadRequests = [:]
         self.progresses = [:]
         self.unzipRequests = [:]
@@ -102,9 +104,21 @@ final class AttachmentDownloader {
 
     func cancel(key: String, libraryId: LibraryIdentifier) {
         let download = Download(key: key, libraryId: libraryId)
-        self.downloadRequests[download]?.cancel()
-        self.unzipRequests[download]?.cancel()
         self.progresses[download] = nil
+
+        if let request = self.downloadRequests[download] {
+            request.cancel()
+            self.downloadRequests[download] = nil
+            return
+        }
+
+        if let request = self.unzipRequests[download] {
+            request.cancel()
+            self.unzipRequests[download] = nil
+
+            // Since zip file is already downloaded, try deleting it
+            try? self.fileStorage.remove(Files.newAttachmentDirectory(in: libraryId, key: key))
+        }
     }
 
     func data(for key: String, libraryId: LibraryIdentifier) -> (progress: CGFloat?, error: Swift.Error?) {
@@ -224,6 +238,8 @@ final class AttachmentDownloader {
         case .success:
             self.errors[download] = nil
             self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .ready)))
+            // Mark file as downloaded in DB
+            try? self.dbStorage.createCoordinator().perform(request: MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true))
 
         case .failure(let error):
             let isCancelError = (error as? Alamofire.AFError)?.isExplicitlyCancelledError == true || (error as? Archive.ArchiveError) == .cancelledOperation

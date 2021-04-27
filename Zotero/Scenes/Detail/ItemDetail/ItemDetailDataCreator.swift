@@ -25,11 +25,11 @@ struct ItemDetailDataCreator {
     /// - parameter doiDetector: DOI detector.
     /// - returns: Populated data for given type.
     static func createData(from type: Kind, schemaController: SchemaController, dateParser: DateParser, fileStorage: FileStorage, urlDetector: UrlDetector, doiDetector: (String) -> Bool)
-                                                                                                                            throws -> (data: ItemDetailState.Data, attachmentErrors: [String: Error]) {
+                                                                                                                                                                        throws -> ItemDetailState.Data {
         switch type {
         case .new(let itemType, let child):
             let data = try creationData(itemType: itemType, child: child, schemaController: schemaController, dateParser: dateParser, urlDetector: urlDetector, doiDetector: doiDetector)
-            return (data, [:])
+            return data
         case .existing(let item):
             return try itemData(item: item, schemaController: schemaController, dateParser: dateParser, fileStorage: fileStorage, urlDetector: urlDetector, doiDetector: doiDetector)
         }
@@ -80,7 +80,7 @@ struct ItemDetailDataCreator {
     /// - parameter doiDetector: DOI detector.
     /// - returns: Data for item detail state.
     private static func itemData(item: RItem, schemaController: SchemaController, dateParser: DateParser, fileStorage: FileStorage, urlDetector: UrlDetector, doiDetector: (String) -> Bool)
-                                                                                                                            throws -> (data: ItemDetailState.Data, attachmentErrors: [String: Error]) {
+                                                                                                                                                                        throws -> ItemDetailState.Data {
         guard let localizedType = schemaController.localized(itemType: item.rawType) else {
             throw ItemDetailError.typeNotSupported
         }
@@ -153,7 +153,7 @@ struct ItemDetailDataCreator {
                                          deletedTags: [],
                                          dateModified: item.dateModified,
                                          dateAdded: item.dateAdded)
-        return (data, [:])
+        return data
     }
 
     /// Creates field data for given item type with the option of setting values for given fields.

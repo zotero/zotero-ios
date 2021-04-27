@@ -447,15 +447,11 @@ final class ItemDetailTableViewHandler: NSObject {
             progress = nil
             error = nil
         } else {
-            let (_progress, _) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
-            let _error = self.viewModel.state.attachmentErrors[attachment.key]
-            progress = _progress
-            error = _error
+            (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
         }
 
         attachmentCell.selectionStyle = self.canTap(attachment: attachment, isEditing: self.viewModel.state.isEditing) ? .gray : .none
         attachmentCell.setup(with: attachment, progress: progress, error: error, enabled: enabled)
-
     }
 
     private func canTap(attachment: Attachment, isEditing: Bool) -> Bool {
@@ -787,7 +783,7 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
                 }
             } else {
                 let attachment = self.viewModel.state.data.attachments[indexPath.row]
-                if let error = self.viewModel.state.attachmentErrors[attachment.key] {
+                if let error = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId).error {
                     self.observer.on(.next(.showAttachmentError(error, indexPath.row)))
                 } else {
                     self.viewModel.process(action: .openAttachment(indexPath.row))

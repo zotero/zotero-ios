@@ -149,7 +149,10 @@ struct AttachmentCreator {
     }
 
     private static func location(for item: RItem, file: File, fileStorage: FileStorage?) -> Attachment.FileLocation {
-        if fileStorage?.has(file) == true {
+        // If file storage is not specified, we don't care about location anyway. Let's just return `.remote`.
+        guard let fileStorage = fileStorage else { return .remote }
+
+        if fileStorage.has(file) {
             return .local
         } else if item.links.filter(.linkType(.enclosure)).first != nil {
             return .remote

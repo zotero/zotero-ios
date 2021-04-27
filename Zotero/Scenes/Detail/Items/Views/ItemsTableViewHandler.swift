@@ -229,6 +229,14 @@ final class ItemsTableViewHandler: NSObject {
                               }
                           })
                           .disposed(by: self.disposeBag)
+
+        NotificationCenter.default
+                .rx.notification(.forceReloadItems)
+                .observeOn(MainScheduler.instance)
+                .subscribe(onNext: { [weak self] notification in
+                    self?.reloadAllAttachments()
+                })
+                .disposed(by: self.disposeBag)
     }
 }
 
@@ -255,8 +263,8 @@ extension ItemsTableViewHandler: UITableViewDataSource {
             // Create and cache attachment if needed
             self.viewModel.process(action: .cacheAttachment(item: item))
 
-            let parentKey = item.key
-            let attachment = self.viewModel.state.attachments[parentKey]
+            let attachment = self.viewModel.state.attachments[item.key]
+            let parentKey = attachment.flatMap({ item.key == $0.key ? nil : item.key })
             let attachmentState: FileAttachmentView.State? = attachment.flatMap({ attachment in
                 let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
                 return .stateFrom(type: attachment.type, progress: progress, error: error)

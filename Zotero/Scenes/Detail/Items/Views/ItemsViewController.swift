@@ -187,11 +187,6 @@ final class ItemsViewController: UIViewController {
             self.updateToolbarItems(state: state)
         }
 
-        if let (attachment, parentKey) = state.openAttachment,
-           self.viewIfLoaded?.window != nil { // Only try opening attachment when viewController is currently visible on screen
-            self.open(attachment: attachment, parentKey: parentKey)
-        }
-
         if let key = state.itemKeyToDuplicate {
             self.coordinatorDelegate?.showItemDetail(for: .duplication(itemKey: key, collectionKey: self.viewModel.state.type.collectionKey), library: self.viewModel.state.library)
         }
@@ -269,11 +264,6 @@ final class ItemsViewController: UIViewController {
         } else if let controller = self.navigationItem.searchController {
             controller.searchBar.resignFirstResponder()
         }
-    }
-
-    private func open(attachment: Attachment, parentKey: String) {
-        let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(for: parentKey)
-        self.coordinatorDelegate?.show(attachment: attachment, library: self.viewModel.state.library, sourceView: sourceView, sourceRect: sourceRect)
     }
 
     private func showItemDetail(for item: RItem) {
@@ -642,6 +632,14 @@ extension ItemsViewController: ItemsTableViewHandlerDelegate {
 
     var isInViewHierarchy: Bool {
         return self.view.window != nil
+    }
+}
+
+extension ItemsViewController: DetailCoordinatorAttachmentProvider {
+    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, Library, UIView, CGRect?)? {
+        guard let attachment = self.viewModel.state.attachments[parentKey ?? key] else { return nil }
+        let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(for: (parentKey ?? key))
+        return (attachment, self.viewModel.state.library, sourceView, sourceRect)
     }
 }
 

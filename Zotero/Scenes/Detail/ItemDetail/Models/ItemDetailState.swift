@@ -294,9 +294,7 @@ struct ItemDetailState: ViewModelState {
     var diff: Diff?
     var error: ItemDetailError?
     var metadataTitleMaxWidth: CGFloat
-    var openAttachment: (Attachment, Int)?
     var updateAttachmentIndex: Int?
-    var attachmentErrors: [String: Error]
     var isLoadingData: Bool
     var observationToken: NotificationToken?
 
@@ -313,7 +311,6 @@ struct ItemDetailState: ViewModelState {
         self.error = nil
         self.isSaving = false
         self.isLoadingData = true
-        self.attachmentErrors = [:]
 
         switch type {
         case .preview, .duplication:
@@ -327,7 +324,6 @@ struct ItemDetailState: ViewModelState {
         self.changes = []
         self.error = nil
         self.diff = nil
-        self.openAttachment = nil
         self.updateAttachmentIndex = nil
     }
 }

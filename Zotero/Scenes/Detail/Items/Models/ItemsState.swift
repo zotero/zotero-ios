@@ -44,7 +44,6 @@ struct ItemsState: ViewModelState {
     var changes: Changes
     var error: ItemsError?
     var itemKeyToDuplicate: String?
-    var openAttachment: (Attachment, String)?
     // Used to indicate which row should update it's attachment view. The update is done directly to cell instead of tableView reload.
     var updateItemKey: String?
 
@@ -65,7 +64,6 @@ struct ItemsState: ViewModelState {
         self.error = nil
         self.changes = []
         self.itemKeyToDuplicate = nil
-        self.openAttachment = nil
         self.updateItemKey = nil
     }
 }

@@ -42,23 +42,6 @@ struct Files {
         return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName, key])
     }
 
-    static func attachmentFile(in libraryId: LibraryIdentifier, key: String, contentType: String) -> File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName], name: key, contentType: contentType)
-    }
-
-    static func attachmentFile(in libraryId: LibraryIdentifier, key: String, ext: String) -> File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName], name: key, ext: ext)
-    }
-
-    static func snapshotHtmlFile(in libraryId: LibraryIdentifier, key: String, filename: String) -> File {
-        let (name, ext) = self.split(filename: filename)
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName, key], name: name, ext: ext)
-    }
-
-    static func snapshotZipFile(in libraryId: LibraryIdentifier, key: String) -> File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName], name: key, ext: "zip")
-    }
-
     static func link(filename: String, key: String) -> File {
         let (name, ext) = self.split(filename: filename)
         return FileData(rootPath: Files.cachesRootPath, relativeComponents: ["Zotero", "links", key], name: name, ext: ext)
@@ -173,7 +156,7 @@ struct Files {
 }
 
 extension LibraryIdentifier {
-    fileprivate var folderName: String {
+    var folderName: String {
         switch self {
         case .custom(let type):
             switch type {

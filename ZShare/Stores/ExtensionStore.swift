@@ -132,10 +132,10 @@ final class ExtensionStore {
             init(item: ItemResponse, attachmentKey: String, attachmentData: [String: Any], attachmentFile: File, defaultTitle: String,
                  collections: Set<String>, libraryId: LibraryIdentifier, userId: Int, dateParser: DateParser) {
                 let newItem = item.copy(libraryId: libraryId, collectionKeys: collections)
-                let file = Files.attachmentFile(in: libraryId, key: attachmentKey, ext: ExtensionStore.defaultExtension)
+                let filename = FilenameFormatter.filename(from: item, defaultTitle: defaultTitle, ext: attachmentFile.ext, dateParser: dateParser)
+                let file = Files.newAttachmentFile(in: libraryId, key: attachmentKey, filename: filename, contentType: attachmentFile.mimeType)
                 let title = ((attachmentData["title"] as? String) ?? defaultTitle) + "." + file.ext
-                let filename = FilenameFormatter.filename(from: item, defaultTitle: defaultTitle, ext: file.ext, dateParser: dateParser)
-                let attachment = Attachment(type: .file(filename: filename, contentType: "application/pdf", location: .local, linkType: .importedFile),
+                let attachment = Attachment(type: .file(filename: filename, contentType: attachmentFile.mimeType, location: .local, linkType: .importedFile),
                                             title: title,
                                             key: attachmentKey,
                                             libraryId: libraryId)
@@ -150,8 +150,8 @@ final class ExtensionStore {
 
             init(localFile: File, attachmentKey: String, collections: Set<String>, libraryId: LibraryIdentifier, userId: Int) {
                 let filename = localFile.name + "." + localFile.ext
-                let file = Files.attachmentFile(in: libraryId, key: attachmentKey, ext: localFile.ext)
-                let attachment = Attachment(type: .file(filename: filename, contentType: "application/pdf", location: .local, linkType: .importedFile),
+                let file = Files.newAttachmentFile(in: libraryId, key: attachmentKey, filename: filename, contentType: localFile.mimeType)
+                let attachment = Attachment(type: .file(filename: filename, contentType: localFile.mimeType, location: .local, linkType: .importedFile),
                                             title: filename,
                                             key: attachmentKey,
                                             libraryId: libraryId)

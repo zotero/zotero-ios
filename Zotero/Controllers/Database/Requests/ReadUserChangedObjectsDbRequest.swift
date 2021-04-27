@@ -17,6 +17,12 @@ struct ReadUserChangedObjectsDbRequest<Obj: UpdatableObject>: DbResponseRequest 
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Results<Obj> {
-        return database.objects(Obj.self).filter(.userChanges)
+        if Obj.self == RItem.self {
+            return database.objects(Obj.self).filter(.itemUserChanges)
+        } else if Obj.self == RPageIndex.self {
+            return database.objects(Obj.self).filter(.pageIndexUserChanges)
+        } else {
+            return database.objects(Obj.self).filter(.userChanges)
+        }
     }
 }

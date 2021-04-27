@@ -124,8 +124,22 @@ extension NSPredicate {
         return NSPredicate(format: "attachmentNeedsSync = true")
     }
 
-    static var userChanges: NSPredicate {
+    static var changedByUser: NSPredicate {
         return NSPredicate(format: "rawChangeType = %d", UpdatableChangeType.user.rawValue)
+    }
+
+    static var userChanges: NSPredicate {
+        let changed = NSCompoundPredicate(orPredicateWithSubpredicates: [.changed, .deleted(true)])
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.changedByUser, changed])
+    }
+
+    static var itemUserChanges: NSPredicate {
+        let changed = NSCompoundPredicate(orPredicateWithSubpredicates: [.changed, .attachmentChanged, .deleted(true)])
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.changedByUser, changed])
+    }
+
+    static var pageIndexUserChanges: NSPredicate {
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.changedByUser, .changed])
     }
 
     static func changesWithoutDeletions(in libraryId: LibraryIdentifier) -> NSPredicate {

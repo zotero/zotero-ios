@@ -23,13 +23,16 @@ import PSPDFKitUI
 
 #endif
 
+protocol DetailCoordinatorAttachmentProvider {
+    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, Library, UIView, CGRect?)?
+}
+
 protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showCollectionPicker(in library: Library, completed: @escaping (Set<String>) -> Void)
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library)
     func showNote(with text: String, readOnly: Bool, save: @escaping (String) -> Void)
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
-    func show(attachment: Attachment, library: Library, sourceView: UIView, sourceRect: CGRect?)
     func showWeb(url: URL)
     func show(doi: String)
     func showFilters(button: UIBarButtonItem, viewModel: ViewModel<ItemsActionHandler>)
@@ -40,7 +43,6 @@ protocol DetailItemDetailCoordinatorDelegate: AnyObject {
     func showAttachmentPicker(save: @escaping ([URL]) -> Void)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func showTypePicker(selected: String, picked: @escaping (String) -> Void)
-    func show(attachment: Attachment, library: Library, sourceView: UIView, sourceRect: CGRect?)
     func showWeb(url: URL)
     func show(doi: String)
     func showCreatorCreation(for itemType: String, saved: @escaping CreatorEditSaveAction)
@@ -111,6 +113,18 @@ final class DetailCoordinator: Coordinator {
         self.controllers = controllers
         self.childCoordinators = []
         self.disposeBag = DisposeBag()
+
+        if let attachmentDownloader = controllers.userControllers?.fileDownloader {
+            attachmentDownloader.observable
+                                .subscribe(onNext: { [weak self] update in
+                                    switch update.kind {
+                                    case .ready:
+                                        self?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
+                                    default: break
+                                    }
+                                })
+                                .disposed(by: self.disposeBag)
+        }
     }
 
     func start(animated: Bool) {
@@ -150,14 +164,19 @@ final class DetailCoordinator: Coordinator {
         }
     }
 
-    func show(attachment: Attachment, library: Library, sourceView: UIView, sourceRect: CGRect?) {
+    private func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier) {
+        guard let (attachment, library, sourceView, sourceRect) = self.navigationController.viewControllers.reversed()
+                                                                      .compactMap({ ($0 as? DetailCoordinatorAttachmentProvider)?.attachment(for: key, parentKey: parentKey, libraryId: libraryId) })
+                                                                      .first else { return }
+        self.show(attachment: attachment, library: library, sourceView: sourceView, sourceRect: sourceRect)
+    }
+
+    private func show(attachment: Attachment, library: Library, sourceView: UIView, sourceRect: CGRect?) {
         switch attachment.type {
         case .url(let url):
             self.showWeb(url: url)
 
-        case .file(let filename, let contentType, let location, _):
-            guard location == .local else { return }
-
+        case .file(let filename, let contentType, _, _):
             let file = Files.newAttachmentFile(in: library.identifier, key: attachment.key, filename: filename, contentType: contentType)
             let url = file.createUrl()
 
@@ -172,13 +191,13 @@ final class DetailCoordinator: Coordinator {
                 if let image = image {
                     self.show(image: image, title: filename)
                 } else {
-                    self.showUnknownAttachment(for: file, filename: filename, attachment: attachment, sourceView: sourceView, sourceRect: sourceRect)
+                      self.share(item: file.createUrl(), source: .view(sourceView, sourceRect))
                 }
             default:
                 if AVURLAsset(url: url).isPlayable {
                     self.showVideo(for: url)
                 } else {
-                    self.showUnknownAttachment(for: file, filename: filename, attachment: attachment, sourceView: sourceView, sourceRect: sourceRect)
+                    self.share(item: file.createUrl(), source: .view(sourceView, sourceRect))
                 }
             }
         }
@@ -240,17 +259,6 @@ final class DetailCoordinator: Coordinator {
         let controller = WebViewController(url: url)
         let navigationController = UINavigationController(rootViewController: controller)
         self.topViewController.present(navigationController, animated: true, completion: nil)
-    }
-
-    private func showUnknownAttachment(for file: File, filename: String, attachment: Attachment, sourceView: UIView, sourceRect: CGRect?) {
-        let linkFile = Files.link(filename: filename, key: attachment.key)
-        do {
-            try self.controllers.fileStorage.link(file: file, to: linkFile)
-            self.share(item: linkFile.createUrl(), source: .view(sourceView, sourceRect))
-        } catch let error {
-            DDLogError("DetailCoordinator: can't link file - \(error)")
-            self.share(item: file.createUrl(), source: .view(sourceView, sourceRect))
-        }
     }
 
     private func share(item: Any, source: ActivityViewControllerSource) {

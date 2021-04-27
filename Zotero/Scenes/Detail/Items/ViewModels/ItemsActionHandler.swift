@@ -175,64 +175,33 @@ struct ItemsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func openAttachment(for key: String, parentKey: String, in viewModel: ViewModel<ItemsActionHandler>) {
-        guard let attachment = viewModel.state.attachments[parentKey] else { return }
+    private func openAttachment(for key: String, parentKey: String?, in viewModel: ViewModel<ItemsActionHandler>) {
+        guard let attachment = viewModel.state.attachments[parentKey ?? key] else { return }
 
-        switch attachment.type {
-        case .url:
-            self.update(viewModel: viewModel) { state in
-                state.openAttachment = (attachment, parentKey)
-            }
-        case .file(_, _, let location, _):
-            switch location {
-            case .local:
-                self.update(viewModel: viewModel) { state in
-                    state.openAttachment = (attachment, parentKey)
-                }
+        let (progress, _) = self.fileDownloader.data(for: attachment.key, libraryId: attachment.libraryId)
 
-            case .remote:
-                let (progress, _) = self.fileDownloader.data(for: attachment.key, libraryId: attachment.libraryId)
-                if progress != nil {
-                    self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
-                } else {
-                    self.fileDownloader.download(attachment: attachment, parentKey: parentKey)//.download(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
-                }
-
-            case .remoteMissing:
-                // TODO: - Show error with causes
-            break
-            }
+        if progress != nil {
+            self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
+        } else {
+            self.fileDownloader.download(attachment: attachment, parentKey: parentKey)
         }
     }
 
     private func process(downloadUpdate update: AttachmentDownloader.Update, in viewModel: ViewModel<ItemsActionHandler>) {
-        guard let parentKey = update.parentKey,
-              let attachment = viewModel.state.attachments[parentKey],
-              attachment.key == update.key else { return }
+        let parentKey = update.parentKey ?? update.key
+        guard let attachment = viewModel.state.attachments[parentKey], attachment.key == update.key else { return }
 
-        var didDownloadAttachment = false
-
-        self.update(viewModel: viewModel) { state in
-            switch update.kind {
-            case .ready:
-                var newAttachment = attachment
-                // If download finished, mark attachment file location as local
-                if case .file(_, _, let location, _) = attachment.type, location == .remote {
-                    newAttachment = attachment.changed(location: .local)
-                    state.attachments[parentKey] = newAttachment
-                    didDownloadAttachment = true
-                }
-                state.openAttachment = (newAttachment, parentKey)
-                state.updateItemKey = parentKey
-
-            case .cancelled, .failed, .progress:
+        switch update.kind {
+        case .ready:
+            guard case .file(_, _, let location, _) = attachment.type, location != .local else { return }
+            self.update(viewModel: viewModel) { state in
+                state.attachments[parentKey] = attachment.changed(location: .local)
                 state.updateItemKey = parentKey
             }
-        }
 
-        if didDownloadAttachment {
-            self.backgroundQueue.async {
-                try? self.dbStorage.createCoordinator().perform(request: MarkFileAsDownloadedDbRequest(key: attachment.key, libraryId: attachment.libraryId, downloaded: true))
+        case .cancelled, .failed, .progress:
+            self.update(viewModel: viewModel) { state in
+                state.updateItemKey = parentKey
             }
         }
     }

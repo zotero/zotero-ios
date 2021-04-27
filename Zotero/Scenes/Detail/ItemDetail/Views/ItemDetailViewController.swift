@@ -158,12 +158,6 @@ final class ItemDetailViewController: UIViewController {
         }
     }
 
-    private func open(attachment: Attachment, at index: Int) {
-        let indexPath = IndexPath(row: index, section: self.tableViewHandler.attachmentSection)
-        let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(at: indexPath)
-        self.coordinatorDelegate?.show(attachment: attachment, library: self.viewModel.state.library, sourceView: sourceView, sourceRect: sourceRect)
-    }
-
     // MARK: - UI state
 
     /// Update UI based on new state.
@@ -224,12 +218,6 @@ final class ItemDetailViewController: UIViewController {
             if let diff = state.diff {
                 self.tableViewHandler.reload(with: diff)
             }
-        }
-
-        if let (attachment, index) = state.openAttachment {
-            // Reset navbar download flag if the attachment didn't need to be downloaded
-            self.downloadingViaNavigationBar = false
-            self.open(attachment: attachment, at: index)
         }
     }
 
@@ -421,5 +409,14 @@ extension ItemDetailViewController: ConflictViewControllerReceiver {
 
     func canDeleteObject(completion: @escaping (Bool) -> Void) {
         self.coordinatorDelegate?.showDeletedAlertForItem(completion: completion)
+    }
+}
+
+extension ItemDetailViewController: DetailCoordinatorAttachmentProvider {
+    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, Library, UIView, CGRect?)? {
+        guard let index = self.viewModel.state.data.attachments.firstIndex(where: { $0.key == key && $0.libraryId == libraryId }) else { return nil }
+        let indexPath = IndexPath(row: index, section: self.tableViewHandler.attachmentSection)
+        let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(at: indexPath)
+        return (self.viewModel.state.data.attachments[index], self.viewModel.state.library, sourceView, sourceRect)
     }
 }

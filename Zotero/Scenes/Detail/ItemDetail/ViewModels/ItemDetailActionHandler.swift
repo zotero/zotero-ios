@@ -168,12 +168,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 type = .existing(item)
             }
 
-            var (data, attachmentErrors) = try ItemDetailDataCreator.createData(from: type,
-                                                                                schemaController: self.schemaController,
-                                                                                dateParser: self.dateParser,
-                                                                                fileStorage: self.fileStorage,
-                                                                                urlDetector: self.urlDetector,
-                                                                                doiDetector: FieldKeys.Item.isDoi)
+            var data = try ItemDetailDataCreator.createData(from: type, schemaController: self.schemaController, dateParser: self.dateParser, fileStorage: self.fileStorage,
+                                                            urlDetector: self.urlDetector, doiDetector: FieldKeys.Item.isDoi)
             if !viewModel.state.isEditing {
                 data.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: data.fieldIds, fields: data.fields)
             }
@@ -184,7 +180,6 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                     state.snapshot = data
                     state.snapshot?.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: data.fieldIds, fields: data.fields)
                 }
-                state.attachmentErrors = attachmentErrors
                 state.isLoadingData = false
                 state.observationToken = token
                 state.changes.insert(.reloadedData)
@@ -460,99 +455,6 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func process(downloadUpdate update: AttachmentDownloader.Update, in viewModel: ViewModel<ItemDetailActionHandler>) {
-//        guard viewModel.state.library.identifier == update.libraryId,
-//              let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
-//
-//        let attachment = viewModel.state.data.attachments[index]
-//
-//        switch update.kind {
-//        case .cancelled, .progress:
-//            self.update(viewModel: viewModel) { state in
-//                state.updateAttachmentIndex = index
-//            }
-//
-//        case .failed(let error):
-//            self.update(viewModel: viewModel) { state in
-//                state.updateAttachmentIndex = index
-//                state.attachmentErrors[attachment.key] = error
-//            }
-//
-//        case .downloaded(let isCompressed):
-//            if case .snapshot(let htmlFile, _, let zipFile, _) = attachment.contentType {
-//                // If snapshot was downloaded, unzip it
-//                self.processSnapshot(from: zipFile, to: htmlFile)
-//                    .subscribeOn(self.backgroundScheduler)
-//                    .observeOn(MainScheduler.instance)
-//                    .subscribe(onCompleted: { [weak viewModel] in
-//                        guard let viewModel = viewModel,
-//                              let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
-//                        self.finishDownload(at: index, in: viewModel)
-//                    }, onError: { [weak viewModel] error in
-//                        guard let viewModel = viewModel,
-//                              let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
-//                        self.finishFailedDownload(error: error, at: index, in: viewModel)
-//                    })
-//                    .disposed(by: self.disposeBag)
-//                return
-//            }
-//
-//            self.finishDownload(at: index, in: viewModel)
-//        }
-    }
-
-    private func processSnapshot(from zipFile: File, to htmlFile: File) -> Completable {
-        return Completable.create { observer -> Disposable in
-            let zipUrl = zipFile.createUrl()
-            let directory = htmlFile.directory
-            let directoryUrl = directory.createUrl()
-
-            DDLogInfo("ItemDetailActionHandler: will process downloaded snapshot")
-
-            do {
-                try self.fileStorage.createDirectories(for: directory)
-
-                if self.fileStorage.isZip(file: zipFile) {
-                    DDLogInfo("ItemDetailActionHandler: snapshot is zip")
-                    try FileManager.default.unzipItem(at: zipUrl, to: directoryUrl)
-                } else {
-                    DDLogInfo("ItemDetailActionHandler: snapshot is html")
-                    try self.fileStorage.move(from: zipFile, to: htmlFile)
-                }
-
-                DDLogInfo("ItemDetailActionHandler: did process downloaded snapshot")
-
-                observer(.completed)
-            } catch let error {
-                DDLogError("ItemDetailActionHandler: error extracting file - \(error)")
-                observer(.error(ItemDetailError.cantUnzipSnapshot))
-            }
-            return Disposables.create()
-        }
-    }
-
-    private func finishDownload(at index: Int, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        var attachment = viewModel.state.data.attachments[index]
-        if case .file(_, _, let location, _) = attachment.type, location == .remote {
-            attachment = attachment.changed(location: .local)
-        }
-        self.update(viewModel: viewModel) { state in
-            state.data.attachments[index] = attachment
-            state.openAttachment = (attachment, index)
-            state.updateAttachmentIndex = index
-        }
-
-        try? self.dbStorage.createCoordinator().perform(request: MarkFileAsDownloadedDbRequest(key: attachment.key, libraryId: attachment.libraryId, downloaded: true))
-    }
-
-    private func finishFailedDownload(error: Error, at index: Int, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        let attachment = viewModel.state.data.attachments[index]
-        self.update(viewModel: viewModel) { state in
-            state.updateAttachmentIndex = index
-            state.attachmentErrors[attachment.key] = error
-        }
-    }
-
     private func addAttachments(from urls: [URL], in viewModel: ViewModel<ItemDetailActionHandler>) {
         var attachments: [Attachment] = []
         var errors = 0
@@ -599,38 +501,33 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         guard index < viewModel.state.data.attachments.count else { return }
 
         let attachment = viewModel.state.data.attachments[index]
-        switch attachment.type {
-        case .url:
-            self.update(viewModel: viewModel) { state in
-                state.openAttachment = (attachment, index)
-            }
+        let (progress, _) = self.fileDownloader.data(for: attachment.key, libraryId: attachment.libraryId)
 
-        case .file(_, _, let location, _):
-            self.open(location: location, attachment: attachment, index: index, in: viewModel)
+        if progress != nil {
+            self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
+        } else {
+            self.fileDownloader.download(attachment: attachment, parentKey: viewModel.state.type.previewKey)
         }
     }
 
-    private func open(location: Attachment.FileLocation, attachment: Attachment, index: Int, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        switch location {
-        case .remote:
-            // Item creation or duplication shouldn't have a .remote location, limit this to preview only
-            guard let previewKey = viewModel.state.type.previewKey else { return }
+    private func process(downloadUpdate update: AttachmentDownloader.Update, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        guard viewModel.state.library.identifier == update.libraryId,
+              let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
 
-            let (progress, _) = self.fileDownloader.data(for: attachment.key, libraryId: attachment.libraryId)
-            if progress != nil {
-                self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
-            } else {
-                self.fileDownloader.download(attachment: attachment, parentKey: previewKey)//.download(file: file, key: attachment.key, parentKey: previewKey, libraryId: attachment.libraryId)
-            }
+        let attachment = viewModel.state.data.attachments[index]
 
-        case .local:
+        switch update.kind {
+        case .cancelled, .progress, .failed:
             self.update(viewModel: viewModel) { state in
-                state.openAttachment = (attachment, index)
+                state.updateAttachmentIndex = index
             }
 
-        case .remoteMissing:
-            // TODO: - Show error with causes
-            break
+        case .ready:
+            guard case .file(_, _, let location, _) = attachment.type, location != .local else { return }
+            self.update(viewModel: viewModel) { state in
+                state.data.attachments[index] = attachment.changed(location: .local)
+                state.updateAttachmentIndex = index
+            }
         }
     }
 

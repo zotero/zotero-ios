@@ -52,6 +52,47 @@ final class AppDelegate: UIResponder {
         UserDefaults.standard.removeObject(forKey: "ItemsSortType")
     }
 
+    private func migrateFileStructure() {
+        guard !UserDefaults.standard.bool(forKey: "DidMigrateFileStructure") else { return }
+
+        guard let dbStorage = self.controllers.userControllers?.dbStorage else {
+            // If user is logget out, no need to migrate, DB is empty and files should be gone.
+            UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure")
+            return
+        }
+
+        guard let coordinator = try? dbStorage.createCoordinator(), let items = try? coordinator.perform(request: ReadAllDownloadedItems()) else {
+            // Can't load data, try again later
+            return
+        }
+
+        for item in items {
+            guard let type = AttachmentCreator.attachmentType(for: item, options: .light, fileStorage: nil, urlDetector: nil) else { continue }
+
+            switch type {
+            case .url: break
+            case .file(_, _, _, let linkType) where (linkType == .embeddedImage || linkType == .linkedFile): break // Embedded images and linked files don't need to be checked.
+            case .file(let filename, let contentType, _, let linkType):
+                // Snapshots were stored based on new structure, no need to do anything.
+                guard linkType != .importedUrl || contentType != "text/html",
+                      let libraryId = item.libraryId else { continue }
+
+                let filenameParts = filename.split(separator: ".")
+                let oldFile: File
+                if filenameParts.count > 1, let ext = filenameParts.last.flatMap(String.init) {
+                    oldFile = FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName], name: item.key, ext: ext)
+                } else {
+                    oldFile = FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName], name: item.key, contentType: contentType)
+                }
+                let newFile = Files.newAttachmentFile(in: libraryId, key: item.key, filename: filename, contentType: contentType)
+                try? self.controllers.fileStorage.move(from: oldFile, to: newFile)
+            }
+        }
+
+        NotificationCenter.default.post(name: .forceReloadItems, object: nil)
+        UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure")
+    }
+
     // MARK: - Setups
 
     private func setupLogs() {
@@ -121,6 +162,10 @@ extension AppDelegate: UIApplicationDelegate {
         self.migratePdfSettings()
         #endif
         self.migrateItemsSortType()
+
+        DispatchQueue.global(qos: .userInteractive).async {
+            self.migrateFileStructure()
+        }
 
         return true
     }
