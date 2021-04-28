@@ -17,7 +17,12 @@ final class ItemCell: UITableViewCell {
     @IBOutlet private weak var subtitleLabel: InsetLabel!
     @IBOutlet private weak var tagCircles: TagCirclesView!
     @IBOutlet private weak var noteIcon: UIImageView!
+    @IBOutlet private weak var accessoryContainer: UIView!
     @IBOutlet private weak var fileView: FileAttachmentView!
+    @IBOutlet private weak var accessoryImageView: UIImageView!
+    @IBOutlet private weak var accessoryContainerRight: NSLayoutConstraint!
+
+    private static let noAccessoryTrailingInset: CGFloat = 16
 
     var key: String = ""
     private var tagBorderColor: CGColor {
@@ -30,7 +35,6 @@ final class ItemCell: UITableViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        self.fileView.tapAction = nil
         self.key = ""
     }
 
@@ -91,9 +95,8 @@ final class ItemCell: UITableViewCell {
         }
     }
 
-    func set(item: ItemCellModel, tapAction: @escaping () -> Void) {
+    func set(item: ItemCellModel) {
         self.key = item.key
-        self.fileView.tapAction = tapAction
 
         self.typeImageView.image = UIImage(named: item.typeIconName)
         self.titleLabel.text = item.title.isEmpty ? " " : item.title
@@ -109,20 +112,32 @@ final class ItemCell: UITableViewCell {
             self.tagCircles.colors = item.tagColors
         }
 
-        if let state = item.attachment {
+        self.set(accessory: item.accessory)
+    }
+
+    func set(accessory: ItemCellModel.Accessory?) {
+        guard let accessory = accessory else {
+            self.accessoryContainer.isHidden = true
+            self.accessoryContainerRight.constant = ItemCell.noAccessoryTrailingInset - self.accessoryContainer.frame.width
+            return
+        }
+
+        self.accessoryContainer.isHidden = false
+        self.accessoryContainerRight.constant = 0
+
+        switch accessory {
+        case .attachment(let state):
             self.fileView.set(state: state, style: .list)
             self.fileView.isHidden = false
-        } else {
+            self.accessoryImageView.isHidden = true
+        case .doi:
             self.fileView.isHidden = true
+            self.accessoryImageView.isHidden = false
+            self.accessoryImageView.image = Asset.Images.ItemTypes.webPageSnapshot.image
+        case .url:
+            self.fileView.isHidden = true
+            self.accessoryImageView.isHidden = false
+            self.accessoryImageView.image = Asset.Images.ItemTypes.webPageSnapshot.image
         }
-    }
-
-    func set(state: FileAttachmentView.State) {
-        self.fileView.set(state: state, style: .list)
-        self.fileView.isHidden = false
-    }
-
-    func clearAttachment() {
-        self.fileView.isHidden = true
     }
 }

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="17701" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="18122" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17703"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="18093"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -28,22 +28,22 @@
                         <rect key="frame" x="64" y="12" width="282" height="36"/>
                         <subviews>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="750" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text=" " textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1cO-yP-LQQ" customClass="CapHeightLabel" customModule="Zotero" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="0.0" width="4.5" height="20.5"/>
+                                <rect key="frame" x="0.0" y="0.0" width="4" height="17"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <stackView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" alignment="center" spacing="5" translatesAutoresizingMaskIntoConstraints="NO" id="vd0-bE-ySJ">
-                                <rect key="frame" x="0.0" y="24" width="4.5" height="16.5"/>
+                                <rect key="frame" x="0.0" y="24" width="4" height="15.5"/>
                                 <subviews>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text=" " textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="X2V-4e-fFg" customClass="InsetLabel" customModule="Zotero" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="0.0" width="4.5" height="16.5"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="4" height="15.5"/>
                                         <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                         <color key="textColor" systemColor="systemGrayColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <view hidden="YES" contentMode="scaleToFill" horizontalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Z8L-AU-qom" customClass="TagCirclesView" customModule="Zotero" customModuleProvider="target">
-                                        <rect key="frame" x="4.5" y="2.5" width="50" height="12"/>
+                                        <rect key="frame" x="4" y="2" width="50" height="12"/>
                                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                         <constraints>
                                             <constraint firstAttribute="width" constant="50" placeholder="YES" id="zGp-4K-An8"/>
@@ -51,7 +51,7 @@
                                         </constraints>
                                     </view>
                                     <imageView hidden="YES" opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" image="Cells/note" translatesAutoresizingMaskIntoConstraints="NO" id="z75-Uk-CFi">
-                                        <rect key="frame" x="4.5" y="2.5" width="12" height="12"/>
+                                        <rect key="frame" x="4" y="2" width="12" height="12"/>
                                     </imageView>
                                 </subviews>
                             </stackView>
@@ -67,26 +67,48 @@
                             <constraint firstItem="vd0-bE-ySJ" firstAttribute="leading" secondItem="xh1-uW-L3X" secondAttribute="leading" id="mlG-1s-kX3"/>
                         </constraints>
                     </view>
-                    <view hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Mcw-7q-2OK" customClass="FileAttachmentView" customModule="Zotero" customModuleProvider="target">
+                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="RBr-zc-TeH">
                         <rect key="frame" x="346" y="0.0" width="60" height="60"/>
+                        <subviews>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="attachment-detail-webpage-snapshot" translatesAutoresizingMaskIntoConstraints="NO" id="sWl-J7-oU5">
+                                <rect key="frame" x="16" y="16" width="28" height="28"/>
+                            </imageView>
+                            <view hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Mcw-7q-2OK" customClass="FileAttachmentView" customModule="Zotero" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="0.0" width="60" height="60"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="60" placeholder="YES" id="KJz-PQ-xQe"/>
+                                    <constraint firstAttribute="width" constant="60" id="Qwr-Ft-5mp"/>
+                                </constraints>
+                            </view>
+                        </subviews>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstAttribute="height" constant="60" placeholder="YES" id="KJz-PQ-xQe"/>
-                            <constraint firstAttribute="width" constant="60" id="Qwr-Ft-5mp"/>
+                            <constraint firstAttribute="trailing" secondItem="Mcw-7q-2OK" secondAttribute="trailing" id="3dF-1U-bH0"/>
+                            <constraint firstItem="Mcw-7q-2OK" firstAttribute="leading" secondItem="RBr-zc-TeH" secondAttribute="leading" id="ORk-jg-JP6"/>
+                            <constraint firstItem="Mcw-7q-2OK" firstAttribute="top" secondItem="RBr-zc-TeH" secondAttribute="top" id="RvO-mR-mhZ"/>
+                            <constraint firstItem="sWl-J7-oU5" firstAttribute="centerY" secondItem="RBr-zc-TeH" secondAttribute="centerY" id="fg7-6E-nfN"/>
+                            <constraint firstAttribute="width" constant="60" id="iMj-3E-swN"/>
+                            <constraint firstItem="sWl-J7-oU5" firstAttribute="centerX" secondItem="RBr-zc-TeH" secondAttribute="centerX" id="prg-9f-nRn"/>
+                            <constraint firstAttribute="height" constant="60" id="rih-hg-Hyt"/>
+                            <constraint firstAttribute="bottom" secondItem="Mcw-7q-2OK" secondAttribute="bottom" id="xXZ-D6-BaT"/>
                         </constraints>
                     </view>
                 </subviews>
                 <constraints>
-                    <constraint firstItem="Mcw-7q-2OK" firstAttribute="centerY" secondItem="2Kq-Mw-dy2" secondAttribute="centerY" id="9K1-kq-Bzk"/>
-                    <constraint firstAttribute="trailing" secondItem="Mcw-7q-2OK" secondAttribute="trailing" id="D05-hV-5g9"/>
+                    <constraint firstAttribute="trailing" secondItem="RBr-zc-TeH" secondAttribute="trailing" id="7YJ-1Y-w06"/>
                     <constraint firstItem="B9P-No-KWH" firstAttribute="centerY" secondItem="2Kq-Mw-dy2" secondAttribute="centerY" id="GQu-Ix-SCA"/>
                     <constraint firstAttribute="bottom" secondItem="xh1-uW-L3X" secondAttribute="bottom" constant="12" id="Jt1-Ab-CRN"/>
-                    <constraint firstItem="Mcw-7q-2OK" firstAttribute="leading" secondItem="xh1-uW-L3X" secondAttribute="trailing" id="KfC-O7-kTO"/>
+                    <constraint firstItem="RBr-zc-TeH" firstAttribute="leading" secondItem="xh1-uW-L3X" secondAttribute="trailing" id="NsE-nI-rjG"/>
                     <constraint firstItem="B9P-No-KWH" firstAttribute="leading" secondItem="2Kq-Mw-dy2" secondAttribute="leading" constant="20" id="TP4-Kc-Wfd"/>
                     <constraint firstItem="xh1-uW-L3X" firstAttribute="leading" secondItem="B9P-No-KWH" secondAttribute="trailing" constant="16" id="WHb-at-3YO"/>
                     <constraint firstItem="xh1-uW-L3X" firstAttribute="top" secondItem="2Kq-Mw-dy2" secondAttribute="top" constant="12" id="ogb-qs-XEA"/>
+                    <constraint firstItem="RBr-zc-TeH" firstAttribute="centerY" secondItem="2Kq-Mw-dy2" secondAttribute="centerY" id="rU2-uK-G4M"/>
                 </constraints>
             </tableViewCellContentView>
             <connections>
+                <outlet property="accessoryContainer" destination="RBr-zc-TeH" id="cgb-5B-DED"/>
+                <outlet property="accessoryContainerRight" destination="7YJ-1Y-w06" id="oxm-tN-fiA"/>
+                <outlet property="accessoryImageView" destination="sWl-J7-oU5" id="NYx-Tk-NqQ"/>
                 <outlet property="fileView" destination="Mcw-7q-2OK" id="osx-zR-ssI"/>
                 <outlet property="noteIcon" destination="z75-Uk-CFi" id="M1g-73-xKO"/>
                 <outlet property="subtitleLabel" destination="X2V-4e-fFg" id="cdv-iV-C0j"/>
@@ -95,16 +117,17 @@
                 <outlet property="titleLabelsToContainerBottom" destination="Jt1-Ab-CRN" id="bep-WR-9pQ"/>
                 <outlet property="typeImageView" destination="B9P-No-KWH" id="9DN-PU-azP"/>
             </connections>
-            <point key="canvasLocation" x="65.217391304347828" y="-90.066964285714278"/>
+            <point key="canvasLocation" x="65.217391304347828" y="-90.401785714285708"/>
         </tableViewCell>
     </objects>
     <designables>
         <designable name="X2V-4e-fFg">
-            <size key="intrinsicContentSize" width="4.5" height="20.5"/>
+            <size key="intrinsicContentSize" width="4" height="17"/>
         </designable>
     </designables>
     <resources>
         <image name="Cells/note" width="12" height="12"/>
+        <image name="attachment-detail-webpage-snapshot" width="28" height="28"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>

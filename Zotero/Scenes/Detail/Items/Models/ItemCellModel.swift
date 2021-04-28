@@ -11,15 +11,21 @@ import UIKit
 import RealmSwift
 
 struct ItemCellModel {
+    enum Accessory {
+        case attachment(FileAttachmentView.State)
+        case doi
+        case url
+    }
+
     let key: String
     let typeIconName: String
     let title: String
     let subtitle: String
     let hasNote: Bool
     let tagColors: [UIColor]
-    let attachment: FileAttachmentView.State?
+    let accessory: Accessory?
 
-    init(item: RItem, attachment: FileAttachmentView.State?) {
+    init(item: RItem, accessory: Accessory?) {
         self.key = item.key
         let contentType: String? = item.rawType == ItemTypes.attachment ? item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value : nil
         self.typeIconName = ItemTypes.iconName(for: item.rawType, contentType: contentType)
@@ -27,13 +33,7 @@ struct ItemCellModel {
         self.subtitle = ItemCellModel.subtitle(for: item)
         self.hasNote = ItemCellModel.hasNote(item: item)
         self.tagColors = ItemCellModel.tagColors(item: item)
-        self.attachment = attachment
-    }
-
-    fileprivate static func hasAttachment(item: RItem) -> Bool {
-        return item.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty))
-                            .filter(.isTrash(false))
-                            .count > 0
+        self.accessory = accessory
     }
 
     fileprivate static func hasNote(item: RItem) -> Bool {

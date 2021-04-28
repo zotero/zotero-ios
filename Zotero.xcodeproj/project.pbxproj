@@ -800,6 +800,7 @@
 		B3F7B0712524A8B700E51377 /* RxAlamofire in Frameworks */ = {isa = PBXBuildFile; productRef = B3F7B0702524A8B700E51377 /* RxAlamofire */; };
 		B3F7B0732524A8D500E51377 /* KeychainSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B3F7B0722524A8D500E51377 /* KeychainSwift */; };
 		B3F7B0752524A8D800E51377 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = B3F7B0742524A8D800E51377 /* ZIPFoundation */; };
+		B3F83808263960FA00E128A6 /* ItemAccessory.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F83807263960FA00E128A6 /* ItemAccessory.swift */; };
 		B3FBAC1924570BDE00AA00C0 /* AnnotationPreviewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FBAC1824570BDE00AA00C0 /* AnnotationPreviewController.swift */; };
 /* End PBXBuildFile section */
 
@@ -1413,6 +1414,7 @@
 		B3F47C02243B3960004F8B1E /* TestFileStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFileStorage.swift; sourceTree = "<group>"; };
 		B3F47C04243B4BC0004F8B1E /* Bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Bundled; sourceTree = "<group>"; };
 		B3F47DF425B5BCFD006FA96F /* ContainerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContainerViewController.swift; sourceTree = "<group>"; };
+		B3F83807263960FA00E128A6 /* ItemAccessory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemAccessory.swift; sourceTree = "<group>"; };
 		B3FBAC1824570BDE00AA00C0 /* AnnotationPreviewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPreviewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -2680,6 +2682,7 @@
 				B3DCDF22240945FA0039ED0D /* CollectionPickerAction.swift */,
 				B3DCDF24240946090039ED0D /* CollectionPickerError.swift */,
 				B3DCDF20240945D80039ED0D /* CollectionPickerState.swift */,
+				B3F83807263960FA00E128A6 /* ItemAccessory.swift */,
 				B3DCDF09240912220039ED0D /* SinglePickerAction.swift */,
 				B3DCDF11240914F10039ED0D /* SinglePickerModel.swift */,
 				B3DCDF0B240912370039ED0D /* SinglePickerState.swift */,
@@ -3259,6 +3262,7 @@
 				B305669B23FC051F003304F2 /* RSearch.swift in Sources */,
 				B305667423FC051F003304F2 /* MD5+Url.swift in Sources */,
 				B31FACCA25DBC71200DD5F14 /* ConflictReceiverAlertHandler.swift in Sources */,
+				B3F83808263960FA00E128A6 /* ItemAccessory.swift in Sources */,
 				B3DCDF1B24091EBE0039ED0D /* SinglePickerRow.swift in Sources */,
 				B30565B723FC051E003304F2 /* StoreSearchesDbRequest.swift in Sources */,
 				B3593F30241A61C700760E20 /* ItemDetailAddCell.swift in Sources */,

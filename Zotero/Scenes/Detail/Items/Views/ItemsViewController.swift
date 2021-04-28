@@ -105,6 +105,8 @@ final class ItemsViewController: UIViewController {
                                     self?.resetActiveSearch()
                                 case .doi(let doi):
                                     self?.coordinatorDelegate?.show(doi: doi)
+                                case .url(let url):
+                                    self?.coordinatorDelegate?.showWeb(url: url)
                                 }
                              })
                              .disposed(by: self.disposeBag)
@@ -157,8 +159,7 @@ final class ItemsViewController: UIViewController {
         } else if state.changes.contains(.attachmentsRemoved) {
             self.tableViewHandler.reloadAllAttachments()
         } else if let key = state.updateItemKey {
-                  let attachment = state.attachments[key]
-            self.tableViewHandler.updateCell(with: attachment, parentKey: key)
+            self.tableViewHandler.updateCell(with: state.itemAccessories[key], parentKey: key)
         }
 
         if state.changes.contains(.editing) {
@@ -637,7 +638,7 @@ extension ItemsViewController: ItemsTableViewHandlerDelegate {
 
 extension ItemsViewController: DetailCoordinatorAttachmentProvider {
     func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, Library, UIView, CGRect?)? {
-        guard let attachment = self.viewModel.state.attachments[parentKey ?? key] else { return nil }
+        guard let accessory = self.viewModel.state.itemAccessories[parentKey ?? key], let attachment = accessory.attachment else { return nil }
         let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(for: (parentKey ?? key))
         return (attachment, self.viewModel.state.library, sourceView, sourceRect)
     }

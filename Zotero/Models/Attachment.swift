@@ -15,12 +15,12 @@ struct Attachment: Identifiable, Equatable {
         case local, remote, remoteMissing
     }
 
-    enum NewFileLinkType {
+    enum FileLinkType {
         case importedUrl, importedFile, embeddedImage, linkedFile
     }
 
     enum Kind: Equatable {
-        case file(filename: String, contentType: String, location: FileLocation, linkType: NewFileLinkType)
+        case file(filename: String, contentType: String, location: FileLocation, linkType: FileLinkType)
         case url(URL)
     }
 
@@ -30,6 +30,13 @@ struct Attachment: Identifiable, Equatable {
     let libraryId: LibraryIdentifier
 
     var id: String { return self.key }
+
+    var location: FileLocation? {
+        switch self.type {
+        case .url: return nil
+        case .file(_, _, let location, _): return location
+        }
+    }
 
     init(type: Kind, title: String, key: String, libraryId: LibraryIdentifier) {
         self.key = key
@@ -50,14 +57,27 @@ struct Attachment: Identifiable, Equatable {
         self.type = type
     }
 
-    func changed(location: FileLocation) -> Attachment {
+    func changed(location: FileLocation, condition: (FileLocation) -> Bool) -> Attachment? {
         switch self.type {
-        case .url: return self
-        case .file(let filename, let contentType, _, let linkType):
+        case .file(let filename, let contentType, let oldLocation, let linkType) where condition(oldLocation):
             return Attachment(type: .file(filename: filename, contentType: contentType, location: location, linkType: linkType),
                               title: self.title,
                               key: self.key,
                               libraryId: self.libraryId)
+        case .url, .file:
+            return nil
+        }
+    }
+
+    func changed(location: FileLocation) -> Attachment? {
+        switch self.type {
+        case .file(let filename, let contentType, let oldLocation, let linkType) where oldLocation != location:
+            return Attachment(type: .file(filename: filename, contentType: contentType, location: location, linkType: linkType),
+                              title: self.title,
+                              key: self.key,
+                              libraryId: self.libraryId)
+        case .url, .file:
+            return nil
         }
     }
 }

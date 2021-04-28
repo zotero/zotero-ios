@@ -115,8 +115,8 @@ struct ItemsActionHandler: ViewModelActionHandler {
                 state.changes = [.selection, .selectAll]
             }
 
-        case .cacheAttachment(let item):
-            self.cacheAttachment(for: item, in: viewModel)
+        case .cacheItemAccessory(let item):
+            self.cacheItemAccessory(for: item, in: viewModel)
 
         case .updateKeys(let items, let deletions, let insertions, let modifications):
             self.processUpdate(items: items, deletions: deletions, insertions: insertions, modifications: modifications, in: viewModel)
@@ -124,8 +124,8 @@ struct ItemsActionHandler: ViewModelActionHandler {
         case .updateDownload(let update):
             self.process(downloadUpdate: update, in: viewModel)
 
-        case .openAttachment(let key, let parentKey):
-            self.openAttachment(for: key, parentKey: parentKey, in: viewModel)
+        case .openAttachment(let attachment, let parentKey):
+            self.process(attachment: attachment, parentKey: parentKey)
 
         case .updateAttachments(let notification):
             self.updateDeletedAttachments(notification, in: viewModel)
@@ -150,36 +150,46 @@ struct ItemsActionHandler: ViewModelActionHandler {
     // MARK: - Attachments
 
     private func updateDeletedAttachments(_ notification: AttachmentFileDeletedNotification, in viewModel: ViewModel<ItemsActionHandler>) {
-        self.update(viewModel: viewModel) { state in
-            // Simply remove deleted attachments from cache, they will be re-cached on demand with proper settings
-            switch notification {
-            case .all:
-                state.attachments = [:]
+        switch notification {
+        case .all:
+            // Update all attachment locations to `.remote`.
+            self.update(viewModel: viewModel) { state in
+                self.changeAttachmentsToRemoteLocation(in: &state.itemAccessories)
                 state.changes = .attachmentsRemoved
-            case .library(let libraryId):
-                if libraryId == state.library.identifier {
-                    state.attachments = [:]
-                    state.changes = .attachmentsRemoved
-                }
-            case .individual(_, let parentKey, let libraryId):
-                // Find item whose mainAttachment has the `key`, for which the file was deleted. If the item was found, new `Attachment`
-                // (with updated content type and availability) is created from items `attachment`.
-                if libraryId == state.library.identifier, let parentKey = parentKey {
-                    // Clear attachment so that it's re-cached when needed.
-                    state.attachments[parentKey] = state.results?.filter(.key(parentKey)).first.flatMap({ $0.attachment }).flatMap({
-                        AttachmentCreator.attachment(for: $0, fileStorage: self.fileStorage, urlDetector: self.urlDetector)
-                    })
-                    state.updateItemKey = parentKey
-                }
+            }
+
+        case .library(let libraryId):
+            // Check whether files in this library have been deleted.
+            guard viewModel.state.library.identifier == libraryId else { return }
+            // Update all attachment locations to `.remote`.
+            self.update(viewModel: viewModel) { state in
+                self.changeAttachmentsToRemoteLocation(in: &state.itemAccessories)
+                state.changes = .attachmentsRemoved
+            }
+
+        case .individual(let key, let parentKey, let libraryId):
+            let updateKey = parentKey ?? key
+
+            // Check whether the deleted file was in this library and there is a cached accessory for it.
+            guard viewModel.state.library.identifier == libraryId,
+                  let accessory = viewModel.state.itemAccessories[updateKey],
+                  let updatedAccessory = accessory.updatedAttachment(update: { attachment in attachment.changed(location: .remote, condition: { $0 == .local }) }) else { return }
+            self.update(viewModel: viewModel) { state in
+                state.itemAccessories[updateKey] = updatedAccessory
+                state.updateItemKey = updateKey
             }
         }
     }
 
-    private func openAttachment(for key: String, parentKey: String?, in viewModel: ViewModel<ItemsActionHandler>) {
-        guard let attachment = viewModel.state.attachments[parentKey ?? key] else { return }
+    private func changeAttachmentsToRemoteLocation(in accessories: inout [String: ItemAccessory]) {
+        for (key, accessory) in accessories {
+            guard let updatedAccessory = accessory.updatedAttachment(update: { attachment in attachment.changed(location: .remote, condition: { $0 == .local }) }) else { continue }
+            accessories[key] = updatedAccessory
+        }
+    }
 
+    private func process(attachment: Attachment, parentKey: String?) {
         let (progress, _) = self.fileDownloader.data(for: attachment.key, libraryId: attachment.libraryId)
-
         if progress != nil {
             self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
         } else {
@@ -188,39 +198,29 @@ struct ItemsActionHandler: ViewModelActionHandler {
     }
 
     private func process(downloadUpdate update: AttachmentDownloader.Update, in viewModel: ViewModel<ItemsActionHandler>) {
-        let parentKey = update.parentKey ?? update.key
-        guard let attachment = viewModel.state.attachments[parentKey], attachment.key == update.key else { return }
+        let updateKey = update.parentKey ?? update.key
+        guard let accessory = viewModel.state.itemAccessories[updateKey], let attachment = accessory.attachment else { return }
 
         switch update.kind {
         case .ready:
-            guard case .file(_, _, let location, _) = attachment.type, location != .local else { return }
+            guard let updatedAttachment = attachment.changed(location: .local) else { return }
             self.update(viewModel: viewModel) { state in
-                state.attachments[parentKey] = attachment.changed(location: .local)
-                state.updateItemKey = parentKey
+                state.itemAccessories[updateKey] = .attachment(updatedAttachment)
+                state.updateItemKey = updateKey
             }
 
         case .cancelled, .failed, .progress:
             self.update(viewModel: viewModel) { state in
-                state.updateItemKey = parentKey
+                state.updateItemKey = updateKey
             }
         }
     }
 
-    private func cacheAttachment(for item: RItem, in viewModel: ViewModel<ItemsActionHandler>) {
-        // Item has attachment, which is not cached, cache it.
-        if let attachment = item.attachment {
-            guard viewModel.state.attachments[item.key] == nil else { return }
-            self.update(viewModel: viewModel) { state in
-                state.attachments[item.key] = AttachmentCreator.attachment(for: attachment, fileStorage: self.fileStorage, urlDetector: self.urlDetector)
-            }
-            return
-        }
-        
-        // Item doesn't have attachment, but there is something in cache, clear it.
-        if viewModel.state.attachments[item.key] != nil {
-            self.update(viewModel: viewModel) { state in
-                state.attachments[item.key] = nil
-            }
+    private func cacheItemAccessory(for item: RItem, in viewModel: ViewModel<ItemsActionHandler>) {
+        // Create cached accessory only if there is nothing in cache yet.
+        guard viewModel.state.itemAccessories[item.key] == nil, let accessory = self.accessory(for: item) else { return }
+        self.update(viewModel: viewModel) { state in
+            state.itemAccessories[item.key] = accessory
         }
     }
 
@@ -440,6 +440,22 @@ struct ItemsActionHandler: ViewModelActionHandler {
 
     // MARK: - Helpers
 
+    private func accessory(for item: RItem) -> ItemAccessory? {
+        if let attachment = item.attachment.flatMap({ AttachmentCreator.attachment(for: $0, fileStorage: self.fileStorage, urlDetector: self.urlDetector) }) {
+            return .attachment(attachment)
+        }
+
+        if let doi = item.doi {
+            return .doi(doi)
+        }
+
+        if let urlString = item.urlString, self.urlDetector.isUrl(string: urlString), let url = URL(string: urlString) {
+            return .url(url)
+        }
+
+        return nil
+    }
+
     /// Updates the `keys` array which mirrors `Results<RItem>` identifiers. Updates `selectedItems` if needed. Updates `attachments` if needed.
     private func processUpdate(items: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int], in viewModel: ViewModel<ItemsActionHandler>) {
         self.update(viewModel: viewModel) { state in
@@ -454,7 +470,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
 
             modifications.forEach { idx in
                 let item = items[idx]
-                state.attachments[item.key] = item.attachment.flatMap({ AttachmentCreator.attachment(for: $0, fileStorage: self.fileStorage, urlDetector: self.urlDetector) })
+                state.itemAccessories[item.key] = self.accessory(for: item)
             }
 
             insertions.forEach { idx in
@@ -462,7 +478,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
                 if state.isEditing {
                     state.keys.insert(item.key, at: idx)
                 }
-                state.attachments[item.key] = item.attachment.flatMap({ AttachmentCreator.attachment(for: $0, fileStorage: self.fileStorage, urlDetector: self.urlDetector) })
+                state.itemAccessories[item.key] = self.accessory(for: item)
             }
         }
     }

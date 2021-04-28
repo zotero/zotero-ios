@@ -87,6 +87,8 @@ protocol DetailItemActionSheetCoordinatorDelegate: AnyObject {
     func showItemCreation(library: Library, collectionKey: String?)
 }
 
+fileprivate class EmptyTransitioningDelegate: NSObject, UIViewControllerTransitioningDelegate {}
+
 final class DetailCoordinator: Coordinator {
     enum ActivityViewControllerSource {
         case view(UIView, CGRect?)
@@ -95,7 +97,7 @@ final class DetailCoordinator: Coordinator {
 
     var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
-
+    private var transitionDelegate: EmptyTransitioningDelegate?
     #if PDFENABLED
     private var pdfSearchController: PDFSearchViewController?
     #endif
@@ -258,6 +260,7 @@ final class DetailCoordinator: Coordinator {
     private func showWebView(for url: URL) {
         let controller = WebViewController(url: url)
         let navigationController = UINavigationController(rootViewController: controller)
+        navigationController.modalPresentationStyle = .fullScreen
         self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
@@ -285,16 +288,13 @@ final class DetailCoordinator: Coordinator {
     }
 
     func showWeb(url: URL) {
-        if url.scheme == "http" || url.scheme == "https" {
-            UIApplication.shared.open(url, options: [:], completionHandler: nil)
-            return
-        }
-
-        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: true) else { return }
-        components.scheme = "http"
-        guard let url = components.url else { return }
-
-        UIApplication.shared.open(url, options: [:], completionHandler: nil)
+        let controller = SFSafariViewController(url: url.withHttpSchemeIfMissing)
+        controller.modalPresentationStyle = .fullScreen
+        // Changes transition to normal modal transition instead of push from right.
+        self.transitionDelegate = EmptyTransitioningDelegate()
+        controller.transitioningDelegate = self.transitionDelegate
+        self.transitionDelegate = nil
+        self.topViewController.present(controller, animated: true, completion: nil)
     }
 
     fileprivate var topViewController: UIViewController {
@@ -804,3 +804,15 @@ extension DetailCoordinator: AnnotationEditCoordinatorDelegate {
 }
 
 #endif
+
+extension URL {
+    fileprivate var withHttpSchemeIfMissing: URL {
+        if self.scheme == "http" || self.scheme == "https" {
+            return self
+        }
+
+        guard var components = URLComponents(url: self, resolvingAgainstBaseURL: true) else { return self }
+        components.scheme = "http"
+        return components.url ?? self
+    }
+}

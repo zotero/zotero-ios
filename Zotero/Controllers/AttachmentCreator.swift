@@ -78,7 +78,7 @@ struct AttachmentCreator {
         return .file(filename: filename, contentType: "image/png", location: location, linkType: .embeddedImage)
     }
 
-    private static func importedType(for item: RItem, libraryId: LibraryIdentifier, fileStorage: FileStorage?, linkType: Attachment.NewFileLinkType) -> Attachment.Kind? {
+    private static func importedType(for item: RItem, libraryId: LibraryIdentifier, fileStorage: FileStorage?, linkType: Attachment.FileLinkType) -> Attachment.Kind? {
         guard let contentType = self.contentType(for: item) else { return nil }
         let filename = self.filename(for: item, ext: contentType.extensionFromMimeType)
         let file = Files.newAttachmentFile(in: libraryId, key: item.key, filename: filename, contentType: contentType)

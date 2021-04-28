@@ -23,6 +23,7 @@ final class ItemsTableViewHandler: NSObject {
     enum TapAction {
         case metadata(RItem)
         case doi(String)
+        case url(URL)
     }
 
     private static let cellId = "ItemCell"
@@ -120,6 +121,20 @@ final class ItemsTableViewHandler: NSObject {
         return (self.tableView, cell?.frame)
     }
 
+    private func cellAccessory(from accessory: ItemAccessory?) -> ItemCellModel.Accessory? {
+        return accessory.flatMap({ accessory -> ItemCellModel.Accessory in
+            switch accessory {
+            case .attachment(let attachment):
+                let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
+                return .attachment(.stateFrom(type: attachment.type, progress: progress, error: error))
+            case .doi:
+                return .doi
+            case .url:
+                return .url
+            }
+        })
+    }
+
     // MARK: - Actions
 
     /// Disables performing tableView batch reloads. Instead just uses `reloadData()`.
@@ -136,15 +151,9 @@ final class ItemsTableViewHandler: NSObject {
         self.tableView.setEditing(editing, animated: animated)
     }
 
-    func updateCell(with attachment: Attachment?, parentKey: String) {
+    func updateCell(with accessory: ItemAccessory?, parentKey: String) {
         guard let cell = self.tableView.visibleCells.first(where: { ($0 as? ItemCell)?.key == parentKey }) as? ItemCell else { return }
-
-        if let attachment = attachment {
-            let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
-            cell.set(state: .stateFrom(type: attachment.type, progress: progress, error: error))
-        } else {
-            cell.clearAttachment()
-        }
+        cell.set(accessory: self.cellAccessory(from: accessory))
     }
 
     func reloadAll(snapshot: Results<RItem>) {
@@ -261,19 +270,10 @@ extension ItemsTableViewHandler: UITableViewDataSource {
         if let item = self.snapshot?[indexPath.row],
            let cell = cell as? ItemCell {
             // Create and cache attachment if needed
-            self.viewModel.process(action: .cacheAttachment(item: item))
+            self.viewModel.process(action: .cacheItemAccessory(item: item))
 
-            let attachment = self.viewModel.state.attachments[item.key]
-            let parentKey = attachment.flatMap({ item.key == $0.key ? nil : item.key })
-            let attachmentState: FileAttachmentView.State? = attachment.flatMap({ attachment in
-                let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
-                return .stateFrom(type: attachment.type, progress: progress, error: error)
-            })
-
-            cell.set(item: ItemCellModel(item: item, attachment: attachmentState), tapAction: { [weak self] in
-                guard let key = attachment?.key else { return }
-                self?.viewModel.process(action: .openAttachment(key: key, parentKey: parentKey))
-            })
+            let accessory = self.viewModel.state.itemAccessories[item.key]
+            cell.set(item: ItemCellModel(item: item, accessory: self.cellAccessory(from: accessory)))
         }
 
         return cell
@@ -286,16 +286,23 @@ extension ItemsTableViewHandler: UITableViewDelegate {
 
         if self.viewModel.state.isEditing {
             self.viewModel.process(action: .selectItem(item.key))
-        } else {
-            tableView.deselectRow(at: indexPath, animated: true)
+            return
+        }
 
-            if let attachment = self.viewModel.state.attachments[item.key] {
-                self.viewModel.process(action: .openAttachment(key: attachment.key, parentKey: item.key))
-            } else if let doi = item.doi {
-                self.tapObserver.on(.next(.doi(doi)))
-            } else {
-                self.tapObserver.on(.next(.metadata(item)))
-            }
+        tableView.deselectRow(at: indexPath, animated: true)
+
+        guard let accessory = self.viewModel.state.itemAccessories[item.key] else {
+            self.tapObserver.on(.next(.metadata(item)))
+            return
+        }
+
+        switch accessory {
+        case .attachment(let attachment):
+            self.viewModel.process(action: .openAttachment(attachment: attachment, parentKey: (item.key == attachment.key ? nil : item.key)))
+        case .doi(let doi):
+            self.tapObserver.on(.next(.doi(doi)))
+        case .url(let url):
+            self.tapObserver.on(.next(.url(url)))
         }
     }
 

@@ -31,9 +31,9 @@ enum ItemsAction {
     case stopEditing
     case toggleSortOrder
     case trashItems(Set<String>)
-    case cacheAttachment(item: RItem)
+    case cacheItemAccessory(item: RItem)
     case updateAttachments(AttachmentFileDeletedNotification)
     case updateDownload(AttachmentDownloader.Update)
-    case openAttachment(key: String, parentKey: String?)
+    case openAttachment(attachment: Attachment, parentKey: String?)
     case updateKeys(items: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int])
 }

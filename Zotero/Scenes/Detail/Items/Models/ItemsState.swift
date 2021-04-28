@@ -37,8 +37,8 @@ struct ItemsState: ViewModelState {
     var filters: [Filter]
     // Keys for all results are stored so that when a deletion comes in it can be determined which keys were deleted and we can remove them from `selectedItems`
     var keys: [String]
-    // Cache of attachments so that they don't need to be re-created in tableView. The key is key of parent item, or item if it's a standalone attachment.
-    var attachments: [String: Attachment]
+    // Cache of item accessories (attachment, doi, url) so that they don't need to be re-fetched in tableView. The key is key of parent item, or item if it's a standalone attachment.
+    var itemAccessories: [String: ItemAccessory]
     var selectedItems: Set<String>
     var isEditing: Bool
     var changes: Changes
@@ -52,7 +52,7 @@ struct ItemsState: ViewModelState {
         self.library = library
         self.filters = []
         self.keys = []
-        self.attachments = [:]
+        self.itemAccessories = [:]
         self.error = error
         self.isEditing = false
         self.selectedItems = []

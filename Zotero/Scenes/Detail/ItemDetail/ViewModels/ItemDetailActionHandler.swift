@@ -429,28 +429,33 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     }
 
     private func updateDeletedAttachments(_ notification: AttachmentFileDeletedNotification, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        self.update(viewModel: viewModel) { state in
-            // Set all affected attachments to remote. Since everything is cached here and the original `RItem` is not available, let's assume
-            // that once downloaded attachment is still available remotely. In the worst case, it was deleted in the meanwhile. The only fallback is
-            // that the user tries to download again without leaving the screen and will get an error message.
-            switch notification {
-            case .all:
+        switch notification {
+        case .all:
+            guard viewModel.state.data.attachments.contains(where: { $0.location == .local }) else { return }
+            self.update(viewModel: viewModel) { state in
                 for (index, attachment) in state.data.attachments.enumerated() {
-                    state.data.attachments[index] = attachment.changed(location: .remote)
+                    guard let new = attachment.changed(location: .remote, condition: { $0 == .local }) else { continue }
+                    state.data.attachments[index] = new
                 }
                 state.changes = .attachmentFilesRemoved
-            case .library(let libraryId):
-                if libraryId == state.library.identifier {
-                    for (index, attachment) in state.data.attachments.enumerated() {
-                        state.data.attachments[index] = attachment.changed(location: .remote)
-                    }
-                    state.changes = .attachmentFilesRemoved
+            }
+
+        case .library(let libraryId):
+            guard libraryId == viewModel.state.library.identifier, viewModel.state.data.attachments.contains(where: { $0.location == .local }) else { return }
+            self.update(viewModel: viewModel) { state in
+                for (index, attachment) in state.data.attachments.enumerated() {
+                    guard let new = attachment.changed(location: .remote, condition: { $0 == .local }) else { continue }
+                    state.data.attachments[index] = new
                 }
-            case .individual(let key, _, let libraryId):
-                if let index = state.data.attachments.firstIndex(where: { $0.key == key && $0.libraryId == libraryId }) {
-                    state.data.attachments[index] = state.data.attachments[index].changed(location: .remote)
-                    state.updateAttachmentIndex = index
-                }
+                state.changes = .attachmentFilesRemoved
+            }
+
+        case .individual(let key, _, let libraryId):
+            guard let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == key && $0.libraryId == libraryId }),
+                  let new = viewModel.state.data.attachments[index].changed(location: .remote, condition: { $0 == .local }) else { return }
+            self.update(viewModel: viewModel) { state in
+                state.data.attachments[index] = new
+                state.updateAttachmentIndex = index
             }
         }
     }
@@ -523,9 +528,9 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             }
 
         case .ready:
-            guard case .file(_, _, let location, _) = attachment.type, location != .local else { return }
+            guard let new = attachment.changed(location: .local) else { return }
             self.update(viewModel: viewModel) { state in
-                state.data.attachments[index] = attachment.changed(location: .local)
+                state.data.attachments[index] = new
                 state.updateAttachmentIndex = index
             }
         }

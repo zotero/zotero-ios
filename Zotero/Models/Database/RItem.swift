@@ -130,6 +130,10 @@ final class RItem: Object {
         })
     }
 
+    var urlString: String? {
+        return self.fields.filter(.key(FieldKeys.Item.url)).first?.value
+    }
+
     // MARK: - Object properties
 
     override class func indexedProperties() -> [String] {
