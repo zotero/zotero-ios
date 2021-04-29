@@ -187,13 +187,20 @@ final class DetailCoordinator: Coordinator {
                 self.showPdf(at: url, key: attachment.key, library: library)
             case "text/html":
                 self.showWebView(for: url)
+            case "text/plain":
+                let text = try? String(contentsOf: url, encoding: .utf8)
+                if let text = text {
+                    self.show(text: text, title: filename)
+                } else {
+                    self.share(item: url, source: .view(sourceView, sourceRect))
+                }
             case _ where contentType.contains("image"):
                 let image = (contentType == "image/gif") ? (try? Data(contentsOf: url)).flatMap({ try? UIImage(gifData: $0) }) :
                                                              UIImage(contentsOfFile: url.path)
                 if let image = image {
                     self.show(image: image, title: filename)
                 } else {
-                      self.share(item: file.createUrl(), source: .view(sourceView, sourceRect))
+                  self.share(item: url, source: .view(sourceView, sourceRect))
                 }
             default:
                 if AVURLAsset(url: url).isPlayable {
@@ -203,6 +210,13 @@ final class DetailCoordinator: Coordinator {
                 }
             }
         }
+    }
+
+    private func show(text: String, title: String) {
+        let controller = TextPreviewViewController(text: text, title: title)
+        let navigationController = UINavigationController(rootViewController: controller)
+        navigationController.modalPresentationStyle = .fullScreen
+        self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
     private func show(image: UIImage, title: String) {

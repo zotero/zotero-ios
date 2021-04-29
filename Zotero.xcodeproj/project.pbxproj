@@ -544,6 +544,8 @@
 		B35E4B8F25248B3C000EA134 /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = B35E4B8E25248B3C000EA134 /* RxCocoa */; };
 		B35E4B9525248BAD000EA134 /* RxBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = B35E4B9425248BAD000EA134 /* RxBlocking */; };
 		B35E4B9725248BAD000EA134 /* RxRelay in Frameworks */ = {isa = PBXBuildFile; productRef = B35E4B9625248BAD000EA134 /* RxRelay */; };
+		B35EDECB263ADD0C003574AC /* TextPreviewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35EDEC9263ADD0C003574AC /* TextPreviewViewController.swift */; };
+		B35EDECC263ADD0C003574AC /* TextPreviewViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B35EDECA263ADD0C003574AC /* TextPreviewViewController.xib */; };
 		B35F476A24F8F55600FE328D /* webview_extraction.js in Resources */ = {isa = PBXBuildFile; fileRef = B35F476924F8F55600FE328D /* webview_extraction.js */; };
 		B35FC1F02628490C00858772 /* MarkFileAsDownloadedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35FC1EF2628490C00858772 /* MarkFileAsDownloadedDbRequest.swift */; };
 		B3604FF824769F0900669CB7 /* note.html in Resources */ = {isa = PBXBuildFile; fileRef = B3604FF724769F0900669CB7 /* note.html */; };
@@ -1209,6 +1211,8 @@
 		B35C529B26383BDD007BD036 /* ReadAllDownloadedItems.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllDownloadedItems.swift; sourceTree = "<group>"; };
 		B35DC8E3261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailFieldMultilineEditCell.swift; sourceTree = "<group>"; };
 		B35DC8E4261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemDetailFieldMultilineEditCell.xib; sourceTree = "<group>"; };
+		B35EDEC9263ADD0C003574AC /* TextPreviewViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextPreviewViewController.swift; sourceTree = "<group>"; };
+		B35EDECA263ADD0C003574AC /* TextPreviewViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TextPreviewViewController.xib; sourceTree = "<group>"; };
 		B35F476924F8F55600FE328D /* webview_extraction.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = webview_extraction.js; sourceTree = "<group>"; };
 		B35FC1EF2628490C00858772 /* MarkFileAsDownloadedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkFileAsDownloadedDbRequest.swift; sourceTree = "<group>"; };
 		B3604FF724769F0900669CB7 /* note.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = note.html; sourceTree = "<group>"; };
@@ -2660,6 +2664,8 @@
 				B3830CF525545EE400910FE0 /* TagPickerCell.xib */,
 				B3830CE8255451DC00910FE0 /* TagPickerViewController.swift */,
 				B3830CE7255451DC00910FE0 /* TagPickerViewController.xib */,
+				B35EDEC9263ADD0C003574AC /* TextPreviewViewController.swift */,
+				B35EDECA263ADD0C003574AC /* TextPreviewViewController.xib */,
 				B3F184A3253F067100498F32 /* WebViewController.swift */,
 			);
 			path = Views;
@@ -2934,6 +2940,7 @@
 				B30BA8C4255D415600361D25 /* Bundled in Resources */,
 				B34DF1B625768BB70019CCD1 /* TextFieldCell.xib in Resources */,
 				B31901952629C9CB00209E33 /* ItemsFilterViewController.xib in Resources */,
+				B35EDECC263ADD0C003574AC /* TextPreviewViewController.xib in Resources */,
 				B3DD9CEA2256340400DE6BAA /* licenses.plist in Resources */,
 				B30565B123FC051E003304F2 /* Assets.xcassets in Resources */,
 				B3C9096F2497666900286FCF /* ImagePreviewViewController.xib in Resources */,
@@ -3425,6 +3432,7 @@
 				B39EE32B223A5E3500302E29 /* TestAppDelegate.swift in Sources */,
 				B30565C423FC051E003304F2 /* EditItemDetailDbRequest.swift in Sources */,
 				B305662023FC051F003304F2 /* SyncSettingsSyncAction.swift in Sources */,
+				B35EDECB263ADD0C003574AC /* TextPreviewViewController.swift in Sources */,
 				B30566A623FC051F003304F2 /* Files.swift in Sources */,
 				B35DC8E5261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.swift in Sources */,
 				B305661F23FC051E003304F2 /* SubmitUpdateSyncAction.swift in Sources */,

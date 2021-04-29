@@ -441,7 +441,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
     // MARK: - Helpers
 
     private func accessory(for item: RItem) -> ItemAccessory? {
-        if let attachment = item.attachment.flatMap({ AttachmentCreator.attachment(for: $0, fileStorage: self.fileStorage, urlDetector: self.urlDetector) }) {
+        if let attachment = AttachmentCreator.mainAttachment(for: item, fileStorage: self.fileStorage) {
             return .attachment(attachment)
         }
 
