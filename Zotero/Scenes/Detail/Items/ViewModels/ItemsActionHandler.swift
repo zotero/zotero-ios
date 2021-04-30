@@ -445,12 +445,12 @@ struct ItemsActionHandler: ViewModelActionHandler {
             return .attachment(attachment)
         }
 
-        if let doi = item.doi {
-            return .doi(doi)
-        }
-
         if let urlString = item.urlString, self.urlDetector.isUrl(string: urlString), let url = URL(string: urlString) {
             return .url(url)
+        }
+
+        if let doi = item.doi {
+            return .doi(doi)
         }
 
         return nil

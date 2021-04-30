@@ -9,13 +9,14 @@
 import UIKit
 
 import Alamofire
-import ZIPFoundation
+import CocoaLumberjackSwift
 import RxAlamofire
 import RxSwift
+import ZIPFoundation
 
 final class AttachmentDownloader {
     enum Error: Swift.Error {
-        case incompatibleAttachment, fileMissingRemotely
+        case incompatibleAttachment
     }
 
     struct Update {
@@ -87,14 +88,12 @@ final class AttachmentDownloader {
         case .file(let filename, let contentType, let location, let linkType):
             switch linkType {
             case .linkedFile, .embeddedImage:
-                return self.observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .failed(Error.incompatibleAttachment))))
+                self.finish(download: Download(key: attachment.key, libraryId: attachment.libraryId), parentKey: parentKey, result: .failure(Error.incompatibleAttachment))
             case .importedFile, .importedUrl:
                 switch location {
                 case .local:
                     self.observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .ready)))
-                case .remoteMissing:
-                    self.observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .failed(Error.fileMissingRemotely))))
-                case .remote:
+                case .remote, .remoteMissing:
                     let file = Files.newAttachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
                     self.download(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
                 }
@@ -242,6 +241,7 @@ final class AttachmentDownloader {
             try? self.dbStorage.createCoordinator().perform(request: MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true))
 
         case .failure(let error):
+            DDLogError("AttachmentDownloader: failed to download attachment \(download.key), \(download.libraryId) - \(error)")
             let isCancelError = (error as? Alamofire.AFError)?.isExplicitlyCancelledError == true || (error as? Archive.ArchiveError) == .cancelledOperation
             self.errors[download] = isCancelError ? nil : error
             self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: (isCancelError ? .cancelled : .failed(error)))))
