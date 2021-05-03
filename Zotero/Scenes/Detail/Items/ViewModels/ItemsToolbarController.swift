@@ -160,7 +160,7 @@ final class ItemsToolbarController {
                 item.tag = ItemsToolbarController.barButtonItemEmptyTag
             case .duplicate:
                 item.tag = ItemsToolbarController.barButtonItemSingleTag
-            case .add, .filter: break
+            case .add, .filter, .createParent: break
             }
             item.rx.tap.subscribe(onNext: { [weak self] _ in
                 guard let `self` = self else { return }
