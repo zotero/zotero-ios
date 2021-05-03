@@ -221,7 +221,7 @@ final class ItemsViewController: UIViewController {
             })
 
         case .createParent:
-            guard let key = selectedKeys.first, let attachment = self.viewModel.state.attachments[key] else { return }
+            guard let key = selectedKeys.first, case .attachment(let attachment) = self.viewModel.state.itemAccessories[key] else { return }
             self.coordinatorDelegate?.showItemDetail(for: .creation(type: ItemTypes.document, child: attachment, collectionKey: nil), library: self.viewModel.state.library)
 
         case .delete:
