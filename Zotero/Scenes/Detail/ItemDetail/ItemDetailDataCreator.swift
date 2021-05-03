@@ -12,7 +12,7 @@ import CocoaLumberjackSwift
 
 struct ItemDetailDataCreator {
     enum Kind {
-        case new(itemType: String)
+        case new(itemType: String, child: Attachment?)
         case existing(RItem)
     }
 
@@ -24,11 +24,11 @@ struct ItemDetailDataCreator {
     /// - parameter urlDetector: URL detector.
     /// - parameter doiDetector: DOI detector.
     /// - returns: Populated data for given type.
-    static func createData(from type: Kind, schemaController: SchemaController, dateParser: DateParser,
-                           fileStorage: FileStorage, urlDetector: UrlDetector, doiDetector: (String) -> Bool) throws -> (data: ItemDetailState.Data, attachmentErrors: [String: Error]) {
+    static func createData(from type: Kind, schemaController: SchemaController, dateParser: DateParser, fileStorage: FileStorage, urlDetector: UrlDetector, doiDetector: (String) -> Bool)
+                                                                                                                            throws -> (data: ItemDetailState.Data, attachmentErrors: [String: Error]) {
         switch type {
-        case .new(let itemType):
-            let data = try creationData(itemType: itemType, schemaController: schemaController, dateParser: dateParser, urlDetector: urlDetector, doiDetector: doiDetector)
+        case .new(let itemType, let child):
+            let data = try creationData(itemType: itemType, child: child, schemaController: schemaController, dateParser: dateParser, urlDetector: urlDetector, doiDetector: doiDetector)
             return (data, [:])
         case .existing(let item):
             return try itemData(item: item, schemaController: schemaController, dateParser: dateParser, fileStorage: fileStorage, urlDetector: urlDetector, doiDetector: doiDetector)
@@ -42,16 +42,15 @@ struct ItemDetailDataCreator {
     /// - parameter urlDetector: URL detector.
     /// - parameter doiDetector: DOI detector.
     /// - returns: Data for item detail state.
-    private static func creationData(itemType: String, schemaController: SchemaController, dateParser: DateParser,
-                                     urlDetector: UrlDetector, doiDetector: (String) -> Bool) throws -> ItemDetailState.Data {
+    private static func creationData(itemType: String, child: Attachment?, schemaController: SchemaController, dateParser: DateParser, urlDetector: UrlDetector,
+                                     doiDetector: (String) -> Bool) throws -> ItemDetailState.Data {
         guard let localizedType = schemaController.localized(itemType: itemType) else {
             throw ItemDetailError.schemaNotInitialized
         }
 
-        let (fieldIds, fields, hasAbstract) = try fieldData(for: itemType, schemaController: schemaController,
-                                                            dateParser: dateParser,
-                                                            urlDetector: urlDetector, doiDetector: doiDetector)
+        let (fieldIds, fields, hasAbstract) = try fieldData(for: itemType, schemaController: schemaController, dateParser: dateParser, urlDetector: urlDetector, doiDetector: doiDetector)
         let date = Date()
+        let attachments: [Attachment] = child.flatMap({ [$0] }) ?? []
 
         return ItemDetailState.Data(title: "",
                                     type: itemType,
@@ -63,7 +62,7 @@ struct ItemDetailDataCreator {
                                     fieldIds: fieldIds,
                                     abstract: (hasAbstract ? "" : nil),
                                     notes: [],
-                                    attachments: [],
+                                    attachments: attachments,
                                     tags: [],
                                     deletedAttachments: [],
                                     deletedNotes: [],
@@ -80,8 +79,8 @@ struct ItemDetailDataCreator {
     /// - parameter urlDetector: URL detector.
     /// - parameter doiDetector: DOI detector.
     /// - returns: Data for item detail state.
-    private static func itemData(item: RItem, schemaController: SchemaController, dateParser: DateParser, fileStorage: FileStorage,
-                                 urlDetector: UrlDetector, doiDetector: (String) -> Bool) throws -> (data: ItemDetailState.Data, attachmentErrors: [String: Error]) {
+    private static func itemData(item: RItem, schemaController: SchemaController, dateParser: DateParser, fileStorage: FileStorage, urlDetector: UrlDetector, doiDetector: (String) -> Bool)
+                                                                                                                            throws -> (data: ItemDetailState.Data, attachmentErrors: [String: Error]) {
         guard let localizedType = schemaController.localized(itemType: item.rawType) else {
             throw ItemDetailError.typeNotSupported
         }
@@ -162,7 +161,7 @@ struct ItemDetailDataCreator {
                                          fieldIds: fieldIds,
                                          abstract: abstract,
                                          notes: Array(notes),
-                                          attachments: attachments,
+                                         attachments: attachments,
                                          tags: Array(tags),
                                          deletedAttachments: [],
                                          deletedNotes: [],

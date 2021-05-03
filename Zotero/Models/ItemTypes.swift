@@ -16,6 +16,7 @@ struct ItemTypes {
     static let interview = "interview"
     static let webpage = "webpage"
     static let annotation = "annotation"
+    static let document = "document"
 }
 
 extension ItemTypes {

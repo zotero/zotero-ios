@@ -99,12 +99,20 @@ struct CreateItemDbRequest: DbResponseRequest {
         // Create attachments
 
         for attachment in self.data.attachments {
-            let rAttachment = try CreateAttachmentDbRequest(attachment: attachment,
-                                                            localizedType: (self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""),
-                                                            collections: []).process(in: database)
-            rAttachment.libraryId = self.libraryId
-            rAttachment.parent = item
-            rAttachment.changedFields.insert(.parent)
+            // Existing standalone attachment can be assigend as a child for new item, check whether attachment exists and update/create accordingly.
+            if let rAttachment = database.objects(RItem.self).filter(.key(attachment.key, in: self.libraryId)).first {
+                // In this case the attachment doesn't change anyhow, just assign this new item as a parent.
+                rAttachment.parent = item
+                rAttachment.changedFields.insert(.parent)
+                rAttachment.changeType = .user
+            } else {
+                let rAttachment = try CreateAttachmentDbRequest(attachment: attachment,
+                                                                localizedType: (self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""),
+                                                                collections: []).process(in: database)
+                rAttachment.libraryId = self.libraryId
+                rAttachment.parent = item
+                rAttachment.changedFields.insert(.parent)
+            }
         }
 
         // Create tags

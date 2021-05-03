@@ -154,8 +154,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             var token: NotificationToken?
 
             switch viewModel.state.type {
-            case .creation(_, let itemType):
-                type = .new(itemType: itemType)
+            case .creation(let itemType, let child, _):
+                type = .new(itemType: itemType, child: child)
             case .preview(let key):
                 let item = try self.dbStorage.createCoordinator().perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: key))
                 token = item.observe({ [weak viewModel] change in
@@ -708,7 +708,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                         try self.updateItem(key: key, libraryId: state.library.identifier, data: newState.data, snapshot: snapshot)
                     }
 
-                case .creation(let collectionKey, _), .duplication(_, let collectionKey):
+                case .creation(_, _, let collectionKey), .duplication(_, let collectionKey):
                     let item = try self.createItem(with: state.library.identifier, collectionKey: collectionKey, data: newState.data)
                     newType = .preview(key: item.key)
                 }

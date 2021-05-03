@@ -361,6 +361,8 @@ internal enum L10n {
     internal enum Action {
       /// Add to Collection
       internal static let addToCollection = L10n.tr("Localizable", "items.action.add_to_collection")
+      /// Create Parent Item
+      internal static let createParent = L10n.tr("Localizable", "items.action.create_parent")
       /// Duplicate
       internal static let duplicate = L10n.tr("Localizable", "items.action.duplicate")
       /// Remove from Collection

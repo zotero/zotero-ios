@@ -224,6 +224,10 @@ final class ItemsViewController: UIViewController {
                 self?.viewModel.process(action: .assignItemsToCollections(items: selectedKeys, collections: collections))
             })
 
+        case .createParent:
+            guard let key = selectedKeys.first, let attachment = self.viewModel.state.attachments[key] else { return }
+            self.coordinatorDelegate?.showItemDetail(for: .creation(type: ItemTypes.document, child: attachment, collectionKey: nil), library: self.viewModel.state.library)
+
         case .delete:
             let question = self.viewModel.state.selectedItems.count == 1 ? L10n.Items.deleteQuestion : L10n.Items.deleteMultipleQuestion
             self.ask(question: question, title: L10n.delete, isDestructive: true, confirm: { [weak self] in
@@ -529,7 +533,7 @@ final class ItemsViewController: UIViewController {
         let items = actions.map({ action -> UIBarButtonItem in
             let item = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
             switch action.type {
-            case .addToCollection, .trash, .delete, .removeFromCollection, .restore:
+            case .addToCollection, .trash, .delete, .removeFromCollection, .restore, .createParent:
                 item.tag = ItemsViewController.barButtonItemEmptyTag
             case .duplicate:
                 item.tag = ItemsViewController.barButtonItemSingleTag

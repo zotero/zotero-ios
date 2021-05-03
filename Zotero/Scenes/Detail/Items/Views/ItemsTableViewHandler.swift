@@ -58,6 +58,9 @@ final class ItemsTableViewHandler: NSObject {
             return [ItemAction(type: .restore), ItemAction(type: .delete)]
         }
         var actions = [ItemAction(type: .addToCollection), ItemAction(type: .duplicate), ItemAction(type: .trash)]
+        if item.rawType == ItemTypes.attachment && item.parent == nil {
+            actions.insert(ItemAction(type: .createParent), at: 0)
+        }
         // Allow removing from collection only if item is in current collection. This can happen when "Show items from subcollection" is enabled.
         if let key = state.type.collectionKey, item.collections.filter(.key(key)).first != nil {
             actions.insert(ItemAction(type: .removeFromCollection), at: 1)
@@ -100,7 +103,7 @@ final class ItemsTableViewHandler: NSObject {
                 contextualAction.backgroundColor = .systemRed
             case .duplicate, .restore:
                 contextualAction.backgroundColor = .systemBlue
-            case .addToCollection:
+            case .addToCollection, .createParent:
                 contextualAction.backgroundColor = .systemOrange
             case .removeFromCollection:
                 contextualAction.backgroundColor = .systemPurple
