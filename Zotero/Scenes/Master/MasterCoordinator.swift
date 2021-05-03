@@ -12,7 +12,7 @@ import SwiftUI
 
 import RxSwift
 
-protocol MasterLibrariesCoordinatorDelegate: class {
+protocol MasterLibrariesCoordinatorDelegate: AnyObject {
     func showCollections(for libraryId: LibraryIdentifier)
     func showSettings()
     func show(error: LibrariesError)
@@ -26,7 +26,7 @@ protocol MasterCollectionsCoordinatorDelegate: MainCoordinatorDelegate {
     func showEditView(for data: CollectionStateEditingData, library: Library)
 }
 
-protocol MasterSettingsCoordinatorDelegate: class {
+protocol MasterSettingsCoordinatorDelegate: AnyObject {
     func showPrivacyPolicy()
     func showSupport()
     func showAboutBeta()

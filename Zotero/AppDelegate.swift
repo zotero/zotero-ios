@@ -16,7 +16,7 @@ import PSPDFKit
 import PSPDFKitUI
 #endif
 
-protocol SceneActivityCounter: class {
+protocol SceneActivityCounter: AnyObject {
     func sceneWillEnterForeground()
     func sceneDidEnterBackground()
 }

@@ -12,14 +12,14 @@ import RxSwift
 
 #if PDFENABLED
 
-protocol AnnotationPopoverAnnotationCoordinatorDelegate: class {
+protocol AnnotationPopoverAnnotationCoordinatorDelegate: AnyObject {
     func showEdit(annotation: Annotation, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func dismiss()
     func didFinish()
 }
 
-protocol AnnotationEditCoordinatorDelegate: class {
+protocol AnnotationEditCoordinatorDelegate: AnyObject {
     func dismiss()
     func back()
     func showPageLabelEditor(label: String, updateSubsequentPages: Bool, saveAction: @escaping AnnotationPageLabelSaveAction)

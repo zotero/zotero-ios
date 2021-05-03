@@ -15,7 +15,7 @@ import PSPDFKit
 import PSPDFKitUI
 import RxSwift
 
-protocol SidebarParent: class {
+protocol SidebarParent: AnyObject {
     var isSidebarVisible: Bool { get }
 }
 

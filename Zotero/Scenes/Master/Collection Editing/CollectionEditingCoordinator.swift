@@ -9,7 +9,7 @@
 import UIKit
 import SwiftUI
 
-protocol CollectionEditingCoordinatorDelegate: class {
+protocol CollectionEditingCoordinatorDelegate: AnyObject {
     func showCollectionPicker(viewModel: ViewModel<CollectionEditActionHandler>)
     func showDeletedAlert(completion: @escaping (Bool) -> Void)
     func dismiss()

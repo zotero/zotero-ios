@@ -11,7 +11,7 @@ import Foundation
 import CocoaLumberjackSwift
 import RxSwift
 
-protocol SchemaDataSource: class {
+protocol SchemaDataSource: AnyObject {
     var itemTypes: [String] { get }
 
     func fields(for type: String) -> [FieldSchema]?

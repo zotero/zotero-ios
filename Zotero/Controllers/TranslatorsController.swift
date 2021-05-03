@@ -15,7 +15,7 @@ import ZIPFoundation
 
 typealias RawTranslator = [String: Any]
 
-protocol TranslatorsControllerCoordinatorDelegate: class {
+protocol TranslatorsControllerCoordinatorDelegate: AnyObject {
     func showBundleLoadTranslatorsError(result: @escaping (Bool) -> Void)
     func showResetToBundleError()
 }

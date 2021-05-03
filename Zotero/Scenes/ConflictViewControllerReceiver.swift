@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol ConflictViewControllerReceiver: class {
+protocol ConflictViewControllerReceiver: AnyObject {
     func shows(object: SyncObject, libraryId: LibraryIdentifier) -> String?
     func canDeleteObject(completion: @escaping (Bool) -> Void)
 }

@@ -21,7 +21,7 @@ protocol SyncAction {
     var result: Single<Result> { get }
 }
 
-protocol SynchronizationController: class {
+protocol SynchronizationController: AnyObject {
     var inProgress: Bool { get }
     var libraryIdInProgress: LibraryIdentifier? { get }
     var progressObservable: PublishSubject<SyncProgress> { get }

@@ -39,7 +39,7 @@ protocol DbCoordinator {
     func perform(requests: [DbRequest]) throws
 }
 
-protocol DbStorage: class {
+protocol DbStorage: AnyObject {
     func createCoordinator() throws -> DbCoordinator
     func clear()
 

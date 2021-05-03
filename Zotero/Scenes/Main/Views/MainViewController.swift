@@ -17,7 +17,7 @@ protocol MainCoordinatorDelegate: SplitControllerDelegate {
     func showItems(for collection: Collection, in library: Library, isInitial: Bool)
 }
 
-protocol SplitControllerDelegate: class {
+protocol SplitControllerDelegate: AnyObject {
     var isSplit: Bool { get }
 }
 

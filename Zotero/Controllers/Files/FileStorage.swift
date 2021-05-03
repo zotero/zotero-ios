@@ -13,7 +13,7 @@ struct DirectoryData {
     let mbSize: Double
 }
 
-protocol FileStorage: class {
+protocol FileStorage: AnyObject {
     var fileManager: FileManager { get }
     func read(_ file: File) throws -> Data
     func write(_ data: Data, to file: File, options: Data.WritingOptions) throws

@@ -12,7 +12,7 @@ import CocoaLumberjackSwift
 import RxAlamofire
 import RxSwift
 
-protocol DebugLoggingCoordinator: class {
+protocol DebugLoggingCoordinator: AnyObject {
     func createDebugAlertActions() -> ((Result<String, DebugLogging.Error>, [URL]?, (() -> Void)?, (() -> Void)?) -> Void, (Double) -> Void)
     func show(error: DebugLogging.Error, logs: [URL]?, retry: (() -> Void)?, completed: (() -> Void)?)
     func setDebugWindow(visible: Bool)

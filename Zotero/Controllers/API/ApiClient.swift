@@ -75,7 +75,7 @@ protocol ApiDownloadRequest: ApiRequest {
 typealias RequestCompletion<Response> = (Swift.Result<Response, Error>) -> Void
 typealias ResponseHeaders = [AnyHashable: Any]
 
-protocol ApiClient: class {
+protocol ApiClient: AnyObject {
     func set(authToken: String?)
     func send<Request: ApiResponseRequest>(request: Request) -> Single<(Request.Response, ResponseHeaders)>
     func send<Request: ApiResponseRequest>(request: Request, queue: DispatchQueue) -> Single<(Request.Response, ResponseHeaders)>
@@ -87,6 +87,6 @@ protocol ApiClient: class {
     func operation(from request: ApiRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data, ResponseHeaders), Error>) -> Void) -> ApiOperation
 }
 
-protocol ApiRequestCreator: class {
+protocol ApiRequestCreator: AnyObject {
     func dataRequest(for request: ApiRequest) -> DataRequest
 }

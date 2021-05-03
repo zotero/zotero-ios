@@ -11,7 +11,7 @@ import Foundation
 import RxCocoa
 import RxSwift
 
-protocol SynchronizationScheduler: class {
+protocol SynchronizationScheduler: AnyObject {
     var syncController: SynchronizationController { get }
 
     func request(syncType: SyncController.SyncType)
@@ -19,7 +19,7 @@ protocol SynchronizationScheduler: class {
     func cancelSync()
 }
 
-protocol WebSocketScheduler: class {
+protocol WebSocketScheduler: AnyObject {
     func webSocketUpdate(libraryId: LibraryIdentifier)
 }
 

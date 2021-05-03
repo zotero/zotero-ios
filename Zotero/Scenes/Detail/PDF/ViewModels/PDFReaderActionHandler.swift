@@ -15,7 +15,7 @@ import PSPDFKit
 import RealmSwift
 import RxSwift
 
-protocol AnnotationBoundingBoxConverter: class {
+protocol AnnotationBoundingBoxConverter: AnyObject {
     func convertToDb(rect: CGRect, page: PageIndex) -> CGRect?
     func convertFromDb(rect: CGRect, page: PageIndex) -> CGRect?
     func sortIndexMinY(rect: CGRect, page: PageIndex) -> CGFloat?

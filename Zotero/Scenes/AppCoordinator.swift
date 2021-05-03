@@ -11,19 +11,19 @@ import SafariServices
 import SwiftUI
 import UIKit
 
-protocol AppDelegateCoordinatorDelegate: class {
+protocol AppDelegateCoordinatorDelegate: AnyObject {
     func showMainScreen(isLoggedIn: Bool)
     func show(error: Error)
     func didRotate(to size: CGSize)
 }
 
-protocol AppOnboardingCoordinatorDelegate: class {
+protocol AppOnboardingCoordinatorDelegate: AnyObject {
     func showAboutBeta()
     func presentLogin()
     func presentRegister()
 }
 
-protocol AppLoginCoordinatorDelegate: class {
+protocol AppLoginCoordinatorDelegate: AnyObject {
     func dismiss()
     func showForgotPassword()
 }

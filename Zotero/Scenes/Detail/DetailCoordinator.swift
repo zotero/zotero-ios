@@ -23,7 +23,7 @@ import PSPDFKitUI
 
 #endif
 
-protocol DetailItemsCoordinatorDelegate: class {
+protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showCollectionPicker(in library: Library, completed: @escaping (Set<String>) -> Void)
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library)
     func showNote(with text: String, readOnly: Bool, save: @escaping (String) -> Void)
@@ -35,7 +35,7 @@ protocol DetailItemsCoordinatorDelegate: class {
     func showFilters(button: UIBarButtonItem, viewModel: ViewModel<ItemsActionHandler>)
 }
 
-protocol DetailItemDetailCoordinatorDelegate: class {
+protocol DetailItemDetailCoordinatorDelegate: AnyObject {
     func showNote(with text: String, readOnly: Bool, save: @escaping (String) -> Void)
     func showAttachmentPicker(save: @escaping ([URL]) -> Void)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
@@ -52,13 +52,13 @@ protocol DetailItemDetailCoordinatorDelegate: class {
     func showTrashAttachmentQuestion(trashAction: @escaping () -> Void)
 }
 
-protocol DetailCreatorEditCoordinatorDelegate: class {
+protocol DetailCreatorEditCoordinatorDelegate: AnyObject {
     func showCreatorTypePicker(itemType: String, selected: String, picked: @escaping (String) -> Void)
 }
 
 #if PDFENABLED
 
-protocol DetailPdfCoordinatorDelegate: class {
+protocol DetailPdfCoordinatorDelegate: AnyObject {
     func showColorPicker(selected: String?, sender: UIButton, save: @escaping (String) -> Void)
     func showSearch(pdfController: PDFViewController, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void)
     func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate)
@@ -71,14 +71,14 @@ protocol DetailPdfCoordinatorDelegate: class {
     func showSettings(state: PDFSettingsState, sender: UIBarButtonItem, completion: @escaping (PDFReaderAction) -> Void)
 }
 
-protocol DetailAnnotationsCoordinatorDelegate: class {
+protocol DetailAnnotationsCoordinatorDelegate: AnyObject {
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func showCellOptions(for annotation: Annotation, sender: UIButton, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
 }
 
 #endif
 
-protocol DetailItemActionSheetCoordinatorDelegate: class {
+protocol DetailItemActionSheetCoordinatorDelegate: AnyObject {
     func showSortTypePicker(sortBy: Binding<ItemsSortType.Field>)
     func showNoteCreation(save: @escaping (String) -> Void)
     func showAttachmentPicker(save: @escaping ([URL]) -> Void)

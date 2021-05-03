@@ -12,7 +12,7 @@ import CocoaLumberjackSwift
 import RxSwift
 import RealmSwift
 
-protocol ObjectUserChangeObserver: class {
+protocol ObjectUserChangeObserver: AnyObject {
     var observable: PublishSubject<[LibraryIdentifier]> { get }
 }
 

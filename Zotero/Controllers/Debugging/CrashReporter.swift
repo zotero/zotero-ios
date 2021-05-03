@@ -12,7 +12,7 @@ import CocoaLumberjackSwift
 import RxSwift
 import RxSwiftExt
 
-protocol CrashReporterCoordinator: class {
+protocol CrashReporterCoordinator: AnyObject {
     func report(id: String)
 }
 

@@ -20,7 +20,7 @@ enum ObjectSyncState: Int {
     case synced, dirty, outdated
 }
 
-protocol Syncable: class {
+protocol Syncable: AnyObject {
     var key: String { get set }
     var customLibraryKey: RealmOptional<Int> { get }
     var groupKey: RealmOptional<Int> { get }

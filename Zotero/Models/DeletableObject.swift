@@ -12,7 +12,7 @@ import RealmSwift
 
 typealias DeletableObject = Deletable&Object
 
-protocol Deletable: class {
+protocol Deletable: AnyObject {
     var deleted: Bool { get set }
 
     func willRemove(in database: Realm)

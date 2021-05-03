@@ -10,7 +10,7 @@ import Foundation
 
 import KeychainSwift
 
-protocol SecureStorage: class {
+protocol SecureStorage: AnyObject {
     var apiToken: String? { get set }
 }
 

@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-protocol ItemDetailTableViewHandlerDelegate: class {
+protocol ItemDetailTableViewHandlerDelegate: AnyObject {
     func isDownloadingFromNavigationBar(for index: Int) -> Bool
 }
 

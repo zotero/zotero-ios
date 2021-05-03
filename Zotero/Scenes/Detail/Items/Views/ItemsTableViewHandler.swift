@@ -13,7 +13,7 @@ import RealmSwift
 import RxCocoa
 import RxSwift
 
-protocol ItemsTableViewHandlerDelegate: class {
+protocol ItemsTableViewHandlerDelegate: AnyObject {
     var isInViewHierarchy: Bool { get }
 
     func process(action: ItemAction.Kind, for item: RItem)

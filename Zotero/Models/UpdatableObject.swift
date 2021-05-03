@@ -17,7 +17,7 @@ enum UpdatableChangeType: Int {
     case user = 1
 }
 
-protocol Updatable: class {
+protocol Updatable: AnyObject {
     var rawChangedFields: Int16 { get set }
     var rawChangeType: Int { get set }
     var updateParameters: [String: Any]? { get }
