@@ -66,6 +66,7 @@ final class ItemsViewController: UIViewController {
                                                       dragDropController: self.controllers.dragDropController,
                                                       fileDownloader: self.controllers.userControllers?.fileDownloader)
         self.toolbarController = ItemsToolbarController(viewController: self, initialState: self.viewModel.state, delegate: self)
+        self.navigationController?.toolbar.barTintColor = .white
         self.setupRightBarButtonItems(for: self.viewModel.state)
         self.setupTitle()
         // Use `navigationController.view.frame` if available, because the navigation controller is already initialized and layed out, so the view
