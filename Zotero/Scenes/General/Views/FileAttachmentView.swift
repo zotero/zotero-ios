@@ -8,22 +8,14 @@
 
 import UIKit
 
+import CocoaLumberjackSwift
 import RxSwift
 
-fileprivate struct LayerData {
-    enum Border {
-        case borderLine
-        case progressLine(CGFloat)
-    }
-
-    enum Content {
-        case stopSign
-        case image(String)
-    }
-
-    let border: Border?
-    let content: Content
-    let badgeName: String?
+fileprivate enum LayerData {
+    case progress(CGFloat)
+    case image(asset: ImageAsset, opacity: Float)
+    case sfSymbol(name: String, color: UIColor)
+    case imageWithBadge(main: ImageAsset, badge: ImageAsset)
 }
 
 final class FileAttachmentView: UIView {
@@ -52,6 +44,7 @@ final class FileAttachmentView: UIView {
     private static let badgeBorderWidth: CGFloat = 1.5
     private static let badgeSize: CGFloat = 11
     private static let progressCircleWidth: CGFloat = 1.5
+    private static let sfSymbolSize: CGFloat = 16
     private let disposeBag: DisposeBag
 
     private var circleLayer: CAShapeLayer!
@@ -61,8 +54,7 @@ final class FileAttachmentView: UIView {
     private var badgeLayer: CALayer!
     private var badgeBorder: CALayer!
     private weak var button: UIButton!
-    private var mainImageName: String?
-    private var badgeImageName: String?
+    private var layerData: LayerData?
     private var parentBackgroundColor: UIColor?
 
     var contentInsets: UIEdgeInsets = UIEdgeInsets() {
@@ -135,11 +127,8 @@ final class FileAttachmentView: UIView {
         self.circleLayer.strokeColor = UIColor.systemGray5.cgColor
         self.badgeBorder.borderColor = self.parentBackgroundColor?.cgColor
 
-        if let name = self.badgeImageName {
-            self.badgeLayer.contents = UIImage(named: name)?.cgImage
-        }
-        if let name = self.mainImageName {
-            self.imageLayer.contents = UIImage(named: name)?.cgImage
+        if let data = self.layerData {
+            self.set(layerData: data)
         }
     }
 
@@ -163,131 +152,168 @@ final class FileAttachmentView: UIView {
 
     func set(state: State, style: Style) {
         guard let data = self.layerData(state: state, style: style) else { return }
+        self.set(layerData: data)
+    }
 
-        if let border = data.border {
-            switch border {
-            case .borderLine:
-                self.progressLayer.isHidden = true
-                self.circleLayer.isHidden = true
-            case .progressLine(let progress):
-                self.progressLayer.strokeEnd = progress
-                self.progressLayer.isHidden = false
-                self.circleLayer.isHidden = false
-            }
-        } else {
-            self.progressLayer.isHidden = true
-            self.circleLayer.isHidden = true
+    private func set(layerData: LayerData) {
+        self.layerData = layerData
+
+        switch layerData {
+        case .progress(let progress):
+            self.set(progress: progress)
+            self.setMainImage(data: nil)
+            self.setBadge(asset: nil)
+
+        case .image(let asset, let opacity):
+            self.set(progress: nil)
+            self.setMainImage(data: (asset, opacity))
+            self.imageLayer.opacity = opacity
+            self.setBadge(asset: nil)
+
+        case .sfSymbol(let name, let color):
+            self.set(progress: nil)
+            self.setMainSymbol(name: name, color: color)
+            self.setBadge(asset: nil)
+
+        case .imageWithBadge(let mainAsset, let badgeAsset):
+            self.set(progress: nil)
+            self.setMainImage(data: (mainAsset, 1))
+            self.setBadge(asset: badgeAsset)
+        }
+    }
+
+    private func set(progress: CGFloat?) {
+        self.stopLayer.isHidden = progress == nil
+        self.progressLayer.isHidden = progress == nil
+        self.circleLayer.isHidden = progress == nil
+        if let progress = progress {
+            self.progressLayer.strokeEnd = progress
+        }
+    }
+
+    private func setMainImage(data: (asset: ImageAsset, opacity: Float)?) {
+        let image = data?.asset.image
+        self.imageLayer.isHidden = data == nil
+        self.imageLayer.contents = image?.cgImage
+        self.imageLayer.mask = nil
+        self.imageLayer.backgroundColor = UIColor.clear.cgColor
+        if let opacity = data?.opacity {
+            self.imageLayer.opacity = opacity
         }
 
-        switch data.content {
-        case .stopSign:
-            self.stopLayer.isHidden = false
-            self.imageLayer.isHidden = true
-            self.mainImageName = nil
-
-        case .image(let name):
-            let image = UIImage(named: name)
-            let size = image?.size ?? CGSize()
-
-            self.stopLayer.isHidden = true
-            self.imageLayer.isHidden = false
-            self.imageLayer.contents = image?.cgImage
-            self.mainImageName = name
-
-            if size.width != self.imageLayer.frame.width || size.height != self.imageLayer.frame.height {
-                self.imageLayer.frame = CGRect(x: 0, y: 0, width: size.width, height: size.height)
-                self.setNeedsLayout()
-            }
+        if let image = image, self.imageLayer.frame.width != image.size.width || self.imageLayer.frame.height != image.size.height {
+            self.imageLayer.frame = CGRect(x: 0, y: 0, width: image.size.width, height: image.size.height)
+            self.setNeedsLayout()
         }
+    }
 
-        self.badgeLayer.isHidden = data.badgeName == nil
-        self.badgeBorder.isHidden = data.badgeName == nil
-        self.badgeImageName = data.badgeName
-        if let name = data.badgeName {
-            self.badgeLayer.contents = UIImage(named: name)?.cgImage
+    private func setMainSymbol(name: String, color: UIColor) {
+        let mask = CALayer()
+        mask.frame = CGRect(x: 0, y: 0, width: FileAttachmentView.sfSymbolSize, height: FileAttachmentView.sfSymbolSize)
+        mask.contents = UIImage(systemName: name)?.cgImage
+        self.imageLayer.isHidden = false
+        self.imageLayer.mask = mask
+        self.imageLayer.contents = nil
+        self.imageLayer.backgroundColor = color.cgColor
+        self.imageLayer.opacity = 1
+
+        if self.imageLayer.frame.width != mask.frame.width || self.imageLayer.frame.height != mask.frame.height {
+            self.imageLayer.frame = mask.frame
+            self.setNeedsLayout()
         }
+    }
+
+    private func setBadge(asset: ImageAsset?) {
+        self.badgeLayer.isHidden = asset == nil
+        self.badgeBorder.isHidden = asset == nil
+        self.badgeLayer.contents = asset?.image.cgImage
     }
 
     private func layerData(state: State, style: Style) -> LayerData? {
-        let type: Attachment.Kind
-        let error: Error?
-
         switch state {
         case .progress(let progress):
-            return LayerData(border: .progressLine(progress), content: .stopSign, badgeName: nil)
-        case .ready(let _type):
-            type = _type
-            error = nil
-        case .failed(let _type, let _error):
-            type = _type
-            error = _error
-        }
+            return .progress(progress)
 
-        switch style {
-        case .list:
-            let image = self.listImage(for: type, error: error)
-            return LayerData(border: .borderLine, content: .image(image), badgeName: nil)
-        case .detail:
-            let (image, badge) = self.detailImageData(for: type, error: error)
-            return LayerData(border: nil, content: .image(image), badgeName: badge)
-        }
-    }
-
-    private func listImage(for type: Attachment.Kind, error: Error?) -> String {
-        switch type {
-        case .file(_, let contentType, let location, _):
-            let documentType = contentType == "application/pdf" ? "pdf" : "document"
-            var state = self.attachmentState(from: location, error: error)
-            if !state.isEmpty {
-                state = "-" + state
+        case .ready(let type):
+            switch style {
+            case .list:
+                switch type {
+                case .file(_, _, let location, _):
+                    switch location {
+                    case .remoteMissing: return .sfSymbol(name: "questionmark.circle.fill", color: Asset.Colors.attachmentMissing.color)
+                    case .local: return .image(asset: self.mainAsset(for: type, style: style), opacity: 1)
+                    case .remote: return .image(asset: self.mainAsset(for: type, style: style), opacity: 0.5)
+                    }
+                case .url: return .image(asset: self.mainAsset(for: type, style: style), opacity: 1)
+                }
+            case .detail:
+                switch type {
+                case .file(_, _, let location, _):
+                    switch location {
+                    case .remoteMissing: return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: Asset.Images.Attachments.badgeMissing)
+                    case .local: return .image(asset: self.mainAsset(for: type, style: style), opacity: 1)
+                    case .remote: return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: Asset.Images.Attachments.badgeDownload)
+                    }
+                case .url: return .image(asset: self.mainAsset(for: type, style: style), opacity: 1)
+                }
             }
-            return "attachment-list-" + documentType + state
-
-        case .url:
-            // These two are not shown in item list, but just in case return missing document
-            return "attachment-list-document-missing"
+        case .failed(let type, _):
+            switch style {
+            case .list: return .sfSymbol(name: "exclamationmark.circle.fill", color: Asset.Colors.attachmentError.color)
+            case .detail: return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: Asset.Images.Attachments.badgeFailed)
+            }
         }
     }
 
-    private func detailImageData(for type: Attachment.Kind, error: Error?) -> (image: String, badge: String?) {
-        switch type {
-        case .file(_, let contentType, let location, let linkType):
-            let documentType = contentType == "application/pdf" ? "pdf" : "document"
-            let badge = self.detailBadge(from: location, error: error)
-
+    private func mainAsset(for attachmentType: Attachment.Kind, style: Style) -> ImageAsset {
+        switch attachmentType {
+        case .url:
+            switch style {
+            case .detail: return Asset.Images.Attachments.detailLinkedUrl
+            case .list: return Asset.Images.Attachments.listLink
+            }
+        case .file(_, let contentType, _, let linkType):
             switch linkType {
-            case .importedUrl where contentType == "text/html":
-                return ("attachment-detail-webpage-snapshot", badge)
-            case .embeddedImage, .importedFile, .importedUrl:
-                return (("attachment-detail-" + documentType), badge)
+            case .embeddedImage:
+                switch style {
+                case .detail: return Asset.Images.Attachments.detailImage
+                case .list: return Asset.Images.Attachments.listImage
+                }
             case .linkedFile:
-                return (("attachment-detail-linked-" + documentType), badge)
+                switch style {
+                case .detail:
+                    switch contentType {
+                    case "application/pdf": return Asset.Images.Attachments.detailLinkedPdf
+                    default: return Asset.Images.Attachments.detailLinkedDocument
+                    }
+                case .list:
+                    return Asset.Images.Attachments.listLink
+                }
+            case .importedUrl where contentType == "text/html":
+                switch style {
+                case .list: return Asset.Images.Attachments.listWebPageSnapshot
+                case .detail: return Asset.Images.Attachments.detailWebpageSnapshot
+                }
+            case .importedFile, .importedUrl:
+                switch contentType {
+                case "image/png", "image/jpeg", "image/gif":
+                    switch style {
+                    case .detail: return Asset.Images.Attachments.detailImage
+                    case .list: return Asset.Images.Attachments.listImage
+                    }
+                case "application/pdf":
+                    switch style {
+                    case .detail: return Asset.Images.Attachments.detailPdf
+                    case .list: return Asset.Images.Attachments.listPdf
+                    }
+                default:
+                    switch style {
+                    case .detail: return Asset.Images.Attachments.detailDocument
+                    case .list: return Asset.Images.Attachments.listDocument
+                    }
+                }
             }
-        case .url:
-            return ("attachment-detail-linked-url", nil)
         }
-    }
-
-    private func attachmentState(from location: Attachment.FileLocation, error: Error?) -> String {
-        guard error == nil else {
-            return "download-failed"
-        }
-        switch location {
-        case .local:
-            return ""
-        case .remote:
-            return "download"
-        case .remoteMissing:
-            return "missing"
-        }
-    }
-
-    private func detailBadge(from location: Attachment.FileLocation, error: Error?) -> String? {
-        let state = self.attachmentState(from: location, error: error)
-        if state.isEmpty {
-            return nil
-        }
-        return "attachment-detail-" + state
     }
 
     // MARK: - Setup
@@ -401,6 +427,7 @@ final class FileAttachmentView: UIView {
         layer.strokeColor = Asset.Colors.zoteroBlue.color.cgColor
         layer.strokeStart = 0
         layer.strokeEnd = 0
+        layer.actions = ["strokeEnd": NSNull()]
         return layer
     }
 

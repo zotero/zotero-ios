@@ -130,14 +130,10 @@ final class ItemCell: UITableViewCell {
             self.fileView.set(state: state, style: .list)
             self.fileView.isHidden = false
             self.accessoryImageView.isHidden = true
-        case .doi:
+        case .doi, .url:
             self.fileView.isHidden = true
             self.accessoryImageView.isHidden = false
-            self.accessoryImageView.image = Asset.Images.ItemTypes.webPageSnapshot.image
-        case .url:
-            self.fileView.isHidden = true
-            self.accessoryImageView.isHidden = false
-            self.accessoryImageView.image = Asset.Images.ItemTypes.webPageSnapshot.image
+            self.accessoryImageView.image = Asset.Images.Attachments.listLink.image
         }
     }
 }
