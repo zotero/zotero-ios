@@ -499,7 +499,7 @@ final class ItemDetailTableViewHandler: NSObject {
     private func setupKeyboardObserving() {
         NotificationCenter.default
                           .keyboardWillShow
-                          .observeOn(MainScheduler.instance)
+                          .observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] notification in
                               if let data = notification.keyboardData {
                                   self?.setupTableView(with: data)
@@ -509,7 +509,7 @@ final class ItemDetailTableViewHandler: NSObject {
 
         NotificationCenter.default
                           .keyboardWillHide
-                          .observeOn(MainScheduler.instance)
+                          .observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] notification in
                               if let data = notification.keyboardData {
                                   self?.setupTableView(with: data)

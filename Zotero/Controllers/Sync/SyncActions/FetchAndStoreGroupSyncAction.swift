@@ -24,7 +24,7 @@ struct FetchAndStoreGroupSyncAction: SyncAction {
 
     var result: Single<()> {
         return self.apiClient.send(request: GroupRequest(identifier: self.identifier), queue: self.queue)
-                             .observeOn(self.scheduler)
+                             .observe(on: self.scheduler)
                              .flatMap({ (response: GroupResponse, headers) -> Single<()> in
                                  do {
                                      try self.dbStorage.createCoordinator().perform(request: StoreGroupDbRequest(response: response, userId: self.userId))

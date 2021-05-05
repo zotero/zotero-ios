@@ -464,7 +464,7 @@ extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
         let controller = DocumentPickerViewController(documentTypes: documentTypes, in: .import)
         controller.popoverPresentationController?.sourceView = self.navigationController.visibleViewController?.view
         controller.observable
-                  .observeOn(MainScheduler.instance)
+                  .observe(on: MainScheduler.instance)
                   .subscribe(onNext: { urls in
                       save(urls)
                   })

@@ -22,7 +22,7 @@ struct SyncGroupVersionsSyncAction: SyncAction {
 
     var result: Single<([Int], [(Int, String)])> {
         return self.apiClient.send(request: GroupVersionsRequest(userId: self.userId), queue: self.queue)
-                             .observeOn(self.scheduler)
+                             .observe(on: self.scheduler)
                              .flatMap { (response: [Int: Int], _) in
                                  do {
                                      let (toUpdate, toRemove) = try self.dbStorage.createCoordinator().perform(request: SyncGroupVersionsDbRequest(versions: response))

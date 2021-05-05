@@ -42,7 +42,7 @@ final class LibrariesViewController: UIViewController {
         self.viewModel.process(action: .loadData)
 
         self.viewModel.stateObservable
-                      .observeOn(MainScheduler.instance)
+                      .observe(on: MainScheduler.instance)
                       .subscribe(onNext: { [weak self] state in
                           self?.update(to: state)
                       })

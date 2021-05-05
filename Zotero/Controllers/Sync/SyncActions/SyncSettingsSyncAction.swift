@@ -25,7 +25,7 @@ struct SyncSettingsSyncAction: SyncAction {
 
     var result: Single<(Bool, Int)> {
         return self.apiClient.send(request: SettingsRequest(libraryId: self.libraryId, userId: self.userId, version: self.sinceVersion), queue: self.queue)
-                            .observeOn(self.scheduler)
+                            .observe(on: self.scheduler)
                             .flatMap({ data, headers -> Single<(SettingsResponse, ResponseHeaders)> in
                                 do {
                                     let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)

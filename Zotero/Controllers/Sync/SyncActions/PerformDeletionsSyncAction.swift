@@ -30,7 +30,7 @@ struct PerformDeletionsSyncAction: SyncAction {
                 let conflicts = try self.dbStorage.createCoordinator().perform(request: request)
                 subscriber(.success(conflicts))
             } catch let error {
-                subscriber(.error(error))
+                subscriber(.failure(error))
             }
 
             return Disposables.create()

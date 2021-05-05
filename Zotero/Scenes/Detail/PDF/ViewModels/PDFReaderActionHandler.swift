@@ -759,7 +759,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     /// - parameter viewModel: ViewModel.
     private func observePreviews(in viewModel: ViewModel<PDFReaderActionHandler>) {
         self.annotationPreviewController.observable
-                                        .observeOn(MainScheduler.instance)
+                                        .observe(on: MainScheduler.instance)
                                         .subscribe(onNext: { [weak viewModel] annotationKey, parentKey, image in
                                             guard let viewModel = viewModel, viewModel.state.key == parentKey else { return }
                                             self.update(viewModel: viewModel) { state in

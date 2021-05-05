@@ -24,7 +24,7 @@ struct DeleteGroupSyncAction: SyncAction {
                 try self.dbStorage.createCoordinator().perform(request: request)
                 subscriber(.success(()))
             } catch let error {
-                subscriber(.error(error))
+                subscriber(.failure(error))
             }
             return Disposables.create()
         }

@@ -21,7 +21,7 @@ final class SyncToolbarController {
         self.viewController = parent
         self.disposeBag = DisposeBag()
 
-        progressObservable.observeOn(MainScheduler.instance)
+        progressObservable.observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] progress in
                               guard let `self` = self else { return }
                               self.update(progress: progress, in: self.viewController)
@@ -141,7 +141,7 @@ final class SyncToolbarController {
 
         button.rx
               .tap
-              .observeOn(MainScheduler.instance)
+              .observe(on: MainScheduler.instance)
               .subscribe(onNext: { [weak self] _ in
                   guard let errors = self?.pendingErrors else { return }
                   self?.showErrorAlert(with: errors)

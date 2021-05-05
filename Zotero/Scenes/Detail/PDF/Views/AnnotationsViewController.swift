@@ -57,7 +57,7 @@ final class AnnotationsViewController: UIViewController {
         self.setupKeyboardObserving()
 
         self.viewModel.stateObservable
-                      .observeOn(MainScheduler.instance)
+                      .observe(on: MainScheduler.instance)
                       .subscribe(onNext: { [weak self] state in
                           self?.update(state: state)
                       })
@@ -289,7 +289,7 @@ final class AnnotationsViewController: UIViewController {
         frame.size.height = 65
 
         let searchBar = SearchBar(frame: frame, insets: insets, cornerRadius: 10)
-        searchBar.text.observeOn(MainScheduler.instance)
+        searchBar.text.observe(on: MainScheduler.instance)
                                 .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
                                 .subscribe(onNext: { [weak self] text in
                                     self?.viewModel.process(action: .searchAnnotations(text))
@@ -307,7 +307,7 @@ final class AnnotationsViewController: UIViewController {
     private func setupKeyboardObserving() {
         NotificationCenter.default
                           .keyboardWillShow
-                          .observeOn(MainScheduler.instance)
+                          .observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] notification in
                               if let data = notification.keyboardData {
                                   self?.setupTableView(with: data)
@@ -317,7 +317,7 @@ final class AnnotationsViewController: UIViewController {
 
         NotificationCenter.default
                           .keyboardWillHide
-                          .observeOn(MainScheduler.instance)
+                          .observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] notification in
                               if let data = notification.keyboardData {
                                   self?.setupTableView(with: data)

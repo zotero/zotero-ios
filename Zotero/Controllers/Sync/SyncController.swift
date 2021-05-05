@@ -631,7 +631,7 @@ final class SyncController: SynchronizationController {
 
     private func processKeyCheckAction() {
         let result = LoadPermissionsSyncAction(apiClient: self.apiClient, queue: self.workQueue, scheduler: self.workScheduler).result
-        result.subscribeOn(self.workScheduler)
+        result.subscribe(on: self.workScheduler)
               .flatMap { response -> Single<(AccessPermissions, String)> in
                   let permissions = AccessPermissions(user: response.user,
                                                       groupDefault: response.defaultGroup,
@@ -648,7 +648,7 @@ final class SyncController: SynchronizationController {
                       self?.accessPermissions = permissions
                       self?.processNextAction()
                   }
-              }, onError: { [weak self] error in
+              }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.abort(error: (self?.fatalError(from: error) ?? .permissionLoadingFailed))
                   }
@@ -658,10 +658,10 @@ final class SyncController: SynchronizationController {
 
     private func processCreateLibraryActions(for libraries: LibrarySyncType, options: CreateLibraryActionsOptions) {
         let result = LoadLibraryDataSyncAction(type: libraries, fetchUpdates: (options != .forceDownloads), loadVersions: (self.type != .full), dbStorage: self.dbStorage).result
-        result.subscribeOn(self.workScheduler)
+        result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] data in
                   self?.finishCreateLibraryActions(with: .success((data, options)))
-              }, onError: { [weak self] error in
+              }, onFailure: { [weak self] error in
                   self?.finishCreateLibraryActions(with: .failure(error))
               })
               .disposed(by: self.disposeBag)
@@ -788,13 +788,13 @@ final class SyncController: SynchronizationController {
 
     private func processCreateUploadActions(for libraryId: LibraryIdentifier) {
         let result = LoadUploadDataSyncAction(libraryId: libraryId, backgroundUploader: self.backgroundUploader, dbStorage: self.dbStorage).result
-        result.subscribeOn(self.workScheduler)
+        result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] uploads in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.progressHandler.reportUpload(count: uploads.count)
                       self?.enqueue(actions: uploads.map({ .uploadAttachment($0) }), at: 0)
                   }
-              }, onError: { [weak self] error in
+              }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishCompletableAction(error: error)
                   }
@@ -804,14 +804,14 @@ final class SyncController: SynchronizationController {
 
     private func processSyncGroupVersions() {
         let result = SyncGroupVersionsSyncAction(userId: self.userId, apiClient: self.apiClient, dbStorage: self.dbStorage, queue: self.workQueue, scheduler: self.workScheduler).result
-        result.subscribeOn(self.workScheduler)
+        result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] toUpdate, toRemove in
                   guard let `self` = self else { return }
                 let actions = self.createGroupActions(updateIds: toUpdate, deleteGroups: toRemove, syncType: self.type)
                   self.accessQueue.async(flags: .barrier) { [weak self] in
                     self?.finishSyncGroupVersions(actions: actions, updateCount: toUpdate.count)
                   }
-              }, onError: { [weak self] error in
+              }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.abort(error: self?.fatalError(from: error) ?? .groupSyncFailed)
                   }
@@ -855,7 +855,7 @@ final class SyncController: SynchronizationController {
         let result = SyncVersionsSyncAction(object: object, sinceVersion: version, currentVersion: lastVersion, syncType: self.type, libraryId: libraryId, userId: self.userId,
                                             syncDelayIntervals: self.syncDelayIntervals, checkRemote: checkRemote, apiClient: self.apiClient, dbStorage: self.dbStorage, queue: self.workQueue,
                                             scheduler: self.workScheduler).result
-        result.subscribeOn(self.workScheduler)
+        result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] newVersion, toUpdate in
                   guard let `self` = self else { return }
                   let versionDidChange = version != lastVersion
@@ -863,7 +863,7 @@ final class SyncController: SynchronizationController {
                   self.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishSyncVersions(actions: actions, updateCount: toUpdate.count, object: object, libraryId: libraryId)
                   }
-              }, onError: { [weak self] error in
+              }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishFailedSyncVersions(libraryId: libraryId, object: object, error: error, version: version)
                   }
@@ -1007,10 +1007,10 @@ final class SyncController: SynchronizationController {
         let result = FetchAndStoreGroupSyncAction(identifier: groupId, userId: self.userId,
                                                   apiClient: self.apiClient, dbStorage: self.dbStorage,
                                                   queue: self.workQueue, scheduler: self.workScheduler).result
-        result.subscribeOn(self.workScheduler)
+        result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] result in
                   self?.finishGroupSyncAction(for: groupId, error: nil)
-              }, onError: { [weak self] error in
+              }, onFailure: { [weak self] error in
                   self?.finishGroupSyncAction(for: groupId, error: error)
               })
               .disposed(by: self.disposeBag)
@@ -1043,12 +1043,12 @@ final class SyncController: SynchronizationController {
 
     private func processStoreVersion(libraryId: LibraryIdentifier, type: UpdateVersionType, version: Int) {
         let result = StoreVersionSyncAction(version: version, type: type, libraryId: libraryId, dbStorage: self.dbStorage).result
-        result.subscribeOn(self.workScheduler)
+        result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishCompletableAction(error: nil)
                   }
-              }, onError: { [weak self] error in
+              }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishCompletableAction(error: error)
                   }
@@ -1058,12 +1058,12 @@ final class SyncController: SynchronizationController {
 
     private func markGroupForResync(identifier: Int) {
         let result = MarkGroupForResyncSyncAction(identifier: identifier, dbStorage: self.dbStorage).result
-        result.subscribeOn(self.workScheduler)
+        result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishCompletableAction(error: nil)
                   }
-              }, onError: { [weak self] error in
+              }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishCompletableAction(error: error)
                   }
@@ -1073,12 +1073,12 @@ final class SyncController: SynchronizationController {
 
     private func markForResync(keys: [Any], libraryId: LibraryIdentifier, object: SyncObject) {
         let result = MarkForResyncSyncAction(keys: keys, object: object, libraryId: libraryId, dbStorage: self.dbStorage).result
-        result.subscribeOn(self.workScheduler)
+        result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishCompletableAction(error: nil)
                   }
-              }, onError: { [weak self] error in
+              }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishCompletableAction(error: error)
                   }
@@ -1089,12 +1089,12 @@ final class SyncController: SynchronizationController {
     private func loadRemoteDeletions(libraryId: LibraryIdentifier, since sinceVersion: Int) {
         let result = LoadDeletionsSyncAction(currentVersion: self.lastReturnedVersion, sinceVersion: sinceVersion, libraryId: libraryId, userId: self.userId, apiClient: self.apiClient,
                                              queue: self.workQueue, scheduler: self.workScheduler).result
-        result.subscribeOn(self.workScheduler)
+        result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] collections, items, searches, tags, version in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.loadedRemoteDeletions(collections: collections, items: items, searches: searches, tags: tags, version: version, libraryId: libraryId)
                   }
-              }, onError: { [weak self] error in
+              }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishDeletionsSync(result: .failure(error), libraryId: libraryId, version: sinceVersion)
                   }
@@ -1120,12 +1120,12 @@ final class SyncController: SynchronizationController {
     private func performDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String],
                                   conflictMode: PerformDeletionsDbRequest.ConflictResolutionMode) {
         let action = PerformDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, conflictMode: conflictMode, dbStorage: self.dbStorage)
-        action.result.subscribeOn(self.workScheduler)
+        action.result.subscribe(on: self.workScheduler)
                      .subscribe(onSuccess: { [weak self] conflicts in
                          self?.accessQueue.async(flags: .barrier) { [weak self] in
                              self?.finishDeletionsSync(result: .success(conflicts), libraryId: libraryId)
                          }
-                     }, onError: { [weak self] error in
+                     }, onFailure: { [weak self] error in
                          self?.accessQueue.async(flags: .barrier) { [weak self] in
                              self?.finishDeletionsSync(result: .failure(error), libraryId: libraryId)
                          }
@@ -1157,12 +1157,12 @@ final class SyncController: SynchronizationController {
 
     private func restoreDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String]) {
         let result = RestoreDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, dbStorage: self.dbStorage).result
-        result.subscribeOn(self.workScheduler)
+        result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] data in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishCompletableAction(error: nil)
                   }
-              }, onError: { [weak self] error in
+              }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                     self?.finishCompletableAction(error: error)
                   }
@@ -1173,12 +1173,12 @@ final class SyncController: SynchronizationController {
     private func processSettingsSync(for libraryId: LibraryIdentifier, since version: Int) {
         let result = SyncSettingsSyncAction(currentVersion: self.lastReturnedVersion, sinceVersion: version, libraryId: libraryId, userId: self.userId, apiClient: self.apiClient,
                                             dbStorage: self.dbStorage, queue: self.workQueue, scheduler: self.workScheduler).result
-        result.subscribeOn(self.workScheduler)
+        result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] data in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishSettingsSync(result: .success(data), libraryId: libraryId, version: version)
                   }
-              }, onError: { [weak self] error in
+              }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishSettingsSync(result: .failure(error), libraryId: libraryId, version: version)
                   }
@@ -1215,13 +1215,13 @@ final class SyncController: SynchronizationController {
                                             libraryId: batch.libraryId, userId: self.userId, updateLibraryVersion: true, apiClient: self.apiClient,
                                             dbStorage: self.dbStorage, fileStorage: self.fileStorage,
                                             queue: self.workQueue, scheduler: self.workScheduler).result
-        result.subscribeOn(self.workScheduler)
+        result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] (version, error) in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.progressHandler.reportWriteBatchSynced(size: batch.parameters.count)
                       self?.finishSubmission(error: error, newVersion: version, libraryId: batch.libraryId, object: batch.object)
                   }
-              }, onError: { [weak self] error in
+              }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.progressHandler.reportWriteBatchSynced(size: batch.parameters.count)
                       self?.finishSubmission(error: error, newVersion: batch.version, libraryId: batch.libraryId, object: batch.object)
@@ -1235,11 +1235,11 @@ final class SyncController: SynchronizationController {
                                                 mtime: upload.mtime, libraryId: upload.libraryId, userId: self.userId, oldMd5: upload.oldMd5,
                                                 apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage,
                                                 queue: self.workQueue, scheduler: self.workScheduler).result
-        result.subscribeOn(self.workScheduler)
+        result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] response, progress in
                   guard let `self` = self else { return }
 
-                  response.subscribeOn(self.workScheduler)
+                  response.subscribe(on: self.workScheduler)
                           .subscribe(onCompleted: { [weak self] in
                               self?.accessQueue.async(flags: .barrier) { [weak self] in
                                   self?.progressHandler.reportUploaded()
@@ -1262,13 +1262,13 @@ final class SyncController: SynchronizationController {
         let result = SubmitDeletionSyncAction(keys: batch.keys, object: batch.object, version: batch.version, libraryId: batch.libraryId,
                                               userId: self.userId, apiClient: self.apiClient, dbStorage: self.dbStorage,
                                               queue: self.workQueue, scheduler: self.workScheduler).result
-        result.subscribeOn(self.workScheduler)
+        result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] version in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.progressHandler.reportWriteBatchSynced(size: batch.keys.count)
                       self?.finishSubmission(error: nil, newVersion: version, libraryId: batch.libraryId, object: batch.object)
                   }
-              }, onError: { [weak self] error in
+              }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.progressHandler.reportWriteBatchSynced(size: batch.keys.count)
                       self?.finishSubmission(error: error, newVersion: batch.version, libraryId: batch.libraryId, object: batch.object)
@@ -1300,12 +1300,12 @@ final class SyncController: SynchronizationController {
 
     private func deleteGroup(with groupId: Int) {
         let result = DeleteGroupSyncAction(groupId: groupId, dbStorage: self.dbStorage).result
-        result.subscribeOn(self.workScheduler)
+        result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishCompletableAction(error: nil)
                   }
-              }, onError: { [weak self] error in
+              }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishCompletableAction(error: error)
                   }
@@ -1315,12 +1315,12 @@ final class SyncController: SynchronizationController {
 
     private func markGroupAsLocalOnly(with groupId: Int) {
         let result = MarkGroupAsLocalOnlySyncAction(groupId: groupId, dbStorage: self.dbStorage).result
-        result.subscribeOn(self.workScheduler)
+        result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishCompletableAction(error: nil)
                   }
-              }, onError: { [weak self] error in
+              }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishCompletableAction(error: error)
                   }
@@ -1330,12 +1330,12 @@ final class SyncController: SynchronizationController {
 
     private func markChangesAsResolved(in libraryId: LibraryIdentifier) {
         let result = MarkChangesAsResolvedSyncAction(libraryId: libraryId, dbStorage: self.dbStorage).result
-        result.subscribeOn(self.workScheduler)
+        result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishCompletableAction(error: nil)
                   }
-              }, onError: { [weak self] error in
+              }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishCompletableAction(error: error)
                   }
@@ -1347,13 +1347,13 @@ final class SyncController: SynchronizationController {
         let result = RevertLibraryUpdatesSyncAction(libraryId: libraryId, dbStorage: self.dbStorage,
                                                     fileStorage: self.fileStorage, schemaController: self.schemaController,
                                                     dateParser: self.dateParser).result
-        result.subscribeOn(self.workScheduler)
+        result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] failures in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       // TODO: - report failures?
                       self?.finishCompletableAction(error: nil)
                   }
-              }, onError: { [weak self] error in
+              }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishCompletableAction(error: nil)
                   }

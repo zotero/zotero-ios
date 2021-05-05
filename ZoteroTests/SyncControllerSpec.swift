@@ -160,7 +160,7 @@ final class SyncControllerSpec: QuickSpec {
 
                     SyncControllerSpec.createNewSyncController()
 
-                    waitUntil(timeout: 10) { doneAction in
+                    waitUntil(timeout: .seconds(10)) { doneAction in
                         SyncControllerSpec.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
@@ -357,7 +357,7 @@ final class SyncControllerSpec: QuickSpec {
 
                     SyncControllerSpec.createNewSyncController()
 
-                    waitUntil(timeout: 10) { doneAction in
+                    waitUntil(timeout: .seconds(10)) { doneAction in
                         SyncControllerSpec.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
@@ -452,7 +452,7 @@ final class SyncControllerSpec: QuickSpec {
                     createStub(for: DeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                baseUrl: baseUrl, headers: header, jsonResponse: ["collections": [], "searches": [], "items": [itemToDelete], "tags": []])
 
-                    waitUntil(timeout: 10) { doneAction in
+                    waitUntil(timeout: .seconds(10)) { doneAction in
                         SyncControllerSpec.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
@@ -575,7 +575,7 @@ final class SyncControllerSpec: QuickSpec {
                     createStub(for: DeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                baseUrl: baseUrl, headers: header, jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []])
 
-                    waitUntil(timeout: 10) { doneAction in
+                    waitUntil(timeout: .seconds(10)) { doneAction in
                         SyncControllerSpec.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
@@ -650,7 +650,7 @@ final class SyncControllerSpec: QuickSpec {
                     createStub(for: DeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                baseUrl: baseUrl, headers: header, jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []])
 
-                    waitUntil(timeout: 10) { doneAction in
+                    waitUntil(timeout: .seconds(10)) { doneAction in
                         SyncControllerSpec.syncController.reportFinish = { result in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
@@ -725,7 +725,7 @@ final class SyncControllerSpec: QuickSpec {
 
                     SyncControllerSpec.createNewSyncController()
 
-                    waitUntil(timeout: 10) { doneAction in
+                    waitUntil(timeout: .seconds(10)) { doneAction in
                         SyncControllerSpec.syncController.reportFinish = { result in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
@@ -850,7 +850,7 @@ final class SyncControllerSpec: QuickSpec {
 
                     SyncControllerSpec.createNewSyncController()
 
-                    waitUntil(timeout: 10) { doneAction in
+                    waitUntil(timeout: .seconds(10)) { doneAction in
                         SyncControllerSpec.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
@@ -1002,7 +1002,7 @@ final class SyncControllerSpec: QuickSpec {
                     createStub(for: DeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                baseUrl: baseUrl, headers: header, jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []])
 
-                    waitUntil(timeout: 10) { doneAction in
+                    waitUntil(timeout: .seconds(10)) { doneAction in
                         SyncControllerSpec.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
@@ -1245,7 +1245,7 @@ final class SyncControllerSpec: QuickSpec {
                     })
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
 
-                    waitUntil(timeout: 10) { doneAction in
+                    waitUntil(timeout: .seconds(10)) { doneAction in
                         SyncControllerSpec.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
@@ -1355,7 +1355,7 @@ final class SyncControllerSpec: QuickSpec {
                     })
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
 
-                    waitUntil(timeout: 10) { doneAction in
+                    waitUntil(timeout: .seconds(10)) { doneAction in
                         SyncControllerSpec.syncController.reportFinish = { _ in
                             doneAction()
                         }
@@ -1441,7 +1441,7 @@ final class SyncControllerSpec: QuickSpec {
 
                     SyncControllerSpec.createNewSyncController()
 
-                    waitUntil(timeout: 10) { doneAction in
+                    waitUntil(timeout: .seconds(10)) { doneAction in
                         SyncControllerSpec.syncController.reportFinish = { _ in
                             doneAction()
                         }
@@ -1485,7 +1485,7 @@ final class SyncControllerSpec: QuickSpec {
                     createStub(for: update, ignorePostParams: true, baseUrl: baseUrl, headers: ["last-modified-version": "\(newVersion)"], statusCode: 200,
                                jsonResponse: ["success": ["0": [:]], "unchanged": [], "failed": []])
 
-                    waitUntil(timeout: 10) { doneAction in
+                    waitUntil(timeout: .seconds(10)) { doneAction in
                         SyncControllerSpec.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
@@ -1531,7 +1531,7 @@ final class SyncControllerSpec: QuickSpec {
 
                     SyncControllerSpec.createNewSyncController()
 
-                    waitUntil(timeout: 10) { doneAction in
+                    waitUntil(timeout: .seconds(10)) { doneAction in
                         SyncControllerSpec.syncController.reportFinish = { _ in
                             expect(downloadCalled).to(beTrue())
                             doneAction()
@@ -1592,7 +1592,7 @@ final class SyncControllerSpec: QuickSpec {
                     createStub(for: SubmitDeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .item, keys: [itemKey], version: 0),
                                baseUrl: baseUrl, headers: header, jsonResponse: [:])
 
-                    waitUntil(timeout: 10) { doneAction in
+                    waitUntil(timeout: .seconds(10)) { doneAction in
                         SyncControllerSpec.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
@@ -1704,7 +1704,7 @@ final class SyncControllerSpec: QuickSpec {
 
                 SyncControllerSpec.createNewSyncController()
 
-                waitUntil(timeout: 10) { doneAction in
+                waitUntil(timeout: .seconds(10)) { doneAction in
                     SyncControllerSpec.syncController.reportFinish = { result in
                         switch result {
                         case .success(let data):
@@ -1805,7 +1805,7 @@ final class SyncControllerSpec: QuickSpec {
                         realm.add(remotelyMissingItem)
                     }
 
-                    waitUntil(timeout: 10) { doneAction in
+                    waitUntil(timeout: .seconds(10)) { doneAction in
                         SyncControllerSpec.syncController.reportFinish = { result in
                             switch result {
                             case .success:
@@ -1898,7 +1898,7 @@ final class SyncControllerSpec: QuickSpec {
                         field.item = changedItem
                     }
 
-                    waitUntil(timeout: 10) { doneAction in
+                    waitUntil(timeout: .seconds(10)) { doneAction in
                         SyncControllerSpec.syncController.reportFinish = { result in
                             switch result {
                             case .success:
@@ -1958,7 +1958,7 @@ fileprivate struct TestConflictCoordinator: ConflictReceiver & DebugPermissionRe
         switch conflict {
         case .objectsRemovedRemotely(let libraryId, let collections, let items, let searches, let tags):
             completed(.remoteDeletionOfActiveObject(libraryId: libraryId, toDeleteCollections: collections, toRestoreCollections: [],
-                                                    toDeleteItems: items, toRestoreItems: [], searches: searches, tags: []))
+                                                    toDeleteItems: items, toRestoreItems: [], searches: searches, tags: tags))
         case .removedItemsHaveLocalChanges(let keys, let libraryId):
             completed(.remoteDeletionOfChangedItem(libraryId: libraryId, toDelete: keys.map({ $0.0 }), toRestore: []))
         case .groupRemoved(let id, _):

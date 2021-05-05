@@ -187,7 +187,7 @@ struct SettingsActionHandler: ViewModelActionHandler {
 
     private func observeWebSocketConnection(in viewModel: ViewModel<SettingsActionHandler>) {
         self.webSocketController.connectionState
-                                .observeOn(MainScheduler.instance)
+                                .observe(on: MainScheduler.instance)
                                 .subscribe(onNext: { [weak viewModel] connectionState in
                                     guard let viewModel = viewModel else { return }
                                     self.update(viewModel: viewModel) { state in
@@ -199,7 +199,7 @@ struct SettingsActionHandler: ViewModelActionHandler {
 
     private func observeTranslatorUpdate(in viewModel: ViewModel<SettingsActionHandler>) {
         self.translatorsController.isLoading
-                                  .observeOn(MainScheduler.instance)
+                                  .observe(on: MainScheduler.instance)
                                   .subscribe(onNext: { [weak viewModel] isLoading in
                                       guard let viewModel = viewModel else { return }
                                       self.update(viewModel: viewModel) { state in
@@ -211,7 +211,7 @@ struct SettingsActionHandler: ViewModelActionHandler {
 
     private func observeSyncChanges(in viewModel: ViewModel<SettingsActionHandler>) {
         self.syncScheduler.syncController.progressObservable
-                                         .observeOn(MainScheduler.instance)
+                                         .observe(on: MainScheduler.instance)
                                          .subscribe(onNext: { [weak viewModel] progress in
                                              guard let viewModel = viewModel else { return }
                                              self.update(viewModel: viewModel) { state in

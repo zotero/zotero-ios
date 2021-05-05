@@ -140,7 +140,7 @@ final class SyncActionsSpec: QuickSpec {
                 expect(collection?.name).to(equal("New name"))
                 expect(collection?.parentKey).to(beNil())
 
-                waitUntil(timeout: 10, action: { doneAction in
+                waitUntil(timeout: .seconds(10), action: { doneAction in
                     RevertLibraryUpdatesSyncAction(libraryId: .custom(.myLibrary), dbStorage: SyncActionsSpec.dbStorage, fileStorage: SyncActionsSpec.fileStorage,
                                                    schemaController: SyncActionsSpec.schemaController, dateParser: SyncActionsSpec.dateParser).result
                                          .subscribe(onSuccess: { failures in
@@ -158,14 +158,14 @@ final class SyncActionsSpec: QuickSpec {
                                              expect(item?.rawChangedFields).to(equal(0))
 
                                              doneAction()
-                                         }, onError: { error in
+                                         }, onFailure: { error in
                                              fail("Could not revert user library: \(error)")
                                              doneAction()
                                          })
                                          .disposed(by: SyncActionsSpec.disposeBag)
                 })
 
-                waitUntil(timeout: 10, action: { doneAction in
+                waitUntil(timeout: .seconds(10), action: { doneAction in
                     RevertLibraryUpdatesSyncAction(libraryId: .group(1234123),
                                                    dbStorage: SyncActionsSpec.dbStorage,
                                                    fileStorage: SyncActionsSpec.fileStorage,
@@ -184,7 +184,7 @@ final class SyncActionsSpec: QuickSpec {
                                              expect(collection?.parentKey).to(beNil())
 
                                              doneAction()
-                                         }, onError: { error in
+                                         }, onFailure: { error in
                                              fail("Could not revert group library: \(error)")
                                              doneAction()
                                          })
@@ -274,7 +274,7 @@ final class SyncActionsSpec: QuickSpec {
                 expect(collection?.parentKey).to(beNil())
                 expect(collection?.rawChangedFields).toNot(equal(0))
 
-                waitUntil(timeout: 10, action: { doneAction in
+                waitUntil(timeout: .seconds(10), action: { doneAction in
                     MarkChangesAsResolvedSyncAction(libraryId: .custom(.myLibrary), dbStorage: SyncActionsSpec.dbStorage).result
                                          .subscribe(onSuccess: { _ in
                                              let realm = try! Realm(configuration: SyncActionsSpec.realmConfig)
@@ -287,14 +287,14 @@ final class SyncActionsSpec: QuickSpec {
                                              expect(item?.rawChangedFields).to(equal(0))
 
                                              doneAction()
-                                        }, onError: { error in
+                                        }, onFailure: { error in
                                             fail("Could not sync user library: \(error)")
                                             doneAction()
                                         })
                                         .disposed(by: SyncActionsSpec.disposeBag)
                 })
 
-                waitUntil(timeout: 10, action: { doneAction in
+                waitUntil(timeout: .seconds(10), action: { doneAction in
                     MarkChangesAsResolvedSyncAction(libraryId: .group(1234123), dbStorage: SyncActionsSpec.dbStorage).result
                                          .subscribe(onSuccess: { _ in
                                              let realm = try! Realm(configuration: SyncActionsSpec.realmConfig)
@@ -306,7 +306,7 @@ final class SyncActionsSpec: QuickSpec {
                                              expect(collection?.rawChangedFields).to(equal(0))
 
                                              doneAction()
-                                         }, onError: { error in
+                                         }, onFailure: { error in
                                              fail("Could not sync group library: \(error)")
                                              doneAction()
                                          })
@@ -321,7 +321,7 @@ final class SyncActionsSpec: QuickSpec {
             it("fails when item metadata not submitted") {
                 let key = "AAAAAAAA"
                 let libraryId = LibraryIdentifier.group(1)
-                let file = Files.attachmentFile(in: libraryId, key: key, ext: "pdf")
+                let file = Files.newAttachmentFile(in: libraryId, key: key, filename: "file", contentType: "application/pdf")
 
                 let realm = SyncActionsSpec.realm
 
@@ -339,7 +339,7 @@ final class SyncActionsSpec: QuickSpec {
                     realm.add(item)
                 }
 
-                waitUntil(timeout: 10, action: { doneAction in
+                waitUntil(timeout: .seconds(10), action: { doneAction in
                     UploadAttachmentSyncAction(key: key,
                                                file: file,
                                                filename: "doc.pdf",
@@ -365,7 +365,7 @@ final class SyncActionsSpec: QuickSpec {
                                                  doneAction()
                                              })
                                              .disposed(by: SyncActionsSpec.disposeBag)
-                                         }, onError: { error in
+                                         }, onFailure: { error in
                                              fail("Unknown error: \(error.localizedDescription)")
                                              doneAction()
                                          })
@@ -375,8 +375,9 @@ final class SyncActionsSpec: QuickSpec {
 
             it("fails when file is not available") {
                 let key = "AAAAAAAA"
+                let filename = "doc.pdf"
                 let libraryId = LibraryIdentifier.group(1)
-                let file = Files.attachmentFile(in: libraryId, key: key, ext: "pdf")
+                let file = Files.newAttachmentFile(in: libraryId, key: key, filename: filename, contentType: "application/pdf")
 
                 let realm = SyncActionsSpec.realm
 
@@ -394,10 +395,10 @@ final class SyncActionsSpec: QuickSpec {
                     realm.add(item)
                 }
 
-                waitUntil(timeout: 10, action: { doneAction in
+                waitUntil(timeout: .seconds(10), action: { doneAction in
                     UploadAttachmentSyncAction(key: key,
                                                file: file,
-                                               filename: "doc.pdf",
+                                               filename: filename,
                                                md5: "aaaaaaaa", mtime: 0,
                                                libraryId: libraryId,
                                                userId: SyncActionsSpec.userId,
@@ -413,9 +414,9 @@ final class SyncActionsSpec: QuickSpec {
                                          .subscribe(onSuccess: { _ in
                                              fail("Upload didn't fail with unsubmitted item")
                                              doneAction()
-                                         }, onError: { error in
+                                         }, onFailure: { error in
                                              if let handlerError = error as? SyncActionError {
-                                                 expect(handlerError).to(equal(.attachmentMissing))
+                                                 expect(handlerError).to(equal(.attachmentMissing(key: key, title: "")))
                                              } else {
                                                  fail("Unknown error: \(error.localizedDescription)")
                                              }
@@ -429,7 +430,7 @@ final class SyncActionsSpec: QuickSpec {
                 let key = "AAAAAAAA"
                 let filename = "doc.txt"
                 let libraryId = LibraryIdentifier.group(1)
-                let file = Files.attachmentFile(in: libraryId, key: key, ext: "txt")
+                let file = Files.newAttachmentFile(in: libraryId, key: key, filename: filename, contentType: "text/plain")
 
                 let data = "test string".data(using: .utf8)!
                 try! FileStorageController().write(data, to: file, options: .atomicWrite)
@@ -468,7 +469,7 @@ final class SyncActionsSpec: QuickSpec {
                                                        oldMd5: nil),
                            baseUrl: baseUrl, jsonResponse: ["exists": 1])
 
-                waitUntil(timeout: 10, action: { doneAction in
+                waitUntil(timeout: .seconds(10), action: { doneAction in
                     UploadAttachmentSyncAction(key: key,
                                                file: file,
                                                filename: filename,
@@ -487,7 +488,7 @@ final class SyncActionsSpec: QuickSpec {
                                                 response.subscribe(onCompleted: {
                                                             subscriber(.success(()))
                                                         }, onError: { error in
-                                                            subscriber(.error(error))
+                                                            subscriber(.failure(error))
                                                         })
                                                         .disposed(by: SyncActionsSpec.disposeBag)
                                                 return Disposables.create()
@@ -495,7 +496,7 @@ final class SyncActionsSpec: QuickSpec {
                                          })
                                          .subscribe(onSuccess: { _ in
                                              doneAction()
-                                         }, onError: { error in
+                                         }, onFailure: { error in
                                              fail("Unknown error: \(error.localizedDescription)")
                                              doneAction()
                                          })
@@ -507,7 +508,7 @@ final class SyncActionsSpec: QuickSpec {
                 let key = "AAAAAAAA"
                 let filename = "doc.txt"
                 let libraryId = LibraryIdentifier.group(1)
-                let file = Files.attachmentFile(in: libraryId, key: key, ext: "txt")
+                let file = Files.newAttachmentFile(in: libraryId, key: key, filename: filename, contentType: "text/plain")
 
                 let data = "test string".data(using: .utf8)!
                 try! FileStorageController().write(data, to: file, options: .atomicWrite)
@@ -553,7 +554,7 @@ final class SyncActionsSpec: QuickSpec {
                 })
 
 
-                waitUntil(timeout: 10, action: { doneAction in
+                waitUntil(timeout: .seconds(10), action: { doneAction in
                     UploadAttachmentSyncAction(key: key,
                                                file: file,
                                                filename: filename,
@@ -572,7 +573,7 @@ final class SyncActionsSpec: QuickSpec {
                                                 response.subscribe(onCompleted: {
                                                             subscriber(.success(()))
                                                         }, onError: { error in
-                                                            subscriber(.error(error))
+                                                            subscriber(.failure(error))
                                                         })
                                                         .disposed(by: SyncActionsSpec.disposeBag)
                                                 return Disposables.create()
@@ -586,13 +587,26 @@ final class SyncActionsSpec: QuickSpec {
                                              expect(item?.attachmentNeedsSync).to(beFalse())
 
                                              doneAction()
-                                         }, onError: { error in
+                                         }, onFailure: { error in
                                              fail("Unknown error: \(error.localizedDescription)")
                                              doneAction()
                                          })
                                          .disposed(by: SyncActionsSpec.disposeBag)
                 })
             }
+        }
+    }
+}
+
+extension SyncActionError: Equatable {
+    public static func == (lhs: SyncActionError, rhs: SyncActionError) -> Bool {
+        switch (lhs, rhs) {
+        case (.attachmentItemNotSubmitted, .attachmentItemNotSubmitted), (.attachmentAlreadyUploaded, .attachmentAlreadyUploaded), (.submitUpdateUnknownFailures, .submitUpdateUnknownFailures):
+            return true
+        case (.attachmentMissing(let lKey, let lTitle), .attachmentMissing(let rKey, let rTitle)):
+            return lKey == rKey && lTitle == rTitle
+        default:
+            return false
         }
     }
 }

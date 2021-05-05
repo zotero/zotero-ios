@@ -96,7 +96,7 @@ final class ImagePreviewViewController: UIViewController {
         tap.numberOfTapsRequired = 1
         tap.rx
            .event
-           .observeOn(MainScheduler.instance)
+           .observe(on: MainScheduler.instance)
            .subscribe(onNext: { [weak self] _ in
                self?.toggleNavbarVisibility()
            })
@@ -107,7 +107,7 @@ final class ImagePreviewViewController: UIViewController {
         doubleTap.numberOfTapsRequired = 2
         doubleTap.rx
                  .event
-                 .observeOn(MainScheduler.instance)
+                 .observe(on: MainScheduler.instance)
                  .subscribe(onNext: { [weak self] sender in
                      self?.toggleZoom(sender: sender)
                  })
@@ -121,7 +121,7 @@ final class ImagePreviewViewController: UIViewController {
         let closeItem = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
         closeItem.rx
                  .tap
-                 .observeOn(MainScheduler.instance)
+                 .observe(on: MainScheduler.instance)
                  .subscribe(onNext: { [weak self] in
                      self?.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
                  })

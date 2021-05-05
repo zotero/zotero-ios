@@ -569,15 +569,15 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         }
 
         self.save(state: viewModel.state)
-            .subscribeOn(self.backgroundScheduler)
-            .observeOn(MainScheduler.instance)
+            .subscribe(on: self.backgroundScheduler)
+            .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak viewModel] newState in
                 guard let viewModel = viewModel else { return }
                 self.update(viewModel: viewModel) { state in
                     state = newState
                     state.isSaving = false
                 }
-            }, onError: { [weak viewModel] error in
+            }, onFailure: { [weak viewModel] error in
                 DDLogError("ItemDetailStore: can't store changes - \(error)")
                 guard let viewModel = viewModel else { return }
                 self.update(viewModel: viewModel) { state in
@@ -623,7 +623,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
                 subscriber(.success(newState))
             } catch let error {
-                subscriber(.error(error))
+                subscriber(.failure(error))
             }
             return Disposables.create()
         }

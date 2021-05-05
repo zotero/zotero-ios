@@ -63,7 +63,7 @@ extension ObservableType where Element == (HTTPURLResponse, Data) {
     }
 
     private func retry(maxAttemptCount: Int, retryDelay: @escaping (Error) -> RetryDelay?) -> Observable<Element> {
-        return self.retryWhen { errors in
+        return self.retry(when: { errors in
             return errors.enumerated().flatMap { attempt, error -> Observable<Void> in
                 guard (attempt + 1) < maxAttemptCount,
                       let delay = retryDelay(error) else {
@@ -74,7 +74,7 @@ extension ObservableType where Element == (HTTPURLResponse, Data) {
                                              scheduler: MainScheduler.instance)
                                       .map { _ in () }
             }
-        }
+        })
     }
 
     func log(identifier: String, startTime: CFAbsoluteTime, request: ApiRequest) -> Observable<Element> {

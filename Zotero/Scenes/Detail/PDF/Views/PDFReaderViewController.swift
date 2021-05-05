@@ -816,7 +816,7 @@ final class PDFReaderViewController: UIViewController {
 
     private func setupObserving() {
         self.viewModel.stateObservable
-                      .observeOn(MainScheduler.instance)
+                      .observe(on: MainScheduler.instance)
                       .subscribe(onNext: { [weak self] state in
                           self?.update(state: state)
                       })
@@ -824,7 +824,7 @@ final class PDFReaderViewController: UIViewController {
 
         NotificationCenter.default.rx
                                   .notification(.PSPDFAnnotationChanged)
-                                  .observeOn(MainScheduler.instance)
+                                  .observe(on: MainScheduler.instance)
                                   .subscribe(onNext: { [weak self] notification in
                                       self?.processAnnotationObserving(notification: notification)
                                   })
@@ -832,7 +832,7 @@ final class PDFReaderViewController: UIViewController {
 
         NotificationCenter.default.rx
                                   .notification(.PSPDFAnnotationsAdded)
-                                  .observeOn(MainScheduler.instance)
+                                  .observe(on: MainScheduler.instance)
                                   .subscribe(onNext: { [weak self] notification in
 
                                       self?.processAnnotationObserving(notification: notification)
@@ -841,7 +841,7 @@ final class PDFReaderViewController: UIViewController {
 
         NotificationCenter.default.rx
                                   .notification(.PSPDFAnnotationsRemoved)
-                                  .observeOn(MainScheduler.instance)
+                                  .observe(on: MainScheduler.instance)
                                   .subscribe(onNext: { [weak self] notification in
                                       self?.processAnnotationObserving(notification: notification)
                                   })
@@ -849,7 +849,7 @@ final class PDFReaderViewController: UIViewController {
 
         NotificationCenter.default.rx
                                   .notification(UIApplication.didBecomeActiveNotification)
-                                  .observeOn(MainScheduler.instance)
+                                  .observe(on: MainScheduler.instance)
                                   .subscribe(onNext: { [weak self] notification in
                                       guard let `self` = self else { return }
                                       self.viewModel.process(action: .updateAnnotationPreviews)
@@ -858,7 +858,7 @@ final class PDFReaderViewController: UIViewController {
 
         NotificationCenter.default.rx
                                   .notification(UIApplication.willResignActiveNotification)
-                                  .observeOn(MainScheduler.instance)
+                                  .observe(on: MainScheduler.instance)
                                   .subscribe(onNext: { [weak self] notification in
                                       guard let `self` = self else { return }
                                       self.viewModel.process(action: .saveChanges)

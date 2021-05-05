@@ -97,7 +97,7 @@ final class ItemsViewController: UIViewController {
         }
 
         self.tableViewHandler.tapObserver
-                             .observeOn(MainScheduler.instance)
+                             .observe(on: MainScheduler.instance)
                              .subscribe(onNext: { [weak self] action in
                                 switch action {
                                 case .metadata(let item):
@@ -112,7 +112,7 @@ final class ItemsViewController: UIViewController {
                              .disposed(by: self.disposeBag)
 
         self.viewModel.stateObservable
-                  .observeOn(MainScheduler.instance)
+                  .observe(on: MainScheduler.instance)
                   .subscribe(onNext: { [weak self] state in
                       self?.update(state: state)
                   })
@@ -338,7 +338,7 @@ final class ItemsViewController: UIViewController {
         guard let syncController = self.controllers.userControllers?.syncScheduler.syncController else { return }
 
         syncController.progressObservable
-            .observeOn(MainScheduler.instance)
+            .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] progress in
                 guard let `self` = self else { return }
                 switch progress {
@@ -372,7 +372,7 @@ final class ItemsViewController: UIViewController {
         NotificationCenter.default
                           .rx
                           .notification(.willEnterForeground)
-                          .observeOn(MainScheduler.instance)
+                          .observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] _ in
                               guard let `self` = self else { return }
                               if self.searchBarNeedsReset {
@@ -387,7 +387,7 @@ final class ItemsViewController: UIViewController {
         NotificationCenter.default
                           .rx
                           .notification(.attachmentFileDeleted)
-                          .observeOn(MainScheduler.instance)
+                          .observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] notification in
                               if let notification = notification.object as? AttachmentFileDeletedNotification {
                                   self?.viewModel.process(action: .updateAttachments(notification))
@@ -398,7 +398,7 @@ final class ItemsViewController: UIViewController {
         guard let downloader = self.controllers.userControllers?.fileDownloader else { return }
 
         downloader.observable
-            .observeOn(MainScheduler.instance)
+            .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] update in
                 self?.viewModel.process(action: .updateDownload(update))
             })
@@ -587,7 +587,7 @@ final class ItemsViewController: UIViewController {
     /// - parameter searchBar: `searchBar` to setup and observe.
     private func setup(searchBar: UISearchBar) {
         searchBar.placeholder = L10n.Items.searchTitle
-        searchBar.rx.text.observeOn(MainScheduler.instance)
+        searchBar.rx.text.observe(on: MainScheduler.instance)
                          .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
                          .subscribe(onNext: { [weak self] text in
                              self?.viewModel.process(action: .search(text ?? ""))
@@ -618,7 +618,7 @@ final class ItemsViewController: UIViewController {
         guard let scheduler = self.controllers.userControllers?.syncScheduler else { return }
         scheduler.syncController
                  .progressObservable
-                 .observeOn(MainScheduler.instance)
+                 .observe(on: MainScheduler.instance)
                  .subscribe(onNext: { [weak self] progress in
                      self?.update(progress: progress)
                  })

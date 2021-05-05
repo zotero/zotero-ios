@@ -24,7 +24,7 @@ struct LoadDeletionsSyncAction: SyncAction {
 
     var result: Single<(collections: [String], items: [String], searches: [String], tags: [String], version: Int)> {
         return self.apiClient.send(request: DeletionsRequest(libraryId: self.libraryId, userId: self.userId, version: self.sinceVersion), queue: self.queue)
-                             .observeOn(self.scheduler)
+                             .observe(on: self.scheduler)
                              .flatMap { (response: DeletionsResponse, headers) in
                                  let newVersion = headers.lastModifiedVersion
 

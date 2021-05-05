@@ -137,7 +137,7 @@ final class WebViewHandler: NSObject {
                        let encodedTranslators = self.encodeJSONForJavascript(translators)
                        return self.callJavascript("translate('\(url.absoluteString)', \(encodedHtml), \(encodedFrames), \(encodedTranslators));")
                    }
-                   .subscribe(onError: { [weak self] error in
+                   .subscribe(onFailure: { [weak self] error in
                        DDLogError("WebViewHandler: translation failed - \(error)")
                        self?.observable.on(.error(error))
                    })
@@ -261,7 +261,7 @@ final class WebViewHandler: NSObject {
 
                     DDLogError("WebViewHandler: javascript call ('\(script)') error - \(error)")
 
-                    subscriber(.error(error))
+                    subscriber(.failure(error))
                 }
             }
 
@@ -291,7 +291,7 @@ extension WebViewHandler: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Swift.Error) {
         DDLogError("WebViewHandler: did fail - \(error)")
-        self.webDidLoad?(.error(error))
+        self.webDidLoad?(.failure(error))
     }
 }
 

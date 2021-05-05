@@ -237,7 +237,7 @@ final class ExtensionStore {
         self.loadAttachment(from: extensionItem)
             .subscribe(onSuccess: { [weak self] attachment in
                 self?.process(attachment: attachment)
-            }, onError: { [weak self] error in
+            }, onFailure: { [weak self] error in
                 DDLogError("ExtensionStore: could not load attachment - \(error)")
                 self?.state.attachmentState = .failed((error as? State.AttachmentState.Error) ?? .unknown)
             })
@@ -279,7 +279,7 @@ final class ExtensionStore {
             self.webViewHandler.loadWebData(from: url)
                                .subscribe(onSuccess: { [weak self] attachment in
                                    self?.process(attachment: attachment)
-                               }, onError: { [weak self] error in
+                               }, onFailure: { [weak self] error in
                                    DDLogError("ExtensionStore: webview could not load data - \(error)")
                                    self?.state.attachmentState = .failed((error as? State.AttachmentState.Error) ?? .unknown)
                                })
@@ -302,7 +302,7 @@ final class ExtensionStore {
 
             let file = Files.shareExtensionTmpItem(key: self.state.attachmentKey, contentType: contentType)
             self.download(url: url, to: file)
-                .observeOn(MainScheduler.instance)
+                .observe(on: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] progress in
                     self?.state.attachmentState = .downloading(progress.completed)
                 }, onError: { [weak self] error in
@@ -331,7 +331,7 @@ final class ExtensionStore {
     private func loadUrl(from itemProvider: NSItemProvider) -> Single<URL> {
         return Single.create { [weak itemProvider] subscriber in
             guard let itemProvider = itemProvider else {
-                subscriber(.error(State.AttachmentState.Error.cantLoadWebData))
+                subscriber(.failure(State.AttachmentState.Error.cantLoadWebData))
                 return Disposables.create()
             }
 
@@ -344,7 +344,7 @@ final class ExtensionStore {
                     subscriber(.success(url))
                 } else {
                     DDLogError("ExtensionStore: can't load URL")
-                    subscriber(.error(State.AttachmentState.Error.cantLoadWebData))
+                    subscriber(.failure(State.AttachmentState.Error.cantLoadWebData))
                 }
             })
 
@@ -358,7 +358,7 @@ final class ExtensionStore {
     private func loadWebData(from itemProvider: NSItemProvider) -> Single<State.RawAttachment> {
         return Single.create { [weak itemProvider] subscriber in
             guard let itemProvider = itemProvider else {
-                subscriber(.error(State.AttachmentState.Error.cantLoadWebData))
+                subscriber(.failure(State.AttachmentState.Error.cantLoadWebData))
                 return Disposables.create()
             }
 
@@ -372,7 +372,7 @@ final class ExtensionStore {
                       let isFile = data["isFile"] as? Bool,
                       let url = (data["url"] as? String).flatMap(URL.init) else {
                     DDLogError("ExtensionStore: can't read script data")
-                    subscriber(.error(State.AttachmentState.Error.cantLoadWebData))
+                    subscriber(.failure(State.AttachmentState.Error.cantLoadWebData))
                     return
                 }
 
@@ -387,7 +387,7 @@ final class ExtensionStore {
                 } else {
                     DDLogError("ExtensionStore: script data don't contain required info")
                     DDLogError("\(data)")
-                    subscriber(.error(State.AttachmentState.Error.cantLoadWebData))
+                    subscriber(.failure(State.AttachmentState.Error.cantLoadWebData))
                 }
             })
 
@@ -400,7 +400,7 @@ final class ExtensionStore {
     /// Observes `WebViewHandler` translation process and acts accordingly.
     private func  setupWebHandlerObserving() {
         self.webViewHandler.observable
-                           .observeOn(MainScheduler.instance)
+                           .observe(on: MainScheduler.instance)
                            .subscribe(onNext: { [weak self] action in
                                switch action {
                                case .loadedItems(let data):
@@ -434,7 +434,7 @@ final class ExtensionStore {
                 self.state = state
 
                 self.download(url: url, to: file)
-                    .observeOn(MainScheduler.instance)
+                    .observe(on: MainScheduler.instance)
                     .subscribe(onNext: { [weak self] progress in
                         self?.state.attachmentState = .downloading(progress.completed)
                     }, onError: { [weak self] error in
@@ -519,7 +519,7 @@ final class ExtensionStore {
     private func download(url: URL, to file: File) -> Observable<RxProgress> {
         let request = FileRequest(data: .external(url), destination: file)
         return self.apiClient.download(request: request)
-                             .subscribeOn(self.backgroundScheduler)
+                             .subscribe(on: self.backgroundScheduler)
                              .flatMap { request in
                                  return request.rx.progress()
                              }
@@ -590,15 +590,15 @@ final class ExtensionStore {
                         fileStorage: FileStorage, schemaController: SchemaController, dateParser: DateParser) {
         let itemToSubmit = item.tags.isEmpty || Defaults.shared.shareExtensionIncludeTags ? item : item.copyWithoutTags
         self.createItem(itemToSubmit, libraryId: libraryId, schemaController: schemaController, dateParser: dateParser)
-            .subscribeOn(self.backgroundScheduler)
+            .subscribe(on: self.backgroundScheduler)
             .flatMap { parameters in
                 return SubmitUpdateSyncAction(parameters: [parameters], sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId, updateLibraryVersion: false, apiClient: apiClient,
                                               dbStorage: dbStorage, fileStorage: fileStorage, queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
             }
-            .observeOn(MainScheduler.instance)
+            .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] _ in
                 self?.state.attachmentState = .done
-            }, onError: { [weak self] error in
+            }, onFailure: { [weak self] error in
                 DDLogError("ExtensionStore: could not submit standalone item - \(error)")
                 self?.state.attachmentState = .failed((error as? State.AttachmentState.Error) ?? .unknown)
             })
@@ -620,7 +620,7 @@ final class ExtensionStore {
                 let item = try coordinator.perform(request: request)
                 subscriber(.success(item.updateParameters ?? [:]))
             } catch let error {
-                subscriber(.error(error))
+                subscriber(.failure(error))
             }
             return Disposables.create()
         }
@@ -668,14 +668,14 @@ final class ExtensionStore {
                                                        parameters: response.params, headers: ["If-None-Match": "*"])
                    }
                }
-               .observeOn(MainScheduler.instance)
+               .observe(on: MainScheduler.instance)
                .subscribe(onSuccess: { [weak self] _ in
                    // The `backgroundUploader` is set to `nil` so that the `URLSession` delegate no longer exists for the share extension.
                    // This way the URLSession delegate will always be called in the main (container) app, where additional upload
                    // processing is performed.
                    self?.backgroundUploader = nil
                    self?.state.attachmentState = .done
-               }, onError: { [weak self] error in
+               }, onFailure: { [weak self] error in
                    DDLogError("ExtensionStore: could not submit item or attachment - \(error)")
                    self?.state.attachmentState = .failed((error as? State.AttachmentState.Error) ?? .unknown)
                })
@@ -698,7 +698,7 @@ final class ExtensionStore {
     private func prepareUpload(attachment: Attachment, collections: Set<String>, file: File, tmpFile: File, filename: String, libraryId: LibraryIdentifier, userId: Int,
                                apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<(AuthorizeUploadResponse, String)> {
         return self.copyFile(from: tmpFile, to: file)
-                   .subscribeOn(self.backgroundScheduler)
+                   .subscribe(on: self.backgroundScheduler)
                    .flatMap { [weak self] filesize -> Single<(UInt64, [String: Any], String, Int)> in
                        guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
                        return self.create(attachment: attachment, collections: collections)
@@ -734,7 +734,7 @@ final class ExtensionStore {
     private func prepareUpload(item: ItemResponse, attachment: Attachment, file: File, tmpFile: File, filename: String, libraryId: LibraryIdentifier, userId: Int,
                                apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<(AuthorizeUploadResponse, String)> {
         return self.moveFile(from: tmpFile, to: file)
-                   .subscribeOn(self.backgroundScheduler)
+                   .subscribe(on: self.backgroundScheduler)
                    .flatMap { [weak self] filesize -> Single<(UInt64, [[String: Any]], String, Int)> in
                        guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
                        return self.createItems(item: item, attachment: attachment)
@@ -768,7 +768,7 @@ final class ExtensionStore {
             do {
                 let size = self.fileStorage.size(of: fromFile)
                 if size == 0 {
-                    subscriber(.error(State.AttachmentState.Error.fileMissing))
+                    subscriber(.failure(State.AttachmentState.Error.fileMissing))
                     return Disposables.create()
                 }
                 try self.fileStorage.move(from: fromFile, to: toFile)
@@ -777,7 +777,7 @@ final class ExtensionStore {
                 DDLogError("ExtensionStore: can't move file: \(error)")
                 // If tmp file couldn't be moved, remove it if it's there
                 try? self.fileStorage.remove(fromFile)
-                subscriber(.error(State.AttachmentState.Error.fileMissing))
+                subscriber(.failure(State.AttachmentState.Error.fileMissing))
             }
 
             return Disposables.create()
@@ -793,14 +793,14 @@ final class ExtensionStore {
             do {
                 let size = self.fileStorage.size(of: fromFile)
                 if size == 0 {
-                    subscriber(.error(State.AttachmentState.Error.fileMissing))
+                    subscriber(.failure(State.AttachmentState.Error.fileMissing))
                     return Disposables.create()
                 }
                 try self.fileStorage.copy(from: fromFile, to: toFile)
                 subscriber(.success(size))
             } catch let error {
                 DDLogError("ExtensionStore: can't copy file: \(error)")
-                subscriber(.error(State.AttachmentState.Error.fileMissing))
+                subscriber(.failure(State.AttachmentState.Error.fileMissing))
             }
 
             return Disposables.create()
@@ -837,7 +837,7 @@ final class ExtensionStore {
 
                 subscriber(.success((parameters, md5, mtime)))
             } catch let error {
-                subscriber(.error(error))
+                subscriber(.failure(error))
             }
 
             return Disposables.create()
@@ -866,7 +866,7 @@ final class ExtensionStore {
 
                 subscriber(.success((attachment.updateParameters ?? [:], md5, mtime)))
             } catch let error {
-                subscriber(.error(error))
+                subscriber(.failure(error))
             }
 
             return Disposables.create()
@@ -913,7 +913,7 @@ final class ExtensionStore {
 
     private func setupSyncObserving() {
         self.syncController.observable
-                           .observeOn(MainScheduler.instance)
+                           .observe(on: MainScheduler.instance)
                            .subscribe(onNext: { [weak self] data in
                                self?.finishSync(successful: (data == nil))
                            }, onError: { [weak self] _ in

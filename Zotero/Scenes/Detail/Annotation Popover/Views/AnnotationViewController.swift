@@ -68,7 +68,7 @@ final class AnnotationViewController: UIViewController {
         self.setupAnnotationView()
 
         self.viewModel.stateObservable
-                      .observeOn(MainScheduler.instance)
+                      .observe(on: MainScheduler.instance)
                       .subscribe(onNext: { [weak self] state in
                           self?.update(state: state)
                       })

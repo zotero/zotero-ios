@@ -41,7 +41,7 @@ class TextPreviewViewController: UIViewController {
         let closeItem = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
         closeItem.rx
                  .tap
-                 .observeOn(MainScheduler.instance)
+                 .observe(on: MainScheduler.instance)
                  .subscribe(onNext: { [weak self] in
                      self?.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
                  })

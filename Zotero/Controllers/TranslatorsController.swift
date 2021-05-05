@@ -93,15 +93,15 @@ final class TranslatorsController {
         self.isLoading.accept(true)
         let type: UpdateType = self.lastCommitHash == "" ? .initial : .startup
         self.updateFromBundle()
-            .subscribeOn(self.scheduler)
+            .subscribe(on: self.scheduler)
             .flatMap {
                 return self._updateFromRepo(type: type)
             }
-            .observeOn(MainScheduler.instance)
+            .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] timestamp in
                 self?.lastTimestamp = timestamp
                 self?.isLoading.accept(false)
-            }, onError: { [weak self] error in
+            }, onFailure: { [weak self] error in
                 self?.process(error: error, updateType: type)
             })
             .disposed(by: self.disposeBag)
@@ -111,7 +111,7 @@ final class TranslatorsController {
     private func updateFromBundle() -> Single<()> {
         return Single.create { [weak self] subscriber -> Disposable in
             guard let `self` = self else {
-                subscriber(.error(Error.bundleLoading(Error.expired)))
+                subscriber(.failure(Error.bundleLoading(Error.expired)))
                 return Disposables.create()
             }
 
@@ -133,7 +133,7 @@ final class TranslatorsController {
 
                 subscriber(.success(()))
             } catch let error {
-                subscriber(.error(Error.bundleLoading(error)))
+                subscriber(.failure(Error.bundleLoading(error)))
             }
 
             return Disposables.create()
@@ -144,12 +144,12 @@ final class TranslatorsController {
     func updateFromRepo(type: UpdateType) {
         self.isLoading.accept(true)
         self._updateFromRepo(type: type)
-            .subscribeOn(self.scheduler)
-            .observeOn(MainScheduler.instance)
+            .subscribe(on: self.scheduler)
+            .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] timestamp in
                 self?.lastTimestamp = timestamp
                 self?.isLoading.accept(false)
-            }, onError: { [weak self] error in
+            }, onFailure: { [weak self] error in
                 self?.process(error: error, updateType: type)
             })
             .disposed(by: self.disposeBag)
@@ -165,7 +165,7 @@ final class TranslatorsController {
         let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? ""
         let request = TranslatorsRequest(timestamp: self.lastTimestamp, version: "\(version)-iOS", type: type.rawValue)
         return self.apiClient.send(request: request, queue: self.queue)
-                             .observeOn(self.scheduler)
+                             .observe(on: self.scheduler)
                              .flatMap { data, _ -> Single<(Int, [Translator])> in
                                 do {
                                     let response = try self.parseXmlTranslators(from: data)
@@ -332,7 +332,7 @@ final class TranslatorsController {
                 subscriber(.success(translators))
             } catch let error {
                 DDLogError("TranslatorController: error - \(error)")
-                subscriber(.error(error))
+                subscriber(.failure(error))
             }
             return Disposables.create()
         }

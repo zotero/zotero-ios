@@ -53,7 +53,7 @@ final class ItemDetailViewController: UIViewController {
         self.setupFileObservers()
 
         self.viewModel.stateObservable
-                      .observeOn(MainScheduler.instance)
+                      .observe(on: MainScheduler.instance)
                       .subscribe(onNext: { [weak self] state in
                           self?.update(to: state)
                       })
@@ -365,7 +365,7 @@ final class ItemDetailViewController: UIViewController {
         self.tableViewHandler.delegate = self
 
         self.tableViewHandler.observer
-                             .observeOn(MainScheduler.instance)
+                             .observe(on: MainScheduler.instance)
                              .subscribe(onNext: { [weak self] action in
                                  self?.perform(tableViewAction: action)
                              })
@@ -376,7 +376,7 @@ final class ItemDetailViewController: UIViewController {
         NotificationCenter.default
                           .rx
                           .notification(.attachmentFileDeleted)
-                          .observeOn(MainScheduler.instance)
+                          .observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] notification in
                               if let notification = notification.object as? AttachmentFileDeletedNotification {
                                   self?.viewModel.process(action: .updateAttachments(notification))
@@ -387,7 +387,7 @@ final class ItemDetailViewController: UIViewController {
         guard let downloader = self.controllers.userControllers?.fileDownloader else { return }
 
         downloader.observable
-            .observeOn(MainScheduler.instance)
+            .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] update in
                 self?.viewModel.process(action: .updateDownload(update))
             })

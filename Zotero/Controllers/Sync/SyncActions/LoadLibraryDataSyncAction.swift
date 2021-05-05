@@ -38,7 +38,7 @@ struct LoadLibraryDataSyncAction: SyncAction {
                 let data = try self.dbStorage.createCoordinator().perform(request: request)
                 subscriber(.success(data))
             } catch let error {
-                subscriber(.error(error))
+                subscriber(.failure(error))
             }
 
             return Disposables.create()

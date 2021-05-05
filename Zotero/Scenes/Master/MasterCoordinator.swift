@@ -168,7 +168,7 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
 
         // Showing alerts in SwiftUI in this case doesn't work. Observe state here and show appropriate alerts.
         viewModel.stateObservable
-                 .observeOn(MainScheduler.instance)
+                 .observe(on: MainScheduler.instance)
                  .subscribe(onNext: { [weak self, weak viewModel] state in
                      guard let `self` = self, let viewModel = viewModel else { return }
 

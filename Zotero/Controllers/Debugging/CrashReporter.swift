@@ -76,7 +76,7 @@ final class CrashReporter {
 
             let date = report.systemInfo.timestamp
 
-            self.submit(crashLog: text).observeOn(MainScheduler.instance)
+            self.submit(crashLog: text).observe(on: MainScheduler.instance)
                                        .subscribe(onNext: { [weak self] reportId in
                                            self?.reportCrashIfNeeded(id: reportId, date: date)
                                            self?.cleanup()
@@ -95,7 +95,7 @@ final class CrashReporter {
         return self.apiClient.send(request: request, queue: self.queue)
                              .asObservable()
                              .retry(.exponentialDelayed(maxCount: 10, initial: 5, multiplier: 1.5))
-                             .observeOn(self.scheduler)
+                             .observe(on: self.scheduler)
                              .flatMap { data, _ -> Observable<String> in
                                  let delegate = DebugResponseParserDelegate()
                                  let parser = XMLParser(data: data)

@@ -96,7 +96,7 @@ final class BackgroundUploader: NSObject {
         let actions = uploads.map({ self.uploadProcessor.finish(upload: $0) })
         // Process all actions, call appropriate completion handlers and finish the background task.
         Observable.concat(actions)
-                  .observeOn(MainScheduler.instance)
+                  .observe(on: MainScheduler.instance)
                   .subscribe(onError: { [weak self] error in
                       self?.uploadsFinishedProcessing = true
                       self?.completeBackgroundSession()

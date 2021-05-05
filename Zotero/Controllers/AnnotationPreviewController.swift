@@ -140,7 +140,7 @@ extension AnnotationPreviewController {
                 DispatchQueue.main.async {
                     completed(UIImage(data: data))
                 }
-            } catch let error {
+            } catch {
                 DispatchQueue.main.async {
                     completed(nil)
                 }
@@ -220,7 +220,7 @@ extension AnnotationPreviewController {
 
             if type == .temporary {
                 // Temporary request always needs to return an error if image was not available
-                self.perform(event: .error(error), key: key, parentKey: parentKey)
+                self.perform(event: .failure(error), key: key, parentKey: parentKey)
             }
         }
     }

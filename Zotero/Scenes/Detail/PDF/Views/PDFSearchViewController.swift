@@ -94,7 +94,7 @@ final class PDFSearchViewController: UIViewController {
         let searchBar = UISearchBar()
         searchBar.translatesAutoresizingMaskIntoConstraints = false
         searchBar.placeholder = L10n.Pdf.Search.title
-        searchBar.rx.text.observeOn(MainScheduler.instance)
+        searchBar.rx.text.observe(on: MainScheduler.instance)
                          .skip(1)
                          .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
                          .subscribe(onNext: { [weak self] text in

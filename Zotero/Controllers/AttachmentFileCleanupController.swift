@@ -43,7 +43,7 @@ final class AttachmentFileCleanupController {
 
         NotificationCenter.default.rx
                                   .notification(.attachmentDeleted)
-                                  .observeOn(self.scheduler)
+                                  .observe(on: self.scheduler)
                                   .subscribe(onNext: { [weak self] notification in
                                       if let file = notification.object as? File {
                                           self?.delete(file: file)

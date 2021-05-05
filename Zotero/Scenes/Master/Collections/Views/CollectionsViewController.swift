@@ -53,7 +53,7 @@ final class CollectionsViewController: UIViewController {
         self.tableViewHandler.update(collections: self.viewModel.state.collections.filter({ $0.visible }), animated: false)
 
         self.viewModel.stateObservable
-                      .observeOn(MainScheduler.instance)
+                      .observe(on: MainScheduler.instance)
                       .subscribe(onNext: { [weak self] state in
                           self?.update(to: state)
                       })

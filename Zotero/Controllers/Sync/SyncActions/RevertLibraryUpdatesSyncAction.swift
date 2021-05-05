@@ -42,7 +42,7 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
 
                 subscriber(.success([.collection: collections.failed, .search: searches.failed, .item: items.failed]))
             } catch let error {
-                subscriber(.error(error))
+                subscriber(.failure(error))
             }
 
             return Disposables.create()

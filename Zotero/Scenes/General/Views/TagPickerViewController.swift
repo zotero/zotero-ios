@@ -41,7 +41,7 @@ final class TagPickerViewController: UIViewController {
         self.setupNavigationBar()
 
         self.viewModel.stateObservable
-                      .observeOn(MainScheduler.instance)
+                      .observe(on: MainScheduler.instance)
                       .subscribe(onNext: { [weak self] state in
                           self?.update(to: state)
                       })
@@ -97,14 +97,14 @@ final class TagPickerViewController: UIViewController {
         searchController.searchBar.placeholder = L10n.ItemDetail.searchTags
         searchController.searchBar.autocapitalizationType = .none
 
-        searchController.searchBar.rx.text.observeOn(MainScheduler.instance)
+        searchController.searchBar.rx.text.observe(on: MainScheduler.instance)
                          .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
                          .subscribe(onNext: { [weak self] text in
                             self?.viewModel.process(action: .search(text ?? ""))
                          })
                          .disposed(by: self.disposeBag)
 
-        searchController.searchBar.rx.searchButtonClicked.observeOn(MainScheduler.instance)
+        searchController.searchBar.rx.searchButtonClicked.observe(on: MainScheduler.instance)
                         .subscribe(onNext: { [weak self] in
                             self?.addTagIfNeeded()
                         })

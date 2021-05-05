@@ -14,7 +14,7 @@ extension PrimitiveSequence where Trait == SingleTrait {
     public func asCompletable() -> Completable {
         return Completable.create { observer in
             return self.subscribe(onSuccess: { _ in observer(.completed) },
-                                  onError: { observer(.error($0)) })
+                                  onFailure: { observer(.error($0)) })
         }
     }
 }

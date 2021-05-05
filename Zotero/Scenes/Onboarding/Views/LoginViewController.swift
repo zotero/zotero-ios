@@ -50,7 +50,7 @@ final class LoginViewController: UIViewController {
         self.usernameField.becomeFirstResponder()
 
         self.viewModel.stateObservable
-                      .observeOn(MainScheduler.instance)
+                      .observe(on: MainScheduler.instance)
                       .subscribe(onNext: { [weak self] state in
                           self?.update(state: state)
                       })
@@ -59,7 +59,7 @@ final class LoginViewController: UIViewController {
         self.usernameField.rx
                           .text
                           .orEmpty
-                          .observeOn(MainScheduler.instance)
+                          .observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] text in
                               self?.viewModel.process(action: .setUsername(text))
                           })
@@ -68,7 +68,7 @@ final class LoginViewController: UIViewController {
         self.passwordField.rx
                           .text
                           .orEmpty
-                          .observeOn(MainScheduler.instance)
+                          .observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] text in
                               self?.viewModel.process(action: .setPassword(text))
                           })

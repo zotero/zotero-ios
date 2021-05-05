@@ -53,7 +53,7 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
         self.timerDisposeBag = DisposeBag()
 
         controller.observable
-                  .observeOn(self.scheduler)
+                  .observe(on: self.scheduler)
                   .subscribe(onNext: { [weak self] data in
                       self?.inProgress = nil
                       if let data = data { // We're retrying, enqueue the new sync

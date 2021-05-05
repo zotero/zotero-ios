@@ -43,7 +43,7 @@ final class CollectionsSearchViewController: UIViewController {
         self.setupDataSource()
 
         self.viewModel.stateObservable
-                      .observeOn(MainScheduler.instance)
+                      .observe(on: MainScheduler.instance)
                       .skip(1)
                       .subscribe(onNext: { [weak self] state in
                           self?.update(to: state)
@@ -66,7 +66,7 @@ final class CollectionsSearchViewController: UIViewController {
         self.searchBar.placeholder = L10n.Collections.searchTitle
 
         self.searchBar.rx.text
-                         .observeOn(MainScheduler.instance)
+                         .observe(on: MainScheduler.instance)
                          .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
                          .subscribe(onNext: { [weak self] text in
                             self?.viewModel.process(action: .search(text ?? ""))
@@ -74,7 +74,7 @@ final class CollectionsSearchViewController: UIViewController {
                          .disposed(by: self.disposeBag)
 
         self.searchBar.rx.cancelButtonClicked
-                         .observeOn(MainScheduler.instance)
+                         .observe(on: MainScheduler.instance)
                          .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
                          .subscribe(onNext: { [weak self] text in
                              self?.dismiss(animated: true, completion: nil)
@@ -109,7 +109,7 @@ final class CollectionsSearchViewController: UIViewController {
     private func setupKeyboardObserving() {
         NotificationCenter.default
                           .keyboardWillShow
-                          .observeOn(MainScheduler.instance)
+                          .observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] notification in
                               if let data = notification.keyboardData {
                                   self?.setupTableView(with: data)
@@ -119,7 +119,7 @@ final class CollectionsSearchViewController: UIViewController {
 
         NotificationCenter.default
                           .keyboardWillHide
-                          .observeOn(MainScheduler.instance)
+                          .observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] notification in
                               if let data = notification.keyboardData {
                                   self?.setupTableView(with: data)

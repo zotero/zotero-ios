@@ -40,7 +40,7 @@ struct SubmitUpdateSyncAction: SyncAction {
     private func submitSettings() -> Single<(Int, Error?)> {
         let request = UpdatesRequest(libraryId: self.libraryId, userId: self.userId, objectType: self.object, params: self.parameters, version: self.sinceVersion)
         return self.apiClient.send(request: request, queue: self.queue)
-                             .observeOn(self.scheduler)
+                             .observe(on: self.scheduler)
                              .flatMap({ _, headers -> Single<([(String, LibraryIdentifier)], Int)> in
                                  let newVersion = headers.lastModifiedVersion
                                  var settings: [(String, LibraryIdentifier)] = []
@@ -70,7 +70,7 @@ struct SubmitUpdateSyncAction: SyncAction {
     private func submitOther() -> Single<(Int, Error?)> {
         let request = UpdatesRequest(libraryId: self.libraryId, userId: self.userId, objectType: self.object, params: self.parameters, version: self.sinceVersion)
         return self.apiClient.send(request: request, queue: self.queue)
-                             .observeOn(self.scheduler)
+                             .observe(on: self.scheduler)
                              .flatMap({ response, headers -> Single<(UpdatesResponse, Int)> in
                                  do {
                                      let newVersion = headers.lastModifiedVersion

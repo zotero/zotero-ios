@@ -65,7 +65,7 @@ final class CreatorEditViewController: UIViewController {
         self.setupConstraints()
 
         self.viewModel.stateObservable
-            .subscribeOn(MainScheduler.instance)
+            .subscribe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] state in
                 self?.update(to: state)
             })

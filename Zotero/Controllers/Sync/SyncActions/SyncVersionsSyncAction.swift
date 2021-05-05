@@ -51,11 +51,11 @@ struct SyncVersionsSyncAction: SyncAction {
                                                                                   current currentVersion: Int?, syncType: SyncController.SyncType) -> Single<(Int, [String])> {
         if !self.checkRemote && self.syncType != .full {
             return self.loadChangedObjects(for: object, from: [:], in: libraryId, syncType: syncType, newVersion: (currentVersion ?? 0), delayIntervals: self.syncDelayIntervals)
-                       .observeOn(self.scheduler)
+                       .observe(on: self.scheduler)
         }
 
         return self.loadRemoteVersions(for: object, in: libraryId, userId: userId, since: sinceVersion, syncType: syncType)
-                   .observeOn(self.scheduler)
+                   .observe(on: self.scheduler)
                    .flatMap { (response: [String: Int], headers) -> Single<(Int, [String])> in
                        let newVersion = headers.lastModifiedVersion
 
@@ -88,7 +88,7 @@ struct SyncVersionsSyncAction: SyncAction {
                 let identifiers = try coordinator.perform(request: request)
                 subscriber(.success((newVersion, identifiers)))
             } catch let error {
-                subscriber(.error(error))
+                subscriber(.failure(error))
             }
 
             return Disposables.create()

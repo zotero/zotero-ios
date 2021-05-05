@@ -232,7 +232,7 @@ final class UserControllers {
 
         // Observe sync to enable/disable the device falling asleep
         self.syncScheduler.syncController.progressObservable
-            .observeOn(MainScheduler.instance)
+            .observe(on: MainScheduler.instance)
             .subscribe(onNext: { progress in
                 switch progress {
                 case .aborted, .finished:
@@ -245,7 +245,7 @@ final class UserControllers {
 
         // Observe local changes to start sync
         self.changeObserver.observable
-            .observeOn(MainScheduler.instance)
+            .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] changedLibraries in
                 self?.syncScheduler.requestNormalSync(for: changedLibraries)
             })
@@ -253,7 +253,7 @@ final class UserControllers {
 
         // Observe remote changes to start sync/translator update
         self.webSocketController.observable
-            .observeOn(MainScheduler.instance)
+            .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] change in
                 switch change {
                 case .translators:

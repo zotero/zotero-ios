@@ -40,10 +40,10 @@ struct UploadAttachmentSyncAction: SyncAction {
                     subscriber(.success(()))
                 } else {
                     DDLogError("UploadAttachmentSyncAction: attachment item not submitted")
-                    subscriber(.error(SyncActionError.attachmentItemNotSubmitted))
+                    subscriber(.failure(SyncActionError.attachmentItemNotSubmitted))
                 }
             } catch let error {
-                subscriber(.error(error))
+                subscriber(.failure(error))
             }
 
             return Disposables.create()
@@ -66,7 +66,7 @@ struct UploadAttachmentSyncAction: SyncAction {
                                                                  userId: self.userId, oldMd5: self.oldMd5, apiClient: self.apiClient,
                                                                  queue: self.queue, scheduler: self.scheduler).result
                             }
-                            .observeOn(self.scheduler)
+                            .observe(on: self.scheduler)
                             .flatMap { response -> Single<Swift.Result<(UploadRequest, AttachmentUploadRequest, String), SyncActionError>> in
                                 switch response {
                                 case .exists:
@@ -86,7 +86,7 @@ struct UploadAttachmentSyncAction: SyncAction {
                             }
 
         let startTime = CFAbsoluteTimeGetCurrent()
-        let response = upload.observeOn(self.scheduler)
+        let response = upload.observe(on: self.scheduler)
                              .flatMap({ result -> Single<Swift.Result<String, SyncActionError>> in
                                  switch result {
                                  case .success((let uploadRequest, let apiRequest, let uploadKey)):
@@ -114,7 +114,7 @@ struct UploadAttachmentSyncAction: SyncAction {
                                      return Single.just(.failure(error))
                                  }
                              })
-                             .observeOn(self.scheduler)
+                             .observe(on: self.scheduler)
                              .flatMap({ result -> Single<()> in
 
                                 let markDbAction: (Int?) -> Single<()> = { version in

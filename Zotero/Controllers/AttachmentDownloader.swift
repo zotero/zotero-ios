@@ -148,7 +148,7 @@ final class AttachmentDownloader {
 
         let request = FileRequest(data: .internal(libraryId, self.userId, key), destination: file)
         self.apiClient.download(request: request)
-                      .observeOn(MainScheduler.instance)
+                      .observe(on: MainScheduler.instance)
                       .flatMap { request -> Observable<DownloadRequest> in
                           let downloadProgress = request.downloadProgress
                           // Check headers on redirect to see whether downloaded file will be compressed zip or base file.

@@ -136,14 +136,14 @@ final class DebugLogging {
         let debugRequest = DebugLogUploadRequest()
         let startTime = CFAbsoluteTimeGetCurrent()
         self.apiClient.upload(request: debugRequest, data: data)
-                      .subscribeOn(self.scheduler)
+                      .subscribe(on: self.scheduler)
                       .flatMap { request -> Single<(HTTPURLResponse, Data)> in
                           let logId = ApiLogger.log(request: debugRequest, url: request.request?.url)
                           request.uploadProgress { progress in
                               DDLogInfo("DebugLogging: progress \(progress.fractionCompleted)")
                               progressAlert(progress.fractionCompleted)
                           }
-                          return request.rx.responseData().subscribeOn(self.scheduler).log(identifier: logId, startTime: startTime, request: debugRequest).asSingle()
+                          return request.rx.responseData().subscribe(on: self.scheduler).log(identifier: logId, startTime: startTime, request: debugRequest).asSingle()
                       }
                       .flatMap { _, data -> Single<String> in
                           let delegate = DebugResponseParserDelegate()
@@ -156,12 +156,12 @@ final class DebugLogging {
                               return Single.error(Error.responseParsing)
                           }
                       }
-                      .observeOn(MainScheduler.instance)
+                      .observe(on: MainScheduler.instance)
                       .subscribe(onSuccess: { [weak self] debugId in
                           DDLogInfo("DebugLogging: uploaded logs")
                           self?.clearDebugDirectory()
                           completionAlert(.success("D" + debugId), nil, nil, nil)
-                      }, onError: { [weak self] error in
+                      }, onFailure: { [weak self] error in
                           DDLogError("DebugLogging: can't upload logs - \(error)")
                           completionAlert(.failure((error as? Error) ?? .upload),
                                           logs,

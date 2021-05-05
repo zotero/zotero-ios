@@ -39,7 +39,7 @@ final class BackgroundUploadProcessor {
                                     headers: [String: String]?) -> Single<(URLRequest, URL)> {
         return Single.create { [weak self] subscriber -> Disposable in
             guard let `self` = self else {
-                subscriber(.error(Error.expired))
+                subscriber(.failure(Error.expired))
                 return Disposables.create()
             }
 
@@ -69,7 +69,7 @@ final class BackgroundUploadProcessor {
                 subscriber(.success((request, newFileUrl)))
             } catch let error {
                 DDLogError("BackgroundUploadProcessor: can't create multipartform data - \(error)")
-                subscriber(.error(error))
+                subscriber(.failure(error))
             }
 
             return Disposables.create()

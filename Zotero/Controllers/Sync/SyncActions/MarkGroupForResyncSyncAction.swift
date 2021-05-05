@@ -24,7 +24,7 @@ struct MarkGroupForResyncSyncAction: SyncAction {
                 try self.dbStorage.createCoordinator().perform(request: MarkGroupForResyncDbAction(identifier: self.identifier))
                 subscriber(.success(()))
             } catch let error {
-                subscriber(.error(error))
+                subscriber(.failure(error))
             }
             return Disposables.create()
         }
