@@ -30,6 +30,7 @@ final class ShareViewController: UIViewController {
     @IBOutlet private weak var attachmentProgressView: CircularProgressView!
     // Collection picker
     @IBOutlet private weak var collectionPickerStackContainer: UIView!
+    @IBOutlet private weak var collectionPickerTitleLabel: UILabel!
     @IBOutlet private weak var collectionPickerContainer: UIView!
     @IBOutlet private weak var collectionPickerStackView: UIStackView!
     @IBOutlet private weak var collectionPickerLoadingContainer: UIView?
@@ -43,6 +44,12 @@ final class ShareViewController: UIViewController {
     @IBOutlet private weak var itemPickerLabel: UILabel!
     @IBOutlet private weak var itemPickerChevron: UIImageView!
     @IBOutlet private weak var itemPickerButton: UIButton!
+    // Tag picker
+    @IBOutlet private weak var tagPickerStackContainer: UIView!
+    @IBOutlet private weak var tagPickerTitleLabel: UILabel!
+    @IBOutlet private weak var tagPickerContainer: UIView!
+    @IBOutlet private weak var tagPickerStackView: UIStackView!
+    @IBOutlet private weak var tagPickerAddButton: RightButton!
     // Progress
     @IBOutlet private weak var bottomProgressContainer: UIView!
     @IBOutlet private weak var bottomProgressActivityIndicator: UIActivityIndicatorView!
@@ -66,6 +73,7 @@ final class ShareViewController: UIViewController {
     private static let toolbarTitleIdx = 1
     private static let childAttachmentLeftOffset: CGFloat = 16
     private static let maxCollectionCount = 5
+    private static let pickerSize = CGSize(width: 468.0, height: 500.0)
 
     // MARK: - Lifecycle
 
@@ -149,6 +157,21 @@ final class ShareViewController: UIViewController {
         self.present(controller, animated: false, completion: nil)
     }
 
+    @IBAction private func showTagPicker() {
+        guard let dbStorage = self.dbStorage else { return }
+
+        let state = TagPickerState(libraryId: self.store.state.selectedLibraryId, selectedTags: Set(self.store.state.tags.map({ $0.name })))
+        let handler = TagPickerActionHandler(dbStorage: dbStorage)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+        let controller = TagPickerViewController(viewModel: viewModel, saveAction: { [weak self] tags in
+            self?.store.set(tags: tags)
+        })
+        controller.preferredContentSize = ShareViewController.pickerSize
+
+        self.navigationController?.preferredContentSize = ShareViewController.pickerSize
+        self.navigationController?.pushViewController(controller, animated: true)
+    }
+
     @IBAction private func showItemPicker() {
         guard let items = self.store.state.itemPicker?.items else { return }
 
@@ -157,11 +180,9 @@ final class ShareViewController: UIViewController {
             self?.navigationController?.popViewController(animated: true)
         }
 
-        let size = CGSize(width: 468.0, height: 500.0)
-
         let controller = UIHostingController(rootView: view)
-        controller.preferredContentSize = size
-        self.navigationController?.preferredContentSize = size
+        controller.preferredContentSize = ShareViewController.pickerSize
+        self.navigationController?.preferredContentSize = ShareViewController.pickerSize
         self.navigationController?.pushViewController(controller, animated: true)
     }
 
@@ -175,11 +196,9 @@ final class ShareViewController: UIViewController {
         }
         .environmentObject(store)
 
-        let size = CGSize(width: 468.0, height: 500.0)
-
         let controller = UIHostingController(rootView: view)
-        controller.preferredContentSize = size
-        self.navigationController?.preferredContentSize = size
+        controller.preferredContentSize = ShareViewController.pickerSize
+        self.navigationController?.preferredContentSize = ShareViewController.pickerSize
         self.navigationController?.pushViewController(controller, animated: true)
     }
 
@@ -199,6 +218,7 @@ final class ShareViewController: UIViewController {
         self.update(attachmentState: state.attachmentState, itemState: state.itemPicker)
         self.update(collectionPicker: state.collectionPicker, recents: state.recents)
         self.update(itemPicker: state.itemPicker)
+        self.updateTagPicker(with: state.tags)
 
         if self.viewIsVisible {
             self.updatePreferredContentSize()
@@ -427,22 +447,24 @@ final class ShareViewController: UIViewController {
     private func update(collectionPicker state: ExtensionStore.State.CollectionPicker, recents: [RecentData]) {
         switch state {
         case .picked(let library, let collection):
-            self.createCollectionRowsIfNeeded(count: min(ShareViewController.maxCollectionCount, recents.count))
-
-            for (idx, view) in self.collectionPickerStackView.arrangedSubviews.enumerated() {
-                guard let row = view as? CollectionRowView else { continue }
-                let recent = recents[idx]
-                let selected = recent.collection?.identifier == collection?.identifier && recent.library.identifier == library.identifier
-                row.setup(with: (recent.collection?.name ?? recent.library.name), isSelected: selected)
-                row.tapAction = { [weak self] in
-                    self?.store.setFromRecent(collection: recent.collection, library: recent.library)
-                }
+            if self.collectionPickerLoadingContainer != nil {
+                // These are unnecessary anymore
+                self.collectionPickerLoadingContainer?.removeFromSuperview()
+                self.collectionPickerFailureLabel?.removeFromSuperview()
+                // Show pick other button
+                self.collectionPickerPickOtherButton.isHidden = false
             }
+
+            let count = min(ShareViewController.maxCollectionCount, recents.count)
+            self.updateRowCount(in: self.collectionPickerStackView, hasAddButton: true, to: count,
+                                createRow: { Bundle.main.loadNibNamed("CollectionRowView", owner: nil, options: nil)?.first as? CollectionRowView })
+            self.updateCollections(to: recents, pickedCollection: collection, library: library)
 
         case .loading:
             self.collectionPickerLoadingContainer?.isHidden = false
             self.collectionPickerFailureLabel?.isHidden = true
             self.collectionPickerPickOtherButton.isHidden = true
+
         case .failed:
             self.collectionPickerLoadingContainer?.isHidden = true
             self.collectionPickerFailureLabel?.isHidden = false
@@ -450,30 +472,43 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func createCollectionRowsIfNeeded(count: Int) {
-        if self.collectionPickerLoadingContainer != nil {
-            // These are unnecessary anymore
-            self.collectionPickerLoadingContainer?.removeFromSuperview()
-            self.collectionPickerFailureLabel?.removeFromSuperview()
-            // Show pick other button
-            self.collectionPickerPickOtherButton.isHidden = false
+    private func updateCollections(to recents: [RecentData], pickedCollection collection: Collection?, library: Library) {
+        for (idx, view) in self.collectionPickerStackView.arrangedSubviews.enumerated() {
+            guard let row = view as? CollectionRowView else { continue }
+            let recent = recents[idx]
+            let selected = recent.collection?.identifier == collection?.identifier && recent.library.identifier == library.identifier
+            row.setup(with: (recent.collection?.name ?? recent.library.name), isSelected: selected)
+            row.tapAction = { [weak self] in
+                self?.store.setFromRecent(collection: recent.collection, library: recent.library)
+            }
         }
+    }
 
-        let visibleCount = self.collectionPickerStackView.arrangedSubviews.count - 1 // -1 for "More" button
+    private func updateTagPicker(with tags: [Tag]) {
+        self.updateRowCount(in: self.tagPickerStackView, hasAddButton: true, to: tags.count, createRow: { Bundle.main.loadNibNamed("TagRow", owner: nil, options: nil)?.first as? TagRow })
+
+        for (idx, view) in self.tagPickerStackView.arrangedSubviews.enumerated() {
+            guard let row = view as? TagRow else { continue }
+            row.setup(with: tags[idx])
+        }
+    }
+
+    private func updateRowCount(in stackView: UIStackView, hasAddButton: Bool, to count: Int, createRow: () -> UIView?) {
+        let visibleCount = stackView.arrangedSubviews.count - (hasAddButton ? 1 : 0)
 
         guard visibleCount != count else { return }
 
         if visibleCount > count {
             for _ in 0..<(visibleCount - count) {
-                guard let view = self.collectionPickerStackView.arrangedSubviews.first else { break }
+                guard let view = stackView.arrangedSubviews.first else { break }
                 view.removeFromSuperview()
             }
             return
         }
 
         for _ in 0..<(count - visibleCount) {
-            guard let row = Bundle.main.loadNibNamed("CollectionRowView", owner: nil, options: nil)?.first as? CollectionRowView else { continue }
-            self.collectionPickerStackView.insertArrangedSubview(row, at: 0)
+            guard let row = createRow() else { continue }
+            stackView.insertArrangedSubview(row, at: 0)
         }
     }
 
@@ -510,15 +545,20 @@ final class ShareViewController: UIViewController {
     private func setupPickers() {
         [self.translationContainer,
          self.collectionPickerContainer,
-         self.itemPickerContainer].forEach { container in
+         self.itemPickerContainer,
+         self.tagPickerContainer].forEach { container in
             container!.layer.cornerRadius = 8
             container!.layer.masksToBounds = true
             container?.backgroundColor = Asset.Colors.defaultCellBackground.color
         }
 
+        self.collectionPickerTitleLabel.text = L10n.Shareext.collectionTitle.uppercased()
         self.collectionPickerFailureLabel?.text = L10n.Shareext.syncError
         self.collectionPickerLoadingLabel.text = L10n.Shareext.loadingCollections
         self.collectionPickerPickOtherButton.setTitle(L10n.Shareext.collectionOther, for: .normal)
+        self.itemPickerTitleLabel.text = L10n.Shareext.itemTitle.uppercased()
+        self.tagPickerTitleLabel.text = L10n.Shareext.tagsTitle.uppercased()
+        self.tagPickerAddButton.setTitle(L10n.add, for: .normal)
     }
 
     private func setupNavbar(loggedIn: Bool) {

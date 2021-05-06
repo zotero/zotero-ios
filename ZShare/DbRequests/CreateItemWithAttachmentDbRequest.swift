@@ -37,7 +37,8 @@ struct CreateItemWithAttachmentDbRequest: DbResponseRequest {
         let localizedType = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
         let attachment = try CreateAttachmentDbRequest(attachment: self.attachment,
                                                        localizedType: localizedType,
-                                                       collections: []).process(in: database)
+                                                       collections: [],
+                                                       tags: []).process(in: database)
 
         attachment.parent = item
         attachment.changedFields.insert(.parent)

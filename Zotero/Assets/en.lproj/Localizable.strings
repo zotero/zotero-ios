@@ -234,6 +234,9 @@
 "shareext.loading_collections" = "Loading Collections";
 "shareext.sync_error" = "Can't sync collections";
 "shareext.collection_other" = "More";
+"shareext.item_title" = "Item";
+"shareext.collection_title" = "Collection";
+"shareext.tags_title" = "Tags";
 
 "searchbar.placeholder" = "Search";
 

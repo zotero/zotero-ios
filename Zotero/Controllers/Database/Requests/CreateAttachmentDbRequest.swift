@@ -16,6 +16,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
     let attachment: Attachment
     let localizedType: String
     let collections: Set<String>
+    let tags: [TagResponse]
 
     var needsWrite: Bool { return true }
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
@@ -137,6 +138,10 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
         if !self.collections.isEmpty {
             item.changedFields.insert(.collections)
         }
+
+        // MARK: - Tags
+
+        
 
         return item
     }

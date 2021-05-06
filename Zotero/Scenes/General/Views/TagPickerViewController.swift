@@ -88,6 +88,19 @@ final class TagPickerViewController: UIViewController {
         self.saveAction(tags)
     }
 
+    private func dismiss() {
+        guard let navigationController = self.navigationController else {
+            self.presentingViewController?.dismiss(animated: true, completion: nil)
+            return
+        }
+
+        if navigationController.viewControllers.count == 1 {
+            navigationController.dismiss(animated: true, completion: nil)
+        } else {
+            navigationController.popViewController(animated: true)
+        }
+    }
+
     // MARK: - Setups
 
     private func setupSearchBar() {
@@ -127,11 +140,7 @@ final class TagPickerViewController: UIViewController {
         let left = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
         left.rx.tap
             .subscribe(onNext: { [weak self] in
-                if self?.navigationController?.popoverPresentationController != nil {
-                    self?.navigationController?.popViewController(animated: true)
-                } else {
-                    self?.navigationController?.dismiss(animated: true, completion: nil)
-                }
+                self?.dismiss()
             })
             .disposed(by: self.disposeBag)
         self.navigationItem.leftBarButtonItem = left
@@ -140,7 +149,7 @@ final class TagPickerViewController: UIViewController {
         right.rx.tap
              .subscribe(onNext: { [weak self] in
                  self?.save()
-                 self?.navigationController?.dismiss(animated: true, completion: nil)
+                 self?.dismiss()
              })
              .disposed(by: self.disposeBag)
         self.navigationItem.rightBarButtonItem = right

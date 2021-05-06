@@ -118,7 +118,7 @@ final class ExtensionStore {
 
         fileprivate struct UploadData {
             enum Kind {
-                case localFile(location: File, collections: Set<String>)
+                case localFile(location: File, collections: Set<String>, tags: [TagResponse])
                 case translated(item: ItemResponse, location: File)
             }
 
@@ -130,8 +130,8 @@ final class ExtensionStore {
             let userId: Int
 
             init(item: ItemResponse, attachmentKey: String, attachmentData: [String: Any], attachmentFile: File, defaultTitle: String,
-                 collections: Set<String>, libraryId: LibraryIdentifier, userId: Int, dateParser: DateParser) {
-                let newItem = item.copy(libraryId: libraryId, collectionKeys: collections)
+                 collections: Set<String>, tags: [TagResponse], libraryId: LibraryIdentifier, userId: Int, dateParser: DateParser) {
+                let newItem = item.copy(libraryId: libraryId, collectionKeys: collections, addedTags: tags)
                 let filename = FilenameFormatter.filename(from: item, defaultTitle: defaultTitle, ext: attachmentFile.ext, dateParser: dateParser)
                 let file = Files.newAttachmentFile(in: libraryId, key: attachmentKey, filename: filename, contentType: attachmentFile.mimeType)
                 let title = ((attachmentData["title"] as? String) ?? defaultTitle) + "." + file.ext
@@ -148,7 +148,7 @@ final class ExtensionStore {
                 self.userId = userId
             }
 
-            init(localFile: File, attachmentKey: String, collections: Set<String>, libraryId: LibraryIdentifier, userId: Int) {
+            init(localFile: File, attachmentKey: String, collections: Set<String>, tags: [TagResponse], libraryId: LibraryIdentifier, userId: Int) {
                 let filename = localFile.name + "." + localFile.ext
                 let file = Files.newAttachmentFile(in: libraryId, key: attachmentKey, filename: filename, contentType: localFile.mimeType)
                 let attachment = Attachment(type: .file(filename: filename, contentType: localFile.mimeType, location: .local, linkType: .importedFile),
@@ -156,7 +156,7 @@ final class ExtensionStore {
                                             key: attachmentKey,
                                             libraryId: libraryId)
 
-                self.type = .localFile(location: localFile, collections: collections)
+                self.type = .localFile(location: localFile, collections: collections, tags: tags)
                 self.attachment = attachment
                 self.file = file
                 self.filename = filename
@@ -177,6 +177,7 @@ final class ExtensionStore {
         var itemPicker: ItemPicker?
         var items: ProcessedAttachment?
         var processedAttachment: ProcessedAttachment?
+        var tags: [Tag]
 
         init() {
             self.attachmentKey = KeyGenerator.newKey
@@ -185,6 +186,7 @@ final class ExtensionStore {
             self.collectionPicker = .loading
             self.attachmentState = .decoding
             self.recents = []
+            self.tags = []
         }
     }
 
@@ -533,6 +535,7 @@ final class ExtensionStore {
 
         self.state.attachmentState = .submitting
 
+        let tags = self.state.tags.map({ TagResponse(tag: $0.name, type: $0.type.rawValue) })
         let libraryId: LibraryIdentifier
         let collectionKeys: Set<String>
         let userId = Defaults.shared.userId
@@ -549,17 +552,17 @@ final class ExtensionStore {
         if let attachment = self.state.processedAttachment {
             switch attachment {
             case .item(let item):
-                self.submit(item: item.copy(libraryId: libraryId, collectionKeys: collectionKeys), libraryId: libraryId, userId: userId,
+                self.submit(item: item.copy(libraryId: libraryId, collectionKeys: collectionKeys, addedTags: tags), libraryId: libraryId, userId: userId,
                             apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, schemaController: self.schemaController, dateParser: self.dateParser)
 
             case .itemWithAttachment(let item, let attachmentData, let attachmentFile):
                 let data = State.UploadData(item: item, attachmentKey: self.state.attachmentKey, attachmentData: attachmentData,
                                             attachmentFile: attachmentFile, defaultTitle: (self.state.title ?? "Unknown"),
-                                            collections: collectionKeys, libraryId: libraryId, userId: userId, dateParser: self.dateParser)
+                                            collections: collectionKeys, tags: tags, libraryId: libraryId, userId: userId, dateParser: self.dateParser)
                 self.upload(data: data, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage)
 
             case .localFile(let file):
-                let data = State.UploadData(localFile: file, attachmentKey: self.state.attachmentKey, collections: collectionKeys, libraryId: libraryId, userId: userId)
+                let data = State.UploadData(localFile: file, attachmentKey: self.state.attachmentKey, collections: collectionKeys, tags: tags, libraryId: libraryId, userId: userId)
                 self.upload(data: data, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage)
             }
         } else if let url = self.state.url {
@@ -570,7 +573,7 @@ final class ExtensionStore {
 
             let webItem = ItemResponse(rawType: ItemTypes.webpage, key: KeyGenerator.newKey, library: LibraryResponse(libraryId: libraryId),
                                        parentKey: nil, collectionKeys: collectionKeys, links: nil, parsedDate: nil, isTrash: false, version: 0,
-                                       dateModified: date, dateAdded: date, fields: fields, tags: [], creators: [], relations: [:], createdBy: nil,
+                                       dateModified: date, dateAdded: date, fields: fields, tags: tags, creators: [], relations: [:], createdBy: nil,
                                        lastModifiedBy: nil, rects: nil)
 
             self.submit(item: webItem, libraryId: libraryId, userId: userId, apiClient: self.apiClient, dbStorage: self.dbStorage,
@@ -635,8 +638,8 @@ final class ExtensionStore {
         let prepare: Single<(AuthorizeUploadResponse, String)>
 
         switch data.type {
-        case .localFile(let location, let collections):
-            prepare = self.prepareUpload(attachment: data.attachment, collections: collections, file: data.file, tmpFile: location,
+        case .localFile(let location, let collections, let tags):
+            prepare = self.prepareUpload(attachment: data.attachment, collections: collections, tags: tags, file: data.file, tmpFile: location,
                                          filename: data.filename, libraryId: data.libraryId, userId: data.userId, apiClient: apiClient,
                                          dbStorage: dbStorage, fileStorage: fileStorage)
         case .translated(let item, let location):
@@ -686,6 +689,7 @@ final class ExtensionStore {
     /// Submits new `RItem`s to Zotero API. Authorizes new upload to Zotero API.
     /// - parameter attachment: Attachment to be created and submitted.
     /// - parameter collections: Collections to which the attachment is assigned.
+    /// - parameter tags: Tags picked by user.
     /// - parameter file: File to upload.
     /// - parameter tmpFile: Original file.
     /// - parameter filename: Filename of file to upload.
@@ -695,13 +699,13 @@ final class ExtensionStore {
     /// - parameter dbStorage: Database storage
     /// - parameter fileStorage: File storage
     /// - returns: `Single` with Authorization response and md5 hash of file.
-    private func prepareUpload(attachment: Attachment, collections: Set<String>, file: File, tmpFile: File, filename: String, libraryId: LibraryIdentifier, userId: Int,
+    private func prepareUpload(attachment: Attachment, collections: Set<String>, tags: [TagResponse], file: File, tmpFile: File, filename: String, libraryId: LibraryIdentifier, userId: Int,
                                apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<(AuthorizeUploadResponse, String)> {
         return self.copyFile(from: tmpFile, to: file)
                    .subscribe(on: self.backgroundScheduler)
                    .flatMap { [weak self] filesize -> Single<(UInt64, [String: Any], String, Int)> in
                        guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
-                       return self.create(attachment: attachment, collections: collections)
+                       return self.create(attachment: attachment, collections: collections, tags: tags)
                                   .flatMap({ Single.just((filesize, $0, $1, $2)) })
                    }
                    .flatMap { filesize, parameters, md5, mtime -> Single<(UInt64, String, Int)> in
@@ -847,11 +851,12 @@ final class ExtensionStore {
     /// Creates `RItem` instance in DB from parsed attachement.
     /// - parameter attachment: Parsed attachment to be created.
     /// - parameter collections: Set of collections to which the attachment is assigned.
+    /// - parameter tags: Tags picked by user.
     /// - returns: `Single` with `updateParameters` of both new items, md5 and mtime of attachment.
-    private func create(attachment: Attachment, collections: Set<String>) -> Single<([String: Any], String, Int)> {
+    private func create(attachment: Attachment, collections: Set<String>, tags: [TagResponse]) -> Single<([String: Any], String, Int)> {
         return Single.create { subscriber -> Disposable in
             let localizedType = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
-            let request = CreateAttachmentDbRequest(attachment: attachment, localizedType: localizedType, collections: collections)
+            let request = CreateAttachmentDbRequest(attachment: attachment, localizedType: localizedType, collections: collections, tags: tags)
 
             do {
                 let coordinator = try self.dbStorage.createCoordinator()
@@ -907,6 +912,12 @@ final class ExtensionStore {
 
         Defaults.shared.selectedCollectionId = state.selectedCollectionId
         Defaults.shared.selectedLibrary = state.selectedLibraryId
+    }
+
+    // MARK: - Tag picker
+
+    func set(tags: [Tag]) {
+        self.state.tags = tags
     }
 
     // MARK: - Sync

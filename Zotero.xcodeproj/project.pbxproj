@@ -567,6 +567,20 @@
 		B361A3022511F9BE00271173 /* LinkMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = B361A3002511F98700271173 /* LinkMode.swift */; };
 		B361A3042511F9FB00271173 /* AnnotationType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B361A3032511F9FB00271173 /* AnnotationType.swift */; };
 		B361A3052511FA0C00271173 /* AnnotationType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B361A3032511F9FB00271173 /* AnnotationType.swift */; };
+		B36459DA2644116000A0C2C0 /* TagPickerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CD9255451AA00910FE0 /* TagPickerState.swift */; };
+		B36459DB2644117D00A0C2C0 /* TagPickerActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CE1255451C200910FE0 /* TagPickerActionHandler.swift */; };
+		B36459DC2644118800A0C2C0 /* TagPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CE8255451DC00910FE0 /* TagPickerViewController.swift */; };
+		B36459DD2644118800A0C2C0 /* TagPickerCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3830CF525545EE400910FE0 /* TagPickerCell.xib */; };
+		B36459DE2644119100A0C2C0 /* TagPickerViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3830CE7255451DC00910FE0 /* TagPickerViewController.xib */; };
+		B36459DF2644119600A0C2C0 /* TagPickerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CF425545EE400910FE0 /* TagPickerCell.swift */; };
+		B36459E0264411AC00A0C2C0 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3866A572417C1BC006693C4 /* ViewModel.swift */; };
+		B36459E1264411D800A0C2C0 /* TagPickerError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CD7255451AA00910FE0 /* TagPickerError.swift */; };
+		B36459E2264411DB00A0C2C0 /* TagPickerAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CD8255451AA00910FE0 /* TagPickerAction.swift */; };
+		B36459E3264411F300A0C2C0 /* TagColorGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36BEC7224485FC700A60552 /* TagColorGenerator.swift */; };
+		B36459E42644120D00A0C2C0 /* Color+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305651023FC051E003304F2 /* Color+Extension.swift */; };
+		B36459E52644121300A0C2C0 /* UIColor+Custom.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650923FC051E003304F2 /* UIColor+Custom.swift */; };
+		B36459E726441A1800A0C2C0 /* TagRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36459E626441A1800A0C2C0 /* TagRow.swift */; };
+		B36459E926441A2000A0C2C0 /* TagRow.xib in Resources */ = {isa = PBXBuildFile; fileRef = B36459E826441A2000A0C2C0 /* TagRow.xib */; };
 		B367330D24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B367330C24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift */; };
 		B36A988D2428E05A005D5790 /* TranslatorsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsController.swift */; };
 		B36A98912428E346005D5790 /* TranslatorsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsController.swift */; };
@@ -1230,6 +1244,8 @@
 		B361820E24C9B9E800B30D56 /* SelectableTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectableTextField.swift; sourceTree = "<group>"; };
 		B361A3002511F98700271173 /* LinkMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkMode.swift; sourceTree = "<group>"; };
 		B361A3032511F9FB00271173 /* AnnotationType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationType.swift; sourceTree = "<group>"; };
+		B36459E626441A1800A0C2C0 /* TagRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagRow.swift; sourceTree = "<group>"; };
+		B36459E826441A2000A0C2C0 /* TagRow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TagRow.xib; sourceTree = "<group>"; };
 		B367330C24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HtmlAttributedStringConverter.swift; sourceTree = "<group>"; };
 		B36A988C2428E059005D5790 /* TranslatorsController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TranslatorsController.swift; sourceTree = "<group>"; };
 		B36BEC7224485FC700A60552 /* TagColorGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagColorGenerator.swift; sourceTree = "<group>"; };
@@ -2557,6 +2573,8 @@
 				B3B6759A26205A48003231A5 /* CollectionRowView.xib */,
 				B3027C1D23BDB2B8007F5B26 /* ItemPickerView.swift */,
 				B3B675A026208BAF003231A5 /* RightButton.swift */,
+				B36459E626441A1800A0C2C0 /* TagRow.swift */,
+				B36459E826441A2000A0C2C0 /* TagRow.xib */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -2973,10 +2991,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				B3F47E0025B5F550006FA96F /* Images.xcassets in Resources */,
+				B36459DD2644118800A0C2C0 /* TagPickerCell.xib in Resources */,
 				B337A5AE244F35A900AFD13D /* Localizable.strings in Resources */,
 				B35F476A24F8F55600FE328D /* webview_extraction.js in Resources */,
 				B3AB38B8238ED023008A1ABB /* Assets.xcassets in Resources */,
+				B36459DE2644119100A0C2C0 /* TagPickerViewController.xib in Resources */,
 				B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */,
+				B36459E926441A2000A0C2C0 /* TagRow.xib in Resources */,
 				B355B8FF239951E800E837B9 /* translation in Resources */,
 				B32AB57E25ADCEED003CF0C6 /* Bundled in Resources */,
 				B3AB38B9238ED023008A1ABB /* ExtensionScript.js in Resources */,
@@ -3610,6 +3631,7 @@
 				B305674B23FC09AF003304F2 /* RCreator.swift in Sources */,
 				B3A27ACD25BEE91A00DE0BB2 /* WebViewHandler.swift in Sources */,
 				B377F29F2493722100022943 /* AttachmentCreator.swift in Sources */,
+				B36459E1264411D800A0C2C0 /* TagPickerError.swift in Sources */,
 				B3A081CE25D2B73B0088EC24 /* PerformDeletionsSyncAction.swift in Sources */,
 				B3BC6B21250FA50F006A8B9C /* SchemaError.swift in Sources */,
 				B305674C23FC09AF003304F2 /* RItem.swift in Sources */,
@@ -3646,6 +3668,7 @@
 				B305672323FC08F6003304F2 /* FileStorage.swift in Sources */,
 				B305670B23FC08B8003304F2 /* ReadDeletedObjectsDbRequest.swift in Sources */,
 				B305673823FC0933003304F2 /* SyncController.swift in Sources */,
+				B36459DF2644119600A0C2C0 /* TagPickerCell.swift in Sources */,
 				B305673623FC092F003304F2 /* UploadAttachmentSyncAction.swift in Sources */,
 				B305677123FC0A5A003304F2 /* ZoteroApiClient.swift in Sources */,
 				B3D037202604FCBA00BCFB05 /* FileAttachmentView.swift in Sources */,
@@ -3663,8 +3686,10 @@
 				B30566EC23FC082D003304F2 /* CrashUploadRequest.swift in Sources */,
 				B361A3022511F9BE00271173 /* LinkMode.swift in Sources */,
 				B30566E023FC080A003304F2 /* BackgroundUploaderContext.swift in Sources */,
+				B36459E2264411DB00A0C2C0 /* TagPickerAction.swift in Sources */,
 				B3BC6B1E250F79C4006A8B9C /* FieldKeys.swift in Sources */,
 				B30566F123FC0845003304F2 /* CheckItemIsChangedDbRequest.swift in Sources */,
+				B36459E42644120D00A0C2C0 /* Color+Extension.swift in Sources */,
 				B34ACC7F2514EB6100040C17 /* AnnotationColorGenerator.swift in Sources */,
 				B305670423FC08A6003304F2 /* ReadAllCustomLibrariesDbRequest.swift in Sources */,
 				B305676E23FC0A52003304F2 /* ApiClient.swift in Sources */,
@@ -3685,6 +3710,7 @@
 				B305672F23FC091F003304F2 /* StoreVersionSyncAction.swift in Sources */,
 				B3D58D7025EE43E700D8FA31 /* CircularProgressView.swift in Sources */,
 				B3F47DF525B5BCFD006FA96F /* ContainerViewController.swift in Sources */,
+				B36459E3264411F300A0C2C0 /* TagColorGenerator.swift in Sources */,
 				B337A5AF244F362D00AFD13D /* Localizable.swift in Sources */,
 				B30566E123FC080C003304F2 /* BackgroundUpload.swift in Sources */,
 				B305673023FC0921003304F2 /* SubmitDeletionSyncAction.swift in Sources */,
@@ -3704,6 +3730,7 @@
 				B305671C23FC08DF003304F2 /* StoreSettingsDbRequest.swift in Sources */,
 				B305673C23FC0988003304F2 /* SettingsResponse.swift in Sources */,
 				B353F1FC242E23680062EE24 /* ResetTranslatorsDbRequest.swift in Sources */,
+				B36459E0264411AC00A0C2C0 /* ViewModel.swift in Sources */,
 				B3902DE62480DBB7007EE48E /* DateParser.swift in Sources */,
 				B3DCDF19240918E50039ED0D /* ActivityIndicatorView.swift in Sources */,
 				B341C8D425CBFF8A005562E5 /* LibraryIdentifier.swift in Sources */,
@@ -3716,6 +3743,7 @@
 				B38CD21F241128FE004299EA /* KeysResponseProcessor.swift in Sources */,
 				B3AB38A5238EC02D008A1ABB /* ShareViewController.swift in Sources */,
 				B305670623FC08AB003304F2 /* ReadUserChangedObjectsDbRequest.swift in Sources */,
+				B36459E52644121300A0C2C0 /* UIColor+Custom.swift in Sources */,
 				B305672123FC08EF003304F2 /* RealmDbStorage.swift in Sources */,
 				B30566E223FC0810003304F2 /* DeletionsRequest.swift in Sources */,
 				B305673A23FC0938003304F2 /* SyncScheduler.swift in Sources */,
@@ -3746,13 +3774,16 @@
 				B378F4D1242D0E4900B88A05 /* TranslatorParserDelegate.swift in Sources */,
 				B30566DE23FC0804003304F2 /* BackgroundUploader.swift in Sources */,
 				B372CEE1248650D600B423AE /* GroupVersionsRequest.swift in Sources */,
+				B36459DC2644118800A0C2C0 /* TagPickerViewController.swift in Sources */,
 				B305671623FC08CF003304F2 /* StoreCollectionsDbRequest.swift in Sources */,
 				B305672923FC0911003304F2 /* LoadPermissionsSyncAction.swift in Sources */,
 				B305670D23FC08BC003304F2 /* ReadItemsDbRequest.swift in Sources */,
 				B30566F723FC0855003304F2 /* DeleteItemsFromCollectionDbRequest.swift in Sources */,
 				B30566F323FC084C003304F2 /* CreateCollectionDbRequest.swift in Sources */,
 				B371494C25D585EA00D6391E /* RestoreDeletionsSyncAction.swift in Sources */,
+				B36459DB2644117D00A0C2C0 /* TagPickerActionHandler.swift in Sources */,
 				B305670723FC08AF003304F2 /* ReadAnyChangedObjectsInLibraryDbRequest.swift in Sources */,
+				B36459DA2644116000A0C2C0 /* TagPickerState.swift in Sources */,
 				B305673523FC092C003304F2 /* SyncVersionsSyncAction.swift in Sources */,
 				B305671E23FC08E4003304F2 /* UpdateItemLocaleDbRequest.swift in Sources */,
 				B305670823FC08B1003304F2 /* ReadAttachmentUploadsDbRequest.swift in Sources */,
@@ -3762,6 +3793,7 @@
 				B30566E523FC081D003304F2 /* KeyRequest.swift in Sources */,
 				B305670123FC089F003304F2 /* MarkObjectsAsSyncedDbRequest.swift in Sources */,
 				B3AB38A6238EC02D008A1ABB /* AllCollectionPickerView.swift in Sources */,
+				B36459E726441A1800A0C2C0 /* TagRow.swift in Sources */,
 				B305677023FC0A58003304F2 /* ObservableRequestExtensions.swift in Sources */,
 				B330261225DEAD9A00742025 /* RPageIndex.swift in Sources */,
 				B305670023FC086B003304F2 /* MarkObjectsAsDeletedDbRequest.swift in Sources */,

@@ -179,7 +179,8 @@ struct ItemResponse {
         self.rects = nil
     }
 
-    func copy(libraryId: LibraryIdentifier, collectionKeys: Set<String>) -> ItemResponse {
+    func copy(libraryId: LibraryIdentifier, collectionKeys: Set<String>, addedTags: [TagResponse]) -> ItemResponse {
+        let tags = addedTags.isEmpty ? self.tags : (self.tags + addedTags)
         return ItemResponse(rawType: self.rawType,
                             key: self.key,
                             library: LibraryResponse(libraryId: libraryId),
@@ -192,7 +193,7 @@ struct ItemResponse {
                             dateModified: self.dateModified,
                             dateAdded: self.dateAdded,
                             fields: self.fields,
-                            tags: self.tags,
+                            tags: tags,
                             creators: self.creators,
                             relations: self.relations,
                             createdBy: self.createdBy,

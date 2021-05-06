@@ -1,14 +1,14 @@
 //
-//  TagPickerCell.swift
-//  Zotero
+//  TagRow.swift
+//  ZShare
 //
-//  Created by Michal Rentka on 05/11/2020.
-//  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
+//  Created by Michal Rentka on 06.05.2021.
+//  Copyright © 2021 Corporation for Digital Scholarship. All rights reserved.
 //
 
 import UIKit
 
-final class TagPickerCell: UITableViewCell {
+class TagRow: UIView {
     @IBOutlet private weak var tagView: UIView!
     @IBOutlet private weak var label: UILabel!
 
@@ -32,5 +32,4 @@ final class TagPickerCell: UITableViewCell {
 
         self.label.text = tag.name
     }
-    
 }
