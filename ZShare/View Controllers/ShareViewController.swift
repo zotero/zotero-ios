@@ -73,7 +73,8 @@ final class ShareViewController: UIViewController {
     private static let toolbarTitleIdx = 1
     private static let childAttachmentLeftOffset: CGFloat = 16
     private static let maxCollectionCount = 5
-    private static let pickerSize = CGSize(width: 468.0, height: 500.0)
+    private static let width: CGFloat = 468
+    private static let pickerSize = CGSize(width: width, height: 500.0)
 
     // MARK: - Lifecycle
 
@@ -140,7 +141,7 @@ final class ShareViewController: UIViewController {
     // MARK: - Actions
 
     private func updatePreferredContentSize() {
-        var size = self.stackView.systemLayoutSizeFitting(CGSize(width: 468.0, height: .greatestFiniteMagnitude))
+        var size = self.stackView.systemLayoutSizeFitting(CGSize(width: ShareViewController.width, height: .greatestFiniteMagnitude))
         size.height += 32
 
         self.preferredContentSize = size

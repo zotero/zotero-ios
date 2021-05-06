@@ -52,11 +52,13 @@ final class ContainerViewController: UIViewController {
         self.containerView.layer.masksToBounds = true
 
         let height = self.containerView.heightAnchor.constraint(equalToConstant: 100)
+        height.priority = .defaultHigh
         self.containerHeight = height
 
         NSLayoutConstraint.activate([
             self.view.centerXAnchor.constraint(equalTo: self.containerView.centerXAnchor),
             self.view.centerYAnchor.constraint(equalTo: self.containerView.centerYAnchor),
+            self.containerView.heightAnchor.constraint(lessThanOrEqualTo: self.view.heightAnchor),
             height,
             self.containerView.widthAnchor.constraint(equalToConstant: ContainerViewController.padWidth)
         ])
