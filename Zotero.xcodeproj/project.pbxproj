@@ -632,6 +632,10 @@
 		B378F4D2242D0EE700B88A05 /* Translator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4C8242CC8EF00B88A05 /* Translator.swift */; };
 		B37BF0AB25A5E2AD00AE0268 /* SquareAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37BF0AA25A5E2AD00AE0268 /* SquareAnnotation.swift */; };
 		B37BF0B125A6035D00AE0268 /* ReadDocumentDataDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37BF0B025A6035D00AE0268 /* ReadDocumentDataDbRequest.swift */; };
+		B37C5B6926453C33009A37E5 /* NoteEditorActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37C5B6826453C33009A37E5 /* NoteEditorActionHandler.swift */; };
+		B37C5B6B26453C4F009A37E5 /* NoteEditorState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37C5B6A26453C4F009A37E5 /* NoteEditorState.swift */; };
+		B37C5B6D26453C58009A37E5 /* NoteEditorAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37C5B6C26453C58009A37E5 /* NoteEditorAction.swift */; };
+		B37C5B6F26454130009A37E5 /* NoteEditorViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B37C5B6E26454130009A37E5 /* NoteEditorViewController.xib */; };
 		B37D8E6424DC21D300F526C5 /* CollectionCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B37D8E6324DC21D300F526C5 /* CollectionCell.xib */; };
 		B37D8E6924DC2BEE00F526C5 /* CollectionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37D8E6824DC2BEE00F526C5 /* CollectionRow.swift */; };
 		B37D8E6A24DC2BF300F526C5 /* CollectionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37D8E6824DC2BEE00F526C5 /* CollectionRow.swift */; };
@@ -1285,6 +1289,10 @@
 		B378F4CE242D0CC200B88A05 /* TranslatorsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsRequest.swift; sourceTree = "<group>"; };
 		B37BF0AA25A5E2AD00AE0268 /* SquareAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareAnnotation.swift; sourceTree = "<group>"; };
 		B37BF0B025A6035D00AE0268 /* ReadDocumentDataDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadDocumentDataDbRequest.swift; sourceTree = "<group>"; };
+		B37C5B6826453C33009A37E5 /* NoteEditorActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorActionHandler.swift; sourceTree = "<group>"; };
+		B37C5B6A26453C4F009A37E5 /* NoteEditorState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorState.swift; sourceTree = "<group>"; };
+		B37C5B6C26453C58009A37E5 /* NoteEditorAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorAction.swift; sourceTree = "<group>"; };
+		B37C5B6E26454130009A37E5 /* NoteEditorViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NoteEditorViewController.xib; sourceTree = "<group>"; };
 		B37D8E6324DC21D300F526C5 /* CollectionCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CollectionCell.xib; sourceTree = "<group>"; };
 		B37D8E6824DC2BEE00F526C5 /* CollectionRow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionRow.swift; sourceTree = "<group>"; };
 		B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateItemRequest.swift; sourceTree = "<group>"; };
@@ -2668,6 +2676,7 @@
 				B3F0C3FF250A1DD7002D557A /* LibraryRow.swift */,
 				B361820C24C9B9D900B30D56 /* NoRotationHostingController.swift */,
 				B3DCDF02240912060039ED0D /* NoteEditorViewController.swift */,
+				B37C5B6E26454130009A37E5 /* NoteEditorViewController.xib */,
 				B32DE61E26320271000287EC /* PopoverNavigationViewController.swift */,
 				B32B4F962475636600F78A05 /* RxTableViewCell.swift */,
 				B361820E24C9B9E800B30D56 /* SelectableTextField.swift */,
@@ -2690,6 +2699,7 @@
 			children = (
 				B3DCDF1E240945B30039ED0D /* CollectionPickerActionHandler.swift */,
 				B361820724C9B53600B30D56 /* KeyboardResponder.swift */,
+				B37C5B6826453C33009A37E5 /* NoteEditorActionHandler.swift */,
 				B3DCDF0D240912500039ED0D /* SinglePickerActionHandler.swift */,
 				B3830CE1255451C200910FE0 /* TagPickerActionHandler.swift */,
 			);
@@ -2703,6 +2713,8 @@
 				B3DCDF24240946090039ED0D /* CollectionPickerError.swift */,
 				B3DCDF20240945D80039ED0D /* CollectionPickerState.swift */,
 				B3F83807263960FA00E128A6 /* ItemAccessory.swift */,
+				B37C5B6C26453C58009A37E5 /* NoteEditorAction.swift */,
+				B37C5B6A26453C4F009A37E5 /* NoteEditorState.swift */,
 				B3DCDF09240912220039ED0D /* SinglePickerAction.swift */,
 				B3DCDF11240914F10039ED0D /* SinglePickerModel.swift */,
 				B3DCDF0B240912370039ED0D /* SinglePickerState.swift */,
@@ -2938,6 +2950,7 @@
 				B37D8E6424DC21D300F526C5 /* CollectionCell.xib in Resources */,
 				B3593F23241A61C700760E20 /* ItemDetailSectionView.xib in Resources */,
 				B3593F42241A61C700760E20 /* ItemsViewController.xib in Resources */,
+				B37C5B6F26454130009A37E5 /* NoteEditorViewController.xib in Resources */,
 				B3593F29241A61C700760E20 /* ItemDetailTitleCell.xib in Resources */,
 				B3593F27241A61C700760E20 /* ItemDetailFieldCell.xib in Resources */,
 				B34DF1BE2576956F0019CCD1 /* SwitchCell.xib in Resources */,
@@ -3167,6 +3180,7 @@
 				B31901942629C9CB00209E33 /* ItemsFilterViewController.swift in Sources */,
 				B32AB57B25ADB891003CF0C6 /* CommentIconDrawingController.swift in Sources */,
 				B30565E523FC051E003304F2 /* RItemLocaleController.swift in Sources */,
+				B37C5B6926453C33009A37E5 /* NoteEditorActionHandler.swift in Sources */,
 				B30565FE23FC051E003304F2 /* BackgroundUploader.swift in Sources */,
 				B3593F19241A61C700760E20 /* ItemDetailActionHandler.swift in Sources */,
 				B36CBD6225DD4257003C4613 /* ChangedItemsDeletedAlertQueueHandler.swift in Sources */,
@@ -3200,6 +3214,7 @@
 				B30565C623FC051E003304F2 /* ReadDeletedObjectsDbRequest.swift in Sources */,
 				B30566AF23FC051F003304F2 /* LibraryResponse.swift in Sources */,
 				B30566C623FC051F003304F2 /* LibraryObject.swift in Sources */,
+				B37C5B6D26453C58009A37E5 /* NoteEditorAction.swift in Sources */,
 				B361820624C9A7C000B30D56 /* RegisterView.swift in Sources */,
 				B30566C223FC051F003304F2 /* LibraryData.swift in Sources */,
 				B30566B123FC051F003304F2 /* KeyResponse.swift in Sources */,
@@ -3472,6 +3487,7 @@
 				B36A988D2428E05A005D5790 /* TranslatorsController.swift in Sources */,
 				B378F4CD242CD45700B88A05 /* TranslatorParserDelegate.swift in Sources */,
 				B3F3D644255ECF3500F310C2 /* AnnotationViewSeparator.swift in Sources */,
+				B37C5B6B26453C4F009A37E5 /* NoteEditorState.swift in Sources */,
 				B325DBB524375DD200EFF0F5 /* DebugPermissionResponse.swift in Sources */,
 				B357DEE424165DEE00E06153 /* CrashReporter.swift in Sources */,
 				B3593F59241A61C700760E20 /* CollectionsViewController.swift in Sources */,

@@ -65,11 +65,11 @@ struct ItemsActionHandler: ViewModelActionHandler {
                 state.error = .dataLoading
             }
 
-        case .saveNote(let key, let text):
+        case .saveNote(let key, let text, let tags):
             if let key = key {
-                self.saveNote(text: text, key: key, in: viewModel)
+                self.saveNote(text: text, tags: tags, key: key, in: viewModel)
             } else {
-                self.createNote(with: text, in: viewModel)
+                self.createNote(with: text, tags: tags, in: viewModel)
             }
 
         case .search(let text):
@@ -317,8 +317,8 @@ struct ItemsActionHandler: ViewModelActionHandler {
         Defaults.shared.itemsSortType = sortType
     }
 
-    private func createNote(with text: String, in viewModel: ViewModel<ItemsActionHandler>) {
-        let note = Note(key: KeyGenerator.newKey, text: text)
+    private func createNote(with text: String, tags: [Tag], in viewModel: ViewModel<ItemsActionHandler>) {
+        let note = Note(key: KeyGenerator.newKey, text: text, tags: tags)
         let request = CreateNoteDbRequest(note: note,
                                           localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""),
                                           libraryId: viewModel.state.library.identifier,
@@ -332,8 +332,8 @@ struct ItemsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func saveNote(text: String, key: String, in viewModel: ViewModel<ItemsActionHandler>) {
-        let note = Note(key: key, text: text)
+    private func saveNote(text: String, tags: [Tag], key: String, in viewModel: ViewModel<ItemsActionHandler>) {
+        let note = Note(key: key, text: text, tags: tags)
         let request = EditNoteDbRequest(note: note, libraryId: viewModel.state.library.identifier)
         self.perform(request: request) { [weak viewModel] error in
             guard let viewModel = viewModel else { return }

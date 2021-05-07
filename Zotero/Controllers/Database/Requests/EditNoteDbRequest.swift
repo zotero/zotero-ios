@@ -18,23 +18,70 @@ struct EditNoteDbRequest: DbRequest {
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     init(note: Note, libraryId: LibraryIdentifier) {
-        self.note = Note(key: note.key, text: note.text)
+        self.note = note
         self.libraryId = libraryId
     }
 
     func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self).filter(.key(self.note.key, in: self.libraryId)).first,
-              let field = item.fields.filter(.key(FieldKeys.Item.note)).first else {
+        guard let item = database.objects(RItem.self).filter(.key(self.note.key, in: self.libraryId)).first else {
             throw DbError.objectNotFound
         }
 
-        guard field.value != self.note.text else { return }
+        var fieldsDidChange = false
 
-        item.set(title: self.note.title)
-        item.changedFields.insert(.fields)
-        item.changeType = .user
-        item.dateModified = Date()
-        field.value = self.note.text
-        field.changed = true
+        if let field = item.fields.filter(.key(FieldKeys.Item.note)).first, field.value != self.note.text {
+            item.set(title: self.note.title)
+            item.changedFields.insert(.fields)
+
+            field.value = self.note.text
+            field.changed = true
+
+            fieldsDidChange = true
+        }
+
+        let tagsDidChange = self.updateTags(with: self.note.tags, item: item, database: database)
+
+        if tagsDidChange || fieldsDidChange {
+            item.changeType = .user
+            item.dateModified = Date()
+        }
+    }
+
+    private func updateTags(with tags: [Tag], item: RItem, database: Realm) -> Bool {
+        let tagsToRemove = item.tags.filter(.tagName(notIn: tags.map({ $0.name })))
+        var tagsDidChange = !tagsToRemove.isEmpty
+
+        database.delete(tagsToRemove)
+
+        let allTags = database.objects(RTag.self).filter(.library(with: self.libraryId))
+
+        for tag in tags {
+            guard item.tags.filter(.tagName(tag.name)).first == nil else { continue }
+
+            let rTag: RTag
+
+            if let existing = allTags.filter(.name(tag.name)).first {
+                rTag = existing
+            } else {
+                rTag = RTag()
+                rTag.name = tag.name
+                rTag.color = tag.color
+                rTag.libraryId = self.libraryId
+                database.add(rTag)
+            }
+
+            let rTypedTag = RTypedTag()
+            rTypedTag.type = .manual
+            database.add(rTypedTag)
+
+            rTypedTag.item = item
+            rTypedTag.tag = rTag
+            tagsDidChange = true
+        }
+
+        if tagsDidChange {
+            item.changedFields.insert(.tags)
+        }
+        return tagsDidChange
     }
 }

@@ -22,7 +22,7 @@ enum ItemsAction {
     case moveItems([String], String)
     case observingFailed
     case restoreItems(Set<String>)
-    case saveNote(String?, String)
+    case saveNote(String?, String, [Tag])
     case search(String)
     case selectItem(String)
     case toggleSelectionState

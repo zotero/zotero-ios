@@ -82,6 +82,10 @@
 
         setup: function (editor) {
             setLocale(editor);
+        },
+
+        onchange_callback: function (instance) {
+            window.webkit.messageHandlers.textHandler.postMessage(instance.getBody().innerHtml);
         }
     });
 </script>

@@ -152,16 +152,13 @@ struct EditItemDetailDbRequest: DbRequest {
         }
 
         for note in data.notes {
-            guard note.text != snapshot.notes.first(where: { $0.key == note.key })?.text else { continue }
+            guard let oldNote = snapshot.notes.first(where: { $0.key == note.key }), (note.text != oldNote.text || note.tags != oldNote.tags) else { continue }
 
-            if let childItem = item.children.filter(.key(note.key)).first,
-               let noteField = childItem.fields.filter(.key(FieldKeys.Item.note)).first {
-                guard noteField.value != note.text else { continue }
-                childItem.set(title: note.title)
-                childItem.changedFields.insert(.fields)
-                noteField.value = note.text
-                noteField.changed = true
-            } else {
+            do {
+                // Try editing an item.
+                try EditNoteDbRequest(note: note, libraryId: self.libraryId).process(in: database)
+            } catch {
+                // If error is thrown, item was not found, so create it.
                 let childItem = try CreateNoteDbRequest(note: note,
                                                         localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""),
                                                         libraryId: self.libraryId,

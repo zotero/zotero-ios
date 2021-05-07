@@ -93,8 +93,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 state.diff = .notes(insertions: [], deletions: Array(offsets), reloads: [])
             }
 
-        case .saveNote(let key, let text):
-            self.saveNote(key: key, text: text, in: viewModel)
+        case .saveNote(let key, let text, let tags):
+            self.saveNote(key: key, text: text, tags: tags, in: viewModel)
 
         case .setTags(let tags):
             self.set(tags: tags, in: viewModel)
@@ -357,9 +357,9 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
     // MARK: - Notes
 
-    private func saveNote(key: String?, text: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
+    private func saveNote(key: String?, text: String, tags: [Tag], in viewModel: ViewModel<ItemDetailActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            let note =  Note(key: (key ?? KeyGenerator.newKey), text: text)
+            let note =  Note(key: (key ?? KeyGenerator.newKey), text: text, tags: tags)
 
             if !state.isEditing {
                 // Note was edited outside of editing mode, so it needs to be saved immediately

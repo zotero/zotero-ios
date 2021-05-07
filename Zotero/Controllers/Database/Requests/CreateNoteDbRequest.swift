@@ -22,6 +22,7 @@ struct CreateNoteDbRequest: DbResponseRequest {
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> RItem {
+        // Create item
         let item = RItem()
         item.key = self.note.key
         item.rawType = ItemTypes.note
@@ -35,12 +36,14 @@ struct CreateNoteDbRequest: DbResponseRequest {
         item.libraryId = libraryId
         database.add(item)
 
+        // Assign collection
         if let key = self.collectionKey,
            let collection = database.objects(RCollection.self).filter(.key(key, in: self.libraryId)).first {
             collection.items.append(item)
             item.changedFields.insert(.collections)
         }
 
+        // Create fields
         let noteField = RItemField()
         noteField.key = FieldKeys.Item.note
         noteField.baseKey = nil
@@ -48,6 +51,29 @@ struct CreateNoteDbRequest: DbResponseRequest {
         noteField.changed = true
         noteField.item = item
         database.add(noteField)
+
+        // Create tags
+        let allTags = database.objects(RTag.self).filter(.library(with: self.libraryId))
+        for tag in self.note.tags {
+            let rTag: RTag
+
+            if let existing = allTags.filter(.name(tag.name)).first {
+                rTag = existing
+            } else {
+                rTag = RTag()
+                rTag.name = tag.name
+                rTag.color = tag.color
+                rTag.libraryId = self.libraryId
+                database.add(rTag)
+            }
+
+            let rTypedTag = RTypedTag()
+            rTypedTag.type = .manual
+            database.add(rTypedTag)
+
+            rTypedTag.item = item
+            rTypedTag.tag = rTag
+        }
 
         return item
     }

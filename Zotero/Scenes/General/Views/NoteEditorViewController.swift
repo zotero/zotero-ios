@@ -10,27 +10,33 @@ import SafariServices
 import UIKit
 import WebKit
 
-final class NoteEditorViewController: UIViewController {
-    let text: String
-    let readOnly: Bool
-    let saveAction: (String) -> Void
+import RxSwift
 
-    private weak var webView: WKWebView!
-    private weak var activityIndicator: UIActivityIndicatorView!
+final class NoteEditorViewController: UIViewController {
+    @IBOutlet private weak var webView: WKWebView!
+    @IBOutlet private weak var tagsTitleLabel: UILabel!
+    @IBOutlet private weak var tagsLabel: UILabel!
+
+    private static let jsHandler: String = "textHandler"
+    private let viewModel: ViewModel<NoteEditorActionHandler>
+    private let disposeBag: DisposeBag
+
+    private var debounceDisposeBag: DisposeBag
+    weak var coordinatorDelegate: DetailNoteEditorCoordinatorDelegate?
 
     private var htmlUrl: URL? {
-        if self.readOnly {
+        if self.viewModel.state.readOnly {
             return Bundle.main.url(forResource: "note", withExtension: "html")
         } else {
             return Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "tinymce")
         }
     }
 
-    init(text: String, readOnly: Bool, saveAction: @escaping (String) -> Void) {
-        self.text = text
-        self.readOnly = readOnly
-        self.saveAction = saveAction
-        super.init(nibName: nil, bundle: nil)
+    init(viewModel: ViewModel<NoteEditorActionHandler>) {
+        self.viewModel = viewModel
+        self.debounceDisposeBag = DisposeBag()
+        self.disposeBag = DisposeBag()
+        super.init(nibName: "NoteEditorViewController", bundle: nil)
     }
     
     required init?(coder: NSCoder) {
@@ -40,86 +46,90 @@ final class NoteEditorViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.view.backgroundColor = self.traitCollection.userInterfaceStyle == .light ? .white : .black
+        self.view.backgroundColor = .systemBackground
         self.setupNavbarItems()
         self.setupWebView()
-        self.loadEditor()
+        self.update(tags: self.viewModel.state.tags)
+
+        self.viewModel.stateObservable
+                      .subscribe(with: self, onNext: { `self`, state in
+                          self.process(state: state)
+                      })
+                      .disposed(by: self.disposeBag)
     }
 
     // MARK: - Actions
 
-    private func showWebView()  {
-        UIView.animate(withDuration: 0.1, animations: {
-            self.webView.alpha = 1
-            self.activityIndicator.alpha =  0
-        }) { _ in
-            self.activityIndicator.stopAnimating()
-            self.activityIndicator.isHidden = true
+    private func process(state: NoteEditorState) {
+        if state.changes.contains(.tags) {
+            self.update(tags: state.tags)
+        }
+        if state.changes.contains(.save) {
+            self.debounceSave()
         }
     }
 
-    private func loadEditor() {
-        guard let url = self.htmlUrl,
-              var data = try? String(contentsOf: url, encoding: .utf8) else { return }
-        data = data.replacingOccurrences(of: "#initialnote", with: self.text)
-        self.webView.loadHTMLString(data, baseURL: url)
+    private func debounceSave() {
+        self.debounceDisposeBag = DisposeBag()
+
+        Single<Int>.timer(.milliseconds(1500), scheduler: MainScheduler.instance)
+                   .subscribe(onSuccess: { [weak self] _ in
+                       self?.viewModel.process(action: .save)
+                   })
+                   .disposed(by: self.debounceDisposeBag)
     }
 
-    @objc private func cancel() {
-        self.presentingViewController?.dismiss(animated: true, completion: nil)
-    }
+    private func update(tags: [Tag]) {
+        let attributedString = NSMutableAttributedString()
 
-    @objc func save() {
-        self.webView.evaluateJavaScript("tinymce.get(\"tinymce\").getContent()") { [weak self] result, error in
-            guard let `self` = self else { return }
-            let newText = (result as? String) ?? ""
-            self.saveAction(newText)
-            self.presentingViewController?.dismiss(animated: true, completion: nil)
+        for (idx, tag) in tags.enumerated() {
+            let (color, type) = TagColorGenerator.uiColor(for: tag.color)
+            let textColor = UIColor { $0.userInterfaceStyle == .light ? .darkText : .white }
+
+            switch type {
+            case .border:
+                attributedString.append(NSAttributedString(string: tag.name, attributes: [.foregroundColor: textColor]))
+
+            case .filled:
+                attributedString.append(NSAttributedString(string: tag.name, attributes: [.foregroundColor: color]))
+            }
+
+            if idx != tags.count - 1 {
+                attributedString.append(NSAttributedString(string: ", ", attributes: [.foregroundColor: textColor]))
+            }
         }
+
+        attributedString.addAttribute(.font, value: UIFont.preferredFont(forTextStyle: .body), range: NSMakeRange(0, attributedString.string.count))
+        self.tagsLabel.attributedText = attributedString
+    }
+
+    @IBAction private func changeTags() {
+        let selected = Set(self.viewModel.state.tags.map({ $0.name }))
+        self.coordinatorDelegate?.pushTagPicker(libraryId: self.viewModel.state.libraryId, selected: selected, picked: { [weak self] tags in
+            self?.viewModel.process(action: .setTags(tags))
+        })
     }
     
     // MARK: - Setups
 
     private func setupNavbarItems() {
-        let cancelItem = UIBarButtonItem(title: L10n.cancel, style: .plain, target: self, action: #selector(NoteEditorViewController.cancel))
-        self.navigationItem.leftBarButtonItem = cancelItem
-        if !self.readOnly {
-            let saveItem = UIBarButtonItem(title: L10n.save, style: .done, target: self, action: #selector(NoteEditorViewController.save))
-            self.navigationItem.rightBarButtonItem = saveItem
-        }
+        let done = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
+        done.rx.tap
+               .subscribe(with: self, onNext: { `self`, _ in
+                   self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
+               })
+               .disposed(by: self.disposeBag)
+        self.navigationItem.rightBarButtonItem = done
     }
 
     private func setupWebView() {
-        let webView = WKWebView()
-        webView.translatesAutoresizingMaskIntoConstraints = false
-        webView.navigationDelegate = self
-        webView.alpha = 0
+        self.webView.navigationDelegate = self
+        self.webView.configuration.userContentController.add(self, name: NoteEditorViewController.jsHandler)
 
-        self.view.addSubview(webView)
-
-        NSLayoutConstraint.activate([
-            webView.leftAnchor.constraint(equalTo: self.view.leftAnchor),
-            webView.rightAnchor.constraint(equalTo: self.view.rightAnchor),
-            webView.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor),
-            webView.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor)
-        ])
-
-        let activityIndicator = UIActivityIndicatorView(style: .medium)
-        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
-
-        self.view.addSubview(activityIndicator)
-
-        NSLayoutConstraint.activate([
-            activityIndicator.centerYAnchor.constraint(equalTo: self.view.centerYAnchor),
-            activityIndicator.centerXAnchor.constraint(equalTo: self.view.centerXAnchor)
-        ])
-
-        activityIndicator.startAnimating()
-
-        self.webView = webView
-        self.activityIndicator = activityIndicator
+        guard let url = self.htmlUrl, var data = try? String(contentsOf: url, encoding: .utf8) else { return }
+        data = data.replacingOccurrences(of: "#initialnote", with: self.viewModel.state.text)
+        self.webView.loadHTMLString(data, baseURL: url)
     }
-
 }
 
 extension NoteEditorViewController: WKNavigationDelegate {
@@ -137,10 +147,13 @@ extension NoteEditorViewController: WKNavigationDelegate {
 
         // Show other links in SFSafariView
         decisionHandler(.cancel)
-        self.present(SFSafariViewController(url: url), animated: true, completion: nil)
+        self.coordinatorDelegate?.showWeb(url: url)
     }
+}
 
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        self.showWebView()
+extension NoteEditorViewController: WKScriptMessageHandler {
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard message.name == NoteEditorViewController.jsHandler, let text = message.body as? String else { return }
+        self.viewModel.process(action: .setText(text))
     }
 }

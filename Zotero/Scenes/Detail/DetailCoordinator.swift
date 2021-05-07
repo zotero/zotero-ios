@@ -30,7 +30,7 @@ protocol DetailCoordinatorAttachmentProvider {
 protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showCollectionPicker(in library: Library, completed: @escaping (Set<String>) -> Void)
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library)
-    func showNote(with text: String, readOnly: Bool, save: @escaping (String) -> Void)
+    func showNote(with text: String, tags: [Tag], libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showWeb(url: URL)
@@ -39,7 +39,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
 }
 
 protocol DetailItemDetailCoordinatorDelegate: AnyObject {
-    func showNote(with text: String, readOnly: Bool, save: @escaping (String) -> Void)
+    func showNote(with text: String, tags: [Tag], libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
     func showAttachmentPicker(save: @escaping ([URL]) -> Void)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func showTypePicker(selected: String, picked: @escaping (String) -> Void)
@@ -56,6 +56,11 @@ protocol DetailItemDetailCoordinatorDelegate: AnyObject {
 
 protocol DetailCreatorEditCoordinatorDelegate: AnyObject {
     func showCreatorTypePicker(itemType: String, selected: String, picked: @escaping (String) -> Void)
+}
+
+protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
+    func showWeb(url: URL)
+    func pushTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
 }
 
 #if PDFENABLED
@@ -82,7 +87,7 @@ protocol DetailAnnotationsCoordinatorDelegate: AnyObject {
 
 protocol DetailItemActionSheetCoordinatorDelegate: AnyObject {
     func showSortTypePicker(sortBy: Binding<ItemsSortType.Field>)
-    func showNoteCreation(save: @escaping (String) -> Void)
+    func showNoteCreation(libraryId: LibraryIdentifier, save: @escaping (String, [Tag]) -> Void)
     func showAttachmentPicker(save: @escaping ([URL]) -> Void)
     func showItemCreation(library: Library, collectionKey: String?)
 }
@@ -331,8 +336,9 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         }))
 
         controller.addAction(UIAlertAction(title: L10n.Items.newNote, style: .default, handler: { [weak self, weak viewModel] _ in
-            self?.showNoteCreation(save: { text in
-                viewModel?.process(action: .saveNote(nil, text))
+            guard let `self` = self, let viewModel = viewModel else { return }
+            self.showNoteCreation(libraryId: viewModel.state.library.identifier, save: { [weak viewModel] text, tags in
+                viewModel?.process(action: .saveNote(nil, text, tags))
             })
         }))
 
@@ -373,10 +379,15 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
                 "\(L10n.Items.sortOrder): \(sortOrderTitle)")
     }
 
-    func showNote(with text: String, readOnly: Bool, save: @escaping (String) -> Void) {
-        let controller = NoteEditorViewController(text: text, readOnly: readOnly, saveAction: save)
+    func showNote(with text: String, tags: [Tag], libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void) {
+        let state = NoteEditorState(text: text, tags: tags, libraryId: libraryId, readOnly: readOnly)
+        let handler = NoteEditorActionHandler(saveAction: save)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+        let controller = NoteEditorViewController(viewModel: viewModel)
+        controller.coordinatorDelegate = self
+
         let navigationController = UINavigationController(rootViewController: controller)
-        navigationController.modalPresentationStyle = .formSheet
+        navigationController.modalPresentationStyle = .fullScreen
         navigationController.isModalInPresentation = true
         self.topViewController.present(navigationController, animated: true, completion: nil)
     }
@@ -455,8 +466,8 @@ extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
         self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
-    func showNoteCreation(save: @escaping (String) -> Void) {
-        self.showNote(with: "", readOnly: false, save: save)
+    func showNoteCreation(libraryId: LibraryIdentifier, save: @escaping (String, [Tag]) -> Void) {
+        self.showNote(with: "", tags: [], libraryId: libraryId, readOnly: false, save: save)
     }
 
     func showAttachmentPicker(save: @escaping ([URL]) -> Void) {
@@ -634,6 +645,19 @@ extension DetailCoordinator: DetailCreatorEditCoordinatorDelegate {
 
         let controller = UIHostingController(rootView: view)
         navigationController?.pushViewController(controller, animated: true)
+    }
+}
+
+extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
+    func pushTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void) {
+        guard let dbStorage = self.controllers.userControllers?.dbStorage, let navigationController = self.topViewController as? UINavigationController else { return }
+
+        let state = TagPickerState(libraryId: libraryId, selectedTags: selected)
+        let handler = TagPickerActionHandler(dbStorage: dbStorage)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+        let controller = TagPickerViewController(viewModel: viewModel, saveAction: picked)
+
+        navigationController.pushViewController(controller, animated: true)
     }
 }
 

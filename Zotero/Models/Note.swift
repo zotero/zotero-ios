@@ -14,13 +14,15 @@ struct Note: Identifiable, Equatable {
     let key: String
     var title: String
     var text: String
+    var tags: [Tag]
 
     var id: String { return self.key }
 
-    init(key: String, text: String) {
+    init(key: String, text: String, tags: [Tag]) {
         self.key = key
         self.title = text.notePreview ?? text
         self.text = text
+        self.tags = tags
     }
 
     init?(item: RItem) {
@@ -32,5 +34,6 @@ struct Note: Identifiable, Equatable {
         self.key = item.key
         self.title = item.displayTitle
         self.text = item.fields.filter(.key(FieldKeys.Item.note)).first?.value ?? ""
+        self.tags = Array(item.tags.map({ Tag(tag: $0) }))
     }
 }
