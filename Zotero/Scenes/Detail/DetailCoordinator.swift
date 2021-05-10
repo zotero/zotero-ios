@@ -30,6 +30,7 @@ protocol DetailCoordinatorAttachmentProvider {
 protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showCollectionPicker(in library: Library, completed: @escaping (Set<String>) -> Void)
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library)
+    func showAttachmentError(_ error: Error, retryAction: @escaping () -> Void)
     func showNote(with text: String, tags: [Tag], libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)

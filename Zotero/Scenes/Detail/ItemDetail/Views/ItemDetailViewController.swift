@@ -297,13 +297,10 @@ final class ItemDetailViewController: UIViewController {
             }).disposed(by: self.disposeBag)
             items.append(button)
 
-        case .downloading(let index, let progress):
+        case .downloading(_, let progress):
             if self.downloadingViaNavigationBar {
                 let view = FileAttachmentView()
                 view.set(state: .progress(progress), style: .list)
-                view.tapAction = { [weak self] in
-                    self?.viewModel.process(action: .openAttachment(index))
-                }
 
                 items.append(UIBarButtonItem(customView: view))
             } else {

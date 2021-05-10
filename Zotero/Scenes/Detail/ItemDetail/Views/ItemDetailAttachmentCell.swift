@@ -18,8 +18,7 @@ final class ItemDetailAttachmentCell: UITableViewCell {
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        self.fileView.tapEnabled = false
-        
+
         let highlightView = UIView()
         highlightView.backgroundColor = Asset.Colors.cellHighlighted.color
         self.selectedBackgroundView = highlightView

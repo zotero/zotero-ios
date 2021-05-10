@@ -59,9 +59,12 @@ internal enum Asset {
       internal static let noteMedium = ImageAsset(name: "Annotations/note.medium")
     }
     internal enum Attachments {
-      internal static let badgeDownload = ImageAsset(name: "Attachments/badge-download")
-      internal static let badgeFailed = ImageAsset(name: "Attachments/badge-failed")
-      internal static let badgeMissing = ImageAsset(name: "Attachments/badge-missing")
+      internal static let badgeDetailDownload = ImageAsset(name: "Attachments/badge-detail-download")
+      internal static let badgeDetailFailed = ImageAsset(name: "Attachments/badge-detail-failed")
+      internal static let badgeDetailMissing = ImageAsset(name: "Attachments/badge-detail-missing")
+      internal static let badgeListDownload = ImageAsset(name: "Attachments/badge-list-download")
+      internal static let badgeListFailed = ImageAsset(name: "Attachments/badge-list-failed")
+      internal static let badgeListMissing = ImageAsset(name: "Attachments/badge-list-missing")
       internal static let detailDocument = ImageAsset(name: "Attachments/detail-document")
       internal static let detailImage = ImageAsset(name: "Attachments/detail-image")
       internal static let detailLinkedDocument = ImageAsset(name: "Attachments/detail-linked-document")

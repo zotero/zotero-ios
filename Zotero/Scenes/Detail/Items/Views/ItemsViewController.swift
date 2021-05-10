@@ -107,6 +107,10 @@ final class ItemsViewController: UIViewController {
                                     self?.coordinatorDelegate?.show(doi: doi)
                                 case .url(let url):
                                     self?.coordinatorDelegate?.showWeb(url: url)
+                                case .showAttachmentError(let error, let attachment, let parentKey):
+                                    self?.coordinatorDelegate?.showAttachmentError(error, retryAction: { [weak self] in
+                                        self?.viewModel.process(action: .openAttachment(attachment: attachment, parentKey: parentKey))
+                                    })
                                 }
                              })
                              .disposed(by: self.disposeBag)

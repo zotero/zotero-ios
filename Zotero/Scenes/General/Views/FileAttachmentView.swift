@@ -11,13 +11,6 @@ import UIKit
 import CocoaLumberjackSwift
 import RxSwift
 
-fileprivate enum LayerData {
-    case progress(CGFloat)
-    case image(asset: ImageAsset, opacity: Float)
-    case sfSymbol(name: String, color: UIColor)
-    case imageWithBadge(main: ImageAsset, badge: ImageAsset)
-}
-
 final class FileAttachmentView: UIView {
     enum Style {
         case list
@@ -39,10 +32,20 @@ final class FileAttachmentView: UIView {
             return .ready(type)
         }
     }
+
+    private enum ContentType {
+        case progress(CGFloat)
+        case image(asset: ImageAsset)
+        case imageWithBadge(main: ImageAsset, badge: ImageAsset)
+    }
+
+    private enum BadgeType {
+        case failed, missing, download
+    }
     
     private static let size: CGFloat = 28
-    private static let badgeBorderWidth: CGFloat = 1.5
-    private static let badgeSize: CGFloat = 11
+    private static let badgeDetailBorderWidth: CGFloat = 1.5
+    private static let badgeListBorderWidth: CGFloat = 1
     private static let progressCircleWidth: CGFloat = 1.5
     private static let sfSymbolSize: CGFloat = 16
     private let disposeBag: DisposeBag
@@ -53,8 +56,9 @@ final class FileAttachmentView: UIView {
     private var imageLayer: CALayer!
     private var badgeLayer: CALayer!
     private var badgeBorder: CALayer!
-    private weak var button: UIButton!
-    private var layerData: LayerData?
+//    private weak var button: UIButton!
+    private var contentType: ContentType?
+    private var style: Style = .detail
     private var parentBackgroundColor: UIColor?
 
     var contentInsets: UIEdgeInsets = UIEdgeInsets() {
@@ -62,16 +66,16 @@ final class FileAttachmentView: UIView {
             self.invalidateIntrinsicContentSize()
         }
     }
-    var tapEnabled: Bool {
-        get {
-            return self.button.isEnabled
-        }
-
-        set {
-            self.button.isEnabled = newValue
-        }
-    }
-    var tapAction: (() -> Void)?
+//    var tapEnabled: Bool {
+//        get {
+//            return self.button.isEnabled
+//        }
+//
+//        set {
+//            self.button.isEnabled = newValue
+//        }
+//    }
+//    var tapAction: (() -> Void)?
 
     // MARK: - Lifecycle
 
@@ -114,8 +118,8 @@ final class FileAttachmentView: UIView {
         self.stopLayer.position = center
         self.imageLayer.position = center
         // Badge is supposed to be at bottom right with outer border, so badgeLayer needs to be moved outside of bounds a bit
-        self.badgeLayer.position = CGPoint(x: (self.bounds.width - self.contentInsets.right) - 0.5,
-                                           y: (self.bounds.height - self.contentInsets.bottom) - 0.5)
+        self.badgeLayer.position = CGPoint(x: (x + (self.imageLayer.frame.width / 2.0)) - 0.5,
+                                           y: (y + (self.imageLayer.frame.height / 2.0)) - 0.5)
         self.badgeBorder.position = self.badgeLayer.position
     }
 
@@ -127,8 +131,8 @@ final class FileAttachmentView: UIView {
         self.circleLayer.strokeColor = UIColor.systemGray5.cgColor
         self.badgeBorder.borderColor = self.parentBackgroundColor?.cgColor
 
-        if let data = self.layerData {
-            self.set(layerData: data)
+        if let type = self.contentType {
+            self.set(contentType: type, style: self.style)
         }
     }
 
@@ -146,39 +150,30 @@ final class FileAttachmentView: UIView {
         self.stopLayer.opacity = opacity
     }
 
-    func showFailure() {
-
-    }
-
     func set(state: State, style: Style) {
-        guard let data = self.layerData(state: state, style: style) else { return }
-        self.set(layerData: data)
+        guard let type = self.contentType(state: state, style: style) else { return }
+        self.set(contentType: type, style: style)
     }
 
-    private func set(layerData: LayerData) {
-        self.layerData = layerData
+    private func set(contentType: ContentType, style: Style) {
+        self.contentType = contentType
+        self.style = style
 
-        switch layerData {
+        switch contentType {
         case .progress(let progress):
             self.set(progress: progress)
-            self.setMainImage(data: nil)
-            self.setBadge(asset: nil)
+            self.setMainImage(asset: nil)
+            self.setBadge(asset: nil, style: style)
 
-        case .image(let asset, let opacity):
+        case .image(let asset):
             self.set(progress: nil)
-            self.setMainImage(data: (asset, opacity))
-            self.imageLayer.opacity = opacity
-            self.setBadge(asset: nil)
-
-        case .sfSymbol(let name, let color):
-            self.set(progress: nil)
-            self.setMainSymbol(name: name, color: color)
-            self.setBadge(asset: nil)
+            self.setMainImage(asset: asset)
+            self.setBadge(asset: nil, style: style)
 
         case .imageWithBadge(let mainAsset, let badgeAsset):
             self.set(progress: nil)
-            self.setMainImage(data: (mainAsset, 1))
-            self.setBadge(asset: badgeAsset)
+            self.setMainImage(asset: mainAsset)
+            self.setBadge(asset: badgeAsset, style: style)
         }
     }
 
@@ -191,15 +186,12 @@ final class FileAttachmentView: UIView {
         }
     }
 
-    private func setMainImage(data: (asset: ImageAsset, opacity: Float)?) {
-        let image = data?.asset.image
-        self.imageLayer.isHidden = data == nil
+    private func setMainImage(asset: ImageAsset?) {
+        let image = asset?.image
+        self.imageLayer.isHidden = asset == nil
         self.imageLayer.contents = image?.cgImage
         self.imageLayer.mask = nil
         self.imageLayer.backgroundColor = UIColor.clear.cgColor
-        if let opacity = data?.opacity {
-            self.imageLayer.opacity = opacity
-        }
 
         if let image = image, self.imageLayer.frame.width != image.size.width || self.imageLayer.frame.height != image.size.height {
             self.imageLayer.frame = CGRect(x: 0, y: 0, width: image.size.width, height: image.size.height)
@@ -207,60 +199,71 @@ final class FileAttachmentView: UIView {
         }
     }
 
-    private func setMainSymbol(name: String, color: UIColor) {
-        let mask = CALayer()
-        mask.frame = CGRect(x: 0, y: 0, width: FileAttachmentView.sfSymbolSize, height: FileAttachmentView.sfSymbolSize)
-        mask.contents = UIImage(systemName: name)?.cgImage
-        self.imageLayer.isHidden = false
-        self.imageLayer.mask = mask
-        self.imageLayer.contents = nil
-        self.imageLayer.backgroundColor = color.cgColor
-        self.imageLayer.opacity = 1
+    private func setBadge(asset: ImageAsset?, style: Style) {
+        let image = asset?.image
+        self.badgeLayer.isHidden = asset == nil
+        self.badgeBorder.isHidden = asset == nil
+        self.badgeLayer.contents = image?.cgImage
 
-        if self.imageLayer.frame.width != mask.frame.width || self.imageLayer.frame.height != mask.frame.height {
-            self.imageLayer.frame = mask.frame
+        if let image = image {
+            let borderWidth = self.badgeBorderWidth(for: style)
+            let badgeBorderSize = image.size.width + (borderWidth * 2)
+
+            self.badgeBorder.frame = CGRect(x: 0, y: 0, width: badgeBorderSize, height: badgeBorderSize)
+            self.badgeBorder.borderWidth = borderWidth
+            self.badgeBorder.cornerRadius = badgeBorderSize / 2
+            self.badgeLayer.frame = CGRect(origin: CGPoint(), size: image.size)
+
             self.setNeedsLayout()
         }
     }
 
-    private func setBadge(asset: ImageAsset?) {
-        self.badgeLayer.isHidden = asset == nil
-        self.badgeBorder.isHidden = asset == nil
-        self.badgeLayer.contents = asset?.image.cgImage
+    private func badgeBorderWidth(for style: Style) -> CGFloat {
+        switch style {
+        case .detail: return FileAttachmentView.badgeDetailBorderWidth
+        case .list: return FileAttachmentView.badgeListBorderWidth
+        }
     }
 
-    private func layerData(state: State, style: Style) -> LayerData? {
+    private func contentType(state: State, style: Style) -> ContentType? {
         switch state {
         case .progress(let progress):
             return .progress(progress)
 
         case .ready(let type):
-            switch style {
-            case .list:
-                switch type {
-                case .file(_, _, let location, _):
-                    switch location {
-                    case .remoteMissing: return .sfSymbol(name: "questionmark.circle.fill", color: Asset.Colors.attachmentMissing.color)
-                    case .local: return .image(asset: self.mainAsset(for: type, style: style), opacity: 1)
-                    case .remote: return .image(asset: self.mainAsset(for: type, style: style), opacity: 0.5)
-                    }
-                case .url: return .image(asset: self.mainAsset(for: type, style: style), opacity: 1)
+            switch type {
+            case .file(_, _, let location, _):
+                switch location {
+                case .local: return .image(asset: self.mainAsset(for: type, style: style))
+                case .remoteMissing: return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: self.badge(for: .missing, style: style))
+                case .remote: return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: self.badge(for: .download, style: style))
                 }
-            case .detail:
-                switch type {
-                case .file(_, _, let location, _):
-                    switch location {
-                    case .remoteMissing: return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: Asset.Images.Attachments.badgeMissing)
-                    case .local: return .image(asset: self.mainAsset(for: type, style: style), opacity: 1)
-                    case .remote: return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: Asset.Images.Attachments.badgeDownload)
-                    }
-                case .url: return .image(asset: self.mainAsset(for: type, style: style), opacity: 1)
-                }
+
+            case .url: return .image(asset: self.mainAsset(for: type, style: style))
             }
-        case .failed(let type, _):
+
+        case .failed(let type, _): return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: self.badge(for: .failed, style: style))
+        }
+    }
+
+    private func badge(for type: BadgeType, style: Style) -> ImageAsset {
+        switch type {
+        case .download:
             switch style {
-            case .list: return .sfSymbol(name: "exclamationmark.circle.fill", color: Asset.Colors.attachmentError.color)
-            case .detail: return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: Asset.Images.Attachments.badgeFailed)
+            case .detail: return Asset.Images.Attachments.badgeDetailDownload
+            case .list: return Asset.Images.Attachments.badgeListDownload
+            }
+
+        case .failed:
+            switch style {
+            case .detail: return Asset.Images.Attachments.badgeDetailFailed
+            case .list: return Asset.Images.Attachments.badgeListFailed
+            }
+
+        case .missing:
+            switch style {
+            case .detail: return Asset.Images.Attachments.badgeDetailMissing
+            case .list: return Asset.Images.Attachments.badgeListMissing
             }
         }
     }
@@ -346,32 +349,32 @@ final class FileAttachmentView: UIView {
         self.layer.addSublayer(badgeBorder)
         self.badgeBorder = badgeBorder
 
-        let button = UIButton()
-        button.frame = self.bounds
-        button.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        self.addSubview(button)
-        self.button = button
-
-        button.rx
-              .controlEvent(.touchDown)
-              .subscribe(onNext: { [weak self] _ in
-                  self?.set(selected: true)
-              })
-              .disposed(by: self.disposeBag)
-
-        button.rx
-              .controlEvent([.touchUpOutside, .touchUpInside, .touchCancel])
-              .subscribe(onNext: { [weak self] _ in
-                  self?.set(selected: false)
-              })
-              .disposed(by: self.disposeBag)
-
-        button.rx
-              .controlEvent(.touchUpInside)
-              .subscribe(onNext: { [weak self] _ in
-                  self?.tapAction?()
-              })
-              .disposed(by: self.disposeBag)
+//        let button = UIButton()
+//        button.frame = self.bounds
+//        button.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+//        self.addSubview(button)
+//        self.button = button
+//
+//        button.rx
+//              .controlEvent(.touchDown)
+//              .subscribe(onNext: { [weak self] _ in
+//                  self?.set(selected: true)
+//              })
+//              .disposed(by: self.disposeBag)
+//
+//        button.rx
+//              .controlEvent([.touchUpOutside, .touchUpInside, .touchCancel])
+//              .subscribe(onNext: { [weak self] _ in
+//                  self?.set(selected: false)
+//              })
+//              .disposed(by: self.disposeBag)
+//
+//        button.rx
+//              .controlEvent(.touchUpInside)
+//              .subscribe(onNext: { [weak self] _ in
+//                  self?.tapAction?()
+//              })
+//              .disposed(by: self.disposeBag)
     }
 
     private func createImageLayer() -> CALayer {
@@ -387,7 +390,6 @@ final class FileAttachmentView: UIView {
     private func createBadgeLayer()  -> CALayer {
         let layer = CALayer()
         layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-        layer.frame = CGRect(x: 0, y: 0, width: FileAttachmentView.badgeSize, height: FileAttachmentView.badgeSize)
         layer.contentsGravity = .resizeAspect
         layer.shouldRasterize = true
         layer.rasterizationScale = UIScreen.main.scale
@@ -395,13 +397,8 @@ final class FileAttachmentView: UIView {
     }
     
     private func createBadgeBorderLayer() -> CALayer {
-        let size = FileAttachmentView.badgeSize + (FileAttachmentView.badgeBorderWidth * 2)
-        
         let layer = CALayer()
         layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-        layer.frame = CGRect(x: 0, y: 0, width: size, height: size)
-        layer.borderWidth = FileAttachmentView.badgeBorderWidth
-        layer.cornerRadius = size / 2
         layer.masksToBounds = true
         // Disable color animation
         layer.actions = ["borderColor": NSNull()]
