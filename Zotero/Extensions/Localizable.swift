@@ -356,6 +356,12 @@ internal enum L10n {
     internal static let sortBy = L10n.tr("Localizable", "items.sort_by")
     /// Sort Order
     internal static let sortOrder = L10n.tr("Localizable", "items.sort_order")
+    /// Filter: %d items
+    internal static func toolbarFilterMultiple(_ p1: Int) -> String {
+      return L10n.tr("Localizable", "items.toolbar_filter_multiple", p1)
+    }
+    /// Filter: 1 item
+    internal static let toolbarFilterSingle = L10n.tr("Localizable", "items.toolbar_filter_single")
     /// Select a Collection
     internal static let zeroCollectionsSelected = L10n.tr("Localizable", "items.zero_collections_selected")
     internal enum Action {

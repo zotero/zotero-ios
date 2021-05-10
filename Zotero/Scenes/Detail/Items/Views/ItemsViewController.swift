@@ -23,7 +23,7 @@ final class ItemsViewController: UIViewController {
         case done
         case selectAll
         case deselectAll
-        case sort
+        case add
     }
 
     @IBOutlet private weak var tableView: UITableView!
@@ -230,9 +230,9 @@ final class ItemsViewController: UIViewController {
             guard let button = button else { return }
             self.coordinatorDelegate?.showFilters(viewModel: self.viewModel, button: button)
 
-        case .add:
+        case .sort:
             guard let button = button else { return }
-            self.coordinatorDelegate?.showAddActions(viewModel: self.viewModel, button: button)
+            self.coordinatorDelegate?.showSortActions(viewModel: self.viewModel, button: button)
         }
     }
 
@@ -386,13 +386,13 @@ final class ItemsViewController: UIViewController {
 
     private func rightBarButtonItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
         if !state.isEditing {
-            return [.sort, .select]
+            return [.add, .select]
         }
         let allSelected = state.selectedItems.count == (state.results?.count ?? 0)
         if allSelected {
-            return [.sort, .deselectAll, .done]
+            return [.add, .deselectAll, .done]
         }
-        return [.sort, .selectAll, .done]
+        return [.add, .selectAll, .done]
     }
 
     private func createRightBarButtonItem(_ type: RightBarButtonItem) -> UIBarButtonItem {
@@ -421,12 +421,12 @@ final class ItemsViewController: UIViewController {
             action = { [weak self] _ in
                 self?.viewModel.process(action: .startEditing)
             }
-        case .sort:
-            image = UIImage(systemName: "arrow.up.arrow.down")
+        case .add:
+            image = UIImage(systemName: "plus")
             title = nil
             action = { [weak self] item in
                 guard let `self` = self else { return }
-                self.coordinatorDelegate?.showSortActions(viewModel: self.viewModel, button: item)
+                self.coordinatorDelegate?.showAddActions(viewModel: self.viewModel, button: item)
             }
         }
 

@@ -431,7 +431,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
             for filter in filters {
                 switch filter {
                 case .downloadedFiles:
-                    results = results.filter("fileDownloaded = true or mainAttachment.fileDownloaded = true")
+                    results = results.filter("fileDownloaded = true or ANY children.fileDownloaded = true")
                 }
             }
         }

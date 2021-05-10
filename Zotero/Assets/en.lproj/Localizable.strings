@@ -123,6 +123,8 @@
 "items.action.create_parent" = "Create Parent Item";
 "items.filters.title" = "Filters";
 "items.filters.downloads" = "Downloaded Files";
+"items.toolbar_filter_single" = "Filter: 1 item";
+"items.toolbar_filter_multiple" = "Filter: %d items";
 
 "item_detail.add_creator" = "Add Creator";
 "item_detail.notes" = "Notes";

@@ -109,7 +109,7 @@ final class ItemsTableViewHandler: NSObject {
                 contextualAction.backgroundColor = .systemOrange
             case .removeFromCollection:
                 contextualAction.backgroundColor = .systemPurple
-            case .add, .filter: break
+            case .sort, .filter: break
             }
             return contextualAction
         })
