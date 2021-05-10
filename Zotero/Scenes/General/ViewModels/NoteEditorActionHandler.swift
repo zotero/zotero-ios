@@ -20,6 +20,7 @@ struct NoteEditorActionHandler: ViewModelActionHandler {
             self.saveAction(viewModel.state.text, viewModel.state.tags)
 
         case .setText(let text):
+            guard text != viewModel.state.text else { return }
             self.update(viewModel: viewModel) { state in
                 state.text = text
                 state.changes = .save

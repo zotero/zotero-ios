@@ -82,10 +82,14 @@
 
         setup: function (editor) {
             setLocale(editor);
-        },
 
-        onchange_callback: function (instance) {
-            window.webkit.messageHandlers.textHandler.postMessage(instance.getBody().innerHtml);
+            editor.on('input NodeChange', function() {
+                let value = editor.getContent();
+                if (value !== editor._lastChange) {
+                    editor._lastChange = value;
+                    window.webkit.messageHandlers.textHandler.postMessage(value);
+                }
+            });
         }
     });
 </script>
