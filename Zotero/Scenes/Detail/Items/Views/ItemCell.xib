@@ -70,8 +70,8 @@
                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="RBr-zc-TeH">
                         <rect key="frame" x="346" y="0.0" width="60" height="60"/>
                         <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="attachment-detail-webpage-snapshot" translatesAutoresizingMaskIntoConstraints="NO" id="sWl-J7-oU5">
-                                <rect key="frame" x="16" y="16" width="28" height="28"/>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Attachments/list-web-page-snapshot" translatesAutoresizingMaskIntoConstraints="NO" id="sWl-J7-oU5">
+                                <rect key="frame" x="22" y="22" width="16" height="16"/>
                             </imageView>
                             <view hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Mcw-7q-2OK" customClass="FileAttachmentView" customModule="Zotero" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="60" height="60"/>
@@ -126,8 +126,8 @@
         </designable>
     </designables>
     <resources>
+        <image name="Attachments/list-web-page-snapshot" width="16" height="16"/>
         <image name="Cells/note" width="12" height="12"/>
-        <image name="attachment-detail-webpage-snapshot" width="28" height="28"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
