@@ -321,7 +321,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             self.add(annotations: addedAnnotations, to: &state, selectFirst: false)
             state.ignoreNotifications[.PSPDFAnnotationsAdded] = insertedKeys
 
-            state.changes.insert(.annotations)
+            if !modifiedKeys.isEmpty || !deletedKeys.isEmpty || !insertedKeys.isEmpty {
+                state.changes.insert(.annotations)
+            }
         }
 
         // Update the document
