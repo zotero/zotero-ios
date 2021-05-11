@@ -102,7 +102,7 @@ extension MainViewController: UISplitViewControllerDelegate {
 
 extension MainViewController: MainCoordinatorDelegate {
     func showItems(for collection: Collection, in library: Library, isInitial: Bool) {
-        guard !self.isSplit || self.detailCoordinator?.library != library || self.detailCoordinator?.collection != collection else { return }
+        guard !self.isSplit || self.detailCoordinator?.library != library || self.detailCoordinator?.collection.identifier != collection.identifier else { return }
 
         let navigationController = UINavigationController()
 
