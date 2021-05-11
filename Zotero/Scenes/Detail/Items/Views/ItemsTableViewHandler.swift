@@ -305,7 +305,6 @@ extension ItemsTableViewHandler: UITableViewDelegate {
             } else {
                 self.viewModel.process(action: .openAttachment(attachment: attachment, parentKey: parentKey))
             }
-            self.viewModel.process(action: .openAttachment(attachment: attachment, parentKey: (item.key == attachment.key ? nil : item.key)))
         case .doi(let doi):
             self.tapObserver.on(.next(.doi(doi)))
         case .url(let url):
