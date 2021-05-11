@@ -113,7 +113,7 @@ final class ExtensionStore {
         enum ProcessedAttachment {
             case item(ItemResponse)
             case itemWithAttachment(item: ItemResponse, attachment: [String: Any], attachmentFile: File)
-            case localFile(File)
+            case localFile(file: File, filename: String)
         }
 
         fileprivate struct UploadData {
@@ -148,8 +148,7 @@ final class ExtensionStore {
                 self.userId = userId
             }
 
-            init(localFile: File, attachmentKey: String, collections: Set<String>, tags: [TagResponse], libraryId: LibraryIdentifier, userId: Int) {
-                let filename = localFile.name + "." + localFile.ext
+            init(localFile: File, filename: String, attachmentKey: String, collections: Set<String>, tags: [TagResponse], libraryId: LibraryIdentifier, userId: Int) {
                 let file = Files.newAttachmentFile(in: libraryId, key: attachmentKey, filename: filename, contentType: localFile.mimeType)
                 let attachment = Attachment(type: .file(filename: filename, contentType: localFile.mimeType, location: .local, linkType: .importedFile),
                                             title: filename,
@@ -249,7 +248,7 @@ final class ExtensionStore {
     func cancel() {
         guard let attachment = self.state.processedAttachment else { return }
         switch attachment {
-        case .itemWithAttachment(_, _, let file), .localFile(let file):
+        case .itemWithAttachment(_, _, let file), .localFile(let file, _):
             // Remove temporary local file if it exists
             try? self.fileStorage.remove(file)
         case .item: break
@@ -288,9 +287,10 @@ final class ExtensionStore {
                                .disposed(by: self.disposeBag)
         case .fileUrl(let url):
             let file = Files.file(from: url)
+            let filename = url.lastPathComponent
 
             var state = self.state
-            state.processedAttachment = .localFile(file)
+            state.processedAttachment = .localFile(file: file, filename: filename)
             state.items = state.processedAttachment
             state.attachmentState = .processed
             self.state = state
@@ -301,6 +301,8 @@ final class ExtensionStore {
             state.title = url.absoluteString
             state.attachmentState = .downloading(0)
             self.state = state
+
+            let filename = url.lastPathComponent
 
             let file = Files.shareExtensionTmpItem(key: self.state.attachmentKey, contentType: contentType)
             self.download(url: url, to: file)
@@ -315,7 +317,7 @@ final class ExtensionStore {
 
                     var state = self.state
                     if self.fileStorage.isPdf(file: file) {
-                        state.processedAttachment = .localFile(file)
+                        state.processedAttachment = .localFile(file: file, filename: filename)
                         state.items = state.processedAttachment
                         state.attachmentState = .processed
                     } else {
@@ -378,8 +380,7 @@ final class ExtensionStore {
                     return
                 }
 
-                if isFile,
-                   let contentType = data["contentType"] as? String {
+                if isFile, let contentType = data["contentType"] as? String {
                     subscriber(.success(.remoteFileUrl(url: url, contentType: contentType)))
                 } else if let title = data["title"] as? String,
                           let html = data["html"] as? String,
@@ -561,8 +562,8 @@ final class ExtensionStore {
                                             collections: collectionKeys, tags: tags, libraryId: libraryId, userId: userId, dateParser: self.dateParser)
                 self.upload(data: data, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage)
 
-            case .localFile(let file):
-                let data = State.UploadData(localFile: file, attachmentKey: self.state.attachmentKey, collections: collectionKeys, tags: tags, libraryId: libraryId, userId: userId)
+            case .localFile(let file, let filename):
+                let data = State.UploadData(localFile: file, filename: filename, attachmentKey: self.state.attachmentKey, collections: collectionKeys, tags: tags, libraryId: libraryId, userId: userId)
                 self.upload(data: data, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage)
             }
         } else if let url = self.state.url {

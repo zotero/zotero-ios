@@ -263,14 +263,14 @@ final class ShareViewController: UIViewController {
             self.attachmentIcon.set(state: .stateFrom(type: .file(filename: "", contentType: file.mimeType, location: .local, linkType: .importedFile), progress: nil, error: attachmentState.error), style: .detail)
             self.attachmentTitleLabel.text = (attachment["title"] as? String) ?? title
 
-        case .localFile(let file):
+        case .localFile(let file, let filename):
             self.itemContainer.isHidden = true
             self.attachmentContainer.isHidden = false
 
             self.attachmentContainerLeft.constant = 0
             self.attachmentIcon.set(state: .stateFrom(type: .file(filename: "", contentType: file.mimeType, location: .local, linkType: .importedFile), progress: nil, error: nil), style: .detail)
             
-            self.attachmentTitleLabel.text = file.name
+            self.attachmentTitleLabel.text = filename
         }
 
         switch attachmentState {
