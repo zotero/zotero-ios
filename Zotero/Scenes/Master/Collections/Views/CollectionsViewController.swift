@@ -50,7 +50,7 @@ final class CollectionsViewController: UIViewController {
                                                             dragDropController: self.dragDropController,
                                                             splitDelegate: self.coordinatorDelegate)
 
-        self.tableViewHandler.update(collections: self.viewModel.state.collections.filter({ $0.visible }), animated: false)
+        self.tableViewHandler.updateCollections(animated: false)
 
         self.viewModel.stateObservable
                       .observe(on: MainScheduler.instance)
@@ -73,15 +73,15 @@ final class CollectionsViewController: UIViewController {
 
     private func update(to state: CollectionsState) {
         if state.changes.contains(.results) {
-            self.tableViewHandler.update(collections: state.collections.filter({ $0.visible }), animated: true, completed: { [weak self] in
+            self.tableViewHandler.updateCollections(animated: true, completed: { [weak self] in
                 self?.selectIfNeeded(collectionId: state.selectedCollectionId)
             })
         }
         if state.changes.contains(.allItemCount) {
-            self.tableViewHandler.updateAllItemCell(with: state.collections[0])
+            self.tableViewHandler.updateAllItemCell()
         }
         if state.changes.contains(.trashItemCount) {
-            self.tableViewHandler.updateTrashItemCell(with: state.collections[state.collections.count - 1])
+            self.tableViewHandler.updateTrashItemCell()
         }
         if state.changes.contains(.selection), let collection = state.collections.first(where: { $0.identifier == state.selectedCollectionId }) {
             self.coordinatorDelegate?.showItems(for: collection, in: state.library, isInitial: false)
