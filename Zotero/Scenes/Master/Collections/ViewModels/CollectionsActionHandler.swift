@@ -276,7 +276,6 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
             self.update(viewModel: viewModel) { state in
                 state.collections = allCollections
-                state.visibleCollections = allCollections.filter({ $0.visible })
                 state.library = library
                 state.collectionsToken = collectionsToken
 //                state.searchesToken = searchesToken
@@ -378,7 +377,6 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
         self.update(viewModel: viewModel) { state in
             state.collections = original
-            state.visibleCollections = original.filter({ $0.visible })
             state.changes.insert(.results)
             if selectedId != state.selectedCollectionId {
                 state.changes.insert(.selection)

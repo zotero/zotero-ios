@@ -27,7 +27,7 @@ final class AnnotationsViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private weak var tableView: UITableView!
-    private var dataSource: UITableViewDiffableDataSource<Int, Annotation>!
+    private var dataSource: DiffableDataSource<Annotation>!
     private var searchController: UISearchController!
     private var isVisible: Bool
 
@@ -180,23 +180,23 @@ final class AnnotationsViewController: UIViewController {
 
         let isVisible = self.sidebarParent?.isSidebarVisible ?? false
 
-        var snapshot = NSDiffableDataSourceSnapshot<Int, Annotation>()
-        snapshot.appendSections(Array(0..<Int(state.document.pageCount)))
+        var snapshot = DiffableDataSourceSnapshot<Annotation>(numberOfSections: Int(state.document.pageCount))
         for (page, annotations) in state.annotations {
             guard page < state.document.pageCount else {
                 DDLogWarn("AnnotationsViewController: annotations page (\(page)) outside of document bounds (\(state.document.pageCount))")
                 continue
             }
-            snapshot.appendItems(annotations, toSection: page)
+            snapshot.append(objects: annotations, for: page)
         }
+        let animation: DiffableDataSourceAnimation = !isVisible ? .none : .animate(reload: .fade, insert: .bottom, delete: .bottom)
 
-        self.dataSource.apply(snapshot, animatingDifferences: isVisible, completion: {
-            // Update selection if needed
+        self.dataSource.apply(snapshot: snapshot, animation: animation) { finished in
+            guard finished else { return }
             if let indexPaths = state.updatedAnnotationIndexPaths {
                 reloadVisibleCells(indexPaths)
+                completion()
             }
-            completion()
-        })
+        }
     }
 
     /// Updates tableView layout in case any cell changed height.
@@ -264,16 +264,15 @@ final class AnnotationsViewController: UIViewController {
             tableView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor)
         ])
 
-        let dataSource = UITableViewDiffableDataSource<Int, Annotation>(tableView: tableView) { [weak self] tableView, indexPath, model -> UITableViewCell? in
-            guard let `self` = self else { return nil }
-
-            let cell = tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
-            cell.contentView.backgroundColor = self.view.backgroundColor
-            if let cell = cell as? AnnotationCell {
-                self.setup(cell: cell, with: model, state: self.viewModel.state)
-            }
-            return cell
-        }
+        let dataSource = DiffableDataSource<Annotation>(tableView: tableView,
+                                                        dequeueAction: { tableView, indexPath in
+                                                            return tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
+                                                        },
+                                                        setupAction: { [weak self] cell, annotation in
+                                                            guard let `self` = self, let cell = cell as? AnnotationCell else { return }
+                                                            cell.contentView.backgroundColor = self.view.backgroundColor
+                                                            self.setup(cell: cell, with: annotation, state: self.viewModel.state)
+                                                        })
 
         self.tableView = tableView
         self.dataSource = dataSource

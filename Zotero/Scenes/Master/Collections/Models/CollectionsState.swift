@@ -35,7 +35,6 @@ struct CollectionsState: ViewModelState {
     var library: Library
     var selectedCollectionId: CollectionIdentifier
     var collections: [Collection]
-    var visibleCollections: [Collection]
     var editingData: CollectionStateEditingData?
     var changes: Changes
     var collectionsToken: NotificationToken?
@@ -61,7 +60,6 @@ struct CollectionsState: ViewModelState {
         self.library = Library(identifier: .custom(.myLibrary), name: "", metadataEditable: false, filesEditable: false)
         self.selectedCollectionId = selectedCollectionId
         self.collections = []
-        self.visibleCollections = []
         self.changes = []
         self.collapsedKeys = []
     }

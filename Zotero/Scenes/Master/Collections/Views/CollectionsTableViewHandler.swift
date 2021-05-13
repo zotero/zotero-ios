@@ -39,25 +39,29 @@ final class CollectionsTableViewHandler: NSObject {
     // MARK: - Actions
 
     func selectIfNeeded(collectionId: CollectionIdentifier) {
-        if let index = self.viewModel.state.visibleCollections.firstIndex(where: { $0.identifier == collectionId}) {
-            guard self.tableView.indexPathForSelectedRow?.row != index else { return }
-            self.tableView.selectRow(at: IndexPath(row: index, section: 0), animated: false, scrollPosition: .none)
+        if let indexPath = self.dataSource.snapshot.indexPath(for: collectionId) {
+            guard self.tableView.indexPathForSelectedRow != indexPath else { return }
+            self.tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
         } else if let indexPath = self.tableView.indexPathForSelectedRow {
             self.tableView.deselectRow(at: indexPath, animated: false)
         }
     }
 
     func updateAllItemCell() {
-        self.dataSource.update(object: self.viewModel.state.visibleCollections[0], at: 0)
+        guard let collection = self.viewModel.state.collections.first else { return }
+        self.dataSource.update(object: collection, at: IndexPath(row: 0, section: 0))
     }
 
     func updateTrashItemCell() {
-        let index = self.viewModel.state.visibleCollections.count - 1
-        self.dataSource.update(object: self.viewModel.state.visibleCollections[index], at: index)
+        guard let collection = self.viewModel.state.collections.last else { return }
+        let count = self.dataSource.snapshot.count(for: 0)
+        guard count > 0 else { return }
+        self.dataSource.update(object: collection, at: IndexPath(row: count - 1, section: 0))
     }
 
     func updateCollections(animated: Bool, completed: (() -> Void)? = nil) {
-        let snapshot = DiffableDataSource.Snapshot(objects: self.viewModel.state.visibleCollections)
+        var snapshot = DiffableDataSourceSnapshot<Collection>(numberOfSections: 1)
+        snapshot.append(objects: self.viewModel.state.collections.filter({ $0.visible }), for: 0)
         let animation: DiffableDataSourceAnimation = !animated ? .none : .animate(reload: .automatic, insert: .bottom, delete: .bottom)
         self.dataSource.apply(snapshot: snapshot, animation: animation, completion: { finished in
             guard finished else { return }
@@ -184,15 +188,11 @@ final class CollectionsTableViewHandler: NSObject {
         self.dataSource = DiffableDataSource(tableView: self.tableView,
                                              dequeueAction: { tableView, indexPath in
                                                 return tableView.dequeueReusableCell(withIdentifier: CollectionsTableViewHandler.cellId, for: indexPath)
-                                             }, setupAction: { [weak self] cell, indexPath in
-                                                guard let `self` = self,
-                                                      indexPath.row < self.viewModel.state.visibleCollections.count,
-                                                      let cell = cell as? CollectionCell else { return }
-
-                                                let collection = self.viewModel.state.visibleCollections[indexPath.row]
-                                                cell.set(collection: collection, toggleCollapsed: { [weak self] in
-                                                    self?.viewModel.process(action: .toggleCollapsed(collection))
-                                                })
+                                             }, setupAction: { [weak self] cell, collection in
+                                                 guard let cell = cell as? CollectionCell else { return }
+                                                 cell.set(collection: collection, toggleCollapsed: {
+                                                     self?.viewModel.process(action: .toggleCollapsed(collection))
+                                                 })
                                              })
     }
 
@@ -252,26 +252,23 @@ extension CollectionsTableViewHandler: UITableViewDelegate {
             tableView.deselectRow(at: indexPath, animated: true)
         }
 
-        guard indexPath.row < self.viewModel.state.visibleCollections.count else { return }
-
         // We don't need to always show it on iPad, since the currently selected collection is visible. So we show only a new one. On iPhone
         // on the other hand we see only the collection list, so we always need to open the item list for selected collection.
-        let collection = self.viewModel.state.visibleCollections[indexPath.row]
-        guard self.splitDelegate?.isSplit == false ? true : collection.identifier != self.viewModel.state.selectedCollectionId else { return }
+        guard let collection = self.dataSource.snapshot.object(at: indexPath),
+              self.splitDelegate?.isSplit == false ? true : collection.identifier != self.viewModel.state.selectedCollectionId else { return }
         self.viewModel.process(action: .select(collection.identifier))
     }
 
     func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        guard indexPath.row < self.viewModel.state.visibleCollections.count else { return nil }
-        let collection = self.viewModel.state.visibleCollections[indexPath.row]
+        guard let collection = self.dataSource.snapshot.object(at: indexPath) else { return nil }
         return self.createContextMenu(for: collection).flatMap({ menu in UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: { _ in menu }) })
     }
 }
 
 extension CollectionsTableViewHandler: UITableViewDropDelegate {
     func tableView(_ tableView: UITableView, performDropWith coordinator: UITableViewDropCoordinator) {
-        guard let indexPath = coordinator.destinationIndexPath, indexPath.row < self.viewModel.state.visibleCollections.count,
-              let key = self.viewModel.state.visibleCollections[indexPath.row].identifier.key else { return }
+        guard let indexPath = coordinator.destinationIndexPath,
+              let key = self.dataSource.snapshot.object(at: indexPath)?.identifier.key else { return }
 
         switch coordinator.proposal.operation {
         case .copy:
@@ -290,16 +287,10 @@ extension CollectionsTableViewHandler: UITableViewDropDelegate {
         guard session.localDragSession != nil else { return UITableViewDropProposal(operation: .forbidden) }
 
         // Allow only dropping to user collections, not custom collections, such as "All Items" or "My Publications"
-        if let destination = destinationIndexPath {
-            if destination.row >= self.viewModel.state.visibleCollections.count {
-                return UITableViewDropProposal(operation: .forbidden)
-            }
-
-            if !self.viewModel.state.visibleCollections[destination.row].identifier.isCollection {
-                return UITableViewDropProposal(operation: .forbidden)
-            }
+        if let destination = destinationIndexPath, let collection = self.dataSource.snapshot.object(at: destination), collection.identifier.isCollection {
+            return UITableViewDropProposal(operation: .copy, intent: .insertIntoDestinationIndexPath)
         }
 
-        return UITableViewDropProposal(operation: .copy, intent: .insertIntoDestinationIndexPath)
+        return UITableViewDropProposal(operation: .forbidden)
     }
 }

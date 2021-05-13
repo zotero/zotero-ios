@@ -10,7 +10,7 @@ import UIKit
 
 import CocoaLumberjackSwift
 
-struct Annotation: Equatable {
+struct Annotation: Identifiable, Equatable {
     enum Editability: Equatable, Hashable {
         case notEditable
         case metadataEditable
@@ -33,6 +33,10 @@ struct Annotation: Equatable {
     let didChange: Bool
     let editability: Editability
     let isSyncable: Bool
+
+    var id: String {
+        return self.key
+    }
 
     var previewBoundingBox: CGRect {
         return self.boundingBox.insetBy(dx: (AnnotationsConfig.imageAnnotationLineWidth + 1), dy: (AnnotationsConfig.imageAnnotationLineWidth + 1))
