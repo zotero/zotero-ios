@@ -253,6 +253,10 @@ internal enum L10n {
       }
       /// You don’t have permission to edit groups.
       internal static let groupPermissions = L10n.tr("Localizable", "errors.sync_toolbar.group_permissions")
+      /// The group '%@' has reached its Zotero File Storage quota. Some files were not uploaded. Other Zotero data will continue to sync to the server.\nThe group owner can increase the group's storage capacity from the storage settings section on zotero.org.
+      internal static func groupQuotaReached(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "errors.sync_toolbar.group_quota_reached", String(describing: p1))
+      }
       /// Could not sync groups. Please try again.
       internal static let groupsFailed = L10n.tr("Localizable", "errors.sync_toolbar.groups_failed")
       /// Unable to connect to the network. Please try again.
@@ -265,6 +269,10 @@ internal enum L10n {
       }
       /// 1 issue
       internal static let oneError = L10n.tr("Localizable", "errors.sync_toolbar.one_error")
+      /// You have reached your Zotero File Storage quota. Some files were not uploaded. Other Zotero data will continue to sync to the server.\nSee your zotero.org account settings for additional storage options.
+      internal static let personalQuotaReached = L10n.tr("Localizable", "errors.sync_toolbar.personal_quota_reached")
+      /// Quota Reached.
+      internal static let quotaReachedShort = L10n.tr("Localizable", "errors.sync_toolbar.quota_reached_short")
     }
     internal enum Translators {
       /// Could not update translators from bundle. Would you like to try again?

@@ -81,8 +81,9 @@ final class MainViewController: UISplitViewController {
 
         self.viewControllers = [masterController]
 
-        if let progressObservable = self.controllers.userControllers?.syncScheduler.syncController.progressObservable {
-            self.syncToolbarController = SyncToolbarController(parent: masterController, progressObservable: progressObservable)
+        if let progressObservable = self.controllers.userControllers?.syncScheduler.syncController.progressObservable,
+           let dbStorage = self.controllers.userControllers?.dbStorage {
+            self.syncToolbarController = SyncToolbarController(parent: masterController, progressObservable: progressObservable, dbStorage: dbStorage)
         }
     }
 }

@@ -14,6 +14,20 @@ enum SyncError {
     case fatal(Fatal)
     case nonFatal(NonFatal)
 
+    var fatal: Fatal? {
+        switch self {
+        case .fatal(let error): return error
+        case .nonFatal: return nil
+        }
+    }
+
+    var nonFatal: NonFatal? {
+        switch self {
+        case .fatal: return nil
+        case .nonFatal(let error): return error
+        }
+    }
+
     enum Fatal: Error {
         case noInternetConnection
         case apiError(String)
@@ -32,9 +46,11 @@ enum SyncError {
     enum NonFatal: Error {
         case versionMismatch(LibraryIdentifier)
         case apiError(String)
-        case unknown
+        case unknown(String)
         case schema(SchemaError)
         case parsing(Parsing.Error)
+        case quotaLimit(LibraryIdentifier)
+        case unchanged
 
         var isVersionMismatch: Bool {
             switch self {

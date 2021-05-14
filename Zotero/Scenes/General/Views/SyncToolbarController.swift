@@ -13,12 +13,14 @@ import RxSwift
 final class SyncToolbarController {
     private static let finishVisibilityTime: RxTimeInterval = .seconds(2)
     private unowned let viewController: UINavigationController
+    private unowned let dbStorage: DbStorage
     private let disposeBag: DisposeBag
 
     private var pendingErrors: [Error]?
 
-    init(parent: UINavigationController, progressObservable: PublishSubject<SyncProgress>) {
+    init(parent: UINavigationController, progressObservable: PublishSubject<SyncProgress>, dbStorage: DbStorage) {
         self.viewController = parent
+        self.dbStorage = dbStorage
         self.disposeBag = DisposeBag()
 
         parent.setToolbarHidden(true, animated: false)
@@ -104,8 +106,18 @@ final class SyncToolbarController {
                     message += L10n.Errors.api(response)
                 case .versionMismatch:
                     message += L10n.Errors.versionMismatch
-                case .unknown:
-                    message += L10n.Errors.unknown
+                case .unknown(let _message):
+                    message += _message.isEmpty ? L10n.Errors.unknown : _message
+                case .quotaLimit(let libraryId):
+                    switch libraryId {
+                    case .custom:
+                        message = L10n.Errors.SyncToolbar.personalQuotaReached
+
+                    case .group(let groupId):
+                        let groupName = (try? self.dbStorage.createCoordinator().perform(request: ReadGroupDbRequest(identifier: groupId)))?.name
+                        message = L10n.Errors.SyncToolbar.groupQuotaReached(groupName ?? "\(groupId)")
+                    }
+                case .unchanged: break
                 }
             }
 

@@ -265,6 +265,9 @@
 "errors.sync_toolbar.conflict_retry_limit" = "Remote sync in progress. Please try again in a few minutes.";
 "errors.sync_toolbar.group_permissions" = "You don’t have permission to edit groups.";
 "errors.sync_toolbar.internet_connection" = "Unable to connect to the network. Please try again.";
+"errors.sync_toolbar.personal_quota_reached" = "You have reached your Zotero File Storage quota. Some files were not uploaded. Other Zotero data will continue to sync to the server.\nSee your zotero.org account settings for additional storage options.";
+"errors.sync_toolbar.group_quota_reached" = "The group '%@' has reached its Zotero File Storage quota. Some files were not uploaded. Other Zotero data will continue to sync to the server.\nThe group owner can increase the group's storage capacity from the storage settings section on zotero.org.";
+"errors.sync_toolbar.quota_reached_short" = "Quota Reached.";
 "errors.item_detail.dropped_fields_title" = "Change Item Type";
 "errors.item_detail.dropped_fields_message" = "Are you sure you want to change the item type?\n\nThe following fields will be lost:\n\n%@";
 "errors.item_detail.cant_load_data" = "Could not load data. Please try again.";
@@ -295,4 +298,4 @@
 "errors.logging.upload" = "Could not upload logs. Please try again.";
 "errors.logging.response_parsing" = "Unexpected response from server";
 "errors.translators.bundle_loading" = "Could not update translators from bundle. Would you like to try again?";
-"errors.translators.bundle_reset" = "Could not load bundled translators.";
+"errors.translators.bundle_reset" = "Could not load bundled translators.";"

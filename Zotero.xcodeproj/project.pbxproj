@@ -417,6 +417,7 @@
 		B34341B4260A496200093E63 /* ReadCollectionAndLibraryDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34341B3260A496200093E63 /* ReadCollectionAndLibraryDbRequest.swift */; };
 		B34341B7260A49C300093E63 /* ReadCollectionAndLibraryDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34341B3260A496200093E63 /* ReadCollectionAndLibraryDbRequest.swift */; };
 		B34341BA260A49E800093E63 /* ReadLibraryDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34341A4260A16AB00093E63 /* ReadLibraryDbRequest.swift */; };
+		B3451B55264ECBA9000EDF16 /* ReadGroupDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3451B54264ECBA9000EDF16 /* ReadGroupDbRequest.swift */; };
 		B347F2BA24DC4D5D000D5FF6 /* CapHeightLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B347F2B924DC4D5D000D5FF6 /* CapHeightLabel.swift */; };
 		B349182B25E00771006C3313 /* ReadVersionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B349182A25E00771006C3313 /* ReadVersionDbRequest.swift */; };
 		B34A9F5E25BF12F7007C9A4A /* ReadFilenameDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34A9F5D25BF12F7007C9A4A /* ReadFilenameDbRequest.swift */; };
@@ -1131,6 +1132,7 @@
 		B34341A4260A16AB00093E63 /* ReadLibraryDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadLibraryDbRequest.swift; sourceTree = "<group>"; };
 		B34341AA260A48A200093E63 /* ReadAllWritableGroupsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllWritableGroupsDbRequest.swift; sourceTree = "<group>"; };
 		B34341B3260A496200093E63 /* ReadCollectionAndLibraryDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadCollectionAndLibraryDbRequest.swift; sourceTree = "<group>"; };
+		B3451B54264ECBA9000EDF16 /* ReadGroupDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadGroupDbRequest.swift; sourceTree = "<group>"; };
 		B347F2B924DC4D5D000D5FF6 /* CapHeightLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapHeightLabel.swift; sourceTree = "<group>"; };
 		B349182A25E00771006C3313 /* ReadVersionDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadVersionDbRequest.swift; sourceTree = "<group>"; };
 		B34A9F5D25BF12F7007C9A4A /* ReadFilenameDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadFilenameDbRequest.swift; sourceTree = "<group>"; };
@@ -1631,6 +1633,7 @@
 				B305644B23FC051E003304F2 /* ReadDeletedObjectsDbRequest.swift */,
 				B37BF0B025A6035D00AE0268 /* ReadDocumentDataDbRequest.swift */,
 				B34A9F5D25BF12F7007C9A4A /* ReadFilenameDbRequest.swift */,
+				B3451B54264ECBA9000EDF16 /* ReadGroupDbRequest.swift */,
 				B305644023FC051E003304F2 /* ReadItemDbRequest.swift */,
 				B305645923FC051E003304F2 /* ReadItemsDbRequest.swift */,
 				B305645C23FC051E003304F2 /* ReadLibrariesDataDbRequest.swift */,
@@ -3309,6 +3312,7 @@
 				B3F83808263960FA00E128A6 /* ItemAccessory.swift in Sources */,
 				B3DCDF1B24091EBE0039ED0D /* SinglePickerRow.swift in Sources */,
 				B30565B723FC051E003304F2 /* StoreSearchesDbRequest.swift in Sources */,
+				B3451B55264ECBA9000EDF16 /* ReadGroupDbRequest.swift in Sources */,
 				B3593F30241A61C700760E20 /* ItemDetailAddCell.swift in Sources */,
 				B3B8800525FB546300904235 /* DeviceInfoProvider.swift in Sources */,
 				B36E9D4925E51B0E00CD1109 /* AnnotationPosition.swift in Sources */,
