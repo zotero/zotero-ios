@@ -215,7 +215,7 @@ internal enum L10n {
       internal static let cantLoadSchema = L10n.tr("Localizable", "errors.shareext.cant_load_schema")
       /// Could not download file
       internal static let downloadFailed = L10n.tr("Localizable", "errors.shareext.download_failed")
-      /// You can still save this page as a Web Page item.
+      /// You can still save this page as a webpage item.
       internal static let failedAdditional = L10n.tr("Localizable", "errors.shareext.failed_additional")
       /// Unable to save PDF
       internal static let fileNotPdf = L10n.tr("Localizable", "errors.shareext.file_not_pdf")
@@ -239,7 +239,7 @@ internal enum L10n {
       internal static let schemaError = L10n.tr("Localizable", "errors.shareext.schema_error")
       /// Saving failed
       internal static let translationFailed = L10n.tr("Localizable", "errors.shareext.translation_failed")
-      /// An unknown error occured
+      /// An unknown error occurred.
       internal static let unknown = L10n.tr("Localizable", "errors.shareext.unknown")
     }
     internal enum SyncToolbar {
