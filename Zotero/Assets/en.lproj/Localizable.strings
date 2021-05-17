@@ -274,7 +274,7 @@
 "errors.settings.storage" = "Could not collect storage data";
 "errors.shareext.logged_out" = "Please log into the app before using this extension.";
 "errors.shareext.cant_load_data" = "Failed to load data. Please try again.";
-"errors.shareext.unknown" = "An unknown error occured";
+"errors.shareext.unknown" = "An unknown error occurred.";
 "errors.shareext.cant_load_schema" = "An error occurred. Please open the Zotero app, sync, and try again.";
 "errors.shareext.cant_load_data" = "An error occurred. Please try again.";
 "errors.shareext.download_failed" = "Could not download file";
@@ -288,7 +288,7 @@
 "errors.shareext.response_missing_data" = "An error occurred. Please try again.";
 "errors.shareext.missing_file" = "Could not find file to upload";
 "errors.shareext.background_uploader_failure" = "Background uploader not initialized";
-"errors.shareext.failed_additional" = "You can still save this page as a Web Page item.";
+"errors.shareext.failed_additional" = "You can still save this page as a webpage item.";
 "errors.shareext.file_not_pdf" = "Unable to save PDF";
 "errors.db_failure" = "Error creating database. Please try logging in again.";
 "errors.logging.title" = "Debugging Error";
