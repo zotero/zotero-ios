@@ -290,24 +290,8 @@ final class ShareViewController: UIViewController {
     }
 
     private func updateNavigationItems(for state: ExtensionStore.State.AttachmentState) {
-        switch state {
-        case .submitting:
-            // Disable "Upload" and "Cancel" button if the upload is being prepared so that the user can't start it multiple times or cancel
-            self.navigationItem.leftBarButtonItem?.isEnabled = false
-            self.navigationItem.rightBarButtonItem?.isEnabled = false
-        case .decoding, .downloading, .translating: // In-progress states should have "Upload" button disabled
-            self.navigationItem.leftBarButtonItem?.isEnabled = true
-            self.navigationItem.rightBarButtonItem?.isEnabled = false
-        case .processed:
-            // Enable "Upload" button if translation and file download (if any) are finished
-            self.navigationItem.leftBarButtonItem?.isEnabled = true
-            self.navigationItem.rightBarButtonItem?.isEnabled = true
-        case .failed(let error):
-            // Enable "Upload" button for non-fatal errors, where the user can still at least save the web as webpage item
-            self.navigationItem.leftBarButtonItem?.isEnabled = true
-            self.navigationItem.rightBarButtonItem?.isEnabled = !error.isFatal
-        case .done: break // The extension will close
-        }
+        self.navigationItem.leftBarButtonItem?.isEnabled = state.isCancellable
+        self.navigationItem.rightBarButtonItem?.isEnabled = state.isSubmittable
     }
 
     private func updateBottomProgress(for state: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPicker?) {
@@ -375,7 +359,7 @@ final class ShareViewController: UIViewController {
             self.failureLabel.textColor = .red
         } else {
             switch error {
-            case .downloadedFileNotPdf: break
+            case .downloadedFileNotPdf, .apiFailure, .quotaLimit: break
             default:
                 message += "\n" + L10n.Errors.Shareext.failedAdditional
             }
@@ -419,6 +403,8 @@ final class ShareViewController: UIViewController {
             return L10n.Errors.Shareext.missingFile
         case .missingBackgroundUploader:
             return L10n.Errors.Shareext.backgroundUploaderFailure
+        case .quotaLimit, .apiFailure:
+            return L10n.Errors.Shareext.apiError
         case .downloadedFileNotPdf:
             return nil
         }

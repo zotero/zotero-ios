@@ -1261,24 +1261,33 @@ final class SyncController: SynchronizationController {
     }
 
     private func finishSubmission(error: Error?, newVersion: Int?, libraryId: LibraryIdentifier, object: SyncObject) {
-        if let error = error {
-            if self.handleUpdatePreconditionFailureIfNeeded(for: error, libraryId: libraryId) {
-                return
+        let nextAction: () -> Void = {
+            if let version = newVersion {
+                self.updateVersionInNextWriteBatch(to: version)
             }
-
-            switch self.syncError(from: error, libraryId: libraryId) {
-            case .fatal(let error):
-                self.abort(error: error)
-                return
-            case .nonFatal(let error):
-                self.nonFatalErrors.append(error)
-            }
+            self.processNextAction()
         }
 
-        if let version = newVersion {
-            self.updateVersionInNextWriteBatch(to: version)
+        guard let error = error else {
+            nextAction()
+            return
         }
-        self.processNextAction()
+
+        if self.handleUpdatePreconditionFailureIfNeeded(for: error, libraryId: libraryId) {
+            return
+        }
+
+        switch self.syncError(from: error, libraryId: libraryId) {
+        case .fatal(let error):
+            self.abort(error: error)
+
+        case .nonFatal(let error):
+            self.handleNonFatal(error: error, libraryId: libraryId, version: newVersion, additionalAction: {
+                if let version = newVersion {
+                    self.updateVersionInNextWriteBatch(to: version)
+                }
+            })
+        }
     }
 
     private func deleteGroup(with groupId: Int) {
@@ -1526,9 +1535,11 @@ final class SyncController: SynchronizationController {
     /// - parameter error: Type of nonfatal error.
     /// - parameter libraryId: Library identifier.
     /// - parameter version: Optional version number received from backend.
-    private func handleNonFatal(error: SyncError.NonFatal, libraryId: LibraryIdentifier, version: Int?) {
+    /// - parameter additionalAction: Optional action taken before next action in queue is processed.
+    private func handleNonFatal(error: SyncError.NonFatal, libraryId: LibraryIdentifier, version: Int?, additionalAction: (() -> Void)? = nil) {
         let appendAndContinue: () -> Void = {
             self.nonFatalErrors.append(error)
+            additionalAction?()
             self.processNextAction()
         }
 
@@ -1541,14 +1552,39 @@ final class SyncController: SynchronizationController {
 
         case .unchanged:
             if let version = version {
-                self.handleUnchangedFailure(lastVersion: version, libraryId: libraryId)
+                self.handleUnchangedFailure(lastVersion: version, libraryId: libraryId, additionalAction: additionalAction)
             } else {
+                additionalAction?()
                 self.processNextAction()
             }
+
+        case .quotaLimit(let libraryId):
+            self.handleQuotaLimitFailure(for: libraryId, additionalAction: additionalAction)
 
         default:
             appendAndContinue()
         }
+    }
+
+    /// Handle quota limit error. If backend returns code 413 it means that the user reached quota limit in given library/group and no further uploads should be attempted.
+    /// - parameter libraryId: Library identifier which reached quota limit.
+    private func handleQuotaLimitFailure(for libraryId: LibraryIdentifier, additionalAction: (() -> Void)?) {
+        DDLogInfo("Sync: received quota limit for \(libraryId)")
+
+        self.queue.removeAll(where: { action in
+            switch action {
+            case .uploadAttachment(let attachment):
+                return attachment.libraryId == libraryId
+            default:
+                return false
+            }
+        })
+
+        if !self.nonFatalErrors.contains(.quotaLimit(libraryId)) {
+            self.nonFatalErrors.append(.quotaLimit(libraryId))
+        }
+
+        self.processNextAction()
     }
 
     /// Handle unchanged "error". If backend returns response code 304, it is treated as error. If this error is returned,
@@ -1558,7 +1594,7 @@ final class SyncController: SynchronizationController {
     /// - parameter version: Current version number which returned this error.
     /// - parameter libraryId: Identifier of current library, which is being synced.
     /// - returns: `true` if there was a unchanged error, `false` otherwise.
-    private func handleUnchangedFailure(lastVersion: Int, libraryId: LibraryIdentifier) {
+    private func handleUnchangedFailure(lastVersion: Int, libraryId: LibraryIdentifier, additionalAction: (() -> Void)?) {
         DDLogInfo("Sync: received unchanged error, store version: \(lastVersion)")
         self.lastReturnedVersion = lastVersion
 

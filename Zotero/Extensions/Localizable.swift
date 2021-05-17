@@ -205,6 +205,8 @@ internal enum L10n {
       internal static let storage = L10n.tr("Localizable", "errors.settings.storage")
     }
     internal enum Shareext {
+      /// Error uploading item. The item was saved to your local library.
+      internal static let apiError = L10n.tr("Localizable", "errors.shareext.api_error")
       /// Background uploader not initialized
       internal static let backgroundUploaderFailure = L10n.tr("Localizable", "errors.shareext.background_uploader_failure")
       /// An error occurred. Please try again.

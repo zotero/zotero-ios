@@ -11,6 +11,7 @@ import Foundation
 import MobileCoreServices
 import WebKit
 
+import Alamofire
 import CocoaLumberjackSwift
 import RxSwift
 import RxAlamofire
@@ -53,11 +54,20 @@ final class ExtensionStore {
         /// - failed: The attachment decoding, translation process or attachment download failed.
         enum AttachmentState {
             enum Error: Swift.Error {
-                case cantLoadSchema, cantLoadWebData, downloadFailed, itemsNotFound, expired, unknown,
-                     fileMissing, missingBackgroundUploader, downloadedFileNotPdf
+                case apiFailure
+                case cantLoadSchema
+                case cantLoadWebData
+                case downloadFailed
+                case itemsNotFound
+                case expired
+                case unknown
+                case fileMissing
+                case missingBackgroundUploader
+                case downloadedFileNotPdf
                 case webViewError(WebViewHandler.Error)
                 case parseError(Parsing.Error)
                 case schemaError(SchemaError)
+                case quotaLimit
 
                 var isFatal: Bool {
                     switch self {
@@ -84,10 +94,29 @@ final class ExtensionStore {
                 }
             }
 
+            var isCancellable: Bool {
+                switch self {
+                case .submitting:
+                    return false
+                default:
+                    return true
+                }
+            }
+
             var isSubmittable: Bool {
                 switch self {
                 case .processed: return true
-                case .failed(let error): return !error.isFatal
+                case .failed(let error):
+                    if error.isFatal {
+                        return false
+                    }
+                    
+                    switch error {
+                    case .apiFailure, .quotaLimit:
+                        return false
+                    default:
+                        return true
+                    }
                 default: return false
                 }
             }
@@ -239,8 +268,9 @@ final class ExtensionStore {
             .subscribe(onSuccess: { [weak self] attachment in
                 self?.process(attachment: attachment)
             }, onFailure: { [weak self] error in
+                guard let `self` = self else { return }
                 DDLogError("ExtensionStore: could not load attachment - \(error)")
-                self?.state.attachmentState = .failed((error as? State.AttachmentState.Error) ?? .unknown)
+                self.state.attachmentState = .failed(self.attachmentError(from: error))
             })
             .disposed(by: self.disposeBag)
     }
@@ -281,8 +311,9 @@ final class ExtensionStore {
                                .subscribe(onSuccess: { [weak self] attachment in
                                    self?.process(attachment: attachment)
                                }, onFailure: { [weak self] error in
+                                   guard let `self` = self else { return }
                                    DDLogError("ExtensionStore: webview could not load data - \(error)")
-                                   self?.state.attachmentState = .failed((error as? State.AttachmentState.Error) ?? .unknown)
+                                   self.state.attachmentState = .failed(self.attachmentError(from: error))
                                })
                                .disposed(by: self.disposeBag)
         case .fileUrl(let url):
@@ -414,8 +445,9 @@ final class ExtensionStore {
                                    self?.state.attachmentState = .translating(progress)
                                }
                            }, onError: { [weak self] error in
+                               guard let `self` = self else { return }
                                DDLogError("ExtensionStore: web view error - \(error)")
-                               self?.state.attachmentState = .failed((error as? WebViewHandler.Error).flatMap({ .webViewError($0) }) ?? .unknown)
+                               self.state.attachmentState = .failed(self.attachmentError(from: error))
                            })
                            .disposed(by: self.disposeBag)
 
@@ -464,18 +496,9 @@ final class ExtensionStore {
                 state.attachmentState = .processed
                 self.state = state
             }
-        } catch let error as Parsing.Error {
-            DDLogError("ExtensionStore: could not parse item - \(error)")
-            self.state.attachmentState = .failed(.parseError(error))
-        } catch let error as SchemaError {
-            DDLogError("ExtensionStore: schema failed - \(error)")
-            self.state.attachmentState = .failed(.schemaError(error))
-        } catch let error as State.AttachmentState.Error {
-            DDLogError("ExtensionStore: attachment processing failed - \(error)")
-            self.state.attachmentState = .failed(error)
-        } catch {
+        } catch let error {
             DDLogError("ExtensionStore: could not process item - \(error)")
-            self.state.attachmentState = .failed(.unknown)
+            self.state.attachmentState = .failed(self.attachmentError(from: error))
         }
     }
 
@@ -603,10 +626,52 @@ final class ExtensionStore {
             .subscribe(onSuccess: { [weak self] _ in
                 self?.state.attachmentState = .done
             }, onFailure: { [weak self] error in
+                guard let `self` = self else { return }
                 DDLogError("ExtensionStore: could not submit standalone item - \(error)")
-                self?.state.attachmentState = .failed((error as? State.AttachmentState.Error) ?? .unknown)
+                self.state.attachmentState = .failed(self.attachmentError(from: error))
             })
             .disposed(by: self.disposeBag)
+    }
+
+    private func attachmentError(from error: Error) -> State.AttachmentState.Error {
+        if let error = error as? State.AttachmentState.Error {
+            return error
+        }
+        if let error = error as? Parsing.Error {
+            DDLogError("ExtensionStore: could not parse item - \(error)")
+            return .parseError(error)
+        }
+        if let error = error as? SchemaError {
+            DDLogError("ExtensionStore: schema failed - \(error)")
+            return .schemaError(error)
+        }
+        if let error = error as? WebViewHandler.Error {
+            return .webViewError(error)
+        }
+        if let responseError = error as? AFResponseError {
+            return self.alamoErrorRequiresAbort(responseError.error)
+        }
+        if let alamoError = error as? AFError {
+            return self.alamoErrorRequiresAbort(alamoError)
+        }
+        return .unknown
+    }
+
+    private func alamoErrorRequiresAbort(_ error: AFError) -> State.AttachmentState.Error {
+        switch error {
+        case .responseValidationFailed(let reason):
+            switch reason {
+            case .unacceptableStatusCode(let code):
+                if code == 413 {
+                    return .quotaLimit
+                }
+                return .apiFailure
+            default:
+                return .apiFailure
+            }
+        default:
+            return .apiFailure
+        }
     }
 
     /// Creates an `RItem` instance in DB.
@@ -680,8 +745,9 @@ final class ExtensionStore {
                    self?.backgroundUploader = nil
                    self?.state.attachmentState = .done
                }, onFailure: { [weak self] error in
+                   guard let `self` = self else { return }
                    DDLogError("ExtensionStore: could not submit item or attachment - \(error)")
-                   self?.state.attachmentState = .failed((error as? State.AttachmentState.Error) ?? .unknown)
+                   self.state.attachmentState = .failed(self.attachmentError(from: error))
                })
                .disposed(by: self.disposeBag)
     }
@@ -708,6 +774,10 @@ final class ExtensionStore {
                        guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
                        return self.create(attachment: attachment, collections: collections, tags: tags)
                                   .flatMap({ Single.just((filesize, $0, $1, $2)) })
+                                  .do(onError: { [weak self] _ in
+                                      // If attachment item couldn't be created in DB, remove the moved file if possible, it won't be processed even from the main app
+                                      try? self?.fileStorage.remove(file)
+                                  })
                    }
                    .flatMap { filesize, parameters, md5, mtime -> Single<(UInt64, String, Int)> in
                        return SubmitUpdateSyncAction(parameters: [parameters], sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId, updateLibraryVersion: false,
@@ -745,8 +815,7 @@ final class ExtensionStore {
                        return self.createItems(item: item, attachment: attachment)
                                   .flatMap({ Single.just((filesize, $0, $1, $2)) })
                                   .do(onError: { [weak self] _ in
-                                      // If attachment item couldn't be created in DB, remove the moved file if possible,
-                                      // it won't be processed even from the main app
+                                      // If attachment item couldn't be created in DB, remove the moved file if possible, it won't be processed even from the main app
                                       try? self?.fileStorage.remove(file)
                                   })
                    }

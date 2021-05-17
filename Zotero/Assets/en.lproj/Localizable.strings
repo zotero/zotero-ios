@@ -290,6 +290,7 @@
 "errors.shareext.background_uploader_failure" = "Background uploader not initialized";
 "errors.shareext.failed_additional" = "You can still save this page as a webpage item.";
 "errors.shareext.file_not_pdf" = "Unable to save PDF";
+"errors.shareext.api_error" = "Error uploading item. The item was saved to your local library.";
 "errors.db_failure" = "Error creating database. Please try logging in again.";
 "errors.logging.title" = "Debugging Error";
 "errors.logging.start" = "Unable to start debug logging";
