@@ -233,6 +233,8 @@ internal enum L10n {
       internal static let missingFile = L10n.tr("Localizable", "errors.shareext.missing_file")
       /// Error parsing translator response
       internal static let parsingError = L10n.tr("Localizable", "errors.shareext.parsing_error")
+      /// The file was saved to your local library.
+      internal static let quotaAdditional = L10n.tr("Localizable", "errors.shareext.quota_additional")
       /// An error occurred. Please try again.
       internal static let responseMissingData = L10n.tr("Localizable", "errors.shareext.response_missing_data")
       /// Some data could not be downloaded. It may have been saved with a newer version of Zotero.

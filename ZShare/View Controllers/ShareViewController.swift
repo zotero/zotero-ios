@@ -290,6 +290,12 @@ final class ShareViewController: UIViewController {
     }
 
     private func updateNavigationItems(for state: ExtensionStore.State.AttachmentState) {
+        if case .quotaLimit = state.error {
+            self.navigationItem.leftBarButtonItem = nil
+            self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(ShareViewController.cancel))
+            return
+        }
+
         self.navigationItem.leftBarButtonItem?.isEnabled = state.isCancellable
         self.navigationItem.rightBarButtonItem?.isEnabled = state.isSubmittable
     }
@@ -359,7 +365,9 @@ final class ShareViewController: UIViewController {
             self.failureLabel.textColor = .red
         } else {
             switch error {
-            case .downloadedFileNotPdf, .apiFailure, .quotaLimit: break
+            case .downloadedFileNotPdf, .apiFailure: break
+            case .quotaLimit:
+                message += "\n" + L10n.Errors.Shareext.quotaAdditional
             default:
                 message += "\n" + L10n.Errors.Shareext.failedAdditional
             }
@@ -403,8 +411,16 @@ final class ShareViewController: UIViewController {
             return L10n.Errors.Shareext.missingFile
         case .missingBackgroundUploader:
             return L10n.Errors.Shareext.backgroundUploaderFailure
-        case .quotaLimit, .apiFailure:
+        case .apiFailure:
             return L10n.Errors.Shareext.apiError
+        case .quotaLimit(let libraryId):
+            switch libraryId {
+            case .custom:
+                return L10n.Errors.SyncToolbar.personalQuotaReached
+            case .group(let groupId):
+                let groupName = (try? self.dbStorage.createCoordinator().perform(request: ReadGroupDbRequest(identifier: groupId)))?.name
+                return L10n.Errors.SyncToolbar.groupQuotaReached(groupName ?? "\(groupId)")
+            }
         case .downloadedFileNotPdf:
             return nil
         }

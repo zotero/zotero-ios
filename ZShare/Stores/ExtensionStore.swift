@@ -67,7 +67,7 @@ final class ExtensionStore {
                 case webViewError(WebViewHandler.Error)
                 case parseError(Parsing.Error)
                 case schemaError(SchemaError)
-                case quotaLimit
+                case quotaLimit(LibraryIdentifier)
 
                 var isFatal: Bool {
                     switch self {
@@ -270,7 +270,7 @@ final class ExtensionStore {
             }, onFailure: { [weak self] error in
                 guard let `self` = self else { return }
                 DDLogError("ExtensionStore: could not load attachment - \(error)")
-                self.state.attachmentState = .failed(self.attachmentError(from: error))
+                self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: nil))
             })
             .disposed(by: self.disposeBag)
     }
@@ -313,7 +313,7 @@ final class ExtensionStore {
                                }, onFailure: { [weak self] error in
                                    guard let `self` = self else { return }
                                    DDLogError("ExtensionStore: webview could not load data - \(error)")
-                                   self.state.attachmentState = .failed(self.attachmentError(from: error))
+                                   self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: nil))
                                })
                                .disposed(by: self.disposeBag)
         case .fileUrl(let url):
@@ -447,7 +447,7 @@ final class ExtensionStore {
                            }, onError: { [weak self] error in
                                guard let `self` = self else { return }
                                DDLogError("ExtensionStore: web view error - \(error)")
-                               self.state.attachmentState = .failed(self.attachmentError(from: error))
+                               self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: nil))
                            })
                            .disposed(by: self.disposeBag)
 
@@ -498,7 +498,7 @@ final class ExtensionStore {
             }
         } catch let error {
             DDLogError("ExtensionStore: could not process item - \(error)")
-            self.state.attachmentState = .failed(self.attachmentError(from: error))
+            self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: nil))
         }
     }
 
@@ -613,8 +613,8 @@ final class ExtensionStore {
     /// - parameter fileStorage: File storage
     /// - parameter schemaController: Schema controller for validating item type and field types.
     /// - parameter dateParser: Date parser for item creation
-    private func submit(item: ItemResponse, libraryId: LibraryIdentifier, userId: Int, apiClient: ApiClient, dbStorage: DbStorage,
-                        fileStorage: FileStorage, schemaController: SchemaController, dateParser: DateParser) {
+    private func submit(item: ItemResponse, libraryId: LibraryIdentifier, userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController,
+                        dateParser: DateParser) {
         let itemToSubmit = item.tags.isEmpty || Defaults.shared.shareExtensionIncludeTags ? item : item.copyWithoutTags
         self.createItem(itemToSubmit, libraryId: libraryId, schemaController: schemaController, dateParser: dateParser)
             .subscribe(on: self.backgroundScheduler)
@@ -628,12 +628,12 @@ final class ExtensionStore {
             }, onFailure: { [weak self] error in
                 guard let `self` = self else { return }
                 DDLogError("ExtensionStore: could not submit standalone item - \(error)")
-                self.state.attachmentState = .failed(self.attachmentError(from: error))
+                self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: libraryId))
             })
             .disposed(by: self.disposeBag)
     }
 
-    private func attachmentError(from error: Error) -> State.AttachmentState.Error {
+    private func attachmentError(from error: Error, libraryId: LibraryIdentifier?) -> State.AttachmentState.Error {
         if let error = error as? State.AttachmentState.Error {
             return error
         }
@@ -649,21 +649,21 @@ final class ExtensionStore {
             return .webViewError(error)
         }
         if let responseError = error as? AFResponseError {
-            return self.alamoErrorRequiresAbort(responseError.error)
+            return self.alamoErrorRequiresAbort(responseError.error, libraryId: libraryId)
         }
         if let alamoError = error as? AFError {
-            return self.alamoErrorRequiresAbort(alamoError)
+            return self.alamoErrorRequiresAbort(alamoError, libraryId: libraryId)
         }
         return .unknown
     }
 
-    private func alamoErrorRequiresAbort(_ error: AFError) -> State.AttachmentState.Error {
+    private func alamoErrorRequiresAbort(_ error: AFError, libraryId: LibraryIdentifier?) -> State.AttachmentState.Error {
         switch error {
         case .responseValidationFailed(let reason):
             switch reason {
             case .unacceptableStatusCode(let code):
-                if code == 413 {
-                    return .quotaLimit
+                if code == 413, let libraryId = libraryId {
+                    return .quotaLimit(libraryId)
                 }
                 return .apiFailure
             default:
@@ -747,7 +747,7 @@ final class ExtensionStore {
                }, onFailure: { [weak self] error in
                    guard let `self` = self else { return }
                    DDLogError("ExtensionStore: could not submit item or attachment - \(error)")
-                   self.state.attachmentState = .failed(self.attachmentError(from: error))
+                   self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: data.libraryId))
                })
                .disposed(by: self.disposeBag)
     }

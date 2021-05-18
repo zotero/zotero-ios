@@ -392,6 +392,7 @@
 		B32EE26224A0998700442974 /* RUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32EE26024A092B700442974 /* RUser.swift */; };
 		B330260D25DE9A1100742025 /* RPageIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = B330260C25DE9A1100742025 /* RPageIndex.swift */; };
 		B330261225DEAD9A00742025 /* RPageIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = B330260C25DE9A1100742025 /* RPageIndex.swift */; };
+		B331F9AF2653CEA00099F6A6 /* ReadGroupDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3451B54264ECBA9000EDF16 /* ReadGroupDbRequest.swift */; };
 		B33791D723BF7B2A00919210 /* CreateItemWithAttachmentDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33791D623BF7B2900919210 /* CreateItemWithAttachmentDbRequest.swift */; };
 		B337A5A8244F1DEB00AFD13D /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = B337A5AA244F1DEB00AFD13D /* Localizable.strings */; };
 		B337A5AC244F228500AFD13D /* Localizable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337A5AB244F228500AFD13D /* Localizable.swift */; };
@@ -3705,6 +3706,7 @@
 				B3E44640248FBD4A007FE8AB /* RRelation.swift in Sources */,
 				B30566E723FC0821003304F2 /* RegisterUploadRequest.swift in Sources */,
 				B37D8E6A24DC2BF300F526C5 /* CollectionRow.swift in Sources */,
+				B331F9AF2653CEA00099F6A6 /* ReadGroupDbRequest.swift in Sources */,
 				B30566EB23FC082A003304F2 /* ObjectsRequest.swift in Sources */,
 				B30566FB23FC085E003304F2 /* MarkAttachmentUploadedDbRequest.swift in Sources */,
 				B30566EE23FC0831003304F2 /* AuthorizeUploadRequest.swift in Sources */,
