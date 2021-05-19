@@ -363,13 +363,16 @@ final class ShareViewController: UIViewController {
 
         if error.isFatal {
             self.failureLabel.textColor = .red
+            self.failureLabel.textAlignment = .center
         } else {
             switch error {
-            case .downloadedFileNotPdf, .apiFailure: break
+            case .downloadedFileNotPdf, .apiFailure:
+                self.failureLabel.textAlignment = .center
             case .quotaLimit:
-                message += "\n" + L10n.Errors.Shareext.quotaAdditional
+                self.failureLabel.textAlignment = .left
             default:
                 message += "\n" + L10n.Errors.Shareext.failedAdditional
+                self.failureLabel.textAlignment = .center
             }
             self.failureLabel.textColor = .darkGray
         }
@@ -413,14 +416,8 @@ final class ShareViewController: UIViewController {
             return L10n.Errors.Shareext.backgroundUploaderFailure
         case .apiFailure:
             return L10n.Errors.Shareext.apiError
-        case .quotaLimit(let libraryId):
-            switch libraryId {
-            case .custom:
-                return L10n.Errors.SyncToolbar.personalQuotaReached
-            case .group(let groupId):
-                let groupName = (try? self.dbStorage.createCoordinator().perform(request: ReadGroupDbRequest(identifier: groupId)))?.name
-                return L10n.Errors.SyncToolbar.groupQuotaReached(groupName ?? "\(groupId)")
-            }
+        case .quotaLimit:
+            return L10n.Errors.Shareext.quotaReached
         case .downloadedFileNotPdf:
             return nil
         }
