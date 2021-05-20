@@ -1,3 +1,6 @@
 [submodule "ZShare/Assets/translation/modules/zotero"]
 	path = ZShare/Assets/translation/modules/zotero
 	url = https://github.com/zotero/zotero.git
+[submodule "bundled-styles"]
+	path = bundled-styles
+	url = https://github.com/zotero/bundled-styles/

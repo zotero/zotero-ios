@@ -229,6 +229,9 @@
 "settings.saving.files_message" = "Automatically attach associated PDFs and other files when saving items";
 "settings.saving.tags_title" = "Save Automatic Tags";
 "settings.saving.tags_message" = "Automatically tag items with keywords and subject headings";
+"settings.cite.title" = "Cite";
+"settings.cite.styles_title" = "Citation Styles";
+"settings.cite.get_more_styles" = "Get additional styles";
 
 "shareext.save" = "Save to Zotero";
 "shareext.decoding_attachment" = "Searching for items";

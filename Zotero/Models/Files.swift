@@ -70,7 +70,7 @@ struct Files {
         return FileData(rootPath: Files.appGroupPath, relativeComponents: ["database"], name: "maindb_\(userId)", ext: "realm")
     }
 
-    static var translatorsDbFile: File {
+    static var bundledDataDbFile: File {
         return FileData(rootPath: Files.appGroupPath, relativeComponents: ["database"], name: "translators", ext: "realm")
     }
 

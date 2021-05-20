@@ -57,10 +57,10 @@ final class TranslatorsController {
         return Date(timeIntervalSince1970: Double(self.lastTimestamp))
     }
 
-    private let apiClient: ApiClient
-    private let fileStorage: FileStorage
+    private unowned let apiClient: ApiClient
+    private unowned let fileStorage: FileStorage
+    private unowned let dbStorage: DbStorage
     private let disposeBag: DisposeBag
-    private let dbStorage: DbStorage
     private let bundle: Bundle
     private let queue: DispatchQueue
     private let scheduler: SchedulerType
@@ -69,7 +69,7 @@ final class TranslatorsController {
 
     init(apiClient: ApiClient, indexStorage: DbStorage, fileStorage: FileStorage, bundle: Bundle = Bundle.main) {
         do {
-            try fileStorage.createDirectories(for: Files.translatorsDbFile)
+            try fileStorage.createDirectories(for: Files.bundledDataDbFile)
         } catch let error {
             fatalError("TranslatorsController: could not create db directories - \(error)")
         }

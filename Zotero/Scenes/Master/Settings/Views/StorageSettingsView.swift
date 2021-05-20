@@ -34,6 +34,7 @@ struct StorageSettingsView_Previews: PreviewProvider {
                                   lastTranslatorUpdate: controllers.translatorsController.lastUpdate,
                                   websocketConnectionState: .disconnected)
         let handler = SettingsActionHandler(dbStorage: controllers.userControllers!.dbStorage,
+                                            bundledDataStorage: controllers.bundledDataStorage,
                                             fileStorage: controllers.fileStorage,
                                             sessionController: controllers.sessionController,
                                             webSocketController: controllers.userControllers!.webSocketController,

@@ -22,6 +22,7 @@ final class Controllers {
     let dragDropController: DragDropController
     let crashReporter: CrashReporter
     let debugLogging: DebugLogging
+    let bundledDataStorage: DbStorage
     let translatorsController: TranslatorsController
     let annotationPreviewController: AnnotationPreviewController
     let urlDetector: UrlDetector
@@ -58,10 +59,12 @@ final class Controllers {
         crashReporter.start()
         let secureStorage = KeychainSecureStorage()
         let sessionController = SessionController(secureStorage: secureStorage, defaults: Defaults.shared)
-        let translatorConfiguration = Database.translatorConfiguration(fileStorage: fileStorage)
-        let translatorsController = TranslatorsController(apiClient: apiClient, indexStorage: RealmDbStorage(config: translatorConfiguration), fileStorage: fileStorage)
+        let bundledDataConfiguration = Database.bundledDataConfiguration(fileStorage: fileStorage)
+        let bundledDataStorage = RealmDbStorage(config: bundledDataConfiguration)
+        let translatorsController = TranslatorsController(apiClient: apiClient, indexStorage: bundledDataStorage, fileStorage: fileStorage)
         let previewSize = CGSize(width: PDFReaderLayout.sidebarWidth, height: PDFReaderLayout.sidebarWidth)
 
+        self.bundledDataStorage = bundledDataStorage
         self.sessionController = sessionController
         self.apiClient = apiClient
         self.secureStorage = secureStorage

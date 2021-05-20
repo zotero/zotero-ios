@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct SettingsListView: View {
-    weak var coordinatorDelegate: MasterSettingsCoordinatorDelegate?
+    weak var coordinatorDelegate: SettingsCoordinatorDelegate?
 
     var body: some View {
         Form {
@@ -32,6 +32,13 @@ struct SettingsListView: View {
                 NavigationLink(destination: GeneralSettingsView()) {
                     Text(L10n.Settings.General.title)
                 }
+
+                Button(action: {
+                    self.coordinatorDelegate?.showCitationSettings()
+                }, label: {
+                    Text(L10n.Settings.Cite.title)
+                        .foregroundColor(Color(self.textColor))
+                })
 
 //                NavigationLink(destination: SyncSettingsView()) {
 //                    Text(L10n.Settings.sync)
@@ -70,6 +77,11 @@ struct SettingsListView: View {
                 })
             }
         }
+        .padding(.top, -30)
+        .listStyle(GroupedListStyle())
+        .navigationBarTitle(Text(L10n.Settings.title), displayMode: .inline)
+        .navigationBarItems(leading: Button(action: { self.coordinatorDelegate?.dismiss() },
+                                            label: { Text(L10n.close).padding(.vertical, 10).padding(.trailing, 10) }))
     }
 
     private var textColor: UIColor {

@@ -62,6 +62,7 @@ final class ShareViewController: UIViewController {
     // Variables
     private var translatorsController: TranslatorsController!
     private var dbStorage: DbStorage!
+    private var bundledDataStorage: DbStorage!
     private var fileStorage: FileStorageController!
     private var debugLogging: DebugLogging!
     private var schemaController: SchemaController!
@@ -591,13 +592,15 @@ final class ShareViewController: UIViewController {
         let fileStorage = FileStorageController()
         let dbUrl = Files.dbFile(for: session.userId).createUrl()
         let dbStorage = RealmDbStorage(config: Database.mainConfiguration(url: dbUrl, fileStorage: fileStorage))
-        let configuration = Database.translatorConfiguration(fileStorage: fileStorage)
-        let translatorsController = TranslatorsController(apiClient: apiClient, indexStorage: RealmDbStorage(config: configuration), fileStorage: fileStorage)
+        let configuration = Database.bundledDataConfiguration(fileStorage: fileStorage)
+        let bundledDataStorage = RealmDbStorage(config: configuration)
+        let translatorsController = TranslatorsController(apiClient: apiClient, indexStorage: bundledDataStorage, fileStorage: fileStorage)
 
         apiClient.set(authToken: session.apiToken)
         translatorsController.updateFromRepo(type: .shareExtension)
 
         self.dbStorage = dbStorage
+        self.bundledDataStorage = bundledDataStorage
         self.translatorsController = translatorsController
         self.store = self.createStore(for: session.userId, dbStorage: dbStorage, apiClient: apiClient, schemaController: schemaController,
                                       fileStorage: fileStorage, translatorsController: translatorsController)

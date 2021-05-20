@@ -8,6 +8,8 @@
 
 import Foundation
 
+import RealmSwift
+
 struct SettingsState: ViewModelState {
     var askForSyncPermission: Bool {
         get {

@@ -669,6 +669,14 @@ internal enum L10n {
     internal static let websocketDisconnected = L10n.tr("Localizable", "settings.websocket_disconnected")
     /// Server Connection
     internal static let websocketTitle = L10n.tr("Localizable", "settings.websocket_title")
+    internal enum Cite {
+      /// Get additional styles
+      internal static let getMoreStyles = L10n.tr("Localizable", "settings.cite.get_more_styles")
+      /// Citation Styles
+      internal static let stylesTitle = L10n.tr("Localizable", "settings.cite.styles_title")
+      /// Cite
+      internal static let title = L10n.tr("Localizable", "settings.cite.title")
+    }
     internal enum CrashAlert {
       /// Your Report ID is %@
       internal static func message(_ p1: Any) -> String {

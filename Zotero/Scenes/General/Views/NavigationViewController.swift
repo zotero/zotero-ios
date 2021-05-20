@@ -11,9 +11,7 @@ import UIKit
 class NavigationViewController: UINavigationController {
     var dismissHandler: (() -> Void)?
 
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
+    deinit {
         self.dismissHandler?()
     }
-
 }

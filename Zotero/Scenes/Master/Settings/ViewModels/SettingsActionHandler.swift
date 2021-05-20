@@ -17,6 +17,7 @@ struct SettingsActionHandler: ViewModelActionHandler {
     typealias State = SettingsState
 
     private unowned let dbStorage: DbStorage
+    private unowned let bundledDataStorage: DbStorage
     private unowned let fileStorage: FileStorage
     private unowned let sessionController: SessionController
     private unowned let syncScheduler: SynchronizationScheduler
@@ -26,9 +27,10 @@ struct SettingsActionHandler: ViewModelActionHandler {
     private unowned let fileCleanupController: AttachmentFileCleanupController
     private let disposeBag: DisposeBag
 
-    init(dbStorage: DbStorage, fileStorage: FileStorage, sessionController: SessionController, webSocketController: WebSocketController, syncScheduler: SynchronizationScheduler,
-         debugLogging: DebugLogging, translatorsController: TranslatorsController, fileCleanupController: AttachmentFileCleanupController) {
+    init(dbStorage: DbStorage, bundledDataStorage: DbStorage, fileStorage: FileStorage, sessionController: SessionController, webSocketController: WebSocketController,
+         syncScheduler: SynchronizationScheduler, debugLogging: DebugLogging, translatorsController: TranslatorsController, fileCleanupController: AttachmentFileCleanupController) {
         self.dbStorage = dbStorage
+        self.bundledDataStorage = bundledDataStorage
         self.fileStorage = fileStorage
         self.sessionController = sessionController
         self.webSocketController = webSocketController
