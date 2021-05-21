@@ -219,6 +219,10 @@ internal enum L10n {
       internal static let failedAdditional = L10n.tr("Localizable", "errors.shareext.failed_additional")
       /// Unable to save PDF
       internal static let fileNotPdf = L10n.tr("Localizable", "errors.shareext.file_not_pdf")
+      /// The group “%@” has reached its Zotero Storage quota, and the file could not be uploaded. The group owner can view their account settings for additional storage options.\n\nThe file was saved to the local library.
+      internal static func groupQuotaReached(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "errors.shareext.group_quota_reached", String(describing: p1))
+      }
       /// No data returned
       internal static let incompatibleItem = L10n.tr("Localizable", "errors.shareext.incompatible_item")
       /// No items found on page
@@ -234,7 +238,7 @@ internal enum L10n {
       /// Error parsing translator response
       internal static let parsingError = L10n.tr("Localizable", "errors.shareext.parsing_error")
       /// You have reached your Zotero Storage quota, and the file could not be uploaded. See your account settings for additional storage options.\n\nThe file was saved to your local library.
-      internal static let quotaReached = L10n.tr("Localizable", "errors.shareext.quota_reached")
+      internal static let personalQuotaReached = L10n.tr("Localizable", "errors.shareext.personal_quota_reached")
       /// An error occurred. Please try again.
       internal static let responseMissingData = L10n.tr("Localizable", "errors.shareext.response_missing_data")
       /// Some data could not be downloaded. It may have been saved with a newer version of Zotero.
@@ -257,7 +261,7 @@ internal enum L10n {
       }
       /// You don’t have permission to edit groups.
       internal static let groupPermissions = L10n.tr("Localizable", "errors.sync_toolbar.group_permissions")
-      /// The group '%@' has reached its Zotero File Storage quota. Some files were not uploaded. Other Zotero data will continue to sync to the server.\nThe group owner can increase the group's storage capacity from the storage settings section on zotero.org.
+      /// The group “%@” has reached its Zotero File Storage quota. Some files were not uploaded. Other Zotero data will continue to sync to the server.\nThe group owner can increase the group's storage capacity from the storage settings section on zotero.org.
       internal static func groupQuotaReached(_ p1: Any) -> String {
         return L10n.tr("Localizable", "errors.sync_toolbar.group_quota_reached", String(describing: p1))
       }

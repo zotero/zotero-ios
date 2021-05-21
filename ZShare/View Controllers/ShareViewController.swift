@@ -416,8 +416,15 @@ final class ShareViewController: UIViewController {
             return L10n.Errors.Shareext.backgroundUploaderFailure
         case .apiFailure:
             return L10n.Errors.Shareext.apiError
-        case .quotaLimit:
-            return L10n.Errors.Shareext.quotaReached
+        case .quotaLimit(let libraryId):
+            switch libraryId {
+            case .custom:
+                return L10n.Errors.Shareext.personalQuotaReached
+
+            case .group(let groupId):
+                let groupName = (try? self.dbStorage.createCoordinator().perform(request: ReadGroupDbRequest(identifier: groupId)))?.name
+                return L10n.Errors.Shareext.groupQuotaReached(groupName ?? "\(groupId)")
+            }
         case .downloadedFileNotPdf:
             return nil
         }
