@@ -334,15 +334,16 @@ final class ExtensionStore {
             self.state = state
 
         case .remoteFileUrl(let url, let contentType):
+            let filename = url.lastPathComponent
+            let file = Files.shareExtensionTmpItem(key: self.state.attachmentKey, contentType: contentType)
+
             var state = self.state
             state.url = url.absoluteString
             state.title = url.absoluteString
             state.attachmentState = .downloading(0)
+            state.items = .localFile(file: file, filename: filename)
             self.state = state
 
-            let filename = url.lastPathComponent
-
-            let file = Files.shareExtensionTmpItem(key: self.state.attachmentKey, contentType: contentType)
             self.download(url: url, to: file)
                 .observe(on: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] progress in
@@ -356,11 +357,11 @@ final class ExtensionStore {
                     var state = self.state
                     if self.fileStorage.isPdf(file: file) {
                         state.processedAttachment = .localFile(file: file, filename: filename)
-                        state.items = state.processedAttachment
                         state.attachmentState = .processed
                     } else {
                         state.processedAttachment = nil
                         state.attachmentState = .failed(.downloadedFileNotPdf)
+                        state.items = nil
                         // Remove downloaded file, it won't be used anymore
                         try? self.fileStorage.remove(file)
                     }
@@ -500,6 +501,7 @@ final class ExtensionStore {
             } else {
                 var state = self.state
                 state.processedAttachment = .item(item)
+                state.items = .item(item)
                 state.attachmentState = .processed
                 self.state = state
             }

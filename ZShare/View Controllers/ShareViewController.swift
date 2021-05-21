@@ -218,7 +218,7 @@ final class ShareViewController: UIViewController {
         self.updateItemsUi(for: state.title, items: state.items, attachmentState: state.attachmentState)
         self.update(attachmentState: state.attachmentState, itemState: state.itemPicker)
         self.update(collectionPicker: state.collectionPicker, recents: state.recents)
-        self.update(itemPicker: state.itemPicker)
+        self.update(itemPicker: state.itemPicker, items: state.items)
         self.updateTagPicker(with: state.tags)
 
         if self.viewIsVisible {
@@ -433,10 +433,13 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func update(itemPicker state: ExtensionStore.State.ItemPicker?) {
-        self.itemPickerStackContainer.isHidden = state == nil
-        
-        guard let state = state else { return }
+    private func update(itemPicker state: ExtensionStore.State.ItemPicker?, items: ExtensionStore.State.ProcessedAttachment?) {
+        guard let state = state, items == nil else {
+            self.itemPickerStackContainer.isHidden = true
+            return
+        }
+
+        self.itemPickerStackContainer.isHidden = false
 
         if let text = state.picked {
             self.itemPickerLabel.text = text

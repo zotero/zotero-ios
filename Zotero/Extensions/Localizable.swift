@@ -650,8 +650,6 @@ internal enum L10n {
     /// Tags
     internal static let tagsTitle = L10n.tr("Localizable", "shareext.tags_title")
     internal enum Translation {
-      /// Downloading
-      internal static let downloading = L10n.tr("Localizable", "shareext.translation.downloading")
       /// Choose an item
       internal static let itemSelection = L10n.tr("Localizable", "shareext.translation.item_selection")
       /// Saving with %@
