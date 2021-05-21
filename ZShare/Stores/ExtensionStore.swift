@@ -75,6 +75,13 @@ final class ExtensionStore {
                     default: return false
                     }
                 }
+
+                var isFatalOrQuota: Bool {
+                    switch self {
+                    case .cantLoadWebData, .cantLoadSchema, .quotaLimit: return true
+                    default: return false
+                    }
+                }
             }
 
             case decoding

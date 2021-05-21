@@ -336,8 +336,11 @@ final class ShareViewController: UIViewController {
             message = nil
             showActivityIndicator = false
 
+            let hidePickers = error.isFatalOrQuota
+
             self.hideSavingOverlay()
-            self.collectionPickerStackContainer.isHidden = error.isFatal
+            self.collectionPickerStackContainer.isHidden = hidePickers
+            self.tagPickerStackContainer.isHidden = hidePickers
             self.itemPickerStackContainer.isHidden = true
             self.show(error: error)
 
