@@ -313,8 +313,6 @@ internal enum L10n {
     internal static let mergeName = L10n.tr("Localizable", "item_detail.merge_name")
     /// Notes
     internal static let notes = L10n.tr("Localizable", "item_detail.notes")
-    /// Search Tags...
-    internal static let searchTags = L10n.tr("Localizable", "item_detail.search_tags")
     /// Show less
     internal static let showLess = L10n.tr("Localizable", "item_detail.show_less")
     /// Show more
@@ -717,6 +715,15 @@ internal enum L10n {
       /// searches
       internal static let searches = L10n.tr("Localizable", "sync_toolbar.object.searches")
     }
+  }
+
+  internal enum TagPicker {
+    /// Create Tag “%@”
+    internal static func createTag(_ p1: Any) -> String {
+      return L10n.tr("Localizable", "tag_picker.create_tag", String(describing: p1))
+    }
+    /// Tag name
+    internal static let placeholder = L10n.tr("Localizable", "tag_picker.placeholder")
   }
 }
 // swiftlint:enable explicit_type_interface function_parameter_count identifier_name line_length

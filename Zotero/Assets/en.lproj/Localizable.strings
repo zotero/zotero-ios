@@ -135,7 +135,6 @@
 "item_detail.add_attachment" = "Add attachment";
 "item_detail.split_name" = "Split name";
 "item_detail.merge_name" = "Merge name";
-"item_detail.search_tags" = "Search Tags...";
 "item_detail.untitled" = "Untitled";
 "item_detail.show_more" = "Show more";
 "item_detail.show_less" = "Show less";
@@ -146,6 +145,9 @@
 "item_detail.trash_attachment_question" = "Are you sure you want to move this attachment to the trash?";
 "item_detail.deleted_title" = "Deleted";
 "item_detail.deleted_message" = "This item has been deleted. Do you want to restore it?";
+
+"tag_picker.placeholder" = "Tag name";
+"tag_picker.create_tag" = "Create Tag \“%@\”";
 
 "creator_editor.creator" = "Creator Type";
 "creator_editor.first_name" = "First Name";

@@ -50,7 +50,7 @@ struct TagPickerActionHandler: ViewModelActionHandler {
             let tag = Tag(name: name, color: "")
             state.tags = snapshot
 
-            let index = state.tags.index(of: tag, sortedBy: { $0.name < $1.name })
+            let index = state.tags.index(of: tag, sortedBy: { $0.name.caseInsensitiveCompare($1.name) == .orderedAscending })
             state.tags.insert(tag, at: index)
             state.selectedTags.insert(name)
 
@@ -67,7 +67,7 @@ struct TagPickerActionHandler: ViewModelActionHandler {
                     state.snapshot = state.tags
                 }
                 state.searchTerm = term
-                state.tags = (state.snapshot ?? state.tags).filter({ $0.name.lowercased().contains(term.lowercased()) })
+                state.tags = (state.snapshot ?? state.tags).filter({ $0.name.localizedCaseInsensitiveContains(term) })
                 state.changes = .tags
             }
         } else {
