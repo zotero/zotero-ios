@@ -108,6 +108,11 @@ final class ItemsViewController: UIViewController {
                   .disposed(by: self.disposeBag)
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.toolbarController.willAppear()
+    }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
     }

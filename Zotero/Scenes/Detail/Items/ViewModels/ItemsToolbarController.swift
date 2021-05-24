@@ -38,6 +38,10 @@ final class ItemsToolbarController {
         self.viewController.navigationController?.setToolbarHidden(false, animated: false)
     }
 
+    func willAppear() {
+        self.viewController.navigationController?.setToolbarHidden(false, animated: false)
+    }
+
     private static func editingActions(for state: ItemsState) -> [ItemAction] {
         var actions: [ItemAction] = []
         if state.type.isTrash {
