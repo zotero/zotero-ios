@@ -34,6 +34,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
         item.changedFields = [.type, .fields, .tags]
         item.changeType = .user
         item.attachmentNeedsSync = true
+        item.fileDownloaded = true
         item.dateAdded = Date()
         item.dateModified = Date()
         item.libraryId = self.attachment.libraryId
