@@ -17,10 +17,12 @@ enum DiffableDataSourceAnimation {
 }
 
 struct DiffableDataSourceSnapshot<Section: Hashable, Object: Hashable> {
+    fileprivate var isEditing: Bool
     fileprivate var sections: [Section]
     fileprivate var objects: [Section: [Object]]
 
-    init() {
+    init(isEditing: Bool) {
+        self.isEditing = isEditing
         self.sections = []
         self.objects = [:]
     }
@@ -43,7 +45,7 @@ struct DiffableDataSourceSnapshot<Section: Hashable, Object: Hashable> {
         return nil
     }
 
-    mutating func create(section: Section) {
+    mutating func append(section: Section) {
         assert(!self.sections.contains(section), "Section already exists")
         self.sections.append(section)
     }
@@ -55,8 +57,8 @@ struct DiffableDataSourceSnapshot<Section: Hashable, Object: Hashable> {
 }
 
 class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITableViewDataSource {
-    typealias DequeueAction = (UITableView, IndexPath, Object) -> UITableViewCell
-    typealias SetupAction = (UITableViewCell, Object) -> Void
+    typealias DequeueAction = (UITableView, IndexPath, Section, Object) -> UITableViewCell
+    typealias SetupAction = (UITableViewCell, IndexPath, Section, Object) -> Void
 
     private let dequeueAction: DequeueAction
     private let setupAction: SetupAction
@@ -68,7 +70,7 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
         self.tableView = tableView
         self.dequeueAction = dequeueAction
         self.setupAction = setupAction
-        self.snapshot = DiffableDataSourceSnapshot()
+        self.snapshot = DiffableDataSourceSnapshot(isEditing: false)
 
         super.init()
 
@@ -83,6 +85,7 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
         switch animation {
         case .none:
             self.snapshot = snapshot
+            tableView.setEditing(snapshot.isEditing, animated: false)
             tableView.reloadData()
 
         case .animate(let reload, let insert, let delete):
@@ -90,27 +93,47 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
         }
     }
 
+    func set(editing: Bool, animated: Bool) {
+        self.snapshot.isEditing = editing
+        self.tableView?.setEditing(editing, animated: animated)
+    }
+
+    func update(section: Section, with objects: [Object], animation: DiffableDataSourceAnimation = .none) {
+        guard self.snapshot.objects[section] != nil else {
+            DDLogWarn("DiffableDataSource: tried reloading section which is not in snapshot")
+            return
+        }
+        var newSnapshot = self.snapshot
+        newSnapshot.objects[section] = objects
+        self.apply(snapshot: newSnapshot, animation: animation, completion: nil)
+    }
+
     func update(object: Object, at indexPath: IndexPath) {
-        guard indexPath.section < self.snapshot.sections.count, var objects = self.snapshot.objects[self.snapshot.sections[indexPath.section]], indexPath.row < objects.count else { return }
+        guard indexPath.section < self.snapshot.sections.count else { return }
+        let section = self.snapshot.sections[indexPath.section]
+        guard var objects = self.snapshot.objects[section], indexPath.row < objects.count else { return }
 
         objects[indexPath.row] = object
-        self.snapshot.objects[self.snapshot.sections[indexPath.section]] = objects
+        self.snapshot.objects[section] = objects
 
         guard let cell = self.tableView?.cellForRow(at: indexPath) else { return }
-        self.setupAction(cell, object)
+        self.setupAction(cell, indexPath, section, object)
     }
 
     // MARK: - Tableview Changes
 
     private func animateChanges(for snapshot: DiffableDataSourceSnapshot<Section, Object>, reloadAnimation: UITableView.RowAnimation, insertAnimation: UITableView.RowAnimation,
                                 deleteAnimation: UITableView.RowAnimation, in tableView: UITableView, completion: ((Bool) -> Void)?) {
-        let (sectionInsert, sectionDelete, rowReload, rowInsert, rowDelete, rowMove) = self.diff(from: self.snapshot, to: snapshot)
+        let (sectionInsert, sectionDelete, rowReload, rowInsert, rowDelete, rowMove, editingChanged) = self.diff(from: self.snapshot, to: snapshot)
 
         if sectionInsert.isEmpty && sectionDelete.isEmpty && rowInsert.isEmpty && rowDelete.isEmpty && rowMove.isEmpty {
             self.snapshot = snapshot
             if !rowReload.isEmpty {
                 // Reload only visible cells, others will load as they come up on the screen.
                 self.updateVisibleCells(for: rowReload, in: tableView)
+            }
+            if editingChanged {
+                tableView.setEditing(snapshot.isEditing, animated: true)
             }
             completion?(true)
             return
@@ -119,16 +142,29 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
         // Perform batch updates
         tableView.performBatchUpdates({
             self.snapshot = snapshot
-            tableView.insertSections(sectionInsert, with: .automatic)
-            tableView.deleteSections(sectionDelete, with: .automatic)
-            tableView.reloadRows(at: rowReload, with: reloadAnimation)
-            tableView.insertRows(at: rowInsert, with: insertAnimation)
-            tableView.deleteRows(at: rowDelete, with: deleteAnimation)
+            if !sectionInsert.isEmpty {
+                tableView.insertSections(sectionInsert, with: .automatic)
+            }
+            if !sectionDelete.isEmpty {
+                tableView.deleteSections(sectionDelete, with: .automatic)
+            }
+            if !rowReload.isEmpty {
+                tableView.reloadRows(at: rowReload, with: reloadAnimation)
+            }
+            if !rowInsert.isEmpty {
+                tableView.insertRows(at: rowInsert, with: insertAnimation)
+            }
+            if !rowDelete.isEmpty {
+                tableView.deleteRows(at: rowDelete, with: deleteAnimation)
+            }
+            if editingChanged {
+                tableView.setEditing(snapshot.isEditing, animated: true)
+            }
         }, completion: completion)
     }
 
     private func diff(from oldSnapshot: DiffableDataSourceSnapshot<Section, Object>, to newSnapshot: DiffableDataSourceSnapshot<Section, Object>)
-                                            -> (sectionInsert: IndexSet, sectionDelete: IndexSet, rowReload: [IndexPath], rowInsert: [IndexPath], rowDelete: [IndexPath], rowMove: [(IndexPath, IndexPath)]) {
+                -> (sectionInsert: IndexSet, sectionDelete: IndexSet, rowReload: [IndexPath], rowInsert: [IndexPath], rowDelete: [IndexPath], rowMove: [(IndexPath, IndexPath)], editingChanged: Bool) {
         let (sectionReload, sectionInsert, sectionDelete) = self.diff(from: oldSnapshot.sections.count, to: newSnapshot.sections.count)
 
         var rowReload: [IndexPath] = []
@@ -145,7 +181,7 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
             rowMove.append(contentsOf: move)
         }
 
-        return (IndexSet(sectionInsert), IndexSet(sectionDelete), rowReload, rowInsert, rowDelete, rowMove)
+        return (IndexSet(sectionInsert), IndexSet(sectionDelete), rowReload, rowInsert, rowDelete, rowMove, (oldSnapshot.isEditing != newSnapshot.isEditing))
     }
 
     private func diff(from oldSections: Int, to newSections: Int) -> (reload: [Int], insert: [Int], delete: [Int]) {
@@ -192,7 +228,7 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
         guard let visibleIndexPaths = tableView.indexPathsForVisibleRows else { return }
         for indexPath in visibleIndexPaths.filter({ indexPaths.contains($0) }) {
             guard let cell = tableView.cellForRow(at: indexPath), let object = self.snapshot.object(at: indexPath) else { continue }
-            self.setupAction(cell, object)
+            self.setupAction(cell, indexPath, self.snapshot.sections[indexPath.section], object)
         }
     }
 
@@ -209,9 +245,10 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let object = self.snapshot.object(at: indexPath) else { return UITableViewCell() }
+        let section = self.snapshot.sections[indexPath.section]
 
-        let cell = self.dequeueAction(tableView, indexPath, object)
-        self.setupAction(cell, object)
+        let cell = self.dequeueAction(tableView, indexPath, section, object)
+        self.setupAction(cell, indexPath, section, object)
         return cell
     }
 }

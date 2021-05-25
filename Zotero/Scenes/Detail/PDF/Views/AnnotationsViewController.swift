@@ -27,7 +27,7 @@ final class AnnotationsViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private weak var tableView: UITableView!
-    private var dataSource: DiffableDataSource<Annotation>!
+    private var dataSource: DiffableDataSource<Int, Annotation>!
     private var searchController: UISearchController!
     private var isVisible: Bool
 
@@ -180,12 +180,16 @@ final class AnnotationsViewController: UIViewController {
 
         let isVisible = self.sidebarParent?.isSidebarVisible ?? false
 
-        var snapshot = DiffableDataSourceSnapshot<Annotation>(numberOfSections: Int(state.document.pageCount))
+        var snapshot = DiffableDataSourceSnapshot<Int, Annotation>(isEditing: false)
+//        for section in (0..<Int(state.document.pageCount)) {
+//            snapshot.create(section: section)
+//        }
         for (page, annotations) in state.annotations {
             guard page < state.document.pageCount else {
                 DDLogWarn("AnnotationsViewController: annotations page (\(page)) outside of document bounds (\(state.document.pageCount))")
                 continue
             }
+            snapshot.create(section: page)
             snapshot.append(objects: annotations, for: page)
         }
         let animation: DiffableDataSourceAnimation = !isVisible ? .none : .animate(reload: .fade, insert: .bottom, delete: .bottom)
@@ -264,18 +268,17 @@ final class AnnotationsViewController: UIViewController {
             tableView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor)
         ])
 
-        let dataSource = DiffableDataSource<Annotation>(tableView: tableView,
-                                                        dequeueAction: { tableView, indexPath in
-                                                            return tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
-                                                        },
-                                                        setupAction: { [weak self] cell, annotation in
-                                                            guard let `self` = self, let cell = cell as? AnnotationCell else { return }
-                                                            cell.contentView.backgroundColor = self.view.backgroundColor
-                                                            self.setup(cell: cell, with: annotation, state: self.viewModel.state)
-                                                        })
+        self.dataSource = DiffableDataSource(tableView: tableView,
+                                             dequeueAction: { tableView, indexPath, _, _ in
+                                                 return tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
+                                             },
+                                             setupAction: { [weak self] cell, _, _, annotation in
+                                                 guard let `self` = self, let cell = cell as? AnnotationCell else { return }
+                                                 cell.contentView.backgroundColor = self.view.backgroundColor
+                                                 self.setup(cell: cell, with: annotation, state: self.viewModel.state)
+                                             })
 
         self.tableView = tableView
-        self.dataSource = dataSource
     }
 
     private func setupSearchController() {

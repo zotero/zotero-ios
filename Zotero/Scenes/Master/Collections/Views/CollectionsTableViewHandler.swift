@@ -60,7 +60,7 @@ final class CollectionsTableViewHandler: NSObject {
     }
 
     func updateCollections(animated: Bool, completed: (() -> Void)? = nil) {
-        var snapshot = DiffableDataSourceSnapshot<Int, Collection>()
+        var snapshot = DiffableDataSourceSnapshot<Int, Collection>(isEditing: false)
         snapshot.create(section: 0)
         snapshot.append(objects: self.viewModel.state.collections.filter({ $0.visible }), for: 0)
         let animation: DiffableDataSourceAnimation = !animated ? .none : .animate(reload: .automatic, insert: .bottom, delete: .bottom)
@@ -187,9 +187,9 @@ final class CollectionsTableViewHandler: NSObject {
         self.tableView.tableFooterView = UIView()
 
         self.dataSource = DiffableDataSource(tableView: self.tableView,
-                                             dequeueAction: { tableView, indexPath in
+                                             dequeueAction: { tableView, indexPath, _, _ in
                                                 return tableView.dequeueReusableCell(withIdentifier: CollectionsTableViewHandler.cellId, for: indexPath)
-                                             }, setupAction: { [weak self] cell, collection in
+                                             }, setupAction: { [weak self] cell, _, _, collection in
                                                  guard let cell = cell as? CollectionCell else { return }
                                                  cell.set(collection: collection, toggleCollapsed: {
                                                      self?.viewModel.process(action: .toggleCollapsed(collection))

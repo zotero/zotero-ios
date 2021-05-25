@@ -10,7 +10,7 @@ import Foundation
 
 import CocoaLumberjackSwift
 
-struct Note: Identifiable, Equatable {
+struct Note: Identifiable, Equatable, Hashable {
     let key: String
     var title: String
     var text: String

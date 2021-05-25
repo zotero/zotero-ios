@@ -23,9 +23,7 @@ final class ItemDetailNoteCell: UITableViewCell {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.minimumLineHeight = ItemDetailLayout.lineHeight
         paragraphStyle.maximumLineHeight = ItemDetailLayout.lineHeight
-        let attributedString = NSAttributedString(string: note.title,
-                                                  attributes: [.font: UIFont.preferredFont(forTextStyle: .body),
-                                                               .paragraphStyle: paragraphStyle])
+        let attributedString = NSAttributedString(string: note.title, attributes: [.font: UIFont.preferredFont(forTextStyle: .body), .paragraphStyle: paragraphStyle])
         self.label.attributedText = attributedString
 
         let font = self.label.font!
