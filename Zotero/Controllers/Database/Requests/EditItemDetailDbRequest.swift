@@ -152,7 +152,10 @@ struct EditItemDetailDbRequest: DbRequest {
         }
 
         for note in data.notes {
-            guard let oldNote = snapshot.notes.first(where: { $0.key == note.key }), (note.text != oldNote.text || note.tags != oldNote.tags) else { continue }
+            if let oldNote = snapshot.notes.first(where: { $0.key == note.key }), (note.text == oldNote.text && note.tags == oldNote.tags) {
+                // Skip if it didn't change
+                continue
+            }
 
             do {
                 // Try editing an item.
