@@ -16,54 +16,59 @@ enum DiffableDataSourceAnimation {
     case animate(reload: UITableView.RowAnimation, insert: UITableView.RowAnimation, delete: UITableView.RowAnimation)
 }
 
-struct DiffableDataSourceSnapshot<Object: Identifiable & Hashable & Equatable> {
-    fileprivate let sections: Int
-    fileprivate var objects: [Int: [Object]]
+struct DiffableDataSourceSnapshot<Section: Hashable, Object: Hashable> {
+    fileprivate var sections: [Section]
+    fileprivate var objects: [Section: [Object]]
 
-    init(numberOfSections: Int) {
-        self.sections = numberOfSections
+    init() {
+        self.sections = []
         self.objects = [:]
     }
 
-    func count(for section: Int) -> Int {
+    func count(for section: Section) -> Int {
         return self.objects[section]?.count ?? 0
     }
 
     func object(at indexPath: IndexPath) -> Object? {
-        guard let objects = self.objects[indexPath.section], indexPath.row < objects.count else { return nil }
+        guard indexPath.section < self.sections.count, let objects = self.objects[self.sections[indexPath.section]], indexPath.row < objects.count else { return nil }
         return objects[indexPath.row]
     }
 
-    func indexPath(for identifier: Object.ID) -> IndexPath? {
+    func indexPath(where: (Object) -> Bool) -> IndexPath? {
         for (section, objects) in self.objects {
-            if let index = objects.firstIndex(where: { $0.id == identifier }) {
-                return IndexPath(row: index, section: section)
+            if let index = objects.firstIndex(where: `where`), let sectionIndex = self.sections.firstIndex(of: section) {
+                return IndexPath(row: index, section: sectionIndex)
             }
         }
         return nil
     }
 
-    mutating func append(objects: [Object], for section: Int) {
-        assert(section < self.sections, "Assigned section is more than number of sections")
+    mutating func create(section: Section) {
+        assert(!self.sections.contains(section), "Section already exists")
+        self.sections.append(section)
+    }
+
+    mutating func append(objects: [Object], for section: Section) {
+        assert(self.sections.contains(section), "Assigned section does not exist")
         self.objects[section] = objects
     }
 }
 
-class DiffableDataSource<Object: Identifiable & Hashable & Equatable>: NSObject, UITableViewDataSource {
-    typealias DequeueAction = (UITableView, IndexPath) -> UITableViewCell
+class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITableViewDataSource {
+    typealias DequeueAction = (UITableView, IndexPath, Object) -> UITableViewCell
     typealias SetupAction = (UITableViewCell, Object) -> Void
 
     private let dequeueAction: DequeueAction
     private let setupAction: SetupAction
 
-    private(set) var snapshot: DiffableDataSourceSnapshot<Object>
+    private(set) var snapshot: DiffableDataSourceSnapshot<Section, Object>
     private weak var tableView: UITableView?
 
     init(tableView: UITableView, dequeueAction: @escaping DequeueAction, setupAction: @escaping SetupAction) {
         self.tableView = tableView
         self.dequeueAction = dequeueAction
         self.setupAction = setupAction
-        self.snapshot = DiffableDataSourceSnapshot(numberOfSections: 0)
+        self.snapshot = DiffableDataSourceSnapshot()
 
         super.init()
 
@@ -72,7 +77,7 @@ class DiffableDataSource<Object: Identifiable & Hashable & Equatable>: NSObject,
 
     // MARK: - Snapshot
 
-    func apply(snapshot: DiffableDataSourceSnapshot<Object>, animation: DiffableDataSourceAnimation = .none, completion: ((Bool) -> Void)?) {
+    func apply(snapshot: DiffableDataSourceSnapshot<Section, Object>, animation: DiffableDataSourceAnimation = .none, completion: ((Bool) -> Void)?) {
         guard let tableView = self.tableView else { return }
 
         switch animation {
@@ -86,10 +91,10 @@ class DiffableDataSource<Object: Identifiable & Hashable & Equatable>: NSObject,
     }
 
     func update(object: Object, at indexPath: IndexPath) {
-        guard indexPath.section < self.snapshot.sections, var objects = self.snapshot.objects[indexPath.section], indexPath.row < objects.count else { return }
+        guard indexPath.section < self.snapshot.sections.count, var objects = self.snapshot.objects[self.snapshot.sections[indexPath.section]], indexPath.row < objects.count else { return }
 
         objects[indexPath.row] = object
-        self.snapshot.objects[indexPath.section] = objects
+        self.snapshot.objects[self.snapshot.sections[indexPath.section]] = objects
 
         guard let cell = self.tableView?.cellForRow(at: indexPath) else { return }
         self.setupAction(cell, object)
@@ -97,7 +102,7 @@ class DiffableDataSource<Object: Identifiable & Hashable & Equatable>: NSObject,
 
     // MARK: - Tableview Changes
 
-    private func animateChanges(for snapshot: DiffableDataSourceSnapshot<Object>, reloadAnimation: UITableView.RowAnimation, insertAnimation: UITableView.RowAnimation,
+    private func animateChanges(for snapshot: DiffableDataSourceSnapshot<Section, Object>, reloadAnimation: UITableView.RowAnimation, insertAnimation: UITableView.RowAnimation,
                                 deleteAnimation: UITableView.RowAnimation, in tableView: UITableView, completion: ((Bool) -> Void)?) {
         let (sectionInsert, sectionDelete, rowReload, rowInsert, rowDelete, rowMove) = self.diff(from: self.snapshot, to: snapshot)
 
@@ -122,9 +127,9 @@ class DiffableDataSource<Object: Identifiable & Hashable & Equatable>: NSObject,
         }, completion: completion)
     }
 
-    private func diff(from oldSnapshot: DiffableDataSourceSnapshot<Object>, to newSnapshot: DiffableDataSourceSnapshot<Object>)
+    private func diff(from oldSnapshot: DiffableDataSourceSnapshot<Section, Object>, to newSnapshot: DiffableDataSourceSnapshot<Section, Object>)
                                             -> (sectionInsert: IndexSet, sectionDelete: IndexSet, rowReload: [IndexPath], rowInsert: [IndexPath], rowDelete: [IndexPath], rowMove: [(IndexPath, IndexPath)]) {
-        let (sectionReload, sectionInsert, sectionDelete) = self.diff(from: oldSnapshot.sections, to: newSnapshot.sections)
+        let (sectionReload, sectionInsert, sectionDelete) = self.diff(from: oldSnapshot.sections.count, to: newSnapshot.sections.count)
 
         var rowReload: [IndexPath] = []
         var rowInsert: [IndexPath] = []
@@ -132,7 +137,7 @@ class DiffableDataSource<Object: Identifiable & Hashable & Equatable>: NSObject,
         var rowMove: [(IndexPath, IndexPath)] = []
 
         for section in sectionReload {
-            let (reload, insert, delete, move) = self.diff(from: (oldSnapshot.objects[section] ?? []), to: (newSnapshot.objects[section] ?? []), in: section)
+            let (reload, insert, delete, move) = self.diff(from: (oldSnapshot.objects[oldSnapshot.sections[section]] ?? []), to: (newSnapshot.objects[newSnapshot.sections[section]] ?? []), in: section)
 
             rowReload.append(contentsOf: reload)
             rowInsert.append(contentsOf: insert)
@@ -194,18 +199,19 @@ class DiffableDataSource<Object: Identifiable & Hashable & Equatable>: NSObject,
     // MARK: - UITableViewDataSource
 
     func numberOfSections(in tableView: UITableView) -> Int {
-        return self.snapshot.sections
+        return self.snapshot.sections.count
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.snapshot.objects[section]?.count ?? 0
+        guard section < self.snapshot.sections.count else { return 0 }
+        return self.snapshot.objects[self.snapshot.sections[section]]?.count ?? 0
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = self.dequeueAction(tableView, indexPath)
-        if let object = self.snapshot.object(at: indexPath) {
-            self.setupAction(cell, object)
-        }
+        guard let object = self.snapshot.object(at: indexPath) else { return UITableViewCell() }
+
+        let cell = self.dequeueAction(tableView, indexPath, object)
+        self.setupAction(cell, object)
         return cell
     }
 }

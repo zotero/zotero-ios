@@ -69,6 +69,36 @@ final class ItemDetailTableViewHandler: NSObject {
         }
     }
 
+    enum Row: Hashable, Equatable {
+        case add
+        case data(RowData)
+    }
+
+    struct RowData: Hashable, Equatable {
+        let iconName: String?
+        let title: String
+        let content: String
+        let needsMultiline: Bool
+        let dateFormat: String?
+        let attachmentData: AttachmentData?
+
+        struct AttachmentData: Hashable, Equatable {
+            let type: Attachment.Kind
+            let progress: CGFloat?
+            let error: Error?
+
+            static func == (lhs: ItemDetailTableViewHandler.Row.AttachmentData, rhs: ItemDetailTableViewHandler.Row.AttachmentData) -> Bool {
+                return lhs.type == rhs.type && lhs.progress == rhs.progress && lhs.error?.localizedDescription == rhs.error?.localizedDescription
+            }
+
+            func hash(into hasher: inout Hasher) {
+                hasher.combine(self.type)
+                hasher.combine(self.progress)
+                hasher.combine(self.error?.localizedDescription)
+            }
+        }
+    }
+
     // Identifier for section view
     private static let sectionId = "ItemDetailSectionView"
     // Identifier for "Add *" cell
@@ -88,6 +118,7 @@ final class ItemDetailTableViewHandler: NSObject {
     private var titleWidth: CGFloat {
         return self.viewModel.state.isEditing ? self.maxTitleWidth : self.maxNonemptyTitleWidth
     }
+    private var dataSource: DiffableDataSource<Section, Row>!
     private weak var fileDownloader: AttachmentDownloader?
     weak var delegate: ItemDetailTableViewHandlerDelegate?
 
@@ -464,11 +495,37 @@ final class ItemDetailTableViewHandler: NSObject {
         }
     }
 
+    // MARK: - DataSource Helpers
+
+    private func cellId(for section: Int, row: Row, isEditing: Bool) -> String {
+        let section = self.sections[section]
+        let cellId: String
+
+        switch section {
+        case .title:
+            cellId = section.cellId(isEditing: isEditing, needsMultiline: row.needsMultiline)
+        case .fields:
+            let isAttachment = self.viewModel.state.data.isAttachment
+            cellId = section.cellId(isEditing: (!isAttachment && isEditing), needsMultiline: row.needsMultiline)
+        case .abstract, .type, .dates:
+            let isAttachment = self.viewModel.state.data.isAttachment
+            cellId = section.cellId(isEditing: (!isAttachment && isEditing), needsMultiline: row.needsMultiline)
+        case .creators, .attachments, .notes, .tags:
+            if indexPath.row < self.baseCount(in: section) {
+                cellId = section.cellId(isEditing: isEditing, needsMultiline: row.needsMultiline)
+            } else {
+                cellId = ItemDetailTableViewHandler.addCellId
+            }
+        }
+
+        return cellId
+    }
+
     // MARK: - Setups
 
     /// Sets `tableView` dataSource, delegate and registers appropriate cells and sections.
     private func setupTableView() {
-        self.tableView.dataSource = self
+//        self.tableView.dataSource = self
         self.tableView.delegate = self
         self.tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
         self.tableView.tableFooterView = UIView()
@@ -488,6 +545,14 @@ final class ItemDetailTableViewHandler: NSObject {
         self.tableView.register(UINib(nibName: multilineId, bundle: nil), forCellReuseIdentifier: multilineId)
         self.tableView.register(UINib(nibName: ItemDetailTableViewHandler.addCellId, bundle: nil), forCellReuseIdentifier: ItemDetailTableViewHandler.addCellId)
         self.tableView.register(UINib(nibName: ItemDetailTableViewHandler.sectionId, bundle: nil), forHeaderFooterViewReuseIdentifier: ItemDetailTableViewHandler.sectionId)
+
+        self.dataSource = DiffableDataSource(tableView: self.tableView,
+                                             dequeueAction: { tableView, indexPath, row in
+                                                let cellId = self.cellId(for: indexPath.section, row: row, isEditing: tableView.isEditing)
+                                                return tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)
+                                             }, setupAction: { cell, row in
+
+                                             })
     }
 
     private func setupTableView(with keyboardData: KeyboardData) {

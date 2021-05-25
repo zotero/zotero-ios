@@ -18,7 +18,7 @@ final class CollectionsTableViewHandler: NSObject {
     private unowned let dragDropController: DragDropController
     private let disposeBag: DisposeBag
 
-    private var dataSource: DiffableDataSource<Collection>!
+    private var dataSource: DiffableDataSource<Int, Collection>!
 //    private var snapshot: [Collection] = []
     private weak var splitDelegate: SplitControllerDelegate?
 
@@ -39,7 +39,7 @@ final class CollectionsTableViewHandler: NSObject {
     // MARK: - Actions
 
     func selectIfNeeded(collectionId: CollectionIdentifier) {
-        if let indexPath = self.dataSource.snapshot.indexPath(for: collectionId) {
+        if let indexPath = self.dataSource.snapshot.indexPath(where: { $0.identifier == collectionId }) {
             guard self.tableView.indexPathForSelectedRow != indexPath else { return }
             self.tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
         } else if let indexPath = self.tableView.indexPathForSelectedRow {
@@ -60,7 +60,8 @@ final class CollectionsTableViewHandler: NSObject {
     }
 
     func updateCollections(animated: Bool, completed: (() -> Void)? = nil) {
-        var snapshot = DiffableDataSourceSnapshot<Collection>(numberOfSections: 1)
+        var snapshot = DiffableDataSourceSnapshot<Int, Collection>()
+        snapshot.create(section: 0)
         snapshot.append(objects: self.viewModel.state.collections.filter({ $0.visible }), for: 0)
         let animation: DiffableDataSourceAnimation = !animated ? .none : .animate(reload: .automatic, insert: .bottom, delete: .bottom)
         self.dataSource.apply(snapshot: snapshot, animation: animation, completion: { finished in

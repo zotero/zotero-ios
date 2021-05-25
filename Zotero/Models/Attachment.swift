@@ -19,7 +19,7 @@ struct Attachment: Identifiable, Equatable {
         case importedUrl, importedFile, embeddedImage, linkedFile
     }
 
-    enum Kind: Equatable {
+    enum Kind: Equatable, Hashable {
         case file(filename: String, contentType: String, location: FileLocation, linkType: FileLinkType)
         case url(URL)
     }
