@@ -9,6 +9,7 @@
 import UIKit
 
 import CocoaLumberjackSwift
+import RealmSwift
 import SwiftUI
 
 #if PDFENABLED
@@ -52,12 +53,19 @@ final class AppDelegate: UIResponder {
         UserDefaults.standard.removeObject(forKey: "ItemsSortType")
     }
 
+    /// This migration was created to move from "old" file structure (before build 120) to "new" one, where items are stored with their proper filenames.
+    /// In `DidMigrateFileStructure` all downloaded items were moved. Items which were up for upload were forgotten, so `DidMigrateFileStructure2` was added to migrate also these items.
+    /// TODO: - Remove after beta
     private func migrateFileStructure() {
-        guard !UserDefaults.standard.bool(forKey: "DidMigrateFileStructure") else { return }
+        let didMigrateFileStructure = UserDefaults.standard.bool(forKey: "DidMigrateFileStructure")
+        let didMigrateFileStructure2 = UserDefaults.standard.bool(forKey: "DidMigrateFileStructure2")
+
+        guard !didMigrateFileStructure || !didMigrateFileStructure2 else { return }
 
         guard let dbStorage = self.controllers.userControllers?.dbStorage else {
             // If user is logget out, no need to migrate, DB is empty and files should be gone.
             UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure")
+            UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure2")
             return
         }
 
@@ -67,35 +75,49 @@ final class AppDelegate: UIResponder {
         }
 
         // Migrate file structure
-        if let items = try? coordinator.perform(request: ReadAllDownloadedItems()) {
-            for item in items {
-                guard let type = AttachmentCreator.attachmentType(for: item, options: .light, fileStorage: nil, urlDetector: nil) else { continue }
-
-                switch type {
-                case .url: break
-                case .file(_, _, _, let linkType) where (linkType == .embeddedImage || linkType == .linkedFile): break // Embedded images and linked files don't need to be checked.
-                case .file(let filename, let contentType, _, let linkType):
-                    // Snapshots were stored based on new structure, no need to do anything.
-                    guard linkType != .importedUrl || contentType != "text/html",
-                          let libraryId = item.libraryId else { continue }
-
-                    let filenameParts = filename.split(separator: ".")
-                    let oldFile: File
-                    if filenameParts.count > 1, let ext = filenameParts.last.flatMap(String.init) {
-                        oldFile = FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName], name: item.key, ext: ext)
-                    } else {
-                        oldFile = FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName], name: item.key, contentType: contentType)
-                    }
-                    let newFile = Files.newAttachmentFile(in: libraryId, key: item.key, filename: filename, contentType: contentType)
-                    try? self.controllers.fileStorage.move(from: oldFile, to: newFile)
-                }
+        if !didMigrateFileStructure && !didMigrateFileStructure2 {
+            if let items = try? coordinator.perform(request: ReadAllDownloadedAndForUploadItemsDbRequest()) {
+                self.migrateFileStructure(for: items)
             }
+            UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure")
+            UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure2")
+        } else if !didMigrateFileStructure {
+            if let items = try? coordinator.perform(request: ReadAllDownloadedItemsDbRequest()) {
+                self.migrateFileStructure(for: items)
+            }
+            UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure")
+        } else if !didMigrateFileStructure2 {
+            if let items = try? coordinator.perform(request: ReadAllItemsForUploadDbRequest()) {
+                self.migrateFileStructure(for: items)
+            }
+            UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure2")
         }
 
-        // Migrate main attachments
-
         NotificationCenter.default.post(name: .forceReloadItems, object: nil)
-        UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure")
+    }
+
+    private func migrateFileStructure(for items: Results<RItem>) {
+        for item in items {
+            guard let type = AttachmentCreator.attachmentType(for: item, options: .light, fileStorage: nil, urlDetector: nil) else { continue }
+
+            switch type {
+            case .url: break
+            case .file(_, _, _, let linkType) where (linkType == .embeddedImage || linkType == .linkedFile): break // Embedded images and linked files don't need to be checked.
+            case .file(let filename, let contentType, _, let linkType):
+                // Snapshots were stored based on new structure, no need to do anything.
+                guard linkType != .importedUrl || contentType != "text/html", let libraryId = item.libraryId else { continue }
+
+                let filenameParts = filename.split(separator: ".")
+                let oldFile: File
+                if filenameParts.count > 1, let ext = filenameParts.last.flatMap(String.init) {
+                    oldFile = FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName], name: item.key, ext: ext)
+                } else {
+                    oldFile = FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName], name: item.key, contentType: contentType)
+                }
+                let newFile = Files.newAttachmentFile(in: libraryId, key: item.key, filename: filename, contentType: contentType)
+                try? self.controllers.fileStorage.move(from: oldFile, to: newFile)
+            }
+        }
     }
 
     // MARK: - Setups

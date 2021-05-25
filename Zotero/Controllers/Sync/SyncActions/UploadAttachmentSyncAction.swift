@@ -54,7 +54,7 @@ struct UploadAttachmentSyncAction: SyncAction {
                                 if size == 0 {
                                     DDLogError("UploadAttachmentSyncAction: missing attachment - \(self.file.createUrl().absoluteString)")
                                     let item = try? self.dbStorage.createCoordinator().perform(request: ReadItemDbRequest(libraryId: self.libraryId, key: self.key))
-                                    let title = item?.displayTitle ?? "L10n.notFound"
+                                    let title = item?.displayTitle ?? L10n.notFound
                                     return Single.error(SyncActionError.attachmentMissing(key: self.key, title: title))
                                 } else {
                                     return Single.just(size)

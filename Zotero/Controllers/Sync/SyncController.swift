@@ -376,7 +376,7 @@ final class SyncController: SynchronizationController {
                 if !mismatchedLibraries.contains(libraryId) {
                     mismatchedLibraries.append(libraryId)
                 }
-            case .unknown, .schema, .parsing, .apiError, .unchanged, .quotaLimit: continue
+            case .unknown, .schema, .parsing, .apiError, .unchanged, .quotaLimit, .attachmentMissing: continue
             }
         }
 
@@ -1420,7 +1420,7 @@ final class SyncController: SynchronizationController {
             case .attachmentAlreadyUploaded, .attachmentItemNotSubmitted: // These shouldn't really get here
                 return .nonFatal(.unknown(error.localizedDescription))
             case .attachmentMissing(let key, let title):
-                return .fatal(.attachmentMissing(key: key, title: title))
+                return .nonFatal(.attachmentMissing(key: key, title: title))
             case .submitUpdateUnknownFailures:
                 return .nonFatal(.unknown(error.localizedDescription))
             }

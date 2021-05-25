@@ -351,6 +351,8 @@
 		B31901942629C9CB00209E33 /* ItemsFilterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31901922629C9CB00209E33 /* ItemsFilterViewController.swift */; };
 		B31901952629C9CB00209E33 /* ItemsFilterViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B31901932629C9CB00209E33 /* ItemsFilterViewController.xib */; };
 		B31941DD24531F6600BF6296 /* AnnotationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */; };
+		B319D6B6265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B319D6B5265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift */; };
+		B319D6B8265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B319D6B7265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift */; };
 		B31EEE5724EBCAF100E3B3AD /* RRect.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5624EBCAF100E3B3AD /* RRect.swift */; };
 		B31EEE5824EBCB2C00E3B3AD /* RRect.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5624EBCAF100E3B3AD /* RRect.swift */; };
 		B31EEE5A24EBD18200E3B3AD /* ReadAnnotationsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5924EBD18200E3B3AD /* ReadAnnotationsDbRequest.swift */; };
@@ -537,7 +539,7 @@
 		B3593F7C241A76E600760E20 /* CollectionEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F76241A76E600760E20 /* CollectionEditView.swift */; };
 		B3593F7E241A76F400760E20 /* CollectionEditingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F7D241A76F400760E20 /* CollectionEditingCoordinator.swift */; };
 		B35B473C25F11BCD0023B6F4 /* PDFSettingsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35B473B25F11BCD0023B6F4 /* PDFSettingsState.swift */; };
-		B35C529C26383BDD007BD036 /* ReadAllDownloadedItems.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35C529B26383BDD007BD036 /* ReadAllDownloadedItems.swift */; };
+		B35C529C26383BDD007BD036 /* ReadAllDownloadedItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35C529B26383BDD007BD036 /* ReadAllDownloadedItemsDbRequest.swift */; };
 		B35C9C082642A0BC0004C47E /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B35C9C072642A0BC0004C47E /* RealmSwift */; };
 		B35C9C0C2642A0E40004C47E /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B35C9C0B2642A0E40004C47E /* RealmSwift */; };
 		B35DC8E5261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35DC8E3261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.swift */; };
@@ -1082,6 +1084,8 @@
 		B31901922629C9CB00209E33 /* ItemsFilterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsFilterViewController.swift; sourceTree = "<group>"; };
 		B31901932629C9CB00209E33 /* ItemsFilterViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemsFilterViewController.xib; sourceTree = "<group>"; };
 		B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationsViewController.swift; sourceTree = "<group>"; };
+		B319D6B5265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllItemsForUploadDbRequest.swift; sourceTree = "<group>"; };
+		B319D6B7265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllDownloadedAndForUploadItemsDbRequest.swift; sourceTree = "<group>"; };
 		B31EEE5624EBCAF100E3B3AD /* RRect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RRect.swift; sourceTree = "<group>"; };
 		B31EEE5924EBD18200E3B3AD /* ReadAnnotationsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAnnotationsDbRequest.swift; sourceTree = "<group>"; };
 		B31EEE5B24EBF24300E3B3AD /* StoreChangedAnnotationsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreChangedAnnotationsDbRequest.swift; sourceTree = "<group>"; };
@@ -1229,7 +1233,7 @@
 		B3593F76241A76E600760E20 /* CollectionEditView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionEditView.swift; sourceTree = "<group>"; };
 		B3593F7D241A76F400760E20 /* CollectionEditingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionEditingCoordinator.swift; sourceTree = "<group>"; };
 		B35B473B25F11BCD0023B6F4 /* PDFSettingsState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSettingsState.swift; sourceTree = "<group>"; };
-		B35C529B26383BDD007BD036 /* ReadAllDownloadedItems.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllDownloadedItems.swift; sourceTree = "<group>"; };
+		B35C529B26383BDD007BD036 /* ReadAllDownloadedItemsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllDownloadedItemsDbRequest.swift; sourceTree = "<group>"; };
 		B35DC8E3261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailFieldMultilineEditCell.swift; sourceTree = "<group>"; };
 		B35DC8E4261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemDetailFieldMultilineEditCell.xib; sourceTree = "<group>"; };
 		B35EDEC9263ADD0C003574AC /* TextPreviewViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextPreviewViewController.swift; sourceTree = "<group>"; };
@@ -1622,8 +1626,10 @@
 				B305645823FC051E003304F2 /* MoveItemsToParentDbRequest.swift */,
 				B305644F23FC051E003304F2 /* PerformDeletionsDbRequest.swift */,
 				B305646023FC051E003304F2 /* ReadAllCustomLibrariesDbRequest.swift */,
-				B35C529B26383BDD007BD036 /* ReadAllDownloadedItems.swift */,
+				B319D6B7265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift */,
+				B35C529B26383BDD007BD036 /* ReadAllDownloadedItemsDbRequest.swift */,
 				B305644823FC051E003304F2 /* ReadAllGroupsDbRequest.swift */,
+				B319D6B5265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift */,
 				B34341AA260A48A200093E63 /* ReadAllWritableGroupsDbRequest.swift */,
 				B31EEE5924EBD18200E3B3AD /* ReadAnnotationsDbRequest.swift */,
 				B305646523FC051E003304F2 /* ReadAnyChangedObjectsInLibraryDbRequest.swift */,
@@ -3444,6 +3450,7 @@
 				B3DCDF06240912060039ED0D /* DocumentPickerViewController.swift in Sources */,
 				B37BF0B125A6035D00AE0268 /* ReadDocumentDataDbRequest.swift in Sources */,
 				B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */,
+				B319D6B8265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift in Sources */,
 				B30566A723FC051F003304F2 /* DelayIntervals.swift in Sources */,
 				B37491382488D7040042FF85 /* SettingsListView.swift in Sources */,
 				B3A081C025D2AD390088EC24 /* LoadDeletionsSyncAction.swift in Sources */,
@@ -3567,13 +3574,14 @@
 				B30566BD23FC051F003304F2 /* AccessPermissions.swift in Sources */,
 				B341C8CF25CBFCE4005562E5 /* ChangeWsResponse.swift in Sources */,
 				B36BEC7324485FC700A60552 /* TagColorGenerator.swift in Sources */,
+				B319D6B6265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift in Sources */,
 				B3593F2A241A61C700760E20 /* ItemDetailNoteCell.swift in Sources */,
 				B30565CF23FC051E003304F2 /* MarkAllLibraryObjectChangesAsSyncedDbRequest.swift in Sources */,
 				B341C8CB25CBFAD3005562E5 /* LibraryIdentifier.swift in Sources */,
 				B34C410C257132730057D5F5 /* AnnotationPopoverLayout.swift in Sources */,
 				B30565D923FC051E003304F2 /* ReadCollectionDbRequest.swift in Sources */,
 				B343419E260A093400093E63 /* CollectionIdentifier.swift in Sources */,
-				B35C529C26383BDD007BD036 /* ReadAllDownloadedItems.swift in Sources */,
+				B35C529C26383BDD007BD036 /* ReadAllDownloadedItemsDbRequest.swift in Sources */,
 				B305660723FC051E003304F2 /* LoginRequest.swift in Sources */,
 				B37491312488D7040042FF85 /* SettingsView.swift in Sources */,
 				B30566B323FC051F003304F2 /* CollectionResponse.swift in Sources */,

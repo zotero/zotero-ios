@@ -40,7 +40,6 @@ enum SyncError {
         case cancelled
         case preconditionErrorCantBeResolved
         case cantResolveConflict
-        case attachmentMissing(key: String, title: String)
     }
 
     enum NonFatal: Error {
@@ -51,6 +50,7 @@ enum SyncError {
         case parsing(Parsing.Error)
         case quotaLimit(LibraryIdentifier)
         case unchanged
+        case attachmentMissing(key: String, title: String)
 
         var isVersionMismatch: Bool {
             switch self {

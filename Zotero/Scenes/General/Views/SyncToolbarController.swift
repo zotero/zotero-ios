@@ -83,8 +83,6 @@ final class SyncToolbarController {
                     message += L10n.Errors.api(response)
                 case .dbError:
                     message += L10n.Errors.db
-                case .attachmentMissing(let key, let title):
-                    message += L10n.Errors.SyncToolbar.attachmentMissing("\(title) (\(key))")
                 case .allLibrariesFetchFailed:
                     message += L10n.Errors.SyncToolbar.librariesMissing
                 case .cantResolveConflict, .preconditionErrorCantBeResolved:
@@ -108,6 +106,8 @@ final class SyncToolbarController {
                     message += L10n.Errors.versionMismatch
                 case .unknown(let _message):
                     message += _message.isEmpty ? L10n.Errors.unknown : _message
+                case .attachmentMissing(let key, let title):
+                    message += L10n.Errors.SyncToolbar.attachmentMissing("\(title) (\(key))")
                 case .quotaLimit(let libraryId):
                     switch libraryId {
                     case .custom:
