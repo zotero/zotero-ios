@@ -11,13 +11,25 @@ import UIKit
 import CocoaLumberjackSwift
 import Differ
 
+@objc protocol AdditionalDiffableDataSource : NSObjectProtocol {
+    @objc optional func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String?
+    @objc optional func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String?
+    @objc optional func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool
+    @objc optional func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool
+    @objc optional func sectionIndexTitles(for tableView: UITableView) -> [String]?
+    @objc optional func tableView(_ tableView: UITableView, sectionForSectionIndexTitle title: String, at index: Int) -> Int
+    @objc optional func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath)
+    @objc optional func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath)
+}
+
 enum DiffableDataSourceAnimation {
     case none
-    case animate(reload: UITableView.RowAnimation, insert: UITableView.RowAnimation, delete: UITableView.RowAnimation)
+    case sections
+    case rows(reload: UITableView.RowAnimation, insert: UITableView.RowAnimation, delete: UITableView.RowAnimation)
 }
 
 struct DiffableDataSourceSnapshot<Section: Hashable, Object: Hashable> {
-    fileprivate var isEditing: Bool
+    fileprivate(set) var isEditing: Bool
     fileprivate var sections: [Section]
     fileprivate var objects: [Section: [Object]]
 
@@ -34,6 +46,15 @@ struct DiffableDataSourceSnapshot<Section: Hashable, Object: Hashable> {
     func object(at indexPath: IndexPath) -> Object? {
         guard indexPath.section < self.sections.count, let objects = self.objects[self.sections[indexPath.section]], indexPath.row < objects.count else { return nil }
         return objects[indexPath.row]
+    }
+
+    func sectionIndex(for section: Section) -> Int? {
+        return self.sections.firstIndex(of: section)
+    }
+
+    func section(for index: Int) -> Section? {
+        guard index < self.sections.count else { return nil }
+        return self.sections[index]
     }
 
     func indexPath(where: (Object) -> Bool) -> IndexPath? {
@@ -66,6 +87,8 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
     private(set) var snapshot: DiffableDataSourceSnapshot<Section, Object>
     private weak var tableView: UITableView?
 
+    weak var dataSource: AdditionalDiffableDataSource?
+
     init(tableView: UITableView, dequeueAction: @escaping DequeueAction, setupAction: @escaping SetupAction) {
         self.tableView = tableView
         self.dequeueAction = dequeueAction
@@ -88,8 +111,11 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
             tableView.setEditing(snapshot.isEditing, animated: false)
             tableView.reloadData()
 
-        case .animate(let reload, let insert, let delete):
-            self.animateChanges(for: snapshot, reloadAnimation: reload, insertAnimation: insert, deleteAnimation: delete, in: tableView, completion: completion)
+        case .sections:
+            self.animateSectionChanges(for: snapshot, in: tableView, completion: completion)
+
+        case .rows(let reload, let insert, let delete):
+            self.animateSectionAndRowChanges(for: snapshot, reloadAnimation: reload, insertAnimation: insert, deleteAnimation: delete, in: tableView, completion: completion)
         }
     }
 
@@ -122,7 +148,28 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
 
     // MARK: - Tableview Changes
 
-    private func animateChanges(for snapshot: DiffableDataSourceSnapshot<Section, Object>, reloadAnimation: UITableView.RowAnimation, insertAnimation: UITableView.RowAnimation,
+    private func animateSectionChanges(for snapshot: DiffableDataSourceSnapshot<Section, Object>, in tableView: UITableView, completion: ((Bool) -> Void)?) {
+        let editingChanged = self.snapshot.isEditing != snapshot.isEditing
+        let (sectionReload, sectionInsert, sectionDelete) = self.diff(from: self.snapshot.sections.count, to: snapshot.sections.count)
+
+        tableView.performBatchUpdates({
+            self.snapshot = snapshot
+            if !sectionReload.isEmpty {
+                tableView.reloadSections(sectionReload, with: .automatic)
+            }
+            if !sectionInsert.isEmpty {
+                tableView.insertSections(sectionInsert, with: .automatic)
+            }
+            if !sectionDelete.isEmpty {
+                tableView.deleteSections(sectionDelete, with: .automatic)
+            }
+            if editingChanged {
+                tableView.setEditing(snapshot.isEditing, animated: true)
+            }
+        }, completion: completion)
+    }
+
+    private func animateSectionAndRowChanges(for snapshot: DiffableDataSourceSnapshot<Section, Object>, reloadAnimation: UITableView.RowAnimation, insertAnimation: UITableView.RowAnimation,
                                 deleteAnimation: UITableView.RowAnimation, in tableView: UITableView, completion: ((Bool) -> Void)?) {
         let (sectionInsert, sectionDelete, rowReload, rowInsert, rowDelete, rowMove, editingChanged) = self.diff(from: self.snapshot, to: snapshot)
 
@@ -181,19 +228,19 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
             rowMove.append(contentsOf: move)
         }
 
-        return (IndexSet(sectionInsert), IndexSet(sectionDelete), rowReload, rowInsert, rowDelete, rowMove, (oldSnapshot.isEditing != newSnapshot.isEditing))
+        return (sectionInsert, sectionDelete, rowReload, rowInsert, rowDelete, rowMove, (oldSnapshot.isEditing != newSnapshot.isEditing))
     }
 
-    private func diff(from oldSections: Int, to newSections: Int) -> (reload: [Int], insert: [Int], delete: [Int]) {
+    private func diff(from oldSections: Int, to newSections: Int) -> (reload: IndexSet, insert: IndexSet, delete: IndexSet) {
         if oldSections == newSections {
-            return (Array(0..<newSections), [], [])
+            return (IndexSet(0..<newSections), [], [])
         }
 
         if oldSections > newSections {
-            return (Array(0..<newSections), [], Array((oldSections - newSections)..<oldSections))
+            return (IndexSet(0..<newSections), [], IndexSet((oldSections - newSections)..<oldSections))
         }
 
-        return (Array(0..<oldSections), Array((newSections - oldSections)..<newSections), [])
+        return (IndexSet(0..<oldSections), IndexSet((newSections - oldSections)..<newSections), [])
     }
 
     private func diff(from oldObjects: [Object], to newObjects: [Object], in section: Int) -> (reload: [IndexPath], insert: [IndexPath], delete: [IndexPath], move: [(IndexPath, IndexPath)]) {
@@ -250,5 +297,37 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
         let cell = self.dequeueAction(tableView, indexPath, section, object)
         self.setupAction(cell, indexPath, section, object)
         return cell
+    }
+
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        return self.dataSource?.tableView?(tableView, titleForHeaderInSection: section)
+    }
+
+    func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
+        return self.dataSource?.tableView?(tableView, titleForFooterInSection: section)
+    }
+
+    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        return self.dataSource?.tableView?(tableView, canEditRowAt: indexPath) ?? false
+    }
+
+    func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
+        return self.dataSource?.tableView?(tableView, canMoveRowAt: indexPath) ?? false
+    }
+
+    func sectionIndexTitles(for tableView: UITableView) -> [String]? {
+        return self.dataSource?.sectionIndexTitles?(for: tableView)
+    }
+
+    func tableView(_ tableView: UITableView, sectionForSectionIndexTitle title: String, at index: Int) -> Int {
+        return self.dataSource?.tableView?(tableView, sectionForSectionIndexTitle: title, at: index) ?? 0
+    }
+
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        self.dataSource?.tableView?(tableView, commit: editingStyle, forRowAt: indexPath)
+    }
+
+    func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
+        self.dataSource?.tableView?(tableView, moveRowAt: sourceIndexPath, to: destinationIndexPath)
     }
 }

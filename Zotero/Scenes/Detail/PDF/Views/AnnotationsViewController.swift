@@ -189,10 +189,10 @@ final class AnnotationsViewController: UIViewController {
                 DDLogWarn("AnnotationsViewController: annotations page (\(page)) outside of document bounds (\(state.document.pageCount))")
                 continue
             }
-            snapshot.create(section: page)
+            snapshot.append(section: page)
             snapshot.append(objects: annotations, for: page)
         }
-        let animation: DiffableDataSourceAnimation = !isVisible ? .none : .animate(reload: .fade, insert: .bottom, delete: .bottom)
+        let animation: DiffableDataSourceAnimation = !isVisible ? .none : .rows(reload: .fade, insert: .bottom, delete: .bottom)
 
         self.dataSource.apply(snapshot: snapshot, animation: animation) { finished in
             guard finished else { return }

@@ -176,7 +176,8 @@ final class ItemDetailViewController: UIViewController {
 
             self.setNavigationBarButtons(to: state)
             self.tableViewHandler.reloadTitleWidth(from: state.data)
-            self.tableViewHandler.reloadSections(to: state, animated: !wasHidden)
+            self.tableViewHandler.reload(state: state, animated: !wasHidden)
+//            self.tableViewHandler.reloadSections(to: state, animated: !wasHidden)
         }
 
         if let error = state.error {
@@ -194,10 +195,12 @@ final class ItemDetailViewController: UIViewController {
         }
 
         if state.changes.contains(.editing) || state.changes.contains(.type) {
-            self.tableViewHandler.reloadSections(to: state, animated: true)
+//            self.tableViewHandler.reloadSections(to: state, animated: true)
+            self.tableViewHandler.reload(state: state, animated: true)
         } else {
             if state.changes.contains(.attachmentFilesRemoved) {
-                self.tableViewHandler.reload(section: .attachments)
+//                self.tableViewHandler.reload(section: .attachments)
+                self.tableViewHandler.reload(section: .attachments, state: state, animated: true)
             } else if let index = state.updateAttachmentIndex {
                 if state.data.mainAttachmentIndex == index {
                     // Update main-attachment related UI
@@ -210,15 +213,27 @@ final class ItemDetailViewController: UIViewController {
                     self.setNavigationBarButtons(to: state)
                 }
 
-                self.tableViewHandler.updateAttachmentCell(with: state.data.attachments[index], at: index)
+                self.tableViewHandler.updateAttachment(with: state.data.attachments[index], at: index)
             }
 
             if state.changes.contains(.abstractCollapsed) {
-                self.tableViewHandler.reload(section: .abstract)
+                self.tableViewHandler.reload(section: .abstract, state: state, animated: true)
             }
 
             if let diff = state.diff {
-                self.tableViewHandler.reload(with: diff)
+                let section: ItemDetailTableViewHandler.Section
+                switch diff {
+                case .attachments:
+                    section = .attachments
+                case .creators:
+                    section = .creators
+                case .notes:
+                    section = .notes
+                case .tags:
+                    section = .tags
+                }
+                self.tableViewHandler.reload(section: section, state: state, animated: true)
+//                self.tableViewHandler.reload(with: diff)
             }
         }
     }

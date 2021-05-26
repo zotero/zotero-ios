@@ -61,9 +61,9 @@ final class CollectionsTableViewHandler: NSObject {
 
     func updateCollections(animated: Bool, completed: (() -> Void)? = nil) {
         var snapshot = DiffableDataSourceSnapshot<Int, Collection>(isEditing: false)
-        snapshot.create(section: 0)
+        snapshot.append(section: 0)
         snapshot.append(objects: self.viewModel.state.collections.filter({ $0.visible }), for: 0)
-        let animation: DiffableDataSourceAnimation = !animated ? .none : .animate(reload: .automatic, insert: .bottom, delete: .bottom)
+        let animation: DiffableDataSourceAnimation = !animated ? .none : .rows(reload: .automatic, insert: .bottom, delete: .bottom)
         self.dataSource.apply(snapshot: snapshot, animation: animation, completion: { finished in
             guard finished else { return }
             completed?()
