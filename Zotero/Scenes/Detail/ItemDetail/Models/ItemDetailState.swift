@@ -19,10 +19,8 @@ struct ItemDetailState: ViewModelState {
 
         static let editing = Changes(rawValue: 1 << 0)
         static let type = Changes(rawValue: 1 << 1)
-        static let attachmentFilesRemoved = Changes(rawValue: 1 << 2)
-        static let abstractCollapsed = Changes(rawValue: 1 << 3)
-        static let reloadedData = Changes(rawValue: 1 << 4)
-        static let item = Changes(rawValue: 1 << 5)
+        static let reloadedData = Changes(rawValue: 1 << 3)
+        static let item = Changes(rawValue: 1 << 4)
     }
 
     enum DetailType {
@@ -244,43 +242,6 @@ struct ItemDetailState: ViewModelState {
         }
     }
 
-    enum Diff {
-        case attachments(insertions: [Int], deletions: [Int], reloads: [Int])
-        case creators(insertions: [Int], deletions: [Int], reloads: [Int])
-        case notes(insertions: [Int], deletions: [Int], reloads: [Int])
-        case tags(insertions: [Int], deletions: [Int], reloads: [Int])
-
-        var insertions: [Int] {
-            switch self {
-            case .attachments(let insertions, _, _),
-                 .creators(let insertions, _, _),
-                 .notes(let insertions, _, _),
-                 .tags(let insertions, _, _):
-                return insertions
-            }
-        }
-
-        var deletions: [Int] {
-            switch self {
-            case .attachments(_, let deletions, _),
-                 .creators(_, let deletions, _),
-                 .notes(_, let deletions, _),
-                 .tags(_, let deletions, _):
-                return deletions
-            }
-        }
-
-        var reloads: [Int] {
-            switch self {
-            case .attachments(_, _, let reloads),
-                 .creators(_, _, let reloads),
-                 .notes(_, _, let reloads),
-                 .tags(_, _, let reloads):
-                return reloads
-            }
-        }
-    }
-
     let library: Library
     let userId: Int
 
@@ -291,7 +252,8 @@ struct ItemDetailState: ViewModelState {
     var data: Data
     var snapshot: Data?
     var promptSnapshot: Data?
-    var diff: Diff?
+    var updatedSection: ItemDetailTableViewHandler.Section?
+    var sectionNeedsReload: Bool
     var error: ItemDetailError?
     var metadataTitleMaxWidth: CGFloat
     var updateAttachmentIndex: Int?
@@ -311,6 +273,7 @@ struct ItemDetailState: ViewModelState {
         self.error = nil
         self.isSaving = false
         self.isLoadingData = true
+        self.sectionNeedsReload = true
 
         switch type {
         case .preview, .duplication:
@@ -323,7 +286,7 @@ struct ItemDetailState: ViewModelState {
     mutating func cleanup() {
         self.changes = []
         self.error = nil
-        self.diff = nil
         self.updateAttachmentIndex = nil
+        self.updatedSection = nil
     }
 }

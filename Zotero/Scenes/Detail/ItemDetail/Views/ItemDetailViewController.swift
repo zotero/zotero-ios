@@ -167,9 +167,7 @@ final class ItemDetailViewController: UIViewController {
     private func update(to state: ItemDetailState) {
         if state.changes.contains(.item) {
             self.itemChanged(state: state)
-        }
-
-        if state.changes.contains(.reloadedData) {
+        } else if state.changes.contains(.reloadedData) {
             let wasHidden = self.tableView.isHidden
             self.tableView.isHidden = state.isLoadingData
             self.activityIndicator.isHidden = !state.isLoadingData
@@ -177,7 +175,6 @@ final class ItemDetailViewController: UIViewController {
             self.setNavigationBarButtons(to: state)
             self.tableViewHandler.reloadTitleWidth(from: state.data)
             self.tableViewHandler.reload(state: state, animated: !wasHidden)
-//            self.tableViewHandler.reloadSections(to: state, animated: !wasHidden)
         }
 
         if let error = state.error {
@@ -186,55 +183,34 @@ final class ItemDetailViewController: UIViewController {
 
         guard !state.isLoadingData else { return }
 
-        if state.changes.contains(.editing) {
-            self.setNavigationBarButtons(to: state)
-        }
-
-        if state.changes.contains(.type) {
-            self.tableViewHandler.reloadTitleWidth(from: state.data)
-        }
-
         if state.changes.contains(.editing) || state.changes.contains(.type) {
-//            self.tableViewHandler.reloadSections(to: state, animated: true)
+            if state.changes.contains(.editing) {
+                self.setNavigationBarButtons(to: state)
+            }
+            if state.changes.contains(.type) {
+                self.tableViewHandler.reloadTitleWidth(from: state.data)
+            }
             self.tableViewHandler.reload(state: state, animated: true)
-        } else {
-            if state.changes.contains(.attachmentFilesRemoved) {
-//                self.tableViewHandler.reload(section: .attachments)
-                self.tableViewHandler.reload(section: .attachments, state: state, animated: true)
-            } else if let index = state.updateAttachmentIndex {
-                if state.data.mainAttachmentIndex == index {
-                    // Update main-attachment related UI
-                    let key = state.data.attachments[index].key
-                    if self.controllers.userControllers?.fileDownloader.data(for: key, libraryId: state.library.identifier).progress == nil {
-                        // Reset navbar download flag after download finishes
-                        self.downloadingViaNavigationBar = false
-                    }
-
-                    self.setNavigationBarButtons(to: state)
-                }
-
-                self.tableViewHandler.updateAttachment(with: state.data.attachments[index], at: index)
-            }
-
-            if state.changes.contains(.abstractCollapsed) {
-                self.tableViewHandler.reload(section: .abstract, state: state, animated: true)
-            }
-
-            if let diff = state.diff {
-                let section: ItemDetailTableViewHandler.Section
-                switch diff {
-                case .attachments:
-                    section = .attachments
-                case .creators:
-                    section = .creators
-                case .notes:
-                    section = .notes
-                case .tags:
-                    section = .tags
-                }
+        } else if let section = state.updatedSection {
+            if state.sectionNeedsReload {
                 self.tableViewHandler.reload(section: section, state: state, animated: true)
-//                self.tableViewHandler.reload(with: diff)
+            } else {
+                self.tableViewHandler.updateHeightAndScrollToUpdated(section: section, state: state)
             }
+        } else if let index = state.updateAttachmentIndex {
+            if state.data.mainAttachmentIndex == index {
+                // Update main-attachment related UI
+                let key = state.data.attachments[index].key
+                if self.controllers.userControllers?.fileDownloader.data(for: key, libraryId: state.library.identifier).progress == nil {
+                    // Reset navbar download flag after download finishes
+                    self.downloadingViaNavigationBar = false
+                }
+
+                self.setNavigationBarButtons(to: state)
+            }
+
+            // TODO: - use snapshot index
+            self.tableViewHandler.updateAttachment(with: state.data.attachments[index], at: index)
         }
     }
 
@@ -428,9 +404,9 @@ extension ItemDetailViewController: ConflictViewControllerReceiver {
 
 extension ItemDetailViewController: DetailCoordinatorAttachmentProvider {
     func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, Library, UIView, CGRect?)? {
-        guard let index = self.viewModel.state.data.attachments.firstIndex(where: { $0.key == key && $0.libraryId == libraryId }) else { return nil }
-        let indexPath = IndexPath(row: index, section: self.tableViewHandler.attachmentSection)
-        let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(at: indexPath)
+        guard let section = self.tableViewHandler.attachmentSection,
+              let index = self.viewModel.state.data.attachments.firstIndex(where: { $0.key == key && $0.libraryId == libraryId }) else { return nil }
+        let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(at: IndexPath(row: index, section: section))
         return (self.viewModel.state.data.attachments[index], self.viewModel.state.library, sourceView, sourceRect)
     }
 }

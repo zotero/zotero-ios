@@ -66,7 +66,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.data.deletedAttachments = state.data.deletedAttachments.union(offsets.map({ state.data.attachments[$0].key }))
                 state.data.attachments.remove(atOffsets: offsets)
-                state.diff = .attachments(insertions: [], deletions: Array(offsets), reloads: [])
+                state.updatedSection = .attachments
+                state.sectionNeedsReload = true
             }
 
         case .openAttachment(let index):
@@ -90,7 +91,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.data.deletedNotes = state.data.deletedNotes.union(offsets.map({ state.data.notes[$0].key }))
                 state.data.notes.remove(atOffsets: offsets)
-                state.diff = .notes(insertions: [], deletions: Array(offsets), reloads: [])
+                state.updatedSection = .notes
+                state.sectionNeedsReload = true
             }
 
         case .saveNote(let key, let text, let tags):
@@ -103,7 +105,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.data.deletedTags = state.data.deletedTags.union(offsets.map({ state.data.tags[$0].name }))
                 state.data.tags.remove(atOffsets: offsets)
-                state.diff = .tags(insertions: [], deletions: Array(offsets), reloads: [])
+                state.updatedSection = .tags
+                state.sectionNeedsReload = true
             }
 
         case .startEditing:
@@ -118,11 +121,15 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         case .setTitle(let title):
             self.update(viewModel: viewModel) { state in
                 state.data.title = title
+                state.updatedSection = .title
+                state.sectionNeedsReload = false
             }
 
         case .setAbstract(let abstract):
             self.update(viewModel: viewModel) { state in
                 state.data.abstract = abstract
+                state.updatedSection = .abstract
+                state.sectionNeedsReload = false
             }
 
         case .setFieldValue(let id, let value):
@@ -140,7 +147,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         case .toggleAbstractDetailCollapsed:
             self.update(viewModel: viewModel) { state in
                 state.abstractCollapsed = !state.abstractCollapsed
-                state.changes = [.abstractCollapsed]
+                state.updatedSection = .abstract
+                state.sectionNeedsReload = true
             }
 
         case .trashAttachment(let attachment):
@@ -330,7 +338,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         self.update(viewModel: viewModel) { state in
             state.data.creatorIds.remove(atOffsets: offsets)
             keys.forEach({ state.data.creators[$0] = nil })
-            state.diff = .creators(insertions: [], deletions: Array(offsets), reloads: [])
+            state.updatedSection = .creators
+            state.sectionNeedsReload = true
         }
     }
 
@@ -339,19 +348,19 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         self.update(viewModel: viewModel) { state in
             state.data.creatorIds.remove(at: index)
             state.data.creators[id] = nil
-            state.diff = .creators(insertions: [], deletions: [index], reloads: [])
+            state.updatedSection = .creators
+            state.sectionNeedsReload = true
         }
     }
 
     private func save(creator: State.Creator, in viewModel: ViewModel<ItemDetailActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            if let index = state.data.creatorIds.firstIndex(of: creator.id) {
-                state.diff = .creators(insertions: [], deletions: [], reloads: [index])
-            } else {
-                state.diff = .creators(insertions: [state.data.creatorIds.count], deletions: [], reloads: [])
+            if !state.data.creatorIds.contains(creator.id) {
                 state.data.creatorIds.append(creator.id)
             }
             state.data.creators[creator.id] = creator
+            state.updatedSection = .creators
+            state.sectionNeedsReload = true
         }
     }
 
@@ -374,11 +383,11 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
             if let index = state.data.notes.firstIndex(where: { $0.key == note.key }) {
                 state.data.notes[index] = note
-                state.diff = .notes(insertions: [], deletions: [], reloads: [index])
             } else {
-                state.diff = .notes(insertions: [state.data.notes.count], deletions: [], reloads: [])
                 state.data.notes.append(note)
             }
+            state.updatedSection = .notes
+            state.sectionNeedsReload = true
         }
     }
 
@@ -391,9 +400,9 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
     private func set(tags: [Tag], in viewModel: ViewModel<ItemDetailActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            let diff = tags.difference(from: state.data.tags).separated
             state.data.tags = tags
-            state.diff = .tags(insertions: diff.insertions, deletions: diff.deletions, reloads: [])
+            state.updatedSection = .tags
+            state.sectionNeedsReload = true
         }
     }
 
@@ -407,7 +416,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
             self.update(viewModel: viewModel) { state in
                 state.data.attachments.remove(at: index)
-                state.diff = .attachments(insertions: [], deletions: [index], reloads: [])
+                state.updatedSection = .attachments
+                state.sectionNeedsReload = true
             }
         } catch let error {
             DDLogError("ItemDetailActionHandler: can't trash attachment - \(error)")
@@ -437,7 +447,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                     guard let new = attachment.changed(location: .remote, condition: { $0 == .local }) else { continue }
                     state.data.attachments[index] = new
                 }
-                state.changes = .attachmentFilesRemoved
+                state.updatedSection = .attachments
+                state.sectionNeedsReload = true
             }
 
         case .library(let libraryId):
@@ -447,7 +458,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                     guard let new = attachment.changed(location: .remote, condition: { $0 == .local }) else { continue }
                     state.data.attachments[index] = new
                 }
-                state.changes = .attachmentFilesRemoved
+                state.updatedSection = .attachments
+                state.sectionNeedsReload = true
             }
 
         case .individual(let key, _, let libraryId):
@@ -490,7 +502,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                     state.data.attachments.insert(attachment, at: index)
                     insertions.append(index)
                 }
-                state.diff = .attachments(insertions: insertions, deletions: [], reloads: [])
+                state.updatedSection = .attachments
+                state.sectionNeedsReload = true
                 if errors > 0 {
                     state.error = .fileNotCopied(errors)
                 }
@@ -696,6 +709,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
         self.update(viewModel: viewModel) { state in
             state.data.fields[id] = field
+            state.updatedSection = .fields
+            state.sectionNeedsReload = false
         }
     }
 

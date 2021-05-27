@@ -48,6 +48,10 @@ struct DiffableDataSourceSnapshot<Section: Hashable, Object: Hashable> {
         return objects[indexPath.row]
     }
 
+    func objects(for section: Section) -> [Object]? {
+        return self.objects[section]
+    }
+
     func sectionIndex(for section: Section) -> Int? {
         return self.sections.firstIndex(of: section)
     }
@@ -134,6 +138,14 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
         self.apply(snapshot: newSnapshot, animation: animation, completion: nil)
     }
 
+    func updateWithoutReload(section: Section, with objects: [Object]) {
+        guard self.snapshot.objects[section] != nil else {
+            DDLogWarn("DiffableDataSource: tried reloading section which is not in snapshot")
+            return
+        }
+        self.snapshot.objects[section] = objects
+    }
+
     func update(object: Object, at indexPath: IndexPath) {
         guard indexPath.section < self.snapshot.sections.count else { return }
         let section = self.snapshot.sections[indexPath.section]
@@ -173,18 +185,18 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
                                 deleteAnimation: UITableView.RowAnimation, in tableView: UITableView, completion: ((Bool) -> Void)?) {
         let (sectionInsert, sectionDelete, rowReload, rowInsert, rowDelete, rowMove, editingChanged) = self.diff(from: self.snapshot, to: snapshot)
 
-        if sectionInsert.isEmpty && sectionDelete.isEmpty && rowInsert.isEmpty && rowDelete.isEmpty && rowMove.isEmpty {
-            self.snapshot = snapshot
-            if !rowReload.isEmpty {
-                // Reload only visible cells, others will load as they come up on the screen.
-                self.updateVisibleCells(for: rowReload, in: tableView)
-            }
-            if editingChanged {
-                tableView.setEditing(snapshot.isEditing, animated: true)
-            }
-            completion?(true)
-            return
-        }
+//        if sectionInsert.isEmpty && sectionDelete.isEmpty && rowInsert.isEmpty && rowDelete.isEmpty && rowMove.isEmpty {
+//            self.snapshot = snapshot
+//            if !rowReload.isEmpty {
+//                // Reload only visible cells, others will load as they come up on the screen.
+//                self.updateVisibleCells(for: rowReload, in: tableView)
+//            }
+//            if editingChanged {
+//                tableView.setEditing(snapshot.isEditing, animated: true)
+//            }
+//            completion?(true)
+//            return
+//        }
 
         // Perform batch updates
         tableView.performBatchUpdates({
@@ -206,6 +218,9 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
             }
             if editingChanged {
                 tableView.setEditing(snapshot.isEditing, animated: true)
+            }
+            if !rowMove.isEmpty {
+                rowMove.forEach({ tableView.moveRow(at: $0.0, to: $0.1) })
             }
         }, completion: completion)
     }

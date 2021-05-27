@@ -8,6 +8,7 @@
 
 import UIKit
 
+import CocoaLumberjackSwift
 import RxSwift
 
 protocol ItemDetailTableViewHandlerDelegate: AnyObject {
@@ -164,7 +165,6 @@ final class ItemDetailTableViewHandler: NSObject {
     private let disposeBag: DisposeBag
     let observer: PublishSubject<Action>
 
-    private var sections: [Section] = []
     // Width of title for field cells when editing is enabled (all fields are visible)
     private var maxTitleWidth: CGFloat = 0
     // Width of title for field cells when editing is disabled (only non-empty fields are visible)
@@ -173,8 +173,8 @@ final class ItemDetailTableViewHandler: NSObject {
     private weak var fileDownloader: AttachmentDownloader?
     weak var delegate: ItemDetailTableViewHandlerDelegate?
 
-    var attachmentSection: Int {
-        return self.sections.firstIndex(of: .attachments) ?? 0
+    var attachmentSection: Int? {
+        return self.dataSource.snapshot.sectionIndex(for: .attachments)
     }
 
     init(tableView: UITableView, containerWidth: CGFloat, viewModel: ViewModel<ItemDetailActionHandler>, fileDownloader: AttachmentDownloader?) {
@@ -186,12 +186,15 @@ final class ItemDetailTableViewHandler: NSObject {
 
         super.init()
 
-        self.sections = self.sections(for: viewModel.state.data, isEditing: viewModel.state.isEditing)
         let (titleWidth, nonEmptyTitleWidth) = self.calculateTitleWidths(for: viewModel.state.data)
         self.maxTitleWidth = titleWidth
         self.maxNonemptyTitleWidth = nonEmptyTitleWidth
         self.setupTableView()
         self.setupKeyboardObserving()
+    }
+
+    deinit {
+        DDLogInfo("ItemDetailTableViewHandler deinitialized")
     }
 
     // MARK: - Actions
@@ -223,9 +226,34 @@ final class ItemDetailTableViewHandler: NSObject {
         self.dataSource.update(section: section, with: rows, animation: (animated ? .rows(reload: .automatic, insert: .automatic, delete: .automatic) : .none))
     }
 
-    func updateAttachment(with attachment: Attachment, at index: Int) {
-        guard let section = self.dataSource.snapshot.sectionIndex(for: .attachments) else { return }
+    /// Update height of updated cell and scroll to it. The cell itself doesn't need to be reloaded, since the change took place inside of it (text field or text view).
+    func updateHeightAndScrollToUpdated(section: Section, state: ItemDetailState) {
+        let rows = self.rows(for: section, state: state)
 
+        guard let oldRows = self.dataSource.snapshot.objects(for: section), rows.count == oldRows.count, let sectionIndex = self.dataSource.snapshot.sectionIndex(for: section) else {
+            // Something else changed and we need to reload. This shouldn't happen as this should be called only for textField/textView changes.
+            DDLogWarn("ItemDetailTableViewHandler: tried to update height and scroll to changed row while more rows/sections changed")
+            self.reload(section: section, state: state, animated: true)
+            return
+        }
+
+        // Find changed indexPath
+        var changedIndexPath: IndexPath?
+        for (idx, row) in rows.enumerated() {
+            if oldRows[idx] != row {
+                changedIndexPath = IndexPath(row: idx, section: sectionIndex)
+                break
+            }
+        }
+
+        guard let indexPath = changedIndexPath else { return }
+
+        // Update snapshot, change height and scroll to changed index
+        self.dataSource.updateWithoutReload(section: section, with: rows)
+        self.updateCellHeightsAndScroll(to: indexPath)
+    }
+
+    func updateAttachment(with attachment: Attachment, at index: Int) {
         let enabled = self.delegate?.isDownloadingFromNavigationBar(for: index) == false
         var progress: CGFloat?
         var error: Error?
@@ -233,7 +261,35 @@ final class ItemDetailTableViewHandler: NSObject {
             (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
         }
 
-        self.dataSource.update(object: .attachment(attachment: attachment, progress: progress, error: error, enabled: enabled), at: IndexPath(row: index, section: section))
+        let indexPath = self.dataSource.snapshot.indexPath(where: { row in
+            switch row {
+            case .attachment(let _attachment, _, _, _):
+                return _attachment.key == attachment.key
+            default: return false
+            }
+        })
+        if let indexPath = indexPath {
+            self.dataSource.update(object: .attachment(attachment: attachment, progress: progress, error: error, enabled: enabled), at: indexPath)
+        }
+    }
+
+    private func updateCellHeightsAndScroll(to indexPath: IndexPath) {
+        UIView.setAnimationsEnabled(false)
+        self.tableView.beginUpdates()
+        self.tableView.endUpdates()
+
+        let cellFrame =  self.tableView.rectForRow(at: indexPath)
+        let cellBottom = cellFrame.maxY - self.tableView.contentOffset.y
+        let tableViewBottom = self.tableView.superview!.bounds.maxY - self.tableView.contentInset.bottom
+        let safeAreaTop = self.tableView.superview!.safeAreaInsets.top
+
+        // Scroll either when cell bottom is below keyboard or cell top is not visible on screen
+        if cellBottom > tableViewBottom || cellFrame.minY < (safeAreaTop + self.tableView.contentOffset.y) {
+            // Scroll to top if cell is smaller than visible screen, so that it's fully visible, otherwise scroll to bottom.
+            let position: UITableView.ScrollPosition = cellFrame.height + safeAreaTop < tableViewBottom ? .top : .bottom
+            self.tableView.scrollToRow(at: indexPath, at: position, animated: false)
+        }
+        UIView.setAnimationsEnabled(true)
     }
 
     // MARK: - Data Helpers
@@ -409,10 +465,13 @@ final class ItemDetailTableViewHandler: NSObject {
 
     // MARK: - DataSource Helpers
 
-    private func setup(cell: UITableViewCell, section: Section, row: Row, isFirst: Bool, isLast: Bool, isEditing: Bool) {
-        NSLog("SETUP: \(row) | FIRST \(isFirst) LAST \(isLast)")
+    private func setup(cell: UITableViewCell, section: Section, row: Row, indexPath: IndexPath) {
+        let isEditing = self.dataSource.snapshot.isEditing
+        let isFirst = indexPath.row == 0
+        let isLast = indexPath.row == (self.dataSource.tableView(self.tableView, numberOfRowsInSection: indexPath.section) - 1)
         let titleWidth = isEditing ? self.maxTitleWidth : self.maxNonemptyTitleWidth
         let (separatorInsets, layoutMargins, accessoryType) = self.cellLayoutData(for: section, isFirstRow: isFirst, isLastRow: isLast, isAddCell: (row == .add), isEditing: isEditing)
+
         cell.separatorInset = separatorInsets
         cell.layoutMargins = layoutMargins
         cell.contentView.layoutMargins = layoutMargins
@@ -444,7 +503,6 @@ final class ItemDetailTableViewHandler: NSObject {
                 cell.textObservable.subscribe(onNext: { [weak self] abstract in
                     guard isEditing else { return }
                     self?.viewModel.process(action: .setAbstract(abstract))
-//                        self?.updateCellHeightsAndScroll(to: indexPath)
                 }).disposed(by: cell.newDisposeBag)
             } else if let cell = cell as? ItemDetailAbstractCell {
                 cell.setup(with: value, isCollapsed: collapsed)
@@ -473,19 +531,18 @@ final class ItemDetailTableViewHandler: NSObject {
                 cell.setup(with: date, title: L10n.dateModified, titleWidth: titleWidth)
             }
 
-        case .field(let field, let multiline):
+        case .field(let field, _):
             if let cell = cell as? ItemDetailFieldCell {
                 cell.setup(with: field, titleWidth: titleWidth)
             } else if let cell = cell as? ItemDetailFieldEditCell {
                 cell.setup(with: field, titleWidth: titleWidth)
                 cell.textObservable.subscribe(onNext: { [weak self] value in
-//                    self?.viewModel.process(action: .setFieldValue(id: fieldId, value: value))
+                    self?.viewModel.process(action: .setFieldValue(id: field.key, value: value))
                 }).disposed(by: cell.newDisposeBag)
             } else if let cell = cell as? ItemDetailFieldMultilineEditCell {
                 cell.setup(with: field, titleWidth: titleWidth)
                 cell.textObservable.subscribe(onNext: { [weak self] value in
-//                    self?.viewModel.process(action: .setFieldValue(id: fieldId, value: value))
-//                    self?.updateCellHeightsAndScroll(to: indexPath)
+                    self?.viewModel.process(action: .setFieldValue(id: field.key, value: value))
                 }).disposed(by: cell.newDisposeBag)
             }
 
@@ -505,7 +562,6 @@ final class ItemDetailTableViewHandler: NSObject {
                 cell.textObservable.subscribe(onNext: { [weak self] title in
                     guard isEditing else { return }
                     self?.viewModel.process(action: .setTitle(title))
-//                    self?.updateCellHeightsAndScroll(to: indexPath)
                 }).disposed(by: cell.newDisposeBag)
             }
 
@@ -574,12 +630,12 @@ final class ItemDetailTableViewHandler: NSObject {
     /// Sets `tableView` dataSource, delegate and registers appropriate cells and sections.
     private func setupTableView() {
         self.dataSource = DiffableDataSource(tableView: self.tableView,
-                                             dequeueAction: { tableView, indexPath, section, row in
+                                             dequeueAction: { [weak self] tableView, indexPath, section, row in
+                                                 guard let `self` = self else { return UITableViewCell() }
                                                  return tableView.dequeueReusableCell(withIdentifier: row.cellId(isEditing: self.dataSource.snapshot.isEditing), for: indexPath)
                                              }, setupAction: { [weak self] cell, indexPath, section, row in
                                                  guard let `self` = self else { return }
-                                                 let isLast = indexPath.row == (self.dataSource.tableView(self.tableView, numberOfRowsInSection: indexPath.section) - 1)
-                                                 self.setup(cell: cell, section: section, row: row, isFirst: (indexPath.row == 0), isLast: isLast, isEditing: self.dataSource.snapshot.isEditing)
+                                                 self.setup(cell: cell, section: section, row: row, indexPath: indexPath)
                                              })
         self.dataSource.dataSource = self
 
@@ -709,7 +765,7 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, targetIndexPathForMoveFromRowAt sourceIndexPath: IndexPath, toProposedIndexPath proposedDestinationIndexPath: IndexPath) -> IndexPath {
-        let section = self.sections[proposedDestinationIndexPath.section]
+        let section = self.dataSource.snapshot.section(for: proposedDestinationIndexPath.section)
         if section != .creators { return sourceIndexPath }
         if let row = self.dataSource.snapshot.object(at: proposedDestinationIndexPath), case .add = row {
             return sourceIndexPath
@@ -718,9 +774,8 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        guard !self.dataSource.snapshot.isEditing else { return nil }
+        guard !self.dataSource.snapshot.isEditing, let section = self.dataSource.snapshot.section(for: indexPath.section) else { return nil }
 
-        let section = self.sections[indexPath.section]
         switch section {
         case .attachments:
             let attachment = self.viewModel.state.data.attachments[indexPath.row]
@@ -736,9 +791,9 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        guard !self.dataSource.snapshot.isEditing else { return nil }
+        guard !self.dataSource.snapshot.isEditing, let section = self.dataSource.snapshot.section(for: indexPath.section) else { return nil }
 
-        switch self.sections[indexPath.section] {
+        switch section {
         case .attachments:
             guard indexPath.row < self.viewModel.state.data.attachments.count else { return nil }
             let attachment = self.viewModel.state.data.attachments[indexPath.row]
@@ -758,7 +813,9 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
 
-        switch self.sections[indexPath.section] {
+        guard let section = self.dataSource.snapshot.section(for: indexPath.section) else { return }
+
+        switch section {
         case .attachments:
             if self.dataSource.snapshot.isEditing {
                 if indexPath.row == self.viewModel.state.data.attachments.count {

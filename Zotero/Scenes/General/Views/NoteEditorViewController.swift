@@ -21,7 +21,7 @@ final class NoteEditorViewController: UIViewController {
     private let viewModel: ViewModel<NoteEditorActionHandler>
     private let disposeBag: DisposeBag
 
-    private var debounceDisposeBag: DisposeBag
+    private var debounceDisposeBag: DisposeBag?
     weak var coordinatorDelegate: DetailNoteEditorCoordinatorDelegate?
 
     private var htmlUrl: URL? {
@@ -34,7 +34,6 @@ final class NoteEditorViewController: UIViewController {
 
     init(viewModel: ViewModel<NoteEditorActionHandler>) {
         self.viewModel = viewModel
-        self.debounceDisposeBag = DisposeBag()
         self.disposeBag = DisposeBag()
         super.init(nibName: "NoteEditorViewController", bundle: nil)
     }
@@ -69,14 +68,24 @@ final class NoteEditorViewController: UIViewController {
         }
     }
 
-    private func debounceSave() {
-        self.debounceDisposeBag = DisposeBag()
+    private func forceSaveIfNeeded() {
+        guard self.debounceDisposeBag != nil else { return }
+        self.debounceDisposeBag = nil
+        self.viewModel.process(action: .save)
+    }
 
-        Single<Int>.timer(.milliseconds(1500), scheduler: MainScheduler.instance)
+    private func debounceSave() {
+        self.debounceDisposeBag = nil
+        let disposeBag = DisposeBag()
+
+        Single<Int>.timer(.seconds(1), scheduler: MainScheduler.instance)
                    .subscribe(onSuccess: { [weak self] _ in
                        self?.viewModel.process(action: .save)
+                       self?.debounceDisposeBag = nil
                    })
-                   .disposed(by: self.debounceDisposeBag)
+                   .disposed(by: disposeBag)
+
+        self.debounceDisposeBag = disposeBag
     }
 
     private func update(tags: [Tag]) {
@@ -117,6 +126,7 @@ final class NoteEditorViewController: UIViewController {
         let done = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
         done.rx.tap
                .subscribe(with: self, onNext: { `self`, _ in
+                   self.forceSaveIfNeeded()
                    self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
                })
                .disposed(by: self.disposeBag)

@@ -331,14 +331,16 @@ final class AnnotationsViewController: UIViewController {
 
 extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSourcePrefetching {
     func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
-        let keys = indexPaths.compactMap({ self.viewModel.state.annotations[$0.section]?[$0.row] }).map({ $0.key })
+        let keys = indexPaths.compactMap({ indexPath -> Annotation? in
+            guard let annotations = self.viewModel.state.annotations[indexPath.section], indexPath.row < annotations.count else { return nil }
+            return annotations[indexPath.row]
+        }).map({ $0.key })
         self.viewModel.process(action: .requestPreviews(keys: keys, notify: false))
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        if let annotations = self.viewModel.state.annotations[indexPath.section], indexPath.row < annotations.count {
-            self.viewModel.process(action: .selectAnnotation(annotations[indexPath.row]))
-        }
+        guard let annotations = self.viewModel.state.annotations[indexPath.section], indexPath.row < annotations.count else { return }
+        self.viewModel.process(action: .selectAnnotation(annotations[indexPath.row]))
     }
 }
 
