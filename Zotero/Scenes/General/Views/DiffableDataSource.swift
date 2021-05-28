@@ -164,8 +164,6 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
         let editingChanged = self.snapshot.isEditing != snapshot.isEditing
         let (sectionReload, sectionInsert, sectionDelete) = self.diff(from: self.snapshot.sections.count, to: snapshot.sections.count)
 
-        NSLog("OLD: \(self.snapshot.sections.count) VS NEW: \(snapshot.sections.count) || INSERT: \(sectionInsert)")
-
         tableView.performBatchUpdates({
             self.snapshot = snapshot
             if !sectionReload.isEmpty {
@@ -299,7 +297,6 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
     // MARK: - UITableViewDataSource
 
     func numberOfSections(in tableView: UITableView) -> Int {
-        NSLog("SECTIONS: \(self.snapshot.sections.count)")
         return self.snapshot.sections.count
     }
 

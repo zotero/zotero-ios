@@ -145,12 +145,16 @@ final class AnnotationsViewController: UIViewController {
     /// - parameter state: Current state.
     /// - parameter completion: Called after reload was performed or even if there was no reload.
     private func reloadIfNeeded(for state: PDFReaderState, completion: @escaping () -> Void) {
+        if state.document.pageCount == 0 {
+            DDLogWarn("AnnotationsViewController: trying to reload empty document")
+            completion()
+            return
+        }
+
         let reloadVisibleCells: ([IndexPath]) -> Void = { indexPaths in
             for indexPath in indexPaths {
-                guard let cell = self.tableView.cellForRow(at: indexPath) as? AnnotationCell else { continue }
-                if let annotations = state.annotations[indexPath.section], indexPath.row < annotations.count {
-                    self.setup(cell: cell, with: annotations[indexPath.row], state: state)
-                }
+                guard let cell = self.tableView.cellForRow(at: indexPath) as? AnnotationCell, let annotation = self.dataSource.snapshot.object(at: indexPath) else { continue }
+                self.setup(cell: cell, with: annotation, state: state)
             }
         }
 
@@ -172,24 +176,17 @@ final class AnnotationsViewController: UIViewController {
             return
         }
 
-        if state.document.pageCount == 0 {
-            DDLogWarn("AnnotationsViewController: trying to reload empty document")
-            completion()
-            return
-        }
-
         let isVisible = self.sidebarParent?.isSidebarVisible ?? false
 
         var snapshot = DiffableDataSourceSnapshot<Int, Annotation>(isEditing: false)
-//        for section in (0..<Int(state.document.pageCount)) {
-//            snapshot.create(section: section)
-//        }
+        for section in (0..<Int(state.document.pageCount)) {
+            snapshot.append(section: section)
+        }
         for (page, annotations) in state.annotations {
             guard page < state.document.pageCount else {
                 DDLogWarn("AnnotationsViewController: annotations page (\(page)) outside of document bounds (\(state.document.pageCount))")
                 continue
             }
-            snapshot.append(section: page)
             snapshot.append(objects: annotations, for: page)
         }
         let animation: DiffableDataSourceAnimation = !isVisible ? .none : .rows(reload: .fade, insert: .bottom, delete: .bottom)
@@ -205,20 +202,27 @@ final class AnnotationsViewController: UIViewController {
 
     /// Updates tableView layout in case any cell changed height.
     private func updateCellHeight() {
+        UIView.setAnimationsEnabled(false)
         self.tableView.beginUpdates()
         self.tableView.endUpdates()
+        UIView.setAnimationsEnabled(true)
     }
 
     /// Scrolls to selected cell if it's not visible.
     private func focusSelectedCell() {
         guard let indexPath = self.tableView.indexPathForSelectedRow else { return }
 
-        let cellBottom = self.tableView.rectForRow(at: indexPath).maxY - self.tableView.contentOffset.y
+        let cellFrame =  self.tableView.rectForRow(at: indexPath)
+        let cellBottom = cellFrame.maxY - self.tableView.contentOffset.y
         let tableViewBottom = self.tableView.superview!.bounds.maxY - self.tableView.contentInset.bottom
+        let safeAreaTop = self.tableView.superview!.safeAreaInsets.top
 
-        guard cellBottom > tableViewBottom else { return }
-
-        self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: false)
+        // Scroll either when cell bottom is below keyboard or cell top is not visible on screen
+        if cellBottom > tableViewBottom || cellFrame.minY < (safeAreaTop + self.tableView.contentOffset.y) {
+            // Scroll to top if cell is smaller than visible screen, so that it's fully visible, otherwise scroll to bottom.
+            let position: UITableView.ScrollPosition = cellFrame.height + safeAreaTop < tableViewBottom ? .top : .bottom
+            self.tableView.scrollToRow(at: indexPath, at: position, animated: false)
+        }
     }
 
     private func setup(cell: AnnotationCell, with annotation: Annotation, state: PDFReaderState) {
@@ -332,15 +336,14 @@ final class AnnotationsViewController: UIViewController {
 extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSourcePrefetching {
     func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
         let keys = indexPaths.compactMap({ indexPath -> Annotation? in
-            guard let annotations = self.viewModel.state.annotations[indexPath.section], indexPath.row < annotations.count else { return nil }
-            return annotations[indexPath.row]
+            return self.dataSource.snapshot.object(at: indexPath)
         }).map({ $0.key })
         self.viewModel.process(action: .requestPreviews(keys: keys, notify: false))
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        guard let annotations = self.viewModel.state.annotations[indexPath.section], indexPath.row < annotations.count else { return }
-        self.viewModel.process(action: .selectAnnotation(annotations[indexPath.row]))
+        guard let annotation = self.dataSource.snapshot.object(at: indexPath) else { return }
+        self.viewModel.process(action: .selectAnnotation(annotation))
     }
 }
 
