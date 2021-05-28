@@ -15,6 +15,13 @@ enum DbError: Error {
     case primaryKeyUnavailable
     case primaryKeyWrongType
     case invalidRequest(String)
+
+    var isObjectNotFound: Bool {
+        switch self {
+        case .objectNotFound: return true
+        default: return false
+        }
+    }
 }
 
 protocol DbRequest {

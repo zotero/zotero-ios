@@ -340,8 +340,9 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
         controller.addAction(UIAlertAction(title: L10n.Items.newNote, style: .default, handler: { [weak self, weak viewModel] _ in
             guard let `self` = self, let viewModel = viewModel else { return }
+            let key = KeyGenerator.newKey
             self.showNoteCreation(libraryId: viewModel.state.library.identifier, save: { [weak viewModel] text, tags in
-                viewModel?.process(action: .saveNote(nil, text, tags))
+                viewModel?.process(action: .saveNote(key, text, tags))
             })
         }))
 

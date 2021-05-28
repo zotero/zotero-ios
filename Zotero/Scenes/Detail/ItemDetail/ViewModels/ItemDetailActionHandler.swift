@@ -366,9 +366,9 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
     // MARK: - Notes
 
-    private func saveNote(key: String?, text: String, tags: [Tag], in viewModel: ViewModel<ItemDetailActionHandler>) {
+    private func saveNote(key: String, text: String, tags: [Tag], in viewModel: ViewModel<ItemDetailActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            let note =  Note(key: (key ?? KeyGenerator.newKey), text: text, tags: tags)
+            let note =  Note(key: key, text: text, tags: tags)
 
             if !state.isEditing {
                 // Note was edited outside of editing mode, so it needs to be saved immediately

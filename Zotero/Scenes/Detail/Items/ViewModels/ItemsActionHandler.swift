@@ -66,11 +66,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
             }
 
         case .saveNote(let key, let text, let tags):
-            if let key = key {
-                self.saveNote(text: text, tags: tags, key: key, in: viewModel)
-            } else {
-                self.createNote(with: text, tags: tags, in: viewModel)
-            }
+            self.saveNote(text: text, tags: tags, key: key, in: viewModel)
 
         case .search(let text):
             self.search(for: (text.isEmpty ? nil : text), in: viewModel)
@@ -317,29 +313,33 @@ struct ItemsActionHandler: ViewModelActionHandler {
         Defaults.shared.itemsSortType = sortType
     }
 
-    private func createNote(with text: String, tags: [Tag], in viewModel: ViewModel<ItemsActionHandler>) {
-        let note = Note(key: KeyGenerator.newKey, text: text, tags: tags)
-        let request = CreateNoteDbRequest(note: note,
-                                          localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""),
-                                          libraryId: viewModel.state.library.identifier,
-                                          collectionKey: viewModel.state.type.collectionKey)
-        self.perform(request: request) { [weak viewModel] error in
-            guard let viewModel = viewModel else { return }
-            DDLogError("ItemsStore: can't save new note: \(error)")
-            self.update(viewModel: viewModel) { state in
-                state.error = .noteSaving
-            }
-        }
-    }
-
     private func saveNote(text: String, tags: [Tag], key: String, in viewModel: ViewModel<ItemsActionHandler>) {
         let note = Note(key: key, text: text, tags: tags)
-        let request = EditNoteDbRequest(note: note, libraryId: viewModel.state.library.identifier)
-        self.perform(request: request) { [weak viewModel] error in
-            guard let viewModel = viewModel else { return }
-            DDLogError("ItemsStore: can't save note: \(error)")
-            self.update(viewModel: viewModel) { state in
-                state.error = .noteSaving
+        let libraryId = viewModel.state.library.identifier
+        let collectionKey = viewModel.state.type.collectionKey
+
+        let handleError: (Error) -> Void = { [weak viewModel] error in
+            DispatchQueue.main.async {
+                DDLogError("ItemsStore: can't save note: \(error)")
+                guard let viewModel = viewModel else { return }
+                self.update(viewModel: viewModel) { state in
+                    state.error = .noteSaving
+                }
+            }
+        }
+
+        self.backgroundQueue.async {
+            do {
+                try self.dbStorage.createCoordinator().perform(request: EditNoteDbRequest(note: note, libraryId: libraryId))
+            } catch let error as DbError where error.isObjectNotFound {
+                do {
+                    let request = CreateNoteDbRequest(note: note, localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""), libraryId: libraryId, collectionKey: collectionKey)
+                    _ = try self.dbStorage.createCoordinator().perform(request: request)
+                } catch let error {
+                    handleError(error)
+                }
+            } catch let error {
+                handleError(error)
             }
         }
     }
