@@ -42,6 +42,7 @@ final class PDFReaderViewController: UIViewController {
     private var annotationTimerDisposeBag: DisposeBag
     private var pageTimerDisposeBag: DisposeBag
     private var itemToken: NotificationToken?
+    private var selectionView: SelectionView?
     /// These 3 keys sets are used to skip unnecessary realm notifications, which are created by user actions and would result in duplicate actions.
     private var insertedKeys: Set<String>
     private var deletedKeys: Set<String>
@@ -560,7 +561,7 @@ final class PDFReaderViewController: UIViewController {
     /// - parameter selectedAnnotation: Selected annotation or `nil` if there is no selection.
     private func updateSelection(on pageView: PDFPageView, annotation: Annotation?) {
         // Delete existing custom highlight selection view
-        if let view = pageView.annotationContainerView.subviews.first(where: { $0 is SelectionView }) {
+        if let view = self.selectionView {
             view.removeFromSuperview()
         }
 
@@ -570,6 +571,7 @@ final class PDFReaderViewController: UIViewController {
         let selectionView = SelectionView()
         selectionView.frame = frame
         pageView.annotationContainerView.addSubview(selectionView)
+        self.selectionView = selectionView
     }
 
     // MARK: - Setups
