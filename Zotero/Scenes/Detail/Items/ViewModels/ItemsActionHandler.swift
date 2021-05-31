@@ -352,7 +352,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
             let key = KeyGenerator.newKey
             let original = Files.file(from: url)
             let filename = (original.name + "." + original.ext)
-            let file = Files.newAttachmentFile(in: libraryId, key: key, filename: filename, contentType: original.mimeType)
+            let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: original.mimeType)
 
             do {
                 try self.fileStorage.move(from: original, to: file)

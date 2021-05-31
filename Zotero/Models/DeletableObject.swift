@@ -118,7 +118,7 @@ extension RItem: Deletable {
             guard linkType != .linkedFile, let libraryId = self.libraryId else { return }
 
             // Delete attachment directory
-            NotificationCenter.default.post(name: .attachmentDeleted, object: Files.newAttachmentDirectory(in: libraryId, key: self.key))
+            NotificationCenter.default.post(name: .attachmentDeleted, object: Files.attachmentDirectory(in: libraryId, key: self.key))
 
             if contentType == "application/pdf" {
                 // This is a PDF file, remove all annotations.

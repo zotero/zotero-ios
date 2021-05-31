@@ -33,18 +33,13 @@ struct Files {
         return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName])
     }
 
-    static func newAttachmentFile(in libraryId: LibraryIdentifier, key: String, filename: String, contentType: String) -> File {
+    static func attachmentFile(in libraryId: LibraryIdentifier, key: String, filename: String, contentType: String) -> File {
         let name = self.split(filename: filename).name
         return FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName, key], name: name, contentType: contentType)
     }
 
-    static func newAttachmentDirectory(in libraryId: LibraryIdentifier, key: String) -> File {
+    static func attachmentDirectory(in libraryId: LibraryIdentifier, key: String) -> File {
         return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName, key])
-    }
-
-    static func link(filename: String, key: String) -> File {
-        let (name, ext) = self.split(filename: filename)
-        return FileData(rootPath: Files.cachesRootPath, relativeComponents: ["Zotero", "links", key], name: name, ext: ext)
     }
 
     static var temporaryUploadFile: File {
@@ -139,11 +134,37 @@ struct Files {
     }
 
     static func file(from url: URL) -> File {
-        if url.hasDirectoryPath {
-            return FileData(rootPath: url.deletingLastPathComponent().relativePath, relativeComponents: [url.lastPathComponent], name: "", type: .directory)
+        let (root, components) = self.rootAndComponents(from: url)
+        if url.pathExtension.isEmpty {
+            return FileData(rootPath: root, relativeComponents: components, name: "", type: .directory)
         }
-        return FileData(rootPath: url.deletingLastPathComponent().relativePath, relativeComponents: [],
+        return FileData(rootPath: root, relativeComponents: components,
                         name: url.deletingPathExtension().lastPathComponent, ext: url.pathExtension)
+    }
+
+    private static func rootAndComponents(from url: URL) -> (String, [String]) {
+        let urlString: String
+        if url.pathExtension.isEmpty {
+            urlString = url.relativeString
+        } else {
+            urlString = url.deletingLastPathComponent().relativeString
+        }
+
+        if let range = urlString.range(of: self.appGroupPath) {
+            return (self.appGroupPath, self.components(from: urlString, excluding: range))
+        }
+        if let range = urlString.range(of:self.cachesRootPath) {
+            return (self.cachesRootPath, self.components(from: urlString, excluding: range))
+        }
+        if let range = urlString.range(of:self.documentsRootPath) {
+            return (self.documentsRootPath, self.components(from: urlString, excluding: range))
+        }
+
+        return (urlString, [])
+    }
+
+    private static func components(from string: String, excluding: Range<String.Index>) -> [String] {
+        return string[excluding.upperBound..<string.endIndex].components(separatedBy: "/").filter({ !$0.isEmpty && $0 != "/" })
     }
 
     private static func split(filename: String) -> (name: String, extension: String) {

@@ -70,5 +70,19 @@ struct SettingsState: ViewModelState {
         self.showDeleteAllQuestion = false
     }
 
+    init(storageData: [LibraryIdentifier: DirectoryData]) {
+        self.storageData = storageData
+        self.totalStorageData = DirectoryData(fileCount: 0, mbSize: 0)
+
+        self.isSyncing = false
+        self.isLogging = false
+        self.lastTranslatorUpdate = Date()
+        self.isUpdatingTranslators = false
+        self.websocketConnectionState = .disconnected
+        self.logoutAlertVisible = false
+        self.libraries = []
+        self.showDeleteAllQuestion = false
+    }
+
     func cleanup() {}
 }

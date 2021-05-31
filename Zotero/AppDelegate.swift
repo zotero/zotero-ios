@@ -114,7 +114,7 @@ final class AppDelegate: UIResponder {
                 } else {
                     oldFile = FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName], name: item.key, contentType: contentType)
                 }
-                let newFile = Files.newAttachmentFile(in: libraryId, key: item.key, filename: filename, contentType: contentType)
+                let newFile = Files.attachmentFile(in: libraryId, key: item.key, filename: filename, contentType: contentType)
                 try? self.controllers.fileStorage.move(from: oldFile, to: newFile)
             }
         }

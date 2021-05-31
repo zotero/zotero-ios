@@ -74,11 +74,29 @@ final class AttachmentFileCleanupController {
         switch type {
         case .all:
             do {
-                try self.fileStorage.remove(Files.downloads)
-                // Annotations are not guaranteed to exist
+                let coordinator = try self.dbStorage.createCoordinator()
+                let groups = try coordinator.perform(request: ReadAllGroupsDbRequest())
+                let libraryIds: [LibraryIdentifier] = [.custom(.myLibrary)] + groups.map({ .group($0.identifier) })
+                var forUpload: [LibraryIdentifier: [String]] = [:]
+                for item in try coordinator.perform(request: ReadAllItemsForUploadDbRequest()) {
+                    guard let libraryId = item.libraryId else { continue }
+
+                    if var keys = forUpload[libraryId] {
+                        keys.append(item.key)
+                        forUpload[libraryId] = keys
+                    } else {
+                        forUpload[libraryId] = [item.key]
+                    }
+                }
+
+                self.delete(downloadsIn: libraryIds, forUpload: forUpload)
+                // Annotations are not guaranteed to exist and they can be removed even if the parent PDF was not deleted due to upload state.
+                // These are generated on device, so they'll just be recreated.
                 try? self.fileStorage.remove(Files.annotationPreviews)
+                // When removing all local files clear cache as well.
                 try? self.fileStorage.remove(Files.cache)
 
+                // TODO: - exclude those for upload
                 try? self.dbStorage.createCoordinator().perform(request: MarkAllFilesAsNotDownloadedDbRequest())
             } catch let error {
                 DDLogError("AttachmentFileCleanupController: can't remove download directory - \(error)")
@@ -87,10 +105,15 @@ final class AttachmentFileCleanupController {
 
         case .library(let libraryId):
             do {
-                try self.fileStorage.remove(Files.downloads(for: libraryId))
-                // Annotations are not guaranteed to exist
+                let coordinator = try self.dbStorage.createCoordinator()
+                let forUpload = try coordinator.perform(request: ReadItemsForUploadDbRequest(libraryId: libraryId)).map({ $0.key })
+
+                self.delete(downloadsIn: [libraryId], forUpload: [libraryId: Array(forUpload)])
+                // Annotations are not guaranteed to exist and they can be removed even if the parent PDF was not deleted due to upload state.
+                // These are generated on device, so they'll just be recreated.
                 try? self.fileStorage.remove(Files.annotationPreviews(for: libraryId))
 
+                // TODO: - exclude those for upload
                 try? self.dbStorage.createCoordinator().perform(request: MarkLibraryFilesAsNotDownloadedDbRequest(libraryId: libraryId))
             } catch let error {
                 DDLogError("AttachmentFileCleanupController: can't remove library downloads - \(error)")
@@ -104,8 +127,13 @@ final class AttachmentFileCleanupController {
                     // Don't try to delete linked files
                     guard linkType != .linkedFile else { return false }
 
-                    try self.fileStorage.remove(Files.newAttachmentDirectory(in: attachment.libraryId, key: attachment.key))
-                    // Annotations are not guaranteed to exist
+                    let coordinator = try self.dbStorage.createCoordinator()
+                    let item = try coordinator.perform(request: ReadItemDbRequest(libraryId: attachment.libraryId, key: attachment.key))
+
+                    guard !item.attachmentNeedsSync else { return false }
+
+                    try self.fileStorage.remove(Files.attachmentDirectory(in: attachment.libraryId, key: attachment.key))
+                    // Annotations are not guaranteed to exist.
                     try? self.fileStorage.remove(Files.annotationPreviews(for: attachment.key, libraryId: attachment.libraryId))
 
                     try? self.dbStorage.createCoordinator().perform(request: MarkFileAsDownloadedDbRequest(key: attachment.key, libraryId: attachment.libraryId, downloaded: false))
@@ -118,5 +146,35 @@ final class AttachmentFileCleanupController {
         }
         
         return true
+    }
+
+    private func delete(downloadsIn libraries: [LibraryIdentifier], forUpload: [LibraryIdentifier: [String]]) {
+        for libraryId in libraries {
+            guard let keysForUpload = forUpload[libraryId], !keysForUpload.isEmpty else {
+                // No items are queued for upload, just delete the whole directory. Ignore thrown error because some may not exist locally (user didn't download anything in given library yet).
+                try? self.fileStorage.remove(Files.downloads(for: libraryId))
+                continue
+            }
+
+            // If there are pending uploads, delete only directories with uploaded files. If no folders are stored locally just skip.
+            guard let contents: [File] = try? self.fileStorage.contentsOfDirectory(at: Files.downloads(for: libraryId)) else { continue }
+
+            let toDelete = contents.filter({ file in
+                // Check whether it's item folder and whether upload is pending for given item.
+                if file.relativeComponents.count == 3, let key = file.relativeComponents.last, key.count == KeyGenerator.length {
+                    return !keysForUpload.contains(key)
+                }
+                // If it's something else, just delete it
+                return true
+            })
+
+            for file in toDelete {
+                do {
+                    try self.fileStorage.remove(file)
+                } catch let error {
+                    DDLogError("AttachmentFileCleanupController: could not remove file \(file) - \(error)")
+                }
+            }
+        }
     }
 }

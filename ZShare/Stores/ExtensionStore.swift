@@ -169,7 +169,7 @@ final class ExtensionStore {
                  collections: Set<String>, tags: [TagResponse], libraryId: LibraryIdentifier, userId: Int, dateParser: DateParser) {
                 let newItem = item.copy(libraryId: libraryId, collectionKeys: collections, addedTags: tags)
                 let filename = FilenameFormatter.filename(from: item, defaultTitle: defaultTitle, ext: attachmentFile.ext, dateParser: dateParser)
-                let file = Files.newAttachmentFile(in: libraryId, key: attachmentKey, filename: filename, contentType: attachmentFile.mimeType)
+                let file = Files.attachmentFile(in: libraryId, key: attachmentKey, filename: filename, contentType: attachmentFile.mimeType)
                 let title = ((attachmentData["title"] as? String) ?? defaultTitle) + "." + file.ext
                 let attachment = Attachment(type: .file(filename: filename, contentType: attachmentFile.mimeType, location: .local, linkType: .importedFile),
                                             title: title,
@@ -185,7 +185,7 @@ final class ExtensionStore {
             }
 
             init(localFile: File, filename: String, attachmentKey: String, collections: Set<String>, tags: [TagResponse], libraryId: LibraryIdentifier, userId: Int) {
-                let file = Files.newAttachmentFile(in: libraryId, key: attachmentKey, filename: filename, contentType: localFile.mimeType)
+                let file = Files.attachmentFile(in: libraryId, key: attachmentKey, filename: filename, contentType: localFile.mimeType)
                 let attachment = Attachment(type: .file(filename: filename, contentType: localFile.mimeType, location: .local, linkType: .importedFile),
                                             title: filename,
                                             key: attachmentKey,

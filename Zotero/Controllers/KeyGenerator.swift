@@ -9,7 +9,7 @@
 import Foundation
 
 struct KeyGenerator {
-    private static let length = 8
+    static let length = 8
     private static let allowedChars = "23456789ABCDEFGHIJKLMNPQRSTUVWXYZ"
 
     static var newKey: String {

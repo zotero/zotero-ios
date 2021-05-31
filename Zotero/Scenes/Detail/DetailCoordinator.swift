@@ -187,7 +187,7 @@ final class DetailCoordinator: Coordinator {
             self.showWeb(url: url)
 
         case .file(let filename, let contentType, _, _):
-            let file = Files.newAttachmentFile(in: library.identifier, key: attachment.key, filename: filename, contentType: contentType)
+            let file = Files.attachmentFile(in: library.identifier, key: attachment.key, filename: filename, contentType: contentType)
             let url = file.createUrl()
 
             switch contentType {

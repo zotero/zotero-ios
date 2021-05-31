@@ -76,7 +76,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
             case FieldKeys.Item.Attachment.md5:
                 switch self.attachment.type {
                 case .file(let filename, let contentType, _, _):
-                    let file = Files.newAttachmentFile(in: self.attachment.libraryId, key: self.attachment.key, filename: filename, contentType: contentType)
+                    let file = Files.attachmentFile(in: self.attachment.libraryId, key: self.attachment.key, filename: filename, contentType: contentType)
                     value = md5(from: file.createUrl()) ?? ""
                 case .url: continue
                 }
@@ -102,7 +102,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
             case FieldKeys.Item.Attachment.path:
                 switch self.attachment.type {
                 case .file(let filename, let contentType, _, let linkType) where linkType == .linkedFile:
-                    let file = Files.newAttachmentFile(in: self.attachment.libraryId, key: self.attachment.key, filename: filename, contentType: contentType)
+                    let file = Files.attachmentFile(in: self.attachment.libraryId, key: self.attachment.key, filename: filename, contentType: contentType)
                     value = file.createUrl().path
                 default: continue
                 }

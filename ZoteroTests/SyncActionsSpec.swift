@@ -321,7 +321,7 @@ final class SyncActionsSpec: QuickSpec {
             it("fails when item metadata not submitted") {
                 let key = "AAAAAAAA"
                 let libraryId = LibraryIdentifier.group(1)
-                let file = Files.newAttachmentFile(in: libraryId, key: key, filename: "file", contentType: "application/pdf")
+                let file = Files.attachmentFile(in: libraryId, key: key, filename: "file", contentType: "application/pdf")
 
                 let realm = SyncActionsSpec.realm
 
@@ -377,7 +377,7 @@ final class SyncActionsSpec: QuickSpec {
                 let key = "AAAAAAAA"
                 let filename = "doc.pdf"
                 let libraryId = LibraryIdentifier.group(1)
-                let file = Files.newAttachmentFile(in: libraryId, key: key, filename: filename, contentType: "application/pdf")
+                let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: "application/pdf")
 
                 let realm = SyncActionsSpec.realm
 
@@ -430,7 +430,7 @@ final class SyncActionsSpec: QuickSpec {
                 let key = "AAAAAAAA"
                 let filename = "doc.txt"
                 let libraryId = LibraryIdentifier.group(1)
-                let file = Files.newAttachmentFile(in: libraryId, key: key, filename: filename, contentType: "text/plain")
+                let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: "text/plain")
 
                 let data = "test string".data(using: .utf8)!
                 try! FileStorageController().write(data, to: file, options: .atomicWrite)
@@ -508,7 +508,7 @@ final class SyncActionsSpec: QuickSpec {
                 let key = "AAAAAAAA"
                 let filename = "doc.txt"
                 let libraryId = LibraryIdentifier.group(1)
-                let file = Files.newAttachmentFile(in: libraryId, key: key, filename: filename, contentType: "text/plain")
+                let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: "text/plain")
 
                 let data = "test string".data(using: .utf8)!
                 try! FileStorageController().write(data, to: file, options: .atomicWrite)

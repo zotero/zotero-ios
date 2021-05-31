@@ -35,7 +35,7 @@ struct ReadAttachmentUploadsDbRequest: DbResponseRequest {
             case .file(let _filename, let contentType, _, let linkType):
                 // Don't try to upload linked attachments
                 guard linkType != .linkedFile else { return nil }
-                file = Files.newAttachmentFile(in: self.libraryId, key: item.key, filename: _filename, contentType: contentType)
+                file = Files.attachmentFile(in: self.libraryId, key: item.key, filename: _filename, contentType: contentType)
                 filename = _filename
             }
 

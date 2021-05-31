@@ -94,7 +94,7 @@ final class AttachmentDownloader {
                 case .local:
                     self.observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .ready)))
                 case .remote, .remoteMissing:
-                    let file = Files.newAttachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
+                    let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
                     self.download(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
                 }
             }
@@ -116,7 +116,7 @@ final class AttachmentDownloader {
             self.unzipRequests[download] = nil
 
             // Since zip file is already downloaded, try deleting it
-            try? self.fileStorage.remove(Files.newAttachmentDirectory(in: libraryId, key: key))
+            try? self.fileStorage.remove(Files.attachmentDirectory(in: libraryId, key: key))
         }
     }
 

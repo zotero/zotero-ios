@@ -704,6 +704,9 @@
 		B3AB38A9238EC060008A1ABB /* AllCollectionPickerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A8238EC060008A1ABB /* AllCollectionPickerStore.swift */; };
 		B3AB38B8238ED023008A1ABB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B3AB38B6238ED023008A1ABB /* Assets.xcassets */; };
 		B3AB38B9238ED023008A1ABB /* ExtensionScript.js in Resources */ = {isa = PBXBuildFile; fileRef = B3AB38B7238ED023008A1ABB /* ExtensionScript.js */; };
+		B3B1C5842664E23A00883597 /* ReadItemsForUploadDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1C5832664E23A00883597 /* ReadItemsForUploadDbRequest.swift */; };
+		B3B1C58626651E2A00883597 /* SettingsActionHandlerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1C58526651E2A00883597 /* SettingsActionHandlerSpec.swift */; };
+		B3B1C5892665258400883597 /* bitcoin.pdf in Resources */ = {isa = PBXBuildFile; fileRef = B3B1C5882665258400883597 /* bitcoin.pdf */; };
 		B3B1EDED250242DB00D8BC1E /* ItemResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDEC250242DB00D8BC1E /* ItemResponseSpec.swift */; };
 		B3B1EDEF250242E700D8BC1E /* CollectionResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDEE250242E700D8BC1E /* CollectionResponseSpec.swift */; };
 		B3B1EDF1250242F700D8BC1E /* SearchResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDF0250242F700D8BC1E /* SearchResponseSpec.swift */; };
@@ -1357,6 +1360,9 @@
 		B3AB38A8238EC060008A1ABB /* AllCollectionPickerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllCollectionPickerStore.swift; sourceTree = "<group>"; };
 		B3AB38B6238ED023008A1ABB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B3AB38B7238ED023008A1ABB /* ExtensionScript.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = ExtensionScript.js; sourceTree = "<group>"; };
+		B3B1C5832664E23A00883597 /* ReadItemsForUploadDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadItemsForUploadDbRequest.swift; sourceTree = "<group>"; };
+		B3B1C58526651E2A00883597 /* SettingsActionHandlerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsActionHandlerSpec.swift; sourceTree = "<group>"; };
+		B3B1C5882665258400883597 /* bitcoin.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = bitcoin.pdf; sourceTree = "<group>"; };
 		B3B1EDEC250242DB00D8BC1E /* ItemResponseSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemResponseSpec.swift; sourceTree = "<group>"; };
 		B3B1EDEE250242E700D8BC1E /* CollectionResponseSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionResponseSpec.swift; sourceTree = "<group>"; };
 		B3B1EDF0250242F700D8BC1E /* SearchResponseSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchResponseSpec.swift; sourceTree = "<group>"; };
@@ -1643,6 +1649,7 @@
 				B3451B54264ECBA9000EDF16 /* ReadGroupDbRequest.swift */,
 				B305644023FC051E003304F2 /* ReadItemDbRequest.swift */,
 				B305645923FC051E003304F2 /* ReadItemsDbRequest.swift */,
+				B3B1C5832664E23A00883597 /* ReadItemsForUploadDbRequest.swift */,
 				B305645C23FC051E003304F2 /* ReadLibrariesDataDbRequest.swift */,
 				B34341A4260A16AB00093E63 /* ReadLibraryDbRequest.swift */,
 				B305645023FC051E003304F2 /* ReadSearchDbRequest.swift */,
@@ -1974,6 +1981,7 @@
 			children = (
 				B3F47C04243B4BC0004F8B1E /* Bundled */,
 				B32A3C83248008A2009E2C5D /* JSONs */,
+				B3B1C5872665258400883597 /* PDFs */,
 				B32A3C88248008A2009E2C5D /* XMLs */,
 				B3B1EDEE250242E700D8BC1E /* CollectionResponseSpec.swift */,
 				B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */,
@@ -1984,6 +1992,7 @@
 				B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */,
 				B39C7BDD251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersDbRequest.swift */,
 				B3B1EDF0250242F700D8BC1E /* SearchResponseSpec.swift */,
+				B3B1C58526651E2A00883597 /* SettingsActionHandlerSpec.swift */,
 				B307E55D22D4A87B00592B3C /* SyncActionsSpec.swift */,
 				B397EC67230BF01100A46E4B /* SyncControllerAction+Equatable.swift */,
 				B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */,
@@ -2622,6 +2631,14 @@
 			path = Assets;
 			sourceTree = "<group>";
 		};
+		B3B1C5872665258400883597 /* PDFs */ = {
+			isa = PBXGroup;
+			children = (
+				B3B1C5882665258400883597 /* bitcoin.pdf */,
+			);
+			path = PDFs;
+			sourceTree = "<group>";
+		};
 		B3B953C12459780600FC96DB /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -2993,6 +3010,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B32A3C90248008A2009E2C5D /* translators.xml in Resources */,
+				B3B1C5892665258400883597 /* bitcoin.pdf in Resources */,
 				B32A3C8C248008A2009E2C5D /* test_collection.json in Resources */,
 				B32A3C8D248008A2009E2C5D /* test_search.json in Resources */,
 				B3B1EDFD2502498100D8BC1E /* collectionresponse_knownfields.json in Resources */,
@@ -3155,6 +3173,7 @@
 				B32B4F972475636600F78A05 /* RxTableViewCell.swift in Sources */,
 				B30566BF23FC051F003304F2 /* AttachmentUpload.swift in Sources */,
 				B3E4463F248FBD2E007FE8AB /* RRelation.swift in Sources */,
+				B3B1C5842664E23A00883597 /* ReadItemsForUploadDbRequest.swift in Sources */,
 				B305662123FC051F003304F2 /* SubmitDeletionSyncAction.swift in Sources */,
 				B305661B23FC051E003304F2 /* SyncVersionsSyncAction.swift in Sources */,
 				B37491422488FC3D0042FF85 /* StorageSettingsRow.swift in Sources */,
@@ -3605,6 +3624,7 @@
 				B3F47C03243B3960004F8B1E /* TestFileStorage.swift in Sources */,
 				B39C7BDE251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersDbRequest.swift in Sources */,
 				B3B1EDED250242DB00D8BC1E /* ItemResponseSpec.swift in Sources */,
+				B3B1C58626651E2A00883597 /* SettingsActionHandlerSpec.swift in Sources */,
 				B397EC68230BF01100A46E4B /* SyncControllerAction+Equatable.swift in Sources */,
 				B34F9FA323743C36004ED34C /* CreatorSummaryFormatterSpec.swift in Sources */,
 				B307E55E22D4A87B00592B3C /* SyncActionsSpec.swift in Sources */,

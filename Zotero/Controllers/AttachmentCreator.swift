@@ -156,7 +156,7 @@ struct AttachmentCreator {
 
     private static func importedType(for item: RItem, contentType: String, libraryId: LibraryIdentifier, fileStorage: FileStorage?, linkType: Attachment.FileLinkType) -> Attachment.Kind? {
         let filename = self.filename(for: item, ext: contentType.extensionFromMimeType)
-        let file = Files.newAttachmentFile(in: libraryId, key: item.key, filename: filename, contentType: contentType)
+        let file = Files.attachmentFile(in: libraryId, key: item.key, filename: filename, contentType: contentType)
         let location = self.location(for: item, file: file, fileStorage: fileStorage)
         return .file(filename: filename, contentType: contentType, location: location, linkType: linkType)
     }
