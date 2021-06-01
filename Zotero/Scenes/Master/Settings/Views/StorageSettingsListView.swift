@@ -12,8 +12,8 @@ struct StorageSettingsListView: View {
     @EnvironmentObject var viewModel: ViewModel<SettingsActionHandler>
 
     var body: some View {
-        List {
-            Section {
+        Form {
+            Section(header: Text("")) {
                 ForEach(self.viewModel.state.libraries) { library in
                     StorageSettingsRow(title: library.name, data: self.viewModel.state.storageData[library.identifier], deleteAction: {
                         self.viewModel.process(action: .showDeleteLibraryQuestion(library))
@@ -21,8 +21,10 @@ struct StorageSettingsListView: View {
                 }
 
                 StorageSettingsRow(title: L10n.total.uppercased(), data: self.viewModel.state.totalStorageData, deleteAction: nil)
+            }
 
-                if self.viewModel.state.totalStorageData.fileCount > 0 {
+            if self.viewModel.state.totalStorageData.fileCount > 0 {
+                Section {
                     Button(action: {
                         self.viewModel.process(action: .showDeleteAllQuestion(true))
                     }) {
@@ -30,7 +32,7 @@ struct StorageSettingsListView: View {
                     }
                 }
             }
-        }.listStyle(GroupedListStyle())
+        }
     }
 }
 

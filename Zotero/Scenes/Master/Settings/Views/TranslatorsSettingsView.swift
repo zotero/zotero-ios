@@ -22,7 +22,7 @@ struct TranslatorsSettingsView: View {
 
     var body: some View {
         Form {
-            Section {
+            Section(header: Text("")) {
                 if self.viewModel.state.isUpdatingTranslators {
                     Text(L10n.Settings.translatorsUpdating)
                 } else {

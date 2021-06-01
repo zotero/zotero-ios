@@ -13,7 +13,7 @@ struct SyncSettingsView: View {
 
     var body: some View {
         Form {
-            Section {
+            Section(header: Text("")) {
                 if self.viewModel.state.isSyncing {
                     Button(action: {
                         self.viewModel.process(action: .cancelSync)
@@ -28,6 +28,7 @@ struct SyncSettingsView: View {
                     }
                 }
             }
+            
             Section {
                 SettingsToggleRow(title: L10n.Settings.permission,
                                   subtitle: L10n.Settings.permissionSubtitle,

@@ -13,7 +13,7 @@ struct DebugSettingsView: View {
 
     var body: some View {
         Form {
-            Section(header: Text(L10n.Settings.loggingTitle)) {
+            Section(header: Text("")) {
                 if self.viewModel.state.isLogging {
                     Button(action: {
                         self.viewModel.process(action: .stopLogging)

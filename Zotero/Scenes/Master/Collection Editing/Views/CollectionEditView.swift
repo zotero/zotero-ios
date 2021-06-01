@@ -19,7 +19,7 @@ struct CollectionEditView: View {
 
     var body: some View {
         Form {
-            Section {
+            Section(header: Text("")) {
                 TextField(L10n.name, text: self.viewModel.binding(keyPath: \.name, action: { .setName($0) }))
             }
 

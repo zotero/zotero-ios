@@ -13,7 +13,7 @@ struct SettingsListView: View {
 
     var body: some View {
         Form {
-            Section {
+            Section(header: Text("")) {
                 Button(action: {
                     self.coordinatorDelegate?.showAboutBeta()
                 }, label: {
