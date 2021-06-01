@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
 import RxSwift
 
 struct AuthorizeUploadSyncAction: SyncAction {
@@ -40,5 +41,9 @@ struct AuthorizeUploadSyncAction: SyncAction {
                                     return Single.error(error)
                                 }
                              }
+                             .do(onError: { error in
+                                DDLogError("AuthorizeUploadSyncAction: can't authorize upload - \(error)")
+                                DDLogError("AuthorizeUploadSyncAction: key=\(self.key);oldMd5=\(self.oldMd5 ?? "nil");md5=\(self.md5);filesize=\(self.filesize);mtime=\(self.mtime)")
+                             })
     }
 }
