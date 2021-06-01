@@ -1421,8 +1421,8 @@ final class SyncController: SynchronizationController {
                 return .nonFatal(.unknown(error.localizedDescription))
             case .attachmentMissing(let key, let title):
                 return .nonFatal(.attachmentMissing(key: key, title: title))
-            case .submitUpdateUnknownFailures:
-                return .nonFatal(.unknown(error.localizedDescription))
+            case .submitUpdateFailures(let messages):
+                return .nonFatal(.unknown(messages))
             }
         }
 

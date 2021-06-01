@@ -71,7 +71,7 @@ enum SyncActionError: Error {
     case attachmentItemNotSubmitted,
          attachmentAlreadyUploaded,
          attachmentMissing(key: String, title: String),
-         submitUpdateUnknownFailures
+         submitUpdateFailures(String)
 }
 
 enum PreconditionErrorType: Error {

@@ -112,14 +112,14 @@ struct SubmitUpdateSyncAction: SyncAction {
                                      return Single.just((newVersion, PreconditionErrorType.objectConflict))
                                  }
 
-                                 if response.failed.first(where: { $0.code == 409 }) != nil {
-                                     let error = AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 409))
-                                     return Single.just((newVersion, error))
+                                 if let failed = response.failed.first(where: { $0.code == 409 }) {
+                                     return Single.just((newVersion, SyncActionError.submitUpdateFailures(failed.message)))
                                  }
 
                                  if !response.failed.isEmpty {
+                                     let errorMessages = response.failed.map({ $0.message }).joined(separator: "\n")
                                      DDLogError("SubmitUpdateSyncAction: unknown failures - \(response.failed)")
-                                     return Single.just((newVersion, SyncActionError.submitUpdateUnknownFailures))
+                                     return Single.just((newVersion, SyncActionError.submitUpdateFailures(errorMessages)))
                                  }
 
                                  return Single.just((newVersion, nil))
