@@ -24,7 +24,9 @@ final class SyncToolbarController {
         self.disposeBag = DisposeBag()
 
         parent.setToolbarHidden(true, animated: false)
-        parent.toolbar.barTintColor = .white
+        parent.toolbar.barTintColor = UIColor(dynamicProvider: { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? .black : .white
+        })
 
         progressObservable.observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] progress in
