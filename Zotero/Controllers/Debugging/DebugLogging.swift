@@ -176,7 +176,8 @@ final class DebugLogging {
     }
 
     private func data(from logs: [URL]) throws -> Data {
-        var allLogs = DeviceInfoProvider.debugString + "\n\n"
+        let timestamp = Date().timeIntervalSince1970
+        var allLogs = DeviceInfoProvider.debugString + "\nTimestamp: \(timestamp)" + "\n\n"
 
         for url in logs {
             let string = try String(contentsOf: url)

@@ -105,7 +105,7 @@ final class DateParser {
     /// - parameter parts: Parts array which will be filled with remaining parts of original string.
     private func parseParts(from string: String, day: inout Int, month: inout Int, year: inout Int, order: inout String, parts: inout [Part]) {
         guard let match = self.partsExpression?.firstMatch(in: string, range: NSRange(string.startIndex..., in: string)) else { return }
-
+        
         let preDatePart = match.substring(at: 1, in: string)
         let datePart1 = match.substring(at: 2, in: string)
         let separator1 = match.substring(at: 3, in: string)
@@ -402,24 +402,6 @@ final class DateParser {
             DDLogError("DateParser: can't create day expression - \(error)")
             return nil
         }
-    }
-}
-
-extension NSTextCheckingResult {
-    /// Creates Swift `Range` from result at given index in string.
-    /// - parameter index: Index of matched range in this result.
-    /// - parameter string: String from which this result originates.
-    /// - returns: `Range` if index is in bounds, `nil` otherwise.
-    fileprivate func swiftRange(at index: Int, in string: String) -> Range<String.Index>? {
-        return Range(self.range(at: index), in: string)
-    }
-
-    /// Creates substring from result at given index in string.
-    /// - parameter index: Index of matched substring in this result.
-    /// - parameter string: String from which this result originates.
-    /// - returns: Substring if index is in bounds, `nil` otherwise.
-    fileprivate func substring(at index: Int, in string: String) -> Substring? {
-        return self.swiftRange(at: index, in: string).flatMap({ string[$0] })
     }
 }
 

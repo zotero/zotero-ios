@@ -14,18 +14,36 @@ final class DebugLogFormatter: NSObject, DDLogFormatter {
     private let targetName: String
     private var lastTimestamp: Date?
 
+    private lazy var timeExpression: NSRegularExpression? = {
+        do {
+            return try NSRegularExpression(pattern: #"^\(\+[0-9]{7}\)"#)
+        } catch let error {
+            DDLogError("DebugLogFormatter: can't create time expression - \(error)")
+            return nil
+        }
+    }()
+
     init(targetName: String) {
         self.targetName = targetName
     }
 
     func format(message logMessage: DDLogMessage) -> String? {
+        var message = logMessage.message
         let level = self.logLevelString(from: logMessage.flag)
-        let timeDiff = (self.lastTimestamp.flatMap({ logMessage.timestamp.timeIntervalSince($0) }) ?? 0) * 1000
-        let formattedTimeDiff = String(format: "+%07.0f", timeDiff)
+        let formattedTimeDiff: String
+
+        if let match = self.timeExpression?.firstMatch(in: message, range: NSRange(message.startIndex..., in: message))?.substring(at: 0, in: message).flatMap(String.init) {
+            formattedTimeDiff = match
+            message = String(message[message.index(message.startIndex, offsetBy: match.count)...])
+        } else {
+            let timeDiff = (self.lastTimestamp.flatMap({ logMessage.timestamp.timeIntervalSince($0) }) ?? 0) * 1000
+            formattedTimeDiff = String(format: "(+%07.0f)", timeDiff)
+        }
+
         self.lastTimestamp = logMessage.timestamp
-        return "\(level) \(self.targetName)(\(formattedTimeDiff)): \(logMessage.message)." +
+        return "\(level) \(self.targetName)\(formattedTimeDiff): \(message)." +
                " [(\(logMessage.line)) \(logMessage.fileName).\(logMessage.function ?? ""); " +
-               "\(logMessage.queueLabel); \(logMessage.timestamp.timeIntervalSince1970)]"
+               "\(logMessage.queueLabel)]"
     }
 
     private func logLevelString(from level: DDLogFlag) -> String {

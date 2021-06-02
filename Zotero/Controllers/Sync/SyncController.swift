@@ -477,7 +477,7 @@ final class SyncController: SynchronizationController {
     /// Processes given action.
     /// - parameter action: Action to process
     private func process(action: Action) {
-        DDLogInfo("Sync: action - \(action.logString)")
+        DDLogInfo("Sync: \(action.logString)")
 
         switch action {
         case .loadKeyPermissions:

@@ -791,6 +791,8 @@
 		B3DCDF23240945FA0039ED0D /* CollectionPickerAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDF22240945FA0039ED0D /* CollectionPickerAction.swift */; };
 		B3DCDF25240946090039ED0D /* CollectionPickerError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDF24240946090039ED0D /* CollectionPickerError.swift */; };
 		B3DD9CEA2256340400DE6BAA /* licenses.plist in Resources */ = {isa = PBXBuildFile; fileRef = B3DD9CE92256340400DE6BAA /* licenses.plist */; };
+		B3DDC0CB2667824D00B2DFD1 /* RegularExpression+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DDC0CA2667824D00B2DFD1 /* RegularExpression+Extensions.swift */; };
+		B3DDC0CC2667825E00B2DFD1 /* RegularExpression+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DDC0CA2667824D00B2DFD1 /* RegularExpression+Extensions.swift */; };
 		B3DDDAAC24CAD6810014DF99 /* InsetLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DDDAAB24CAD6810014DF99 /* InsetLabel.swift */; };
 		B3E1BEC9254B0B9500D9BB27 /* ItemDetailFieldEditCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E1BEC7254B0B9500D9BB27 /* ItemDetailFieldEditCell.swift */; };
 		B3E1BECA254B0B9500D9BB27 /* ItemDetailFieldEditCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3E1BEC8254B0B9500D9BB27 /* ItemDetailFieldEditCell.xib */; };
@@ -1432,6 +1434,7 @@
 		B3DCDF22240945FA0039ED0D /* CollectionPickerAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionPickerAction.swift; sourceTree = "<group>"; };
 		B3DCDF24240946090039ED0D /* CollectionPickerError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionPickerError.swift; sourceTree = "<group>"; };
 		B3DD9CE92256340400DE6BAA /* licenses.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = licenses.plist; path = "pdf-keys/licenses.plist"; sourceTree = SOURCE_ROOT; };
+		B3DDC0CA2667824D00B2DFD1 /* RegularExpression+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RegularExpression+Extensions.swift"; sourceTree = "<group>"; };
 		B3DDDAAB24CAD6810014DF99 /* InsetLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsetLabel.swift; sourceTree = "<group>"; };
 		B3E1BEC7254B0B9500D9BB27 /* ItemDetailFieldEditCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailFieldEditCell.swift; sourceTree = "<group>"; };
 		B3E1BEC8254B0B9500D9BB27 /* ItemDetailFieldEditCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemDetailFieldEditCell.xib; sourceTree = "<group>"; };
@@ -1795,6 +1798,7 @@
 				B305650B23FC051E003304F2 /* Observable+Completable.swift */,
 				B305650D23FC051E003304F2 /* PreferenceKeys.swift */,
 				B3A94B492462F5D300BC7910 /* PSPDFKit+Extensions.swift */,
+				B3DDC0CA2667824D00B2DFD1 /* RegularExpression+Extensions.swift */,
 				B305650823FC051E003304F2 /* String+Extensions.swift */,
 				B305650423FC051E003304F2 /* Threading+Extras.swift */,
 				B305650923FC051E003304F2 /* UIColor+Custom.swift */,
@@ -3568,6 +3572,7 @@
 				B30565D423FC051E003304F2 /* ReadItemsDbRequest.swift in Sources */,
 				B3593F47241A61C700760E20 /* TagCirclesView.swift in Sources */,
 				B3593F2E241A61C700760E20 /* ItemDetailAttachmentCell.swift in Sources */,
+				B3DDC0CB2667824D00B2DFD1 /* RegularExpression+Extensions.swift in Sources */,
 				B3B953D42459B62D00FC96DB /* AnnotationCell.swift in Sources */,
 				B3CBB123248A44D100C4228F /* KeyboardData.swift in Sources */,
 				B34C40FF25711C990057D5F5 /* ColorPickerCell.swift in Sources */,
@@ -3735,6 +3740,7 @@
 				B30566E723FC0821003304F2 /* RegisterUploadRequest.swift in Sources */,
 				B37D8E6A24DC2BF300F526C5 /* CollectionRow.swift in Sources */,
 				B331F9AF2653CEA00099F6A6 /* ReadGroupDbRequest.swift in Sources */,
+				B3DDC0CC2667825E00B2DFD1 /* RegularExpression+Extensions.swift in Sources */,
 				B30566EB23FC082A003304F2 /* ObjectsRequest.swift in Sources */,
 				B30566FB23FC085E003304F2 /* MarkAttachmentUploadedDbRequest.swift in Sources */,
 				B30566EE23FC0831003304F2 /* AuthorizeUploadRequest.swift in Sources */,
