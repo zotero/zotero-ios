@@ -69,7 +69,7 @@ final class AppCoordinator: NSObject {
 
         self.controllers.debugLogging.coordinator = self
         self.controllers.crashReporter.coordinator = self
-        self.controllers.translatorsController.coordinator = self
+        self.controllers.translatorsAndStylesController.coordinator = self
     }
 
     // MARK: - Navigation

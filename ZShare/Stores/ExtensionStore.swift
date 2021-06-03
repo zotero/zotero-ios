@@ -246,7 +246,7 @@ final class ExtensionStore {
 
     init(webView: WKWebView, apiClient: ApiClient, backgroundUploader: BackgroundUploader,
          dbStorage: DbStorage, schemaController: SchemaController, dateParser: DateParser, fileStorage: FileStorage,
-         syncController: SyncController, translatorsController: TranslatorsController) {
+         syncController: SyncController, translatorsController: TranslatorsAndStylesController) {
         let queue = DispatchQueue(label: "org.zotero.ZShare.BackgroundQueue", qos: .userInteractive)
         self.syncController = syncController
         self.apiClient = apiClient

@@ -55,8 +55,8 @@ final class SettingsCoordinator: NSObject, Coordinator {
 
         let state = SettingsState(isSyncing: syncScheduler.syncController.inProgress,
                                   isLogging: self.controllers.debugLogging.isEnabled,
-                                  isUpdatingTranslators: self.controllers.translatorsController.isLoading.value,
-                                  lastTranslatorUpdate: self.controllers.translatorsController.lastUpdate,
+                                  isUpdatingTranslators: self.controllers.translatorsAndStylesController.isLoading.value,
+                                  lastTranslatorUpdate: self.controllers.translatorsAndStylesController.lastUpdate,
                                   websocketConnectionState: webSocketController.connectionState.value)
         let handler = SettingsActionHandler(dbStorage: dbStorage,
                                             bundledDataStorage: self.controllers.bundledDataStorage,
@@ -65,7 +65,7 @@ final class SettingsCoordinator: NSObject, Coordinator {
                                             webSocketController: webSocketController,
                                             syncScheduler: syncScheduler,
                                             debugLogging: self.controllers.debugLogging,
-                                            translatorsController: self.controllers.translatorsController,
+                                            translatorsAndStylesController: self.controllers.translatorsAndStylesController,
                                             fileCleanupController: fileCleanupController)
         let viewModel = ViewModel(initialState: state, handler: handler)
 
@@ -194,6 +194,7 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
 
 extension SettingsCoordinator: UINavigationControllerDelegate {
     func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
+        guard viewController.preferredContentSize.width > 0 && viewController.preferredContentSize.height > 0 else { return }
         navigationController.preferredContentSize = viewController.preferredContentSize
     }
 }

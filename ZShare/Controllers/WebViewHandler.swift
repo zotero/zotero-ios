@@ -49,7 +49,7 @@ final class WebViewHandler: NSObject {
         case webExtractionMissingData
     }
 
-    private let translatorsController: TranslatorsController
+    private let translatorsController: TranslatorsAndStylesController
     private let disposeBag: DisposeBag
     let observable: PublishSubject<WebViewHandler.Action>
 
@@ -61,7 +61,7 @@ final class WebViewHandler: NSObject {
 
     // MARK: - Lifecycle
 
-    init(webView: WKWebView, translatorsController: TranslatorsController) {
+    init(webView: WKWebView, translatorsController: TranslatorsAndStylesController) {
         self.webView = webView
         self.disposeBag = DisposeBag()
         self.translatorsController = translatorsController

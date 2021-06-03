@@ -23,7 +23,7 @@ final class Controllers {
     let crashReporter: CrashReporter
     let debugLogging: DebugLogging
     let bundledDataStorage: DbStorage
-    let translatorsController: TranslatorsController
+    let translatorsAndStylesController: TranslatorsAndStylesController
     let annotationPreviewController: AnnotationPreviewController
     let urlDetector: UrlDetector
     let dateParser: DateParser
@@ -61,7 +61,7 @@ final class Controllers {
         let sessionController = SessionController(secureStorage: secureStorage, defaults: Defaults.shared)
         let bundledDataConfiguration = Database.bundledDataConfiguration(fileStorage: fileStorage)
         let bundledDataStorage = RealmDbStorage(config: bundledDataConfiguration)
-        let translatorsController = TranslatorsController(apiClient: apiClient, indexStorage: bundledDataStorage, fileStorage: fileStorage)
+        let translatorsAndStylesController = TranslatorsAndStylesController(apiClient: apiClient, bundledDataStorage: bundledDataStorage, fileStorage: fileStorage)
         let previewSize = CGSize(width: PDFReaderLayout.sidebarWidth, height: PDFReaderLayout.sidebarWidth)
 
         self.bundledDataStorage = bundledDataStorage
@@ -73,7 +73,7 @@ final class Controllers {
         self.dragDropController = DragDropController()
         self.crashReporter = crashReporter
         self.debugLogging = debugLogging
-        self.translatorsController = translatorsController
+        self.translatorsAndStylesController = translatorsAndStylesController
         self.annotationPreviewController = AnnotationPreviewController(previewSize: previewSize, fileStorage: fileStorage)
         self.urlDetector = urlDetector
         self.dateParser = DateParser()
@@ -88,7 +88,7 @@ final class Controllers {
 
     func willEnterForeground() {
         self.crashReporter.processPendingReports()
-        self.translatorsController.update()
+        self.translatorsAndStylesController.update()
 
         guard let controllers = self.userControllers, let session = self.sessionController.sessionData else { return }
         controllers.enableSync(apiKey: session.apiToken)
@@ -184,7 +184,7 @@ final class UserControllers {
     let fileCleanupController: AttachmentFileCleanupController
     private let isFirstLaunch: Bool
     private let lastBuildNumber: Int?
-    unowned let translatorsController: TranslatorsController
+    unowned let translatorsAndStylesController: TranslatorsAndStylesController
 
     private static let schemaVersion: UInt64 = 9
 
@@ -221,7 +221,7 @@ final class UserControllers {
         self.fileDownloader = fileDownloader
         self.webSocketController = webSocketController
         self.fileCleanupController = fileCleanupController
-        self.translatorsController = controllers.translatorsController
+        self.translatorsAndStylesController = controllers.translatorsAndStylesController
         self.lastBuildNumber = controllers.lastBuildNumber
         self.disposeBag = DisposeBag()
 
@@ -260,7 +260,7 @@ final class UserControllers {
             .subscribe(onNext: { [weak self] change in
                 switch change {
                 case .translators:
-                    self?.translatorsController.updateFromRepo(type: .notification)
+                    self?.translatorsAndStylesController.updateFromRepo(type: .notification)
                 case .library(let libraryId, _):
                     self?.syncScheduler.webSocketUpdate(libraryId: libraryId)
                 }

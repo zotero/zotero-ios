@@ -1,5 +1,5 @@
 //
-//  TranslatorsController.swift
+//  TranslatorsAndStylesController.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 11/12/2019.
@@ -20,7 +20,7 @@ protocol TranslatorsControllerCoordinatorDelegate: AnyObject {
     func showResetToBundleError()
 }
 
-final class TranslatorsController {
+final class TranslatorsAndStylesController {
     enum UpdateType: Int {
         case manual = 1
         case initial = 2
@@ -67,7 +67,7 @@ final class TranslatorsController {
 
     weak var coordinator: TranslatorsControllerCoordinatorDelegate?
 
-    init(apiClient: ApiClient, indexStorage: DbStorage, fileStorage: FileStorage, bundle: Bundle = Bundle.main) {
+    init(apiClient: ApiClient, bundledDataStorage: DbStorage, fileStorage: FileStorage, bundle: Bundle = Bundle.main) {
         do {
             try fileStorage.createDirectories(for: Files.bundledDataDbFile)
         } catch let error {
@@ -79,7 +79,7 @@ final class TranslatorsController {
         self.bundle = bundle
         self.apiClient = apiClient
         self.fileStorage = fileStorage
-        self.dbStorage = indexStorage
+        self.dbStorage = bundledDataStorage
         self.isLoading = BehaviorRelay(value: false)
         self.disposeBag = DisposeBag()
         self.queue = queue
@@ -116,20 +116,7 @@ final class TranslatorsController {
             }
 
             do {
-                let hash = try self.loadLastCommitHash()
-
-                if self.lastCommitHash != hash {
-                    let timestamp = try self.loadLastTimestamp()
-                    let (deletedVersion, deletedIndices) = try self.loadDeleted()
-
-                    try self.syncTranslatorsWithBundledData(deleteIndices: deletedIndices)
-                    
-                    self.lastCommitHash = hash
-                    if timestamp > self.lastTimestamp {
-                        self.lastTimestamp = timestamp
-                    }
-                    self.lastDeleted = deletedVersion
-                }
+                try self._updateTranslatorsFromBundle()
 
                 subscriber(.success(()))
             } catch let error {
@@ -138,6 +125,23 @@ final class TranslatorsController {
 
             return Disposables.create()
         }
+    }
+
+    private func _updateTranslatorsFromBundle() throws {
+        let hash = try self.loadLastCommitHash()
+
+        guard self.lastCommitHash != hash else { return }
+
+        let timestamp = try self.loadLastTimestamp()
+        let (deletedVersion, deletedIndices) = try self.loadDeleted()
+
+        try self.syncTranslatorsWithBundledData(deleteIndices: deletedIndices)
+
+        self.lastCommitHash = hash
+        if timestamp > self.lastTimestamp {
+            self.lastTimestamp = timestamp
+        }
+        self.lastDeleted = deletedVersion
     }
 
     /// Manual update of translators from remote repo.

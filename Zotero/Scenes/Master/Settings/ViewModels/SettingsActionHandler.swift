@@ -22,13 +22,13 @@ struct SettingsActionHandler: ViewModelActionHandler {
     private unowned let sessionController: SessionController
     private unowned let syncScheduler: SynchronizationScheduler
     private unowned let debugLogging: DebugLogging
-    private unowned let translatorsController: TranslatorsController
+    private unowned let translatorsAndStylesController: TranslatorsAndStylesController
     private unowned let webSocketController: WebSocketController
     private unowned let fileCleanupController: AttachmentFileCleanupController
     private let disposeBag: DisposeBag
 
     init(dbStorage: DbStorage, bundledDataStorage: DbStorage, fileStorage: FileStorage, sessionController: SessionController, webSocketController: WebSocketController,
-         syncScheduler: SynchronizationScheduler, debugLogging: DebugLogging, translatorsController: TranslatorsController, fileCleanupController: AttachmentFileCleanupController) {
+         syncScheduler: SynchronizationScheduler, debugLogging: DebugLogging, translatorsAndStylesController: TranslatorsAndStylesController, fileCleanupController: AttachmentFileCleanupController) {
         self.dbStorage = dbStorage
         self.bundledDataStorage = bundledDataStorage
         self.fileStorage = fileStorage
@@ -36,7 +36,7 @@ struct SettingsActionHandler: ViewModelActionHandler {
         self.webSocketController = webSocketController
         self.syncScheduler = syncScheduler
         self.debugLogging = debugLogging
-        self.translatorsController = translatorsController
+        self.translatorsAndStylesController = translatorsAndStylesController
         self.fileCleanupController = fileCleanupController
         self.disposeBag = DisposeBag()
     }
@@ -86,10 +86,10 @@ struct SettingsActionHandler: ViewModelActionHandler {
             self.debugLogging.stop()
 
         case .updateTranslators:
-            self.translatorsController.updateFromRepo(type: .manual)
+            self.translatorsAndStylesController.updateFromRepo(type: .manual)
 
         case .resetTranslators:
-            self.translatorsController.resetToBundle()
+            self.translatorsAndStylesController.resetToBundle()
 
         case .loadStorageData:
             self.loadStorageData(in: viewModel)
@@ -200,15 +200,15 @@ struct SettingsActionHandler: ViewModelActionHandler {
     }
 
     private func observeTranslatorUpdate(in viewModel: ViewModel<SettingsActionHandler>) {
-        self.translatorsController.isLoading
-                                  .observe(on: MainScheduler.instance)
-                                  .subscribe(onNext: { [weak viewModel] isLoading in
-                                      guard let viewModel = viewModel else { return }
-                                      self.update(viewModel: viewModel) { state in
-                                          state.isUpdatingTranslators = isLoading
-                                      }
-                                  })
-                                  .disposed(by: self.disposeBag)
+        self.translatorsAndStylesController.isLoading
+                                           .observe(on: MainScheduler.instance)
+                                           .subscribe(onNext: { [weak viewModel] isLoading in
+                                               guard let viewModel = viewModel else { return }
+                                               self.update(viewModel: viewModel) { state in
+                                                   state.isUpdatingTranslators = isLoading
+                                               }
+                                           })
+                                           .disposed(by: self.disposeBag)
     }
 
     private func observeSyncChanges(in viewModel: ViewModel<SettingsActionHandler>) {

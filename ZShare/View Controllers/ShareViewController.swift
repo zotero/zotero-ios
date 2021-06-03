@@ -60,7 +60,7 @@ final class ShareViewController: UIViewController {
     @IBOutlet private weak var savingInnerContainer: UIView!
 
     // Variables
-    private var translatorsController: TranslatorsController!
+    private var translatorsController: TranslatorsAndStylesController!
     private var dbStorage: DbStorage!
     private var bundledDataStorage: DbStorage!
     private var fileStorage: FileStorageController!
@@ -594,7 +594,7 @@ final class ShareViewController: UIViewController {
         let dbStorage = RealmDbStorage(config: Database.mainConfiguration(url: dbUrl, fileStorage: fileStorage))
         let configuration = Database.bundledDataConfiguration(fileStorage: fileStorage)
         let bundledDataStorage = RealmDbStorage(config: configuration)
-        let translatorsController = TranslatorsController(apiClient: apiClient, indexStorage: bundledDataStorage, fileStorage: fileStorage)
+        let translatorsController = TranslatorsAndStylesController(apiClient: apiClient, bundledDataStorage: bundledDataStorage, fileStorage: fileStorage)
 
         apiClient.set(authToken: session.apiToken)
         translatorsController.updateFromRepo(type: .shareExtension)
@@ -607,7 +607,7 @@ final class ShareViewController: UIViewController {
     }
 
     private func createStore(for userId: Int, dbStorage: DbStorage, apiClient: ApiClient, schemaController: SchemaController,
-                             fileStorage: FileStorage, translatorsController: TranslatorsController) -> ExtensionStore {
+                             fileStorage: FileStorage, translatorsController: TranslatorsAndStylesController) -> ExtensionStore {
         let dateParser = DateParser()
 
         let uploadProcessor = BackgroundUploadProcessor(apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)

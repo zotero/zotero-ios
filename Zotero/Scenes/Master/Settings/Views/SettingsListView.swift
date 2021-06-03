@@ -40,14 +40,6 @@ struct SettingsListView: View {
                         .foregroundColor(Color(self.textColor))
                 })
 
-//                NavigationLink(destination: SyncSettingsView()) {
-//                    Text(L10n.Settings.sync)
-//                }
-
-//                NavigationLink(destination: TranslatorsSettingsView()) {
-//                    Text(L10n.Settings.translators)
-//                }
-
                 NavigationLink(destination: SavingSettingsView()) {
                     Text(L10n.Settings.Saving.title)
                 }

@@ -30,8 +30,8 @@ struct StorageSettingsView_Previews: PreviewProvider {
         let controllers = Controllers()
         let state = SettingsState(isSyncing: false,
                                   isLogging: controllers.debugLogging.isEnabled,
-                                  isUpdatingTranslators: controllers.translatorsController.isLoading.value,
-                                  lastTranslatorUpdate: controllers.translatorsController.lastUpdate,
+                                  isUpdatingTranslators: controllers.translatorsAndStylesController.isLoading.value,
+                                  lastTranslatorUpdate: controllers.translatorsAndStylesController.lastUpdate,
                                   websocketConnectionState: .disconnected)
         let handler = SettingsActionHandler(dbStorage: controllers.userControllers!.dbStorage,
                                             bundledDataStorage: controllers.bundledDataStorage,
@@ -40,7 +40,7 @@ struct StorageSettingsView_Previews: PreviewProvider {
                                             webSocketController: controllers.userControllers!.webSocketController,
                                             syncScheduler: controllers.userControllers!.syncScheduler,
                                             debugLogging: controllers.debugLogging,
-                                            translatorsController: controllers.translatorsController,
+                                            translatorsAndStylesController: controllers.translatorsAndStylesController,
                                             fileCleanupController: controllers.userControllers!.fileCleanupController)
         return StorageSettingsView().environmentObject(ViewModel(initialState: state, handler: handler))
     }

@@ -58,13 +58,15 @@ fileprivate struct CitationStyleContentView: View {
 
     var body: some View {
         Form {
-            ForEach(self.viewModel.state.remoteStyles) { style in
-                Button(action: {
-                    self.pickAction(style)
-                    self.presentationMode.wrappedValue.dismiss()
-                }, label: {
-                    CitationStyleRow(style: style)
-                })
+            Section(header: Text("")) {
+                ForEach(self.viewModel.state.remoteStyles) { style in
+                    Button(action: {
+                        self.pickAction(style)
+                        self.presentationMode.wrappedValue.dismiss()
+                    }, label: {
+                        CitationStyleRow(style: style)
+                    })
+                }
             }
         }
     }
@@ -76,6 +78,7 @@ fileprivate struct CitationStyleRow: View {
     var body: some View {
         HStack {
             Text(self.style.title)
+                .foregroundColor(.black)
 
             Spacer()
 

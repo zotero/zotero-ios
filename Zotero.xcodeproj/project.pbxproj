@@ -590,8 +590,8 @@
 		B36459E726441A1800A0C2C0 /* TagRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36459E626441A1800A0C2C0 /* TagRow.swift */; };
 		B36459E926441A2000A0C2C0 /* TagRow.xib in Resources */ = {isa = PBXBuildFile; fileRef = B36459E826441A2000A0C2C0 /* TagRow.xib */; };
 		B367330D24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B367330C24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift */; };
-		B36A988D2428E05A005D5790 /* TranslatorsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsController.swift */; };
-		B36A98912428E346005D5790 /* TranslatorsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsController.swift */; };
+		B36A988D2428E05A005D5790 /* TranslatorsAndStylesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsAndStylesController.swift */; };
+		B36A98912428E346005D5790 /* TranslatorsAndStylesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsAndStylesController.swift */; };
 		B36BEC7324485FC700A60552 /* TagColorGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36BEC7224485FC700A60552 /* TagColorGenerator.swift */; };
 		B36C5086257521DE00A370D3 /* AnnotationEditActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36C5085257521DE00A370D3 /* AnnotationEditActionHandler.swift */; };
 		B36C508A2575221400A370D3 /* AnnotationEditAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36C50892575221400A370D3 /* AnnotationEditAction.swift */; };
@@ -1282,7 +1282,7 @@
 		B36459E626441A1800A0C2C0 /* TagRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagRow.swift; sourceTree = "<group>"; };
 		B36459E826441A2000A0C2C0 /* TagRow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TagRow.xib; sourceTree = "<group>"; };
 		B367330C24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HtmlAttributedStringConverter.swift; sourceTree = "<group>"; };
-		B36A988C2428E059005D5790 /* TranslatorsController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TranslatorsController.swift; sourceTree = "<group>"; };
+		B36A988C2428E059005D5790 /* TranslatorsAndStylesController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TranslatorsAndStylesController.swift; sourceTree = "<group>"; };
 		B36BEC7224485FC700A60552 /* TagColorGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagColorGenerator.swift; sourceTree = "<group>"; };
 		B36C5085257521DE00A370D3 /* AnnotationEditActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationEditActionHandler.swift; sourceTree = "<group>"; };
 		B36C50892575221400A370D3 /* AnnotationEditAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationEditAction.swift; sourceTree = "<group>"; };
@@ -1612,7 +1612,7 @@
 				B305646E23FC051E003304F2 /* SessionController.swift */,
 				B36BEC7224485FC700A60552 /* TagColorGenerator.swift */,
 				B378F4CC242CD45700B88A05 /* TranslatorParserDelegate.swift */,
-				B36A988C2428E059005D5790 /* TranslatorsController.swift */,
+				B36A988C2428E059005D5790 /* TranslatorsAndStylesController.swift */,
 				B3972688247D403200A8B469 /* UrlDetector.swift */,
 				B324276C25C81F2000567504 /* WebSocketController.swift */,
 			);
@@ -3576,7 +3576,7 @@
 				B37491362488D7040042FF85 /* GeneralSettingsView.swift in Sources */,
 				B30566A423FC051F003304F2 /* UpdatableObject.swift in Sources */,
 				B30566C723FC051F003304F2 /* AppGroup.swift in Sources */,
-				B36A988D2428E05A005D5790 /* TranslatorsController.swift in Sources */,
+				B36A988D2428E05A005D5790 /* TranslatorsAndStylesController.swift in Sources */,
 				B378F4CD242CD45700B88A05 /* TranslatorParserDelegate.swift in Sources */,
 				B3F3D644255ECF3500F310C2 /* AnnotationViewSeparator.swift in Sources */,
 				B37C5B6B26453C4F009A37E5 /* NoteEditorState.swift in Sources */,
@@ -3920,7 +3920,7 @@
 				B305677923FC0C4D003304F2 /* FileManager+Utils.swift in Sources */,
 				B305671523FC08CD003304F2 /* EditCollectionDbRequest.swift in Sources */,
 				B305677F23FC0D0A003304F2 /* SessionController.swift in Sources */,
-				B36A98912428E346005D5790 /* TranslatorsController.swift in Sources */,
+				B36A98912428E346005D5790 /* TranslatorsAndStylesController.swift in Sources */,
 				B30566F623FC0853003304F2 /* DeleteGroupDbRequest.swift in Sources */,
 				B3AAD70D23CE16010042C4AB /* CreateBackendItemDbRequest.swift in Sources */,
 				B305671123FC08C5003304F2 /* ReadTagsDbRequest.swift in Sources */,
