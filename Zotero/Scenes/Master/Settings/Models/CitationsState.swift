@@ -15,8 +15,8 @@ struct CitationsState: ViewModelState {
     var styles: Results<RStyle>?
     var stylesToken: NotificationToken?
 
-    var remoteStyles: [CitationStyle]
-    var filteredRemoteStyles: [CitationStyle]?
+    var remoteStyles: [RemoteCitationStyle]
+    var filteredRemoteStyles: [RemoteCitationStyle]?
     var loadingRemoteStyles: Bool
     var loadingError: Error?
 

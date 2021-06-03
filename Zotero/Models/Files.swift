@@ -91,6 +91,15 @@ struct Files {
         return FileData(rootPath: Files.appGroupPath, relativeComponents: ["translators"], name: name, ext: "")
     }
 
+    static var styles: File {
+        return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["styles"])
+    }
+
+    static func style(filename: String) -> File {
+        let name = self.split(filename: filename).name
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["styles"], name: name, ext: "csl")
+    }
+
     // MARK: - PDF
 
     static func pdfToShare(filename: String, key: String) -> File {
@@ -143,11 +152,15 @@ struct Files {
     }
 
     private static func rootAndComponents(from url: URL) -> (String, [String]) {
-        let urlString: String
+        var urlString: String
         if url.pathExtension.isEmpty {
             urlString = url.relativeString
         } else {
             urlString = url.deletingLastPathComponent().relativeString
+        }
+
+        if urlString.hasPrefix("file://") {
+            urlString = String(urlString[urlString.index(urlString.startIndex, offsetBy: 7)...])
         }
 
         if let range = urlString.range(of: self.appGroupPath) {

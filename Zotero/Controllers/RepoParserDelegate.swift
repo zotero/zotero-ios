@@ -1,5 +1,5 @@
 //
-//  TranslatorParserDelegate.swift
+//  RepoParserDelegate.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 26/03/2020.
@@ -8,10 +8,9 @@
 
 import Foundation
 
-final class TranslatorParserDelegate: NSObject, XMLParserDelegate {
+final class RepoParserDelegate: NSObject, XMLParserDelegate {
     private(set) var translators: [Translator]
     private(set) var timestamp: Int
-    private var currentElement: Element?
     private var currentTranslator: Translator?
     private var currentValue: String
 
@@ -42,8 +41,7 @@ final class TranslatorParserDelegate: NSObject, XMLParserDelegate {
     }
 
     func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
-        self.currentElement = Element(rawValue: elementName)
-        if self.currentElement == .translator {
+        if Element(rawValue: elementName) == .translator {
             self.currentTranslator = Translator(metadata: attributeDict, code: "")
         }
     }
@@ -65,7 +63,6 @@ final class TranslatorParserDelegate: NSObject, XMLParserDelegate {
             }
         }
 
-        self.currentElement = nil
         self.currentValue = ""
     }
 

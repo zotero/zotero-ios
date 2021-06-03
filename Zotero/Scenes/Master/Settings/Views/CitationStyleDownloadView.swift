@@ -11,7 +11,7 @@ import SwiftUI
 struct CitationStyleDownloadView: View {
     @EnvironmentObject var viewModel: ViewModel<CitationsActionHandler>
 
-    let pickAction: (CitationStyle) -> Void
+    let pickAction: (RemoteCitationStyle) -> Void
 
     var body: some View {
         ZStack {
@@ -54,7 +54,7 @@ fileprivate struct CitationStyleContentView: View {
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     @EnvironmentObject var viewModel: ViewModel<CitationsActionHandler>
 
-    let pickAction: (CitationStyle) -> Void
+    let pickAction: (RemoteCitationStyle) -> Void
 
     var body: some View {
         Form {
@@ -73,7 +73,7 @@ fileprivate struct CitationStyleContentView: View {
 }
 
 fileprivate struct CitationStyleRow: View {
-    let style: CitationStyle
+    let style: RemoteCitationStyle
 
     var body: some View {
         HStack {

@@ -1,5 +1,5 @@
 //
-//  CitationStyle.swift
+//  RemoteCitationStyle.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 19.05.2021.
@@ -8,11 +8,11 @@
 
 import Foundation
 
-struct CitationStyle: Identifiable {
+struct RemoteCitationStyle: Identifiable {
     let title: String
     let name: String
     let dependent: Bool
-    let category: CitationStyleCategory
+    let category: RemoteCitationStyleCategory
     let updated: Date
     let href: String
 
@@ -21,7 +21,7 @@ struct CitationStyle: Identifiable {
     }
 }
 
-extension CitationStyle: Decodable {
+extension RemoteCitationStyle: Decodable {
     private enum CodingKeys: String, CodingKey {
         case title, name, dependent, categories, updated, href
     }
@@ -34,12 +34,12 @@ extension CitationStyle: Decodable {
         self.name = try container.decode(String.self, forKey: .name)
         self.href = try container.decode(String.self, forKey: .href)
         self.dependent = try container.decode(Int.self, forKey: .dependent) == 1
-        self.category = try container.decode(CitationStyleCategory.self, forKey: .categories)
+        self.category = try container.decode(RemoteCitationStyleCategory.self, forKey: .categories)
         self.updated = Formatter.sqlFormat.date(from: rawDate) ?? Date(timeIntervalSince1970: 0)
     }
 }
 
-struct CitationStyleCategory: Decodable {
+struct RemoteCitationStyleCategory: Decodable {
     let format: String
     let fields: [String]
 }

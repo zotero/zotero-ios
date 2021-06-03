@@ -28,7 +28,7 @@ final class SettingsCoordinator: NSObject, Coordinator {
     unowned let navigationController: UINavigationController
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
-    private static let defaultSize: CGSize = CGSize(width: 540, height: 620)
+    private static let defaultSize: CGSize = CGSize(width: 540, height: 580)
 
     private var searchController: UISearchController?
 
@@ -159,7 +159,7 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         view.coordinatorDelegate = self
 
         let controller = UIHostingController(rootView: view.environmentObject(viewModel))
-        controller.preferredContentSize = SettingsCoordinator.defaultSize
+        controller.preferredContentSize = UIScreen.main.bounds.size
         self.navigationController.pushViewController(controller, animated: true)
     }
 

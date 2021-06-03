@@ -46,12 +46,14 @@ final class TranslatorsAndStylesController {
         }
     }
 
-    @UserDefault(key: "TranslatorLastCommitHash", defaultValue: "")
-    private var lastCommitHash: String
     @UserDefault(key: "TranslatorLastTimestamp", defaultValue: 0)
     private var lastTimestamp: Int
+    @UserDefault(key: "TranslatorLastCommitHash", defaultValue: "")
+    private var lastTranslatorCommitHash: String
     @UserDefault(key: "TranslatorLastDeletedVersion", defaultValue: 0)
-    private var lastDeleted: Int
+    private var lastTranslatorDeleted: Int
+    @UserDefault(key: "StylesLastCommitHash", defaultValue: "")
+    private var lastStylesCommitHash: String
     private(set) var isLoading: BehaviorRelay<Bool>
     var lastUpdate: Date {
         return Date(timeIntervalSince1970: Double(self.lastTimestamp))
@@ -90,8 +92,10 @@ final class TranslatorsAndStylesController {
 
     /// Loads bundled translators if needed, then loads remote translators.
     func update() {
+        let type: UpdateType = self.lastTranslatorCommitHash == "" ? .initial : .startup
+
         self.isLoading.accept(true)
-        let type: UpdateType = self.lastCommitHash == "" ? .initial : .startup
+
         self.updateFromBundle()
             .subscribe(on: self.scheduler)
             .flatMap {
@@ -107,7 +111,7 @@ final class TranslatorsAndStylesController {
             .disposed(by: self.disposeBag)
     }
 
-    /// Update local translators with bundled translators if needed.
+    /// Update local assets with bundled assets if needed.
     private func updateFromBundle() -> Single<()> {
         return Single.create { [weak self] subscriber -> Disposable in
             guard let `self` = self else {
@@ -117,9 +121,16 @@ final class TranslatorsAndStylesController {
 
             do {
                 try self._updateTranslatorsFromBundle()
+                try self._updateStylesFromBundle()
+
+                let timestamp = try self.loadLastTimestamp()
+                if timestamp > self.lastTimestamp {
+                    self.lastTimestamp = timestamp
+                }
 
                 subscriber(.success(()))
             } catch let error {
+                DDLogError("Error: \(error)")
                 subscriber(.failure(Error.bundleLoading(error)))
             }
 
@@ -127,21 +138,28 @@ final class TranslatorsAndStylesController {
         }
     }
 
+    /// Update local translators with bundled translators if needed.
     private func _updateTranslatorsFromBundle() throws {
-        let hash = try self.loadLastCommitHash()
+        let hash = try self.loadLastTranslatorCommitHash()
 
-        guard self.lastCommitHash != hash else { return }
+        guard self.lastTranslatorCommitHash != hash else { return }
 
-        let timestamp = try self.loadLastTimestamp()
         let (deletedVersion, deletedIndices) = try self.loadDeleted()
-
         try self.syncTranslatorsWithBundledData(deleteIndices: deletedIndices)
 
-        self.lastCommitHash = hash
-        if timestamp > self.lastTimestamp {
-            self.lastTimestamp = timestamp
-        }
-        self.lastDeleted = deletedVersion
+        self.lastTranslatorDeleted = deletedVersion
+        self.lastTranslatorCommitHash = hash
+    }
+
+    /// Update local styles with bundled styles if needed.
+    private func _updateStylesFromBundle() throws {
+        let hash = try self.loadLastStylesCommitHash()
+
+        guard self.lastStylesCommitHash != hash else { return }
+
+        try self.syncStylesWithBundledData()
+
+        self.lastStylesCommitHash = hash
     }
 
     /// Manual update of translators from remote repo.
@@ -172,7 +190,7 @@ final class TranslatorsAndStylesController {
                              .observe(on: self.scheduler)
                              .flatMap { data, _ -> Single<(Int, [Translator])> in
                                 do {
-                                    let response = try self.parseXmlTranslators(from: data)
+                                    let response = try self.parseRepoResponse(from: data)
                                     return Single.just(response)
                                 } catch let error {
                                     return Single.error(error)
@@ -216,16 +234,38 @@ final class TranslatorsAndStylesController {
 
     /// Sync local translators with bundled translators.
     private func syncTranslatorsWithBundledData(deleteIndices: [String]) throws {
+        // Load metadata index
         let metadata = try self.loadIndex()
-        let coordinator = try self.dbStorage.createCoordinator()
+        // Sync translators
         let request = SyncTranslatorsDbRequest(updateMetadata: metadata, deleteIndices: deleteIndices)
-        let updated = try coordinator.perform(request: request)
-
+        let updated = try self.dbStorage.createCoordinator().perform(request: request)
+        // Delete files of deleted translators
         deleteIndices.forEach { id in
             try? self.fileStorage.remove(Files.translator(filename: id))
         }
-
+        // Unzip updated translators
         try self.unzip(translators: updated)
+    }
+
+    /// Sync local styles with bundled styles.
+    private func syncStylesWithBundledData() throws {
+        guard let stylesUrl = self.bundle.path(forResource: "Bundled/styles", ofType: "").flatMap({ URL(fileURLWithPath: $0) }) else {
+            throw Error.bundleMissing
+        }
+
+        // Load file metadata of bundled styles
+        let files: [File] = try self.fileStorage.contentsOfDirectory(at: Files.file(from: stylesUrl))
+        let styles: [CitationStyle] = files.compactMap({ file in
+            guard file.ext == "csl" else { return nil }
+            return try? self.parseStyle(from: file)
+        })
+        // Sync styles
+        let request = SyncStylesDbRequest(styles: styles)
+        let updated = try self.dbStorage.createCoordinator().perform(request: request)
+        // Copy updated files
+        for file in files.filter({ updated.contains($0.name) }) {
+            try self.fileStorage.copy(from: file, to: Files.style(filename: file.name))
+        }
     }
 
     /// Unzip individual translators from bundled zip file to translator location.
@@ -235,6 +275,7 @@ final class TranslatorsAndStylesController {
               let archive = Archive(url: zipUrl, accessMode: .read) else {
             throw Error.bundleMissing
         }
+
         for (id, filename) in translators {
             guard let entry = archive[filename] else { continue }
             let file = Files.translator(filename: id)
@@ -282,6 +323,7 @@ final class TranslatorsAndStylesController {
             guard let `self` = self else { return }
 
             do {
+                // TODO: - implement styles reset if needed
                 try self._resetToBundle()
             } catch let error {
                 DDLogError("TranslatorsController: can't reset to bundle - \(error)")
@@ -455,11 +497,24 @@ final class TranslatorsAndStylesController {
         return data
     }
 
+    private func parseStyle(from file: File) throws -> CitationStyle {
+        let data = try self.fileStorage.read(file)
+        let delegate = StyleParserDelegate()
+        let parser = XMLParser(data: data)
+        parser.delegate = delegate
+
+        if parser.parse(), let style = delegate.style {
+            return style
+        }
+
+        throw Error.cantParseXmlResponse
+    }
+
     /// Parse XML response from translator repo.
     /// - parameter data: Data to be parsed.
     /// - returns: Tupe, where first value is the "currentTime" and second value is an array of parsed `Translator`s.
-    private func parseXmlTranslators(from data: Data) throws -> (Int, [Translator]) {
-        let delegate = TranslatorParserDelegate()
+    private func parseRepoResponse(from data: Data) throws -> (Int, [Translator]) {
+        let delegate = RepoParserDelegate()
         let parser = XMLParser(data: data)
         parser.delegate = delegate
 
@@ -487,7 +542,7 @@ final class TranslatorsAndStylesController {
     /// - returns: Tuple, where first value is the version of deleted file and second value is an array of indices of translators to be deleted.
     private func loadDeleted() throws -> (Int, [String]) {
         return try self.loadFromBundle(resource: "Bundled/translators/deleted", type: "txt", map: {
-            guard let data = self.parse(deleted: $0, lastDeletedVersion: self.lastDeleted) else {
+            guard let data = self.parse(deleted: $0, lastDeletedVersion: self.lastTranslatorDeleted) else {
                 throw Error.incompatibleDeleted
             }
             return data
@@ -497,16 +552,22 @@ final class TranslatorsAndStylesController {
     /// Load bundled last timestamp.
     /// - returns: Last timestamp.
     private func loadLastTimestamp() throws -> Int {
-        return try self.loadFromBundle(resource: "Bundled/translators/timestamp", type: "txt", map: {
+        return try self.loadFromBundle(resource: "Bundled/timestamp", type: "txt", map: {
             guard let value = Int($0) else { throw Error.bundleMissing }
             return value
         })
     }
 
-    /// Load bundled last commit hash.
+    /// Load bundled last translator commit hash.
     /// - returns: Commit hash.
-    private func loadLastCommitHash() throws -> String {
+    private func loadLastTranslatorCommitHash() throws -> String {
         return try self.loadFromBundle(resource: "Bundled/translators/commit_hash", type: "txt", map: { return $0 })
+    }
+
+    /// Load bundled last styles commit hash.
+    /// - returns: Commit hash.
+    private func loadLastStylesCommitHash() throws -> String {
+        return try self.loadFromBundle(resource: "Bundled/styles/commit_hash", type: "txt", map: { return $0 })
     }
 
     /// Load bundled data and map it to appropriate type.
@@ -524,10 +585,9 @@ final class TranslatorsAndStylesController {
 
     // MARK: - Testing
 
-    func setupTest(timestamp: Int,
-                   hash: String, deleted: Int) {
+    func setupTest(timestamp: Int, hash: String, deleted: Int) {
         self.lastTimestamp = timestamp
-        self.lastCommitHash = hash
-        self.lastDeleted = deleted
+        self.lastTranslatorCommitHash = hash
+        self.lastTranslatorDeleted = deleted
     }
 }

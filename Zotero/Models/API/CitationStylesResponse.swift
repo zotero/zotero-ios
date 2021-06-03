@@ -11,16 +11,16 @@ import Foundation
 import CocoaLumberjackSwift
 
 struct CitationStylesResponse: Decodable {
-    let styles: [CitationStyle]
+    let styles: [RemoteCitationStyle]
 
     init(from decoder: Decoder) throws {
         var container = try decoder.unkeyedContainer()
 
-        var styles: [CitationStyle] = []
+        var styles: [RemoteCitationStyle] = []
 
         while !container.isAtEnd {
             do {
-                let style = try container.decode(CitationStyle.self)
+                let style = try container.decode(RemoteCitationStyle.self)
                 styles.append(style)
             } catch let error {
                 DDLogWarn("CitationStylesResponse: can't parse style - \(error)")

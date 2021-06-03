@@ -9,7 +9,7 @@
 import Foundation
 
 enum CitationsAction {
-    case addStyle(CitationStyle)
+    case addStyle(RemoteCitationStyle)
     case loadStyles
     case loadRemoteStyles
     case searchRemote(String)

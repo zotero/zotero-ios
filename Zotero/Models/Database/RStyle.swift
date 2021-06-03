@@ -11,17 +11,18 @@ import Foundation
 import RealmSwift
 
 final class RStyle: Object {
-    @objc dynamic var name: String = ""
+    @objc dynamic var identifier: String = ""
     @objc dynamic var title: String = ""
+    @objc dynamic var href: String = ""
     @objc dynamic var updated: Date = Date(timeIntervalSince1970: 0)
 
     // MARK: - Object properties
 
     override class func primaryKey() -> String? {
-        return "name"
+        return "identifier"
     }
 }
 
 extension RStyle: Identifiable {
-    var id: String { return self.name }
+    var id: String { return self.identifier }
 }

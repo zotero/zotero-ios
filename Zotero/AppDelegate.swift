@@ -170,8 +170,7 @@ extension AppDelegate: SceneActivityCounter {
 }
 
 extension AppDelegate: UIApplicationDelegate {
-    func application(_ application: UIApplication,
-                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         #if PDFENABLED
         if let key = Licenses.shared.pspdfkitKey {
             PSPDFKit.SDK.setLicenseKey(key)

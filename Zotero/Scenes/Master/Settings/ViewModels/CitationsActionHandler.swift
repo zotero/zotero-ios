@@ -87,8 +87,7 @@ struct CitationsActionHandler: ViewModelActionHandler {
 
         self.apiClient.send(request: CitationStylesRequest())
             .observe(on: MainScheduler.instance)
-            .subscribe(with: viewModel,
-                       onSuccess: { (viewModel, response: (CitationStylesResponse, ResponseHeaders)) in
+            .subscribe(with: viewModel, onSuccess: { (viewModel, response: (CitationStylesResponse, ResponseHeaders)) in
                            self.update(viewModel: viewModel) { state in
                                state.loadingRemoteStyles = false
                                state.remoteStyles = response.0.styles
@@ -101,6 +100,5 @@ struct CitationsActionHandler: ViewModelActionHandler {
                            }
                        })
                        .disposed(by: self.disposeBag)
-
     }
 }

@@ -40,7 +40,7 @@ if not os.path.isdir(bundle_dir):
     raise Exception(bundle_dir + " is not a directory")
 
 # Download translators submodule
-subprocess.check_call(["git", "submodule", "update", "--recursive"])
+subprocess.check_call(["git", "submodule", "update", "--recursive", "ZShare/Assets/translation/modules/zotero"])
 
 # Get translators directory
 translators_dir = os.path.join(os.path.abspath("."), "ZShare" + os.sep + "Assets" + os.sep + "translation" + os.sep + "modules" + os.sep + "zotero" + os.sep + "translators")
