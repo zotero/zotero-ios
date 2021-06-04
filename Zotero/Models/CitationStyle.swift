@@ -12,7 +12,7 @@ struct CitationStyle: Identifiable {
     let identifier: String
     let title: String
     let updated: Date
-    let href: String
+    let href: URL
 
     var id: String {
         return self.identifier

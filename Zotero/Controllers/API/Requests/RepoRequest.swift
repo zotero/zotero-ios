@@ -1,5 +1,5 @@
 //
-//  TranslatorsRequest.swift
+//  RepoRequest.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 26/03/2020.
@@ -8,10 +8,11 @@
 
 import Foundation
 
-struct TranslatorsRequest: ApiRequest {
+struct RepoRequest: ApiRequest {
     let timestamp: Int
     let version: String
     let type: Int
+    let styles: [String: Any]?
 
     var endpoint: ApiEndpoint {
         return .other(URL(string: "https://repo.zotero.org/repo/updated")!)
@@ -22,13 +23,17 @@ struct TranslatorsRequest: ApiRequest {
     }
 
     var encoding: ApiParameterEncoding {
-        return .url
+        return .jsonAndUrl
     }
 
     var parameters: [String : Any]? {
-        return ["last": self.timestamp,
-                "version": self.version,
-                "m": self.type]
+        var parameters: [String: Any] = [JsonAndUrlEncoding.urlKey: ["last": self.timestamp,
+                                                                     "version": self.version,
+                                                                     "m": self.type]]
+        if let styles = self.styles {
+            parameters[JsonAndUrlEncoding.jsonKey] = styles
+        }
+        return parameters
     }
 
     var headers: [String : String]? {

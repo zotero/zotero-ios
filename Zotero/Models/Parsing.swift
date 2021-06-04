@@ -16,6 +16,7 @@ struct Parsing {
         case missingKey(String)
         case notArray
         case notDictionary
+        case notUrl
     }
 
     static func parse<T>(key: String, from data: [String: Any]) throws -> T {

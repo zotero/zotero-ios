@@ -1,5 +1,5 @@
 //
-//  CitationSettingsView.swift
+//  CitationStylesSettingsView.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 18.05.2021.
@@ -8,8 +8,8 @@
 
 import SwiftUI
 
-struct CitationSettingsView: View {
-    @EnvironmentObject var viewModel: ViewModel<CitationsActionHandler>
+struct CitationStylesSettingsView: View {
+    @EnvironmentObject var viewModel: ViewModel<CitationStylesActionHandler>
 
     weak var coordinatorDelegate: SettingsCoordinatorDelegate?
 
@@ -20,6 +20,7 @@ struct CitationSettingsView: View {
                     ForEach(styles) { style in
                         StyleRow(style: style)
                     }
+                    .onDelete(perform: self.delete)
                 }
             }
 
@@ -42,13 +43,18 @@ struct CitationSettingsView: View {
         .listStyle(GroupedListStyle())
         .navigationBarTitle(L10n.Settings.Cite.title)
         .onAppear {
-            self.viewModel.process(action: .loadStyles)
+            self.viewModel.process(action: .load)
         }
+    }
+
+    private func delete(at indexSet: IndexSet) {
+        guard let index = indexSet.first else { return }
+        self.viewModel.process(action: .remove(index))
     }
 }
 
 struct StyleRow: View {
-    let style: RStyle
+    let style: CitationStyle
 
     var body: some View {
         Text(self.style.title)
@@ -57,6 +63,6 @@ struct StyleRow: View {
 
 struct CitationSettingsView_Previews: PreviewProvider {
     static var previews: some View {
-        CitationSettingsView()
+        CitationStylesSettingsView()
     }
 }

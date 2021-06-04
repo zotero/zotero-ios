@@ -232,6 +232,7 @@
 "settings.cite.title" = "Cite";
 "settings.cite.styles_title" = "Citation Styles";
 "settings.cite.get_more_styles" = "Get additional styles";
+"settings.cite_search.search_title" = "Search styles";
 
 "shareext.save" = "Save to Zotero";
 "shareext.decoding_attachment" = "Searching for items";
@@ -306,6 +307,10 @@
 "errors.logging.response_parsing" = "Unexpected response from server";
 "errors.translators.bundle_loading" = "Could not update translators from bundle. Would you like to try again?";
 "errors.translators.bundle_reset" = "Could not load bundled translators.";
+"errors.styles.addition" = "Could not add style \“%@\”.";
+"errors.styles.deletion" = "Could not delete style \“%@\”.";
+"errors.styles.loading" = "Could not load styles.";
+"errors.styles_search.loading" = "Could not load styles. Do you want to try again?";
 
 "accessibility.untitled" = "Untitled";
 "accessibility.locked" = "Locked";

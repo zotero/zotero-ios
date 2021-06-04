@@ -362,6 +362,8 @@
 		B31FACD225DBC7E900DD5F14 /* ActiveObjectDeletedConflictReceiverHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31FACD125DBC7E900DD5F14 /* ActiveObjectDeletedConflictReceiverHandler.swift */; };
 		B3231334243F0F0000F1905A /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3231333243F0F0000F1905A /* SceneDelegate.swift */; };
 		B3235C9224ADE11E0034113B /* StringAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3235C9124ADE11E0034113B /* StringAttributes.swift */; };
+		B323E3A1266A694000562298 /* JsonAndUrlEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B323E3A0266A694000562298 /* JsonAndUrlEncoding.swift */; };
+		B323E3A2266A698900562298 /* JsonAndUrlEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B323E3A0266A694000562298 /* JsonAndUrlEncoding.swift */; };
 		B324276D25C81F2000567504 /* WebSocketController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B324276C25C81F2000567504 /* WebSocketController.swift */; };
 		B324277225C82DBF00567504 /* SubscribeWsMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B324277125C82DBF00567504 /* SubscribeWsMessage.swift */; };
 		B324277825C82E6500567504 /* UnsubscribeWsMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B324277725C82E6500567504 /* UnsubscribeWsMessage.swift */; };
@@ -396,9 +398,8 @@
 		B330261225DEAD9A00742025 /* RPageIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = B330260C25DE9A1100742025 /* RPageIndex.swift */; };
 		B331F9AF2653CEA00099F6A6 /* ReadGroupDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3451B54264ECBA9000EDF16 /* ReadGroupDbRequest.swift */; };
 		B331F9B12653F59C0099F6A6 /* RStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B331F9B02653F59C0099F6A6 /* RStyle.swift */; };
-		B331F9B32653FC010099F6A6 /* CitationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B331F9B22653FC010099F6A6 /* CitationSettingsView.swift */; };
+		B331F9B32653FC010099F6A6 /* CitationStylesSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B331F9B22653FC010099F6A6 /* CitationStylesSettingsView.swift */; };
 		B331F9B5265400D70099F6A6 /* ReadStylesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B331F9B4265400D70099F6A6 /* ReadStylesDbRequest.swift */; };
-		B331F9B7265407850099F6A6 /* CitationStyleDownloadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B331F9B6265407850099F6A6 /* CitationStyleDownloadView.swift */; };
 		B33791D723BF7B2A00919210 /* CreateItemWithAttachmentDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33791D623BF7B2900919210 /* CreateItemWithAttachmentDbRequest.swift */; };
 		B337A5A8244F1DEB00AFD13D /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = B337A5AA244F1DEB00AFD13D /* Localizable.strings */; };
 		B337A5AC244F228500AFD13D /* Localizable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337A5AB244F228500AFD13D /* Localizable.swift */; };
@@ -643,8 +644,8 @@
 		B377F2A5249373F300022943 /* AttachmentFileCleanupController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B377F2A4249373F300022943 /* AttachmentFileCleanupController.swift */; };
 		B378F4C9242CC8EF00B88A05 /* Translator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4C8242CC8EF00B88A05 /* Translator.swift */; };
 		B378F4CD242CD45700B88A05 /* RepoParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4CC242CD45700B88A05 /* RepoParserDelegate.swift */; };
-		B378F4CF242D0CC200B88A05 /* TranslatorsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4CE242D0CC200B88A05 /* TranslatorsRequest.swift */; };
-		B378F4D0242D0D5500B88A05 /* TranslatorsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4CE242D0CC200B88A05 /* TranslatorsRequest.swift */; };
+		B378F4CF242D0CC200B88A05 /* RepoRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4CE242D0CC200B88A05 /* RepoRequest.swift */; };
+		B378F4D0242D0D5500B88A05 /* RepoRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4CE242D0CC200B88A05 /* RepoRequest.swift */; };
 		B378F4D1242D0E4900B88A05 /* RepoParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4CC242CD45700B88A05 /* RepoParserDelegate.swift */; };
 		B378F4D2242D0EE700B88A05 /* Translator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4C8242CC8EF00B88A05 /* Translator.swift */; };
 		B37BF0AB25A5E2AD00AE0268 /* SquareAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37BF0AA25A5E2AD00AE0268 /* SquareAnnotation.swift */; };
@@ -707,9 +708,9 @@
 		B3A27AD125BEE93400DE0BB2 /* FilenameFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A27AD025BEE93400DE0BB2 /* FilenameFormatter.swift */; };
 		B3A2AECC26552248004BF3A4 /* SettingsCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A2AECB26552248004BF3A4 /* SettingsCoordinator.swift */; };
 		B3A2AECE26553DD8004BF3A4 /* NavigationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A2AECD26553DD8004BF3A4 /* NavigationViewController.swift */; };
-		B3A2AED4265552D5004BF3A4 /* CitationsActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A2AED3265552D5004BF3A4 /* CitationsActionHandler.swift */; };
-		B3A2AED6265552F3004BF3A4 /* CitationsAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A2AED5265552F3004BF3A4 /* CitationsAction.swift */; };
-		B3A2AED8265552FA004BF3A4 /* CitationsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A2AED7265552FA004BF3A4 /* CitationsState.swift */; };
+		B3A2AED4265552D5004BF3A4 /* CitationStylesActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A2AED3265552D5004BF3A4 /* CitationStylesActionHandler.swift */; };
+		B3A2AED6265552F3004BF3A4 /* CitationStylesAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A2AED5265552F3004BF3A4 /* CitationStylesAction.swift */; };
+		B3A2AED8265552FA004BF3A4 /* CitationStylesState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A2AED7265552FA004BF3A4 /* CitationStylesState.swift */; };
 		B3A2AEDA26555B61004BF3A4 /* RemoteCitationStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A2AED926555B61004BF3A4 /* RemoteCitationStyle.swift */; };
 		B3A2AEDC2656511D004BF3A4 /* CitationStylesRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A2AEDB2656511D004BF3A4 /* CitationStylesRequest.swift */; };
 		B3A2AEDE26565211004BF3A4 /* CitationStylesResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A2AEDD26565211004BF3A4 /* CitationStylesResponse.swift */; };
@@ -737,6 +738,13 @@
 		B3B1EDFE2502498100D8BC1E /* collectionresponse_unknownfields.json in Resources */ = {isa = PBXBuildFile; fileRef = B3B1EDFC2502498100D8BC1E /* collectionresponse_unknownfields.json */; };
 		B3B1EE062502675E00D8BC1E /* Parsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EE052502675E00D8BC1E /* Parsing.swift */; };
 		B3B1EE072502680000D8BC1E /* Parsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EE052502675E00D8BC1E /* Parsing.swift */; };
+		B3B3FF7B266A1FAB0061E3B2 /* StoreStyleDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B3FF7A266A1FAB0061E3B2 /* StoreStyleDbRequest.swift */; };
+		B3B3FF7D266A2B410061E3B2 /* CitationStylesSearchActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B3FF7C266A2B410061E3B2 /* CitationStylesSearchActionHandler.swift */; };
+		B3B3FF7F266A2B4F0061E3B2 /* CitationStylesSearchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B3FF7E266A2B4F0061E3B2 /* CitationStylesSearchState.swift */; };
+		B3B3FF81266A2B5C0061E3B2 /* CitationStylesSearchAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B3FF80266A2B5C0061E3B2 /* CitationStylesSearchAction.swift */; };
+		B3B3FF83266A380D0061E3B2 /* DeleteStyleDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B3FF82266A380D0061E3B2 /* DeleteStyleDbRequest.swift */; };
+		B3B3FF86266A52600061E3B2 /* CitationStyleSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B3FF84266A52600061E3B2 /* CitationStyleSearchViewController.swift */; };
+		B3B3FF87266A52600061E3B2 /* CitationStyleSearchViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3B3FF85266A52600061E3B2 /* CitationStyleSearchViewController.xib */; };
 		B3B613F7260B844B00B92017 /* EmptyTrashDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B613F6260B844B00B92017 /* EmptyTrashDbRequest.swift */; };
 		B3B6759526205A3C003231A5 /* CollectionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B6759426205A3C003231A5 /* CollectionRowView.swift */; };
 		B3B6759B26205A48003231A5 /* CollectionRowView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3B6759A26205A48003231A5 /* CollectionRowView.xib */; };
@@ -1119,6 +1127,7 @@
 		B31FACD125DBC7E900DD5F14 /* ActiveObjectDeletedConflictReceiverHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveObjectDeletedConflictReceiverHandler.swift; sourceTree = "<group>"; };
 		B3231333243F0F0000F1905A /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		B3235C9124ADE11E0034113B /* StringAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringAttributes.swift; sourceTree = "<group>"; };
+		B323E3A0266A694000562298 /* JsonAndUrlEncoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JsonAndUrlEncoding.swift; sourceTree = "<group>"; };
 		B324276C25C81F2000567504 /* WebSocketController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSocketController.swift; sourceTree = "<group>"; };
 		B324277125C82DBF00567504 /* SubscribeWsMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscribeWsMessage.swift; sourceTree = "<group>"; };
 		B324277725C82E6500567504 /* UnsubscribeWsMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnsubscribeWsMessage.swift; sourceTree = "<group>"; };
@@ -1145,9 +1154,8 @@
 		B32EE26024A092B700442974 /* RUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RUser.swift; sourceTree = "<group>"; };
 		B330260C25DE9A1100742025 /* RPageIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPageIndex.swift; sourceTree = "<group>"; };
 		B331F9B02653F59C0099F6A6 /* RStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RStyle.swift; sourceTree = "<group>"; };
-		B331F9B22653FC010099F6A6 /* CitationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationSettingsView.swift; sourceTree = "<group>"; };
+		B331F9B22653FC010099F6A6 /* CitationStylesSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationStylesSettingsView.swift; sourceTree = "<group>"; };
 		B331F9B4265400D70099F6A6 /* ReadStylesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadStylesDbRequest.swift; sourceTree = "<group>"; };
-		B331F9B6265407850099F6A6 /* CitationStyleDownloadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationStyleDownloadView.swift; sourceTree = "<group>"; };
 		B33791D623BF7B2900919210 /* CreateItemWithAttachmentDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CreateItemWithAttachmentDbRequest.swift; sourceTree = "<group>"; };
 		B337A5A9244F1DEB00AFD13D /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		B337A5AB244F228500AFD13D /* Localizable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Localizable.swift; sourceTree = "<group>"; };
@@ -1329,7 +1337,7 @@
 		B377F2A4249373F300022943 /* AttachmentFileCleanupController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentFileCleanupController.swift; sourceTree = "<group>"; };
 		B378F4C8242CC8EF00B88A05 /* Translator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Translator.swift; sourceTree = "<group>"; };
 		B378F4CC242CD45700B88A05 /* RepoParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepoParserDelegate.swift; sourceTree = "<group>"; };
-		B378F4CE242D0CC200B88A05 /* TranslatorsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsRequest.swift; sourceTree = "<group>"; };
+		B378F4CE242D0CC200B88A05 /* RepoRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepoRequest.swift; sourceTree = "<group>"; };
 		B37BF0AA25A5E2AD00AE0268 /* SquareAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareAnnotation.swift; sourceTree = "<group>"; };
 		B37BF0B025A6035D00AE0268 /* ReadDocumentDataDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadDocumentDataDbRequest.swift; sourceTree = "<group>"; };
 		B37C5B6826453C33009A37E5 /* NoteEditorActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorActionHandler.swift; sourceTree = "<group>"; };
@@ -1382,9 +1390,9 @@
 		B3A27AD025BEE93400DE0BB2 /* FilenameFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilenameFormatter.swift; sourceTree = "<group>"; };
 		B3A2AECB26552248004BF3A4 /* SettingsCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsCoordinator.swift; sourceTree = "<group>"; };
 		B3A2AECD26553DD8004BF3A4 /* NavigationViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NavigationViewController.swift; sourceTree = "<group>"; };
-		B3A2AED3265552D5004BF3A4 /* CitationsActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationsActionHandler.swift; sourceTree = "<group>"; };
-		B3A2AED5265552F3004BF3A4 /* CitationsAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationsAction.swift; sourceTree = "<group>"; };
-		B3A2AED7265552FA004BF3A4 /* CitationsState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationsState.swift; sourceTree = "<group>"; };
+		B3A2AED3265552D5004BF3A4 /* CitationStylesActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationStylesActionHandler.swift; sourceTree = "<group>"; };
+		B3A2AED5265552F3004BF3A4 /* CitationStylesAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationStylesAction.swift; sourceTree = "<group>"; };
+		B3A2AED7265552FA004BF3A4 /* CitationStylesState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationStylesState.swift; sourceTree = "<group>"; };
 		B3A2AED926555B61004BF3A4 /* RemoteCitationStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteCitationStyle.swift; sourceTree = "<group>"; };
 		B3A2AEDB2656511D004BF3A4 /* CitationStylesRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationStylesRequest.swift; sourceTree = "<group>"; };
 		B3A2AEDD26565211004BF3A4 /* CitationStylesResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationStylesResponse.swift; sourceTree = "<group>"; };
@@ -1409,6 +1417,13 @@
 		B3B1EDFB2502498100D8BC1E /* collectionresponse_knownfields.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = collectionresponse_knownfields.json; sourceTree = "<group>"; };
 		B3B1EDFC2502498100D8BC1E /* collectionresponse_unknownfields.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = collectionresponse_unknownfields.json; sourceTree = "<group>"; };
 		B3B1EE052502675E00D8BC1E /* Parsing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Parsing.swift; sourceTree = "<group>"; };
+		B3B3FF7A266A1FAB0061E3B2 /* StoreStyleDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreStyleDbRequest.swift; sourceTree = "<group>"; };
+		B3B3FF7C266A2B410061E3B2 /* CitationStylesSearchActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationStylesSearchActionHandler.swift; sourceTree = "<group>"; };
+		B3B3FF7E266A2B4F0061E3B2 /* CitationStylesSearchState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationStylesSearchState.swift; sourceTree = "<group>"; };
+		B3B3FF80266A2B5C0061E3B2 /* CitationStylesSearchAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationStylesSearchAction.swift; sourceTree = "<group>"; };
+		B3B3FF82266A380D0061E3B2 /* DeleteStyleDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteStyleDbRequest.swift; sourceTree = "<group>"; };
+		B3B3FF84266A52600061E3B2 /* CitationStyleSearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationStyleSearchViewController.swift; sourceTree = "<group>"; };
+		B3B3FF85266A52600061E3B2 /* CitationStyleSearchViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CitationStyleSearchViewController.xib; sourceTree = "<group>"; };
 		B3B613F6260B844B00B92017 /* EmptyTrashDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyTrashDbRequest.swift; sourceTree = "<group>"; };
 		B3B6759426205A3C003231A5 /* CollectionRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionRowView.swift; sourceTree = "<group>"; };
 		B3B6759A26205A48003231A5 /* CollectionRowView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CollectionRowView.xib; sourceTree = "<group>"; };
@@ -1653,6 +1668,7 @@
 				B305644223FC051E003304F2 /* DeleteGroupDbRequest.swift */,
 				B305643E23FC051E003304F2 /* DeleteItemsFromCollectionDbRequest.swift */,
 				B305643823FC051E003304F2 /* DeleteObjectsDbRequest.swift */,
+				B3B3FF82266A380D0061E3B2 /* DeleteStyleDbRequest.swift */,
 				B305643F23FC051E003304F2 /* EditCollectionDbRequest.swift */,
 				B305644923FC051E003304F2 /* EditItemDetailDbRequest.swift */,
 				B305644D23FC051E003304F2 /* EditNoteDbRequest.swift */,
@@ -1707,6 +1723,7 @@
 				B3A14DF725A7666C00DF5334 /* StorePageForItemDbRequest.swift */,
 				B305643C23FC051E003304F2 /* StoreSearchesDbRequest.swift */,
 				B305645123FC051E003304F2 /* StoreSettingsDbRequest.swift */,
+				B3B3FF7A266A1FAB0061E3B2 /* StoreStyleDbRequest.swift */,
 				B3593F1B2668E86100FA4BB2 /* SyncStylesDbRequest.swift */,
 				B300B3372429254900C1FE1E /* SyncTranslatorsDbRequest.swift */,
 				B305646323FC051E003304F2 /* SyncVersionsDbRequest.swift */,
@@ -1733,6 +1750,7 @@
 				B305648B23FC051E003304F2 /* ApiClient.swift */,
 				B3C6AB2A248E3EB90009AC96 /* ApiOperation.swift */,
 				B305649D23FC051E003304F2 /* ArrayEncoding.swift */,
+				B323E3A0266A694000562298 /* JsonAndUrlEncoding.swift */,
 				B305648D23FC051E003304F2 /* ObservableRequestExtensions.swift */,
 				B305648C23FC051E003304F2 /* ZoteroApiClient.swift */,
 			);
@@ -1766,10 +1784,10 @@
 				B305649123FC051E003304F2 /* LoginRequest.swift */,
 				B305649823FC051E003304F2 /* ObjectsRequest.swift */,
 				B305649423FC051E003304F2 /* RegisterUploadRequest.swift */,
+				B378F4CE242D0CC200B88A05 /* RepoRequest.swift */,
 				B305649A23FC051E003304F2 /* SchemaRequest.swift */,
 				B305649323FC051E003304F2 /* SettingsRequest.swift */,
 				B305649523FC051E003304F2 /* SubmitDeletionsRequest.swift */,
-				B378F4CE242D0CC200B88A05 /* TranslatorsRequest.swift */,
 				B305649023FC051E003304F2 /* UpdatesRequest.swift */,
 				B305649623FC051E003304F2 /* VersionsRequest.swift */,
 			);
@@ -2576,7 +2594,8 @@
 		B37491202488D7040042FF85 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
-				B3A2AED3265552D5004BF3A4 /* CitationsActionHandler.swift */,
+				B3A2AED3265552D5004BF3A4 /* CitationStylesActionHandler.swift */,
+				B3B3FF7C266A2B410061E3B2 /* CitationStylesSearchActionHandler.swift */,
 				B37491212488D7040042FF85 /* SettingsActionHandler.swift */,
 			);
 			path = ViewModels;
@@ -2585,8 +2604,10 @@
 		B37491222488D7040042FF85 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				B3A2AED5265552F3004BF3A4 /* CitationsAction.swift */,
-				B3A2AED7265552FA004BF3A4 /* CitationsState.swift */,
+				B3A2AED5265552F3004BF3A4 /* CitationStylesAction.swift */,
+				B3B3FF80266A2B5C0061E3B2 /* CitationStylesSearchAction.swift */,
+				B3B3FF7E266A2B4F0061E3B2 /* CitationStylesSearchState.swift */,
+				B3A2AED7265552FA004BF3A4 /* CitationStylesState.swift */,
 				B3A2AED926555B61004BF3A4 /* RemoteCitationStyle.swift */,
 				B37491242488D7040042FF85 /* SettingsAction.swift */,
 				B37491232488D7040042FF85 /* SettingsState.swift */,
@@ -2597,8 +2618,9 @@
 		B37491252488D7040042FF85 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				B331F9B22653FC010099F6A6 /* CitationSettingsView.swift */,
-				B331F9B6265407850099F6A6 /* CitationStyleDownloadView.swift */,
+				B3B3FF84266A52600061E3B2 /* CitationStyleSearchViewController.swift */,
+				B3B3FF85266A52600061E3B2 /* CitationStyleSearchViewController.xib */,
+				B331F9B22653FC010099F6A6 /* CitationStylesSettingsView.swift */,
 				B37491292488D7040042FF85 /* DebugSettingsView.swift */,
 				B374912B2488D7040042FF85 /* GeneralSettingsView.swift */,
 				B37491272488D7040042FF85 /* ProfileView.swift */,
@@ -3021,6 +3043,7 @@
 				B3604FF824769F0900669CB7 /* note.html in Resources */,
 				B3593F22241A61C700760E20 /* ItemDetailAddCell.xib in Resources */,
 				B3593F21241A61C700760E20 /* ItemDetailAttachmentCell.xib in Resources */,
+				B3B3FF87266A52600061E3B2 /* CitationStyleSearchViewController.xib in Resources */,
 				B361820324C9A7C000B30D56 /* OnboardingViewController.xib in Resources */,
 				B361820424C9A7C000B30D56 /* OnboardingPageView.xib in Resources */,
 				B3F0C3FA250A1BD8002D557A /* LibrariesViewController.xib in Resources */,
@@ -3257,6 +3280,7 @@
 				B37491422488FC3D0042FF85 /* StorageSettingsRow.swift in Sources */,
 				B3593F49241A61C700760E20 /* LibrariesAction.swift in Sources */,
 				B3593F35241A61C700760E20 /* ItemDetailTableViewHandler.swift in Sources */,
+				B3B3FF86266A52600061E3B2 /* CitationStyleSearchViewController.swift in Sources */,
 				B3DCDF0C240912370039ED0D /* SinglePickerState.swift in Sources */,
 				B30B40652491222000FAAF6D /* AttachmentCreator.swift in Sources */,
 				B305661D23FC051E003304F2 /* SyncGroupVersionsSyncAction.swift in Sources */,
@@ -3284,7 +3308,7 @@
 				B305667E23FC051F003304F2 /* Array+Utils.swift in Sources */,
 				B30565FC23FC051E003304F2 /* CoordinatedFileStorage.swift in Sources */,
 				B3A081DD25D2D1420088EC24 /* ConflictViewControllerReceiver.swift in Sources */,
-				B331F9B32653FC010099F6A6 /* CitationSettingsView.swift in Sources */,
+				B331F9B32653FC010099F6A6 /* CitationStylesSettingsView.swift in Sources */,
 				B305662623FC051F003304F2 /* MarkChangesAsResolvedSyncAction.swift in Sources */,
 				B3593F28241A61C700760E20 /* ItemDetailFieldCell.swift in Sources */,
 				B361A3012511F98700271173 /* LinkMode.swift in Sources */,
@@ -3319,6 +3343,7 @@
 				B3A94B4A2462F5D300BC7910 /* PSPDFKit+Extensions.swift in Sources */,
 				B305661323FC051E003304F2 /* ArrayEncoding.swift in Sources */,
 				B305667723FC051F003304F2 /* UIFont+Extensions.swift in Sources */,
+				B323E3A1266A694000562298 /* JsonAndUrlEncoding.swift in Sources */,
 				B37BF0AB25A5E2AD00AE0268 /* SquareAnnotation.swift in Sources */,
 				B361820024C9A7C000B30D56 /* LoginAction.swift in Sources */,
 				B305660523FC051E003304F2 /* DeletionsRequest.swift in Sources */,
@@ -3345,6 +3370,7 @@
 				B305661E23FC051E003304F2 /* DeleteGroupSyncAction.swift in Sources */,
 				B3DCDF1D24091EC40039ED0D /* SinglePickerView.swift in Sources */,
 				B3593F4A241A61C700760E20 /* LibrariesState.swift in Sources */,
+				B3B3FF83266A380D0061E3B2 /* DeleteStyleDbRequest.swift in Sources */,
 				B3F3D63C255EC98600F310C2 /* AnnotationViewButton.swift in Sources */,
 				B35B473C25F11BCD0023B6F4 /* PDFSettingsState.swift in Sources */,
 				B36C508E2575221C00A370D3 /* AnnotationEditState.swift in Sources */,
@@ -3379,6 +3405,7 @@
 				B3B613F7260B844B00B92017 /* EmptyTrashDbRequest.swift in Sources */,
 				B3593F2F241A61C700760E20 /* ItemDetailTitleCell.swift in Sources */,
 				B30565D223FC051E003304F2 /* ReadCollectionsDbRequest.swift in Sources */,
+				B3B3FF81266A2B5C0061E3B2 /* CitationStylesSearchAction.swift in Sources */,
 				B3764D9D2574F2DE0024274F /* ColorPickerCircleView.swift in Sources */,
 				B30565C223FC051E003304F2 /* ReadTagsDbRequest.swift in Sources */,
 				B340692224A60D6A009ECE48 /* CGFloat+Extensions.swift in Sources */,
@@ -3399,7 +3426,7 @@
 				B3CBB125248A46D500C4228F /* NotificationCenter+Extensions.swift in Sources */,
 				B305660C23FC051E003304F2 /* VersionsRequest.swift in Sources */,
 				B33AB488246D315F00490DDE /* CheckboxButton.swift in Sources */,
-				B378F4CF242D0CC200B88A05 /* TranslatorsRequest.swift in Sources */,
+				B378F4CF242D0CC200B88A05 /* RepoRequest.swift in Sources */,
 				B30565B923FC051E003304F2 /* DeleteItemsFromCollectionDbRequest.swift in Sources */,
 				B30565E123FC051E003304F2 /* MarkGroupAsLocalOnlyDbRequest.swift in Sources */,
 				B305667A23FC051F003304F2 /* PreferenceKeys.swift in Sources */,
@@ -3416,7 +3443,7 @@
 				B305667F23FC051F003304F2 /* UIView+Extensions.swift in Sources */,
 				B3DCDEE12408F5200039ED0D /* MainViewController.swift in Sources */,
 				B30566A923FC051F003304F2 /* File.swift in Sources */,
-				B3A2AED8265552FA004BF3A4 /* CitationsState.swift in Sources */,
+				B3A2AED8265552FA004BF3A4 /* CitationStylesState.swift in Sources */,
 				B305669B23FC051F003304F2 /* RSearch.swift in Sources */,
 				B305667423FC051F003304F2 /* MD5+Url.swift in Sources */,
 				B31FACCA25DBC71200DD5F14 /* ConflictReceiverAlertHandler.swift in Sources */,
@@ -3442,7 +3469,7 @@
 				B305667323FC051F003304F2 /* FileManager+Utils.swift in Sources */,
 				B305661223FC051E003304F2 /* FileRequest.swift in Sources */,
 				B347F2BA24DC4D5D000D5FF6 /* CapHeightLabel.swift in Sources */,
-				B3A2AED4265552D5004BF3A4 /* CitationsActionHandler.swift in Sources */,
+				B3A2AED4265552D5004BF3A4 /* CitationStylesActionHandler.swift in Sources */,
 				B37491322488D7040042FF85 /* ProfileView.swift in Sources */,
 				B30566B023FC051F003304F2 /* AuthorizeUploadResponse.swift in Sources */,
 				B30565E323FC051E003304F2 /* DbStorage.swift in Sources */,
@@ -3539,6 +3566,7 @@
 				B3B953C32459780600FC96DB /* Annotation.swift in Sources */,
 				B34A9F5E25BF12F7007C9A4A /* ReadFilenameDbRequest.swift in Sources */,
 				B39A403024BC902600205172 /* ColorPickerView.swift in Sources */,
+				B3B3FF7B266A1FAB0061E3B2 /* StoreStyleDbRequest.swift in Sources */,
 				B3593F3A241A61C700760E20 /* ItemsAction.swift in Sources */,
 				B305667823FC051F003304F2 /* Observable+Completable.swift in Sources */,
 				B3DCDF08240912060039ED0D /* ActivityIndicatorView.swift in Sources */,
@@ -3558,6 +3586,7 @@
 				B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */,
 				B319D6B8265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift in Sources */,
 				B30566A723FC051F003304F2 /* DelayIntervals.swift in Sources */,
+				B3B3FF7D266A2B410061E3B2 /* CitationStylesSearchActionHandler.swift in Sources */,
 				B37491382488D7040042FF85 /* SettingsListView.swift in Sources */,
 				B3A081C025D2AD390088EC24 /* LoadDeletionsSyncAction.swift in Sources */,
 				B3DCDF1F240945B40039ED0D /* CollectionPickerActionHandler.swift in Sources */,
@@ -3646,7 +3675,7 @@
 				B3BC25CD247E6BA000AC27B5 /* DateParser.swift in Sources */,
 				B305662523FC051F003304F2 /* RevertLibraryUpdatesSyncAction.swift in Sources */,
 				B361820D24C9B9D900B30D56 /* NoRotationHostingController.swift in Sources */,
-				B3A2AED6265552F3004BF3A4 /* CitationsAction.swift in Sources */,
+				B3A2AED6265552F3004BF3A4 /* CitationStylesAction.swift in Sources */,
 				B3401D612568047D00BB8D6E /* AnnotationViewTextView.swift in Sources */,
 				B30B40612490D84300FAAF6D /* ItemCellModel.swift in Sources */,
 				B3C9D60A24DA9D49003EA1EE /* CollectionsSearchAction.swift in Sources */,
@@ -3668,10 +3697,10 @@
 				B3BC6B1D250F797B006A8B9C /* FieldKeys.swift in Sources */,
 				B3830CEA255451DC00910FE0 /* TagPickerViewController.swift in Sources */,
 				B36C5086257521DE00A370D3 /* AnnotationEditActionHandler.swift in Sources */,
+				B3B3FF7F266A2B4F0061E3B2 /* CitationStylesSearchState.swift in Sources */,
 				B30A8C672582690900EC56FB /* HighlightAnnotation.swift in Sources */,
 				B305667923FC051F003304F2 /* UserDefault+Extensions.swift in Sources */,
 				B34DF1BD2576956F0019CCD1 /* SwitchCell.swift in Sources */,
-				B331F9B7265407850099F6A6 /* CitationStyleDownloadView.swift in Sources */,
 				B3A14DF825A7666C00DF5334 /* StorePageForItemDbRequest.swift in Sources */,
 				B37491332488D7040042FF85 /* SyncSettingsView.swift in Sources */,
 				B30566C123FC051F003304F2 /* SyncErrors.swift in Sources */,
@@ -3753,6 +3782,7 @@
 				B305676823FC0A0B003304F2 /* Predicates.swift in Sources */,
 				B305676923FC0A0B003304F2 /* SortType.swift in Sources */,
 				B305676A23FC0A0B003304F2 /* SyncableObject.swift in Sources */,
+				B323E3A2266A698900562298 /* JsonAndUrlEncoding.swift in Sources */,
 				B3748D2026566F4800ED05F8 /* ContainerViewController.swift in Sources */,
 				B305676B23FC0A0B003304F2 /* Tag.swift in Sources */,
 				B305676C23FC0A0B003304F2 /* UpdatableObject.swift in Sources */,
@@ -3973,7 +4003,7 @@
 				B3B675A126208BAF003231A5 /* RightButton.swift in Sources */,
 				B30566E923FC0826003304F2 /* VersionsRequest.swift in Sources */,
 				B305670223FC08A2003304F2 /* MoveItemsToParentDbRequest.swift in Sources */,
-				B378F4D0242D0D5500B88A05 /* TranslatorsRequest.swift in Sources */,
+				B378F4D0242D0D5500B88A05 /* RepoRequest.swift in Sources */,
 				B30B550C24B8623900F94B59 /* Assets.swift in Sources */,
 				B305672823FC090F003304F2 /* LoadLibraryDataSyncAction.swift in Sources */,
 				B377F2A3249373AB00022943 /* Notifications.swift in Sources */,

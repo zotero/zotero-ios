@@ -33,7 +33,7 @@ struct SyncStylesDbRequest: DbResponseRequest {
                 database.add(rStyle)
             }
 
-            rStyle.href = style.href
+            rStyle.href = style.href.absoluteString
             rStyle.title = style.title
             rStyle.updated = style.updated
             update.append(style.identifier)

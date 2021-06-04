@@ -17,8 +17,12 @@ protocol SettingsCoordinatorDelegate: AnyObject {
     func showSupport()
     func showAboutBeta()
     func showCitationSettings()
-    func showCitationStyleManagement(viewModel: ViewModel<CitationsActionHandler>)
+    func showCitationStyleManagement(viewModel: ViewModel<CitationStylesActionHandler>)
     func dismiss()
+}
+
+protocol CitationStyleSearchSettingsCoordinatorDelegate: AnyObject {
+    func showError(retryAction: @escaping () -> Void, cancelAction: @escaping () -> Void)
 }
 
 final class SettingsCoordinator: NSObject, Coordinator {
@@ -152,43 +156,72 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
     }
 
     func showCitationSettings() {
-        let handler = CitationsActionHandler(apiClient: self.controllers.apiClient, bundledDataStorage: self.controllers.bundledDataStorage, fileStorage: self.controllers.fileStorage)
-        let state = CitationsState()
+        let handler = CitationStylesActionHandler(apiClient: self.controllers.apiClient, bundledDataStorage: self.controllers.bundledDataStorage, fileStorage: self.controllers.fileStorage)
+        let state = CitationStylesState()
         let viewModel = ViewModel(initialState: state, handler: handler)
-        var view = CitationSettingsView()
+        var view = CitationStylesSettingsView()
         view.coordinatorDelegate = self
 
+        viewModel.stateObservable.subscribe(onNext: { [weak self] state in
+            if let error = state.error {
+                self?.showCitationSettings(error: error)
+            }
+        }).disposed(by: self.disposeBag)
+
         let controller = UIHostingController(rootView: view.environmentObject(viewModel))
         controller.preferredContentSize = UIScreen.main.bounds.size
         self.navigationController.pushViewController(controller, animated: true)
     }
 
-    func showCitationStyleManagement(viewModel: ViewModel<CitationsActionHandler>) {
-        let view = CitationStyleDownloadView { [weak viewModel] style in
-            viewModel?.process(action: .addStyle(style))
+    private func showCitationSettings(error: CitationStylesState.Error) {
+        let message: String
+        switch error {
+        case .deletion(let name, _):
+            message = L10n.Errors.Styles.addition(name)
+        case .addition(let name, _):
+            message = L10n.Errors.Styles.deletion(name)
+        case .loading:
+            message = L10n.Errors.Styles.loading
         }
-        let controller = UIHostingController(rootView: view.environmentObject(viewModel))
-        controller.preferredContentSize = UIScreen.main.bounds.size
-        // Setup search controller here, since SwiftUI doesn't support it
-        controller.navigationItem.searchController = self.createSettingsSearchController(viewModel: viewModel)
-        self.navigationController.pushViewController(controller, animated: true)
+
+        let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
+        self.navigationController.present(controller, animated: true, completion: nil)
     }
 
-    private func createSettingsSearchController(viewModel: ViewModel<CitationsActionHandler>) -> UISearchController {
-        let searchController = UISearchController()
-        searchController.obscuresBackgroundDuringPresentation = false
-        searchController.searchBar.placeholder = L10n.Items.searchTitle
-        searchController.searchBar.rx.text.observe(on: MainScheduler.instance)
-                                  .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
-                                  .subscribe(onNext: { [weak viewModel] text in
-                                      viewModel?.process(action: .searchRemote(text ?? ""))
-                                  })
-                                  .disposed(by: self.disposeBag)
-        return searchController
+    func showCitationStyleManagement(viewModel: ViewModel<CitationStylesActionHandler>) {
+        var installedIds: Set<String> = []
+        for style in viewModel.state.styles {
+            installedIds.insert(style.identifier)
+        }
+
+        let handler = CitationStylesSearchActionHandler(apiClient: self.controllers.apiClient)
+        let state = CitationStylesSearchState(installedIds: installedIds)
+        let searchViewModel = ViewModel(initialState: state, handler: handler)
+
+        let controller = CitationStyleSearchViewController(viewModel: searchViewModel) { [weak viewModel] style in
+            viewModel?.process(action: .add(style))
+        }
+        controller.coordinatorDelegate = self
+        controller.preferredContentSize = UIScreen.main.bounds.size
+        self.navigationController.pushViewController(controller, animated: true)
     }
 
     func dismiss() {
         self.navigationController.dismiss(animated: true, completion: nil)
+    }
+}
+
+extension SettingsCoordinator: CitationStyleSearchSettingsCoordinatorDelegate {
+    func showError(retryAction: @escaping () -> Void, cancelAction: @escaping () -> Void) {
+        let controller = UIAlertController(title: L10n.error, message: L10n.Errors.StylesSearch.loading, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.retry, style: .default, handler: { _ in
+            retryAction()
+        }))
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: { _ in
+            cancelAction()
+        }))
+        self.navigationController.present(controller, animated: true, completion: nil)
     }
 }
 

@@ -185,7 +185,7 @@ final class TranslatorsAndStylesController {
         guard type != .startup || self.didDayChange(from: Date(timeIntervalSince1970: Double(self.lastTimestamp))) else { return Single.just(self.lastTimestamp) }
 
         let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? ""
-        let request = TranslatorsRequest(timestamp: self.lastTimestamp, version: "\(version)-iOS", type: type.rawValue)
+        let request = RepoRequest(timestamp: self.lastTimestamp, version: "\(version)-iOS", type: type.rawValue)
         return self.apiClient.send(request: request, queue: self.queue)
                              .observe(on: self.scheduler)
                              .flatMap { data, _ -> Single<(Int, [Translator])> in

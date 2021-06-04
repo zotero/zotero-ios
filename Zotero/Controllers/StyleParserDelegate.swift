@@ -18,7 +18,7 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
     private var identifier: String?
     private var title: String?
     private var updated: Date?
-    private var href: String?
+    private var href: URL?
 
     private enum Element: String {
         case identifier = "id"
@@ -41,7 +41,7 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
         if let element = Element(rawValue: elementName) {
             switch element {
             case .identifier:
-                self.href = self.currentValue
+                self.href = URL(string: self.currentValue)
                 self.identifier = String(self.currentValue[self.currentValue.index(self.currentValue.startIndex, offsetBy: StyleParserDelegate.idPrefix.count)...])
             case .title:
                 self.title = self.currentValue

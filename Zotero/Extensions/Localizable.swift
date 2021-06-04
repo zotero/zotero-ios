@@ -341,6 +341,22 @@ internal enum L10n {
       /// An unknown error occurred.
       internal static let unknown = L10n.tr("Localizable", "errors.shareext.unknown")
     }
+    internal enum Styles {
+      /// Could not add style “%@”.
+      internal static func addition(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "errors.styles.addition", String(describing: p1))
+      }
+      /// Could not delete style “%@”.
+      internal static func deletion(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "errors.styles.deletion", String(describing: p1))
+      }
+      /// Could not load styles.
+      internal static let loading = L10n.tr("Localizable", "errors.styles.loading")
+    }
+    internal enum StylesSearch {
+      /// Could not load styles. Do you want to try again?
+      internal static let loading = L10n.tr("Localizable", "errors.styles_search.loading")
+    }
     internal enum SyncToolbar {
       /// Unable to upload attachment: %@. Please try removing and re-adding the attachment.
       internal static func attachmentMissing(_ p1: Any) -> String {
@@ -676,6 +692,10 @@ internal enum L10n {
       internal static let stylesTitle = L10n.tr("Localizable", "settings.cite.styles_title")
       /// Cite
       internal static let title = L10n.tr("Localizable", "settings.cite.title")
+    }
+    internal enum CiteSearch {
+      /// Search styles
+      internal static let searchTitle = L10n.tr("Localizable", "settings.cite_search.search_title")
     }
     internal enum CrashAlert {
       /// Your Report ID is %@

@@ -13,7 +13,10 @@ import RxAlamofire
 import RxSwift
 
 enum ApiParameterEncoding {
-    case json, url, array
+    case json
+    case url
+    case array
+    case jsonAndUrl
 }
 
 enum ApiHttpMethod: String {
