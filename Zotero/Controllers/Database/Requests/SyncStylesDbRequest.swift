@@ -36,6 +36,7 @@ struct SyncStylesDbRequest: DbResponseRequest {
             rStyle.href = style.href.absoluteString
             rStyle.title = style.title
             rStyle.updated = style.updated
+            rStyle.filename = style.filename
             update.append(style.identifier)
         }
 

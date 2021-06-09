@@ -130,7 +130,7 @@ final class TranslatorsAndStylesController {
 
                 subscriber(.success(()))
             } catch let error {
-                DDLogError("Error: \(error)")
+                DDLogError("TranslatorsAndStylesController: can't update from bundle - \(error)")
                 subscriber(.failure(Error.bundleLoading(error)))
             }
 
@@ -185,20 +185,34 @@ final class TranslatorsAndStylesController {
         guard type != .startup || self.didDayChange(from: Date(timeIntervalSince1970: Double(self.lastTimestamp))) else { return Single.just(self.lastTimestamp) }
 
         let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? ""
-        let request = RepoRequest(timestamp: self.lastTimestamp, version: "\(version)-iOS", type: type.rawValue)
+        let request = RepoRequest(timestamp: self.lastTimestamp, version: "\(version)-iOS", type: type.rawValue, styles: self.styles(for: type))
         return self.apiClient.send(request: request, queue: self.queue)
                              .observe(on: self.scheduler)
-                             .flatMap { data, _ -> Single<(Int, [Translator])> in
-                                do {
-                                    let response = try self.parseRepoResponse(from: data)
-                                    return Single.just(response)
-                                } catch let error {
-                                    return Single.error(error)
-                                }
+                             .flatMap { data, _ -> Single<(Int, [Translator], [(String, String)])> in
+                                 do {
+                                     let response = try self.parseRepoResponse(from: data)
+                                     return Single.just(response)
+                                 } catch let error {
+                                     return Single.error(error)
+                                 }
                              }
-                             .flatMap { timestamp, translators in
-                                return self.syncTranslatorsWithRemote(translators: translators).flatMap({ return Single.just(timestamp) })
+                             .flatMap { timestamp, translators, styles in
+                                 return self.syncRepoResponse(translators: translators, styles: styles).flatMap({ return Single.just(timestamp) })
                              }
+    }
+
+    private func styles(for type: UpdateType) -> [CitationStyle]? {
+        guard type != .shareExtension else { return nil }
+
+        do {
+            return try self.dbStorage.createCoordinator().perform(request: ReadStylesDbRequest()).compactMap({ style -> CitationStyle? in
+                guard let url = URL(string: style.href) else { return nil }
+                return CitationStyle(identifier: style.identifier, title: style.title, updated: style.updated, href: url, filename: style.filename)
+            })
+        } catch let error {
+            DDLogError("TranslatorsAndStylesController: can't read styles - \(error)")
+            return nil
+        }
     }
 
     private func didDayChange(from date: Date) -> Bool {
@@ -213,7 +227,7 @@ final class TranslatorsAndStylesController {
     /// Checks whether the error was caused by bundled or remote loading and shows appropriate error.
     /// - parameter error: Error to check.
     private func process(error: Swift.Error, updateType: UpdateType) {
-        DDLogError("TranslatorsController: \(error)")
+        DDLogError("TranslatorsAndStylesController: \(error)")
 
         guard let delegate = self.coordinator else {
             self.isLoading.accept(false)
@@ -286,29 +300,40 @@ final class TranslatorsAndStylesController {
 
     /// Sync local translators with remote translators.
     /// - parameter translators: Translators to be updated or removed.
-    private func syncTranslatorsWithRemote(translators: [Translator]) -> Single<()> {
+    private func syncRepoResponse(translators: [Translator], styles: [(String, String)]) -> Single<()> {
         do {
+            // Split translators into deletions and updates, parse metadata.
             let (updateTranslators, deleteTranslators) = self.split(translators: translators)
-            let updateMetadata = updateTranslators.compactMap({ self.metadata(from: $0) })
-            let deleteMetadata = deleteTranslators.compactMap({ self.metadata(from: $0) })
+            let updateTranslatorMetadata = updateTranslators.compactMap({ self.metadata(from: $0) })
+            let deleteTranslatorMetadata = deleteTranslators.compactMap({ self.metadata(from: $0) })
 
             // Sanity check, if some translators can't be mapped to metadata they are missing important information.
-            if updateMetadata.count != updateTranslators.count || deleteMetadata.count != deleteTranslators.count {
+            if updateTranslatorMetadata.count != updateTranslators.count || deleteTranslatorMetadata.count != deleteTranslators.count {
                 return Single.error(Error.incompatibleTranslator)
             }
 
-            let coordinator = try self.dbStorage.createCoordinator()
-            let request = SyncTranslatorsDbRequest(updateMetadata: updateMetadata, deleteIndices: deleteMetadata.map({ $0.id }))
-            _ = try coordinator.perform(request: request)
+            // Split styles into metadata and xml data.
+            let (updateStyles, stylesData) = self.split(styles: styles)
 
-            for metadata in deleteMetadata {
+            guard !updateTranslatorMetadata.isEmpty || !deleteTranslatorMetadata.isEmpty || !updateStyles.isEmpty else { return Single.just(()) }
+
+            // Sync metadata to DB
+            try self.dbStorage.createCoordinator().perform(request: SyncRepoResponseDbRequest(styles: updateStyles, translators: updateTranslatorMetadata, deleteTranslators: deleteTranslatorMetadata))
+
+            // Remove local translators
+            for metadata in deleteTranslatorMetadata {
                 try? self.fileStorage.remove(Files.translator(filename: metadata.id))
             }
-            for (index, metadata) in updateMetadata.enumerated() {
+            // Write updated translators
+            for (index, metadata) in updateTranslatorMetadata.enumerated() {
                 guard let data = self.data(from: updateTranslators[index]) else {
                     return Single.error(Error.incompatibleTranslator)
                 }
                 try? self.fileStorage.write(data, to: Files.translator(filename: metadata.id), options: .atomicWrite)
+            }
+            // Write updated styles
+            for (filename, data) in stylesData {
+                try? self.fileStorage.write(data, to: Files.style(filename: filename), options: .atomicWrite)
             }
 
             return Single.just(())
@@ -326,7 +351,7 @@ final class TranslatorsAndStylesController {
                 // TODO: - implement styles reset if needed
                 try self._resetToBundle()
             } catch let error {
-                DDLogError("TranslatorsController: can't reset to bundle - \(error)")
+                DDLogError("TranslatorsAndStylesController: can't reset to bundle - \(error)")
                 self.coordinator?.showResetToBundleError()
             }
 
@@ -377,7 +402,7 @@ final class TranslatorsAndStylesController {
                 let translators = contents.compactMap({ self.loadRawTranslator(from: $0) })
                 subscriber(.success(translators))
             } catch let error {
-                DDLogError("TranslatorController: error - \(error)")
+                DDLogError("TranslatorsAndStylesController: can't load translators - \(error)")
                 subscriber(.failure(error))
             }
             return Disposables.create()
@@ -402,7 +427,7 @@ final class TranslatorsAndStylesController {
 
             return metadata
         } catch let error {
-            DDLogError("TranslatorsController: cant' read data from \(file.createUrl()) - \(error)")
+            DDLogError("TranslatorsAndStylesController: cant' read data from \(file.createUrl()) - \(error)")
             return nil
         }
     }
@@ -428,12 +453,33 @@ final class TranslatorsAndStylesController {
 
     // MARK: - Helpers
 
-    /// Parses version and indices from `deleted.txt` file and
-    /// checks whether deleted version is higher than `lastDeletedVersion`. Returns data accordingly.
+    /// Parses style metadata from provided XML strings and splits them into metadata and filename + XML data tuples.
+    /// - styles: Array of tuples where first String is style identifier and second string is style XML.
+    /// - returns: Array of styles metadata and array of tuple of filenames and xml data.
+    private func split(styles: [(String, String)]) -> (styles: [CitationStyle], data: [(String, Data)]) {
+        var stylesMetadata: [CitationStyle] = []
+        var stylesData: [(String, Data)] = []
+
+        for (_, xml) in styles {
+            guard let data = xml.data(using: .utf8) else { continue }
+
+            let delegate = StyleParserDelegate(filename: nil)
+            let parser = XMLParser(data: data)
+            parser.delegate = delegate
+
+            guard parser.parse(), let style = delegate.style else { continue }
+
+            stylesMetadata.append(style)
+            stylesData.append((style.filename, data))
+        }
+
+        return (stylesMetadata, stylesData)
+    }
+
+    /// Parses version and indices from `deleted.txt` file and checks whether deleted version is higher than `lastDeletedVersion`. Returns data accordingly.
     /// - parameter deleted: Raw `deleted.txt` string.
     /// - parameter lastDeletedVersion: Version of `deleted.txt` file which was processed last.
-    /// - returns: If `version > lastDeletedVersion` return tuple with `version` and parsed indices.
-    ///            Otherwise return tuple with `lastDeletedVersion` and empty array.
+    /// - returns: If `version > lastDeletedVersion` return tuple with `version` and parsed indices. Otherwise return tuple with `lastDeletedVersion` and empty array.
     private func parse(deleted: String, lastDeletedVersion: Int) -> (Int, [String])? {
         let deletedLines = deleted.split(whereSeparator: { $0.isNewline })
         guard !deletedLines.isEmpty,
@@ -455,8 +501,7 @@ final class TranslatorsAndStylesController {
         return String(line[line.startIndex..<index])
     }
 
-    /// Splits translators returned by repo, which contain both translators to be updated and deleted.
-    /// Translators which need to be deleted have `priority = 0`, other translators have `priority > 0`.
+    /// Splits translators returned by repo, which contain both translators to be updated and deleted. Translators which need to be deleted have `priority = 0`, other translators have `priority > 0`.
     /// - parameter translators: Translators returned by repo.
     /// - returns: Translators split into those which need to be updated and those which need to be deleted.
     private func split(translators: [Translator]) -> (update: [Translator], delete: [Translator]) {
@@ -499,7 +544,7 @@ final class TranslatorsAndStylesController {
 
     private func parseStyle(from file: File) throws -> CitationStyle {
         let data = try self.fileStorage.read(file)
-        let delegate = StyleParserDelegate()
+        let delegate = StyleParserDelegate(filename: file.name)
         let parser = XMLParser(data: data)
         parser.delegate = delegate
 
@@ -513,13 +558,13 @@ final class TranslatorsAndStylesController {
     /// Parse XML response from translator repo.
     /// - parameter data: Data to be parsed.
     /// - returns: Tupe, where first value is the "currentTime" and second value is an array of parsed `Translator`s.
-    private func parseRepoResponse(from data: Data) throws -> (Int, [Translator]) {
+    private func parseRepoResponse(from data: Data) throws -> (Int, [Translator], [(String, String)]) {
         let delegate = RepoParserDelegate()
         let parser = XMLParser(data: data)
         parser.delegate = delegate
 
         if parser.parse() {
-            return (delegate.timestamp, delegate.translators)
+            return (delegate.timestamp, delegate.translators, delegate.styles)
         }
 
         throw Error.cantParseXmlResponse

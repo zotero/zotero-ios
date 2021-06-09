@@ -24,6 +24,7 @@ final class Controllers {
     let debugLogging: DebugLogging
     let bundledDataStorage: DbStorage
     let translatorsAndStylesController: TranslatorsAndStylesController
+    let citationController: CitationController
     let annotationPreviewController: AnnotationPreviewController
     let urlDetector: UrlDetector
     let dateParser: DateParser
@@ -74,6 +75,7 @@ final class Controllers {
         self.crashReporter = crashReporter
         self.debugLogging = debugLogging
         self.translatorsAndStylesController = translatorsAndStylesController
+        self.citationController = CitationController(stylesController: translatorsAndStylesController)
         self.annotationPreviewController = AnnotationPreviewController(previewSize: previewSize, fileStorage: fileStorage)
         self.urlDetector = urlDetector
         self.dateParser = DateParser()

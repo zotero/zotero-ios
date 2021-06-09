@@ -19,7 +19,7 @@ if not os.path.isdir(bundle_dir):
 # Download submodule
 subprocess.check_call(["git", "submodule", "update", "--recursive", "bundled-styles"])
 
-# Get translators directory
+# Get styles directory
 styles_dir = os.path.join(os.path.abspath("."), "bundled-styles")
 
 if not os.path.isdir(styles_dir):

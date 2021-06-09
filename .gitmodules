@@ -4,3 +4,6 @@
 [submodule "bundled-styles"]
 	path = bundled-styles
 	url = https://github.com/zotero/bundled-styles/
+[submodule "locales"]
+	path = locales
+	url = https://github.com/citation-style-language/locales.git

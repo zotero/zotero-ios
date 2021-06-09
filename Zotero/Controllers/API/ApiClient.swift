@@ -16,7 +16,6 @@ enum ApiParameterEncoding {
     case json
     case url
     case array
-    case jsonAndUrl
 }
 
 enum ApiHttpMethod: String {

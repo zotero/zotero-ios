@@ -15,6 +15,7 @@ final class RStyle: Object {
     @objc dynamic var title: String = ""
     @objc dynamic var href: String = ""
     @objc dynamic var updated: Date = Date(timeIntervalSince1970: 0)
+    @objc dynamic var filename: String = ""
 
     // MARK: - Object properties
 

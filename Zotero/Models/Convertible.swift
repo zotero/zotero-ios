@@ -61,8 +61,6 @@ extension ApiParameterEncoding {
             return URLEncoding()
         case .array:
             return ArrayEncoding()
-        case .jsonAndUrl:
-            return JsonAndUrlEncoding()
         }
     }
 }

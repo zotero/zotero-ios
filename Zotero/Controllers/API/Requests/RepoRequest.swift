@@ -12,28 +12,34 @@ struct RepoRequest: ApiRequest {
     let timestamp: Int
     let version: String
     let type: Int
-    let styles: [String: Any]?
+    let styles: [CitationStyle]?
 
     var endpoint: ApiEndpoint {
-        return .other(URL(string: "https://repo.zotero.org/repo/updated")!)
+        return .other(URL(string: "https://repo.zotero.org/repo/updated?m=\(self.type)&last=\(self.timestamp)&version=\(self.version)")!)
     }
 
     var httpMethod: ApiHttpMethod {
-        return .get
+        return .post
     }
 
     var encoding: ApiParameterEncoding {
-        return .jsonAndUrl
+        return .url
     }
 
     var parameters: [String : Any]? {
-        var parameters: [String: Any] = [JsonAndUrlEncoding.urlKey: ["last": self.timestamp,
-                                                                     "version": self.version,
-                                                                     "m": self.type]]
-        if let styles = self.styles {
-            parameters[JsonAndUrlEncoding.jsonKey] = styles
+        guard let styles = self.styles else { return nil }
+
+        let styleParameters = styles.map({ style -> [String: Any] in
+            return ["id": style.identifier,
+                    "updated": Int(style.updated.timeIntervalSince1970),
+                    "url": style.href.absoluteString]
+        })
+
+        if let data = try? JSONSerialization.data(withJSONObject: styleParameters), let jsonString = String(data: data, encoding: .utf8) {
+            return ["styles": jsonString]
         }
-        return parameters
+
+        return nil
     }
 
     var headers: [String : String]? {

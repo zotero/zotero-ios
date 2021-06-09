@@ -241,6 +241,8 @@ final class ItemsViewController: UIViewController {
         case .sort:
             guard let button = button else { return }
             self.coordinatorDelegate?.showSortActions(viewModel: self.viewModel, button: button)
+
+        case .copyCitation: break
         }
     }
 
@@ -549,6 +551,18 @@ final class ItemsViewController: UIViewController {
 
 extension ItemsViewController: ItemsTableViewHandlerDelegate {
     func process(action: ItemAction.Kind, for item: RItem) {
+        if action == .copyCitation {
+            self.controllers.citationController.citation(for: item, in: self)
+                                               .subscribe(onSuccess: { citation in
+                                                   DDLogInfo("CITATION: \(citation)")
+                                                   UIPasteboard.general.string = citation
+                                               }, onFailure: { error in
+                                                   DDLogError("CITATION ERROR: \(error)")
+                                               })
+                                               .disposed(by: self.disposeBag)
+            return
+        }
+
         self.process(action: action, for: [item.key], button: nil)
     }
 

@@ -47,6 +47,7 @@ final class WebViewHandler: NSObject {
         case noSuccessfulTranslators
         case webExtractionMissingJs
         case webExtractionMissingData
+        case webViewMissing
     }
 
     private let translatorsController: TranslatorsAndStylesController
@@ -78,6 +79,8 @@ final class WebViewHandler: NSObject {
     // MARK: - Actions
 
     func loadWebData(from url: URL) -> Single<ExtensionStore.State.RawAttachment> {
+        guard let webView = self.webView else { return Single.error(Error.webViewMissing) }
+
         return self.load(url: url)
                    .flatMap({ _ -> Single<Any> in
                        guard let url = Bundle.main.url(forResource: "webview_extraction", withExtension: "js"),
@@ -85,7 +88,7 @@ final class WebViewHandler: NSObject {
                            DDLogError("WebViewHandler: can't load extraction javascript")
                            return Single.error(Error.webExtractionMissingJs)
                        }
-                       return self.callJavascript(script)
+                       return webView.call(javascript: script)
                    })
                    .flatMap({ data -> Single<ExtensionStore.State.RawAttachment> in
                        guard let payload = data as? [String: Any],
@@ -117,6 +120,10 @@ final class WebViewHandler: NSObject {
     /// - parameter cookies: Cookies string from shared website. Equals to javacsript "document.cookie".
     /// - parameter frames: HTML content of frames contained in initial HTML document.
     func translate(url: URL, title: String, html: String, cookies: String, frames: [String]) {
+        guard let webView = self.webView else {
+            self.observable.on(.error(Error.webViewMissing))
+            return
+        }
         guard let containerUrl = Bundle.main.url(forResource: "src/index", withExtension: "html", subdirectory: "translation"),
               let containerHtml = try? String(contentsOf: containerUrl, encoding: .utf8) else {
             DDLogError("WebViewHandler: can't load translator html")
@@ -124,9 +131,9 @@ final class WebViewHandler: NSObject {
             return
         }
 
-        let encodedHtml = self.encodeForJavascript(html.data(using: .utf8))
+        let encodedHtml = WKWebView.encodeForJavascript(html.data(using: .utf8))
         let jsonFramesData = try? JSONSerialization.data(withJSONObject: frames, options: .fragmentsAllowed)
-        let encodedFrames = jsonFramesData.flatMap({ self.encodeForJavascript($0) }) ?? "''"
+        let encodedFrames = jsonFramesData.flatMap({ WKWebView.encodeForJavascript($0) }) ?? "''"
         self.cookies = cookies
 
         return self.load(html: containerHtml, baseUrl: containerUrl)
@@ -134,8 +141,8 @@ final class WebViewHandler: NSObject {
                        return self.translatorsController.translators()
                    }
                    .flatMap { translators -> Single<Any> in
-                       let encodedTranslators = self.encodeJSONForJavascript(translators)
-                       return self.callJavascript("translate('\(url.absoluteString)', \(encodedHtml), \(encodedFrames), \(encodedTranslators));")
+                       let encodedTranslators = WKWebView.encodeAsJSONForJavascript(translators)
+                       return webView.call(javascript: "translate('\(url.absoluteString)', \(encodedHtml), \(encodedFrames), \(encodedTranslators));")
                    }
                    .subscribe(onFailure: { [weak self] error in
                        DDLogError("WebViewHandler: translation failed - \(error)")
@@ -149,7 +156,7 @@ final class WebViewHandler: NSObject {
     func selectItem(_ item: (String, String)) {
         guard let messageId = self.itemSelectionMessageId else { return }
         let (key, value) = item
-        self.webView?.evaluateJavaScript("Zotero.Messaging.receiveResponse('\(messageId)', \(self.encodeJSONForJavascript([key: value])));", completionHandler: nil)
+        self.webView?.evaluateJavaScript("Zotero.Messaging.receiveResponse('\(messageId)', \(WKWebView.encodeAsJSONForJavascript([key: value])));", completionHandler: nil)
         self.itemSelectionMessageId = nil
     }
 
@@ -219,7 +226,7 @@ final class WebViewHandler: NSObject {
 
     private func sendError(_ error: String, for messageId: Int) {
         let payload: [String: Any] = ["error": ["message": error]]
-        let script = "Zotero.Messaging.receiveResponse('\(messageId)', \(self.encodeJSONForJavascript(payload)));"
+        let script = "Zotero.Messaging.receiveResponse('\(messageId)', \(WKWebView.encodeAsJSONForJavascript(payload)));"
         self.webView?.evaluateJavaScript(script, completionHandler: nil)
     }
 
@@ -234,50 +241,7 @@ final class WebViewHandler: NSObject {
             payload = ["error": ["status": statusCode, "responseText": responseText]]
         }
 
-        return "Zotero.Messaging.receiveResponse('\(messageId)', \(self.encodeJSONForJavascript(payload)));"
-    }
-
-    // MARK: - Helpers
-
-    /// Makes a javascript call to `webView` with `Single` response.
-    /// - parameter script: JS script to be performed.
-    /// - returns: `Single` with response from `webView`.
-    private func callJavascript(_ script: String) -> Single<Any> {
-        return Single.create { subscriber -> Disposable in
-            self.webView?.evaluateJavaScript(script) { result, error in
-                if let data = result {
-                    subscriber(.success(data))
-                } else {
-                    let error = error ?? Error.javascriptCallMissingResult
-                    let nsError = error as NSError
-
-                    // TODO: - Check JS code to see if it's possible to remove this error.
-                    // For some calls we get an WKWebView error "JavaScript execution returned a result of an unsupported type" even though
-                    // no error really occured in the code. Because of this error the observable doesn't send any more "next" events and we don't
-                    // receive the response. So we just ignore this error.
-                    if nsError.domain == WKErrorDomain && nsError.code == 5 {
-                        return
-                    }
-
-                    DDLogError("WebViewHandler: javascript call ('\(script)') error - \(error)")
-
-                    subscriber(.failure(error))
-                }
-            }
-
-            return Disposables.create()
-        }
-    }
-
-    /// Encodes data which need to be sent to `webView`. All data that is passed to JS is Base64 encoded so that it can be sent as a simple `String`.
-    private func encodeForJavascript(_ data: Data?) -> String {
-        return data.flatMap({ "'" + $0.base64EncodedString(options: .endLineWithLineFeed) + "'" }) ?? "null"
-    }
-
-    /// Encodes JSON payload so that it can be sent to `webView`.
-    private func encodeJSONForJavascript(_ payload: Any) -> String {
-        let data = try? JSONSerialization.data(withJSONObject: payload, options: .prettyPrinted)
-        return self.encodeForJavascript(data)
+        return "Zotero.Messaging.receiveResponse('\(messageId)', \(WKWebView.encodeAsJSONForJavascript(payload)));"
     }
 }
 

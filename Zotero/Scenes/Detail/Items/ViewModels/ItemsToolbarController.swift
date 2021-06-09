@@ -139,7 +139,7 @@ final class ItemsToolbarController {
                 item.tag = ItemsToolbarController.barButtonItemEmptyTag
             case .duplicate:
                 item.tag = ItemsToolbarController.barButtonItemSingleTag
-            case .sort, .filter, .createParent: break
+            case .sort, .filter, .createParent, .copyCitation: break
             }
             switch action.type {
             case .addToCollection:

@@ -13,6 +13,7 @@ struct CitationStyle: Identifiable {
     let title: String
     let updated: Date
     let href: URL
+    let filename: String
 
     var id: String {
         return self.identifier

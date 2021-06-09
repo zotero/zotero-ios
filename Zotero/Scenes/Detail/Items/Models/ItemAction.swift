@@ -10,7 +10,7 @@ import UIKit
 
 struct ItemAction {
     enum Kind {
-        case addToCollection, delete, duplicate, removeFromCollection, restore, trash, sort, filter, createParent
+        case addToCollection, delete, duplicate, removeFromCollection, restore, trash, sort, filter, createParent, copyCitation
     }
 
     private enum Image {
@@ -32,7 +32,7 @@ struct ItemAction {
     var isDestructive: Bool {
         switch self.type {
         case .delete, .trash: return true
-        case .addToCollection, .duplicate, .removeFromCollection, .restore, .sort, .filter, .createParent: return false
+        case .addToCollection, .duplicate, .removeFromCollection, .restore, .sort, .filter, .createParent, .copyCitation: return false
         }
     }
 
@@ -67,6 +67,9 @@ struct ItemAction {
         case .filter:
             self.title = ""
             self._image = .system("")
+        case .copyCitation:
+            self.title = "Copy Citation"
+            self._image = .system("doc.on.doc")
         }
     }
 }

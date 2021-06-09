@@ -23,13 +23,14 @@ struct StoreStyleDbRequest: DbRequest {
             rStyle = existing
         } else {
             rStyle = RStyle()
-            rStyle.identifier = self.style.name
+            rStyle.identifier = self.style.id
             database.add(rStyle)
         }
 
         rStyle.href = self.style.href.absoluteString
         rStyle.title = self.style.title
         rStyle.updated = self.style.updated
+        rStyle.filename = self.style.name
     }
 }
 

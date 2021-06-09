@@ -17,7 +17,7 @@ struct RemoteCitationStyle: Identifiable, Hashable, Equatable {
     let href: URL
 
     var id: String {
-        return self.name
+        return "http://zotero.org/styles/\(self.name)"
     }
 }
 

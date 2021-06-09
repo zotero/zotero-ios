@@ -9,12 +9,10 @@
 import Foundation
 
 final class StyleParserDelegate: NSObject, XMLParserDelegate {
-    private static let idPrefix = "http://www.zotero.org/styles/"
+    private let filename: String?
 
     private(set) var style: CitationStyle?
-
     private var currentValue: String
-
     private var identifier: String?
     private var title: String?
     private var updated: Date?
@@ -24,41 +22,48 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
         case identifier = "id"
         case title = "title"
         case updated = "updated"
+        case link = "link"
     }
 
-    override init() {
+    init(filename: String?) {
+        self.filename = filename
         self.currentValue = ""
         super.init()
     }
 
-    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {}
+    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
+        guard self.href == nil && Element(rawValue: elementName) == .link && attributeDict["rel"] == "self", let href = attributeDict["href"] else { return }
+        self.href = URL(string: href)
+    }
 
     func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
-        guard self.style == nil else { return }
+        guard self.identifier == nil || self.title == nil || self.updated == nil, let element = Element(rawValue: elementName) else {
+            self.currentValue = ""
+            return
+        }
 
         self.currentValue = self.currentValue.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        if let element = Element(rawValue: elementName) {
-            switch element {
-            case .identifier:
-                self.href = URL(string: self.currentValue)
-                self.identifier = String(self.currentValue[self.currentValue.index(self.currentValue.startIndex, offsetBy: StyleParserDelegate.idPrefix.count)...])
-            case .title:
-                self.title = self.currentValue
-            case .updated:
-                self.updated = Formatter.iso8601.date(from: self.currentValue)
-            }
+        switch element {
+        case .identifier:
+            self.identifier = self.currentValue
+        case .title:
+            self.title = self.currentValue
+        case .updated:
+            self.updated = Formatter.iso8601.date(from: self.currentValue)
+        case .link: break
         }
 
         self.currentValue = ""
-
-        if let identifier = self.identifier, let title = self.title, let updated = self.updated, let href = self.href {
-            self.style = CitationStyle(identifier: identifier, title: title, updated: updated, href: href)
-        }
     }
 
     func parser(_ parser: XMLParser, foundCharacters string: String) {
-        guard self.style == nil else { return }
+        guard self.identifier == nil || self.title == nil || self.updated == nil else { return }
         self.currentValue += string
+    }
+
+    func parserDidEndDocument(_ parser: XMLParser) {
+        guard let identifier = self.identifier, let title = self.title, let updated = self.updated, let href = self.href else { return }
+        self.style = CitationStyle(identifier: identifier, title: title, updated: updated, href: href, filename: (self.filename ?? href.lastPathComponent))
     }
 }

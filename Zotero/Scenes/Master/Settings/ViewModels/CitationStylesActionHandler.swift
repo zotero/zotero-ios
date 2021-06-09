@@ -59,7 +59,7 @@ struct CitationStylesActionHandler: ViewModelActionHandler {
             try self.bundledDataStorage.createCoordinator().perform(request: StoreStyleDbRequest(style: remoteStyle))
 
             self.update(viewModel: viewModel) { state in
-                let style = CitationStyle(identifier: remoteStyle.name, title: remoteStyle.title, updated: remoteStyle.updated, href: remoteStyle.href)
+                let style = CitationStyle(identifier: remoteStyle.id, title: remoteStyle.title, updated: remoteStyle.updated, href: remoteStyle.href, filename: remoteStyle.name)
                 let index = state.styles.index(of: style, sortedBy: { $0.title > $1.title })
                 state.styles.insert(style, at: index)
             }
@@ -95,7 +95,7 @@ struct CitationStylesActionHandler: ViewModelActionHandler {
     private func loadStyles(in viewModel: ViewModel<CitationStylesActionHandler>) {
         do {
             let styles = try self.bundledDataStorage.createCoordinator().perform(request: ReadStylesDbRequest())
-                                 .map({ CitationStyle(identifier: $0.identifier, title: $0.title, updated: $0.updated, href: (URL(string: $0.href) ?? URL(fileURLWithPath: ""))) })
+                               .map({ CitationStyle(identifier: $0.identifier, title: $0.title, updated: $0.updated, href: (URL(string: $0.href) ?? URL(fileURLWithPath: "")), filename: $0.filename) })
 
             self.update(viewModel: viewModel) { state in
                 state.styles = Array(styles)
