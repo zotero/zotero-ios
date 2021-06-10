@@ -17,6 +17,7 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
     private var title: String?
     private var updated: Date?
     private var href: URL?
+    private(set) var dependencyHref: String?
 
     private enum Element: String {
         case identifier = "id"
@@ -32,8 +33,17 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
     }
 
     func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
-        guard self.href == nil && Element(rawValue: elementName) == .link && attributeDict["rel"] == "self", let href = attributeDict["href"] else { return }
-        self.href = URL(string: href)
+        guard Element(rawValue: elementName) == .link, let rel = attributeDict["rel"] else { return }
+
+        switch rel {
+        case "self":
+            if self.href == nil, let href = attributeDict["href"] {
+                self.href = URL(string: href)
+            }
+        case "independent-parent":
+            self.dependencyHref = attributeDict["href"]
+        default: break
+        }
     }
 
     func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {

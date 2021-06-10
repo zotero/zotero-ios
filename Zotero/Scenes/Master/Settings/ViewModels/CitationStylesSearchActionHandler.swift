@@ -43,7 +43,7 @@ struct CitationStylesSearchActionHandler: ViewModelActionHandler {
             .subscribe(with: viewModel, onSuccess: { (viewModel, response: (CitationStylesResponse, ResponseHeaders)) in
                            self.update(viewModel: viewModel) { state in
                                state.loading = false
-                               state.styles = response.0.styles.filter({ !viewModel.state.installedIds.contains($0.name) })
+                               state.styles = response.0.styles.filter({ !viewModel.state.installedIds.contains($0.id) })
                                state.error = nil
                                state.changes = [.loading, .styles]
                            }

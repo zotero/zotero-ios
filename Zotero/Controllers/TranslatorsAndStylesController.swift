@@ -543,9 +543,8 @@ final class TranslatorsAndStylesController {
     }
 
     private func parseStyle(from file: File) throws -> CitationStyle {
-        let data = try self.fileStorage.read(file)
+        guard let parser = XMLParser(contentsOf: file.createUrl()) else { throw Error.cantParseXmlResponse }
         let delegate = StyleParserDelegate(filename: file.name)
-        let parser = XMLParser(data: data)
         parser.delegate = delegate
 
         if parser.parse(), let style = delegate.style {

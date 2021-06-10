@@ -20,5 +20,7 @@ struct CitationStylesState: ViewModelState {
     var styles: [CitationStyle] = []
     var error: Error?
 
-    func cleanup() {}
+    mutating func cleanup() {
+        self.error = nil
+    }
 }

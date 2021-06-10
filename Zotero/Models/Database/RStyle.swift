@@ -16,6 +16,10 @@ final class RStyle: Object {
     @objc dynamic var href: String = ""
     @objc dynamic var updated: Date = Date(timeIntervalSince1970: 0)
     @objc dynamic var filename: String = ""
+    @objc dynamic var dependency: RStyle?
+    @objc dynamic var installed: Bool = false
+
+    let dependent = LinkingObjects(fromType: RStyle.self, property: "dependency")
 
     // MARK: - Object properties
 

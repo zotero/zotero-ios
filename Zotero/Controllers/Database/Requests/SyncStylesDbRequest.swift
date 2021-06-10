@@ -30,6 +30,8 @@ struct SyncStylesDbRequest: DbResponseRequest {
             } else {
                 rStyle = RStyle()
                 rStyle.identifier = style.identifier
+                // If it needs to be created it's synced from bundle and it should be automatically installed.
+                rStyle.installed = true
                 database.add(rStyle)
             }
 

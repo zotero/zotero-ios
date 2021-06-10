@@ -74,7 +74,9 @@ final class ViewModel<Handler: ViewModelActionHandler>: ObservableObject {
         var state = self.state
         state.cleanup()
         action(&state)
-        self.stateObservable.accept(state)
-        self.objectWillChange.send()
+        inMainThread {
+            self.stateObservable.accept(state)
+            self.objectWillChange.send()
+        }
     }
 }

@@ -11,26 +11,43 @@ import Foundation
 import RealmSwift
 
 struct StoreStyleDbRequest: DbRequest {
-    let style: RemoteCitationStyle
+    let style: CitationStyle
+    let dependency: CitationStyle?
 
     var needsWrite: Bool { return true }
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
-        let rStyle: RStyle
-
-        if let existing = database.object(ofType: RStyle.self, forPrimaryKey: self.style.name) {
-            rStyle = existing
-        } else {
-            rStyle = RStyle()
-            rStyle.identifier = self.style.id
-            database.add(rStyle)
-        }
-
+        let (rStyle, _) = self.style(for: self.style.identifier, database: database)
         rStyle.href = self.style.href.absoluteString
         rStyle.title = self.style.title
         rStyle.updated = self.style.updated
-        rStyle.filename = self.style.name
+        rStyle.filename = self.style.filename
+        rStyle.installed = true
+
+        if let dependency = self.dependency {
+            let (rDependency, existed) = self.style(for: dependency.identifier, database: database)
+            rDependency.updated = dependency.updated
+            rDependency.filename = dependency.filename
+            rDependency.href = dependency.href.absoluteString
+            rDependency.title = dependency.title
+            if !existed {
+                rDependency.installed = false
+            }
+
+            rStyle.dependency = rDependency
+        }
+    }
+
+    private func style(for identifier: String, database: Realm) -> (RStyle, Bool) {
+        if let existing = database.object(ofType: RStyle.self, forPrimaryKey: identifier) {
+            return (existing, true)
+        } else {
+            let rStyle = RStyle()
+            rStyle.identifier = identifier
+            database.add(rStyle)
+            return (rStyle, false)
+        }
     }
 }
 
