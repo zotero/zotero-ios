@@ -33,6 +33,15 @@ final class Defaults {
     @UserDefault(key: "ShowSubcollectionItems", defaultValue: false, defaults: .standard)
     var showSubcollectionItems: Bool
 
+    @UserDefault(key: "ExportStyleId", defaultValue: "http://www.zotero.org/styles/chicago-note-bibliography", defaults: .standard)
+    var exportDefaultStyleId: String
+
+    @UserDefault(key: "ExportLocaleId", defaultValue: Locale.preferredLanguages.first ?? "en-US", defaults: .standard)
+    var exportDefaultLocaleId: String
+
+    @UserDefault(key: "ExportCopyAsHtml", defaultValue: false, defaults: .standard)
+    var exportCopyAsHtml: Bool
+
     // MARK: - Selection
 
     @CodableUserDefault(key: "SelectedRawLibraryKey", defaultValue: LibraryIdentifier.custom(.myLibrary), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)

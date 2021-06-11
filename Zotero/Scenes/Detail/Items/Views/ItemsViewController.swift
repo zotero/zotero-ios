@@ -552,7 +552,7 @@ final class ItemsViewController: UIViewController {
 extension ItemsViewController: ItemsTableViewHandlerDelegate {
     func process(action: ItemAction.Kind, for item: RItem) {
         if action == .copyCitation {
-            self.controllers.citationController.citation(for: item, in: self)
+            self.controllers.citationController.bibliography(for: item, styleFilename: "modern-language-association", localeId: "en-GB", format: .html, in: self)
                                                .subscribe(onSuccess: { citation in
                                                    DDLogInfo("CITATION: \(citation)")
                                                    UIPasteboard.general.string = citation

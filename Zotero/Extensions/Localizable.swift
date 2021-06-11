@@ -705,6 +705,18 @@ internal enum L10n {
       /// Crash Log Sent
       internal static let title = L10n.tr("Localizable", "settings.crash_alert.title")
     }
+    internal enum Export {
+      /// Copy as HTML
+      internal static let copyAsHtml = L10n.tr("Localizable", "settings.export.copy_as_html")
+      /// Default Format
+      internal static let defaultFormat = L10n.tr("Localizable", "settings.export.default_format")
+      /// Language
+      internal static let language = L10n.tr("Localizable", "settings.export.language")
+      /// Quick Copy
+      internal static let quickCopy = L10n.tr("Localizable", "settings.export.quick_copy")
+      /// Export
+      internal static let title = L10n.tr("Localizable", "settings.export.title")
+    }
     internal enum General {
       /// Show Items from Subcollections
       internal static let showSubcollectionsTitle = L10n.tr("Localizable", "settings.general.show_subcollections_title")

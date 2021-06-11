@@ -233,6 +233,11 @@
 "settings.cite.styles_title" = "Citation Styles";
 "settings.cite.get_more_styles" = "Get additional styles";
 "settings.cite_search.search_title" = "Search styles";
+"settings.export.title" = "Export";
+"settings.export.default_format" = "Default Format";
+"settings.export.language" = "Language";
+"settings.export.copy_as_html" = "Copy as HTML";
+"settings.export.quick_copy" = "Quick Copy";
 
 "shareext.save" = "Save to Zotero";
 "shareext.decoding_attachment" = "Searching for items";

@@ -1,5 +1,5 @@
 //
-//  ExportState.swift
+//  PDFExportState.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 26.01.2021.
@@ -10,7 +10,7 @@ import Foundation
 
 #if PDFENABLED
 
-enum ExportState {
+enum PDFExportState {
     case preparing
     case exported(File)
     case failed(PdfDocumentExporter.Error)

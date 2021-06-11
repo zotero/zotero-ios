@@ -80,7 +80,7 @@ struct PDFReaderState: ViewModelState {
     /// if they are not available.
     var shouldStoreAnnotationPreviewsIfNeeded: Bool
     var visiblePage: Int
-    var exportState: ExportState?
+    var exportState: PDFExportState?
     /// Used to ignore next insertion/deletion notification of annotations. Used when there is a remote change of annotations. PSPDFKit can't suppress notifications when adding/deleting annotations
     /// to/from document. So when a remote change comes in, the document is edited and emits notifications which would try to do the same work again.
     var ignoreNotifications: [Notification.Name: Set<String>]

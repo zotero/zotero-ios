@@ -75,7 +75,7 @@ final class Controllers {
         self.crashReporter = crashReporter
         self.debugLogging = debugLogging
         self.translatorsAndStylesController = translatorsAndStylesController
-        self.citationController = CitationController(stylesController: translatorsAndStylesController)
+        self.citationController = CitationController(stylesController: translatorsAndStylesController, fileStorage: fileStorage)
         self.annotationPreviewController = AnnotationPreviewController(previewSize: previewSize, fileStorage: fileStorage)
         self.urlDetector = urlDetector
         self.dateParser = DateParser()

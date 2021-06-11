@@ -18,6 +18,7 @@ protocol SettingsCoordinatorDelegate: AnyObject {
     func showAboutBeta()
     func showCitationSettings()
     func showCitationStyleManagement(viewModel: ViewModel<CitationStylesActionHandler>)
+    func showExportSettings()
     func dismiss()
 }
 
@@ -204,6 +205,20 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         }
         controller.coordinatorDelegate = self
         controller.preferredContentSize = UIScreen.main.bounds.size
+        self.navigationController.pushViewController(controller, animated: true)
+    }
+
+    func showExportSettings() {
+        let localeId = Defaults.shared.exportDefaultLocaleId
+        let language = Locale.current.localizedString(forLanguageCode: localeId) ?? localeId
+        let styleId = Defaults.shared.exportDefaultStyleId
+        let style = (try? self.controllers.bundledDataStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: styleId)))?.title ?? styleId
+        let state = ExportState(style: style, language: language, copyAsHtml: Defaults.shared.exportCopyAsHtml)
+        let handler = ExportActionHandler(bundledDataStorage: self.controllers.bundledDataStorage, fileStorage: self.controllers.fileStorage)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+
+        let controller = UIHostingController(rootView: ExportSettingsView().environmentObject(viewModel))
+        controller.preferredContentSize = SettingsCoordinator.defaultSize
         self.navigationController.pushViewController(controller, animated: true)
     }
 

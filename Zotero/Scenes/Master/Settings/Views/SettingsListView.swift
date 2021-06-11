@@ -34,6 +34,13 @@ struct SettingsListView: View {
                 }
 
                 Button(action: {
+                    self.coordinatorDelegate?.showExportSettings()
+                }, label: {
+                    Text(L10n.Settings.Export.title)
+                        .foregroundColor(Color(self.textColor))
+                })
+
+                Button(action: {
                     self.coordinatorDelegate?.showCitationSettings()
                 }, label: {
                     Text(L10n.Settings.Cite.title)

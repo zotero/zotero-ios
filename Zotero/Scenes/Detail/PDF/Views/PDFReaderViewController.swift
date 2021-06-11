@@ -240,7 +240,7 @@ final class PDFReaderViewController: UIViewController {
         }
     }
 
-    private func update(state: ExportState?) {
+    private func update(state: PDFExportState?) {
         var items = self.navigationItem.rightBarButtonItems ?? []
 
         guard let shareId = items.firstIndex(where: { $0.tag == NavigationBarButton.share.rawValue }) else { return }

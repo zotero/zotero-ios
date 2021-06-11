@@ -9,7 +9,7 @@ import time
 bundle_dir = os.path.join(os.path.abspath("."), "Bundled" + os.sep + "locales")
 
 if not os.path.isdir(bundle_dir):
-    raise Exception(bundle_dir + " is not a directory")
+    os.mkdir(bundle_dir)
 
 # Download submodule
 subprocess.check_call(["git", "submodule", "update", "--recursive", "locales"])

@@ -37,7 +37,7 @@ def index_json(directory):
 bundle_dir = os.path.join(os.path.abspath("."), "Bundled" + os.sep + "translators")
 
 if not os.path.isdir(bundle_dir):
-    raise Exception(bundle_dir + " is not a directory")
+    os.mkdir(bundle_dir)
 
 # Download translators submodule
 subprocess.check_call(["git", "submodule", "update", "--recursive", "ZShare/Assets/translation/modules/zotero"])
