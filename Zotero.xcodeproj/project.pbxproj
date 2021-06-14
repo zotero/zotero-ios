@@ -807,6 +807,17 @@
 		B3D3E714264BD0F200A521DE /* DiffableDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3E713264BD0F200A521DE /* DiffableDataSource.swift */; };
 		B3D3F78B240D222C0018F354 /* ItemFetchType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3F78A240D222C0018F354 /* ItemFetchType.swift */; };
 		B3D3F78D240D24D10018F354 /* ItemFetchType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3F78A240D222C0018F354 /* ItemFetchType.swift */; };
+		B3D3FC9D26774836008E243A /* SettingsListButtonRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3FC9C26774836008E243A /* SettingsListButtonRow.swift */; };
+		B3D3FC9F26775264008E243A /* ExportLocalePickerActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3FC9E26775264008E243A /* ExportLocalePickerActionHandler.swift */; };
+		B3D3FCA1267752C6008E243A /* ExportLocalePickerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3FCA0267752C6008E243A /* ExportLocalePickerState.swift */; };
+		B3D3FCA3267752CE008E243A /* ExportLocalePickerAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3FCA2267752CE008E243A /* ExportLocalePickerAction.swift */; };
+		B3D3FCA5267755B6008E243A /* ExportLocalePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3FCA4267755B6008E243A /* ExportLocalePickerView.swift */; };
+		B3D3FCA726775E94008E243A /* ExportLocale.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3FCA626775E94008E243A /* ExportLocale.swift */; };
+		B3D3FCA9267762EC008E243A /* ExportLocaleReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3FCA8267762EC008E243A /* ExportLocaleReader.swift */; };
+		B3D3FCAB26776B2E008E243A /* StylePickerAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3FCAA26776B2E008E243A /* StylePickerAction.swift */; };
+		B3D3FCAD26776B37008E243A /* StylePickerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3FCAC26776B37008E243A /* StylePickerState.swift */; };
+		B3D3FCAF26776F32008E243A /* StylePickerActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3FCAE26776F32008E243A /* StylePickerActionHandler.swift */; };
+		B3D3FCB1267770A7008E243A /* StylePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3FCB0267770A7008E243A /* StylePickerView.swift */; };
 		B3D58D5625ED856F00D8FA31 /* DebugLogUploadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D58D5525ED856F00D8FA31 /* DebugLogUploadRequest.swift */; };
 		B3D58D5B25ED861500D8FA31 /* DebugLogUploadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D58D5525ED856F00D8FA31 /* DebugLogUploadRequest.swift */; };
 		B3D58D6225EE26A600D8FA31 /* DebugResponseParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D58D6125EE26A600D8FA31 /* DebugResponseParserDelegate.swift */; };
@@ -1487,6 +1498,17 @@
 		B3D3369F25F78068008EA3E9 /* SavingSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingSettingsView.swift; sourceTree = "<group>"; };
 		B3D3E713264BD0F200A521DE /* DiffableDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiffableDataSource.swift; sourceTree = "<group>"; };
 		B3D3F78A240D222C0018F354 /* ItemFetchType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemFetchType.swift; sourceTree = "<group>"; };
+		B3D3FC9C26774836008E243A /* SettingsListButtonRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsListButtonRow.swift; sourceTree = "<group>"; };
+		B3D3FC9E26775264008E243A /* ExportLocalePickerActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportLocalePickerActionHandler.swift; sourceTree = "<group>"; };
+		B3D3FCA0267752C6008E243A /* ExportLocalePickerState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportLocalePickerState.swift; sourceTree = "<group>"; };
+		B3D3FCA2267752CE008E243A /* ExportLocalePickerAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportLocalePickerAction.swift; sourceTree = "<group>"; };
+		B3D3FCA4267755B6008E243A /* ExportLocalePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportLocalePickerView.swift; sourceTree = "<group>"; };
+		B3D3FCA626775E94008E243A /* ExportLocale.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportLocale.swift; sourceTree = "<group>"; };
+		B3D3FCA8267762EC008E243A /* ExportLocaleReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportLocaleReader.swift; sourceTree = "<group>"; };
+		B3D3FCAA26776B2E008E243A /* StylePickerAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StylePickerAction.swift; sourceTree = "<group>"; };
+		B3D3FCAC26776B37008E243A /* StylePickerState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StylePickerState.swift; sourceTree = "<group>"; };
+		B3D3FCAE26776F32008E243A /* StylePickerActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StylePickerActionHandler.swift; sourceTree = "<group>"; };
+		B3D3FCB0267770A7008E243A /* StylePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StylePickerView.swift; sourceTree = "<group>"; };
 		B3D58D5525ED856F00D8FA31 /* DebugLogUploadRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogUploadRequest.swift; sourceTree = "<group>"; };
 		B3D58D6125EE26A600D8FA31 /* DebugResponseParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugResponseParserDelegate.swift; sourceTree = "<group>"; };
 		B3D58D6A25EE437700D8FA31 /* CircularProgressView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CircularProgressView.swift; sourceTree = "<group>"; };
@@ -1645,6 +1667,7 @@
 				B305646D23FC051E003304F2 /* CreatorSummaryFormatter.swift */,
 				B3BC25CC247E6BA000AC27B5 /* DateParser.swift */,
 				B305647F23FC051E003304F2 /* DragDropController.swift */,
+				B3D3FCA8267762EC008E243A /* ExportLocaleReader.swift */,
 				B305648123FC051E003304F2 /* Formatter.swift */,
 				B367330C24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift */,
 				B30564B923FC051E003304F2 /* ItemTitleFormatter.swift */,
@@ -2624,7 +2647,9 @@
 				B3A2AED3265552D5004BF3A4 /* CitationStylesActionHandler.swift */,
 				B3B3FF7C266A2B410061E3B2 /* CitationStylesSearchActionHandler.swift */,
 				B322B470267391A400BC3D08 /* ExportActionHandler.swift */,
+				B3D3FC9E26775264008E243A /* ExportLocalePickerActionHandler.swift */,
 				B37491212488D7040042FF85 /* SettingsActionHandler.swift */,
+				B3D3FCAE26776F32008E243A /* StylePickerActionHandler.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -2637,10 +2662,15 @@
 				B3B3FF7E266A2B4F0061E3B2 /* CitationStylesSearchState.swift */,
 				B3A2AED7265552FA004BF3A4 /* CitationStylesState.swift */,
 				B322B474267391E900BC3D08 /* ExportAction.swift */,
+				B3D3FCA626775E94008E243A /* ExportLocale.swift */,
+				B3D3FCA2267752CE008E243A /* ExportLocalePickerAction.swift */,
+				B3D3FCA0267752C6008E243A /* ExportLocalePickerState.swift */,
 				B322B472267391DF00BC3D08 /* ExportState.swift */,
 				B3A2AED926555B61004BF3A4 /* RemoteCitationStyle.swift */,
 				B37491242488D7040042FF85 /* SettingsAction.swift */,
 				B37491232488D7040042FF85 /* SettingsState.swift */,
+				B3D3FCAA26776B2E008E243A /* StylePickerAction.swift */,
+				B3D3FCAC26776B37008E243A /* StylePickerState.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -2652,16 +2682,19 @@
 				B3B3FF85266A52600061E3B2 /* CitationStyleSearchViewController.xib */,
 				B331F9B22653FC010099F6A6 /* CitationStylesSettingsView.swift */,
 				B37491292488D7040042FF85 /* DebugSettingsView.swift */,
+				B3D3FCA4267755B6008E243A /* ExportLocalePickerView.swift */,
 				B322B46E2673917100BC3D08 /* ExportSettingsView.swift */,
 				B374912B2488D7040042FF85 /* GeneralSettingsView.swift */,
 				B37491272488D7040042FF85 /* ProfileView.swift */,
 				B3D3369F25F78068008EA3E9 /* SavingSettingsView.swift */,
+				B3D3FC9C26774836008E243A /* SettingsListButtonRow.swift */,
 				B374912D2488D7040042FF85 /* SettingsListView.swift */,
 				B374912C2488D7040042FF85 /* SettingsToggleRow.swift */,
 				B374913D2488FC0E0042FF85 /* StorageSettingsEmptyView.swift */,
 				B374913F2488FC170042FF85 /* StorageSettingsListView.swift */,
 				B37491412488FC3D0042FF85 /* StorageSettingsRow.swift */,
 				B374913B2488E3D90042FF85 /* StorageSettingsView.swift */,
+				B3D3FCB0267770A7008E243A /* StylePickerView.swift */,
 				B37491282488D7040042FF85 /* SyncSettingsView.swift */,
 				B374912A2488D7040042FF85 /* TranslatorsSettingsView.swift */,
 			);
@@ -3348,6 +3381,7 @@
 				B3593F39241A61C700760E20 /* ItemsActionHandler.swift in Sources */,
 				B30565C923FC051E003304F2 /* UpdateItemLocaleDbRequest.swift in Sources */,
 				B3BD2BB325C98D2900275EF9 /* BackgroundTimer.swift in Sources */,
+				B3D3FCA726775E94008E243A /* ExportLocale.swift in Sources */,
 				B3593F48241A61C700760E20 /* LibrariesActionHandler.swift in Sources */,
 				B30565D623FC051E003304F2 /* CreateAttachmentDbRequest.swift in Sources */,
 				B3DCDF07240912060039ED0D /* NoteEditorViewController.swift in Sources */,
@@ -3488,6 +3522,7 @@
 				B3593F3B241A61C700760E20 /* ItemsError.swift in Sources */,
 				B30566B823FC051F003304F2 /* SearchesResponse.swift in Sources */,
 				B3CBB125248A46D500C4228F /* NotificationCenter+Extensions.swift in Sources */,
+				B3D3FCAB26776B2E008E243A /* StylePickerAction.swift in Sources */,
 				B305660C23FC051E003304F2 /* VersionsRequest.swift in Sources */,
 				B33AB488246D315F00490DDE /* CheckboxButton.swift in Sources */,
 				B378F4CF242D0CC200B88A05 /* RepoRequest.swift in Sources */,
@@ -3544,6 +3579,7 @@
 				B34A9F6825BF1D27007C9A4A /* AnnotationConverter.swift in Sources */,
 				B3A081C425D2ADCD0088EC24 /* PerformDeletionsSyncAction.swift in Sources */,
 				B30565B623FC051E003304F2 /* StoreItemsDbResponseRequest.swift in Sources */,
+				B3D3FCA5267755B6008E243A /* ExportLocalePickerView.swift in Sources */,
 				B3593F5A241A61C700760E20 /* CollectionsTableViewHandler.swift in Sources */,
 				B395EFEB25494B3200CEBD9F /* CreatorEditActionHandler.swift in Sources */,
 				B30565E623FC051E003304F2 /* SchemaController.swift in Sources */,
@@ -3551,10 +3587,12 @@
 				B30565EB23FC051E003304F2 /* Controllers.swift in Sources */,
 				B3593F78241A76E600760E20 /* CollectionEditError.swift in Sources */,
 				B31EEE5C24EBF24300E3B3AD /* StoreChangedAnnotationsDbRequest.swift in Sources */,
+				B3D3FCA1267752C6008E243A /* ExportLocalePickerState.swift in Sources */,
 				B36181EC24C96B0500B30D56 /* SearchableCollection.swift in Sources */,
 				B3830CDB255451AB00910FE0 /* TagPickerAction.swift in Sources */,
 				B3593F40241A61C700760E20 /* ItemCell.swift in Sources */,
 				B305679023FC1D9B003304F2 /* CollectionDifference+Separated.swift in Sources */,
+				B3D3FCB1267770A7008E243A /* StylePickerView.swift in Sources */,
 				B34ACC7A2514EAAB00040C17 /* AnnotationColorGenerator.swift in Sources */,
 				B32EE26124A092B700442974 /* RUser.swift in Sources */,
 				B305660A23FC051E003304F2 /* RegisterUploadRequest.swift in Sources */,
@@ -3564,6 +3602,7 @@
 				B30565CB23FC051E003304F2 /* ReadSearchDbRequest.swift in Sources */,
 				B305669A23FC051F003304F2 /* RItem.swift in Sources */,
 				B305662D23FC051F003304F2 /* ItemTitleFormatter.swift in Sources */,
+				B3D3FC9D26774836008E243A /* SettingsListButtonRow.swift in Sources */,
 				B30566C823FC051F003304F2 /* SortType.swift in Sources */,
 				B3C6AB2B248E3EB90009AC96 /* ApiOperation.swift in Sources */,
 				B305660F23FC051E003304F2 /* CrashUploadRequest.swift in Sources */,
@@ -3607,6 +3646,7 @@
 				B324278225C841A600567504 /* WsResponse.swift in Sources */,
 				B37491302488D7040042FF85 /* SettingsAction.swift in Sources */,
 				B361820124C9A7C000B30D56 /* OnboardingPageView.swift in Sources */,
+				B3D3FCA9267762EC008E243A /* ExportLocaleReader.swift in Sources */,
 				B30565CA23FC051E003304F2 /* PerformDeletionsDbRequest.swift in Sources */,
 				B36181FE24C9A7C000B30D56 /* OnboardingLayout.swift in Sources */,
 				B3DDDAAC24CAD6810014DF99 /* InsetLabel.swift in Sources */,
@@ -3678,6 +3718,7 @@
 				B30566A223FC051F003304F2 /* Attachment.swift in Sources */,
 				B3593F7B241A76E600760E20 /* CollectionPickerView.swift in Sources */,
 				B30565BF23FC051E003304F2 /* CheckItemIsChangedDbRequest.swift in Sources */,
+				B3D3FC9F26775264008E243A /* ExportLocalePickerActionHandler.swift in Sources */,
 				B3DCDF21240945D80039ED0D /* CollectionPickerState.swift in Sources */,
 				B3D58D5625ED856F00D8FA31 /* DebugLogUploadRequest.swift in Sources */,
 				B3E1BEC9254B0B9500D9BB27 /* ItemDetailFieldEditCell.swift in Sources */,
@@ -3736,6 +3777,7 @@
 				B34A9F6425BF1ABB007C9A4A /* PdfDocumentExporter.swift in Sources */,
 				B377F2A5249373F300022943 /* AttachmentFileCleanupController.swift in Sources */,
 				B305661823FC051E003304F2 /* LoadPermissionsSyncAction.swift in Sources */,
+				B3D3FCAF26776F32008E243A /* StylePickerActionHandler.swift in Sources */,
 				B3593F3E241A61C700760E20 /* ItemsTableViewHandler.swift in Sources */,
 				B3DCDF102409127A0039ED0D /* CreatorTypePickerViewModelCreator.swift in Sources */,
 				B3401D572567D8F700BB8D6E /* AnnotationViewController.swift in Sources */,
@@ -3745,6 +3787,7 @@
 				B305662523FC051F003304F2 /* RevertLibraryUpdatesSyncAction.swift in Sources */,
 				B361820D24C9B9D900B30D56 /* NoRotationHostingController.swift in Sources */,
 				B3A2AED6265552F3004BF3A4 /* CitationStylesAction.swift in Sources */,
+				B3D3FCA3267752CE008E243A /* ExportLocalePickerAction.swift in Sources */,
 				B3401D612568047D00BB8D6E /* AnnotationViewTextView.swift in Sources */,
 				B30B40612490D84300FAAF6D /* ItemCellModel.swift in Sources */,
 				B3C9D60A24DA9D49003EA1EE /* CollectionsSearchAction.swift in Sources */,
@@ -3765,6 +3808,7 @@
 				B30565C023FC051E003304F2 /* ReadAttachmentUploadsDbRequest.swift in Sources */,
 				B3BC6B1D250F797B006A8B9C /* FieldKeys.swift in Sources */,
 				B3830CEA255451DC00910FE0 /* TagPickerViewController.swift in Sources */,
+				B3D3FCAD26776B37008E243A /* StylePickerState.swift in Sources */,
 				B36C5086257521DE00A370D3 /* AnnotationEditActionHandler.swift in Sources */,
 				B3B3FF7F266A2B4F0061E3B2 /* CitationStylesSearchState.swift in Sources */,
 				B30A8C672582690900EC56FB /* HighlightAnnotation.swift in Sources */,

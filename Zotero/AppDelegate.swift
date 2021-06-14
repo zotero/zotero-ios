@@ -149,6 +149,18 @@ final class AppDelegate: UIResponder {
         // Search bar
         UISearchBar.appearance().tintColor = Asset.Colors.zoteroBlue.color
     }
+
+    private func setupExportDefaults() {
+        if UserDefaults.standard.string(forKey: "ExportLocaleId") != nil {
+            // Value is already assigned, no need to do anything else.
+            return
+        }
+
+        guard let localeIds = try? ExportLocaleReader.loadIds() else { return }
+
+        let defaultLocale = localeIds.first(where: { $0.contains(Locale.current.identifier) }) ?? "en-US"
+        UserDefaults.standard.setValue(defaultLocale, forKey: "ExportLocaleId")
+    }
 }
 
 extension AppDelegate: SceneActivityCounter {
@@ -183,6 +195,7 @@ extension AppDelegate: UIApplicationDelegate {
         self.setupLogs()
         self.controllers = Controllers()
         self.setupAppearance()
+        self.setupExportDefaults()
 
         #if PDFENABLED
         self.migratePdfSettings()

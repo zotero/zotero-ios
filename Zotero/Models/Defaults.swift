@@ -36,7 +36,8 @@ final class Defaults {
     @UserDefault(key: "ExportStyleId", defaultValue: "http://www.zotero.org/styles/chicago-note-bibliography", defaults: .standard)
     var exportDefaultStyleId: String
 
-    @UserDefault(key: "ExportLocaleId", defaultValue: Locale.preferredLanguages.first ?? "en-US", defaults: .standard)
+    // Proper default value is set up in AppDelegate.setupExportDefaults().
+    @UserDefault(key: "ExportLocaleId", defaultValue: "en-US", defaults: .standard)
     var exportDefaultLocaleId: String
 
     @UserDefault(key: "ExportCopyAsHtml", defaultValue: false, defaults: .standard)

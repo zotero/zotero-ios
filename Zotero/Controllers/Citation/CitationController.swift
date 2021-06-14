@@ -31,32 +31,40 @@ class CitationController: NSObject {
 
     private unowned let stylesController: TranslatorsAndStylesController
     private unowned let fileStorage: FileStorage
+    private unowned let dbStorage: DbStorage
     private let backgroundScheduler: SerialDispatchQueueScheduler
 
     private var webView: WKWebView?
     private var webDidLoad: ((SingleEvent<WKWebView>) -> Void)?
     private var webViewResponse: ((SingleEvent<String>) -> Void)?
 
-    init(stylesController: TranslatorsAndStylesController, fileStorage: FileStorage) {
+    init(stylesController: TranslatorsAndStylesController, fileStorage: FileStorage, dbStorage: DbStorage) {
         self.stylesController = stylesController
         self.fileStorage = fileStorage
+        self.dbStorage = dbStorage
         self.backgroundScheduler = SerialDispatchQueueScheduler(internalSerialQueueName: "org.zotero.CitationController")
         super.init()
     }
 
     // MARK: - Actions
 
-    func citation(for item: RItem, styleFilename: String, localeId: String, format: CitationFormat, in controller: UIViewController) -> Single<String> {
-        return self.loadEncodedXmls(styleFilename: styleFilename, localeId: localeId)
+    func citation(for item: RItem, styleId: String, localeId: String, format: CitationFormat, in controller: UIViewController) -> Single<String> {
+        return self.loadStyleFilename(for: styleId)
                    .subscribe(on: self.backgroundScheduler)
+                   .flatMap({ filename in
+                       return self.loadEncodedXmls(styleFilename: filename, localeId: localeId)
+                   })
                    .flatMap({ styleXml, localeXml -> Single<String> in
                        return self.call(webViewAction: { self.getCitation(styleXml: styleXml, localeId: localeId, localeXml: localeXml, format: format.rawValue, webView: $0) }, in: controller)
                    })
     }
 
-    func bibliography(for item: RItem, styleFilename: String, localeId: String, format: CitationFormat, in controller: UIViewController) -> Single<String> {
-        return self.loadEncodedXmls(styleFilename: styleFilename, localeId: localeId)
+    func bibliography(for item: RItem, styleId: String, localeId: String, format: CitationFormat, in controller: UIViewController) -> Single<String> {
+        return self.loadStyleFilename(for: styleId)
                    .subscribe(on: self.backgroundScheduler)
+                   .flatMap({ filename in
+                       self.loadEncodedXmls(styleFilename: filename, localeId: localeId)
+                   })
                    .flatMap({ styleXml, localeXml -> Single<String> in
                        return self.call(webViewAction: { self.getBibliography(styleXml: styleXml, localeId: localeId, localeXml: localeXml, format: format.rawValue, webView: $0) }, in: controller)
                    })
@@ -105,6 +113,19 @@ class CitationController: NSObject {
                 subscriber(.failure(Error.styleOrLocaleMissing))
             }
 
+            return Disposables.create()
+        }
+    }
+
+    private func loadStyleFilename(for styleId: String) -> Single<String> {
+        return Single.create { subscriber in
+            do {
+                let style = try self.dbStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: styleId))
+                subscriber(.success(style.filename))
+            } catch let error {
+                DDLogError("CitationController: can't load style - \(error)")
+                subscriber(.failure(Error.styleOrLocaleMissing))
+            }
             return Disposables.create()
         }
     }

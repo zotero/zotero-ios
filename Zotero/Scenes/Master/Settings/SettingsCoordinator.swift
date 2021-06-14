@@ -26,6 +26,11 @@ protocol CitationStyleSearchSettingsCoordinatorDelegate: AnyObject {
     func showError(retryAction: @escaping () -> Void, cancelAction: @escaping () -> Void)
 }
 
+protocol ExportSettingsCoordinatorDelegate: AnyObject {
+    func showStylePicker(picked: @escaping (String) -> Void)
+    func showLocalePicker(picked: @escaping (String) -> Void)
+}
+
 final class SettingsCoordinator: NSObject, Coordinator {
     var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
@@ -33,7 +38,7 @@ final class SettingsCoordinator: NSObject, Coordinator {
     unowned let navigationController: UINavigationController
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
-    private static let defaultSize: CGSize = CGSize(width: 540, height: 580)
+    private static let defaultSize: CGSize = CGSize(width: 580, height: 620)
 
     private var searchController: UISearchController?
 
@@ -213,11 +218,14 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         let language = Locale.current.localizedString(forLanguageCode: localeId) ?? localeId
         let styleId = Defaults.shared.exportDefaultStyleId
         let style = (try? self.controllers.bundledDataStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: styleId)))?.title ?? styleId
+        
         let state = ExportState(style: style, language: language, copyAsHtml: Defaults.shared.exportCopyAsHtml)
-        let handler = ExportActionHandler(bundledDataStorage: self.controllers.bundledDataStorage, fileStorage: self.controllers.fileStorage)
+        let handler = ExportActionHandler()
         let viewModel = ViewModel(initialState: state, handler: handler)
+        var view = ExportSettingsView()
+        view.coordinatorDelegate = self
 
-        let controller = UIHostingController(rootView: ExportSettingsView().environmentObject(viewModel))
+        let controller = UIHostingController(rootView: view.environmentObject(viewModel))
         controller.preferredContentSize = SettingsCoordinator.defaultSize
         self.navigationController.pushViewController(controller, animated: true)
     }
@@ -237,6 +245,30 @@ extension SettingsCoordinator: CitationStyleSearchSettingsCoordinatorDelegate {
             cancelAction()
         }))
         self.navigationController.present(controller, animated: true, completion: nil)
+    }
+}
+
+extension SettingsCoordinator: ExportSettingsCoordinatorDelegate {
+    func showStylePicker(picked: @escaping (String) -> Void) {
+        let handler = StylePickerActionHandler(dbStorage: self.controllers.bundledDataStorage)
+        let state = StylePickerState(selected: Defaults.shared.exportDefaultStyleId)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+
+        let view = StylePickerView(picked: picked)
+        let controller = UIHostingController(rootView: view.environmentObject(viewModel))
+        controller.preferredContentSize = UIScreen.main.bounds.size
+        self.navigationController.pushViewController(controller, animated: true)
+    }
+
+    func showLocalePicker(picked: @escaping (String) -> Void) {
+        let handler = ExportLocalePickerActionHandler(fileStorage: self.controllers.fileStorage)
+        let state = ExportLocalePickerState(selected: Defaults.shared.exportDefaultLocaleId)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+
+        let view = ExportLocalePickerView(picked: picked)
+        let controller = UIHostingController(rootView: view.environmentObject(viewModel))
+        controller.preferredContentSize = UIScreen.main.bounds.size
+        self.navigationController.pushViewController(controller, animated: true)
     }
 }
 

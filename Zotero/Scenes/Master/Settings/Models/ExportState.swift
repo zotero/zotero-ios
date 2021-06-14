@@ -12,20 +12,14 @@ import RealmSwift
 
 struct ExportState: ViewModelState {
 //    var styles: Results<RStyle>?
-//    var localeIds: [String]
-//    var locales: [String: String]
     var selectedStyle: String
     var selectedLanguage: String
     var copyAsHtml: Bool
-//    var loading: Bool
 
     init(style: String, language: String, copyAsHtml: Bool) {
-//        self.locales = [:]
-//        self.localeIds = []
         self.selectedStyle = style
         self.selectedLanguage = language
         self.copyAsHtml = copyAsHtml
-//        self.loading = true
     }
 
     func cleanup() {}

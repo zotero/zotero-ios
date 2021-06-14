@@ -11,24 +11,31 @@ import SwiftUI
 struct ExportSettingsView: View {
     @EnvironmentObject var viewModel: ViewModel<ExportActionHandler>
 
+    weak var coordinatorDelegate: ExportSettingsCoordinatorDelegate?
+
     var body: some View {
         Form {
             Section(header: Text(L10n.Settings.Export.quickCopy)) {
                 Button {
-
+                    self.coordinatorDelegate?.showStylePicker(picked: { styleTitle in
+                        self.viewModel.process(action: .updateStyle(styleTitle))
+                    })
                 } label: {
-                    TextRow(title: L10n.Settings.Export.defaultFormat, value: self.viewModel.state.selectedStyle)
+                    SettingsListButtonRow(text: L10n.Settings.Export.defaultFormat, detailText: self.viewModel.state.selectedStyle)
                 }
 
                 Button {
-                    
+                    self.coordinatorDelegate?.showLocalePicker(picked: { title in
+                        self.viewModel.process(action: .updateLocale(title))
+                    })
                 } label: {
-                    TextRow(title: L10n.Settings.Export.language, value: self.viewModel.state.selectedLanguage)
+                    SettingsListButtonRow(text: L10n.Settings.Export.language, detailText: self.viewModel.state.selectedLanguage)
                 }
 
                 ToggleRow(title: L10n.Settings.Export.copyAsHtml, isOn: self.viewModel.binding(keyPath: \.copyAsHtml, action: { .setCopyAsHtml($0) }))
             }
         }
+        .navigationBarTitle(Text(L10n.Settings.Export.title))
     }
 }
 
