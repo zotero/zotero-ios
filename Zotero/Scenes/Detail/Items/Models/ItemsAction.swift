@@ -6,7 +6,7 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
-import Foundation
+import UIKit
 
 import RealmSwift
 
@@ -36,4 +36,5 @@ enum ItemsAction {
     case updateDownload(AttachmentDownloader.Update)
     case openAttachment(attachment: Attachment, parentKey: String?)
     case updateKeys(items: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int])
+    case quickCopyBibliography(RItem, UIViewController)
 }

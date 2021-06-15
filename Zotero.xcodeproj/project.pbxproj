@@ -345,6 +345,11 @@
 		B30D59592206F60400884C4A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59582206F60400884C4A /* AppDelegate.swift */; };
 		B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B30D59632206F60500884C4A /* LaunchScreen.storyboard */; };
 		B30D597B2206F60500884C4A /* ZoteroUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D597A2206F60500884C4A /* ZoteroUITests.swift */; };
+		B30E25F72678919B004C0DFA /* CitationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30E25F52678919B004C0DFA /* CitationViewController.swift */; };
+		B30E25F82678919B004C0DFA /* CitationViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B30E25F62678919B004C0DFA /* CitationViewController.xib */; };
+		B30E25FA267891B7004C0DFA /* CitationActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30E25F9267891B7004C0DFA /* CitationActionHandler.swift */; };
+		B30E25FC267891C4004C0DFA /* CitationAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30E25FB267891C4004C0DFA /* CitationAction.swift */; };
+		B30E25FE267891D0004C0DFA /* CitationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30E25FD267891D0004C0DFA /* CitationState.swift */; };
 		B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B311B3202386A39800BCF592 /* MainInterface.storyboard */; };
 		B311B3262386A39800BCF592 /* ZShare.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B311B31C2386A39800BCF592 /* ZShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B312BB4125519DD30023300A /* ItemDetailLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B312BB4025519DD30023300A /* ItemDetailLayout.swift */; };
@@ -1133,6 +1138,11 @@
 		B30D59762206F60500884C4A /* ZoteroUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ZoteroUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B30D597A2206F60500884C4A /* ZoteroUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoteroUITests.swift; sourceTree = "<group>"; };
 		B30D597C2206F60500884C4A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B30E25F52678919B004C0DFA /* CitationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationViewController.swift; sourceTree = "<group>"; };
+		B30E25F62678919B004C0DFA /* CitationViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CitationViewController.xib; sourceTree = "<group>"; };
+		B30E25F9267891B7004C0DFA /* CitationActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationActionHandler.swift; sourceTree = "<group>"; };
+		B30E25FB267891C4004C0DFA /* CitationAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationAction.swift; sourceTree = "<group>"; };
+		B30E25FD267891D0004C0DFA /* CitationState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationState.swift; sourceTree = "<group>"; };
 		B311B31C2386A39800BCF592 /* ZShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ZShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B311B3212386A39800BCF592 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
 		B311B3232386A39800BCF592 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -2847,6 +2857,8 @@
 				B3DCDF03240912060039ED0D /* ActivityIndicatorView.swift */,
 				B347F2B924DC4D5D000D5FF6 /* CapHeightLabel.swift */,
 				B3D58D6A25EE437700D8FA31 /* CircularProgressView.swift */,
+				B30E25F52678919B004C0DFA /* CitationViewController.swift */,
+				B30E25F62678919B004C0DFA /* CitationViewController.xib */,
 				B37D8E6824DC2BEE00F526C5 /* CollectionRow.swift */,
 				B3748D2126566F6900ED05F8 /* ContainerViewController.swift */,
 				B3D3E713264BD0F200A521DE /* DiffableDataSource.swift */,
@@ -2881,6 +2893,7 @@
 		B3DCDF04240912060039ED0D /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				B30E25F9267891B7004C0DFA /* CitationActionHandler.swift */,
 				B3DCDF1E240945B30039ED0D /* CollectionPickerActionHandler.swift */,
 				B361820724C9B53600B30D56 /* KeyboardResponder.swift */,
 				B37C5B6826453C33009A37E5 /* NoteEditorActionHandler.swift */,
@@ -2893,6 +2906,8 @@
 		B3DCDF05240912060039ED0D /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				B30E25FB267891C4004C0DFA /* CitationAction.swift */,
+				B30E25FD267891D0004C0DFA /* CitationState.swift */,
 				B3DCDF22240945FA0039ED0D /* CollectionPickerAction.swift */,
 				B3DCDF24240946090039ED0D /* CollectionPickerError.swift */,
 				B3DCDF20240945D80039ED0D /* CollectionPickerState.swift */,
@@ -3148,6 +3163,7 @@
 				B34C40F625710B430057D5F5 /* AnnotationEditViewController.xib in Resources */,
 				B3593F2C241A61C700760E20 /* ItemDetailTagCell.xib in Resources */,
 				B3593F58241A61C700760E20 /* CollectionsViewController.xib in Resources */,
+				B30E25F82678919B004C0DFA /* CitationViewController.xib in Resources */,
 				B3B78C44266FAF0800E91D02 /* citation in Resources */,
 				B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */,
 				B337A5A8244F1DEB00AFD13D /* Localizable.strings in Resources */,
@@ -3608,6 +3624,7 @@
 				B305660F23FC051E003304F2 /* CrashUploadRequest.swift in Sources */,
 				B331F9B12653F59C0099F6A6 /* RStyle.swift in Sources */,
 				B34C4108257122BF0057D5F5 /* AnnotationViewLayout.swift in Sources */,
+				B30E25F72678919B004C0DFA /* CitationViewController.swift in Sources */,
 				B361820524C9A7C000B30D56 /* OnboardingViewController.swift in Sources */,
 				B305660B23FC051E003304F2 /* SubmitDeletionsRequest.swift in Sources */,
 				B305667B23FC051F003304F2 /* UIViewController+Extensions.swift in Sources */,
@@ -3688,9 +3705,11 @@
 				B30565B823FC051E003304F2 /* ReadUserChangedObjectsDbRequest.swift in Sources */,
 				B3593F54241A61C700760E20 /* CollectionsError.swift in Sources */,
 				B30565B523FC051E003304F2 /* MarkObjectsAsSyncedDbRequest.swift in Sources */,
+				B30E25FE267891D0004C0DFA /* CitationState.swift in Sources */,
 				B30565DE23FC051E003304F2 /* SyncVersionsDbRequest.swift in Sources */,
 				B3DCDF06240912060039ED0D /* DocumentPickerViewController.swift in Sources */,
 				B37BF0B125A6035D00AE0268 /* ReadDocumentDataDbRequest.swift in Sources */,
+				B30E25FC267891C4004C0DFA /* CitationAction.swift in Sources */,
 				B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */,
 				B319D6B8265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift in Sources */,
 				B30566A723FC051F003304F2 /* DelayIntervals.swift in Sources */,
@@ -3750,6 +3769,7 @@
 				B37491362488D7040042FF85 /* GeneralSettingsView.swift in Sources */,
 				B30566A423FC051F003304F2 /* UpdatableObject.swift in Sources */,
 				B30566C723FC051F003304F2 /* AppGroup.swift in Sources */,
+				B30E25FA267891B7004C0DFA /* CitationActionHandler.swift in Sources */,
 				B36A988D2428E05A005D5790 /* TranslatorsAndStylesController.swift in Sources */,
 				B378F4CD242CD45700B88A05 /* RepoParserDelegate.swift in Sources */,
 				B3F3D644255ECF3500F310C2 /* AnnotationViewSeparator.swift in Sources */,

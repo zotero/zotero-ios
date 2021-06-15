@@ -126,6 +126,28 @@
 "items.toolbar_filter_single" = "Filter: 1 item";
 "items.toolbar_filter_multiple" = "Filter: %d items";
 
+"citation.copy_citation" = "Copy Citation";
+"citation.copy_bibliography" = "Copy Bibliography";
+"citation.preview" = "Preview:";
+"citation.omit_author" = "Omit Author";
+"citation.locator_placeholder" = "Number";
+"citation.locator.page" = "Page";
+"citation.locator.book" = "Book";
+"citation.locator.chapter" = "Chapter";
+"citation.locator.column" = "Column";
+"citation.locator.figure" = "Figure";
+"citation.locator.folio" = "Folio";
+"citation.locator.issue" = "Issue";
+"citation.locator.line" = "Line";
+"citation.locator.note" = "Note";
+"citation.locator.opus" = "Opus";
+"citation.locator.paragraph" = "Paragraph";
+"citation.locator.part" = "Part";
+"citation.locator.section" = "Section";
+"citation.locator.subverbo" = "Sub verbo";
+"citation.locator.volume" = "Volume";
+"citation.locator.verse" = "Verse";
+
 "item_detail.add_creator" = "Add Creator";
 "item_detail.notes" = "Notes";
 "item_detail.add_note" = "Add note";

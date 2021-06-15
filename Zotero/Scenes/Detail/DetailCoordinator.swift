@@ -39,6 +39,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showFilters(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void)
     func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void)
+    func showCitation(for item: RItem)
 }
 
 protocol DetailItemDetailCoordinatorDelegate: AnyObject {
@@ -152,7 +153,8 @@ final class DetailCoordinator: Coordinator {
                                          fileStorage: self.controllers.fileStorage,
                                          schemaController: self.controllers.schemaController,
                                          urlDetector: self.controllers.urlDetector,
-                                         fileDownloader: fileDownloader)
+                                         fileDownloader: fileDownloader,
+                                         citationController: self.controllers.citationController)
         return ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: self.controllers, coordinatorDelegate: self)
     }
 
@@ -474,6 +476,16 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         }))
         controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: nil))
         self.topViewController.present(controller, animated: true, completion: nil)
+    }
+
+    func showCitation(for item: RItem) {
+        let state = CitationState(item: item, styleId: Defaults.shared.exportDefaultStyleId, localeId: Defaults.shared.exportDefaultLocaleId)
+        let handler = CitationActionHandler(citationController: self.controllers.citationController)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+
+        let controller = CitationViewController(viewModel: viewModel)
+        let navigationController = UINavigationController(rootViewController: controller)
+        self.navigationController.present(navigationController, animated: true, completion: nil)
     }
 }
 

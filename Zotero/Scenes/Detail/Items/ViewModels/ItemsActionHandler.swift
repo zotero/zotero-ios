@@ -6,10 +6,11 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
-import Foundation
+import UIKit
 
 import CocoaLumberjackSwift
 import RealmSwift
+import RxSwift
 
 struct ItemsActionHandler: ViewModelActionHandler {
     typealias State = ItemsState
@@ -21,14 +22,18 @@ struct ItemsActionHandler: ViewModelActionHandler {
     private unowned let urlDetector: UrlDetector
     private unowned let backgroundQueue: DispatchQueue
     private unowned let fileDownloader: AttachmentDownloader
+    private unowned let citationController: CitationController
+    private let disposeBag: DisposeBag
 
-    init(dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, urlDetector: UrlDetector, fileDownloader: AttachmentDownloader) {
+    init(dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, urlDetector: UrlDetector, fileDownloader: AttachmentDownloader, citationController: CitationController) {
         self.backgroundQueue = DispatchQueue.global(qos: .userInitiated)
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
         self.urlDetector = urlDetector
         self.fileDownloader = fileDownloader
+        self.citationController = citationController
+        self.disposeBag = DisposeBag()
     }
 
     func process(action: ItemsAction, in viewModel: ViewModel<ItemsActionHandler>) {
@@ -128,6 +133,16 @@ struct ItemsActionHandler: ViewModelActionHandler {
 
         case .filter(let filters):
             self.filter(with: filters, in: viewModel)
+
+        case .quickCopyBibliography(let item, let controller):
+            self.citationController.bibliography(for: item, styleId: Defaults.shared.exportDefaultStyleId, localeId: Defaults.shared.exportDefaultLocaleId, format: .html, in: controller)
+                                   .subscribe(onSuccess: { citation in
+                                       UIPasteboard.general.string = citation
+                                    // TODO: - show something
+                                   }, onFailure: { error in
+                                    // TODO: Show something
+                                   })
+                                   .disposed(by: self.disposeBag)
         }
     }
 

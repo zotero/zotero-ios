@@ -242,7 +242,7 @@ final class ItemsViewController: UIViewController {
             guard let button = button else { return }
             self.coordinatorDelegate?.showSortActions(viewModel: self.viewModel, button: button)
 
-        case .copyCitation: break
+        case .copyCitation, .copyBibliography: break
         }
     }
 
@@ -551,19 +551,17 @@ final class ItemsViewController: UIViewController {
 
 extension ItemsViewController: ItemsTableViewHandlerDelegate {
     func process(action: ItemAction.Kind, for item: RItem) {
-        if action == .copyCitation {
-            self.controllers.citationController.bibliography(for: item, styleId: Defaults.shared.exportDefaultStyleId, localeId: Defaults.shared.exportDefaultLocaleId, format: .html, in: self)
-                                               .subscribe(onSuccess: { citation in
-                                                   DDLogInfo("CITATION: \(citation)")
-                                                   UIPasteboard.general.string = citation
-                                               }, onFailure: { error in
-                                                   DDLogError("CITATION ERROR: \(error)")
-                                               })
-                                               .disposed(by: self.disposeBag)
-            return
-        }
+        // Some actions work only for single item, others are passed along
+        switch action {
+        case .copyCitation:
+            self.coordinatorDelegate?.showCitation(for: item)
 
-        self.process(action: action, for: [item.key], button: nil)
+        case .copyBibliography:
+            self.viewModel.process(action: .quickCopyBibliography(item, self))
+
+        case .addToCollection, .createParent, .delete, .duplicate, .filter, .removeFromCollection, .restore, .sort, .trash:
+            self.process(action: action, for: [item.key], button: nil)
+        }
     }
 
     var isInViewHierarchy: Bool {

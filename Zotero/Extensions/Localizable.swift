@@ -184,6 +184,53 @@ internal enum L10n {
     }
   }
 
+  internal enum Citation {
+    /// Copy Bibliography
+    internal static let copyBibliography = L10n.tr("Localizable", "citation.copy_bibliography")
+    /// Copy Citation
+    internal static let copyCitation = L10n.tr("Localizable", "citation.copy_citation")
+    /// Number
+    internal static let locatorPlaceholder = L10n.tr("Localizable", "citation.locator_placeholder")
+    /// Omit Author
+    internal static let omitAuthor = L10n.tr("Localizable", "citation.omit_author")
+    /// Preview:
+    internal static let preview = L10n.tr("Localizable", "citation.preview")
+    internal enum Locator {
+      /// Book
+      internal static let book = L10n.tr("Localizable", "citation.locator.book")
+      /// Chapter
+      internal static let chapter = L10n.tr("Localizable", "citation.locator.chapter")
+      /// Column
+      internal static let column = L10n.tr("Localizable", "citation.locator.column")
+      /// Figure
+      internal static let figure = L10n.tr("Localizable", "citation.locator.figure")
+      /// Folio
+      internal static let folio = L10n.tr("Localizable", "citation.locator.folio")
+      /// Issue
+      internal static let issue = L10n.tr("Localizable", "citation.locator.issue")
+      /// Line
+      internal static let line = L10n.tr("Localizable", "citation.locator.line")
+      /// Note
+      internal static let note = L10n.tr("Localizable", "citation.locator.note")
+      /// Opus
+      internal static let opus = L10n.tr("Localizable", "citation.locator.opus")
+      /// Page
+      internal static let page = L10n.tr("Localizable", "citation.locator.page")
+      /// Paragraph
+      internal static let paragraph = L10n.tr("Localizable", "citation.locator.paragraph")
+      /// Part
+      internal static let part = L10n.tr("Localizable", "citation.locator.part")
+      /// Section
+      internal static let section = L10n.tr("Localizable", "citation.locator.section")
+      /// Sub verbo
+      internal static let subverbo = L10n.tr("Localizable", "citation.locator.subverbo")
+      /// Verse
+      internal static let verse = L10n.tr("Localizable", "citation.locator.verse")
+      /// Volume
+      internal static let volume = L10n.tr("Localizable", "citation.locator.volume")
+    }
+  }
+
   internal enum Collections {
     /// All Items
     internal static let allItems = L10n.tr("Localizable", "collections.all_items")
