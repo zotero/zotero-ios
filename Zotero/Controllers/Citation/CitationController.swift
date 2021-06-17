@@ -85,12 +85,15 @@ class CitationController: NSObject {
 
     /// Generates citation preview for given item in given format. Has to be called after `prepareForCitation(styleId:localeId:in:)` finishes!
     /// - parameter item: Item for which citation is generated.
+    /// - parameter label: Label for locator which should be used.
+    /// - parameter locator: Locator value.
+    /// - parameter omitAuthor: True if author should be suppressed, false otherwise.
     /// - parameter format: Format in which citation is generated.
     /// - parameter webView: Web view which is fully loaded (`prepareForCitation(styleId:localeId:in:)` finished).
     /// - returns: Single with generated citation.
-    func citation(for item: RItem, format: CitationFormat, in webView: WKWebView) -> Single<String> {
+    func citation(for item: RItem, label: String?, locator: String?, omitAuthor: Bool, format: CitationFormat, in webView: WKWebView) -> Single<String> {
         guard let style = self.styleXml, let localeId = self.localeId, let locale = self.localeXml else { return Single.error(Error.prepareNotCalled) }
-        return self.getCitation(styleXml: style, localeId: localeId, localeXml: locale, format: format.rawValue, webView: webView)
+        return self.getCitation(styleXml: style, localeId: localeId, localeXml: locale, label: label, locator: locator, omitAuthor: omitAuthor, format: format.rawValue, webView: webView)
     }
 
     /// Cleans up after citation. Should be called when all citation() requests are called.
@@ -180,8 +183,9 @@ class CitationController: NSObject {
 
     /// Calls javascript in webView and waits for response.
     /// - returns: Single with citation response or error.
-    private func getCitation(styleXml: String, localeId: String, localeXml: String, format: String, webView: WKWebView) -> Single<String> {
-        webView.evaluateJavaScript("getCit(\(styleXml), '\(localeId)', \(localeXml), '\(format)');", completionHandler: nil)
+    private func getCitation(styleXml: String, localeId: String, localeXml: String, label: String?, locator: String?, omitAuthor: Bool, format: String, webView: WKWebView) -> Single<String> {
+        webView.evaluateJavaScript("getCit(\(styleXml), '\(localeId)', \(localeXml), '\(format)', \(WKWebView.optionalToJs(label)), \(WKWebView.optionalToJs(locator)), \(omitAuthor));",
+                                   completionHandler: nil)
 
         return Single.create { [weak self] subscriber -> Disposable in
             self?.webViewResponse = subscriber

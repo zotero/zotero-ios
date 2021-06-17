@@ -53,6 +53,9 @@
                                             <state key="normal" title="Page">
                                                 <color key="titleColor" systemColor="labelColor"/>
                                             </state>
+                                            <connections>
+                                                <action selector="showLocatorPicker" destination="-1" eventType="touchUpInside" id="TyQ-Z5-vaN"/>
+                                            </connections>
                                         </button>
                                         <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Number" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="Wxx-cA-cYH">
                                             <rect key="frame" x="49" y="0.0" width="404" height="44"/>

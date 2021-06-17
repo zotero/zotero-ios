@@ -20,12 +20,9 @@ function getCiteproc(itemsCSL, styleXML, localeXML, lang) {
 	return { citeproc, styleMeta };
 }
 
-function getCitation(itemIDs, itemsCSL, styleXML, localeXML, lang, format = 'html') { //eslint-disable-line no-unused-vars
+function getCitation(citationItems, itemsCSL, styleXML, localeXML, lang, format = 'html') { //eslint-disable-line no-unused-vars
 	const { citeproc } = getCiteproc(itemsCSL, styleXML, localeXML, lang);
-	const citation = {
-		citationItems: itemIDs.map(id => ({ id })),
-		properties: {}
-	};
+    const citation = { citationItems, properties: {} };
 	return citeproc.previewCitationCluster(citation, [], [], format);
 }
 

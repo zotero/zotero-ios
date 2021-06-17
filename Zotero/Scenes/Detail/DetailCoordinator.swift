@@ -96,6 +96,10 @@ protocol DetailItemActionSheetCoordinatorDelegate: AnyObject {
     func showItemCreation(library: Library, collectionKey: String?)
 }
 
+protocol DetailCitationCoordinatorDelegate: AnyObject {
+    func showLocatorPicker(for values: [SinglePickerModel], selected: String, picked: @escaping (String) -> Void)
+}
+
 fileprivate class EmptyTransitioningDelegate: NSObject, UIViewControllerTransitioningDelegate {}
 
 final class DetailCoordinator: Coordinator {
@@ -116,6 +120,8 @@ final class DetailCoordinator: Coordinator {
     private unowned let controllers: Controllers
     unowned let navigationController: UINavigationController
     private let disposeBag: DisposeBag
+
+    private weak var citationNavigationController: UINavigationController?
 
     init(library: Library, collection: Collection, navigationController: UINavigationController, controllers: Controllers) {
         self.library = library
@@ -484,8 +490,13 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let viewModel = ViewModel(initialState: state, handler: handler)
 
         let controller = CitationViewController(viewModel: viewModel)
+        controller.coordinatorDelegate = self
         let navigationController = UINavigationController(rootViewController: controller)
-        self.navigationController.present(navigationController, animated: true, completion: nil)
+        self.citationNavigationController = navigationController
+        let containerController = ContainerViewController(rootViewController: navigationController)
+        containerController.isModalInPresentation = true
+        containerController.modalPresentationStyle = .formSheet
+        self.navigationController.present(containerController, animated: true, completion: nil)
     }
 }
 
@@ -693,6 +704,22 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
         let controller = TagPickerViewController(viewModel: viewModel, saveAction: picked)
 
         navigationController.pushViewController(controller, animated: true)
+    }
+}
+
+extension DetailCoordinator: DetailCitationCoordinatorDelegate {
+    func showLocatorPicker(for values: [SinglePickerModel], selected: String, picked: @escaping (String) -> Void) {
+        let state = SinglePickerState(objects: values, selectedRow: selected)
+        let viewModel = ViewModel(initialState: state, handler: SinglePickerActionHandler())
+
+        let view = SinglePickerView(requiresSaveButton: false, requiresCancelButton: false, saveAction: picked) { completed in
+            completed?()
+            self.citationNavigationController?.popViewController(animated: true)
+        }
+        let controller = UIHostingController(rootView: view.environmentObject(viewModel))
+        controller.preferredContentSize = CGSize(width: CitationViewController.width, height: CGFloat(values.count * 44))
+        self.citationNavigationController?.preferredContentSize = controller.preferredContentSize
+        self.citationNavigationController?.pushViewController(controller, animated: true)
     }
 }
 

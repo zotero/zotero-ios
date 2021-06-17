@@ -8,17 +8,22 @@
 
 import UIKit
 
+import RxSwift
+
 class ContainerViewController: UIViewController {
     private let rootViewController: UIViewController
+    private let disposeBag: DisposeBag
 
     private weak var containerHeight: NSLayoutConstraint?
     private weak var containerWidth: NSLayoutConstraint?
+    private weak var containerCenterY: NSLayoutConstraint?
     private var didAppear = false
 
     // MARK: - Lifecycle
 
     init(rootViewController: UIViewController) {
         self.rootViewController = rootViewController
+        self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -65,10 +70,23 @@ class ContainerViewController: UIViewController {
         self.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 
+    private func moveToKeyboard(_ data: KeyboardData, willShow: Bool) {
+        guard let centerY = self.containerCenterY else { return }
+
+        centerY.constant = willShow ? data.endFrame.height / 2 : 0
+
+        guard self.isViewLoaded else { return }
+
+        UIView.animate(withDuration: 0.2) {
+            self.view.layoutIfNeeded()
+        }
+    }
+
     // MARK: - Setups
 
     private func setupForPad() {
         self.setupTappableBackground()
+        self.setupKeyboardObserving()
 
         self.rootViewController.view.layer.cornerRadius = 8
         self.rootViewController.view.layer.masksToBounds = true
@@ -81,9 +99,12 @@ class ContainerViewController: UIViewController {
         width.priority = .defaultHigh
         self.containerWidth = width
 
+        let centerY = self.view.centerYAnchor.constraint(equalTo: self.rootViewController.view.centerYAnchor)
+        self.containerCenterY = centerY
+
         NSLayoutConstraint.activate([
             self.view.centerXAnchor.constraint(equalTo: self.rootViewController.view.centerXAnchor),
-            self.view.centerYAnchor.constraint(equalTo: self.rootViewController.view.centerYAnchor),
+            centerY,
             self.rootViewController.view.heightAnchor.constraint(lessThanOrEqualTo: self.view.heightAnchor),
             height,
             width
@@ -114,5 +135,27 @@ class ContainerViewController: UIViewController {
         button.frame = self.view.bounds
         button.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         self.view.insertSubview(button, at: 0)
+    }
+
+    private func setupKeyboardObserving() {
+        NotificationCenter.default
+                          .keyboardWillShow
+                          .observe(on: MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] notification in
+                              if let data = notification.keyboardData {
+                                  self?.moveToKeyboard(data, willShow: true)
+                              }
+                          })
+                          .disposed(by: self.disposeBag)
+
+        NotificationCenter.default
+                          .keyboardWillHide
+                          .observe(on: MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] notification in
+                              if let data = notification.keyboardData {
+                                  self?.moveToKeyboard(data, willShow: false)
+                              }
+                          })
+                          .disposed(by: self.disposeBag)
     }
 }

@@ -126,6 +126,7 @@
 "items.toolbar_filter_single" = "Filter: 1 item";
 "items.toolbar_filter_multiple" = "Filter: %d items";
 
+"citation.title" = "Citation Preview";
 "citation.copy_citation" = "Copy Citation";
 "citation.copy_bibliography" = "Copy Bibliography";
 "citation.preview" = "Preview:";
@@ -144,7 +145,7 @@
 "citation.locator.paragraph" = "Paragraph";
 "citation.locator.part" = "Part";
 "citation.locator.section" = "Section";
-"citation.locator.subverbo" = "Sub verbo";
+"citation.locator.sub verbo" = "Sub verbo";
 "citation.locator.volume" = "Volume";
 "citation.locator.verse" = "Verse";
 

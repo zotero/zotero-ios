@@ -23,9 +23,11 @@ final class CitationViewController: UIViewController {
     @IBOutlet private weak var activityIndicatorContainer: UIView!
     @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
 
-    private static let width: CGFloat = 500
+    static let width: CGFloat = 500
     private let viewModel: ViewModel<CitationActionHandler>
     private let disposeBag: DisposeBag
+
+    weak var coordinatorDelegate: DetailCitationCoordinatorDelegate?
 
     // MARK: - Lifecycle
 
@@ -42,14 +44,21 @@ final class CitationViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        self.title = L10n.Citation.title
         self.previewTitleLabel.text = L10n.Citation.preview
         self.omitAuthorTitle.text = L10n.Citation.omitAuthor
         self.locatorButton.setTitle(self.localized(locator: self.viewModel.state.locator), for: .normal)
+        self.omitAuthorSwitch.setOn(self.viewModel.state.omitAuthor, animated: false)
         self.setupPreview()
         self.setupNavigationBar()
         self.setupObserving()
 
         self.viewModel.process(action: .preload(self.webView))
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.updatePreferredContentSize()
     }
 
     deinit {
@@ -84,6 +93,13 @@ final class CitationViewController: UIViewController {
         }
     }
 
+    @IBAction private func showLocatorPicker() {
+        let values = CitationState.locators.map({ SinglePickerModel(id: $0, name: self.localized(locator: $0)) })
+        self.coordinatorDelegate?.showLocatorPicker(for: values, selected: self.viewModel.state.locator, picked: { [weak self] locator in
+            self?.viewModel.process(action: .setLocator(locator))
+        })
+    }
+
     // MARK: - Helpers
 
     private func localized(locator: String) -> String {
@@ -92,8 +108,8 @@ final class CitationViewController: UIViewController {
 
     private func updatePreferredContentSize() {
         let size = self.view.systemLayoutSizeFitting(CGSize(width: CitationViewController.width, height: .greatestFiniteMagnitude))
-        self.preferredContentSize = size
-        self.navigationController?.preferredContentSize = size
+        self.preferredContentSize = CGSize(width: CitationViewController.width, height: size.height - self.view.safeAreaInsets.top)
+        self.navigationController?.preferredContentSize = self.preferredContentSize
     }
 
     // MARK: - Setups

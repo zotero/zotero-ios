@@ -195,6 +195,8 @@ internal enum L10n {
     internal static let omitAuthor = L10n.tr("Localizable", "citation.omit_author")
     /// Preview:
     internal static let preview = L10n.tr("Localizable", "citation.preview")
+    /// Citation Preview
+    internal static let title = L10n.tr("Localizable", "citation.title")
     internal enum Locator {
       /// Book
       internal static let book = L10n.tr("Localizable", "citation.locator.book")
@@ -223,7 +225,7 @@ internal enum L10n {
       /// Section
       internal static let section = L10n.tr("Localizable", "citation.locator.section")
       /// Sub verbo
-      internal static let subverbo = L10n.tr("Localizable", "citation.locator.subverbo")
+      internal static let subVerbo = L10n.tr("Localizable", "citation.locator.sub verbo")
       /// Verse
       internal static let verse = L10n.tr("Localizable", "citation.locator.verse")
       /// Volume
