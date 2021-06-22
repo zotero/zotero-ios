@@ -21,7 +21,7 @@ struct ExportActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.copyAsHtml = value
             }
-            Defaults.shared.exportCopyAsHtml = value
+            Defaults.shared.quickCopyAsHtml = value
 
         case .updateLocale(let title):
             self.update(viewModel: viewModel) { state in

@@ -1,5 +1,5 @@
 //
-//  CitationActionHandler.swift
+//  SingleCitationActionHandler.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 15.06.2021.
@@ -12,9 +12,9 @@ import WebKit
 import CocoaLumberjackSwift
 import RxSwift
 
-struct CitationActionHandler: ViewModelActionHandler {
-    typealias Action = CitationAction
-    typealias State = CitationState
+struct SingleCitationActionHandler: ViewModelActionHandler {
+    typealias Action = SingleCitationAction
+    typealias State = SingleCitationState
 
     private unowned let citationController: CitationController
     private let disposeBag: DisposeBag
@@ -24,7 +24,7 @@ struct CitationActionHandler: ViewModelActionHandler {
         self.disposeBag = DisposeBag()
     }
 
-    func process(action: CitationAction, in viewModel: ViewModel<CitationActionHandler>) {
+    func process(action: SingleCitationAction, in viewModel: ViewModel<SingleCitationActionHandler>) {
         switch action {
         case .preload(let webView):
             self.preload(webView: webView, in: viewModel)
@@ -58,7 +58,7 @@ struct CitationActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func loadPreview(locatorLabel: String, locatorValue: String, omitAuthor: Bool, stateAction: @escaping (inout CitationState) -> Void, in viewModel: ViewModel<CitationActionHandler>) {
+    private func loadPreview(locatorLabel: String, locatorValue: String, omitAuthor: Bool, stateAction: @escaping (inout SingleCitationState) -> Void, in viewModel: ViewModel<SingleCitationActionHandler>) {
         guard let webView = viewModel.state.webView else { return }
         self.citationController.citation(for: viewModel.state.item, label: locatorLabel, locator: locatorValue, omitAuthor: omitAuthor, format: .html, in: webView)
                                .subscribe(onSuccess: { [weak viewModel] preview in
@@ -71,7 +71,7 @@ struct CitationActionHandler: ViewModelActionHandler {
                                .disposed(by: self.disposeBag)
     }
 
-    private func preload(webView: WKWebView, in viewModel: ViewModel<CitationActionHandler>) {
+    private func preload(webView: WKWebView, in viewModel: ViewModel<SingleCitationActionHandler>) {
         let item = viewModel.state.item
         self.citationController.prepareForCitation(styleId: viewModel.state.styleId, localeId: viewModel.state.localeId, in: webView)
                                .flatMap({ [weak webView] _ -> Single<String> in

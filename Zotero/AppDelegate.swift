@@ -151,7 +151,7 @@ final class AppDelegate: UIResponder {
     }
 
     private func setupExportDefaults() {
-        if UserDefaults.standard.string(forKey: "ExportLocaleId") != nil {
+        if UserDefaults.standard.string(forKey: "QuickCopyLocaleId") != nil {
             // Value is already assigned, no need to do anything else.
             return
         }
@@ -159,7 +159,7 @@ final class AppDelegate: UIResponder {
         guard let localeIds = try? ExportLocaleReader.loadIds() else { return }
 
         let defaultLocale = localeIds.first(where: { $0.contains(Locale.current.identifier) }) ?? "en-US"
-        UserDefaults.standard.setValue(defaultLocale, forKey: "ExportLocaleId")
+        UserDefaults.standard.setValue(defaultLocale, forKey: "QuickCopyLocaleId")
     }
 }
 

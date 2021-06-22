@@ -1,5 +1,5 @@
 //
-//  CitationStyleSearchViewController.swift
+//  CiteSearchViewController.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 04.06.2021.
@@ -10,22 +10,22 @@ import UIKit
 
 import RxSwift
 
-class CitationStyleSearchViewController: UIViewController {
+class CiteSearchViewController: UIViewController {
     @IBOutlet private weak var tableView: UITableView!
     @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
 
-    private let viewModel: ViewModel<CitationStylesSearchActionHandler>
-    private let pickAction: (RemoteCitationStyle) -> Void
+    private let viewModel: ViewModel<CiteSearchActionHandler>
+    private let pickAction: (RemoteStyle) -> Void
     private let disposeBag: DisposeBag
 
-    private var dataSource: DiffableDataSource<Int, RemoteCitationStyle>!
+    private var dataSource: DiffableDataSource<Int, RemoteStyle>!
     weak var coordinatorDelegate: CitationStyleSearchSettingsCoordinatorDelegate?
 
-    init(viewModel: ViewModel<CitationStylesSearchActionHandler>, pickAction: @escaping (RemoteCitationStyle) -> Void) {
+    init(viewModel: ViewModel<CiteSearchActionHandler>, pickAction: @escaping (RemoteStyle) -> Void) {
         self.viewModel = viewModel
         self.pickAction = pickAction
         self.disposeBag = DisposeBag()
-        super.init(nibName: "CitationStyleSearchViewController", bundle: nil)
+        super.init(nibName: "CiteSearchViewController", bundle: nil)
     }
 
     required init?(coder: NSCoder) {
@@ -47,7 +47,7 @@ class CitationStyleSearchViewController: UIViewController {
 
     // MARK: - Actions
 
-    private func update(state: CitationStylesSearchState) {
+    private func update(state: CiteSearchState) {
         if state.error != nil {
             self.coordinatorDelegate?.showError(retryAction: { [weak self] in
                 self?.viewModel.process(action: .load)
@@ -69,7 +69,7 @@ class CitationStyleSearchViewController: UIViewController {
 
         if state.changes.contains(.styles) {
             let styles = state.filtered ?? state.styles
-            var snapshot = DiffableDataSourceSnapshot<Int, RemoteCitationStyle>(isEditing: false)
+            var snapshot = DiffableDataSourceSnapshot<Int, RemoteStyle>(isEditing: false)
             snapshot.append(section: 0)
             snapshot.append(objects: styles, for: 0)
             let animation: DiffableDataSourceAnimation = state.changes.contains(.loading) ? .none : .rows(reload: .automatic, insert: .automatic, delete: .automatic)
@@ -103,7 +103,7 @@ class CitationStyleSearchViewController: UIViewController {
     }
 }
 
-extension CitationStyleSearchViewController: UITableViewDelegate {
+extension CiteSearchViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
 

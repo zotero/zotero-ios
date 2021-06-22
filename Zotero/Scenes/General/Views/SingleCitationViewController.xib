@@ -9,7 +9,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="CitationViewController" customModule="Zotero" customModuleProvider="target">
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="SingleCitationViewController" customModule="Zotero" customModuleProvider="target">
             <connections>
                 <outlet property="activityIndicator" destination="0e1-n9-iN1" id="etb-YF-TW0"/>
                 <outlet property="activityIndicatorContainer" destination="PK9-WB-m4U" id="LmR-r6-Jrg"/>

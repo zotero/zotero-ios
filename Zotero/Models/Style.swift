@@ -1,5 +1,5 @@
 //
-//  CitationStyle.swift
+//  Style.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 03.06.2021.
@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct CitationStyle: Identifiable {
+struct Style: Identifiable {
     let identifier: String
     let title: String
     let updated: Date

@@ -201,13 +201,13 @@ final class TranslatorsAndStylesController {
                              }
     }
 
-    private func styles(for type: UpdateType) -> [CitationStyle]? {
+    private func styles(for type: UpdateType) -> [Style]? {
         guard type != .shareExtension else { return nil }
 
         do {
-            return try self.dbStorage.createCoordinator().perform(request: ReadStylesDbRequest()).compactMap({ style -> CitationStyle? in
+            return try self.dbStorage.createCoordinator().perform(request: ReadStylesDbRequest()).compactMap({ style -> Style? in
                 guard let url = URL(string: style.href) else { return nil }
-                return CitationStyle(identifier: style.identifier, title: style.title, updated: style.updated, href: url, filename: style.filename)
+                return Style(identifier: style.identifier, title: style.title, updated: style.updated, href: url, filename: style.filename)
             })
         } catch let error {
             DDLogError("TranslatorsAndStylesController: can't read styles - \(error)")
@@ -269,7 +269,7 @@ final class TranslatorsAndStylesController {
 
         // Load file metadata of bundled styles
         let files: [File] = try self.fileStorage.contentsOfDirectory(at: Files.file(from: stylesUrl))
-        let styles: [CitationStyle] = files.compactMap({ file in
+        let styles: [Style] = files.compactMap({ file in
             guard file.ext == "csl" else { return nil }
             return try? self.parseStyle(from: file)
         })
@@ -456,8 +456,8 @@ final class TranslatorsAndStylesController {
     /// Parses style metadata from provided XML strings and splits them into metadata and filename + XML data tuples.
     /// - styles: Array of tuples where first String is style identifier and second string is style XML.
     /// - returns: Array of styles metadata and array of tuple of filenames and xml data.
-    private func split(styles: [(String, String)]) -> (styles: [CitationStyle], data: [(String, Data)]) {
-        var stylesMetadata: [CitationStyle] = []
+    private func split(styles: [(String, String)]) -> (styles: [Style], data: [(String, Data)]) {
+        var stylesMetadata: [Style] = []
         var stylesData: [(String, Data)] = []
 
         for (_, xml) in styles {
@@ -542,7 +542,7 @@ final class TranslatorsAndStylesController {
         return data
     }
 
-    private func parseStyle(from file: File) throws -> CitationStyle {
+    private func parseStyle(from file: File) throws -> Style {
         guard let parser = XMLParser(contentsOf: file.createUrl()) else { throw Error.cantParseXmlResponse }
         let delegate = StyleParserDelegate(filename: file.name)
         parser.delegate = delegate

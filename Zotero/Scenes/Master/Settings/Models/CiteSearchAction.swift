@@ -1,5 +1,5 @@
 //
-//  CitationStylesSearchAction.swift
+//  CiteSearchAction.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 04.06.2021.
@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum CitationStylesSearchAction {
+enum CiteSearchAction {
     case load
     case search(String)
 }

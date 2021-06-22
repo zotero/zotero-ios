@@ -1,5 +1,5 @@
 //
-//  CitationStylesAction.swift
+//  CiteAction.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 19.05.2021.
@@ -8,8 +8,8 @@
 
 import Foundation
 
-enum CitationStylesAction {
-    case add(RemoteCitationStyle)
+enum CiteAction {
+    case add(RemoteStyle)
     case load
     case remove(Int)
 }

@@ -11,8 +11,8 @@ import Foundation
 import RealmSwift
 
 struct StoreStyleDbRequest: DbRequest {
-    let style: CitationStyle
-    let dependency: CitationStyle?
+    let style: Style
+    let dependency: Style?
 
     var needsWrite: Bool { return true }
     var ignoreNotificationTokens: [NotificationToken]? { return nil }

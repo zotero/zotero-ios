@@ -12,7 +12,7 @@ struct RepoRequest: ApiRequest {
     let timestamp: Int
     let version: String
     let type: Int
-    let styles: [CitationStyle]?
+    let styles: [Style]?
 
     var endpoint: ApiEndpoint {
         return .other(URL(string: "https://repo.zotero.org/repo/updated?m=\(self.type)&last=\(self.timestamp)&version=\(self.version)")!)

@@ -1,5 +1,5 @@
 //
-//  RemoteCitationStyle.swift
+//  RemoteStyle.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 19.05.2021.
@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct RemoteCitationStyle: Identifiable, Hashable, Equatable {
+struct RemoteStyle: Identifiable, Hashable, Equatable {
     let title: String
     let name: String
     let dependent: Bool
@@ -21,7 +21,7 @@ struct RemoteCitationStyle: Identifiable, Hashable, Equatable {
     }
 }
 
-extension RemoteCitationStyle: Decodable {
+extension RemoteStyle: Decodable {
     private enum CodingKeys: String, CodingKey {
         case title, name, dependent, categories, updated, href
     }

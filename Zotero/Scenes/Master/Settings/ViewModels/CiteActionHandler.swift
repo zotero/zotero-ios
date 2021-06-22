@@ -1,5 +1,5 @@
 //
-//  CitationStylesActionHandler.swift
+//  CiteActionHandler.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 19.05.2021.
@@ -11,9 +11,9 @@ import Foundation
 import CocoaLumberjackSwift
 import RxSwift
 
-struct CitationStylesActionHandler: ViewModelActionHandler {
-    typealias Action = CitationStylesAction
-    typealias State = CitationStylesState
+struct CiteActionHandler: ViewModelActionHandler {
+    typealias Action = CiteAction
+    typealias State = CiteState
 
     private unowned let apiClient: ApiClient
     private unowned let bundledDataStorage: DbStorage
@@ -29,7 +29,7 @@ struct CitationStylesActionHandler: ViewModelActionHandler {
         self.disposeBag = DisposeBag()
     }
 
-    func process(action: CitationStylesAction, in viewModel: ViewModel<CitationStylesActionHandler>) {
+    func process(action: CiteAction, in viewModel: ViewModel<CiteActionHandler>) {
         switch action {
         case .load:
             self.loadStyles(in: viewModel)
@@ -42,12 +42,12 @@ struct CitationStylesActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func add(style remoteStyle: RemoteCitationStyle, in viewModel: ViewModel<CitationStylesActionHandler>) {
+    private func add(style remoteStyle: RemoteStyle, in viewModel: ViewModel<CiteActionHandler>) {
         // Check whether style already exists locally and set `installed` flag if it does.
         if (try? self.bundledDataStorage.createCoordinator().perform(request: InstallStyleDbRequest(identifier: remoteStyle.id))) ?? false { return }
 
         // If it doesn't, we need to download and process it.
-        let style = CitationStyle(identifier: remoteStyle.id, title: remoteStyle.title, updated: remoteStyle.updated, href: remoteStyle.href, filename: remoteStyle.name)
+        let style = Style(identifier: remoteStyle.id, title: remoteStyle.title, updated: remoteStyle.updated, href: remoteStyle.href, filename: remoteStyle.name)
         let file = Files.style(filename: remoteStyle.name)
         let request = FileRequest(data: .external(style.href), destination: file)
 
@@ -65,7 +65,7 @@ struct CitationStylesActionHandler: ViewModelActionHandler {
                       .disposed(by: self.disposeBag)
     }
 
-    private func process(downloadedStyle: CitationStyle, file: File, isDependent: Bool, in viewModel: ViewModel<CitationStylesActionHandler>) {
+    private func process(downloadedStyle: Style, file: File, isDependent: Bool, in viewModel: ViewModel<CiteActionHandler>) {
         guard isDependent, let (_, dependencyHref) = self.loadStyle(from: file), let dependencyUrl = dependencyHref.flatMap({ URL(string: $0) }) else {
             self._add(style: downloadedStyle, dependency: nil, in: viewModel)
             return
@@ -92,7 +92,7 @@ struct CitationStylesActionHandler: ViewModelActionHandler {
                       .disposed(by: self.disposeBag)
     }
 
-    private func loadStyle(from file: File) -> (CitationStyle, String?)? {
+    private func loadStyle(from file: File) -> (Style, String?)? {
         guard let parser = XMLParser(contentsOf: file.createUrl()) else { return nil }
 
         let delegate = StyleParserDelegate(filename: file.name)
@@ -104,7 +104,7 @@ struct CitationStylesActionHandler: ViewModelActionHandler {
         return nil
     }
 
-    private func _add(style: CitationStyle, dependency: CitationStyle?, in viewModel: ViewModel<CitationStylesActionHandler>) {
+    private func _add(style: Style, dependency: Style?, in viewModel: ViewModel<CiteActionHandler>) {
         do {
             try self.bundledDataStorage.createCoordinator().perform(request: StoreStyleDbRequest(style: style, dependency: dependency))
 
@@ -120,7 +120,7 @@ struct CitationStylesActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func remove(at index: Int, in viewModel: ViewModel<CitationStylesActionHandler>) {
+    private func remove(at index: Int, in viewModel: ViewModel<CiteActionHandler>) {
         guard index < viewModel.state.styles.count else { return }
 
         let style = viewModel.state.styles[index]
@@ -143,11 +143,11 @@ struct CitationStylesActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func loadStyles(in viewModel: ViewModel<CitationStylesActionHandler>) {
+    private func loadStyles(in viewModel: ViewModel<CiteActionHandler>) {
         do {
-            let styles = try self.bundledDataStorage.createCoordinator().perform(request: ReadInstalledStylesDbRequest()).compactMap({ style -> CitationStyle? in
+            let styles = try self.bundledDataStorage.createCoordinator().perform(request: ReadInstalledStylesDbRequest()).compactMap({ style -> Style? in
                 guard let href = URL(string: style.href) else { return nil }
-                return CitationStyle(identifier: style.identifier, title: style.title, updated: style.updated, href: href, filename: style.filename)
+                return Style(identifier: style.identifier, title: style.title, updated: style.updated, href: href, filename: style.filename)
             })
 
             self.update(viewModel: viewModel) { state in

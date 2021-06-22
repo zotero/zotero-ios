@@ -1,5 +1,5 @@
 //
-//  CitationStylesRequest.swift
+//  StylesRequest.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 20.05.2021.
@@ -8,8 +8,8 @@
 
 import Foundation
 
-struct CitationStylesRequest: ApiResponseRequest {
-    typealias Response = CitationStylesResponse
+struct StylesRequest: ApiResponseRequest {
+    typealias Response = RemoteStylesResponse
 
     var endpoint: ApiEndpoint {
         return .other(URL(string: "https://www.zotero.org/styles-files/styles.json")!)

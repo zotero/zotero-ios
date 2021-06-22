@@ -13,7 +13,7 @@ import RealmSwift
 struct SyncStylesDbRequest: DbResponseRequest {
     typealias Response = [String]
 
-    let styles: [CitationStyle]
+    let styles: [Style]
 
     var needsWrite: Bool { return true }
     var ignoreNotificationTokens: [NotificationToken]? { return nil }

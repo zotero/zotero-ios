@@ -135,7 +135,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
             self.filter(with: filters, in: viewModel)
 
         case .quickCopyBibliography(let item, let controller):
-            self.citationController.bibliography(for: item, styleId: Defaults.shared.exportDefaultStyleId, localeId: Defaults.shared.exportDefaultLocaleId, format: .html, in: controller)
+            self.citationController.bibliography(for: item, styleId: Defaults.shared.quickCopyStyleId, localeId: Defaults.shared.quickCopyLocaleId, format: .html, in: controller)
                                    .subscribe(onSuccess: { citation in
                                        UIPasteboard.general.string = citation
                                     // TODO: - show something

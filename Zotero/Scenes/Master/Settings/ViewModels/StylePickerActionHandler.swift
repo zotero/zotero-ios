@@ -26,7 +26,7 @@ struct StylePickerActionHandler: ViewModelActionHandler {
             self.load(in: viewModel)
 
         case .setStyle(let styleId):
-            Defaults.shared.exportDefaultStyleId = styleId
+            Defaults.shared.quickCopyStyleId = styleId
         }
     }
 

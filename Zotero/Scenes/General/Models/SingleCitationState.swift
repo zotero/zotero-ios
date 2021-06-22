@@ -1,5 +1,5 @@
 //
-//  CitationState.swift
+//  SingleCitationState.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 15.06.2021.
@@ -9,7 +9,7 @@
 import UIKit
 import WebKit
 
-struct CitationState: ViewModelState {
+struct SingleCitationState: ViewModelState {
     struct Changes: OptionSet {
         typealias RawValue = UInt8
 
@@ -42,7 +42,7 @@ struct CitationState: ViewModelState {
         self.item = item
         self.styleId = styleId
         self.localeId = localeId
-        self.locator = CitationState.locators.first!
+        self.locator = SingleCitationState.locators.first!
         self.changes = []
         self.locatorValue = ""
         self.omitAuthor = false

@@ -1,5 +1,5 @@
 //
-//  CitationStylesSettingsView.swift
+//  CiteSettingsView.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 18.05.2021.
@@ -8,8 +8,8 @@
 
 import SwiftUI
 
-struct CitationStylesSettingsView: View {
-    @EnvironmentObject var viewModel: ViewModel<CitationStylesActionHandler>
+struct CiteSettingsView: View {
+    @EnvironmentObject var viewModel: ViewModel<CiteActionHandler>
 
     weak var coordinatorDelegate: SettingsCoordinatorDelegate?
 
@@ -54,7 +54,7 @@ struct CitationStylesSettingsView: View {
 }
 
 struct StyleRow: View {
-    let style: CitationStyle
+    let style: Style
 
     var body: some View {
         Text(self.style.title)
@@ -63,6 +63,6 @@ struct StyleRow: View {
 
 struct CitationSettingsView_Previews: PreviewProvider {
     static var previews: some View {
-        CitationStylesSettingsView()
+        CiteSettingsView()
     }
 }

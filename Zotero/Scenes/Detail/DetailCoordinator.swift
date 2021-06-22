@@ -485,11 +485,11 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     }
 
     func showCitation(for item: RItem) {
-        let state = CitationState(item: item, styleId: Defaults.shared.exportDefaultStyleId, localeId: Defaults.shared.exportDefaultLocaleId)
-        let handler = CitationActionHandler(citationController: self.controllers.citationController)
+        let state = SingleCitationState(item: item, styleId: Defaults.shared.quickCopyStyleId, localeId: Defaults.shared.quickCopyLocaleId)
+        let handler = SingleCitationActionHandler(citationController: self.controllers.citationController)
         let viewModel = ViewModel(initialState: state, handler: handler)
 
-        let controller = CitationViewController(viewModel: viewModel)
+        let controller = SingleCitationViewController(viewModel: viewModel)
         controller.coordinatorDelegate = self
         let navigationController = UINavigationController(rootViewController: controller)
         self.citationNavigationController = navigationController
@@ -717,7 +717,7 @@ extension DetailCoordinator: DetailCitationCoordinatorDelegate {
             self.citationNavigationController?.popViewController(animated: true)
         }
         let controller = UIHostingController(rootView: view.environmentObject(viewModel))
-        controller.preferredContentSize = CGSize(width: CitationViewController.width, height: CGFloat(values.count * 44))
+        controller.preferredContentSize = CGSize(width: SingleCitationViewController.width, height: CGFloat(values.count * 44))
         self.citationNavigationController?.preferredContentSize = controller.preferredContentSize
         self.citationNavigationController?.pushViewController(controller, animated: true)
     }

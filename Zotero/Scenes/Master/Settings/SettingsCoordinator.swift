@@ -17,7 +17,7 @@ protocol SettingsCoordinatorDelegate: AnyObject {
     func showSupport()
     func showAboutBeta()
     func showCitationSettings()
-    func showCitationStyleManagement(viewModel: ViewModel<CitationStylesActionHandler>)
+    func showCitationStyleManagement(viewModel: ViewModel<CiteActionHandler>)
     func showExportSettings()
     func dismiss()
 }
@@ -162,10 +162,10 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
     }
 
     func showCitationSettings() {
-        let handler = CitationStylesActionHandler(apiClient: self.controllers.apiClient, bundledDataStorage: self.controllers.bundledDataStorage, fileStorage: self.controllers.fileStorage)
-        let state = CitationStylesState()
+        let handler = CiteActionHandler(apiClient: self.controllers.apiClient, bundledDataStorage: self.controllers.bundledDataStorage, fileStorage: self.controllers.fileStorage)
+        let state = CiteState()
         let viewModel = ViewModel(initialState: state, handler: handler)
-        var view = CitationStylesSettingsView()
+        var view = CiteSettingsView()
         view.coordinatorDelegate = self
 
         viewModel.stateObservable.subscribe(onNext: { [weak self] state in
@@ -179,7 +179,7 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         self.navigationController.pushViewController(controller, animated: true)
     }
 
-    private func showCitationSettings(error: CitationStylesState.Error) {
+    private func showCitationSettings(error: CiteState.Error) {
         let message: String
         switch error {
         case .deletion(let name, _):
@@ -195,17 +195,17 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         self.navigationController.present(controller, animated: true, completion: nil)
     }
 
-    func showCitationStyleManagement(viewModel: ViewModel<CitationStylesActionHandler>) {
+    func showCitationStyleManagement(viewModel: ViewModel<CiteActionHandler>) {
         var installedIds: Set<String> = []
         for style in viewModel.state.styles {
             installedIds.insert(style.identifier)
         }
 
-        let handler = CitationStylesSearchActionHandler(apiClient: self.controllers.apiClient)
-        let state = CitationStylesSearchState(installedIds: installedIds)
+        let handler = CiteSearchActionHandler(apiClient: self.controllers.apiClient)
+        let state = CiteSearchState(installedIds: installedIds)
         let searchViewModel = ViewModel(initialState: state, handler: handler)
 
-        let controller = CitationStyleSearchViewController(viewModel: searchViewModel) { [weak viewModel] style in
+        let controller = CiteSearchViewController(viewModel: searchViewModel) { [weak viewModel] style in
             viewModel?.process(action: .add(style))
         }
         controller.coordinatorDelegate = self
@@ -214,12 +214,12 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
     }
 
     func showExportSettings() {
-        let localeId = Defaults.shared.exportDefaultLocaleId
+        let localeId = Defaults.shared.quickCopyLocaleId
         let language = Locale.current.localizedString(forLanguageCode: localeId) ?? localeId
-        let styleId = Defaults.shared.exportDefaultStyleId
+        let styleId = Defaults.shared.quickCopyStyleId
         let style = (try? self.controllers.bundledDataStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: styleId)))?.title ?? styleId
         
-        let state = ExportState(style: style, language: language, copyAsHtml: Defaults.shared.exportCopyAsHtml)
+        let state = ExportState(style: style, language: language, copyAsHtml: Defaults.shared.quickCopyAsHtml)
         let handler = ExportActionHandler()
         let viewModel = ViewModel(initialState: state, handler: handler)
         var view = ExportSettingsView()
@@ -251,7 +251,7 @@ extension SettingsCoordinator: CitationStyleSearchSettingsCoordinatorDelegate {
 extension SettingsCoordinator: ExportSettingsCoordinatorDelegate {
     func showStylePicker(picked: @escaping (String) -> Void) {
         let handler = StylePickerActionHandler(dbStorage: self.controllers.bundledDataStorage)
-        let state = StylePickerState(selected: Defaults.shared.exportDefaultStyleId)
+        let state = StylePickerState(selected: Defaults.shared.quickCopyStyleId)
         let viewModel = ViewModel(initialState: state, handler: handler)
 
         let view = StylePickerView(picked: picked)
@@ -262,7 +262,7 @@ extension SettingsCoordinator: ExportSettingsCoordinatorDelegate {
 
     func showLocalePicker(picked: @escaping (String) -> Void) {
         let handler = ExportLocalePickerActionHandler(fileStorage: self.controllers.fileStorage)
-        let state = ExportLocalePickerState(selected: Defaults.shared.exportDefaultLocaleId)
+        let state = ExportLocalePickerState(selected: Defaults.shared.quickCopyLocaleId)
         let viewModel = ViewModel(initialState: state, handler: handler)
 
         let view = ExportLocalePickerView(picked: picked)

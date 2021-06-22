@@ -1,5 +1,5 @@
 //
-//  CitationAction.swift
+//  SingleCitationAction.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 15.06.2021.
@@ -9,7 +9,7 @@
 import UIKit
 import WebKit
 
-enum CitationAction {
+enum SingleCitationAction {
     case preload(WKWebView)
     case setLocator(String)
     case setLocatorValue(String)

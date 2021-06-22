@@ -1,5 +1,5 @@
 //
-//  CitationStylesSearchState.swift
+//  CiteSearchState.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 04.06.2021.
@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct CitationStylesSearchState: ViewModelState {
+struct CiteSearchState: ViewModelState {
     struct Changes: OptionSet {
         typealias RawValue = UInt8
 
@@ -21,8 +21,8 @@ struct CitationStylesSearchState: ViewModelState {
     let installedIds: Set<String>
 
     var changes: Changes
-    var styles: [RemoteCitationStyle]
-    var filtered: [RemoteCitationStyle]?
+    var styles: [RemoteStyle]
+    var filtered: [RemoteStyle]?
     var loading: Bool
     var error: Error?
 

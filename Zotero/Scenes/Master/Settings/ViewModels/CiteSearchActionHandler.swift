@@ -11,9 +11,9 @@ import Foundation
 import CocoaLumberjackSwift
 import RxSwift
 
-struct CitationStylesSearchActionHandler: ViewModelActionHandler {
-    typealias Action = CitationStylesSearchAction
-    typealias State = CitationStylesSearchState
+struct CiteSearchActionHandler: ViewModelActionHandler {
+    typealias Action = CiteSearchAction
+    typealias State = CiteSearchState
 
     private unowned let apiClient: ApiClient
     private let disposeBag: DisposeBag
@@ -23,7 +23,7 @@ struct CitationStylesSearchActionHandler: ViewModelActionHandler {
         self.disposeBag = DisposeBag()
     }
 
-    func process(action: CitationStylesSearchAction, in viewModel: ViewModel<CitationStylesSearchActionHandler>) {
+    func process(action: CiteSearchAction, in viewModel: ViewModel<CiteSearchActionHandler>) {
         switch action {
         case .load:
             self.load(in: viewModel)
@@ -33,14 +33,14 @@ struct CitationStylesSearchActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func load(in viewModel: ViewModel<CitationStylesSearchActionHandler>) {
+    private func load(in viewModel: ViewModel<CiteSearchActionHandler>) {
         self.update(viewModel: viewModel) { state in
             state.loading = true
         }
 
-        self.apiClient.send(request: CitationStylesRequest())
+        self.apiClient.send(request: StylesRequest())
             .observe(on: MainScheduler.instance)
-            .subscribe(with: viewModel, onSuccess: { (viewModel, response: (CitationStylesResponse, ResponseHeaders)) in
+            .subscribe(with: viewModel, onSuccess: { (viewModel, response: (RemoteStylesResponse, ResponseHeaders)) in
                            self.update(viewModel: viewModel) { state in
                                state.loading = false
                                state.styles = response.0.styles.filter({ !viewModel.state.installedIds.contains($0.id) })
@@ -58,7 +58,7 @@ struct CitationStylesSearchActionHandler: ViewModelActionHandler {
                        .disposed(by: self.disposeBag)
     }
 
-    private func filter(with string: String, in viewModel: ViewModel<CitationStylesSearchActionHandler>) {
+    private func filter(with string: String, in viewModel: ViewModel<CiteSearchActionHandler>) {
         if string.isEmpty {
             self.update(viewModel: viewModel) { state in
                 state.filtered = nil

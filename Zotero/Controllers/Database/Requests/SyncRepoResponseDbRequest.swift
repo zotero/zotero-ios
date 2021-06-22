@@ -11,7 +11,7 @@ import Foundation
 import RealmSwift
 
 struct SyncRepoResponseDbRequest: DbRequest {
-    let styles: [CitationStyle]
+    let styles: [Style]
     let translators: [TranslatorMetadata]
     let deleteTranslators: [TranslatorMetadata]
 

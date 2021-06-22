@@ -1,5 +1,5 @@
 //
-//  CitationViewController.swift
+//  SingleCitationViewController.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 15.06.2021.
@@ -11,7 +11,7 @@ import WebKit
 
 import RxSwift
 
-final class CitationViewController: UIViewController {
+final class SingleCitationViewController: UIViewController {
     @IBOutlet private weak var webView: WKWebView!
     @IBOutlet private weak var locatorButton: UIButton!
     @IBOutlet private weak var locatorTextField: UITextField!
@@ -24,17 +24,17 @@ final class CitationViewController: UIViewController {
     @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
 
     static let width: CGFloat = 500
-    private let viewModel: ViewModel<CitationActionHandler>
+    private let viewModel: ViewModel<SingleCitationActionHandler>
     private let disposeBag: DisposeBag
 
     weak var coordinatorDelegate: DetailCitationCoordinatorDelegate?
 
     // MARK: - Lifecycle
 
-    init(viewModel: ViewModel<CitationActionHandler>) {
+    init(viewModel: ViewModel<SingleCitationActionHandler>) {
         self.viewModel = viewModel
         self.disposeBag = DisposeBag()
-        super.init(nibName: "CitationViewController", bundle: nil)
+        super.init(nibName: "SingleCitationViewController", bundle: nil)
     }
 
     required init?(coder: NSCoder) {
@@ -67,7 +67,7 @@ final class CitationViewController: UIViewController {
 
     // MARK: - Actions
 
-    private func update(state: CitationState) {
+    private func update(state: SingleCitationState) {
         if state.changes.contains(.preview) {
             self.previewLabel.text = state.preview
         }
@@ -94,7 +94,7 @@ final class CitationViewController: UIViewController {
     }
 
     @IBAction private func showLocatorPicker() {
-        let values = CitationState.locators.map({ SinglePickerModel(id: $0, name: self.localized(locator: $0)) })
+        let values = SingleCitationState.locators.map({ SinglePickerModel(id: $0, name: self.localized(locator: $0)) })
         self.coordinatorDelegate?.showLocatorPicker(for: values, selected: self.viewModel.state.locator, picked: { [weak self] locator in
             self?.viewModel.process(action: .setLocator(locator))
         })
@@ -107,8 +107,8 @@ final class CitationViewController: UIViewController {
     }
 
     private func updatePreferredContentSize() {
-        let size = self.view.systemLayoutSizeFitting(CGSize(width: CitationViewController.width, height: .greatestFiniteMagnitude))
-        self.preferredContentSize = CGSize(width: CitationViewController.width, height: size.height - self.view.safeAreaInsets.top)
+        let size = self.view.systemLayoutSizeFitting(CGSize(width: SingleCitationViewController.width, height: .greatestFiniteMagnitude))
+        self.preferredContentSize = CGSize(width: SingleCitationViewController.width, height: size.height - self.view.safeAreaInsets.top)
         self.navigationController?.preferredContentSize = self.preferredContentSize
     }
 

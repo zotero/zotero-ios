@@ -33,15 +33,15 @@ final class Defaults {
     @UserDefault(key: "ShowSubcollectionItems", defaultValue: false, defaults: .standard)
     var showSubcollectionItems: Bool
 
-    @UserDefault(key: "ExportStyleId", defaultValue: "http://www.zotero.org/styles/chicago-note-bibliography", defaults: .standard)
-    var exportDefaultStyleId: String
+    @UserDefault(key: "QuickCopyStyleId", defaultValue: "http://www.zotero.org/styles/chicago-note-bibliography", defaults: .standard)
+    var quickCopyStyleId: String
 
     // Proper default value is set up in AppDelegate.setupExportDefaults().
-    @UserDefault(key: "ExportLocaleId", defaultValue: "en-US", defaults: .standard)
-    var exportDefaultLocaleId: String
+    @UserDefault(key: "QuickCopyLocaleId", defaultValue: "en-US", defaults: .standard)
+    var quickCopyLocaleId: String
 
-    @UserDefault(key: "ExportCopyAsHtml", defaultValue: false, defaults: .standard)
-    var exportCopyAsHtml: Bool
+    @UserDefault(key: "QuickCopyAsHtml", defaultValue: false, defaults: .standard)
+    var quickCopyAsHtml: Bool
 
     // MARK: - Selection
 

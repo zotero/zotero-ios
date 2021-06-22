@@ -13,6 +13,10 @@ import CocoaLumberjackSwift
 import RxSwift
 
 class CitationController: NSObject {
+    enum Format: String {
+        case html = "html"
+    }
+
     /// Handlers for communication with JS in `webView`
     enum JSHandlers: String, CaseIterable {
         /// Handler used for HTTP requests. Expects response (HTTP response).
@@ -91,7 +95,7 @@ class CitationController: NSObject {
     /// - parameter format: Format in which citation is generated.
     /// - parameter webView: Web view which is fully loaded (`prepareForCitation(styleId:localeId:in:)` finished).
     /// - returns: Single with generated citation.
-    func citation(for item: RItem, label: String?, locator: String?, omitAuthor: Bool, format: CitationFormat, in webView: WKWebView) -> Single<String> {
+    func citation(for item: RItem, label: String?, locator: String?, omitAuthor: Bool, format: Format, in webView: WKWebView) -> Single<String> {
         guard let style = self.styleXml, let localeId = self.localeId, let locale = self.localeXml else { return Single.error(Error.prepareNotCalled) }
         return self.getCitation(styleXml: style, localeId: localeId, localeXml: locale, label: label, locator: locator, omitAuthor: omitAuthor, format: format.rawValue, webView: webView)
     }
@@ -110,7 +114,7 @@ class CitationController: NSObject {
     /// - parameter format: Bibliography format to use for generation.
     /// - parameter viewController: View controller in which webView will be embedded.
     /// - returns: Single which returns bibliography.
-    func bibliography(for item: RItem, styleId: String, localeId: String, format: CitationFormat, in viewController: UIViewController) -> Single<String> {
+    func bibliography(for item: RItem, styleId: String, localeId: String, format: Format, in viewController: UIViewController) -> Single<String> {
         return self.loadStyleFilename(for: styleId)
                    .subscribe(on: self.backgroundScheduler)
                    .observe(on: self.backgroundScheduler)

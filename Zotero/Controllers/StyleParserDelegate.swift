@@ -11,7 +11,7 @@ import Foundation
 final class StyleParserDelegate: NSObject, XMLParserDelegate {
     private let filename: String?
 
-    private(set) var style: CitationStyle?
+    private(set) var style: Style?
     private var currentValue: String
     private var identifier: String?
     private var title: String?
@@ -74,6 +74,6 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
 
     func parserDidEndDocument(_ parser: XMLParser) {
         guard let identifier = self.identifier, let title = self.title, let updated = self.updated, let href = self.href else { return }
-        self.style = CitationStyle(identifier: identifier, title: title, updated: updated, href: href, filename: (self.filename ?? href.lastPathComponent))
+        self.style = Style(identifier: identifier, title: title, updated: updated, href: href, filename: (self.filename ?? href.lastPathComponent))
     }
 }
