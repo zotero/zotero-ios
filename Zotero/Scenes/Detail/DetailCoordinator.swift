@@ -703,23 +703,13 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         if let coordinator = self.childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
             return
         }
+        guard let navigationController = self.topViewController as? UINavigationController else { return }
 
-        let navigationController = PopoverNavigationViewController()
-        navigationController.childNavigationController.setNavigationBarHidden(true, animated: false)
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            navigationController.modalPresentationStyle = .popover
-            navigationController.popoverPresentationController?.sourceView = self.navigationController.presentedViewController?.view
-            navigationController.popoverPresentationController?.sourceRect = sourceRect
-            navigationController.popoverPresentationController?.permittedArrowDirections = [.left, .right]
-            navigationController.popoverPresentationController?.delegate = popoverDelegate
-        }
-
-        let coordinator = AnnotationPopoverCoordinator(popoverNavController: navigationController, controllers: self.controllers, viewModel: viewModel)
+        let coordinator = AnnotationPopoverCoordinator(parentNavigationController: navigationController, popoverDelegate: popoverDelegate,
+                                                       sourceRect: sourceRect, controllers: self.controllers, viewModel: viewModel)
         coordinator.parentCoordinator = self
         self.childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-
-        self.topViewController.present(navigationController, animated: true, completion: nil)
+        coordinator.start(animated: true)
     }
 
     func showSearch(pdfController: PDFViewController, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void) {
@@ -835,7 +825,7 @@ extension DetailCoordinator: DetailAnnotationsCoordinatorDelegate {
         let state = AnnotationEditState(annotation: annotation)
         let handler = AnnotationEditActionHandler()
         let viewModel = ViewModel(initialState: state, handler: handler)
-        let controller = AnnotationEditViewController(viewModel: viewModel, saveAction: saveAction, deleteAction: deleteAction)
+        let controller = AnnotationEditViewController(viewModel: viewModel, includeColorPicker: true, saveAction: saveAction, deleteAction: deleteAction)
         controller.coordinatorDelegate = self
 
         let navigationController = UINavigationController(rootViewController: controller)

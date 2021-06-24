@@ -78,17 +78,14 @@ final class AnnotationView: UIView {
     // MARK: - Setups
 
     func setupHeader(with annotation: Annotation, selected: Bool, hasWritePermission: Bool) {
-        let color = UIColor(hex: annotation.color)
-        self.header.setup(type: annotation.type, color: color, pageLabel: annotation.pageLabel, author: annotation.author,
-                          showsMenuButton: (hasWritePermission && selected), showsDoneButton: self.layout.showDoneButton)
+        self.header.setup(with: annotation, isEditable: (hasWritePermission && selected), showDoneButton: self.layout.showDoneButton)
     }
 
     func setup(with annotation: Annotation, attributedComment: NSAttributedString?, preview: UIImage?, selected: Bool, commentActive: Bool, availableWidth: CGFloat, hasWritePermission: Bool) {
         let color = UIColor(hex: annotation.color)
         let canEdit = (annotation.editability != .notEditable) && selected && (hasWritePermission || annotation.isAuthor)
 
-        self.header.setup(type: annotation.type, color: color, pageLabel: annotation.pageLabel, author: (annotation.isAuthor ? "" : annotation.author),
-                          showsMenuButton: canEdit, showsDoneButton: self.layout.showDoneButton)
+        self.header.setup(with: annotation, isEditable: canEdit, showDoneButton: self.layout.showDoneButton)
         self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth)
         self.setupComments(for: annotation, attributedComment: attributedComment, isActive: commentActive, canEdit: canEdit)
         self.setupTags(for: annotation, canEdit: canEdit)
@@ -141,7 +138,7 @@ final class AnnotationView: UIView {
             return
         }
 
-        let comment = attributedComment.flatMap({ self.attributedString(from: $0) })
+        let comment = attributedComment.flatMap({ AnnotationView.attributedString(from: $0, layout: self.layout) })
         self.commentTextView.setup(text: comment)
 
         self.commentButton?.isHidden = true
@@ -159,7 +156,7 @@ final class AnnotationView: UIView {
             return
         }
 
-        self.tags.setup(with: self.attributedString(from: annotation.tags))
+        self.tags.setup(with: AnnotationView.attributedString(from: annotation.tags, layout: self.layout))
 
         self.tagsButton.isHidden = true
         self.tags.isHidden = false
@@ -219,8 +216,20 @@ final class AnnotationView: UIView {
     }
 
     private func createStaticBodyView() -> UIView {
-        return self.createStackView(with: [self.header, self.topSeparator, self.highlightContent!, self.imageContent!, self.commentButton!,
-                                           self.commentTextView, self.bottomSeparator, self.tagsButton, self.tags])
+        var views: [UIView] = [self.header, self.topSeparator]
+        if self.layout.showsContent {
+            if let highlightContent = self.highlightContent {
+                views.append(highlightContent)
+            }
+            if let imageContent = self.imageContent {
+                views.append(imageContent)
+            }
+            if let commentButton = self.commentButton {
+                views.append(commentButton)
+            }
+        }
+        views.append(contentsOf: [self.commentTextView, self.bottomSeparator, self.tagsButton, self.tags])
+        return self.createStackView(with: views)
     }
 
     private func createScrollableBodyView() -> UIView {
@@ -276,20 +285,20 @@ final class AnnotationView: UIView {
 
     // MARK: - Helpers
 
-    private var paragraphStyle: NSParagraphStyle {
+    static func paragraphStyle(for layout: AnnotationViewLayout) -> NSParagraphStyle {
         let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.minimumLineHeight = self.layout.lineHeight
-        paragraphStyle.maximumLineHeight = self.layout.lineHeight
+        paragraphStyle.minimumLineHeight = layout.lineHeight
+        paragraphStyle.maximumLineHeight = layout.lineHeight
         return paragraphStyle
     }
 
-    private func attributedString(from comment: NSAttributedString) -> NSAttributedString {
+    static func attributedString(from comment: NSAttributedString, layout: AnnotationViewLayout) -> NSAttributedString {
         let string = NSMutableAttributedString(attributedString: comment)
-        string.addAttribute(.paragraphStyle, value: self.paragraphStyle, range: NSRange(location: 0, length: comment.length))
+        string.addAttribute(.paragraphStyle, value: AnnotationView.paragraphStyle(for: layout), range: NSRange(location: 0, length: comment.length))
         return string
     }
 
-    private func attributedString(from tags: [Tag]) -> NSAttributedString {
+    static func attributedString(from tags: [Tag], layout: AnnotationViewLayout) -> NSAttributedString {
         let wholeString = NSMutableAttributedString()
         for (index, tag) in tags.enumerated() {
             let tagInfo = TagColorGenerator.uiColor(for: tag.color)
@@ -309,7 +318,7 @@ final class AnnotationView: UIView {
                 wholeString.append(NSAttributedString(string: ", "))
             }
         }
-        wholeString.addAttribute(.paragraphStyle, value: self.paragraphStyle, range: NSRange(location: 0, length: wholeString.length))
+        wholeString.addAttribute(.paragraphStyle, value: self.paragraphStyle(for: layout), range: NSRange(location: 0, length: wholeString.length))
         return wholeString
     }
 }

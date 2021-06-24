@@ -50,7 +50,7 @@ final class AnnotationViewHeader: UIView {
         }
     }
 
-    func setup(type: AnnotationType, color: UIColor, pageLabel: String, author: String, showsMenuButton: Bool, showsDoneButton: Bool) {
+    private func setup(type: AnnotationType, color: UIColor, pageLabel: String, author: String, showsMenuButton: Bool, showsDoneButton: Bool) {
         self.typeImageView.image = self.image(for: type)?.withRenderingMode(.alwaysTemplate)
         self.typeImageView.tintColor = color
         self.pageLabel.text = L10n.page + " " + pageLabel
@@ -58,6 +58,12 @@ final class AnnotationViewHeader: UIView {
         self.menuButton.isHidden = !showsMenuButton
         self.authorTrailingToButton.isActive = showsMenuButton
         self.authorTrailingToContainer.isActive = !showsMenuButton
+    }
+
+    func setup(with annotation: Annotation, isEditable: Bool, showDoneButton: Bool) {
+        let color = UIColor(hex: annotation.color)
+        let author = annotation.isAuthor ? "" : annotation.author
+        self.setup(type: annotation.type, color: color, pageLabel: annotation.pageLabel, author: author, showsMenuButton: isEditable, showsDoneButton: showDoneButton)
     }
 
     private func setupView(with layout: AnnotationViewLayout) {

@@ -39,8 +39,11 @@ final class AnnotationEditViewController: UIViewController {
 
     weak var coordinatorDelegate: AnnotationEditCoordinatorDelegate?
 
-    init(viewModel: ViewModel<AnnotationEditActionHandler>, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
-        var sections: [Section] = [.colorPicker, .pageLabel, .actions]
+    init(viewModel: ViewModel<AnnotationEditActionHandler>, includeColorPicker: Bool, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
+        var sections: [Section] = [.pageLabel, .actions]
+        if includeColorPicker {
+            sections.insert(.colorPicker, at: 0)
+        }
         if viewModel.state.annotation.type == .highlight {
             sections.insert(.highlight, at: 0)
         }
@@ -101,7 +104,6 @@ final class AnnotationEditViewController: UIViewController {
         controller.addAction(UIAlertAction(title: L10n.yes, style: .destructive, handler: { [weak self] _ in
             guard let `self` = self else { return }
             self.deleteAction(self.viewModel.state.annotation)
-            self.coordinatorDelegate?.dismiss()
         }))
 
         controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: nil))
@@ -125,7 +127,8 @@ final class AnnotationEditViewController: UIViewController {
     }
 
     private func updatePreferredContentSize() {
-        var height: CGFloat = 366
+        let sectionCount = self.sections.count - (self.sections.contains(.highlight) ? 1 : 0)
+        var height: CGFloat = (CGFloat(sectionCount) * 80) + 36 // 80 for 36 spacer and 44 cell height
 
         if let text = self.viewModel.state.annotation.text {
             let width = AnnotationPopoverLayout.width - ((AnnotationPopoverLayout.annotationLayout.horizontalInset * 2) +
@@ -136,12 +139,12 @@ final class AnnotationEditViewController: UIViewController {
             paragraphStyle.maximumLineHeight = AnnotationPopoverLayout.annotationLayout.lineHeight
             let attributedText = NSAttributedString(string: text, attributes: [.font: AnnotationPopoverLayout.annotationLayout.font, .paragraphStyle: paragraphStyle])
             let boundingRect = attributedText.boundingRect(with: CGSize(width: width, height: .greatestFiniteMagnitude), options: .usesLineFragmentOrigin, context: nil)
-            height += boundingRect.height + 22
+            height += ceil(boundingRect.height) + 58 // 58 for 22 insets and 36 spacer
         }
 
         let size = CGSize(width: AnnotationPopoverLayout.width, height: height)
         self.preferredContentSize = size
-        self.popoverPresentationController?.presentedViewController.preferredContentSize = size
+        NSLog("EDIT: \(size)")
     }
 
     // MARK: - Setups
@@ -150,7 +153,9 @@ final class AnnotationEditViewController: UIViewController {
         self.navigationItem.hidesBackButton = true
 
         let cancel = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
-        cancel.rx.tap.subscribe(onNext: { [weak self] in self?.coordinatorDelegate?.back() }).disposed(by: self.disposeBag)
+        cancel.rx.tap.subscribe(onNext: { [weak self] in
+            self?.presentingViewController?.dismiss(animated: true, completion: nil)
+        }).disposed(by: self.disposeBag)
         self.navigationItem.leftBarButtonItem = cancel
 
         let save = UIBarButtonItem(title: L10n.save, style: .done, target: nil, action: nil)
@@ -158,7 +163,7 @@ final class AnnotationEditViewController: UIViewController {
                .subscribe(onNext: { [weak self] in
                    guard let `self` = self else { return }
                    self.saveAction(self.viewModel.state.annotation)
-                   self.coordinatorDelegate?.back()
+                    self.presentingViewController?.dismiss(animated: true, completion: nil)
                })
                .disposed(by: self.disposeBag)
 
@@ -201,12 +206,13 @@ extension AnnotationEditViewController: UITableViewDataSource {
                 cell.setup(with: (self.viewModel.state.annotation.text ?? ""), color: self.viewModel.state.annotation.color)
                 cell.textObservable
                     .subscribe(onNext: { [weak self] text, needsHeightReload in
+                        self?.viewModel.process(action: .setHighlight(text.string))
+
                         if needsHeightReload {
-                            self?.reloadHeight()
                             self?.updatePreferredContentSize()
+                            self?.reloadHeight()
                             self?.focusHighlightCell()
                         }
-                        self?.viewModel.process(action: .setHighlight(text.string))
                     })
                     .disposed(by: self.disposeBag)
             }

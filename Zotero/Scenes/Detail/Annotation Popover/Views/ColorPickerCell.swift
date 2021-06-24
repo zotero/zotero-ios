@@ -21,7 +21,7 @@ final class ColorPickerCell: UITableViewCell {
 
         AnnotationsConfig.colors.forEach { hexColor in
             let circleView = ColorPickerCircleView(hexColor: hexColor)
-            circleView.contentInsets = UIEdgeInsets(top: 6, left: 11, bottom: 6, right: 11)
+            circleView.contentInsets = UIEdgeInsets(top: 11, left: 11, bottom: 11, right: 11)
             circleView.backgroundColor = .clear
             circleView.tap.bind(to: self.colorChange).disposed(by: self.disposeBag)
             circleView.backgroundColor = Asset.Colors.defaultCellBackground.color

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="17506" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="18122" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17505"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="18093"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -18,7 +18,7 @@
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <stackView opaque="NO" contentMode="scaleToFill" alignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="xil-z2-BhX">
-                        <rect key="frame" x="5" y="8" width="288" height="28"/>
+                        <rect key="frame" x="5" y="0.0" width="288" height="44"/>
                         <constraints>
                             <constraint firstAttribute="width" constant="288" placeholder="YES" id="uoG-3l-74h"/>
                         </constraints>
@@ -26,8 +26,8 @@
                 </subviews>
                 <constraints>
                     <constraint firstItem="xil-z2-BhX" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="5" id="0HN-Fm-nzn"/>
-                    <constraint firstAttribute="bottom" secondItem="xil-z2-BhX" secondAttribute="bottom" constant="8" id="4fL-al-Q57"/>
-                    <constraint firstItem="xil-z2-BhX" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="8" id="nnV-jc-pd2"/>
+                    <constraint firstAttribute="bottom" secondItem="xil-z2-BhX" secondAttribute="bottom" id="4fL-al-Q57"/>
+                    <constraint firstItem="xil-z2-BhX" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" id="nnV-jc-pd2"/>
                     <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="xil-z2-BhX" secondAttribute="trailing" constant="5" id="qrr-lz-8i5"/>
                 </constraints>
             </tableViewCellContentView>

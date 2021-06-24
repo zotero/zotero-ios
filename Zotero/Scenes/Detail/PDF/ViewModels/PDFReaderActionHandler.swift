@@ -118,6 +118,14 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                                   additionalStateChange: { $0.comments[key] = comment },
                                   in: viewModel)
 
+        case .setColor(let key, let color):
+            self.updateAnnotation(with: key,
+                                  transformAnnotation: { originalAnnotation in
+                                      let changes: PdfAnnotationChanges = originalAnnotation.color != color ? .color : []
+                                      return (originalAnnotation.copy(color: color), changes)
+                                  },
+                                  in: viewModel)
+
         case .setCommentActive(let isActive):
             guard let annotation = viewModel.state.selectedAnnotation else { return }
             self.update(viewModel: viewModel) { state in
