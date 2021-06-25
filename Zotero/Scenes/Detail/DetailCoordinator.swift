@@ -703,13 +703,22 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         if let coordinator = self.childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
             return
         }
-        guard let navigationController = self.topViewController as? UINavigationController else { return }
 
-        let coordinator = AnnotationPopoverCoordinator(parentNavigationController: navigationController, popoverDelegate: popoverDelegate,
-                                                       sourceRect: sourceRect, controllers: self.controllers, viewModel: viewModel)
+        let navigationController = UINavigationController()
+
+        let coordinator = AnnotationPopoverCoordinator(navigationController: navigationController, controllers: self.controllers, viewModel: viewModel)
         coordinator.parentCoordinator = self
         self.childCoordinators.append(coordinator)
-        coordinator.start(animated: true)
+        coordinator.start(animated: false)
+
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            navigationController.modalPresentationStyle = .popover
+            navigationController.popoverPresentationController?.sourceView = self.topViewController.view
+            navigationController.popoverPresentationController?.sourceRect = sourceRect
+            navigationController.popoverPresentationController?.permittedArrowDirections = [.left, .right]
+            navigationController.popoverPresentationController?.delegate = popoverDelegate
+        }
+        self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
     func showSearch(pdfController: PDFViewController, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void) {
@@ -829,22 +838,16 @@ extension DetailCoordinator: DetailAnnotationsCoordinatorDelegate {
         controller.coordinatorDelegate = self
 
         let navigationController = UINavigationController(rootViewController: controller)
-        navigationController.modalPresentationStyle = .popover
-        navigationController.popoverPresentationController?.sourceView = sender
-        navigationController.popoverPresentationController?.permittedArrowDirections = .left
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            navigationController.modalPresentationStyle = .popover
+            navigationController.popoverPresentationController?.sourceView = sender
+            navigationController.popoverPresentationController?.permittedArrowDirections = .left
+        }
         self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 }
 
 extension DetailCoordinator: AnnotationEditCoordinatorDelegate {
-    func back() {
-        self.topViewController.dismiss(animated: true, completion: nil)
-    }
-
-    func dismiss() {
-        self.topViewController.dismiss(animated: true, completion: nil)
-    }
-
     func showPageLabelEditor(label: String, updateSubsequentPages: Bool, saveAction: @escaping AnnotationPageLabelSaveAction) {
         let state = AnnotationPageLabelState(label: label, updateSubsequentPages: updateSubsequentPages)
         let handler = AnnotationPageLabelActionHandler()

@@ -281,6 +281,7 @@ final class AnnotationsViewController: UIViewController {
                                                  cell.contentView.backgroundColor = self.view.backgroundColor
                                                  self.setup(cell: cell, with: annotation, state: self.viewModel.state)
                                              })
+        self.dataSource.dataSource = self
 
         self.tableView = tableView
     }
@@ -344,6 +345,18 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSourceP
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         guard let annotation = self.dataSource.snapshot.object(at: indexPath) else { return }
         self.viewModel.process(action: .selectAnnotation(annotation))
+    }
+}
+
+extension AnnotationsViewController: AdditionalDiffableDataSource {
+    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        return true
+    }
+
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        guard editingStyle == .delete else { return }
+        guard let annotation = self.dataSource.snapshot.object(at: indexPath) else { return }
+        self.viewModel.process(action: .removeAnnotation(annotation))
     }
 }
 

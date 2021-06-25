@@ -77,6 +77,7 @@ final class AnnotationEditViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        self.navigationController?.setNavigationBarHidden(false, animated: true)
         self.updatePreferredContentSize()
     }
 
@@ -144,7 +145,16 @@ final class AnnotationEditViewController: UIViewController {
 
         let size = CGSize(width: AnnotationPopoverLayout.width, height: height)
         self.preferredContentSize = size
-        NSLog("EDIT: \(size)")
+        self.navigationController?.preferredContentSize = size
+    }
+
+    private func cancel() {
+        guard let navigationController = self.navigationController else { return }
+        if navigationController.viewControllers.count == 1 {
+            self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
+        } else {
+            self.navigationController?.popViewController(animated: true)
+        }
     }
 
     // MARK: - Setups
@@ -154,7 +164,7 @@ final class AnnotationEditViewController: UIViewController {
 
         let cancel = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
         cancel.rx.tap.subscribe(onNext: { [weak self] in
-            self?.presentingViewController?.dismiss(animated: true, completion: nil)
+            self?.cancel()
         }).disposed(by: self.disposeBag)
         self.navigationItem.leftBarButtonItem = cancel
 
@@ -163,7 +173,7 @@ final class AnnotationEditViewController: UIViewController {
                .subscribe(onNext: { [weak self] in
                    guard let `self` = self else { return }
                    self.saveAction(self.viewModel.state.annotation)
-                    self.presentingViewController?.dismiss(animated: true, completion: nil)
+                   self.cancel()
                })
                .disposed(by: self.disposeBag)
 

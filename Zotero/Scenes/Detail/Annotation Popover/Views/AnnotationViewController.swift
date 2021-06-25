@@ -65,12 +65,8 @@ final class AnnotationViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        self.navigationController?.setNavigationBarHidden(true, animated: true)
         self.updatePreferredContentSize()
-    }
-
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-//        self.updatePreferredContentSize()
     }
 
     deinit {
@@ -83,7 +79,7 @@ final class AnnotationViewController: UIViewController {
         guard var size = self.containerStackView?.systemLayoutSizeFitting(CGSize(width: AnnotationPopoverLayout.width, height: .greatestFiniteMagnitude)) else { return }
         size.width = AnnotationPopoverLayout.width
         self.preferredContentSize = size
-        NSLog("MAIN: \(size)")
+        self.navigationController?.preferredContentSize = size
     }
 
     private func update(state: PDFReaderState) {

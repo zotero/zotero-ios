@@ -25,20 +25,14 @@ protocol AnnotationEditCoordinatorDelegate: AnyObject {
 final class AnnotationPopoverCoordinator: NSObject, Coordinator {
     var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
-    private weak var mainController: UIViewController?
 
     unowned let navigationController: UINavigationController
-    private let sourceRect: CGRect
-    private unowned let popoverDelegate: UIPopoverPresentationControllerDelegate
     private unowned let viewModel: ViewModel<PDFReaderActionHandler>
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
-    init(parentNavigationController: UINavigationController, popoverDelegate: UIPopoverPresentationControllerDelegate,
-         sourceRect: CGRect, controllers: Controllers, viewModel: ViewModel<PDFReaderActionHandler>) {
-        self.navigationController = parentNavigationController
-        self.sourceRect = sourceRect
-        self.popoverDelegate = popoverDelegate
+    init(navigationController: UINavigationController, controllers: Controllers, viewModel: ViewModel<PDFReaderActionHandler>) {
+        self.navigationController = navigationController
         self.controllers = controllers
         self.viewModel = viewModel
         self.childCoordinators = []
@@ -50,16 +44,9 @@ final class AnnotationPopoverCoordinator: NSObject, Coordinator {
     func start(animated: Bool) {
         let controller = AnnotationViewController(viewModel: self.viewModel, attributedStringConverter: self.controllers.htmlAttributedStringConverter)
         controller.coordinatorDelegate = self
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            controller.modalPresentationStyle = .popover
-            controller.popoverPresentationController?.sourceView = self.navigationController.view
-            controller.popoverPresentationController?.sourceRect = self.sourceRect
-            controller.popoverPresentationController?.permittedArrowDirections = [.left, .right]
-            controller.popoverPresentationController?.delegate = self.popoverDelegate
-        }
-        self.mainController = controller
-
-        self.navigationController.present(controller, animated: animated, completion: nil)
+        self.navigationController.isNavigationBarHidden = true
+        self.navigationController.setViewControllers([controller], animated: animated)
+        self.navigationController.delegate = self
     }
 }
 
@@ -70,9 +57,7 @@ extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDe
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = AnnotationEditViewController(viewModel: viewModel, includeColorPicker: false, saveAction: saveAction, deleteAction: deleteAction)
         controller.coordinatorDelegate = self
-        let navigationController = UINavigationController(rootViewController: controller)
-        navigationController.modalPresentationStyle = .currentContext
-        self.mainController?.present(navigationController, animated: true, completion: nil)
+        self.navigationController.pushViewController(controller, animated: true)
     }
 
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void) {
@@ -83,11 +68,8 @@ extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDe
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = TagPickerViewController(viewModel: viewModel, saveAction: picked)
         controller.preferredContentSize = AnnotationPopoverLayout.tagPickerPreferredSize
-
-        let navigationController = UINavigationController(rootViewController: controller)
-        navigationController.modalPresentationStyle = .currentContext
-        navigationController.preferredContentSize = controller.preferredContentSize
-        self.mainController?.present(navigationController, animated: true, completion: nil)
+        self.navigationController.preferredContentSize = controller.preferredContentSize
+        self.navigationController.pushViewController(controller, animated: true)
     }
 
     func didFinish() {
@@ -102,6 +84,12 @@ extension AnnotationPopoverCoordinator: AnnotationEditCoordinatorDelegate {
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = AnnotationPageLabelViewController(viewModel: viewModel, saveAction: saveAction)
         self.navigationController.pushViewController(controller, animated: true)
+    }
+}
+
+extension AnnotationPopoverCoordinator: UINavigationControllerDelegate {
+    func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
+        navigationController.setNavigationBarHidden((viewController is AnnotationViewController), animated: animated)
     }
 }
 
