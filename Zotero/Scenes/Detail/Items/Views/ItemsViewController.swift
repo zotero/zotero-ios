@@ -206,6 +206,7 @@ final class ItemsViewController: UIViewController {
     private func process(action: ItemAction.Kind, for selectedKeys: Set<String>, button: UIBarButtonItem?) {
         switch action {
         case .addToCollection:
+            guard !selectedKeys.isEmpty else { return }
             self.coordinatorDelegate?.showCollectionPicker(in: self.viewModel.state.library, completed: { [weak self] collections in
                 self?.viewModel.process(action: .assignItemsToCollections(items: selectedKeys, collections: collections))
             })
@@ -215,6 +216,7 @@ final class ItemsViewController: UIViewController {
             self.coordinatorDelegate?.showItemDetail(for: .creation(type: ItemTypes.document, child: attachment, collectionKey: nil), library: self.viewModel.state.library)
 
         case .delete:
+            guard !selectedKeys.isEmpty else { return }
             self.coordinatorDelegate?.showDeletionQuestion(count: self.viewModel.state.selectedItems.count) { [weak self] in
                 self?.viewModel.process(action: .deleteItems(selectedKeys))
             }
@@ -224,14 +226,17 @@ final class ItemsViewController: UIViewController {
             self.viewModel.process(action: .loadItemToDuplicate(key))
 
         case .removeFromCollection:
+            guard !selectedKeys.isEmpty else { return }
             self.coordinatorDelegate?.showRemoveFromCollectionQuestion(count: self.viewModel.state.selectedItems.count) { [weak self] in
                 self?.viewModel.process(action: .deleteItemsFromCollection(selectedKeys))
             }
 
         case .restore:
+            guard !selectedKeys.isEmpty else { return }
             self.viewModel.process(action: .restoreItems(selectedKeys))
 
         case .trash:
+            guard !selectedKeys.isEmpty else { return }
             self.viewModel.process(action: .trashItems(selectedKeys))
 
         case .filter:
@@ -241,6 +246,10 @@ final class ItemsViewController: UIViewController {
         case .sort:
             guard let button = button else { return }
             self.coordinatorDelegate?.showSortActions(viewModel: self.viewModel, button: button)
+
+        case .share:
+            guard !selectedKeys.isEmpty else { return }
+            self.coordinatorDelegate?.showCiteExport(for: selectedKeys)
 
         case .copyCitation, .copyBibliography: break
         }
@@ -559,7 +568,7 @@ extension ItemsViewController: ItemsTableViewHandlerDelegate {
         case .copyBibliography:
             self.viewModel.process(action: .quickCopyBibliography(item, self))
 
-        case .addToCollection, .createParent, .delete, .duplicate, .filter, .removeFromCollection, .restore, .sort, .trash:
+        case .addToCollection, .createParent, .delete, .duplicate, .filter, .removeFromCollection, .restore, .sort, .trash, .share:
             self.process(action: action, for: [item.key], button: nil)
         }
     }

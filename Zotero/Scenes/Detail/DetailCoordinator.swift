@@ -40,6 +40,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void)
     func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void)
     func showCitation(for item: RItem)
+    func showCiteExport(for items: Set<String>)
 }
 
 protocol DetailItemDetailCoordinatorDelegate: AnyObject {
@@ -98,6 +99,10 @@ protocol DetailItemActionSheetCoordinatorDelegate: AnyObject {
 
 protocol DetailCitationCoordinatorDelegate: AnyObject {
     func showLocatorPicker(for values: [SinglePickerModel], selected: String, picked: @escaping (String) -> Void)
+}
+
+protocol DetailCitationBibliographyExportCoordinatorDelegate: AnyObject {
+    func cancel()
 }
 
 fileprivate class EmptyTransitioningDelegate: NSObject, UIViewControllerTransitioningDelegate {}
@@ -498,6 +503,27 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         containerController.modalPresentationStyle = .formSheet
         self.navigationController.present(containerController, animated: true, completion: nil)
     }
+
+    func showCiteExport(for items: Set<String>) {
+        do {
+            let styleId = Defaults.shared.quickCopyStyleId
+            let rStyle = try self.controllers.bundledDataStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: styleId))
+            guard let style = Style(rStyle: rStyle) else { return }
+
+            let state = CitationBibliographyExportState(selectedStyle: style, selectedLocaleId: Defaults.shared.quickCopyLocaleId)
+            let handler = CitationBibliographyExportActionHandler(citationController: self.controllers.citationController)
+            let viewModel = ViewModel(initialState: state, handler: handler)
+
+            var view = CitationBibliographyExportView()
+            view.coordinatorDelegate = self
+
+            let controller = UIHostingController(rootView: view.environmentObject(viewModel))
+            let navigationController = UINavigationController(rootViewController: controller)
+            self.topViewController.present(navigationController, animated: true, completion: nil)
+        } catch let error {
+            DDLogError("DetailCoordinator: can't open citeexport - \(error)")
+        }
+    }
 }
 
 extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
@@ -720,6 +746,12 @@ extension DetailCoordinator: DetailCitationCoordinatorDelegate {
         controller.preferredContentSize = CGSize(width: SingleCitationViewController.width, height: CGFloat(values.count * 44))
         self.citationNavigationController?.preferredContentSize = controller.preferredContentSize
         self.citationNavigationController?.pushViewController(controller, animated: true)
+    }
+}
+
+extension DetailCoordinator: DetailCitationBibliographyExportCoordinatorDelegate {
+    func cancel() {
+        self.topViewController.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 }
 

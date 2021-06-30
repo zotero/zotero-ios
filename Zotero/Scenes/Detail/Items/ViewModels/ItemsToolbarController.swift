@@ -51,6 +51,7 @@ final class ItemsToolbarController {
             if state.type.collectionKey != nil {
                 actions.insert(ItemAction(type: .removeFromCollection), at: 1)
             }
+            actions.append(ItemAction(type: .share))
         }
         return actions
     }
@@ -139,7 +140,7 @@ final class ItemsToolbarController {
                 item.tag = ItemsToolbarController.barButtonItemEmptyTag
             case .duplicate:
                 item.tag = ItemsToolbarController.barButtonItemSingleTag
-            case .sort, .filter, .createParent, .copyCitation, .copyBibliography: break
+            case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .share: break
             }
             switch action.type {
             case .addToCollection:
