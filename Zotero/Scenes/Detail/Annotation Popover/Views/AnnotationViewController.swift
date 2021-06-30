@@ -127,7 +127,8 @@ final class AnnotationViewController: UIViewController {
         self.present(controller, animated: true, completion: nil)
     }
 
-    private func showSettings(for annotation: Annotation) {
+    private func showSettings() {
+        guard let annotation = self.viewModel.state.selectedAnnotation else { return }
         self.coordinatorDelegate?.showEdit(annotation: annotation,
                                            saveAction: { [weak self] annotation in
                                                self?.viewModel.process(action: .updateAnnotationProperties(annotation))
@@ -142,11 +143,11 @@ final class AnnotationViewController: UIViewController {
         self.viewModel.process(action: .setColor(key: annotation.key, color: color))
     }
 
-    private func showTagPicker(for annotation: Annotation, libraryId: LibraryIdentifier) {
-        guard annotation.isAuthor else { return }
+    private func showTagPicker() {
+        guard let annotation = self.viewModel.state.selectedAnnotation, annotation.isAuthor else { return }
 
         let selected = Set(annotation.tags.map({ $0.name }))
-        self.coordinatorDelegate?.showTagPicker(libraryId: libraryId, selected: selected, picked: { [weak self] tags in
+        self.coordinatorDelegate?.showTagPicker(libraryId: self.viewModel.state.library.identifier, selected: selected, picked: { [weak self] tags in
             self?.viewModel.process(action: .setTags(tags, annotation.key))
         })
     }
@@ -166,22 +167,20 @@ final class AnnotationViewController: UIViewController {
     private func setupViews() {
         guard let annotation = self.viewModel.state.selectedAnnotation else { return }
 
-        let isEditable = self.viewModel.state.library.metadataEditable
         let layout = AnnotationPopoverLayout.annotationLayout
-        let libraryId = self.viewModel.state.library.identifier
 
         // Setup header
         let header = AnnotationViewHeader(layout: layout)
-        header.setup(with: annotation, isEditable: isEditable, showDoneButton: false)
+        header.setup(with: annotation, isEditable: self.viewModel.state.library.metadataEditable, showDoneButton: false)
         header.menuTap
               .subscribe(with: self, onNext: { `self`, _ in
-                  self.showSettings(for: annotation)
+                  self.showSettings()
               })
               .disposed(by: self.disposeBag)
         self.header = header
 
         // Setup comment
-        let commentView = AnnotationViewTextView(layout: AnnotationPopoverLayout.annotationLayout, placeholder: self.commentPlaceholder)
+        let commentView = AnnotationViewTextView(layout: layout, placeholder: self.commentPlaceholder)
         let comment = AnnotationView.attributedString(from: self.attributedStringConverter.convert(text: annotation.comment, baseFont: layout.font), layout: layout)
         commentView.setup(text: comment)
         commentView.textObservable
@@ -196,14 +195,14 @@ final class AnnotationViewController: UIViewController {
         self.comment = commentView
 
         // Setup tags
-        let tags = AnnotationViewText(layout: AnnotationPopoverLayout.annotationLayout)
+        let tags = AnnotationViewText(layout: layout)
         if !annotation.tags.isEmpty {
             tags.setup(with: AnnotationView.attributedString(from: annotation.tags, layout: layout))
         }
         tags.isHidden = annotation.tags.isEmpty
         tags.tap
             .subscribe(with: self, onNext: { `self`, _ in
-                self.showTagPicker(for: annotation, libraryId: libraryId)
+                self.showTagPicker()
             })
             .disposed(by: self.disposeBag)
         self.tags = tags
@@ -213,7 +212,7 @@ final class AnnotationViewController: UIViewController {
         tagButton.isHidden = !annotation.tags.isEmpty
         tagButton.rx.tap
                  .subscribe(with: self, onNext: { `self`, _ in
-                     self.showTagPicker(for: annotation, libraryId: libraryId)
+                     self.showTagPicker()
                  })
                  .disposed(by: self.disposeBag)
         self.tagsButton = tagButton

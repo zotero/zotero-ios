@@ -133,7 +133,6 @@ final class TagPickerViewController: UIViewController {
         self.tableView.dataSource = self
         self.tableView.allowsMultipleSelectionDuringEditing = true
         self.tableView.isEditing = true
-        self.tableView.rowHeight = 44
         self.tableView.register(UINib(nibName: "TagPickerCell", bundle: nil), forCellReuseIdentifier: TagPickerViewController.tagCellId)
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: TagPickerViewController.addCellId)
     }
