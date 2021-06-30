@@ -76,8 +76,7 @@ final class AnnotationViewController: UIViewController {
     // MARK: - Actions
 
     private func updatePreferredContentSize() {
-        guard var size = self.containerStackView?.systemLayoutSizeFitting(CGSize(width: AnnotationPopoverLayout.width, height: .greatestFiniteMagnitude)) else { return }
-        size.width = AnnotationPopoverLayout.width
+        guard let size = self.containerStackView?.systemLayoutSizeFitting(CGSize(width: AnnotationPopoverLayout.width, height: .greatestFiniteMagnitude), withHorizontalFittingPriority: .defaultHigh, verticalFittingPriority: .defaultLow) else { return }
         self.preferredContentSize = size
         self.navigationController?.preferredContentSize = size
     }
@@ -103,6 +102,15 @@ final class AnnotationViewController: UIViewController {
                 guard let circleView = view as? ColorPickerCircleView else { continue }
                 circleView.isSelected = circleView.hexColor == annotation.color
             }
+        }
+
+        if !annotation.tags.isEmpty {
+            self.tags?.setup(with: AnnotationView.attributedString(from: annotation.tags, layout: AnnotationPopoverLayout.annotationLayout))
+            self.tags?.isHidden = false
+            self.tagsButton?.isHidden = true
+        } else {
+            self.tags?.isHidden = true
+            self.tagsButton?.isHidden = false
         }
     }
 
