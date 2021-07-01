@@ -29,9 +29,6 @@ struct ExportLocalePickerActionHandler: ViewModelActionHandler {
         switch action {
         case .load:
             self.load(in: viewModel)
-
-        case .setLocale(let localeId):
-            Defaults.shared.quickCopyLocaleId = localeId
         }
     }
 

@@ -23,14 +23,16 @@ struct ExportActionHandler: ViewModelActionHandler {
             }
             Defaults.shared.quickCopyAsHtml = value
 
-        case .updateLocale(let title):
+        case .updateLocale(let locale):
+            Defaults.shared.quickCopyLocaleId = locale.id
             self.update(viewModel: viewModel) { state in
-                state.selectedLanguage = title
+                state.selectedLanguage = locale.name
             }
 
-        case .updateStyle(let title):
+        case .updateStyle(let style):
+            Defaults.shared.quickCopyStyleId = style.identifier
             self.update(viewModel: viewModel) { state in
-                state.selectedStyle = title
+                state.selectedStyle = style.title
             }
         }
     }

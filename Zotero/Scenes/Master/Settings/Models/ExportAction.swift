@@ -10,6 +10,6 @@ import Foundation
 
 enum ExportAction {
     case setCopyAsHtml(Bool)
-    case updateLocale(String)
-    case updateStyle(String)
+    case updateLocale(ExportLocale)
+    case updateStyle(Style)
 }

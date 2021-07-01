@@ -10,5 +10,4 @@ import Foundation
 
 enum ExportLocalePickerAction {
     case load
-    case setLocale(String)
 }

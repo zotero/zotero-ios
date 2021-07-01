@@ -10,5 +10,4 @@ import Foundation
 
 enum StylePickerAction {
     case load
-    case setStyle(String)
 }

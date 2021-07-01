@@ -11,7 +11,7 @@ import SwiftUI
 struct CitationBibliographyExportView: View {
     @EnvironmentObject var viewModel: ViewModel<CitationBibliographyExportActionHandler>
 
-    weak var coordinatorDelegate: DetailCitationBibliographyExportCoordinatorDelegate?
+    weak var coordinatorDelegate: CitationBibliographyExportCoordinatorDelegate?
 
     var body: some View {
         Form {
@@ -60,7 +60,7 @@ struct CitationBibliographyExportView: View {
 fileprivate struct CiteView: View {
     @EnvironmentObject var viewModel: ViewModel<CitationBibliographyExportActionHandler>
 
-    weak var coordinatorDelegate: DetailCitationBibliographyExportCoordinatorDelegate?
+    weak var coordinatorDelegate: CitationBibliographyExportCoordinatorDelegate?
 
     var body: some View {
         Section(header: Text("")) {
@@ -72,27 +72,33 @@ fileprivate struct CiteView: View {
                 Picker(selection: self.viewModel.binding(get: \.mode, action: { .setMode($0) }), label: Text("Output Mode"), content: {
                     Text("Citations")
                         .tag(CitationBibliographyExportState.OutputMode.citation)
-                    Text("Bibliography")
-                        .tag(CitationBibliographyExportState.OutputMode.bibliography)
+                    if self.viewModel.state.style.supportsBibliography {
+                        Text("Bibliography")
+                            .tag(CitationBibliographyExportState.OutputMode.bibliography)
+                    }
                 })
                 .pickerStyle(SegmentedPickerStyle())
                 .fixedSize()
             }
         }
 
-        Section(header: Text("Style")) {
+        Section(header: Text("Style"), footer: self.styleFooter) {
             RowView(title: self.viewModel.state.style.title)
                 .contentShape(Rectangle())
                 .onTapGesture {
-
+                    self.coordinatorDelegate?.showStylePicker(picked: { style in
+                        self.viewModel.process(action: .setStyle(style))
+                    })
                 }
         }
 
         Section(header: Text("Language")) {
-            RowView(title: self.language)
+            RowView(title: self.viewModel.state.localeName)
                 .contentShape(Rectangle())
                 .onTapGesture {
-
+                    self.coordinatorDelegate?.showLanguagePicker(picked: { locale in
+                        self.viewModel.process(action: .setLocale(id: locale.id, name: locale.name))
+                    })
                 }
         }
 
@@ -109,6 +115,17 @@ fileprivate struct CiteView: View {
         }
     }
 
+    private var styleFooter: some View {
+        Group {
+            if !self.viewModel.state.style.supportsBibliography {
+                Text("This style doesn't support bibliography. If you want to create bibliography, choose another style.")
+                    .font(.footnote)
+            } else {
+                EmptyView()
+            }
+        }
+    }
+
     private func name(for method: CitationBibliographyExportState.OutputMethod) -> String {
         switch method {
         case .html:
@@ -116,10 +133,6 @@ fileprivate struct CiteView: View {
         case .copy:
             return "Copy to Clipboard"
         }
-    }
-
-    private var language: String {
-        return Locale.current.localizedString(forIdentifier: self.viewModel.state.localeId) ?? self.viewModel.state.localeId
     }
 }
 
@@ -166,7 +179,7 @@ fileprivate struct ExportView: View {
 struct CitationBibliographyExportView_Previews: PreviewProvider {
     static var previews: some View {
         let controllers = Controllers()
-        let style = Style(identifier: "http://www.zotero.org/styles/nature", title: "Nature", updated: Date(), href: URL(string: "")!, filename: "")
+        let style = Style(identifier: "http://www.zotero.org/styles/nature", title: "Nature", updated: Date(), href: URL(string: "")!, filename: "", supportsBibliography: true)
         let state = CitationBibliographyExportState(selectedStyle: style, selectedLocaleId: "en_US")
         let handler = CitationBibliographyExportActionHandler(citationController: controllers.citationController)
         let viewModel = ViewModel(initialState: state, handler: handler)

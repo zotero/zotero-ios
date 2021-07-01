@@ -12,15 +12,15 @@ struct StylePickerView: View {
     @EnvironmentObject var viewModel: ViewModel<StylePickerActionHandler>
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
 
-    let picked: (String) -> Void
+    let picked: (Style) -> Void
 
     var body: some View {
         Form {
             if let results = self.viewModel.state.results {
                 ForEach(results) { style in
                     Button {
-                        self.viewModel.process(action: .setStyle(style.identifier))
-                        self.picked(style.title)
+                        guard let style = Style(rStyle: style) else { return }
+                        self.picked(style)
                         self.presentationMode.wrappedValue.dismiss()
                     } label: {
                         SinglePickerRow(text: style.title, isSelected: (self.viewModel.state.selected == style.identifier))

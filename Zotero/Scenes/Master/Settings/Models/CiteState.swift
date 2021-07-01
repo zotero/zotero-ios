@@ -13,7 +13,7 @@ import RealmSwift
 struct CiteState: ViewModelState {
     enum Error: Swift.Error {
         case loading(Swift.Error)
-        case addition(name: String, error: Swift.Error)
+        case addition(name: String, error: Swift.Error?)
         case deletion(name: String, error: Swift.Error)
     }
 

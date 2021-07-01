@@ -12,7 +12,7 @@ struct ExportLocalePickerView: View {
     @EnvironmentObject var viewModel: ViewModel<ExportLocalePickerActionHandler>
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
 
-    let picked: (String) -> Void
+    let picked: (ExportLocale) -> Void
 
     var body: some View {
         if self.viewModel.state.loading {
@@ -24,8 +24,7 @@ struct ExportLocalePickerView: View {
             Form {
                 ForEach(self.viewModel.state.locales) { locale in
                     Button {
-                        self.viewModel.process(action: .setLocale(locale.id))
-                        self.picked(locale.name)
+                        self.picked(locale)
                         self.presentationMode.wrappedValue.dismiss()
                     } label: {
                         SinglePickerRow(text: locale.name, isSelected: (self.viewModel.state.selected == locale.id))

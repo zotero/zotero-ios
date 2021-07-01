@@ -24,6 +24,7 @@ struct StoreStyleDbRequest: DbRequest {
         rStyle.updated = self.style.updated
         rStyle.filename = self.style.filename
         rStyle.installed = true
+        rStyle.supportsBibliography = self.style.supportsBibliography
 
         if let dependency = self.dependency {
             let (rDependency, existed) = self.style(for: dependency.identifier, database: database)
@@ -31,6 +32,7 @@ struct StoreStyleDbRequest: DbRequest {
             rDependency.filename = dependency.filename
             rDependency.href = dependency.href.absoluteString
             rDependency.title = dependency.title
+            rDependency.supportsBibliography = dependency.supportsBibliography
             if !existed {
                 rDependency.installed = false
             }

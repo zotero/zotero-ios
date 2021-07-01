@@ -39,6 +39,7 @@ struct SyncStylesDbRequest: DbResponseRequest {
             rStyle.title = style.title
             rStyle.updated = style.updated
             rStyle.filename = style.filename
+            rStyle.supportsBibliography = style.supportsBibliography
             update.append(style.identifier)
         }
 

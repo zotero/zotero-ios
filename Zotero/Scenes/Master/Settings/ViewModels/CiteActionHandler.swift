@@ -47,27 +47,35 @@ struct CiteActionHandler: ViewModelActionHandler {
         if (try? self.bundledDataStorage.createCoordinator().perform(request: InstallStyleDbRequest(identifier: remoteStyle.id))) ?? false { return }
 
         // If it doesn't, we need to download and process it.
-        let style = Style(identifier: remoteStyle.id, title: remoteStyle.title, updated: remoteStyle.updated, href: remoteStyle.href, filename: remoteStyle.name)
         let file = Files.style(filename: remoteStyle.name)
-        let request = FileRequest(data: .external(style.href), destination: file)
+        let request = FileRequest(data: .external(remoteStyle.href), destination: file)
 
         self.apiClient.download(request: request)
                       .subscribe(on: self.scheduler)
                       .observe(on: self.scheduler)
                       .subscribe(with: viewModel, onError: { viewModel, error in
+                          DDLogError("CitationStylesActionHandler: can't download style - \(error)")
                           self.update(viewModel: viewModel) { state in
-                              DDLogError("CitationStylesActionHandler: can't download style - \(error)")
-                              state.error = .addition(name: style.title, error: error)
+                              state.error = .addition(name: remoteStyle.title, error: error)
                           }
                       }, onCompleted: { viewModel in
-                          self.process(downloadedStyle: style, file: file, isDependent: remoteStyle.dependent, in: viewModel)
+                          if let (style, dependencyHref) = self.loadStyle(from: file) {
+                              self.process(style: style, dependencyHref: dependencyHref, in: viewModel)
+                          } else {
+                              DDLogError("CitationStylesActionHandler: can't parse downloaded style")
+                              self.update(viewModel: viewModel) { state in
+                                  state.error = .addition(name: remoteStyle.title, error: nil)
+                              }
+                              // Try removing unsuccessful download
+                              try? self.fileStorage.remove(file)
+                          }
                       })
                       .disposed(by: self.disposeBag)
     }
 
-    private func process(downloadedStyle: Style, file: File, isDependent: Bool, in viewModel: ViewModel<CiteActionHandler>) {
-        guard isDependent, let (_, dependencyHref) = self.loadStyle(from: file), let dependencyUrl = dependencyHref.flatMap({ URL(string: $0) }) else {
-            self._add(style: downloadedStyle, dependency: nil, in: viewModel)
+    private func process(style: Style, dependencyHref: String?, in viewModel: ViewModel<CiteActionHandler>) {
+        guard let dependencyUrl = dependencyHref.flatMap({ URL(string: $0) }) else {
+            self._add(style: style, dependency: nil, in: viewModel)
             return
         }
 
@@ -80,14 +88,14 @@ struct CiteActionHandler: ViewModelActionHandler {
                       .subscribe(with: viewModel, onError: { viewModel, error in
                           self.update(viewModel: viewModel) { state in
                               DDLogError("CitationStylesActionHandler: can't download style - \(error)")
-                              state.error = .addition(name: downloadedStyle.title, error: error)
+                              state.error = .addition(name: style.title, error: error)
                           }
                       }, onCompleted: { viewModel in
                           guard let (dependency, _) = self.loadStyle(from: file) else {
-                              self._add(style: downloadedStyle, dependency: nil, in: viewModel)
+                              self._add(style: style, dependency: nil, in: viewModel)
                               return
                           }
-                          self._add(style: downloadedStyle, dependency: dependency, in: viewModel)
+                          self._add(style: style, dependency: dependency, in: viewModel)
                       })
                       .disposed(by: self.disposeBag)
     }
@@ -145,10 +153,7 @@ struct CiteActionHandler: ViewModelActionHandler {
 
     private func loadStyles(in viewModel: ViewModel<CiteActionHandler>) {
         do {
-            let styles = try self.bundledDataStorage.createCoordinator().perform(request: ReadInstalledStylesDbRequest()).compactMap({ style -> Style? in
-                guard let href = URL(string: style.href) else { return nil }
-                return Style(identifier: style.identifier, title: style.title, updated: style.updated, href: href, filename: style.filename)
-            })
+            let styles = try self.bundledDataStorage.createCoordinator().perform(request: ReadInstalledStylesDbRequest()).compactMap(Style.init)
 
             self.update(viewModel: viewModel) { state in
                 state.styles = Array(styles)

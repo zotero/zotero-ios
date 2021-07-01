@@ -11,7 +11,7 @@ import UIKit
 import RxSwift
 
 class ContainerViewController: UIViewController {
-    private let rootViewController: UIViewController
+    let rootViewController: UIViewController
     private let disposeBag: DisposeBag
 
     private weak var containerHeight: NSLayoutConstraint?

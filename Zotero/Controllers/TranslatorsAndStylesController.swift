@@ -205,10 +205,7 @@ final class TranslatorsAndStylesController {
         guard type != .shareExtension else { return nil }
 
         do {
-            return try self.dbStorage.createCoordinator().perform(request: ReadStylesDbRequest()).compactMap({ style -> Style? in
-                guard let url = URL(string: style.href) else { return nil }
-                return Style(identifier: style.identifier, title: style.title, updated: style.updated, href: url, filename: style.filename)
-            })
+            return try self.dbStorage.createCoordinator().perform(request: ReadStylesDbRequest()).compactMap(Style.init)
         } catch let error {
             DDLogError("TranslatorsAndStylesController: can't read styles - \(error)")
             return nil

@@ -17,16 +17,16 @@ struct ExportSettingsView: View {
         Form {
             Section(header: Text(L10n.Settings.Export.quickCopy)) {
                 Button {
-                    self.coordinatorDelegate?.showStylePicker(picked: { styleTitle in
-                        self.viewModel.process(action: .updateStyle(styleTitle))
+                    self.coordinatorDelegate?.showStylePicker(picked: { style in
+                        self.viewModel.process(action: .updateStyle(style))
                     })
                 } label: {
                     SettingsListButtonRow(text: L10n.Settings.Export.defaultFormat, detailText: self.viewModel.state.selectedStyle)
                 }
 
                 Button {
-                    self.coordinatorDelegate?.showLocalePicker(picked: { title in
-                        self.viewModel.process(action: .updateLocale(title))
+                    self.coordinatorDelegate?.showLocalePicker(picked: { locale in
+                        self.viewModel.process(action: .updateLocale(locale))
                     })
                 } label: {
                     SettingsListButtonRow(text: L10n.Settings.Export.language, detailText: self.viewModel.state.selectedLanguage)

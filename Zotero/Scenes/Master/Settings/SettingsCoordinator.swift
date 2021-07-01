@@ -27,8 +27,8 @@ protocol CitationStyleSearchSettingsCoordinatorDelegate: AnyObject {
 }
 
 protocol ExportSettingsCoordinatorDelegate: AnyObject {
-    func showStylePicker(picked: @escaping (String) -> Void)
-    func showLocalePicker(picked: @escaping (String) -> Void)
+    func showStylePicker(picked: @escaping (Style) -> Void)
+    func showLocalePicker(picked: @escaping (ExportLocale) -> Void)
 }
 
 final class SettingsCoordinator: NSObject, Coordinator {
@@ -249,7 +249,7 @@ extension SettingsCoordinator: CitationStyleSearchSettingsCoordinatorDelegate {
 }
 
 extension SettingsCoordinator: ExportSettingsCoordinatorDelegate {
-    func showStylePicker(picked: @escaping (String) -> Void) {
+    func showStylePicker(picked: @escaping (Style) -> Void) {
         let handler = StylePickerActionHandler(dbStorage: self.controllers.bundledDataStorage)
         let state = StylePickerState(selected: Defaults.shared.quickCopyStyleId)
         let viewModel = ViewModel(initialState: state, handler: handler)
@@ -260,7 +260,7 @@ extension SettingsCoordinator: ExportSettingsCoordinatorDelegate {
         self.navigationController.pushViewController(controller, animated: true)
     }
 
-    func showLocalePicker(picked: @escaping (String) -> Void) {
+    func showLocalePicker(picked: @escaping (ExportLocale) -> Void) {
         let handler = ExportLocalePickerActionHandler(fileStorage: self.controllers.fileStorage)
         let state = ExportLocalePickerState(selected: Defaults.shared.quickCopyLocaleId)
         let viewModel = ViewModel(initialState: state, handler: handler)

@@ -34,6 +34,7 @@ struct CitationBibliographyExportState: ViewModelState {
 
     // Cite
     var localeId: String
+    var localeName: String
     var style: Style
     var mode: OutputMode
     var method: OutputMethod
@@ -43,8 +44,9 @@ struct CitationBibliographyExportState: ViewModelState {
     init(selectedStyle: Style, selectedLocaleId: String) {
         self.type = .cite
         self.localeId = selectedLocaleId
+        self.localeName = Locale.current.localizedString(forIdentifier: selectedLocaleId) ?? selectedLocaleId
         self.style = selectedStyle
-        self.mode = .bibliography
+        self.mode = style.supportsBibliography ? .bibliography : .citation
         self.method = .copy
     }
 

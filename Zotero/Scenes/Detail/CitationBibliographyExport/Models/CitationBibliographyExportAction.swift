@@ -12,4 +12,6 @@ enum CitationBibliographyExportAction {
     case setType(CitationBibliographyExportState.Kind)
     case setMode(CitationBibliographyExportState.OutputMode)
     case setMethod(CitationBibliographyExportState.OutputMethod)
+    case setStyle(Style)
+    case setLocale(id: String, name: String)
 }

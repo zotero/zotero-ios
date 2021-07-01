@@ -34,6 +34,20 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.type = type
             }
+
+        case .setStyle(let style):
+            self.update(viewModel: viewModel) { state in
+                state.style = style
+                if !state.style.supportsBibliography {
+                    state.mode = .citation
+                }
+            }
+
+        case .setLocale(let id, let name):
+            self.update(viewModel: viewModel) { state in
+                state.localeId = id
+                state.localeName = name
+            }
         }
     }
 }

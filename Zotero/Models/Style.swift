@@ -16,17 +16,19 @@ struct Style: Identifiable {
     let updated: Date
     let href: URL
     let filename: String
+    let supportsBibliography: Bool
 
     var id: String {
         return self.identifier
     }
 
-    init(identifier: String, title: String, updated: Date, href: URL, filename: String) {
+    init(identifier: String, title: String, updated: Date, href: URL, filename: String, supportsBibliography: Bool) {
         self.identifier = identifier
         self.title = title
         self.updated = updated
         self.href = href
         self.filename = filename
+        self.supportsBibliography = supportsBibliography
     }
 
     init?(rStyle: RStyle) {
@@ -39,5 +41,6 @@ struct Style: Identifiable {
         self.updated = rStyle.updated
         self.href = href
         self.filename = rStyle.filename
+        self.supportsBibliography = rStyle.supportsBibliography
     }
 }
