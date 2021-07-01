@@ -51,7 +51,9 @@ extension PlaceholderTextViewDelegate: UITextViewDelegate {
             UIMenuController.shared.menuItems = menuItems
         }
         if textView.text == self.placeholder {
-            textView.selectedRange = NSRange(location: 0, length: 0)
+            DispatchQueue.main.async {
+                textView.selectedTextRange = textView.textRange(from: textView.beginningOfDocument, to: textView.beginningOfDocument)
+            }
         }
     }
 
