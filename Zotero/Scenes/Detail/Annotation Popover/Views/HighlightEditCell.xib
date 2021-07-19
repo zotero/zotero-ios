@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="17506" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="18122" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17505"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="18093"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -19,21 +19,14 @@
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <view contentMode="scaleToFill" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="gf6-8w-ocC">
-                        <rect key="frame" x="16" y="10" width="3" height="20.5"/>
+                        <rect key="frame" x="16" y="10" width="3" height="201"/>
                         <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
                             <constraint firstAttribute="width" constant="3" id="Sa0-Jn-c1T"/>
                         </constraints>
                     </view>
-                    <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="CIb-5o-jcs">
-                        <rect key="frame" x="27" y="10" width="277" height="20.5"/>
-                        <color key="backgroundColor" systemColor="systemGray5Color"/>
-                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                        <color key="textColor" systemColor="systemRedColor"/>
-                        <nil key="highlightedColor"/>
-                    </label>
                     <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" scrollEnabled="NO" textAlignment="natural" translatesAutoresizingMaskIntoConstraints="NO" id="1e7-1a-Yjo">
-                        <rect key="frame" x="27" y="10" width="277" height="20.5"/>
+                        <rect key="frame" x="27" y="10" width="277" height="201"/>
                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <color key="textColor" systemColor="labelColor"/>
                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
@@ -41,22 +34,17 @@
                     </textView>
                 </subviews>
                 <constraints>
-                    <constraint firstItem="1e7-1a-Yjo" firstAttribute="top" secondItem="CIb-5o-jcs" secondAttribute="top" id="0m1-rQ-7mD"/>
-                    <constraint firstAttribute="bottom" secondItem="CIb-5o-jcs" secondAttribute="bottom" priority="999" constant="10" id="8XP-vq-mGn"/>
-                    <constraint firstAttribute="trailing" secondItem="CIb-5o-jcs" secondAttribute="trailing" constant="16" id="AfT-SB-5BX"/>
-                    <constraint firstItem="1e7-1a-Yjo" firstAttribute="bottom" secondItem="CIb-5o-jcs" secondAttribute="bottom" id="Bmv-Gz-0aI"/>
-                    <constraint firstItem="CIb-5o-jcs" firstAttribute="top" secondItem="gf6-8w-ocC" secondAttribute="top" id="CPE-LK-i0e"/>
-                    <constraint firstItem="CIb-5o-jcs" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="10" id="Gld-sw-DjQ"/>
-                    <constraint firstItem="CIb-5o-jcs" firstAttribute="bottom" secondItem="gf6-8w-ocC" secondAttribute="bottom" id="HSG-XY-Ijy"/>
+                    <constraint firstItem="1e7-1a-Yjo" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="10" id="5nX-PZ-xRA"/>
                     <constraint firstItem="1e7-1a-Yjo" firstAttribute="leading" secondItem="gf6-8w-ocC" secondAttribute="trailing" constant="8" id="SHJ-Ev-XJp"/>
+                    <constraint firstItem="1e7-1a-Yjo" firstAttribute="top" secondItem="gf6-8w-ocC" secondAttribute="top" id="Vmx-QY-NwH"/>
                     <constraint firstAttribute="trailing" secondItem="1e7-1a-Yjo" secondAttribute="trailing" constant="16" id="fba-Wu-6qV"/>
-                    <constraint firstItem="CIb-5o-jcs" firstAttribute="leading" secondItem="gf6-8w-ocC" secondAttribute="trailing" constant="8" id="tF3-dr-UBU"/>
+                    <constraint firstAttribute="bottom" secondItem="1e7-1a-Yjo" secondAttribute="bottom" constant="10" id="mFG-Ha-TCm"/>
+                    <constraint firstItem="1e7-1a-Yjo" firstAttribute="bottom" secondItem="gf6-8w-ocC" secondAttribute="bottom" id="y2T-e6-qk7"/>
                     <constraint firstItem="gf6-8w-ocC" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="16" id="z3N-0h-Ka7"/>
                 </constraints>
             </tableViewCellContentView>
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>
             <connections>
-                <outlet property="label" destination="CIb-5o-jcs" id="Kod-2m-bCJ"/>
                 <outlet property="lineView" destination="gf6-8w-ocC" id="g6G-JU-Uhi"/>
                 <outlet property="textView" destination="1e7-1a-Yjo" id="UG3-eF-5aM"/>
             </connections>
@@ -66,12 +54,6 @@
     <resources>
         <systemColor name="labelColor">
             <color white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-        </systemColor>
-        <systemColor name="systemGray5Color">
-            <color red="0.89803921568627454" green="0.89803921568627454" blue="0.91764705882352937" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </systemColor>
-        <systemColor name="systemRedColor">
-            <color red="1" green="0.23137254901960785" blue="0.18823529411764706" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

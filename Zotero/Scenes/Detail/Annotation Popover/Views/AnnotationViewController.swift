@@ -54,6 +54,7 @@ final class AnnotationViewController: UIViewController {
         super.viewDidLoad()
 
         self.setupViews()
+        self.view.layoutSubviews()
 
         self.viewModel.stateObservable
                       .observe(on: MainScheduler.instance)
@@ -65,7 +66,8 @@ final class AnnotationViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        self.navigationController?.setNavigationBarHidden(true, animated: true)
+
+        self.navigationController?.setNavigationBarHidden(true, animated: animated)
         self.updatePreferredContentSize()
     }
 
@@ -76,7 +78,8 @@ final class AnnotationViewController: UIViewController {
     // MARK: - Actions
 
     private func updatePreferredContentSize() {
-        guard let size = self.containerStackView?.systemLayoutSizeFitting(CGSize(width: AnnotationPopoverLayout.width, height: .greatestFiniteMagnitude), withHorizontalFittingPriority: .defaultHigh, verticalFittingPriority: .defaultLow) else { return }
+        guard var size = self.containerStackView?.systemLayoutSizeFitting(CGSize(width: AnnotationPopoverLayout.width, height: .greatestFiniteMagnitude)) else { return }
+        size.width = AnnotationPopoverLayout.width
         self.preferredContentSize = size
         self.navigationController?.preferredContentSize = size
     }

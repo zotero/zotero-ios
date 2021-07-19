@@ -138,7 +138,7 @@ final class AnnotationView: UIView {
             return
         }
 
-        let comment = attributedComment.flatMap({ AnnotationView.attributedString(from: $0, layout: self.layout) })
+        let comment = attributedComment.flatMap({ AnnotationView.attributedString(from: $0, layout: self.layout) }) ?? NSAttributedString()
         self.commentTextView.setup(text: comment)
 
         self.commentButton?.isHidden = true

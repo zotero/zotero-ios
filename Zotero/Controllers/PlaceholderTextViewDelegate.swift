@@ -11,8 +11,9 @@ import UIKit
 import RxSwift
 
 final class PlaceholderTextViewDelegate: NSObject {
-    private let placeholder: String
     private let menuItems: [UIMenuItem]?
+    private let placeholderLayer: CATextLayer
+    private let placeholder: String
 
     private var observer: AnyObserver<String>?
     var textObservable: Observable<String> {
@@ -22,26 +23,40 @@ final class PlaceholderTextViewDelegate: NSObject {
         }
     }
 
-    init(placeholder: String, menuItems: [UIMenuItem]?) {
-        self.placeholder = placeholder
+    init(placeholder: String, menuItems: [UIMenuItem]?, textView: UITextView) {
         self.menuItems = menuItems
+        self.placeholder = placeholder
+        self.placeholderLayer = CATextLayer()
+
         super.init()
+
+        self.setup(placeholder: placeholder, textView: textView)
     }
 
     func set(text: String, to textView: UITextView) {
-        if text.isEmpty {
-            self.setPlaceholder(to: textView)
-        } else {
-            textView.text = text
-            textView.textColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
-                return traitCollection.userInterfaceStyle == .dark ? .white : .darkText
-            })
-        }
+        self.placeholderLayer.isHidden = !text.isEmpty
+        textView.text = text
     }
 
-    private func setPlaceholder(to textView: UITextView) {
-        textView.text = self.placeholder
-        textView.textColor = .placeholderText
+    func set(text: NSAttributedString, to textView: UITextView) {
+        self.placeholderLayer.isHidden = !text.string.isEmpty
+        textView.attributedText = text
+    }
+
+    func layoutPlaceholder(in textView: UITextView) {
+        self.placeholderLayer.frame = textView.bounds
+    }
+
+    private func setup(placeholder: String, textView: UITextView) {
+        self.placeholderLayer.string = placeholder
+        self.placeholderLayer.font = textView.font
+        self.placeholderLayer.fontSize = textView.font?.pointSize ?? 0
+        self.placeholderLayer.foregroundColor = UIColor.placeholderText.cgColor
+        self.placeholderLayer.contentsScale = UIScreen.main.scale
+
+        textView.layer.addSublayer(self.placeholderLayer)
+
+        self.layoutPlaceholder(in: textView)
     }
 }
 
@@ -50,25 +65,15 @@ extension PlaceholderTextViewDelegate: UITextViewDelegate {
         if let menuItems = self.menuItems {
             UIMenuController.shared.menuItems = menuItems
         }
-        if textView.text == self.placeholder {
-            DispatchQueue.main.async {
-                textView.selectedTextRange = textView.textRange(from: textView.beginningOfDocument, to: textView.beginningOfDocument)
-            }
-        }
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {
-        if textView.text.isEmpty {
-            self.setPlaceholder(to: textView)
-        }
+        self.placeholderLayer.isHidden = !textView.text.isEmpty
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        if textView.text == self.placeholder {
-            textView.text = ""
-            textView.textColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
-                return traitCollection.userInterfaceStyle == .dark ? .white : .darkText
-            })
+        if textView.text.isEmpty && !text.isEmpty {
+            self.placeholderLayer.isHidden = true
         }
         return true
     }

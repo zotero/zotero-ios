@@ -12,22 +12,23 @@ import RxSwift
 
 final class HighlightEditCell: UITableViewCell {
     @IBOutlet private weak var lineView: UIView!
-    @IBOutlet private weak var label: UILabel!
     @IBOutlet private weak var textView: UITextView!
 
-    private var textViewDelegate: GrowingTextViewCellDelegate!
-    var textObservable: Observable<(NSAttributedString, Bool)> {
-        return self.textViewDelegate.textObservable
+    private var observer: AnyObserver<(String, Bool)>?
+    var textObservable: Observable<(String, Bool)> {
+        return Observable.create { observer -> Disposable in
+            self.observer = observer
+            return Disposables.create()
+        }
     }
 
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        self.textViewDelegate = GrowingTextViewCellDelegate(label: self.label, placeholder: nil, menuItems: nil)
-
         self.textView.textContainerInset = UIEdgeInsets()
         self.textView.textContainer.lineFragmentPadding = 0
-        self.textView.delegate = self.textViewDelegate
+        self.textView.delegate = self
+        self.textView.isScrollEnabled = false
     }
 
     func setup(with text: String, color: String) {
@@ -39,7 +40,14 @@ final class HighlightEditCell: UITableViewCell {
                                                                            .paragraphStyle: paragraphStyle])
 
         self.lineView.backgroundColor = UIColor(hex: color)
-        self.label.attributedText = attributedText
         self.textView.attributedText = attributedText
+    }
+}
+
+extension HighlightEditCell: UITextViewDelegate {
+    func textViewDidChange(_ textView: UITextView) {
+        let height = textView.contentSize.height
+        textView.sizeToFit()
+        self.observer?.on(.next((textView.text, (height != textView.contentSize.height))))
     }
 }

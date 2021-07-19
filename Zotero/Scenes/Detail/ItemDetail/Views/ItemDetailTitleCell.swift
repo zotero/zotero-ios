@@ -18,7 +18,7 @@ final class ItemDetailTitleCell: RxTableViewCell {
     @IBOutlet private weak var separatorHeight: NSLayoutConstraint!
 
     private lazy var delegate: PlaceholderTextViewDelegate = {
-        PlaceholderTextViewDelegate(placeholder: L10n.ItemDetail.untitled, menuItems: nil)
+        PlaceholderTextViewDelegate(placeholder: L10n.ItemDetail.untitled, menuItems: nil, textView: self.textView)
     }()
     var textObservable: Observable<String> {
         return self.delegate.textObservable
@@ -37,6 +37,11 @@ final class ItemDetailTitleCell: RxTableViewCell {
         let font = self.textView.font!
         self.topConstraint.constant = font.capHeight - font.ascender
         self.bottomConstraint.constant = -font.descender
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        self.delegate.layoutPlaceholder(in: self.textView)
     }
 
     func setup(with title: String, isEditing: Bool) {

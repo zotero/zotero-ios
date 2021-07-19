@@ -216,7 +216,7 @@ extension AnnotationEditViewController: UITableViewDataSource {
                 cell.setup(with: (self.viewModel.state.annotation.text ?? ""), color: self.viewModel.state.annotation.color)
                 cell.textObservable
                     .subscribe(onNext: { [weak self] text, needsHeightReload in
-                        self?.viewModel.process(action: .setHighlight(text.string))
+                        self?.viewModel.process(action: .setHighlight(text))
 
                         if needsHeightReload {
                             self?.updatePreferredContentSize()

@@ -11,38 +11,43 @@ import UIKit
 import RxSwift
 
 final class AnnotationViewTextView: UIView {
-    private weak var label: UILabel!
     private weak var textView: AnnotationTextView!
 
     private let layout: AnnotationViewLayout
-    private let placeholder: NSAttributedString
+    private let placeholder: String
 
-    private var textViewDelegate: GrowingTextViewCellDelegate!
+    private var textViewDelegate: PlaceholderTextViewDelegate!
     var textObservable: Observable<(NSAttributedString, Bool)> {
-        return self.textViewDelegate.textObservable
+        return self.textViewDelegate.textObservable.flatMap { _ -> Observable<(NSAttributedString, Bool)> in
+            let height = self.textView.contentSize.height
+            self.textView.sizeToFit()
+            return Observable.just((self.textView.attributedText, (height != self.textView.contentSize.height)))
+        }
     }
 
     // MARK: - Lifecycle
 
     init(layout: AnnotationViewLayout, placeholder: String) {
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.minimumLineHeight = layout.lineHeight
-        paragraphStyle.maximumLineHeight = layout.lineHeight
-        let attributedPlaceholder = NSAttributedString(string: placeholder, attributes: [.font: layout.font, .paragraphStyle: paragraphStyle])
-
         self.layout = layout
-        self.placeholder = attributedPlaceholder
+        self.placeholder = placeholder
 
         super.init(frame: CGRect())
 
         self.translatesAutoresizingMaskIntoConstraints = false
         self.backgroundColor = layout.backgroundColor
+
         self.setupView()
         self.setupTextViewDelegate()
+        self.textView.sizeToFit()
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        self.textViewDelegate.layoutPlaceholder(in: self.textView)
     }
 
     // MARK: - Actions
@@ -58,59 +63,36 @@ final class AnnotationViewTextView: UIView {
 
     // MARK: - Setups
 
-    func setup(text: NSAttributedString?) {
-        if let text = text, !text.string.isEmpty {
-            self.textView.attributedText = text
-            self.textView.textColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
-                return traitCollection.userInterfaceStyle == .dark ? .white : .darkText
-            })
-            self.label.attributedText = text
-        } else {
-            self.textView.attributedText = self.placeholder
-            self.textView.textColor = .placeholderText
-            self.label.attributedText = self.placeholder
-        }
+    func setup(text: NSAttributedString) {
+        self.textViewDelegate.set(text: text, to: self.textView)
     }
 
     private func setupView() {
-        let label = UILabel()
-        label.font = self.layout.font
-        label.numberOfLines = 0
-        label.setContentHuggingPriority(.defaultHigh, for: .vertical)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.isHidden = true
-
         let textView = AnnotationTextView(defaultFont: self.layout.font)
         textView.textContainerInset = UIEdgeInsets()
         textView.textContainer.lineFragmentPadding = 0
-        textView.attributedText = self.placeholder
-        textView.textColor = .placeholderText
         textView.isScrollEnabled = false
         textView.translatesAutoresizingMaskIntoConstraints = false
+        textView.font = self.layout.font
 
         self.addSubview(textView)
-        self.addSubview(label)
 
         let topFontOffset = self.layout.font.ascender - self.layout.font.xHeight
+        let bottomFontOffset = self.layout.font.descender
 
         if let minHeight = self.layout.commentMinHeight {
-            label.heightAnchor.constraint(greaterThanOrEqualToConstant: minHeight).isActive = true
+            textView.heightAnchor.constraint(greaterThanOrEqualToConstant: minHeight).isActive = true
         }
 
         NSLayoutConstraint.activate([
             // Horizontal
-            label.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: self.layout.horizontalInset),
-            self.trailingAnchor.constraint(equalTo: label.trailingAnchor, constant: self.layout.horizontalInset),
-            textView.leadingAnchor.constraint(equalTo: label.leadingAnchor),
-            textView.trailingAnchor.constraint(equalTo: label.trailingAnchor),
+            textView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: self.layout.horizontalInset),
+            self.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: self.layout.horizontalInset),
             // Vertical
-            label.topAnchor.constraint(equalTo: self.topAnchor, constant: self.layout.verticalSpacerHeight - topFontOffset),
-            self.bottomAnchor.constraint(equalTo: label.lastBaselineAnchor, constant: self.layout.verticalSpacerHeight),
-            textView.topAnchor.constraint(equalTo: label.topAnchor),
-            textView.bottomAnchor.constraint(equalTo: label.bottomAnchor)
+            textView.topAnchor.constraint(equalTo: self.topAnchor, constant: self.layout.verticalSpacerHeight - topFontOffset),
+            self.bottomAnchor.constraint(equalTo: textView.bottomAnchor, constant: self.layout.verticalSpacerHeight - bottomFontOffset)
         ])
 
-        self.label = label
         self.textView = textView
     }
 
@@ -120,7 +102,7 @@ final class AnnotationViewTextView: UIView {
         let superscript = UIMenuItem(title: "Superscript", action: #selector(AnnotationTextView.toggleSuperscript))
         let `subscript` = UIMenuItem(title: "Subscript", action: #selector(AnnotationTextView.toggleSubscript))
         let items = [bold, italics, superscript, `subscript`]
-        let delegate = GrowingTextViewCellDelegate(label: self.label, placeholder: self.placeholder, menuItems: items)
+        let delegate = PlaceholderTextViewDelegate(placeholder: self.placeholder, menuItems: items, textView: self.textView)
         self.textView.delegate = delegate
         self.textViewDelegate = delegate
     }
