@@ -24,6 +24,9 @@ final class AnnotationViewTextView: UIView {
             return Observable.just((self.textView.attributedText, (height != self.textView.contentSize.height)))
         }
     }
+    var didBecomeActive: Observable<()> {
+        return self.textViewDelegate.didBecomeActive
+    }
 
     // MARK: - Lifecycle
 
@@ -61,6 +64,10 @@ final class AnnotationViewTextView: UIView {
         return self.textView.resignFirstResponder()
     }
 
+    func set(placeholderColor: UIColor) {
+        self.textViewDelegate.set(placeholderColor: placeholderColor)
+    }
+
     // MARK: - Setups
 
     func setup(text: NSAttributedString) {
@@ -90,7 +97,7 @@ final class AnnotationViewTextView: UIView {
             self.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: self.layout.horizontalInset),
             // Vertical
             textView.topAnchor.constraint(equalTo: self.topAnchor, constant: self.layout.verticalSpacerHeight - topFontOffset),
-            self.bottomAnchor.constraint(equalTo: textView.bottomAnchor, constant: self.layout.verticalSpacerHeight - bottomFontOffset)
+            self.bottomAnchor.constraint(equalTo: textView.bottomAnchor, constant: self.layout.verticalSpacerHeight + bottomFontOffset)
         ])
 
         self.textView = textView

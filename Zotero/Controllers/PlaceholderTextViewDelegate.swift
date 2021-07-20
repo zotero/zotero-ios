@@ -15,10 +15,17 @@ final class PlaceholderTextViewDelegate: NSObject {
     private let placeholderLayer: CATextLayer
     private let placeholder: String
 
-    private var observer: AnyObserver<String>?
+    private var textObserver: AnyObserver<String>?
     var textObservable: Observable<String> {
         return Observable.create { observer -> Disposable in
-            self.observer = observer
+            self.textObserver = observer
+            return Disposables.create()
+        }
+    }
+    private var didBecomeActiveObserver: AnyObserver<()>?
+    var didBecomeActive: Observable<()> {
+        return Observable.create { observer -> Disposable in
+            self.didBecomeActiveObserver = observer
             return Disposables.create()
         }
     }
@@ -43,8 +50,15 @@ final class PlaceholderTextViewDelegate: NSObject {
         textView.attributedText = text
     }
 
+    func set(placeholderColor: UIColor) {
+        self.placeholderLayer.foregroundColor = placeholderColor.cgColor
+    }
+
     func layoutPlaceholder(in textView: UITextView) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
         self.placeholderLayer.frame = textView.bounds
+        CATransaction.commit()
     }
 
     private func setup(placeholder: String, textView: UITextView) {
@@ -65,6 +79,8 @@ extension PlaceholderTextViewDelegate: UITextViewDelegate {
         if let menuItems = self.menuItems {
             UIMenuController.shared.menuItems = menuItems
         }
+        self.placeholderLayer.foregroundColor = UIColor.placeholderText.cgColor
+        self.didBecomeActiveObserver?.on(.next(()))
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {
@@ -79,6 +95,6 @@ extension PlaceholderTextViewDelegate: UITextViewDelegate {
     }
 
     func textViewDidChange(_ textView: UITextView) {
-        self.observer?.on(.next(textView.text))
+        self.textObserver?.on(.next(textView.text))
     }
 }

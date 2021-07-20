@@ -106,6 +106,11 @@ final class AnnotationsViewController: UIViewController {
 
         case .setComment(let comment):
             self.viewModel.process(action: .setComment(key: annotation.key, comment: comment))
+            // Since comment is already written in the UITextView, we don't want to reload the cell and therefore the diffable data source is not updated on update of view model. So data source
+            // needs to be updated manually so that we keep data consistency.
+            if let indexPath = self.dataSource.snapshot.indexPath(where: { $0.key == annotation.key }), let updatedAnnotation = self.viewModel.state.annotations[indexPath.section]?[indexPath.row] {
+                self.dataSource.update(object: updatedAnnotation, at: indexPath, withReload: false)
+            }
 
         case .reloadHeight:
             self.updateCellHeight()

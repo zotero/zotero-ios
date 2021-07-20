@@ -31,7 +31,6 @@ final class AnnotationView: UIView {
     private var topSeparator: UIView!
     private var highlightContent: AnnotationViewHighlightContent?
     private var imageContent: AnnotationViewImageContent?
-    private var commentButton: AnnotationViewButton?
     private var commentTextView: AnnotationViewTextView!
     private var bottomSeparator: UIView!
     private var tagsButton: AnnotationViewButton!
@@ -91,7 +90,7 @@ final class AnnotationView: UIView {
         self.setupTags(for: annotation, canEdit: canEdit)
         self.setupObserving()
 
-        let commentButtonIsHidden = self.commentButton?.isHidden ?? true
+        let commentButtonIsHidden = !self.layout.showsContent || !canEdit || commentActive || !annotation.comment.isEmpty
         let highlightContentIsHidden = self.highlightContent?.isHidden ?? true
         let imageContentIsHidden = self.imageContent?.isHidden ?? true
 
@@ -133,16 +132,16 @@ final class AnnotationView: UIView {
 
     private func setupComments(for annotation: Annotation, attributedComment: NSAttributedString?, isActive: Bool, canEdit: Bool) {
         guard isActive || !annotation.comment.isEmpty else {
-            self.commentButton?.isHidden = !canEdit
-            self.commentTextView.isHidden = true
+            self.commentTextView.isHidden = !self.layout.showsContent || !canEdit
+            self.commentTextView.set(placeholderColor: Asset.Colors.zoteroBlue.color)
             return
         }
 
         let comment = attributedComment.flatMap({ AnnotationView.attributedString(from: $0, layout: self.layout) }) ?? NSAttributedString()
         self.commentTextView.setup(text: comment)
 
-        self.commentButton?.isHidden = true
         self.commentTextView.isHidden = false
+        self.commentTextView.set(placeholderColor: .placeholderText)
         self.commentTextView.isUserInteractionEnabled = canEdit
         if canEdit && isActive {
             self.commentTextView.becomeFirstResponder()
@@ -166,7 +165,7 @@ final class AnnotationView: UIView {
     private func setupObserving() {
         self.disposeBag = DisposeBag()
 
-        self.commentButton?.rx.tap.subscribe(onNext: { [weak self] _ in
+        self.commentTextView.didBecomeActive.subscribe(onNext: { [weak self] _ in
             self?.actionPublisher.on(.next(.setCommentActive(true)))
         })
         .disposed(by: self.disposeBag)
@@ -200,8 +199,6 @@ final class AnnotationView: UIView {
         if self.layout.showsContent {
             self.highlightContent = AnnotationViewHighlightContent(layout: self.layout)
             self.imageContent = AnnotationViewImageContent(layout: self.layout)
-            self.commentButton = AnnotationViewButton(layout: self.layout)
-            self.commentButton?.setTitle(L10n.Pdf.AnnotationsSidebar.addComment, for: .normal)
         }
 
         let view = self.layout.scrollableBody ? self.createScrollableBodyView() : self.createStaticBodyView()
@@ -223,9 +220,6 @@ final class AnnotationView: UIView {
             }
             if let imageContent = self.imageContent {
                 views.append(imageContent)
-            }
-            if let commentButton = self.commentButton {
-                views.append(commentButton)
             }
         }
         views.append(contentsOf: [self.commentTextView, self.bottomSeparator, self.tagsButton, self.tags])

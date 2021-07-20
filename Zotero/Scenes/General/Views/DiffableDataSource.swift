@@ -146,7 +146,7 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
         self.snapshot.objects[section] = objects
     }
 
-    func update(object: Object, at indexPath: IndexPath) {
+    func update(object: Object, at indexPath: IndexPath, withReload: Bool = true) {
         guard indexPath.section < self.snapshot.sections.count else { return }
         let section = self.snapshot.sections[indexPath.section]
         guard var objects = self.snapshot.objects[section], indexPath.row < objects.count else { return }
@@ -154,7 +154,7 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
         objects[indexPath.row] = object
         self.snapshot.objects[section] = objects
 
-        guard let cell = self.tableView?.cellForRow(at: indexPath) else { return }
+        guard withReload, let cell = self.tableView?.cellForRow(at: indexPath) else { return }
         self.setupAction(cell, indexPath, section, object)
     }
 
