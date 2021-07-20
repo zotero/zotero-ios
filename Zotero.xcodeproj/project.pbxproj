@@ -662,6 +662,7 @@
 		B38D3CCA24A1F420005289EF /* CrashReporter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B38D3CC924A1F420005289EF /* CrashReporter.framework */; };
 		B3902DE62480DBB7007EE48E /* DateParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC25CC247E6BA000AC27B5 /* DateParser.swift */; };
 		B3902DE72480DBC1007EE48E /* ComponentDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32A3C77247FB62B009E2C5D /* ComponentDate.swift */; };
+		B394A0E226A709A900CA307F /* NoteEditorTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B394A0E126A709A900CA307F /* NoteEditorTitleView.swift */; };
 		B395EFE325494B1B00CEBD9F /* CreatorEditAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B395EFE225494B1B00CEBD9F /* CreatorEditAction.swift */; };
 		B395EFE725494B2300CEBD9F /* CreatorEditState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B395EFE625494B2300CEBD9F /* CreatorEditState.swift */; };
 		B395EFEB25494B3200CEBD9F /* CreatorEditActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B395EFEA25494B3200CEBD9F /* CreatorEditActionHandler.swift */; };
@@ -1325,6 +1326,7 @@
 		B3886C46249234D600B7D67B /* AttachmentDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentDownloader.swift; sourceTree = "<group>"; };
 		B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeysResponseProcessor.swift; sourceTree = "<group>"; };
 		B38D3CC924A1F420005289EF /* CrashReporter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CrashReporter.framework; sourceTree = "<group>"; };
+		B394A0E126A709A900CA307F /* NoteEditorTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorTitleView.swift; sourceTree = "<group>"; };
 		B395EFE225494B1B00CEBD9F /* CreatorEditAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorEditAction.swift; sourceTree = "<group>"; };
 		B395EFE625494B2300CEBD9F /* CreatorEditState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorEditState.swift; sourceTree = "<group>"; };
 		B395EFEA25494B3200CEBD9F /* CreatorEditActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorEditActionHandler.swift; sourceTree = "<group>"; };
@@ -2712,6 +2714,7 @@
 				B3DDDAAB24CAD6810014DF99 /* InsetLabel.swift */,
 				B3F0C3FF250A1DD7002D557A /* LibraryRow.swift */,
 				B361820C24C9B9D900B30D56 /* NoRotationHostingController.swift */,
+				B394A0E126A709A900CA307F /* NoteEditorTitleView.swift */,
 				B3DCDF02240912060039ED0D /* NoteEditorViewController.swift */,
 				B37C5B6E26454130009A37E5 /* NoteEditorViewController.xib */,
 				B32DE61E26320271000287EC /* PopoverNavigationViewController.swift */,
@@ -3245,6 +3248,7 @@
 				B37BF0AB25A5E2AD00AE0268 /* SquareAnnotation.swift in Sources */,
 				B361820024C9A7C000B30D56 /* LoginAction.swift in Sources */,
 				B305660523FC051E003304F2 /* DeletionsRequest.swift in Sources */,
+				B394A0E226A709A900CA307F /* NoteEditorTitleView.swift in Sources */,
 				B305667523FC051F003304F2 /* String+Extensions.swift in Sources */,
 				B36181FC24C9A7C000B30D56 /* LoginActionHandler.swift in Sources */,
 				B30565CE23FC051E003304F2 /* StoreGroupDbRequest.swift in Sources */,

@@ -114,7 +114,9 @@ final class ItemDetailViewController: UIViewController {
         case .openNoteEditor(let note):
             let library = self.viewModel.state.library
             let key = note?.key ?? KeyGenerator.newKey
-            self.coordinatorDelegate?.showNote(with: (note?.text ?? ""), tags: (note?.tags ?? []), libraryId: library.identifier, readOnly: !library.metadataEditable, save: { [weak self] text, tags in
+            let title = NoteEditorState.TitleData(type: self.viewModel.state.data.type, title: self.viewModel.state.data.title)
+            self.coordinatorDelegate?.showNote(with: (note?.text ?? ""), tags: (note?.tags ?? []), title: title,
+                                               libraryId: library.identifier, readOnly: !library.metadataEditable, save: { [weak self] text, tags in
                 self?.viewModel.process(action: .saveNote(key: key, text: text, tags: tags))
             })
 

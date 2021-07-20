@@ -268,7 +268,7 @@ final class ItemsViewController: UIViewController {
             guard let note = Note(item: item) else { return }
             let tags = Array(item.tags.map({ Tag(tag: $0) }))
             let library = self.viewModel.state.library
-            self.coordinatorDelegate?.showNote(with: note.text, tags: tags, libraryId: library.identifier, readOnly: !library.metadataEditable, save: { [weak self] newText, newTags in
+            self.coordinatorDelegate?.showNote(with: note.text, tags: tags, title: nil, libraryId: library.identifier, readOnly: !library.metadataEditable, save: { [weak self] newText, newTags in
                 self?.viewModel.process(action: .saveNote(note.key, newText, newTags))
             })
 

@@ -31,7 +31,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showCollectionPicker(in library: Library, completed: @escaping (Set<String>) -> Void)
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library)
     func showAttachmentError(_ error: Error, retryAction: @escaping () -> Void)
-    func showNote(with text: String, tags: [Tag], libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
+    func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showWeb(url: URL)
@@ -42,7 +42,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
 }
 
 protocol DetailItemDetailCoordinatorDelegate: AnyObject {
-    func showNote(with text: String, tags: [Tag], libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
+    func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
     func showAttachmentPicker(save: @escaping ([URL]) -> Void)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func showTypePicker(selected: String, picked: @escaping (String) -> Void)
@@ -90,7 +90,7 @@ protocol DetailAnnotationsCoordinatorDelegate: AnyObject {
 
 protocol DetailItemActionSheetCoordinatorDelegate: AnyObject {
     func showSortTypePicker(sortBy: Binding<ItemsSortType.Field>)
-    func showNoteCreation(libraryId: LibraryIdentifier, save: @escaping (String, [Tag]) -> Void)
+    func showNoteCreation(title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, save: @escaping (String, [Tag]) -> Void)
     func showAttachmentPicker(save: @escaping ([URL]) -> Void)
     func showItemCreation(library: Library, collectionKey: String?)
 }
@@ -341,7 +341,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         controller.addAction(UIAlertAction(title: L10n.Items.newNote, style: .default, handler: { [weak self, weak viewModel] _ in
             guard let `self` = self, let viewModel = viewModel else { return }
             let key = KeyGenerator.newKey
-            self.showNoteCreation(libraryId: viewModel.state.library.identifier, save: { [weak viewModel] text, tags in
+            self.showNoteCreation(title: nil, libraryId: viewModel.state.library.identifier, save: { [weak viewModel] text, tags in
                 viewModel?.process(action: .saveNote(key, text, tags))
             })
         }))
@@ -383,8 +383,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
                 "\(L10n.Items.sortOrder): \(sortOrderTitle)")
     }
 
-    func showNote(with text: String, tags: [Tag], libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void) {
-        let state = NoteEditorState(text: text, tags: tags, libraryId: libraryId, readOnly: readOnly)
+    func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void) {
+        let state = NoteEditorState(title: title, text: text, tags: tags, libraryId: libraryId, readOnly: readOnly)
         let handler = NoteEditorActionHandler(saveAction: save)
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = NoteEditorViewController(viewModel: viewModel)
@@ -489,8 +489,8 @@ extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
         self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
-    func showNoteCreation(libraryId: LibraryIdentifier, save: @escaping (String, [Tag]) -> Void) {
-        self.showNote(with: "", tags: [], libraryId: libraryId, readOnly: false, save: save)
+    func showNoteCreation(title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, save: @escaping (String, [Tag]) -> Void) {
+        self.showNote(with: "", tags: [], title: title, libraryId: libraryId, readOnly: false, save: save)
     }
 
     func showAttachmentPicker(save: @escaping ([URL]) -> Void) {

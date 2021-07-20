@@ -45,6 +45,10 @@ final class NoteEditorViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        if let data = self.viewModel.state.title {
+            self.navigationItem.titleView = NoteEditorTitleView(type: data.type, title: data.title)
+        }
+
         self.view.backgroundColor = .systemBackground
         self.setupNavbarItems()
         self.setupWebView()

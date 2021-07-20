@@ -18,15 +18,23 @@ struct NoteEditorState: ViewModelState {
         static let save = Changes(rawValue: 1 << 1)
     }
 
-    var text: String
-    var tags: [Tag]
+    struct TitleData {
+        let type: String
+        let title: String
+    }
+
+    let title: TitleData?
     let libraryId: LibraryIdentifier
     let readOnly: Bool
+
+    var text: String
+    var tags: [Tag]
     var changes: Changes
 
-    init(text: String, tags: [Tag], libraryId: LibraryIdentifier, readOnly: Bool) {
+    init(title: TitleData?, text: String, tags: [Tag], libraryId: LibraryIdentifier, readOnly: Bool) {
         self.text = text
         self.tags = tags
+        self.title = title
         self.libraryId = libraryId
         self.readOnly = readOnly
         self.changes = []
