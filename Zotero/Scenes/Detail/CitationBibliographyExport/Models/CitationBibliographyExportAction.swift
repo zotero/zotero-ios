@@ -14,4 +14,5 @@ enum CitationBibliographyExportAction {
     case setMethod(CitationBibliographyExportState.OutputMethod)
     case setStyle(Style)
     case setLocale(id: String, name: String)
+    case process
 }

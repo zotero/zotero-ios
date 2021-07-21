@@ -9,6 +9,18 @@
 import Foundation
 
 struct CitationBibliographyExportState: ViewModelState {
+    struct Changes: OptionSet {
+        typealias RawValue = UInt8
+
+        let rawValue: UInt8
+
+        static let finished = Changes(rawValue: 1 << 0)
+    }
+
+    enum Error: Swift.Error {
+        case cantCreateData
+    }
+
     enum Kind: Int {
         case cite
         case export
@@ -31,6 +43,10 @@ struct CitationBibliographyExportState: ViewModelState {
     static let methods: [OutputMethod] = [.html, .copy]
 
     var type: Kind
+    var isLoading: Bool
+    var changes: Changes
+    var error: Swift.Error?
+    var outputFile: File?
 
     // Cite
     var localeId: String
@@ -48,7 +64,12 @@ struct CitationBibliographyExportState: ViewModelState {
         self.style = selectedStyle
         self.mode = style.supportsBibliography ? .bibliography : .citation
         self.method = .copy
+        self.isLoading = false
+        self.changes = []
     }
 
-    func cleanup() {}
+    mutating func cleanup() {
+        self.error = nil
+        self.changes = []
+    }
 }

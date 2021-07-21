@@ -11,6 +11,7 @@ import UIKit
 import CocoaLumberjackSwift
 import RealmSwift
 import RxSwift
+import WebKit
 
 final class ItemsViewController: UIViewController {
     private enum SearchBarPosition {
@@ -39,6 +40,7 @@ final class ItemsViewController: UIViewController {
     private var resultsToken: NotificationToken?
     private weak var searchBarContainer: SearchBarContainer?
     private var searchBarNeedsReset = false
+    private weak var webView: WKWebView?
 
     private weak var coordinatorDelegate: DetailItemsCoordinatorDelegate?
 
@@ -150,6 +152,11 @@ final class ItemsViewController: UIViewController {
     // MARK: - UI state
 
     private func update(state: ItemsState) {
+        if state.changes.contains(.webViewCleanup) {
+            self.webView?.removeFromSuperview()
+            self.webView = nil
+        }
+
         if state.changes.contains(.results),
            let results = state.results {
             self.startObserving(results: results)
@@ -566,7 +573,11 @@ extension ItemsViewController: ItemsTableViewHandlerDelegate {
             self.coordinatorDelegate?.showCitation(for: item)
 
         case .copyBibliography:
-            self.viewModel.process(action: .quickCopyBibliography(item, self))
+            let webView = WKWebView()
+            webView.isHidden = true
+            self.view.insertSubview(webView, at: 0)
+            self.viewModel.process(action: .quickCopyBibliography(item, webView))
+            self.webView = webView
 
         case .addToCollection, .createParent, .delete, .duplicate, .filter, .removeFromCollection, .restore, .sort, .trash, .share:
             self.process(action: action, for: [item.key], button: nil)

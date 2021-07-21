@@ -134,13 +134,18 @@ struct ItemsActionHandler: ViewModelActionHandler {
         case .filter(let filters):
             self.filter(with: filters, in: viewModel)
 
-        case .quickCopyBibliography(let item, let controller):
-            self.citationController.bibliography(for: item, styleId: Defaults.shared.quickCopyStyleId, localeId: Defaults.shared.quickCopyLocaleId, format: .html, in: controller)
-                                   .subscribe(onSuccess: { citation in
+        case .quickCopyBibliography(let item, let webView):
+            self.citationController.bibliography(for: item, styleId: Defaults.shared.quickCopyStyleId, localeId: Defaults.shared.quickCopyLocaleId, format: .html, in: webView)
+                                   .subscribe(with: viewModel, onSuccess: { viewModel, citation in
                                        UIPasteboard.general.string = citation
-                                    // TODO: - show something
-                                   }, onFailure: { error in
-                                    // TODO: Show something
+                                       self.update(viewModel: viewModel) { state in
+                                           state.changes = .webViewCleanup
+                                       }
+                                   }, onFailure: { viewModel, error in
+                                       // TODO: Show something
+                                       self.update(viewModel: viewModel) { state in
+                                           state.changes = .webViewCleanup
+                                       }
                                    })
                                    .disposed(by: self.disposeBag)
         }

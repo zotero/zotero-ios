@@ -44,7 +44,7 @@ class CitationController: NSObject {
     private var localeId: String?
     private var localeXml: String?
 
-    private var webDidLoad: ((SingleEvent<WKWebView>) -> Void)?
+    private var webDidLoad: ((SingleEvent<()>) -> Void)?
     private var webViewResponse: ((SingleEvent<String>) -> Void)?
 
     init(stylesController: TranslatorsAndStylesController, fileStorage: FileStorage, dbStorage: DbStorage) {
@@ -62,6 +62,11 @@ class CitationController: NSObject {
     /// - parameter localeId: Id of locale to use for citation generation.
     /// - returns: Single which is called when webView is fully loaded.
     func prepareForCitation(styleId: String, localeId: String, in webView: WKWebView) -> Single<()> {
+        webView.navigationDelegate = self
+        JSHandlers.allCases.forEach { handler in
+            webView.configuration.userContentController.add(self, name: handler.rawValue)
+        }
+
         return self.loadStyleFilename(for: styleId)
                     .subscribe(on: self.backgroundScheduler)
                     .observe(on: self.backgroundScheduler)
@@ -77,10 +82,6 @@ class CitationController: NSObject {
                         return self.loadIndexHtml()
                     })
                     .observe(on: MainScheduler.instance)
-                    .flatMap({ [weak webView] html, url -> Single<(String, URL)> in
-                        guard let webView = webView else { return Single.error(Error.deinitialized) }
-                        return self.setup(webView: webView).flatMap({ Single.just((html, url)) })
-                    })
                     .flatMap({ [weak webView] html, url -> Single<()> in
                          guard let webView = webView else { return Single.error(Error.deinitialized) }
                          return self.load(html: html, baseUrl: url, in: webView).flatMap({ _ in Single.just(()) })
@@ -112,9 +113,14 @@ class CitationController: NSObject {
     /// - parameter styleId: Id of style to use for bibliography generation.
     /// - parameter localeId: Id of locale to use for bibliography generation.
     /// - parameter format: Bibliography format to use for generation.
-    /// - parameter viewController: View controller in which webView will be embedded.
+    /// - parameter webView: WebView which will run the javascript.
     /// - returns: Single which returns bibliography.
-    func bibliography(for item: RItem, styleId: String, localeId: String, format: Format, in viewController: UIViewController) -> Single<String> {
+    func bibliography(for item: RItem, styleId: String, localeId: String, format: Format, in webView: WKWebView) -> Single<String> {
+        webView.navigationDelegate = self
+        JSHandlers.allCases.forEach { handler in
+            webView.configuration.userContentController.add(self, name: handler.rawValue)
+        }
+
         return self.loadStyleFilename(for: styleId)
                    .subscribe(on: self.backgroundScheduler)
                    .observe(on: self.backgroundScheduler)
@@ -125,24 +131,12 @@ class CitationController: NSObject {
                        return self.loadIndexHtml().flatMap({ Single.just((style, locale, $0, $1)) })
                    })
                   .observe(on: MainScheduler.instance)
-                  .flatMap({ [weak viewController] style, locale, html, url -> Single<(String, String, WKWebView, String, URL)> in
-                      guard let viewController = viewController else { return Single.error(Error.deinitialized) }
-                      return self.createWebView(in: viewController).flatMap({ Single.just((style, locale, $0, html, url)) })
+                  .flatMap({ [weak webView] style, locale, html, url -> Single<(String, String)> in
+                      guard let webView = webView else { return Single.error(Error.deinitialized) }
+                      return self.load(html: html, baseUrl: url, in: webView).flatMap({ Single.just((style, locale)) })
                   })
-                  .flatMap({ style, locale, webView, html, url -> Single<(String, String, WKWebView, String, URL)> in
-                      return self.setup(webView: webView).flatMap({ Single.just((style, locale, webView, html, url)) })
-                  })
-                  .flatMap({ style, locale, webView, html, url -> Single<(String, String, WKWebView)> in
-                       return self.load(html: html, baseUrl: url, in: webView).flatMap({ Single.just((style, locale, $0)) })
-                  })
-                  .do(onSuccess: { [weak self] _ in
-                      self?.removeWebView()
-                  }, onError: { [weak self] _ in
-                      self?.removeWebView()
-                  }, onDispose: { [weak self] in
-                      self?.removeWebView()
-                  })
-                  .flatMap({ style, locale, webView in
+                  .flatMap({ [weak webView] style, locale in
+                      guard let webView = webView else { return Single.error(Error.deinitialized) }
                       return self.getBibliography(styleXml: style, localeId: localeId, localeXml: locale, format: format.rawValue, webView: webView)
                   })
     }
@@ -214,7 +208,7 @@ class CitationController: NSObject {
 
     /// Loads html in given web view.
     /// - returns: Single called after index is loaded.
-    private func load(html: String, baseUrl: URL, in webView: WKWebView) -> Single<WKWebView> {
+    private func load(html: String, baseUrl: URL, in webView: WKWebView) -> Single<()> {
         webView.loadHTMLString(html, baseURL: baseUrl)
 
         return Single.create { [weak self] subscriber -> Disposable in
@@ -237,55 +231,13 @@ class CitationController: NSObject {
             return Disposables.create()
         }
     }
-
-    /// Create new `WKWebView` instance in given controller and sets it up with js handlers.
-    /// - returns: WebView instance.
-    private func createWebView(in controller: UIViewController) -> Single<WKWebView> {
-        return Single.create { [weak controller, weak self] subscriber -> Disposable in
-            guard let controller = controller else {
-                subscriber(.failure(Error.deinitialized))
-                return Disposables.create()
-            }
-
-            let webView = WKWebView()
-            webView.isHidden = true
-            controller.view.addSubview(webView)
-            self?.webView = webView
-
-            subscriber(.success(webView))
-            return Disposables.create()
-        }
-    }
-
-    private func setup(webView: WKWebView) -> Single<()> {
-        return Single.create { [weak webView, weak self] subscriber -> Disposable in
-            guard let `self` = self, let webView = webView else {
-                subscriber(.failure(Error.deinitialized))
-                return Disposables.create()
-            }
-
-            webView.navigationDelegate = self
-            JSHandlers.allCases.forEach { handler in
-                webView.configuration.userContentController.add(self, name: handler.rawValue)
-            }
-
-            subscriber(.success(()))
-            return Disposables.create()
-        }
-    }
-
-    /// Remove web view from parent controller.
-    private func removeWebView() {
-        self.webView?.removeFromSuperview()
-        self.webView = nil
-    }
 }
 
 extension CitationController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         // Wait for javascript to load
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
-            self.webDidLoad?(.success(webView))
+            self.webDidLoad?(.success(()))
         }
     }
 

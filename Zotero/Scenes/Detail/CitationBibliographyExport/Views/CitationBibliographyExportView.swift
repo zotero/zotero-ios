@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import WebKit
 
 struct CitationBibliographyExportView: View {
     @EnvironmentObject var viewModel: ViewModel<CitationBibliographyExportActionHandler>
@@ -14,7 +15,8 @@ struct CitationBibliographyExportView: View {
     weak var coordinatorDelegate: CitationBibliographyExportCoordinatorDelegate?
 
     var body: some View {
-        Form {
+        ZStack {
+            Form {
 //            Section(header: self.picker, content: {})
 //
 //            switch self.viewModel.state.type {
@@ -23,6 +25,14 @@ struct CitationBibliographyExportView: View {
 //            case .export:
 //                ExportView()
 //            }
+            }
+
+            if self.viewModel.state.isLoading {
+                Rectangle()
+                    .foregroundColor(Color.black.opacity(0.35))
+
+                ActivityIndicatorView(style: .large, color: .white, isAnimating: .constant(true))
+            }
         }
         .navigationBarItems(leading: self.leadingItem, trailing: self.trailingItem)
     }
@@ -37,10 +47,11 @@ struct CitationBibliographyExportView: View {
 
     private var trailingItem: some View {
         Button(action: {
-            self.coordinatorDelegate?.cancel()
+            self.viewModel.process(action: .process)
         }, label: {
             Text(L10n.done)
         })
+        .disabled(self.viewModel.state.isLoading)
     }
 
     private var citeView: some View {
@@ -63,26 +74,7 @@ fileprivate struct CiteView: View {
     weak var coordinatorDelegate: CitationBibliographyExportCoordinatorDelegate?
 
     var body: some View {
-        Section(header: Text("")) {
-            HStack {
-                Text("Output Mode")
-
-                Spacer()
-
-                Picker(selection: self.viewModel.binding(get: \.mode, action: { .setMode($0) }), label: Text("Output Mode"), content: {
-                    Text("Citations")
-                        .tag(CitationBibliographyExportState.OutputMode.citation)
-                    if self.viewModel.state.style.supportsBibliography {
-                        Text("Bibliography")
-                            .tag(CitationBibliographyExportState.OutputMode.bibliography)
-                    }
-                })
-                .pickerStyle(SegmentedPickerStyle())
-                .fixedSize()
-            }
-        }
-
-        Section(header: Text("Style"), footer: self.styleFooter) {
+        Section(header: Text("Style")) {
             RowView(title: self.viewModel.state.style.title)
                 .contentShape(Rectangle())
                 .onTapGesture {
@@ -102,6 +94,24 @@ fileprivate struct CiteView: View {
                 }
         }
 
+        Section(header: Text("Output Mode")) {
+            VStack {
+                OutputMethodRow(title: "Citations", isSelected: self.viewModel.state.mode == .citation)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        self.viewModel.process(action: .setMode(.citation))
+                    }
+
+                if self.viewModel.state.style.supportsBibliography {
+                    OutputMethodRow(title: "Bibliography", isSelected: self.viewModel.state.mode == .bibliography)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            self.viewModel.process(action: .setMode(.bibliography))
+                        }
+                }
+            }
+        }
+
         Section(header: Text("Output Method")) {
             VStack {
                 ForEach(CitationBibliographyExportState.methods) { method in
@@ -111,17 +121,6 @@ fileprivate struct CiteView: View {
                             self.viewModel.process(action: .setMethod(method))
                         }
                 }
-            }
-        }
-    }
-
-    private var styleFooter: some View {
-        Group {
-            if !self.viewModel.state.style.supportsBibliography {
-                Text("This style doesn't support bibliography. If you want to create bibliography, choose another style.")
-                    .font(.footnote)
-            } else {
-                EmptyView()
             }
         }
     }
@@ -181,7 +180,7 @@ struct CitationBibliographyExportView_Previews: PreviewProvider {
         let controllers = Controllers()
         let style = Style(identifier: "http://www.zotero.org/styles/nature", title: "Nature", updated: Date(), href: URL(string: "")!, filename: "", supportsBibliography: true)
         let state = CitationBibliographyExportState(selectedStyle: style, selectedLocaleId: "en_US")
-        let handler = CitationBibliographyExportActionHandler(citationController: controllers.citationController)
+        let handler = CitationBibliographyExportActionHandler(citationController: controllers.citationController, webView: WKWebView())
         let viewModel = ViewModel(initialState: state, handler: handler)
         return CitationBibliographyExportView().environmentObject(viewModel)
     }

@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import WebKit
 
 import RealmSwift
 
@@ -36,5 +37,5 @@ enum ItemsAction {
     case updateDownload(AttachmentDownloader.Update)
     case openAttachment(attachment: Attachment, parentKey: String?)
     case updateKeys(items: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int])
-    case quickCopyBibliography(RItem, UIViewController)
+    case quickCopyBibliography(RItem, WKWebView)
 }
