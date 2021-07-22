@@ -17,14 +17,14 @@ struct CitationBibliographyExportView: View {
     var body: some View {
         ZStack {
             Form {
-//            Section(header: self.picker, content: {})
-//
-//            switch self.viewModel.state.type {
-//            case .cite:
-                self.citeView
-//            case .export:
-//                ExportView()
-//            }
+//                Section(header: self.picker, content: {})
+
+//                switch self.viewModel.state.type {
+//                case .cite:
+                    self.citeView
+//                case .export:
+//                    ExportView()
+//                }
             }
 
             if self.viewModel.state.isLoading {
@@ -179,8 +179,8 @@ struct CitationBibliographyExportView_Previews: PreviewProvider {
     static var previews: some View {
         let controllers = Controllers()
         let style = Style(identifier: "http://www.zotero.org/styles/nature", title: "Nature", updated: Date(), href: URL(string: "")!, filename: "", supportsBibliography: true)
-        let state = CitationBibliographyExportState(selectedStyle: style, selectedLocaleId: "en_US")
-        let handler = CitationBibliographyExportActionHandler(citationController: controllers.citationController, webView: WKWebView())
+        let state = CitationBibliographyExportState(itemIds: [], libraryId: .custom(.myLibrary), selectedStyle: style, selectedLocaleId: "en_US")
+        let handler = CitationBibliographyExportActionHandler(citationController: controllers.citationController, fileStorage: controllers.fileStorage, webView: WKWebView())
         let viewModel = ViewModel(initialState: state, handler: handler)
         return CitationBibliographyExportView().environmentObject(viewModel)
     }

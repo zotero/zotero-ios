@@ -24,6 +24,7 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
 
     init(citationController: CitationController, fileStorage: FileStorage, webView: WKWebView) {
         self.citationController = citationController
+        self.fileStorage = fileStorage
         self.webView = webView
         self.queue = DispatchQueue(label: "org.zotero.CitationBibliographyExportActionHandler", qos: .userInteractive)
         self.disposeBag = DisposeBag()
@@ -75,10 +76,12 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
         switch viewModel.state.mode {
         case .citation:
             value = self.citationController.prepareForCitation(styleId: viewModel.state.style.identifier, localeId: viewModel.state.localeId, in: self.webView)
-                        .flatMap { self.citationController.citation(for: RItem(), label: nil, locator: nil, omitAuthor: false, format: .html, in: self.webView) }
+                        .flatMap { self.citationController.citation(for: viewModel.state.itemIds, libraryId: viewModel.state.libraryId, label: nil,
+                                                                    locator: nil, omitAuthor: false, format: .html, in: self.webView) }
 
         case .bibliography:
-            value = self.citationController.bibliography(for: RItem(), styleId: viewModel.state.style.identifier, localeId: viewModel.state.localeId, format: .html, in: self.webView)
+            value = self.citationController.bibliography(for: viewModel.state.itemIds, libraryId: viewModel.state.libraryId, styleId: viewModel.state.style.identifier,
+                                                         localeId: viewModel.state.localeId, format: .html, in: self.webView)
         }
 
         value.subscribe(with: viewModel,

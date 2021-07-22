@@ -134,8 +134,8 @@ struct ItemsActionHandler: ViewModelActionHandler {
         case .filter(let filters):
             self.filter(with: filters, in: viewModel)
 
-        case .quickCopyBibliography(let item, let webView):
-            self.citationController.bibliography(for: item, styleId: Defaults.shared.quickCopyStyleId, localeId: Defaults.shared.quickCopyLocaleId, format: .html, in: webView)
+        case .quickCopyBibliography(let itemIds, let libraryId, let webView):
+            self.citationController.bibliography(for: itemIds, libraryId: libraryId, styleId: Defaults.shared.quickCopyStyleId, localeId: Defaults.shared.quickCopyLocaleId, format: .html, in: webView)
                                    .subscribe(with: viewModel, onSuccess: { viewModel, citation in
                                        UIPasteboard.general.string = citation
                                        self.update(viewModel: viewModel) { state in

@@ -256,9 +256,18 @@ final class ItemsViewController: UIViewController {
 
         case .share:
             guard !selectedKeys.isEmpty else { return }
-            self.coordinatorDelegate?.showCiteExport(for: selectedKeys)
+            self.coordinatorDelegate?.showCiteExport(for: selectedKeys, libraryId: self.viewModel.state.library.identifier)
 
-        case .copyCitation, .copyBibliography: break
+        case .copyBibliography:
+            let webView = WKWebView()
+            webView.isHidden = true
+            self.view.insertSubview(webView, at: 0)
+            self.webView = webView
+
+            self.viewModel.process(action: .quickCopyBibliography(selectedKeys, self.viewModel.state.library.identifier, webView))
+
+        case .copyCitation:
+            self.coordinatorDelegate?.showCitation(for: selectedKeys, libraryId: self.viewModel.state.library.identifier)
         }
     }
 
@@ -567,21 +576,7 @@ final class ItemsViewController: UIViewController {
 
 extension ItemsViewController: ItemsTableViewHandlerDelegate {
     func process(action: ItemAction.Kind, for item: RItem) {
-        // Some actions work only for single item, others are passed along
-        switch action {
-        case .copyCitation:
-            self.coordinatorDelegate?.showCitation(for: item)
-
-        case .copyBibliography:
-            let webView = WKWebView()
-            webView.isHidden = true
-            self.view.insertSubview(webView, at: 0)
-            self.viewModel.process(action: .quickCopyBibliography(item, webView))
-            self.webView = webView
-
-        case .addToCollection, .createParent, .delete, .duplicate, .filter, .removeFromCollection, .restore, .sort, .trash, .share:
-            self.process(action: action, for: [item.key], button: nil)
-        }
+        self.process(action: action, for: [item.key], button: nil)
     }
 
     var isInViewHierarchy: Bool {

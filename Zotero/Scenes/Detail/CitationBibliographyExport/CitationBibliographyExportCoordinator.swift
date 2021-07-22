@@ -24,11 +24,15 @@ final class CitationBibliographyExportCoordinator: NSObject, Coordinator {
     var childCoordinators: [Coordinator]
 
     private static let defaultSize: CGSize = CGSize(width: 600, height: 504)
+    private let itemIds: Set<String>
+    private let libraryId: LibraryIdentifier
     unowned let navigationController: UINavigationController
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
-    init(navigationController: NavigationViewController, controllers: Controllers) {
+    init(itemIds: Set<String>, libraryId: LibraryIdentifier, navigationController: NavigationViewController, controllers: Controllers) {
+        self.itemIds = itemIds
+        self.libraryId = libraryId
         self.navigationController = navigationController
         self.controllers = controllers
         self.childCoordinators = []
@@ -52,7 +56,7 @@ final class CitationBibliographyExportCoordinator: NSObject, Coordinator {
             let webView = WKWebView()
             webView.isHidden = true
 
-            let state = CitationBibliographyExportState(selectedStyle: style, selectedLocaleId: Defaults.shared.quickCopyLocaleId)
+            let state = CitationBibliographyExportState(itemIds: self.itemIds, libraryId: self.libraryId, selectedStyle: style, selectedLocaleId: Defaults.shared.quickCopyLocaleId)
             let handler = CitationBibliographyExportActionHandler(citationController: self.controllers.citationController, fileStorage: self.controllers.fileStorage, webView: webView)
             let viewModel = ViewModel(initialState: state, handler: handler)
 
@@ -63,7 +67,7 @@ final class CitationBibliographyExportCoordinator: NSObject, Coordinator {
                          }
 
                          if let file = state.outputFile {
-                             // TODO: - show file sharing
+                             self.share(file: file)
                          }
 
                          if let error = state.error {
@@ -83,6 +87,18 @@ final class CitationBibliographyExportCoordinator: NSObject, Coordinator {
         } catch let error {
             DDLogError("DetailCoordinator: can't open citeexport - \(error)")
         }
+    }
+
+    private func share(file: File) {
+        let controller = UIActivityViewController(activityItems: [file.createUrl()], applicationActivities: nil)
+        controller.modalPresentationStyle = .pageSheet
+        controller.popoverPresentationController?.barButtonItem = self.navigationController.navigationBar.topItem?.rightBarButtonItem
+        controller.completionWithItemsHandler = { [weak self] _, finished, _, _ in
+            if finished {
+                self?.cancel()
+            }
+        }
+        self.navigationController.present(controller, animated: true, completion: nil)
     }
 }
 

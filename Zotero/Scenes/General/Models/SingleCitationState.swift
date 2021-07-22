@@ -26,7 +26,8 @@ struct SingleCitationState: ViewModelState {
 
     static let locators: [String] = ["page", "book", "chapter", "column", "figure", "folio", "issue", "line", "note", "opus", "paragraph", "part", "section", "sub verbo", "verse", "volume"]
 
-    let item: RItem
+    let itemIds: Set<String>
+    let libraryId: LibraryIdentifier
     let styleId: String
     let localeId: String
 
@@ -38,8 +39,9 @@ struct SingleCitationState: ViewModelState {
     var error: Error?
     var changes: Changes
 
-    init(item: RItem, styleId: String, localeId: String) {
-        self.item = item
+    init(itemIds: Set<String>, libraryId: LibraryIdentifier, styleId: String, localeId: String) {
+        self.itemIds = itemIds
+        self.libraryId = libraryId
         self.styleId = styleId
         self.localeId = localeId
         self.locator = SingleCitationState.locators.first!

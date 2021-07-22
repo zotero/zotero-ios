@@ -39,8 +39,8 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showFilters(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void)
     func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void)
-    func showCitation(for item: RItem)
-    func showCiteExport(for items: Set<String>)
+    func showCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier)
+    func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
 }
 
 protocol DetailItemDetailCoordinatorDelegate: AnyObject {
@@ -485,8 +485,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.topViewController.present(controller, animated: true, completion: nil)
     }
 
-    func showCitation(for item: RItem) {
-        let state = SingleCitationState(item: item, styleId: Defaults.shared.quickCopyStyleId, localeId: Defaults.shared.quickCopyLocaleId)
+    func showCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
+        let state = SingleCitationState(itemIds: itemIds, libraryId: libraryId, styleId: Defaults.shared.quickCopyStyleId, localeId: Defaults.shared.quickCopyLocaleId)
         let handler = SingleCitationActionHandler(citationController: self.controllers.citationController)
         let viewModel = ViewModel(initialState: state, handler: handler)
 
@@ -500,11 +500,11 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.navigationController.present(containerController, animated: true, completion: nil)
     }
 
-    func showCiteExport(for items: Set<String>) {
+    func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
         let navigationController = NavigationViewController()
         let containerController = ContainerViewController(rootViewController: navigationController)
 
-        let coordinator = CitationBibliographyExportCoordinator(navigationController: navigationController, controllers: self.controllers)
+        let coordinator = CitationBibliographyExportCoordinator(itemIds: itemIds, libraryId: libraryId, navigationController: navigationController, controllers: self.controllers)
         coordinator.parentCoordinator = self
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)

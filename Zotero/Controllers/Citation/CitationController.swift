@@ -64,6 +64,7 @@ class CitationController: NSObject {
     func prepareForCitation(styleId: String, localeId: String, in webView: WKWebView) -> Single<()> {
         webView.navigationDelegate = self
         JSHandlers.allCases.forEach { handler in
+            webView.configuration.userContentController.removeScriptMessageHandler(forName: handler.rawValue)
             webView.configuration.userContentController.add(self, name: handler.rawValue)
         }
 
@@ -89,14 +90,15 @@ class CitationController: NSObject {
     }
 
     /// Generates citation preview for given item in given format. Has to be called after `prepareForCitation(styleId:localeId:in:)` finishes!
-    /// - parameter item: Item for which citation is generated.
+    /// - parameter items: Ids of items of which citation is created.
+    /// - parameter libraryId: Id of library for given items.
     /// - parameter label: Label for locator which should be used.
     /// - parameter locator: Locator value.
     /// - parameter omitAuthor: True if author should be suppressed, false otherwise.
     /// - parameter format: Format in which citation is generated.
     /// - parameter webView: Web view which is fully loaded (`prepareForCitation(styleId:localeId:in:)` finished).
     /// - returns: Single with generated citation.
-    func citation(for item: RItem, label: String?, locator: String?, omitAuthor: Bool, format: Format, in webView: WKWebView) -> Single<String> {
+    func citation(for itemIds: Set<String>, libraryId: LibraryIdentifier, label: String?, locator: String?, omitAuthor: Bool, format: Format, in webView: WKWebView) -> Single<String> {
         guard let style = self.styleXml, let localeId = self.localeId, let locale = self.localeXml else { return Single.error(Error.prepareNotCalled) }
         return self.getCitation(styleXml: style, localeId: localeId, localeXml: locale, label: label, locator: locator, omitAuthor: omitAuthor, format: format.rawValue, webView: webView)
     }
@@ -109,15 +111,17 @@ class CitationController: NSObject {
 
     /// Bibliography happens once for selected item(s). Appropriate style and locale xmls are loaded, webView is initialized and loaded with index.html. When everything is loaded,
     /// appropriate js function is called and result is returned. When everything is finished, webView is removed from controller.
-    /// - parameter item: Item for which bibliography is created.
+    /// - parameter items: Ids of items of which bibliography is created.
+    /// - parameter libraryId: Id of library for given items.
     /// - parameter styleId: Id of style to use for bibliography generation.
     /// - parameter localeId: Id of locale to use for bibliography generation.
     /// - parameter format: Bibliography format to use for generation.
     /// - parameter webView: WebView which will run the javascript.
     /// - returns: Single which returns bibliography.
-    func bibliography(for item: RItem, styleId: String, localeId: String, format: Format, in webView: WKWebView) -> Single<String> {
+    func bibliography(for itemIds: Set<String>, libraryId: LibraryIdentifier, styleId: String, localeId: String, format: Format, in webView: WKWebView) -> Single<String> {
         webView.navigationDelegate = self
         JSHandlers.allCases.forEach { handler in
+            webView.configuration.userContentController.removeScriptMessageHandler(forName: handler.rawValue)
             webView.configuration.userContentController.add(self, name: handler.rawValue)
         }
 

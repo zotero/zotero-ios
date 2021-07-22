@@ -41,6 +41,8 @@ struct CitationBibliographyExportState: ViewModelState {
     }
 
     static let methods: [OutputMethod] = [.html, .copy]
+    let itemIds: Set<String>
+    let libraryId: LibraryIdentifier
 
     var type: Kind
     var isLoading: Bool
@@ -57,7 +59,9 @@ struct CitationBibliographyExportState: ViewModelState {
 
     // Export
 
-    init(selectedStyle: Style, selectedLocaleId: String) {
+    init(itemIds: Set<String>, libraryId: LibraryIdentifier, selectedStyle: Style, selectedLocaleId: String) {
+        self.itemIds = itemIds
+        self.libraryId = libraryId
         self.type = .cite
         self.localeId = selectedLocaleId
         self.localeName = Locale.current.localizedString(forIdentifier: selectedLocaleId) ?? selectedLocaleId
@@ -71,5 +75,6 @@ struct CitationBibliographyExportState: ViewModelState {
     mutating func cleanup() {
         self.error = nil
         self.changes = []
+        self.outputFile = nil
     }
 }
