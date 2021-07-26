@@ -99,15 +99,23 @@ final class ItemCell: UITableViewCell {
         self.key = item.key
 
         self.typeImageView.image = UIImage(named: item.typeIconName)
+        self.typeImageView.isAccessibilityElement = true
+        self.typeImageView.accessibilityTraits = .image
+        self.typeImageView.accessibilityLabel = item.typeName
+        
         self.titleLabel.text = item.title.isEmpty ? " " : item.title
+        self.titleLabel.accessibilityLabel = item.title.isEmpty ? L10n.Accessibility.untitled : item.title
         self.subtitleLabel.text = item.subtitle.isEmpty ? " " : item.subtitle
+        self.subtitleLabel.accessibilityLabel = item.subtitle
         // The label adds extra horizontal spacing so there is a negative right inset so that the label ends where the text ends exactly.
         // The note icon is rectangular and has 1px white space on each side, so it needs an extra negative pixel when there are no tags.
         self.subtitleLabel.rightInset = item.tagColors.isEmpty ? -2 : -1
         self.subtitleLabel.isHidden = item.subtitle.isEmpty && (item.hasNote || !item.tagColors.isEmpty)
         self.noteIcon.isHidden = !item.hasNote
+        self.noteIcon.isAccessibilityElement = false
 
         self.tagCircles.isHidden = item.tagColors.isEmpty
+        self.tagCircles.isAccessibilityElement = false
         if !self.tagCircles.isHidden {
             self.tagCircles.colors = item.tagColors
         }

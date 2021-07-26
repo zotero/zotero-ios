@@ -97,6 +97,7 @@ final class LibrariesViewController: UIViewController {
 
     private func setupNavigationBar() {
         let item = UIBarButtonItem(image: UIImage(systemName: "gear"), style: .plain, target: nil, action: nil)
+        item.accessibilityLabel = L10n.Settings.title
         item.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 self?.coordinatorDelegate?.showSettings()

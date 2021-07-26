@@ -302,4 +302,31 @@
 "errors.logging.upload" = "Could not upload logs. Please try again.";
 "errors.logging.response_parsing" = "Unexpected response from server";
 "errors.translators.bundle_loading" = "Could not update translators from bundle. Would you like to try again?";
-"errors.translators.bundle_reset" = "Could not load bundled translators.";"
+"errors.translators.bundle_reset" = "Could not load bundled translators.";
+
+//case .addToCollection:
+//case .trash:
+//case .delete:
+//case .removeFromCollection:
+//case .restore:
+//case .duplicate:
+"accessibility.untitled" = "Untitled";
+"accessibility.locked" = "Locked";
+"accessibility.archived" = "Archived";
+"accessibility.collections.items" = "items";
+"accessibility.collections.expand" = "Expand";
+"accessibility.collections.collapse" = "Collapse";
+"accessibility.collections.create_collection" = "Create collection";
+"accessibility.collections.search_collections" = "Search collections";
+"accessibility.collections.expand_all_collections" = "Expand all collections";
+"accessibility.items.select_items" = "Select items";
+"accessibility.items.select_all_items" = "Select All Items";
+"accessibility.items.deselect_all_items" = "Deselect All Items";
+"accessibility.items.filter_items" = "Filter items";
+"accessibility.items.sort_items" = "Sort items";
+"accessibility.items.add_to_collection" = "Add selected items to collection";
+"accessibility.items.remove_from_collection" = "Remove selected items from collection";
+"accessibility.items.trash" = "Move selected items to trash";
+"accessibility.items.delete" = "Delete selected items";
+"accessibility.items.restore" = "Restore selected items";
+"accessibility.items.duplicate" = "Duplicate selected item";

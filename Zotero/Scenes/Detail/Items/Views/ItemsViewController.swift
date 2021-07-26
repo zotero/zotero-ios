@@ -64,7 +64,8 @@ final class ItemsViewController: UIViewController {
                                                       viewModel: self.viewModel,
                                                       delegate: self,
                                                       dragDropController: self.controllers.dragDropController,
-                                                      fileDownloader: self.controllers.userControllers?.fileDownloader)
+                                                      fileDownloader: self.controllers.userControllers?.fileDownloader,
+                                                      schemaController: self.controllers.schemaController)
         self.toolbarController = ItemsToolbarController(viewController: self, initialState: self.viewModel.state, delegate: self)
         self.navigationController?.toolbar.barTintColor = UIColor(dynamicProvider: { traitCollection in
             return traitCollection.userInterfaceStyle == .dark ? .black : .white
@@ -406,30 +407,36 @@ final class ItemsViewController: UIViewController {
         var image: UIImage?
         var title: String?
         let action: (UIBarButtonItem) -> Void
+        let accessibilityLabel: String
 
         switch type {
         case .deselectAll:
             title = L10n.Items.deselectAll
+            accessibilityLabel = L10n.Accessibility.Items.deselectAllItems
             action = { [weak self] _ in
                 self?.viewModel.process(action: .toggleSelectionState)
             }
         case .selectAll:
             title = L10n.Items.selectAll
+            accessibilityLabel = L10n.Accessibility.Items.selectAllItems
             action = { [weak self] _ in
                 self?.viewModel.process(action: .toggleSelectionState)
             }
         case .done:
             title = L10n.done
+            accessibilityLabel = L10n.done
             action = { [weak self] _ in
                 self?.viewModel.process(action: .stopEditing)
             }
         case .select:
             title = L10n.Items.select
+            accessibilityLabel = L10n.Accessibility.Items.selectItems
             action = { [weak self] _ in
                 self?.viewModel.process(action: .startEditing)
             }
         case .add:
             image = UIImage(systemName: "plus")
+            accessibilityLabel = L10n.Items.new
             title = nil
             action = { [weak self] item in
                 guard let `self` = self else { return }
@@ -447,6 +454,7 @@ final class ItemsViewController: UIViewController {
         }
 
         item.tag = type.rawValue
+        item.accessibilityLabel = accessibilityLabel
         item.rx.tap.subscribe(onNext: { _ in action(item) }).disposed(by: self.disposeBag)
         return item
     }

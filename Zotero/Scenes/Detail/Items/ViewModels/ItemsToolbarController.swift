@@ -60,6 +60,7 @@ final class ItemsToolbarController {
     func createToolbarItems(for state: ItemsState) {
         if state.isEditing {
             self.viewController.toolbarItems = self.createEditingToolbarItems(from: self.editingActions)
+            self.updateEditingToolbarItems(for: state.selectedItems)
         } else {
             self.viewController.toolbarItems = self.createNormalToolbarItems(for: state.filters)
         }
@@ -109,22 +110,24 @@ final class ItemsToolbarController {
         let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
         let filterButton = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
         filterButton.tag = ItemsToolbarController.barButtonItemFilterTag
+        filterButton.accessibilityLabel = L10n.Accessibility.Items.filterItems
         filterButton.rx.tap.subscribe(onNext: { [weak self] _ in
             self?.delegate?.process(action: .filter, button: filterButton)
         })
         .disposed(by: self.disposeBag)
 
         let action = ItemAction(type: .sort)
-        let addButton = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
-        addButton.rx.tap.subscribe(onNext: { [weak self] _ in
-            self?.delegate?.process(action: action.type, button: addButton)
+        let sortButton = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
+        sortButton.accessibilityLabel = L10n.Accessibility.Items.sortItems
+        sortButton.rx.tap.subscribe(onNext: { [weak self] _ in
+            self?.delegate?.process(action: action.type, button: sortButton)
         })
         .disposed(by: self.disposeBag)
 
         let titleButton = UIBarButtonItem(customView: self.createTitleView())
         titleButton.tag = ItemsToolbarController.barButtonItemTitleTag
 
-        return [fixedSpacer, filterButton, flexibleSpacer, titleButton, flexibleSpacer, addButton, fixedSpacer]
+        return [fixedSpacer, filterButton, flexibleSpacer, titleButton, flexibleSpacer, sortButton, fixedSpacer]
     }
 
     private func createEditingToolbarItems(from actions: [ItemAction]) -> [UIBarButtonItem] {
@@ -136,6 +139,21 @@ final class ItemsToolbarController {
                 item.tag = ItemsToolbarController.barButtonItemEmptyTag
             case .duplicate:
                 item.tag = ItemsToolbarController.barButtonItemSingleTag
+            case .sort, .filter, .createParent: break
+            }
+            switch action.type {
+            case .addToCollection:
+                item.accessibilityLabel = L10n.Accessibility.Items.addToCollection
+            case .trash:
+                item.accessibilityLabel = L10n.Accessibility.Items.trash
+            case .delete:
+                item.accessibilityLabel = L10n.Accessibility.Items.delete
+            case .removeFromCollection:
+                item.accessibilityLabel = L10n.Accessibility.Items.removeFromCollection
+            case .restore:
+                item.accessibilityLabel = L10n.Accessibility.Items.restore
+            case .duplicate:
+                item.accessibilityLabel = L10n.Accessibility.Items.duplicate
             case .sort, .filter, .createParent: break
             }
             item.rx.tap.subscribe(onNext: { [weak self] _ in

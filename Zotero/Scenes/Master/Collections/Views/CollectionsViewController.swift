@@ -139,6 +139,7 @@ final class CollectionsViewController: UIViewController {
 
     private func setupAddNavbarItem() {
         let addItem = UIBarButtonItem(image: UIImage(systemName: "plus"), style: .plain, target: nil, action: nil)
+        addItem.accessibilityLabel = L10n.Accessibility.Collections.createCollection
         addItem.rx.tap
                .subscribe(onNext: { [weak self] _ in
                 self?.viewModel.process(action: .startEditing(.add))
@@ -146,6 +147,7 @@ final class CollectionsViewController: UIViewController {
                .disposed(by: self.disposeBag)
 
         let searchItem = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"), style: .plain, target: nil, action: nil)
+        searchItem.accessibilityLabel = L10n.Accessibility.Collections.searchCollections
         searchItem.rx.tap
                   .subscribe(onNext: { [weak self] _ in
                     self?.showSearch()
@@ -158,6 +160,7 @@ final class CollectionsViewController: UIViewController {
     private func setupTitleWithContextMenu(_ title: String) {
         let button = UIButton(type: .custom)
         button.setTitle(title, for: .normal)
+        button.accessibilityLabel = "\(title) \(L10n.Accessibility.Collections.expandAllCollections)"
         button.setTitleColor(UIColor(dynamicProvider: { $0.userInterfaceStyle == .light ? .black : .white }), for: .normal)
         button.titleLabel?.font = UIFont.systemFont(ofSize: 17, weight: .semibold)
         button.contentEdgeInsets = UIEdgeInsets(top: 8, left: 12, bottom: 8, right: 12)

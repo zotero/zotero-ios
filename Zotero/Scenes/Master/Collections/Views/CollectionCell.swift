@@ -64,6 +64,7 @@ final class CollectionCell: UITableViewCell {
         self.badgeContainer.isHidden = collection.itemCount == 0
         if !self.badgeContainer.isHidden {
             self.badgeLabel.text = "\(collection.itemCount)"
+            self.badgeLabel.accessibilityLabel = "\(collection.itemCount) \(L10n.Accessibility.Collections.items)"
         }
         self.contentToBadgeConstraint.isActive = !self.badgeContainer.isHidden || !self.chevronButton.isHidden
         self.contentToRightConstraint.isActive = !self.contentToBadgeConstraint.isActive
@@ -72,6 +73,7 @@ final class CollectionCell: UITableViewCell {
     private func setup(with collection: Collection) {
         self.iconImage.image = UIImage(named: collection.iconName)?.withRenderingMode(.alwaysTemplate)
         self.titleLabel.text = collection.name
+        self.titleLabel.accessibilityLabel = collection.name
 
         self.leftConstraint.constant = self.inset(for: collection.level)
         self.chevronButton.isHidden = !collection.hasChildren
@@ -79,6 +81,7 @@ final class CollectionCell: UITableViewCell {
             let configuration = UIImage.SymbolConfiguration(scale: .small)
             let name = collection.collapsed ? "chevron.right" : "chevron.down"
             self.chevronButton.setImage(UIImage(systemName: name, withConfiguration: configuration), for: .normal)
+            self.chevronButton.accessibilityLabel = collection.collapsed ? L10n.Accessibility.Collections.expand : L10n.Accessibility.Collections.collapse
         }
 
         self.updateBadgeView(for: collection)

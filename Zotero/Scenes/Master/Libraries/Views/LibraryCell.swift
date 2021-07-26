@@ -24,6 +24,7 @@ final class LibraryCell: UITableViewCell {
     func setup(with name: String, libraryState: LibraryState) {
         self.iconView.image = self.image(for: libraryState).withRenderingMode(.alwaysTemplate)
         self.titleLabel.text = name
+        self.titleLabel.accessibilityLabel = self.accessibilityNamePrefix(for: libraryState) + name
 
         let hasExtraPadding = libraryState != .normal
         self.iconLeftConstraint.constant = LibraryCell.horizontalPadding - (hasExtraPadding ? 2 : 0)
@@ -36,6 +37,14 @@ final class LibraryCell: UITableViewCell {
         case .normal: return Asset.Images.Cells.library.image
         case .locked: return Asset.Images.Cells.libraryReadonly.image
         case .archived: return Asset.Images.Cells.libraryArchived.image
+        }
+    }
+
+    private func accessibilityNamePrefix(for state: LibraryState) -> String {
+        switch state {
+        case .normal: return ""
+        case .locked: return "\(L10n.Accessibility.locked) "
+        case .archived: return "\(L10n.Accessibility.archived) "
         }
     }
 }

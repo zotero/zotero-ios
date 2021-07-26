@@ -38,13 +38,16 @@ final class ItemsTableViewHandler: NSObject {
     private var snapshot: Results<RItem>?
     private var reloadAnimationsDisabled: Bool
     private weak var fileDownloader: AttachmentDownloader?
+    private weak var schemaController: SchemaController?
 
-    init(tableView: UITableView, viewModel: ViewModel<ItemsActionHandler>, delegate: ItemsTableViewHandlerDelegate, dragDropController: DragDropController, fileDownloader: AttachmentDownloader?) {
+    init(tableView: UITableView, viewModel: ViewModel<ItemsActionHandler>, delegate: ItemsTableViewHandlerDelegate, dragDropController: DragDropController,
+         fileDownloader: AttachmentDownloader?, schemaController: SchemaController?) {
         self.tableView = tableView
         self.viewModel = viewModel
         self.delegate = delegate
         self.dragDropController = dragDropController
         self.fileDownloader = fileDownloader
+        self.schemaController = schemaController
         self.reloadAnimationsDisabled = false
         self.tapObserver = PublishSubject()
         self.disposeBag = DisposeBag()
@@ -275,7 +278,8 @@ extension ItemsTableViewHandler: UITableViewDataSource {
             self.viewModel.process(action: .cacheItemAccessory(item: item))
 
             let accessory = self.viewModel.state.itemAccessories[item.key]
-            cell.set(item: ItemCellModel(item: item, accessory: self.cellAccessory(from: accessory)))
+            let typeName = self.schemaController?.localized(itemType: item.rawType) ?? item.rawType
+            cell.set(item: ItemCellModel(item: item, typeName: typeName, accessory: self.cellAccessory(from: accessory)))
         }
 
         return cell

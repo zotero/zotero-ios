@@ -91,6 +91,53 @@ internal enum L10n {
   /// Yes
   internal static let yes = L10n.tr("Localizable", "yes")
 
+  internal enum Accessibility {
+    /// Archived
+    internal static let archived = L10n.tr("Localizable", "accessibility.archived")
+    /// Locked
+    internal static let locked = L10n.tr("Localizable", "accessibility.locked")
+    /// Untitled
+    internal static let untitled = L10n.tr("Localizable", "accessibility.untitled")
+    internal enum Collections {
+      /// Collapse
+      internal static let collapse = L10n.tr("Localizable", "accessibility.collections.collapse")
+      /// Create collection
+      internal static let createCollection = L10n.tr("Localizable", "accessibility.collections.create_collection")
+      /// Expand
+      internal static let expand = L10n.tr("Localizable", "accessibility.collections.expand")
+      /// Expand all collections
+      internal static let expandAllCollections = L10n.tr("Localizable", "accessibility.collections.expand_all_collections")
+      /// items
+      internal static let items = L10n.tr("Localizable", "accessibility.collections.items")
+      /// Search collections
+      internal static let searchCollections = L10n.tr("Localizable", "accessibility.collections.search_collections")
+    }
+    internal enum Items {
+      /// Add selected items to collection
+      internal static let addToCollection = L10n.tr("Localizable", "accessibility.items.add_to_collection")
+      /// Delete selected items
+      internal static let delete = L10n.tr("Localizable", "accessibility.items.delete")
+      /// Deselect All Items
+      internal static let deselectAllItems = L10n.tr("Localizable", "accessibility.items.deselect_all_items")
+      /// Duplicate selected item
+      internal static let duplicate = L10n.tr("Localizable", "accessibility.items.duplicate")
+      /// Filter items
+      internal static let filterItems = L10n.tr("Localizable", "accessibility.items.filter_items")
+      /// Remove selected items from collection
+      internal static let removeFromCollection = L10n.tr("Localizable", "accessibility.items.remove_from_collection")
+      /// Restore selected items
+      internal static let restore = L10n.tr("Localizable", "accessibility.items.restore")
+      /// Select All Items
+      internal static let selectAllItems = L10n.tr("Localizable", "accessibility.items.select_all_items")
+      /// Select items
+      internal static let selectItems = L10n.tr("Localizable", "accessibility.items.select_items")
+      /// Sort items
+      internal static let sortItems = L10n.tr("Localizable", "accessibility.items.sort_items")
+      /// Move selected items to trash
+      internal static let trash = L10n.tr("Localizable", "accessibility.items.trash")
+    }
+  }
+
   internal enum Collections {
     /// All Items
     internal static let allItems = L10n.tr("Localizable", "collections.all_items")
