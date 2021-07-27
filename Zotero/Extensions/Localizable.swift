@@ -112,6 +112,12 @@ internal enum L10n {
       /// Search collections
       internal static let searchCollections = L10n.tr("Localizable", "accessibility.collections.search_collections")
     }
+    internal enum ItemDetail {
+      /// Double tap to download and open
+      internal static let downloadAndOpen = L10n.tr("Localizable", "accessibility.item_detail.download_and_open")
+      /// Double tap to open
+      internal static let `open` = L10n.tr("Localizable", "accessibility.item_detail.open")
+    }
     internal enum Items {
       /// Add selected items to collection
       internal static let addToCollection = L10n.tr("Localizable", "accessibility.items.add_to_collection")
@@ -135,6 +141,22 @@ internal enum L10n {
       internal static let sortItems = L10n.tr("Localizable", "accessibility.items.sort_items")
       /// Move selected items to trash
       internal static let trash = L10n.tr("Localizable", "accessibility.items.trash")
+    }
+    internal enum Pdf {
+      /// Color picker
+      internal static let colorPicker = L10n.tr("Localizable", "accessibility.pdf.color_picker")
+      /// Export pdf
+      internal static let export = L10n.tr("Localizable", "accessibility.pdf.export")
+      /// Create highlight annotation
+      internal static let highlightAnnotationTool = L10n.tr("Localizable", "accessibility.pdf.highlight_annotation_tool")
+      /// Create image annotation
+      internal static let imageAnnotationTool = L10n.tr("Localizable", "accessibility.pdf.image_annotation_tool")
+      /// Create note annotation
+      internal static let noteAnnotationTool = L10n.tr("Localizable", "accessibility.pdf.note_annotation_tool")
+      /// Close sidebar
+      internal static let sidebarClose = L10n.tr("Localizable", "accessibility.pdf.sidebar_close")
+      /// Open sidebar
+      internal static let sidebarOpen = L10n.tr("Localizable", "accessibility.pdf.sidebar_open")
     }
   }
 

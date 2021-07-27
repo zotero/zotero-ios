@@ -304,12 +304,6 @@
 "errors.translators.bundle_loading" = "Could not update translators from bundle. Would you like to try again?";
 "errors.translators.bundle_reset" = "Could not load bundled translators.";
 
-//case .addToCollection:
-//case .trash:
-//case .delete:
-//case .removeFromCollection:
-//case .restore:
-//case .duplicate:
 "accessibility.untitled" = "Untitled";
 "accessibility.locked" = "Locked";
 "accessibility.archived" = "Archived";
@@ -330,3 +324,12 @@
 "accessibility.items.delete" = "Delete selected items";
 "accessibility.items.restore" = "Restore selected items";
 "accessibility.items.duplicate" = "Duplicate selected item";
+"accessibility.item_detail.download_and_open" = "Double tap to download and open";
+"accessibility.item_detail.open" = "Double tap to open";
+"accessibility.pdf.sidebar_open" = "Open sidebar";
+"accessibility.pdf.sidebar_close" = "Close sidebar";
+"accessibility.pdf.export" = "Export pdf";
+"accessibility.pdf.color_picker" = "Color picker";
+"accessibility.pdf.highlight_annotation_tool" = "Create highlight annotation";
+"accessibility.pdf.note_annotation_tool" = "Create note annotation";
+"accessibility.pdf.image_annotation_tool" = "Create image annotation";

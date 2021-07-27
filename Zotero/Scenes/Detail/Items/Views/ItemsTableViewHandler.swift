@@ -212,6 +212,7 @@ final class ItemsTableViewHandler: NSObject {
         self.tableView.estimatedRowHeight = 60
         self.tableView.allowsMultipleSelectionDuringEditing = true
         self.tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
+        self.tableView.shouldGroupAccessibilityChildren = true
 
         self.tableView.register(UINib(nibName: "ItemCell", bundle: nil), forCellReuseIdentifier: ItemsTableViewHandler.cellId)
         self.tableView.tableFooterView = UIView()

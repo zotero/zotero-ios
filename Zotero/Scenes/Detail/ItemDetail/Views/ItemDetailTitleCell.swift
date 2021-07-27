@@ -26,6 +26,9 @@ final class ItemDetailTitleCell: RxTableViewCell {
 
     override func awakeFromNib() {
         super.awakeFromNib()
+
+        self.isAccessibilityElement = false
+
         self.separatorHeight.constant = ItemDetailLayout.separatorHeight
 
         self.textView.font = .preferredFont(forTextStyle: .title1)

@@ -50,6 +50,7 @@ final class PDFReaderViewController: UIViewController {
 
     private lazy var shareButton: UIBarButtonItem = {
         let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
+        share.accessibilityLabel = L10n.Accessibility.Pdf.export
         share.tag = NavigationBarButton.share.rawValue
         share.rx.tap
              .subscribe(onNext: { [weak self] _ in
@@ -353,6 +354,7 @@ final class PDFReaderViewController: UIViewController {
         }
 
         self.isSidebarTransitioning = true
+        self.navigationItem.leftBarButtonItems?.last?.accessibilityLabel = shouldShow ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
 
         UIView.animate(withDuration: 0.3, delay: 0,
                        usingSpringWithDamping: 1,
@@ -726,6 +728,7 @@ final class PDFReaderViewController: UIViewController {
         let symbolConfig = UIImage.SymbolConfiguration(scale: .large)
 
         let highlight = CheckboxButton(type: .custom)
+        highlight.accessibilityLabel = L10n.Accessibility.Pdf.highlightAnnotationTool
         highlight.setImage(Asset.Images.Annotations.highlighterLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
         highlight.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         highlight.rx
@@ -737,6 +740,7 @@ final class PDFReaderViewController: UIViewController {
         self.createHighlightButton = highlight
 
         let note = CheckboxButton(type: .custom)
+        note.accessibilityLabel = L10n.Accessibility.Pdf.noteAnnotationTool
         note.setImage(Asset.Images.Annotations.noteLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
         note.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         note.rx
@@ -748,6 +752,7 @@ final class PDFReaderViewController: UIViewController {
         self.createNoteButton = note
 
         let area = CheckboxButton(type: .custom)
+        area.accessibilityLabel = L10n.Accessibility.Pdf.imageAnnotationTool
         area.setImage(Asset.Images.Annotations.areaLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
         area.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         area.rx
@@ -768,6 +773,7 @@ final class PDFReaderViewController: UIViewController {
         }
 
         let picker = UIButton()
+        picker.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
         picker.setImage(UIImage(systemName: "circle.fill", withConfiguration: symbolConfig), for: .normal)
         picker.tintColor = self.viewModel.state.activeColor
         picker.rx.controlEvent(.touchUpInside)
@@ -794,13 +800,12 @@ final class PDFReaderViewController: UIViewController {
     }
 
     private func setupNavigationBar() {
-        let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"),
-                                            style: .plain, target: nil, action: nil)
+        let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"), style: .plain, target: nil, action: nil)
+        sidebarButton.accessibilityLabel = self.isSidebarVisible ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
         sidebarButton.rx.tap
                      .subscribe(onNext: { [weak self] in self?.toggleSidebar() })
                      .disposed(by: self.disposeBag)
-        let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"),
-                                          style: .plain, target: nil, action: nil)
+        let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"), style: .plain, target: nil, action: nil)
         closeButton.rx.tap
                    .subscribe(onNext: { [weak self] in self?.close() })
                    .disposed(by: self.disposeBag)

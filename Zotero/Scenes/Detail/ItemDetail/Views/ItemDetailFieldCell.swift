@@ -35,8 +35,10 @@ final class ItemDetailFieldCell: RxTableViewCell {
         self.valueLabel.text = value.isEmpty ? " " : value
         if field.isTappable {
             self.valueLabel.textColor = Asset.Colors.zoteroBlue.color
+            self.accessibilityTraits = .button
         } else {
             self.valueLabel.textColor = UIColor(dynamicProvider: { $0.userInterfaceStyle == .dark ? .white : .black })
+            self.accessibilityTraits = []
         }
 
         self.setupInsets()

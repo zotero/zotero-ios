@@ -17,6 +17,7 @@ final class ItemDetailNoteCell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
         self.containerHeight.constant = ItemDetailLayout.minCellHeight
+        self.accessibilityTraits = .button
     }
 
     func setup(with note: Note) {

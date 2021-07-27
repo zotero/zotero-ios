@@ -67,5 +67,35 @@ final class ItemDetailAttachmentCell: UITableViewCell {
 
         self.label.textColor = textColor
         self.isUserInteractionEnabled = enabled
+        self.setupAccessibility(for: attachment, enabled: enabled)
+    }
+
+    private func setupAccessibility(for attachment: Attachment, enabled: Bool) {
+        guard enabled && self.selectionStyle != .none else {
+            self.accessibilityTraits = []
+            self.accessibilityHint = nil
+            return
+        }
+
+        switch attachment.type {
+        case .file(_, _, let location, _):
+            switch location {
+            case .remoteMissing:
+                self.accessibilityTraits = []
+                self.accessibilityHint = nil
+
+            case .remote:
+                self.accessibilityHint = L10n.Accessibility.ItemDetail.downloadAndOpen
+                self.accessibilityTraits = .button
+
+            case .local:
+                self.accessibilityHint = L10n.Accessibility.ItemDetail.open
+                self.accessibilityTraits = .button
+            }
+
+        case .url:
+            self.accessibilityHint = L10n.Accessibility.ItemDetail.open
+            self.accessibilityTraits = .button
+        }
     }
 }

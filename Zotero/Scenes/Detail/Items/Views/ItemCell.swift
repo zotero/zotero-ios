@@ -99,12 +99,8 @@ final class ItemCell: UITableViewCell {
         self.key = item.key
 
         self.typeImageView.image = UIImage(named: item.typeIconName)
-        self.typeImageView.isAccessibilityElement = true
-        self.typeImageView.accessibilityTraits = .image
-        self.typeImageView.accessibilityLabel = item.typeName
-        
         self.titleLabel.text = item.title.isEmpty ? " " : item.title
-        self.titleLabel.accessibilityLabel = item.title.isEmpty ? L10n.Accessibility.untitled : item.title
+        self.titleLabel.accessibilityLabel = self.titleAccessibilityLabel(for: item)
         self.subtitleLabel.text = item.subtitle.isEmpty ? " " : item.subtitle
         self.subtitleLabel.accessibilityLabel = item.subtitle
         // The label adds extra horizontal spacing so there is a negative right inset so that the label ends where the text ends exactly.
@@ -143,5 +139,10 @@ final class ItemCell: UITableViewCell {
             self.accessoryImageView.isHidden = false
             self.accessoryImageView.image = Asset.Images.Attachments.listLink.image
         }
+    }
+
+    private func titleAccessibilityLabel(for item: ItemCellModel) -> String {
+        let title = item.title.isEmpty ? L10n.Accessibility.untitled : item.title
+        return item.typeName + ", " + title
     }
 }

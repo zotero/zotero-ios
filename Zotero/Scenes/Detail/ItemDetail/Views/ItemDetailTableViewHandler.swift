@@ -480,6 +480,7 @@ final class ItemDetailTableViewHandler: NSObject {
         } else {
             cell.accessoryType = accessoryType
         }
+        cell.accessibilityTraits = []
 
         switch row {
         case .add:
@@ -568,6 +569,9 @@ final class ItemDetailTableViewHandler: NSObject {
         case .type(let type):
             if let cell = cell as? ItemDetailFieldCell {
                 cell.setup(with: type, title: L10n.itemType, titleWidth: titleWidth)
+                if isEditing {
+                    cell.accessibilityTraits = .button
+                }
             }
         }
     }
