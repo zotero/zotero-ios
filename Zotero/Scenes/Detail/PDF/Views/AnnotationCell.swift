@@ -90,6 +90,54 @@ final class AnnotationCell: UITableViewCell {
         self.key = annotation.key
         self.selectionView.layer.borderWidth = selected ? PDFReaderLayout.cellSelectionLineWidth : 0
         let availableWidth = availableWidth - (PDFReaderLayout.annotationLayout.horizontalInset * 2)
-        self.annotationView.setup(with: annotation, attributedComment: attributedComment, preview: preview, selected: selected, commentActive: commentActive, availableWidth: availableWidth, hasWritePermission: hasWritePermission)
+        self.annotationView.setup(with: annotation, attributedComment: attributedComment, preview: preview, selected: selected, commentActive: commentActive, availableWidth: availableWidth,
+                                  hasWritePermission: hasWritePermission, accessibilityType: .cell)
+
+        self.setupAccessibility(for: annotation, selected: selected)
+    }
+
+    private func setupAccessibility(for annotation: Annotation, selected: Bool) {
+        let author = annotation.isAuthor || annotation.author.isEmpty ? nil : annotation.author
+
+        var label = self.accessibilityLabel(for: annotation.type, pageLabel: annotation.pageLabel, author: author)
+
+        if let text = annotation.text {
+            label += ", " + L10n.Accessibility.Pdf.highlightedText + ": " + text
+        }
+
+        if !selected {
+            if !annotation.comment.isEmpty {
+                label += ", " + L10n.Accessibility.Pdf.comment + ": " + annotation.comment
+            }
+            if let tags = self.annotationView.tagString, !tags.isEmpty {
+                label += ", " + L10n.Accessibility.Pdf.tags + ": " + tags
+            }
+        }
+
+        self.isAccessibilityElement = false
+        self.accessibilityLabel = label
+        self.accessibilityTraits = .button
+        if selected {
+            self.accessibilityHint = nil
+        } else {
+            self.accessibilityHint = L10n.Accessibility.Pdf.annotationHint
+        }
+    }
+
+    private func accessibilityLabel(for type: AnnotationType, pageLabel: String, author: String?) -> String {
+        let annotationName: String
+        switch type {
+        case .highlight:
+            annotationName = L10n.Accessibility.Pdf.highlightAnnotation
+        case .image:
+            annotationName = L10n.Accessibility.Pdf.imageAnnotation
+        case .note:
+            annotationName = L10n.Accessibility.Pdf.noteAnnotation
+        }
+        var label = annotationName + ", " + L10n.page + " " + pageLabel
+        if let author = author {
+            label += ", \(L10n.Accessibility.Pdf.author): " + author
+        }
+        return label
     }
 }

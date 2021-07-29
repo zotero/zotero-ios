@@ -24,6 +24,11 @@ final class AnnotationView: UIView {
         case done
     }
 
+    enum AccessibilityType {
+        case cell
+        case view
+    }
+
     private let layout: AnnotationViewLayout
     let actionPublisher: PublishSubject<AnnotationView.Action>
 
@@ -38,6 +43,10 @@ final class AnnotationView: UIView {
     private var scrollView: UIScrollView?
     private var scrollViewContent: UIView?
     private(set) var disposeBag: DisposeBag!
+
+    var tagString: String? {
+        return self.tags.textLabel.text
+    }
 
     // MARK: - Lifecycle
 
@@ -76,18 +85,19 @@ final class AnnotationView: UIView {
 
     // MARK: - Setups
 
-    func setupHeader(with annotation: Annotation, selected: Bool, hasWritePermission: Bool) {
-        self.header.setup(with: annotation, isEditable: (hasWritePermission && selected), showDoneButton: self.layout.showDoneButton)
+    func setupHeader(with annotation: Annotation, selected: Bool, hasWritePermission: Bool, accessibilityType: AccessibilityType) {
+        self.header.setup(with: annotation, isEditable: (hasWritePermission && selected), showDoneButton: self.layout.showDoneButton, accessibilityType: accessibilityType)
     }
 
-    func setup(with annotation: Annotation, attributedComment: NSAttributedString?, preview: UIImage?, selected: Bool, commentActive: Bool, availableWidth: CGFloat, hasWritePermission: Bool) {
+    func setup(with annotation: Annotation, attributedComment: NSAttributedString?, preview: UIImage?, selected: Bool, commentActive: Bool, availableWidth: CGFloat, hasWritePermission: Bool,
+               accessibilityType: AccessibilityType) {
         let color = UIColor(hex: annotation.color)
         let canEdit = (annotation.editability != .notEditable) && selected && (hasWritePermission || annotation.isAuthor)
 
-        self.header.setup(with: annotation, isEditable: canEdit, showDoneButton: self.layout.showDoneButton)
-        self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth)
+        self.header.setup(with: annotation, isEditable: canEdit, showDoneButton: self.layout.showDoneButton, accessibilityType: accessibilityType)
+        self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth, accessibilityType: accessibilityType)
         self.setupComments(for: annotation, attributedComment: attributedComment, isActive: commentActive, canEdit: canEdit)
-        self.setupTags(for: annotation, canEdit: canEdit)
+        self.setupTags(for: annotation, canEdit: canEdit, accessibilityEnabled: (accessibilityType == .view || selected))
         self.setupObserving()
 
         let commentButtonIsHidden = !self.layout.showsContent || !canEdit || commentActive || !annotation.comment.isEmpty
@@ -100,7 +110,7 @@ final class AnnotationView: UIView {
         self.bottomSeparator.isHidden = (self.tags.isHidden && self.tagsButton.isHidden) || (self.commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden)
     }
 
-    private func setupContent(for annotation: Annotation, preview: UIImage?, color: UIColor, canEdit: Bool, selected: Bool, availableWidth: CGFloat) {
+    private func setupContent(for annotation: Annotation, preview: UIImage?, color: UIColor, canEdit: Bool, selected: Bool, availableWidth: CGFloat, accessibilityType: AccessibilityType) {
         guard let highlightContent = self.highlightContent, let imageContent = self.imageContent else { return }
 
         highlightContent.isUserInteractionEnabled = false
@@ -112,7 +122,7 @@ final class AnnotationView: UIView {
 
         case .highlight:
             let bottomInset = self.inset(from: self.layout.highlightLineVerticalInsets, hasComment: !annotation.comment.isEmpty, selected: selected, canEdit: canEdit)
-            highlightContent.setup(with: color, text: (annotation.text ?? ""), bottomInset: bottomInset)
+            highlightContent.setup(with: color, text: (annotation.text ?? ""), bottomInset: bottomInset, accessibilityType: accessibilityType)
 
         case .image:
             let size = annotation.previewBoundingBox.size
@@ -148,18 +158,25 @@ final class AnnotationView: UIView {
         }
     }
 
-    private func setupTags(for annotation: Annotation, canEdit: Bool) {
+    private func setupTags(for annotation: Annotation, canEdit: Bool, accessibilityEnabled: Bool) {
         guard !annotation.tags.isEmpty else {
             self.tagsButton.isHidden = !canEdit
+            self.tagsButton.accessibilityLabel = L10n.Pdf.AnnotationsSidebar.addTags
             self.tags.isHidden = true
             return
         }
 
-        self.tags.setup(with: AnnotationView.attributedString(from: annotation.tags, layout: self.layout))
+        let tagString = AnnotationView.attributedString(from: annotation.tags, layout: self.layout)
+        self.tags.setup(with: tagString)
 
         self.tagsButton.isHidden = true
         self.tags.isHidden = false
         self.tags.isUserInteractionEnabled = canEdit
+
+        if accessibilityEnabled {
+            self.tags.button.accessibilityLabel = L10n.Accessibility.Pdf.tags + ": " + tagString.string
+            self.tags.button.accessibilityHint = L10n.Accessibility.Pdf.tagsHint
+        }
     }
 
     private func setupObserving() {

@@ -11,7 +11,7 @@ import UIKit
 import RealmSwift
 import RxSwift
 
-protocol ItemsToolbarControllerDelegate: class {
+protocol ItemsToolbarControllerDelegate: AnyObject {
     func process(action: ItemAction.Kind, button: UIBarButtonItem)
 }
 

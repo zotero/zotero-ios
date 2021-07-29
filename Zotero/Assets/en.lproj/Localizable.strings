@@ -333,3 +333,13 @@
 "accessibility.pdf.highlight_annotation_tool" = "Create highlight annotation";
 "accessibility.pdf.note_annotation_tool" = "Create note annotation";
 "accessibility.pdf.image_annotation_tool" = "Create image annotation";
+"accessibility.pdf.highlight_annotation" = "Highlight annotation";
+"accessibility.pdf.note_annotation" = "Note annotation";
+"accessibility.pdf.image_annotation" = "Image annotation";
+"accessibility.pdf.edit_annotation" = "Edit annotation";
+"accessibility.pdf.highlighted_text" = "Highlighted text";
+"accessibility.pdf.author" = "Author";
+"accessibility.pdf.comment" = "Comment";
+"accessibility.pdf.tags" = "Tags";
+"accessibility.pdf.annotation_hint" = "Double tap to select and edit";
+"accessibility.pdf.tags_hint" = "Double tap to edit tags";

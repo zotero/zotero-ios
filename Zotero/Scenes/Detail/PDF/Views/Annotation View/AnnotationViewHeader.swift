@@ -50,7 +50,20 @@ final class AnnotationViewHeader: UIView {
         }
     }
 
-    private func setup(type: AnnotationType, color: UIColor, pageLabel: String, author: String, showsMenuButton: Bool, showsDoneButton: Bool) {
+    private func accessibilityLabel(for type: AnnotationType, pageLabel: String) -> String {
+        let annotationName: String
+        switch type {
+        case .highlight:
+            annotationName = L10n.Accessibility.Pdf.highlightAnnotation
+        case .image:
+            annotationName = L10n.Accessibility.Pdf.imageAnnotation
+        case .note:
+            annotationName = L10n.Accessibility.Pdf.noteAnnotation
+        }
+        return annotationName + ", " + L10n.page + " " + pageLabel
+    }
+
+    private func setup(type: AnnotationType, color: UIColor, pageLabel: String, author: String, showsMenuButton: Bool, showsDoneButton: Bool, accessibilityType: AnnotationView.AccessibilityType) {
         self.typeImageView.image = self.image(for: type)?.withRenderingMode(.alwaysTemplate)
         self.typeImageView.tintColor = color
         self.pageLabel.text = L10n.page + " " + pageLabel
@@ -58,12 +71,31 @@ final class AnnotationViewHeader: UIView {
         self.menuButton.isHidden = !showsMenuButton
         self.authorTrailingToButton.isActive = showsMenuButton
         self.authorTrailingToContainer.isActive = !showsMenuButton
+
+        self.setupAccessibility(type: type, pageLabel: pageLabel, author: author, accessibilityType: accessibilityType)
     }
 
-    func setup(with annotation: Annotation, isEditable: Bool, showDoneButton: Bool) {
+    func setup(with annotation: Annotation, isEditable: Bool, showDoneButton: Bool, accessibilityType: AnnotationView.AccessibilityType) {
         let color = UIColor(hex: annotation.color)
         let author = annotation.isAuthor ? "" : annotation.author
-        self.setup(type: annotation.type, color: color, pageLabel: annotation.pageLabel, author: author, showsMenuButton: isEditable, showsDoneButton: showDoneButton)
+        self.setup(type: annotation.type, color: color, pageLabel: annotation.pageLabel, author: author, showsMenuButton: isEditable,
+                   showsDoneButton: showDoneButton, accessibilityType: accessibilityType)
+    }
+
+    private func setupAccessibility(type: AnnotationType, pageLabel: String, author: String, accessibilityType: AnnotationView.AccessibilityType) {
+//        switch accessibilityType {
+//        case .view:
+//            self.pageLabel.accessibilityLabel = self.accessibilityLabel(for: type, pageLabel: pageLabel)
+//            self.authorLabel.accessibilityLabel = author.isEmpty ? nil : L10n.Accessibility.Pdf.author + ": " + author
+//        case .cell:
+//            self.pageLabel.isAccessibilityElement = false
+//            self.authorLabel.isAccessibilityElement = false
+//        }
+
+//        self.menuButton.accessibilityLabel = L10n.Accessibility.Pdf.editAnnotation
+        self.menuButton.isAccessibilityElement = true
+
+//        self.accessibilityElements = [self.menuButton]
     }
 
     private func setupView(with layout: AnnotationViewLayout) {

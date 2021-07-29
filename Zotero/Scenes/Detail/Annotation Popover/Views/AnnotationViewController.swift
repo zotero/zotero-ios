@@ -93,7 +93,7 @@ final class AnnotationViewController: UIViewController {
         guard state.changes.contains(.annotations) else { return }
 
         // Update header
-        self.header?.setup(with: annotation, isEditable: state.library.metadataEditable, showDoneButton: false)
+        self.header?.setup(with: annotation, isEditable: state.library.metadataEditable, showDoneButton: false, accessibilityType: .view)
 
         // Update comment
         let comment = self.attributedStringConverter.convert(text: annotation.comment, baseFont: AnnotationPopoverLayout.annotationLayout.font)
@@ -174,7 +174,7 @@ final class AnnotationViewController: UIViewController {
 
         // Setup header
         let header = AnnotationViewHeader(layout: layout)
-        header.setup(with: annotation, isEditable: self.viewModel.state.library.metadataEditable, showDoneButton: false)
+        header.setup(with: annotation, isEditable: self.viewModel.state.library.metadataEditable, showDoneButton: false, accessibilityType: .view)
         header.menuTap
               .subscribe(with: self, onNext: { `self`, _ in
                   self.showSettings()

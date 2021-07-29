@@ -12,8 +12,8 @@ import RxSwift
 import RxCocoa
 
 final class AnnotationViewText: UIView {
-    private weak var textLabel: UILabel!
-    private weak var button: UIButton!
+    private(set) weak var textLabel: UILabel!
+    private(set) weak var button: UIButton!
 
     private let layout: AnnotationViewLayout
 

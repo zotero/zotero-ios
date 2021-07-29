@@ -14,14 +14,14 @@ import RxCocoa
 final class AnnotationViewHighlightContent: UIView {
     private weak var lineView: UIView!
     private weak var textLabel: UILabel!
-    private weak var button: UIButton!
+//    private weak var button: UIButton!
     private weak var bottomInsetConstraint: NSLayoutConstraint!
 
     private let layout: AnnotationViewLayout
 
-    var tap: Observable<UIButton> {
-        return self.button.rx.tap.flatMap({ Observable.just(self.button) })
-    }
+//    var tap: Observable<UIButton> {
+//        return self.button.rx.tap.flatMap({ Observable.just(self.button) })
+//    }
 
     init(layout: AnnotationViewLayout) {
         self.layout = layout
@@ -37,18 +37,24 @@ final class AnnotationViewHighlightContent: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func setup(with color: UIColor, text: String, bottomInset: CGFloat) {
-        self.lineView.backgroundColor = color
-
+    func setup(with color: UIColor, text: String, bottomInset: CGFloat, accessibilityType: AnnotationView.AccessibilityType) {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.minimumLineHeight = self.layout.lineHeight
         paragraphStyle.maximumLineHeight = self.layout.lineHeight
         let attributedString = NSAttributedString(string: text, attributes: [.paragraphStyle: paragraphStyle,
                                                                              .font: self.layout.font,
                                                                              .foregroundColor: Asset.Colors.annotationText.color])
-        self.textLabel.attributedText = attributedString
 
+        self.lineView.backgroundColor = color
+        self.textLabel.attributedText = attributedString
         self.bottomInsetConstraint.constant = bottomInset
+
+//        switch accessibilityType {
+//        case .cell:
+//            self.textLabel.isAccessibilityElement = false
+//        case .view:
+//            self.textLabel.accessibilityLabel = attributedString.string
+//        }
     }
 
     private func setupView() {
@@ -60,12 +66,12 @@ final class AnnotationViewHighlightContent: UIView {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.setContentHuggingPriority(.defaultHigh, for: .vertical)
 
-        let button = UIButton()
-        button.translatesAutoresizingMaskIntoConstraints = false
+//        let button = UIButton()
+//        button.translatesAutoresizingMaskIntoConstraints = false
 
         self.addSubview(lineView)
         self.addSubview(label)
-        self.addSubview(button)
+//        self.addSubview(button)
 
         let bottomInset = self.bottomAnchor.constraint(equalTo: lineView.bottomAnchor, constant: self.layout.highlightLineVerticalInsets)
 
@@ -74,8 +80,8 @@ final class AnnotationViewHighlightContent: UIView {
             lineView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: self.layout.horizontalInset),
             label.leadingAnchor.constraint(equalTo: lineView.trailingAnchor, constant: self.layout.highlightContentLeadingOffset),
             self.trailingAnchor.constraint(equalTo: label.trailingAnchor, constant: self.layout.horizontalInset),
-            button.leadingAnchor.constraint(equalTo: self.leadingAnchor),
-            button.trailingAnchor.constraint(equalTo: self.trailingAnchor),
+//            button.leadingAnchor.constraint(equalTo: self.leadingAnchor),
+//            button.trailingAnchor.constraint(equalTo: self.trailingAnchor),
             // Size
             lineView.heightAnchor.constraint(equalTo: label.heightAnchor),
             lineView.widthAnchor.constraint(equalToConstant: self.layout.highlightLineWidth),
@@ -84,13 +90,13 @@ final class AnnotationViewHighlightContent: UIView {
             lineView.bottomAnchor.constraint(equalTo: label.bottomAnchor),
             lineView.topAnchor.constraint(equalTo: self.topAnchor, constant: self.layout.highlightLineVerticalInsets),
             bottomInset,
-            button.topAnchor.constraint(equalTo: self.topAnchor),
-            button.bottomAnchor.constraint(equalTo: self.bottomAnchor)
+//            button.topAnchor.constraint(equalTo: self.topAnchor),
+//            button.bottomAnchor.constraint(equalTo: self.bottomAnchor)
         ])
 
         self.lineView = lineView
         self.textLabel = label
-        self.button = button
+//        self.button = button
         self.bottomInsetConstraint = bottomInset
     }
 }

@@ -143,20 +143,40 @@ internal enum L10n {
       internal static let trash = L10n.tr("Localizable", "accessibility.items.trash")
     }
     internal enum Pdf {
+      /// Double tap to select and edit
+      internal static let annotationHint = L10n.tr("Localizable", "accessibility.pdf.annotation_hint")
+      /// Author
+      internal static let author = L10n.tr("Localizable", "accessibility.pdf.author")
       /// Color picker
       internal static let colorPicker = L10n.tr("Localizable", "accessibility.pdf.color_picker")
+      /// Comment
+      internal static let comment = L10n.tr("Localizable", "accessibility.pdf.comment")
+      /// Edit annotation
+      internal static let editAnnotation = L10n.tr("Localizable", "accessibility.pdf.edit_annotation")
       /// Export pdf
       internal static let export = L10n.tr("Localizable", "accessibility.pdf.export")
+      /// Highlight annotation
+      internal static let highlightAnnotation = L10n.tr("Localizable", "accessibility.pdf.highlight_annotation")
       /// Create highlight annotation
       internal static let highlightAnnotationTool = L10n.tr("Localizable", "accessibility.pdf.highlight_annotation_tool")
+      /// Highlighted text
+      internal static let highlightedText = L10n.tr("Localizable", "accessibility.pdf.highlighted_text")
+      /// Image annotation
+      internal static let imageAnnotation = L10n.tr("Localizable", "accessibility.pdf.image_annotation")
       /// Create image annotation
       internal static let imageAnnotationTool = L10n.tr("Localizable", "accessibility.pdf.image_annotation_tool")
+      /// Note annotation
+      internal static let noteAnnotation = L10n.tr("Localizable", "accessibility.pdf.note_annotation")
       /// Create note annotation
       internal static let noteAnnotationTool = L10n.tr("Localizable", "accessibility.pdf.note_annotation_tool")
       /// Close sidebar
       internal static let sidebarClose = L10n.tr("Localizable", "accessibility.pdf.sidebar_close")
       /// Open sidebar
       internal static let sidebarOpen = L10n.tr("Localizable", "accessibility.pdf.sidebar_open")
+      /// Tags
+      internal static let tags = L10n.tr("Localizable", "accessibility.pdf.tags")
+      /// Double tap to edit tags
+      internal static let tagsHint = L10n.tr("Localizable", "accessibility.pdf.tags_hint")
     }
   }
 

@@ -27,6 +27,15 @@ final class AnnotationViewTextView: UIView {
     var didBecomeActive: Observable<()> {
         return self.textViewDelegate.didBecomeActive
     }
+    override var accessibilityLabel: String? {
+        get {
+            return self.textView.accessibilityLabel
+        }
+
+        set {
+            self.textView.accessibilityLabel = newValue
+        }
+    }
 
     // MARK: - Lifecycle
 
