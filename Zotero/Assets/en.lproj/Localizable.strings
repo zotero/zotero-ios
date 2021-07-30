@@ -313,6 +313,7 @@
 "accessibility.collections.create_collection" = "Create collection";
 "accessibility.collections.search_collections" = "Search collections";
 "accessibility.collections.expand_all_collections" = "Expand all collections";
+"accessibility.items.open_item" = "Open item info";
 "accessibility.items.select_items" = "Select items";
 "accessibility.items.select_all_items" = "Select All Items";
 "accessibility.items.deselect_all_items" = "Deselect All Items";

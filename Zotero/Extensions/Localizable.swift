@@ -129,6 +129,8 @@ internal enum L10n {
       internal static let duplicate = L10n.tr("Localizable", "accessibility.items.duplicate")
       /// Filter items
       internal static let filterItems = L10n.tr("Localizable", "accessibility.items.filter_items")
+      /// Open item info
+      internal static let openItem = L10n.tr("Localizable", "accessibility.items.open_item")
       /// Remove selected items from collection
       internal static let removeFromCollection = L10n.tr("Localizable", "accessibility.items.remove_from_collection")
       /// Restore selected items
