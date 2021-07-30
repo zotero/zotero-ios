@@ -343,3 +343,4 @@
 "accessibility.pdf.tags" = "Tags";
 "accessibility.pdf.annotation_hint" = "Double tap to select and edit";
 "accessibility.pdf.tags_hint" = "Double tap to edit tags";
+"accessibility.pdf.selected" = "Selected";

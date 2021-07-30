@@ -21,21 +21,14 @@ final class AnnotationViewTextView: UIView {
         return self.textViewDelegate.textObservable.flatMap { _ -> Observable<(NSAttributedString, Bool)> in
             let height = self.textView.contentSize.height
             self.textView.sizeToFit()
+            self.setupAccessibilityLabel()
             return Observable.just((self.textView.attributedText, (height != self.textView.contentSize.height)))
         }
     }
     var didBecomeActive: Observable<()> {
         return self.textViewDelegate.didBecomeActive
     }
-    override var accessibilityLabel: String? {
-        get {
-            return self.textView.accessibilityLabel
-        }
-
-        set {
-            self.textView.accessibilityLabel = newValue
-        }
-    }
+    var accessibilityLabelPrefix: String?
 
     // MARK: - Lifecycle
 
@@ -81,6 +74,21 @@ final class AnnotationViewTextView: UIView {
 
     func setup(text: NSAttributedString) {
         self.textViewDelegate.set(text: text, to: self.textView)
+        self.setupAccessibilityLabel()
+        self.textView.isAccessibilityElement = true
+    }
+
+    private func setupAccessibilityLabel() {
+        if self.textView.attributedText.string.isEmpty {
+            self.accessibilityLabel = self.placeholder
+            return
+        }
+
+        var label = self.textView.attributedText.string
+        if let prefix = self.accessibilityLabelPrefix {
+            label = prefix + label
+        }
+        self.accessibilityLabel = label
     }
 
     private func setupView() {

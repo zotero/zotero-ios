@@ -30,6 +30,7 @@ struct ColorPickerView: View {
                                 .onTapGesture {
                                     self.selectionAction(color)
                                 }
+                                .accessibility(label: Text(self.name(for: color)))
                     }
                 }
             }
@@ -45,6 +46,14 @@ struct ColorPickerView: View {
                         .padding(4)
             }
         }
+    }
+
+    private func name(for color: String) -> String {
+        let colorName = AnnotationsConfig.colorNames[color] ?? L10n.unknown
+        if self.selected != color {
+            return colorName
+        }
+        return L10n.Accessibility.Pdf.selected + ": " + colorName
     }
 }
 

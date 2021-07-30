@@ -156,11 +156,8 @@ final class AnnotationsViewController: UIViewController {
             return
         }
 
-        let reloadVisibleCells: ([IndexPath]) -> Void = { indexPaths in
-            for indexPath in indexPaths {
-                guard let cell = self.tableView.cellForRow(at: indexPath) as? AnnotationCell, let annotation = self.dataSource.snapshot.object(at: indexPath) else { continue }
-                self.setup(cell: cell, with: annotation, state: state)
-            }
+        let reloadVisibleCells: ([IndexPath]) -> Void = { [weak self] indexPaths in
+            self?.tableView.reloadRows(at: indexPaths, with: .none)
         }
 
         if !state.changes.contains(.annotations) && (state.changes.contains(.selection) || state.changes.contains(.activeComment)) {

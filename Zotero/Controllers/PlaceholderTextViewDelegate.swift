@@ -43,11 +43,13 @@ final class PlaceholderTextViewDelegate: NSObject {
     func set(text: String, to textView: UITextView) {
         self.placeholderLayer.isHidden = !text.isEmpty
         textView.text = text
+        textView.isAccessibilityElement = true
     }
 
     func set(text: NSAttributedString, to textView: UITextView) {
         self.placeholderLayer.isHidden = !text.string.isEmpty
         textView.attributedText = text
+        textView.isAccessibilityElement = true
     }
 
     func set(placeholderColor: UIColor) {

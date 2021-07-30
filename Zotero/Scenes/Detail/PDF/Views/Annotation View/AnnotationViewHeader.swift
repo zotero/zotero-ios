@@ -83,19 +83,17 @@ final class AnnotationViewHeader: UIView {
     }
 
     private func setupAccessibility(type: AnnotationType, pageLabel: String, author: String, accessibilityType: AnnotationView.AccessibilityType) {
-//        switch accessibilityType {
-//        case .view:
-//            self.pageLabel.accessibilityLabel = self.accessibilityLabel(for: type, pageLabel: pageLabel)
-//            self.authorLabel.accessibilityLabel = author.isEmpty ? nil : L10n.Accessibility.Pdf.author + ": " + author
-//        case .cell:
-//            self.pageLabel.isAccessibilityElement = false
-//            self.authorLabel.isAccessibilityElement = false
-//        }
+        switch accessibilityType {
+        case .view:
+            self.pageLabel.accessibilityLabel = self.accessibilityLabel(for: type, pageLabel: pageLabel)
+            self.authorLabel.accessibilityLabel = author.isEmpty ? nil : L10n.Accessibility.Pdf.author + ": " + author
+        case .cell:
+            self.pageLabel.isAccessibilityElement = false
+            self.authorLabel.isAccessibilityElement = false
+        }
 
-//        self.menuButton.accessibilityLabel = L10n.Accessibility.Pdf.editAnnotation
+        self.menuButton.accessibilityLabel = L10n.Accessibility.Pdf.editAnnotation
         self.menuButton.isAccessibilityElement = true
-
-//        self.accessibilityElements = [self.menuButton]
     }
 
     private func setupView(with layout: AnnotationViewLayout) {

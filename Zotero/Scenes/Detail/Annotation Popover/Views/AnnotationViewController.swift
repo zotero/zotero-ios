@@ -104,6 +104,7 @@ final class AnnotationViewController: UIViewController {
             for view in views {
                 guard let circleView = view as? ColorPickerCircleView else { continue }
                 circleView.isSelected = circleView.hexColor == annotation.color
+                circleView.accessibilityLabel = self.name(for: circleView.hexColor, isSelected: circleView.isSelected)
             }
         }
 
@@ -115,6 +116,11 @@ final class AnnotationViewController: UIViewController {
             self.tags?.isHidden = true
             self.tagsButton?.isHidden = false
         }
+    }
+
+    private func name(for color: String, isSelected: Bool) -> String {
+        let colorName = AnnotationsConfig.colorNames[color] ?? L10n.unknown
+        return !isSelected ? colorName : L10n.Accessibility.Pdf.selected + ": " + colorName
     }
 
     @IBAction private func delete() {
@@ -209,6 +215,8 @@ final class AnnotationViewController: UIViewController {
             })
             .disposed(by: self.disposeBag)
         self.tags = tags
+        self.tags?.button.accessibilityLabel = L10n.Accessibility.Pdf.tags + ": " + (self.tags?.textLabel.text ?? "")
+        self.tags?.textLabel.isAccessibilityElement = false
 
         let tagButton = AnnotationViewButton(layout: layout)
         tagButton.setTitle(L10n.Pdf.AnnotationsSidebar.addTags, for: .normal)
@@ -219,8 +227,10 @@ final class AnnotationViewController: UIViewController {
                  })
                  .disposed(by: self.disposeBag)
         self.tagsButton = tagButton
+        self.accessibilityLabel = L10n.Pdf.AnnotationsSidebar.addTags
 
         // Setup color picker
+        self.colorPickerContainer.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
         for (idx, hexColor) in AnnotationsConfig.colors.enumerated() {
             let circleView = ColorPickerCircleView(hexColor: hexColor)
             circleView.contentInsets = UIEdgeInsets(top: 11, left: (idx == 0 ? 16 : 11), bottom: 11, right: 11)
@@ -231,6 +241,8 @@ final class AnnotationViewController: UIViewController {
                           self.set(color: color)
                       })
                       .disposed(by: self.disposeBag)
+            circleView.isAccessibilityElement = true
+            circleView.accessibilityLabel = self.name(for: circleView.hexColor, isSelected: circleView.isSelected)
             circleView.backgroundColor = Asset.Colors.defaultCellBackground.color
             self.colorPickerContainer?.addArrangedSubview(circleView)
         }

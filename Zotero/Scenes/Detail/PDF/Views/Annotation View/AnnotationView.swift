@@ -162,6 +162,7 @@ final class AnnotationView: UIView {
         guard !annotation.tags.isEmpty else {
             self.tagsButton.isHidden = !canEdit
             self.tagsButton.accessibilityLabel = L10n.Pdf.AnnotationsSidebar.addTags
+            self.tagsButton.isAccessibilityElement = true
             self.tags.isHidden = true
             return
         }
@@ -172,10 +173,15 @@ final class AnnotationView: UIView {
         self.tagsButton.isHidden = true
         self.tags.isHidden = false
         self.tags.isUserInteractionEnabled = canEdit
+        self.tags.button.isAccessibilityElement = true
+        self.tags.button.accessibilityLabel = L10n.Accessibility.Pdf.tags + ": " + tagString.string
 
         if accessibilityEnabled {
-            self.tags.button.accessibilityLabel = L10n.Accessibility.Pdf.tags + ": " + tagString.string
+            self.tags.button.accessibilityTraits = .button
             self.tags.button.accessibilityHint = L10n.Accessibility.Pdf.tagsHint
+        } else {
+            self.tags.button.accessibilityTraits = .staticText
+            self.tags.button.accessibilityHint = nil
         }
     }
 
@@ -208,6 +214,7 @@ final class AnnotationView: UIView {
         self.header = AnnotationViewHeader(layout: self.layout)
         self.topSeparator = AnnotationViewSeparator()
         self.commentTextView = AnnotationViewTextView(layout: self.layout, placeholder: commentPlaceholder)
+        self.commentTextView.accessibilityLabelPrefix = L10n.Accessibility.Pdf.comment + ": "
         self.bottomSeparator = AnnotationViewSeparator()
         self.tagsButton = AnnotationViewButton(layout: self.layout)
         self.tagsButton.setTitle(L10n.Pdf.AnnotationsSidebar.addTags, for: .normal)
