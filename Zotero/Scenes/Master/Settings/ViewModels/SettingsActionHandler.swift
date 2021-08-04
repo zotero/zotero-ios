@@ -59,15 +59,7 @@ struct SettingsActionHandler: ViewModelActionHandler {
         case .cancelSync:
             self.syncScheduler.cancelSync()
 
-        case .setLogoutAlertVisible(let visible):
-            self.update(viewModel: viewModel) { state in
-                state.logoutAlertVisible = visible
-            }
-
         case .logout:
-            self.update(viewModel: viewModel) { state in
-                state.logoutAlertVisible = false
-            }
             self.sessionController.reset()
 
         case .startObserving:

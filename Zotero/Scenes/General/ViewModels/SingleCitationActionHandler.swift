@@ -77,7 +77,7 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
         let itemIds = viewModel.state.itemIds
         let libraryId = viewModel.state.libraryId
 
-        self.citationController.prepareForCitation(styleId: viewModel.state.styleId, localeId: viewModel.state.localeId, in: webView)
+        self.citationController.prepareForCitation(for: itemIds, libraryId: libraryId, styleId: viewModel.state.styleId, localeId: viewModel.state.localeId, in: webView)
                                .flatMap({ [weak webView] _ -> Single<String> in
                                    guard let webView = webView else { return Single.error(CitationController.Error.prepareNotCalled) }
                                    return self.citationController.citation(for: itemIds, libraryId: libraryId, label: viewModel.state.locator, locator: viewModel.state.locatorValue,

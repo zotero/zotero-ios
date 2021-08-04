@@ -11,6 +11,8 @@ import SwiftUI
 struct ProfileView: View {
     @EnvironmentObject var viewModel: ViewModel<SettingsActionHandler>
 
+    weak var coordinatorDelegate: SettingsCoordinatorDelegate?
+
     var body: some View {
         Form {
             Section(header: Text("")) {
@@ -19,7 +21,7 @@ struct ProfileView: View {
 
             Section {
                 Button(action: {
-                    self.viewModel.process(action: .setLogoutAlertVisible(true))
+                    self.coordinatorDelegate?.showLogoutAlert(viewModel: self.viewModel)
                 }) {
                     Text(L10n.Settings.logout)
                         .foregroundColor(.red)
@@ -27,14 +29,6 @@ struct ProfileView: View {
             }
         }
         .navigationBarTitle(L10n.Settings.account)
-        .alert(isPresented: self.viewModel.binding(keyPath: \.logoutAlertVisible, action: { .setLogoutAlertVisible($0) })) {
-            Alert(title: Text(L10n.warning),
-                  message: Text(L10n.Settings.logoutWarning),
-                  primaryButton: .default(Text(L10n.yes), action: {
-                      self.viewModel.process(action: .logout)
-                  }),
-                  secondaryButton: .cancel(Text(L10n.no)))
-        }
     }
 
     private var username: String {

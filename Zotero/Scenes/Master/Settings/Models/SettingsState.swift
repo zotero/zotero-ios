@@ -33,7 +33,6 @@ struct SettingsState: ViewModelState {
     var isLogging: Bool
     var lastTranslatorUpdate: Date
     var isUpdatingTranslators: Bool
-    var logoutAlertVisible: Bool
     var libraries: [Library]
     var storageData: [LibraryIdentifier: DirectoryData]
     var totalStorageData: DirectoryData
@@ -66,7 +65,6 @@ struct SettingsState: ViewModelState {
         self.isUpdatingTranslators = isUpdatingTranslators
         self.totalStorageData = DirectoryData(fileCount: 0, mbSize: 0)
         self.websocketConnectionState = websocketConnectionState
-        self.logoutAlertVisible = false
         self.libraries = []
         self.storageData = [:]
         self.showDeleteAllQuestion = false
@@ -81,7 +79,6 @@ struct SettingsState: ViewModelState {
         self.lastTranslatorUpdate = Date()
         self.isUpdatingTranslators = false
         self.websocketConnectionState = .disconnected
-        self.logoutAlertVisible = false
         self.libraries = []
         self.showDeleteAllQuestion = false
     }

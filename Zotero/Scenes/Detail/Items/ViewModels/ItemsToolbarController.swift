@@ -155,7 +155,9 @@ final class ItemsToolbarController {
                 item.accessibilityLabel = L10n.Accessibility.Items.restore
             case .duplicate:
                 item.accessibilityLabel = L10n.Accessibility.Items.duplicate
-            case .sort, .filter, .createParent: break
+            case .share:
+                item.accessibilityLabel = L10n.Accessibility.Items.share
+            case .sort, .filter, .createParent, .copyCitation, .copyBibliography: break
             }
             item.rx.tap.subscribe(onNext: { [weak self] _ in
                 guard let `self` = self else { return }

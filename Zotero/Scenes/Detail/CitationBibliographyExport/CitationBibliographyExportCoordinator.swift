@@ -48,6 +48,8 @@ final class CitationBibliographyExportCoordinator: NSObject, Coordinator {
     }
 
     func start(animated: Bool) {
+        guard let citationController = self.controllers.userControllers?.citationController else { return }
+
         do {
             let styleId = Defaults.shared.quickCopyStyleId
             let rStyle = try self.controllers.bundledDataStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: styleId))
@@ -57,7 +59,7 @@ final class CitationBibliographyExportCoordinator: NSObject, Coordinator {
             webView.isHidden = true
 
             let state = CitationBibliographyExportState(itemIds: self.itemIds, libraryId: self.libraryId, selectedStyle: style, selectedLocaleId: Defaults.shared.quickCopyLocaleId)
-            let handler = CitationBibliographyExportActionHandler(citationController: self.controllers.citationController, fileStorage: self.controllers.fileStorage, webView: webView)
+            let handler = CitationBibliographyExportActionHandler(citationController: citationController, fileStorage: self.controllers.fileStorage, webView: webView)
             let viewModel = ViewModel(initialState: state, handler: handler)
 
             viewModel.stateObservable

@@ -20,6 +20,7 @@ protocol SettingsCoordinatorDelegate: AnyObject {
     func showCitationStyleManagement(viewModel: ViewModel<CiteActionHandler>)
     func showExportSettings()
     func dismiss()
+    func showLogoutAlert(viewModel: ViewModel<SettingsActionHandler>)
 }
 
 protocol CitationStyleSearchSettingsCoordinatorDelegate: AnyObject {
@@ -228,6 +229,15 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         let controller = UIHostingController(rootView: view.environmentObject(viewModel))
         controller.preferredContentSize = SettingsCoordinator.defaultSize
         self.navigationController.pushViewController(controller, animated: true)
+    }
+
+    func showLogoutAlert(viewModel: ViewModel<SettingsActionHandler>) {
+        let controller = UIAlertController(title: L10n.warning, message: L10n.Settings.logoutWarning, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.yes, style: .default, handler: { [weak viewModel] _ in
+            viewModel?.process(action: .logout)
+        }))
+        controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: nil))
+        self.navigationController.present(controller, animated: true, completion: nil)
     }
 
     func dismiss() {

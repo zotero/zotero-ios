@@ -20,7 +20,6 @@ enum SettingsAction {
     case setAskForSyncPermission(Bool)
     case setIncludeTags(Bool)
     case setIncludeAttachment(Bool)
-    case setLogoutAlertVisible(Bool)
     case setShowSubcollectionItems(Bool)
     case showDeleteAllQuestion(Bool)
     case showDeleteLibraryQuestion(Library?)

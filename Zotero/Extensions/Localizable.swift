@@ -139,6 +139,8 @@ internal enum L10n {
       internal static let selectAllItems = L10n.tr("Localizable", "accessibility.items.select_all_items")
       /// Select items
       internal static let selectItems = L10n.tr("Localizable", "accessibility.items.select_items")
+      /// Share selected items
+      internal static let share = L10n.tr("Localizable", "accessibility.items.share")
       /// Sort items
       internal static let sortItems = L10n.tr("Localizable", "accessibility.items.sort_items")
       /// Move selected items to trash

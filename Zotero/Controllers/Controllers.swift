@@ -24,7 +24,6 @@ final class Controllers {
     let debugLogging: DebugLogging
     let bundledDataStorage: DbStorage
     let translatorsAndStylesController: TranslatorsAndStylesController
-    let citationController: CitationController
     let annotationPreviewController: AnnotationPreviewController
     let urlDetector: UrlDetector
     let dateParser: DateParser
@@ -75,7 +74,6 @@ final class Controllers {
         self.crashReporter = crashReporter
         self.debugLogging = debugLogging
         self.translatorsAndStylesController = translatorsAndStylesController
-        self.citationController = CitationController(stylesController: translatorsAndStylesController, fileStorage: fileStorage, dbStorage: bundledDataStorage)
         self.annotationPreviewController = AnnotationPreviewController(previewSize: previewSize, fileStorage: fileStorage)
         self.urlDetector = urlDetector
         self.dateParser = DateParser()
@@ -184,6 +182,7 @@ final class UserControllers {
     let fileDownloader: AttachmentDownloader
     let webSocketController: WebSocketController
     let fileCleanupController: AttachmentFileCleanupController
+    let citationController: CitationController
     private let isFirstLaunch: Bool
     private let lastBuildNumber: Int?
     unowned let translatorsAndStylesController: TranslatorsAndStylesController
@@ -223,6 +222,8 @@ final class UserControllers {
         self.fileDownloader = fileDownloader
         self.webSocketController = webSocketController
         self.fileCleanupController = fileCleanupController
+        self.citationController = CitationController(stylesController: controllers.translatorsAndStylesController, fileStorage: controllers.fileStorage,
+                                                     dbStorage: dbStorage, bundledDataStorage: controllers.bundledDataStorage)
         self.translatorsAndStylesController = controllers.translatorsAndStylesController
         self.lastBuildNumber = controllers.lastBuildNumber
         self.disposeBag = DisposeBag()

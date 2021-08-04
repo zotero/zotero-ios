@@ -38,3 +38,17 @@ struct ReadItemsDbRequest: DbResponseRequest {
         return keys
     }
 }
+
+struct ReadItemsWithKeysDbRequest: DbResponseRequest {
+    typealias Response = Results<RItem>
+
+    let keys: Set<String>
+    let libraryId: LibraryIdentifier
+
+    var needsWrite: Bool { return false }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
+
+    func process(in database: Realm) throws -> Results<RItem> {
+        return database.objects(RItem.self).filter(.keys(self.keys, in: self.libraryId))
+    }
+}

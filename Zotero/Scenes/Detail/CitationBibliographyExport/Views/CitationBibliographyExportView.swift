@@ -180,7 +180,7 @@ struct CitationBibliographyExportView_Previews: PreviewProvider {
         let controllers = Controllers()
         let style = Style(identifier: "http://www.zotero.org/styles/nature", title: "Nature", updated: Date(), href: URL(string: "")!, filename: "", supportsBibliography: true)
         let state = CitationBibliographyExportState(itemIds: [], libraryId: .custom(.myLibrary), selectedStyle: style, selectedLocaleId: "en_US")
-        let handler = CitationBibliographyExportActionHandler(citationController: controllers.citationController, fileStorage: controllers.fileStorage, webView: WKWebView())
+        let handler = CitationBibliographyExportActionHandler(citationController: controllers.userControllers!.citationController, fileStorage: controllers.fileStorage, webView: WKWebView())
         let viewModel = ViewModel(initialState: state, handler: handler)
         return CitationBibliographyExportView().environmentObject(viewModel)
     }

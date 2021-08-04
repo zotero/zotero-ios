@@ -13,6 +13,8 @@ import CocoaLumberjackSwift
 import RxSwift
 
 class CitationController: NSObject {
+    fileprivate typealias WebViewResponseHandler = (SingleEvent<String>) -> Void
+
     enum Format: String {
         case html = "html"
     }
@@ -23,6 +25,7 @@ class CitationController: NSObject {
         case citation = "citationHandler"
         case log = "logHandler"
         case bibliography = "bibliographyHandler"
+        case csl = "cslHandler"
     }
 
     enum Error: Swift.Error {
@@ -32,36 +35,43 @@ class CitationController: NSObject {
         case missingResponse
         case styleOrLocaleMissing
         case prepareNotCalled
+        case cantFindSchema
     }
 
     private unowned let stylesController: TranslatorsAndStylesController
     private unowned let fileStorage: FileStorage
     private unowned let dbStorage: DbStorage
+    private unowned let bundledDataStorage: DbStorage
     private let backgroundScheduler: SerialDispatchQueueScheduler
 
-    private var webView: WKWebView?
+    // Store temporary data for citation preview so that they don't need to be reloaded for each preview generation.
     private var styleXml: String?
     private var localeId: String?
     private var localeXml: String?
+    private var itemsCsl: String?
 
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
-    private var webViewResponse: ((SingleEvent<String>) -> Void)?
+    private var responseHandlers: [String: WebViewResponseHandler]
 
-    init(stylesController: TranslatorsAndStylesController, fileStorage: FileStorage, dbStorage: DbStorage) {
+    init(stylesController: TranslatorsAndStylesController, fileStorage: FileStorage, dbStorage: DbStorage, bundledDataStorage: DbStorage) {
         self.stylesController = stylesController
         self.fileStorage = fileStorage
         self.dbStorage = dbStorage
+        self.bundledDataStorage = bundledDataStorage
         self.backgroundScheduler = SerialDispatchQueueScheduler(internalSerialQueueName: "org.zotero.CitationController")
+        self.responseHandlers = [:]
         super.init()
     }
 
     // MARK: - Actions
 
     /// Pre-loads given webView with appropriate index.html so that it's ready immediately for preview generation.
+    /// - parameter itemIds: Ids of items for which CSL will be generated.
+    /// - parameter libraryId: Library identifier of given items.
     /// - parameter styleId: Id of style to use for citation generation.
     /// - parameter localeId: Id of locale to use for citation generation.
     /// - returns: Single which is called when webView is fully loaded.
-    func prepareForCitation(styleId: String, localeId: String, in webView: WKWebView) -> Single<()> {
+    func prepareForCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier, styleId: String, localeId: String, in webView: WKWebView) -> Single<()> {
         webView.navigationDelegate = self
         JSHandlers.allCases.forEach { handler in
             webView.configuration.userContentController.removeScriptMessageHandler(forName: handler.rawValue)
@@ -79,18 +89,32 @@ class CitationController: NSObject {
                         self.localeId = localeId
                         self.localeXml = locale
                     })
-                    .flatMap({ _ -> Single<(String, URL)> in
-                        return self.loadIndexHtml()
+                    .flatMap({ _ -> Single<String> in
+                        return self.loadSchema()
+                    })
+                    .flatMap({ schema -> Single<(String, String)> in
+                        return self.loadItemJsons(for: itemIds, libraryId: libraryId).flatMap({ Single.just((schema, $0)) })
+                    })
+                    .flatMap({ schema, itemJsons -> Single<(String, URL, String, String)> in
+                        return self.loadIndexHtml().flatMap({ Single.just(($0, $1, schema, itemJsons)) })
                     })
                     .observe(on: MainScheduler.instance)
-                    .flatMap({ [weak webView] html, url -> Single<()> in
+                    .flatMap({ [weak webView] html, url, schema, itemJsons -> Single<(String, String)> in
                          guard let webView = webView else { return Single.error(Error.deinitialized) }
-                         return self.load(html: html, baseUrl: url, in: webView).flatMap({ _ in Single.just(()) })
+                         return self.load(html: html, baseUrl: url, in: webView).flatMap({ _ in Single.just((schema, itemJsons)) })
                     })
+                    .flatMap({ [weak webView] schema, itemJsons -> Single<String> in
+                        guard let webView = webView else { return Single.error(Error.deinitialized) }
+                        return self.getItemsCsl(from: itemJsons, schema: schema, webView: webView)
+                    })
+                    .do(onSuccess: { itemsCsl in
+                        self.itemsCsl = itemsCsl
+                    })
+                    .flatMap({ _ in return Single.just(()) })
     }
 
     /// Generates citation preview for given item in given format. Has to be called after `prepareForCitation(styleId:localeId:in:)` finishes!
-    /// - parameter items: Ids of items of which citation is created.
+    /// - parameter itemIds: Ids of items of which citation is created.
     /// - parameter libraryId: Id of library for given items.
     /// - parameter label: Label for locator which should be used.
     /// - parameter locator: Locator value.
@@ -99,14 +123,32 @@ class CitationController: NSObject {
     /// - parameter webView: Web view which is fully loaded (`prepareForCitation(styleId:localeId:in:)` finished).
     /// - returns: Single with generated citation.
     func citation(for itemIds: Set<String>, libraryId: LibraryIdentifier, label: String?, locator: String?, omitAuthor: Bool, format: Format, in webView: WKWebView) -> Single<String> {
-        guard let style = self.styleXml, let localeId = self.localeId, let locale = self.localeXml else { return Single.error(Error.prepareNotCalled) }
-        return self.getCitation(styleXml: style, localeId: localeId, localeXml: locale, label: label, locator: locator, omitAuthor: omitAuthor, format: format.rawValue, webView: webView)
+        guard let style = self.styleXml, let localeId = self.localeId, let locale = self.localeXml, let itemsCsl = self.itemsCsl else { return Single.error(Error.prepareNotCalled) }
+        let itemsData = self.itemsData(for: itemIds, label: label, locator: locator, omitAuthor: omitAuthor)
+        return self.getCitation(itemsCsl: itemsCsl, itemsData: itemsData, styleXml: style, localeId: localeId, localeXml: locale, format: format.rawValue, webView: webView)
+    }
+
+    private func itemsData(for itemIds: Set<String>, label: String?, locator: String?, omitAuthor: Bool) -> String {
+        var itemsData: [[String: Any]] = []
+        for key in itemIds {
+            var data: [String: Any] = ["id": "https://www.zotero.org/\(key)", "suppress-author": omitAuthor]
+            if let value = label {
+                data["label"] = value
+            }
+            if let value = locator {
+                data["locator"] = value
+            }
+            itemsData.append(data)
+        }
+        return WKWebView.encodeAsJSONForJavascript(itemsData)
     }
 
     /// Cleans up after citation. Should be called when all citation() requests are called.
     func finishCitation() {
         self.localeXml = nil
+        self.localeId = nil
         self.styleXml = nil
+        self.itemsCsl = nil
     }
 
     /// Bibliography happens once for selected item(s). Appropriate style and locale xmls are loaded, webView is initialized and loaded with index.html. When everything is loaded,
@@ -134,14 +176,24 @@ class CitationController: NSObject {
                    .flatMap({ style, locale -> Single<(String, String, String, URL)> in
                        return self.loadIndexHtml().flatMap({ Single.just((style, locale, $0, $1)) })
                    })
+                   .flatMap({ style, locale, html, url -> Single<(String, String, String, URL, String)> in
+                       return self.loadSchema().flatMap({ Single.just((style, locale, html, url, $0)) })
+                   })
+                   .flatMap({ style, locale, html, url, schema -> Single<(String, String, String, URL, String, String)> in
+                       return self.loadItemJsons(for: itemIds, libraryId: libraryId).flatMap({ Single.just((style, locale, html, url, schema, $0)) })
+                   })
                   .observe(on: MainScheduler.instance)
-                  .flatMap({ [weak webView] style, locale, html, url -> Single<(String, String)> in
+                  .flatMap({ [weak webView] style, locale, html, url, schema, itemJsons -> Single<(String, String, String, String)> in
                       guard let webView = webView else { return Single.error(Error.deinitialized) }
-                      return self.load(html: html, baseUrl: url, in: webView).flatMap({ Single.just((style, locale)) })
+                      return self.load(html: html, baseUrl: url, in: webView).flatMap({ Single.just((style, locale, schema, itemJsons)) })
                   })
-                  .flatMap({ [weak webView] style, locale in
+                  .flatMap({ [weak webView] style, locale, schema, itemJsons -> Single<(String, String, String)> in
                       guard let webView = webView else { return Single.error(Error.deinitialized) }
-                      return self.getBibliography(styleXml: style, localeId: localeId, localeXml: locale, format: format.rawValue, webView: webView)
+                      return self.getItemsCsl(from: itemJsons, schema: schema, webView: webView).flatMap({ Single.just((style, locale, $0)) })
+                  })
+                  .flatMap({ [weak webView] style, locale, itemsCsl in
+                      guard let webView = webView else { return Single.error(Error.deinitialized) }
+                    return self.getBibliography(itemsCsl: itemsCsl, styleXml: style, localeId: localeId, localeXml: locale, format: format.rawValue, webView: webView)
                   })
     }
 
@@ -171,7 +223,7 @@ class CitationController: NSObject {
     private func loadStyleFilename(for styleId: String) -> Single<String> {
         return Single.create { subscriber in
             do {
-                let style = try self.dbStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: styleId))
+                let style = try self.bundledDataStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: styleId))
                 subscriber(.success(style.filename))
             } catch let error {
                 DDLogError("CitationController: can't load style - \(error)")
@@ -181,31 +233,125 @@ class CitationController: NSObject {
         }
     }
 
+    private func loadSchema() -> Single<String> {
+        return Single.create { subscriber in
+            guard let schemaPath = Bundle.main.path(forResource: "Bundled/schema", ofType: "json"),
+                  let schemaData = try? Data(contentsOf: URL(fileURLWithPath: schemaPath)) else {
+                subscriber(.failure(Error.cantFindSchema))
+                return Disposables.create()
+            }
+
+            subscriber(.success(WKWebView.encodeForJavascript(schemaData)))
+
+            return Disposables.create()
+        }
+    }
+
+    private func loadItemJsons(for keys: Set<String>, libraryId: LibraryIdentifier) -> Single<String> {
+        return Single.create { subscriber in
+            do {
+                let items = try self.dbStorage.createCoordinator().perform(request: ReadItemsWithKeysDbRequest(keys: keys, libraryId: libraryId))
+                let data = Array(items.map({ self.data(for: $0) }))
+                subscriber(.success(WKWebView.encodeAsJSONForJavascript(data)))
+            } catch let error {
+                DDLogError("CitationController: can't read items - \(error)")
+                subscriber(.failure(error))
+            }
+
+            return Disposables.create()
+        }
+    }
+
+    private func data(for item: RItem) -> [String: Any] {
+        var data: [String: Any] = [:]
+
+        // Add all fields
+        for field in item.fields {
+            data[field.key] = field.value
+        }
+
+        // Add creators
+        var creators: [[String: Any]] = []
+        for rCreator in item.creators.sorted(byKeyPath: "orderId") {
+            var creator: [String: Any] = ["creatorType": rCreator.rawType]
+            if !rCreator.name.isEmpty {
+                creator["name"] = rCreator.name
+            } else {
+                creator["firstName"] = rCreator.firstName
+                creator["lastName"] = rCreator.lastName
+            }
+            creators.append(creator)
+        }
+        data["creators"] = creators
+
+        // Add relations
+        var relations: [[String: Any]] = []
+        for rRelation in item.relations {
+            guard !rRelation.urlString.isEmpty else { continue }
+
+            let urls = rRelation.urlString.components(separatedBy: ";").filter({ !$0.isEmpty })
+            var relation: [String: Any] = [:]
+
+            if urls.count == 1, let url = urls.first {
+                relation[rRelation.type] = url
+            } else {
+                relation[rRelation.type] = urls
+            }
+            relations.append(relation)
+        }
+        data["relations"] = relations
+
+        // Add remaining data
+        data["key"] = item.key
+        data["itemType"] = item.rawType
+        data["version"] = item.version
+        if let key = item.parent?.key {
+            data["parentItem"] = key
+        }
+        data["dateAdded"] = Formatter.iso8601.string(from: item.dateAdded)
+        data["dateModified"] = Formatter.iso8601.string(from: item.dateModified)
+        data["uri"] = "https://www.zotero.org/\(item.key)"
+        data["inPublications"] = item.inPublications
+        data["collections"] = []
+        data["tags"] = []
+
+        return data
+    }
+
     // MARK: - Web View
 
     /// Calls javascript in webView and waits for response.
     /// - returns: Single with citation response or error.
-    private func getCitation(styleXml: String, localeId: String, localeXml: String, label: String?, locator: String?, omitAuthor: Bool, format: String, webView: WKWebView) -> Single<String> {
-        webView.evaluateJavaScript("getCit(\(styleXml), '\(localeId)', \(localeXml), '\(format)', \(WKWebView.optionalToJs(label)), \(WKWebView.optionalToJs(locator)), \(omitAuthor));",
-                                   completionHandler: nil)
-
-        return Single.create { [weak self] subscriber -> Disposable in
-            self?.webViewResponse = subscriber
-            return Disposables.create {
-                self?.webViewResponse = nil
-            }
-        }
+    private func getCitation(itemsCsl: String, itemsData: String, styleXml: String, localeId: String, localeXml: String, format: String, webView: WKWebView) -> Single<String> {
+        return self.perform(javascript: "getCit(\(itemsCsl), \(itemsData), \(styleXml), '\(localeId)', \(localeXml), '\(format)', 'msgid');", in: webView)
     }
 
     /// Calls javascript in webView and waits for response.
     /// - returns: Single with bibliography response or error.
-    private func getBibliography(styleXml: String, localeId: String, localeXml: String, format: String, webView: WKWebView) -> Single<String> {
-        webView.evaluateJavaScript("getBib(\(styleXml), '\(localeId)', \(localeXml), '\(format)');", completionHandler: nil)
+    private func getBibliography(itemsCsl: String, styleXml: String, localeId: String, localeXml: String, format: String, webView: WKWebView) -> Single<String> {
+        return self.perform(javascript: "getBib(\(itemsCsl), \(styleXml), '\(localeId)', \(localeXml), '\(format)', 'msgid');", in: webView)
+    }
 
-        return Single.create { [weak self] subscriber -> Disposable in
-            self?.webViewResponse = subscriber
-            return Disposables.create {
-                self?.webViewResponse = nil
+    private func getItemsCsl(from jsons: String, schema: String, webView: WKWebView) -> Single<String> {
+        return self.perform(javascript: "convertItemsToCSL(\(jsons), \(schema), 'msgid');", in: webView)
+    }
+
+    /// Performs javascript script in web view, returns `Single` with registered response handler.
+    private func perform(javascript: String, in webView: WKWebView) -> Single<String> {
+        return Single.create { [weak self, weak webView] subscriber -> Disposable in
+            guard let `self` = self, let webView = webView else {
+                subscriber(.failure(Error.deinitialized))
+                return Disposables.create()
+            }
+
+            let id = UUID().uuidString
+            let javascriptWithId = javascript.replacingOccurrences(of: "msgid", with: id)
+
+            self.responseHandlers[id] = subscriber
+            webView.evaluateJavaScript(javascriptWithId, completionHandler: nil)
+
+            return Disposables.create { [weak self] in
+                self?.responseHandlers[id] = nil
             }
         }
     }
@@ -213,10 +359,10 @@ class CitationController: NSObject {
     /// Loads html in given web view.
     /// - returns: Single called after index is loaded.
     private func load(html: String, baseUrl: URL, in webView: WKWebView) -> Single<()> {
-        webView.loadHTMLString(html, baseURL: baseUrl)
-
-        return Single.create { [weak self] subscriber -> Disposable in
+        return Single.create { [weak self, weak webView] subscriber -> Disposable in
             self?.webDidLoad = subscriber
+            webView?.loadHTMLString(html, baseURL: baseUrl)
+
             return Disposables.create {
                 self?.webDidLoad = nil
             }
@@ -256,16 +402,44 @@ extension CitationController: WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let handler = JSHandlers(rawValue: message.name) else { return }
 
+        if handler == .log {
+            DDLogInfo("CitationController: \((message.body as? String) ?? "-")")
+            return
+        }
+
+        guard let messageBody = message.body as? [String: Any],
+              let messageId = messageBody["id"] as? String,
+              let jsResult = messageBody["result"] else {
+            DDLogError("CitationController: unknown message body - \(message.body)")
+            return
+        }
+
+        let result: SingleEvent<String>
+
         switch handler {
         case .citation, .bibliography:
-            if let citation = message.body as? String {
-                self.webViewResponse?(.success(citation))
+            if let _result = jsResult as? String {
+                result = .success(_result)
             } else {
-                self.webViewResponse?(.failure(Error.missingResponse))
+                DDLogError("CitationController: Citation/bibliography got unknown response - \(jsResult)")
+                result = .failure(Error.missingResponse)
             }
 
-        case .log:
-            DDLogInfo("CitationController: \((message.body as? String) ?? "-")")
+        case .csl:
+            if let csl = jsResult as? [[String: Any]] {
+                result = .success(WKWebView.encodeAsJSONForJavascript(csl))
+            } else {
+                DDLogError("CitationController: CSL got unknown response - \(jsResult)")
+                result = .failure(Error.missingResponse)
+            }
+
+        case .log: return
+        }
+
+        if let handler = self.responseHandlers[messageId] {
+            handler(result)
+        } else {
+            DDLogError("CitationController: handler for \(message.name) doesn't exist anymore")
         }
     }
 }
