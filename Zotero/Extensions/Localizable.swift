@@ -284,6 +284,8 @@ internal enum L10n {
     internal static func api(_ p1: Any) -> String {
       return L10n.tr("Localizable", "errors.api", String(describing: p1))
     }
+    /// Could not generate citation preview
+    internal static let citationPreview = L10n.tr("Localizable", "errors.citation_preview")
     /// Could not connect to database. The device storage might be full.
     internal static let db = L10n.tr("Localizable", "errors.db")
     /// Error creating database. Please try logging in again.
@@ -317,6 +319,10 @@ internal enum L10n {
       }
       /// Change Item Type
       internal static let droppedFieldsTitle = L10n.tr("Localizable", "errors.item_detail.dropped_fields_title")
+    }
+    internal enum Items {
+      /// Could not generate bibliography
+      internal static let generatingBib = L10n.tr("Localizable", "errors.items.generating_bib")
     }
     internal enum Libraries {
       /// Unable to load libraries
@@ -502,6 +508,8 @@ internal enum L10n {
     internal static let descending = L10n.tr("Localizable", "items.descending")
     /// Deselect All
     internal static let deselectAll = L10n.tr("Localizable", "items.deselect_all")
+    /// Generating Bibliography
+    internal static let generatingBib = L10n.tr("Localizable", "items.generating_bib")
     /// %d Collections Selected
     internal static func manyCollectionsSelected(_ p1: Int) -> String {
       return L10n.tr("Localizable", "items.many_collections_selected", p1)

@@ -47,6 +47,8 @@ struct ItemsState: ViewModelState {
     var itemKeyToDuplicate: String?
     // Used to indicate which row should update it's attachment view. The update is done directly to cell instead of tableView reload.
     var updateItemKey: String?
+    var processingBibliography: Bool
+    var bibliographyError: Error?
 
     init(type: ItemFetchType, library: Library, sortType: ItemsSortType, error: ItemsError?) {
         self.type = type
@@ -59,6 +61,7 @@ struct ItemsState: ViewModelState {
         self.selectedItems = []
         self.changes = []
         self.sortType = sortType
+        self.processingBibliography = false
     }
 
     mutating func cleanup() {
@@ -66,5 +69,6 @@ struct ItemsState: ViewModelState {
         self.changes = []
         self.itemKeyToDuplicate = nil
         self.updateItemKey = nil
+        self.bibliographyError = nil
     }
 }

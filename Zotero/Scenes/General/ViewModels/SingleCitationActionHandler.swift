@@ -30,21 +30,18 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
             self.preload(webView: webView, in: viewModel)
 
         case .setLocator(let locator):
-            // TODO: - do something with locator
             self.loadPreview(locatorLabel: locator, locatorValue: viewModel.state.locatorValue, omitAuthor: viewModel.state.omitAuthor, stateAction: { state in
                 state.locator = locator
                 state.changes = [.preview, .locator]
             }, in: viewModel)
 
         case .setLocatorValue(let value):
-            // TODO: - do something with locator value
             self.loadPreview(locatorLabel: viewModel.state.locator, locatorValue: value, omitAuthor: viewModel.state.omitAuthor, stateAction: { state in
                 state.locatorValue = value
                 state.changes = .preview
             }, in: viewModel)
 
         case .setOmitAuthor(let omitAuthor):
-            // TODO: - do something with omitAuthor
             self.loadPreview(locatorLabel: viewModel.state.locator, locatorValue: viewModel.state.locatorValue, omitAuthor: omitAuthor, stateAction: { state in
                 state.omitAuthor = omitAuthor
                 state.changes = .preview

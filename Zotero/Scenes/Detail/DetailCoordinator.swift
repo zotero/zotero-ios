@@ -99,6 +99,7 @@ protocol DetailItemActionSheetCoordinatorDelegate: AnyObject {
 
 protocol DetailCitationCoordinatorDelegate: AnyObject {
     func showLocatorPicker(for values: [SinglePickerModel], selected: String, picked: @escaping (String) -> Void)
+    func showCitationPreview(errorMessage: String)
 }
 
 fileprivate class EmptyTransitioningDelegate: NSObject, UIViewControllerTransitioningDelegate {}
@@ -735,6 +736,12 @@ extension DetailCoordinator: DetailCitationCoordinatorDelegate {
         controller.preferredContentSize = CGSize(width: SingleCitationViewController.width, height: CGFloat(values.count * 44))
         self.citationNavigationController?.preferredContentSize = controller.preferredContentSize
         self.citationNavigationController?.pushViewController(controller, animated: true)
+    }
+
+    func showCitationPreview(errorMessage: String) {
+        let controller = UIAlertController(title: L10n.error, message: errorMessage, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
+        self.citationNavigationController?.present(controller, animated: true, completion: nil)
     }
 }
 

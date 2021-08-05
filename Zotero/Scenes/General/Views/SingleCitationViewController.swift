@@ -85,7 +85,7 @@ final class SingleCitationViewController: UIViewController {
         }
 
         if let error = state.error {
-            // TODO: - show error
+            self.coordinatorDelegate?.showCitationPreview(errorMessage: L10n.Errors.citationPreview)
         }
 
         if state.changes.contains(.preview) || state.changes.contains(.loading) {

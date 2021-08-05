@@ -27,7 +27,17 @@ final class ItemsViewController: UIViewController {
         case add
     }
 
+    private enum OverlayState {
+        case processing
+        case error(String)
+    }
+
     @IBOutlet private weak var tableView: UITableView!
+    @IBOutlet private weak var overlayContainer: UIView!
+    @IBOutlet private weak var overlayBody: UIView!
+    @IBOutlet private weak var overlayActivityIndicator: UIActivityIndicatorView!
+    @IBOutlet private weak var overlayErrorIcon: UIImageView!
+    @IBOutlet private weak var overlayText: UILabel!
 
     private static let itemBatchingLimit = 150
 
@@ -80,6 +90,7 @@ final class ItemsViewController: UIViewController {
         self.setupPullToRefresh()
         self.setupFileObservers()
         self.setupAppStateObserver()
+        self.setupOverlay()
 
         self.startObservingSyncProgress()
         if let results = self.viewModel.state.results {
@@ -192,6 +203,17 @@ final class ItemsViewController: UIViewController {
         if let key = state.itemKeyToDuplicate {
             self.coordinatorDelegate?.showItemDetail(for: .duplication(itemKey: key, collectionKey: self.viewModel.state.type.collectionKey), library: self.viewModel.state.library)
         }
+
+        if state.processingBibliography {
+            self.showOverlay(state: .processing)
+        } else if state.bibliographyError != nil {
+            self.showOverlay(state: .error(L10n.Errors.Items.generatingBib))
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(1500)) { [weak self] in
+                self?.hideOverlay()
+            }
+        } else {
+            self.hideOverlay()
+        }
     }
 
     private func update(progress: SyncProgress) {
@@ -209,6 +231,43 @@ final class ItemsViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    private func showOverlay(state: OverlayState) {
+        switch state {
+        case .processing:
+            self.overlayText.text = L10n.Items.generatingBib
+            self.overlayActivityIndicator.isHidden = false
+            self.overlayActivityIndicator.startAnimating()
+            self.overlayErrorIcon.isHidden = true
+
+        case .error(let message):
+            self.overlayText.text = message
+            self.overlayActivityIndicator.stopAnimating()
+            self.overlayErrorIcon.isHidden = false
+        }
+
+        self.overlayContainer.layoutIfNeeded()
+
+        guard self.overlayContainer.isHidden else { return }
+
+        self.overlayContainer.alpha = 0
+        self.overlayContainer.isHidden = false
+
+        UIView.animate(withDuration: 0.2) {
+            self.overlayContainer.alpha = 1
+        }
+    }
+
+    private func hideOverlay() {
+        guard !self.overlayContainer.isHidden else { return }
+
+        UIView.animate(withDuration: 0.2) {
+            self.overlayContainer.alpha = 0
+        } completion: { finished in
+            guard finished else { return }
+            self.overlayContainer.isHidden = true
+        }
+    }
 
     private func process(action: ItemAction.Kind, for selectedKeys: Set<String>, button: UIBarButtonItem?) {
         switch action {
@@ -571,6 +630,10 @@ final class ItemsViewController: UIViewController {
                      self?.update(progress: progress)
                  })
                  .disposed(by: self.disposeBag)
+    }
+
+    private func setupOverlay() {
+        self.overlayBody.layer.cornerRadius = 16
     }
 }
 

@@ -135,16 +135,22 @@ struct ItemsActionHandler: ViewModelActionHandler {
             self.filter(with: filters, in: viewModel)
 
         case .quickCopyBibliography(let itemIds, let libraryId, let webView):
+            self.update(viewModel: viewModel) { state in
+                state.processingBibliography = true
+            }
+
             self.citationController.bibliography(for: itemIds, libraryId: libraryId, styleId: Defaults.shared.quickCopyStyleId, localeId: Defaults.shared.quickCopyLocaleId, format: .html, in: webView)
                                    .subscribe(with: viewModel, onSuccess: { viewModel, citation in
                                        UIPasteboard.general.string = citation
                                        self.update(viewModel: viewModel) { state in
                                            state.changes = .webViewCleanup
+                                           state.processingBibliography = false
                                        }
                                    }, onFailure: { viewModel, error in
-                                       // TODO: Show something
                                        self.update(viewModel: viewModel) { state in
                                            state.changes = .webViewCleanup
+                                           state.processingBibliography = false
+                                           state.bibliographyError = error
                                        }
                                    })
                                    .disposed(by: self.disposeBag)

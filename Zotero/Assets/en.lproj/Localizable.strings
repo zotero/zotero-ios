@@ -125,6 +125,7 @@
 "items.filters.downloads" = "Downloaded Files";
 "items.toolbar_filter_single" = "Filter: 1 item";
 "items.toolbar_filter_multiple" = "Filter: %d items";
+"items.generating_bib" = "Generating Bibliography";
 
 "citation.title" = "Citation Preview";
 "citation.copy_citation" = "Copy Citation";
@@ -301,6 +302,8 @@
 "errors.sync_toolbar.personal_quota_reached" = "You have reached your Zotero File Storage quota. Some files were not uploaded. Other Zotero data will continue to sync to the server.\nSee your zotero.org account settings for additional storage options.";
 "errors.sync_toolbar.group_quota_reached" = "The group \“%@\” has reached its Zotero File Storage quota. Some files were not uploaded. Other Zotero data will continue to sync to the server.\nThe group owner can increase the group's storage capacity from the storage settings section on zotero.org.";
 "errors.sync_toolbar.quota_reached_short" = "Quota Reached.";
+"errors.items.generating_bib" = "Could not generate bibliography";
+"errors.citation_preview" = "Could not generate citation preview";
 "errors.item_detail.dropped_fields_title" = "Change Item Type";
 "errors.item_detail.dropped_fields_message" = "Are you sure you want to change the item type?\n\nThe following fields will be lost:\n\n%@";
 "errors.item_detail.cant_load_data" = "Could not load data. Please try again.";
