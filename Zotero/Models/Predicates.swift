@@ -233,6 +233,10 @@ extension NSPredicate {
         return NSPredicate(format: "rawType = %@", type)
     }
 
+    static func item(notTypeIn itemTypes: Set<String>) -> NSPredicate {
+        return NSPredicate(format: "not rawType in %@", itemTypes)
+    }
+
     static func itemsNotChangedAndNeedUpload(in libraryId: LibraryIdentifier) -> NSPredicate {
         return NSCompoundPredicate(andPredicateWithSubpredicates: [.notChanged,
                                                                    .attachmentNeedsUpload,

@@ -37,8 +37,10 @@ class CitationController: NSObject {
         case styleOrLocaleMissing
         case prepareNotCalled
         case cantFindSchema
+        case invalidItemTypes
     }
 
+    static let invalidItemTypes: Set<String> = [ItemTypes.attachment, ItemTypes.note]
     private unowned let stylesController: TranslatorsAndStylesController
     private unowned let fileStorage: FileStorage
     private unowned let dbStorage: DbStorage
@@ -252,6 +254,13 @@ class CitationController: NSObject {
         return Single.create { subscriber in
             do {
                 let items = try self.dbStorage.createCoordinator().perform(request: ReadItemsWithKeysDbRequest(keys: keys, libraryId: libraryId))
+                                                                  .filter(.item(notTypeIn: CitationController.invalidItemTypes))
+
+                if items.isEmpty {
+                    subscriber(.failure(Error.invalidItemTypes))
+                    return Disposables.create()
+                }
+
                 let data = Array(items.map({ self.data(for: $0) }))
                 subscriber(.success(WKWebView.encodeAsJSONForJavascript(data)))
             } catch let error {

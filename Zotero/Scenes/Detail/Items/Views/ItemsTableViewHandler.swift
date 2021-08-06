@@ -62,7 +62,10 @@ final class ItemsTableViewHandler: NSObject {
         if state.type.isTrash {
             return [ItemAction(type: .restore), ItemAction(type: .delete)]
         }
-        var actions = [ItemAction(type: .copyBibliography), ItemAction(type: .copyCitation), ItemAction(type: .addToCollection), ItemAction(type: .duplicate), ItemAction(type: .trash)]
+        var actions = [ItemAction(type: .addToCollection), ItemAction(type: .duplicate), ItemAction(type: .trash)]
+        if !CitationController.invalidItemTypes.contains(item.rawType) {
+            actions.insert(contentsOf: [ItemAction(type: .copyCitation), ItemAction(type: .copyBibliography)], at: 0)
+        }
         if item.rawType == ItemTypes.attachment && item.parent == nil {
             actions.insert(ItemAction(type: .createParent), at: 0)
         }
