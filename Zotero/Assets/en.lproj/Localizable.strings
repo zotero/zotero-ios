@@ -149,6 +149,14 @@
 "citation.locator.sub verbo" = "Sub verbo";
 "citation.locator.volume" = "Volume";
 "citation.locator.verse" = "Verse";
+"citation.style" = "Style";
+"citation.language" = "Language";
+"citation.output_mode" = "Output Mode";
+"citation.citations" = "Citations";
+"citation.bibliography" = "Bibliography";
+"citation.output_method" = "Output Method";
+"citation.save_html" = "Save as HTML";
+"citation.copy" = "Copy to Clipboard";
 
 "item_detail.add_creator" = "Add Creator";
 "item_detail.notes" = "Notes";
@@ -342,6 +350,9 @@
 "errors.styles.deletion" = "Could not delete style \“%@\”.";
 "errors.styles.loading" = "Could not load styles.";
 "errors.styles_search.loading" = "Could not load styles. Do you want to try again?";
+"errors.citation.generate_citation" = "Could not generate citation.";
+"errors.citation.generate_bibliography" = "Could not generate bibliography.";
+"errors.citation.invalid_types" = "Invalid item types selected.";
 
 "accessibility.untitled" = "Untitled";
 "accessibility.locked" = "Locked";

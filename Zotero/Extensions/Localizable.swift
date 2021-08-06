@@ -187,16 +187,32 @@ internal enum L10n {
   }
 
   internal enum Citation {
+    /// Bibliography
+    internal static let bibliography = L10n.tr("Localizable", "citation.bibliography")
+    /// Citations
+    internal static let citations = L10n.tr("Localizable", "citation.citations")
+    /// Copy to Clipboard
+    internal static let copy = L10n.tr("Localizable", "citation.copy")
     /// Copy Bibliography
     internal static let copyBibliography = L10n.tr("Localizable", "citation.copy_bibliography")
     /// Copy Citation
     internal static let copyCitation = L10n.tr("Localizable", "citation.copy_citation")
+    /// Language
+    internal static let language = L10n.tr("Localizable", "citation.language")
     /// Number
     internal static let locatorPlaceholder = L10n.tr("Localizable", "citation.locator_placeholder")
     /// Omit Author
     internal static let omitAuthor = L10n.tr("Localizable", "citation.omit_author")
+    /// Output Method
+    internal static let outputMethod = L10n.tr("Localizable", "citation.output_method")
+    /// Output Mode
+    internal static let outputMode = L10n.tr("Localizable", "citation.output_mode")
     /// Preview:
     internal static let preview = L10n.tr("Localizable", "citation.preview")
+    /// Save as HTML
+    internal static let saveHtml = L10n.tr("Localizable", "citation.save_html")
+    /// Style
+    internal static let style = L10n.tr("Localizable", "citation.style")
     /// Citation Preview
     internal static let title = L10n.tr("Localizable", "citation.title")
     internal enum Locator {
@@ -303,6 +319,14 @@ internal enum L10n {
       internal static let cantOpenAttachment = L10n.tr("Localizable", "errors.attachments.cant_open_attachment")
       /// Unable to unzip snapshot
       internal static let cantUnzipSnapshot = L10n.tr("Localizable", "errors.attachments.cant_unzip_snapshot")
+    }
+    internal enum Citation {
+      /// Could not generate bibliography.
+      internal static let generateBibliography = L10n.tr("Localizable", "errors.citation.generate_bibliography")
+      /// Could not generate citation.
+      internal static let generateCitation = L10n.tr("Localizable", "errors.citation.generate_citation")
+      /// Invalid item types selected.
+      internal static let invalidTypes = L10n.tr("Localizable", "errors.citation.invalid_types")
     }
     internal enum Collections {
       /// Please enter a collection name

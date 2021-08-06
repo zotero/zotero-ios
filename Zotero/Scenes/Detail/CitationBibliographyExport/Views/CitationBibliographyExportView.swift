@@ -28,13 +28,29 @@ struct CitationBibliographyExportView: View {
             }
 
             if self.viewModel.state.isLoading {
-                Rectangle()
-                    .foregroundColor(Color.black.opacity(0.35))
-
-                ActivityIndicatorView(style: .large, color: .white, isAnimating: .constant(true))
+                Overlay(type: .loading)
+            } else if let error = self.viewModel.state.error {
+                Overlay(type: .error(self.message(for: error, mode: self.viewModel.state.mode)))
             }
         }
         .navigationBarItems(leading: self.leadingItem, trailing: self.trailingItem)
+    }
+
+    private func message(for error: Error, mode: CitationBibliographyExportState.OutputMode) -> String {
+        if let error = error as? CitationController.Error {
+            switch error {
+            case .invalidItemTypes:
+                return L10n.Errors.Citation.invalidTypes
+            default: break
+            }
+        }
+
+        switch mode {
+        case .bibliography:
+            return L10n.Errors.Citation.generateBibliography
+        case .citation:
+            return L10n.Errors.Citation.generateCitation
+        }
     }
 
     private var leadingItem: some View {
@@ -51,7 +67,7 @@ struct CitationBibliographyExportView: View {
         }, label: {
             Text(L10n.done)
         })
-        .disabled(self.viewModel.state.isLoading)
+        .disabled(self.viewModel.state.isLoading || self.viewModel.state.error != nil)
     }
 
     private var citeView: some View {
@@ -68,13 +84,44 @@ struct CitationBibliographyExportView: View {
     }
 }
 
+fileprivate struct Overlay: View {
+    enum Kind {
+        case loading
+        case error(String)
+    }
+
+    let type: Kind
+
+    var body: some View {
+        Rectangle()
+            .foregroundColor(Color.black.opacity(0.15))
+
+        switch self.type {
+        case .loading:
+            ActivityIndicatorView(style: .large, color: .white, isAnimating: .constant(true))
+        case .error(let message):
+            VStack(spacing: 12) {
+                Image(systemName: "exclamationmark.circle")
+                    .imageScale(.large)
+                    .foregroundColor(.red)
+
+                Text(message)
+                    .font(.system(.body))
+                    .foregroundColor(.white)
+            }
+            .padding()
+            .background(RoundedRectangle(cornerRadius: 8).foregroundColor(Color.black.opacity(0.5)))
+        }
+    }
+}
+
 fileprivate struct CiteView: View {
     @EnvironmentObject var viewModel: ViewModel<CitationBibliographyExportActionHandler>
 
     weak var coordinatorDelegate: CitationBibliographyExportCoordinatorDelegate?
 
     var body: some View {
-        Section(header: Text("Style")) {
+        Section(header: Text(L10n.Citation.style)) {
             RowView(title: self.viewModel.state.style.title)
                 .contentShape(Rectangle())
                 .onTapGesture {
@@ -84,7 +131,7 @@ fileprivate struct CiteView: View {
                 }
         }
 
-        Section(header: Text("Language")) {
+        Section(header: Text(L10n.Citation.language)) {
             RowView(title: self.viewModel.state.localeName)
                 .contentShape(Rectangle())
                 .onTapGesture {
@@ -94,16 +141,16 @@ fileprivate struct CiteView: View {
                 }
         }
 
-        Section(header: Text("Output Mode")) {
+        Section(header: Text(L10n.Citation.outputMode)) {
             VStack {
-                OutputMethodRow(title: "Citations", isSelected: self.viewModel.state.mode == .citation)
+                OutputMethodRow(title: L10n.Citation.citations, isSelected: self.viewModel.state.mode == .citation)
                     .contentShape(Rectangle())
                     .onTapGesture {
                         self.viewModel.process(action: .setMode(.citation))
                     }
 
                 if self.viewModel.state.style.supportsBibliography {
-                    OutputMethodRow(title: "Bibliography", isSelected: self.viewModel.state.mode == .bibliography)
+                    OutputMethodRow(title: L10n.Citation.bibliography, isSelected: self.viewModel.state.mode == .bibliography)
                         .contentShape(Rectangle())
                         .onTapGesture {
                             self.viewModel.process(action: .setMode(.bibliography))
@@ -112,7 +159,7 @@ fileprivate struct CiteView: View {
             }
         }
 
-        Section(header: Text("Output Method")) {
+        Section(header: Text(L10n.Citation.outputMethod)) {
             VStack {
                 ForEach(CitationBibliographyExportState.methods) { method in
                     OutputMethodRow(title: self.name(for: method), isSelected: self.viewModel.state.method == method)
@@ -128,9 +175,9 @@ fileprivate struct CiteView: View {
     private func name(for method: CitationBibliographyExportState.OutputMethod) -> String {
         switch method {
         case .html:
-            return "Save as HTML"
+            return L10n.Citation.saveHtml
         case .copy:
-            return "Copy to Clipboard"
+            return L10n.Citation.copy
         }
     }
 }
