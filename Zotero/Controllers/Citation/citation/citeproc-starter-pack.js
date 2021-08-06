@@ -20,14 +20,14 @@ function getCiteproc(itemsCSL, styleXML, localeXML, lang) {
 	return { citeproc, styleMeta };
 }
 
-function getCitation(citationItems, itemsCSL, styleXML, localeXML, lang, format = 'html') { //eslint-disable-line no-unused-vars
+function getCitation(citationItems, itemsCSL, styleXML, localeXML, lang, format) { //eslint-disable-line no-unused-vars
 	const { citeproc } = getCiteproc(itemsCSL, styleXML, localeXML, lang);
     const citation = { citationItems, properties: {} };
 	return citeproc.previewCitationCluster(citation, [], [], format);
 }
 
 /* Entry function that produced bibliography based on the inputs provided */
-function getBibliography(itemsCSL, styleXML, localeXML, lang, format = 'html') { //eslint-disable-line no-unused-vars
+function getBibliography(itemsCSL, styleXML, localeXML, lang, format) { //eslint-disable-line no-unused-vars
 	const { citeproc, styleMeta } = getCiteproc(itemsCSL, styleXML, localeXML, lang);
 
 	if(styleMeta.hasBibliography) {

@@ -59,7 +59,7 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
                              in viewModel: ViewModel<SingleCitationActionHandler>) {
         guard let webView = viewModel.state.webView else { return }
         self.citationController.citation(for: viewModel.state.itemIds, libraryId: viewModel.state.libraryId, label: locatorLabel, locator: locatorValue,
-                                         omitAuthor: omitAuthor, format: .html, in: webView)
+                                         omitAuthor: omitAuthor, format: .text, in: webView)
                                .subscribe(onSuccess: { [weak viewModel] preview in
                                    guard let viewModel = viewModel else { return }
                                    self.update(viewModel: viewModel) { state in
@@ -78,7 +78,7 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
                                .flatMap({ [weak webView] _ -> Single<String> in
                                    guard let webView = webView else { return Single.error(CitationController.Error.prepareNotCalled) }
                                    return self.citationController.citation(for: itemIds, libraryId: libraryId, label: viewModel.state.locator, locator: viewModel.state.locatorValue,
-                                                                           omitAuthor: viewModel.state.omitAuthor, format: .html, in: webView)
+                                                                           omitAuthor: viewModel.state.omitAuthor, format: .text, in: webView)
                                })
                                .subscribe(onSuccess: { [weak viewModel, weak webView] preview in
                                    guard let viewModel = viewModel else { return }

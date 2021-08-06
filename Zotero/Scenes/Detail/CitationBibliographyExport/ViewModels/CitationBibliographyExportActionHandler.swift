@@ -71,6 +71,14 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
             state.isLoading = true
         }
 
+        let format: CitationController.Format
+        switch viewModel.state.method {
+        case .copy:
+            format = .text
+        case .html:
+            format = .html
+        }
+
         let value: Single<String>
 
         switch viewModel.state.mode {
@@ -78,11 +86,11 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
             let itemIds = viewModel.state.itemIds
             let libraryId = viewModel.state.libraryId
             value = self.citationController.prepareForCitation(for: itemIds, libraryId: libraryId, styleId: viewModel.state.style.identifier, localeId: viewModel.state.localeId, in: self.webView)
-                        .flatMap { self.citationController.citation(for: itemIds, libraryId: libraryId, label: nil, locator: nil, omitAuthor: false, format: .html, in: self.webView) }
+                        .flatMap { self.citationController.citation(for: itemIds, libraryId: libraryId, label: nil, locator: nil, omitAuthor: false, format: format, in: self.webView) }
 
         case .bibliography:
             value = self.citationController.bibliography(for: viewModel.state.itemIds, libraryId: viewModel.state.libraryId, styleId: viewModel.state.style.identifier,
-                                                         localeId: viewModel.state.localeId, format: .html, in: self.webView)
+                                                         localeId: viewModel.state.localeId, format: format, in: self.webView)
         }
 
         value.subscribe(with: viewModel,

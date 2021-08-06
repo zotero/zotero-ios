@@ -16,7 +16,8 @@ class CitationController: NSObject {
     fileprivate typealias WebViewResponseHandler = (SingleEvent<String>) -> Void
 
     enum Format: String {
-        case html = "html"
+        case html
+        case text
     }
 
     /// Handlers for communication with JS in `webView`
