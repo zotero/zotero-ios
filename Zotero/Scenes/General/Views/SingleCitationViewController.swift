@@ -13,6 +13,7 @@ import RxSwift
 
 final class SingleCitationViewController: UIViewController {
     @IBOutlet private weak var webView: WKWebView!
+    @IBOutlet private weak var container: UIStackView!
     @IBOutlet private weak var locatorButton: UIButton!
     @IBOutlet private weak var locatorTextField: UITextField!
     @IBOutlet private weak var omitAuthorTitle: UILabel!
@@ -84,7 +85,7 @@ final class SingleCitationViewController: UIViewController {
             self.navigationItem.rightBarButtonItem?.isEnabled = state.webView != nil
         }
 
-        if let error = state.error {
+        if state.error != nil {
             self.coordinatorDelegate?.showCitationPreview(errorMessage: L10n.Errors.citationPreview)
         }
 
@@ -117,6 +118,14 @@ final class SingleCitationViewController: UIViewController {
     private func setupPreview() {
         self.previewContainer.layer.cornerRadius = 4
         self.previewContainer.layer.masksToBounds = true
+
+        switch UIDevice.current.userInterfaceIdiom {
+        case .pad:
+            self.view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: self.container.bottomAnchor, constant: 12).isActive = true
+        case .phone:
+            self.view.safeAreaLayoutGuide.bottomAnchor.constraint(greaterThanOrEqualTo: self.container.bottomAnchor, constant: 12).isActive = true
+        default: break
+        }
     }
 
     private func setupNavigationBar() {

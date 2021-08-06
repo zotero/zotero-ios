@@ -13,6 +13,7 @@
             <connections>
                 <outlet property="activityIndicator" destination="0e1-n9-iN1" id="etb-YF-TW0"/>
                 <outlet property="activityIndicatorContainer" destination="PK9-WB-m4U" id="LmR-r6-Jrg"/>
+                <outlet property="container" destination="tTe-z7-XAZ" id="31q-yD-PJm"/>
                 <outlet property="locatorButton" destination="nja-6D-LzY" id="X8k-i2-Tqi"/>
                 <outlet property="locatorTextField" destination="Wxx-cA-cYH" id="CDH-60-XUV"/>
                 <outlet property="omitAuthorSwitch" destination="gRh-Az-PER" id="LP3-zn-f15"/>
@@ -150,7 +151,7 @@
             <viewLayoutGuide key="safeArea" id="fnl-2z-Ty3"/>
             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
             <constraints>
-                <constraint firstItem="fnl-2z-Ty3" firstAttribute="bottom" secondItem="tTe-z7-XAZ" secondAttribute="bottom" constant="12" id="9Is-Wu-3B1"/>
+                <constraint firstItem="fnl-2z-Ty3" firstAttribute="bottom" secondItem="tTe-z7-XAZ" secondAttribute="bottom" constant="12" placeholder="YES" id="9Is-Wu-3B1"/>
                 <constraint firstItem="tTe-z7-XAZ" firstAttribute="trailing" secondItem="fnl-2z-Ty3" secondAttribute="trailing" constant="-20" id="DyX-Gr-KMd"/>
                 <constraint firstItem="tTe-z7-XAZ" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" constant="20" id="iz7-2v-feX"/>
                 <constraint firstItem="tTe-z7-XAZ" firstAttribute="top" secondItem="fnl-2z-Ty3" secondAttribute="top" constant="12" id="nue-07-92R"/>
