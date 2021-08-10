@@ -37,6 +37,7 @@ struct StoreStyleDbRequest: DbRequest {
                 rDependency.installed = false
             }
 
+            rStyle.supportsBibliography = dependency.supportsBibliography
             rStyle.dependency = rDependency
         }
     }

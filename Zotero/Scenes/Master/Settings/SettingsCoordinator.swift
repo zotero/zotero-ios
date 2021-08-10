@@ -184,9 +184,9 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         let message: String
         switch error {
         case .deletion(let name, _):
-            message = L10n.Errors.Styles.addition(name)
-        case .addition(let name, _):
             message = L10n.Errors.Styles.deletion(name)
+        case .addition(let name, _):
+            message = L10n.Errors.Styles.addition(name)
         case .loading:
             message = L10n.Errors.Styles.loading
         }

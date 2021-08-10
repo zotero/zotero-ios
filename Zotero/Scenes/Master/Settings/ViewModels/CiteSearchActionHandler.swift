@@ -68,12 +68,10 @@ struct CiteSearchActionHandler: ViewModelActionHandler {
         }
 
         self.update(viewModel: viewModel) { state in
-            let start = CFAbsoluteTimeGetCurrent()
             state.filtered = state.styles.filter({ style in
                 return style.title.localizedCaseInsensitiveContains(string) || style.category.fields.contains(where: { $0.localizedCaseInsensitiveContains(string) })
             })
             state.changes = .styles
-            NSLog("TIME: \(CFAbsoluteTimeGetCurrent() - start)")
         }
     }
 }

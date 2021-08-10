@@ -84,7 +84,7 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
     }
 
     func parserDidEndDocument(_ parser: XMLParser) {
-        guard self.supportsCitation else {
+        guard self.supportsCitation || self.dependencyHref != nil else {
             DDLogError("Style \"\(self.identifier ?? "unknown id")\"; \"\(self.filename ?? self.href?.lastPathComponent ?? "unknown filename")\" doesn't support citation")
             return
         }
