@@ -59,7 +59,7 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
                              in viewModel: ViewModel<SingleCitationActionHandler>) {
         guard let webView = viewModel.state.webView else { return }
         self.citationController.citation(for: viewModel.state.itemIds, libraryId: viewModel.state.libraryId, label: locatorLabel, locator: locatorValue,
-                                         omitAuthor: omitAuthor, format: .text, in: webView)
+                                         omitAuthor: omitAuthor, format: (viewModel.state.exportAsHtml ? .html : .text), in: webView)
                                .subscribe(onSuccess: { [weak viewModel] preview in
                                    guard let viewModel = viewModel else { return }
                                    self.update(viewModel: viewModel) { state in

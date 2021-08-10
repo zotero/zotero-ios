@@ -30,6 +30,7 @@ struct SingleCitationState: ViewModelState {
     let libraryId: LibraryIdentifier
     let styleId: String
     let localeId: String
+    let exportAsHtml: Bool
 
     var locator: String
     var locatorValue: String
@@ -39,11 +40,12 @@ struct SingleCitationState: ViewModelState {
     var error: Error?
     var changes: Changes
 
-    init(itemIds: Set<String>, libraryId: LibraryIdentifier, styleId: String, localeId: String) {
+    init(itemIds: Set<String>, libraryId: LibraryIdentifier, styleId: String, localeId: String, exportAsHtml: Bool) {
         self.itemIds = itemIds
         self.libraryId = libraryId
         self.styleId = styleId
         self.localeId = localeId
+        self.exportAsHtml = exportAsHtml
         self.locator = SingleCitationState.locators.first!
         self.changes = []
         self.locatorValue = ""

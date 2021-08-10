@@ -65,6 +65,23 @@ final class Defaults {
     var pdfSettings: PDFSettingsState
     #endif
 
+    // MARK: - Citation / Bibliography Export
+
+    @UserDefault(key: "exportStyleId", defaultValue: "http://www.zotero.org/styles/chicago-note-bibliography", defaults: .standard)
+    var exportStyleId: String
+
+    // Proper default value is set up in AppDelegate.setupExportDefaults().
+    @UserDefault(key: "exportLocaleId", defaultValue: "en-US", defaults: .standard)
+    var exportLocaleId: String
+
+    #if MAINAPP
+    @CodableUserDefault(key: "ExportOutputMethod", defaultValue: .copy, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
+    var exportOutputMethod: CitationBibliographyExportState.OutputMethod
+
+    @CodableUserDefault(key: "ExportOutputMode", defaultValue: .bibliography, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
+    var exportOutputMode: CitationBibliographyExportState.OutputMode
+    #endif
+
     // MARK: - Helpers
 
     @OptionalUserDefault(key: "LastLaunchBuildNumber", defaults: .standard)

@@ -26,12 +26,12 @@ struct CitationBibliographyExportState: ViewModelState {
         case export
     }
 
-    enum OutputMode: Int {
+    enum OutputMode: Int, Codable {
         case citation
         case bibliography
     }
 
-    enum OutputMethod: Int, Identifiable {
+    enum OutputMethod: Int, Identifiable, Codable {
         case html
         case copy
 
@@ -59,15 +59,15 @@ struct CitationBibliographyExportState: ViewModelState {
 
     // Export
 
-    init(itemIds: Set<String>, libraryId: LibraryIdentifier, selectedStyle: Style, selectedLocaleId: String) {
+    init(itemIds: Set<String>, libraryId: LibraryIdentifier, selectedStyle: Style, selectedLocaleId: String, selectedMode: OutputMode, selectedMethod: OutputMethod) {
         self.itemIds = itemIds
         self.libraryId = libraryId
         self.type = .cite
         self.localeId = selectedLocaleId
         self.localeName = Locale.current.localizedString(forIdentifier: selectedLocaleId) ?? selectedLocaleId
         self.style = selectedStyle
-        self.mode = style.supportsBibliography ? .bibliography : .citation
-        self.method = .copy
+        self.mode = selectedMode == .bibliography ? (selectedStyle.supportsBibliography ? .bibliography : .citation) : selectedMode
+        self.method = selectedMethod
         self.isLoading = false
         self.changes = []
     }

@@ -160,6 +160,7 @@ final class AppDelegate: UIResponder {
 
         let defaultLocale = localeIds.first(where: { $0.contains(Locale.current.identifier) }) ?? "en-US"
         UserDefaults.standard.setValue(defaultLocale, forKey: "QuickCopyLocaleId")
+        UserDefaults.standard.setValue(defaultLocale, forKey: "ExportLocaleId")
     }
 }
 

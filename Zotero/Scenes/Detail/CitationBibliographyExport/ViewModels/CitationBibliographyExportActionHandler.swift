@@ -35,11 +35,13 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
         case .setMethod(let method):
             self.update(viewModel: viewModel) { state in
                 state.method = method
+                Defaults.shared.exportOutputMethod = method
             }
 
         case .setMode(let mode):
             self.update(viewModel: viewModel) { state in
                 state.mode = mode
+                Defaults.shared.exportOutputMode = mode
             }
 
         case .setType(let type):
@@ -50,8 +52,11 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
         case .setStyle(let style):
             self.update(viewModel: viewModel) { state in
                 state.style = style
+                Defaults.shared.exportStyleId = style.identifier
+
                 if !state.style.supportsBibliography {
                     state.mode = .citation
+                    Defaults.shared.exportOutputMode = .citation
                 }
             }
 
@@ -59,6 +64,7 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.localeId = id
                 state.localeName = name
+                Defaults.shared.exportLocaleId = id
             }
 
         case .process:
