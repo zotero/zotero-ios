@@ -25,14 +25,14 @@
 
 async function translate(url, encodedHtml, encodedFrames, encodedTranslators) {
     // Set up translators
-    const translatorData = JSON.parse(window.atob(encodedTranslators));
+    const translatorData = JSON.parse(decodeBase64(encodedTranslators));
     if (translatorData) {
         Zotero.Translators.init(translatorData);
     }
 
     // Prepare a document
-    const html = decodeURIComponent(escape(window.atob(encodedHtml)));
-    const frames = JSON.parse(decodeURIComponent(escape(window.atob(encodedFrames))));
+    const html = decodeBase64(encodedHtml);
+    const frames = JSON.parse(decodeBase64(encodedFrames));
     const doc = prepareDoc(parseDoc(html, frames), url);
 
     // Set up a translate instance
@@ -144,6 +144,17 @@ function prepareDoc(doc, docURL) {
     });
     return wrappedDoc;
 };
+
+function decodeBase64(base64) {
+    const text = atob(base64);
+    const length = text.length;
+    const bytes = new Uint8Array(length);
+    for (let i = 0; i < length; i++) {
+        bytes[i] = text.charCodeAt(i);
+    }
+    const decoder = new TextDecoder();
+    return decoder.decode(bytes);
+}
 
 window.addEventListener('DOMContentLoaded', function() {
     Zotero.Debug.init(1);
