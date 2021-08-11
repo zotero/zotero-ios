@@ -74,7 +74,6 @@ struct SettingsListView: View {
                 })
             }
         }
-        .padding(.top, -30)
         .listStyle(GroupedListStyle())
         .navigationBarTitle(Text(L10n.Settings.title), displayMode: .inline)
         .navigationBarItems(leading: Button(action: { self.coordinatorDelegate?.dismiss() },

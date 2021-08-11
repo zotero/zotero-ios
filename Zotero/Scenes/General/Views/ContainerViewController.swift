@@ -100,6 +100,7 @@ class ContainerViewController: UIViewController {
         self.containerWidth = width
 
         let centerY = self.view.centerYAnchor.constraint(equalTo: self.rootViewController.view.centerYAnchor)
+        centerY.priority = .defaultLow
         self.containerCenterY = centerY
 
         NSLayoutConstraint.activate([
@@ -107,7 +108,8 @@ class ContainerViewController: UIViewController {
             centerY,
             self.rootViewController.view.heightAnchor.constraint(lessThanOrEqualTo: self.view.heightAnchor),
             height,
-            width
+            width,
+            self.view.topAnchor.constraint(lessThanOrEqualTo: self.rootViewController.view.topAnchor)
         ])
     }
 

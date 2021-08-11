@@ -25,7 +25,7 @@
                     <rect key="frame" x="197" y="438" width="20" height="20"/>
                 </activityIndicatorView>
                 <tableView hidden="YES" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="66N-tI-rXI">
-                    <rect key="frame" x="0.0" y="0.0" width="414" height="862"/>
+                    <rect key="frame" x="0.0" y="44" width="414" height="818"/>
                     <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                 </tableView>
             </subviews>
@@ -37,7 +37,7 @@
                 <constraint firstItem="66N-tI-rXI" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" id="YEz-Xv-fs6"/>
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="66N-tI-rXI" secondAttribute="trailing" id="oHy-PJ-Yqw"/>
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="bottom" secondItem="66N-tI-rXI" secondAttribute="bottom" id="pzZ-eg-TZv"/>
-                <constraint firstItem="66N-tI-rXI" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" id="wey-Be-cFq"/>
+                <constraint firstItem="66N-tI-rXI" firstAttribute="top" secondItem="fnl-2z-Ty3" secondAttribute="top" id="wey-Be-cFq"/>
             </constraints>
             <point key="canvasLocation" x="139" y="146"/>
         </view>
