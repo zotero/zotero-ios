@@ -1,6 +1,6 @@
 /* global CSL */
 
-function getCiteproc(itemsCSL, styleXML, localeXML, lang) {
+function getCiteproc(itemsCSL, styleXML, localeXML, lang, format) {
 	const retrieveLocale = () => localeXML;
 	const itemsLookup = itemsCSL.reduce((acc, item) => { acc[item.id] = item; return acc }, {});
 	const retrieveItem = itemId => itemsLookup[itemId];
@@ -15,20 +15,21 @@ function getCiteproc(itemsCSL, styleXML, localeXML, lang) {
 		{ retrieveLocale, retrieveItem, uppercase_subtitles: styleMeta.isUppercaseSubtitlesStyle },
 		styleXML, lang
 	);
+    citeproc.setOutputFormat(format);
 	citeproc.updateItems(itemsCSL.map(item => item.id));
 
 	return { citeproc, styleMeta };
 }
 
 function getCitation(citationItems, itemsCSL, styleXML, localeXML, lang, format) { //eslint-disable-line no-unused-vars
-	const { citeproc } = getCiteproc(itemsCSL, styleXML, localeXML, lang);
+	const { citeproc } = getCiteproc(itemsCSL, styleXML, localeXML, lang, format);
     const citation = { citationItems, properties: {} };
 	return citeproc.previewCitationCluster(citation, [], [], format);
 }
 
 /* Entry function that produced bibliography based on the inputs provided */
 function getBibliography(itemsCSL, styleXML, localeXML, lang, format) { //eslint-disable-line no-unused-vars
-	const { citeproc, styleMeta } = getCiteproc(itemsCSL, styleXML, localeXML, lang);
+	const { citeproc, styleMeta } = getCiteproc(itemsCSL, styleXML, localeXML, lang, format);
 
 	if(styleMeta.hasBibliography) {
 		const bib = citeproc.makeBibliography();
