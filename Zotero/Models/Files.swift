@@ -143,12 +143,14 @@ struct Files {
     }
 
     static func file(from url: URL) -> File {
-        let (root, components) = self.rootAndComponents(from: url)
+        var (root, components) = self.rootAndComponents(from: url)
+        components = components.map({ $0.removingPercentEncoding ?? $0 })
         if url.pathExtension.isEmpty {
             return FileData(rootPath: root, relativeComponents: components, name: "", type: .directory)
         }
-        return FileData(rootPath: root, relativeComponents: components,
-                        name: url.deletingPathExtension().lastPathComponent, ext: url.pathExtension)
+        var name = url.deletingPathExtension().lastPathComponent
+        name = name.removingPercentEncoding ?? name
+        return FileData(rootPath: root, relativeComponents: components, name: name, ext: url.pathExtension)
     }
 
     private static func rootAndComponents(from url: URL) -> (String, [String]) {
