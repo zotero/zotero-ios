@@ -19,7 +19,7 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
     private var title: String?
     private var updated: Date?
     private var href: URL?
-    private(set) var dependencyHref: String?
+    private var dependencyHref: String?
     private var supportsCitation: Bool
     private var supportsBibliography: Bool
 
@@ -89,6 +89,7 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
             return
         }
         guard let identifier = self.identifier, let title = self.title, let updated = self.updated, let href = self.href else { return }
-        self.style = Style(identifier: identifier, title: title, updated: updated, href: href, filename: (self.filename ?? href.lastPathComponent), supportsBibliography: self.supportsBibliography)
+        self.style = Style(identifier: identifier, dependencyId: self.dependencyHref, title: title, updated: updated, href: href,
+                           filename: (self.filename ?? href.lastPathComponent), supportsBibliography: self.supportsBibliography)
     }
 }

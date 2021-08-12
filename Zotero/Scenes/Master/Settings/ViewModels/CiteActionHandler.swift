@@ -59,8 +59,8 @@ struct CiteActionHandler: ViewModelActionHandler {
                               state.error = .addition(name: remoteStyle.title, error: error)
                           }
                       }, onCompleted: { viewModel in
-                          if let (style, dependencyHref) = self.loadStyle(from: file) {
-                              self.process(style: style, dependencyHref: dependencyHref, in: viewModel)
+                          if let style = self.loadStyle(from: file) {
+                              self.process(style: style, in: viewModel)
                           } else {
                               DDLogError("CitationStylesActionHandler: can't parse downloaded style")
                               self.update(viewModel: viewModel) { state in
@@ -73,8 +73,8 @@ struct CiteActionHandler: ViewModelActionHandler {
                       .disposed(by: self.disposeBag)
     }
 
-    private func process(style: Style, dependencyHref: String?, in viewModel: ViewModel<CiteActionHandler>) {
-        guard let dependencyUrl = dependencyHref.flatMap({ URL(string: $0) }) else {
+    private func process(style: Style, in viewModel: ViewModel<CiteActionHandler>) {
+        guard let dependencyUrl = style.dependencyId.flatMap({ URL(string: $0) }) else {
             self._add(style: style, dependency: nil, in: viewModel)
             return
         }
@@ -91,7 +91,7 @@ struct CiteActionHandler: ViewModelActionHandler {
                               state.error = .addition(name: style.title, error: error)
                           }
                       }, onCompleted: { viewModel in
-                          guard let (dependency, _) = self.loadStyle(from: file) else {
+                          guard let dependency = self.loadStyle(from: file) else {
                               self._add(style: style, dependency: nil, in: viewModel)
                               return
                           }
@@ -100,14 +100,14 @@ struct CiteActionHandler: ViewModelActionHandler {
                       .disposed(by: self.disposeBag)
     }
 
-    private func loadStyle(from file: File) -> (Style, String?)? {
+    private func loadStyle(from file: File) -> Style? {
         guard let parser = XMLParser(contentsOf: file.createUrl()) else { return nil }
 
         let delegate = StyleParserDelegate(filename: file.name)
         parser.delegate = delegate
 
         if parser.parse(), let style = delegate.style {
-            return (style, delegate.dependencyHref)
+            return style
         }
         return nil
     }

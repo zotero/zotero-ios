@@ -489,7 +489,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     func showCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
         guard let citationController = self.controllers.userControllers?.citationController else { return }
 
-        let state = SingleCitationState(itemIds: itemIds, libraryId: libraryId, styleId: Defaults.shared.quickCopyStyleId,
+        let parentStyleId = Defaults.shared.quickCopyParentStyleId
+        let state = SingleCitationState(itemIds: itemIds, libraryId: libraryId, styleId: Defaults.shared.quickCopyStyleId, parentStyleId: parentStyleId.isEmpty ? nil : parentStyleId,
                                         localeId: Defaults.shared.quickCopyLocaleId, exportAsHtml: Defaults.shared.quickCopyAsHtml)
         let handler = SingleCitationActionHandler(citationController: citationController)
         let viewModel = ViewModel(initialState: state, handler: handler)

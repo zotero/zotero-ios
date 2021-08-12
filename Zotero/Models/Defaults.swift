@@ -36,6 +36,9 @@ final class Defaults {
     @UserDefault(key: "QuickCopyStyleId", defaultValue: "http://www.zotero.org/styles/chicago-note-bibliography", defaults: .standard)
     var quickCopyStyleId: String
 
+    @UserDefault(key: "QuickCopyParentStyleId", defaultValue: "", defaults: .standard)
+    var quickCopyParentStyleId: String
+
     // Proper default value is set up in AppDelegate.setupExportDefaults().
     @UserDefault(key: "QuickCopyLocaleId", defaultValue: "en-US", defaults: .standard)
     var quickCopyLocaleId: String

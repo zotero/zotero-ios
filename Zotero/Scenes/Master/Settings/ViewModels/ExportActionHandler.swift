@@ -30,7 +30,9 @@ struct ExportActionHandler: ViewModelActionHandler {
             }
 
         case .updateStyle(let style):
+            guard style.identifier != viewModel.state.selectedStyle else { return }
             Defaults.shared.quickCopyStyleId = style.identifier
+            Defaults.shared.quickCopyParentStyleId = style.dependencyId ?? ""
             self.update(viewModel: viewModel) { state in
                 state.selectedStyle = style.title
             }

@@ -72,16 +72,17 @@ class CitationController: NSObject {
     /// - parameter itemIds: Ids of items for which CSL will be generated.
     /// - parameter libraryId: Library identifier of given items.
     /// - parameter styleId: Id of style to use for citation generation.
+    /// - parameter parentStyleId: Id of parent style for dependent styles.
     /// - parameter localeId: Id of locale to use for citation generation.
     /// - returns: Single which is called when webView is fully loaded.
-    func prepareForCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier, styleId: String, localeId: String, in webView: WKWebView) -> Single<()> {
+    func prepareForCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier, styleId: String, parentStyleId: String?, localeId: String, in webView: WKWebView) -> Single<()> {
         webView.navigationDelegate = self
         JSHandlers.allCases.forEach { handler in
             webView.configuration.userContentController.removeScriptMessageHandler(forName: handler.rawValue)
             webView.configuration.userContentController.add(self, name: handler.rawValue)
         }
 
-        return self.loadStyleFilename(for: styleId)
+        return self.loadStyleFilename(for: (parentStyleId ?? styleId))
                     .subscribe(on: self.backgroundScheduler)
                     .observe(on: self.backgroundScheduler)
                     .flatMap({ filename -> Single<(String, String)> in
@@ -159,18 +160,19 @@ class CitationController: NSObject {
     /// - parameter items: Ids of items of which bibliography is created.
     /// - parameter libraryId: Id of library for given items.
     /// - parameter styleId: Id of style to use for bibliography generation.
+    /// - parameter parentStyleId: Id of parent style for dependent styles. 
     /// - parameter localeId: Id of locale to use for bibliography generation.
     /// - parameter format: Bibliography format to use for generation.
     /// - parameter webView: WebView which will run the javascript.
     /// - returns: Single which returns bibliography.
-    func bibliography(for itemIds: Set<String>, libraryId: LibraryIdentifier, styleId: String, localeId: String, format: Format, in webView: WKWebView) -> Single<String> {
+    func bibliography(for itemIds: Set<String>, libraryId: LibraryIdentifier, styleId: String, parentStyleId: String?, localeId: String, format: Format, in webView: WKWebView) -> Single<String> {
         webView.navigationDelegate = self
         JSHandlers.allCases.forEach { handler in
             webView.configuration.userContentController.removeScriptMessageHandler(forName: handler.rawValue)
             webView.configuration.userContentController.add(self, name: handler.rawValue)
         }
 
-        return self.loadStyleFilename(for: styleId)
+        return self.loadStyleFilename(for: (parentStyleId ?? styleId))
                    .subscribe(on: self.backgroundScheduler)
                    .observe(on: self.backgroundScheduler)
                    .flatMap({ filename -> Single<(String, String)> in
