@@ -148,13 +148,13 @@ final class DetailCoordinator: Coordinator {
 
     func start(animated: Bool) {
         guard let userControllers = self.controllers.userControllers else { return }
-        let controller = self.createItemsViewController(collection: self.collection, library: self.library, dbStorage: userControllers.dbStorage,
-                                                        fileDownloader: userControllers.fileDownloader, citationController: userControllers.citationController)
+        let controller = self.createItemsViewController(collection: self.collection, library: self.library, dbStorage: userControllers.dbStorage, fileDownloader: userControllers.fileDownloader,
+                                                        citationController: userControllers.citationController, bundledDataStorage: self.controllers.bundledDataStorage)
         self.navigationController.setViewControllers([controller], animated: animated)
     }
 
     private func createItemsViewController(collection: Collection, library: Library, dbStorage: DbStorage, fileDownloader: AttachmentDownloader,
-                                           citationController: CitationController) -> ItemsViewController {
+                                           citationController: CitationController, bundledDataStorage: DbStorage) -> ItemsViewController {
         let type = self.fetchType(from: collection)
         let state = ItemsState(type: type, library: library, sortType: .default, error: nil)
         let handler = ItemsActionHandler(dbStorage: dbStorage,
@@ -162,7 +162,8 @@ final class DetailCoordinator: Coordinator {
                                          schemaController: self.controllers.schemaController,
                                          urlDetector: self.controllers.urlDetector,
                                          fileDownloader: fileDownloader,
-                                         citationController: citationController)
+                                         citationController: citationController,
+                                         bundledDataStorage: bundledDataStorage)
         return ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: self.controllers, coordinatorDelegate: self)
     }
 
@@ -487,11 +488,12 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     }
 
     func showCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
-        guard let citationController = self.controllers.userControllers?.citationController else { return }
+        guard let citationController = self.controllers.userControllers?.citationController,
+              let style = try? self.controllers.bundledDataStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: Defaults.shared.quickCopyStyleId)) else { return }
 
-        let parentStyleId = Defaults.shared.quickCopyParentStyleId
-        let state = SingleCitationState(itemIds: itemIds, libraryId: libraryId, styleId: Defaults.shared.quickCopyStyleId, parentStyleId: parentStyleId.isEmpty ? nil : parentStyleId,
-                                        localeId: Defaults.shared.quickCopyLocaleId, exportAsHtml: Defaults.shared.quickCopyAsHtml)
+        let localeId = style.defaultLocale.isEmpty ? Defaults.shared.quickCopyLocaleId : style.defaultLocale
+        let state = SingleCitationState(itemIds: itemIds, libraryId: libraryId, styleId: style.identifier, parentStyleId: style.dependency?.identifier, localeId: localeId,
+                                        exportAsHtml: Defaults.shared.quickCopyAsHtml)
         let handler = SingleCitationActionHandler(citationController: citationController)
         let viewModel = ViewModel(initialState: state, handler: handler)
 

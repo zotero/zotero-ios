@@ -31,10 +31,18 @@ struct ExportActionHandler: ViewModelActionHandler {
 
         case .updateStyle(let style):
             guard style.identifier != viewModel.state.selectedStyle else { return }
-            Defaults.shared.quickCopyStyleId = style.identifier
-            Defaults.shared.quickCopyParentStyleId = style.dependencyId ?? ""
+
             self.update(viewModel: viewModel) { state in
                 state.selectedStyle = style.title
+                Defaults.shared.quickCopyStyleId = style.identifier
+
+                if let localeId = style.defaultLocale {
+                    state.selectedLanguage = Locale.current.localizedString(forIdentifier: localeId) ?? localeId
+                    state.languagePickerEnabled = false
+                } else {
+                    state.languagePickerEnabled = true
+                    state.selectedLanguage = Locale.current.localizedString(forIdentifier: Defaults.shared.quickCopyLocaleId) ?? Defaults.shared.quickCopyLocaleId
+                }
             }
         }
     }

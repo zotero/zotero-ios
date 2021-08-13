@@ -58,8 +58,11 @@ final class CitationBibliographyExportCoordinator: NSObject, Coordinator {
             let webView = WKWebView()
             webView.isHidden = true
 
-            let state = CitationBibliographyExportState(itemIds: self.itemIds, libraryId: self.libraryId, selectedStyle: style, selectedLocaleId: Defaults.shared.exportLocaleId,
-                                                        selectedMode: Defaults.shared.exportOutputMode, selectedMethod: Defaults.shared.exportOutputMethod)
+            let localeId = style.defaultLocale ?? Defaults.shared.exportLocaleId
+            let languageEnabled = style.defaultLocale == nil
+            let mode: CitationBibliographyExportState.OutputMode = style.supportsBibliography ? Defaults.shared.exportOutputMode : .citation
+            let state = CitationBibliographyExportState(itemIds: self.itemIds, libraryId: self.libraryId, selectedStyle: style, selectedLocaleId: localeId, languagePickerEnabled: languageEnabled,
+                                                        selectedMode: mode, selectedMethod: Defaults.shared.exportOutputMethod)
             let handler = CitationBibliographyExportActionHandler(citationController: citationController, fileStorage: self.controllers.fileStorage, webView: webView)
             let viewModel = ViewModel(initialState: state, handler: handler)
 
@@ -104,7 +107,7 @@ final class CitationBibliographyExportCoordinator: NSObject, Coordinator {
 extension CitationBibliographyExportCoordinator: CitationBibliographyExportCoordinatorDelegate {
     func showStylePicker(picked: @escaping (Style) -> Void) {
         let handler = StylePickerActionHandler(dbStorage: self.controllers.bundledDataStorage)
-        let state = StylePickerState(selected: Defaults.shared.quickCopyStyleId)
+        let state = StylePickerState(selected: Defaults.shared.exportStyleId)
         let viewModel = ViewModel(initialState: state, handler: handler)
 
         let view = StylePickerView(picked: picked)
@@ -115,7 +118,7 @@ extension CitationBibliographyExportCoordinator: CitationBibliographyExportCoord
 
     func showLanguagePicker(picked: @escaping (ExportLocale) -> Void) {
         let handler = ExportLocalePickerActionHandler(fileStorage: self.controllers.fileStorage)
-        let state = ExportLocalePickerState(selected: Defaults.shared.quickCopyLocaleId)
+        let state = ExportLocalePickerState(selected: Defaults.shared.exportLocaleId)
         let viewModel = ViewModel(initialState: state, handler: handler)
 
         let view = ExportLocalePickerView(picked: picked)

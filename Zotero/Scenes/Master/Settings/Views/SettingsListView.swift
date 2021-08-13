@@ -36,13 +36,13 @@ struct SettingsListView: View {
                 Button(action: {
                     self.coordinatorDelegate?.showExportSettings()
                 }, label: {
-                    SettingsListButtonRow(text: L10n.Settings.Export.title, detailText: nil)
+                    SettingsListButtonRow(text: L10n.Settings.Export.title, detailText: nil, enabled: true)
                 })
 
                 Button(action: {
                     self.coordinatorDelegate?.showCitationSettings()
                 }, label: {
-                    SettingsListButtonRow(text: L10n.Settings.Cite.title, detailText: nil)
+                    SettingsListButtonRow(text: L10n.Settings.Cite.title, detailText: nil, enabled: true)
                 })
 
                 NavigationLink(destination: SavingSettingsView()) {

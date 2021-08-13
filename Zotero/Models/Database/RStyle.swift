@@ -19,6 +19,7 @@ final class RStyle: Object {
     @objc dynamic var dependency: RStyle?
     @objc dynamic var installed: Bool = false
     @objc dynamic var supportsBibliography: Bool = false
+    @objc dynamic var defaultLocale: String = ""
 
     let dependent = LinkingObjects(fromType: RStyle.self, property: "dependency")
 

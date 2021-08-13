@@ -11,14 +11,15 @@ import Foundation
 import RealmSwift
 
 struct ExportState: ViewModelState {
-//    var styles: Results<RStyle>?
     var selectedStyle: String
     var selectedLanguage: String
+    var languagePickerEnabled: Bool
     var copyAsHtml: Bool
 
-    init(style: String, language: String, copyAsHtml: Bool) {
+    init(style: String, language: String, languagePickerEnabled: Bool, copyAsHtml: Bool) {
         self.selectedStyle = style
         self.selectedLanguage = language
+        self.languagePickerEnabled = languagePickerEnabled
         self.copyAsHtml = copyAsHtml
     }
 

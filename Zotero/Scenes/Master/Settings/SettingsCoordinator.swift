@@ -215,12 +215,17 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
     }
 
     func showExportSettings() {
-        let localeId = Defaults.shared.quickCopyLocaleId
-        let language = Locale.current.localizedString(forLanguageCode: localeId) ?? localeId
-        let styleId = Defaults.shared.quickCopyStyleId
-        let style = (try? self.controllers.bundledDataStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: styleId)))?.title ?? styleId
+        guard let style = try? self.controllers.bundledDataStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: Defaults.shared.quickCopyStyleId)) else { return }
+
+        let language: String
+        if !style.defaultLocale.isEmpty  {
+            language = Locale.current.localizedString(forLanguageCode: style.defaultLocale) ?? style.defaultLocale
+        } else {
+            let localeId = Defaults.shared.quickCopyLocaleId
+            language = Locale.current.localizedString(forLanguageCode: localeId) ?? localeId
+        }
         
-        let state = ExportState(style: style, language: language, copyAsHtml: Defaults.shared.quickCopyAsHtml)
+        let state = ExportState(style: style.title, language: language, languagePickerEnabled: style.defaultLocale.isEmpty, copyAsHtml: Defaults.shared.quickCopyAsHtml)
         let handler = ExportActionHandler()
         let viewModel = ViewModel(initialState: state, handler: handler)
         var view = ExportSettingsView()

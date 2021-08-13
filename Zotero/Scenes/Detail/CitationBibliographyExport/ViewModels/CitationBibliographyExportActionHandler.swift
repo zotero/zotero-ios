@@ -56,7 +56,16 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
 
                 if !state.style.supportsBibliography {
                     state.mode = .citation
-                    Defaults.shared.exportOutputMode = .citation
+                }
+
+                if let localeId = state.style.defaultLocale {
+                    state.localeId = localeId
+                    state.localeName = Locale.current.localizedString(forIdentifier: localeId) ?? localeId
+                    state.languagePickerEnabled = false
+                } else {
+                    state.localeId = Defaults.shared.exportLocaleId
+                    state.localeName = Locale.current.localizedString(forIdentifier: Defaults.shared.exportLocaleId) ?? Defaults.shared.exportLocaleId
+                    state.languagePickerEnabled = true
                 }
             }
 
@@ -91,13 +100,15 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
         case .citation:
             let itemIds = viewModel.state.itemIds
             let libraryId = viewModel.state.libraryId
+
             value = self.citationController.prepareForCitation(for: itemIds, libraryId: libraryId, styleId: viewModel.state.style.identifier, parentStyleId: viewModel.state.style.dependencyId,
-                                                               localeId: viewModel.state.localeId, in: self.webView)
+                                                               localeId: (viewModel.state.style.defaultLocale ?? viewModel.state.localeId), in: self.webView)
                         .flatMap { self.citationController.citation(for: itemIds, libraryId: libraryId, label: nil, locator: nil, omitAuthor: false, format: format, in: self.webView) }
 
         case .bibliography:
             value = self.citationController.bibliography(for: viewModel.state.itemIds, libraryId: viewModel.state.libraryId, styleId: viewModel.state.style.identifier,
-                                                         parentStyleId: viewModel.state.style.dependencyId, localeId: viewModel.state.localeId, format: format, in: self.webView)
+                                                         parentStyleId: viewModel.state.style.dependencyId, localeId: (viewModel.state.style.defaultLocale ?? viewModel.state.localeId),
+                                                         format: format, in: self.webView)
         }
 
         value.subscribe(with: viewModel,

@@ -53,18 +53,20 @@ struct CitationBibliographyExportState: ViewModelState {
     // Cite
     var localeId: String
     var localeName: String
+    var languagePickerEnabled: Bool
     var style: Style
     var mode: OutputMode
     var method: OutputMethod
 
     // Export
 
-    init(itemIds: Set<String>, libraryId: LibraryIdentifier, selectedStyle: Style, selectedLocaleId: String, selectedMode: OutputMode, selectedMethod: OutputMethod) {
+    init(itemIds: Set<String>, libraryId: LibraryIdentifier, selectedStyle: Style, selectedLocaleId: String, languagePickerEnabled: Bool, selectedMode: OutputMode, selectedMethod: OutputMethod) {
         self.itemIds = itemIds
         self.libraryId = libraryId
         self.type = .cite
         self.localeId = selectedLocaleId
         self.localeName = Locale.current.localizedString(forIdentifier: selectedLocaleId) ?? selectedLocaleId
+        self.languagePickerEnabled = languagePickerEnabled
         self.style = selectedStyle
         self.mode = selectedMode == .bibliography ? (selectedStyle.supportsBibliography ? .bibliography : .citation) : selectedMode
         self.method = selectedMethod

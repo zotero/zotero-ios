@@ -21,7 +21,7 @@ struct ExportSettingsView: View {
                         self.viewModel.process(action: .updateStyle(style))
                     })
                 } label: {
-                    SettingsListButtonRow(text: L10n.Settings.Export.defaultFormat, detailText: self.viewModel.state.selectedStyle)
+                    SettingsListButtonRow(text: L10n.Settings.Export.defaultFormat, detailText: self.viewModel.state.selectedStyle, enabled: true)
                 }
 
                 Button {
@@ -29,8 +29,9 @@ struct ExportSettingsView: View {
                         self.viewModel.process(action: .updateLocale(locale))
                     })
                 } label: {
-                    SettingsListButtonRow(text: L10n.Settings.Export.language, detailText: self.viewModel.state.selectedLanguage)
+                    SettingsListButtonRow(text: L10n.Settings.Export.language, detailText: self.viewModel.state.selectedLanguage, enabled: self.viewModel.state.languagePickerEnabled)
                 }
+                .disabled(!self.viewModel.state.languagePickerEnabled)
 
                 ToggleRow(title: L10n.Settings.Export.copyAsHtml, isOn: self.viewModel.binding(keyPath: \.copyAsHtml, action: { .setCopyAsHtml($0) }))
             }

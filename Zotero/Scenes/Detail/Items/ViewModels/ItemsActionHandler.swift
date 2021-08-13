@@ -23,9 +23,11 @@ struct ItemsActionHandler: ViewModelActionHandler {
     private unowned let backgroundQueue: DispatchQueue
     private unowned let fileDownloader: AttachmentDownloader
     private unowned let citationController: CitationController
+    private unowned let bundledDataStorage: DbStorage
     private let disposeBag: DisposeBag
 
-    init(dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, urlDetector: UrlDetector, fileDownloader: AttachmentDownloader, citationController: CitationController) {
+    init(dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, urlDetector: UrlDetector, fileDownloader: AttachmentDownloader, citationController: CitationController,
+         bundledDataStorage: DbStorage) {
         self.backgroundQueue = DispatchQueue.global(qos: .userInitiated)
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
@@ -33,6 +35,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
         self.urlDetector = urlDetector
         self.fileDownloader = fileDownloader
         self.citationController = citationController
+        self.bundledDataStorage = bundledDataStorage
         self.disposeBag = DisposeBag()
     }
 
@@ -135,13 +138,14 @@ struct ItemsActionHandler: ViewModelActionHandler {
             self.filter(with: filters, in: viewModel)
 
         case .quickCopyBibliography(let itemIds, let libraryId, let webView):
+            guard let style = try? self.bundledDataStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: Defaults.shared.quickCopyStyleId)) else { return }
+
             self.update(viewModel: viewModel) { state in
                 state.processingBibliography = true
             }
 
-            let parentStyleId = Defaults.shared.quickCopyParentStyleId
-            self.citationController.bibliography(for: itemIds, libraryId: libraryId, styleId: Defaults.shared.quickCopyStyleId, parentStyleId: (parentStyleId.isEmpty ? nil : parentStyleId),
-                                                 localeId: Defaults.shared.quickCopyLocaleId, format: .text, in: webView)
+            let localeId = style.defaultLocale.isEmpty ? Defaults.shared.quickCopyLocaleId : style.defaultLocale
+            self.citationController.bibliography(for: itemIds, libraryId: libraryId, styleId: style.identifier, parentStyleId: style.dependency?.identifier, localeId: localeId, format: .text, in: webView)
                                    .subscribe(with: viewModel, onSuccess: { viewModel, citation in
                                        UIPasteboard.general.string = citation
                                        self.update(viewModel: viewModel) { state in

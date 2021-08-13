@@ -122,7 +122,7 @@ fileprivate struct CiteView: View {
 
     var body: some View {
         Section(header: Text(L10n.Citation.style)) {
-            RowView(title: self.viewModel.state.style.title)
+            RowView(title: self.viewModel.state.style.title, enabled: true)
                 .contentShape(Rectangle())
                 .onTapGesture {
                     self.coordinatorDelegate?.showStylePicker(picked: { style in
@@ -132,9 +132,10 @@ fileprivate struct CiteView: View {
         }
 
         Section(header: Text(L10n.Citation.language)) {
-            RowView(title: self.viewModel.state.localeName)
+            RowView(title: self.viewModel.state.localeName, enabled: self.viewModel.state.languagePickerEnabled)
                 .contentShape(Rectangle())
                 .onTapGesture {
+                    guard self.viewModel.state.languagePickerEnabled else { return }
                     self.coordinatorDelegate?.showLanguagePicker(picked: { locale in
                         self.viewModel.process(action: .setLocale(id: locale.id, name: locale.name))
                     })
@@ -184,16 +185,25 @@ fileprivate struct CiteView: View {
 
 fileprivate struct RowView: View {
     let title: String
+    let enabled: Bool
 
     var body: some View {
         HStack {
             Text(self.title)
+                .foregroundColor(Color(self.textColor))
 
             Spacer()
 
             Image(systemName: "chevron.right")
                 .foregroundColor(Color(.systemGray2))
         }
+    }
+
+    private var textColor: UIColor {
+        if !self.enabled {
+            return .systemGray
+        }
+        return UIColor { $0.userInterfaceStyle == .light ? .black : .white }
     }
 }
 
@@ -225,8 +235,8 @@ fileprivate struct ExportView: View {
 struct CitationBibliographyExportView_Previews: PreviewProvider {
     static var previews: some View {
         let controllers = Controllers()
-        let style = Style(identifier: "http://www.zotero.org/styles/nature", dependencyId: nil, title: "Nature", updated: Date(), href: URL(string: "")!, filename: "", supportsBibliography: true)
-        let state = CitationBibliographyExportState(itemIds: [], libraryId: .custom(.myLibrary), selectedStyle: style, selectedLocaleId: "en_US", selectedMode: .bibliography, selectedMethod: .copy)
+        let style = Style(identifier: "http://www.zotero.org/styles/nature", dependencyId: nil, title: "Nature", updated: Date(), href: URL(string: "")!, filename: "", supportsBibliography: true, defaultLocale: nil)
+        let state = CitationBibliographyExportState(itemIds: [], libraryId: .custom(.myLibrary), selectedStyle: style, selectedLocaleId: "en_US", languagePickerEnabled: true, selectedMode: .bibliography, selectedMethod: .copy)
         let handler = CitationBibliographyExportActionHandler(citationController: controllers.userControllers!.citationController, fileStorage: controllers.fileStorage, webView: WKWebView())
         let viewModel = ViewModel(initialState: state, handler: handler)
         return CitationBibliographyExportView().environmentObject(viewModel)

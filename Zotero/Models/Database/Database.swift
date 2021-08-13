@@ -11,7 +11,7 @@ import Foundation
 import RealmSwift
 
 struct Database {
-    private static let schemaVersion: UInt64 = 26
+    private static let schemaVersion: UInt64 = 27
 
     static func mainConfiguration(url: URL, fileStorage: FileStorage) -> Realm.Configuration {
         let shouldDelete = shouldDeleteRealm(url: url)

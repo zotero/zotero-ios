@@ -11,6 +11,7 @@ import SwiftUI
 struct SettingsListButtonRow: View {
     let text: String
     let detailText: String?
+    let enabled: Bool
 
     var body: some View {
         HStack {
@@ -33,6 +34,9 @@ struct SettingsListButtonRow: View {
     }
 
     private var textColor: UIColor {
+        if !self.enabled {
+            return .systemGray
+        }
         return UIColor(dynamicProvider: { traitCollection -> UIColor in
             return traitCollection.userInterfaceStyle == .dark ? .white : .black
         })
@@ -41,6 +45,6 @@ struct SettingsListButtonRow: View {
 
 struct SettingsListButtonRow_Previews: PreviewProvider {
     static var previews: some View {
-        SettingsListButtonRow(text: "Test", detailText: nil)
+        SettingsListButtonRow(text: "Test", detailText: nil, enabled: true)
     }
 }

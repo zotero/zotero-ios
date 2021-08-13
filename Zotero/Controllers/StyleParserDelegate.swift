@@ -22,6 +22,7 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
     private var dependencyHref: String?
     private var supportsCitation: Bool
     private var supportsBibliography: Bool
+    private var defaultLocale: String?
 
     private enum Element: String {
         case identifier = "id"
@@ -30,6 +31,7 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
         case link = "link"
         case citation = "citation"
         case bibliography = "bibliography"
+        case style = "style"
     }
 
     init(filename: String?) {
@@ -41,15 +43,27 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
     }
 
     func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
-        guard Element(rawValue: elementName) == .link, let rel = attributeDict["rel"] else { return }
+        guard let element = Element(rawValue: elementName) else { return }
 
-        switch rel {
-        case "self":
-            if self.href == nil, let href = attributeDict["href"] {
-                self.href = URL(string: href)
+        switch element {
+        case .link:
+            if let rel = attributeDict["rel"] {
+                switch rel {
+                case "self":
+                    if self.href == nil, let href = attributeDict["href"] {
+                        self.href = URL(string: href)
+                    }
+                case "independent-parent":
+                    self.dependencyHref = attributeDict["href"]
+                default: break
+                }
             }
-        case "independent-parent":
-            self.dependencyHref = attributeDict["href"]
+
+        case .style:
+            if let locale = attributeDict["default-locale"] {
+                self.defaultLocale = locale
+            }
+
         default: break
         }
     }
@@ -73,7 +87,7 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
             self.supportsCitation = true
         case .bibliography:
             self.supportsBibliography = true
-        case .link: break
+        case .link, .style: break
         }
 
         self.currentValue = ""
@@ -90,6 +104,6 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
         }
         guard let identifier = self.identifier, let title = self.title, let updated = self.updated, let href = self.href else { return }
         self.style = Style(identifier: identifier, dependencyId: self.dependencyHref, title: title, updated: updated, href: href,
-                           filename: (self.filename ?? href.lastPathComponent), supportsBibliography: self.supportsBibliography)
+                           filename: (self.filename ?? href.lastPathComponent), supportsBibliography: self.supportsBibliography, defaultLocale: self.defaultLocale)
     }
 }
