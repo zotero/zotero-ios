@@ -30,7 +30,6 @@ final class SingleCitationViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     weak var coordinatorDelegate: DetailCitationCoordinatorDelegate?
-    private var startTime: CFAbsoluteTime = 0
 
     // MARK: - Lifecycle
 
@@ -56,7 +55,6 @@ final class SingleCitationViewController: UIViewController {
         self.setupNavigationBar()
         self.setupObserving()
 
-        self.startTime = CFAbsoluteTimeGetCurrent()
         self.viewModel.process(action: .preload(self.previewWebView))
     }
 
