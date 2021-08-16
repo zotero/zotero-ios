@@ -9,10 +9,10 @@
 import UIKit
 import WebKit
 
+import CocoaLumberjackSwift
 import RxSwift
 
 final class SingleCitationViewController: UIViewController {
-    @IBOutlet private weak var webView: WKWebView!
     @IBOutlet private weak var container: UIStackView!
     @IBOutlet private weak var locatorButton: UIButton!
     @IBOutlet private weak var locatorTextField: UITextField!
@@ -20,7 +20,8 @@ final class SingleCitationViewController: UIViewController {
     @IBOutlet private weak var omitAuthorSwitch: UISwitch!
     @IBOutlet private weak var previewTitleLabel: UILabel!
     @IBOutlet private weak var previewContainer: UIView!
-    @IBOutlet private weak var previewLabel: UILabel!
+    @IBOutlet private weak var previewWebView: WKWebView!
+    @IBOutlet private weak var webViewHeight: NSLayoutConstraint!
     @IBOutlet private weak var activityIndicatorContainer: UIView!
     @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
 
@@ -29,6 +30,7 @@ final class SingleCitationViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     weak var coordinatorDelegate: DetailCitationCoordinatorDelegate?
+    private var startTime: CFAbsoluteTime = 0
 
     // MARK: - Lifecycle
 
@@ -54,7 +56,8 @@ final class SingleCitationViewController: UIViewController {
         self.setupNavigationBar()
         self.setupObserving()
 
-        self.viewModel.process(action: .preload(self.webView))
+        self.startTime = CFAbsoluteTimeGetCurrent()
+        self.viewModel.process(action: .preload(self.previewWebView))
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -69,10 +72,6 @@ final class SingleCitationViewController: UIViewController {
     // MARK: - Actions
 
     private func update(state: SingleCitationState) {
-        if state.changes.contains(.preview) {
-            self.previewLabel.text = state.preview
-        }
-
         if state.changes.contains(.locator) {
             self.locatorButton.setTitle(self.localized(locator: state.locator), for: .normal)
         }
@@ -126,6 +125,11 @@ final class SingleCitationViewController: UIViewController {
             self.view.safeAreaLayoutGuide.bottomAnchor.constraint(greaterThanOrEqualTo: self.container.bottomAnchor, constant: 12).isActive = true
         default: break
         }
+
+        self.previewWebView.scrollView.isScrollEnabled = false
+        self.previewWebView.backgroundColor = .clear
+        self.previewWebView.scrollView.backgroundColor = .clear
+        self.previewWebView.configuration.userContentController.add(self, name: "heightHandler")
     }
 
     private func setupNavigationBar() {
@@ -165,5 +169,12 @@ final class SingleCitationViewController: UIViewController {
                                     self.viewModel.process(action: .setOmitAuthor(self.omitAuthorSwitch.isOn))
                                 })
                                 .disposed(by: self.disposeBag)
+    }
+}
+
+extension SingleCitationViewController: WKScriptMessageHandler {
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard message.name == "heightHandler", let height = message.body as? CGFloat else { return }
+        self.webViewHeight.constant = height
     }
 }
