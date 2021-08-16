@@ -73,13 +73,14 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
     private func preload(webView: WKWebView, in viewModel: ViewModel<SingleCitationActionHandler>) {
         let itemIds = viewModel.state.itemIds
         let libraryId = viewModel.state.libraryId
+        let outputFormat: CitationController.Format = (viewModel.state.exportAsHtml ? .html : .text)
 
         self.citationController.prepareForCitation(for: itemIds, libraryId: libraryId, styleId: viewModel.state.styleId, parentStyleId: viewModel.state.parentStyleId,
                                                    localeId: viewModel.state.localeId, in: webView)
                                .flatMap({ [weak webView] _ -> Single<String> in
                                    guard let webView = webView else { return Single.error(CitationController.Error.prepareNotCalled) }
                                    return self.citationController.citation(for: itemIds, libraryId: libraryId, label: viewModel.state.locator, locator: viewModel.state.locatorValue,
-                                                                           omitAuthor: viewModel.state.omitAuthor, format: .text, in: webView)
+                                                                           omitAuthor: viewModel.state.omitAuthor, format: outputFormat, in: webView)
                                })
                                .subscribe(onSuccess: { [weak viewModel, weak webView] preview in
                                    guard let viewModel = viewModel else { return }
