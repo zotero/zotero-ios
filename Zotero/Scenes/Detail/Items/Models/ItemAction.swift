@@ -74,7 +74,7 @@ struct ItemAction {
             self.title = L10n.Citation.copyBibliography
             self._image = .system("doc.on.doc")
         case .share:
-            self.title = ""
+            self.title = L10n.share
             self._image = .system("square.and.arrow.up")
         }
     }

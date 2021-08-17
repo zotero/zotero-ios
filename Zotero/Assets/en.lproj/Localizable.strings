@@ -43,6 +43,7 @@
 "recent" = "Recents";
 "lookup" = "Look Up";
 "not_found" = "Not Found";
+"share" = "Share";
 
 "beta_wipe_title" = "Resync Required";
 "beta_wipe_message" = "Due to a beta update, your data must be redownloaded from zotero.org.";
