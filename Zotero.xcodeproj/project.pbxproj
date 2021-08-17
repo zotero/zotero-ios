@@ -2901,10 +2901,10 @@
 		B3DCDF04240912060039ED0D /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
-				B30E25F9267891B7004C0DFA /* SingleCitationActionHandler.swift */,
 				B3DCDF1E240945B30039ED0D /* CollectionPickerActionHandler.swift */,
 				B361820724C9B53600B30D56 /* KeyboardResponder.swift */,
 				B37C5B6826453C33009A37E5 /* NoteEditorActionHandler.swift */,
+				B30E25F9267891B7004C0DFA /* SingleCitationActionHandler.swift */,
 				B3DCDF0D240912500039ED0D /* SinglePickerActionHandler.swift */,
 				B3830CE1255451C200910FE0 /* TagPickerActionHandler.swift */,
 			);

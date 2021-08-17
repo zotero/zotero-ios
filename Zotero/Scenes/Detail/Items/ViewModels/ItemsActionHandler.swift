@@ -138,14 +138,11 @@ struct ItemsActionHandler: ViewModelActionHandler {
             self.filter(with: filters, in: viewModel)
 
         case .quickCopyBibliography(let itemIds, let libraryId, let webView):
-            guard let style = try? self.bundledDataStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: Defaults.shared.quickCopyStyleId)) else { return }
-
             self.update(viewModel: viewModel) { state in
                 state.processingBibliography = true
             }
 
-            let localeId = style.defaultLocale.isEmpty ? Defaults.shared.quickCopyLocaleId : style.defaultLocale
-            self.citationController.bibliography(for: itemIds, libraryId: libraryId, styleId: style.identifier, parentStyleId: style.dependency?.identifier, localeId: localeId, format: .text, in: webView)
+            self.citationController.bibliography(for: itemIds, libraryId: libraryId, styleId: Defaults.shared.quickCopyStyleId, localeId: Defaults.shared.quickCopyLocaleId, format: .text, in: webView)
                                    .subscribe(with: viewModel, onSuccess: { viewModel, citation in
                                        UIPasteboard.general.string = citation
                                        self.update(viewModel: viewModel) { state in

@@ -327,6 +327,12 @@ internal enum L10n {
       internal static let generateCitation = L10n.tr("Localizable", "errors.citation.generate_citation")
       /// Invalid item types selected.
       internal static let invalidTypes = L10n.tr("Localizable", "errors.citation.invalid_types")
+      /// Citation style seems to be missing. Go to Settings -> Export and select new style.
+      internal static let missingStyle = L10n.tr("Localizable", "errors.citation.missing_style")
+      /// Citation style seems to be missing. Change style to something else.
+      internal static let missingStyleExport = L10n.tr("Localizable", "errors.citation.missing_style_export")
+      /// Open Settings
+      internal static let openSettings = L10n.tr("Localizable", "errors.citation.open_settings")
     }
     internal enum Collections {
       /// Please enter a collection name

@@ -206,10 +206,15 @@ final class ItemsViewController: UIViewController {
 
         if state.processingBibliography {
             self.showOverlay(state: .processing)
-        } else if state.bibliographyError != nil {
-            self.showOverlay(state: .error(L10n.Errors.Items.generatingBib))
-            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(1500)) { [weak self] in
-                self?.hideOverlay()
+        } else if let error = state.bibliographyError {
+            if let error = error as? CitationController.Error, error == .styleOrLocaleMissing {
+                self.hideOverlay()
+                self.coordinatorDelegate?.showMissingStyleError()
+            } else {
+                self.showOverlay(state: .error(L10n.Errors.Items.generatingBib))
+                DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(1500)) { [weak self] in
+                    self?.hideOverlay()
+                }
             }
         } else {
             self.hideOverlay()

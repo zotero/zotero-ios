@@ -101,14 +101,12 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
             let itemIds = viewModel.state.itemIds
             let libraryId = viewModel.state.libraryId
 
-            value = self.citationController.prepareForCitation(for: itemIds, libraryId: libraryId, styleId: viewModel.state.style.identifier, parentStyleId: viewModel.state.style.dependencyId,
-                                                               localeId: (viewModel.state.style.defaultLocale ?? viewModel.state.localeId), in: self.webView)
+            value = self.citationController.prepareForCitation(for: itemIds, libraryId: libraryId, styleId: viewModel.state.style.identifier, localeId: viewModel.state.localeId, in: self.webView)
                         .flatMap { self.citationController.citation(for: itemIds, libraryId: libraryId, label: nil, locator: nil, omitAuthor: false, format: format, in: self.webView) }
 
         case .bibliography:
             value = self.citationController.bibliography(for: viewModel.state.itemIds, libraryId: viewModel.state.libraryId, styleId: viewModel.state.style.identifier,
-                                                         parentStyleId: viewModel.state.style.dependencyId, localeId: (viewModel.state.style.defaultLocale ?? viewModel.state.localeId),
-                                                         format: format, in: self.webView)
+                                                         localeId: viewModel.state.localeId, format: format, in: self.webView)
         }
 
         value.subscribe(with: viewModel,

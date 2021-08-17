@@ -75,8 +75,7 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
         let libraryId = viewModel.state.libraryId
         let outputFormat: CitationController.Format = (viewModel.state.exportAsHtml ? .html : .text)
 
-        self.citationController.prepareForCitation(for: itemIds, libraryId: libraryId, styleId: viewModel.state.styleId, parentStyleId: viewModel.state.parentStyleId,
-                                                   localeId: viewModel.state.localeId, in: webView)
+        self.citationController.prepareForCitation(for: itemIds, libraryId: libraryId, styleId: viewModel.state.styleId, localeId: viewModel.state.localeId, in: webView)
                                .flatMap({ [weak webView] _ -> Single<String> in
                                    guard let webView = webView else { return Single.error(CitationController.Error.prepareNotCalled) }
                                    return self.citationController.citation(for: itemIds, libraryId: libraryId, label: viewModel.state.locator, locator: viewModel.state.locatorValue,
@@ -92,7 +91,11 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
                                }, onFailure: { error in
                                    DDLogError("CitationActionHandler: can't preload webView - \(error)")
                                    self.update(viewModel: viewModel) { state in
-                                       state.error = .cantPreloadWebView
+                                       if let error = error as? CitationController.Error, error == .styleOrLocaleMissing {
+                                           state.error = .styleMissing
+                                       } else {
+                                           state.error = .cantPreloadWebView
+                                       }
                                    }
                                })
                                .disposed(by: self.disposeBag)

@@ -50,45 +50,47 @@ final class CitationBibliographyExportCoordinator: NSObject, Coordinator {
     func start(animated: Bool) {
         guard let citationController = self.controllers.userControllers?.citationController else { return }
 
-        do {
-            let styleId = Defaults.shared.exportStyleId
-            let rStyle = try self.controllers.bundledDataStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: styleId))
-            guard let style = Style(rStyle: rStyle) else { return }
+        let style: Style
 
-            let webView = WKWebView()
-            webView.isHidden = true
-
-            let localeId = style.defaultLocale ?? Defaults.shared.exportLocaleId
-            let languageEnabled = style.defaultLocale == nil
-            let mode: CitationBibliographyExportState.OutputMode = style.supportsBibliography ? Defaults.shared.exportOutputMode : .citation
-            let state = CitationBibliographyExportState(itemIds: self.itemIds, libraryId: self.libraryId, selectedStyle: style, selectedLocaleId: localeId, languagePickerEnabled: languageEnabled,
-                                                        selectedMode: mode, selectedMethod: Defaults.shared.exportOutputMethod)
-            let handler = CitationBibliographyExportActionHandler(citationController: citationController, fileStorage: self.controllers.fileStorage, webView: webView)
-            let viewModel = ViewModel(initialState: state, handler: handler)
-
-            viewModel.stateObservable
-                     .subscribe(with: self, onNext: { `self`, state in
-                         if state.changes.contains(.finished) {
-                             self.cancel()
-                         }
-
-                         if let file = state.outputFile {
-                             self.share(file: file)
-                         }
-                     })
-                     .disposed(by: self.disposeBag)
-
-            var view = CitationBibliographyExportView()
-            view.coordinatorDelegate = self
-
-            let controller = UIHostingController(rootView: view.environmentObject(viewModel))
-            controller.preferredContentSize = CitationBibliographyExportCoordinator.defaultSize
-
-            self.navigationController.setViewControllers([controller], animated: animated)
-            self.navigationController.view.insertSubview(webView, at: 0)
-        } catch let error {
-            DDLogError("DetailCoordinator: can't open citeexport - \(error)")
+        if let rStyle = try? self.controllers.bundledDataStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: Defaults.shared.exportStyleId)),
+           let _style = Style(rStyle: rStyle) {
+            style = _style
+        } else {
+            style = Style(identifier: "", dependencyId: nil, title: L10n.unknown, updated: Date(), href: URL(fileURLWithPath: ""), filename: "", supportsBibliography: false, defaultLocale: nil)
         }
+
+        let webView = WKWebView()
+        webView.isHidden = true
+
+        let localeId = style.defaultLocale ?? Defaults.shared.exportLocaleId
+        let languageEnabled = style.defaultLocale == nil
+        let mode: CitationBibliographyExportState.OutputMode = style.supportsBibliography ? Defaults.shared.exportOutputMode : .citation
+
+        let state = CitationBibliographyExportState(itemIds: self.itemIds, libraryId: self.libraryId, selectedStyle: style, selectedLocaleId: localeId, languagePickerEnabled: languageEnabled,
+                                                    selectedMode: mode, selectedMethod: Defaults.shared.exportOutputMethod)
+        let handler = CitationBibliographyExportActionHandler(citationController: citationController, fileStorage: self.controllers.fileStorage, webView: webView)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+
+        viewModel.stateObservable
+                 .subscribe(with: self, onNext: { `self`, state in
+                     if state.changes.contains(.finished) {
+                         self.cancel()
+                     }
+
+                     if let file = state.outputFile {
+                         self.share(file: file)
+                     }
+                 })
+                 .disposed(by: self.disposeBag)
+
+        var view = CitationBibliographyExportView()
+        view.coordinatorDelegate = self
+
+        let controller = UIHostingController(rootView: view.environmentObject(viewModel))
+        controller.preferredContentSize = CitationBibliographyExportCoordinator.defaultSize
+
+        self.navigationController.setViewControllers([controller], animated: animated)
+        self.navigationController.view.insertSubview(webView, at: 0)
     }
 
     private func share(file: File) {

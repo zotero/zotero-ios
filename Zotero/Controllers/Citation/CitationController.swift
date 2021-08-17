@@ -72,21 +72,20 @@ class CitationController: NSObject {
     /// - parameter itemIds: Ids of items for which CSL will be generated.
     /// - parameter libraryId: Library identifier of given items.
     /// - parameter styleId: Id of style to use for citation generation.
-    /// - parameter parentStyleId: Id of parent style for dependent styles.
     /// - parameter localeId: Id of locale to use for citation generation.
     /// - returns: Single which is called when webView is fully loaded.
-    func prepareForCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier, styleId: String, parentStyleId: String?, localeId: String, in webView: WKWebView) -> Single<()> {
+    func prepareForCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier, styleId: String, localeId: String, in webView: WKWebView) -> Single<()> {
         webView.navigationDelegate = self
         JSHandlers.allCases.forEach { handler in
             webView.configuration.userContentController.removeScriptMessageHandler(forName: handler.rawValue)
             webView.configuration.userContentController.add(self, name: handler.rawValue)
         }
 
-        return self.loadStyleFilename(for: (parentStyleId ?? styleId))
+        return self.loadStyleData(for: styleId)
                     .subscribe(on: self.backgroundScheduler)
                     .observe(on: self.backgroundScheduler)
-                    .flatMap({ filename -> Single<(String, String)> in
-                        return self.loadEncodedXmls(styleFilename: filename, localeId: localeId)
+                    .flatMap({ filename, styleLocaleId -> Single<(String, String)> in
+                        return self.loadEncodedXmls(styleFilename: filename, localeId: (styleLocaleId ?? localeId))
                     })
                     .do(onSuccess: { style, locale in
                         self.styleXml = style
@@ -160,23 +159,22 @@ class CitationController: NSObject {
     /// - parameter items: Ids of items of which bibliography is created.
     /// - parameter libraryId: Id of library for given items.
     /// - parameter styleId: Id of style to use for bibliography generation.
-    /// - parameter parentStyleId: Id of parent style for dependent styles. 
     /// - parameter localeId: Id of locale to use for bibliography generation.
     /// - parameter format: Bibliography format to use for generation.
     /// - parameter webView: WebView which will run the javascript.
     /// - returns: Single which returns bibliography.
-    func bibliography(for itemIds: Set<String>, libraryId: LibraryIdentifier, styleId: String, parentStyleId: String?, localeId: String, format: Format, in webView: WKWebView) -> Single<String> {
+    func bibliography(for itemIds: Set<String>, libraryId: LibraryIdentifier, styleId: String, localeId: String, format: Format, in webView: WKWebView) -> Single<String> {
         webView.navigationDelegate = self
         JSHandlers.allCases.forEach { handler in
             webView.configuration.userContentController.removeScriptMessageHandler(forName: handler.rawValue)
             webView.configuration.userContentController.add(self, name: handler.rawValue)
         }
 
-        return self.loadStyleFilename(for: (parentStyleId ?? styleId))
+        return self.loadStyleData(for: styleId)
                    .subscribe(on: self.backgroundScheduler)
                    .observe(on: self.backgroundScheduler)
-                   .flatMap({ filename -> Single<(String, String)> in
-                       return self.loadEncodedXmls(styleFilename: filename, localeId: localeId)
+                   .flatMap({ filename, styleLocaleId -> Single<(String, String)> in
+                       return self.loadEncodedXmls(styleFilename: filename, localeId: (styleLocaleId ?? localeId))
                    })
                    .flatMap({ style, locale -> Single<(String, String, String, URL)> in
                        return self.loadIndexHtml().flatMap({ Single.just((style, locale, $0, $1)) })
@@ -225,11 +223,16 @@ class CitationController: NSObject {
         }
     }
 
-    private func loadStyleFilename(for styleId: String) -> Single<String> {
+    /// Loads style data.
+    /// - parameter styleId: Identifier of style
+    /// - returns: Tuple where first `String` is style filename and second `String` is locale id if specified by style.
+    private func loadStyleData(for styleId: String) -> Single<(String, String?)> {
         return Single.create { subscriber in
             do {
                 let style = try self.bundledDataStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: styleId))
-                subscriber(.success(style.filename))
+                let filename = style.dependency?.filename ?? style.filename
+                let localeId = style.defaultLocale.isEmpty ? nil : style.defaultLocale
+                subscriber(.success((filename, localeId)))
             } catch let error {
                 DDLogError("CitationController: can't load style - \(error)")
                 subscriber(.failure(Error.styleOrLocaleMissing))

@@ -38,14 +38,16 @@ final class SettingsCoordinator: NSObject, Coordinator {
 
     unowned let navigationController: UINavigationController
     private unowned let controllers: Controllers
+    private let startsWithExport: Bool
     private let disposeBag: DisposeBag
     private static let defaultSize: CGSize = CGSize(width: 580, height: 620)
 
     private var searchController: UISearchController?
 
-    init(navigationController: NavigationViewController, controllers: Controllers) {
+    init(startsWithExport: Bool, navigationController: NavigationViewController, controllers: Controllers) {
         self.navigationController = navigationController
         self.controllers = controllers
+        self.startsWithExport = startsWithExport
         self.childCoordinators = []
         self.disposeBag = DisposeBag()
 
@@ -59,10 +61,20 @@ final class SettingsCoordinator: NSObject, Coordinator {
     }
 
     func start(animated: Bool) {
+        guard let listController = self.createListController() else { return }
+
+        var controllers: [UIViewController] = [listController]
+        if self.startsWithExport {
+            controllers.append(self.createExportController())
+        }
+        self.navigationController.setViewControllers(controllers, animated: animated)
+    }
+
+    private func createListController() -> UIViewController? {
         guard let syncScheduler = self.controllers.userControllers?.syncScheduler,
               let webSocketController = self.controllers.userControllers?.webSocketController,
               let dbStorage = self.controllers.userControllers?.dbStorage,
-              let fileCleanupController = self.controllers.userControllers?.fileCleanupController else { return }
+              let fileCleanupController = self.controllers.userControllers?.fileCleanupController else { return nil }
 
         let state = SettingsState(isSyncing: syncScheduler.syncController.inProgress,
                                   isLogging: self.controllers.debugLogging.isEnabled,
@@ -103,7 +115,30 @@ final class SettingsCoordinator: NSObject, Coordinator {
 
         let controller = UIHostingController(rootView: view.environmentObject(viewModel))
         controller.preferredContentSize = SettingsCoordinator.defaultSize
-        self.navigationController.setViewControllers([controller], animated: animated)
+
+        return controller
+    }
+
+    private func createExportController() -> UIViewController {
+        let style = try? self.controllers.bundledDataStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: Defaults.shared.quickCopyStyleId))
+
+        let language: String
+        if let defaultLocale = style?.defaultLocale, !defaultLocale.isEmpty {
+            language = Locale.current.localizedString(forLanguageCode: defaultLocale) ?? defaultLocale
+        } else {
+            let localeId = Defaults.shared.quickCopyLocaleId
+            language = Locale.current.localizedString(forLanguageCode: localeId) ?? localeId
+        }
+
+        let state = ExportState(style: (style?.title ?? L10n.unknown), language: language, languagePickerEnabled: (style?.defaultLocale.isEmpty ?? true), copyAsHtml: Defaults.shared.quickCopyAsHtml)
+        let handler = ExportActionHandler()
+        let viewModel = ViewModel(initialState: state, handler: handler)
+        var view = ExportSettingsView()
+        view.coordinatorDelegate = self
+
+        let controller = UIHostingController(rootView: view.environmentObject(viewModel))
+        controller.preferredContentSize = SettingsCoordinator.defaultSize
+        return controller
     }
 }
 
@@ -215,24 +250,7 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
     }
 
     func showExportSettings() {
-        guard let style = try? self.controllers.bundledDataStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: Defaults.shared.quickCopyStyleId)) else { return }
-
-        let language: String
-        if !style.defaultLocale.isEmpty  {
-            language = Locale.current.localizedString(forLanguageCode: style.defaultLocale) ?? style.defaultLocale
-        } else {
-            let localeId = Defaults.shared.quickCopyLocaleId
-            language = Locale.current.localizedString(forLanguageCode: localeId) ?? localeId
-        }
-        
-        let state = ExportState(style: style.title, language: language, languagePickerEnabled: style.defaultLocale.isEmpty, copyAsHtml: Defaults.shared.quickCopyAsHtml)
-        let handler = ExportActionHandler()
-        let viewModel = ViewModel(initialState: state, handler: handler)
-        var view = ExportSettingsView()
-        view.coordinatorDelegate = self
-
-        let controller = UIHostingController(rootView: view.environmentObject(viewModel))
-        controller.preferredContentSize = SettingsCoordinator.defaultSize
+        let controller = self.createExportController()
         self.navigationController.pushViewController(controller, animated: true)
     }
 

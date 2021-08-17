@@ -41,6 +41,8 @@ struct CitationBibliographyExportView: View {
             switch error {
             case .invalidItemTypes:
                 return L10n.Errors.Citation.invalidTypes
+            case .styleOrLocaleMissing:
+                return L10n.Errors.Citation.missingStyleExport
             default: break
             }
         }

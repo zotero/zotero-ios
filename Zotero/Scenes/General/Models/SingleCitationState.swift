@@ -22,6 +22,7 @@ struct SingleCitationState: ViewModelState {
 
     enum Error: Swift.Error {
         case cantPreloadWebView
+        case styleMissing
     }
 
     static let locators: [String] = ["page", "book", "chapter", "column", "figure", "folio", "issue", "line", "note", "opus", "paragraph", "part", "section", "sub verbo", "verse", "volume"]
@@ -29,7 +30,6 @@ struct SingleCitationState: ViewModelState {
     let itemIds: Set<String>
     let libraryId: LibraryIdentifier
     let styleId: String
-    let parentStyleId: String?
     let localeId: String
     let exportAsHtml: Bool
 
@@ -41,11 +41,10 @@ struct SingleCitationState: ViewModelState {
     var error: Error?
     var changes: Changes
 
-    init(itemIds: Set<String>, libraryId: LibraryIdentifier, styleId: String, parentStyleId: String?, localeId: String, exportAsHtml: Bool) {
+    init(itemIds: Set<String>, libraryId: LibraryIdentifier, styleId: String, localeId: String, exportAsHtml: Bool) {
         self.itemIds = itemIds
         self.libraryId = libraryId
         self.styleId = styleId
-        self.parentStyleId = parentStyleId
         self.localeId = localeId
         self.exportAsHtml = exportAsHtml
         self.locator = SingleCitationState.locators.first!

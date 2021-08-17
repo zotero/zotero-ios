@@ -134,7 +134,10 @@ struct CiteActionHandler: ViewModelActionHandler {
         let style = viewModel.state.styles[index]
 
         do {
-            let toRemove = try self.bundledDataStorage.createCoordinator().perform(request: UninstallStyleDbRequest(identifier: style.identifier))
+            let coordinator = try self.bundledDataStorage.createCoordinator()
+
+            let toRemove = try coordinator.perform(request: UninstallStyleDbRequest(identifier: style.identifier))
+            self.resetDefaultStylesIfNeeded(removedStyle: style, coordinator: coordinator)
             for identifier in toRemove {
                 try? self.fileStorage.remove(Files.style(filename: identifier))
             }
@@ -148,6 +151,30 @@ struct CiteActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.error = .deletion(name: style.title, error: error)
             }
+        }
+    }
+
+    private func resetDefaultStylesIfNeeded(removedStyle style: Style, coordinator: DbCoordinator) {
+        let quickCopyRemoved = style.identifier == Defaults.shared.quickCopyStyleId
+        let exportRemoved = style.identifier == Defaults.shared.exportStyleId
+
+        guard quickCopyRemoved || exportRemoved else { return }
+
+        let resetRemoved: (String) -> Void = { newId in
+            if quickCopyRemoved {
+                Defaults.shared.quickCopyStyleId = newId
+            }
+            if exportRemoved {
+                Defaults.shared.exportStyleId = newId
+            }
+        }
+
+        if let defaultStyle = try? coordinator.perform(request: ReadStyleDbRequest(identifier: "http://www.zotero.org/styles/chicago-note-bibliography")) {
+            resetRemoved(defaultStyle.identifier)
+        } else if let availableStyle = try? coordinator.perform(request: ReadStylesDbRequest()).first {
+            resetRemoved(availableStyle.identifier)
+        } else {
+            resetRemoved("")
         }
     }
 

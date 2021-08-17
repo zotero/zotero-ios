@@ -141,7 +141,7 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
         containerController.isModalInPresentation = true
         containerController.modalPresentationStyle = .formSheet
 
-        let coordinator = SettingsCoordinator(navigationController: navigationController, controllers: self.controllers)
+        let coordinator = SettingsCoordinator(startsWithExport: false, navigationController: navigationController, controllers: self.controllers)
         coordinator.parentCoordinator = self
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)

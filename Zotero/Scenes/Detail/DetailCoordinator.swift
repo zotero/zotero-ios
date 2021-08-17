@@ -41,6 +41,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void)
     func showCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier)
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
+    func showMissingStyleError()
 }
 
 protocol DetailItemDetailCoordinatorDelegate: AnyObject {
@@ -100,6 +101,7 @@ protocol DetailItemActionSheetCoordinatorDelegate: AnyObject {
 protocol DetailCitationCoordinatorDelegate: AnyObject {
     func showLocatorPicker(for values: [SinglePickerModel], selected: String, picked: @escaping (String) -> Void)
     func showCitationPreview(errorMessage: String)
+    func showMissingStyleError()
 }
 
 fileprivate class EmptyTransitioningDelegate: NSObject, UIViewControllerTransitioningDelegate {}
@@ -488,12 +490,10 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     }
 
     func showCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
-        guard let citationController = self.controllers.userControllers?.citationController,
-              let style = try? self.controllers.bundledDataStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: Defaults.shared.quickCopyStyleId)) else { return }
+        guard let citationController = self.controllers.userControllers?.citationController else { return }
 
-        let localeId = style.defaultLocale.isEmpty ? Defaults.shared.quickCopyLocaleId : style.defaultLocale
-        let state = SingleCitationState(itemIds: itemIds, libraryId: libraryId, styleId: style.identifier, parentStyleId: style.dependency?.identifier, localeId: localeId,
-                                        exportAsHtml: Defaults.shared.quickCopyAsHtml)
+        let state = SingleCitationState(itemIds: itemIds, libraryId: libraryId, styleId: Defaults.shared.quickCopyStyleId,
+                                        localeId: Defaults.shared.quickCopyLocaleId, exportAsHtml: Defaults.shared.quickCopyAsHtml)
         let handler = SingleCitationActionHandler(citationController: citationController)
         let viewModel = ViewModel(initialState: state, handler: handler)
 
@@ -504,6 +504,36 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let containerController = ContainerViewController(rootViewController: navigationController)
         containerController.isModalInPresentation = true
         containerController.modalPresentationStyle = .formSheet
+        self.navigationController.present(containerController, animated: true, completion: nil)
+    }
+
+    func showMissingStyleError() {
+        let controller = UIAlertController(title: L10n.error, message: L10n.Errors.Citation.missingStyle, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
+        controller.addAction(UIAlertAction(title: L10n.Errors.Citation.openSettings, style: .default, handler: { [weak self] _ in
+            self?.openExportSettings()
+        }))
+
+        if self.navigationController.presentedViewController == nil {
+            self.navigationController.present(controller, animated: true, completion: nil)
+        } else {
+            self.navigationController.dismiss(animated: true) {
+                self.navigationController.present(controller, animated: true, completion: nil)
+            }
+        }
+    }
+
+    private func openExportSettings() {
+        let navigationController = NavigationViewController()
+        let containerController = ContainerViewController(rootViewController: navigationController)
+        containerController.isModalInPresentation = true
+        containerController.modalPresentationStyle = .formSheet
+
+        let coordinator = SettingsCoordinator(startsWithExport: true, navigationController: navigationController, controllers: self.controllers)
+        coordinator.parentCoordinator = self
+        self.childCoordinators.append(coordinator)
+        coordinator.start(animated: false)
+
         self.navigationController.present(containerController, animated: true, completion: nil)
     }
 

@@ -82,8 +82,13 @@ final class SingleCitationViewController: UIViewController {
             self.navigationItem.rightBarButtonItem?.isEnabled = state.webView != nil
         }
 
-        if state.error != nil {
-            self.coordinatorDelegate?.showCitationPreview(errorMessage: L10n.Errors.citationPreview)
+        if let error = state.error {
+            switch error {
+            case .styleMissing:
+                self.coordinatorDelegate?.showMissingStyleError()
+            case .cantPreloadWebView:
+                self.coordinatorDelegate?.showCitationPreview(errorMessage: L10n.Errors.citationPreview)
+            }
         }
 
         if state.changes.contains(.preview) || state.changes.contains(.loading) {
