@@ -9,6 +9,8 @@
 import SwiftUI
 
 struct SettingsListView: View {
+    @EnvironmentObject var viewModel: ViewModel<SettingsActionHandler>
+    
     weak var coordinatorDelegate: SettingsCoordinatorDelegate?
 
     var body: some View {
@@ -29,7 +31,7 @@ struct SettingsListView: View {
             }
 
             Section {
-                NavigationLink(destination: GeneralSettingsView()) {
+                NavigationLink(destination: GeneralSettingsView().environmentObject(self.viewModel)) {
                     Text(L10n.Settings.General.title)
                 }
 
@@ -45,15 +47,15 @@ struct SettingsListView: View {
                     SettingsListButtonRow(text: L10n.Settings.Cite.title, detailText: nil, enabled: true)
                 })
 
-                NavigationLink(destination: SavingSettingsView()) {
+                NavigationLink(destination: SavingSettingsView().environmentObject(self.viewModel)) {
                     Text(L10n.Settings.Saving.title)
                 }
 
-                NavigationLink(destination: StorageSettingsView()) {
+                NavigationLink(destination: StorageSettingsView().environmentObject(self.viewModel)) {
                     Text(L10n.Settings.storage)
                 }
 
-                NavigationLink(destination: DebugSettingsView()) {
+                NavigationLink(destination: DebugSettingsView().environmentObject(self.viewModel)) {
                     Text(L10n.Settings.debug)
                 }
             }
