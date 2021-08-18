@@ -276,7 +276,7 @@ final class WebSocketController {
     /// Handles received websocket event.
     /// - parameter event: Websocket event to process.
     private func handle(event: WebSocketEvent) {
-        DDLogInfo("WebSocketController: WS event - \(event)")
+        DDLogInfo("WebSocketController: WS event - \(self.redact(logMessage: "\(event)"))")
 
         switch event {
         case .ping, .pong, .viabilityChanged, .reconnectSuggested, .connected, .cancelled, .error: break
@@ -303,7 +303,7 @@ final class WebSocketController {
                 return
             }
 
-            DDLogInfo("WebSocketController: handle event - \(event)")
+            DDLogInfo("WebSocketController: handle event - \(self.redact(logMessage: "\(event)"))")
 
             switch event {
             case .topicAdded, .topicRemoved, .topicUpdated:
@@ -315,7 +315,7 @@ final class WebSocketController {
 
         } catch let error {
             let message = String(data: data, encoding: .utf8) ?? ""
-            DDLogError("WebSocketController: received unknown message - \(error). Original message: \(message)")
+            DDLogError("WebSocketController: received unknown message - \(error). Original message: \(self.redact(logMessage: message))")
         }
     }
 
@@ -368,12 +368,12 @@ final class WebSocketController {
             let data = try self.jsonEncoder.encode(message)
             let string = String(data: data, encoding: .utf8) ?? ""
 
-            DDLogInfo("WebSocketController: send message - \(string)")
+            DDLogInfo("WebSocketController: send message - \(self.redact(logMessage: string))")
 
             self.createResponse(for: responseEvent, completion: completion)
             webSocket.write(string: string)
         } catch let error {
-            DDLogError("WebSocketController: message error (\(message)) - \(error)")
+            DDLogError("WebSocketController: message error (\(self.redact(logMessage: "\(message)")) - \(error)")
             completion(.cantCreateMessage)
         }
     }
@@ -400,5 +400,10 @@ final class WebSocketController {
         self.webSocket = nil
         // Clear current api key
         self.apiKey = nil
+    }
+
+    private func redact(logMessage: String) -> String {
+        guard let apiKey = self.apiKey else { return logMessage }
+        return logMessage.replacingOccurrences(of: apiKey, with: "<redacted>")
     }
 }
