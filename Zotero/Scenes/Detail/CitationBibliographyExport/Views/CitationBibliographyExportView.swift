@@ -29,20 +29,20 @@ struct CitationBibliographyExportView: View {
 
             if self.viewModel.state.isLoading {
                 Overlay(type: .loading)
-            } else if let error = self.viewModel.state.error {
-                Overlay(type: .error(self.message(for: error, mode: self.viewModel.state.mode)))
+            } else if let error = self.viewModel.state.error, let message = self.message(for: error, mode: self.viewModel.state.mode) {
+                Overlay(type: .error(message))
             }
         }
         .navigationBarItems(leading: self.leadingItem, trailing: self.trailingItem)
     }
 
-    private func message(for error: Error, mode: CitationBibliographyExportState.OutputMode) -> String {
+    private func message(for error: Error, mode: CitationBibliographyExportState.OutputMode) -> String? {
         if let error = error as? CitationController.Error {
             switch error {
             case .invalidItemTypes:
                 return L10n.Errors.Citation.invalidTypes
             case .styleOrLocaleMissing:
-                return L10n.Errors.Citation.missingStyleExport
+                return nil
             default: break
             }
         }

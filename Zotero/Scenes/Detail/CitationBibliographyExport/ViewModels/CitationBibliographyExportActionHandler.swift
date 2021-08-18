@@ -22,6 +22,8 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
     private let queue: DispatchQueue
     private let disposeBag: DisposeBag
 
+    weak var coordinatorDelegate: CitationBibliographyExportCoordinatorDelegate?
+
     init(citationController: CitationController, fileStorage: FileStorage, webView: WKWebView) {
         self.citationController = citationController
         self.fileStorage = fileStorage
@@ -114,12 +116,23 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
                             self.finishProcessing(value: value, in: viewModel)
                         }, onFailure: { viewModel, error in
                             DDLogError("CitationBibliographyExportActionHandler: can't create citation of bibliography - \(error)")
-                            self.update(viewModel: viewModel) { state in
-                                state.isLoading = false
-                                state.error = error
-                            }
+                            self.handleCitation(error: error, in: viewModel)
                         })
             .disposed(by: self.disposeBag)
+    }
+
+    private func handleCitation(error: Error, in viewModel: ViewModel<CitationBibliographyExportActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            state.isLoading = false
+
+            if let error = error as? CitationController.Error, error == .styleOrLocaleMissing {
+                self.coordinatorDelegate?.showStylePicker(picked: { style in
+                    viewModel.process(action: .setStyle(style))
+                })
+            } else {
+                state.error = error
+            }
+        }
     }
 
     private func finishProcessing(value: String, in viewModel: ViewModel<CitationBibliographyExportActionHandler>) {

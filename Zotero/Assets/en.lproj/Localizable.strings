@@ -354,7 +354,6 @@
 "errors.citation.generate_citation" = "Could not generate citation.";
 "errors.citation.generate_bibliography" = "Could not generate bibliography.";
 "errors.citation.invalid_types" = "Invalid item types selected.";
-"errors.citation.missing_style_export" = "Citation style seems to be missing. Change style to something else.";
 "errors.citation.missing_style" = "No citation style selected. Go to Settings → Quick Copy and select a new style.";
 "errors.citation.open_settings" = "Open Settings";
 

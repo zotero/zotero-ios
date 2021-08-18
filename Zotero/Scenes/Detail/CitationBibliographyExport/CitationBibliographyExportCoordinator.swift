@@ -68,7 +68,8 @@ final class CitationBibliographyExportCoordinator: NSObject, Coordinator {
 
         let state = CitationBibliographyExportState(itemIds: self.itemIds, libraryId: self.libraryId, selectedStyle: style, selectedLocaleId: localeId, languagePickerEnabled: languageEnabled,
                                                     selectedMode: mode, selectedMethod: Defaults.shared.exportOutputMethod)
-        let handler = CitationBibliographyExportActionHandler(citationController: citationController, fileStorage: self.controllers.fileStorage, webView: webView)
+        var handler = CitationBibliographyExportActionHandler(citationController: citationController, fileStorage: self.controllers.fileStorage, webView: webView)
+        handler.coordinatorDelegate = self
         let viewModel = ViewModel(initialState: state, handler: handler)
 
         viewModel.stateObservable
