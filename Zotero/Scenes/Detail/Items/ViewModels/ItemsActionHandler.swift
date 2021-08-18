@@ -142,7 +142,8 @@ struct ItemsActionHandler: ViewModelActionHandler {
                 state.processingBibliography = true
             }
 
-            self.citationController.bibliography(for: itemIds, libraryId: libraryId, styleId: Defaults.shared.quickCopyStyleId, localeId: Defaults.shared.quickCopyLocaleId, format: .text, in: webView)
+            self.citationController.bibliography(for: itemIds, libraryId: libraryId, styleId: Defaults.shared.quickCopyStyleId, localeId: Defaults.shared.quickCopyLocaleId,
+                                                 format: (Defaults.shared.quickCopyAsHtml ? .html : .text), in: webView)
                                    .subscribe(with: viewModel, onSuccess: { viewModel, citation in
                                        UIPasteboard.general.string = citation
                                        self.update(viewModel: viewModel) { state in
