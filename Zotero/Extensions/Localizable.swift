@@ -802,8 +802,6 @@ internal enum L10n {
       /// Language
       internal static let language = L10n.tr("Localizable", "settings.export.language")
       /// Quick Copy
-      internal static let quickCopy = L10n.tr("Localizable", "settings.export.quick_copy")
-      /// Export
       internal static let title = L10n.tr("Localizable", "settings.export.title")
     }
     internal enum General {

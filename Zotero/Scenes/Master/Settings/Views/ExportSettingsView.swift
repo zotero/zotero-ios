@@ -15,7 +15,7 @@ struct ExportSettingsView: View {
 
     var body: some View {
         Form {
-            Section(header: Text(L10n.Settings.Export.quickCopy)) {
+            Section(header: Text("")) {
                 Button {
                     self.coordinatorDelegate?.showStylePicker(picked: { style in
                         self.viewModel.process(action: .updateStyle(style))
