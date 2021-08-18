@@ -289,7 +289,7 @@ extension SettingsCoordinator: ExportSettingsCoordinatorDelegate {
 
         let view = StylePickerView(picked: picked)
         let controller = UIHostingController(rootView: view.environmentObject(viewModel))
-        controller.preferredContentSize = UIScreen.main.bounds.size
+        controller.preferredContentSize = SettingsCoordinator.defaultSize
         self.navigationController.pushViewController(controller, animated: true)
     }
 
@@ -300,7 +300,7 @@ extension SettingsCoordinator: ExportSettingsCoordinatorDelegate {
 
         let view = ExportLocalePickerView(picked: picked)
         let controller = UIHostingController(rootView: view.environmentObject(viewModel))
-        controller.preferredContentSize = UIScreen.main.bounds.size
+        controller.preferredContentSize = SettingsCoordinator.defaultSize
         self.navigationController.pushViewController(controller, animated: true)
     }
 }
