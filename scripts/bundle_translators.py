@@ -9,7 +9,7 @@ def commit_hash_from_submodules(array):
     for line in array:
         if line.startswith("translators"):
             return line.split()[1]
-        
+
 def index_json(directory):
     index = []
 
@@ -39,14 +39,11 @@ bundle_dir = os.path.join(os.path.abspath("."), "Bundled" + os.sep + "translator
 if not os.path.isdir(bundle_dir):
     os.mkdir(bundle_dir)
 
-# Download translators submodule
-subprocess.check_call(["git", "submodule", "update", "--recursive", "ZShare/Assets/translation/modules/zotero"])
-
 # Get translators directory
-translators_dir = os.path.join(os.path.abspath("."), "ZShare" + os.sep + "Assets" + os.sep + "translation" + os.sep + "modules" + os.sep + "zotero" + os.sep + "translators")
+translators_dir = os.path.join(os.path.abspath("."), "translators")
 
 if not os.path.isdir(translators_dir):
-    raise Exception(translators_dir + " is not a directory")
+    raise Exception(translators_dir + " is not a directory. Call update_bundled_data.py first.")
 
 # Store last commit hash from translators submodule
 submodules = subprocess.check_output(["git", "submodule", "foreach", "--recursive", "echo $path `git rev-parse HEAD`"]).decode("utf-8").splitlines()

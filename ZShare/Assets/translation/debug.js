@@ -24,12 +24,9 @@
 */
 
 Zotero.Debug = new function () {
-	var _console, _stackTrace, _store, _level, _lastTime, _output = [];
+	var _console, _store, _level, _lastTime, _output = [];
 	var _slowTime = false;
-	var _colorOutput = false;
 	var _consoleViewer = false;
-	var _consoleViewerQueue = [];
-	var _consoleViewerListener;
 	
 	/**
 	 * Initialize debug logging
@@ -87,7 +84,6 @@ Zotero.Debug = new function () {
 		}
 		
 		var output = '(' + level + ')' + deltaStr + ': ' + message;
-		console.log(output+"\n");
         window.webkit.messageHandlers.logHandler.postMessage(output);
 		
 		if (_store) {
@@ -183,4 +179,8 @@ Zotero.Debug = new function () {
 	this.filterStack = function (stack) {
 		return stack.split(/\n/).filter(line => line.indexOf('zotero/bluebird') == -1).join('\n');
 	}
+}
+
+if (typeof process === 'object' && process + '' === '[object process]'){
+	module.exports = Zotero.Debug;
 }

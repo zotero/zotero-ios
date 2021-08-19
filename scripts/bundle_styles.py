@@ -16,14 +16,11 @@ bundle_dir = os.path.join(os.path.abspath("."), "Bundled" + os.sep + "styles")
 if not os.path.isdir(bundle_dir):
     os.mkdir(bundle_dir)
 
-# Download submodule
-subprocess.check_call(["git", "submodule", "update", "--recursive", "bundled-styles"])
-
 # Get styles directory
 styles_dir = os.path.join(os.path.abspath("."), "bundled-styles")
 
 if not os.path.isdir(styles_dir):
-    raise Exception(styles_dir + " is not a directory")
+    raise Exception(styles_dir + " is not a directory. Call update_bundled_data.py first.")
 
 # Store last commit hash from translators submodule
 submodules = subprocess.check_output(["git", "submodule", "foreach", "--recursive", "echo $path `git rev-parse HEAD`"]).decode("utf-8").splitlines()

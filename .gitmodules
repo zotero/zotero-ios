@@ -1,9 +1,12 @@
-[submodule "ZShare/Assets/translation/modules/zotero"]
-	path = ZShare/Assets/translation/modules/zotero
-	url = https://github.com/zotero/zotero.git
 [submodule "bundled-styles"]
 	path = bundled-styles
 	url = https://github.com/zotero/bundled-styles/
 [submodule "locales"]
 	path = locales
 	url = https://github.com/citation-style-language/locales.git
+[submodule "ZShare/Assets/translation/translate"]
+	path = ZShare/Assets/translation/translate
+	url = git@github.com:zotero/translate.git
+[submodule "translators"]
+	path = translators
+	url = git@github.com:zotero/translators.git

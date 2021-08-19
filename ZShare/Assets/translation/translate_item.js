@@ -1,8 +1,8 @@
 /*
 	***** BEGIN LICENSE BLOCK *****
 	
-	Copyright © 2018 Center for History and New Media
-					George Mason University, Fairfax, Virginia, USA
+	Copyright © 2021 Corporation for Digital Scholarship
+                     Vienna, Virginia, USA
 					http://zotero.org
 	
 	This file is part of Zotero.
@@ -23,20 +23,7 @@
 	***** END LICENSE BLOCK *****
 */
 
-Zotero.Translate = {...Zotero.Translate,
-	SandboxManager,
-	ItemSaver,
-	ItemGetter
-};
-
-window.Services = {
-	// nsIVersionComparator
-	vc: {
-		compare: function (a, b) {
-			// Only worry about the major version (4. vs. 5.)
-			var aParts = a.split(/\./g);
-			var bParts = b.split(/\./g);
-			return aParts[0] - bParts[0];
-		}
-	}
-};
+Zotero.Translate.ItemSaver.prototype.saveItems = async function (jsonItems) {
+	this.items = (this.items || []).concat(jsonItems);
+	return jsonItems
+}

@@ -1,29 +1,34 @@
 /*
-    ***** BEGIN LICENSE BLOCK *****
+	***** BEGIN LICENSE BLOCK *****
+	
+	Copyright © 2019 Center for History and New Media
+					George Mason University, Fairfax, Virginia, USA
+					http://zotero.org
+	
+	This file is part of Zotero.
+	
+	Zotero is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	
+	Zotero is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
 
-    Copyright © 2019 Center for History and New Media
-                    George Mason University, Fairfax, Virginia, USA
-                    http://zotero.org
-
-    This file is part of Zotero.
-
-    Zotero is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    Zotero is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with Zotero.  If not, see <http://www.gnu.org/licenses/>.
-
-    ***** END LICENSE BLOCK *****
+	You should have received a copy of the GNU Affero General Public License
+	along with Zotero.  If not, see <http://www.gnu.org/licenses/>.
+	
+	***** END LICENSE BLOCK *****
 */
 
-async function translate(url, encodedHtml, encodedFrames, encodedTranslators) {
+async function translate(url, encodedHtml, encodedFrames, encodedTranslators, encodedSchema) {
+    // Set up schema
+    const schemaData = JSON.parse(decodeBase64(encodedSchema));
+    if (schemaData) {
+        Zotero.Schema.init(schemaData);
+    }
     // Set up translators
     const translatorData = JSON.parse(decodeBase64(encodedTranslators));
     if (translatorData) {
@@ -50,7 +55,6 @@ async function translate(url, encodedHtml, encodedFrames, encodedTranslators) {
 
     if (!translators.length) {
         Zotero.debug("No translators found!");
-        window.webkit.messageHandlers.saveAsWebHandler.postMessage(0);
         return;
     }
 

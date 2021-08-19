@@ -124,14 +124,17 @@ final class WebViewHandler: NSObject {
             self.observable.on(.error(Error.webViewMissing))
             return
         }
-        guard let containerUrl = Bundle.main.url(forResource: "src/index", withExtension: "html", subdirectory: "translation"),
-              let containerHtml = try? String(contentsOf: containerUrl, encoding: .utf8) else {
+        guard let containerUrl = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "translation"),
+              let containerHtml = try? String(contentsOf: containerUrl, encoding: .utf8),
+              let schemaUrl = Bundle.main.url(forResource: "schema", withExtension: "json", subdirectory: "Bundled"),
+              let schemaData = try? Data(contentsOf: schemaUrl) else {
             DDLogError("WebViewHandler: can't load translator html")
             self.observable.on(.error(Error.cantFindBaseFile))
             return
         }
 
         let encodedHtml = WKWebView.encodeForJavascript(html.data(using: .utf8))
+        let encodedSchema = WKWebView.encodeForJavascript(schemaData)
         let jsonFramesData = try? JSONSerialization.data(withJSONObject: frames, options: .fragmentsAllowed)
         let encodedFrames = jsonFramesData.flatMap({ WKWebView.encodeForJavascript($0) }) ?? "''"
         self.cookies = cookies
@@ -142,7 +145,7 @@ final class WebViewHandler: NSObject {
                    }
                    .flatMap { translators -> Single<Any> in
                        let encodedTranslators = WKWebView.encodeAsJSONForJavascript(translators)
-                       return webView.call(javascript: "translate('\(url.absoluteString)', \(encodedHtml), \(encodedFrames), \(encodedTranslators));")
+                       return webView.call(javascript: "translate('\(url.absoluteString)', \(encodedHtml), \(encodedFrames), \(encodedTranslators), \(encodedSchema));")
                    }
                    .subscribe(onFailure: { [weak self] error in
                        DDLogError("WebViewHandler: translation failed - \(error)")
