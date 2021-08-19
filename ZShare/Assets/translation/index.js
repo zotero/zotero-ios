@@ -50,11 +50,13 @@ async function translate(url, encodedHtml, encodedFrames, encodedTranslators, en
         translators = await translate.getTranslators();
     } catch (e) {
         Zotero.logError(e);
+        window.webkit.messageHandlers.saveAsWebHandler.postMessage(0);
         return;
     }
 
     if (!translators.length) {
         Zotero.debug("No translators found!");
+        window.webkit.messageHandlers.saveAsWebHandler.postMessage(0);
         return;
     }
 
