@@ -17,7 +17,7 @@ struct ResetTranslatorsDbRequest: DbRequest {
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
-        database.deleteAll()
+        database.delete(database.objects(RTranslatorMetadata.self))
 
         self.metadata.forEach { data in
             let rData = RTranslatorMetadata()

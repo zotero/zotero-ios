@@ -54,6 +54,8 @@ final class TranslatorsAndStylesController {
     private var lastTranslatorDeleted: Int
     @UserDefault(key: "StylesLastCommitHash", defaultValue: "")
     private var lastStylesCommitHash: String
+    @UserDefault(key: "TranslatorsDidResetToBundleFix", defaultValue: false)
+    private var translatorsDidReset: Bool
     private(set) var isLoading: BehaviorRelay<Bool>
     var lastUpdate: Date {
         return Date(timeIntervalSince1970: Double(self.lastTimestamp))
@@ -140,6 +142,13 @@ final class TranslatorsAndStylesController {
 
     /// Update local translators with bundled translators if needed.
     private func _updateTranslatorsFromBundle() throws {
+        // A fix for issue in Beta. Translators from repo API were stored with incorrect id key ("id" instead of "translatorID"). Force reset to bundled translators once to fix the stored id key.
+        // TODO: - this can be removed later
+        if !self.translatorsDidReset {
+            try self._resetToBundle()
+            self.translatorsDidReset = true
+        }
+
         let hash = try self.loadLastTranslatorCommitHash()
 
         guard self.lastTranslatorCommitHash != hash else { return }
@@ -347,6 +356,9 @@ final class TranslatorsAndStylesController {
             do {
                 // TODO: - implement styles reset if needed
                 try self._resetToBundle()
+                self.lastTimestamp = try self.loadLastTimestamp()
+                self.lastTranslatorCommitHash = try self.loadLastTranslatorCommitHash()
+                self.lastTranslatorDeleted = try self.loadDeleted().0
             } catch let error {
                 DDLogError("TranslatorsAndStylesController: can't reset to bundle - \(error)")
                 self.coordinator?.showResetToBundleError()
@@ -358,25 +370,22 @@ final class TranslatorsAndStylesController {
 
     /// Reset local translators to match bundled translators.
     private func _resetToBundle() throws {
+        // Load bundled data
         guard let zipUrl = self.bundle.path(forResource: "Bundled/translators/translators", ofType: "zip")
                                       .flatMap({ URL(fileURLWithPath: $0) }),
               let archive = Archive(url: zipUrl, accessMode: .read) else {
             throw Error.bundleMissing
         }
-
-        let timestamp = try self.loadLastTimestamp()
         let metadata = try self.loadIndex()
-
+        // Remove existing translators and unzip all translators to folder
         try? self.fileStorage.remove(Files.translators)
         try self.fileStorage.createDirectories(for: Files.translators)
         for data in metadata {
             guard let entry = archive[data.filename] else { continue }
             _ = try archive.extract(entry, to: Files.translator(filename: data.id).createUrl())
         }
-
-        let coordinator = try self.dbStorage.createCoordinator()
-        try coordinator.perform(request: ResetTranslatorsDbRequest(metadata: metadata))
-        self.lastTimestamp = timestamp
+        // Reset metadata in database
+        try self.dbStorage.createCoordinator().perform(request: ResetTranslatorsDbRequest(metadata: metadata))
     }
 
     // MARK: - Translator loading
@@ -571,10 +580,10 @@ final class TranslatorsAndStylesController {
     /// Load bundled index file and parse translator metadata.
     /// - returns: Parsed translator metadata.
     private func loadIndex() throws -> [TranslatorMetadata] {
-        guard let indexFilePath = self.bundle.path(forResource: "Bundled/translators/index", ofType: "json") else {
+        guard let url = self.bundle.url(forResource: "Bundled/translators/index", withExtension: "json") else {
             throw Error.bundleMissing
         }
-        let data = try Data(contentsOf: URL(fileURLWithPath: indexFilePath))
+        let data = try Data(contentsOf: url)
         let decoded = try JSONDecoder().decode(TranslatorMetadatas.self, from: data)
         return decoded.metadatas
     }
