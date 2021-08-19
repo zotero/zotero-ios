@@ -194,7 +194,8 @@ final class TranslatorsAndStylesController {
         guard type != .startup || self.didDayChange(from: Date(timeIntervalSince1970: Double(self.lastTimestamp))) else { return Single.just(self.lastTimestamp) }
 
         let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? ""
-        let request = RepoRequest(timestamp: self.lastTimestamp, version: "\(version)-iOS", type: type.rawValue, styles: self.styles(for: type))
+        let bundle = (Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? ""
+        let request = RepoRequest(timestamp: self.lastTimestamp, version: "\(version)-\(bundle)-iOS", type: type.rawValue, styles: self.styles(for: type))
         return self.apiClient.send(request: request, queue: self.queue)
                              .observe(on: self.scheduler)
                              .flatMap { data, _ -> Single<(Int, [Translator], [(String, String)])> in
@@ -361,7 +362,9 @@ final class TranslatorsAndStylesController {
                 self.lastTranslatorDeleted = try self.loadDeleted().0
             } catch let error {
                 DDLogError("TranslatorsAndStylesController: can't reset to bundle - \(error)")
-                self.coordinator?.showResetToBundleError()
+                DispatchQueue.main.async {
+                    self.coordinator?.showResetToBundleError()
+                }
             }
 
             completion?()
@@ -378,7 +381,9 @@ final class TranslatorsAndStylesController {
         }
         let metadata = try self.loadIndex()
         // Remove existing translators and unzip all translators to folder
-        try? self.fileStorage.remove(Files.translators)
+        if self.fileStorage.has(Files.translators) {
+            try self.fileStorage.remove(Files.translators)
+        }
         try self.fileStorage.createDirectories(for: Files.translators)
         for data in metadata {
             guard let entry = archive[data.filename] else { continue }
