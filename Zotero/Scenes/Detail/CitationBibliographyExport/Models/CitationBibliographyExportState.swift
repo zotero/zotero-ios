@@ -40,7 +40,7 @@ struct CitationBibliographyExportState: ViewModelState {
         }
     }
 
-    static let methods: [OutputMethod] = [.html, .copy]
+    static let methods: [OutputMethod] = [.copy, .html]
     let itemIds: Set<String>
     let libraryId: LibraryIdentifier
 
