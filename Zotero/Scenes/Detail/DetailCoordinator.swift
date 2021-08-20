@@ -502,8 +502,6 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let navigationController = UINavigationController(rootViewController: controller)
         self.citationNavigationController = navigationController
         let containerController = ContainerViewController(rootViewController: navigationController)
-        containerController.isModalInPresentation = true
-        containerController.modalPresentationStyle = .formSheet
         self.navigationController.present(containerController, animated: true, completion: nil)
     }
 
@@ -526,9 +524,6 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     private func openExportSettings() {
         let navigationController = NavigationViewController()
         let containerController = ContainerViewController(rootViewController: navigationController)
-        containerController.isModalInPresentation = true
-        containerController.modalPresentationStyle = .formSheet
-
         let coordinator = SettingsCoordinator(startsWithExport: true, navigationController: navigationController, controllers: self.controllers)
         coordinator.parentCoordinator = self
         self.childCoordinators.append(coordinator)
@@ -540,7 +535,6 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
         let navigationController = NavigationViewController()
         let containerController = ContainerViewController(rootViewController: navigationController)
-
         let coordinator = CitationBibliographyExportCoordinator(itemIds: itemIds, libraryId: libraryId, navigationController: navigationController, controllers: self.controllers)
         coordinator.parentCoordinator = self
         self.childCoordinators.append(coordinator)

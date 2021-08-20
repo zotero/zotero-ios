@@ -36,6 +36,7 @@ class ContainerViewController: UIViewController {
 
         self.preferredContentSize = UIScreen.main.bounds.size
         self.view.backgroundColor = .clear
+        self.isModalInPresentation = true
         self.setupRootViewController()
         if UIDevice.current.userInterfaceIdiom == .pad {
             self.setupForPad()
