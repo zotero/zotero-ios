@@ -70,8 +70,8 @@ final class ItemsTableViewHandler: NSObject {
             actions.insert(ItemAction(type: .createParent), at: 0)
         }
         // Allow removing from collection only if item is in current collection. This can happen when "Show items from subcollection" is enabled.
-        if let key = state.type.collectionKey, item.collections.filter(.key(key)).first != nil {
-            actions.insert(ItemAction(type: .removeFromCollection), at: 1)
+        if let key = state.type.collectionKey, item.collections.filter(.key(key)).first != nil, let index = actions.firstIndex(where: { $0.type == .addToCollection }) {
+            actions.insert(ItemAction(type: .removeFromCollection), at: index)
         }
         return actions
     }
