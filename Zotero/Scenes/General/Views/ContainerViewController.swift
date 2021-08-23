@@ -35,6 +35,7 @@ class ContainerViewController: UIViewController {
         super.viewDidLoad()
 
         self.preferredContentSize = UIScreen.main.bounds.size
+        self.modalPresentationStyle = .formSheet
         self.view.backgroundColor = .clear
         self.isModalInPresentation = true
         self.setupRootViewController()

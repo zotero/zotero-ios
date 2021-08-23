@@ -1,13 +1,15 @@
 var Zotero = {};
 
-async function getCit(encodedItemsCsl, encodedItemsData, encodedStyleXml, localeId, encodedLocaleXml, format, messageId) {
+async function getCit(encodedItemsCsl, encodedItemsData, encodedStyleXml, localeId, encodedLocaleXml, format, setToBody, messageId) {
     const styleXml = decodeBase64(encodedStyleXml);
     const localeXml = decodeBase64(encodedLocaleXml);
     const itemsData = JSON.parse(decodeBase64(encodedItemsData));
     const itemsCsl = JSON.parse(decodeBase64(encodedItemsCsl));
     const citation = getCitation(itemsData, itemsCsl, styleXml, localeXml, localeId, format);
-    document.body.innerHTML = citation;
-    window.webkit.messageHandlers.heightHandler.postMessage(document.body.scrollHeight);
+    if (setToBody) {
+        document.body.innerHTML = citation;
+        window.webkit.messageHandlers.heightHandler.postMessage(document.body.scrollHeight);
+    }
     window.webkit.messageHandlers.citationHandler.postMessage({result: citation, id: messageId});
 };
 

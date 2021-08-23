@@ -17,7 +17,7 @@ struct SingleCitationState: ViewModelState {
 
         static let locator = Changes(rawValue: 1 << 0)
         static let preview = Changes(rawValue: 1 << 1)
-        static let loading = Changes(rawValue: 1 << 2)
+        static let copied = Changes(rawValue: 1 << 4)
     }
 
     enum Error: Swift.Error {
@@ -33,6 +33,8 @@ struct SingleCitationState: ViewModelState {
     let localeId: String
     let exportAsHtml: Bool
 
+    var loadingPreview: Bool
+    var loadingCopy: Bool
     var locator: String
     var locatorValue: String
     var omitAuthor: Bool
@@ -47,6 +49,8 @@ struct SingleCitationState: ViewModelState {
         self.styleId = styleId
         self.localeId = localeId
         self.exportAsHtml = exportAsHtml
+        self.loadingPreview = true
+        self.loadingCopy = false
         self.locator = SingleCitationState.locators.first!
         self.changes = []
         self.locatorValue = ""

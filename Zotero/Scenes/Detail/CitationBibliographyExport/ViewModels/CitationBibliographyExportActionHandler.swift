@@ -6,6 +6,7 @@
 //  Copyright © 2021 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import MobileCoreServices
 import UIKit
 import WebKit
 
@@ -88,40 +89,119 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
             state.isLoading = true
         }
 
-        let format: CitationController.Format
         switch viewModel.state.method {
         case .copy:
-            format = .text
+            self.loadForCopy(in: viewModel)
+                .subscribe(with: viewModel, onSuccess: { viewModel, data in
+                    self.copy(html: data.0, plaintext: data.1, in: viewModel)
+                    self.citationController.finishCitation()
+                }, onFailure: { viewModel, error in
+                    DDLogError("CitationBibliographyExportActionHbi andler: can't create citation of bibliography - \(error)")
+                    self.handle(error: error, in: viewModel)
+                    self.citationController.finishCitation()
+                })
+                .disposed(by: self.disposeBag)
+
         case .html:
-            format = .html
+            self.loadForHtml(in: viewModel)
+                .subscribe(with: viewModel, onSuccess: { viewModel, html in
+                    self.save(html: html, in: viewModel)
+                    self.citationController.finishCitation()
+                }, onFailure: { viewModel, error in
+                    DDLogError("CitationBibliographyExportActionHandler: can't create citation of bibliography - \(error)")
+                    self.handle(error: error, in: viewModel)
+                    self.citationController.finishCitation()
+                })
+                .disposed(by: self.disposeBag)
         }
+    }
 
-        let value: Single<String>
-
+    private func loadForCopy(in viewModel: ViewModel<CitationBibliographyExportActionHandler>) -> Single<(String, String)> {
         switch viewModel.state.mode {
         case .citation:
             let itemIds = viewModel.state.itemIds
             let libraryId = viewModel.state.libraryId
-
-            value = self.citationController.prepareForCitation(for: itemIds, libraryId: libraryId, styleId: viewModel.state.style.identifier, localeId: viewModel.state.localeId, in: self.webView)
-                        .flatMap { self.citationController.citation(for: itemIds, libraryId: libraryId, label: nil, locator: nil, omitAuthor: false, format: format, in: self.webView) }
+            return self.loadForHtml(in: viewModel)
+                       .flatMap { html -> Single<(String, String)> in
+                           return self.citationController.citation(for: itemIds, libraryId: libraryId, label: nil, locator: nil, omitAuthor: false, format: .text, showInWebView: false,
+                                                                   in: self.webView).flatMap({ return Single.just((html, $0)) })
+                       }
 
         case .bibliography:
-            value = self.citationController.bibliography(for: viewModel.state.itemIds, libraryId: viewModel.state.libraryId, styleId: viewModel.state.style.identifier,
-                                                         localeId: viewModel.state.localeId, format: format, in: self.webView)
+            return self.loadForHtml(in: viewModel)
+                       .flatMap { html -> Single<(String, String)> in
+                           return self.citationController.bibliography(format: .text, in: self.webView).flatMap({ return Single.just((html, $0)) })
+                       }
         }
-
-        value.subscribe(with: viewModel,
-                        onSuccess: { viewModel, value in
-                            self.finishProcessing(value: value, in: viewModel)
-                        }, onFailure: { viewModel, error in
-                            DDLogError("CitationBibliographyExportActionHandler: can't create citation of bibliography - \(error)")
-                            self.handleCitation(error: error, in: viewModel)
-                        })
-            .disposed(by: self.disposeBag)
     }
 
-    private func handleCitation(error: Error, in viewModel: ViewModel<CitationBibliographyExportActionHandler>) {
+    private func loadForHtml(in viewModel: ViewModel<CitationBibliographyExportActionHandler>) -> Single<String> {
+        let itemIds = viewModel.state.itemIds
+        let libraryId = viewModel.state.libraryId
+
+        let prepare: Single<()> = self.citationController.prepare(webView: self.webView, for: itemIds, libraryId: libraryId,
+                                                                  styleId: viewModel.state.style.identifier, localeId: viewModel.state.localeId)
+
+        switch viewModel.state.mode {
+        case .citation:
+            return prepare.flatMap { self.citationController.citation(for: itemIds, libraryId: libraryId, label: nil, locator: nil, omitAuthor: false,
+                                                                      format: .html, showInWebView: false, in: self.webView) }
+
+        case .bibliography:
+            return prepare.flatMap { self.citationController.bibliography(format: .html, in: self.webView) }
+        }
+    }
+
+    private func copy(html: String, plaintext: String, in viewModel: ViewModel<CitationBibliographyExportActionHandler>) {
+        guard let htmlData = html.data(using: .utf8) else { return }
+
+        UIPasteboard.general.items = [
+            [(kUTTypePlainText as String): plaintext,
+            (kUTTypeHTML as String): htmlData]
+        ]
+
+        self.update(viewModel: viewModel) { state in
+            state.isLoading = false
+            state.changes = .finished
+        }
+    }
+
+    private func save(html: String, in viewModel: ViewModel<CitationBibliographyExportActionHandler>) {
+        let finish: (Result<File, Error>) -> Void = { result in
+            DispatchQueue.main.async {
+                self.update(viewModel: viewModel) { state in
+                    switch result {
+                    case .success(let file):
+                        state.outputFile = file
+                    case .failure(let error):
+                        DDLogError("CitationBibliographyExportActionHandler: can't finish citation of bibliography - \(error)")
+                        state.error = error
+                    }
+
+                    state.isLoading = false
+                }
+            }
+        }
+
+        self.queue.async {
+            guard let data = html.data(using: .utf8) else {
+                finish(.failure(CitationBibliographyExportState.Error.cantCreateData))
+                return
+            }
+
+            let url = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true).appendingPathComponent("Untitled.html")
+            let file = Files.file(from: url)
+
+            do {
+                try self.fileStorage.write(data, to: file, options: [])
+                finish(.success(file))
+            } catch let error {
+                finish(.failure(error))
+            }
+        }
+    }
+
+    private func handle(error: Error, in viewModel: ViewModel<CitationBibliographyExportActionHandler>) {
         self.update(viewModel: viewModel) { state in
             state.isLoading = false
 
@@ -131,52 +211,6 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
                 })
             } else {
                 state.error = error
-            }
-        }
-    }
-
-    private func finishProcessing(value: String, in viewModel: ViewModel<CitationBibliographyExportActionHandler>) {
-        switch viewModel.state.method {
-        case .copy:
-            UIPasteboard.general.string = value
-
-            self.update(viewModel: viewModel) { state in
-                state.isLoading = false
-                state.changes = .finished
-            }
-
-        case .html:
-            let finish: (Result<File, Error>) -> Void = { result in
-                DispatchQueue.main.async {
-                    self.update(viewModel: viewModel) { state in
-                        switch result {
-                        case .success(let file):
-                            state.outputFile = file
-                        case .failure(let error):
-                            DDLogError("CitationBibliographyExportActionHandler: can't finish citation of bibliography - \(error)")
-                            state.error = error
-                        }
-
-                        state.isLoading = false
-                    }
-                }
-            }
-
-            self.queue.async {
-                guard let data = value.data(using: .utf8) else {
-                    finish(.failure(CitationBibliographyExportState.Error.cantCreateData))
-                    return
-                }
-
-                let url = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true).appendingPathComponent("Untitled.html")
-                let file = Files.file(from: url)
-
-                do {
-                    try self.fileStorage.write(data, to: file, options: [])
-                    finish(.success(file))
-                } catch let error {
-                    finish(.failure(error))
-                }
             }
         }
     }

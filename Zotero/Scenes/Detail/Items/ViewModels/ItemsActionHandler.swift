@@ -7,6 +7,8 @@
 //
 
 import UIKit
+import MobileCoreServices
+import WebKit
 
 import CocoaLumberjackSwift
 import RealmSwift
@@ -138,27 +140,60 @@ struct ItemsActionHandler: ViewModelActionHandler {
             self.filter(with: filters, in: viewModel)
 
         case .quickCopyBibliography(let itemIds, let libraryId, let webView):
-            self.update(viewModel: viewModel) { state in
-                state.processingBibliography = true
-            }
-
-            self.citationController.bibliography(for: itemIds, libraryId: libraryId, styleId: Defaults.shared.quickCopyStyleId, localeId: Defaults.shared.quickCopyLocaleId,
-                                                 format: (Defaults.shared.quickCopyAsHtml ? .html : .text), in: webView)
-                                   .subscribe(with: viewModel, onSuccess: { viewModel, citation in
-                                       UIPasteboard.general.string = citation
-                                       self.update(viewModel: viewModel) { state in
-                                           state.changes = .webViewCleanup
-                                           state.processingBibliography = false
-                                       }
-                                   }, onFailure: { viewModel, error in
-                                       self.update(viewModel: viewModel) { state in
-                                           state.changes = .webViewCleanup
-                                           state.processingBibliography = false
-                                           state.bibliographyError = error
-                                       }
-                                   })
-                                   .disposed(by: self.disposeBag)
+            self.copyBibliography(itemIds: itemIds, libraryId: libraryId, webView: webView, in: viewModel)
         }
+    }
+
+    private func copyBibliography(itemIds: Set<String>, libraryId: LibraryIdentifier, webView: WKWebView, in viewModel: ViewModel<ItemsActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            state.processingBibliography = true
+        }
+
+        let copyAsHtml = Defaults.shared.quickCopyAsHtml
+
+        self.citationController.prepare(webView: webView, for: itemIds, libraryId: libraryId, styleId: Defaults.shared.quickCopyStyleId, localeId: Defaults.shared.quickCopyLocaleId)
+                               .flatMap { [weak webView] _ -> Single<String> in
+                                   guard let webView = webView else { return Single.error(CitationController.Error.prepareNotCalled) }
+                                   return self.citationController.bibliography(format: .html, in: webView)
+                               }
+                               .flatMap { [weak webView] html -> Single<(String, String?)> in
+                                   if copyAsHtml { return Single.just((html, nil)) }
+                                   guard let webView = webView else { return Single.error(CitationController.Error.prepareNotCalled) }
+                                   return self.citationController.bibliography(format: .text, in: webView).flatMap({ return Single.just((html, $0)) })
+                               }
+                               .subscribe(with: viewModel, onSuccess: { viewModel, data in
+                                   if let plaintext = data.1 {
+                                       self.copyBibliography(html: data.0, plaintext: plaintext)
+                                   } else {
+                                       UIPasteboard.general.string = data.0
+                                   }
+
+                                   self.update(viewModel: viewModel) { state in
+                                       state.changes = .webViewCleanup
+                                       state.processingBibliography = false
+                                   }
+
+                                   self.citationController.finishCitation()
+                               }, onFailure: { viewModel, error in
+                                   DDLogError("ItemsActionHandler: could not load bibliography - \(error)")
+                                
+                                   self.update(viewModel: viewModel) { state in
+                                       state.changes = .webViewCleanup
+                                       state.processingBibliography = false
+                                       state.bibliographyError = error
+                                   }
+
+                                   self.citationController.finishCitation()
+                               })
+                               .disposed(by: self.disposeBag)
+    }
+
+    private func copyBibliography(html: String, plaintext: String) {
+        guard let htmlData = html.data(using: .utf8) else { return }
+        UIPasteboard.general.items = [
+            [(kUTTypePlainText as String): plaintext,
+            (kUTTypeHTML as String): htmlData]
+        ]
     }
 
     private func loadInitialState(in viewModel: ViewModel<ItemsActionHandler>) {

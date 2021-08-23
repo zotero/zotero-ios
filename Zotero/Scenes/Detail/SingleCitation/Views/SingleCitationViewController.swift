@@ -74,13 +74,9 @@ final class SingleCitationViewController: UIViewController {
             self.locatorButton.setTitle(self.localized(locator: state.locator), for: .normal)
         }
 
-        if state.changes.contains(.loading) {
-            self.activityIndicatorContainer.isHidden = state.webView != nil
-            self.previewContainer.isHidden = state.webView == nil
-            self.locatorButton.isEnabled = state.webView != nil
-            self.locatorTextField.isEnabled = state.webView != nil
-            self.navigationItem.rightBarButtonItem?.isEnabled = state.webView != nil
-        }
+        self.updatePreview(isLoading: state.loadingPreview)
+        self.setupRightButtonItem(isLoading: state.loadingCopy)
+        self.navigationItem.rightBarButtonItem?.isEnabled = !state.loadingPreview
 
         if let error = state.error {
             switch error {
@@ -91,8 +87,38 @@ final class SingleCitationViewController: UIViewController {
             }
         }
 
-        if state.changes.contains(.preview) || state.changes.contains(.loading) {
+        if state.changes.contains(.preview) {
             self.updatePreferredContentSize()
+        }
+
+        if state.changes.contains(.copied) {
+            self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
+        }
+    }
+
+    private func updatePreview(isLoading: Bool) {
+        guard self.previewContainer.isHidden != isLoading else { return }
+
+        self.activityIndicatorContainer.isHidden = !isLoading
+        self.previewContainer.isHidden = isLoading
+        self.locatorButton.isEnabled = !isLoading
+        self.locatorTextField.isEnabled = !isLoading
+    }
+
+    private func setupRightButtonItem(isLoading: Bool) {
+        guard self.navigationItem.rightBarButtonItem == nil || isLoading == (self.navigationItem.rightBarButtonItem?.customView == nil) else { return }
+
+        if isLoading {
+            let indicator = UIActivityIndicatorView(style: .medium)
+            indicator.startAnimating()
+            self.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: indicator)
+        } else {
+            let copy = UIBarButtonItem(title: L10n.copy, style: .done, target: nil, action: nil)
+            copy.rx.tap.subscribe(onNext: { [weak self] in
+                self?.viewModel.process(action: .copy)
+            })
+            .disposed(by: self.disposeBag)
+            self.navigationItem.rightBarButtonItem = copy
         }
     }
 
@@ -143,13 +169,7 @@ final class SingleCitationViewController: UIViewController {
         .disposed(by: self.disposeBag)
         self.navigationItem.leftBarButtonItem = cancel
 
-        let copy = UIBarButtonItem(title: L10n.copy, style: .done, target: nil, action: nil)
-        copy.rx.tap.subscribe(onNext: { [weak self] in
-            self?.viewModel.process(action: .copy)
-            self?.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
-        })
-        .disposed(by: self.disposeBag)
-        self.navigationItem.rightBarButtonItem = copy
+        self.setupRightButtonItem(isLoading: false)
     }
 
     private func setupObserving() {
