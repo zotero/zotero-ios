@@ -25,6 +25,8 @@ class ContainerViewController: UIViewController {
         self.rootViewController = rootViewController
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
+        self.modalPresentationStyle = .formSheet
+        self.isModalInPresentation = true
     }
 
     required init?(coder: NSCoder) {
@@ -35,9 +37,7 @@ class ContainerViewController: UIViewController {
         super.viewDidLoad()
 
         self.preferredContentSize = UIScreen.main.bounds.size
-        self.modalPresentationStyle = .formSheet
         self.view.backgroundColor = .clear
-        self.isModalInPresentation = true
         self.setupRootViewController()
         if UIDevice.current.userInterfaceIdiom == .pad {
             self.setupForPad()
@@ -94,11 +94,11 @@ class ContainerViewController: UIViewController {
         self.rootViewController.view.layer.masksToBounds = true
 
         let height = self.rootViewController.view.heightAnchor.constraint(equalToConstant: 100)
-        height.priority = .defaultHigh
+        height.priority = UILayoutPriority(rawValue: 700)
         self.containerHeight = height
 
         let width = self.rootViewController.view.widthAnchor.constraint(equalToConstant: 100)
-        width.priority = .defaultHigh
+        width.priority = UILayoutPriority(rawValue: 700)
         self.containerWidth = width
 
         let centerY = self.view.centerYAnchor.constraint(equalTo: self.rootViewController.view.centerYAnchor)
@@ -111,7 +111,10 @@ class ContainerViewController: UIViewController {
             self.rootViewController.view.heightAnchor.constraint(lessThanOrEqualTo: self.view.heightAnchor),
             height,
             width,
-            self.view.topAnchor.constraint(lessThanOrEqualTo: self.rootViewController.view.topAnchor)
+            self.view.topAnchor.constraint(lessThanOrEqualTo: self.rootViewController.view.topAnchor),
+            self.view.leadingAnchor.constraint(lessThanOrEqualTo: self.rootViewController.view.leadingAnchor),
+            self.rootViewController.view.trailingAnchor.constraint(lessThanOrEqualTo: self.view.trailingAnchor),
+            self.rootViewController.view.bottomAnchor.constraint(lessThanOrEqualTo: self.view.bottomAnchor)
         ])
     }
 
