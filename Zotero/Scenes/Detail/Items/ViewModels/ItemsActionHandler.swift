@@ -154,12 +154,12 @@ struct ItemsActionHandler: ViewModelActionHandler {
         self.citationController.prepare(webView: webView, for: itemIds, libraryId: libraryId, styleId: Defaults.shared.quickCopyStyleId, localeId: Defaults.shared.quickCopyLocaleId)
                                .flatMap { [weak webView] _ -> Single<String> in
                                    guard let webView = webView else { return Single.error(CitationController.Error.prepareNotCalled) }
-                                   return self.citationController.bibliography(format: .html, in: webView)
+                                   return self.citationController.bibliography(for: itemIds, format: .html, in: webView)
                                }
                                .flatMap { [weak webView] html -> Single<(String, String?)> in
                                    if copyAsHtml { return Single.just((html, nil)) }
                                    guard let webView = webView else { return Single.error(CitationController.Error.prepareNotCalled) }
-                                   return self.citationController.bibliography(format: .text, in: webView).flatMap({ return Single.just((html, $0)) })
+                                   return self.citationController.bibliography(for: itemIds, format: .text, in: webView).flatMap({ return Single.just((html, $0)) })
                                }
                                .subscribe(with: viewModel, onSuccess: { viewModel, data in
                                    if let plaintext = data.1 {

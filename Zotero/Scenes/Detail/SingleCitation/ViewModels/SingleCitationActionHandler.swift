@@ -76,8 +76,8 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
             state.loadingCopy = true
         }
 
-        self.citationController.citation(for: viewModel.state.itemIds, libraryId: viewModel.state.libraryId, label: viewModel.state.locator, locator: viewModel.state.locatorValue,
-                                         omitAuthor: viewModel.state.omitAuthor, format: .text, showInWebView: false, in: webView)
+        self.citationController.citation(for: viewModel.state.itemIds, label: viewModel.state.locator, locator: viewModel.state.locatorValue, omitAuthor: viewModel.state.omitAuthor, format: .text,
+                                         showInWebView: false, in: webView)
             .subscribe(with: viewModel, onSuccess: { viewModel, text in
                 self.copy(html: viewModel.state.preview, plaintext: text)
                 self.update(viewModel: viewModel) { state in
@@ -99,8 +99,7 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
     private func loadPreview(locatorLabel: String, locatorValue: String, omitAuthor: Bool, stateAction: @escaping (inout SingleCitationState) -> Void,
                              in viewModel: ViewModel<SingleCitationActionHandler>) {
         guard let webView = viewModel.state.webView else { return }
-        self.citationController.citation(for: viewModel.state.itemIds, libraryId: viewModel.state.libraryId, label: locatorLabel, locator: locatorValue,
-                                         omitAuthor: omitAuthor, format: .html, showInWebView: true, in: webView)
+        self.citationController.citation(for: viewModel.state.itemIds, label: locatorLabel, locator: locatorValue, omitAuthor: omitAuthor, format: .html, showInWebView: true, in: webView)
                                .subscribe(with: viewModel, onSuccess: { viewModel, preview in
                                    self.update(viewModel: viewModel) { state in
                                        state.preview = preview
@@ -118,7 +117,7 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
         self.citationController.prepare(webView: webView, for: itemIds, libraryId: libraryId, styleId: viewModel.state.styleId, localeId: viewModel.state.localeId)
                                .flatMap({ [weak webView] _ -> Single<String> in
                                    guard let webView = webView else { return Single.error(CitationController.Error.prepareNotCalled) }
-                                   return self.citationController.citation(for: itemIds, libraryId: libraryId, label: viewModel.state.locator, locator: viewModel.state.locatorValue,
+                                   return self.citationController.citation(for: itemIds, label: viewModel.state.locator, locator: viewModel.state.locatorValue,
                                                                            omitAuthor: viewModel.state.omitAuthor, format: .html, showInWebView: true, in: webView)
                                })
                                .subscribe(onSuccess: { [weak viewModel, weak webView] preview in

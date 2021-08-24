@@ -12,6 +12,18 @@ import WebKit
 import CocoaLumberjackSwift
 import RxSwift
 
+fileprivate struct StyleData {
+    let filename: String
+    let defaultLocaleId: String?
+    let supportsBibliography: Bool
+
+    init(style: RStyle) {
+        self.filename = style.dependency?.filename ?? style.filename
+        self.defaultLocaleId = style.defaultLocale.isEmpty ? nil : style.defaultLocale
+        self.supportsBibliography = style.supportsBibliography
+    }
+}
+
 class CitationController: NSObject {
     fileprivate typealias WebViewResponseHandler = (SingleEvent<String>) -> Void
 
@@ -53,6 +65,7 @@ class CitationController: NSObject {
     private var localeId: String?
     private var localeXml: String?
     private var itemsCsl: String?
+    private var supportsBibliography: Bool?
 
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
     private var responseHandlers: [String: WebViewResponseHandler]
@@ -83,38 +96,40 @@ class CitationController: NSObject {
         }
 
         return self.loadStyleData(for: styleId)
-                    .subscribe(on: self.backgroundScheduler)
-                    .observe(on: self.backgroundScheduler)
-                    .flatMap({ filename, styleLocaleId -> Single<(String, String)> in
-                        return self.loadEncodedXmls(styleFilename: filename, localeId: (styleLocaleId ?? localeId))
-                    })
-                    .do(onSuccess: { style, locale in
-                        self.styleXml = style
-                        self.localeId = localeId
-                        self.localeXml = locale
-                    })
-                    .flatMap({ _ -> Single<String> in
-                        return self.loadSchema()
-                    })
-                    .flatMap({ schema -> Single<(String, String)> in
-                        return self.loadItemJsons(for: itemIds, libraryId: libraryId).flatMap({ Single.just((schema, $0)) })
-                    })
-                    .flatMap({ schema, itemJsons -> Single<(String, URL, String, String)> in
-                        return self.loadIndexHtml().flatMap({ Single.just(($0, $1, schema, itemJsons)) })
-                    })
-                    .observe(on: MainScheduler.instance)
-                    .flatMap({ [weak webView] html, url, schema, itemJsons -> Single<(String, String)> in
-                         guard let webView = webView else { return Single.error(Error.deinitialized) }
-                         return self.load(html: html, baseUrl: url, in: webView).flatMap({ _ in Single.just((schema, itemJsons)) })
-                    })
-                    .flatMap({ [weak webView] schema, itemJsons -> Single<String> in
+                   .subscribe(on: self.backgroundScheduler)
+                   .observe(on: self.backgroundScheduler)
+                   .flatMap({ styleData -> Single<(String, String, String, Bool)> in
+                       let styleLocaleId = styleData.defaultLocaleId ?? localeId
+                       return self.loadEncodedXmls(styleFilename: styleData.filename, localeId: styleLocaleId).flatMap({ Single.just(($0.0, $0.1, styleLocaleId, styleData.supportsBibliography)) })
+                   })
+                   .do(onSuccess: { styleXml, localeXml, localeId, supportsBibliography in
+                       self.styleXml = styleXml
+                       self.localeId = localeId
+                       self.localeXml = localeXml
+                       self.supportsBibliography = supportsBibliography
+                   })
+                   .flatMap({ _ -> Single<String> in
+                       return self.loadSchema()
+                   })
+                   .flatMap({ schema -> Single<(String, String)> in
+                       return self.loadItemJsons(for: itemIds, libraryId: libraryId).flatMap({ Single.just((schema, $0)) })
+                   })
+                   .flatMap({ schema, itemJsons -> Single<(String, URL, String, String)> in
+                       return self.loadIndexHtml().flatMap({ Single.just(($0, $1, schema, itemJsons)) })
+                   })
+                   .observe(on: MainScheduler.instance)
+                   .flatMap({ [weak webView] html, url, schema, itemJsons -> Single<(String, String)> in
                         guard let webView = webView else { return Single.error(Error.deinitialized) }
-                        return self.getItemsCsl(from: itemJsons, schema: schema, webView: webView)
-                    })
-                    .do(onSuccess: { itemsCsl in
-                        self.itemsCsl = itemsCsl
-                    })
-                    .flatMap({ _ in return Single.just(()) })
+                        return self.load(html: html, baseUrl: url, in: webView).flatMap({ _ in Single.just((schema, itemJsons)) })
+                   })
+                   .flatMap({ [weak webView] schema, itemJsons -> Single<String> in
+                       guard let webView = webView else { return Single.error(Error.deinitialized) }
+                       return self.getItemsCsl(from: itemJsons, schema: schema, webView: webView)
+                   })
+                   .do(onSuccess: { itemsCsl in
+                       self.itemsCsl = itemsCsl
+                   })
+                   .flatMap({ _ in return Single.just(()) })
     }
 
     /// Cleans up after citeproc-js is finished. Should be called when all requests are called.
@@ -123,6 +138,7 @@ class CitationController: NSObject {
         self.localeId = nil
         self.styleXml = nil
         self.itemsCsl = nil
+        self.supportsBibliography = nil
     }
 
     /// Generates citation preview for given item in given format. Has to be called after `prepareForCitation(styleId:localeId:in:)` finishes!
@@ -135,7 +151,7 @@ class CitationController: NSObject {
     /// - parameter showInWebView: If true, shows generated result in webView body. If false, just returns generated result through handlers.
     /// - parameter webView: Web view which is fully loaded (`prepareForCitation(styleId:localeId:in:)` finished).
     /// - returns: Single with generated citation.
-    func citation(for itemIds: Set<String>, libraryId: LibraryIdentifier, label: String?, locator: String?, omitAuthor: Bool, format: Format, showInWebView: Bool, in webView: WKWebView) -> Single<String> {
+    func citation(for itemIds: Set<String>, label: String?, locator: String?, omitAuthor: Bool, format: Format, showInWebView: Bool, in webView: WKWebView) -> Single<String> {
         guard let style = self.styleXml, let localeId = self.localeId, let locale = self.localeXml, let itemsCsl = self.itemsCsl else { return Single.error(Error.prepareNotCalled) }
         let itemsData = self.itemsData(for: itemIds, label: label, locator: locator, omitAuthor: omitAuthor)
         return self.getCitation(itemsCsl: itemsCsl, itemsData: itemsData, styleXml: style, localeId: localeId, localeXml: locale, format: format.rawValue, showInWebView: showInWebView, webView: webView)
@@ -158,16 +174,52 @@ class CitationController: NSObject {
 
     /// Bibliography happens once for selected item(s). Appropriate style and locale xmls are loaded, webView is initialized and loaded with index.html. When everything is loaded,
     /// appropriate js function is called and result is returned. When everything is finished, webView is removed from controller.
-    /// - parameter items: Ids of items of which bibliography is created.
+    /// - parameter itemIds: Ids of items of which bibliography is created.
     /// - parameter libraryId: Id of library for given items.
-    /// - parameter styleId: Id of style to use for bibliography generation.
-    /// - parameter localeId: Id of locale to use for bibliography generation.
     /// - parameter format: Bibliography format to use for generation.
     /// - parameter webView: WebView which will run the javascript.
     /// - returns: Single which returns bibliography.
-    func bibliography(format: Format, in webView: WKWebView) -> Single<String> {
-        guard let style = self.styleXml, let localeId = self.localeId, let locale = self.localeXml, let itemsCsl = self.itemsCsl else { return Single.error(Error.prepareNotCalled) }
-        return self.getBibliography(itemsCsl: itemsCsl, styleXml: style, localeId: localeId, localeXml: locale, format: format.rawValue, webView: webView)
+    func bibliography(for itemIds: Set<String>, format: Format, in webView: WKWebView) -> Single<String> {
+        guard let style = self.styleXml, let localeId = self.localeId, let locale = self.localeXml, let itemsCsl = self.itemsCsl, let supportsBibliography = self.supportsBibliography else {
+            return Single.error(Error.prepareNotCalled)
+        }
+
+        if supportsBibliography {
+            return self.getBibliography(itemsCsl: itemsCsl, styleXml: style, localeId: localeId, localeXml: locale, format: format.rawValue, webView: webView)
+        }
+        return self.numberedBibliography(for: itemIds, format: format, in: webView)
+    }
+
+    private func numberedBibliography(for itemIds: Set<String>, format: Format, in webView: WKWebView) -> Single<String> {
+        let actions = itemIds.map({ self.citation(for: [$0], label: nil, locator: nil, omitAuthor: false, format: format, showInWebView: false, in: webView).asObservable() })
+
+        return Observable.concat(actions)
+                         .reduce([]) { array, citation -> [String] in
+                             var new = array
+                             new.append(citation)
+                             return new
+                         }
+                         .asSingle()
+                         .flatMap({ citations -> Single<String> in
+                             return Single.just(self.formatBibliography(from: citations, to: format))
+                         })
+    }
+
+    private func formatBibliography(from citations: [String], to format: Format) -> String {
+        switch format {
+        case .html:
+            return "<ol>\n\t<li>" + citations.joined(separator: "</li>\n\t<li>") + "</li>\n</ol>"
+
+        case .rtf:
+            let prefix = "{\\rtf \n{\\*\\listtable{\\list\\listtemplateid1\\listhybrid{\\listlevel\\levelnfc0\\levelnfcn0\\leveljc0\\leveljcn0\\levelfollow0\\levelstartat1" +
+                        "\\levelspace360\\levelindent0{\\*\\levelmarker \\{decimal\\}.}{\\leveltext\\leveltemplateid1\\'02\\'00.;}{\\levelnumbers\\'01;}\\fi-360\\li720\\lin720 }" +
+                        "{\\listname ;}\\listid1}}\n{\\*\\listoverridetable{\\listoverride\\listid1\\listoverridecount0\\ls1}}\n\\tx720\\li720\\fi-480\\ls1\\ilvl0\n"
+            let postfix = "}"
+            return prefix + citations.enumerated().map({ "{\\listtext \($0.offset + 1).    }\($0.element)\\\n" }).joined() + postfix
+
+        case .text:
+            return citations.enumerated().map({ "\($0.offset + 1). \($0.element)" }).joined(separator: "\r\n")
+        }
     }
 
     private func loadEncodedXmls(styleFilename: String, localeId: String) -> Single<(String, String)> {
@@ -195,14 +247,12 @@ class CitationController: NSObject {
 
     /// Loads style data.
     /// - parameter styleId: Identifier of style
-    /// - returns: Tuple where first `String` is style filename and second `String` is locale id if specified by style.
-    private func loadStyleData(for styleId: String) -> Single<(String, String?)> {
+    /// - returns: Style data.
+    private func loadStyleData(for styleId: String) -> Single<StyleData> {
         return Single.create { subscriber in
             do {
                 let style = try self.bundledDataStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: styleId))
-                let filename = style.dependency?.filename ?? style.filename
-                let localeId = style.defaultLocale.isEmpty ? nil : style.defaultLocale
-                subscriber(.success((filename, localeId)))
+                subscriber(.success(StyleData(style: style)))
             } catch let error {
                 DDLogError("CitationController: can't load style - \(error)")
                 subscriber(.failure(Error.styleOrLocaleMissing))

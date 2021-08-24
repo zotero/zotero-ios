@@ -152,13 +152,11 @@ fileprivate struct CiteView: View {
                         self.viewModel.process(action: .setMode(.citation))
                     }
 
-                if self.viewModel.state.style.supportsBibliography {
-                    OutputMethodRow(title: L10n.Citation.bibliography, isSelected: self.viewModel.state.mode == .bibliography)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            self.viewModel.process(action: .setMode(.bibliography))
-                        }
-                }
+                OutputMethodRow(title: L10n.Citation.bibliography, isSelected: self.viewModel.state.mode == .bibliography)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        self.viewModel.process(action: .setMode(.bibliography))
+                    }
             }
         }
 

@@ -68,7 +68,7 @@ struct CitationBibliographyExportState: ViewModelState {
         self.localeName = Locale.current.localizedString(forIdentifier: selectedLocaleId) ?? selectedLocaleId
         self.languagePickerEnabled = languagePickerEnabled
         self.style = selectedStyle
-        self.mode = selectedMode == .bibliography ? (selectedStyle.supportsBibliography ? .bibliography : .citation) : selectedMode
+        self.mode = selectedMode
         self.method = selectedMethod
         self.isLoading = false
         self.changes = []

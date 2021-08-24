@@ -57,10 +57,6 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
                 state.style = style
                 Defaults.shared.exportStyleId = style.identifier
 
-                if !state.style.supportsBibliography {
-                    state.mode = .citation
-                }
-
                 if let localeId = state.style.defaultLocale {
                     state.localeId = localeId
                     state.localeName = Locale.current.localizedString(forIdentifier: localeId) ?? localeId
@@ -117,20 +113,20 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
     }
 
     private func loadForCopy(in viewModel: ViewModel<CitationBibliographyExportActionHandler>) -> Single<(String, String)> {
+        let itemIds = viewModel.state.itemIds
+
         switch viewModel.state.mode {
         case .citation:
-            let itemIds = viewModel.state.itemIds
-            let libraryId = viewModel.state.libraryId
             return self.loadForHtml(in: viewModel)
                        .flatMap { html -> Single<(String, String)> in
-                           return self.citationController.citation(for: itemIds, libraryId: libraryId, label: nil, locator: nil, omitAuthor: false, format: .text, showInWebView: false,
-                                                                   in: self.webView).flatMap({ return Single.just((html, $0)) })
+                           return self.citationController.citation(for: itemIds, label: nil, locator: nil, omitAuthor: false, format: .text, showInWebView: false, in: self.webView)
+                                                         .flatMap({ return Single.just((html, $0)) })
                        }
 
         case .bibliography:
             return self.loadForHtml(in: viewModel)
                        .flatMap { html -> Single<(String, String)> in
-                           return self.citationController.bibliography(format: .text, in: self.webView).flatMap({ return Single.just((html, $0)) })
+                        return self.citationController.bibliography(for: itemIds, format: .text, in: self.webView).flatMap({ return Single.just((html, $0)) })
                        }
         }
     }
@@ -144,11 +140,10 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
 
         switch viewModel.state.mode {
         case .citation:
-            return prepare.flatMap { self.citationController.citation(for: itemIds, libraryId: libraryId, label: nil, locator: nil, omitAuthor: false,
-                                                                      format: .html, showInWebView: false, in: self.webView) }
+            return prepare.flatMap { self.citationController.citation(for: itemIds, label: nil, locator: nil, omitAuthor: false, format: .html, showInWebView: false, in: self.webView) }
 
         case .bibliography:
-            return prepare.flatMap { self.citationController.bibliography(format: .html, in: self.webView) }
+            return prepare.flatMap { self.citationController.bibliography(for: itemIds, format: .html, in: self.webView) }
         }
     }
 

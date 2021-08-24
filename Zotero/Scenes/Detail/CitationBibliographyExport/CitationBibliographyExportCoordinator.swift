@@ -64,10 +64,9 @@ final class CitationBibliographyExportCoordinator: NSObject, Coordinator {
 
         let localeId = style.defaultLocale ?? Defaults.shared.exportLocaleId
         let languageEnabled = style.defaultLocale == nil
-        let mode: CitationBibliographyExportState.OutputMode = style.supportsBibliography ? Defaults.shared.exportOutputMode : .citation
 
         let state = CitationBibliographyExportState(itemIds: self.itemIds, libraryId: self.libraryId, selectedStyle: style, selectedLocaleId: localeId, languagePickerEnabled: languageEnabled,
-                                                    selectedMode: mode, selectedMethod: Defaults.shared.exportOutputMethod)
+                                                    selectedMode: Defaults.shared.exportOutputMode, selectedMethod: Defaults.shared.exportOutputMethod)
         var handler = CitationBibliographyExportActionHandler(citationController: citationController, fileStorage: self.controllers.fileStorage, webView: webView)
         handler.coordinatorDelegate = self
         let viewModel = ViewModel(initialState: state, handler: handler)
