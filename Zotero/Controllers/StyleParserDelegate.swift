@@ -22,6 +22,7 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
     private var dependencyHref: String?
     private var supportsCitation: Bool
     private var supportsBibliography: Bool
+    private var isNoteStyle: Bool
     private var defaultLocale: String?
 
     private enum Element: String {
@@ -38,6 +39,7 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
         self.filename = filename
         self.supportsCitation = false
         self.supportsBibliography = false
+        self.isNoteStyle = false
         self.currentValue = ""
         super.init()
     }
@@ -62,6 +64,9 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
         case .style:
             if let locale = attributeDict["default-locale"] {
                 self.defaultLocale = locale
+            }
+            if let classValue = attributeDict["class"] {
+                self.isNoteStyle = classValue == "note"
             }
 
         default: break
@@ -103,7 +108,7 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
             return
         }
         guard let identifier = self.identifier, let title = self.title, let updated = self.updated, let href = self.href else { return }
-        self.style = Style(identifier: identifier, dependencyId: self.dependencyHref, title: title, updated: updated, href: href,
-                           filename: (self.filename ?? href.lastPathComponent), supportsBibliography: self.supportsBibliography, defaultLocale: self.defaultLocale)
+        self.style = Style(identifier: identifier, dependencyId: self.dependencyHref, title: title, updated: updated, href: href, filename: (self.filename ?? href.lastPathComponent),
+                           supportsBibliography: self.supportsBibliography, isNoteStyle: self.isNoteStyle, defaultLocale: self.defaultLocale)
     }
 }

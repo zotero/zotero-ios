@@ -25,6 +25,7 @@ struct StoreStyleDbRequest: DbRequest {
         rStyle.filename = self.style.filename
         rStyle.installed = true
         rStyle.supportsBibliography = self.style.supportsBibliography
+        rStyle.isNoteStyle = self.style.isNoteStyle
         rStyle.defaultLocale = self.style.defaultLocale ?? ""
 
         if let dependency = self.dependency {
@@ -34,6 +35,7 @@ struct StoreStyleDbRequest: DbRequest {
             rDependency.href = dependency.href.absoluteString
             rDependency.title = dependency.title
             rDependency.supportsBibliography = dependency.supportsBibliography
+            rDependency.isNoteStyle = dependency.isNoteStyle
             rDependency.defaultLocale = dependency.defaultLocale ?? ""
             if !existed {
                 rDependency.installed = false

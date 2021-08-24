@@ -56,7 +56,8 @@ final class CitationBibliographyExportCoordinator: NSObject, Coordinator {
            let _style = Style(rStyle: rStyle) {
             style = _style
         } else {
-            style = Style(identifier: "", dependencyId: nil, title: L10n.unknown, updated: Date(), href: URL(fileURLWithPath: ""), filename: "", supportsBibliography: false, defaultLocale: nil)
+            style = Style(identifier: "", dependencyId: nil, title: L10n.unknown, updated: Date(), href: URL(fileURLWithPath: ""),
+                          filename: "", supportsBibliography: false, isNoteStyle: false, defaultLocale: nil)
         }
 
         let webView = WKWebView()

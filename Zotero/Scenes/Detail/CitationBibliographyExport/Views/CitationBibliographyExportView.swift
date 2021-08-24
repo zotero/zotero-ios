@@ -146,7 +146,7 @@ fileprivate struct CiteView: View {
 
         Section(header: Text(L10n.Citation.outputMode)) {
             VStack {
-                OutputMethodRow(title: L10n.Citation.citations, isSelected: self.viewModel.state.mode == .citation)
+                OutputMethodRow(title: self.citationTitle, isSelected: self.viewModel.state.mode == .citation)
                     .contentShape(Rectangle())
                     .onTapGesture {
                         self.viewModel.process(action: .setMode(.citation))
@@ -171,6 +171,10 @@ fileprivate struct CiteView: View {
                 }
             }
         }
+    }
+
+    private var citationTitle: String {
+        return self.viewModel.state.style.isNoteStyle ? L10n.Citation.notes : L10n.Citation.citations
     }
 
     private func name(for method: CitationBibliographyExportState.OutputMethod) -> String {
@@ -235,8 +239,10 @@ fileprivate struct ExportView: View {
 struct CitationBibliographyExportView_Previews: PreviewProvider {
     static var previews: some View {
         let controllers = Controllers()
-        let style = Style(identifier: "http://www.zotero.org/styles/nature", dependencyId: nil, title: "Nature", updated: Date(), href: URL(string: "")!, filename: "", supportsBibliography: true, defaultLocale: nil)
-        let state = CitationBibliographyExportState(itemIds: [], libraryId: .custom(.myLibrary), selectedStyle: style, selectedLocaleId: "en_US", languagePickerEnabled: true, selectedMode: .bibliography, selectedMethod: .copy)
+        let style = Style(identifier: "http://www.zotero.org/styles/nature", dependencyId: nil, title: "Nature", updated: Date(), href: URL(string: "")!, filename: "", supportsBibliography: true,
+                          isNoteStyle: false, defaultLocale: nil)
+        let state = CitationBibliographyExportState(itemIds: [], libraryId: .custom(.myLibrary), selectedStyle: style, selectedLocaleId: "en_US", languagePickerEnabled: true,
+                                                    selectedMode: .bibliography, selectedMethod: .copy)
         let handler = CitationBibliographyExportActionHandler(citationController: controllers.userControllers!.citationController, fileStorage: controllers.fileStorage, webView: WKWebView())
         let viewModel = ViewModel(initialState: state, handler: handler)
         return CitationBibliographyExportView().environmentObject(viewModel)

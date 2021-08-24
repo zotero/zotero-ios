@@ -155,6 +155,7 @@
 "citation.output_mode" = "Output Mode";
 "citation.citations" = "Citations";
 "citation.bibliography" = "Bibliography";
+"citation.notes" = "Notes";
 "citation.output_method" = "Output Method";
 "citation.save_html" = "Save as HTML";
 "citation.copy" = "Copy to Clipboard";

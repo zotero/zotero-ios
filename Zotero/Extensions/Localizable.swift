@@ -203,6 +203,8 @@ internal enum L10n {
     internal static let language = L10n.tr("Localizable", "citation.language")
     /// Number
     internal static let locatorPlaceholder = L10n.tr("Localizable", "citation.locator_placeholder")
+    /// Notes
+    internal static let notes = L10n.tr("Localizable", "citation.notes")
     /// Omit Author
     internal static let omitAuthor = L10n.tr("Localizable", "citation.omit_author")
     /// Output Method

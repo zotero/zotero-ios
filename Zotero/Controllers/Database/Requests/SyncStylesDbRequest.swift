@@ -40,6 +40,7 @@ struct SyncStylesDbRequest: DbResponseRequest {
             rStyle.updated = style.updated
             rStyle.filename = style.filename
             rStyle.supportsBibliography = style.supportsBibliography
+            rStyle.isNoteStyle = style.isNoteStyle
             rStyle.defaultLocale = style.defaultLocale ?? ""
             update.append(style.filename)
         }

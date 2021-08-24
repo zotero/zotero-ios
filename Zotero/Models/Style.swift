@@ -17,6 +17,7 @@ struct Style: Identifiable {
     let href: URL
     let filename: String
     let supportsBibliography: Bool
+    let isNoteStyle: Bool
     let dependencyId: String?
     let defaultLocale: String?
 
@@ -24,13 +25,14 @@ struct Style: Identifiable {
         return self.identifier
     }
 
-    init(identifier: String, dependencyId: String?, title: String, updated: Date, href: URL, filename: String, supportsBibliography: Bool, defaultLocale: String?) {
+    init(identifier: String, dependencyId: String?, title: String, updated: Date, href: URL, filename: String, supportsBibliography: Bool, isNoteStyle: Bool, defaultLocale: String?) {
         self.identifier = identifier
         self.title = title
         self.updated = updated
         self.href = href
         self.filename = filename
         self.supportsBibliography = supportsBibliography
+        self.isNoteStyle = isNoteStyle
         self.dependencyId = dependencyId
         self.defaultLocale = defaultLocale
     }
@@ -46,6 +48,7 @@ struct Style: Identifiable {
         self.href = href
         self.filename = rStyle.filename
         self.supportsBibliography = rStyle.supportsBibliography
+        self.isNoteStyle = rStyle.isNoteStyle
         self.dependencyId = rStyle.dependency?.identifier
         self.defaultLocale = rStyle.defaultLocale.isEmpty ? nil : rStyle.defaultLocale
     }
