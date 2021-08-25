@@ -260,4 +260,10 @@ extension AnnotationEditViewController: UITableViewDelegate {
     }
 }
 
+extension AnnotationEditViewController: AnnotationPopover {
+    var annotationKey: String {
+        return self.viewModel.state.annotation.key
+    }
+}
+
 #endif

@@ -10,6 +10,10 @@ import UIKit
 
 import RxSwift
 
+protocol AnnotationPopover: AnyObject {
+    var annotationKey: String { get }
+}
+
 #if PDFENABLED
 
 protocol AnnotationPopoverAnnotationCoordinatorDelegate: AnyObject {

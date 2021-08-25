@@ -229,6 +229,11 @@ final class PDFReaderViewController: UIViewController {
         }
 
         if state.changes.contains(.save) {
+            // If popover with deleted key is presented, dismiss it
+            if let controller = (self.presentedViewController as? UINavigationController)?.viewControllers.first as? AnnotationPopover, state.deletedKeys.contains(controller.annotationKey) {
+                self.dismiss(animated: true, completion: nil)
+            }
+            // Store changed keys and enqueue a save
             self.insertedKeys = self.insertedKeys.union(state.insertedKeys)
             self.deletedKeys = self.deletedKeys.union(state.deletedKeys)
             self.modifiedKeys = self.modifiedKeys.union(state.modifiedKeys)
