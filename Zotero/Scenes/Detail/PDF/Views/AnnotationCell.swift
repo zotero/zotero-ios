@@ -133,6 +133,8 @@ final class AnnotationCell: UITableViewCell {
             annotationName = L10n.Accessibility.Pdf.imageAnnotation
         case .note:
             annotationName = L10n.Accessibility.Pdf.noteAnnotation
+        case .ink:
+            annotationName = L10n.Accessibility.Pdf.inkAnnotation
         }
         var label = annotationName + ", " + L10n.page + " " + pageLabel
         if let author = author {

@@ -388,9 +388,11 @@
 "accessibility.pdf.highlight_annotation_tool" = "Create highlight annotation";
 "accessibility.pdf.note_annotation_tool" = "Create note annotation";
 "accessibility.pdf.image_annotation_tool" = "Create image annotation";
+"accessibility.pdf.ink_annotation_tool" = "Create ink annotation";
 "accessibility.pdf.highlight_annotation" = "Highlight annotation";
 "accessibility.pdf.note_annotation" = "Note annotation";
 "accessibility.pdf.image_annotation" = "Image annotation";
+"accessibility.pdf.ink_annotation" = "Ink annotation";
 "accessibility.pdf.edit_annotation" = "Edit annotation";
 "accessibility.pdf.highlighted_text" = "Highlighted text";
 "accessibility.pdf.author" = "Author";

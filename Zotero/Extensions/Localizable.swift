@@ -171,6 +171,10 @@ internal enum L10n {
       internal static let imageAnnotation = L10n.tr("Localizable", "accessibility.pdf.image_annotation")
       /// Create image annotation
       internal static let imageAnnotationTool = L10n.tr("Localizable", "accessibility.pdf.image_annotation_tool")
+      /// Ink annotation
+      internal static let inkAnnotation = L10n.tr("Localizable", "accessibility.pdf.ink_annotation")
+      /// Create ink annotation
+      internal static let inkAnnotationTool = L10n.tr("Localizable", "accessibility.pdf.ink_annotation_tool")
       /// Note annotation
       internal static let noteAnnotation = L10n.tr("Localizable", "accessibility.pdf.note_annotation")
       /// Create note annotation

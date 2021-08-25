@@ -118,7 +118,7 @@ final class AnnotationView: UIView {
         imageContent.isHidden = annotation.type != .image
 
         switch annotation.type {
-        case .note: break
+        case .note, .ink: break
 
         case .highlight:
             let bottomInset = self.inset(from: self.layout.highlightLineVerticalInsets, hasComment: !annotation.comment.isEmpty, selected: selected, canEdit: canEdit)

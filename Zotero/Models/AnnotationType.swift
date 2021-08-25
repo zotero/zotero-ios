@@ -12,4 +12,5 @@ enum AnnotationType: String {
     case note = "note"
     case highlight = "highlight"
     case image = "image"
+    case ink = "ink"
 }

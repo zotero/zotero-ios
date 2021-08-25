@@ -823,7 +823,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         let pdfAnnotation: PSPDFKit.Annotation
 
         switch annotationType {
-        case .highlight: return
+        case .highlight, .ink: return
         case .image:
             let rect = CGRect(origin: origin, size: CGSize(width: 50, height: 50))
             let square = SquareAnnotation()

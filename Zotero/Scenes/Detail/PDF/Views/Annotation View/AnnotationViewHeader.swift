@@ -47,6 +47,7 @@ final class AnnotationViewHeader: UIView {
         case .image: return Asset.Images.Annotations.areaMedium.image
         case .highlight: return Asset.Images.Annotations.highlighterMedium.image
         case .note: return Asset.Images.Annotations.noteMedium.image
+        case .ink: return UIImage(systemName: "line.diagonal")
         }
     }
 
@@ -59,6 +60,8 @@ final class AnnotationViewHeader: UIView {
             annotationName = L10n.Accessibility.Pdf.imageAnnotation
         case .note:
             annotationName = L10n.Accessibility.Pdf.noteAnnotation
+        case .ink:
+            annotationName = L10n.Accessibility.Pdf.inkAnnotation
         }
         return annotationName + ", " + L10n.page + " " + pageLabel
     }

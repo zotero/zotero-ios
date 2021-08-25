@@ -144,6 +144,10 @@ struct AnnotationConverter {
             type = .image
             rects = [annotation.boundingBox]
             text = nil
+        } else if let annotation = annotation as? PSPDFKit.InkAnnotation {
+            type = .ink
+            rects = [annotation.boundingBox]
+            text = nil
         } else {
             return nil
         }
@@ -188,6 +192,8 @@ struct AnnotationConverter {
             annotation = self.highlightAnnotation(from: zoteroAnnotation, type: type, color: color, alpha: alpha)
         case .note:
             annotation = self.noteAnnotation(from: zoteroAnnotation, type: type, color: color)
+        case .ink:
+            annotation = self.inkAnnotation(from: zoteroAnnotation, type: type, color: color)
         }
 
         switch type {
@@ -265,6 +271,14 @@ struct AnnotationConverter {
         note.color = color
 
         return note
+    }
+
+    private static func inkAnnotation(from annotation: Annotation, type: Kind, color: UIColor) -> PSPDFKit.InkAnnotation {
+        let ink = PSPDFKit.InkAnnotation()
+        ink.color = color
+        ink.boundingBox = annotation.boundingBox
+        ink.lines = [] // TODO
+        return ink
     }
 }
 
