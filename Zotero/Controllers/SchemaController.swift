@@ -45,6 +45,7 @@ final class SchemaController {
         self.itemSchemas = schema.itemSchemas
         self.locales = schema.locales
         self.version = schema.version
+        self.itemSchemas["annotation"] = ItemSchema(data: ["itemType": "annotation"])
     }
 }
 
