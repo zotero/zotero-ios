@@ -144,6 +144,7 @@ final class AnnotationView: UIView {
         guard isActive || !annotation.comment.isEmpty else {
             self.commentTextView.isHidden = !self.layout.showsContent || !canEdit
             self.commentTextView.set(placeholderColor: Asset.Colors.zoteroBlue.color)
+            self.commentTextView.setup(text: nil)
             return
         }
 

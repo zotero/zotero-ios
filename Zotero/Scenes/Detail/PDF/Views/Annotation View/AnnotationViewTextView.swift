@@ -72,10 +72,15 @@ final class AnnotationViewTextView: UIView {
 
     // MARK: - Setups
 
-    func setup(text: NSAttributedString) {
-        self.textViewDelegate.set(text: text, to: self.textView)
+    func setup(text: NSAttributedString?) {
         self.setupAccessibilityLabel()
         self.textView.isAccessibilityElement = true
+
+        if let text = text {
+            self.textViewDelegate.set(text: text, to: self.textView)
+        } else {
+            self.textViewDelegate.set(text: "", to: self.textView)
+        }
     }
 
     private func setupAccessibilityLabel() {
