@@ -148,13 +148,7 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
     }
 
     private func copy(html: String, plaintext: String, in viewModel: ViewModel<CitationBibliographyExportActionHandler>) {
-        guard let htmlData = html.data(using: .utf8) else { return }
-
-        UIPasteboard.general.items = [
-            [(kUTTypePlainText as String): plaintext,
-            (kUTTypeHTML as String): htmlData]
-        ]
-
+        UIPasteboard.general.copy(html: html, plaintext: plaintext)
         self.update(viewModel: viewModel) { state in
             state.isLoading = false
             state.changes = .finished

@@ -88,6 +88,15 @@ final class SingleCitationViewController: UIViewController {
         }
 
         if state.changes.contains(.preview) {
+//            do {
+//                if let data = state.preview.data(using: .utf8) {
+//                    let attr = try NSAttributedString(data: data, options: [.documentType: NSAttributedString.DocumentType.rtf, .characterEncoding: String.Encoding.utf8], documentAttributes: nil)
+//                    self.previewTitleLabel.numberOfLines = 0
+//                    self.previewTitleLabel.attributedText = attr
+//                }
+//            } catch let error {
+//                NSLog("ERROR: \(error)")
+//            }
             self.updatePreferredContentSize()
         }
 

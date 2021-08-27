@@ -79,21 +79,13 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
         self.citationController.citation(for: viewModel.state.itemIds, label: viewModel.state.locator, locator: viewModel.state.locatorValue, omitAuthor: viewModel.state.omitAuthor, format: .text,
                                          showInWebView: false, in: webView)
             .subscribe(with: viewModel, onSuccess: { viewModel, text in
-                self.copy(html: viewModel.state.preview, plaintext: text)
+                UIPasteboard.general.copy(html: viewModel.state.preview, plaintext: text)
                 self.update(viewModel: viewModel) { state in
                     state.loadingCopy = false
                     state.changes = .copied
                 }
             })
             .disposed(by: self.disposeBag)
-    }
-
-    private func copy(html: String, plaintext: String) {
-        guard let htmlData = html.data(using: .utf8) else { return }
-        UIPasteboard.general.items = [
-            [(kUTTypePlainText as String): plaintext,
-            (kUTTypeHTML as String): htmlData]
-        ]
     }
 
     private func loadPreview(locatorLabel: String, locatorValue: String, omitAuthor: Bool, stateAction: @escaping (inout SingleCitationState) -> Void,

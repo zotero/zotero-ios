@@ -154,7 +154,9 @@ class CitationController: NSObject {
     func citation(for itemIds: Set<String>, label: String?, locator: String?, omitAuthor: Bool, format: Format, showInWebView: Bool, in webView: WKWebView) -> Single<String> {
         guard let style = self.styleXml, let localeId = self.localeId, let locale = self.localeXml, let itemsCsl = self.itemsCsl else { return Single.error(Error.prepareNotCalled) }
         let itemsData = self.itemsData(for: itemIds, label: label, locator: locator, omitAuthor: omitAuthor)
-        return self.getCitation(itemsCsl: itemsCsl, itemsData: itemsData, styleXml: style, localeId: localeId, localeXml: locale, format: format.rawValue, showInWebView: showInWebView, webView: webView)
+        return self.getCitation(itemsCsl: itemsCsl, itemsData: itemsData, styleXml: style, localeId: localeId, localeXml: locale,
+                                format: format.rawValue, showInWebView: showInWebView, webView: webView)
+                   .flatMap({ Single.just(self.format(result: $0, format: format)) })
     }
 
     private func itemsData(for itemIds: Set<String>, label: String?, locator: String?, omitAuthor: Bool) -> String {
@@ -186,8 +188,37 @@ class CitationController: NSObject {
 
         if supportsBibliography {
             return self.getBibliography(itemsCsl: itemsCsl, styleXml: style, localeId: localeId, localeXml: locale, format: format.rawValue, webView: webView)
+                       .flatMap({ Single.just(self.format(result: $0, format: format)) })
         }
         return self.numberedBibliography(for: itemIds, format: format, in: webView)
+                   .flatMap({ Single.just(self.format(result: $0, format: format)) })
+    }
+
+    private func format(result: String, format: Format) -> String {
+        switch format {
+        case .rtf:
+            var newResult = result
+            if !result.hasPrefix("{\\rtf") {
+                newResult = "{\\rtf\n" + newResult
+            }
+            if !result.hasSuffix("}") {
+                newResult = newResult + "\n}"
+            }
+            return newResult
+
+        case .html:
+            var newResult = result
+            if !result.hasPrefix("<!DOCTYPE") {
+                newResult = "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\"><html><head>" +
+                            "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"></head><body>" + newResult
+            }
+            if !result.hasSuffix("</html>") {
+                newResult = newResult + "</body></html>"
+            }
+            return newResult
+
+        case .text: return result
+        }
     }
 
     private func numberedBibliography(for itemIds: Set<String>, format: Format, in webView: WKWebView) -> Single<String> {
@@ -211,11 +242,10 @@ class CitationController: NSObject {
             return "<ol>\n\t<li>" + citations.joined(separator: "</li>\n\t<li>") + "</li>\n</ol>"
 
         case .rtf:
-            let prefix = "{\\rtf \n{\\*\\listtable{\\list\\listtemplateid1\\listhybrid{\\listlevel\\levelnfc0\\levelnfcn0\\leveljc0\\leveljcn0\\levelfollow0\\levelstartat1" +
+            let prefix = "{\\*\\listtable{\\list\\listtemplateid1\\listhybrid{\\listlevel\\levelnfc0\\levelnfcn0\\leveljc0\\leveljcn0\\levelfollow0\\levelstartat1" +
                         "\\levelspace360\\levelindent0{\\*\\levelmarker \\{decimal\\}.}{\\leveltext\\leveltemplateid1\\'02\\'00.;}{\\levelnumbers\\'01;}\\fi-360\\li720\\lin720 }" +
                         "{\\listname ;}\\listid1}}\n{\\*\\listoverridetable{\\listoverride\\listid1\\listoverridecount0\\ls1}}\n\\tx720\\li720\\fi-480\\ls1\\ilvl0\n"
-            let postfix = "}"
-            return prefix + citations.enumerated().map({ "{\\listtext \($0.offset + 1).    }\($0.element)\\\n" }).joined() + postfix
+            return prefix + citations.enumerated().map({ "{\\listtext \($0.offset + 1).    }\($0.element)\\\n" }).joined()
 
         case .text:
             return citations.enumerated().map({ "\($0.offset + 1). \($0.element)" }).joined(separator: "\r\n")

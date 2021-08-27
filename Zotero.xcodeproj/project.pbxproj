@@ -686,6 +686,8 @@
 		B38D3CCA24A1F420005289EF /* CrashReporter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B38D3CC924A1F420005289EF /* CrashReporter.framework */; };
 		B3902DE62480DBB7007EE48E /* DateParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC25CC247E6BA000AC27B5 /* DateParser.swift */; };
 		B3902DE72480DBC1007EE48E /* ComponentDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32A3C77247FB62B009E2C5D /* ComponentDate.swift */; };
+		B391480726D9093E0016B7B2 /* UIPasteboard+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B391480626D9093E0016B7B2 /* UIPasteboard+Extensions.swift */; };
+		B391480826D909E40016B7B2 /* UIPasteboard+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B391480626D9093E0016B7B2 /* UIPasteboard+Extensions.swift */; };
 		B394A0E226A709A900CA307F /* NoteEditorTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B394A0E126A709A900CA307F /* NoteEditorTitleView.swift */; };
 		B395EFE325494B1B00CEBD9F /* CreatorEditAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B395EFE225494B1B00CEBD9F /* CreatorEditAction.swift */; };
 		B395EFE725494B2300CEBD9F /* CreatorEditState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B395EFE625494B2300CEBD9F /* CreatorEditState.swift */; };
@@ -1404,6 +1406,7 @@
 		B3886C46249234D600B7D67B /* AttachmentDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentDownloader.swift; sourceTree = "<group>"; };
 		B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeysResponseProcessor.swift; sourceTree = "<group>"; };
 		B38D3CC924A1F420005289EF /* CrashReporter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CrashReporter.framework; sourceTree = "<group>"; };
+		B391480626D9093E0016B7B2 /* UIPasteboard+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIPasteboard+Extensions.swift"; sourceTree = "<group>"; };
 		B394A0E126A709A900CA307F /* NoteEditorTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorTitleView.swift; sourceTree = "<group>"; };
 		B395EFE225494B1B00CEBD9F /* CreatorEditAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorEditAction.swift; sourceTree = "<group>"; };
 		B395EFE625494B2300CEBD9F /* CreatorEditState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorEditState.swift; sourceTree = "<group>"; };
@@ -1927,6 +1930,7 @@
 				B305650923FC051E003304F2 /* UIColor+Custom.swift */,
 				B3429B8024BDE73A008359FC /* UIDevice+Extensions.swift */,
 				B305650A23FC051E003304F2 /* UIFont+Extensions.swift */,
+				B391480626D9093E0016B7B2 /* UIPasteboard+Extensions.swift */,
 				B3593ADB24B60A7600CA0B57 /* UISearchBar+Extensions.swift */,
 				B3B953D12459B4D800FC96DB /* UITableViewCell+SwiftUI.swift */,
 				B305651223FC051E003304F2 /* UIView+Extensions.swift */,
@@ -3552,6 +3556,7 @@
 				B37C5B6D26453C58009A37E5 /* NoteEditorAction.swift in Sources */,
 				B361820624C9A7C000B30D56 /* RegisterView.swift in Sources */,
 				B30566C223FC051F003304F2 /* LibraryData.swift in Sources */,
+				B391480726D9093E0016B7B2 /* UIPasteboard+Extensions.swift in Sources */,
 				B30566B123FC051F003304F2 /* KeyResponse.swift in Sources */,
 				B3B78C46266FAF8500E91D02 /* WKWebView+Extensions.swift in Sources */,
 				B3593F182668E6A700FA4BB2 /* StyleParserDelegate.swift in Sources */,
@@ -4031,6 +4036,7 @@
 				B305674C23FC09AF003304F2 /* RItem.swift in Sources */,
 				B305674D23FC09AF003304F2 /* RSearch.swift in Sources */,
 				B3C6AB2E248E42400009AC96 /* ApiOperation.swift in Sources */,
+				B391480826D909E40016B7B2 /* UIPasteboard+Extensions.swift in Sources */,
 				B305674E23FC09AF003304F2 /* RVersions.swift in Sources */,
 				B325DBAD24375C7B00EFF0F5 /* UIViewController+Extensions.swift in Sources */,
 				B305674F23FC09AF003304F2 /* RGroup.swift in Sources */,

@@ -163,7 +163,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
                                }
                                .subscribe(with: viewModel, onSuccess: { viewModel, data in
                                    if let plaintext = data.1 {
-                                       self.copyBibliography(html: data.0, plaintext: plaintext)
+                                       UIPasteboard.general.copy(html: data.0, plaintext: plaintext)
                                    } else {
                                        UIPasteboard.general.string = data.0
                                    }
@@ -186,14 +186,6 @@ struct ItemsActionHandler: ViewModelActionHandler {
                                    self.citationController.finishCitation()
                                })
                                .disposed(by: self.disposeBag)
-    }
-
-    private func copyBibliography(html: String, plaintext: String) {
-        guard let htmlData = html.data(using: .utf8) else { return }
-        UIPasteboard.general.items = [
-            [(kUTTypePlainText as String): plaintext,
-            (kUTTypeHTML as String): htmlData]
-        ]
     }
 
     private func loadInitialState(in viewModel: ViewModel<ItemsActionHandler>) {
