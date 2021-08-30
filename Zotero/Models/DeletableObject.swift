@@ -65,6 +65,13 @@ extension RItem: Deletable {
         if !self.tags.isInvalidated {
             database.delete(self.tags)
         }
+        if !self.paths.isInvalidated {
+            for path in self.paths {
+                guard !path.isInvalidated && !path.coordinates.isInvalidated else { continue }
+                database.delete(path.coordinates)
+            }
+            database.delete(self.paths)
+        }
 
         if let createdByUser = self.createdBy, !createdByUser.isInvalidated, let lastModifiedByUser = self.lastModifiedBy, !lastModifiedByUser.isInvalidated,
            createdByUser.identifier == lastModifiedByUser.identifier &&

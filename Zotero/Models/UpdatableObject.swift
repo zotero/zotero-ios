@@ -147,6 +147,8 @@ extension RItem: Updatable {
     var updateParameters: [String : Any]? {
         guard self.isChanged else { return nil }
 
+        var changedPageIndex: Int?
+        var changedLineWidth: Double?
         var parameters: [String: Any] = ["key": self.key,
                                          "version": self.version,
                                          "dateModified": Formatter.iso8601.string(from: self.dateModified),
@@ -186,28 +188,41 @@ extension RItem: Updatable {
                     // but they are used in file upload
                     parameters[field.key] = ""
                 case FieldKeys.Item.Annotation.pageIndex:
-                    let pageIndex = Int(field.value) ?? 0
-                    parameters[FieldKeys.Item.Annotation.position] = self.createAnnotationPosition(pageIndex: pageIndex, rects: self.rects)
+                    changedPageIndex = Int(field.value) ?? 0
+                case FieldKeys.Item.Annotation.lineWidth:
+                    changedLineWidth = Double(field.value) ?? 0
                 default:
                     parameters[field.key] = field.value
                 }
             }
         }
-        if changes.contains(.rects) && parameters[FieldKeys.Item.Annotation.position] == nil {
-            let pageIndex = self.fields.filter(.key(FieldKeys.Item.Annotation.pageIndex)).first.flatMap({ Int($0.value) }) ?? 0
-            parameters[FieldKeys.Item.Annotation.position] = self.createAnnotationPosition(pageIndex: pageIndex, rects: self.rects)
+        if changes.contains(.rects) || changes.contains(.paths) || changedPageIndex != nil || changedLineWidth != nil {
+            let pageIndex = changedPageIndex ?? (self.fields.filter(.key(FieldKeys.Item.Annotation.pageIndex)).first.flatMap({ Int($0.value) }) ?? 0)
+            let lineWidth = changedLineWidth ?? (self.fields.filter(.key(FieldKeys.Item.Annotation.lineWidth)).first.flatMap({ Double($0.value) }) ?? 0)
+            parameters[FieldKeys.Item.Annotation.position] = self.createAnnotationPosition(pageIndex: pageIndex, rects: self.rects, paths: self.paths, lineWidth: lineWidth)
         }
         
         return parameters
     }
 
-    private func createAnnotationPosition(pageIndex: Int, rects: List<RRect>) -> String {
-        var rectArray: [[Double]] = []
-        rects.forEach { rRect in
-            rectArray.append([rRect.minX.rounded(to: 3), rRect.minY.rounded(to: 3), rRect.maxX.rounded(to: 3), rRect.maxY.rounded(to: 3)])
+    private func createAnnotationPosition(pageIndex: Int, rects: List<RRect>, paths: List<RPath>, lineWidth: Double) -> String {
+        var jsonData: [String: Any] = [FieldKeys.Item.Annotation.pageIndex: pageIndex]
+
+        if !rects.isEmpty {
+            var rectArray: [[Double]] = []
+            rects.forEach { rRect in
+                rectArray.append([rRect.minX.rounded(to: 3), rRect.minY.rounded(to: 3), rRect.maxX.rounded(to: 3), rRect.maxY.rounded(to: 3)])
+            }
+            jsonData[FieldKeys.Item.Annotation.rects] = rectArray
+        } else if !paths.isEmpty {
+            var apiPaths: [[Double]] = []
+            for path in paths.sorted(byKeyPath: "sortIndex") {
+                apiPaths.append(path.coordinates.sorted(byKeyPath: "sortIndex").map({ $0.value.rounded(to: 3) }))
+            }
+            jsonData[FieldKeys.Item.Annotation.paths] = apiPaths
+            jsonData[FieldKeys.Item.Annotation.lineWidth] = lineWidth.rounded(to: 3)
         }
-        let jsonData: [String: Any] = [FieldKeys.Item.Annotation.pageIndex: pageIndex,
-                                       FieldKeys.Item.Annotation.rects: rectArray]
+
         return (try? JSONSerialization.data(withJSONObject: jsonData, options: [])).flatMap({ String(data: $0, encoding: .utf8) }) ?? ""
     }
 
@@ -277,6 +292,9 @@ extension RItem: Updatable {
         }
         if !self.rects.isEmpty {
             changes.insert(.rects)
+        }
+        if !self.paths.isEmpty {
+            changes.insert(.paths)
         }
         return changes
     }

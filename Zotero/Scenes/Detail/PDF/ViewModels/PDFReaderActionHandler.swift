@@ -635,12 +635,24 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         let sortIndex = AnnotationConverter.sortIndex(from: pdfAnnotation, boundingBoxConverter: self.boundingBoxConverter)
         let rects = pdfAnnotation.rects ?? [pdfAnnotation.boundingBox]
         let highlightText = (pdfAnnotation as? PSPDFKit.HighlightAnnotation)?.markedUpString.trimmingCharacters(in: .whitespacesAndNewlines)
+        var paths: [[CGPoint]] = []
+        var lineWidth: CGFloat?
+        if let inkAnnotation = pdfAnnotation as? PSPDFKit.InkAnnotation {
+            paths = inkAnnotation.lines.flatMap({ paths in return paths.map({ path in return path.map({ $0.location }) }) }) ?? []
+            lineWidth = inkAnnotation.lineWidth
+        }
 
         self.updateAnnotation(with: key,
                               transformAnnotation: { original in
                                 var new = original
                                 if rects != original.rects {
                                     new = new.copy(rects: rects, sortIndex: sortIndex)
+                                }
+                                if paths != original.paths {
+                                    new = new.copy(paths: paths)
+                                }
+                                if lineWidth != original.lineWidth {
+                                    new = new.copy(lineWidth: lineWidth)
                                 }
                                 if original.text != highlightText {
                                     new = new.copy(text: highlightText)

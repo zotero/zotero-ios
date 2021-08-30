@@ -30,10 +30,11 @@ struct ItemResponse {
     let createdBy: UserResponse?
     let lastModifiedBy: UserResponse?
     let rects: [[Double]]?
+    let paths: [[Double]]?
 
-    init(rawType: String, key: String, library: LibraryResponse, parentKey: String?, collectionKeys: Set<String>, links: LinksResponse?,
-         parsedDate: String?, isTrash: Bool, version: Int, dateModified: Date, dateAdded: Date, fields: [String: String], tags: [TagResponse],
-         creators: [CreatorResponse], relations: [String: Any], createdBy: UserResponse?, lastModifiedBy: UserResponse?, rects: [[Double]]?) {
+    init(rawType: String, key: String, library: LibraryResponse, parentKey: String?, collectionKeys: Set<String>, links: LinksResponse?, parsedDate: String?, isTrash: Bool, version: Int,
+         dateModified: Date, dateAdded: Date, fields: [String: String], tags: [TagResponse], creators: [CreatorResponse], relations: [String: Any], createdBy: UserResponse?,
+         lastModifiedBy: UserResponse?, rects: [[Double]]?, paths: [[Double]]?) {
         self.rawType = rawType
         self.key = key
         self.library = library
@@ -53,6 +54,7 @@ struct ItemResponse {
         self.createdBy = createdBy
         self.lastModifiedBy = lastModifiedBy
         self.rects = rects
+        self.paths = paths
     }
 
     init(response: [String: Any], schemaController: SchemaController) throws {
@@ -77,16 +79,17 @@ struct ItemResponse {
 
         switch itemType {
         case ItemTypes.annotation:
-            try self.init(key: key, library: library, links: links, parsedDate: parsedDate, createdBy: createdBy, lastModifiedBy: lastModifiedBy,
-                          version: version, annotationData: data, schemaController: schemaController)
+            try self.init(key: key, library: library, links: links, parsedDate: parsedDate, createdBy: createdBy, lastModifiedBy: lastModifiedBy, version: version, annotationData: data,
+                          schemaController: schemaController)
         default:
-            try self.init(key: key, rawType: itemType, library: library, links: links, parsedDate: parsedDate, createdBy: createdBy,
-                          lastModifiedBy: lastModifiedBy, version: version, data: data, schemaController: schemaController)
+            try self.init(key: key, rawType: itemType, library: library, links: links, parsedDate: parsedDate, createdBy: createdBy, lastModifiedBy: lastModifiedBy, version: version, data: data,
+                          schemaController: schemaController)
         }
     }
 
-    private init(key: String, rawType: String, library: LibraryResponse, links: LinksResponse?, parsedDate: String?, createdBy: UserResponse?,
-                 lastModifiedBy: UserResponse?, version: Int, data: [String: Any], schemaController: SchemaController) throws {
+    // Init any item type except annotation
+    private init(key: String, rawType: String, library: LibraryResponse, links: LinksResponse?, parsedDate: String?, createdBy: UserResponse?, lastModifiedBy: UserResponse?, version: Int,
+                 data: [String: Any], schemaController: SchemaController) throws {
         let dateAdded = data["dateAdded"] as? String
         let dateModified = data["dateModified"] as? String
         let tags = (data["tags"] as? [[String: Any]]) ?? []
@@ -111,6 +114,7 @@ struct ItemResponse {
         self.createdBy = createdBy
         self.lastModifiedBy = lastModifiedBy
         self.rects = nil
+        self.paths = nil
 
         // Attachment with link mode "embedded_image" always needs a parent assigned
         if rawType == ItemTypes.attachment,
@@ -120,13 +124,14 @@ struct ItemResponse {
         }
     }
 
-    private init(key: String, library: LibraryResponse, links: LinksResponse?, parsedDate: String?, createdBy: UserResponse?,
-                 lastModifiedBy: UserResponse?, version: Int, annotationData data: [String: Any], schemaController: SchemaController) throws {
+    // Init annotation
+    private init(key: String, library: LibraryResponse, links: LinksResponse?, parsedDate: String?, createdBy: UserResponse?, lastModifiedBy: UserResponse?, version: Int,
+                 annotationData data: [String: Any], schemaController: SchemaController) throws {
         let dateAdded = data["dateAdded"] as? String
         let dateModified = data["dateModified"] as? String
         let tags = (data["tags"] as? [[String: Any]]) ?? []
 
-        let (fields, rects) = try ItemResponse.parseFields(from: data, rawType: ItemTypes.annotation, key: key, schemaController: schemaController)
+        let (fields, rects, paths) = try ItemResponse.parseFields(from: data, rawType: ItemTypes.annotation, key: key, schemaController: schemaController)
 
         self.rawType = ItemTypes.annotation
         self.key = key
@@ -147,6 +152,7 @@ struct ItemResponse {
         self.createdBy = createdBy
         self.lastModifiedBy = lastModifiedBy
         self.rects = rects
+        self.paths = paths
     }
 
     init(translatorResponse response: [String: Any], schemaController: SchemaController) throws {
@@ -177,6 +183,7 @@ struct ItemResponse {
         self.createdBy = nil
         self.lastModifiedBy = nil
         self.rects = nil
+        self.paths = nil
     }
 
     func copy(libraryId: LibraryIdentifier, collectionKeys: Set<String>, addedTags: [TagResponse]) -> ItemResponse {
@@ -198,7 +205,8 @@ struct ItemResponse {
                             relations: self.relations,
                             createdBy: self.createdBy,
                             lastModifiedBy: self.lastModifiedBy,
-                            rects: self.rects)
+                            rects: self.rects,
+                            paths: self.paths)
     }
 
     var copyWithoutTags: ItemResponse {
@@ -219,7 +227,8 @@ struct ItemResponse {
                             relations: self.relations,
                             createdBy: self.createdBy,
                             lastModifiedBy: self.lastModifiedBy,
-                            rects: self.rects)
+                            rects: self.rects,
+                            paths: self.paths)
     }
 
     var copyWithAutomaticTags: ItemResponse {
@@ -240,7 +249,8 @@ struct ItemResponse {
                             relations: self.relations,
                             createdBy: self.createdBy,
                             lastModifiedBy: self.lastModifiedBy,
-                            rects: self.rects)
+                            rects: self.rects,
+                            paths: self.paths)
     }
 
     /// Parses field values from item data for given type.
@@ -251,10 +261,11 @@ struct ItemResponse {
     /// - parameter ignoreUnknownFields: If set to `false`, when an unknown field is encountered during parsing, an exception `Error.unknownField` is thrown. Otherwise the field is silently ignored and parsing continues.
     /// - returns: Parsed dictionary of fields with their values.
     private static func parseFields(from data: [String: Any], rawType: String, key: String, schemaController: SchemaController,
-                                    ignoreUnknownFields: Bool = false) throws -> (fields: [String: String], rects: [[Double]]?) {
+                                    ignoreUnknownFields: Bool = false) throws -> (fields: [String: String], rects: [[Double]]?, paths: [[Double]]?) {
         let excludedKeys = FieldKeys.Item.knownNonFieldKeys
         var fields: [String: String] = [:]
         var rects: [[Double]]?
+        var paths: [[Double]]?
 
         guard let schemaFields = schemaController.fields(for: rawType) else { throw SchemaError.missingSchemaFields(itemType: rawType) }
 
@@ -278,9 +289,13 @@ struct ItemResponse {
             switch object.key {
             case FieldKeys.Item.Annotation.position:
                 // Annotations have `annotationPosition` which is a JSON string, so the string needs to be decoded and stored as proper field values
-                let (index, newRects) = try self.parsePosition(from: value, key: key)
-                fields[FieldKeys.Item.Annotation.pageIndex] = "\(index)"
+                let (pageIndex, newRects, newPaths, lineWidth) = try self.parsePosition(from: value, key: key)
                 rects = newRects
+                paths = newPaths
+                fields[FieldKeys.Item.Annotation.pageIndex] = "\(pageIndex)"
+                if let lineWidth = lineWidth {
+                    fields[FieldKeys.Item.Annotation.lineWidth] = String(format: "%.3f", lineWidth.rounded(to: 3))
+                }
             case FieldKeys.Item.accessDate:
                 if value == "CURRENT_TIMESTAMP" {
                     value = Formatter.iso8601.string(from: Date())
@@ -291,19 +306,15 @@ struct ItemResponse {
             }
         }
 
-        try self.validate(fields: fields, rects: rects, itemType: rawType, key: key)
+        try self.validate(fields: fields, itemType: rawType, key: key)
 
-        return (fields, rects)
+        return (fields, rects, paths)
     }
 
-    private static func validate(fields: [String: String], rects: [[Double]]?, itemType: String, key: String) throws {
+    private static func validate(fields: [String: String], itemType: String, key: String) throws {
         switch itemType {
         case ItemTypes.annotation:
-            // Rects and pageIndex are validated in `parsePosition(from:key:)` where we have access to their original `String` value.
-            // Here we just check whether they are available/
-            if rects == nil {
-                throw SchemaError.missingField(key: key, field: FieldKeys.Item.Annotation.rects, itemType: itemType)
-            }
+            // `position` parameters are validated in `parsePosition(from:key:)` where we have access to their original `String` value.
             guard let rawType = fields[FieldKeys.Item.Annotation.type] else {
                 throw SchemaError.missingField(key: key, field: FieldKeys.Item.Annotation.type, itemType: itemType)
             }
@@ -313,25 +324,27 @@ struct ItemResponse {
 
             let mandatoryFields = FieldKeys.Item.Annotation.fields(for: type)
             for field in mandatoryFields {
-                if let value = fields[field] {
-                    switch field {
-                    case FieldKeys.Item.Annotation.color:
-                        if !value.starts(with: "#") {
-                            throw SchemaError.invalidValue(value: value, field: field, key: key)
-                        }
-                    case FieldKeys.Item.Annotation.sortIndex:
-                        // Sort index consists of 3 parts separated by "|":
-                        // - 1. page index (5 characters)
-                        // - 2. character offset (6 characters)
-                        // - 3. y position from top (5 characters)
-                        let parts = value.split(separator: "|")
-                        if parts.count != 3 || parts[0].count != 5 || parts[1].count != 6 || parts[2].count != 5 {
-                            throw SchemaError.invalidValue(value: value, field: field, key: key)
-                        }
-                    default: break
-                    }
-                } else {
+                guard let value = fields[field] else {
                     throw SchemaError.missingField(key: key, field: field, itemType: itemType)
+                }
+
+                switch field {
+                case FieldKeys.Item.Annotation.color:
+                    if !value.starts(with: "#") {
+                        throw SchemaError.invalidValue(value: value, field: field, key: key)
+                    }
+
+                case FieldKeys.Item.Annotation.sortIndex:
+                    // Sort index consists of 3 parts separated by "|":
+                    // - 1. page index (5 characters)
+                    // - 2. character offset (6 characters)
+                    // - 3. y position from top (5 characters)
+                    let parts = value.split(separator: "|")
+                    if parts.count != 3 || parts[0].count != 5 || parts[1].count != 6 || parts[2].count != 5 {
+                        throw SchemaError.invalidValue(value: value, field: field, key: key)
+                    }
+
+                default: break
                 }
             }
 
@@ -347,21 +360,31 @@ struct ItemResponse {
         }
     }
 
-    private static func parsePosition(from value: String?, key: String) throws -> (Int, [[Double]]) {
+    private static func parsePosition(from value: String?, key: String) throws -> (pageIndex: Int, rects: [[Double]]?, paths: [[Double]]?, lineWidth: Double?) {
         guard let data = value?.data(using: .utf8),
               let json = (try? JSONSerialization.jsonObject(with: data, options: .allowFragments)) as? [String: Any],
-              let pageIndex = json[FieldKeys.Item.Annotation.pageIndex] as? Int,
-              let rawRects = json[FieldKeys.Item.Annotation.rects],
-              let parsedRects = rawRects as? [[Double]] else {
+              let pageIndex = json[FieldKeys.Item.Annotation.pageIndex] as? Int else {
             throw SchemaError.invalidValue(value: (value ?? ""), field: FieldKeys.Item.Annotation.position, key: key)
         }
 
-        // Rects consist of minX, minY, maxX, maxY coordinates, they can't be empty
-        if parsedRects.isEmpty || parsedRects.first(where: { $0.count != 4 }) != nil {
-            throw SchemaError.invalidValue(value: "\(rawRects)", field: FieldKeys.Item.Annotation.rects, key: key)
+        if let rawRects = json[FieldKeys.Item.Annotation.rects], let parsedRects = rawRects as? [[Double]] {
+            // Rects consist of minX, minY, maxX, maxY coordinates, they can't be empty
+            if parsedRects.isEmpty || parsedRects.first(where: { $0.count != 4 }) != nil {
+                throw SchemaError.invalidValue(value: "\(parsedRects)", field: FieldKeys.Item.Annotation.rects, key: key)
+            }
+            return (pageIndex, parsedRects, nil, nil)
         }
 
-        return (pageIndex, parsedRects)
+        if let rawPaths = json[FieldKeys.Item.Annotation.paths], let parsedPaths = rawPaths as? [[Double]], let lineWidth = json[FieldKeys.Item.Annotation.lineWidth] as? Double {
+            // Paths store points where x and y values follow one after each other, so the coordinates array always has to have even number of coordinates.
+            if parsedPaths.isEmpty || parsedPaths.first(where: { $0.count % 2 != 0 }) != nil {
+                throw SchemaError.invalidValue(value: "\(parsedPaths)", field: FieldKeys.Item.Annotation.paths, key: key)
+            }
+            return (pageIndex, nil, parsedPaths, lineWidth)
+        }
+
+        // If both paths and rects are missing, position of annotation is unknown and therefore invalid.
+        throw SchemaError.invalidValue(value: (value ?? ""), field: FieldKeys.Item.Annotation.position, key: key)
     }
 
     /// Checks whether given field is a known field for given item type.

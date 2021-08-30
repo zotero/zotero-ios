@@ -607,7 +607,7 @@ final class ExtensionStore {
             let webItem = ItemResponse(rawType: ItemTypes.webpage, key: KeyGenerator.newKey, library: LibraryResponse(libraryId: libraryId),
                                        parentKey: nil, collectionKeys: collectionKeys, links: nil, parsedDate: nil, isTrash: false, version: 0,
                                        dateModified: date, dateAdded: date, fields: fields, tags: tags, creators: [], relations: [:], createdBy: nil,
-                                       lastModifiedBy: nil, rects: nil)
+                                       lastModifiedBy: nil, rects: nil, paths: nil)
 
             self.submit(item: webItem, libraryId: libraryId, userId: userId, apiClient: self.apiClient, dbStorage: self.dbStorage,
                         fileStorage: self.fileStorage, schemaController: self.schemaController, dateParser: self.dateParser)

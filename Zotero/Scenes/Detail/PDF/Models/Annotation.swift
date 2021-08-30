@@ -22,6 +22,8 @@ struct Annotation: Identifiable, Equatable {
     let page: Int
     let pageLabel: String
     let rects: [CGRect]
+    let paths: [[CGPoint]]
+    let lineWidth: CGFloat?
     let author: String
     let isAuthor: Bool
     let color: String
@@ -42,13 +44,15 @@ struct Annotation: Identifiable, Equatable {
         return self.boundingBox.insetBy(dx: (AnnotationsConfig.imageAnnotationLineWidth + 1), dy: (AnnotationsConfig.imageAnnotationLineWidth + 1))
     }
 
-    init(key: String, type: AnnotationType, page: Int, pageLabel: String, rects: [CGRect], author: String, isAuthor: Bool, color: String, comment: String,
+    init(key: String, type: AnnotationType, page: Int, pageLabel: String, rects: [CGRect], paths: [[CGPoint]], lineWidth: CGFloat?, author: String, isAuthor: Bool, color: String, comment: String,
          text: String?, sortIndex: String, dateModified: Date, tags: [Tag], didChange: Bool, editability: Editability, isSyncable: Bool) {
         self.key = key
         self.type = type
         self.page = page
         self.pageLabel = pageLabel
         self.rects = rects
+        self.paths = paths
+        self.lineWidth = lineWidth
         self.author = author
         self.isAuthor = isAuthor
         self.color = color
@@ -96,6 +100,8 @@ struct Annotation: Identifiable, Equatable {
                           page: self.page,
                           pageLabel: self.pageLabel,
                           rects: rects,
+                          paths: self.paths,
+                          lineWidth: self.lineWidth,
                           author: self.author,
                           isAuthor: self.isAuthor,
                           color: self.color,
@@ -115,6 +121,8 @@ struct Annotation: Identifiable, Equatable {
                           page: self.page,
                           pageLabel: self.pageLabel,
                           rects: self.rects,
+                          paths: self.paths,
+                          lineWidth: self.lineWidth,
                           author: self.author,
                           isAuthor: self.isAuthor,
                           color: self.color,
@@ -134,6 +142,8 @@ struct Annotation: Identifiable, Equatable {
                           page: self.page,
                           pageLabel: self.pageLabel,
                           rects: self.rects,
+                          paths: self.paths,
+                          lineWidth: self.lineWidth,
                           author: self.author,
                           isAuthor: self.isAuthor,
                           color: self.color,
@@ -153,6 +163,8 @@ struct Annotation: Identifiable, Equatable {
                           page: self.page,
                           pageLabel: self.pageLabel,
                           rects: self.rects,
+                          paths: self.paths,
+                          lineWidth: self.lineWidth,
                           author: self.author,
                           isAuthor: self.isAuthor,
                           color: self.color,
@@ -172,6 +184,8 @@ struct Annotation: Identifiable, Equatable {
                           page: self.page,
                           pageLabel: self.pageLabel,
                           rects: self.rects,
+                          paths: self.paths,
+                          lineWidth: self.lineWidth,
                           author: self.author,
                           isAuthor: self.isAuthor,
                           color: color,
@@ -191,6 +205,8 @@ struct Annotation: Identifiable, Equatable {
                           page: self.page,
                           pageLabel: pageLabel,
                           rects: self.rects,
+                          paths: self.paths,
+                          lineWidth: self.lineWidth,
                           author: self.author,
                           isAuthor: self.isAuthor,
                           color: self.color,
@@ -204,12 +220,14 @@ struct Annotation: Identifiable, Equatable {
                           isSyncable: self.isSyncable)
     }
 
-    func copy(didChange: Bool) -> Annotation {
+    func copy(paths: [[CGPoint]]) -> Annotation {
         return Annotation(key: self.key,
                           type: self.type,
                           page: self.page,
                           pageLabel: self.pageLabel,
                           rects: self.rects,
+                          paths: paths,
+                          lineWidth: self.lineWidth,
                           author: self.author,
                           isAuthor: self.isAuthor,
                           color: self.color,
@@ -218,7 +236,49 @@ struct Annotation: Identifiable, Equatable {
                           sortIndex: self.sortIndex,
                           dateModified: self.dateModified,
                           tags: self.tags,
-                          didChange: false,
+                          didChange: true,
+                          editability: self.editability,
+                          isSyncable: self.isSyncable)
+    }
+
+    func copy(lineWidth: CGFloat?) -> Annotation {
+        return Annotation(key: self.key,
+                          type: self.type,
+                          page: self.page,
+                          pageLabel: self.pageLabel,
+                          rects: self.rects,
+                          paths: self.paths,
+                          lineWidth: lineWidth,
+                          author: self.author,
+                          isAuthor: self.isAuthor,
+                          color: self.color,
+                          comment: self.comment,
+                          text: self.text,
+                          sortIndex: self.sortIndex,
+                          dateModified: self.dateModified,
+                          tags: self.tags,
+                          didChange: true,
+                          editability: self.editability,
+                          isSyncable: self.isSyncable)
+    }
+
+    func copy(didChange: Bool) -> Annotation {
+        return Annotation(key: self.key,
+                          type: self.type,
+                          page: self.page,
+                          pageLabel: self.pageLabel,
+                          rects: self.rects,
+                          paths: self.paths,
+                          lineWidth: self.lineWidth,
+                          author: self.author,
+                          isAuthor: self.isAuthor,
+                          color: self.color,
+                          comment: self.comment,
+                          text: self.text,
+                          sortIndex: self.sortIndex,
+                          dateModified: self.dateModified,
+                          tags: self.tags,
+                          didChange: didChange,
                           editability: self.editability,
                           isSyncable: self.isSyncable)
     }

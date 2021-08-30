@@ -115,6 +115,7 @@ struct StoreItemDbRequest: DbRequest {
         self.syncLinks(data: self.response, item: item, database: database)
         self.syncUsers(createdBy: self.response.createdBy, lastModifiedBy: self.response.lastModifiedBy, item: item, database: database)
         self.sync(rects: self.response.rects ?? [], in: item, database: database)
+        self.sync(paths: self.response.paths ?? [], in: item, database: database)
 
         // Item title depends on item type, creators and fields, so we update derived titles (displayTitle and sortTitle) after everything else synced
         item.updateDerivedTitles()
@@ -175,20 +176,7 @@ struct StoreItemDbRequest: DbRequest {
     }
 
     private func sync(rects: [[Double]], in item: RItem, database: Realm) {
-        // Check whether there are any changes from local state
-        var hasChanges = rects.count != item.rects.count
-        if !hasChanges {
-            for rect in rects {
-                let containsLocally = item.rects.filter("minX == %d and minY == %d and maxX == %d and maxY == %d",
-                                                        rect[0], rect[1], rect[2], rect[3]).first != nil
-                if !containsLocally {
-                    hasChanges = true
-                    break
-                }
-            }
-        }
-
-        guard hasChanges else { return }
+        guard self.rects(rects, differFrom: item.rects) else { return }
 
         database.delete(item.rects)
         for rect in rects {
@@ -198,6 +186,21 @@ struct StoreItemDbRequest: DbRequest {
         }
     }
 
+    private func rects(_ rects: [[Double]], differFrom itemRects: List<RRect>) -> Bool {
+        if rects.count != itemRects.count {
+            return true
+        }
+
+        for rect in rects {
+            // If rect can't be found in item, it must have changed
+            if itemRects.filter("minX == %d and minY == %d and maxX == %d and maxY == %d", rect[0], rect[1], rect[2], rect[3]).first == nil {
+                return true
+            }
+        }
+
+        return false
+    }
+
     private func createRect(from rect: [Double]) -> RRect {
         let rRect = RRect()
         rRect.minX = rect[0]
@@ -205,6 +208,58 @@ struct StoreItemDbRequest: DbRequest {
         rRect.maxX = rect[2]
         rRect.maxY = rect[3]
         return rRect
+    }
+
+    private func sync(paths: [[Double]], in item: RItem, database: Realm) {
+        guard self.paths(paths, differFrom: item.paths) else { return }
+
+        for path in item.paths {
+            database.delete(path.coordinates)
+        }
+        database.delete(item.paths)
+
+        for (idx, path) in paths.enumerated() {
+            let rPath = RPath()
+            rPath.sortIndex = idx
+            database.add(rPath)
+
+            for (idy, value) in path.enumerated() {
+                let rCoordinate = RPathCoordinate()
+                rCoordinate.value = value
+                rCoordinate.sortIndex = idy
+                database.add(rCoordinate)
+                rPath.coordinates.append(rCoordinate)
+            }
+
+            item.paths.append(rPath)
+        }
+    }
+
+    private func paths(_ paths: [[Double]], differFrom itemPaths: List<RPath>) -> Bool {
+        if paths.count != itemPaths.count {
+            return true
+        }
+
+        let sortedPaths = itemPaths.sorted(byKeyPath: "sortIndex")
+
+        for idx in 0..<paths.count {
+            let path = paths[idx]
+            let itemPath = sortedPaths[idx]
+
+            if path.count != itemPath.coordinates.count {
+                return true
+            }
+
+            let sortedCoordinates = itemPath.coordinates.sorted(byKeyPath: "sortIndex")
+
+            for idy in 0..<path.count {
+                if path[idy] != sortedCoordinates[idy].value {
+                    return true
+                }
+            }
+        }
+
+        return false
     }
 
     private func syncParent(key: String?, libraryId: LibraryIdentifier, item: RItem, database: Realm) {

@@ -30,6 +30,7 @@ extension RItemChanges {
     static let creators = RItemChanges(rawValue: 1 << 6)
     static let relations = RItemChanges(rawValue: 1 << 7)
     static let rects = RItemChanges(rawValue: 1 << 8)
+    static let paths = RItemChanges(rawValue: 1 << 9)
     static let all: RItemChanges = [.type, .trash, .parent, .collections, .fields, .tags, .creators, .relations]
 }
 
@@ -41,11 +42,8 @@ final class RItem: Object {
     @objc dynamic var dateAdded: Date = Date(timeIntervalSince1970: 0)
     @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
     @objc dynamic var parent: RItem?
-    @objc dynamic var mainAttachment: RItem?
-    @objc dynamic var fileDownloaded: Bool = false
     @objc dynamic var createdBy: RUser?
     @objc dynamic var lastModifiedBy: RUser?
-    let rects: List<RRect> = List()
 
     let customLibraryKey = RealmOptional<Int>()
     let groupKey = RealmOptional<Int>()
@@ -59,6 +57,11 @@ final class RItem: Object {
 
     // MARK: - Attachment data
     @objc dynamic var backendMd5: String = ""
+    @objc dynamic var mainAttachment: RItem?
+    @objc dynamic var fileDownloaded: Bool = false
+    // MARK: - Annotation data
+    let rects: List<RRect> = List()
+    let paths: List<RPath> = List()
     // MARK: - Derived data
     /// Localized type based on current localization of device, used for sorting
     @objc dynamic var localizedType: String = ""
@@ -95,7 +98,6 @@ final class RItem: Object {
     @objc dynamic var hasPublicationTitle: Bool = false
     /// Sort index for annotations
     @objc dynamic var annotationSortIndex: String = ""
-
     // MARK: - Sync data
     /// Indicates whether the object is trashed locally and needs to be synced with backend
     @objc dynamic var trash: Bool = false

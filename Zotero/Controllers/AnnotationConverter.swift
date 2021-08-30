@@ -46,7 +46,7 @@ struct AnnotationConverter {
 
     static func annotation(from item: RItem, editability: Annotation.Editability, currentUserId: Int, username: String, boundingBoxConverter: AnnotationBoundingBoxConverter) -> Annotation? {
         guard let rawType = item.fieldValue(for: FieldKeys.Item.Annotation.type),
-              let pageIndex = item.fieldValue(for: FieldKeys.Item.Annotation.pageIndex).flatMap({ Int($0) }),
+              let pageIndex = item.fieldValue(for: FieldKeys.Item.Annotation.pageIndex).flatMap(Int.init),
               let pageLabel = item.fieldValue(for: FieldKeys.Item.Annotation.pageLabel),
               let color = item.fieldValue(for: FieldKeys.Item.Annotation.color) else {
             return nil
@@ -87,12 +87,24 @@ struct AnnotationConverter {
         let comment = item.fieldValue(for: FieldKeys.Item.Annotation.comment) ?? ""
         let rects: [CGRect] = item.rects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX), height: ($0.maxY - $0.minY)) })
                                         .compactMap({ boundingBoxConverter.convertFromDb(rect: $0, page: PageIndex(pageIndex)) })
+        var paths: [[CGPoint]] = []
+        for path in item.paths.sorted(byKeyPath: "sortIndex") {
+            guard path.coordinates.count % 2 == 0 else { continue }
+            let sortedCoordinates = path.coordinates.sorted(byKeyPath: "sortIndex")
+            let lines = (0..<(path.coordinates.count / 2)).map({ idx -> CGPoint in
+                return CGPoint(x: sortedCoordinates[idx * 2].value, y: sortedCoordinates[(idx * 2) + 1].value)
+            })
+            paths.append(lines)
+        }
+        let lineWidth = (item.fields.filter(.key(FieldKeys.Item.Annotation.lineWidth)).first?.value).flatMap(Double.init).flatMap(CGFloat.init)
 
         return Annotation(key: item.key,
                           type: type,
                           page: pageIndex,
                           pageLabel: pageLabel,
                           rects: rects,
+                          paths: paths,
+                          lineWidth: lineWidth,
                           author: author,
                           isAuthor: isAuthor,
                           color: color,
@@ -115,8 +127,8 @@ struct AnnotationConverter {
     /// - parameter isNew: Indicating, whether the annotation has just been created.
     /// - parameter username: Username of current user.
     /// - returns: Matching Zotero annotation.
-    static func annotation(from annotation: PSPDFKit.Annotation, color: String, editability: Annotation.Editability, isNew: Bool,
-                           isSyncable: Bool, username: String, boundingBoxConverter: AnnotationBoundingBoxConverter?) -> Annotation? {
+    static func annotation(from annotation: PSPDFKit.Annotation, color: String, editability: Annotation.Editability, isNew: Bool, isSyncable: Bool, username: String,
+                           boundingBoxConverter: AnnotationBoundingBoxConverter?) -> Annotation? {
         guard let document = annotation.document, AnnotationsConfig.supported.contains(annotation.type) else { return nil }
 
         let key = isSyncable ? KeyGenerator.newKey : annotation.uuid
@@ -131,23 +143,37 @@ struct AnnotationConverter {
         let type: AnnotationType
         let rects: [CGRect]
         let text: String?
+        let paths: [[CGPoint]]
+        let lineWidth: CGFloat?
 
         if let annotation = annotation as? PSPDFKit.NoteAnnotation {
             type = .note
             rects = [CGRect(origin: annotation.boundingBox.origin, size: AnnotationsConfig.noteAnnotationSize)]
             text = nil
+            paths = []
+            lineWidth = nil
         } else if let annotation = annotation as? PSPDFKit.HighlightAnnotation {
             type = .highlight
             rects = annotation.rects ?? [annotation.boundingBox]
             text = annotation.markedUpString.trimmingCharacters(in: .whitespacesAndNewlines)
+            paths = []
+            lineWidth = nil
         } else if let annotation = annotation as? PSPDFKit.SquareAnnotation {
             type = .image
             rects = [annotation.boundingBox]
             text = nil
+            paths = []
+            lineWidth = nil
         } else if let annotation = annotation as? PSPDFKit.InkAnnotation {
             type = .ink
-            rects = [annotation.boundingBox]
+            rects = []
             text = nil
+            paths = annotation.lines.flatMap({ lines -> [[CGPoint]] in
+                return lines.map({ group in
+                    return group.map({ $0.location })
+                })
+            }) ?? []
+            lineWidth = annotation.lineWidth
         } else {
             return nil
         }
@@ -157,6 +183,8 @@ struct AnnotationConverter {
                           page: page,
                           pageLabel: pageLabel,
                           rects: rects,
+                          paths: paths,
+                          lineWidth: lineWidth,
                           author: author,
                           isAuthor: isAuthor,
                           color: color,
@@ -274,10 +302,12 @@ struct AnnotationConverter {
     }
 
     private static func inkAnnotation(from annotation: Annotation, type: Kind, color: UIColor) -> PSPDFKit.InkAnnotation {
-        let ink = PSPDFKit.InkAnnotation()
+        let lines = annotation.paths.map({ group in
+            return group.map({ DrawingPoint(cgPoint: $0) })
+        })
+        let ink = PSPDFKit.InkAnnotation(lines: lines)
         ink.color = color
-        ink.boundingBox = annotation.boundingBox
-        ink.lines = [] // TODO
+        ink.lineWidth = annotation.lineWidth ?? 1
         return ink
     }
 }

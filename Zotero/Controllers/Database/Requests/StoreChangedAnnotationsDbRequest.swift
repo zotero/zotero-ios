@@ -55,6 +55,7 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
         self.syncFields(annotation: annotation, in: item, database: database)
         self.sync(tags: annotation.tags, in: item, database: database)
         self.sync(rects: annotation.rects.compactMap({ self.boundingBoxConverter.convertToDb(rect: $0, page: UInt(annotation.page)) }), in: item, database: database)
+        self.sync(paths: annotation.paths, in: item, database: database)
 
         if !item.changedFields.isEmpty {
             item.changeType = .user
@@ -73,6 +74,8 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
                 newValue = annotation.comment
             case FieldKeys.Item.Annotation.pageIndex:
                 newValue = "\(annotation.page)"
+            case FieldKeys.Item.Annotation.lineWidth:
+                newValue = annotation.lineWidth.flatMap({ String(format: "%.3f", $0.rounded(to: 3)) }) ?? ""
             case FieldKeys.Item.Annotation.pageLabel:
                 newValue = annotation.pageLabel
             case FieldKeys.Item.Annotation.sortIndex:
@@ -97,20 +100,7 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
     }
 
     private func sync(rects: [CGRect], in item: RItem, database: Realm) {
-        // Check whether there are any changes from local state
-        var hasChanges = rects.count != item.rects.count
-        if !hasChanges {
-            for rect in rects {
-                let containsLocally = item.rects.filter("minX == %d and minY == %d and maxX == %d and maxY == %d",
-                                                        rect.minX, rect.minY, rect.maxX, rect.maxY).first != nil
-                if !containsLocally {
-                    hasChanges = true
-                    break
-                }
-            }
-        }
-
-        guard hasChanges else { return }
+        guard self.rects(rects, differFrom: item.rects) else { return }
 
         database.delete(item.rects)
         for rect in rects {
@@ -122,6 +112,21 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
         item.changedFields.insert(.rects)
     }
 
+    private func rects(_ rects: [CGRect], differFrom itemRects: List<RRect>) -> Bool {
+        if rects.count != itemRects.count {
+            return true
+        }
+
+        for rect in rects {
+            // If rect can't be found in item, it must have changed
+            if itemRects.filter("minX == %d and minY == %d and maxX == %d and maxY == %d", rect.minX, rect.minY, rect.maxX, rect.maxY).first == nil {
+                return true
+            }
+        }
+
+        return false
+    }
+
     private func createRect(from rect: CGRect) -> RRect {
         let rRect = RRect()
         rRect.minX = Double(rect.minX)
@@ -129,6 +134,66 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
         rRect.maxX = Double(rect.maxX)
         rRect.maxY = Double(rect.maxY)
         return rRect
+    }
+
+    private func sync(paths: [[CGPoint]], in item: RItem, database: Realm) {
+        guard self.paths(paths, differFrom: item.paths) else { return }
+
+        for path in item.paths {
+            database.delete(path.coordinates)
+        }
+        database.delete(item.paths)
+
+        for (idx, path) in paths.enumerated() {
+            let rPath = RPath()
+            rPath.sortIndex = idx
+            database.add(rPath)
+
+            for (idy, point) in path.enumerated() {
+                let rXCoordinate = RPathCoordinate()
+                rXCoordinate.value = Double(point.x)
+                rXCoordinate.sortIndex = idy * 2
+                database.add(rXCoordinate)
+                rPath.coordinates.append(rXCoordinate)
+
+                let rYCoordinate = RPathCoordinate()
+                rYCoordinate.value = Double(point.y)
+                rYCoordinate.sortIndex = (idy * 2) + 1
+                database.add(rYCoordinate)
+                rPath.coordinates.append(rYCoordinate)
+            }
+
+            item.paths.append(rPath)
+        }
+
+        item.changedFields.insert(.paths)
+    }
+
+    private func paths(_ paths: [[CGPoint]], differFrom itemPaths: List<RPath>) -> Bool {
+        if paths.count != itemPaths.count {
+            return true
+        }
+
+        let sortedPaths = itemPaths.sorted(byKeyPath: "sortIndex")
+
+        for idx in 0..<paths.count {
+            let path = paths[idx]
+            let itemPath = sortedPaths[idx]
+
+            if (path.count * 2) != itemPath.coordinates.count {
+                return true
+            }
+
+            let sortedCoordinates = itemPath.coordinates.sorted(byKeyPath: "sortIndex")
+
+            for (idy, point) in path.enumerated() {
+                if Double(point.x) != sortedCoordinates[idy * 2].value || Double(point.y) != sortedCoordinates[(idy * 2) + 1].value {
+                    return true
+                }
+            }
+        }
+
+        return false
     }
 
     private func sync(tags: [Tag], in item: RItem, database: Realm) {
