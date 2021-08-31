@@ -42,6 +42,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier)
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
     func showMissingStyleError()
+    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
 }
 
 protocol DetailItemDetailCoordinatorDelegate: AnyObject {
@@ -58,6 +59,7 @@ protocol DetailItemDetailCoordinatorDelegate: AnyObject {
     func show(error: ItemDetailError, viewModel: ViewModel<ItemDetailActionHandler>)
     func showDataReloaded(completion: @escaping () -> Void)
     func showTrashAttachmentQuestion(trashAction: @escaping () -> Void)
+    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
 }
 
 protocol DetailCreatorEditCoordinatorDelegate: AnyObject {
@@ -134,29 +136,17 @@ final class DetailCoordinator: Coordinator {
         self.controllers = controllers
         self.childCoordinators = []
         self.disposeBag = DisposeBag()
-
-        if let attachmentDownloader = controllers.userControllers?.fileDownloader {
-            attachmentDownloader.observable
-                                .subscribe(onNext: { [weak self] update in
-                                    switch update.kind {
-                                    case .ready:
-                                        self?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
-                                    default: break
-                                    }
-                                })
-                                .disposed(by: self.disposeBag)
-        }
     }
 
     func start(animated: Bool) {
         guard let userControllers = self.controllers.userControllers else { return }
         let controller = self.createItemsViewController(collection: self.collection, library: self.library, dbStorage: userControllers.dbStorage, fileDownloader: userControllers.fileDownloader,
-                                                        citationController: userControllers.citationController, bundledDataStorage: self.controllers.bundledDataStorage)
+                                                        citationController: userControllers.citationController, fileCleanupController: userControllers.fileCleanupController)
         self.navigationController.setViewControllers([controller], animated: animated)
     }
 
     private func createItemsViewController(collection: Collection, library: Library, dbStorage: DbStorage, fileDownloader: AttachmentDownloader,
-                                           citationController: CitationController, bundledDataStorage: DbStorage) -> ItemsViewController {
+                                           citationController: CitationController, fileCleanupController: AttachmentFileCleanupController) -> ItemsViewController {
         let type = self.fetchType(from: collection)
         let state = ItemsState(type: type, library: library, sortType: .default, error: nil)
         let handler = ItemsActionHandler(dbStorage: dbStorage,
@@ -165,7 +155,8 @@ final class DetailCoordinator: Coordinator {
                                          urlDetector: self.controllers.urlDetector,
                                          fileDownloader: fileDownloader,
                                          citationController: citationController,
-                                         bundledDataStorage: bundledDataStorage)
+                                         bundledDataStorage: self.controllers.bundledDataStorage,
+                                         fileCleanupController: fileCleanupController)
         return ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: self.controllers, coordinatorDelegate: self)
     }
 
@@ -187,7 +178,7 @@ final class DetailCoordinator: Coordinator {
         }
     }
 
-    private func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier) {
+    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier) {
         guard let (attachment, library, sourceView, sourceRect) = self.navigationController.viewControllers.reversed()
                                                                       .compactMap({ ($0 as? DetailCoordinatorAttachmentProvider)?.attachment(for: key, parentKey: parentKey, libraryId: libraryId) })
                                                                       .first else { return }

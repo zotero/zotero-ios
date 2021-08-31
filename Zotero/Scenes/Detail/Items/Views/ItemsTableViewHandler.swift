@@ -62,17 +62,39 @@ final class ItemsTableViewHandler: NSObject {
         if state.type.isTrash {
             return [ItemAction(type: .restore), ItemAction(type: .delete)]
         }
-        var actions = [ItemAction(type: .addToCollection), ItemAction(type: .duplicate), ItemAction(type: .trash)]
+
+        var actions: [ItemAction] = []
+
+        // Add citation for valid types
         if !CitationController.invalidItemTypes.contains(item.rawType) {
-            actions.insert(contentsOf: [ItemAction(type: .copyCitation), ItemAction(type: .copyBibliography), ItemAction(type: .share)], at: 0)
+            actions.append(contentsOf: [ItemAction(type: .copyCitation), ItemAction(type: .copyBibliography), ItemAction(type: .share)])
         }
-        if item.rawType == ItemTypes.attachment && item.parent == nil {
-            actions.insert(ItemAction(type: .createParent), at: 0)
+
+        // Add parent creation for standalone attachments
+        if item.rawType == ItemTypes.attachment, item.parent == nil {
+            actions.append(ItemAction(type: .createParent))
         }
-        // Allow removing from collection only if item is in current collection. This can happen when "Show items from subcollection" is enabled.
-        if let key = state.type.collectionKey, item.collections.filter(.key(key)).first != nil, let index = actions.firstIndex(where: { $0.type == .addToCollection }) {
-            actions.insert(ItemAction(type: .removeFromCollection), at: index)
+        
+        // Add download/remove downloaded option for attachments
+        if let accessory = state.itemAccessories[item.key], let location = accessory.attachment?.location {
+            switch location {
+            case .local:
+                actions.append(ItemAction(type: .removeDownload))
+            case .remote:
+                actions.append(ItemAction(type: .download))
+            case .remoteMissing: break
+            }
         }
+
+        actions.append(ItemAction(type: .addToCollection))
+
+        // Add removing from collection only if item is in current collection.
+        if let key = state.type.collectionKey, item.collections.filter(.key(key)).first != nil {
+            actions.append(ItemAction(type: .removeFromCollection))
+        }
+
+        actions.append(contentsOf: [ItemAction(type: .duplicate), ItemAction(type: .trash)])
+
         return actions
     }
 
@@ -115,7 +137,7 @@ final class ItemsTableViewHandler: NSObject {
                 contextualAction.backgroundColor = .systemOrange
             case .removeFromCollection:
                 contextualAction.backgroundColor = .systemPurple
-            case .sort, .filter, .copyCitation, .copyBibliography, .share: break
+            case .sort, .filter, .copyCitation, .copyBibliography, .share, .download, .removeDownload: break
             }
             return contextualAction
         })

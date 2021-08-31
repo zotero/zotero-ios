@@ -10,6 +10,7 @@ import Foundation
 
 enum AttachmentFileDeletedNotification {
     case individual(key: String, parentKey: String?, libraryId: LibraryIdentifier)
+    case allForItems(keys: Set<String>, libraryId: LibraryIdentifier)
     case library(LibraryIdentifier)
     case all
 }

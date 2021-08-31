@@ -140,7 +140,7 @@ final class ItemsToolbarController {
                 item.tag = ItemsToolbarController.barButtonItemEmptyTag
             case .duplicate:
                 item.tag = ItemsToolbarController.barButtonItemSingleTag
-            case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .share: break
+            case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .share, .removeDownload, .download: break
             }
             switch action.type {
             case .addToCollection:
@@ -157,7 +157,7 @@ final class ItemsToolbarController {
                 item.accessibilityLabel = L10n.Accessibility.Items.duplicate
             case .share:
                 item.accessibilityLabel = L10n.Accessibility.Items.share
-            case .sort, .filter, .createParent, .copyCitation, .copyBibliography: break
+            case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .removeDownload, .download: break
             }
             item.rx.tap.subscribe(onNext: { [weak self] _ in
                 guard let `self` = self else { return }

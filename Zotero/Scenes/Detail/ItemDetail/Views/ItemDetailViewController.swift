@@ -383,6 +383,12 @@ final class ItemDetailViewController: UIViewController {
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] update in
                 self?.viewModel.process(action: .updateDownload(update))
+
+                switch update.kind {
+                case .ready:
+                    self?.coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
+                default: break
+                }
             })
             .disposed(by: self.disposeBag)
     }

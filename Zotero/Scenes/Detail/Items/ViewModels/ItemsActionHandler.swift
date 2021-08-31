@@ -26,10 +26,11 @@ struct ItemsActionHandler: ViewModelActionHandler {
     private unowned let fileDownloader: AttachmentDownloader
     private unowned let citationController: CitationController
     private unowned let bundledDataStorage: DbStorage
+    private unowned let fileCleanupController: AttachmentFileCleanupController
     private let disposeBag: DisposeBag
 
     init(dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, urlDetector: UrlDetector, fileDownloader: AttachmentDownloader, citationController: CitationController,
-         bundledDataStorage: DbStorage) {
+         bundledDataStorage: DbStorage, fileCleanupController: AttachmentFileCleanupController) {
         self.backgroundQueue = DispatchQueue.global(qos: .userInitiated)
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
@@ -38,6 +39,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
         self.fileDownloader = fileDownloader
         self.citationController = citationController
         self.bundledDataStorage = bundledDataStorage
+        self.fileCleanupController = fileCleanupController
         self.disposeBag = DisposeBag()
     }
 
@@ -131,7 +133,13 @@ struct ItemsActionHandler: ViewModelActionHandler {
             self.process(downloadUpdate: update, in: viewModel)
 
         case .openAttachment(let attachment, let parentKey):
-            self.process(attachment: attachment, parentKey: parentKey)
+            self.open(attachment: attachment, parentKey: parentKey, in: viewModel)
+
+        case .attachmentOpened(let key):
+            guard viewModel.state.attachmentToOpen == key else { return }
+            self.update(viewModel: viewModel) { state in
+                state.attachmentToOpen = nil
+            }
 
         case .updateAttachments(let notification):
             self.updateDeletedAttachments(notification, in: viewModel)
@@ -141,6 +149,12 @@ struct ItemsActionHandler: ViewModelActionHandler {
 
         case .quickCopyBibliography(let itemIds, let libraryId, let webView):
             self.copyBibliography(itemIds: itemIds, libraryId: libraryId, webView: webView, in: viewModel)
+
+        case .download(let keys):
+            self.downloadAttachments(for: keys, in: viewModel)
+
+        case .removeDownloads(let ids):
+            self.fileCleanupController.delete(.allForItems(ids, viewModel.state.library.identifier), completed: nil)
         }
     }
 
@@ -202,6 +216,14 @@ struct ItemsActionHandler: ViewModelActionHandler {
 
     // MARK: - Attachments
 
+    private func downloadAttachments(for keys: Set<String>, in viewModel: ViewModel<ItemsActionHandler>) {
+        for key in keys {
+            let (progress, _) = self.fileDownloader.data(for: key, libraryId: viewModel.state.library.identifier)
+            guard progress == nil, let attachment = viewModel.state.itemAccessories[key]?.attachment else { return }
+            self.fileDownloader.download(attachment: attachment, parentKey: (attachment.key == key ? nil : key))
+        }
+    }
+
     private func updateDeletedAttachments(_ notification: AttachmentFileDeletedNotification, in viewModel: ViewModel<ItemsActionHandler>) {
         switch notification {
         case .all:
@@ -217,6 +239,19 @@ struct ItemsActionHandler: ViewModelActionHandler {
             // Update all attachment locations to `.remote`.
             self.update(viewModel: viewModel) { state in
                 self.changeAttachmentsToRemoteLocation(in: &state.itemAccessories)
+                state.changes = .attachmentsRemoved
+            }
+
+        case .allForItems(let keys, let libraryId):
+            // Check whether files in this library have been deleted.
+            guard viewModel.state.library.identifier == libraryId else { return }
+
+            self.update(viewModel: viewModel) { state in
+                for key in keys {
+                    guard let accessory = viewModel.state.itemAccessories[key],
+                          let updatedAccessory = accessory.updatedAttachment(update: { attachment in attachment.changed(location: .remote, condition: { $0 == .local }) }) else { continue }
+                    state.itemAccessories[key] = updatedAccessory
+                }
                 state.changes = .attachmentsRemoved
             }
 
@@ -241,11 +276,21 @@ struct ItemsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func process(attachment: Attachment, parentKey: String?) {
+    private func open(attachment: Attachment, parentKey: String?, in viewModel: ViewModel<ItemsActionHandler>) {
         let (progress, _) = self.fileDownloader.data(for: attachment.key, libraryId: attachment.libraryId)
         if progress != nil {
+            if viewModel.state.attachmentToOpen == attachment.key {
+                self.update(viewModel: viewModel) { state in
+                    state.attachmentToOpen = nil
+                }
+            }
+
             self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
         } else {
+            self.update(viewModel: viewModel) { state in
+                state.attachmentToOpen = attachment.key
+            }
+
             self.fileDownloader.download(attachment: attachment, parentKey: parentKey)
         }
     }

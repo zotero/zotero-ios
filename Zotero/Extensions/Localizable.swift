@@ -587,8 +587,12 @@ internal enum L10n {
       internal static let addToCollection = L10n.tr("Localizable", "items.action.add_to_collection")
       /// Create Parent Item
       internal static let createParent = L10n.tr("Localizable", "items.action.create_parent")
+      /// Download
+      internal static let download = L10n.tr("Localizable", "items.action.download")
       /// Duplicate
       internal static let duplicate = L10n.tr("Localizable", "items.action.duplicate")
+      /// Remove Download
+      internal static let removeDownload = L10n.tr("Localizable", "items.action.remove_download")
       /// Remove from Collection
       internal static let removeFromCollection = L10n.tr("Localizable", "items.action.remove_from_collection")
       /// Move to Trash

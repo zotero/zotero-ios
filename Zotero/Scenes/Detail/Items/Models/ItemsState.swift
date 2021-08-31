@@ -49,6 +49,7 @@ struct ItemsState: ViewModelState {
     var updateItemKey: String?
     var processingBibliography: Bool
     var bibliographyError: Error?
+    var attachmentToOpen: String?
 
     init(type: ItemFetchType, library: Library, sortType: ItemsSortType, error: ItemsError?) {
         self.type = type

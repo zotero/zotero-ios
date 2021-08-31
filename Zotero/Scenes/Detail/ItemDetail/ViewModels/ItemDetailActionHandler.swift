@@ -442,25 +442,17 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         switch notification {
         case .all:
             guard viewModel.state.data.attachments.contains(where: { $0.location == .local }) else { return }
-            self.update(viewModel: viewModel) { state in
-                for (index, attachment) in state.data.attachments.enumerated() {
-                    guard let new = attachment.changed(location: .remote, condition: { $0 == .local }) else { continue }
-                    state.data.attachments[index] = new
-                }
-                state.updatedSection = .attachments
-                state.sectionNeedsReload = true
-            }
+            self.setAllAttachmentsAsDeleted(in: viewModel)
 
         case .library(let libraryId):
             guard libraryId == viewModel.state.library.identifier, viewModel.state.data.attachments.contains(where: { $0.location == .local }) else { return }
-            self.update(viewModel: viewModel) { state in
-                for (index, attachment) in state.data.attachments.enumerated() {
-                    guard let new = attachment.changed(location: .remote, condition: { $0 == .local }) else { continue }
-                    state.data.attachments[index] = new
-                }
-                state.updatedSection = .attachments
-                state.sectionNeedsReload = true
-            }
+            self.setAllAttachmentsAsDeleted(in: viewModel)
+
+        case .allForItems(let keys, let libraryId):
+            guard libraryId == viewModel.state.library.identifier,
+                  let key = viewModel.state.type.previewKey,
+                  keys.contains(key) && viewModel.state.data.attachments.contains(where: { $0.location == .local }) else { return }
+            self.setAllAttachmentsAsDeleted(in: viewModel)
 
         case .individual(let key, _, let libraryId):
             guard let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == key && $0.libraryId == libraryId }),
@@ -469,6 +461,17 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 state.data.attachments[index] = new
                 state.updateAttachmentIndex = index
             }
+        }
+    }
+
+    private func setAllAttachmentsAsDeleted(in viewModel: ViewModel<ItemDetailActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            for (index, attachment) in state.data.attachments.enumerated() {
+                guard let new = attachment.changed(location: .remote, condition: { $0 == .local }) else { continue }
+                state.data.attachments[index] = new
+            }
+            state.updatedSection = .attachments
+            state.sectionNeedsReload = true
         }
     }
 

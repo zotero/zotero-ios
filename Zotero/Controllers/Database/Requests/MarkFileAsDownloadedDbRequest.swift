@@ -29,6 +29,21 @@ struct MarkFileAsDownloadedDbRequest: DbRequest {
     }
 }
 
+struct MarkItemsFilesAsNotDownloadedDbRequest: DbRequest {
+    let keys: Set<String>
+    let libraryId: LibraryIdentifier
+
+    var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
+
+    func process(in database: Realm) throws {
+        let items = database.objects(RItem.self).filter(.keys(self.keys, in: self.libraryId)).filter(.item(type: ItemTypes.attachment)).filter(.file(downloaded: true))
+        for item in items {
+            item.fileDownloaded = false
+        }
+    }
+}
+
 struct MarkLibraryFilesAsNotDownloadedDbRequest: DbRequest {
     let libraryId: LibraryIdentifier
 

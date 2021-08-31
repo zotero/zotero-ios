@@ -17,25 +17,28 @@ enum ItemsAction {
     case deleteItemsFromCollection(Set<String>)
     case deleteItems(Set<String>)
     case deselectItem(String)
+    case download(Set<String>)
     case filter([ItemsState.Filter])
     case loadInitialState
     case loadItemToDuplicate(String)
     case moveItems([String], String)
     case observingFailed
+    case removeDownloads(Set<String>)
     case restoreItems(Set<String>)
     case saveNote(String, String, [Tag])
     case search(String)
     case selectItem(String)
-    case toggleSelectionState
     case setSortField(ItemsSortType.Field)
     case startEditing
     case stopEditing
+    case toggleSelectionState
     case toggleSortOrder
     case trashItems(Set<String>)
     case cacheItemAccessory(item: RItem)
     case updateAttachments(AttachmentFileDeletedNotification)
     case updateDownload(AttachmentDownloader.Update)
     case openAttachment(attachment: Attachment, parentKey: String?)
+    case attachmentOpened(String)
     case updateKeys(items: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int])
     case quickCopyBibliography(Set<String>, LibraryIdentifier, WKWebView)
 }
