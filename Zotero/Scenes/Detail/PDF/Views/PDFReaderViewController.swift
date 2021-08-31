@@ -770,20 +770,20 @@ final class PDFReaderViewController: UIViewController {
             .disposed(by: self.disposeBag)
         self.createAreaButton = area
 
-        let ink = CheckboxButton(type: .custom)
-        ink.accessibilityLabel = L10n.Accessibility.Pdf.inkAnnotationTool
-        ink.setImage(UIImage(systemName: "line.diagonal")!.withRenderingMode(.alwaysTemplate), for: .normal)
-        ink.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        ink.rx
-           .controlEvent(.touchDown)
-           .subscribe(onNext: { [weak self] _ in
-               self?.toggle(annotationTool: .ink)
-           })
-           .disposed(by: self.disposeBag)
-        self.createInkButton = ink
+//        let ink = CheckboxButton(type: .custom)
+//        ink.accessibilityLabel = L10n.Accessibility.Pdf.inkAnnotationTool
+//        ink.setImage(UIImage(systemName: "line.diagonal")!.withRenderingMode(.alwaysTemplate), for: .normal)
+//        ink.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
+//        ink.rx
+//           .controlEvent(.touchDown)
+//           .subscribe(onNext: { [weak self] _ in
+//               self?.toggle(annotationTool: .ink)
+//           })
+//           .disposed(by: self.disposeBag)
+//        self.createInkButton = ink
 
 
-        [highlight, note, area, ink].forEach { button in
+        [highlight, note, area].forEach { button in
             button.adjustsImageWhenHighlighted = false
             button.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
             button.selectedTintColor = .white
@@ -811,13 +811,13 @@ final class PDFReaderViewController: UIViewController {
             note.heightAnchor.constraint(equalToConstant: size),
             area.widthAnchor.constraint(equalToConstant: size),
             area.heightAnchor.constraint(equalToConstant: size),
-            ink.widthAnchor.constraint(equalToConstant: size),
-            ink.heightAnchor.constraint(equalToConstant: size),
+//            ink.widthAnchor.constraint(equalToConstant: size),
+//            ink.heightAnchor.constraint(equalToConstant: size),
             picker.widthAnchor.constraint(equalToConstant: size),
             picker.heightAnchor.constraint(equalToConstant: size),
         ])
 
-        return [highlight, note, area, ink, picker]
+        return [highlight, note, area, picker]
     }
 
     private func setupNavigationBar() {

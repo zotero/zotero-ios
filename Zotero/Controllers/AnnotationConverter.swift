@@ -56,6 +56,11 @@ struct AnnotationConverter {
             return nil
         }
 
+        if type == .ink {
+            // TODO: - remove when ink annotations are enabled
+            return nil
+        }
+
         let text = item.fields.filter(.key(FieldKeys.Item.Annotation.text)).first?.value
 
         if type == .highlight && text == nil {
@@ -165,15 +170,17 @@ struct AnnotationConverter {
             paths = []
             lineWidth = nil
         } else if let annotation = annotation as? PSPDFKit.InkAnnotation {
-            type = .ink
-            rects = []
-            text = nil
-            paths = annotation.lines.flatMap({ lines -> [[CGPoint]] in
-                return lines.map({ group in
-                    return group.map({ $0.location })
-                })
-            }) ?? []
-            lineWidth = annotation.lineWidth
+            // TODO: - change when ink annotations are enabled
+//            type = .ink
+//            rects = []
+//            text = nil
+//            paths = annotation.lines.flatMap({ lines -> [[CGPoint]] in
+//                return lines.map({ group in
+//                    return group.map({ $0.location })
+//                })
+//            }) ?? []
+//            lineWidth = annotation.lineWidth
+            return nil
         } else {
             return nil
         }
