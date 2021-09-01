@@ -145,8 +145,7 @@ struct StoreItemDbRequest: DbRequest {
                 field.key = key
                 field.baseKey = self.schemaController.baseKey(for: data.rawType, field: key)
                 field.value = value
-                field.item = item
-                database.add(field)
+                item.fields.append(field)
             }
 
             switch (field.key, field.baseKey) {
@@ -180,8 +179,11 @@ struct StoreItemDbRequest: DbRequest {
 
         database.delete(item.rects)
         for rect in rects {
-            let rRect = self.createRect(from: rect)
-            database.add(rRect)
+            let rRect = RRect()
+            rRect.minX = rect[0]
+            rRect.minY = rect[1]
+            rRect.maxX = rect[2]
+            rRect.maxY = rect[3]
             item.rects.append(rRect)
         }
     }
@@ -201,15 +203,6 @@ struct StoreItemDbRequest: DbRequest {
         return false
     }
 
-    private func createRect(from rect: [Double]) -> RRect {
-        let rRect = RRect()
-        rRect.minX = rect[0]
-        rRect.minY = rect[1]
-        rRect.maxX = rect[2]
-        rRect.maxY = rect[3]
-        return rRect
-    }
-
     private func sync(paths: [[Double]], in item: RItem, database: Realm) {
         guard self.paths(paths, differFrom: item.paths) else { return }
 
@@ -221,13 +214,11 @@ struct StoreItemDbRequest: DbRequest {
         for (idx, path) in paths.enumerated() {
             let rPath = RPath()
             rPath.sortIndex = idx
-            database.add(rPath)
 
             for (idy, value) in path.enumerated() {
                 let rCoordinate = RPathCoordinate()
                 rCoordinate.value = value
                 rCoordinate.sortIndex = idy
-                database.add(rCoordinate)
                 rPath.coordinates.append(rCoordinate)
             }
 
@@ -370,8 +361,7 @@ struct StoreItemDbRequest: DbRequest {
             creator.name = name
             creator.orderId = object.offset
             creator.primary = self.schemaController.creatorIsPrimary(creator.rawType, itemType: item.rawType)
-            creator.item = item
-            database.add(creator)
+            item.creators.append(creator)
         }
 
         item.updateCreatorSummary()
@@ -400,8 +390,7 @@ struct StoreItemDbRequest: DbRequest {
             } else {
                 relation = RRelation()
                 relation.type = key
-                relation.item = item
-                database.add(relation)
+                item.relations.append(relation)
             }
 
             relation.urlString = value
@@ -434,8 +423,7 @@ struct StoreItemDbRequest: DbRequest {
         link.href = data.href
         link.title = data.title ?? ""
         link.length = data.length ?? 0
-        link.item = item
-        database.add(link)
+        item.links.append(link)
     }
 
     private func syncUsers(createdBy: UserResponse?, lastModifiedBy: UserResponse?, item: RItem, database: Realm) {

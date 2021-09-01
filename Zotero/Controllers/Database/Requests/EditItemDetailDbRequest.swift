@@ -55,7 +55,6 @@ struct EditItemDetailDbRequest: DbRequest {
             rCreator.rawType = creator.type
             rCreator.orderId = offset
             rCreator.primary = creator.primary
-            rCreator.item = item
 
             switch creator.namePresentation {
             case .full:
@@ -68,7 +67,7 @@ struct EditItemDetailDbRequest: DbRequest {
                 rCreator.lastName = creator.lastName
             }
 
-            database.add(rCreator)
+            item.creators.append(rCreator)
         }
 
         item.updateCreatorSummary()
@@ -115,8 +114,7 @@ struct EditItemDetailDbRequest: DbRequest {
                 let rField = RItemField()
                 rField.key = field.key
                 rField.baseKey = field.baseField
-                rField.item = item
-                database.add(rField)
+                item.fields.append(rField)
                 fieldToChange = rField
             }
 

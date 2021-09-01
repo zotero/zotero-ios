@@ -10,13 +10,12 @@ import Foundation
 
 import RealmSwift
 
-final class RLink: Object {
+final class RLink: EmbeddedObject {
     @Persisted var type: String
     @Persisted var href: String
     @Persisted var contentType: String
     @Persisted var title: String
     @Persisted var length: Int
-    @Persisted var item: RItem?
 
     var linkType: LinkType? {
         return LinkType(rawValue: self.type)

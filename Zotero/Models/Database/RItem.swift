@@ -50,12 +50,12 @@ final class RItem: Object {
     @Persisted var customLibraryKey: Int?
     @Persisted var groupKey: Int?
     @Persisted(originProperty: "items") var collections: LinkingObjects<RCollection>
-    @Persisted(originProperty: "item") var fields: LinkingObjects<RItemField>
+    @Persisted var fields: List<RItemField>
     @Persisted(originProperty: "parent") var children: LinkingObjects<RItem>
     @Persisted(originProperty: "item") var tags: LinkingObjects<RTypedTag>
-    @Persisted(originProperty: "item") var creators: LinkingObjects<RCreator>
-    @Persisted(originProperty: "item") var links: LinkingObjects<RLink>
-    @Persisted(originProperty: "item") var relations: LinkingObjects<RRelation>
+    @Persisted var creators: List<RCreator>
+    @Persisted var links: List<RLink>
+    @Persisted var relations: List<RRelation>
 
     // MARK: - Attachment data
     @Persisted var backendMd5: String
@@ -229,10 +229,9 @@ final class RItem: Object {
     }
 }
 
-final class RItemField: Object {
+final class RItemField: EmbeddedObject {
     @Persisted var key: String
     @Persisted var baseKey: String?
     @Persisted var value: String
-    @Persisted var item: RItem?
     @Persisted var changed: Bool
 }

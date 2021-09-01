@@ -10,14 +10,13 @@ import Foundation
 
 import RealmSwift
 
-final class RCreator: Object {
+final class RCreator: EmbeddedObject {
     @Persisted var rawType: String
     @Persisted var firstName: String
     @Persisted var lastName: String
     @Persisted var name: String
     @Persisted var orderId: Int
     @Persisted var primary: Bool
-    @Persisted var item: RItem?
 
     var summaryName: String {
         if !self.name.isEmpty {

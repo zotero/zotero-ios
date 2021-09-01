@@ -49,8 +49,7 @@ struct CreateNoteDbRequest: DbResponseRequest {
         noteField.baseKey = nil
         noteField.value = self.note.text
         noteField.changed = true
-        noteField.item = item
-        database.add(noteField)
+        item.fields.append(noteField)
 
         // Create tags
         let allTags = database.objects(RTag.self).filter(.library(with: self.libraryId))

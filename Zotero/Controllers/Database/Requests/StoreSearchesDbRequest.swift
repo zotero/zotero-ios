@@ -57,8 +57,7 @@ struct StoreSearchesDbRequest: DbRequest {
             condition.operator = object.element.operator
             condition.value = object.element.value
             condition.sortId = object.offset
-            condition.search = search
-            database.add(condition)
+            search.conditions.append(condition)
         }
     }
 }

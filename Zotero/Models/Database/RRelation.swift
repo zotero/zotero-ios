@@ -10,8 +10,7 @@ import Foundation
 
 import RealmSwift
 
-final class RRelation: Object {
+final class RRelation: EmbeddedObject {
     @Persisted var type: String
     @Persisted var urlString: String
-    @Persisted var item: RItem?
 }

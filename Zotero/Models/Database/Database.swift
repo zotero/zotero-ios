@@ -11,7 +11,7 @@ import Foundation
 import RealmSwift
 
 struct Database {
-    private static let schemaVersion: UInt64 = 29
+    private static let schemaVersion: UInt64 = 32
 
     static func mainConfiguration(url: URL, fileStorage: FileStorage) -> Realm.Configuration {
         let shouldDelete = shouldDeleteRealm(url: url)
@@ -47,7 +47,80 @@ struct Database {
             if schemaVersion < 24 {
                 Database.migrateMainAttachmentDownloaded(migration: migration, fileStorage: fileStorage)
             }
+            if schemaVersion < 32 {
+                Database.migrateEmbeddedObjects(migration: migration)
+            }
         }
+    }
+
+    private struct KeyedLibraryId: Hashable {
+        let key: String
+        let customLibraryKey: Int?
+        let groupKey: Int?
+    }
+
+    private static func migrateEmbeddedObjects(migration: Migration) {
+        var orphaned: [MigrationObject] = []
+        let creators = self.groupedEmbeddedObjects(ofType: "RCreator", parentPropertyName: "item", orphaned: &orphaned, migration: migration)
+        let links = self.groupedEmbeddedObjects(ofType: "RLink", parentPropertyName: "item", orphaned: &orphaned, migration: migration)
+        let fields = self.groupedEmbeddedObjects(ofType: "RItemField", parentPropertyName: "item", orphaned: &orphaned, migration: migration)
+        let relations = self.groupedEmbeddedObjects(ofType: "RRelation", parentPropertyName: "item", orphaned: &orphaned, migration: migration)
+
+        let setObjectsToList: ([MigrationObject]?, Any?) -> Void = { objects, list in
+            if let objects = objects, let list = list as? List<MigrationObject> {
+                list.append(objectsIn: objects)
+            }
+        }
+
+        migration.enumerateObjects(ofType: "RItem") { old, new in
+            guard let old = old, let key = old["key"] as? String else { return }
+
+            let id = KeyedLibraryId(key: key, customLibraryKey: (old["customLibraryKey"] as? Int), groupKey: (old["groupKey"] as? Int))
+
+            setObjectsToList(creators[id], new?["creators"])
+            setObjectsToList(links[id], new?["links"])
+            setObjectsToList(fields[id], new?["fields"])
+            setObjectsToList(relations[id], new?["relations"])
+        }
+
+        let conditions = self.groupedEmbeddedObjects(ofType: "RCondition", parentPropertyName: "search", orphaned: &orphaned, migration: migration)
+
+        migration.enumerateObjects(ofType: "RSearch") { old, new in
+            guard let old = old, let key = old["key"] as? String else { return }
+
+            let id = KeyedLibraryId(key: key, customLibraryKey: (old["customLibraryKey"] as? Int), groupKey: (old["groupKey"] as? Int))
+            setObjectsToList(conditions[id], new?["conditions"])
+        }
+
+        for object in orphaned {
+            migration.delete(object)
+        }
+    }
+
+    private static func groupedEmbeddedObjects(ofType type: String, parentPropertyName: String, orphaned: inout [MigrationObject], migration: Migration) -> [KeyedLibraryId: [MigrationObject]] {
+        var objects: [KeyedLibraryId: [MigrationObject]] = [:]
+
+        migration.enumerateObjects(ofType: type) { old, new in
+            guard let old = old, let new = new else { return }
+
+            guard let parent = old[parentPropertyName] as? MigrationObject else {
+                orphaned.append(new)
+                return
+            }
+
+            guard let key = parent["key"] as? String else { return }
+
+            let itemId = KeyedLibraryId(key: key, customLibraryKey: (parent["customLibraryKey"] as? Int), groupKey: (parent["groupKey"] as? Int))
+
+            if var itemObjects = objects[itemId] {
+                itemObjects.append(new)
+                objects[itemId] = itemObjects
+            } else {
+                objects[itemId] = [new]
+            }
+        }
+
+        return objects
     }
 
     private static func migrateCollapsibleCollections(migration: Migration) {

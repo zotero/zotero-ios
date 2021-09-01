@@ -17,14 +17,13 @@ struct InitializeCustomLibrariesDbRequest: DbResponseRequest {
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Bool {
-        let (isNew, object) = try database.autocreatedObject(ofType: RCustomLibrary.self, forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
+        guard database.object(ofType: RCustomLibrary.self, forPrimaryKey: RCustomLibraryType.myLibrary.rawValue) == nil else { return false }
 
-        guard isNew else { return false }
-
-        object.orderId = 1
-        let versions = RVersions()
-        database.add(versions)
-        object.versions = versions
+        let library = RCustomLibrary()
+        library.rawType = RCustomLibraryType.myLibrary.rawValue
+        library.orderId = 1
+        library.versions = RVersions()
+        database.add(library)
 
         return true
     }

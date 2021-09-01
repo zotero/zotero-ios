@@ -54,8 +54,7 @@ struct CreateItemDbRequest: DbResponseRequest {
             rCreator.name = creator.name
             rCreator.orderId = offset
             rCreator.primary = creator.primary
-            rCreator.item = item
-            database.add(rCreator)
+            item.creators.append(rCreator)
         }
         item.updateCreatorSummary()
 
@@ -69,10 +68,9 @@ struct CreateItemDbRequest: DbResponseRequest {
             let rField = RItemField()
             rField.key = field.key
             rField.baseKey = field.baseField
-            rField.item = item
             rField.value = field.value
             rField.changed = true
-            database.add(rField)
+            item.fields.append(rField)
             
             if field.key == FieldKeys.Item.title || field.baseField == FieldKeys.Item.title {
                 item.baseTitle = field.value

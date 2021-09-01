@@ -114,8 +114,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
             field.baseKey = nil
             field.value = value
             field.changed = true
-            field.item = item
-            database.add(field)
+            item.fields.append(field)
         }
 
         // Collections

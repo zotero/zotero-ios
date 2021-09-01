@@ -26,7 +26,7 @@ struct ItemTitleFormatter {
         }
     }
 
-    private static func letterDisplayTitle(from baseTitle: String, creators: LinkingObjects<RCreator>) -> String {
+    private static func letterDisplayTitle(from baseTitle: String, creators: List<RCreator>) -> String {
         guard baseTitle.isEmpty else { return baseTitle }
 
         let names = separatedCreators(from: creators.filter("rawType == %@", "recipient"), limit: nameCountLimit)
@@ -37,7 +37,7 @@ struct ItemTitleFormatter {
         return "[Letter to \(names)]"
     }
 
-    private static func interviewDisplayTitle(from baseTitle: String, creators: LinkingObjects<RCreator>) -> String {
+    private static func interviewDisplayTitle(from baseTitle: String, creators: List<RCreator>) -> String {
         guard baseTitle.isEmpty else { return baseTitle }
 
         let names = separatedCreators(from: creators.filter("rawType == %@", "interviewer"), limit: nameCountLimit)
@@ -85,7 +85,7 @@ struct ItemTitleFormatter {
         return names
     }
 
-    private static func caseDisplayTitle(from baseTitle: String, fields: LinkingObjects<RItemField>, creators: LinkingObjects<RCreator>) -> String {
+    private static func caseDisplayTitle(from baseTitle: String, fields: List<RItemField>, creators: List<RCreator>) -> String {
         if !baseTitle.isEmpty {
             var title = baseTitle
             if let field = fields.filter("key = %@", FieldKeys.Item.reporter).first, !field.value.isEmpty {

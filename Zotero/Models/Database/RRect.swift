@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-final class RRect: Object {
+final class RRect: EmbeddedObject {
     @Persisted var minX: Double
     @Persisted var minY: Double
     @Persisted var maxX: Double

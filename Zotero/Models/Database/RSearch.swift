@@ -32,7 +32,7 @@ final class RSearch: Object {
     @Persisted var dateModified: Date
     @Persisted var customLibraryKey: Int?
     @Persisted var groupKey: Int?
-    @Persisted(originProperty: "search") var conditions: LinkingObjects<RCondition>
+    @Persisted var conditions: List<RCondition>
 
     // MARK: - Sync data
     /// Indicates local version of object
@@ -65,10 +65,9 @@ final class RSearch: Object {
     }
 }
 
-final class RCondition: Object {
-    @objc dynamic var condition: String = ""
-    @objc dynamic var `operator`: String = ""
-    @objc dynamic var value: String = ""
-    @objc dynamic var sortId: Int = 0
-    @objc dynamic var search: RSearch?
+final class RCondition: EmbeddedObject {
+    @Persisted var condition: String
+    @Persisted var `operator`: String
+    @Persisted var value: String
+    @Persisted var sortId: Int
 }

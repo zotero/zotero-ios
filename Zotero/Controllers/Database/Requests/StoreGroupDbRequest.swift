@@ -18,7 +18,16 @@ struct StoreGroupDbRequest: DbRequest {
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
-        let group = try database.autocreatedObject(ofType: RGroup.self, forPrimaryKey: self.response.identifier).1
+        let group: RGroup
+
+        if let _group = database.object(ofType: RGroup.self, forPrimaryKey: self.response.identifier) {
+            group = _group
+        } else {
+            group = RGroup()
+            group.identifier = self.response.identifier
+            group.versions = RVersions()
+            database.add(group)
+        }
 
         let canEditMetadata: Bool
         let canEditFiles: Bool
@@ -54,11 +63,5 @@ struct StoreGroupDbRequest: DbRequest {
         group.version = self.response.version
         group.syncState = .synced
         group.isLocalOnly = false
-
-        if group.versions == nil {
-            let versions = RVersions()
-            database.add(versions)
-            group.versions = versions
-        }
     }
 }

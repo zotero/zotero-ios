@@ -104,8 +104,11 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
 
         database.delete(item.rects)
         for rect in rects {
-            let rRect = self.createRect(from: rect)
-            database.add(rRect)
+            let rRect = RRect()
+            rRect.minX = Double(rect.minX)
+            rRect.minY = Double(rect.minY)
+            rRect.maxX = Double(rect.maxX)
+            rRect.maxY = Double(rect.maxY)
             item.rects.append(rRect)
         }
 
@@ -127,15 +130,6 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
         return false
     }
 
-    private func createRect(from rect: CGRect) -> RRect {
-        let rRect = RRect()
-        rRect.minX = Double(rect.minX)
-        rRect.minY = Double(rect.minY)
-        rRect.maxX = Double(rect.maxX)
-        rRect.maxY = Double(rect.maxY)
-        return rRect
-    }
-
     private func sync(paths: [[CGPoint]], in item: RItem, database: Realm) {
         guard self.paths(paths, differFrom: item.paths) else { return }
 
@@ -147,19 +141,16 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
         for (idx, path) in paths.enumerated() {
             let rPath = RPath()
             rPath.sortIndex = idx
-            database.add(rPath)
 
             for (idy, point) in path.enumerated() {
                 let rXCoordinate = RPathCoordinate()
                 rXCoordinate.value = Double(point.x)
                 rXCoordinate.sortIndex = idy * 2
-                database.add(rXCoordinate)
                 rPath.coordinates.append(rXCoordinate)
 
                 let rYCoordinate = RPathCoordinate()
                 rYCoordinate.value = Double(point.y)
                 rYCoordinate.sortIndex = (idy * 2) + 1
-                database.add(rYCoordinate)
                 rPath.coordinates.append(rYCoordinate)
             }
 
@@ -263,9 +254,7 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
                 rField.value = annotationType.rawValue
             }
             rField.changed = true
-            database.add(rField)
-
-            rField.item = item
+            item.fields.append(rField)
         }
     }
 }

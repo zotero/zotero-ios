@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-final class RVersions: Object {
+final class RVersions: EmbeddedObject {
     @Persisted var collections: Int
     @Persisted var items: Int
     @Persisted var trash: Int

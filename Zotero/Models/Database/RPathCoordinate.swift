@@ -10,12 +10,12 @@ import Foundation
 
 import RealmSwift
 
-final class RPath: Object {
+final class RPath: EmbeddedObject {
     @Persisted var sortIndex: Int
     @Persisted var coordinates: List<RPathCoordinate>
 }
 
-final class RPathCoordinate: Object {
+final class RPathCoordinate: EmbeddedObject {
     @Persisted var value: Double
     @Persisted var sortIndex: Int
 }

@@ -50,27 +50,8 @@ extension RItem: Deletable {
             }
             database.delete(self.children)
         }
-        if !self.links.isInvalidated {
-            database.delete(self.links)
-        }
-        if !self.relations.isInvalidated {
-            database.delete(self.relations)
-        }
-        if !self.creators.isInvalidated {
-            database.delete(self.creators)
-        }
-        if !self.rects.isInvalidated {
-            database.delete(self.rects)
-        }
         if !self.tags.isInvalidated {
             database.delete(self.tags)
-        }
-        if !self.paths.isInvalidated {
-            for path in self.paths {
-                guard !path.isInvalidated && !path.coordinates.isInvalidated else { continue }
-                database.delete(path.coordinates)
-            }
-            database.delete(self.paths)
         }
 
         if let createdByUser = self.createdBy, !createdByUser.isInvalidated, let lastModifiedByUser = self.lastModifiedBy, !lastModifiedByUser.isInvalidated,
@@ -79,10 +60,10 @@ extension RItem: Deletable {
            createdByUser.modifiedBy.count == 1 {
             database.delete(createdByUser)
         } else {
-            if let user = self.createdBy, !user.isInvalidated, user.createdBy.count == 1 && user.modifiedBy.isEmpty {
+            if let user = self.createdBy, !user.isInvalidated, user.createdBy.count == 1 && (user.modifiedBy.isInvalidated || user.modifiedBy.isEmpty) {
                 database.delete(user)
             }
-            if let user = self.lastModifiedBy, !user.isInvalidated, user.createdBy.isEmpty && user.modifiedBy.count == 1 {
+            if let user = self.lastModifiedBy, !user.isInvalidated, (user.createdBy.isInvalidated || user.createdBy.isEmpty) && user.modifiedBy.count == 1 {
                 database.delete(user)
             }
         }
@@ -136,9 +117,5 @@ extension RItem: Deletable {
 }
 
 extension RSearch: Deletable {
-    func willRemove(in database: Realm) {
-        if !self.conditions.isInvalidated {
-            database.delete(self.conditions)
-        }
-    }
+    func willRemove(in database: Realm) {}
 }
