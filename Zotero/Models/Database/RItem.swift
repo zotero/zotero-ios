@@ -35,91 +35,90 @@ extension RItemChanges {
 }
 
 final class RItem: Object {
-    static let observableKeypathsForItemList: [String] = ["rawType", "baseTitle", "displayTitle", "sortTitle", "creatorSummary", "sortCreatorSummary", "hasCreatorSummary", "parsedDate", "hasParsedDate",
-    "parsedYear", "hasParsedYear", "publisher", "hasPublisher", "publicationTitle", "hasPublicationTitle"]
+    static let observableKeypathsForItemList: [String] = ["rawType", "baseTitle", "displayTitle", "sortTitle", "creatorSummary", "sortCreatorSummary", "hasCreatorSummary", "parsedDate",
+                                                          "hasParsedDate", "parsedYear", "hasParsedYear", "publisher", "hasPublisher", "publicationTitle", "hasPublicationTitle"]
 
-    @objc dynamic var key: String = ""
-    @objc dynamic var rawType: String = ""
-    @objc dynamic var baseTitle: String = ""
-    @objc dynamic var inPublications: Bool = false
-    @objc dynamic var dateAdded: Date = Date(timeIntervalSince1970: 0)
-    @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
-    @objc dynamic var parent: RItem?
-    @objc dynamic var createdBy: RUser?
-    @objc dynamic var lastModifiedBy: RUser?
-
-    let customLibraryKey = RealmOptional<Int>()
-    let groupKey = RealmOptional<Int>()
-    let collections = LinkingObjects(fromType: RCollection.self, property: "items")
-    let fields = LinkingObjects(fromType: RItemField.self, property: "item")
-    let children = LinkingObjects(fromType: RItem.self, property: "parent")
-    let tags = LinkingObjects(fromType: RTypedTag.self, property: "item")
-    let creators = LinkingObjects(fromType: RCreator.self, property: "item")
-    let links = LinkingObjects(fromType: RLink.self, property: "item")
-    let relations = LinkingObjects(fromType: RRelation.self, property: "item")
+    @Persisted(indexed: true) var key: String
+    @Persisted var rawType: String
+    @Persisted var baseTitle: String
+    @Persisted var inPublications: Bool
+    @Persisted var dateAdded: Date
+    @Persisted var dateModified: Date
+    @Persisted var parent: RItem?
+    @Persisted var createdBy: RUser?
+    @Persisted var lastModifiedBy: RUser?
+    @Persisted var customLibraryKey: Int?
+    @Persisted var groupKey: Int?
+    @Persisted(originProperty: "items") var collections: LinkingObjects<RCollection>
+    @Persisted(originProperty: "item") var fields: LinkingObjects<RItemField>
+    @Persisted(originProperty: "parent") var children: LinkingObjects<RItem>
+    @Persisted(originProperty: "item") var tags: LinkingObjects<RTypedTag>
+    @Persisted(originProperty: "item") var creators: LinkingObjects<RCreator>
+    @Persisted(originProperty: "item") var links: LinkingObjects<RLink>
+    @Persisted(originProperty: "item") var relations: LinkingObjects<RRelation>
 
     // MARK: - Attachment data
-    @objc dynamic var backendMd5: String = ""
-    @objc dynamic var mainAttachment: RItem?
-    @objc dynamic var fileDownloaded: Bool = false
+    @Persisted var backendMd5: String
+    @Persisted var mainAttachment: RItem?
+    @Persisted var fileDownloaded: Bool
     // MARK: - Annotation data
-    let rects: List<RRect> = List()
-    let paths: List<RPath> = List()
+    @Persisted var rects: List<RRect>
+    @Persisted var paths: List<RPath>
     // MARK: - Derived data
     /// Localized type based on current localization of device, used for sorting
-    @objc dynamic var localizedType: String = ""
+    @Persisted var localizedType: String
     /// Title which is displayed in items list
-    @objc dynamic var displayTitle: String = ""
+    @Persisted var displayTitle: String
     /// Title by which the item list is sorted
-    @objc dynamic var sortTitle: String = ""
+    @Persisted var sortTitle: String
     /// Summary of creators collected from linked RCreators
-    @objc dynamic var creatorSummary: String? = nil
+    @Persisted var creatorSummary: String?
     /// Summary of creators used for sorting
-    @objc dynamic var sortCreatorSummary: String? = nil
+    @Persisted var sortCreatorSummary: String?
     /// Indicates whether this instance has nonempty creatorSummary, helper variable, used in sorting so that we can show items with summaries
     /// first and sort them in any order we want (asd/desc) and all other items later
-    @objc dynamic var hasCreatorSummary: Bool = false
+    @Persisted var hasCreatorSummary: Bool
     /// Date that was parsed from "date" field
-    @objc dynamic var parsedDate: Date? = nil
+    @Persisted var parsedDate: Date?
     /// Indicates whether this instance has nonempty parsedDate, helper variable, used in sorting so that we can show items with dates
     /// first and sort them in any order we want (asd/desc) and all other items later
-    @objc dynamic var hasParsedDate: Bool = false
+    @Persisted var hasParsedDate: Bool
     /// Year that was parsed from "date" field
-    @objc dynamic var parsedYear: Int = 0
+    @Persisted var parsedYear: Int
     /// Indicates whether this instance has nonempty parsedYear, helper variable, used in sorting so that we can show items with years
     /// first and sort them in any order we want (asd/desc) and all other items later
-    @objc dynamic var hasParsedYear: Bool = false
+    @Persisted var hasParsedYear: Bool
     /// Value taken from publisher field
-    @objc dynamic var publisher: String? = nil
+    @Persisted var publisher: String?
     /// Indicates whether this instance has nonempty publisher, helper variable, used in sorting so that we can show items with publishers
     /// first and sort them in any order we want (asd/desc) and all other items later
-    @objc dynamic var hasPublisher: Bool = false
+    @Persisted var hasPublisher: Bool
     /// Value taken from publicationTitle field
-    @objc dynamic var publicationTitle: String? = nil
+    @Persisted var publicationTitle: String?
     /// Indicates whether this instance has nonempty publicationTitle, helper variable, used in sorting so that we can show items with titles
     /// first and sort them in any order we want (asd/desc) and all other items later
-    @objc dynamic var hasPublicationTitle: Bool = false
+    @Persisted var hasPublicationTitle: Bool
     /// Sort index for annotations
-    @objc dynamic var annotationSortIndex: String = ""
+    @Persisted var annotationSortIndex: String
     // MARK: - Sync data
     /// Indicates whether the object is trashed locally and needs to be synced with backend
-    @objc dynamic var trash: Bool = false
+    @Persisted var trash: Bool
     /// Indicates local version of object
-    @objc dynamic var version: Int = 0
+    @Persisted(indexed: true) var version: Int
     /// Indicates whether attachemnt (file) needs to be uploaded to backend
-    @objc dynamic var attachmentNeedsSync: Bool = false
+    @Persisted var attachmentNeedsSync: Bool
     /// State which indicates whether object is synced with backend data, see ObjectSyncState for more info
-    @objc dynamic var rawSyncState: Int = 0
+    @Persisted var rawSyncState: Int
     /// Date when last sync attempt was performed on this object
-    @objc dynamic var lastSyncDate: Date = Date(timeIntervalSince1970: 0)
+    @Persisted var lastSyncDate: Date
     /// Number of retries for sync of this object
-    @objc dynamic var syncRetries: Int = 0
+    @Persisted var syncRetries: Int
     /// Raw value for OptionSet of changes for this object, indicates which local changes need to be synced to backend
-    @objc dynamic var rawChangedFields: Int16 = 0
+    @Persisted var rawChangedFields: Int16
     /// Raw value for `UpdatableChangeType`, indicates whether current update of item has been made by user or sync process.
-    @objc dynamic var rawChangeType: Int = 0
+    @Persisted var rawChangeType: Int
     /// Indicates whether the object is deleted locally and needs to be synced with backend
-    @objc dynamic var deleted: Bool = false
+    @Persisted var deleted: Bool
 
     var attachment: RItem? {
         if self.rawType == ItemTypes.attachment {
@@ -137,12 +136,6 @@ final class RItem: Object {
 
     var urlString: String? {
         return self.fields.filter(.key(FieldKeys.Item.url)).first?.value
-    }
-
-    // MARK: - Object properties
-
-    override class func indexedProperties() -> [String] {
-        return ["version", "key"]
     }
 
     // MARK: - Sync properties
@@ -237,9 +230,9 @@ final class RItem: Object {
 }
 
 final class RItemField: Object {
-    @objc dynamic var key: String = ""
-    @objc dynamic var baseKey: String?
-    @objc dynamic var value: String = ""
-    @objc dynamic var item: RItem?
-    @objc dynamic var changed: Bool = false
+    @Persisted var key: String
+    @Persisted var baseKey: String?
+    @Persisted var value: String
+    @Persisted var item: RItem?
+    @Persisted var changed: Bool
 }

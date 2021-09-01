@@ -24,17 +24,9 @@ extension RCustomLibraryType {
 }
 
 final class RCustomLibrary: Object {
-    @objc dynamic var rawType: Int = 0
-    @objc dynamic var orderId: Int = 0
-    @objc dynamic var versions: RVersions?
-
-    override class func primaryKey() -> String? {
-        return "rawType"
-    }
-
-    override class func indexedProperties() -> [String] {
-        return ["version"]
-    }
+    @Persisted(primaryKey: true) var rawType: Int
+    @Persisted var orderId: Int = 0
+    @Persisted var versions: RVersions?
 
     var type: RCustomLibraryType {
         return RCustomLibraryType(rawValue: self.rawType) ?? .myLibrary

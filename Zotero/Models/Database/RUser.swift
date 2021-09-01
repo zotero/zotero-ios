@@ -11,14 +11,9 @@ import Foundation
 import RealmSwift
 
 final class RUser: Object {
-    @objc dynamic var identifier: Int = 0
-    @objc dynamic var name: String = ""
-    @objc dynamic var username: String = ""
-
-    let createdBy = LinkingObjects(fromType: RItem.self, property: "createdBy")
-    let modifiedBy = LinkingObjects(fromType: RItem.self, property: "lastModifiedBy")
-
-    override class func primaryKey() -> String? {
-        return "identifier"
-    }
+    @Persisted(primaryKey: true) var identifier: Int
+    @Persisted var name: String
+    @Persisted var username: String
+    @Persisted(originProperty: "createdBy") var createdBy: LinkingObjects<RItem>
+    @Persisted(originProperty: "lastModifiedBy") var modifiedBy: LinkingObjects<RItem>
 }

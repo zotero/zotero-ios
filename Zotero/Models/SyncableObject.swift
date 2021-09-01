@@ -22,8 +22,8 @@ enum ObjectSyncState: Int {
 
 protocol Syncable: AnyObject {
     var key: String { get set }
-    var customLibraryKey: RealmOptional<Int> { get }
-    var groupKey: RealmOptional<Int> { get }
+    var customLibraryKey: Int? { get set }
+    var groupKey: Int? { get set }
     var version: Int { get set }
     var rawSyncState: Int { get set }
     var lastSyncDate: Date { get set }
@@ -36,10 +36,10 @@ extension Syncable {
         get {
             guard !self.isInvalidated else { return nil }
             
-            if let key = self.customLibraryKey.value, let type = RCustomLibraryType(rawValue: key) {
+            if let key = self.customLibraryKey, let type = RCustomLibraryType(rawValue: key) {
                 return .custom(type)
             }
-            if let key = self.groupKey.value {
+            if let key = self.groupKey {
                 return .group(key)
             }
             return nil
@@ -47,16 +47,16 @@ extension Syncable {
 
         set {
             guard let identifier = newValue else {
-                self.groupKey.value = nil
-                self.customLibraryKey.value = nil
+                self.groupKey = nil
+                self.customLibraryKey = nil
                 return
             }
 
             switch identifier {
             case .custom(let type):
-                self.customLibraryKey.value = type.rawValue
+                self.customLibraryKey = type.rawValue
             case .group(let id):
-                self.groupKey.value = id
+                self.groupKey = id
             }
         }
     }

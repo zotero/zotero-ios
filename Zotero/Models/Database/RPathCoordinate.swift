@@ -11,11 +11,11 @@ import Foundation
 import RealmSwift
 
 final class RPath: Object {
-    @objc dynamic var sortIndex: Int = 0
-    let coordinates: List<RPathCoordinate> = List()
+    @Persisted var sortIndex: Int
+    @Persisted var coordinates: List<RPathCoordinate>
 }
 
 final class RPathCoordinate: Object {
-    @objc dynamic var value: Double = 0
-    @objc dynamic var sortIndex: Int = 0
+    @Persisted var value: Double
+    @Persisted var sortIndex: Int
 }

@@ -11,24 +11,17 @@ import Foundation
 import RealmSwift
 
 final class RStyle: Object {
-    @objc dynamic var identifier: String = ""
-    @objc dynamic var title: String = ""
-    @objc dynamic var href: String = ""
-    @objc dynamic var updated: Date = Date(timeIntervalSince1970: 0)
-    @objc dynamic var filename: String = ""
-    @objc dynamic var dependency: RStyle?
-    @objc dynamic var installed: Bool = false
-    @objc dynamic var supportsBibliography: Bool = false
-    @objc dynamic var isNoteStyle: Bool = false
-    @objc dynamic var defaultLocale: String = ""
-
-    let dependent = LinkingObjects(fromType: RStyle.self, property: "dependency")
-
-    // MARK: - Object properties
-
-    override class func primaryKey() -> String? {
-        return "identifier"
-    }
+    @Persisted(primaryKey: true) var identifier: String
+    @Persisted var title: String
+    @Persisted var href: String
+    @Persisted var updated: Date
+    @Persisted var filename: String
+    @Persisted var dependency: RStyle?
+    @Persisted var installed: Bool
+    @Persisted var supportsBibliography: Bool
+    @Persisted var isNoteStyle: Bool
+    @Persisted var defaultLocale: String
+    @Persisted(originProperty: "dependency") var dependent: LinkingObjects<RStyle>
 }
 
 extension RStyle: Identifiable {

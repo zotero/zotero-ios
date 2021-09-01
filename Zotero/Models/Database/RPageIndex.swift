@@ -25,32 +25,25 @@ extension RPageIndexChanges {
 }
 
 final class RPageIndex: Object {
-    @objc dynamic var key: String = ""
-    @objc dynamic var index: Int = 0
-    @objc dynamic var changed: Bool = false
-
-    let customLibraryKey = RealmOptional<Int>()
-    let groupKey = RealmOptional<Int>()
+    @Persisted(indexed: true) var key: String
+    @Persisted var index: Int
+    @Persisted var changed: Bool
+    @Persisted var customLibraryKey: Int?
+    @Persisted var groupKey: Int?
 
     // MARK: - Sync data
     /// Indicates local version of object
-    @objc dynamic var version: Int = 0
+    @Persisted(indexed: true) var version: Int
     /// State which indicates whether object is synced with backend data, see ObjectSyncState for more info
-    @objc dynamic var rawSyncState: Int = 0
+    @Persisted var rawSyncState: Int
     /// Date when last sync attempt was performed on this object
-    @objc dynamic var lastSyncDate: Date = Date(timeIntervalSince1970: 0)
+    @Persisted var lastSyncDate: Date
     /// Number of retries for sync of this object
-    @objc dynamic var syncRetries: Int = 0
+    @Persisted var syncRetries: Int
     /// Raw value for OptionSet of changes for this object, indicates which local changes need to be synced to backend
-    @objc dynamic var rawChangedFields: Int16 = 0
+    @Persisted var rawChangedFields: Int16
     /// Raw value for `UpdatableChangeType`, indicates whether current update of item has been made by user or sync process.
-    @objc dynamic var rawChangeType: Int = 0
-
-    // MARK: - Object properties
-
-    override class func indexedProperties() -> [String] {
-        return ["version", "key"]
-    }
+    @Persisted var rawChangeType: Int
 
     // MARK: - Sync properties
 

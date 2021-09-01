@@ -27,40 +27,34 @@ extension RCollectionChanges {
 }
 
 final class RCollection: Object {
-    @objc dynamic var key: String = ""
-    @objc dynamic var name: String = ""
-    @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
-    @objc dynamic var parentKey: String?
-    @objc dynamic var collapsed: Bool = true
-    @objc dynamic var lastUsed: Date = Date(timeIntervalSince1970: 0)
+    @Persisted(indexed: true) var key: String
+    @Persisted var name: String
+    @Persisted var dateModified: Date
+    @Persisted var parentKey: String?
+    @Persisted var collapsed: Bool = true
+    @Persisted var lastUsed: Date
 
-    let items: List<RItem> = List()
-    let customLibraryKey = RealmOptional<Int>()
-    let groupKey = RealmOptional<Int>()
+    @Persisted var items: List<RItem>
+    @Persisted var customLibraryKey: Int?
+    @Persisted var groupKey: Int?
 
     // MARK: - Sync data
     /// Indicates local version of object
-    @objc dynamic var version: Int = 0
+    @Persisted(indexed: true) var version: Int
     /// State which indicates whether object is synced with backend data, see ObjectSyncState for more info
-    @objc dynamic var rawSyncState: Int = 0
+    @Persisted var rawSyncState: Int
     /// Date when last sync attempt was performed on this object
-    @objc dynamic var lastSyncDate: Date = Date(timeIntervalSince1970: 0)
+    @Persisted var lastSyncDate: Date
     /// Number of retries for sync of this object
-    @objc dynamic var syncRetries: Int = 0
+    @Persisted var syncRetries: Int
     /// Raw value for OptionSet of changes for this object, indicates which local changes need to be synced to backend
-    @objc dynamic var rawChangedFields: Int16 = 0
+    @Persisted var rawChangedFields: Int16
     /// Raw value for `UpdatableChangeType`, indicates whether current update of item has been made by user or sync process.
-    @objc dynamic var rawChangeType: Int = 0
+    @Persisted var rawChangeType: Int
     /// Indicates whether the object is deleted locally and needs to be synced with backend
-    @objc dynamic var deleted: Bool = false
+    @Persisted var deleted: Bool
     /// Indicates whether the object is trashed locally and needs to be synced with backend
-    @objc dynamic var trash: Bool = false
-
-    // MARK: - Object properties
-
-    override class func indexedProperties() -> [String] {
-        return ["version", "key"]
-    }
+    @Persisted var trash: Bool
 
     // MARK: - Sync properties
 

@@ -11,10 +11,10 @@ import Foundation
 import RealmSwift
 
 final class RVersions: Object {
-    @objc dynamic var collections: Int = 0
-    @objc dynamic var items: Int = 0
-    @objc dynamic var trash: Int = 0
-    @objc dynamic var searches: Int = 0
-    @objc dynamic var deletions: Int = 0
-    @objc dynamic var settings: Int = 0
+    @Persisted var collections: Int
+    @Persisted var items: Int
+    @Persisted var trash: Int
+    @Persisted var searches: Int
+    @Persisted var deletions: Int
+    @Persisted var settings: Int
 }

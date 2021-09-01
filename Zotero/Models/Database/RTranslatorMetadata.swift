@@ -11,12 +11,6 @@ import Foundation
 import RealmSwift
 
 final class RTranslatorMetadata: Object {
-    @objc dynamic var id: String = ""
-    @objc dynamic var lastUpdated: Date = Date(timeIntervalSince1970: 0)
-
-    // MARK: - Object properties
-
-    override class func primaryKey() -> String? {
-        return "id"
-    }
+    @Persisted(primaryKey: true) var id: String
+    @Persisted var lastUpdated: Date
 }

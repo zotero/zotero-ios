@@ -11,12 +11,12 @@ import Foundation
 import RealmSwift
 
 final class RLink: Object {
-    @objc dynamic var type: String = ""
-    @objc dynamic var href: String = ""
-    @objc dynamic var contentType: String = ""
-    @objc dynamic var title: String = ""
-    @objc dynamic var length: Int = 0
-    @objc dynamic var item: RItem?
+    @Persisted var type: String
+    @Persisted var href: String
+    @Persisted var contentType: String
+    @Persisted var title: String
+    @Persisted var length: Int
+    @Persisted var item: RItem?
 
     var linkType: LinkType? {
         return LinkType(rawValue: self.type)

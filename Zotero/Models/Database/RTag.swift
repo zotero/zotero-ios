@@ -16,9 +16,9 @@ final class RTypedTag: Object {
         case manual = 0
     }
 
-    @objc dynamic var rawType: Int = 0
-    @objc dynamic var tag: RTag?
-    @objc dynamic var item: RItem?
+    @Persisted var rawType: Int
+    @Persisted var tag: RTag?
+    @Persisted var item: RItem?
 
     var type: Kind {
         get {
@@ -32,27 +32,20 @@ final class RTypedTag: Object {
 }
 
 final class RTag: Object {
-    @objc dynamic var name: String = ""
-    @objc dynamic var color: String = ""
-    let customLibraryKey = RealmOptional<Int>()
-    let groupKey = RealmOptional<Int>()
-
-    let tags = LinkingObjects(fromType: RTypedTag.self, property: "tag")
-
-    // MARK: - Object properties
-
-    override class func indexedProperties() -> [String] {
-        return ["name"]
-    }
+    @Persisted(indexed: true) var name: String
+    @Persisted var color: String
+    @Persisted var customLibraryKey: Int?
+    @Persisted var groupKey: Int?
+    @Persisted(originProperty: "tag") var tags: LinkingObjects<RTypedTag>
 
     // MARK: - Sync properties
 
     var libraryId: LibraryIdentifier? {
         get {
-            if let key = self.customLibraryKey.value, let type = RCustomLibraryType(rawValue: key) {
+            if let key = self.customLibraryKey, let type = RCustomLibraryType(rawValue: key) {
                 return .custom(type)
             }
-            if let key = self.groupKey.value {
+            if let key = self.groupKey {
                 return .group(key)
             }
             return nil
@@ -60,16 +53,16 @@ final class RTag: Object {
 
         set {
             guard let identifier = newValue else {
-                self.groupKey.value = nil
-                self.customLibraryKey.value = nil
+                self.groupKey = nil
+                self.customLibraryKey = nil
                 return
             }
 
             switch identifier {
             case .custom(let type):
-                self.customLibraryKey.value = type.rawValue
+                self.customLibraryKey = type.rawValue
             case .group(let id):
-                self.groupKey.value = id
+                self.groupKey = id
             }
         }
     }

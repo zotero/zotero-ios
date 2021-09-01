@@ -11,7 +11,7 @@ import Foundation
 import RealmSwift
 
 final class RRelation: Object {
-    @objc dynamic var type: String = ""
-    @objc dynamic var urlString: String = ""
-    @objc dynamic var item: RItem?
+    @Persisted var type: String
+    @Persisted var urlString: String
+    @Persisted var item: RItem?
 }

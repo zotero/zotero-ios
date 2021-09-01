@@ -11,13 +11,13 @@ import Foundation
 import RealmSwift
 
 final class RCreator: Object {
-    @objc dynamic var rawType: String = ""
-    @objc dynamic var firstName: String = ""
-    @objc dynamic var lastName: String = ""
-    @objc dynamic var name: String = ""
-    @objc dynamic var orderId: Int = 0
-    @objc dynamic var primary: Bool = false
-    @objc dynamic var item: RItem?
+    @Persisted var rawType: String
+    @Persisted var firstName: String
+    @Persisted var lastName: String
+    @Persisted var name: String
+    @Persisted var orderId: Int
+    @Persisted var primary: Bool
+    @Persisted var item: RItem?
 
     var summaryName: String {
         if !self.name.isEmpty {
