@@ -37,12 +37,13 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showWeb(url: URL)
     func show(doi: String)
     func showFilters(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
-    func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void)
+    func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void, cancelAction: @escaping () -> Void)
     func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void)
     func showCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier)
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
     func showMissingStyleError()
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
+    func show(error: ItemsError)
 }
 
 protocol DetailItemDetailCoordinatorDelegate: AnyObject {
@@ -461,9 +462,9 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
-    func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void) {
+    func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void, cancelAction: @escaping () -> Void) {
         let question = count == 1 ? L10n.Items.deleteQuestion : L10n.Items.deleteMultipleQuestion
-        self.ask(question: question, title: L10n.delete, isDestructive: true, confirm: confirmAction)
+        self.ask(question: question, title: L10n.delete, isDestructive: true, confirm: confirmAction, cancel: cancelAction)
     }
 
     func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void) {
@@ -471,12 +472,14 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.ask(question: question, title: L10n.Items.removeFromCollectionTitle, isDestructive: false, confirm: confirmAction)
     }
 
-    private func ask(question: String, title: String, isDestructive: Bool, confirm: @escaping () -> Void) {
+    private func ask(question: String, title: String, isDestructive: Bool, confirm: @escaping () -> Void, cancel: (() -> Void)? = nil) {
         let controller = UIAlertController(title: title, message: question, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.yes, style: (isDestructive ? .destructive : .default), handler: { _ in
             confirm()
         }))
-        controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: nil))
+        controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: { _ in
+            cancel?()
+        }))
         self.topViewController.present(controller, animated: true, completion: nil)
     }
 
@@ -532,6 +535,37 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         coordinator.start(animated: false)
 
         self.topViewController.present(containerController, animated: true, completion: nil)
+    }
+
+    func show(error: ItemsError) {
+        let message: String
+        switch error {
+        case .dataLoading:
+            message = L10n.Errors.Items.loading
+        case .deletion:
+            message = L10n.Errors.Items.deletion
+        case .deletionFromCollection:
+            message = L10n.Errors.Items.deletionFromCollection
+        case .collectionAssignment:
+            message = L10n.Errors.Items.addToCollection
+        case .itemMove:
+            message = L10n.Errors.Items.moveItem
+        case .noteSaving:
+            message = L10n.Errors.Items.saveNote
+        case .attachmentAdding(let type):
+            switch type {
+            case .couldNotSave:
+                message = L10n.Errors.Items.addAttachment
+            case .someFailed(let failed):
+                message = L10n.Errors.Items.addSomeAttachments(failed.joined(separator: ","))
+            }
+        case .duplicationLoading:
+            message = L10n.Errors.Items.loadDuplication
+        }
+
+        let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
+        self.topViewController.present(controller, animated: true, completion: nil)
     }
 }
 

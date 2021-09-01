@@ -313,6 +313,15 @@
 "errors.sync_toolbar.personal_quota_reached" = "You have reached your Zotero File Storage quota. Some files were not uploaded. Other Zotero data will continue to sync to the server.\nSee your zotero.org account settings for additional storage options.";
 "errors.sync_toolbar.group_quota_reached" = "The group \“%@\” has reached its Zotero File Storage quota. Some files were not uploaded. Other Zotero data will continue to sync to the server.\nThe group owner can increase the group's storage capacity from the storage settings section on zotero.org.";
 "errors.sync_toolbar.quota_reached_short" = "Quota Reached.";
+"errors.items.loading" = "Could not load items.";
+"errors.items.deletion" = "Could not remove item.";
+"errors.items.deletion_from_collection" = "Could not remove item from collection.";
+"errors.items.add_to_collection" = "Could not add item to collection.";
+"errors.items.move_item" = "Could not move item.";
+"errors.items.save_note" = "Could not save note.";
+"errors.items.add_attachment" = "Could not add attachment.";
+"errors.items.add_some_attachments" = "Some attachments were not added: %@.";
+"errors.items.load_duplication" = "Could not load item to duplicate.";
 "errors.items.generating_bib" = "Could not generate bibliography";
 "errors.citation_preview" = "Could not generate citation preview";
 "errors.item_detail.dropped_fields_title" = "Change Item Type";

@@ -357,8 +357,28 @@ internal enum L10n {
       internal static let droppedFieldsTitle = L10n.tr("Localizable", "errors.item_detail.dropped_fields_title")
     }
     internal enum Items {
+      /// Could not add attachment.
+      internal static let addAttachment = L10n.tr("Localizable", "errors.items.add_attachment")
+      /// Some attachments were not added: %@.
+      internal static func addSomeAttachments(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "errors.items.add_some_attachments", String(describing: p1))
+      }
+      /// Could not add item to collection.
+      internal static let addToCollection = L10n.tr("Localizable", "errors.items.add_to_collection")
+      /// Could not remove item.
+      internal static let deletion = L10n.tr("Localizable", "errors.items.deletion")
+      /// Could not remove item from collection.
+      internal static let deletionFromCollection = L10n.tr("Localizable", "errors.items.deletion_from_collection")
       /// Could not generate bibliography
       internal static let generatingBib = L10n.tr("Localizable", "errors.items.generating_bib")
+      /// Could not load item to duplicate.
+      internal static let loadDuplication = L10n.tr("Localizable", "errors.items.load_duplication")
+      /// Could not load items.
+      internal static let loading = L10n.tr("Localizable", "errors.items.loading")
+      /// Could not move item.
+      internal static let moveItem = L10n.tr("Localizable", "errors.items.move_item")
+      /// Could not save note.
+      internal static let saveNote = L10n.tr("Localizable", "errors.items.save_note")
     }
     internal enum Libraries {
       /// Unable to load libraries

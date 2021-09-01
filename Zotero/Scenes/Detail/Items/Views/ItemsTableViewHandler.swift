@@ -16,7 +16,7 @@ import RxSwift
 protocol ItemsTableViewHandlerDelegate: AnyObject {
     var isInViewHierarchy: Bool { get }
 
-    func process(action: ItemAction.Kind, for item: RItem)
+    func process(action: ItemAction.Kind, for item: RItem, completionAction: ((Bool) -> Void)?)
 }
 
 final class ItemsTableViewHandler: NSObject {
@@ -113,7 +113,7 @@ final class ItemsTableViewHandler: NSObject {
     private func createContextMenu(for item: RItem) -> UIMenu {
         let actions: [UIAction] = self.createContextMenuActions(for: item, state: self.viewModel.state).map({ action in
             return UIAction(title: action.title, image: action.image, attributes: (action.isDestructive ? .destructive : [])) { [weak self] _ in
-                self?.delegate.process(action: action.type, for: item)
+                self?.delegate.process(action: action.type, for: item, completionAction: nil)
             }
         })
         return UIMenu(title: "", children: actions)
@@ -123,9 +123,11 @@ final class ItemsTableViewHandler: NSObject {
         guard !self.tableView.isEditing && self.viewModel.state.library.metadataEditable else { return nil }
         let actions = itemActions.map({ action -> UIContextualAction in
             let contextualAction = UIContextualAction(style: (action.isDestructive ? .destructive : .normal), title: action.title, handler: { [weak self] _, _, completion in
-                guard let item = self?.snapshot?[indexPath.row] else { return }
-                self?.delegate.process(action: action.type, for: item)
-                completion(true)
+                guard let item = self?.snapshot?[indexPath.row] else {
+                    completion(false)
+                    return
+                }
+                self?.delegate.process(action: action.type, for: item, completionAction: completion)
             })
             contextualAction.image = action.image
             switch action.type {

@@ -35,6 +35,9 @@ extension RItemChanges {
 }
 
 final class RItem: Object {
+    static let observableKeypathsForItemList: [String] = ["rawType", "baseTitle", "displayTitle", "sortTitle", "creatorSummary", "sortCreatorSummary", "hasCreatorSummary", "parsedDate", "hasParsedDate",
+    "parsedYear", "hasParsedYear", "publisher", "hasPublisher", "publicationTitle", "hasPublicationTitle"]
+
     @objc dynamic var key: String = ""
     @objc dynamic var rawType: String = ""
     @objc dynamic var baseTitle: String = ""

@@ -219,6 +219,10 @@ final class ItemsViewController: UIViewController {
         } else {
             self.hideOverlay()
         }
+
+        if let error = state.error {
+            self.process(error: error, state: state)
+        }
     }
 
     private func update(progress: SyncProgress) {
@@ -236,6 +240,20 @@ final class ItemsViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    private func process(error: ItemsError, state: ItemsState) {
+        // Perform additional actions for individual errors if needed
+        switch error {
+        case .itemMove, .deletion, .deletionFromCollection:
+            if let snapshot = state.results {
+                self.tableViewHandler.reloadAll(snapshot: snapshot.freeze())
+            }
+        case .dataLoading, .collectionAssignment, .noteSaving, .attachmentAdding(_), .duplicationLoading: break
+        }
+
+        // Show appropriate message
+        self.coordinatorDelegate?.show(error: error)
+    }
 
     private func showOverlay(state: OverlayState) {
         switch state {
@@ -274,12 +292,13 @@ final class ItemsViewController: UIViewController {
         }
     }
 
-    private func process(action: ItemAction.Kind, for selectedKeys: Set<String>, button: UIBarButtonItem?) {
+    private func process(action: ItemAction.Kind, for selectedKeys: Set<String>, button: UIBarButtonItem?, completionAction: ((Bool) -> Void)?) {
         switch action {
         case .addToCollection:
             guard !selectedKeys.isEmpty else { return }
             self.coordinatorDelegate?.showCollectionPicker(in: self.viewModel.state.library, completed: { [weak self] collections in
                 self?.viewModel.process(action: .assignItemsToCollections(items: selectedKeys, collections: collections))
+                completionAction?(true)
             })
 
         case .createParent:
@@ -288,9 +307,11 @@ final class ItemsViewController: UIViewController {
 
         case .delete:
             guard !selectedKeys.isEmpty else { return }
-            self.coordinatorDelegate?.showDeletionQuestion(count: self.viewModel.state.selectedItems.count) { [weak self] in
+            self.coordinatorDelegate?.showDeletionQuestion(count: self.viewModel.state.selectedItems.count, confirmAction: { [weak self] in
                 self?.viewModel.process(action: .deleteItems(selectedKeys))
-            }
+            }, cancelAction: {
+                completionAction?(false)
+            })
 
         case .duplicate:
             guard let key = selectedKeys.first else { return }
@@ -300,11 +321,13 @@ final class ItemsViewController: UIViewController {
             guard !selectedKeys.isEmpty else { return }
             self.coordinatorDelegate?.showRemoveFromCollectionQuestion(count: self.viewModel.state.selectedItems.count) { [weak self] in
                 self?.viewModel.process(action: .deleteItemsFromCollection(selectedKeys))
+                completionAction?(true)
             }
 
         case .restore:
             guard !selectedKeys.isEmpty else { return }
             self.viewModel.process(action: .restoreItems(selectedKeys))
+            completionAction?(true)
 
         case .trash:
             guard !selectedKeys.isEmpty else { return }
@@ -376,7 +399,7 @@ final class ItemsViewController: UIViewController {
     }
 
     private func startObserving(results: Results<RItem>) {
-        self.resultsToken = results.observe({ [weak self] changes  in
+        self.resultsToken = results.observe(keyPaths: RItem.observableKeypathsForItemList, { [weak self] changes  in
             guard let `self` = self else { return }
 
             switch changes {
@@ -658,8 +681,8 @@ final class ItemsViewController: UIViewController {
 }
 
 extension ItemsViewController: ItemsTableViewHandlerDelegate {
-    func process(action: ItemAction.Kind, for item: RItem) {
-        self.process(action: action, for: [item.key], button: nil)
+    func process(action: ItemAction.Kind, for item: RItem, completionAction: ((Bool) -> Void)?) {
+        self.process(action: action, for: [item.key], button: nil, completionAction: completionAction)
     }
 
     var isInViewHierarchy: Bool {
@@ -677,7 +700,7 @@ extension ItemsViewController: DetailCoordinatorAttachmentProvider {
 
 extension ItemsViewController: ItemsToolbarControllerDelegate {
     func process(action: ItemAction.Kind, button: UIBarButtonItem) {
-        self.process(action: action, for: self.viewModel.state.selectedItems, button: button)
+        self.process(action: action, for: self.viewModel.state.selectedItems, button: button, completionAction: nil)
     }
 }
 
