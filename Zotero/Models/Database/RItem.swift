@@ -47,7 +47,7 @@ final class RItem: Object {
     @Persisted var parent: RItem?
     @Persisted var createdBy: RUser?
     @Persisted var lastModifiedBy: RUser?
-    @Persisted var customLibraryKey: Int?
+    @Persisted var customLibraryKey: RCustomLibraryType?
     @Persisted var groupKey: Int?
     @Persisted(originProperty: "items") var collections: LinkingObjects<RCollection>
     @Persisted var fields: List<RItemField>
@@ -108,7 +108,7 @@ final class RItem: Object {
     /// Indicates whether attachemnt (file) needs to be uploaded to backend
     @Persisted var attachmentNeedsSync: Bool
     /// State which indicates whether object is synced with backend data, see ObjectSyncState for more info
-    @Persisted var rawSyncState: Int
+    @Persisted var syncState: ObjectSyncState
     /// Date when last sync attempt was performed on this object
     @Persisted var lastSyncDate: Date
     /// Number of retries for sync of this object
@@ -116,7 +116,7 @@ final class RItem: Object {
     /// Raw value for OptionSet of changes for this object, indicates which local changes need to be synced to backend
     @Persisted var rawChangedFields: Int16
     /// Raw value for `UpdatableChangeType`, indicates whether current update of item has been made by user or sync process.
-    @Persisted var rawChangeType: Int
+    @Persisted var changeType: UpdatableChangeType
     /// Indicates whether the object is deleted locally and needs to be synced with backend
     @Persisted var deleted: Bool
 

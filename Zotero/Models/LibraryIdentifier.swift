@@ -8,6 +8,8 @@
 
 import Foundation
 
+import RxSwift
+
 enum LibraryIdentifier: Equatable, Hashable {
     case custom(RCustomLibraryType)
     case group(Int)

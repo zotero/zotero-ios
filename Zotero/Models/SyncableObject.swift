@@ -16,16 +16,16 @@ typealias SyncableObject = Syncable&Object
 /// .synced - object is up to date
 /// .dirty - object has not yet been synced, it is just a placeholder that shouldn't be visible to the user
 /// .outdated - object has been synced before, but most recent sync failed and it needs to resync
-enum ObjectSyncState: Int {
+enum ObjectSyncState: Int, PersistableEnum {
     case synced, dirty, outdated
 }
 
 protocol Syncable: AnyObject {
     var key: String { get set }
-    var customLibraryKey: Int? { get set }
+    var customLibraryKey: RCustomLibraryType? { get set }
     var groupKey: Int? { get set }
     var version: Int { get set }
-    var rawSyncState: Int { get set }
+    var syncState: ObjectSyncState { get set }
     var lastSyncDate: Date { get set }
     var syncRetries: Int { get set }
     var isInvalidated: Bool { get }
@@ -36,8 +36,8 @@ extension Syncable {
         get {
             guard !self.isInvalidated else { return nil }
             
-            if let key = self.customLibraryKey, let type = RCustomLibraryType(rawValue: key) {
-                return .custom(type)
+            if let key = self.customLibraryKey {
+                return .custom(key)
             }
             if let key = self.groupKey {
                 return .group(key)
@@ -54,20 +54,10 @@ extension Syncable {
 
             switch identifier {
             case .custom(let type):
-                self.customLibraryKey = type.rawValue
+                self.customLibraryKey = type
             case .group(let id):
                 self.groupKey = id
             }
-        }
-    }
-
-    var syncState: ObjectSyncState {
-        get {
-            return ObjectSyncState(rawValue: self.rawSyncState) ?? .synced
-        }
-
-        set {
-            self.rawSyncState = newValue.rawValue
         }
     }
 }

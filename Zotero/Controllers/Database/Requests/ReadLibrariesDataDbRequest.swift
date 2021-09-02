@@ -28,7 +28,7 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
 
         var customLibraries = database.objects(RCustomLibrary.self)
         if let types = separatedIds?.custom {
-            customLibraries = customLibraries.filter("rawType IN %@", types.map({ $0.rawValue }))
+            customLibraries = customLibraries.filter("type IN %@", types.map({ $0.rawValue }))
         }
         let customData = try customLibraries.map({ library -> LibraryData in
             let libraryId = LibraryIdentifier.custom(library.type)

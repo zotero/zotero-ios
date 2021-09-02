@@ -12,14 +12,14 @@ import RealmSwift
 
 typealias UpdatableObject = Updatable&Object
 
-enum UpdatableChangeType: Int {
+enum UpdatableChangeType: Int, PersistableEnum {
     case sync = 0
     case user = 1
 }
 
 protocol Updatable: AnyObject {
     var rawChangedFields: Int16 { get set }
-    var rawChangeType: Int { get set }
+    var changeType: UpdatableChangeType { get set }
     var updateParameters: [String: Any]? { get }
     var isChanged: Bool { get }
     var selfOrChildChanged: Bool { get }
@@ -32,21 +32,11 @@ extension Updatable {
     func resetChanges() {
         guard self.isChanged else { return }
         self.rawChangedFields = 0
-        self.rawChangeType = 0
+        self.changeType = .sync
     }
 
     var isChanged: Bool {
         return self.rawChangedFields > 0
-    }
-
-    var changeType: UpdatableChangeType {
-        get {
-            return UpdatableChangeType(rawValue: self.rawChangeType) ?? .sync
-        }
-
-        set {
-            self.rawChangeType = newValue.rawValue
-        }
     }
 }
 
@@ -162,7 +152,7 @@ extension RItem: Updatable {
             parameters["deleted"] = self.trash
         }
         if changes.contains(.tags) {
-            parameters["tags"] = Array(self.tags.map({ ["tag": ($0.tag?.name ?? ""), "type": $0.rawType] }))
+            parameters["tags"] = Array(self.tags.map({ ["tag": ($0.tag?.name ?? ""), "type": $0.type.rawValue] }))
         }
         if changes.contains(.collections) {
             parameters["collections"] = Array(self.collections.map({ $0.key }))
@@ -230,7 +220,7 @@ extension RItem: Updatable {
         guard self.isChanged else { return }
 
         self.rawChangedFields = 0
-        self.rawChangeType = 0
+        self.changeType = .sync
         self.fields.filter("changed = true").forEach { field in
             field.changed = false
         }

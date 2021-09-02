@@ -35,14 +35,14 @@ final class RCollection: Object {
     @Persisted var lastUsed: Date
 
     @Persisted var items: List<RItem>
-    @Persisted var customLibraryKey: Int?
+    @Persisted var customLibraryKey: RCustomLibraryType?
     @Persisted var groupKey: Int?
 
     // MARK: - Sync data
     /// Indicates local version of object
     @Persisted(indexed: true) var version: Int
     /// State which indicates whether object is synced with backend data, see ObjectSyncState for more info
-    @Persisted var rawSyncState: Int
+    @Persisted var syncState: ObjectSyncState
     /// Date when last sync attempt was performed on this object
     @Persisted var lastSyncDate: Date
     /// Number of retries for sync of this object
@@ -50,7 +50,7 @@ final class RCollection: Object {
     /// Raw value for OptionSet of changes for this object, indicates which local changes need to be synced to backend
     @Persisted var rawChangedFields: Int16
     /// Raw value for `UpdatableChangeType`, indicates whether current update of item has been made by user or sync process.
-    @Persisted var rawChangeType: Int
+    @Persisted var changeType: UpdatableChangeType
     /// Indicates whether the object is deleted locally and needs to be synced with backend
     @Persisted var deleted: Bool
     /// Indicates whether the object is trashed locally and needs to be synced with backend

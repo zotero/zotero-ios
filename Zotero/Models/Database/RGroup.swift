@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-enum GroupType: String {
+enum GroupType: String, PersistableEnum {
     case `public` = "Public"
     case `private` = "Private"
 }
@@ -20,7 +20,7 @@ final class RGroup: Object {
     @Persisted var owner: Int
     @Persisted var name: String
     @Persisted var desc: String
-    @Persisted var rawType: String
+    @Persisted var type: GroupType = .private
     @Persisted var canEditMetadata: Bool
     @Persisted var canEditFiles: Bool
     @Persisted var orderId: Int
@@ -33,27 +33,5 @@ final class RGroup: Object {
     /// Indicates local version of object
     @Persisted var version: Int
     /// State which indicates whether object is synced with backend data, see ObjectSyncState for more info
-    @Persisted var rawSyncState: Int
-
-    // MARK: - Sync properties
-
-    var syncState: ObjectSyncState {
-        get {
-            return ObjectSyncState(rawValue: self.rawSyncState) ?? .synced
-        }
-
-        set {
-            self.rawSyncState = newValue.rawValue
-        }
-    }
-
-    var type: GroupType {
-        get {
-            return GroupType(rawValue: self.rawType) ?? .private
-        }
-
-        set {
-            self.rawType = newValue.rawValue
-        }
-    }
+    @Persisted var syncState: ObjectSyncState
 }

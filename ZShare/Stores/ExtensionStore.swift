@@ -568,7 +568,7 @@ final class ExtensionStore {
 
         self.state.attachmentState = .submitting
 
-        let tags = self.state.tags.map({ TagResponse(tag: $0.name, type: $0.type.rawValue) })
+        let tags = self.state.tags.map({ TagResponse(tag: $0.name, type: $0.type) })
         let libraryId: LibraryIdentifier
         let collectionKeys: Set<String>
         let userId = Defaults.shared.userId

@@ -433,21 +433,31 @@ struct ItemResponse {
 }
 
 struct TagResponse {
-    let tag: String
-    let type: Int
+    enum Error: Swift.Error {
+        case unknownTagType
+    }
 
-    init(tag: String, type: Int) {
+    let tag: String
+    let type: RTypedTag.Kind
+
+    init(tag: String, type: RTypedTag.Kind) {
         self.tag = tag
         self.type = type
     }
 
     init(response: [String: Any]) throws {
+        let rawType = (try? response.apiGet(key: "type")) ?? 0
+
+        guard let type = RTypedTag.Kind(rawValue: rawType) else {
+            throw Error.unknownTagType
+        }
+
         self.tag = try response.apiGet(key: "tag")
-        self.type = (try? response.apiGet(key: "type")) ?? 0
+        self.type = type
     }
 
     var automaticCopy: TagResponse {
-        return TagResponse(tag: self.tag, type: RTypedTag.Kind.automatic.rawValue)
+        return TagResponse(tag: self.tag, type: RTypedTag.Kind.automatic)
     }
 }
 

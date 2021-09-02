@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-enum RCustomLibraryType: Int, Codable {
+enum RCustomLibraryType: Int, Codable, PersistableEnum, _PrimaryKey {
     case myLibrary
 }
 
@@ -24,11 +24,7 @@ extension RCustomLibraryType {
 }
 
 final class RCustomLibrary: Object {
-    @Persisted(primaryKey: true) var rawType: Int
+    @Persisted(primaryKey: true) var type: RCustomLibraryType = .myLibrary
     @Persisted var orderId: Int = 0
     @Persisted var versions: RVersions?
-
-    var type: RCustomLibraryType {
-        return RCustomLibraryType(rawValue: self.rawType) ?? .myLibrary
-    }
 }

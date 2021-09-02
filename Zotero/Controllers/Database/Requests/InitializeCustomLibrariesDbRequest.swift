@@ -20,7 +20,7 @@ struct InitializeCustomLibrariesDbRequest: DbResponseRequest {
         guard database.object(ofType: RCustomLibrary.self, forPrimaryKey: RCustomLibraryType.myLibrary.rawValue) == nil else { return false }
 
         let library = RCustomLibrary()
-        library.rawType = RCustomLibraryType.myLibrary.rawValue
+        library.type = .myLibrary
         library.orderId = 1
         library.versions = RVersions()
         database.add(library)

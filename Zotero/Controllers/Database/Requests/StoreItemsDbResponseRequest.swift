@@ -320,8 +320,8 @@ struct StoreItemDbRequest: DbRequest {
 
         for tag in tags {
             if let existing = item.tags.filter(.tagName(tag.tag)).first {
-                if existing.rawType != tag.type {
-                    existing.rawType = tag.type
+                if existing.type != tag.type {
+                    existing.type = tag.type
                 }
                 continue
             }
@@ -338,7 +338,7 @@ struct StoreItemDbRequest: DbRequest {
             }
 
             let rTypedTag = RTypedTag()
-            rTypedTag.rawType = tag.type
+            rTypedTag.type = tag.type
             database.add(rTypedTag)
 
             rTypedTag.item = item

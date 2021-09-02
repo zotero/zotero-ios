@@ -125,7 +125,7 @@ extension NSPredicate {
     }
 
     static var changedByUser: NSPredicate {
-        return NSPredicate(format: "rawChangeType = %d", UpdatableChangeType.user.rawValue)
+        return NSPredicate(format: "changeType = %d", UpdatableChangeType.user.rawValue)
     }
 
     static var userChanges: NSPredicate {
@@ -164,11 +164,11 @@ extension NSPredicate {
     }
 
     static func syncState(_ syncState: ObjectSyncState) -> NSPredicate {
-        return NSPredicate(format: "rawSyncState = %d", syncState.rawValue)
+        return NSPredicate(format: "syncState = %d", syncState.rawValue)
     }
 
     static func notSyncState(_ syncState: ObjectSyncState) -> NSPredicate {
-        return NSPredicate(format: "rawSyncState != %d", syncState.rawValue)
+        return NSPredicate(format: "syncState != %d", syncState.rawValue)
     }
 
     static func notSyncState(_ syncState: ObjectSyncState, in libraryId: LibraryIdentifier) -> NSPredicate {

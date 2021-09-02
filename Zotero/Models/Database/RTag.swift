@@ -11,30 +11,20 @@ import Foundation
 import RealmSwift
 
 final class RTypedTag: Object {
-    enum Kind: Int {
+    enum Kind: Int, PersistableEnum {
         case automatic = 1
         case manual = 0
     }
 
-    @Persisted var rawType: Int
+    @Persisted var type: Kind
     @Persisted var tag: RTag?
     @Persisted var item: RItem?
-
-    var type: Kind {
-        get {
-            return Kind(rawValue: self.rawType) ?? .manual
-        }
-
-        set {
-            self.rawType = newValue.rawValue
-        }
-    }
 }
 
 final class RTag: Object {
     @Persisted(indexed: true) var name: String
     @Persisted var color: String
-    @Persisted var customLibraryKey: Int?
+    @Persisted var customLibraryKey: RCustomLibraryType?
     @Persisted var groupKey: Int?
     @Persisted(originProperty: "tag") var tags: LinkingObjects<RTypedTag>
 
@@ -42,8 +32,8 @@ final class RTag: Object {
 
     var libraryId: LibraryIdentifier? {
         get {
-            if let key = self.customLibraryKey, let type = RCustomLibraryType(rawValue: key) {
-                return .custom(type)
+            if let key = self.customLibraryKey {
+                return .custom(key)
             }
             if let key = self.groupKey {
                 return .group(key)
@@ -60,7 +50,7 @@ final class RTag: Object {
 
             switch identifier {
             case .custom(let type):
-                self.customLibraryKey = type.rawValue
+                self.customLibraryKey = type
             case .group(let id):
                 self.groupKey = id
             }

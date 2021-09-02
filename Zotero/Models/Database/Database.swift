@@ -11,7 +11,7 @@ import Foundation
 import RealmSwift
 
 struct Database {
-    private static let schemaVersion: UInt64 = 32
+    private static let schemaVersion: UInt64 = 33
 
     static func mainConfiguration(url: URL, fileStorage: FileStorage) -> Realm.Configuration {
         let shouldDelete = shouldDeleteRealm(url: url)
@@ -50,6 +50,71 @@ struct Database {
             if schemaVersion < 32 {
                 Database.migrateEmbeddedObjects(migration: migration)
             }
+            if schemaVersion < 33 {
+                Database.migrateRawValuesToEnums(migration: migration)
+            }
+        }
+    }
+
+    private static func migrateRawValuesToEnums(migration: Migration) {
+        let migrateSyncState: (MigrationObject?, MigrationObject?) -> Void = { old, new in
+            guard let rawState = old?["rawSyncState"] as? Int else { return }
+            new?["syncState"] = ObjectSyncState(rawValue: rawState) ?? .synced
+        }
+
+        let migrateCustomLibraryKey: (MigrationObject?, MigrationObject?) -> Void = { old, new in
+            guard let rawKey = old?["customLibraryKey"] as? Int else { return }
+            new?["customLibraryKey"] = RCustomLibraryType(rawValue: rawKey) ?? .myLibrary
+        }
+
+        let migrateChangeType: (MigrationObject?, MigrationObject?) -> Void = { old, new in
+            guard let rawKey = old?["rawChangeType"] as? Int else { return }
+            new?["changeType"] = UpdatableChangeType(rawValue: rawKey) ?? .sync
+        }
+
+        migration.enumerateObjects(ofType: "RCustomLibrary") { old, new in
+            guard let rawType = old?["rawType"] as? Int else { return }
+            new?["type"] = RCustomLibraryType(rawValue: rawType) ?? .myLibrary
+        }
+
+        migration.enumerateObjects(ofType: "RGroup") { old, new in
+            if let rawType = old?["rawType"] as? String {
+                new?["type"] = GroupType(rawValue: rawType) ?? .private
+            }
+            migrateSyncState(old, new)
+        }
+
+        migration.enumerateObjects(ofType: "RCollection") { old, new in
+            migrateSyncState(old, new)
+            migrateCustomLibraryKey(old, new)
+            migrateChangeType(old, new)
+        }
+
+        migration.enumerateObjects(ofType: "RItem") { old, new in
+            migrateSyncState(old, new)
+            migrateCustomLibraryKey(old, new)
+            migrateChangeType(old, new)
+        }
+
+        migration.enumerateObjects(ofType: "RSearch") { old, new in
+            migrateSyncState(old, new)
+            migrateCustomLibraryKey(old, new)
+            migrateChangeType(old, new)
+        }
+
+        migration.enumerateObjects(ofType: "RPageIndex") { old, new in
+            migrateSyncState(old, new)
+            migrateCustomLibraryKey(old, new)
+            migrateChangeType(old, new)
+        }
+
+        migration.enumerateObjects(ofType: "RTag") { old, new in
+            migrateCustomLibraryKey(old, new)
+        }
+
+        migration.enumerateObjects(ofType: "RTypedTag") { old, new in
+            guard let rawType = old?["rawType"] as? Int else { return }
+            new?["type"] = RTypedTag.Kind(rawValue: rawType) ?? .manual
         }
     }
 
