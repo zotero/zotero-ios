@@ -5100,7 +5100,7 @@
 			repositoryURL = "https://github.com/RxSwiftCommunity/RxAlamofire";
 			requirement = {
 				kind = exactVersion;
-				version = 6.1.1;
+				version = 6.1.2;
 			};
 		};
 		B356A3732524A601003F1943 /* XCRemoteSwiftPackageReference "RxSwiftExt" */ = {
@@ -5108,7 +5108,7 @@
 			repositoryURL = "https://github.com/RxSwiftCommunity/RxSwiftExt";
 			requirement = {
 				kind = exactVersion;
-				version = 6.0.1;
+				version = 6.1.0;
 			};
 		};
 		B356A3792524A63D003F1943 /* XCRemoteSwiftPackageReference "SwiftyGif" */ = {
@@ -5132,7 +5132,7 @@
 			repositoryURL = "https://github.com/Quick/Nimble";
 			requirement = {
 				kind = exactVersion;
-				version = 9.0.1;
+				version = 9.2.1;
 			};
 		};
 		B356A38E2524A6BA003F1943 /* XCRemoteSwiftPackageReference "Quick" */ = {
@@ -5140,7 +5140,7 @@
 			repositoryURL = "https://github.com/Quick/Quick";
 			requirement = {
 				kind = exactVersion;
-				version = 3.1.2;
+				version = 4.0.0;
 			};
 		};
 		B356A3942524A6D5003F1943 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */ = {
@@ -5172,7 +5172,7 @@
 			repositoryURL = "https://github.com/ReactiveX/RxSwift";
 			requirement = {
 				kind = exactVersion;
-				version = 6.1.0;
+				version = 6.2.0;
 			};
 		};
 		B3A6C59D252CA08200F24CBE /* XCRemoteSwiftPackageReference "PSPDFKit-SP" */ = {
@@ -5180,7 +5180,7 @@
 			repositoryURL = "https://github.com/PSPDFKit/PSPDFKit-SP";
 			requirement = {
 				kind = exactVersion;
-				version = 10.3.0;
+				version = 10.5.1;
 			};
 		};
 		B3BD2B9E25C95ED300275EF9 /* XCRemoteSwiftPackageReference "Starscream" */ = {

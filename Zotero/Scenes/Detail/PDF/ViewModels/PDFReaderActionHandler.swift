@@ -336,28 +336,26 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
         // Update the document
 
-        UndoController.performWithoutUndo(undoController: viewModel.state.document.undoController) {
-            if !modifiedAnnotations.isEmpty {
-                for (pdfAnnotation, annotation, changes) in modifiedAnnotations {
-                    self.update(pdfAnnotation: pdfAnnotation, with: annotation, changes: changes, state: viewModel.state)
-                }
+        if !modifiedAnnotations.isEmpty {
+            for (pdfAnnotation, annotation, changes) in modifiedAnnotations {
+                self.update(pdfAnnotation: pdfAnnotation, with: annotation, changes: changes, state: viewModel.state)
             }
+        }
 
-            if !deletedAnnotations.isEmpty {
-                viewModel.state.document.remove(annotations: deletedAnnotations, options: nil)
-            }
+        if !deletedAnnotations.isEmpty {
+            viewModel.state.document.remove(annotations: deletedAnnotations, options: nil)
+        }
 
-            if !addedAnnotations.isEmpty {
-                // Convert Zotero annotations to PSPDFKit annotations
-                let annotations = addedAnnotations.map({ AnnotationConverter.annotation(from: $0, type: .zotero, interfaceStyle: viewModel.state.interfaceStyle) })
-                // Add them to document, suppress notifications
-                viewModel.state.document.add(annotations: annotations, options: nil)
-                // Store preview for image annotations
-                annotations.compactMap({ $0 as? PSPDFKit.SquareAnnotation }).forEach { annotation in
-                    self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key,
-                                                           libraryId: viewModel.state.library.identifier,
-                                                           isDark: (viewModel.state.interfaceStyle == .dark))
-                }
+        if !addedAnnotations.isEmpty {
+            // Convert Zotero annotations to PSPDFKit annotations
+            let annotations = addedAnnotations.map({ AnnotationConverter.annotation(from: $0, type: .zotero, interfaceStyle: viewModel.state.interfaceStyle) })
+            // Add them to document, suppress notifications
+            viewModel.state.document.add(annotations: annotations, options: nil)
+            // Store preview for image annotations
+            annotations.compactMap({ $0 as? PSPDFKit.SquareAnnotation }).forEach { annotation in
+                self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key,
+                                                       libraryId: viewModel.state.library.identifier,
+                                                       isDark: (viewModel.state.interfaceStyle == .dark))
             }
         }
     }
@@ -561,7 +559,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         }
 
         if let pdfAnnotation = viewModel.state.document.annotations(at: UInt(annotation.page)).first(where: { $0.syncable && $0.key == annotation.key }) {
-            self.update(pdfAnnotation: pdfAnnotation, with: newAnnotation, changes: changes, state: viewModel.state)
+            viewModel.state.document.undoController.recordCommand(named: nil, changing: [pdfAnnotation]) {
+                self.update(pdfAnnotation: pdfAnnotation, with: newAnnotation, changes: changes, state: viewModel.state)
+            }
         }
     }
 
@@ -679,8 +679,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     /// - parameter viewModel: ViewModel.
     private func remove(annotation: Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let documentAnnotation = viewModel.state.document.annotations(at: UInt(annotation.page)).first(where: { $0.syncable && $0.key == annotation.key }) else { return }
-        documentAnnotation.isEditable = true
-        viewModel.state.document.remove(annotations: [documentAnnotation], options: nil)
+
+        viewModel.state.document.undoController.recordCommand(named: nil, removing: [documentAnnotation]) {
+            viewModel.state.document.remove(annotations: [documentAnnotation], options: nil)
+        }
     }
 
     /// Searches through annotations and updates view with results.
@@ -853,7 +855,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             pdfAnnotation = note
         }
 
-        viewModel.state.document.add(annotations: [pdfAnnotation], options: nil)
+        viewModel.state.document.undoController.recordCommand(named: nil, adding: [pdfAnnotation]) {
+            viewModel.state.document.add(annotations: [pdfAnnotation], options: nil)
+        }
     }
 
     /// Updates annotations based on insertions to PSPDFKit document.
@@ -1050,25 +1054,23 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                 state.dbItems = items
                 state.changes = [.annotations, .itemObserving]
 
-                UndoController.performWithoutUndo(undoController: state.document.undoController) {
-                    // Disable all non-zotero annotations, store previews if needed
-                    let allAnnotations = state.document.allAnnotations(of: PSPDFKit.Annotation.Kind.all)
-                    for (_, annotations) in allAnnotations {
-                        annotations.forEach({ annotation in
-                            annotation.flags.update(with: .locked)
+                // Disable all non-zotero annotations, store previews if needed
+                let allAnnotations = state.document.allAnnotations(of: PSPDFKit.Annotation.Kind.all)
+                for (_, annotations) in allAnnotations {
+                    annotations.forEach({ annotation in
+                        annotation.flags.update(with: .locked)
 
-                            if let annotation = annotation as? PSPDFKit.SquareAnnotation {
-                                self.annotationPreviewController.store(for: annotation, parentKey: state.key, libraryId: viewModel.state.library.identifier, isDark: isDark)
-                            }
-                        })
-                    }
-                    // Add zotero annotations to document
-                    state.document.add(annotations: pspdfkitAnnotations, options: nil)
-                    // Store previews
-                    pspdfkitAnnotations.forEach { annotation in
                         if let annotation = annotation as? PSPDFKit.SquareAnnotation {
                             self.annotationPreviewController.store(for: annotation, parentKey: state.key, libraryId: viewModel.state.library.identifier, isDark: isDark)
                         }
+                    })
+                }
+                // Add zotero annotations to document
+                state.document.add(annotations: pspdfkitAnnotations, options: nil)
+                // Store previews
+                pspdfkitAnnotations.forEach { annotation in
+                    if let annotation = annotation as? PSPDFKit.SquareAnnotation {
+                        self.annotationPreviewController.store(for: annotation, parentKey: state.key, libraryId: viewModel.state.library.identifier, isDark: isDark)
                     }
                 }
             }

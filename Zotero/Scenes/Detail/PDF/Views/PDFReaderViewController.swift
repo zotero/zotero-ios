@@ -81,24 +81,26 @@ final class PDFReaderViewController: UIViewController {
     }()
     private lazy var undoButton: UIBarButtonItem = {
         let undo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.left"), style: .plain, target: nil, action: nil)
-        undo.isEnabled = self.pdfController.undoManager?.canUndo ?? false
+        undo.isEnabled = self.viewModel.state.document.undoController.undoManager.canUndo
         undo.tag = NavigationBarButton.undo.rawValue
         undo.rx
             .tap
             .subscribe(onNext: { [weak self] _ in
-                self?.pdfController.undoManager?.undo()
+                guard let `self` = self, self.viewModel.state.document.undoController.undoManager.canUndo else { return }
+                self.viewModel.state.document.undoController.undoManager.undo()
             })
             .disposed(by: self.disposeBag)
         return undo
     }()
     private lazy var redoButton: UIBarButtonItem = {
         let redo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.right"), style: .plain, target: nil, action: nil)
-        redo.isEnabled = self.pdfController.undoManager?.canRedo ?? false
+        redo.isEnabled = self.viewModel.state.document.undoController.undoManager.canRedo
         redo.tag = NavigationBarButton.redo.rawValue
         redo.rx
             .tap
             .subscribe(onNext: { [weak self] _ in
-                self?.pdfController.undoManager?.redo()
+                guard let `self` = self, self.viewModel.state.document.undoController.undoManager.canRedo else { return }
+                self.viewModel.state.document.undoController.undoManager.redo()
             })
             .disposed(by: self.disposeBag)
         return redo
@@ -334,8 +336,7 @@ final class PDFReaderViewController: UIViewController {
 
         stateManager.drawColor = AnnotationColorGenerator.color(from: self.viewModel.state.activeColor, isHighlight: (annotationTool == .highlight),
                                                                 userInterfaceStyle: self.traitCollection.userInterfaceStyle).color
-
-        self.pdfController.annotationStateManager.setState(annotationTool, variant: nil)
+        stateManager.setState(annotationTool, variant: nil)
     }
 
     private func showColorPicker(sender: UIButton) {
