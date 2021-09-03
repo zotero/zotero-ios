@@ -34,7 +34,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         static let color = PdfAnnotationChanges(rawValue: 1 << 0)
         static let comment = PdfAnnotationChanges(rawValue: 1 << 1)
         static let boundingBox = PdfAnnotationChanges(rawValue: 1 << 2)
-        static let rects = PdfAnnotationChanges(rawValue: 1 << 2)
+        static let rects = PdfAnnotationChanges(rawValue: 1 << 3)
+        static let lineWidth = PdfAnnotationChanges(rawValue: 1 << 4)
 
         static func stringValues(from changes: PdfAnnotationChanges) -> [String] {
             switch changes {
@@ -42,6 +43,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             case .comment: return ["contents"]
             case .rects: return ["rects"]
             case .boundingBox: return ["boundingBox"]
+            case .lineWidth: return ["lineWidth"]
             default: return []
             }
         }
@@ -126,13 +128,18 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                                   },
                                   in: viewModel)
 
+        case .setLineWidth(let key, let width):
+            self.updateAnnotation(with: key,
+                                  transformAnnotation: { originalAnnotation in
+                                      let changes: PdfAnnotationChanges = originalAnnotation.lineWidth != width ? .color : []
+                                      return (originalAnnotation.copy(lineWidth: width), changes)
+                                  },
+                                  in: viewModel)
+
         case .setCommentActive(let isActive):
-            guard let annotation = viewModel.state.selectedAnnotation else { return }
+            guard viewModel.state.selectedAnnotation != nil else { return }
             self.update(viewModel: viewModel) { state in
                 state.selectedAnnotationCommentActive = isActive
-                if let index = state.annotations[annotation.page]?.firstIndex(where: { annotation.key == $0.key }) {
-                    state.updatedAnnotationIndexPaths = [IndexPath(row: index, section: annotation.page)]
-                }
                 state.changes = .activeComment
             }
 
@@ -352,10 +359,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             // Add them to document, suppress notifications
             viewModel.state.document.add(annotations: annotations, options: nil)
             // Store preview for image annotations
-            annotations.compactMap({ $0 as? PSPDFKit.SquareAnnotation }).forEach { annotation in
-                self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key,
-                                                       libraryId: viewModel.state.library.identifier,
-                                                       isDark: (viewModel.state.interfaceStyle == .dark))
+            let isDark = viewModel.state.interfaceStyle == .dark
+            annotations.forEach { annotation in
+                self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, isDark: isDark)
             }
         }
     }
@@ -477,9 +483,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         // Load area annotations if needed.
         for (_, annotations) in viewModel.state.document.allAnnotations(of: .square) {
             for annotation in annotations {
-                guard let annotation = annotation as? PSPDFKit.SquareAnnotation,
-                      annotation.isImageAnnotation &&
-                      !self.annotationPreviewController.hasPreview(for: (annotation.key ?? annotation.uuid), parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark) else { continue }
+                guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation &&
+                      !self.annotationPreviewController.hasPreview(for: annotation.previewId, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark) else { continue }
                 self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark)
             }
         }
@@ -613,13 +618,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
         if changes.contains(.boundingBox) {
             pdfAnnotation.boundingBox = annotation.boundingBox
-            if let annotation = pdfAnnotation as? PSPDFKit.SquareAnnotation {
-                self.annotationPreviewController.store(for: annotation, parentKey: state.key, libraryId: state.library.identifier, isDark: (state.interfaceStyle == .dark))
-            }
+            self.annotationPreviewController.store(for: pdfAnnotation, parentKey: state.key, libraryId: state.library.identifier, isDark: (state.interfaceStyle == .dark))
         }
 
         if changes.contains(.rects) {
             pdfAnnotation.rects = annotation.rects
+        }
+
+        if changes.contains(.lineWidth), let inkAnnotation = pdfAnnotation as? PSPDFKit.InkAnnotation {
+            inkAnnotation.lineWidth = annotation.lineWidth ?? 1
         }
 
         NotificationCenter.default.post(name: NSNotification.Name.PSPDFAnnotationChanged, object: pdfAnnotation,
@@ -665,12 +672,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                               },
                               in: viewModel)
 
-        if let pdfAnnotation = pdfAnnotation as? PSPDFKit.SquareAnnotation {
+        if pdfAnnotation.shouldRenderPreview {
             // Remove cached annotation preview.
             viewModel.state.previewCache.removeObject(forKey: (key as NSString))
             // Cache new preview.
-            let isDark = viewModel.state.interfaceStyle == .dark
-            self.annotationPreviewController.store(for: pdfAnnotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, isDark: isDark)
+            self.annotationPreviewController.store(for: pdfAnnotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, isDark: (viewModel.state.interfaceStyle == .dark))
         }
     }
 
@@ -800,6 +806,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     ///                     If `false`, images are loaded and no notification is sent.
     /// - parameter viewModel: ViewModel.
     private func loadPreviews(for keys: [String], notify: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard !keys.isEmpty else { return }
+
         let group = DispatchGroup()
         let isDark = viewModel.state.interfaceStyle == .dark
         let libraryId = viewModel.state.library.identifier
@@ -890,9 +898,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                                      AnnotationsConfig.baseColorKey: activeColor,
                                      AnnotationsConfig.syncableKey: true]
 
-            if let annotation = annotation as? PSPDFKit.SquareAnnotation {
-                self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark)
-            }
+            self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark)
         }
 
         guard !newZoteroAnnotations.isEmpty else { return }
@@ -1059,19 +1065,14 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                 for (_, annotations) in allAnnotations {
                     annotations.forEach({ annotation in
                         annotation.flags.update(with: .locked)
-
-                        if let annotation = annotation as? PSPDFKit.SquareAnnotation {
-                            self.annotationPreviewController.store(for: annotation, parentKey: state.key, libraryId: viewModel.state.library.identifier, isDark: isDark)
-                        }
+                        self.annotationPreviewController.store(for: annotation, parentKey: state.key, libraryId: viewModel.state.library.identifier, isDark: isDark)
                     })
                 }
                 // Add zotero annotations to document
                 state.document.add(annotations: pspdfkitAnnotations, options: nil)
                 // Store previews
                 pspdfkitAnnotations.forEach { annotation in
-                    if let annotation = annotation as? PSPDFKit.SquareAnnotation {
-                        self.annotationPreviewController.store(for: annotation, parentKey: state.key, libraryId: viewModel.state.library.identifier, isDark: isDark)
-                    }
+                    self.annotationPreviewController.store(for: annotation, parentKey: state.key, libraryId: viewModel.state.library.identifier, isDark: isDark)
                 }
             }
         } catch let error {
@@ -1083,7 +1084,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         for (_, pdfAnnotations) in document.allAnnotations(of: AnnotationsConfig.supported) {
             for pdfAnnotation in pdfAnnotations {
                 // Check whether square annotation was previously created by Zotero. If it's just "normal" square (instead of our image) annotation, don't convert it to Zotero annotation.
-                if let square = pdfAnnotation as? PSPDFKit.SquareAnnotation, !square.isImageAnnotation {
+                if let square = pdfAnnotation as? PSPDFKit.SquareAnnotation, !square.isZoteroAnnotation {
                     continue
                 }
 

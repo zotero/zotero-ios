@@ -229,22 +229,34 @@ final class AnnotationsViewController: UIViewController {
 
     private func setup(cell: AnnotationCell, with annotation: Annotation, state: PDFReaderState) {
         let hasWritePermission = state.library.metadataEditable
-        let comment = state.comments[annotation.key]
         let selected = annotation.key == state.selectedAnnotation?.key
-        let preview: UIImage?
 
-        if annotation.type != .image {
-            preview = nil
-        } else {
-            preview = state.previewCache.object(forKey: (annotation.key as NSString))
-
+        let loadPreview: () -> UIImage? = {
+            let preview = state.previewCache.object(forKey: (annotation.key as NSString))
             if preview == nil {
                 self.viewModel.process(action: .requestPreviews(keys: [annotation.key], notify: true))
             }
+            return preview
         }
 
-        cell.setup(with: annotation, attributedComment: comment, preview: preview, selected: selected, commentActive: state.selectedAnnotationCommentActive,
-                   availableWidth: PDFReaderLayout.sidebarWidth, hasWritePermission: hasWritePermission)
+        let preview: UIImage?
+        let comment: AnnotationView.Comment?
+
+        switch annotation.type {
+        case .image:
+            comment = .init(attributedString: state.comments[annotation.key], isActive: state.selectedAnnotationCommentActive)
+            preview = loadPreview()
+
+        case .ink:
+            comment = nil
+            preview = loadPreview()
+
+        case .note, .highlight:
+            preview = nil
+            comment = .init(attributedString: state.comments[annotation.key], isActive: state.selectedAnnotationCommentActive)
+        }
+
+        cell.setup(with: annotation, comment: comment, preview: preview, selected: selected, availableWidth: PDFReaderLayout.sidebarWidth, hasWritePermission: hasWritePermission)
         cell.actionPublisher.subscribe(onNext: { [weak self] action in
             self?.perform(action: action, annotation: annotation)
         })
@@ -338,9 +350,14 @@ final class AnnotationsViewController: UIViewController {
 
 extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSourcePrefetching {
     func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
-        let keys = indexPaths.compactMap({ indexPath -> Annotation? in
-            return self.dataSource.snapshot.object(at: indexPath)
-        }).map({ $0.key })
+        let keys = indexPaths.compactMap({ self.dataSource.snapshot.object(at: $0) })
+                             .filter({
+                                 switch $0.type {
+                                 case .image, .ink: return true
+                                 case .note, .highlight: return false
+                                 }
+                             })
+                             .map({ $0.key })
         self.viewModel.process(action: .requestPreviews(keys: keys, notify: false))
     }
 

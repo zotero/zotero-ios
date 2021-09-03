@@ -66,14 +66,26 @@ extension PSPDFKit.Annotation {
         }
     }
 
-    var previewBoundingBox: CGRect {
-        return self.boundingBox.insetBy(dx: (self.lineWidth + 1), dy: (self.lineWidth + 1))
+    @objc var previewBoundingBox: CGRect {
+        return self.boundingBox
+    }
+
+    var isZoteroAnnotation: Bool {
+        return self.key != nil || (self.name ?? "").contains("Zotero")
+    }
+
+    var shouldRenderPreview: Bool {
+        return (self is PSPDFKit.SquareAnnotation) || (self is PSPDFKit.InkAnnotation)
+    }
+
+    var previewId: String {
+        return self.key ?? self.uuid
     }
 }
 
 extension PSPDFKit.SquareAnnotation {
-    var isImageAnnotation: Bool {
-        return self.key != nil || (self.name ?? "").contains("Zotero")
+    override var previewBoundingBox: CGRect {
+        return self.boundingBox.insetBy(dx: (self.lineWidth + 1), dy: (self.lineWidth + 1))
     }
 }
 

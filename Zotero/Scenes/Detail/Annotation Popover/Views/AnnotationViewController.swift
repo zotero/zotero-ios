@@ -22,11 +22,14 @@ final class AnnotationViewController: UIViewController {
     @IBOutlet private weak var scrollView: UIScrollView!
     @IBOutlet private weak var containerStackView: UIStackView!
     @IBOutlet private weak var colorPickerContainer: UIStackView!
+    @IBOutlet private weak var lineWidthContainer: UIStackView!
+    @IBOutlet private weak var lineWidthSlider: UISlider!
+    @IBOutlet private weak var lineWidthValueLabel: UILabel!
     @IBOutlet private weak var deleteButton: UIButton!
-    private weak var header: AnnotationViewHeader?
+    private weak var header: AnnotationViewHeader!
     private weak var comment: AnnotationViewTextView?
-    private weak var tagsButton: AnnotationViewButton?
-    private weak var tags: AnnotationViewText?
+    private weak var tagsButton: AnnotationViewButton!
+    private weak var tags: AnnotationViewText!
 
     weak var coordinatorDelegate: AnnotationPopoverAnnotationCoordinatorDelegate?
 
@@ -93,11 +96,13 @@ final class AnnotationViewController: UIViewController {
         guard state.changes.contains(.annotations) else { return }
 
         // Update header
-        self.header?.setup(with: annotation, isEditable: state.library.metadataEditable, showDoneButton: false, accessibilityType: .view)
+        self.header.setup(with: annotation, isEditable: state.library.metadataEditable, showDoneButton: false, accessibilityType: .view)
 
         // Update comment
-        let comment = self.attributedStringConverter.convert(text: annotation.comment, baseFont: AnnotationPopoverLayout.annotationLayout.font)
-        self.comment?.setup(text: comment)
+        if let commentView = self.comment {
+            let comment = self.attributedStringConverter.convert(text: annotation.comment, baseFont: AnnotationPopoverLayout.annotationLayout.font)
+            commentView.setup(text: comment)
+        }
 
         // Update selected color
         if let views = self.colorPickerContainer?.arrangedSubviews {
@@ -108,14 +113,12 @@ final class AnnotationViewController: UIViewController {
             }
         }
 
+        // Update tags
         if !annotation.tags.isEmpty {
-            self.tags?.setup(with: AnnotationView.attributedString(from: annotation.tags, layout: AnnotationPopoverLayout.annotationLayout))
-            self.tags?.isHidden = false
-            self.tagsButton?.isHidden = true
-        } else {
-            self.tags?.isHidden = true
-            self.tagsButton?.isHidden = false
+            self.tags.setup(with: AnnotationView.attributedString(from: annotation.tags, layout: AnnotationPopoverLayout.annotationLayout))
         }
+        self.tags.isHidden = annotation.tags.isEmpty
+        self.tagsButton.isHidden = !annotation.tags.isEmpty
     }
 
     private func name(for color: String, isSelected: Bool) -> String {
@@ -178,6 +181,8 @@ final class AnnotationViewController: UIViewController {
 
         let layout = AnnotationPopoverLayout.annotationLayout
 
+        var arrangedSubviews: [UIView] = []
+
         // Setup header
         let header = AnnotationViewHeader(layout: layout)
         header.setup(with: annotation, isEditable: self.viewModel.state.library.metadataEditable, showDoneButton: false, accessibilityType: .view)
@@ -188,46 +193,28 @@ final class AnnotationViewController: UIViewController {
               .disposed(by: self.disposeBag)
         self.header = header
 
+        arrangedSubviews.append(header)
+        arrangedSubviews.append(AnnotationViewSeparator())
+
         // Setup comment
-        let commentView = AnnotationViewTextView(layout: layout, placeholder: self.commentPlaceholder)
-        let comment = AnnotationView.attributedString(from: self.attributedStringConverter.convert(text: annotation.comment, baseFont: layout.font), layout: layout)
-        commentView.setup(text: comment)
-        commentView.textObservable
-                   .subscribe(with: self, onNext: { `self`, data in
-                       self.viewModel.process(action: .setComment(key: annotation.key, comment: data.0))
-                       if data.1 {
-                           self.updatePreferredContentSize()
-                           self.scrollToBottomIfNeeded()
-                       }
-                   })
-                   .disposed(by: self.disposeBag)
-        self.comment = commentView
+        if annotation.type != .ink {
+            let commentView = AnnotationViewTextView(layout: layout, placeholder: self.commentPlaceholder)
+            let comment = AnnotationView.attributedString(from: self.attributedStringConverter.convert(text: annotation.comment, baseFont: layout.font), layout: layout)
+            commentView.setup(text: comment)
+            commentView.textObservable
+                       .subscribe(with: self, onNext: { `self`, data in
+                           self.viewModel.process(action: .setComment(key: annotation.key, comment: data.0))
+                           if data.1 {
+                               self.updatePreferredContentSize()
+                               self.scrollToBottomIfNeeded()
+                           }
+                       })
+                       .disposed(by: self.disposeBag)
+            self.comment = commentView
 
-        // Setup tags
-        let tags = AnnotationViewText(layout: layout)
-        if !annotation.tags.isEmpty {
-            tags.setup(with: AnnotationView.attributedString(from: annotation.tags, layout: layout))
+            arrangedSubviews.append(commentView)
+            arrangedSubviews.append(AnnotationViewSeparator())
         }
-        tags.isHidden = annotation.tags.isEmpty
-        tags.tap
-            .subscribe(with: self, onNext: { `self`, _ in
-                self.showTagPicker()
-            })
-            .disposed(by: self.disposeBag)
-        self.tags = tags
-        self.tags?.button.accessibilityLabel = L10n.Accessibility.Pdf.tags + ": " + (self.tags?.textLabel.text ?? "")
-        self.tags?.textLabel.isAccessibilityElement = false
-
-        let tagButton = AnnotationViewButton(layout: layout)
-        tagButton.setTitle(L10n.Pdf.AnnotationsSidebar.addTags, for: .normal)
-        tagButton.isHidden = !annotation.tags.isEmpty
-        tagButton.rx.tap
-                 .subscribe(with: self, onNext: { `self`, _ in
-                     self.showTagPicker()
-                 })
-                 .disposed(by: self.disposeBag)
-        self.tagsButton = tagButton
-        self.accessibilityLabel = L10n.Pdf.AnnotationsSidebar.addTags
 
         // Setup color picker
         self.colorPickerContainer.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
@@ -244,17 +231,49 @@ final class AnnotationViewController: UIViewController {
             circleView.isAccessibilityElement = true
             circleView.accessibilityLabel = self.name(for: circleView.hexColor, isSelected: circleView.isSelected)
             circleView.backgroundColor = Asset.Colors.defaultCellBackground.color
-            self.colorPickerContainer?.addArrangedSubview(circleView)
+            self.colorPickerContainer.addArrangedSubview(circleView)
         }
 
-        self.containerStackView.insertArrangedSubview(header, at: 0)
-        self.containerStackView.insertArrangedSubview(AnnotationViewSeparator(), at: 1)
-        self.containerStackView.insertArrangedSubview(commentView, at: 2)
-        self.containerStackView.insertArrangedSubview(AnnotationViewSeparator(), at: 3)
-        self.containerStackView.insertArrangedSubview(AnnotationViewSeparator(), at: 5)
-        self.containerStackView.insertArrangedSubview(tags, at: 6)
-        self.containerStackView.insertArrangedSubview(tagButton, at: 7)
-        self.containerStackView.insertArrangedSubview(AnnotationViewSeparator(), at: 8)
+        arrangedSubviews.append(self.colorPickerContainer)
+        arrangedSubviews.append(AnnotationViewSeparator())
+
+        // Setup tags
+        let tags = AnnotationViewText(layout: layout)
+        if !annotation.tags.isEmpty {
+            tags.setup(with: AnnotationView.attributedString(from: annotation.tags, layout: layout))
+        }
+        tags.isHidden = annotation.tags.isEmpty
+        tags.tap
+            .subscribe(with: self, onNext: { `self`, _ in
+                self.showTagPicker()
+            })
+            .disposed(by: self.disposeBag)
+        tags.button.accessibilityLabel = L10n.Accessibility.Pdf.tags + ": " + (self.tags?.textLabel.text ?? "")
+        tags.textLabel.isAccessibilityElement = false
+        self.tags = tags
+
+        arrangedSubviews.append(tags)
+
+        let tagButton = AnnotationViewButton(layout: layout)
+        tagButton.setTitle(L10n.Pdf.AnnotationsSidebar.addTags, for: .normal)
+        tagButton.isHidden = !annotation.tags.isEmpty
+        tagButton.rx.tap
+                 .subscribe(with: self, onNext: { `self`, _ in
+                     self.showTagPicker()
+                 })
+                 .disposed(by: self.disposeBag)
+        tagButton.accessibilityLabel = L10n.Pdf.AnnotationsSidebar.addTags
+        self.tagsButton = tagButton
+
+        arrangedSubviews.append(tagButton)
+        arrangedSubviews.append(AnnotationViewSeparator())
+
+        for subview in self.containerStackView.arrangedSubviews {
+            self.containerStackView.removeArrangedSubview(subview)
+        }
+        for subview in arrangedSubviews {
+            self.containerStackView.addArrangedSubview(subview)
+        }
     }
 }
 

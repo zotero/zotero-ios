@@ -85,14 +85,13 @@ extension AnnotationPreviewController {
     /// - parameter parentKey: Key of PDF item.
     /// - parameter libraryId: Library identifier of item.
     /// - parameter isDark: `true` if dark mode is on, `false` otherwise.
-    func store(for annotation: PSPDFKit.SquareAnnotation, parentKey: String, libraryId: LibraryIdentifier, isDark: Bool) {
-        guard annotation.isImageAnnotation, let document = annotation.document else { return }
+    func store(for annotation: PSPDFKit.Annotation, parentKey: String, libraryId: LibraryIdentifier, isDark: Bool) {
+        guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation, let document = annotation.document else { return }
 
         // Cache and report original color
-        let key = annotation.key ?? annotation.uuid
         let rect = annotation.previewBoundingBox
-        self.enqueue(key: key, parentKey: parentKey, libraryId: libraryId, document: document, pageIndex: annotation.pageIndex,
-                     rect: rect, invertColors: false, isDark: isDark, type: .cachedAndReported)
+        self.enqueue(key: annotation.previewId, parentKey: parentKey, libraryId: libraryId, document: document, pageIndex: annotation.pageIndex,
+                     rect: rect, includeAnnotation: (annotation is PSPDFKit.InkAnnotation), invertColors: false, isDark: isDark, type: .cachedAndReported)
 //        // If in dark mode, only cache light mode version, which is required for backend upload
 //        if isDark {
 //            self.enqueue(key: key, parentKey: parentKey, document: document, pageIndex: annotation.pageIndex, rect: rect,
@@ -104,10 +103,10 @@ extension AnnotationPreviewController {
     /// - parameter annotation: Area annotation for which the preview is to be deleted.
     /// - parameter parentKey: Key of PDF item.
     /// - parameter libraryId: Library identifier of item.
-    func delete(for annotation: PSPDFKit.SquareAnnotation, parentKey: String, libraryId: LibraryIdentifier) {
-        guard annotation.isImageAnnotation else { return }
+    func delete(for annotation: PSPDFKit.Annotation, parentKey: String, libraryId: LibraryIdentifier) {
+        guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation else { return }
 
-        let key = annotation.key ?? annotation.uuid
+        let key = annotation.previewId
         self.queue.async(flags: .barrier) { [weak self] in
             guard let `self` = self else { return }
             try? self.fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: true))
@@ -155,11 +154,12 @@ extension AnnotationPreviewController {
     /// - parameter document: Document to render.
     /// - parameter pageIndex: Page to render.
     /// - parameter rect: Part of page to render.
+    /// - parameter includeAnnotation: If true, render annotation as well, otherwise render PDF only.
     /// - parameter invertColors: `true` if colors should be inverted, false otherwise.
     /// - parameter isDark: `true` if rendered image is in dark mode, `false` otherwise.
     /// - parameter type: Type of preview image. If `temporary`, requested image is temporary and is returned as `Single<UIImage>`. Otherwise image is
     ///                   cached locally and reported through `PublishSubject`.
-    private func enqueue(key: String, parentKey: String, libraryId: LibraryIdentifier, document: Document, pageIndex: PageIndex, rect: CGRect, invertColors: Bool = false, isDark: Bool = false, type: PreviewType) {
+    private func enqueue(key: String, parentKey: String, libraryId: LibraryIdentifier, document: Document, pageIndex: PageIndex, rect: CGRect, includeAnnotation: Bool = false, invertColors: Bool = false, isDark: Bool = false, type: PreviewType) {
         /*
          Workaround for PSPDFKit issue.
 
@@ -174,8 +174,13 @@ extension AnnotationPreviewController {
          */
 //        let newDoc = Document(url: document.fileURL!)
 
+        var skipAnnotations = document.annotations(at: pageIndex)
+        if includeAnnotation {
+            skipAnnotations = skipAnnotations.filter({ $0.previewId != key })
+        }
+
         let options = RenderOptions()
-        options.skipAnnotationArray = document.annotations(at: pageIndex)
+        options.skipAnnotationArray = skipAnnotations
         // Color inversion disabled because of PSPDFKit rendering issues. It's not needed now, but just in case this is needed later let's keep it here.
 //        options.invertRenderColor = !invertColors && isDark
 

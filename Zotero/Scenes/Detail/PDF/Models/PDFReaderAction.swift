@@ -28,6 +28,7 @@ enum PDFReaderAction {
     case setComment(key: String, comment: NSAttributedString)
     case setTags([Tag], String)
     case setColor(key: String, color: String)
+    case setLineWidth(key: String, width: CGFloat)
     case setHighlight(text: String, key: String)
     case updateAnnotationProperties(Annotation)
     case userInterfaceStyleChanged(UIUserInterfaceStyle)

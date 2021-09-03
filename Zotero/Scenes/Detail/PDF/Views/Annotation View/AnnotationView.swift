@@ -29,6 +29,11 @@ final class AnnotationView: UIView {
         case view
     }
 
+    struct Comment {
+        let attributedString: NSAttributedString?
+        let isActive: Bool
+    }
+
     private let layout: AnnotationViewLayout
     let actionPublisher: PublishSubject<AnnotationView.Action>
 
@@ -89,18 +94,25 @@ final class AnnotationView: UIView {
         self.header.setup(with: annotation, isEditable: (hasWritePermission && selected), showDoneButton: self.layout.showDoneButton, accessibilityType: accessibilityType)
     }
 
-    func setup(with annotation: Annotation, attributedComment: NSAttributedString?, preview: UIImage?, selected: Bool, commentActive: Bool, availableWidth: CGFloat, hasWritePermission: Bool,
-               accessibilityType: AccessibilityType) {
+    /// Setups up annotation view with given annotation and additional data.
+    /// - parameter annotation: Annotation to show in view.
+    /// - parameter comment: Comment to show. If nil, comment field is not shown.
+    /// - parameter preview: Preview image to show. If nil, no image is shown.
+    /// - parameter selected: If true, selected state style is applied.
+    /// - parameter availableWidth: Available width for view.
+    /// - parameter hasWritePermission: Indicates whether editing is enabled.
+    /// - parameter accessibilityType: Indicates what type of Accessibility features should be used.
+    func setup(with annotation: Annotation, comment: Comment?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, hasWritePermission: Bool) {
         let color = UIColor(hex: annotation.color)
-        let canEdit = (annotation.editability != .notEditable) && selected && (hasWritePermission || annotation.isAuthor)
+        let canEdit = (annotation.editability != .notEditable) && (hasWritePermission || annotation.isAuthor) && selected
 
-        self.header.setup(with: annotation, isEditable: canEdit, showDoneButton: self.layout.showDoneButton, accessibilityType: accessibilityType)
-        self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth, accessibilityType: accessibilityType)
-        self.setupComments(for: annotation, attributedComment: attributedComment, isActive: commentActive, canEdit: canEdit)
-        self.setupTags(for: annotation, canEdit: canEdit, accessibilityEnabled: (accessibilityType == .view || selected))
+        self.header.setup(with: annotation, isEditable: canEdit, showDoneButton: self.layout.showDoneButton, accessibilityType: .cell)
+        self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth, accessibilityType: .cell)
+        self.setup(comment: comment, canEdit: canEdit)
+        self.setupTags(for: annotation, canEdit: canEdit, accessibilityEnabled: selected)
         self.setupObserving()
 
-        let commentButtonIsHidden = !self.layout.showsContent || !canEdit || commentActive || !annotation.comment.isEmpty
+        let commentButtonIsHidden = self.commentTextView.isHidden
         let highlightContentIsHidden = self.highlightContent?.isHidden ?? true
         let imageContentIsHidden = self.imageContent?.isHidden ?? true
 
@@ -115,16 +127,16 @@ final class AnnotationView: UIView {
 
         highlightContent.isUserInteractionEnabled = false
         highlightContent.isHidden = annotation.type != .highlight
-        imageContent.isHidden = annotation.type != .image
+        imageContent.isHidden = annotation.type != .image && annotation.type != .ink
 
         switch annotation.type {
-        case .note, .ink: break
+        case .note: break
 
         case .highlight:
             let bottomInset = self.inset(from: self.layout.highlightLineVerticalInsets, hasComment: !annotation.comment.isEmpty, selected: selected, canEdit: canEdit)
             highlightContent.setup(with: color, text: (annotation.text ?? ""), bottomInset: bottomInset, accessibilityType: accessibilityType)
 
-        case .image:
+        case .image, .ink:
             let size = annotation.previewBoundingBox.size
             let maxWidth = availableWidth - (self.layout.horizontalInset * 2)
             let maxHeight = ceil((size.height / size.width) * maxWidth)
@@ -140,21 +152,32 @@ final class AnnotationView: UIView {
         return (selected && canEdit) ? 0 : baseInset
     }
 
-    private func setupComments(for annotation: Annotation, attributedComment: NSAttributedString?, isActive: Bool, canEdit: Bool) {
-        guard isActive || !annotation.comment.isEmpty else {
-            self.commentTextView.isHidden = !self.layout.showsContent || !canEdit
+    /// Setups comment input. If comment is nil or comment can't be edited and there is no assigned comment string, the input is hidden. Otherwise the input either acts as text view or button.
+    /// - parameter comment: Comment to show.
+    /// - parameter canEdit: Indicates whether comment can be edited by the user.
+    private func setup(comment: Comment?, canEdit: Bool) {
+        let isEmptyComment = (comment?.attributedString?.string ?? "").isEmpty
+        guard let comment = comment, !isEmptyComment || canEdit else {
+            self.commentTextView.isHidden = true
+            return
+        }
+
+        self.commentTextView.isHidden = false
+
+        // If comment is empty and not active, the input acts as a button.
+        if isEmptyComment && !comment.isActive {
             self.commentTextView.set(placeholderColor: Asset.Colors.zoteroBlue.color)
             self.commentTextView.setup(text: nil)
             return
         }
 
-        let comment = attributedComment.flatMap({ AnnotationView.attributedString(from: $0, layout: self.layout) }) ?? NSAttributedString()
-        self.commentTextView.setup(text: comment)
-
-        self.commentTextView.isHidden = false
+        // If there is any comment or the comment is active, the input acts as a text view with a placeholder.
+        let attributedString = comment.attributedString.flatMap({ AnnotationView.attributedString(from: $0, layout: self.layout) })
         self.commentTextView.set(placeholderColor: .placeholderText)
+        self.commentTextView.setup(text: attributedString)
         self.commentTextView.isUserInteractionEnabled = canEdit
-        if canEdit && isActive {
+
+        if canEdit && comment.isActive {
             self.commentTextView.becomeFirstResponder()
         }
     }
