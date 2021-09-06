@@ -19,6 +19,11 @@ struct AnnotationEditActionHandler: ViewModelActionHandler {
                 state.annotation = state.annotation.copy(color: hexString)
                 state.changes = .color
             }
+
+        case .setLineWidth(let width):
+            self.update(viewModel: viewModel) { state in
+                state.annotation = state.annotation.copy(lineWidth: width)
+            }
             
         case .setPageLabel(let label, let updateSubsequentPages):
             self.update(viewModel: viewModel) { state in

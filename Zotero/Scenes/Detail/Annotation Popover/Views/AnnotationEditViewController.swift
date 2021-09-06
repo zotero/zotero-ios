@@ -17,11 +17,11 @@ typealias AnnotationEditDeleteAction = (Annotation) -> Void
 
 final class AnnotationEditViewController: UIViewController {
     private enum Section {
-        case colorPicker, pageLabel, actions, highlight
+        case properties, pageLabel, actions, highlight
 
-        var cellId: String {
+        func cellId(index: Int) -> String {
             switch self {
-            case .colorPicker: return "ColorPickerCell"
+            case .properties: return index == 0 ? "ColorPickerCell" : "LineWidthCell"
             case .actions: return "ActionCell"
             case .pageLabel: return "PageLabelCell"
             case .highlight: return "HighlightCell"
@@ -42,7 +42,7 @@ final class AnnotationEditViewController: UIViewController {
     init(viewModel: ViewModel<AnnotationEditActionHandler>, includeColorPicker: Bool, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
         var sections: [Section] = [.pageLabel, .actions]
         if includeColorPicker {
-            sections.insert(.colorPicker, at: 0)
+            sections.insert(.properties, at: 0)
         }
         if viewModel.state.annotation.type == .highlight {
             sections.insert(.highlight, at: 0)
@@ -85,7 +85,7 @@ final class AnnotationEditViewController: UIViewController {
 
     private func update(to state: AnnotationEditState) {
         if state.changes.contains(.color) {
-            self.reload(sections: [.colorPicker, .highlight])
+            self.reload(sections: [.properties, .highlight])
         }
         if state.changes.contains(.pageLabel) {
             self.reload(sections: [.pageLabel])
@@ -184,10 +184,11 @@ final class AnnotationEditViewController: UIViewController {
         self.tableView.widthAnchor.constraint(equalToConstant: AnnotationPopoverLayout.width).isActive = true
         self.tableView.delegate = self
         self.tableView.dataSource = self
-        self.tableView.register(UINib(nibName: "ColorPickerCell", bundle: nil), forCellReuseIdentifier: Section.colorPicker.cellId)
-        self.tableView.register(UINib(nibName: "HighlightEditCell", bundle: nil), forCellReuseIdentifier: Section.highlight.cellId)
-        self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.actions.cellId)
-        self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.pageLabel.cellId)
+        self.tableView.register(UINib(nibName: "ColorPickerCell", bundle: nil), forCellReuseIdentifier: Section.properties.cellId(index: 0))
+        self.tableView.register(LineWidthCell.self, forCellReuseIdentifier: Section.properties.cellId(index: 1))
+        self.tableView.register(UINib(nibName: "HighlightEditCell", bundle: nil), forCellReuseIdentifier: Section.highlight.cellId(index: 0))
+        self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.actions.cellId(index: 0))
+        self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.pageLabel.cellId(index: 0))
     }
 }
 
@@ -197,18 +198,26 @@ extension AnnotationEditViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 1
+        switch self.sections[section] {
+        case .properties:
+            return 2
+        default:
+            return 1
+        }
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let section = self.sections[indexPath.section]
-        let cell = tableView.dequeueReusableCell(withIdentifier: section.cellId, for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: section.cellId(index: indexPath.row), for: indexPath)
 
         switch section {
-        case .colorPicker:
+        case .properties:
             if let cell = cell as? ColorPickerCell {
                 cell.setup(selectedColor: self.viewModel.state.annotation.color)
                 cell.colorChange.subscribe(onNext: { hex in self.viewModel.process(action: .setColor(hex)) }).disposed(by: cell.disposeBag)
+            } else if let cell = cell as? LineWidthCell {
+                cell.set(value: Float(self.viewModel.state.annotation.lineWidth ?? 1))
+                cell.valueObservable.subscribe(onNext: { value in self.viewModel.process(action: .setLineWidth(CGFloat(value))) }).disposed(by: cell.newDisposeBag)
             }
 
         case .highlight:
@@ -246,7 +255,7 @@ extension AnnotationEditViewController: UITableViewDelegate {
         tableView.deselectRow(at: indexPath, animated: true)
 
         switch self.sections[indexPath.section] {
-        case .colorPicker, .highlight: break
+        case .properties, .highlight: break
         case .actions:
             self.confirmDeletion()
         case .pageLabel:

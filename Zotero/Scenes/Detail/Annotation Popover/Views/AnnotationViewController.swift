@@ -21,15 +21,12 @@ final class AnnotationViewController: UIViewController {
 
     @IBOutlet private weak var scrollView: UIScrollView!
     @IBOutlet private weak var containerStackView: UIStackView!
-    @IBOutlet private weak var colorPickerContainer: UIStackView!
-    @IBOutlet private weak var lineWidthContainer: UIStackView!
-    @IBOutlet private weak var lineWidthSlider: UISlider!
-    @IBOutlet private weak var lineWidthValueLabel: UILabel!
-    @IBOutlet private weak var deleteButton: UIButton!
     private weak var header: AnnotationViewHeader!
     private weak var comment: AnnotationViewTextView?
+    private weak var colorPickerContainer: UIStackView!
     private weak var tagsButton: AnnotationViewButton!
     private weak var tags: AnnotationViewText!
+    private weak var deleteButton: UIButton!
 
     weak var coordinatorDelegate: AnnotationPopoverAnnotationCoordinatorDelegate?
 
@@ -181,8 +178,6 @@ final class AnnotationViewController: UIViewController {
 
         let layout = AnnotationPopoverLayout.annotationLayout
 
-        var arrangedSubviews: [UIView] = []
-
         // Setup header
         let header = AnnotationViewHeader(layout: layout)
         header.setup(with: annotation, isEditable: self.viewModel.state.library.metadataEditable, showDoneButton: false, accessibilityType: .view)
@@ -193,8 +188,8 @@ final class AnnotationViewController: UIViewController {
               .disposed(by: self.disposeBag)
         self.header = header
 
-        arrangedSubviews.append(header)
-        arrangedSubviews.append(AnnotationViewSeparator())
+        self.containerStackView.addArrangedSubview(header)
+        self.containerStackView.addArrangedSubview(AnnotationViewSeparator())
 
         // Setup comment
         if annotation.type != .ink {
@@ -212,12 +207,16 @@ final class AnnotationViewController: UIViewController {
                        .disposed(by: self.disposeBag)
             self.comment = commentView
 
-            arrangedSubviews.append(commentView)
-            arrangedSubviews.append(AnnotationViewSeparator())
+            self.containerStackView.addArrangedSubview(commentView)
+            self.containerStackView.addArrangedSubview(AnnotationViewSeparator())
         }
 
         // Setup color picker
-        self.colorPickerContainer.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
+        let colorPickerContainer = UIView()
+        colorPickerContainer.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
+        let colorPickerStackView = UIStackView(arrangedSubviews: [])
+        colorPickerStackView.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
+        colorPickerStackView.translatesAutoresizingMaskIntoConstraints = false
         for (idx, hexColor) in AnnotationsConfig.colors.enumerated() {
             let circleView = ColorPickerCircleView(hexColor: hexColor)
             circleView.contentInsets = UIEdgeInsets(top: 11, left: (idx == 0 ? 16 : 11), bottom: 11, right: 11)
@@ -231,11 +230,33 @@ final class AnnotationViewController: UIViewController {
             circleView.isAccessibilityElement = true
             circleView.accessibilityLabel = self.name(for: circleView.hexColor, isSelected: circleView.isSelected)
             circleView.backgroundColor = Asset.Colors.defaultCellBackground.color
-            self.colorPickerContainer.addArrangedSubview(circleView)
+            colorPickerStackView.addArrangedSubview(circleView)
         }
+        self.colorPickerContainer = colorPickerStackView
+        colorPickerContainer.addSubview(colorPickerStackView)
 
-        arrangedSubviews.append(self.colorPickerContainer)
-        arrangedSubviews.append(AnnotationViewSeparator())
+        NSLayoutConstraint.activate([
+            colorPickerStackView.topAnchor.constraint(equalTo: colorPickerContainer.topAnchor),
+            colorPickerStackView.bottomAnchor.constraint(equalTo: colorPickerContainer.bottomAnchor),
+            colorPickerStackView.leadingAnchor.constraint(equalTo: colorPickerContainer.leadingAnchor),
+            colorPickerStackView.trailingAnchor.constraint(lessThanOrEqualTo: colorPickerContainer.trailingAnchor)
+        ])
+
+        self.containerStackView.addArrangedSubview(colorPickerContainer)
+        self.containerStackView.addArrangedSubview(AnnotationViewSeparator())
+
+        if annotation.type == .ink {
+            // Setup line width slider
+            let lineView = LineWidthView(settings: .lineWidth)
+            lineView.value = Float(annotation.lineWidth ?? 0)
+            lineView.valueObservable
+                    .subscribe(with: self, onNext: { `self`, value in
+                        self.viewModel.process(action: .setLineWidth(key: annotation.key, width: CGFloat(value)))
+                    })
+                    .disposed(by: self.disposeBag)
+            self.containerStackView.addArrangedSubview(lineView)
+            self.containerStackView.addArrangedSubview(AnnotationViewSeparator())
+        }
 
         // Setup tags
         let tags = AnnotationViewText(layout: layout)
@@ -252,7 +273,7 @@ final class AnnotationViewController: UIViewController {
         tags.textLabel.isAccessibilityElement = false
         self.tags = tags
 
-        arrangedSubviews.append(tags)
+        self.containerStackView.addArrangedSubview(tags)
 
         let tagButton = AnnotationViewButton(layout: layout)
         tagButton.setTitle(L10n.Pdf.AnnotationsSidebar.addTags, for: .normal)
@@ -265,15 +286,17 @@ final class AnnotationViewController: UIViewController {
         tagButton.accessibilityLabel = L10n.Pdf.AnnotationsSidebar.addTags
         self.tagsButton = tagButton
 
-        arrangedSubviews.append(tagButton)
-        arrangedSubviews.append(AnnotationViewSeparator())
+        self.containerStackView.addArrangedSubview(tagButton)
+        self.containerStackView.addArrangedSubview(AnnotationViewSeparator())
 
-        for subview in self.containerStackView.arrangedSubviews {
-            self.containerStackView.removeArrangedSubview(subview)
-        }
-        for subview in arrangedSubviews {
-            self.containerStackView.addArrangedSubview(subview)
-        }
+        // MARK: - Setup delete button
+        let button = UIButton()
+        button.setTitle(L10n.Pdf.AnnotationPopover.delete, for: .normal)
+        button.setTitleColor(.red, for: .normal)
+        button.contentEdgeInsets = UIEdgeInsets(top: 11, left: 0, bottom: 12, right: 0)
+        self.deleteButton = button
+
+        self.containerStackView.addArrangedSubview(button)
     }
 }
 

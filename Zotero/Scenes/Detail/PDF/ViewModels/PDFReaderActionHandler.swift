@@ -131,7 +131,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         case .setLineWidth(let key, let width):
             self.updateAnnotation(with: key,
                                   transformAnnotation: { originalAnnotation in
-                                      let changes: PdfAnnotationChanges = originalAnnotation.lineWidth != width ? .color : []
+                                      let changes: PdfAnnotationChanges = originalAnnotation.lineWidth != width ? .lineWidth : []
                                       return (originalAnnotation.copy(lineWidth: width), changes)
                                   },
                                   in: viewModel)
@@ -149,7 +149,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         case .updateAnnotationProperties(let annotation):
             self.updateAnnotation(with: annotation.key,
                                   transformAnnotation: { originalAnnotation in
-                                    let changes: PdfAnnotationChanges = originalAnnotation.color != annotation.color ? .color : []
+                                    var changes: PdfAnnotationChanges = []
+                                    if originalAnnotation.color != annotation.color {
+                                        changes.insert(.color)
+                                    }
+                                    if originalAnnotation.lineWidth != annotation.lineWidth {
+                                        changes.insert(.lineWidth)
+                                    }
                                     return (annotation, changes)
                                   },
                                   in: viewModel)

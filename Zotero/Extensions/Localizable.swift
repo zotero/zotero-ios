@@ -670,6 +670,10 @@ internal enum L10n {
     internal static let deletedMessage = L10n.tr("Localizable", "pdf.deleted_message")
     /// Deleted
     internal static let deletedTitle = L10n.tr("Localizable", "pdf.deleted_title")
+    /// %0.1f pt
+    internal static func lineWidthPoint(_ p1: Float) -> String {
+      return L10n.tr("Localizable", "pdf.line_width_point", p1)
+    }
     internal enum AnnotationPopover {
       /// Delete Annotation
       internal static let delete = L10n.tr("Localizable", "pdf.annotation_popover.delete")

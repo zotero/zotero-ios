@@ -437,6 +437,8 @@
 		B3486B8C26CFAFEA0036A267 /* SingleCitationViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3486B8726CFAFEA0036A267 /* SingleCitationViewController.xib */; };
 		B3486B8D26CFAFEA0036A267 /* SingleCitationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3486B8826CFAFEA0036A267 /* SingleCitationViewController.swift */; };
 		B349182B25E00771006C3313 /* ReadVersionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B349182A25E00771006C3313 /* ReadVersionDbRequest.swift */; };
+		B34A4B7026E63C9900B3E993 /* LineWidthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34A4B6F26E63C9900B3E993 /* LineWidthView.swift */; };
+		B34A4B7226E65FC200B3E993 /* LineWidthCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34A4B7126E65FC200B3E993 /* LineWidthCell.swift */; };
 		B34A73002670C9ED00A7B186 /* SyncRepoResponseDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34A72FF2670C9ED00A7B186 /* SyncRepoResponseDbRequest.swift */; };
 		B34A73012670CC3300A7B186 /* SyncRepoResponseDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34A72FF2670C9ED00A7B186 /* SyncRepoResponseDbRequest.swift */; };
 		B34A9F5E25BF12F7007C9A4A /* ReadFilenameDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34A9F5D25BF12F7007C9A4A /* ReadFilenameDbRequest.swift */; };
@@ -1223,6 +1225,8 @@
 		B3486B8726CFAFEA0036A267 /* SingleCitationViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = SingleCitationViewController.xib; sourceTree = "<group>"; };
 		B3486B8826CFAFEA0036A267 /* SingleCitationViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SingleCitationViewController.swift; sourceTree = "<group>"; };
 		B349182A25E00771006C3313 /* ReadVersionDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadVersionDbRequest.swift; sourceTree = "<group>"; };
+		B34A4B6F26E63C9900B3E993 /* LineWidthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LineWidthView.swift; sourceTree = "<group>"; };
+		B34A4B7126E65FC200B3E993 /* LineWidthCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LineWidthCell.swift; sourceTree = "<group>"; };
 		B34A72FF2670C9ED00A7B186 /* SyncRepoResponseDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncRepoResponseDbRequest.swift; sourceTree = "<group>"; };
 		B34A9F5D25BF12F7007C9A4A /* ReadFilenameDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadFilenameDbRequest.swift; sourceTree = "<group>"; };
 		B34A9F6325BF1ABB007C9A4A /* PdfDocumentExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PdfDocumentExporter.swift; sourceTree = "<group>"; };
@@ -2298,6 +2302,8 @@
 				B3764D9C2574F2DE0024274F /* ColorPickerCircleView.swift */,
 				B398142C257A649D002C755C /* HighlightEditCell.swift */,
 				B398143E257A8EB2002C755C /* HighlightEditCell.xib */,
+				B34A4B7126E65FC200B3E993 /* LineWidthCell.swift */,
+				B34A4B6F26E63C9900B3E993 /* LineWidthView.swift */,
 				B34DF1BB2576956F0019CCD1 /* SwitchCell.swift */,
 				B34DF1BC2576956F0019CCD1 /* SwitchCell.xib */,
 				B34DF1B325768BB70019CCD1 /* TextFieldCell.swift */,
@@ -3547,6 +3553,7 @@
 				B305667523FC051F003304F2 /* String+Extensions.swift in Sources */,
 				B36181FC24C9A7C000B30D56 /* LoginActionHandler.swift in Sources */,
 				B3FE4B97268DDE4900CE123F /* CitationBibliographyExportActionHandler.swift in Sources */,
+				B34A4B7226E65FC200B3E993 /* LineWidthCell.swift in Sources */,
 				B30565CE23FC051E003304F2 /* StoreGroupDbRequest.swift in Sources */,
 				B322B475267391E900BC3D08 /* ExportAction.swift in Sources */,
 				B340868925D574D6000F4446 /* RestoreDeletionsSyncAction.swift in Sources */,
@@ -3707,6 +3714,7 @@
 				B30565CB23FC051E003304F2 /* ReadSearchDbRequest.swift in Sources */,
 				B305669A23FC051F003304F2 /* RItem.swift in Sources */,
 				B3FE4B9C268DDE6100CE123F /* CitationBibliographyExportCoordinator.swift in Sources */,
+				B34A4B7026E63C9900B3E993 /* LineWidthView.swift in Sources */,
 				B305662D23FC051F003304F2 /* ItemTitleFormatter.swift in Sources */,
 				B3D3FC9D26774836008E243A /* SettingsListButtonRow.swift in Sources */,
 				B30566C823FC051F003304F2 /* SortType.swift in Sources */,
