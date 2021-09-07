@@ -10,6 +10,9 @@ import UIKit
 
 import RxSwift
 
+
+#if PDFENABLED
+
 class InkSettingsViewController: UIViewController {
     private unowned let viewModel: ViewModel<PDFReaderActionHandler>
 
@@ -60,3 +63,5 @@ class InkSettingsViewController: UIViewController {
         ])
     }
 }
+
+#endif
