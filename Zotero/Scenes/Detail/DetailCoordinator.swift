@@ -85,6 +85,7 @@ protocol DetailPdfCoordinatorDelegate: AnyObject {
     func showDeletedAlertForPdf(completion: @escaping (Bool) -> Void)
     func pdfDidDeinitialize()
     func showSettings(state: PDFSettingsState, sender: UIBarButtonItem, completion: @escaping (PDFReaderAction) -> Void)
+    func showInkSettings(sender: UIView, viewModel: ViewModel<PDFReaderActionHandler>)
 }
 
 protocol DetailAnnotationsCoordinatorDelegate: AnyObject {
@@ -809,7 +810,7 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         let controller = UIHostingController(rootView: view)
         controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         controller.popoverPresentationController?.sourceView = sender
-        controller.preferredContentSize = CGSize(width: 322, height: 74)
+        controller.preferredContentSize = CGSize(width: 272, height: 60)
         self.topViewController.present(controller, animated: true, completion: nil)
     }
 
@@ -939,6 +940,13 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
             completion(.changeDirection(state.direction == .vertical ? .horizontal : .vertical))
         }))
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
+        self.topViewController.present(controller, animated: true, completion: nil)
+    }
+
+    func showInkSettings(sender: UIView, viewModel: ViewModel<PDFReaderActionHandler>) {
+        let controller = InkSettingsViewController(viewModel: viewModel)
+        controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
+        controller.popoverPresentationController?.sourceView = sender
         self.topViewController.present(controller, animated: true, completion: nil)
     }
 }

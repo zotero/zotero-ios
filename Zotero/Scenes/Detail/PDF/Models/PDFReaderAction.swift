@@ -34,6 +34,7 @@ enum PDFReaderAction {
     case userInterfaceStyleChanged(UIUserInterfaceStyle)
     case updateAnnotationPreviews
     case setActiveColor(String)
+    case setActiveLineWidth(CGFloat)
     case saveChanges
     case create(annotation: AnnotationType, pageIndex: PageIndex, origin: CGPoint)
     case setCommentActive(Bool)

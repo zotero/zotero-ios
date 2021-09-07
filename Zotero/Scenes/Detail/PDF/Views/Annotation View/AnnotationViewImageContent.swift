@@ -38,6 +38,7 @@ final class AnnotationViewImageContent: UIView {
     private func setupView(layout: AnnotationViewLayout) {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
         imageView.translatesAutoresizingMaskIntoConstraints = false
 
         self.addSubview(imageView)

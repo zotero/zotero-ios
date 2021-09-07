@@ -143,6 +143,10 @@ final class AnnotationEditViewController: UIViewController {
             height += ceil(boundingRect.height) + 58 // 58 for 22 insets and 36 spacer
         }
 
+        if self.viewModel.state.annotation.type == .ink {
+            height += 49 // for line width slider
+        }
+
         let size = CGSize(width: AnnotationPopoverLayout.width, height: height)
         self.preferredContentSize = size
         self.navigationController?.preferredContentSize = size
@@ -200,7 +204,7 @@ extension AnnotationEditViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch self.sections[section] {
         case .properties:
-            return 2
+            return self.viewModel.state.annotation.type == .ink ? 2 : 1
         default:
             return 1
         }

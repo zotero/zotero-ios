@@ -41,7 +41,12 @@ struct Annotation: Identifiable, Equatable {
     }
 
     var previewBoundingBox: CGRect {
-        return self.boundingBox.insetBy(dx: (AnnotationsConfig.imageAnnotationLineWidth + 1), dy: (AnnotationsConfig.imageAnnotationLineWidth + 1))
+        switch self.type {
+        case .image:
+            return self.boundingBox.insetBy(dx: (AnnotationsConfig.imageAnnotationLineWidth + 1), dy: (AnnotationsConfig.imageAnnotationLineWidth + 1))
+        case .ink, .note, .highlight:
+            return self.boundingBox
+        }
     }
 
     init(key: String, type: AnnotationType, page: Int, pageLabel: String, rects: [CGRect], paths: [[CGPoint]], lineWidth: CGFloat?, author: String, isAuthor: Bool, color: String, comment: String,
@@ -67,10 +72,47 @@ struct Annotation: Identifiable, Equatable {
     }
 
     var boundingBox: CGRect {
-        if self.rects.count == 1, let boundingBox = self.rects.first {
-            return boundingBox
+        if !self.paths.isEmpty, let lineWidth = self.lineWidth {
+            return self.createBoundingBox(from: self.paths, lineWidth: lineWidth)
+        }
+        if self.rects.count == 1 {
+            return self.rects[0]
+        }
+        return self.createBoundingBox(from: self.rects)
+    }
+
+    private func createBoundingBox(from paths: [[CGPoint]], lineWidth: CGFloat) -> CGRect {
+        var minX: CGFloat = .infinity
+        var minY: CGFloat = .infinity
+        var maxX: CGFloat = 0.0
+        var maxY: CGFloat = 0.0
+
+        for path in paths {
+            for point in path {
+                let _minX = point.x - lineWidth
+                let _maxX = point.x + lineWidth
+                let _minY = point.y - lineWidth
+                let _maxY = point.y + lineWidth
+
+                if _minX < minX {
+                    minX = _minX
+                }
+                if _maxX > maxX {
+                    maxX = _maxX
+                }
+                if _minY < minY {
+                    minY = _minY
+                }
+                if _maxY > maxY {
+                    maxY = _maxY
+                }
+            }
         }
 
+        return CGRect(x: minX, y: minY, width: (maxX - minX), height: (maxY - minY))
+    }
+
+    private func createBoundingBox(from rects: [CGRect]) -> CGRect {
         var minX: CGFloat = .infinity
         var minY: CGFloat = .infinity
         var maxX: CGFloat = 0.0

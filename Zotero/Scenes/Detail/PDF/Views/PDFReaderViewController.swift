@@ -139,6 +139,7 @@ final class PDFReaderViewController: UIViewController {
         self.setupNavigationBar()
         self.setupAnnotationControls(forCompactSize: self.isCompactSize)
         self.set(toolColor: self.viewModel.state.activeColor, in: self.pdfController.annotationStateManager)
+        self.set(lineWidth: self.viewModel.state.activeLineWidth, in: self.pdfController.annotationStateManager)
         self.setupObserving()
         self.updateInterface(to: self.viewModel.state.settings)
 
@@ -229,6 +230,10 @@ final class PDFReaderViewController: UIViewController {
         if state.changes.contains(.activeColor) {
             self.set(toolColor: state.activeColor, in: self.pdfController.annotationStateManager)
             self.colorPickerbutton.tintColor = state.activeColor
+        }
+
+        if state.changes.contains(.activeLineWidth) {
+            self.set(lineWidth: state.activeLineWidth, in: self.pdfController.annotationStateManager)
         }
 
         if state.changes.contains(.save) {
@@ -336,7 +341,12 @@ final class PDFReaderViewController: UIViewController {
 
         stateManager.drawColor = AnnotationColorGenerator.color(from: self.viewModel.state.activeColor, isHighlight: (annotationTool == .highlight),
                                                                 userInterfaceStyle: self.traitCollection.userInterfaceStyle).color
+
         stateManager.setState(annotationTool, variant: nil)
+        
+        if annotationTool == .ink {
+            stateManager.lineWidth = self.viewModel.state.activeLineWidth
+        }
     }
 
     private func showColorPicker(sender: UIButton) {
@@ -441,6 +451,10 @@ final class PDFReaderViewController: UIViewController {
         } else {
             stateManager.drawColor = toolColor
         }
+    }
+
+    private func set(lineWidth: CGFloat, in stateManager: AnnotationStateManager) {
+        stateManager.lineWidth = lineWidth
     }
 
     private func add(controller: UIViewController) {
@@ -771,18 +785,32 @@ final class PDFReaderViewController: UIViewController {
             .disposed(by: self.disposeBag)
         self.createAreaButton = area
 
+        let inkLongPress = UILongPressGestureRecognizer()
+        inkLongPress.rx
+                    .event
+                    .subscribe(with: self, onNext: { `self`, recognizer in
+                        if recognizer.state == .began, let view = recognizer.view {
+                            self.coordinatorDelegate?.showInkSettings(sender: view, viewModel: self.viewModel)
+                        }
+                    })
+                    .disposed(by: self.disposeBag)
+
+        let inkTap = UITapGestureRecognizer()
+        inkTap.rx
+              .event
+              .subscribe(with: self, onNext: { `self`, _ in
+                  self.toggle(annotationTool: .ink)
+              })
+              .disposed(by: self.disposeBag)
+        inkTap.require(toFail: inkLongPress)
+
         let ink = CheckboxButton(type: .custom)
         ink.accessibilityLabel = L10n.Accessibility.Pdf.inkAnnotationTool
-        ink.setImage(UIImage(systemName: "line.diagonal")!.withRenderingMode(.alwaysTemplate), for: .normal)
+        ink.setImage(UIImage(systemName: "pencil.tip")!.withRenderingMode(.alwaysTemplate), for: .normal)
         ink.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        ink.rx
-           .controlEvent(.touchDown)
-           .subscribe(onNext: { [weak self] _ in
-               self?.toggle(annotationTool: .ink)
-           })
-           .disposed(by: self.disposeBag)
+        ink.addGestureRecognizer(inkLongPress)
+        ink.addGestureRecognizer(inkTap)
         self.createInkButton = ink
-
 
         [highlight, note, area, ink].forEach { button in
             button.adjustsImageWhenHighlighted = false

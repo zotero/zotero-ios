@@ -31,6 +31,7 @@ struct PDFReaderState: ViewModelState {
         static let save = Changes(rawValue: 1 << 6)
         static let itemObserving = Changes(rawValue: 1 << 8)
         static let export = Changes(rawValue: 1 << 9)
+        static let activeLineWidth = Changes(rawValue: 1 << 10)
     }
 
     enum AppearanceMode: UInt {
@@ -38,8 +39,6 @@ struct PDFReaderState: ViewModelState {
         case light
         case dark
     }
-
-    static let activeColorKey = "PDFReaderState.activeColor"
 
     let key: String
     let library: Library
@@ -64,6 +63,7 @@ struct PDFReaderState: ViewModelState {
     var dbItems: Results<RItem>?
     var comments: [String: NSAttributedString]
     var activeColor: UIColor
+    var activeLineWidth: CGFloat
     var currentFilter: String?
     var changes: Changes
     var selectedAnnotation: Annotation?
@@ -106,8 +106,8 @@ struct PDFReaderState: ViewModelState {
         self.shouldStoreAnnotationPreviewsIfNeeded = false
         self.visiblePage = 0
         self.commentFont = PDFReaderLayout.annotationLayout.font
-        self.activeColor = UserDefaults.standard.string(forKey: PDFReaderState.activeColorKey)
-                                                .flatMap({ UIColor(hex: $0) }) ?? UIColor(hex: AnnotationsConfig.defaultActiveColor)
+        self.activeColor = UIColor(hex: Defaults.shared.activeColorHex)
+        self.activeLineWidth = CGFloat(Defaults.shared.activeLineWidth)
         self.changes = []
         self.previewCache.totalCostLimit = 1024 * 1024 * 10 // Cache object limit - 10 MB
     }

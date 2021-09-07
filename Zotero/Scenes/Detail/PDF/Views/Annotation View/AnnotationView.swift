@@ -139,7 +139,12 @@ final class AnnotationView: UIView {
         case .image, .ink:
             let size = annotation.previewBoundingBox.size
             let maxWidth = availableWidth - (self.layout.horizontalInset * 2)
-            let maxHeight = ceil((size.height / size.width) * maxWidth)
+            var maxHeight = ceil((size.height / size.width) * maxWidth)
+            if maxHeight.isNaN || maxHeight.isInfinite {
+                maxHeight = maxWidth * 2
+            } else {
+                maxHeight = min((maxWidth * 2), maxHeight)
+            }
             let bottomInset = self.inset(from: self.layout.verticalSpacerHeight, hasComment: !annotation.comment.isEmpty, selected: selected, canEdit: canEdit)
             imageContent.setup(with: preview, height: maxHeight, bottomInset: bottomInset)
         }

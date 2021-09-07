@@ -169,6 +169,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         case .setActiveColor(let hex):
             self.setActiveColor(hex: hex, in: viewModel)
 
+        case .setActiveLineWidth(let lineWidth):
+            self.setActive(lineWidth: lineWidth, in: viewModel)
+
         case .saveChanges:
             self.saveChanges(in: viewModel)
 
@@ -543,13 +546,20 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     }
 
     private func setActiveColor(hex: String, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        let color = UIColor(hex: hex)
-
-        UserDefaults.standard.set(hex, forKey: PDFReaderState.activeColorKey)
+        Defaults.shared.activeColorHex = hex
 
         self.update(viewModel: viewModel) { state in
-            state.activeColor = color
+            state.activeColor = UIColor(hex: hex)
             state.changes = .activeColor
+        }
+    }
+
+    private func setActive(lineWidth: CGFloat, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        Defaults.shared.activeLineWidth = Float(lineWidth)
+
+        self.update(viewModel: viewModel) { state in
+            state.activeLineWidth = lineWidth
+            state.changes = .activeLineWidth
         }
     }
 

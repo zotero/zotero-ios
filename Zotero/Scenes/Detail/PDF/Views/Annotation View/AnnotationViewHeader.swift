@@ -47,7 +47,7 @@ final class AnnotationViewHeader: UIView {
         case .image: return Asset.Images.Annotations.areaMedium.image
         case .highlight: return Asset.Images.Annotations.highlighterMedium.image
         case .note: return Asset.Images.Annotations.noteMedium.image
-        case .ink: return UIImage(systemName: "line.diagonal")
+        case .ink: return UIImage(systemName: "pencil.tip")
         }
     }
 

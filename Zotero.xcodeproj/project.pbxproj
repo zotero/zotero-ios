@@ -683,6 +683,7 @@
 		B3866A582417C1BC006693C4 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3866A572417C1BC006693C4 /* ViewModel.swift */; };
 		B3866A5A2417C1C7006693C4 /* Coordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3866A592417C1C7006693C4 /* Coordinator.swift */; };
 		B3886C47249234D600B7D67B /* AttachmentDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3886C46249234D600B7D67B /* AttachmentDownloader.swift */; };
+		B38B24B926E7664400BDD1BB /* InkSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38B24B826E7664400BDD1BB /* InkSettingsViewController.swift */; };
 		B38CD21E241128D4004299EA /* KeysResponseProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */; };
 		B38CD21F241128FE004299EA /* KeysResponseProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */; };
 		B38D3CCA24A1F420005289EF /* CrashReporter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B38D3CC924A1F420005289EF /* CrashReporter.framework */; };
@@ -1410,6 +1411,7 @@
 		B3866A572417C1BC006693C4 /* ViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
 		B3866A592417C1C7006693C4 /* Coordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coordinator.swift; sourceTree = "<group>"; };
 		B3886C46249234D600B7D67B /* AttachmentDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentDownloader.swift; sourceTree = "<group>"; };
+		B38B24B826E7664400BDD1BB /* InkSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InkSettingsViewController.swift; sourceTree = "<group>"; };
 		B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeysResponseProcessor.swift; sourceTree = "<group>"; };
 		B38D3CC924A1F420005289EF /* CrashReporter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CrashReporter.framework; sourceTree = "<group>"; };
 		B391480626D9093E0016B7B2 /* UIPasteboard+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIPasteboard+Extensions.swift"; sourceTree = "<group>"; };
@@ -2198,6 +2200,7 @@
 				B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */,
 				B33AB487246D315F00490DDE /* CheckboxButton.swift */,
 				B39A402F24BC902600205172 /* ColorPickerView.swift */,
+				B38B24B826E7664400BDD1BB /* InkSettingsViewController.swift */,
 				B3B953CD245981DA00FC96DB /* PDFReaderViewController.swift */,
 				B3593AD524B601AB00CA0B57 /* PDFSearchCell.swift */,
 				B3593AD624B601AB00CA0B57 /* PDFSearchCell.xib */,
@@ -3756,6 +3759,7 @@
 				B3593F64241A62E400760E20 /* MasterCoordinator.swift in Sources */,
 				B30565E923FC051E003304F2 /* SessionController.swift in Sources */,
 				B3A081D425D2C1620088EC24 /* ConflictCoordinator.swift in Sources */,
+				B38B24B926E7664400BDD1BB /* InkSettingsViewController.swift in Sources */,
 				B30566A123FC051F003304F2 /* Library.swift in Sources */,
 				B324278225C841A600567504 /* WsResponse.swift in Sources */,
 				B37491302488D7040042FF85 /* SettingsAction.swift in Sources */,

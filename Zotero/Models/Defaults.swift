@@ -60,7 +60,13 @@ final class Defaults {
 
     // MARK: - PDF Settings
 
+    @UserDefault(key: "PdfReaderLineWidth", defaultValue: 2)
+    var activeLineWidth: Float
+
     #if PDFENABLED && MAINAPP
+    @UserDefault(key: "PDFReaderState.activeColor", defaultValue: AnnotationsConfig.defaultActiveColor)
+    var activeColorHex: String
+
     @CodableUserDefault(key: "PDFReaderSettings", defaultValue: PDFSettingsState.default, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder, defaults: .standard)
     var pdfSettings: PDFSettingsState
     #endif
