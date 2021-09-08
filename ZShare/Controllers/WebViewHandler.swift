@@ -41,7 +41,7 @@ final class WebViewHandler: NSObject {
     }
 
     enum Error: Swift.Error {
-        case cantFindBaseFile
+        case cantFindFile
         case incompatibleItem
         case javascriptCallMissingResult
         case noSuccessfulTranslators
@@ -124,34 +124,60 @@ final class WebViewHandler: NSObject {
             self.observable.on(.error(Error.webViewMissing))
             return
         }
-        guard let containerUrl = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "translation"),
-              let containerHtml = try? String(contentsOf: containerUrl, encoding: .utf8),
-              let schemaUrl = Bundle.main.url(forResource: "schema", withExtension: "json", subdirectory: "Bundled"),
-              let schemaData = try? Data(contentsOf: schemaUrl) else {
-            DDLogError("WebViewHandler: can't load translator html")
-            self.observable.on(.error(Error.cantFindBaseFile))
-            return
-        }
 
         let encodedHtml = WKWebView.encodeForJavascript(html.data(using: .utf8))
-        let encodedSchema = WKWebView.encodeForJavascript(schemaData)
         let jsonFramesData = try? JSONSerialization.data(withJSONObject: frames, options: .fragmentsAllowed)
         let encodedFrames = jsonFramesData.flatMap({ WKWebView.encodeForJavascript($0) }) ?? "''"
         self.cookies = cookies
 
-        return self.load(html: containerHtml, baseUrl: containerUrl)
-                   .flatMap { _ -> Single<[RawTranslator]> in
-                       return self.translatorsController.translators()
+        return self.loadBundledFiles()
+                   .flatMap { containerHtml, containerUrl, encodedSchema, encodedDateFormats -> Single<(String, String)> in
+                       return self.load(html: containerHtml, baseUrl: containerUrl).flatMap({ return Single.just((encodedSchema, encodedDateFormats)) })
                    }
-                   .flatMap { translators -> Single<Any> in
+                   .flatMap { encodedSchema, encodedDateFormats -> Single<([RawTranslator], String, String)> in
+                    return self.translatorsController.translators().flatMap({ return Single.just(($0, encodedSchema, encodedDateFormats)) })
+                   }
+                   .flatMap { translators, encodedSchema, encodedDateFormats -> Single<Any> in
                        let encodedTranslators = WKWebView.encodeAsJSONForJavascript(translators)
-                       return webView.call(javascript: "translate('\(url.absoluteString)', \(encodedHtml), \(encodedFrames), \(encodedTranslators), \(encodedSchema));")
+                       return webView.call(javascript: "translate('\(url.absoluteString)', \(encodedHtml), \(encodedFrames), \(encodedTranslators), \(encodedSchema), \(encodedDateFormats));")
                    }
                    .subscribe(onFailure: { [weak self] error in
                        DDLogError("WebViewHandler: translation failed - \(error)")
                        self?.observable.on(.error(error))
                    })
                    .disposed(by: self.disposeBag)
+    }
+
+    private func loadBundledFiles() -> Single<(String, URL, String, String)> {
+        return Single.create { subscriber in
+            guard let containerUrl = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "translation"),
+                  let containerHtml = try? String(contentsOf: containerUrl, encoding: .utf8) else {
+                DDLogError("WebViewHandler: can't load translator html")
+                subscriber(.failure(Error.cantFindFile))
+                return Disposables.create()
+            }
+
+            guard let schemaUrl = Bundle.main.url(forResource: "schema", withExtension: "json", subdirectory: "Bundled"),
+                  let schemaData = try? Data(contentsOf: schemaUrl) else {
+                DDLogError("WebViewHandler: can't load schema json")
+                subscriber(.failure(Error.cantFindFile))
+                return Disposables.create()
+            }
+
+            guard let dateFormatsUrl = Bundle.main.url(forResource: "dateFormats", withExtension: "json", subdirectory: "translation/translate/modules/utilities/resource"),
+                  let dateFormatData = try? Data(contentsOf: dateFormatsUrl) else {
+                DDLogError("WebViewHandler: can't load dateFormats json")
+                subscriber(.failure(Error.cantFindFile))
+                return Disposables.create()
+            }
+
+            let encodedSchema = WKWebView.encodeForJavascript(schemaData)
+            let encodedFormats = WKWebView.encodeForJavascript(dateFormatData)
+
+            subscriber(.success((containerHtml, containerUrl, encodedSchema, encodedFormats)))
+
+            return Disposables.create()
+        }
     }
 
     /// Sends selected item back to `webView`.

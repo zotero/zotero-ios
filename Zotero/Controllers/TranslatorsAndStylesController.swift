@@ -435,6 +435,11 @@ final class TranslatorsAndStylesController {
             }
 
             metadata["code"] = string
+            // Remap type to translatorType. Some translators from repo return "type" instead of "translatorType", so the value is just remapped here.
+            if let value = metadata["type"] {
+                metadata["translatorType"] = value
+                metadata["type"] = nil
+            }
 
             return metadata
         } catch let error {
@@ -535,7 +540,7 @@ final class TranslatorsAndStylesController {
     /// - parameter translator: Translator to be converted.
     /// - returns: Metadata of given translator.
     private func metadata(from translator: Translator) -> TranslatorMetadata? {
-        guard let id = translator.metadata["id"],
+        guard let id = translator.metadata["translatorID"],
               let rawLastUpdated = translator.metadata["lastUpdated"] else { return nil }
         return try? TranslatorMetadata(id: id, filename: "", rawLastUpdated: rawLastUpdated)
     }

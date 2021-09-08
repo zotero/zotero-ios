@@ -23,7 +23,12 @@
 	***** END LICENSE BLOCK *****
 */
 
-async function translate(url, encodedHtml, encodedFrames, encodedTranslators, encodedSchema) {
+async function translate(url, encodedHtml, encodedFrames, encodedTranslators, encodedSchema, encodedDateFormats) {
+    // Setup date
+    const dateFormats = JSON.parse(decodeBase64(encodedDateFormats));
+    if (dateFormats) {
+        Zotero.Date.init(dateFormats);
+    }
     // Set up schema
     const schemaData = JSON.parse(decodeBase64(encodedSchema));
     if (schemaData) {
