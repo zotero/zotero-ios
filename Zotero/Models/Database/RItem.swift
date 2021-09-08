@@ -36,7 +36,8 @@ extension RItemChanges {
 
 final class RItem: Object {
     static let observableKeypathsForItemList: [String] = ["rawType", "baseTitle", "displayTitle", "sortTitle", "creatorSummary", "sortCreatorSummary", "hasCreatorSummary", "parsedDate",
-                                                          "hasParsedDate", "parsedYear", "hasParsedYear", "publisher", "hasPublisher", "publicationTitle", "hasPublicationTitle"]
+                                                          "hasParsedDate", "parsedYear", "hasParsedYear", "publisher", "hasPublisher", "publicationTitle", "hasPublicationTitle", "children.backendMd5"]
+    static let observableKeypathsForItemDetail: [String] = ["rawType", "baseTitle", "fields.value", "children.backendMd5", "children.fields.value"]
 
     @Persisted(indexed: true) var key: String
     @Persisted var rawType: String

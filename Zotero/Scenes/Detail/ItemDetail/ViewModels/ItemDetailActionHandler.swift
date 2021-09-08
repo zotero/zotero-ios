@@ -166,10 +166,10 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 type = .new(itemType: itemType, child: child)
             case .preview(let key):
                 let item = try self.dbStorage.createCoordinator().perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: key))
-                token = item.observe({ [weak viewModel] change in
+                token = item.observe(keyPaths: RItem.observableKeypathsForItemDetail) { [weak viewModel] change in
                     guard let viewModel = viewModel else { return }
                     self.itemChanged(change, in: viewModel)
-                })
+                }
                 type = .existing(item)
             case .duplication(let itemKey, _):
                 let item = try dbStorage.createCoordinator().perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: itemKey))
@@ -214,7 +214,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     }
 
     private func shouldReloadData(for changes: [PropertyChange]) -> Bool {
-        guard let change = changes.first(where: { $0.name == "rawChangeType" }), let newValue = change.newValue as? Int, let type = UpdatableChangeType(rawValue: newValue) else { return true }
+        guard let change = changes.first(where: { $0.name == "changeType" }), let newValue = change.newValue as? Int, let type = UpdatableChangeType(rawValue: newValue) else { return true }
 
         switch type {
         case .user:
@@ -227,7 +227,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 return true
             }
             let changes = Set(changes.map({ $0.name }))
-            return !changes.contains("version") || !changes.contains("rawChangedFields") || !changes.contains("rawChangeType")
+            return !changes.contains("version") || !changes.contains("rawChangedFields") || !changes.contains("changeType")
         }
     }
 

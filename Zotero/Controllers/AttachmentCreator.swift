@@ -227,7 +227,11 @@ struct AttachmentCreator {
         guard let fileStorage = fileStorage else { return .remote }
 
         if fileStorage.has(file) {
-            return .local
+            if let md5 = md5(from: file.createUrl()), item.backendMd5 != md5 {
+                return .localAndChangedRemotely
+            } else {
+                return .local
+            }
         } else if item.links.contains(where: { $0.type == LinkType.enclosure.rawValue }) {
             return .remote
         } else {

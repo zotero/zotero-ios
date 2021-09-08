@@ -84,7 +84,7 @@ final class ItemDetailAttachmentCell: UITableViewCell {
                 self.accessibilityTraits = []
                 self.accessibilityHint = nil
 
-            case .remote:
+            case .remote, .localAndChangedRemotely:
                 self.accessibilityHint = L10n.Accessibility.ItemDetail.downloadAndOpen
                 self.accessibilityTraits = .button
 

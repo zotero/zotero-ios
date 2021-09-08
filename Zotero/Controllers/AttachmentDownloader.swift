@@ -88,14 +88,17 @@ final class AttachmentDownloader {
         case .file(let filename, let contentType, let location, let linkType):
             switch linkType {
             case .linkedFile, .embeddedImage:
-                self.finish(download: Download(key: attachment.key, libraryId: attachment.libraryId), parentKey: parentKey, result: .failure(Error.incompatibleAttachment))
+                self.finish(download: Download(key: attachment.key, libraryId: attachment.libraryId), parentKey: parentKey, result: .failure(Error.incompatibleAttachment), hasLocalCopy: false)
             case .importedFile, .importedUrl:
                 switch location {
                 case .local:
                     self.observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .ready)))
                 case .remote, .remoteMissing:
                     let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
-                    self.download(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
+                    self.download(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, hasLocalCopy: false)
+                case .localAndChangedRemotely:
+                    let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
+                    self.download(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, hasLocalCopy: true)
                 }
             }
         }
@@ -128,7 +131,7 @@ final class AttachmentDownloader {
 
     // MARK: - Helpers
 
-    private func download(file: File, key: String, parentKey: String?, libraryId: LibraryIdentifier) {
+    private func download(file: File, key: String, parentKey: String?, libraryId: LibraryIdentifier, hasLocalCopy: Bool) {
         let download = Download(key: key, libraryId: libraryId)
 
         guard self.downloadRequests[download] == nil && self.unzipRequests[download] == nil else { return }
@@ -165,15 +168,15 @@ final class AttachmentDownloader {
                           self?.downloadRequests[download] = request
                       })
                       .subscribe(onError: { [weak self] error in
-                          self?.finish(download: download, parentKey: parentKey, result: .failure(error))
+                          self?.finish(download: download, parentKey: parentKey, result: .failure(error), hasLocalCopy: hasLocalCopy)
                       }, onCompleted: { [weak self] in
                           guard let `self` = self else { return }
                           if let error = self.checkFileResponse(for: file) {
-                              self.finish(download: download, parentKey: parentKey, result: .failure(error))
+                              self.finish(download: download, parentKey: parentKey, result: .failure(error), hasLocalCopy: hasLocalCopy)
                           } else if isCompressed {
-                              self.unzip(file: file, download: download, parentKey: parentKey, progress: progress)
+                              self.unzip(file: file, download: download, parentKey: parentKey, progress: progress, hasLocalCopy: hasLocalCopy)
                           } else {
-                              self.finish(download: download, parentKey: parentKey, result: .success(()))
+                              self.finish(download: download, parentKey: parentKey, result: .success(()), hasLocalCopy: hasLocalCopy)
                           }
                       })
                     .disposed(by: self.disposeBag)
@@ -195,7 +198,7 @@ final class AttachmentDownloader {
     /// - parameter download: Download identifier
     /// - parameter parentKey: Parent key of attachment.
     /// - parameter progress: Main progress of whole download.
-    private func unzip(file: File, download: Download, parentKey: String?, progress: Progress) {
+    private func unzip(file: File, download: Download, parentKey: String?, progress: Progress, hasLocalCopy: Bool) {
         let zipProgress = Progress()
         progress.addChild(zipProgress, withPendingUnitCount: 10)
 
@@ -206,7 +209,7 @@ final class AttachmentDownloader {
             guard let `self` = self else { return }
             let result = self._unzip(file: file, download: download, parentKey: parentKey, progress: zipProgress)
             DispatchQueue.main.async { [weak self] in
-                self?.finish(download: download, parentKey: parentKey, result: result)
+                self?.finish(download: download, parentKey: parentKey, result: result, hasLocalCopy: hasLocalCopy)
             }
         }
     }
@@ -228,7 +231,7 @@ final class AttachmentDownloader {
         }
     }
 
-    private func finish(download: Download, parentKey: String?, result: Result<(), Swift.Error>) {
+    private func finish(download: Download, parentKey: String?, result: Result<(), Swift.Error>, hasLocalCopy: Bool) {
         self.downloadRequests[download] = nil
         self.unzipRequests[download] = nil
         self.progresses[download] = nil
@@ -243,8 +246,15 @@ final class AttachmentDownloader {
         case .failure(let error):
             DDLogError("AttachmentDownloader: failed to download attachment \(download.key), \(download.libraryId) - \(error)")
             let isCancelError = (error as? Alamofire.AFError)?.isExplicitlyCancelledError == true || (error as? Archive.ArchiveError) == .cancelledOperation
-            self.errors[download] = isCancelError ? nil : error
-            self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: (isCancelError ? .cancelled : .failed(error)))))
+            self.errors[download] = (isCancelError || hasLocalCopy) ? nil : error
+
+            if isCancelError {
+                self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .cancelled)))
+            } else if hasLocalCopy {
+                self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .ready)))
+            } else {
+                self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .failed(error))))
+            }
         }
     }
 }

@@ -12,7 +12,7 @@ import CocoaLumberjackSwift
 
 struct Attachment: Identifiable, Equatable {
     enum FileLocation {
-        case local, remote, remoteMissing
+        case local, localAndChangedRemotely, remote, remoteMissing
     }
 
     enum FileLinkType {

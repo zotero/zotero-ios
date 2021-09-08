@@ -236,7 +236,7 @@ final class FileAttachmentView: UIView {
                 switch location {
                 case .local: return .image(asset: self.mainAsset(for: type, style: style))
                 case .remoteMissing: return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: self.badge(for: .missing, style: style))
-                case .remote: return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: self.badge(for: .download, style: style))
+                case .remote, .localAndChangedRemotely: return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: self.badge(for: .download, style: style))
                 }
 
             case .url: return .image(asset: self.mainAsset(for: type, style: style))
