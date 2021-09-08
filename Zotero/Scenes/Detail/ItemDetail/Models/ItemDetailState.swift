@@ -259,6 +259,7 @@ struct ItemDetailState: ViewModelState {
     var updateAttachmentIndex: Int?
     var isLoadingData: Bool
     var observationToken: NotificationToken?
+    var attachmentToOpen: String?
 
     @UserDefault(key: "ItemDetailAbstractCollapsedKey", defaultValue: false)
     var abstractCollapsed: Bool

@@ -381,12 +381,15 @@ final class ItemDetailViewController: UIViewController {
 
         downloader.observable
             .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] update in
-                self?.viewModel.process(action: .updateDownload(update))
+            .subscribe(with: self, onNext: { `self`, update in
+                self.viewModel.process(action: .updateDownload(update))
 
                 switch update.kind {
                 case .ready:
-                    self?.coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
+                    if self.viewModel.state.attachmentToOpen == update.key {
+                        self.viewModel.process(action: .attachmentOpened(update.key))
+                        self.coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
+                    }
                 default: break
                 }
             })

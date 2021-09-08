@@ -73,6 +73,12 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         case .openAttachment(let index):
             self.openAttachment(at: index, in: viewModel)
 
+        case .attachmentOpened(let key):
+            guard viewModel.state.attachmentToOpen == key else { return }
+            self.update(viewModel: viewModel) { state in
+                state.attachmentToOpen = nil
+            }
+
         case .saveCreator(let creator):
             self.save(creator: creator, in: viewModel)
 
@@ -523,6 +529,10 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
         let attachment = viewModel.state.data.attachments[index]
         let (progress, _) = self.fileDownloader.data(for: attachment.key, libraryId: attachment.libraryId)
+
+        self.update(viewModel: viewModel) { state in
+            state.attachmentToOpen = attachment.key
+        }
 
         if progress != nil {
             self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
