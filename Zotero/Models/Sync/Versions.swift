@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct Versions {
+struct Versions: Equatable {
     let collections: Int
     let items: Int
     let trash: Int

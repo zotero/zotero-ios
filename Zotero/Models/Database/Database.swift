@@ -6,7 +6,7 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
-import Foundation
+import UIKit
 
 import RealmSwift
 
@@ -124,6 +124,17 @@ struct Database {
         let groupKey: Int?
     }
 
+    private struct VersionsMigration {
+        let versions: Versions
+        let object: MigrationObject
+
+        init(object: MigrationObject) {
+            self.object = object
+            self.versions = Versions(collections: (object["collections"] as? Int) ?? -1, items: (object["items"] as? Int) ?? -1, trash: (object["trash"] as? Int) ?? -1,
+                                     searches: (object["searches"] as? Int) ?? -1, deletions: (object["deletions"] as? Int) ?? -1, settings: (object["settings"] as? Int) ?? -1)
+        }
+    }
+
     private static func migrateEmbeddedObjects(migration: Migration) {
         var orphaned: [MigrationObject] = []
         let creators = self.groupedEmbeddedObjects(ofType: "RCreator", parentPropertyName: "item", orphaned: &orphaned, migration: migration)
@@ -155,6 +166,35 @@ struct Database {
 
             let id = KeyedLibraryId(key: key, customLibraryKey: (old["customLibraryKey"] as? Int), groupKey: (old["groupKey"] as? Int))
             setObjectsToList(conditions[id], new?["conditions"])
+        }
+
+        var versionsMigrations: [VersionsMigration] = []
+
+        migration.enumerateObjects(ofType: "RVersions") { old, new in
+            guard let new = new else { return }
+            versionsMigrations.append(VersionsMigration(object: new))
+        }
+
+        let migrateVersions: (MigrationObject?) -> Void = { new in
+            guard let new = new, let versionsObject = new["versions"] as? MigrationObject else { return }
+            let versions = VersionsMigration(object: versionsObject).versions
+
+            if let index = versionsMigrations.firstIndex(where: { $0.versions == versions }) {
+                new["versions"] = versionsMigrations[index].object
+                versionsMigrations.remove(at: index)
+            }
+        }
+
+        migration.enumerateObjects(ofType: "RGroup") { old, new in
+            migrateVersions(new)
+        }
+
+        migration.enumerateObjects(ofType: "RCustomLibrary") { old, new in
+            migrateVersions(new)
+        }
+
+        for migration in versionsMigrations {
+            orphaned.append(migration.object)
         }
 
         for object in orphaned {
