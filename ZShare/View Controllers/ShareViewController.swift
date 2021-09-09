@@ -233,23 +233,25 @@ final class ShareViewController: UIViewController {
     }
 
     private func updateItemsUi(for title: String?, items: ExtensionStore.State.ProcessedAttachment?, attachmentState: ExtensionStore.State.AttachmentState) {
+        self.translationContainer.isHidden = false
+
         guard let items = items else {
-            self.translationContainer.isHidden = true
+            guard !attachmentState.translationInProgress, let title = title else {
+                self.translationContainer.isHidden = true
+                return
+            }
+
+            self.setItem(title: title, image: UIImage(named: ItemTypes.iconName(for: ItemTypes.webpage, contentType: nil)))
+
             return
         }
 
-        self.translationContainer.isHidden = false
-
         switch items {
         case .item(let item):
-            self.itemContainer.isHidden = false
-            self.attachmentContainer.isHidden = true
-
             let titleKey = self.schemaController.titleKey(for: item.rawType)
-            let itemTitle = titleKey.flatMap({ item.fields[$0] }) ?? title
-
-            self.itemIcon.image = UIImage(named: ItemTypes.iconName(for: item.rawType, contentType: nil))
-            self.itemTitleLabel.text = itemTitle
+            let itemTitle = titleKey.flatMap({ item.fields[$0] }) ?? title ?? ""
+            let image = UIImage(named: ItemTypes.iconName(for: item.rawType, contentType: nil))
+            self.setItem(title: itemTitle, image: image)
 
         case .itemWithAttachment(let item, let attachment, let file):
             self.itemContainer.isHidden = false
@@ -288,6 +290,13 @@ final class ShareViewController: UIViewController {
                 self.attachmentTitleLabel.alpha = 1
             }
         }
+    }
+
+    private func setItem(title: String, image: UIImage?) {
+        self.itemContainer.isHidden = false
+        self.attachmentContainer.isHidden = true
+        self.itemIcon.image = image
+        self.itemTitleLabel.text = title
     }
 
     private func updateNavigationItems(for state: ExtensionStore.State.AttachmentState) {
@@ -406,7 +415,7 @@ final class ShareViewController: UIViewController {
             case .javascriptCallMissingResult:
                 return L10n.Errors.Shareext.javascriptFailed
             case .noSuccessfulTranslators:
-                return L10n.Errors.Shareext.translationFailed
+                return nil
             case .cantFindFile, .webExtractionMissingJs, .webViewMissing: // should never happen
                 return L10n.Errors.Shareext.missingBaseFiles
             case .webExtractionMissingData:

@@ -101,6 +101,15 @@ final class ExtensionStore {
                 }
             }
 
+            var translationInProgress: Bool {
+                switch self {
+                case .decoding, .translating, .downloading:
+                    return true
+                default:
+                    return false
+                }
+            }
+
             var isCancellable: Bool {
                 switch self {
                 case .submitting:
