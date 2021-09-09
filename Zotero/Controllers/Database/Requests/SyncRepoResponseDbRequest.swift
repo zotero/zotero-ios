@@ -14,13 +14,14 @@ struct SyncRepoResponseDbRequest: DbRequest {
     let styles: [Style]
     let translators: [TranslatorMetadata]
     let deleteTranslators: [TranslatorMetadata]
+    unowned let fileStorage: FileStorage
 
     var needsWrite: Bool { return true }
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         if !self.translators.isEmpty || !self.deleteTranslators.isEmpty {
-            _ = try SyncTranslatorsDbRequest(updateMetadata: self.translators, deleteIndices: self.deleteTranslators.map({ $0.id })).process(in: database)
+            _ = try SyncTranslatorsDbRequest(updateMetadata: self.translators, deleteIndices: self.deleteTranslators.map({ $0.id }), fileStorage: self.fileStorage).process(in: database)
         }
         if !self.styles.isEmpty {
             _ = try SyncStylesDbRequest(styles: self.styles).process(in: database)

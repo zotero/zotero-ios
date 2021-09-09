@@ -58,8 +58,7 @@ Zotero.Messaging = new function() {
                     var errJSON = payload["error"];
                     let e = new Error(errJSON.message);
                     for (let key in errJSON) e[key] = errJSON[key];
-                    Zotero.debug("Callback error: " + errJSON.message);
-                    Zotero.debug("Callback error: " + e);
+                    Zotero.debug("Callback error: " + JSON.stringify(errJSON));
                     deferred.reject(e);
                 }
 

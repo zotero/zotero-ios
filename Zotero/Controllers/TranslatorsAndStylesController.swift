@@ -258,7 +258,7 @@ final class TranslatorsAndStylesController {
         // Load metadata index
         let metadata = try self.loadIndex()
         // Sync translators
-        let request = SyncTranslatorsDbRequest(updateMetadata: metadata, deleteIndices: deleteIndices)
+        let request = SyncTranslatorsDbRequest(updateMetadata: metadata, deleteIndices: deleteIndices, fileStorage: self.fileStorage)
         let updated = try self.dbStorage.createCoordinator().perform(request: request)
         // Delete files of deleted translators
         deleteIndices.forEach { id in
@@ -325,7 +325,8 @@ final class TranslatorsAndStylesController {
             guard !updateTranslatorMetadata.isEmpty || !deleteTranslatorMetadata.isEmpty || !updateStyles.isEmpty else { return Single.just(()) }
 
             // Sync metadata to DB
-            try self.dbStorage.createCoordinator().perform(request: SyncRepoResponseDbRequest(styles: updateStyles, translators: updateTranslatorMetadata, deleteTranslators: deleteTranslatorMetadata))
+            let repoRequest = SyncRepoResponseDbRequest(styles: updateStyles, translators: updateTranslatorMetadata, deleteTranslators: deleteTranslatorMetadata, fileStorage: self.fileStorage)
+            try self.dbStorage.createCoordinator().perform(request: repoRequest)
 
             // Remove local translators
             for metadata in deleteTranslatorMetadata {
