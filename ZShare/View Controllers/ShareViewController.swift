@@ -82,6 +82,8 @@ final class ShareViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        DDLogInfo("View loaded")
+
         DDLog.add(DDOSLogger.sharedInstance)
 
         self.fileStorage = FileStorageController()
@@ -109,6 +111,8 @@ final class ShareViewController: UIViewController {
             return
         }
 
+        DDLogInfo("Controllers initialized")
+
         // Setup UI
         self.setupPickers()
         self.setupSavingOverlay()
@@ -122,6 +126,7 @@ final class ShareViewController: UIViewController {
 
         // Load initial data
         if let extensionItem = self.extensionContext?.inputItems.first as? NSExtensionItem {
+            DDLogInfo("Load extension item")
             self.store?.start(with: extensionItem)
         } else {
             self.showInitialError(message: L10n.Errors.Shareext.cantLoadData)
@@ -216,6 +221,7 @@ final class ShareViewController: UIViewController {
     }
 
     private func update(to state: ExtensionStore.State) {
+        self.log(attachmentState: state.attachmentState, itemState: state.itemPicker)
         self.updateItemsUi(for: state.title, items: state.items, attachmentState: state.attachmentState)
         self.update(attachmentState: state.attachmentState, itemState: state.itemPicker)
         self.update(collectionPicker: state.collectionPicker, recents: state.recents)
@@ -224,6 +230,33 @@ final class ShareViewController: UIViewController {
 
         if self.viewIsVisible {
             self.updatePreferredContentSize()
+        }
+    }
+
+    private func log(attachmentState: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPicker?) {
+        switch attachmentState {
+        case .decoding:
+            DDLogInfo("State: decoding")
+        case .done:
+            DDLogInfo("State: done")
+        case .downloading(let progress):
+            DDLogInfo("State: downloading \(progress)")
+        case .failed(let error):
+            DDLogInfo("State: failed with \(error)")
+        case .processed:
+            DDLogInfo("State: processed")
+        case .submitting:
+            DDLogInfo("State: submitting")
+        case .translating(let name):
+            DDLogInfo("State: translating with \(name)")
+        }
+
+        if let state = itemState {
+            if let picked = state.picked {
+                DDLogInfo("State: picked item \(picked)")
+            } else {
+                DDLogInfo("State: loaded \(state.items.count) items")
+            }
         }
     }
 

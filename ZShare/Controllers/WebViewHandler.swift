@@ -81,6 +81,8 @@ final class WebViewHandler: NSObject {
     func loadWebData(from url: URL) -> Single<ExtensionStore.State.RawAttachment> {
         guard let webView = self.webView else { return Single.error(Error.webViewMissing) }
 
+        DDLogInfo("WebViewHandler: load web data")
+
         return self.load(url: url)
                    .flatMap({ _ -> Single<Any> in
                        guard let url = Bundle.main.url(forResource: "webview_extraction", withExtension: "js"),
@@ -88,6 +90,7 @@ final class WebViewHandler: NSObject {
                            DDLogError("WebViewHandler: can't load extraction javascript")
                            return Single.error(Error.webExtractionMissingJs)
                        }
+                       DDLogInfo("WebViewHandler: call data extraction js")
                        return webView.call(javascript: script)
                    })
                    .flatMap({ data -> Single<ExtensionStore.State.RawAttachment> in
@@ -99,11 +102,13 @@ final class WebViewHandler: NSObject {
                        }
 
                        if isFile, let contentType = payload["contentType"] as? String {
+                           DDLogInfo("WebViewHandler: extracted file")
                            return Single.just(.remoteFileUrl(url: url, contentType: contentType))
                        } else if let title = payload["title"] as? String,
                                  let html = payload["html"] as? String,
                                  let cookies = payload["cookies"] as? String,
                                  let frames = payload["frames"] as? [String] {
+                           DDLogInfo("WebViewHandler: extracted html")
                            return Single.just(.web(title: title, url: url, html: html, cookies: cookies, frames: frames))
                        } else {
                            DDLogError("WebViewHandler: extracted data incompatible")
@@ -121,9 +126,12 @@ final class WebViewHandler: NSObject {
     /// - parameter frames: HTML content of frames contained in initial HTML document.
     func translate(url: URL, title: String, html: String, cookies: String, frames: [String]) {
         guard let webView = self.webView else {
+            DDLogError("WebViewHandler: web view is nil")
             self.observable.on(.error(Error.webViewMissing))
             return
         }
+
+        DDLogInfo("WebViewHandler: translate")
 
         let encodedHtml = WKWebView.encodeForJavascript(html.data(using: .utf8))
         let jsonFramesData = try? JSONSerialization.data(withJSONObject: frames, options: .fragmentsAllowed)
@@ -135,9 +143,11 @@ final class WebViewHandler: NSObject {
                        return self.load(html: containerHtml, baseUrl: containerUrl).flatMap({ return Single.just((encodedSchema, encodedDateFormats)) })
                    }
                    .flatMap { encodedSchema, encodedDateFormats -> Single<([RawTranslator], String, String)> in
-                    return self.translatorsController.translators().flatMap({ return Single.just(($0, encodedSchema, encodedDateFormats)) })
+                       DDLogInfo("WebViewHandler: load translators")
+                       return self.translatorsController.translators().flatMap({ return Single.just(($0, encodedSchema, encodedDateFormats)) })
                    }
                    .flatMap { translators, encodedSchema, encodedDateFormats -> Single<Any> in
+                       DDLogInfo("WebViewHandler: call translate js")
                        let encodedTranslators = WKWebView.encodeAsJSONForJavascript(translators)
                        return webView.call(javascript: "translate('\(url.absoluteString)', \(encodedHtml), \(encodedFrames), \(encodedTranslators), \(encodedSchema), \(encodedDateFormats));")
                    }
@@ -174,6 +184,8 @@ final class WebViewHandler: NSObject {
             let encodedSchema = WKWebView.encodeForJavascript(schemaData)
             let encodedFormats = WKWebView.encodeForJavascript(dateFormatData)
 
+            DDLogInfo("WebViewHandler: loaded bundled files")
+
             subscriber(.success((containerHtml, containerUrl, encodedSchema, encodedFormats)))
 
             return Disposables.create()
@@ -191,6 +203,7 @@ final class WebViewHandler: NSObject {
 
     /// Load the translation server.
     private func load(html: String, baseUrl: URL) -> Single<()> {
+        DDLogInfo("WebViewHandler: load translation html")
         self.webView?.loadHTMLString(html, baseURL: baseUrl)
         return self.createWebLoadedSingle()
     }

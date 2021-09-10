@@ -98,6 +98,8 @@ final class TranslatorsAndStylesController {
 
         self.isLoading.accept(true)
 
+        DDLogInfo("TranslatorsAndStylesController: update translators and styles")
+
         self.updateFromBundle()
             .subscribe(on: self.scheduler)
             .flatMap {
@@ -153,6 +155,8 @@ final class TranslatorsAndStylesController {
 
         guard self.lastTranslatorCommitHash != hash else { return }
 
+        DDLogInfo("TranslatorsAndStylesController: update translators from bundle")
+
         let (deletedVersion, deletedIndices) = try self.loadDeleted()
         try self.syncTranslatorsWithBundledData(deleteIndices: deletedIndices)
 
@@ -165,6 +169,8 @@ final class TranslatorsAndStylesController {
         let hash = try self.loadLastStylesCommitHash()
 
         guard self.lastStylesCommitHash != hash else { return }
+
+        DDLogInfo("TranslatorsAndStylesController: update styles from bundle")
 
         try self.syncStylesWithBundledData()
 
@@ -192,6 +198,8 @@ final class TranslatorsAndStylesController {
     private func _updateFromRepo(type: UpdateType) -> Single<Int> {
         // Startup update is limited to once daily, other updates happen always
         guard type != .startup || self.didDayChange(from: Date(timeIntervalSince1970: Double(self.lastTimestamp))) else { return Single.just(self.lastTimestamp) }
+
+        DDLogInfo("TranslatorsAndStylesController: update from repo")
 
         let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? ""
         let bundle = (Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? ""
@@ -260,12 +268,14 @@ final class TranslatorsAndStylesController {
         // Sync translators
         let request = SyncTranslatorsDbRequest(updateMetadata: metadata, deleteIndices: deleteIndices, fileStorage: self.fileStorage)
         let updated = try self.dbStorage.createCoordinator().perform(request: request)
+        DDLogInfo("TranslatorsAndStylesController: updated \(updated.count) translators")
         // Delete files of deleted translators
         deleteIndices.forEach { id in
             try? self.fileStorage.remove(Files.translator(filename: id))
         }
         // Unzip updated translators
         try self.unzip(translators: updated)
+        DDLogInfo("TranslatorsAndStylesController: unzipped translators")
     }
 
     /// Sync local styles with bundled styles.
@@ -283,6 +293,7 @@ final class TranslatorsAndStylesController {
         // Sync styles
         let request = SyncStylesDbRequest(styles: styles)
         let updated = try self.dbStorage.createCoordinator().perform(request: request)
+        DDLogInfo("TranslatorsAndStylesController: updated \(updated.count) styles")
         // Copy updated files
         for file in files.filter({ updated.contains($0.name) }) {
             try self.fileStorage.copy(from: file, to: Files.style(filename: file.name))
@@ -309,6 +320,8 @@ final class TranslatorsAndStylesController {
     /// - parameter translators: Translators to be updated or removed.
     private func syncRepoResponse(translators: [Translator], styles: [(String, String)]) -> Single<()> {
         do {
+            DDLogInfo("TranslatorsAndStylesController: sync repo response")
+
             // Split translators into deletions and updates, parse metadata.
             let (updateTranslators, deleteTranslators) = self.split(translators: translators)
             let updateTranslatorMetadata = updateTranslators.compactMap({ self.metadata(from: $0) })
@@ -322,11 +335,18 @@ final class TranslatorsAndStylesController {
             // Split styles into metadata and xml data.
             let (updateStyles, stylesData) = self.split(styles: styles)
 
-            guard !updateTranslatorMetadata.isEmpty || !deleteTranslatorMetadata.isEmpty || !updateStyles.isEmpty else { return Single.just(()) }
+            guard !updateTranslatorMetadata.isEmpty || !deleteTranslatorMetadata.isEmpty || !updateStyles.isEmpty else {
+                DDLogInfo("TranslatorsAndStylesController: no repo updates")
+                return Single.just(())
+            }
+
+            DDLogInfo("TranslatorsAndStylesController: update db from repo")
 
             // Sync metadata to DB
             let repoRequest = SyncRepoResponseDbRequest(styles: updateStyles, translators: updateTranslatorMetadata, deleteTranslators: deleteTranslatorMetadata, fileStorage: self.fileStorage)
             try self.dbStorage.createCoordinator().perform(request: repoRequest)
+
+            DDLogInfo("TranslatorsAndStylesController: update local files from repo")
 
             // Remove local translators
             for metadata in deleteTranslatorMetadata {
@@ -402,6 +422,8 @@ final class TranslatorsAndStylesController {
         if !self.isLoading.value {
             return self.loadTranslators()
         }
+
+        DDLogInfo("TranslatorsAndStylesController: wait for translators")
         return self.isLoading.filter({ !$0 }).first().flatMap { _ in self.loadTranslators() }
     }
 
@@ -409,14 +431,18 @@ final class TranslatorsAndStylesController {
     /// - returns: Raw translators.
     private func loadTranslators() -> Single<[RawTranslator]> {
         return Single.create { subscriber -> Disposable in
+            DDLogInfo("TranslatorsAndStylesController: load translators")
+
             do {
                 let contents: [File] = try self.fileStorage.contentsOfDirectory(at: Files.translators)
+                DDLogInfo("TranslatorsAndStylesController: load \(contents.count) raw translators")
                 let translators = contents.compactMap({ self.loadRawTranslator(from: $0) })
                 subscriber(.success(translators))
             } catch let error {
                 DDLogError("TranslatorsAndStylesController: can't load translators - \(error)")
                 subscriber(.failure(error))
             }
+
             return Disposables.create()
         }
     }
@@ -580,6 +606,7 @@ final class TranslatorsAndStylesController {
         parser.delegate = delegate
 
         if parser.parse() {
+            DDLogInfo("TranslatorsAndStylesController: parsed \(delegate.translators.count) translators and \(delegate.styles.count) styles")
             return (delegate.timestamp, delegate.translators, delegate.styles)
         }
 
