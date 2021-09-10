@@ -6,7 +6,7 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
-import UIKit
+import Foundation
 
 import RealmSwift
 
@@ -135,12 +135,31 @@ struct Database {
         }
     }
 
+    private struct RectMigration: Equatable, Hashable {
+        let minX: Double
+        let minY: Double
+        let maxX: Double
+        let maxY: Double
+
+        init(object: MigrationObject) {
+            self.minX = (object["minX"] as? Double) ?? -1
+            self.minY = (object["minY"] as? Double) ?? -1
+            self.maxX = (object["maxX"] as? Double) ?? -1
+            self.maxY = (object["maxY"] as? Double) ?? -1
+        }
+    }
+
+    /// Migrate some Realm `Object`s to `EmbeddedObject`, which makes them directly dependent on their parent. Migration of `RCreator`, `RLink`, `RItemField`, `RCondition` and `RRelation` is simple,
+    /// because they had links to their parents. Migration of `RVersion` and `RRect` is a bit more complicated, because these objects are not linked to their parent, only their parents have them
+    /// stored in a list. So if some object is missing a link to their parent we'll get the message "At least one object does not have a backlink (data would get lost)". Since there is no identifier
+    /// or attribute which can identify these objects, we compare based on their values and delete the ones that are not found in parent objects.
     private static func migrateEmbeddedObjects(migration: Migration) {
         var orphaned: [MigrationObject] = []
         let creators = self.groupedEmbeddedObjects(ofType: "RCreator", parentPropertyName: "item", orphaned: &orphaned, migration: migration)
         let links = self.groupedEmbeddedObjects(ofType: "RLink", parentPropertyName: "item", orphaned: &orphaned, migration: migration)
         let fields = self.groupedEmbeddedObjects(ofType: "RItemField", parentPropertyName: "item", orphaned: &orphaned, migration: migration)
         let relations = self.groupedEmbeddedObjects(ofType: "RRelation", parentPropertyName: "item", orphaned: &orphaned, migration: migration)
+        var rects = self.groupedRects(migration: migration)
 
         let setObjectsToList: ([MigrationObject]?, Any?) -> Void = { objects, list in
             if let objects = objects, let list = list as? List<MigrationObject> {
@@ -149,15 +168,33 @@ struct Database {
         }
 
         migration.enumerateObjects(ofType: "RItem") { old, new in
-            guard let old = old, let key = old["key"] as? String else { return }
+            guard let old = old, let new = new, let key = old["key"] as? String else { return }
 
             let id = KeyedLibraryId(key: key, customLibraryKey: (old["customLibraryKey"] as? Int), groupKey: (old["groupKey"] as? Int))
 
-            setObjectsToList(creators[id], new?["creators"])
-            setObjectsToList(links[id], new?["links"])
-            setObjectsToList(fields[id], new?["fields"])
-            setObjectsToList(relations[id], new?["relations"])
+            setObjectsToList(creators[id], new["creators"])
+            setObjectsToList(links[id], new["links"])
+            setObjectsToList(fields[id], new["fields"])
+            setObjectsToList(relations[id], new["relations"])
+
+            var rectObjects: [MigrationObject] = []
+            for oldRectObject in old.dynamicList("rects") {
+                let rect = RectMigration(object: oldRectObject)
+                if var objects = rects[rect], !objects.isEmpty {
+                    rectObjects.append(objects.removeFirst())
+
+                    if objects.isEmpty {
+                        rects[rect] = nil
+                    } else {
+                        rects[rect] = objects
+                    }
+                }
+            }
+            new.dynamicList("rects").removeAll()
+            new.dynamicList("rects").append(objectsIn: rectObjects)
         }
+
+        orphaned.append(contentsOf: rects.values.flatMap({ $0 }))
 
         let conditions = self.groupedEmbeddedObjects(ofType: "RCondition", parentPropertyName: "search", orphaned: &orphaned, migration: migration)
 
@@ -200,6 +237,23 @@ struct Database {
         for object in orphaned {
             migration.delete(object)
         }
+        migration.deleteData(forType: "RPath")
+        migration.deleteData(forType: "RPathCoordinate")
+    }
+
+    private static func groupedRects(migration: Migration) -> [RectMigration: [MigrationObject]] {
+        var map: [RectMigration: [MigrationObject]] = [:]
+        migration.enumerateObjects(ofType: "RRect") { old, new in
+            guard let new = new else { return }
+
+            let rect = RectMigration(object: new)
+            if var existing = map[rect] {
+                existing.append(new)
+            } else {
+                map[rect] = [new]
+            }
+        }
+        return map
     }
 
     private static func groupedEmbeddedObjects(ofType type: String, parentPropertyName: String, orphaned: inout [MigrationObject], migration: Migration) -> [KeyedLibraryId: [MigrationObject]] {
