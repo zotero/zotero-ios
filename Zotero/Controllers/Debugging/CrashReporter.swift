@@ -9,6 +9,7 @@
 import Foundation
 
 import CocoaLumberjackSwift
+import CrashReporter
 import RxSwift
 import RxSwiftExt
 
