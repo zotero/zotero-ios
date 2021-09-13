@@ -147,8 +147,11 @@ final class WebViewHandler: NSObject {
                        return self.translatorsController.translators().flatMap({ return Single.just(($0, encodedSchema, encodedDateFormats)) })
                    }
                    .flatMap { translators, encodedSchema, encodedDateFormats -> Single<Any> in
-                       DDLogInfo("WebViewHandler: call translate js")
+                       DDLogInfo("WebViewHandler: encode translators")
                        let encodedTranslators = WKWebView.encodeAsJSONForJavascript(translators)
+                       DDLogInfo("WebViewHandler: call translate js")
+                       DDLogInfo("URL: \(url.absoluteString)")
+                       DDLogInfo("Translators: \(encodedTranslators)")
                        return webView.call(javascript: "translate('\(url.absoluteString)', \(encodedHtml), \(encodedFrames), \(encodedTranslators), \(encodedSchema), \(encodedDateFormats));")
                    }
                    .subscribe(onFailure: { [weak self] error in
