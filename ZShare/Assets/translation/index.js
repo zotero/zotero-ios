@@ -25,33 +25,43 @@
 
 async function translate(url, encodedHtml, encodedFrames, encodedTranslators, encodedSchema, encodedDateFormats) {
     // Setup date
+    Zotero.debug("Parse date formats");
     const dateFormats = JSON.parse(decodeBase64(encodedDateFormats));
     if (dateFormats) {
+        Zotero.debug("Initialize date formats");
         Zotero.Date.init(dateFormats);
     }
     // Set up schema
+    Zotero.debug("Parse schema");
     const schemaData = JSON.parse(decodeBase64(encodedSchema));
     if (schemaData) {
+        Zotero.debug("Initialize schema");
         Zotero.Schema.init(schemaData);
     }
     // Set up translators
+    Zotero.debug("Translate");
     const translatorData = JSON.parse(decodeBase64(encodedTranslators));
     if (translatorData) {
+        Zotero.debug("Initialize translators");
         Zotero.Translators.init(translatorData);
     }
 
     // Prepare a document
+    Zotero.debug("Parse HTML data");
     const html = decodeBase64(encodedHtml);
     const frames = JSON.parse(decodeBase64(encodedFrames));
+    Zotero.debug("Create document");
     const doc = prepareDoc(parseDoc(html, frames), url);
 
     // Set up a translate instance
+    Zotero.debug("Initialize document");
     const translate = new Zotero.Translate.Web();
     translate.setDocument(doc);
 
     // Get translators
     var translators;
     try {
+        Zotero.debug("Get translators");
         translators = await translate.getTranslators();
     } catch (e) {
         Zotero.logError(e);

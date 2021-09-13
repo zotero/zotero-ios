@@ -233,9 +233,15 @@ final class WebViewHandler: NSObject {
         guard let urlString = options["url"] as? String,
               let url = URL(string: urlString),
               let method = options["method"] as? String else {
+            DDLogInfo("Incorrect URL request from javascript")
+            DDLogInfo("\(options)")
+
             let error = "Incorrect URL request from javascript".data(using: .utf8)
             let script = self.javascript(for: messageId, statusCode: -1, successCodes: [200], data: error)
-            self.webView?.evaluateJavaScript(script, completionHandler: nil)
+
+            inMainThread { [weak self] in
+                self?.webView?.evaluateJavaScript(script, completionHandler: nil)
+            }
             return
         }
 
@@ -243,6 +249,8 @@ final class WebViewHandler: NSObject {
         let body = options["body"] as? String
         let timeout = (options["timeout"] as? Double).flatMap({ $0 / 1000 }) ?? 60
         let successCodes = (options["successCodes"] as? [Int]) ?? []
+
+        DDLogInfo("WebViewHandler: send request to \(urlString)")
 
         var request = URLRequest(url: url)
         request.httpMethod = method

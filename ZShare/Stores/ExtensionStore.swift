@@ -467,7 +467,7 @@ final class ExtensionStore {
     // MARK: - Translation
 
     /// Observes `WebViewHandler` translation process and acts accordingly.
-    private func  setupWebHandlerObserving() {
+    private func setupWebHandlerObserving() {
         self.webViewHandler.observable
                            .observe(on: MainScheduler.instance)
                            .subscribe(onNext: { [weak self] action in
