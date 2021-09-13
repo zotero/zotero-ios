@@ -22,4 +22,8 @@ final class SquareAnnotation: PSPDFKit.SquareAnnotation {
 
         CommentIconDrawingController.draw(context: context, boundingBox: self.boundingBox, color: (self.color ?? .black))
     }
+
+    override class var supportsSecureCoding: Bool {
+        true
+    }
 }

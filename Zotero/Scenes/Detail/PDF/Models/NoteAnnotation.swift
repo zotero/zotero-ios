@@ -29,4 +29,8 @@ final class NoteAnnotation: PSPDFKit.NoteAnnotation {
         context.resetClip()
         context.draw(outlineCgImage, in: boundingBox)
     }
+
+    override class var supportsSecureCoding: Bool {
+        true
+    }
 }

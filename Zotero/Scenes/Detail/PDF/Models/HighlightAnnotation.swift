@@ -22,4 +22,8 @@ final class HighlightAnnotation: PSPDFKit.HighlightAnnotation {
 
         CommentIconDrawingController.draw(context: context, boundingBox: (self.rects?.first ?? self.boundingBox), color: (self.color ?? .black))
     }
+
+    override class var supportsSecureCoding: Bool {
+        true
+    }
 }
