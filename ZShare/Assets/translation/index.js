@@ -31,15 +31,13 @@ function initTranslators(encodedTranslators) {
     }
 }
 
-function initSchema(encodedSchema) {
+function initSchemaAndDateFormats(encodedSchema, encodedDateFormats) {
     const schemaData = JSON.parse(decodeBase64(encodedSchema));
     if (schemaData) {
         Zotero.debug("Init schema");
         Zotero.Schema.init(schemaData);
     }
-}
 
-function initDateFormats(encodedDateFormats) {
     const dateFormats = JSON.parse(decodeBase64(encodedDateFormats));
     if (dateFormats) {
         Zotero.debug("Init date formats");

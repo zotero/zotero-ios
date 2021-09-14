@@ -135,15 +135,12 @@ final class WebViewHandler: NSObject {
 
         self.cookies = cookies
 
-        return self.loadBundledFiles()
-                   .flatMap { containerHtml, containerUrl, encodedSchema, encodedDateFormats -> Single<(String, String)> in
-                       return self.load(html: containerHtml, baseUrl: containerUrl).flatMap({ return Single.just((encodedSchema, encodedDateFormats)) })
+        return self.loadIndex()
+                   .flatMap { _ -> Single<(String, String)> in
+                       return self.loadBundledFiles()
                    }
-                   .flatMap { encodedSchema, encodedDateFormats -> Single<String> in
-                       return webView.call(javascript: "initDateFormats(\(encodedDateFormats));").flatMap { _ in return Single.just(encodedSchema) }
-                   }
-                   .flatMap { encodedSchema -> Single<Any> in
-                       return webView.call(javascript: "initSchema(\(encodedSchema));")
+                   .flatMap { encodedSchema, encodedDateFormats -> Single<Any> in
+                       return webView.call(javascript: "initSchemaAndDateFormats(\(encodedSchema), \(encodedDateFormats));")
                    }
                    .flatMap { _ -> Single<[RawTranslator]> in
                        DDLogInfo("WebViewHandler: load translators")
@@ -168,15 +165,8 @@ final class WebViewHandler: NSObject {
                    .disposed(by: self.disposeBag)
     }
 
-    private func loadBundledFiles() -> Single<(String, URL, String, String)> {
+    private func loadBundledFiles() -> Single<(String, String)> {
         return Single.create { subscriber in
-            guard let containerUrl = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "translation"),
-                  let containerHtml = try? String(contentsOf: containerUrl, encoding: .utf8) else {
-                DDLogError("WebViewHandler: can't load translator html")
-                subscriber(.failure(Error.cantFindFile))
-                return Disposables.create()
-            }
-
             guard let schemaUrl = Bundle.main.url(forResource: "schema", withExtension: "json", subdirectory: "Bundled"),
                   let schemaData = try? Data(contentsOf: schemaUrl) else {
                 DDLogError("WebViewHandler: can't load schema json")
@@ -196,7 +186,7 @@ final class WebViewHandler: NSObject {
 
             DDLogInfo("WebViewHandler: loaded bundled files")
 
-            subscriber(.success((containerHtml, containerUrl, encodedSchema, encodedFormats)))
+            subscriber(.success((encodedSchema, encodedFormats)))
 
             return Disposables.create()
         }
@@ -211,10 +201,11 @@ final class WebViewHandler: NSObject {
         self.itemSelectionMessageId = nil
     }
 
-    /// Load the translation server.
-    private func load(html: String, baseUrl: URL) -> Single<()> {
-        DDLogInfo("WebViewHandler: load translation html")
-        self.webView?.loadHTMLString(html, baseURL: baseUrl)
+    private func loadIndex() -> Single<()> {
+        guard let indexUrl = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "translation") else {
+            return Single.error(Error.cantFindFile)
+        }
+        self.webView?.loadFileURL(indexUrl, allowingReadAccessTo: indexUrl.deletingLastPathComponent())
         return self.createWebLoadedSingle()
     }
 
