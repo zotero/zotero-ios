@@ -12,10 +12,6 @@ import WebKit
 import CocoaLumberjackSwift
 import RxSwift
 
-enum WebViewError: Error {
-    case javascriptCallMissingResult
-}
-
 extension WKWebView {
     /// Makes a javascript call to `webView` with `Single` with result response.
     /// - parameter script: JS script to be performed.
@@ -25,24 +21,27 @@ extension WKWebView {
             guard let `self` = self else { return Disposables.create() }
 
             self.evaluateJavaScript(script) { result, error in
+                if let error = error {
+                    let nsError = error as NSError
+
+                    // TODO: - Check JS code to see if it's possible to remove this error.
+                    // For some calls we get an WKWebView error "JavaScript execution returned a result of an unsupported type" even though no error really occured in the code.
+                    // Because of this error the observable doesn't send any more "next" events and we don't receive the response. So we just ignore this error.
+                    if nsError.domain == WKErrorDomain && nsError.code == 5 {
+                        return
+                    }
+
+                    DDLogError("WKWebView: javascript call ('\(script)') error - \(error)")
+
+                    subscriber(.failure(error))
+                    return
+                }
+
                 if let data = result {
                     subscriber(.success(data))
-                    return
+                } else {
+                    subscriber(.success(""))
                 }
-
-                let error = error ?? WebViewError.javascriptCallMissingResult
-                let nsError = error as NSError
-
-                // TODO: - Check JS code to see if it's possible to remove this error.
-                // For some calls we get an WKWebView error "JavaScript execution returned a result of an unsupported type" even though no error really occured in the code.
-                // Because of this error the observable doesn't send any more "next" events and we don't receive the response. So we just ignore this error.
-                if nsError.domain == WKErrorDomain && nsError.code == 5 {
-                    return
-                }
-
-                DDLogError("WKWebView: javascript call ('\(script)') error - \(error)")
-
-                subscriber(.failure(error))
             }
 
             return Disposables.create()

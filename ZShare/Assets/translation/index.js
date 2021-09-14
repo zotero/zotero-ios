@@ -23,29 +23,31 @@
 	***** END LICENSE BLOCK *****
 */
 
-async function translate(url, encodedHtml, encodedFrames, encodedTranslators, encodedSchema, encodedDateFormats) {
-    // Setup date
-    Zotero.debug("Parse date formats");
-    const dateFormats = JSON.parse(decodeBase64(encodedDateFormats));
-    if (dateFormats) {
-        Zotero.debug("Initialize date formats");
-        Zotero.Date.init(dateFormats);
-    }
-    // Set up schema
-    Zotero.debug("Parse schema");
-    const schemaData = JSON.parse(decodeBase64(encodedSchema));
-    if (schemaData) {
-        Zotero.debug("Initialize schema");
-        Zotero.Schema.init(schemaData);
-    }
-    // Set up translators
-    Zotero.debug("Translate");
+function initTranslators(encodedTranslators) {
     const translatorData = JSON.parse(decodeBase64(encodedTranslators));
     if (translatorData) {
-        Zotero.debug("Initialize translators");
+        Zotero.debug("Init translators");
         Zotero.Translators.init(translatorData);
     }
+}
 
+function initSchema(encodedSchema) {
+    const schemaData = JSON.parse(decodeBase64(encodedSchema));
+    if (schemaData) {
+        Zotero.debug("Init schema");
+        Zotero.Schema.init(schemaData);
+    }
+}
+
+function initDateFormats(encodedDateFormats) {
+    const dateFormats = JSON.parse(decodeBase64(encodedDateFormats));
+    if (dateFormats) {
+        Zotero.debug("Init date formats");
+        Zotero.Date.init(dateFormats);
+    }
+}
+
+async function translate(url, encodedHtml, encodedFrames) {
     // Prepare a document
     Zotero.debug("Parse HTML data");
     const html = decodeBase64(encodedHtml);
@@ -54,7 +56,7 @@ async function translate(url, encodedHtml, encodedFrames, encodedTranslators, en
     const doc = prepareDoc(parseDoc(html, frames), url);
 
     // Set up a translate instance
-    Zotero.debug("Initialize document");
+    Zotero.debug("Init document");
     const translate = new Zotero.Translate.Web();
     translate.setDocument(doc);
 

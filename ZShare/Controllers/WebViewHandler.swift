@@ -133,27 +133,34 @@ final class WebViewHandler: NSObject {
 
         DDLogInfo("WebViewHandler: translate")
 
-        let encodedHtml = WKWebView.encodeForJavascript(html.data(using: .utf8))
-        let jsonFramesData = try? JSONSerialization.data(withJSONObject: frames, options: .fragmentsAllowed)
-        let encodedFrames = jsonFramesData.flatMap({ WKWebView.encodeForJavascript($0) }) ?? "''"
         self.cookies = cookies
 
         return self.loadBundledFiles()
                    .flatMap { containerHtml, containerUrl, encodedSchema, encodedDateFormats -> Single<(String, String)> in
                        return self.load(html: containerHtml, baseUrl: containerUrl).flatMap({ return Single.just((encodedSchema, encodedDateFormats)) })
                    }
-                   .flatMap { encodedSchema, encodedDateFormats -> Single<([RawTranslator], String, String)> in
-                       DDLogInfo("WebViewHandler: load translators")
-                       return self.translatorsController.translators().flatMap({ return Single.just(($0, encodedSchema, encodedDateFormats)) })
+                   .flatMap { encodedSchema, encodedDateFormats -> Single<String> in
+                       return webView.call(javascript: "initDateFormats(\(encodedDateFormats));").flatMap { _ in return Single.just(encodedSchema) }
                    }
-                   .flatMap { translators, encodedSchema, encodedDateFormats -> Single<Any> in
+                   .flatMap { encodedSchema -> Single<Any> in
+                       return webView.call(javascript: "initSchema(\(encodedSchema));")
+                   }
+                   .flatMap { _ -> Single<[RawTranslator]> in
+                       DDLogInfo("WebViewHandler: load translators")
+                       return self.translatorsController.translators()
+                   }
+                   .flatMap { translators -> Single<Any> in
                        DDLogInfo("WebViewHandler: encode translators")
                        let encodedTranslators = WKWebView.encodeAsJSONForJavascript(translators)
-                       DDLogInfo("WebViewHandler: call translate js")
-                       DDLogInfo("URL: \(url.absoluteString)")
-                       DDLogInfo("Translators: \(encodedTranslators)")
-                       return webView.call(javascript: "translate('\(url.absoluteString)', \(encodedHtml), \(encodedFrames), \(encodedTranslators), \(encodedSchema), \(encodedDateFormats));")
+                       return webView.call(javascript: "initTranslators(\(encodedTranslators));")
                    }
+                   .flatMap({ _ -> Single<Any> in
+                       DDLogInfo("WebViewHandler: call translate js")
+                       let encodedHtml = WKWebView.encodeForJavascript(html.data(using: .utf8))
+                       let jsonFramesData = try? JSONSerialization.data(withJSONObject: frames, options: .fragmentsAllowed)
+                       let encodedFrames = jsonFramesData.flatMap({ WKWebView.encodeForJavascript($0) }) ?? "''"
+                       return webView.call(javascript: "translate('\(url.absoluteString)', \(encodedHtml), \(encodedFrames));")
+                   })
                    .subscribe(onFailure: { [weak self] error in
                        DDLogError("WebViewHandler: translation failed - \(error)")
                        self?.observable.on(.error(error))
