@@ -131,7 +131,7 @@ struct AnnotationConverter {
                            boundingBoxConverter: AnnotationBoundingBoxConverter?) -> Annotation? {
         guard let document = annotation.document, AnnotationsConfig.supported.contains(annotation.type) else { return nil }
 
-        let key = isSyncable ? KeyGenerator.newKey : annotation.uuid
+        let key = isSyncable ? (annotation.key ?? KeyGenerator.newKey) : annotation.uuid
         let page = Int(annotation.pageIndex)
         let pageLabel = document.pageLabelForPage(at: annotation.pageIndex, substituteWithPlainLabel: false) ?? "\(annotation.pageIndex + 1)"
         let author = isNew ? username : (annotation.user ?? "")

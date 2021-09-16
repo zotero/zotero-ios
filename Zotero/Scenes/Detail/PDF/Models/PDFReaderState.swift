@@ -29,9 +29,9 @@ struct PDFReaderState: ViewModelState {
         static let activeColor = Changes(rawValue: 1 << 4)
         static let activeComment = Changes(rawValue: 1 << 5)
         static let save = Changes(rawValue: 1 << 6)
-        static let itemObserving = Changes(rawValue: 1 << 8)
-        static let export = Changes(rawValue: 1 << 9)
-        static let activeLineWidth = Changes(rawValue: 1 << 10)
+        static let itemObserving = Changes(rawValue: 1 << 7)
+        static let export = Changes(rawValue: 1 << 8)
+        static let activeLineWidth = Changes(rawValue: 1 << 9)
     }
 
     enum AppearanceMode: UInt {

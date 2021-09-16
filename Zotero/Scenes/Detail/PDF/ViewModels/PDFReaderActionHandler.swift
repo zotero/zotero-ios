@@ -905,14 +905,18 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         let activeColor = viewModel.state.activeColor.hexString
 
         for annotation in annotations {
-            guard !annotation.syncable,
-                  let zoteroAnnotation = AnnotationConverter.annotation(from: annotation, color: activeColor, editability: editability, isNew: true, isSyncable: true,
+            // Either annotation is new (not syncable) or the user used undo/redo and we check whether the annotation exists
+            guard !annotation.syncable || viewModel.state.annotations[Int(annotation.pageIndex)]?.first(where: { $0.key == annotation.key }) == nil,
+                  let zoteroAnnotation = AnnotationConverter.annotation(from: annotation, color: (annotation.color?.hexString ?? activeColor), editability: editability, isNew: true, isSyncable: true,
                                                                         username: viewModel.state.username, boundingBoxConverter: self.boundingBoxConverter) else { continue }
 
             newZoteroAnnotations.append(zoteroAnnotation)
-            annotation.customData = [AnnotationsConfig.keyKey: zoteroAnnotation.key,
-                                     AnnotationsConfig.baseColorKey: activeColor,
-                                     AnnotationsConfig.syncableKey: true]
+
+            if !annotation.syncable {
+                annotation.customData = [AnnotationsConfig.keyKey: zoteroAnnotation.key,
+                                         AnnotationsConfig.baseColorKey: activeColor,
+                                         AnnotationsConfig.syncableKey: true]
+            }
 
             self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark)
         }
@@ -1032,8 +1036,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         var keys: Set<String> = []
         for annotation in annotations {
             guard annotation.syncable, let key = annotation.key else { continue }
-            // Set syncable flag to false so that if user uses redo function this annotation is re-added.
-            annotation.syncable = false
             let page = Int(annotation.pageIndex)
             if let index = zoteroAnnotations[page]?.firstIndex(where: { $0.key == key }) {
                 zoteroAnnotations[page]?.remove(at: index)
@@ -1085,7 +1087,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                     })
                 }
                 // Add zotero annotations to document
-                state.document.add(annotations: pspdfkitAnnotations, options: nil)
+                state.document.add(annotations: pspdfkitAnnotations, options: [.suppressNotifications: true])
                 // Store previews
                 pspdfkitAnnotations.forEach { annotation in
                     self.annotationPreviewController.store(for: annotation, parentKey: state.key, libraryId: viewModel.state.library.identifier, isDark: isDark)
