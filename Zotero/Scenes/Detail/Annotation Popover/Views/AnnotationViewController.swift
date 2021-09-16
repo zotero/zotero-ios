@@ -123,7 +123,7 @@ final class AnnotationViewController: UIViewController {
         return !isSelected ? colorName : L10n.Accessibility.Pdf.selected + ": " + colorName
     }
 
-    @IBAction private func delete() {
+    @objc private func deleteAnnotation() {
         guard let annotation = self.viewModel.state.selectedAnnotation else { return }
 
         let controller = UIAlertController(title: L10n.warning, message: L10n.Pdf.AnnotationPopover.deleteConfirm, preferredStyle: .alert)
@@ -291,6 +291,7 @@ final class AnnotationViewController: UIViewController {
 
         // MARK: - Setup delete button
         let button = UIButton()
+        button.addTarget(self, action: #selector(AnnotationViewController.deleteAnnotation), for: .touchUpInside)
         button.setTitle(L10n.Pdf.AnnotationPopover.delete, for: .normal)
         button.setTitleColor(.red, for: .normal)
         button.contentEdgeInsets = UIEdgeInsets(top: 11, left: 0, bottom: 12, right: 0)
