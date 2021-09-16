@@ -33,10 +33,11 @@ final class TranslatorsAndStylesController {
         case expired
         case bundleLoading(Swift.Error)
         case bundleMissing
-        case cantParseIndexFile
-        case incompatibleTranslator
         case incompatibleDeleted
         case cantParseXmlResponse
+        case cantConvertTranslatorToData
+        case translatorMissingId
+        case translatorMissingLastUpdated
 
         var isBundeLoadingError: Bool {
             switch self {
@@ -70,12 +71,20 @@ final class TranslatorsAndStylesController {
     private let scheduler: SchedulerType
 
     weak var coordinator: TranslatorsControllerCoordinatorDelegate?
+    private lazy var uuidExpression: NSRegularExpression? = {
+        do {
+            return try NSRegularExpression(pattern: #"[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-4[0-9A-Fa-f]{3}-[89ABab][0-9A-Fa-f]{3}-[0-9A-Fa-f]{12}"#)
+        } catch let error {
+            DDLogError("TranslatorsAndStylesController: can't create uuid expression - \(error)")
+            return nil
+        }
+    }()
 
     init(apiClient: ApiClient, bundledDataStorage: DbStorage, fileStorage: FileStorage, bundle: Bundle = Bundle.main) {
         do {
             try fileStorage.createDirectories(for: Files.bundledDataDbFile)
         } catch let error {
-            fatalError("TranslatorsController: could not create db directories - \(error)")
+            fatalError("TranslatorsAndStylesController: could not create db directories - \(error)")
         }
 
         let queue = DispatchQueue(label: "org.zotero.TranslatorsController.queue", qos: .utility, attributes: .concurrent)
@@ -242,7 +251,7 @@ final class TranslatorsAndStylesController {
     /// Checks whether the error was caused by bundled or remote loading and shows appropriate error.
     /// - parameter error: Error to check.
     private func process(error: Swift.Error, updateType: UpdateType) {
-        DDLogError("TranslatorsAndStylesController: \(error)")
+        DDLogError("TranslatorsAndStylesController: error - \(error)")
 
         guard let delegate = self.coordinator else {
             self.isLoading.accept(false)
@@ -319,54 +328,46 @@ final class TranslatorsAndStylesController {
     /// Sync local translators with remote translators.
     /// - parameter translators: Translators to be updated or removed.
     private func syncRepoResponse(translators: [Translator], styles: [(String, String)]) -> Single<()> {
-        do {
-            DDLogInfo("TranslatorsAndStylesController: sync repo response")
+        return Single.create { subscriber in
+            do {
+                DDLogInfo("TranslatorsAndStylesController: sync repo response")
 
-            // Split translators into deletions and updates, parse metadata.
-            let (updateTranslators, deleteTranslators) = self.split(translators: translators)
-            let updateTranslatorMetadata = updateTranslators.compactMap({ self.metadata(from: $0) })
-            let deleteTranslatorMetadata = deleteTranslators.compactMap({ self.metadata(from: $0) })
+                // Split translators into deletions and updates, parse metadata.
+                let (updateTranslators, deleteTranslators) = self.split(translators: translators)
+                let updateTranslatorMetadata = try updateTranslators.compactMap({ try self.metadata(from: $0) })
+                let deleteTranslatorMetadata = try deleteTranslators.compactMap({ try self.metadata(from: $0) })
 
-            // Sanity check, if some translators can't be mapped to metadata they are missing important information.
-            if updateTranslatorMetadata.count != updateTranslators.count || deleteTranslatorMetadata.count != deleteTranslators.count {
-                return Single.error(Error.incompatibleTranslator)
-            }
+                // Split styles into metadata and xml data.
+                let (updateStyles, stylesData) = self.split(styles: styles)
 
-            // Split styles into metadata and xml data.
-            let (updateStyles, stylesData) = self.split(styles: styles)
+                DDLogInfo("TranslatorsAndStylesController: update local files from repo")
 
-            guard !updateTranslatorMetadata.isEmpty || !deleteTranslatorMetadata.isEmpty || !updateStyles.isEmpty else {
-                DDLogInfo("TranslatorsAndStylesController: no repo updates")
-                return Single.just(())
-            }
-
-            DDLogInfo("TranslatorsAndStylesController: update db from repo")
-
-            // Sync metadata to DB
-            let repoRequest = SyncRepoResponseDbRequest(styles: updateStyles, translators: updateTranslatorMetadata, deleteTranslators: deleteTranslatorMetadata, fileStorage: self.fileStorage)
-            try self.dbStorage.createCoordinator().perform(request: repoRequest)
-
-            DDLogInfo("TranslatorsAndStylesController: update local files from repo")
-
-            // Remove local translators
-            for metadata in deleteTranslatorMetadata {
-                try? self.fileStorage.remove(Files.translator(filename: metadata.id))
-            }
-            // Write updated translators
-            for (index, metadata) in updateTranslatorMetadata.enumerated() {
-                guard let data = self.data(from: updateTranslators[index]) else {
-                    return Single.error(Error.incompatibleTranslator)
+                // Remove local translators
+                for metadata in deleteTranslatorMetadata {
+                    try? self.fileStorage.remove(Files.translator(filename: metadata.id))
                 }
-                try? self.fileStorage.write(data, to: Files.translator(filename: metadata.id), options: .atomicWrite)
-            }
-            // Write updated styles
-            for (filename, data) in stylesData {
-                try? self.fileStorage.write(data, to: Files.style(filename: filename), options: .atomicWrite)
+                // Write updated translators
+                for (index, metadata) in updateTranslatorMetadata.enumerated() {
+                    let data = try self.data(from: updateTranslators[index])
+                    try self.fileStorage.write(data, to: Files.translator(filename: metadata.id), options: .atomicWrite)
+                }
+                // Write updated styles
+                for (filename, data) in stylesData {
+                    try self.fileStorage.write(data, to: Files.style(filename: filename), options: .atomicWrite)
+                }
+
+                DDLogInfo("TranslatorsAndStylesController: update db from repo")
+
+                // Sync metadata to DB
+                let repoRequest = SyncRepoResponseDbRequest(styles: updateStyles, translators: updateTranslatorMetadata, deleteTranslators: deleteTranslatorMetadata, fileStorage: self.fileStorage)
+                try self.dbStorage.createCoordinator().perform(request: repoRequest)
+
+                subscriber(.success(()))
+            } catch let error {
+                subscriber(.failure(error))
             }
 
-            return Single.just(())
-        } catch let error {
-            return Single.error(error)
+            return Disposables.create()
         }
     }
 
@@ -416,27 +417,28 @@ final class TranslatorsAndStylesController {
 
     // MARK: - Translator loading
 
-    /// Loads raw translators if they are not currently being loaded. Otherwise waits for loading and returns them afterwards.
-    /// - returns: Raw translators.
-    func translators() -> Single<[RawTranslator]> {
+    func translators(matching url: String) -> Single<[RawTranslator]> {
         if !self.isLoading.value {
-            return self.loadTranslators()
+            return self.loadTranslators(matching: url)
         }
 
         DDLogInfo("TranslatorsAndStylesController: wait for translators")
-        return self.isLoading.filter({ !$0 }).first().flatMap { _ in self.loadTranslators() }
+        return self.isLoading.filter({ !$0 }).first().flatMap { _ in return self.loadTranslators(matching: url) }
     }
 
-    /// Load local raw translators for javascript.
-    /// - returns: Raw translators.
-    private func loadTranslators() -> Single<[RawTranslator]> {
+    private func loadTranslators(matching url: String) -> Single<[RawTranslator]> {
         return Single.create { subscriber -> Disposable in
             DDLogInfo("TranslatorsAndStylesController: load translators")
 
             do {
-                let contents: [File] = try self.fileStorage.contentsOfDirectory(at: Files.translators)
-                DDLogInfo("TranslatorsAndStylesController: load \(contents.count) raw translators")
-                let translators = contents.compactMap({ self.loadRawTranslator(from: $0) })
+                DDLogInfo("TranslatorsAndStylesController: load raw translators for \(url)")
+
+                var loadedUuids: Set<String> = []
+                let allUuids = try self.fileStorage.contentsOfDirectory(at: Files.translators).compactMap({ $0.relativeComponents.last })
+                let translators = self.loadTranslatorsWithDependencies(for: Set(allUuids), matching: url, loadedUuids: &loadedUuids)
+
+                DDLogInfo("TranslatorsAndStylesController: found \(translators.count) translators")
+
                 subscriber(.success(translators))
             } catch let error {
                 DDLogError("TranslatorsAndStylesController: can't load translators - \(error)")
@@ -447,32 +449,109 @@ final class TranslatorsAndStylesController {
         }
     }
 
+    private func loadTranslatorsWithDependencies(for uuids: Set<String>, matching url: String?, loadedUuids: inout Set<String>) -> [RawTranslator] {
+        guard !uuids.isEmpty else { return [] }
+
+        var translators: [RawTranslator] = []
+        var dependencies: Set<String> = []
+
+        for uuid in uuids {
+            guard !loadedUuids.contains(uuid) else { continue }
+
+            guard let translator = self.loadRawTranslator(from: Files.translator(filename: uuid), ifTargetMatches: url), let id = translator["translatorID"] as? String else { continue }
+            loadedUuids.insert(id)
+            translators.append(translator)
+            // Add dependencies which are not yet loaded
+            let deps = self.findDependencies(for: translator).subtracting(loadedUuids).subtracting(loadedUuids)
+            dependencies.formUnion(deps)
+        }
+
+        // Dependencies don't need to match the URL anymore.
+        translators.append(contentsOf: self.loadTranslatorsWithDependencies(for: dependencies, matching: nil, loadedUuids: &loadedUuids))
+
+        return translators
+    }
+
     /// Loads raw translator dictionary from translator file.
     /// - parameter file: File of translator.
     /// - returns: Raw translator data.
-    private func loadRawTranslator(from file: File) -> RawTranslator? {
+    private func loadRawTranslator(from file: File, ifTargetMatches url: String? = nil) -> RawTranslator? {
+        let data: Data
+
         do {
-            let data = try self.fileStorage.read(file)
-
-            guard let string = String(data: data, encoding: .utf8),
-                  let endingIndex = self.metadataIndex(from: string),
-                  let metadataData = string[string.startIndex..<endingIndex].data(using: .utf8),
-                  var metadata = try JSONSerialization.jsonObject(with: metadataData, options: .allowFragments) as? [String: Any] else {
-                throw Error.incompatibleTranslator
-            }
-
-            metadata["code"] = string
-            // Remap type to translatorType. Some translators from repo return "type" instead of "translatorType", so the value is just remapped here.
-            if let value = metadata["type"] {
-                metadata["translatorType"] = value
-                metadata["type"] = nil
-            }
-
-            return metadata
+            data = try self.fileStorage.read(file)
         } catch let error {
-            DDLogError("TranslatorsAndStylesController: cant' read data from \(file.createUrl()) - \(error)")
+            DDLogError("TranslatorsAndStylesController: can't read data from \(file.createUrl()) - \(error)")
             return nil
         }
+
+        guard let rawString = String(data: data, encoding: .utf8) else {
+            DDLogError("TranslatorsAndStylesController: can't create string from data")
+            return nil
+        }
+
+        guard let metadataEndIndex = self.metadataIndex(from: rawString),
+              let metadataData = rawString[rawString.startIndex..<metadataEndIndex].data(using: .utf8) else {
+            DDLogError("TranslatorsAndStylesController: can't find metadata in translator file")
+            return nil
+        }
+
+        var metadata: [String: Any]
+        do {
+            let _metadata = try JSONSerialization.jsonObject(with: metadataData, options: .allowFragments)
+            guard let _metadata = _metadata as? [String: Any] else {
+                DDLogError("TranslatorsAndStylesController: metadata can't be converted to dictionary")
+                return nil
+            }
+            metadata = _metadata
+        } catch let error {
+            DDLogError("TranslatorsAndStylesController: can't parse metadata - \(error)")
+            return nil
+        }
+
+        guard let target = metadata["target"] as? String else {
+            DDLogError("TranslatorsAndStylesController: \((metadata["label"] as? String) ?? "unknown") raw translator missing target")
+            return nil
+        }
+
+        if let url = url, !target.isEmpty {
+            do {
+                let regularExpression = try NSRegularExpression(pattern: target)
+                if regularExpression.firstMatch(in: url, range: NSRange(url.startIndex..., in: url)) == nil {
+                    // Target didn't match url
+                    return nil
+                }
+                DDLogInfo("TranslatorsAndStylesController: \((metadata["label"] as? String) ?? "unknown") matches url")
+            } catch let error {
+                DDLogError("TranslatorsAndStylesController: can't create regular expression '\(target)' - \(error)")
+                return nil
+            }
+        }
+
+        metadata["code"] = rawString
+        // Remap type to translatorType. Some translators from repo return "type" instead of "translatorType", so the value is just remapped here.
+        if let value = metadata["type"] {
+            metadata["translatorType"] = value
+            metadata["type"] = nil
+        }
+        // Same as above, but with id
+        if let id = metadata["id"] {
+            metadata["translatorID"] = id
+            metadata["id"] = nil
+        }
+
+        return metadata
+    }
+
+    private func findDependencies(for translator: RawTranslator) -> Set<String> {
+        guard let code = translator["code"] as? String else {
+            DDLogError("TranslatorsAndStylesController: raw translator missing code")
+            return []
+        }
+        guard let uuidRegex = self.uuidExpression else { return [] }
+
+        let matches = uuidRegex.matches(in: code, options: [], range: NSRange(code.startIndex..., in: code))
+        return Set(matches.compactMap({ $0.substring(at: 0, in: code).flatMap(String.init) }))
     }
 
     /// Finds `endIndex` of metadata part in translator file (translator file consists of json metadata and code).
@@ -566,19 +645,37 @@ final class TranslatorsAndStylesController {
     /// Parses metadata from `Translator` and converts them to `TranslatorMetadata`.
     /// - parameter translator: Translator to be converted.
     /// - returns: Metadata of given translator.
-    private func metadata(from translator: Translator) -> TranslatorMetadata? {
-        guard let id = translator.metadata["translatorID"],
-              let rawLastUpdated = translator.metadata["lastUpdated"] else { return nil }
-        return try? TranslatorMetadata(id: id, filename: "", rawLastUpdated: rawLastUpdated)
+    private func metadata(from translator: Translator) throws -> TranslatorMetadata {
+        guard let id = translator.metadata["translatorID"] else {
+            DDLogError("TranslatorsAndStylesController: translator missing id")
+            throw Error.translatorMissingId
+        }
+        guard let rawLastUpdated = translator.metadata["lastUpdated"] else {
+            DDLogError("TranslatorsAndStylesController: translator missing last updated")
+            throw Error.translatorMissingLastUpdated
+        }
+        return try TranslatorMetadata(id: id, filename: "", rawLastUpdated: rawLastUpdated)
     }
 
     /// Converts `Translator` to `Data` which can be written to file.
     /// - parameter translator: Translator to be converted.
     /// - returns: Converted data.
-    private func data(from translator: Translator) -> Data? {
-        guard let jsonMetadata = try? JSONSerialization.data(withJSONObject: translator.metadata, options: .prettyPrinted),
-              let code = translator.code.data(using: .utf8),
-              let newlines = "\n\n".data(using: .utf8) else { return nil }
+    private func data(from translator: Translator) throws -> Data {
+        let jsonMetadata: Data
+
+        do {
+            jsonMetadata = try JSONSerialization.data(withJSONObject: translator.metadata, options: .prettyPrinted)
+        } catch let error {
+            DDLogError("TranslatorsAndStylesController: can't create data from metadata - \(error)")
+            throw Error.cantConvertTranslatorToData
+        }
+
+        guard let code = translator.code.data(using: .utf8),
+              let newlines = "\n\n".data(using: .utf8) else {
+            DDLogError("TranslatorsAndStylesController: can't create data from code")
+            throw Error.cantConvertTranslatorToData
+        }
+
         var data = jsonMetadata
         data.append(newlines)
         data.append(code)

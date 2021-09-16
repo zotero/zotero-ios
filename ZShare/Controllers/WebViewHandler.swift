@@ -144,7 +144,7 @@ final class WebViewHandler: NSObject {
                    }
                    .flatMap { _ -> Single<[RawTranslator]> in
                        DDLogInfo("WebViewHandler: load translators")
-                       return self.translatorsController.translators()
+                       return self.translatorsController.translators(matching: url.absoluteString)
                    }
                    .flatMap { translators -> Single<Any> in
                        DDLogInfo("WebViewHandler: encode translators")

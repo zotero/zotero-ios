@@ -18,15 +18,22 @@ struct Translator {
             updatedMetadata["translatorID"] = id
             updatedMetadata["id"] = nil
         }
+        if let type = metadata["type"] {
+            updatedMetadata["translatorType"] = type
+            updatedMetadata["type"] = nil
+        }
         self.metadata = updatedMetadata
         self.code = code
     }
 
     func withMetadata(key: String, value: String) -> Translator {
         var metadata = self.metadata
-        if key == "id" {
+        switch key {
+        case "id":
             metadata["translatorID"] = value
-        } else {
+        case "type":
+            metadata["translatorType"] = value
+        default:
             metadata[key] = value
         }
         return Translator(metadata: metadata, code: self.code)
