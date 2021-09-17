@@ -122,16 +122,16 @@ struct Database {
         let key: String
         let customLibraryKey: Int?
         let groupKey: Int?
-    }
 
-    private struct VersionsMigration {
-        let versions: Versions
-        let object: MigrationObject
-
-        init(object: MigrationObject) {
-            self.object = object
-            self.versions = Versions(collections: (object["collections"] as? Int) ?? -1, items: (object["items"] as? Int) ?? -1, trash: (object["trash"] as? Int) ?? -1,
-                                     searches: (object["searches"] as? Int) ?? -1, deletions: (object["deletions"] as? Int) ?? -1, settings: (object["settings"] as? Int) ?? -1)
+        init(key: String, groupKey: Any?) {
+            self.key = key
+            if let groupKey = groupKey as? Int {
+                self.groupKey = groupKey
+                self.customLibraryKey = nil
+            } else {
+                self.customLibraryKey = RCustomLibraryType.myLibrary.rawValue
+                self.groupKey = nil
+            }
         }
     }
 
@@ -154,57 +154,76 @@ struct Database {
     /// stored in a list. So if some object is missing a link to their parent we'll get the message "At least one object does not have a backlink (data would get lost)". Since there is no identifier
     /// or attribute which can identify these objects, we compare based on their values and delete the ones that are not found in parent objects.
     private static func migrateEmbeddedObjects(migration: Migration) {
-        var orphaned: [MigrationObject] = []
-        let creators = self.groupedEmbeddedObjects(ofType: "RCreator", parentPropertyName: "item", orphaned: &orphaned, migration: migration)
-        let links = self.groupedEmbeddedObjects(ofType: "RLink", parentPropertyName: "item", orphaned: &orphaned, migration: migration)
-        let fields = self.groupedEmbeddedObjects(ofType: "RItemField", parentPropertyName: "item", orphaned: &orphaned, migration: migration)
-        let relations = self.groupedEmbeddedObjects(ofType: "RRelation", parentPropertyName: "item", orphaned: &orphaned, migration: migration)
-        var rects = self.groupedRects(migration: migration)
+        // Just delete these, they shouldn't be in use yet
+        migration.deleteData(forType: RPath.className())
+        migration.deleteData(forType: RPathCoordinate.className())
 
-        let setObjectsToList: ([MigrationObject]?, Any?) -> Void = { objects, list in
-            if let objects = objects, let list = list as? List<MigrationObject> {
-                list.append(objectsIn: objects)
-            }
-        }
+        self.migrateVersions(migration: migration)
+        self.migrateLinkedChildren(ofType: RItemField.className(), parentType: RItem.className(), oldLinkPropertyName: "item", newListPropertyName: "fields", migration: migration)
+        self.migrateLinkedChildren(ofType: RCreator.className(), parentType: RItem.className(), oldLinkPropertyName: "item", newListPropertyName: "creators", migration: migration)
+        self.migrateLinkedChildren(ofType: RLink.className(), parentType: RItem.className(), oldLinkPropertyName: "item", newListPropertyName: "links", migration: migration)
+        self.migrateLinkedChildren(ofType: RRelation.className(), parentType: RItem.className(), oldLinkPropertyName: "item", newListPropertyName: "relations", migration: migration)
+        self.migrateLinkedChildren(ofType: RCondition.className(), parentType: RSearch.className(), oldLinkPropertyName: "search", newListPropertyName: "conditions", migration: migration)
+        self.migrateRects(migration: migration)
+    }
+
+    private static func migrateRects(migration: Migration) {
+        var groupedNewRects = self.groupedRects(migration: migration)
 
         migration.enumerateObjects(ofType: "RItem") { old, new in
-            guard let old = old, let new = new, let key = old["key"] as? String else { return }
-
-            let id = KeyedLibraryId(key: key, customLibraryKey: (old["customLibraryKey"] as? Int), groupKey: (old["groupKey"] as? Int))
-
-            setObjectsToList(creators[id], new["creators"])
-            setObjectsToList(links[id], new["links"])
-            setObjectsToList(fields[id], new["fields"])
-            setObjectsToList(relations[id], new["relations"])
+            guard let old = old, let new = new else { return }
 
             var rectObjects: [MigrationObject] = []
             for oldRectObject in old.dynamicList("rects") {
                 let rect = RectMigration(object: oldRectObject)
-                if var objects = rects[rect], !objects.isEmpty {
+                if var objects = groupedNewRects[rect], !objects.isEmpty {
                     rectObjects.append(objects.removeFirst())
 
                     if objects.isEmpty {
-                        rects[rect] = nil
+                        groupedNewRects[rect] = nil
                     } else {
-                        rects[rect] = objects
+                        groupedNewRects[rect] = objects
                     }
                 }
             }
+
             new.dynamicList("rects").removeAll()
             new.dynamicList("rects").append(objectsIn: rectObjects)
         }
 
-        orphaned.append(contentsOf: rects.values.flatMap({ $0 }))
+        for object in groupedNewRects.values.flatMap({ $0 }) {
+            migration.delete(object)
+        }
+    }
 
-        let conditions = self.groupedEmbeddedObjects(ofType: "RCondition", parentPropertyName: "search", orphaned: &orphaned, migration: migration)
+    private static func groupedRects(migration: Migration) -> [RectMigration: [MigrationObject]] {
+        var map: [RectMigration: [MigrationObject]] = [:]
+        migration.enumerateObjects(ofType: "RRect") { old, new in
+            guard let new = new else { return }
 
-        migration.enumerateObjects(ofType: "RSearch") { old, new in
-            guard let old = old, let key = old["key"] as? String else { return }
+            let rect = RectMigration(object: new)
+            if var existing = map[rect] {
+                existing.append(new)
+                map[rect] = existing
+            } else {
+                map[rect] = [new]
+            }
+        }
+        return map
+    }
 
-            let id = KeyedLibraryId(key: key, customLibraryKey: (old["customLibraryKey"] as? Int), groupKey: (old["groupKey"] as? Int))
-            setObjectsToList(conditions[id], new?["conditions"])
+    private struct VersionsMigration {
+            let versions: Versions
+            let object: MigrationObject
+
+            init(object: MigrationObject) {
+                self.object = object
+                self.versions = Versions(collections: (object["collections"] as? Int) ?? -1, items: (object["items"] as? Int) ?? -1, trash: (object["trash"] as? Int) ?? -1,
+                                         searches: (object["searches"] as? Int) ?? -1, deletions: (object["deletions"] as? Int) ?? -1, settings: (object["settings"] as? Int) ?? -1)
+            }
         }
 
+    private static func migrateVersions(migration: Migration) {
         var versionsMigrations: [VersionsMigration] = []
 
         migration.enumerateObjects(ofType: "RVersions") { old, new in
@@ -230,56 +249,50 @@ struct Database {
             migrateVersions(new)
         }
 
-        for migration in versionsMigrations {
-            orphaned.append(migration.object)
+        for versionsMigration in versionsMigrations {
+            migration.delete(versionsMigration.object)
+        }
+    }
+
+    private static func migrateLinkedChildren(ofType type: String, parentType: String, oldLinkPropertyName: String, newListPropertyName: String, migration: Migration) {
+        var grouped: [KeyedLibraryId: [MigrationObject]] = [:]
+        var orphaned: [MigrationObject] = []
+
+        migration.enumerateObjects(ofType: type) { old, new in
+            guard let new = new else { return }
+
+            guard let parent = old?[oldLinkPropertyName] as? MigrationObject, let key = parent["key"] as? String else {
+                orphaned.append(new)
+                return
+            }
+
+            let id = KeyedLibraryId(key: key, groupKey: parent["groupKey"])
+
+            if var objects = grouped[id] {
+                objects.append(new)
+                grouped[id] = objects
+            } else {
+                grouped[id] = [new]
+            }
+        }
+
+        migration.enumerateObjects(ofType: parentType) { old, new in
+            guard let key = new?["key"] as? String else { return }
+
+            let id = KeyedLibraryId(key: key, groupKey: old?["groupKey"])
+
+            guard let objects = grouped[id] else { return }
+
+            grouped[id] = nil
+
+            if let list = new?.dynamicList(newListPropertyName) {
+                list.append(objectsIn: objects)
+            }
         }
 
         for object in orphaned {
             migration.delete(object)
         }
-        migration.deleteData(forType: "RPath")
-        migration.deleteData(forType: "RPathCoordinate")
-    }
-
-    private static func groupedRects(migration: Migration) -> [RectMigration: [MigrationObject]] {
-        var map: [RectMigration: [MigrationObject]] = [:]
-        migration.enumerateObjects(ofType: "RRect") { old, new in
-            guard let new = new else { return }
-
-            let rect = RectMigration(object: new)
-            if var existing = map[rect] {
-                existing.append(new)
-            } else {
-                map[rect] = [new]
-            }
-        }
-        return map
-    }
-
-    private static func groupedEmbeddedObjects(ofType type: String, parentPropertyName: String, orphaned: inout [MigrationObject], migration: Migration) -> [KeyedLibraryId: [MigrationObject]] {
-        var objects: [KeyedLibraryId: [MigrationObject]] = [:]
-
-        migration.enumerateObjects(ofType: type) { old, new in
-            guard let old = old, let new = new else { return }
-
-            guard let parent = old[parentPropertyName] as? MigrationObject else {
-                orphaned.append(new)
-                return
-            }
-
-            guard let key = parent["key"] as? String else { return }
-
-            let itemId = KeyedLibraryId(key: key, customLibraryKey: (parent["customLibraryKey"] as? Int), groupKey: (parent["groupKey"] as? Int))
-
-            if var itemObjects = objects[itemId] {
-                itemObjects.append(new)
-                objects[itemId] = itemObjects
-            } else {
-                objects[itemId] = [new]
-            }
-        }
-
-        return objects
     }
 
     private static func migrateCollapsibleCollections(migration: Migration) {
