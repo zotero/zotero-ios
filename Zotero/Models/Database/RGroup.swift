@@ -11,8 +11,9 @@ import Foundation
 import RealmSwift
 
 enum GroupType: String, PersistableEnum {
-    case `public` = "Public"
     case `private` = "Private"
+    case publicOpen = "PublicOpen"
+    case publicClosed = "PublicClosed"
 }
 
 final class RGroup: Object {
