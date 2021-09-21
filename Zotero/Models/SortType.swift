@@ -11,5 +11,5 @@ import Foundation
 import RealmSwift
 
 protocol SortType {
-    var descriptors: [SortDescriptor] { get }
+    var descriptors: [RealmSwift.SortDescriptor] { get }
 }

@@ -51,7 +51,7 @@ struct ItemsSortType: Codable {
 }
 
 extension ItemsSortType: SortType {
-    var descriptors: [SortDescriptor] {
+    var descriptors: [RealmSwift.SortDescriptor] {
         switch self.field {
         case .title:
             return [SortDescriptor(keyPath: "sortTitle", ascending: self.ascending)]

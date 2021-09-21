@@ -13,7 +13,6 @@ import UIKit
 
 protocol AppDelegateCoordinatorDelegate: AnyObject {
     func showMainScreen(isLoggedIn: Bool)
-    func show(error: Error)
     func didRotate(to size: CGSize)
 }
 
@@ -56,9 +55,6 @@ final class AppCoordinator: NSObject {
     func start() {
         self.showMainScreen(isLogged: self.controllers.sessionController.isLoggedIn, animated: false)
 
-        if let error = self.controllers.userControllerError {
-            self.show(error: error)
-        }
         // If db needs to be wiped and this is the first start of the app, show beta alert
         if self.controllers.userControllers?.dbStorage.willPerformBetaWipe == true && self.controllers.sessionController.isLoggedIn {
             self.showBetaAlert()
@@ -144,27 +140,6 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
         self.showMainScreen(isLogged: isLoggedIn, animated: true)
     }
 
-    func show(error: Error) {
-        let controller = UIAlertController(title: L10n.error, message: L10n.Errors.dbFailure, preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
-        controller.addAction(UIAlertAction(title: L10n.report, style: .default, handler: { [weak self] _ in
-            self?.report(error: error)
-        }))
-        self.viewController?.present(controller, animated: true, completion: nil)
-    }
-
-    private func report(error: Error) {
-        guard MFMailComposeViewController.canSendMail() else {
-            return
-        }
-
-        let controller = MFMailComposeViewController()
-        controller.mailComposeDelegate = self
-        controller.setToRecipients(["michalrentka@gmail.com"])
-        controller.setMessageBody("Error:\n\(error)", isHTML: false)
-        self.viewController?.present(controller, animated: true, completion: nil)
-    }
-
     func didRotate(to size: CGSize) {
         guard let window = self.debugWindow else { return }
         let xPos = window.frame.minX == AppCoordinator.debugButtonOffset ? window.frame.minX : size.width - AppCoordinator.debugButtonSize.width - AppCoordinator.debugButtonOffset
@@ -179,7 +154,7 @@ extension AppCoordinator: MFMailComposeViewControllerDelegate {
 }
 
 extension AppCoordinator: DebugLoggingCoordinator {
-    func createDebugAlertActions() -> ((Result<String, DebugLogging.Error>, [URL]?, (() -> Void)?, (() -> Void)?) -> Void, (Double) -> Void) {
+    func createDebugAlertActions() -> ((Result<(String, String?), DebugLogging.Error>, [URL]?, (() -> Void)?, (() -> Void)?) -> Void, (Double) -> Void) {
         var progressAlert: UIAlertController?
         var progressView: CircularProgressView?
 
@@ -196,7 +171,7 @@ extension AppCoordinator: DebugLoggingCoordinator {
             progressView?.progress = CGFloat(progress)
         }
 
-        let createCompletionAlert: (Result<String, DebugLogging.Error>, [URL]?, (() -> Void)?, (() -> Void)?) -> Void = { [weak self] result, logs, retry, completion in
+        let createCompletionAlert: (Result<(String, String?), DebugLogging.Error>, [URL]?, (() -> Void)?, (() -> Void)?) -> Void = { [weak self] result, logs, retry, completion in
             if let controller = progressAlert {
                 controller.presentingViewController?.dismiss(animated: true, completion: {
                     self?.showAlert(for: result, logs: logs, retry: retry, completion: completion)
@@ -224,10 +199,10 @@ extension AppCoordinator: DebugLoggingCoordinator {
         return (controller, progressView)
     }
 
-    private func showAlert(for result: Result<String, DebugLogging.Error>, logs: [URL]?, retry: (() -> Void)?, completion: (() -> Void)?) {
+    private func showAlert(for result: Result<(String, String?), DebugLogging.Error>, logs: [URL]?, retry: (() -> Void)?, completion: (() -> Void)?) {
         switch result {
-        case .success(let debugId):
-            self.share(debugId: debugId)
+        case .success((let debugId, let customMessage)):
+            self.share(debugId: debugId, customMessage: customMessage)
             completion?()
 
         case .failure(let error):
@@ -235,12 +210,13 @@ extension AppCoordinator: DebugLoggingCoordinator {
         }
     }
 
-    private func share(debugId: String) {
+    private func share(debugId: String, customMessage: String?) {
         let actions = [UIAlertAction(title: L10n.ok, style: .cancel, handler: nil),
                        UIAlertAction(title: L10n.copy, style: .default, handler: { _ in
                           UIPasteboard.general.string = debugId
                        })]
-        self.showAlert(title: L10n.Settings.LogAlert.title, message: L10n.Settings.LogAlert.message(debugId), actions: actions)
+        let message = customMessage ?? L10n.Settings.LogAlert.message(debugId)
+        self.showAlert(title: L10n.Settings.LogAlert.title, message: message, actions: actions)
     }
 
     func show(error: DebugLogging.Error, logs: [URL]?, retry: (() -> Void)?, completed: (() -> Void)?) {

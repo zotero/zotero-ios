@@ -50,6 +50,10 @@ internal enum L10n {
   internal static let lastUpdated = L10n.tr("Localizable", "last_updated")
   /// Look Up
   internal static let lookup = L10n.tr("Localizable", "lookup")
+  /// App failed to initialize and can't function properly. Please report this Debug ID %@ to Zotero forums.
+  internal static func migrationDebug(_ p1: Any) -> String {
+    return L10n.tr("Localizable", "migration_debug", String(describing: p1))
+  }
   /// Name
   internal static let name = L10n.tr("Localizable", "name")
   /// No

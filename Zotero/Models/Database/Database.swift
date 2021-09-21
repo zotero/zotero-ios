@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
 import RealmSwift
 
 struct Database {
@@ -58,28 +59,28 @@ struct Database {
 
     private static func migrateRawValuesToEnums(migration: Migration) {
         let migrateSyncState: (MigrationObject?, MigrationObject?) -> Void = { old, new in
-            guard let rawState = old?["rawSyncState"] as? Int else { return }
-            new?["syncState"] = ObjectSyncState(rawValue: rawState) ?? .synced
+            guard let rawState = old?.safeGet(key: "rawSyncState") as? Int else { return }
+            new?.safeSet(key: "syncState", value: (ObjectSyncState(rawValue: rawState) ?? .synced))
         }
 
         let migrateCustomLibraryKey: (MigrationObject?, MigrationObject?) -> Void = { old, new in
-            guard let rawKey = old?["customLibraryKey"] as? Int else { return }
-            new?["customLibraryKey"] = RCustomLibraryType(rawValue: rawKey) ?? .myLibrary
+            guard let rawKey = old?.safeGet(key: "customLibraryKey") as? Int else { return }
+            new?.safeSet(key: "customLibraryKey", value: (RCustomLibraryType(rawValue: rawKey) ?? .myLibrary))
         }
 
         let migrateChangeType: (MigrationObject?, MigrationObject?) -> Void = { old, new in
-            guard let rawKey = old?["rawChangeType"] as? Int else { return }
-            new?["changeType"] = UpdatableChangeType(rawValue: rawKey) ?? .sync
+            guard let rawKey = old?.safeGet(key: "rawChangeType") as? Int else { return }
+            new?.safeSet(key: "changeType", value: (UpdatableChangeType(rawValue: rawKey) ?? .sync))
         }
 
         migration.enumerateObjects(ofType: "RCustomLibrary") { old, new in
-            guard let rawType = old?["rawType"] as? Int else { return }
-            new?["type"] = RCustomLibraryType(rawValue: rawType) ?? .myLibrary
+            guard let rawType = old?.safeGet(key: "rawType") as? Int else { return }
+            new?.safeSet(key: "type", value: (RCustomLibraryType(rawValue: rawType) ?? .myLibrary))
         }
 
         migration.enumerateObjects(ofType: "RGroup") { old, new in
-            if let rawType = old?["rawType"] as? String {
-                new?["type"] = GroupType(rawValue: rawType) ?? .private
+            if let rawType = old?.safeGet(key: "rawType") as? String {
+                new?.safeSet(key: "type", value: (GroupType(rawValue: rawType) ?? .private))
             }
             migrateSyncState(old, new)
         }
@@ -113,8 +114,8 @@ struct Database {
         }
 
         migration.enumerateObjects(ofType: "RTypedTag") { old, new in
-            guard let rawType = old?["rawType"] as? Int else { return }
-            new?["type"] = RTypedTag.Kind(rawValue: rawType) ?? .manual
+            guard let rawType = old?.safeGet(key: "rawType") as? Int else { return }
+            new?.safeSet(key: "type", value: (RTypedTag.Kind(rawValue: rawType) ?? .manual))
         }
     }
 
@@ -142,10 +143,10 @@ struct Database {
         let maxY: Double
 
         init(object: MigrationObject) {
-            self.minX = (object["minX"] as? Double) ?? -1
-            self.minY = (object["minY"] as? Double) ?? -1
-            self.maxX = (object["maxX"] as? Double) ?? -1
-            self.maxY = (object["maxY"] as? Double) ?? -1
+            self.minX = (object.safeGet(key: "minX") as? Double) ?? -1
+            self.minY = (object.safeGet(key: "minY") as? Double) ?? -1
+            self.maxX = (object.safeGet(key: "maxX") as? Double) ?? -1
+            self.maxY = (object.safeGet(key: "maxY") as? Double) ?? -1
         }
     }
 
@@ -154,6 +155,7 @@ struct Database {
     /// stored in a list. So if some object is missing a link to their parent we'll get the message "At least one object does not have a backlink (data would get lost)". Since there is no identifier
     /// or attribute which can identify these objects, we compare based on their values and delete the ones that are not found in parent objects.
     private static func migrateEmbeddedObjects(migration: Migration) {
+        DDLogInfo("Migrate embedded objects")
         // Just delete these, they shouldn't be in use yet
         migration.deleteData(forType: RPath.className())
         migration.deleteData(forType: RPathCoordinate.className())
@@ -168,38 +170,59 @@ struct Database {
     }
 
     private static func migrateRects(migration: Migration) {
-        var groupedNewRects = self.groupedRects(migration: migration)
+        var (groupedNewRects, allCount, availableCount) = self.groupedRects(migration: migration)
 
+        var migratedCount = 0
         migration.enumerateObjects(ofType: "RItem") { old, new in
             guard let old = old, let new = new else { return }
 
             var rectObjects: [MigrationObject] = []
-            for oldRectObject in old.dynamicList("rects") {
-                let rect = RectMigration(object: oldRectObject)
-                if var objects = groupedNewRects[rect], !objects.isEmpty {
-                    rectObjects.append(objects.removeFirst())
 
-                    if objects.isEmpty {
-                        groupedNewRects[rect] = nil
-                    } else {
-                        groupedNewRects[rect] = objects
+            if let list = old.safeDynamicList(key: "rects") {
+                for oldRectObject in list {
+                    let rect = RectMigration(object: oldRectObject)
+                    if var objects = groupedNewRects[rect], !objects.isEmpty {
+                        rectObjects.append(objects.removeFirst())
+
+                        if objects.isEmpty {
+                            groupedNewRects[rect] = nil
+                        } else {
+                            groupedNewRects[rect] = objects
+                        }
                     }
                 }
+            } else {
+                DDLogError("RItem missing rects")
             }
 
-            new.dynamicList("rects").removeAll()
-            new.dynamicList("rects").append(objectsIn: rectObjects)
+            new.safeDynamicList(key: "rects")?.removeAll()
+            if !rectObjects.isEmpty {
+                migratedCount += rectObjects.count
+                new.safeDynamicList(key: "rects")?.append(objectsIn: rectObjects)
+            }
         }
 
+        var deletions = 0
         for object in groupedNewRects.values.flatMap({ $0 }) {
+            deletions += 1
             migration.delete(object)
+        }
+
+        if allCount != availableCount || (migratedCount + deletions) != availableCount {
+            DDLogError("Rects migration: all: \(allCount), \(availableCount); migrated: \(migratedCount); deletions: \(deletions)")
+        } else {
+            DDLogInfo("Rects migration: all: \(allCount); migrated: \(migratedCount); deletions: \(deletions)")
         }
     }
 
-    private static func groupedRects(migration: Migration) -> [RectMigration: [MigrationObject]] {
+    private static func groupedRects(migration: Migration) -> ([RectMigration: [MigrationObject]], Int, Int) {
         var map: [RectMigration: [MigrationObject]] = [:]
+        var allCount = 0
+        var availableCount = 0
         migration.enumerateObjects(ofType: "RRect") { old, new in
+            allCount += 1
             guard let new = new else { return }
+            availableCount += 1
 
             let rect = RectMigration(object: new)
             if var existing = map[rect] {
@@ -209,7 +232,7 @@ struct Database {
                 map[rect] = [new]
             }
         }
-        return map
+        return (map, allCount, availableCount)
     }
 
     private struct VersionsMigration {
@@ -218,25 +241,43 @@ struct Database {
 
             init(object: MigrationObject) {
                 self.object = object
-                self.versions = Versions(collections: (object["collections"] as? Int) ?? -1, items: (object["items"] as? Int) ?? -1, trash: (object["trash"] as? Int) ?? -1,
-                                         searches: (object["searches"] as? Int) ?? -1, deletions: (object["deletions"] as? Int) ?? -1, settings: (object["settings"] as? Int) ?? -1)
+                self.versions = Versions(collections: (object.safeGet(key: "collections") as? Int) ?? -1,
+                                         items: (object.safeGet(key: "items") as? Int) ?? -1,
+                                         trash: (object.safeGet(key: "trash") as? Int) ?? -1,
+                                         searches: (object.safeGet(key: "searches") as? Int) ?? -1,
+                                         deletions: (object.safeGet(key: "deletions") as? Int) ?? -1,
+                                         settings: (object.safeGet(key: "settings") as? Int) ?? -1)
             }
         }
 
     private static func migrateVersions(migration: Migration) {
         var versionsMigrations: [VersionsMigration] = []
 
+        var allCount = 0
+        var availableCount = 0
         migration.enumerateObjects(ofType: "RVersions") { old, new in
+            allCount += 1
             guard let new = new else { return }
+            availableCount += 1
             versionsMigrations.append(VersionsMigration(object: new))
         }
 
+        var allMigrated = 0
+        var availableMigrated = 0
         let migrateVersions: (MigrationObject?) -> Void = { new in
-            guard let new = new, let versionsObject = new["versions"] as? MigrationObject else { return }
+            allMigrated += 1
+            guard let new = new else { return }
+            guard let versionsObject = new.safeGet(key: "versions") as? MigrationObject else {
+                let isGroup = new.objectSchema.properties.contains(where: { $0.name == "name" })
+                DDLogError("\(isGroup ? "Group" : "Library") missing versions")
+                return
+            }
+            availableMigrated += 1
+
             let versions = VersionsMigration(object: versionsObject).versions
 
             if let index = versionsMigrations.firstIndex(where: { $0.versions == versions }) {
-                new["versions"] = versionsMigrations[index].object
+                new.safeSet(key: "versions", value: versionsMigrations[index].object)
                 versionsMigrations.remove(at: index)
             }
         }
@@ -249,8 +290,16 @@ struct Database {
             migrateVersions(new)
         }
 
+        var deletions = 0
         for versionsMigration in versionsMigrations {
+            deletions += 1
             migration.delete(versionsMigration.object)
+        }
+
+        if allCount != availableCount || allMigrated != availableMigrated || (availableMigrated + deletions) != availableCount {
+            DDLogError("Versions migration: all: \(allCount), \(availableCount); migrated: \(allMigrated), \(availableMigrated); deleted: \(deletions)")
+        } else {
+            DDLogInfo("Versions migration: all: \(availableCount); migrated: \(availableMigrated); deleted: \(deletions)")
         }
     }
 
@@ -258,15 +307,19 @@ struct Database {
         var grouped: [KeyedLibraryId: [MigrationObject]] = [:]
         var orphaned: [MigrationObject] = []
 
+        var allCount = 0
+        var availableCount = 0
         migration.enumerateObjects(ofType: type) { old, new in
+            allCount += 1
             guard let new = new else { return }
+            availableCount += 1
 
-            guard let parent = old?[oldLinkPropertyName] as? MigrationObject, let key = parent["key"] as? String else {
+            guard let parent = old?.safeGet(key: oldLinkPropertyName) as? MigrationObject, let key = parent.safeGet(key: "key") as? String else {
                 orphaned.append(new)
                 return
             }
 
-            let id = KeyedLibraryId(key: key, groupKey: parent["groupKey"])
+            let id = KeyedLibraryId(key: key, groupKey: parent.safeGet(key: "groupKey"))
 
             if var objects = grouped[id] {
                 objects.append(new)
@@ -276,52 +329,66 @@ struct Database {
             }
         }
 
+        var migrated = 0
         migration.enumerateObjects(ofType: parentType) { old, new in
-            guard let key = new?["key"] as? String else { return }
+            guard let key = new?.safeGet(key: "key") as? String else {
+                DDLogError("\(parentType) missing key")
+                return
+            }
 
-            let id = KeyedLibraryId(key: key, groupKey: old?["groupKey"])
+            let id = KeyedLibraryId(key: key, groupKey: old?.safeGet(key: "groupKey"))
 
             guard let objects = grouped[id] else { return }
 
             grouped[id] = nil
 
-            if let list = new?.dynamicList(newListPropertyName) {
+            if let list = new?.safeDynamicList(key: newListPropertyName) {
+                migrated += objects.count
                 list.append(objectsIn: objects)
             }
         }
 
+        var deleted = 0
         for object in orphaned {
+            deleted += 1
             migration.delete(object)
+        }
+
+        if allCount != availableCount || (migrated + deleted) != availableCount {
+            DDLogError("\(type) migration: all: \(allCount), \(availableCount); migrated: \(migrated); deleted: \(deleted)")
+        } else {
+            DDLogInfo("\(type) migration: all: \(allCount); migrated: \(migrated); deleted: \(deleted)")
         }
     }
 
     private static func migrateCollapsibleCollections(migration: Migration) {
         migration.enumerateObjects(ofType: "RCollection") { old, new in
             if let new = new {
-                new["collapsed"] = true
+                new.safeSet(key: "collapsed", value: true)
             }
         }
     }
 
     private static func migrateCollectionParentKeys(migration: Migration) {
         migration.enumerateObjects(ofType: "RCollection") { old, new in
-            let parentKey = old?.value(forKeyPath: "parent.key") as? String
-            new?["parentKey"] = parentKey
+            let parent = old?.safeGet(key: "parent") as? MigrationObject
+            let key = parent?.safeGet(key: "key") as? String
+            new?.safeSet(key: "parentKey", value: key)
         }
     }
 
     private static func migrateMainAttachmentDownloaded(migration: Migration, fileStorage: FileStorage) {
         let attachmentMap = self.createAttachmentFileMap(fileStorage: fileStorage)
         migration.enumerateObjects(ofType: "RItem", { old, new in
-            if let rawType = old?.value(forKey: "rawType") as? String, rawType == ItemTypes.attachment,
-               let key = old?.value(forKey: "key") as? String {
+            if let rawType = old?.safeGet(key: "rawType") as? String, rawType == ItemTypes.attachment,
+               let key = old?.safeGet(key: "key") as? String {
                 let libraryId: LibraryIdentifier
-                if let groupId = old?.value(forKey: "groupKey") as? Int {
+                if let groupId = old?.safeGet(key: "groupKey") as? Int {
                     libraryId = .group(groupId)
                 } else {
                     libraryId = .custom(.myLibrary)
                 }
-                new?["fileDownloaded"] = attachmentMap[libraryId]?.contains(key) == true
+                new?.safeSet(key: "fileDownloaded", value: (attachmentMap[libraryId]?.contains(key) == true))
             }
         })
     }
@@ -388,5 +455,35 @@ extension String {
               self[self.startIndex..<self.index(self.startIndex, offsetBy: 5)] == "group",
               let groupId = Int(self[self.index(self.startIndex, offsetBy: 6)..<self.endIndex]) else { return nil }
         return .group(groupId)
+    }
+}
+
+extension DynamicObject {
+    fileprivate func safeGet(key: String) -> Any? {
+        guard self.objectSchema.properties.contains(where: { $0.name == key }) else {
+            DDLogError("Database: trying to get '\(key)' but it's not in schema.")
+            return nil
+        }
+        return self[key]
+    }
+
+    fileprivate func safeSet(key: String, value: Any?) {
+        guard let property = self.objectSchema.properties.first(where: { $0.name == key }) else {
+            DDLogError("Database: trying to get list '\(key)' but it's not in schema.")
+            return
+        }
+        guard value != nil || property.isOptional else {
+            DDLogError("Database: trying to set nil to property \(property.name) which is not optional.")
+            return
+        }
+        self[key] = value
+    }
+
+    fileprivate func safeDynamicList(key: String) -> List<DynamicObject>? {
+        guard self.objectSchema.properties.contains(where: { $0.name == key }) else {
+            DDLogError("Database: trying to set '\(key)' but it's not in schema.")
+            return nil
+        }
+        return self.dynamicList(key)
     }
 }

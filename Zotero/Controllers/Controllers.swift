@@ -32,31 +32,31 @@ final class Controllers {
     fileprivate let lastBuildNumber: Int?
 
     var userControllers: UserControllers?
-    // Stores initial error when initializing `UserControllers`. It's needed in case the error happens on app launch.
-    // The event sent through `userInitialized` publisher is not received by scene, because this happens in AppDelegate `didFinishLaunchingWithOptions`.
-    var userControllerError: Error?
     private var apiKey: String?
     private var sessionCancellable: AnyCancellable?
 
-    init() {
-        let schemaController = SchemaController()
-
+    private static func apiConfiguration(schemaVersion: Int) -> URLSessionConfiguration {
         let configuration = URLSessionConfiguration.default
-        configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description,
-                                               "Zotero-Schema-Version": schemaController.version]
+        configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description, "Zotero-Schema-Version": schemaVersion]
         configuration.sharedContainerIdentifier = AppGroup.identifier
         configuration.timeoutIntervalForRequest = ApiConstants.requestTimeout
         configuration.timeoutIntervalForResource = ApiConstants.resourceTimeout
+        return configuration
+    }
 
+    init() {
+        let schemaController = SchemaController()
         let fileStorage = FileStorageController()
-        let urlDetector = UrlDetector()
-        let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
-        let debugLogging = DebugLogging(apiClient: apiClient, fileStorage: fileStorage)
-        // Start logging as soon as possible to catch all errors/warnings.
-        debugLogging.startLoggingOnLaunchIfNeeded()
+        let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: Controllers.apiConfiguration(schemaVersion: schemaController.version))
+
         let crashReporter = CrashReporter(apiClient: apiClient)
         // Start crash reporter as soon as possible to catch all crashes.
         crashReporter.start()
+        let debugLogging = DebugLogging(apiClient: apiClient, fileStorage: fileStorage)
+        // Start logging as soon as possible to catch all errors/warnings.
+        debugLogging.startLoggingOnLaunchIfNeeded()
+
+        let urlDetector = UrlDetector()
         let secureStorage = KeychainSecureStorage()
         let sessionController = SessionController(secureStorage: secureStorage, defaults: Defaults.shared)
         let bundledDataConfiguration = Database.bundledDataConfiguration(fileStorage: fileStorage)
@@ -83,7 +83,7 @@ final class Controllers {
 
         Defaults.shared.lastBuildNumber = DeviceInfoProvider.buildNumber
         self.startObservingSession()
-        self.update(with: self.sessionController.sessionData, isLogin: false)
+        self.update(with: self.sessionController.sessionData, isLogin: false, debugLogging: debugLogging)
     }
 
     func willEnterForeground() {
@@ -109,13 +109,14 @@ final class Controllers {
                                                         .receive(on: DispatchQueue.main)
                                                         .dropFirst()
                                                         .sink { [weak self] data in
-                                                            self?.update(with: data, isLogin: true)
+                                                            guard let `self` = self else { return }
+                                                            self.update(with: data, isLogin: true, debugLogging: self.debugLogging)
                                                         }
     }
 
-    private func update(with data: SessionData?, isLogin: Bool) {
+    private func update(with data: SessionData?, isLogin: Bool, debugLogging: DebugLogging) {
         if let data = data {
-            self.initializeSession(with: data, isLogin: isLogin)
+            self.initializeSession(with: data, isLogin: isLogin, debugLogging: debugLogging)
             self.apiKey = data.apiToken
         } else {
             self.clearSession()
@@ -125,9 +126,11 @@ final class Controllers {
         }
     }
 
-    private func initializeSession(with data: SessionData, isLogin: Bool) {
+    private func initializeSession(with data: SessionData, isLogin: Bool, debugLogging: DebugLogging) {
         do {
             self.apiClient.set(authToken: data.apiToken)
+
+            debugLogging.start(type: .immediate)
 
             let controllers = try UserControllers(userId: data.userId, controllers: self)
             if isLogin {
@@ -135,7 +138,11 @@ final class Controllers {
             }
             self.userControllers = controllers
 
-            self.userControllerError = nil
+            if !debugLogging.didStartFromLaunch {
+                // If debug logging was started from launch by user, don't cancel ongoing logging. Otherwise cancel it, since nothing interesting happen during initialization.
+                debugLogging.cancel()
+            }
+
             self.userInitialized.send(.success(true))
         } catch let error {
             DDLogError("Controllers: can't create UserControllers - \(error)")
@@ -149,7 +156,8 @@ final class Controllers {
             // Re-start session observing
             self.startObservingSession()
 
-            self.userControllerError = error
+            debugLogging.stop(ignoreEmptyLogs: true, customAlertMessage: { L10n.migrationDebug($0) })
+
             self.userInitialized.send(.failure(error))
         }
     }
@@ -164,7 +172,6 @@ final class Controllers {
         // Clear session and controllers
         self.apiClient.set(authToken: nil)
         self.userControllers = nil
-        self.userControllerError = nil
         // Report user logged out
         self.userInitialized.send(.success(false))
         // Clear data

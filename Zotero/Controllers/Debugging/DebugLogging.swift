@@ -13,14 +13,20 @@ import RxAlamofire
 import RxSwift
 
 protocol DebugLoggingCoordinator: AnyObject {
-    func createDebugAlertActions() -> ((Result<String, DebugLogging.Error>, [URL]?, (() -> Void)?, (() -> Void)?) -> Void, (Double) -> Void)
+    func createDebugAlertActions() -> ((Result<(String, String?), DebugLogging.Error>, [URL]?, (() -> Void)?, (() -> Void)?) -> Void, (Double) -> Void)
     func show(error: DebugLogging.Error, logs: [URL]?, retry: (() -> Void)?, completed: (() -> Void)?)
     func setDebugWindow(visible: Bool)
 }
 
+fileprivate struct PendingCoordinatorAction {
+    let ignoreEmptyLogs: Bool
+    let customAlertMessage: ((String) -> String)?
+}
+
 final class DebugLogging {
     enum LoggingType {
-        case immediate, nextLaunch
+        case immediate
+        case nextLaunch
     }
 
     enum Error: Swift.Error {
@@ -46,14 +52,25 @@ final class DebugLogging {
             self.isEnabledPublisher.on(.next(self.isEnabled))
         }
     }
+    private(set) var didStartFromLaunch: Bool
     private var logger: DDFileLogger?
-    weak var coordinator: DebugLoggingCoordinator?
+    weak var coordinator: DebugLoggingCoordinator? {
+        didSet {
+            guard let action = self.pendingAction else { return }
+            self.queue.async { [weak self] in
+                self?.shareLogs(ignoreEmptyLogs: action.ignoreEmptyLogs, customAlertMessage: action.customAlertMessage)
+                self?.logger = nil
+            }
+        }
+    }
+    private var pendingAction: PendingCoordinatorAction?
 
     init(apiClient: ApiClient, fileStorage: FileStorage) {
         let queue = DispatchQueue(label: "org.zotero.DebugLogging.Queue", qos: .userInitiated)
         self.apiClient = apiClient
         self.fileStorage = fileStorage
         self.queue = queue
+        self.didStartFromLaunch = false
         self.isEnabledPublisher = PublishSubject()
         self.scheduler = ConcurrentDispatchQueueScheduler(queue: queue)
         self.disposeBag = DisposeBag()
@@ -66,8 +83,30 @@ final class DebugLogging {
         }
     }
 
-    func stop() {
+    func stop(ignoreEmptyLogs: Bool = false, customAlertMessage: ((String) -> String)? = nil) {
         self.isEnabled = false
+        self.didStartFromLaunch = false
+
+        guard let logger = self.logger else { return }
+
+        DDLog.remove(logger)
+
+        logger.rollLogFile { [weak self] in
+            if self?.coordinator == nil {
+                self?.pendingAction = PendingCoordinatorAction(ignoreEmptyLogs: ignoreEmptyLogs, customAlertMessage: customAlertMessage)
+                return
+            }
+
+            self?.queue.async {
+                self?.shareLogs(ignoreEmptyLogs: ignoreEmptyLogs, customAlertMessage: customAlertMessage)
+                self?.logger = nil
+            }
+        }
+    }
+
+    func cancel() {
+        self.isEnabled = false
+        self.didStartFromLaunch = false
 
         guard let logger = self.logger else { return }
 
@@ -75,7 +114,7 @@ final class DebugLogging {
 
         logger.rollLogFile { [weak self] in
             self?.queue.async {
-                self?.shareLogs()
+                self?.clearDebugDirectory()
                 self?.logger = nil
             }
         }
@@ -83,6 +122,7 @@ final class DebugLogging {
 
     func startLoggingOnLaunchIfNeeded() {
         guard self.isEnabled else { return }
+        self.didStartFromLaunch = true
         self.startLogger()
     }
 
@@ -94,16 +134,23 @@ final class DebugLogging {
         logger.rollLogFile(withCompletion: completed)
     }
 
-    private func shareLogs() {
+    private func shareLogs(ignoreEmptyLogs: Bool, customAlertMessage: ((String) -> String)?) {
         DDLogInfo("DebugLogging: sharing logs")
 
         do {
             let logs: [URL] = try self.fileStorage.sortedContentsOfDirectory(at: Files.debugLogDirectory)
+
             if logs.isEmpty {
+                if ignoreEmptyLogs {
+                    self.clearDebugDirectory()
+                    return
+                }
+
                 DDLogWarn("DebugLogging: no logs found")
                 throw Error.noLogsRecorded
             }
-            self.submit(logs: logs)
+
+            self.submit(logs: logs, customAlertMessage: customAlertMessage)
         } catch let error {
             DDLogError("DebugLogging: can't read debug directory contents - \(error)")
             inMainThread {
@@ -112,7 +159,7 @@ final class DebugLogging {
         }
     }
 
-    private func submit(logs: [URL]) {
+    private func submit(logs: [URL], customAlertMessage: ((String) -> String)?) {
         guard let (completionAlert, progressAlert) = self.coordinator?.createDebugAlertActions() else { return }
 
         let data: Data
@@ -124,7 +171,7 @@ final class DebugLogging {
                 completionAlert(.failure((error as? Error) ?? .contentReading),
                                 logs,
                                 { [weak self] in // Retry block
-                                    self?.submit(logs: logs)
+                                    self?.submit(logs: logs, customAlertMessage: customAlertMessage)
                                 },
                                 { [weak self] in // Completion block
                                     self?.clearDebugDirectory()
@@ -160,13 +207,14 @@ final class DebugLogging {
                       .subscribe(onSuccess: { [weak self] debugId in
                           DDLogInfo("DebugLogging: uploaded logs")
                           self?.clearDebugDirectory()
-                          completionAlert(.success("D" + debugId), nil, nil, nil)
+                          let fullDebugId = "D" + debugId
+                          completionAlert(.success((fullDebugId, customAlertMessage?(fullDebugId))), nil, nil, nil)
                       }, onFailure: { [weak self] error in
                           DDLogError("DebugLogging: can't upload logs - \(error)")
                           completionAlert(.failure((error as? Error) ?? .upload),
                                           logs,
                                           { // Retry block
-                                              self?.submit(logs: logs)
+                                              self?.submit(logs: logs, customAlertMessage: customAlertMessage)
                                           },
                                           { // Completion block
                                               self?.clearDebugDirectory()
@@ -199,6 +247,8 @@ final class DebugLogging {
     }
 
     private func startLogger() {
+        guard self.logger == nil else { return }
+
         do {
             let file = Files.debugLogDirectory
             if self.fileStorage.has(file) {

@@ -59,14 +59,9 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                                                  switch result {
                                                  case .success(let isLoggedIn):
                                                      self?.coordinator.showMainScreen(isLoggedIn: isLoggedIn)
-                                                 case .failure(let error):
-                                                     self?.userInitializationFailed(with: error)
+                                                 case .failure:
+                                                     self?.coordinator.showMainScreen(isLoggedIn: false)
                                                  }
                                              })
-    }
-
-    private func userInitializationFailed(with error: Error) {
-        self.coordinator.showMainScreen(isLoggedIn: false)
-        self.coordinator.show(error: error)
     }
 }
