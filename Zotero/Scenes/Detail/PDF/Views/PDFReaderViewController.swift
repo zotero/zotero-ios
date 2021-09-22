@@ -845,7 +845,7 @@ final class PDFReaderViewController: UIViewController {
             picker.heightAnchor.constraint(equalToConstant: size),
         ])
 
-        return [highlight, note, area, picker]
+        return [highlight, note, area, ink, picker]
     }
 
     private func setupNavigationBar() {
