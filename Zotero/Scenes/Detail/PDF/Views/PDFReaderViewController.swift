@@ -339,11 +339,9 @@ final class PDFReaderViewController: UIViewController {
             return
         }
 
+        stateManager.setState(annotationTool, variant: nil)
         stateManager.drawColor = AnnotationColorGenerator.color(from: self.viewModel.state.activeColor, isHighlight: (annotationTool == .highlight),
                                                                 userInterfaceStyle: self.traitCollection.userInterfaceStyle).color
-
-        stateManager.setState(annotationTool, variant: nil)
-        
         if annotationTool == .ink {
             stateManager.lineWidth = self.viewModel.state.activeLineWidth
         }
@@ -806,7 +804,7 @@ final class PDFReaderViewController: UIViewController {
 
         let ink = CheckboxButton(type: .custom)
         ink.accessibilityLabel = L10n.Accessibility.Pdf.inkAnnotationTool
-        ink.setImage(UIImage(systemName: "pencil.tip")!.withRenderingMode(.alwaysTemplate), for: .normal)
+        ink.setImage(Asset.Images.Annotations.inkLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
         ink.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         ink.addGestureRecognizer(inkLongPress)
         ink.addGestureRecognizer(inkTap)
@@ -846,7 +844,7 @@ final class PDFReaderViewController: UIViewController {
             picker.heightAnchor.constraint(equalToConstant: size),
         ])
 
-        return [highlight, note, area, picker]
+        return [highlight, note, area, ink, picker]
     }
 
     private func setupNavigationBar() {
