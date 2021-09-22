@@ -246,6 +246,15 @@ final class WebViewHandler: NSObject {
             return
         }
 
+        guard !urlString.contains("repo/code/undefined") else {
+            DDLogError("WebViewHandler: Undefined call, translator missing.")
+
+            // Received undefined translator repo call, which happens only when translation doesn't have proper translator available and just gets stuck, so we just force this error here.
+            self.observable.on(.error(Error.noSuccessfulTranslators))
+
+            return
+        }
+
         let headers = (options["headers"] as? [String: String]) ?? [:]
         let body = options["body"] as? String
         let timeout = (options["timeout"] as? Double).flatMap({ $0 / 1000 }) ?? 60
