@@ -24,7 +24,7 @@ struct CiteSettingsView: View {
                 }
             }
 
-            Section(header: Text("")) {
+            Section {
                 Button {
                     self.coordinatorDelegate?.showCitationStyleManagement(viewModel: self.viewModel)
                 } label: {

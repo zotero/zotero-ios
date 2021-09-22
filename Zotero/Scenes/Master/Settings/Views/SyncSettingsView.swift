@@ -13,7 +13,7 @@ struct SyncSettingsView: View {
 
     var body: some View {
         Form {
-            Section(header: Text("")) {
+            Section {
                 if self.viewModel.state.isSyncing {
                     Button(action: {
                         self.viewModel.process(action: .cancelSync)

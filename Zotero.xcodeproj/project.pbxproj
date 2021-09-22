@@ -614,6 +614,7 @@
 		B367330D24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B367330C24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift */; };
 		B36A988D2428E05A005D5790 /* TranslatorsAndStylesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsAndStylesController.swift */; };
 		B36BEC7324485FC700A60552 /* TagColorGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36BEC7224485FC700A60552 /* TagColorGenerator.swift */; };
+		B36C07DE26FB264800C855A9 /* UITableView+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36C07DD26FB264800C855A9 /* UITableView+Extensions.swift */; };
 		B36C5086257521DE00A370D3 /* AnnotationEditActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36C5085257521DE00A370D3 /* AnnotationEditActionHandler.swift */; };
 		B36C508A2575221400A370D3 /* AnnotationEditAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36C50892575221400A370D3 /* AnnotationEditAction.swift */; };
 		B36C508E2575221C00A370D3 /* AnnotationEditState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36C508D2575221C00A370D3 /* AnnotationEditState.swift */; };
@@ -1354,6 +1355,7 @@
 		B367330C24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HtmlAttributedStringConverter.swift; sourceTree = "<group>"; };
 		B36A988C2428E059005D5790 /* TranslatorsAndStylesController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TranslatorsAndStylesController.swift; sourceTree = "<group>"; };
 		B36BEC7224485FC700A60552 /* TagColorGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagColorGenerator.swift; sourceTree = "<group>"; };
+		B36C07DD26FB264800C855A9 /* UITableView+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UITableView+Extensions.swift"; sourceTree = "<group>"; };
 		B36C5085257521DE00A370D3 /* AnnotationEditActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationEditActionHandler.swift; sourceTree = "<group>"; };
 		B36C50892575221400A370D3 /* AnnotationEditAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationEditAction.swift; sourceTree = "<group>"; };
 		B36C508D2575221C00A370D3 /* AnnotationEditState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationEditState.swift; sourceTree = "<group>"; };
@@ -1938,6 +1940,7 @@
 				B305650A23FC051E003304F2 /* UIFont+Extensions.swift */,
 				B391480626D9093E0016B7B2 /* UIPasteboard+Extensions.swift */,
 				B3593ADB24B60A7600CA0B57 /* UISearchBar+Extensions.swift */,
+				B36C07DD26FB264800C855A9 /* UITableView+Extensions.swift */,
 				B3B953D12459B4D800FC96DB /* UITableViewCell+SwiftUI.swift */,
 				B305651223FC051E003304F2 /* UIView+Extensions.swift */,
 				B305650E23FC051E003304F2 /* UIViewController+Extensions.swift */,
@@ -3819,6 +3822,7 @@
 				B395EFE325494B1B00CEBD9F /* CreatorEditAction.swift in Sources */,
 				B374913C2488E3D90042FF85 /* StorageSettingsView.swift in Sources */,
 				B30565FB23FC051E003304F2 /* Formatter.swift in Sources */,
+				B36C07DE26FB264800C855A9 /* UITableView+Extensions.swift in Sources */,
 				B3972689247D403200A8B469 /* UrlDetector.swift in Sources */,
 				B305660923FC051E003304F2 /* SettingsRequest.swift in Sources */,
 				B305662423FC051F003304F2 /* LoadLibraryDataSyncAction.swift in Sources */,

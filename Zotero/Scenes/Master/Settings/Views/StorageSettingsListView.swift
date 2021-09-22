@@ -13,7 +13,7 @@ struct StorageSettingsListView: View {
 
     var body: some View {
         Form {
-            Section(header: Text("")) {
+            Section {
                 ForEach(self.viewModel.state.libraries) { library in
                     StorageSettingsRow(title: library.name, data: self.viewModel.state.storageData[library.identifier], deleteAction: {
                         self.viewModel.process(action: .showDeleteLibraryQuestion(library))

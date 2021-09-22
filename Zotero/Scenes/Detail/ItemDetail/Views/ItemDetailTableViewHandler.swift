@@ -592,7 +592,9 @@ final class ItemDetailTableViewHandler: NSObject {
         var accessoryType: UITableViewCell.AccessoryType = .none
 
         switch section {
-        case .abstract, .title, .notes: break
+        case .title, .notes: break
+        case .abstract:
+            hasSeparator = false
         case .attachments: break
             // TODO: implement attachment metadata screen
 //            if !isAddCell {
@@ -645,10 +647,14 @@ final class ItemDetailTableViewHandler: NSObject {
 
         self.tableView.delegate = self
         self.tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
+        self.tableView.tableHeaderView = UIView()
         self.tableView.tableFooterView = UIView()
         self.tableView.separatorInsetReference = .fromAutomaticInsets
         self.tableView.layoutMargins = .zero
         self.tableView.separatorInset = .zero
+        if #available(iOS 15.0, *) {
+            self.tableView.sectionHeaderTopPadding = 0
+        }
 
         ItemDetailTableViewHandler.cellIds.forEach { cellId in
             self.tableView.register(UINib(nibName: cellId, bundle: nil), forCellReuseIdentifier: cellId)

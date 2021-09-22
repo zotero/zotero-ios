@@ -79,6 +79,7 @@ final class AnnotationPageLabelViewController: UIViewController {
         self.tableView.rowHeight = 44
         self.tableView.register(UINib(nibName: "TextFieldCell", bundle: nil), forCellReuseIdentifier: Section.labelInput.cellId)
         self.tableView.register(UINib(nibName: "SwitchCell", bundle: nil), forCellReuseIdentifier: Section.switches.cellId)
+        self.tableView.setDefaultSizedHeader()
     }
 }
 

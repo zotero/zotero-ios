@@ -193,6 +193,7 @@ final class AnnotationEditViewController: UIViewController {
         self.tableView.register(UINib(nibName: "HighlightEditCell", bundle: nil), forCellReuseIdentifier: Section.highlight.cellId(index: 0))
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.actions.cellId(index: 0))
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.pageLabel.cellId(index: 0))
+        self.tableView.setDefaultSizedHeader()
     }
 }
 

@@ -15,7 +15,7 @@ struct ProfileView: View {
 
     var body: some View {
         Form {
-            Section(header: Text("")) {
+            Section {
                 Text(self.username)
             }
 

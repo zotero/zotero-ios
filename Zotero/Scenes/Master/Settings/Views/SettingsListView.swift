@@ -15,7 +15,7 @@ struct SettingsListView: View {
 
     var body: some View {
         Form {
-            Section(header: Text("")) {
+            Section {
                 Button(action: {
                     self.coordinatorDelegate?.showAboutBeta()
                 }, label: {
