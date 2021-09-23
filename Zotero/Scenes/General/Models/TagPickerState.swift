@@ -22,6 +22,7 @@ struct TagPickerState: ViewModelState {
     var snapshot: [Tag]?
     var selectedTags: Set<String>
     var searchTerm: String
+    var showAddTagButton: Bool
     var error: TagPickerError?
     var changes: Changes
 
@@ -30,6 +31,7 @@ struct TagPickerState: ViewModelState {
         self.tags = []
         self.searchTerm = ""
         self.selectedTags = selectedTags
+        self.showAddTagButton = false
         self.changes = []
     }
 

@@ -15,8 +15,8 @@ final class TagPickerViewController: UIViewController {
 
     private static let addCellId = "AddCell"
     private static let tagCellId = "TagCell"
-    private static let addSection = 0
-    private static let tagsSection = 1
+    private static let addSection = 1
+    private static let tagsSection = 0
     private let viewModel: ViewModel<TagPickerActionHandler>
     private let saveAction: ([Tag]) -> Void
     private let disposeBag: DisposeBag
@@ -164,7 +164,7 @@ extension TagPickerViewController: UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch section {
-        case TagPickerViewController.addSection: return self.viewModel.state.tags.isEmpty && !self.viewModel.state.searchTerm.isEmpty ? 1 : 0
+        case TagPickerViewController.addSection: return self.viewModel.state.showAddTagButton ? 1 : 0
         case TagPickerViewController.tagsSection: return self.viewModel.state.tags.count
         default: return 0
         }
