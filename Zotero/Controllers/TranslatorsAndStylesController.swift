@@ -73,7 +73,7 @@ final class TranslatorsAndStylesController {
     weak var coordinator: TranslatorsControllerCoordinatorDelegate?
     private lazy var uuidExpression: NSRegularExpression? = {
         do {
-            return try NSRegularExpression(pattern: #"[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-4[0-9A-Fa-f]{3}-[89ABab][0-9A-Fa-f]{3}-[0-9A-Fa-f]{12}"#)
+            return try NSRegularExpression(pattern: #"[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}"#)
         } catch let error {
             DDLogError("TranslatorsAndStylesController: can't create uuid expression - \(error)")
             return nil
