@@ -21,6 +21,16 @@ final class AnnotationViewText: UIView {
         return self.button.rx.tap.flatMap({ Observable.just(self.button) })
     }
 
+    var isEnabled: Bool {
+        get {
+            return self.button.isEnabled
+        }
+
+        set {
+            self.button.isEnabled = newValue
+        }
+    }
+
     init(layout: AnnotationViewLayout) {
         self.layout = layout
 

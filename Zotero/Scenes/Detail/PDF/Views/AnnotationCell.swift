@@ -82,7 +82,7 @@ final class AnnotationCell: UITableViewCell {
         ])
     }
 
-    func setup(with annotation: Annotation, comment: AnnotationView.Comment?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, hasWritePermission: Bool) {
+    func setup(with annotation: Annotation, comment: AnnotationView.Comment?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, library: Library) {
         if !selected {
             self.annotationView.resignFirstResponder()
         }
@@ -90,7 +90,7 @@ final class AnnotationCell: UITableViewCell {
         self.key = annotation.key
         self.selectionView.layer.borderWidth = selected ? PDFReaderLayout.cellSelectionLineWidth : 0
         let availableWidth = availableWidth - (PDFReaderLayout.annotationLayout.horizontalInset * 2)
-        self.annotationView.setup(with: annotation, comment: comment, preview: preview, selected: selected, availableWidth: availableWidth, hasWritePermission: hasWritePermission)
+        self.annotationView.setup(with: annotation, comment: comment, preview: preview, selected: selected, availableWidth: availableWidth, library: library)
 
         self.setupAccessibility(for: annotation, selected: selected)
     }

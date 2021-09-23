@@ -100,11 +100,10 @@ final class AnnotationView: UIView {
     /// - parameter preview: Preview image to show. If nil, no image is shown.
     /// - parameter selected: If true, selected state style is applied.
     /// - parameter availableWidth: Available width for view.
-    /// - parameter hasWritePermission: Indicates whether editing is enabled.
-    /// - parameter accessibilityType: Indicates what type of Accessibility features should be used.
-    func setup(with annotation: Annotation, comment: Comment?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, hasWritePermission: Bool) {
+    /// - parameter library: Library of given annotation
+    func setup(with annotation: Annotation, comment: Comment?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, library: Library) {
         let color = UIColor(hex: annotation.color)
-        let canEdit = (annotation.editability != .notEditable) && (hasWritePermission || annotation.isAuthor) && selected
+        let canEdit = annotation.isEditable(in: library) && selected
 
         self.header.setup(with: annotation, isEditable: canEdit, showDoneButton: self.layout.showDoneButton, accessibilityType: .cell)
         self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth, accessibilityType: .cell)

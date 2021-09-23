@@ -228,7 +228,6 @@ final class AnnotationsViewController: UIViewController {
     }
 
     private func setup(cell: AnnotationCell, with annotation: Annotation, state: PDFReaderState) {
-        let hasWritePermission = state.library.metadataEditable
         let selected = annotation.key == state.selectedAnnotation?.key
 
         let loadPreview: () -> UIImage? = {
@@ -256,7 +255,7 @@ final class AnnotationsViewController: UIViewController {
             comment = .init(attributedString: state.comments[annotation.key], isActive: state.selectedAnnotationCommentActive)
         }
 
-        cell.setup(with: annotation, comment: comment, preview: preview, selected: selected, availableWidth: PDFReaderLayout.sidebarWidth, hasWritePermission: hasWritePermission)
+        cell.setup(with: annotation, comment: comment, preview: preview, selected: selected, availableWidth: PDFReaderLayout.sidebarWidth, library: state.library)
         cell.actionPublisher.subscribe(onNext: { [weak self] action in
             self?.perform(action: action, annotation: annotation)
         })
