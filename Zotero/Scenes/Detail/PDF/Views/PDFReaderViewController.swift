@@ -790,6 +790,9 @@ final class PDFReaderViewController: UIViewController {
                     .subscribe(with: self, onNext: { `self`, recognizer in
                         if recognizer.state == .began, let view = recognizer.view {
                             self.coordinatorDelegate?.showInkSettings(sender: view, viewModel: self.viewModel)
+                            if self.pdfController.annotationStateManager.state != .ink {
+                                self.toggle(annotationTool: .ink)
+                            }
                         }
                     })
                     .disposed(by: self.disposeBag)
