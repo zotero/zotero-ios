@@ -186,31 +186,34 @@ extension RItem: Updatable {
                 }
             }
         }
-        if changes.contains(.rects) || changes.contains(.paths) || changedPageIndex != nil || changedLineWidth != nil {
-            let pageIndex = changedPageIndex ?? (self.fields.filter(.key(FieldKeys.Item.Annotation.pageIndex)).first.flatMap({ Int($0.value) }) ?? 0)
-            let lineWidth = changedLineWidth ?? (self.fields.filter(.key(FieldKeys.Item.Annotation.lineWidth)).first.flatMap({ Double($0.value) }) ?? 0)
-            parameters[FieldKeys.Item.Annotation.position] = self.createAnnotationPosition(pageIndex: pageIndex, rects: self.rects, paths: self.paths, lineWidth: lineWidth)
+        if self.rawType == ItemTypes.annotation && (changes.contains(.rects) || changes.contains(.paths) || changedPageIndex != nil || changedLineWidth != nil),
+           let annotationType = self.fields.filter(.key(FieldKeys.Item.Annotation.type)).first.flatMap({ AnnotationType(rawValue: $0.value) }) {
+            parameters[FieldKeys.Item.Annotation.position] = self.createAnnotationPosition(for: annotationType, changedPageIndex: changedPageIndex, changedLineWidth: changedLineWidth)
         }
         
         return parameters
     }
 
-    private func createAnnotationPosition(pageIndex: Int, rects: List<RRect>, paths: List<RPath>, lineWidth: Double) -> String {
+    private func createAnnotationPosition(for type: AnnotationType, changedPageIndex: Int?, changedLineWidth: Double?) -> String {
+        let pageIndex = changedPageIndex ?? (self.fields.filter(.key(FieldKeys.Item.Annotation.pageIndex)).first.flatMap({ Int($0.value) }) ?? 0)
         var jsonData: [String: Any] = [FieldKeys.Item.Annotation.pageIndex: pageIndex]
 
-        if !rects.isEmpty {
-            var rectArray: [[Double]] = []
-            rects.forEach { rRect in
-                rectArray.append([rRect.minX.rounded(to: 3), rRect.minY.rounded(to: 3), rRect.maxX.rounded(to: 3), rRect.maxY.rounded(to: 3)])
-            }
-            jsonData[FieldKeys.Item.Annotation.rects] = rectArray
-        } else if !paths.isEmpty {
+        switch type {
+        case .ink:
+            let lineWidth = changedLineWidth ?? (self.fields.filter(.key(FieldKeys.Item.Annotation.lineWidth)).first.flatMap({ Double($0.value) }) ?? 0)
             var apiPaths: [[Double]] = []
-            for path in paths.sorted(byKeyPath: "sortIndex") {
+            for path in self.paths.sorted(byKeyPath: "sortIndex") {
                 apiPaths.append(path.coordinates.sorted(byKeyPath: "sortIndex").map({ $0.value.rounded(to: 3) }))
             }
             jsonData[FieldKeys.Item.Annotation.paths] = apiPaths
             jsonData[FieldKeys.Item.Annotation.lineWidth] = lineWidth.rounded(to: 3)
+            
+        case .highlight, .image, .note:
+            var rectArray: [[Double]] = []
+            self.rects.forEach { rRect in
+                rectArray.append([rRect.minX.rounded(to: 3), rRect.minY.rounded(to: 3), rRect.maxX.rounded(to: 3), rRect.maxY.rounded(to: 3)])
+            }
+            jsonData[FieldKeys.Item.Annotation.rects] = rectArray
         }
 
         return (try? JSONSerialization.data(withJSONObject: jsonData, options: [])).flatMap({ String(data: $0, encoding: .utf8) }) ?? ""
