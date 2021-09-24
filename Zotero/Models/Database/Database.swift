@@ -10,6 +10,7 @@ import Foundation
 
 import CocoaLumberjackSwift
 import RealmSwift
+import Network
 
 struct Database {
     private static let schemaVersion: UInt64 = 33
@@ -58,64 +59,64 @@ struct Database {
     }
 
     private static func migrateRawValuesToEnums(migration: Migration) {
-        let migrateSyncState: (MigrationObject?, MigrationObject?) -> Void = { old, new in
-            guard let rawState = old?.safeGet(key: "rawSyncState") as? Int else { return }
-            new?.safeSet(key: "syncState", value: (ObjectSyncState(rawValue: rawState) ?? .synced))
+        let migrateSyncState: (String, MigrationObject?, MigrationObject?) -> Void = { type, old, new in
+            guard let rawState = old?.safeGet(key: "rawSyncState", in: migration.oldSchema[type]) as? Int else { return }
+            new?.safeSet(key: "syncState", value: (ObjectSyncState(rawValue: rawState) ?? .synced), in: migration.newSchema[type])
         }
 
-        let migrateCustomLibraryKey: (MigrationObject?, MigrationObject?) -> Void = { old, new in
-            guard let rawKey = old?.safeGet(key: "customLibraryKey") as? Int else { return }
-            new?.safeSet(key: "customLibraryKey", value: (RCustomLibraryType(rawValue: rawKey) ?? .myLibrary))
+        let migrateCustomLibraryKey: (String, MigrationObject?, MigrationObject?) -> Void = { type, old, new in
+            guard let rawKey = old?.safeGet(key: "customLibraryKey", in: migration.oldSchema[type]) as? Int else { return }
+            new?.safeSet(key: "customLibraryKey", value: (RCustomLibraryType(rawValue: rawKey) ?? .myLibrary), in: migration.newSchema[type])
         }
 
-        let migrateChangeType: (MigrationObject?, MigrationObject?) -> Void = { old, new in
-            guard let rawKey = old?.safeGet(key: "rawChangeType") as? Int else { return }
-            new?.safeSet(key: "changeType", value: (UpdatableChangeType(rawValue: rawKey) ?? .sync))
+        let migrateChangeType: (String, MigrationObject?, MigrationObject?) -> Void = { type, old, new in
+            guard let rawKey = old?.safeGet(key: "rawChangeType", in: migration.oldSchema[type]) as? Int else { return }
+            new?.safeSet(key: "changeType", value: (UpdatableChangeType(rawValue: rawKey) ?? .sync), in: migration.newSchema[type])
         }
 
-        migration.enumerateObjects(ofType: "RCustomLibrary") { old, new in
-            guard let rawType = old?.safeGet(key: "rawType") as? Int else { return }
-            new?.safeSet(key: "type", value: (RCustomLibraryType(rawValue: rawType) ?? .myLibrary))
+        migration.enumerateObjects(ofType: RCustomLibrary.className()) { old, new in
+            guard let rawType = old?.safeGet(key: "rawType", in: migration.oldSchema[RCustomLibrary.className()]) as? Int else { return }
+            new?.safeSet(key: "type", value: (RCustomLibraryType(rawValue: rawType) ?? .myLibrary), in: migration.newSchema[RCustomLibrary.className()])
         }
 
-        migration.enumerateObjects(ofType: "RGroup") { old, new in
-            if let rawType = old?.safeGet(key: "rawType") as? String {
-                new?.safeSet(key: "type", value: (GroupType(rawValue: rawType) ?? .private))
+        migration.enumerateObjects(ofType: RGroup.className()) { old, new in
+            if let rawType = old?.safeGet(key: "rawType", in: migration.oldSchema[RGroup.className()]) as? String {
+                new?.safeSet(key: "type", value: (GroupType(rawValue: rawType) ?? .private), in: migration.newSchema[RGroup.className()])
             }
-            migrateSyncState(old, new)
+            migrateSyncState(RGroup.className(), old, new)
         }
 
-        migration.enumerateObjects(ofType: "RCollection") { old, new in
-            migrateSyncState(old, new)
-            migrateCustomLibraryKey(old, new)
-            migrateChangeType(old, new)
+        migration.enumerateObjects(ofType: RCollection.className()) { old, new in
+            migrateSyncState(RCollection.className(), old, new)
+            migrateCustomLibraryKey(RCollection.className(), old, new)
+            migrateChangeType(RCollection.className(), old, new)
         }
 
-        migration.enumerateObjects(ofType: "RItem") { old, new in
-            migrateSyncState(old, new)
-            migrateCustomLibraryKey(old, new)
-            migrateChangeType(old, new)
+        migration.enumerateObjects(ofType: RItem.className()) { old, new in
+            migrateSyncState(RItem.className(), old, new)
+            migrateCustomLibraryKey(RItem.className(), old, new)
+            migrateChangeType(RItem.className(), old, new)
         }
 
-        migration.enumerateObjects(ofType: "RSearch") { old, new in
-            migrateSyncState(old, new)
-            migrateCustomLibraryKey(old, new)
-            migrateChangeType(old, new)
+        migration.enumerateObjects(ofType: RSearch.className()) { old, new in
+            migrateSyncState(RSearch.className(), old, new)
+            migrateCustomLibraryKey(RSearch.className(), old, new)
+            migrateChangeType(RSearch.className(), old, new)
         }
 
-        migration.enumerateObjects(ofType: "RPageIndex") { old, new in
-            migrateSyncState(old, new)
-            migrateCustomLibraryKey(old, new)
-            migrateChangeType(old, new)
+        migration.enumerateObjects(ofType: RPageIndex.className()) { old, new in
+            migrateSyncState(RPageIndex.className(), old, new)
+            migrateCustomLibraryKey(RPageIndex.className(), old, new)
+            migrateChangeType(RPageIndex.className(), old, new)
         }
 
-        migration.enumerateObjects(ofType: "RTag") { old, new in
-            migrateCustomLibraryKey(old, new)
+        migration.enumerateObjects(ofType: RTag.className()) { old, new in
+            migrateCustomLibraryKey(RTag.className(), old, new)
         }
 
-        migration.enumerateObjects(ofType: "RTypedTag") { old, new in
-            guard let rawType = old?.safeGet(key: "rawType") as? Int else { return }
-            new?.safeSet(key: "type", value: (RTypedTag.Kind(rawValue: rawType) ?? .manual))
+        migration.enumerateObjects(ofType: RTypedTag.className()) { old, new in
+            guard let rawType = old?.safeGet(key: "rawType", in: migration.oldSchema[RTypedTag.className()]) as? Int else { return }
+            new?.safeSet(key: "type", value: (RTypedTag.Kind(rawValue: rawType) ?? .manual), in: migration.newSchema[RTypedTag.className()])
         }
     }
 
@@ -142,11 +143,12 @@ struct Database {
         let maxX: Double
         let maxY: Double
 
-        init(object: MigrationObject) {
-            self.minX = (object.safeGet(key: "minX") as? Double) ?? -1
-            self.minY = (object.safeGet(key: "minY") as? Double) ?? -1
-            self.maxX = (object.safeGet(key: "maxX") as? Double) ?? -1
-            self.maxY = (object.safeGet(key: "maxY") as? Double) ?? -1
+        init(object: MigrationObject, isNewSchema: Bool, migration: Migration) {
+            let schema = (isNewSchema ? migration.newSchema : migration.oldSchema)[RRect.className()]
+            self.minX = (object.safeGet(key: "minX", in: schema) as? Double) ?? -1
+            self.minY = (object.safeGet(key: "minY", in: schema) as? Double) ?? -1
+            self.maxX = (object.safeGet(key: "maxX", in: schema) as? Double) ?? -1
+            self.maxY = (object.safeGet(key: "maxY", in: schema) as? Double) ?? -1
         }
     }
 
@@ -173,14 +175,14 @@ struct Database {
         var (groupedNewRects, allCount, availableCount) = self.groupedRects(migration: migration)
 
         var migratedCount = 0
-        migration.enumerateObjects(ofType: "RItem") { old, new in
+        migration.enumerateObjects(ofType: RItem.className()) { old, new in
             guard let old = old, let new = new else { return }
 
             var rectObjects: [MigrationObject] = []
 
-            if let list = old.safeDynamicList(key: "rects") {
+            if let list = old.safeDynamicList(key: "rects", in: migration.oldSchema[RItem.className()]) {
                 for oldRectObject in list {
-                    let rect = RectMigration(object: oldRectObject)
+                    let rect = RectMigration(object: oldRectObject, isNewSchema: false, migration: migration)
                     if var objects = groupedNewRects[rect], !objects.isEmpty {
                         rectObjects.append(objects.removeFirst())
 
@@ -195,10 +197,10 @@ struct Database {
                 DDLogError("RItem missing rects")
             }
 
-            new.safeDynamicList(key: "rects")?.removeAll()
+            new.safeDynamicList(key: "rects", in: migration.newSchema[RItem.className()])?.removeAll()
             if !rectObjects.isEmpty {
                 migratedCount += rectObjects.count
-                new.safeDynamicList(key: "rects")?.append(objectsIn: rectObjects)
+                new.safeDynamicList(key: "rects", in: migration.newSchema[RItem.className()])?.append(objectsIn: rectObjects)
             }
         }
 
@@ -219,12 +221,12 @@ struct Database {
         var map: [RectMigration: [MigrationObject]] = [:]
         var allCount = 0
         var availableCount = 0
-        migration.enumerateObjects(ofType: "RRect") { old, new in
+        migration.enumerateObjects(ofType: RRect.className()) { old, new in
             allCount += 1
             guard let new = new else { return }
             availableCount += 1
 
-            let rect = RectMigration(object: new)
+            let rect = RectMigration(object: new, isNewSchema: true, migration: migration)
             if var existing = map[rect] {
                 existing.append(new)
                 map[rect] = existing
@@ -236,58 +238,59 @@ struct Database {
     }
 
     private struct VersionsMigration {
-            let versions: Versions
-            let object: MigrationObject
+        let versions: Versions
+        let object: MigrationObject
 
-            init(object: MigrationObject) {
-                self.object = object
-                self.versions = Versions(collections: (object.safeGet(key: "collections") as? Int) ?? -1,
-                                         items: (object.safeGet(key: "items") as? Int) ?? -1,
-                                         trash: (object.safeGet(key: "trash") as? Int) ?? -1,
-                                         searches: (object.safeGet(key: "searches") as? Int) ?? -1,
-                                         deletions: (object.safeGet(key: "deletions") as? Int) ?? -1,
-                                         settings: (object.safeGet(key: "settings") as? Int) ?? -1)
-            }
+        init(object: MigrationObject, isNewSchema: Bool, migration: Migration) {
+            self.object = object
+
+            let schema = (isNewSchema ? migration.newSchema : migration.oldSchema)[RVersions.className()]
+            self.versions = Versions(collections: (object.safeGet(key: "collections", in: schema) as? Int) ?? -1,
+                                     items: (object.safeGet(key: "items", in: schema) as? Int) ?? -1,
+                                     trash: (object.safeGet(key: "trash", in: schema) as? Int) ?? -1,
+                                     searches: (object.safeGet(key: "searches", in: schema) as? Int) ?? -1,
+                                     deletions: (object.safeGet(key: "deletions", in: schema) as? Int) ?? -1,
+                                     settings: (object.safeGet(key: "settings", in: schema) as? Int) ?? -1)
         }
+    }
 
     private static func migrateVersions(migration: Migration) {
         var versionsMigrations: [VersionsMigration] = []
 
         var allCount = 0
         var availableCount = 0
-        migration.enumerateObjects(ofType: "RVersions") { old, new in
+        migration.enumerateObjects(ofType: RVersions.className()) { old, new in
             allCount += 1
             guard let new = new else { return }
             availableCount += 1
-            versionsMigrations.append(VersionsMigration(object: new))
+            versionsMigrations.append(VersionsMigration(object: new, isNewSchema: true, migration: migration))
         }
 
         var allMigrated = 0
         var availableMigrated = 0
-        let migrateVersions: (MigrationObject?) -> Void = { new in
+        let migrateVersions: (String, MigrationObject?) -> Void = { type, new in
             allMigrated += 1
             guard let new = new else { return }
-            guard let versionsObject = new.safeGet(key: "versions") as? MigrationObject else {
-                let isGroup = new.objectSchema.properties.contains(where: { $0.name == "name" })
-                DDLogError("\(isGroup ? "Group" : "Library") missing versions")
+            guard let versionsObject = new.safeGet(key: "versions", in: migration.newSchema[type]) as? MigrationObject else {
+                DDLogError("\(type) missing versions")
                 return
             }
             availableMigrated += 1
 
-            let versions = VersionsMigration(object: versionsObject).versions
+            let versions = VersionsMigration(object: versionsObject, isNewSchema: true, migration: migration).versions
 
             if let index = versionsMigrations.firstIndex(where: { $0.versions == versions }) {
-                new.safeSet(key: "versions", value: versionsMigrations[index].object)
+                new.safeSet(key: "versions", value: versionsMigrations[index].object, in: migration.newSchema[type])
                 versionsMigrations.remove(at: index)
             }
         }
 
-        migration.enumerateObjects(ofType: "RGroup") { old, new in
-            migrateVersions(new)
+        migration.enumerateObjects(ofType: RGroup.className()) { old, new in
+            migrateVersions(RGroup.className(), new)
         }
 
-        migration.enumerateObjects(ofType: "RCustomLibrary") { old, new in
-            migrateVersions(new)
+        migration.enumerateObjects(ofType: RCustomLibrary.className()) { old, new in
+            migrateVersions(RCustomLibrary.className(), new)
         }
 
         var deletions = 0
@@ -314,12 +317,12 @@ struct Database {
             guard let new = new else { return }
             availableCount += 1
 
-            guard let parent = old?.safeGet(key: oldLinkPropertyName) as? MigrationObject, let key = parent.safeGet(key: "key") as? String else {
+            guard let parent = old?.safeGet(key: oldLinkPropertyName, in: migration.oldSchema[type]) as? MigrationObject, let key = parent.safeGet(key: "key", in: migration.oldSchema[parentType]) as? String else {
                 orphaned.append(new)
                 return
             }
 
-            let id = KeyedLibraryId(key: key, groupKey: parent.safeGet(key: "groupKey"))
+            let id = KeyedLibraryId(key: key, groupKey: parent.safeGet(key: "groupKey", in: migration.oldSchema[parentType]))
 
             if var objects = grouped[id] {
                 objects.append(new)
@@ -331,18 +334,18 @@ struct Database {
 
         var migrated = 0
         migration.enumerateObjects(ofType: parentType) { old, new in
-            guard let key = new?.safeGet(key: "key") as? String else {
+            guard let key = new?.safeGet(key: "key", in: migration.newSchema[parentType]) as? String else {
                 DDLogError("\(parentType) missing key")
                 return
             }
 
-            let id = KeyedLibraryId(key: key, groupKey: old?.safeGet(key: "groupKey"))
+            let id = KeyedLibraryId(key: key, groupKey: old?.safeGet(key: "groupKey", in: migration.oldSchema[parentType]))
 
             guard let objects = grouped[id] else { return }
 
             grouped[id] = nil
 
-            if let list = new?.safeDynamicList(key: newListPropertyName) {
+            if let list = new?.safeDynamicList(key: newListPropertyName, in: migration.newSchema[parentType]) {
                 migrated += objects.count
                 list.append(objectsIn: objects)
             }
@@ -362,33 +365,33 @@ struct Database {
     }
 
     private static func migrateCollapsibleCollections(migration: Migration) {
-        migration.enumerateObjects(ofType: "RCollection") { old, new in
+        migration.enumerateObjects(ofType: RCollection.className()) { old, new in
             if let new = new {
-                new.safeSet(key: "collapsed", value: true)
+                new.safeSet(key: "collapsed", value: true, in: migration.newSchema[RCollection.className()])
             }
         }
     }
 
     private static func migrateCollectionParentKeys(migration: Migration) {
-        migration.enumerateObjects(ofType: "RCollection") { old, new in
-            let parent = old?.safeGet(key: "parent") as? MigrationObject
-            let key = parent?.safeGet(key: "key") as? String
-            new?.safeSet(key: "parentKey", value: key)
+        migration.enumerateObjects(ofType: RCollection.className()) { old, new in
+            let parent = old?.safeGet(key: "parent", in: migration.oldSchema[RCollection.className()]) as? MigrationObject
+            let key = parent?.safeGet(key: "key", in: migration.oldSchema[RCollection.className()]) as? String
+            new?.safeSet(key: "parentKey", value: key, in: migration.newSchema[RCollection.className()])
         }
     }
 
     private static func migrateMainAttachmentDownloaded(migration: Migration, fileStorage: FileStorage) {
         let attachmentMap = self.createAttachmentFileMap(fileStorage: fileStorage)
-        migration.enumerateObjects(ofType: "RItem", { old, new in
-            if let rawType = old?.safeGet(key: "rawType") as? String, rawType == ItemTypes.attachment,
-               let key = old?.safeGet(key: "key") as? String {
+        migration.enumerateObjects(ofType: RItem.className(), { old, new in
+            if let rawType = old?.safeGet(key: "rawType", in: migration.oldSchema[RItem.className()]) as? String, rawType == ItemTypes.attachment,
+               let key = old?.safeGet(key: "key", in: migration.oldSchema[RItem.className()]) as? String {
                 let libraryId: LibraryIdentifier
-                if let groupId = old?.safeGet(key: "groupKey") as? Int {
+                if let groupId = old?.safeGet(key: "groupKey", in: migration.oldSchema[RItem.className()]) as? Int {
                     libraryId = .group(groupId)
                 } else {
                     libraryId = .custom(.myLibrary)
                 }
-                new?.safeSet(key: "fileDownloaded", value: (attachmentMap[libraryId]?.contains(key) == true))
+                new?.safeSet(key: "fileDownloaded", value: (attachmentMap[libraryId]?.contains(key) == true), in: migration.newSchema[RItem.className()])
             }
         })
     }
@@ -459,16 +462,24 @@ extension String {
 }
 
 extension DynamicObject {
-    fileprivate func safeGet(key: String) -> Any? {
-        guard self.objectSchema.properties.contains(where: { $0.name == key }) else {
+    fileprivate func safeGet(key: String, in schema: ObjectSchema?) -> Any? {
+        guard let schema = schema else {
+            DDLogError("Database: trying to get '\(key)' but missing schema.")
+            return nil
+        }
+        guard schema.properties.contains(where: { $0.name == key }) else {
             DDLogError("Database: trying to get '\(key)' but it's not in schema.")
             return nil
         }
         return self[key]
     }
 
-    fileprivate func safeSet(key: String, value: Any?) {
-        guard let property = self.objectSchema.properties.first(where: { $0.name == key }) else {
+    fileprivate func safeSet(key: String, value: Any?, in schema: ObjectSchema?) {
+        guard let schema = schema else {
+            DDLogError("Database: trying to get list '\(key)' but missing schema.")
+            return
+        }
+        guard let property = schema.properties.first(where: { $0.name == key }) else {
             DDLogError("Database: trying to get list '\(key)' but it's not in schema.")
             return
         }
@@ -479,8 +490,12 @@ extension DynamicObject {
         self[key] = value
     }
 
-    fileprivate func safeDynamicList(key: String) -> List<DynamicObject>? {
-        guard self.objectSchema.properties.contains(where: { $0.name == key }) else {
+    fileprivate func safeDynamicList(key: String, in schema: ObjectSchema?) -> List<DynamicObject>? {
+        guard let schema = schema else {
+            DDLogError("Database: trying to set '\(key)' but missing schema.")
+            return nil
+        }
+        guard schema.properties.contains(where: { $0.name == key }) else {
             DDLogError("Database: trying to set '\(key)' but it's not in schema.")
             return nil
         }
