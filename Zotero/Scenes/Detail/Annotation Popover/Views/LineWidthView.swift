@@ -70,7 +70,7 @@ final class LineWidthView: UIView {
 
     private func step(value: Float) {
         self.slider.value = self.stepFunction(value)
-        self.valueLabel.text = L10n.Pdf.lineWidthPoint(self.slider.value)
+        self.valueLabel.text = String(format: "%0.1f", self.slider.value)
     }
 
     // MARK: - Setups
@@ -88,7 +88,7 @@ final class LineWidthView: UIView {
         let label = UILabel()
         label.font = .preferredFont(forTextStyle: .body)
         label.textColor = .systemGray
-        label.text = L10n.Pdf.lineWidthPoint(value)
+        label.text = String(format: "%0.1f", self.slider.value)
         self.valueLabel = label
 
         let container = UIStackView(arrangedSubviews: [slider, label])
