@@ -95,7 +95,7 @@ final class AnnotationViewController: UIViewController {
 
         // Update comment
         if let commentView = self.comment {
-            let comment = self.attributedStringConverter.convert(text: annotation.comment, baseFont: AnnotationPopoverLayout.annotationLayout.font)
+            let comment = self.attributedStringConverter.convert(text: annotation.comment, baseAttributes: [.font: AnnotationPopoverLayout.annotationLayout.font])
             commentView.setup(text: comment)
         }
 
@@ -199,7 +199,7 @@ final class AnnotationViewController: UIViewController {
         // Setup comment
         if annotation.type != .ink {
             let commentView = AnnotationViewTextView(layout: layout, placeholder: self.commentPlaceholder)
-            let comment = AnnotationView.attributedString(from: self.attributedStringConverter.convert(text: annotation.comment, baseFont: layout.font), layout: layout)
+            let comment = AnnotationView.attributedString(from: self.attributedStringConverter.convert(text: annotation.comment, baseAttributes: [.font: layout.font]), layout: layout)
             commentView.setup(text: comment)
             commentView.isUserInteractionEnabled = canEdit
             commentView.textObservable
@@ -220,6 +220,7 @@ final class AnnotationViewController: UIViewController {
         // Setup color picker
         if canEdit {
             let colorPickerContainer = UIView()
+            colorPickerContainer.backgroundColor = Asset.Colors.defaultCellBackground.color
             colorPickerContainer.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
             let colorPickerStackView = UIStackView(arrangedSubviews: [])
             colorPickerStackView.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)

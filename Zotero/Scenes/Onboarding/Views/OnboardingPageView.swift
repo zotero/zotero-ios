@@ -43,8 +43,8 @@ final class OnboardingPageView: UIView {
         let kern = font.pointSize * layout.kern
 
         self.textLabel.attributedText = htmlConverter.convert(text: string,
-                                                              baseFont: font,
-                                                              baseAttributes: [.paragraphStyle: paragraphStyle,
+                                                              baseAttributes: [.font: font,
+                                                                                .paragraphStyle: paragraphStyle,
                                                                                .kern: kern,
                                                                                .foregroundColor: Asset.Colors.onboardingTitle.color])
 

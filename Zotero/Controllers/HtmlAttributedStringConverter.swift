@@ -79,10 +79,9 @@ final class HtmlAttributedStringConverter {
 
     /// Converts string with HTML tags to attributed string. Supports only `b`, `i`, `sup` and `sub` HTML tags.
     /// - parameter comment: Comment to convert to attributed string
-    /// - parameter baseFont: Base font from which attributes are derived.
     /// - parameter baseAttributes: Attributes applied to whole string.
     /// - returns: Attributed string with attributes assigned from recognized HTML tags.
-    func convert(text: String, baseFont: UIFont, baseAttributes: [NSAttributedString.Key: Any]? = nil) -> NSAttributedString {
+    func convert(text: String, baseAttributes: [NSAttributedString.Key: Any]? = nil) -> NSAttributedString {
         var tagStart: Int?
         var deletedCharacters = 0
         var attributes: [Attribute] = []
@@ -128,8 +127,16 @@ final class HtmlAttributedStringConverter {
         // Create attributed string with parsed attributes.
         var activeAttributes: [StringAttribute] = []
         var wholeStringAttributes = baseAttributes ?? [:]
-        wholeStringAttributes[.font] = baseFont
+        if wholeStringAttributes[.font] == nil {
+            wholeStringAttributes[.font] = UIFont.preferredFont(for: .body, weight: .regular)
+        }
+        if wholeStringAttributes[.foregroundColor] == nil {
+            wholeStringAttributes[.foregroundColor] = UIColor(dynamicProvider: { traitCollection in
+                return traitCollection.userInterfaceStyle == .light ? .black : .white
+            })
+        }
         let attributedString = NSMutableAttributedString(string: strippedText, attributes: wholeStringAttributes)
+        let baseFont = wholeStringAttributes[.font] as! UIFont
 
         for (index, attribute) in attributes.enumerated() {
             guard index < attributes.count - 1 else { break }

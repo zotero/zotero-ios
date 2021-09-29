@@ -292,7 +292,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                     modifiedKeys.insert(annotation.key)
                 }
 
-                state.comments[annotation.key] = self.htmlAttributedStringConverter.convert(text: annotation.comment, baseFont: state.commentFont)
+                state.comments[annotation.key] = self.htmlAttributedStringConverter.convert(text: annotation.comment, baseAttributes: [.font: state.commentFont])
             }
             state.ignoreNotifications[.PSPDFAnnotationChanged] = modifiedKeys
 
@@ -1115,7 +1115,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                 annotations.insert(annotation, at: index)
                 allAnnotations[annotation.page] = annotations
 
-                comments[annotation.key] = NSAttributedString(string: annotation.comment, attributes: [.font: font])
+                comments[annotation.key] = self.htmlAttributedStringConverter.convert(text: annotation.comment, baseAttributes: [.font: font])
             }
         }
     }
@@ -1157,7 +1157,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                 annotations[annotation.page] = [annotation]
             }
 
-            comments[annotation.key] = self.htmlAttributedStringConverter.convert(text: annotation.comment, baseFont: baseFont)
+            comments[annotation.key] = self.htmlAttributedStringConverter.convert(text: annotation.comment, baseAttributes: [.font: baseFont])
         }
 
         return (annotations, positions, comments, page, items)
