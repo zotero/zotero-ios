@@ -674,6 +674,10 @@ internal enum L10n {
     internal static let deletedMessage = L10n.tr("Localizable", "pdf.deleted_message")
     /// Deleted
     internal static let deletedTitle = L10n.tr("Localizable", "pdf.deleted_title")
+    /// Keep screen on
+    internal static let idleTimerDisable = L10n.tr("Localizable", "pdf.idle_timer_disable")
+    /// Allow device to sleep
+    internal static let idleTimerEnable = L10n.tr("Localizable", "pdf.idle_timer_enable")
     /// %0.1f pt
     internal static func lineWidthPoint(_ p1: Float) -> String {
       return L10n.tr("Localizable", "pdf.line_width_point", p1)

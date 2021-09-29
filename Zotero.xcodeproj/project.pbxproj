@@ -329,6 +329,7 @@
 		B305677F23FC0D0A003304F2 /* SessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305646E23FC051E003304F2 /* SessionController.swift */; };
 		B305678323FC0D6B003304F2 /* SecureStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305646F23FC051E003304F2 /* SecureStorage.swift */; };
 		B305679023FC1D9B003304F2 /* CollectionDifference+Separated.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305678F23FC1D9B003304F2 /* CollectionDifference+Separated.swift */; };
+		B307A2732704A87D005986B3 /* IdleTimerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B307A2722704A87D005986B3 /* IdleTimerController.swift */; };
 		B307E55E22D4A87B00592B3C /* SyncActionsSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B307E55D22D4A87B00592B3C /* SyncActionsSpec.swift */; };
 		B30A8C672582690900EC56FB /* HighlightAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30A8C662582690900EC56FB /* HighlightAnnotation.swift */; };
 		B30B405F2490CAFC00FAAF6D /* ItemCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B30B405E2490CAFC00FAAF6D /* ItemCell.xib */; };
@@ -1130,6 +1131,7 @@
 		B305656223FC051E003304F2 /* SortType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SortType.swift; sourceTree = "<group>"; };
 		B30566D823FC0769003304F2 /* tinymce */ = {isa = PBXFileReference; lastKnownFileType = folder; path = tinymce; sourceTree = "<group>"; };
 		B305678F23FC1D9B003304F2 /* CollectionDifference+Separated.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CollectionDifference+Separated.swift"; sourceTree = "<group>"; };
+		B307A2722704A87D005986B3 /* IdleTimerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdleTimerController.swift; sourceTree = "<group>"; };
 		B307E55D22D4A87B00592B3C /* SyncActionsSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncActionsSpec.swift; sourceTree = "<group>"; };
 		B30A8C662582690900EC56FB /* HighlightAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightAnnotation.swift; sourceTree = "<group>"; };
 		B30B405E2490CAFC00FAAF6D /* ItemCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemCell.xib; sourceTree = "<group>"; };
@@ -1699,6 +1701,7 @@
 				B3D3FCA8267762EC008E243A /* ExportLocaleReader.swift */,
 				B305648123FC051E003304F2 /* Formatter.swift */,
 				B367330C24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift */,
+				B307A2722704A87D005986B3 /* IdleTimerController.swift */,
 				B30564B923FC051E003304F2 /* ItemTitleFormatter.swift */,
 				B305648023FC051E003304F2 /* KeyGenerator.swift */,
 				B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */,
@@ -3685,6 +3688,7 @@
 				B305669F23FC051F003304F2 /* RCustomLibrary.swift in Sources */,
 				B305667323FC051F003304F2 /* FileManager+Utils.swift in Sources */,
 				B305661223FC051E003304F2 /* FileRequest.swift in Sources */,
+				B307A2732704A87D005986B3 /* IdleTimerController.swift in Sources */,
 				B347F2BA24DC4D5D000D5FF6 /* CapHeightLabel.swift in Sources */,
 				B3A2AED4265552D5004BF3A4 /* CiteActionHandler.swift in Sources */,
 				B37491322488D7040042FF85 /* ProfileView.swift in Sources */,

@@ -29,6 +29,7 @@ final class Controllers {
     let dateParser: DateParser
     let htmlAttributedStringConverter: HtmlAttributedStringConverter
     let userInitialized: PassthroughSubject<Result<Bool, Error>, Never>
+    let idleTimerController: IdleTimerController
     fileprivate let lastBuildNumber: Int?
 
     var userControllers: UserControllers?
@@ -80,6 +81,7 @@ final class Controllers {
         self.htmlAttributedStringConverter = HtmlAttributedStringConverter()
         self.userInitialized = PassthroughSubject()
         self.lastBuildNumber = Defaults.shared.lastBuildNumber
+        self.idleTimerController = IdleTimerController()
 
         Defaults.shared.lastBuildNumber = DeviceInfoProvider.buildNumber
         self.startObservingSession()
@@ -192,7 +194,8 @@ final class UserControllers {
     let citationController: CitationController
     private let isFirstLaunch: Bool
     private let lastBuildNumber: Int?
-    unowned let translatorsAndStylesController: TranslatorsAndStylesController
+    private unowned let translatorsAndStylesController: TranslatorsAndStylesController
+    private unowned let idleTimerController: IdleTimerController
 
     private static let schemaVersion: UInt64 = 9
 
@@ -232,6 +235,7 @@ final class UserControllers {
         self.citationController = CitationController(stylesController: controllers.translatorsAndStylesController, fileStorage: controllers.fileStorage,
                                                      dbStorage: dbStorage, bundledDataStorage: controllers.bundledDataStorage)
         self.translatorsAndStylesController = controllers.translatorsAndStylesController
+        self.idleTimerController = controllers.idleTimerController
         self.lastBuildNumber = controllers.lastBuildNumber
         self.disposeBag = DisposeBag()
 
@@ -246,12 +250,13 @@ final class UserControllers {
         // Observe sync to enable/disable the device falling asleep
         self.syncScheduler.syncController.progressObservable
             .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { progress in
+            .subscribe(with: self, onNext: { `self`, progress in
                 switch progress {
                 case .aborted, .finished:
-                    UIApplication.shared.isIdleTimerDisabled = false
-                default:
-                    UIApplication.shared.isIdleTimerDisabled = true
+                    self.idleTimerController.enable()
+                case .starting:
+                    self.idleTimerController.disable()
+                default: break
                 }
             })
             .disposed(by: self.disposeBag)

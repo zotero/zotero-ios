@@ -54,18 +54,20 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
     private unowned let schemaController: SchemaController
     private unowned let fileStorage: FileStorage
+    private unowned let idleTimerController: IdleTimerController
     private let queue: DispatchQueue
     private let disposeBag: DisposeBag
 
     weak var boundingBoxConverter: AnnotationBoundingBoxConverter?
 
-    init(dbStorage: DbStorage, annotationPreviewController: AnnotationPreviewController, htmlAttributedStringConverter: HtmlAttributedStringConverter,
-         schemaController: SchemaController, fileStorage: FileStorage) {
+    init(dbStorage: DbStorage, annotationPreviewController: AnnotationPreviewController, htmlAttributedStringConverter: HtmlAttributedStringConverter, schemaController: SchemaController,
+         fileStorage: FileStorage, idleTimerController: IdleTimerController) {
         self.dbStorage = dbStorage
         self.annotationPreviewController = annotationPreviewController
         self.htmlAttributedStringConverter = htmlAttributedStringConverter
         self.schemaController = schemaController
         self.fileStorage = fileStorage
+        self.idleTimerController = idleTimerController
         self.queue = DispatchQueue(label: "org.zotero.Zotero.PDFReaderActionHandler.queue", qos: .userInteractive)
         self.disposeBag = DisposeBag()
     }
@@ -214,6 +216,25 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
         case .changeTransition(let transition):
             self.updateSettings(action: { $0.transition = transition }, in: viewModel)
+
+        case .changeIdleTimerDisabled(let disabled):
+            self.changeIdleTimer(disabled: disabled, in: viewModel)
+
+        }
+    }
+
+    private func changeIdleTimer(disabled: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard viewModel.state.settings.idleTimerDisabled != disabled else { return }
+
+        if disabled {
+            self.idleTimerController.disable()
+        } else {
+            self.idleTimerController.enable()
+        }
+
+        // This setting doesn't affect the view, so we don't need to report `changes` and since it's not persisted, we don't need to update `Defaults`.
+        self.update(viewModel: viewModel) { state in
+            state.settings.idleTimerDisabled = disabled
         }
     }
 

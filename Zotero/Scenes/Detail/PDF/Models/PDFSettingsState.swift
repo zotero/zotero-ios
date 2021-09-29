@@ -16,9 +16,10 @@ struct PDFSettingsState {
     var direction: ScrollDirection
     var transition: PageTransition
     var appearanceMode: PDFReaderState.AppearanceMode
+    var idleTimerDisabled: Bool
 
     static var `default`: PDFSettingsState {
-        return PDFSettingsState(direction: .horizontal, transition: .scrollContinuous, appearanceMode: .automatic)
+        return PDFSettingsState(direction: .horizontal, transition: .scrollContinuous, appearanceMode: .automatic, idleTimerDisabled: false)
     }
 }
 
@@ -36,6 +37,8 @@ extension PDFSettingsState: Codable {
         self.direction = ScrollDirection(rawValue: directionRaw) ?? .horizontal
         self.transition = PageTransition(rawValue: transitionRaw) ?? .scrollPerSpread
         self.appearanceMode = PDFReaderState.AppearanceMode(rawValue: appearanceRaw) ?? .automatic
+        // This setting is not persisted, always defaults to false
+        self.idleTimerDisabled = false
     }
 
     func encode(to encoder: Encoder) throws {

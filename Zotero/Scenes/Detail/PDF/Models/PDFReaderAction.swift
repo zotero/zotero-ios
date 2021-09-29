@@ -48,6 +48,7 @@ enum PDFReaderAction {
     case changeDirection(ScrollDirection)
     case changeTransition(PageTransition)
     case changeAppearanceMode(PDFReaderState.AppearanceMode)
+    case changeIdleTimerDisabled(Bool)
 }
 
 #endif

@@ -219,6 +219,8 @@
 "pdf.deleted_title" = "Deleted";
 "pdf.deleted_message" = "This document has been deleted. Do you want to restore it?";
 "pdf.line_width_point" = "%0.1f pt";
+"pdf.idle_timer_enable" = "Allow device to sleep";
+"pdf.idle_timer_disable" = "Keep screen on";
 
 "settings.title" = "Settings";
 "settings.account" = "Account";

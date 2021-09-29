@@ -272,7 +272,7 @@ final class DetailCoordinator: Coordinator {
 
         let handler = PDFReaderActionHandler(dbStorage: dbStorage, annotationPreviewController: self.controllers.annotationPreviewController,
                                              htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter, schemaController: self.controllers.schemaController,
-                                             fileStorage: self.controllers.fileStorage)
+                                             fileStorage: self.controllers.fileStorage, idleTimerController: self.controllers.idleTimerController)
         let state = PDFReaderState(url: url, key: key, library: library, settings: Defaults.shared.pdfSettings, userId: userId, username: username,
                                    interfaceStyle: self.topViewController.view.traitCollection.userInterfaceStyle)
         let controller = PDFReaderViewController(viewModel: ViewModel(initialState: state, handler: handler),
@@ -926,8 +926,13 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
             appearanceString = L10n.Pdf.Appearance.lightMode
         }
 
+        let idleTimerString = state.idleTimerDisabled ? L10n.Pdf.idleTimerEnable : L10n.Pdf.idleTimerDisable
+
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         controller.popoverPresentationController?.barButtonItem = sender
+        controller.addAction(UIAlertAction(title: idleTimerString, style: .default, handler: { _ in
+            completion(.changeIdleTimerDisabled(!state.idleTimerDisabled))
+        }))
         controller.addAction(UIAlertAction(title: L10n.Pdf.Appearance.title(appearanceString), style: .default, handler: { [weak self] _ in
             self?.showAppearanceModePicker(for: state.appearanceMode, completed: { appearanceMode in
                 completion(.changeAppearanceMode(appearanceMode))

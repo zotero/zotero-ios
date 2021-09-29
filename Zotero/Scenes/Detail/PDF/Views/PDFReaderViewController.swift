@@ -148,6 +148,7 @@ final class PDFReaderViewController: UIViewController {
     }
 
     deinit {
+        self.viewModel.process(action: .changeIdleTimerDisabled(false))
         self.pdfController?.annotationStateManager.remove(self)
         self.coordinatorDelegate?.pdfDidDeinitialize()
         DDLogInfo("PDFReaderViewController deinitialized")
