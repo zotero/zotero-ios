@@ -705,7 +705,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                               },
                               shouldReload: { original, new in
                                   // Reload only if aspect ratio or text changed.
-                                return original.boundingBox.heightToWidthRatio.rounded(to: 2) != new.boundingBox.heightToWidthRatio.rounded(to: 2) || original.text != new.text
+                                  return original.boundingBox.heightToWidthRatio.roundedDecimal(to: 2) != new.boundingBox.heightToWidthRatio.roundedDecimal(to: 2) || original.text != new.text
                               },
                               in: viewModel)
 

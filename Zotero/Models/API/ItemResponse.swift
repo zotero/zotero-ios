@@ -294,7 +294,7 @@ struct ItemResponse {
                 paths = newPaths
                 fields[FieldKeys.Item.Annotation.pageIndex] = "\(pageIndex)"
                 if let lineWidth = lineWidth {
-                    fields[FieldKeys.Item.Annotation.lineWidth] = String(format: "%.3f", lineWidth.rounded(to: 3))
+                    fields[FieldKeys.Item.Annotation.lineWidth] = "\(lineWidth.rounded(to: 3))"
                 }
             case FieldKeys.Item.accessDate:
                 if value == "CURRENT_TIMESTAMP" {

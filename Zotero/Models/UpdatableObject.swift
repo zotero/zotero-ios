@@ -201,17 +201,17 @@ extension RItem: Updatable {
         switch type {
         case .ink:
             let lineWidth = changedLineWidth ?? (self.fields.filter(.key(FieldKeys.Item.Annotation.lineWidth)).first.flatMap({ Double($0.value) }) ?? 0)
-            var apiPaths: [[Double]] = []
+            var apiPaths: [[Decimal]] = []
             for path in self.paths.sorted(byKeyPath: "sortIndex") {
-                apiPaths.append(path.coordinates.sorted(byKeyPath: "sortIndex").map({ $0.value.rounded(to: 3) }))
+                apiPaths.append(path.coordinates.sorted(byKeyPath: "sortIndex").map({ $0.value.roundedDecimal(to: 3) }))
             }
             jsonData[FieldKeys.Item.Annotation.paths] = apiPaths
-            jsonData[FieldKeys.Item.Annotation.lineWidth] = lineWidth.rounded(to: 3)
+            jsonData[FieldKeys.Item.Annotation.lineWidth] = lineWidth.roundedDecimal(to: 3)
             
         case .highlight, .image, .note:
-            var rectArray: [[Double]] = []
+            var rectArray: [[Decimal]] = []
             self.rects.forEach { rRect in
-                rectArray.append([rRect.minX.rounded(to: 3), rRect.minY.rounded(to: 3), rRect.maxX.rounded(to: 3), rRect.maxY.rounded(to: 3)])
+                rectArray.append([rRect.minX.roundedDecimal(to: 3), rRect.minY.roundedDecimal(to: 3), rRect.maxX.roundedDecimal(to: 3), rRect.maxY.roundedDecimal(to: 3)])
             }
             jsonData[FieldKeys.Item.Annotation.rects] = rectArray
         }
