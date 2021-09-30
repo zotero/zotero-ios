@@ -1432,13 +1432,6 @@ final class SyncController: SynchronizationController {
             }
         }
 
-        let nsError = error as NSError
-
-        // Check connection
-        if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorNotConnectedToInternet {
-            return .fatal(.noInternetConnection)
-        }
-
         // Check other networking errors
         if let responseError = error as? AFResponseError {
             return self.alamoErrorRequiresAbort(responseError.error, response: responseError.response, libraryId: libraryId)
@@ -1481,9 +1474,16 @@ final class SyncController: SynchronizationController {
             case .dataFileNil, .dataFileReadFailed, .missingContentType, .unacceptableContentType, .customValidationFailed:
                 return .fatal(.apiError(response))
             }
+        case .sessionTaskFailed(let error):
+            let nsError = error as NSError
+            if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorNotConnectedToInternet {
+                return .fatal(.noInternetConnection)
+            } else {
+                return .fatal(.apiError(error.localizedDescription))
+            }
         case .multipartEncodingFailed, .parameterEncodingFailed, .parameterEncoderFailed, .invalidURL, .createURLRequestFailed,
              .requestAdaptationFailed, .requestRetryFailed, .serverTrustEvaluationFailed, .sessionDeinitialized, .sessionInvalidated,
-             .urlRequestValidationFailed, .sessionTaskFailed:
+             .urlRequestValidationFailed:
             return .fatal(.apiError(response))
         case .responseSerializationFailed, .createUploadableFailed, .downloadedFileMoveFailed, .explicitlyCancelled:
             return .nonFatal(.apiError(response))
