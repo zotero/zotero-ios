@@ -179,9 +179,8 @@ final class ExtensionStore {
                 let newItem = item.copy(libraryId: libraryId, collectionKeys: collections, addedTags: tags)
                 let filename = FilenameFormatter.filename(from: item, defaultTitle: defaultTitle, ext: attachmentFile.ext, dateParser: dateParser)
                 let file = Files.attachmentFile(in: libraryId, key: attachmentKey, filename: filename, contentType: attachmentFile.mimeType)
-                let title = ((attachmentData["title"] as? String) ?? defaultTitle) + "." + file.ext
                 let attachment = Attachment(type: .file(filename: filename, contentType: attachmentFile.mimeType, location: .local, linkType: .importedFile),
-                                            title: title,
+                                            title: filename,
                                             key: attachmentKey,
                                             libraryId: libraryId)
 
