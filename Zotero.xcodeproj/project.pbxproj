@@ -361,6 +361,7 @@
 		B31FACC625DBC6F800DD5F14 /* ConflictReceiverAlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31FACC525DBC6F800DD5F14 /* ConflictReceiverAlertController.swift */; };
 		B31FACCA25DBC71200DD5F14 /* ConflictReceiverAlertHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31FACC925DBC71200DD5F14 /* ConflictReceiverAlertHandler.swift */; };
 		B31FACD225DBC7E900DD5F14 /* ActiveObjectDeletedConflictReceiverHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31FACD125DBC7E900DD5F14 /* ActiveObjectDeletedConflictReceiverHandler.swift */; };
+		B32259A227070EBA0047598D /* PDFPlainReaderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32259A127070EBA0047598D /* PDFPlainReaderViewController.swift */; };
 		B322B46F2673917100BC3D08 /* ExportSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B322B46E2673917100BC3D08 /* ExportSettingsView.swift */; };
 		B322B471267391A400BC3D08 /* ExportActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B322B470267391A400BC3D08 /* ExportActionHandler.swift */; };
 		B322B473267391DF00BC3D08 /* ExportState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B322B472267391DF00BC3D08 /* ExportState.swift */; };
@@ -1167,6 +1168,7 @@
 		B31FACC525DBC6F800DD5F14 /* ConflictReceiverAlertController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConflictReceiverAlertController.swift; sourceTree = "<group>"; };
 		B31FACC925DBC71200DD5F14 /* ConflictReceiverAlertHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictReceiverAlertHandler.swift; sourceTree = "<group>"; };
 		B31FACD125DBC7E900DD5F14 /* ActiveObjectDeletedConflictReceiverHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveObjectDeletedConflictReceiverHandler.swift; sourceTree = "<group>"; };
+		B32259A127070EBA0047598D /* PDFPlainReaderViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFPlainReaderViewController.swift; sourceTree = "<group>"; };
 		B322B46E2673917100BC3D08 /* ExportSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportSettingsView.swift; sourceTree = "<group>"; };
 		B322B470267391A400BC3D08 /* ExportActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportActionHandler.swift; sourceTree = "<group>"; };
 		B322B472267391DF00BC3D08 /* ExportState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportState.swift; sourceTree = "<group>"; };
@@ -2203,6 +2205,7 @@
 				B33AB487246D315F00490DDE /* CheckboxButton.swift */,
 				B39A402F24BC902600205172 /* ColorPickerView.swift */,
 				B38B24B826E7664400BDD1BB /* InkSettingsViewController.swift */,
+				B32259A127070EBA0047598D /* PDFPlainReaderViewController.swift */,
 				B3B953CD245981DA00FC96DB /* PDFReaderViewController.swift */,
 				B3593AD524B601AB00CA0B57 /* PDFSearchCell.swift */,
 				B3593AD624B601AB00CA0B57 /* PDFSearchCell.xib */,
@@ -3668,6 +3671,7 @@
 				B3F83808263960FA00E128A6 /* ItemAccessory.swift in Sources */,
 				B3DCDF1B24091EBE0039ED0D /* SinglePickerRow.swift in Sources */,
 				B30565B723FC051E003304F2 /* StoreSearchesDbRequest.swift in Sources */,
+				B32259A227070EBA0047598D /* PDFPlainReaderViewController.swift in Sources */,
 				B322B471267391A400BC3D08 /* ExportActionHandler.swift in Sources */,
 				B3451B55264ECBA9000EDF16 /* ReadGroupDbRequest.swift in Sources */,
 				B3593F30241A61C700760E20 /* ItemDetailAddCell.swift in Sources */,

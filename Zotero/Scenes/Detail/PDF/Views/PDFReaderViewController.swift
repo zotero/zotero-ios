@@ -852,14 +852,19 @@ final class PDFReaderViewController: UIViewController {
         let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"), style: .plain, target: nil, action: nil)
         sidebarButton.accessibilityLabel = self.isSidebarVisible ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
         sidebarButton.rx.tap
-                     .subscribe(onNext: { [weak self] in self?.toggleSidebar() })
+                     .subscribe(with: self, onNext: { `self`, _ in self.toggleSidebar() })
                      .disposed(by: self.disposeBag)
         let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"), style: .plain, target: nil, action: nil)
         closeButton.rx.tap
-                   .subscribe(onNext: { [weak self] in self?.close() })
+                   .subscribe(with: self, onNext: { `self`, _ in self.close() })
                    .disposed(by: self.disposeBag)
+        let readerButton = UIBarButtonItem(image: self.pdfController.readerViewButtonItem.image, style: .plain, target: nil, action: nil)
+        readerButton.accessibilityLabel = self.isSidebarVisible ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
+        readerButton.rx.tap
+                    .subscribe(with: self, onNext: { `self`, _ in self.coordinatorDelegate?.showReader(document: self.viewModel.state.document) })
+                    .disposed(by: self.disposeBag)
 
-        self.navigationItem.leftBarButtonItems = [closeButton, sidebarButton]
+        self.navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton]
         self.navigationItem.rightBarButtonItems = self.createRightBarButtonItems(forCompactSize: self.isCompactSize)
     }
 

@@ -86,6 +86,7 @@ protocol DetailPdfCoordinatorDelegate: AnyObject {
     func pdfDidDeinitialize()
     func showSettings(state: PDFSettingsState, sender: UIBarButtonItem, completion: @escaping (PDFReaderAction) -> Void)
     func showInkSettings(sender: UIView, viewModel: ViewModel<PDFReaderActionHandler>)
+    func showReader(document: Document)
 }
 
 protocol DetailAnnotationsCoordinatorDelegate: AnyObject {
@@ -953,6 +954,14 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         controller.popoverPresentationController?.sourceView = sender
         self.topViewController.present(controller, animated: true, completion: nil)
+    }
+
+    func showReader(document: Document) {
+        let controller = PDFPlainReaderViewController(document: document)
+        let navigationController = UINavigationController(rootViewController: controller)
+        navigationController.modalPresentationStyle = .fullScreen
+        self.topViewController.present(navigationController, animated: true, completion: nil)
+
     }
 }
 
