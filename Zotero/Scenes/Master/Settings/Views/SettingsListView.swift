@@ -91,7 +91,7 @@ struct SettingsListView: View {
     var profileView: some View {
         var view = ProfileView()
         view.coordinatorDelegate = self.coordinatorDelegate
-        return view
+        return view.environmentObject(self.viewModel)
     }
 }
 
