@@ -338,14 +338,20 @@ final class ExtensionStore {
                                .disposed(by: self.disposeBag)
 
         case .fileUrl(let url):
-            let file = Files.file(from: url)
             let filename = url.lastPathComponent
+            let tmpFile = Files.temporaryFile(ext: url.pathExtension)
 
-            var state = self.state
-            state.processedAttachment = .localFile(file: file, filename: filename)
-            state.items = state.processedAttachment
-            state.attachmentState = .processed
-            self.state = state
+            self.copyFile(from: url.path, to: tmpFile)
+                .subscribe(with: self, onSuccess: { `self`, _ in
+                    var state = self.state
+                    state.processedAttachment = .localFile(file: tmpFile, filename: filename)
+                    state.items = state.processedAttachment
+                    state.attachmentState = .processed
+                    self.state = state
+                }, onFailure: { `self`, error in
+                    self.state.attachmentState = .failed(.fileMissing)
+                })
+                .disposed(by: self.disposeBag)
 
         case .remoteFileUrl(let url, let contentType):
             let filename = url.lastPathComponent
@@ -839,7 +845,7 @@ final class ExtensionStore {
     /// - returns: `Single` with Authorization response and md5 hash of file.
     private func prepareUpload(attachment: Attachment, collections: Set<String>, tags: [TagResponse], file: File, tmpFile: File, filename: String, libraryId: LibraryIdentifier, userId: Int,
                                apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<(AuthorizeUploadResponse, String)> {
-        return self.copyFile(from: tmpFile, to: file)
+        return self.moveFile(from: tmpFile, to: file)
                    .subscribe(on: self.backgroundScheduler)
                    .flatMap { [weak self] filesize -> Single<(UInt64, [String: Any], String, Int)> in
                        guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
@@ -935,17 +941,17 @@ final class ExtensionStore {
     /// - parameter from: `File` where from the file is being moved.
     /// - parameter to: `File` where the file needs to be moved.
     /// - returns: `Single` with size of file.
-    private func copyFile(from fromFile: File, to toFile: File) -> Single<UInt64> {
+    private func copyFile(from path: String, to toFile: File) -> Single<UInt64> {
         return Single.create { subscriber -> Disposable in
             DDLogInfo("ExtensionStore: copy file to attachment folder")
 
             do {
-                let size = self.fileStorage.size(of: fromFile)
+                let size = self.fileStorage.size(of: path)
                 if size == 0 {
                     subscriber(.failure(State.AttachmentState.Error.fileMissing))
                     return Disposables.create()
                 }
-                try self.fileStorage.copy(from: fromFile, to: toFile)
+                try self.fileStorage.copy(from: path, to: toFile)
                 subscriber(.success(size))
             } catch let error {
                 DDLogError("ExtensionStore: can't copy file: \(error)")

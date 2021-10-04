@@ -18,10 +18,12 @@ protocol FileStorage: AnyObject {
     func read(_ file: File) throws -> Data
     func write(_ data: Data, to file: File, options: Data.WritingOptions) throws
     func remove(_ file: File) throws
+    func copy(from path: String, to toFile: File) throws
     func copy(from fromFile: File, to toFile: File) throws
     func move(from fromFile: File, to toFile: File) throws
     func has(_ file: File) -> Bool
     func size(of file: File) -> UInt64
+    func size(of path: String) -> UInt64
     func createDirectories(for file: File) throws
     func contentsOfDirectory(at file: File) throws -> [URL]
     func contentsOfDirectory(at file: File) throws -> [File]
@@ -55,6 +57,11 @@ final class FileStorageController: FileStorage {
         try self.fileManager.removeItem(at: file.createUrl())
     }
 
+    func copy(from path: String, to toFile: File) throws {
+        try self.createDirectories(for: toFile)
+        try self.fileManager.copyItem(atPath: path, toPath: toFile.createUrl().path)
+    }
+
     func copy(from fromFile: File, to toFile: File) throws {
         try self.createDirectories(for: toFile)
         try self.fileManager.copyItem(at: fromFile.createUrl(), to: toFile.createUrl())
@@ -69,9 +76,13 @@ final class FileStorageController: FileStorage {
         return self.fileManager.fileExists(atPath: file.createUrl().path)
     }
 
-    func size(of file: File) -> UInt64 {
-        let attributes = try? self.fileManager.attributesOfItem(atPath: file.createUrl().path)
+    func size(of path: String) -> UInt64 {
+        let attributes = try? self.fileManager.attributesOfItem(atPath: path)
         return (attributes?[FileAttributeKey.size] as? UInt64) ?? 0
+    }
+
+    func size(of file: File) -> UInt64 {
+        return self.size(of: file.createUrl().path)
     }
 
     func createDirectories(for file: File) throws {

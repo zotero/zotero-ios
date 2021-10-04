@@ -46,6 +46,10 @@ struct Files {
         return FileData(rootPath: Files.appGroupPath, relativeComponents: ["uploads"], name: UUID().uuidString, ext: "")
     }
 
+    static func temporaryFile(ext: String) -> File {
+        return FileData(rootPath: Files.cachesRootPath, relativeComponents: [], name: UUID().uuidString, ext: ext)
+    }
+
     // MARK: - JSON cache
 
     static func jsonCacheFile(for object: SyncObject, libraryId: LibraryIdentifier, key: String) -> File {
