@@ -99,17 +99,17 @@ final class ItemsViewController: UIViewController {
 
         self.tableViewHandler.tapObserver
                              .observe(on: MainScheduler.instance)
-                             .subscribe(onNext: { [weak self] action in
+                             .subscribe(with: self, onNext: { `self`, action in
                                 switch action {
                                 case .metadata(let item):
-                                    self?.showItemDetail(for: item)
-                                    self?.resetActiveSearch()
+                                    self.showItemDetail(for: item)
+                                    self.resetActiveSearch()
                                 case .doi(let doi):
-                                    self?.coordinatorDelegate?.show(doi: doi)
+                                    self.coordinatorDelegate?.show(doi: doi)
                                 case .url(let url):
-                                    self?.coordinatorDelegate?.showWeb(url: url)
+                                    self.coordinatorDelegate?.showWeb(url: url)
                                 case .showAttachmentError(let error, let attachment, let parentKey):
-                                    self?.coordinatorDelegate?.showAttachmentError(error, retryAction: { [weak self] in
+                                    self.coordinatorDelegate?.showAttachmentError(error, retryAction: { [weak self] in
                                         self?.viewModel.process(action: .openAttachment(attachment: attachment, parentKey: parentKey))
                                     })
                                 }
@@ -118,8 +118,8 @@ final class ItemsViewController: UIViewController {
 
         self.viewModel.stateObservable
                   .observe(on: MainScheduler.instance)
-                  .subscribe(onNext: { [weak self] state in
-                      self?.update(state: state)
+                  .subscribe(with: self, onNext: { `self`, state in
+                      self.update(state: state)
                   })
                   .disposed(by: self.disposeBag)
     }
@@ -158,6 +158,10 @@ final class ItemsViewController: UIViewController {
                 self.setupSearchBar(for: size)
             }, completion: nil)
         }
+    }
+
+    deinit {
+        DDLogInfo("ItemsViewController deinitialized")
     }
 
     // MARK: - UI state
@@ -399,7 +403,7 @@ final class ItemsViewController: UIViewController {
     }
 
     private func startObserving(results: Results<RItem>) {
-        self.resultsToken = results.observe(keyPaths: RItem.observableKeypathsForItemList, { [weak self] changes  in
+        self.resultsToken = results.observe(keyPaths: RItem.observableKeypathsForItemList, { [weak self] changes in
             guard let `self` = self else { return }
 
             switch changes {

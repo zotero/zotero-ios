@@ -58,6 +58,10 @@ final class ItemsTableViewHandler: NSObject {
         self.setupKeyboardObserving()
     }
 
+    deinit {
+        DDLogInfo("ItemsTableViewHandler deinitialized")
+    }
+
     private func createContextMenuActions(for item: RItem, state: ItemsState) -> [ItemAction] {
         if state.type.isTrash {
             return [ItemAction(type: .restore), ItemAction(type: .delete)]
