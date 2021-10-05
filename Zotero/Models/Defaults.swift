@@ -22,6 +22,15 @@ final class Defaults {
     @UserDefault(key: "userid", defaultValue: 0)
     var userId: Int
 
+    // MARK: - WebDav Session
+
+    @OptionalUserDefault(key: "webDavScheme")
+    var webDavScheme: String?
+    @OptionalUserDefault(key: "webDavUsername")
+    var webDavUsername: String?
+    @OptionalUserDefault(key: "webDavUrl")
+    var webDavUrl: String?
+
     // MARK: - Settings
 
     @UserDefault(key: "ShareExtensionIncludeTags", defaultValue: true)

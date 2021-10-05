@@ -30,6 +30,7 @@ final class Controllers {
     let htmlAttributedStringConverter: HtmlAttributedStringConverter
     let userInitialized: PassthroughSubject<Result<Bool, Error>, Never>
     let idleTimerController: IdleTimerController
+    let webDavController: WebDavController
     fileprivate let lastBuildNumber: Int?
 
     var userControllers: UserControllers?
@@ -64,6 +65,7 @@ final class Controllers {
         let bundledDataStorage = RealmDbStorage(config: bundledDataConfiguration)
         let translatorsAndStylesController = TranslatorsAndStylesController(apiClient: apiClient, bundledDataStorage: bundledDataStorage, fileStorage: fileStorage)
         let previewSize = CGSize(width: PDFReaderLayout.sidebarWidth, height: PDFReaderLayout.sidebarWidth)
+        let webDavController = WebDavController(sessionStorage: SecureWebDavSessionStorage(secureStorage: secureStorage))
 
         self.bundledDataStorage = bundledDataStorage
         self.sessionController = sessionController
@@ -79,6 +81,7 @@ final class Controllers {
         self.urlDetector = urlDetector
         self.dateParser = DateParser()
         self.htmlAttributedStringConverter = HtmlAttributedStringConverter()
+        self.webDavController = webDavController
         self.userInitialized = PassthroughSubject()
         self.lastBuildNumber = Defaults.shared.lastBuildNumber
         self.idleTimerController = IdleTimerController()
@@ -241,6 +244,14 @@ final class UserControllers {
 
         let coordinator = try dbStorage.createCoordinator()
         self.isFirstLaunch = try coordinator.perform(request: InitializeCustomLibrariesDbRequest())
+
+        controllers.webDavController.checkServer()
+                    .subscribe(onSuccess: { _ in
+                        DDLogInfo("WebDavController: check server passed")
+                    }, onFailure: { error in
+                        DDLogError("WebDavController: check server error - \(error)")
+                    })
+                    .disposed(by: self.disposeBag)
     }
 
     /// Connects to websocket to monitor changes and performs initial sync.

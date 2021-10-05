@@ -12,30 +12,44 @@ import KeychainSwift
 
 protocol SecureStorage: AnyObject {
     var apiToken: String? { get set }
+    var webDavPassword: String? { get set }
 }
 
 final class KeychainSecureStorage: SecureStorage {
-    private struct Keys {
-        static let apiToken = "api_token_key"
+    private static let keychain: KeychainSwift = KeychainSecureStorage.createKeychain()
+
+    private static func createKeychain() -> KeychainSwift {
+        let keychain = KeychainSwift()
+        keychain.accessGroup = AppGroup.identifier
+        return keychain
     }
 
+    @SecureString(key: "api_token_key", keychain: KeychainSecureStorage.keychain)
+    var apiToken: String?
+    @SecureString(key: "webDavPassword", keychain: KeychainSecureStorage.keychain)
+    var webDavPassword: String?
+}
+
+@propertyWrapper
+struct SecureString {
+    let key: String
     private let keychain: KeychainSwift
 
-    init() {
-        self.keychain = KeychainSwift()
-        self.keychain.accessGroup = AppGroup.identifier
+    init(key: String, keychain: KeychainSwift) {
+        self.key = key
+        self.keychain = keychain
     }
 
-    var apiToken: String? {
+    var wrappedValue: String? {
         get {
-            return self.keychain.get(Keys.apiToken)
+            return self.keychain.get(self.key)
         }
 
         set {
             if let value = newValue {
-                self.keychain.set(value, forKey: Keys.apiToken)
+                self.keychain.set(value, forKey: self.key)
             } else {
-                self.keychain.delete(Keys.apiToken)
+                self.keychain.delete(self.key)
             }
         }
     }
