@@ -209,8 +209,7 @@ class CitationController: NSObject {
         case .html:
             var newResult = result
             if !result.hasPrefix("<!DOCTYPE") {
-                newResult = "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\"><html><head>" +
-                            "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"></head><body>" + newResult
+                newResult = "<!DOCTYPE html><html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"></head><body>" + newResult
             }
             if !result.hasSuffix("</html>") {
                 newResult = newResult + "</body></html>"
