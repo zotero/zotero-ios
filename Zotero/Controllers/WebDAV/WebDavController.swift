@@ -13,30 +13,27 @@ import RxSwift
 import SwiftUI
 
 final class WebDavController {
-    private static let url = URL(string: "http://michalrentka:utorok@192.168.0.104:8080/zotero/")!
-
     enum Error: Swift.Error {
-        case expired
-        case unknownResponse(code: Int, url: String)
-        case noScheme
-        case schemeInvalid
-        case noUrl
-        case noUsername
-        case noPassword
-        case invalidUrl
-        case notDav
-        case parentDirNotFound
-        case zoteroDirNotFound
-        case nonExistentFileNotMissing
+        enum Verification: Swift.Error {
+            case noUrl
+            case noUsername
+            case noPassword
+            case invalidUrl
+            case notDav
+            case parentDirNotFound
+            case zoteroDirNotFound
+            case nonExistentFileNotMissing
+            case fileMissingAfterUpload
+        }
     }
 
-    private let urlSession: URLSession
+    private unowned let apiClient: ApiClient
     private let sessionStorage: WebDavSessionStorage
 
     private var verified: Bool
 
-    init(sessionStorage: WebDavSessionStorage) {
-        self.urlSession = URLSession(configuration: .default)
+    init(apiClient: ApiClient, sessionStorage: WebDavSessionStorage) {
+        self.apiClient = apiClient
         self.sessionStorage = sessionStorage
         self.verified = false
     }
@@ -53,114 +50,115 @@ final class WebDavController {
     }
 
     private func checkIsDav(url: URL) -> Single<URL> {
-        var request = URLRequest(url: url)
-        request.httpMethod = "OPTIONS"
-        return self.urlSession.rx.response(request: request)
-                   .validate(successCodes: [200, 404])
-                   .flatMap({ response, _ -> Observable<()> in
-                       guard response.allHeaderFields["DAV"] != nil else {
-                           return Observable.error(Error.notDav)
-                       }
-                       return Observable.just(())
-                   })
-                   .asSingle()
-                   .flatMap({ _ in Single.just(url) })
+        let request = WebDavRequest(url: url, httpMethod: .options, acceptableStatusCodes: [200, 404])
+        return self.apiClient.send(request: request)
+                             .flatMap({ _, response -> Single<URL> in
+                                 guard response.allHeaderFields["DAV"] != nil else {
+                                     return Single.error(Error.Verification.notDav)
+                                 }
+                                 return Single.just(url)
+                             })
     }
 
     private func checkZoteroDirectory(url: URL) -> Single<URL> {
         return self.propFind(url: url)
-                   .flatMap({ response, _ -> Observable<()> in
+                   .flatMap({ response -> Single<URL> in
                        if response.statusCode == 207 {
                            return self.checkWhetherReturns404ForMissingFile(url: url)
                                       .flatMap({ self.checkWritability(url: url) })
+                                      .flatMap({ Single.just(url) })
                        }
 
                        if response.statusCode == 404 {
                            // Zotero directory wasn't found, see if parent directory exists
-                           return self.propFind(url: url.deletingLastPathComponent())
-                                      .flatMap({ response, _ -> Observable<()> in
-                                          if response.statusCode == 207 {
-                                              return Observable.error(Error.zoteroDirNotFound)
-                                          } else {
-                                              return Observable.error(Error.parentDirNotFound)
-                                          }
-                                      })
+                           return self.checkWhetherParentAvailable(url: url)
                        }
 
-                       return Observable.just(())
+                       return Single.just(url)
                    })
-                   .asSingle()
-                   .flatMap({ _ in Single.just(url) })
     }
 
-    private func checkWritability(url: URL) -> Observable<()> {
-        return Observable.just(())
+    private func checkWritability(url: URL) -> Single<()> {
+        let testUrl = url.appendingPathComponent("zotero-test-file.prop")
+        let request = WebDavRequest(url: testUrl, httpMethod: .put, parameters: " ".data(using: .utf8)?.asParameters(), parameterEncoding: .data, headers: nil, acceptableStatusCodes: [200, 201, 204])
+        return self.apiClient.send(request: request)
+                   .flatMap({ _ -> Single<()> in
+                       let request = WebDavRequest(url: testUrl, httpMethod: .get, acceptableStatusCodes: [200, 404])
+                       return self.apiClient.send(request: request)
+                                  .flatMap({ _, response in
+                                      if response.statusCode == 404 {
+                                          return Single.error(Error.Verification.fileMissingAfterUpload)
+                                      }
+                                      return Single.just(())
+                                  })
+                   })
+                   .flatMap({ _ -> Single<()> in
+                       let request = WebDavRequest(url: testUrl, httpMethod: .delete, acceptableStatusCodes: [200, 204])
+                       return self.apiClient.send(request: request).flatMap({ _ in Single.just(()) })
+                   })
     }
 
-    private func checkWhetherReturns404ForMissingFile(url: URL) -> Observable<()> {
-        var request = URLRequest(url: url.appendingPathComponent("nonexistent.prop"))
-        request.httpMethod = "GET"
-        return self.urlSession.rx.response(request: request)
-                   .validate(successCodeCheck: { return $0 == 404 || (200..<300).contains($0) })
-                   .flatMap({ response, _ -> Observable<()> in
-                       if response.statusCode == 404 {
-                           return Observable.just(())
+    private func checkWhetherParentAvailable(url: URL) -> Single<URL> {
+        return self.propFind(url: url.deletingLastPathComponent())
+                   .flatMap({ response -> Single<URL> in
+                       if response.statusCode == 207 {
+                           return Single.error(Error.Verification.zoteroDirNotFound)
                        } else {
-                           return Observable.error(Error.nonExistentFileNotMissing)
+                           return Single.error(Error.Verification.parentDirNotFound)
                        }
                    })
     }
 
-    private func propFind(url: URL) -> Observable<(response: HTTPURLResponse, data: Data)> {
-        // IIS 5.1 requires at least one property in PROPFIND
-        let xml = "<propfind xmlns='DAV:'><prop><getcontentlength/></prop></propfind>"
-        var request = URLRequest(url: url)
-        request.httpMethod = "PROPFIND"
-        request.setValue("0", forHTTPHeaderField: "Depth")
-        request.setValue("text/xml; charset=utf-8", forHTTPHeaderField: "Content-Type")
-        request.httpBody = xml.data(using: .utf8)
+    private func checkWhetherReturns404ForMissingFile(url: URL) -> Single<()> {
+        let request = WebDavRequest(url: url.appendingPathComponent("nonexistent.prop"), httpMethod: .get, acceptableStatusCodes: Set(200..<300).union([404]))
+        return self.apiClient.send(request: request)
+                             .flatMap({ _, response -> Single<()> in
+                                 if response.statusCode == 404 {
+                                     return Single.just(())
+                                 } else {
+                                     return Single.error(Error.Verification.nonExistentFileNotMissing)
+                                 }
+                             })
+    }
 
-        return self.urlSession.rx.response(request: request)
-                   .validate(successCodes: [207, 404])
+    private func propFind(url: URL) -> Single<HTTPURLResponse> {
+        // IIS 5.1 requires at least one property in PROPFIND
+        let xmlData = "<propfind xmlns='DAV:'><prop><getcontentlength/></prop></propfind>".data(using: .utf8)
+        let request = WebDavRequest(url: url, httpMethod: .propfind, parameters: xmlData?.asParameters(), parameterEncoding: .data,
+                                    headers: ["Content-Type": "text/xml; charset=utf-8", "Depth": "0"], acceptableStatusCodes: [207, 404])
+        return self.apiClient.send(request: request).flatMap({ Single.just($1) })
     }
 
     private func createUrl() -> Single<URL> {
-        return Single.create { [weak self] subscriber in
-            guard let `self` = self else {
-                subscriber(.failure(Error.expired))
+        return Single.create { [weak sessionStorage] subscriber in
+            guard let sessionStorage = sessionStorage else {
+                DDLogError("WebDavController: session storage not found")
+                subscriber(.failure(Error.Verification.noUsername))
                 return Disposables.create()
             }
-
-            guard let scheme = self.sessionStorage.scheme else {
-                DDLogError("WebDavController: scheme not found")
-                subscriber(.failure(Error.noScheme))
-                return Disposables.create()
-            }
-            guard scheme == "http" || scheme == "https" else {
-                DDLogError("WebDavController: scheme invalid (\(scheme))")
-                subscriber(.failure(Error.schemeInvalid))
-                return Disposables.create()
-            }
-            guard let username = self.sessionStorage.username, !username.isEmpty else {
+            let username = sessionStorage.username
+            guard !username.isEmpty else {
                 DDLogError("WebDavController: username not found")
-                subscriber(.failure(Error.noUsername))
+                subscriber(.failure(Error.Verification.noUsername))
                 return Disposables.create()
             }
-            guard let password = self.sessionStorage.password, !password.isEmpty else {
+            let password = sessionStorage.password
+            guard !password.isEmpty else {
                 DDLogError("WebDavController: username not found")
-                subscriber(.failure(Error.noPassword))
+                subscriber(.failure(Error.Verification.noPassword))
                 return Disposables.create()
             }
-            guard let url = self.sessionStorage.url, !url.isEmpty else {
+            let url = sessionStorage.url
+            guard !url.isEmpty else {
                 DDLogError("WebDavController: url not found")
-                subscriber(.failure(Error.noUrl))
+                subscriber(.failure(Error.Verification.noUrl))
                 return Disposables.create()
             }
 
             let urlComponents = url.components(separatedBy: "/")
             guard !urlComponents.isEmpty else {
                 DDLogError("WebDavController: url components empty - \(url)")
-                subscriber(.failure(Error.invalidUrl))
+                subscriber(.failure(Error.Verification.invalidUrl))
                 return Disposables.create()
             }
 
@@ -176,7 +174,7 @@ final class WebDavController {
             }
 
             var components = URLComponents()
-            components.scheme = scheme
+            components.scheme = sessionStorage.scheme.rawValue
             components.user = username
             components.password = password
             components.host = host
@@ -186,32 +184,10 @@ final class WebDavController {
             if let url = components.url {
                 subscriber(.success(url))
             } else {
-                subscriber(.failure(Error.invalidUrl))
+                subscriber(.failure(Error.Verification.invalidUrl))
             }
 
             return Disposables.create()
-        }
-    }
-}
-
-extension ObservableType where Element == (response: HTTPURLResponse, data: Data) {
-    fileprivate func validate(successCodes: Set<Int>) -> Observable<Element> {
-        return self.flatMap { response, data -> Observable<Element> in
-            if successCodes.contains(response.statusCode) {
-                return Observable.just((response, data))
-            } else {
-                return Observable.error(WebDavController.Error.unknownResponse(code: response.statusCode, url: response.url?.absoluteString ?? ""))
-            }
-        }
-    }
-
-    fileprivate func validate(successCodeCheck: @escaping (Int) -> Bool) -> Observable<Element> {
-        return self.flatMap { response, data -> Observable<Element> in
-            if successCodeCheck(response.statusCode) {
-                return Observable.just((response, data))
-            } else {
-                return Observable.error(WebDavController.Error.unknownResponse(code: response.statusCode, url: response.url?.absoluteString ?? ""))
-            }
         }
     }
 }

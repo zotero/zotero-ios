@@ -38,10 +38,7 @@ struct ArrayEncoding: ParameterEncoding {
     public func encode(_ urlRequest: URLRequestConvertible, with parameters: Parameters?) throws -> URLRequest {
         var urlRequest = try urlRequest.asURLRequest()
 
-        guard let parameters = parameters,
-              let array = parameters[ArrayEncoding.arrayParametersKey] else {
-            return urlRequest
-        }
+        guard let array = parameters?[ArrayEncoding.arrayParametersKey] else { return urlRequest }
 
         do {
             let data = try JSONSerialization.data(withJSONObject: array, options: self.options)

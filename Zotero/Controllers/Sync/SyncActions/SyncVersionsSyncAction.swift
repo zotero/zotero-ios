@@ -56,19 +56,19 @@ struct SyncVersionsSyncAction: SyncAction {
 
         return self.loadRemoteVersions(for: object, in: libraryId, userId: userId, since: sinceVersion, syncType: syncType)
                    .observe(on: self.scheduler)
-                   .flatMap { (response: [String: Int], headers) -> Single<(Int, [String])> in
-                       let newVersion = headers.lastModifiedVersion
+                   .flatMap { (decoded: [String: Int], response) -> Single<(Int, [String])> in
+                       let newVersion = response.allHeaderFields.lastModifiedVersion
 
                        if let current = currentVersion, newVersion != current {
                            return Single.error(SyncError.NonFatal.versionMismatch(libraryId))
                        }
 
-                       return self.loadChangedObjects(for: object, from: response, in: libraryId, syncType: syncType, newVersion: newVersion, delayIntervals: self.syncDelayIntervals)
+                       return self.loadChangedObjects(for: object, from: decoded, in: libraryId, syncType: syncType, newVersion: newVersion, delayIntervals: self.syncDelayIntervals)
                    }
     }
 
     private func loadRemoteVersions(for object: SyncObject, in libraryId: LibraryIdentifier, userId: Int, since sinceVersion: Int?, syncType: SyncController.SyncType)
-                                                                                                                                                           -> Single<([String: Int], ResponseHeaders)> {
+                                                                                                                                                           -> Single<([String: Int], HTTPURLResponse)> {
         let request = VersionsRequest(libraryId: libraryId, userId: userId, objectType: object, version: sinceVersion)
         return self.apiClient.send(request: request, queue: self.queue)
     }

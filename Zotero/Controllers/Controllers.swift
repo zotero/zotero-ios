@@ -65,7 +65,7 @@ final class Controllers {
         let bundledDataStorage = RealmDbStorage(config: bundledDataConfiguration)
         let translatorsAndStylesController = TranslatorsAndStylesController(apiClient: apiClient, bundledDataStorage: bundledDataStorage, fileStorage: fileStorage)
         let previewSize = CGSize(width: PDFReaderLayout.sidebarWidth, height: PDFReaderLayout.sidebarWidth)
-        let webDavController = WebDavController(sessionStorage: SecureWebDavSessionStorage(secureStorage: secureStorage))
+        let webDavController = WebDavController(apiClient: apiClient, sessionStorage: SecureWebDavSessionStorage(secureStorage: secureStorage))
 
         self.bundledDataStorage = bundledDataStorage
         self.sessionController = sessionController
@@ -244,14 +244,6 @@ final class UserControllers {
 
         let coordinator = try dbStorage.createCoordinator()
         self.isFirstLaunch = try coordinator.perform(request: InitializeCustomLibrariesDbRequest())
-
-        controllers.webDavController.checkServer()
-                    .subscribe(onSuccess: { _ in
-                        DDLogInfo("WebDavController: check server passed")
-                    }, onFailure: { error in
-                        DDLogError("WebDavController: check server error - \(error)")
-                    })
-                    .disposed(by: self.disposeBag)
     }
 
     /// Connects to websocket to monitor changes and performs initial sync.

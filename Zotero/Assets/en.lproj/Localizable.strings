@@ -225,7 +225,7 @@
 "pdf.idle_timer_disable" = "Keep screen on";
 
 "settings.title" = "Settings";
-"settings.account" = "Account";
+"settings.account" = "Sync";
 "settings.logout" = "Sign Out";
 "settings.logout_warning" = "Any local data that was not synced will be deleted. Do you really want to sign out?";
 "settings.general.title" = "General";

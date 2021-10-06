@@ -25,16 +25,16 @@ struct SettingsListView: View {
             }
 
             Section {
-                NavigationLink(destination: self.profileView) {
-                    Text(L10n.Settings.account)
-                }
-            }
-
-            Section {
                 Button(action: {
                     self.coordinatorDelegate?.showGeneralSettings()
                 }, label: {
                     SettingsListButtonRow(text: L10n.Settings.General.title, detailText: nil, enabled: true)
+                })
+
+                Button(action: {
+                    self.coordinatorDelegate?.showSync()
+                }, label: {
+                    SettingsListButtonRow(text: L10n.Settings.account, detailText: nil, enabled: true)
                 })
 
                 Button(action: {
@@ -94,12 +94,6 @@ struct SettingsListView: View {
         return UIColor(dynamicProvider: { traitCollection -> UIColor in
             return traitCollection.userInterfaceStyle == .dark ? .white : .black
         })
-    }
-
-    var profileView: some View {
-        var view = ProfileView()
-        view.coordinatorDelegate = self.coordinatorDelegate
-        return view.environmentObject(self.viewModel)
     }
 }
 

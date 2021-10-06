@@ -26,11 +26,11 @@ struct SyncSettingsSyncAction: SyncAction {
     var result: Single<(Bool, Int)> {
         return self.apiClient.send(request: SettingsRequest(libraryId: self.libraryId, userId: self.userId, version: self.sinceVersion), queue: self.queue)
                             .observe(on: self.scheduler)
-                            .flatMap({ data, headers -> Single<(SettingsResponse, ResponseHeaders)> in
+                            .flatMap({ data, response -> Single<(SettingsResponse, ResponseHeaders)> in
                                 do {
                                     let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
-                                    let response = try SettingsResponse(response: jsonObject)
-                                    return Single.just((response, headers))
+                                    let decoded = try SettingsResponse(response: jsonObject)
+                                    return Single.just((decoded, response.allHeaderFields))
                                 } catch let error {
                                     return Single.error(error)
                                 }

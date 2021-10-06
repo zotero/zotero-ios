@@ -87,12 +87,12 @@ extension ObservableType where Element == (HTTPURLResponse, Data) {
 }
 
 extension ObservableType where Element == DataRequest {
-    func responseDataWithResponseError(queue: DispatchQueue) -> Observable<(HTTPURLResponse, Data)> {
-        return self.flatMap { $0.rx.responseDataWithResponseError(queue: queue) }
+    func responseDataWithResponseError(queue: DispatchQueue, acceptableStatusCodes: Set<Int>) -> Observable<(HTTPURLResponse, Data)> {
+        return self.flatMap { $0.rx.responseDataWithResponseError(queue: queue, acceptableStatusCodes: acceptableStatusCodes) }
     }
 
-    func validate() -> Observable<Element> {
-        return self.map { $0.validate() }
+    func validate(acceptableStatusCodes: Set<Int>) -> Observable<Element> {
+        return self.map { $0.validate(acceptableStatusCodes: acceptableStatusCodes) }
     }
 
     func log(request: ApiRequest) -> Observable<(Element, String)> {
@@ -104,10 +104,10 @@ extension ObservableType where Element == DataRequest {
 }
 
 extension DataRequest {
-    func validate() -> Self {
+    func validate(acceptableStatusCodes: Set<Int>) -> Self {
        return self.validate(contentType: self.acceptableContentTypes)
                   .validate { request, response, _ -> Request.ValidationResult in
-                      if (response.statusCode >= 200 && response.statusCode < 300) || response.statusCode == 304 {
+                      if acceptableStatusCodes.contains(response.statusCode) {
                           return .success(())
                       }
                       return .failure(AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: response.statusCode)))
@@ -125,12 +125,11 @@ extension DataRequest {
 }
 
 extension Reactive where Base: DataRequest {
-    func responseDataWithResponseError(queue: DispatchQueue) -> Observable<(HTTPURLResponse, Data)> {
-        return self.responseResultWithResponseError(queue: queue, responseSerializer: DataResponseSerializer(emptyResponseCodes: [200, 204, 304]))
+    func responseDataWithResponseError(queue: DispatchQueue, acceptableStatusCodes: Set<Int>) -> Observable<(HTTPURLResponse, Data)> {
+        return self.responseResultWithResponseError(queue: queue, responseSerializer: DataResponseSerializer(emptyResponseCodes: acceptableStatusCodes))
     }
 
-    private func responseResultWithResponseError<T: DataResponseSerializerProtocol>(queue: DispatchQueue, responseSerializer: T)
-                                                                  -> Observable<(HTTPURLResponse, T.SerializedObject)> {
+    private func responseResultWithResponseError<T: DataResponseSerializerProtocol>(queue: DispatchQueue, responseSerializer: T) -> Observable<(HTTPURLResponse, T.SerializedObject)> {
         return Observable.create { observer in
             let dataRequest = self.base.response(queue: queue, responseSerializer: responseSerializer) { response in
                     switch response.result {

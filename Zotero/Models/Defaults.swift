@@ -24,12 +24,17 @@ final class Defaults {
 
     // MARK: - WebDav Session
 
-    @OptionalUserDefault(key: "webDavScheme")
-    var webDavScheme: String?
-    @OptionalUserDefault(key: "webDavUsername")
-    var webDavUsername: String?
-    @OptionalUserDefault(key: "webDavUrl")
-    var webDavUrl: String?
+    @UserDefault(key: "webDavEnabled", defaultValue: false)
+    var webDavEnabled: Bool
+
+    @CodableUserDefault(key: "webDavScheme", defaultValue: .http, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
+    var webDavScheme: WebDavScheme
+
+    @UserDefault(key: "webDavUsername", defaultValue: "")
+    var webDavUsername: String
+
+    @UserDefault(key: "webDavUrl", defaultValue: "")
+    var webDavUrl: String
 
     // MARK: - Settings
 

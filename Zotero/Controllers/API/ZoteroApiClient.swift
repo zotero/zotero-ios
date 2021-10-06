@@ -43,28 +43,28 @@ final class ZoteroApiClient: ApiClient {
         self.token = authToken
     }
 
-    func send<Request: ApiResponseRequest>(request: Request) -> Single<(Request.Response, ResponseHeaders)> {
+    func send<Request: ApiResponseRequest>(request: Request) -> Single<(Request.Response, HTTPURLResponse)> {
         self.send(request: request, queue: .main)
     }
 
-    func send<Request: ApiResponseRequest>(request: Request, queue: DispatchQueue) -> Single<(Request.Response, ResponseHeaders)> {
+    func send<Request: ApiResponseRequest>(request: Request, queue: DispatchQueue) -> Single<(Request.Response, HTTPURLResponse)> {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
         let startTime = CFAbsoluteTimeGetCurrent()
         return self.manager.rx.request(urlRequest: convertible)
-                              .validate()
+                              .validate(acceptableStatusCodes: request.acceptableStatusCodes)
                               .log(request: request)
-                              .flatMap({ dataRequest, logId -> Observable<(Request.Response, ResponseHeaders)> in
-                                  return dataRequest.rx.responseDataWithResponseError(queue: queue)
+                              .flatMap({ dataRequest, logId -> Observable<(Request.Response, HTTPURLResponse)> in
+                                  return dataRequest.rx.responseDataWithResponseError(queue: queue, acceptableStatusCodes: request.acceptableStatusCodes)
                                                        .log(identifier: logId, startTime: startTime, request: request)
                                                        .retryIfNeeded()
-                                                       .flatMap { response, data -> Observable<(Request.Response, ResponseHeaders)> in
+                                                       .flatMap { response, data -> Observable<(Request.Response, HTTPURLResponse)> in
                                                            do {
                                                                if response.statusCode == 304 {
                                                                    return Observable.error(ZoteroApiError.unchanged)
                                                                }
 
                                                                let decodedResponse = try JSONDecoder().decode(Request.Response.self, from: data)
-                                                               return Observable.just((decodedResponse, response.allHeaderFields))
+                                                               return Observable.just((decodedResponse, response))
                                                            } catch let error {
                                                                return Observable.error(error)
                                                            }
@@ -73,31 +73,31 @@ final class ZoteroApiClient: ApiClient {
                               .asSingle()
     }
 
-    func send(request: ApiRequest) -> Single<(Data, ResponseHeaders)> {
+    func send(request: ApiRequest) -> Single<(Data, HTTPURLResponse)> {
         self.send(request: request, queue: .main)
     }
 
-    func send(request: ApiRequest, queue: DispatchQueue) -> Single<(Data, ResponseHeaders)> {
+    func send(request: ApiRequest, queue: DispatchQueue) -> Single<(Data, HTTPURLResponse)> {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
         let startTime = CFAbsoluteTimeGetCurrent()
         return self.manager.rx.request(urlRequest: convertible)
-                              .validate()
+                              .validate(acceptableStatusCodes: request.acceptableStatusCodes)
                               .log(request: request)
-                              .flatMap({ dataRequest, logId -> Observable<(Data, ResponseHeaders)> in
-                                  return dataRequest.rx.responseDataWithResponseError(queue: queue)
+                              .flatMap({ dataRequest, logId -> Observable<(Data, HTTPURLResponse)> in
+                                  return dataRequest.rx.responseDataWithResponseError(queue: queue, acceptableStatusCodes: request.acceptableStatusCodes)
                                                        .log(identifier: logId, startTime: startTime, request: request)
                                                        .retryIfNeeded()
-                                                       .flatMap { (response, data) -> Observable<(Data, [AnyHashable : Any])> in
+                                                       .flatMap { (response, data) -> Observable<(Data, HTTPURLResponse)> in
                                                            if response.statusCode == 304 {
                                                                return Observable.error(ZoteroApiError.unchanged)
                                                            }
-                                                           return Observable.just((data, response.allHeaderFields))
+                                                           return Observable.just((data, response))
                                                        }
                               })
                               .asSingle()
     }
 
-    func operation(from request: ApiRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data, ResponseHeaders), Error>) -> Void) -> ApiOperation {
+    func operation(from request: ApiRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data, HTTPURLResponse), Error>) -> Void) -> ApiOperation {
         return ApiOperation(apiRequest: request, requestCreator: self, queue: queue, completion: completion)
     }
 
@@ -129,7 +129,7 @@ final class ZoteroApiClient: ApiClient {
 extension ZoteroApiClient: ApiRequestCreator {
     func dataRequest(for request: ApiRequest) -> DataRequest {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
-        return self.manager.request(convertible).validate()
+        return self.manager.request(convertible).validate(acceptableStatusCodes: request.acceptableStatusCodes)
     }
 }
 

@@ -75,12 +75,12 @@ final class SyncBatchProcessor {
         self.requestQueue.addOperations(operations, waitUntilFinished: false)
     }
 
-    private func process(result: Result<(Data, ResponseHeaders), Error>, batch: DownloadBatch) {
+    private func process(result: Result<(Data, HTTPURLResponse), Error>, batch: DownloadBatch) {
         guard !self.isFinished else { return }
 
         switch result {
         case .success(let response):
-            self.process(data: response.0, headers: response.1, batch: batch)
+            self.process(data: response.0, headers: response.1.allHeaderFields, batch: batch)
         case .failure(let error):
             self.cancel(with: error)
         }

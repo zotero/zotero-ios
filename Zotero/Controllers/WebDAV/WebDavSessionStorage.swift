@@ -9,10 +9,10 @@
 import Foundation
 
 protocol WebDavSessionStorage: AnyObject {
-    var username: String? { get set }
-    var url: String? { get set }
-    var scheme: String? { get set }
-    var password: String? { get set }
+    var username: String { get set }
+    var url: String { get set }
+    var scheme: WebDavScheme { get set }
+    var password: String { get set }
 }
 
 final class SecureWebDavSessionStorage: WebDavSessionStorage {
@@ -22,7 +22,7 @@ final class SecureWebDavSessionStorage: WebDavSessionStorage {
         self.secureStorage = secureStorage
     }
 
-    var username: String? {
+    var username: String {
         get {
             // TODO: - remove after test
             return "user"
@@ -34,10 +34,10 @@ final class SecureWebDavSessionStorage: WebDavSessionStorage {
         }
     }
 
-    var url: String? {
+    var url: String {
         get {
             // TODO: - remove after test
-            return "192.168.0.104:8080"
+            return "192.168.0.101:8080"
 //            return Defaults.shared.webDavUrl
         }
 
@@ -46,10 +46,10 @@ final class SecureWebDavSessionStorage: WebDavSessionStorage {
         }
     }
 
-    var scheme: String? {
+    var scheme: WebDavScheme {
         get {
             // TODO: - remove after test
-            return "http"
+            return .http
 //            return Defaults.shared.webDavScheme
         }
 
@@ -58,7 +58,7 @@ final class SecureWebDavSessionStorage: WebDavSessionStorage {
         }
     }
 
-    var password: String? {
+    var password: String {
         get {
             // TODO: - remove after test
             return "password"

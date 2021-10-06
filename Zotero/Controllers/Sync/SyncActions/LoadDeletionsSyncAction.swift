@@ -25,14 +25,14 @@ struct LoadDeletionsSyncAction: SyncAction {
     var result: Single<(collections: [String], items: [String], searches: [String], tags: [String], version: Int)> {
         return self.apiClient.send(request: DeletionsRequest(libraryId: self.libraryId, userId: self.userId, version: self.sinceVersion), queue: self.queue)
                              .observe(on: self.scheduler)
-                             .flatMap { (response: DeletionsResponse, headers) in
-                                 let newVersion = headers.lastModifiedVersion
+                             .flatMap { (decoded: DeletionsResponse, response) in
+                                 let newVersion = response.allHeaderFields.lastModifiedVersion
 
                                  if let version = self.currentVersion, version != newVersion {
                                      return Single.error(SyncError.NonFatal.versionMismatch(self.libraryId))
                                  }
 
-                                 return Single.just((response.collections, response.items, response.searches, response.tags, newVersion))
+                                 return Single.just((decoded.collections, decoded.items, decoded.searches, decoded.tags, newVersion))
                              }
     }
 }

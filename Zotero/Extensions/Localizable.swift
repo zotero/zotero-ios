@@ -762,7 +762,7 @@ internal enum L10n {
   }
 
   internal enum Settings {
-    /// Account
+    /// Sync
     internal static let account = L10n.tr("Localizable", "settings.account")
     /// Debug Output Logging
     internal static let debug = L10n.tr("Localizable", "settings.debug")

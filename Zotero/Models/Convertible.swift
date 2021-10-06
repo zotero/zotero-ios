@@ -19,12 +19,8 @@ struct Convertible {
     private let headers: [String: String]
 
     init(request: ApiRequest, baseUrl: URL, token: String?) {
-        switch request.endpoint {
-        case .zotero(let path):
-            self.url = baseUrl.appendingPathComponent(path)
-        case .other(let url):
-            self.url = url
-        }
+        let (url, token) = request.endpointData(withBase: baseUrl, authToken: token)
+        self.url = url
         self.token = token
         self.httpMethod = request.httpMethod
         self.encoding = request.encoding.alamoEncoding
@@ -61,6 +57,8 @@ extension ApiParameterEncoding {
             return URLEncoding()
         case .array:
             return ArrayEncoding()
+        case .data:
+            return RawDataEncoding()
         }
     }
 }

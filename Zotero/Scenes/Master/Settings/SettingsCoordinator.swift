@@ -13,6 +13,7 @@ import SafariServices
 import RxSwift
 
 protocol SettingsCoordinatorDelegate: AnyObject {
+    func showSync()
     func showPrivacyPolicy()
     func showSupport()
     func showAboutBeta()
@@ -24,7 +25,7 @@ protocol SettingsCoordinatorDelegate: AnyObject {
     func showSavingSettings()
     func showGeneralSettings()
     func dismiss()
-    func showLogoutAlert(viewModel: ViewModel<SettingsActionHandler>)
+    func showLogoutAlert(viewModel: ViewModel<SyncSettingsActionHandler>)
 }
 
 protocol CitationStyleSearchSettingsCoordinatorDelegate: AnyObject {
@@ -143,6 +144,23 @@ extension SettingsCoordinator: StorageSettingsSettingsCoordinatorDelegate {
 }
 
 extension SettingsCoordinator: SettingsCoordinatorDelegate {
+    func showSync() {
+        let handler = SyncSettingsActionHandler(sessionController: self.controllers.sessionController, secureStorage: self.controllers.secureStorage)
+        let state = SyncSettingsState(account: Defaults.shared.username,
+                                      fileSyncType: (Defaults.shared.webDavEnabled ? .webDav : .zotero),
+                                      scheme: Defaults.shared.webDavScheme,
+                                      url: Defaults.shared.webDavUrl,
+                                      username: Defaults.shared.webDavUsername,
+                                      password: self.controllers.secureStorage.webDavPassword ?? "")
+        let viewModel = ViewModel(initialState: state, handler: handler)
+        var view = ProfileView()
+        view.coordinatorDelegate = self
+
+        let controller = UIHostingController(rootView: view.environmentObject(viewModel))
+        controller.preferredContentSize = SettingsCoordinator.defaultSize
+        self.navigationController.pushViewController(controller, animated: true)
+    }
+
     func showAboutBeta() {
         self.showSafari(with: URL(string: "https://www.zotero.org/support/ios_beta?app=1")!)
     }
@@ -238,7 +256,7 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         self.pushDefaultSize(view: view)
     }
 
-    func showLogoutAlert(viewModel: ViewModel<SettingsActionHandler>) {
+    func showLogoutAlert(viewModel: ViewModel<SyncSettingsActionHandler>) {
         let controller = UIAlertController(title: L10n.warning, message: L10n.Settings.logoutWarning, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.yes, style: .default, handler: { [weak viewModel] _ in
             viewModel?.process(action: .logout)

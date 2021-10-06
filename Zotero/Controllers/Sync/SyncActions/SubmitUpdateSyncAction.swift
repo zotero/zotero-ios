@@ -41,8 +41,8 @@ struct SubmitUpdateSyncAction: SyncAction {
         let request = UpdatesRequest(libraryId: self.libraryId, userId: self.userId, objectType: self.object, params: self.parameters, version: self.sinceVersion)
         return self.apiClient.send(request: request, queue: self.queue)
                              .observe(on: self.scheduler)
-                             .flatMap({ _, headers -> Single<([(String, LibraryIdentifier)], Int)> in
-                                 let newVersion = headers.lastModifiedVersion
+                             .flatMap({ _, response -> Single<([(String, LibraryIdentifier)], Int)> in
+                                 let newVersion = response.allHeaderFields.lastModifiedVersion
                                  var settings: [(String, LibraryIdentifier)] = []
                                  for params in self.parameters {
                                      guard let key = params.keys.first,
@@ -71,10 +71,10 @@ struct SubmitUpdateSyncAction: SyncAction {
         let request = UpdatesRequest(libraryId: self.libraryId, userId: self.userId, objectType: self.object, params: self.parameters, version: self.sinceVersion)
         return self.apiClient.send(request: request, queue: self.queue)
                              .observe(on: self.scheduler)
-                             .flatMap({ response, headers -> Single<(UpdatesResponse, Int)> in
+                             .flatMap({ data, response -> Single<(UpdatesResponse, Int)> in
                                  do {
-                                     let newVersion = headers.lastModifiedVersion
-                                     let json = try JSONSerialization.jsonObject(with: response, options: .allowFragments)
+                                     let newVersion = response.allHeaderFields.lastModifiedVersion
+                                     let json = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
                                      return Single.just((try UpdatesResponse(json: json), newVersion))
                                  } catch let error {
                                      return Single.error(error)

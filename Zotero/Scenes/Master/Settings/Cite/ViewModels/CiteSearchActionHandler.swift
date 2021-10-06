@@ -40,7 +40,7 @@ struct CiteSearchActionHandler: ViewModelActionHandler {
 
         self.apiClient.send(request: StylesRequest())
             .observe(on: MainScheduler.instance)
-            .subscribe(with: viewModel, onSuccess: { (viewModel, response: (RemoteStylesResponse, ResponseHeaders)) in
+            .subscribe(with: viewModel, onSuccess: { (viewModel, response: (RemoteStylesResponse, HTTPURLResponse)) in
                            self.update(viewModel: viewModel) { state in
                                state.loading = false
                                state.styles = response.0.styles.filter({ !viewModel.state.installedIds.contains($0.id) })

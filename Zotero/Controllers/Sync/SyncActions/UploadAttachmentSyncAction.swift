@@ -101,7 +101,7 @@ struct UploadAttachmentSyncAction: SyncAction {
                                      return Single.just(.failure(error))
                                  }
                              })
-                             .flatMap({ result -> Single<Swift.Result<(Data, ResponseHeaders), SyncActionError>> in
+                             .flatMap({ result -> Single<Swift.Result<(Data, HTTPURLResponse), SyncActionError>> in
                                  switch result {
                                  case .success(let uploadKey):
                                      let request = RegisterUploadRequest(libraryId: self.libraryId,
@@ -132,8 +132,8 @@ struct UploadAttachmentSyncAction: SyncAction {
                                  }
 
                                  switch result {
-                                 case .success((_, let headers)):
-                                     return markDbAction(headers.lastModifiedVersion)
+                                 case .success((_, let response)):
+                                     return markDbAction(response.allHeaderFields.lastModifiedVersion)
                                  case .failure(let error):
                                     switch error {
                                     case .attachmentAlreadyUploaded:

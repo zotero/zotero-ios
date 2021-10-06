@@ -29,9 +29,9 @@ struct SubmitDeletionSyncAction: SyncAction {
                                              objectType: self.object, keys: self.keys, version: self.version)
         return self.apiClient.send(request: request, queue: self.queue)
                              .observe(on: self.scheduler)
-                             .flatMap({ _, headers -> Single<Int> in
+                             .flatMap({ _, response -> Single<Int> in
                                 do {
-                                    let newVersion = headers.lastModifiedVersion
+                                    let newVersion = response.allHeaderFields.lastModifiedVersion
                                     let updateVersion = UpdateVersionsDbRequest(version: newVersion, libraryId: self.libraryId, type: .object(self.object))
                                     var requests: [DbRequest] = [updateVersion]
 
