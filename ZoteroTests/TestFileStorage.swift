@@ -45,8 +45,14 @@ final class TestFileStorage: FileStorage {
 
     func copy(from url: File, to file: File) throws {}
 
+    func copy(from path: String, to toFile: File) throws {}
+
     func size(of file: File) -> UInt64 {
         return UInt64(self.data?.count ?? 0)
+    }
+
+    func size(of path: String) -> UInt64 {
+        return 0
     }
 
     func createDictionaries(for file: File) throws {}

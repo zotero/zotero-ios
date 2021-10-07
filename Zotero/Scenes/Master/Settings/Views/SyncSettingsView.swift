@@ -48,7 +48,6 @@ struct SyncSettingsView_Previews: PreviewProvider {
                                   lastTranslatorUpdate: controllers.translatorsAndStylesController.lastUpdate,
                                   websocketConnectionState: .disconnected)
         let handler = SettingsActionHandler(dbStorage: controllers.userControllers!.dbStorage,
-                                            bundledDataStorage: controllers.bundledDataStorage,
                                             fileStorage: controllers.fileStorage,
                                             sessionController: controllers.sessionController,
                                             webSocketController: controllers.userControllers!.webSocketController,

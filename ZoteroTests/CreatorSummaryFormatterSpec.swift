@@ -27,7 +27,11 @@ final class CreatorSummaryFormatterSpec: QuickSpec {
         }
 
         it("creates summary for no creators") {
-            let results = CreatorSummaryFormatterSpec.realm.objects(RCreator.self)
+            try? CreatorSummaryFormatterSpec.realm.write {
+                CreatorSummaryFormatterSpec.realm.add(self.createCreators(type: "author", namePresentation: .separate, count: 0))
+            }
+
+            let results = CreatorSummaryFormatterSpec.realm.objects(RItem.self).first!.creators.filter("primary = true")
             let summary = CreatorSummaryFormatter.summary(for: results)
             expect(summary).to(beNil())
         }
@@ -37,7 +41,7 @@ final class CreatorSummaryFormatterSpec: QuickSpec {
                 CreatorSummaryFormatterSpec.realm.add(self.createCreators(type: "author", namePresentation: .separate, count: 1))
             }
 
-            let results = CreatorSummaryFormatterSpec.realm.objects(RCreator.self)
+            let results = CreatorSummaryFormatterSpec.realm.objects(RItem.self).first!.creators.filter("primary = true")
             let summary = CreatorSummaryFormatter.summary(for: results)
             expect(summary).to(equal("Surname0"))
 
@@ -46,7 +50,7 @@ final class CreatorSummaryFormatterSpec: QuickSpec {
                 CreatorSummaryFormatterSpec.realm.add(self.createCreators(type: "author", namePresentation: .full, count: 1))
             }
 
-            let results2 = CreatorSummaryFormatterSpec.realm.objects(RCreator.self)
+            let results2 = CreatorSummaryFormatterSpec.realm.objects(RItem.self).first!.creators.filter("primary = true")
             let summary2 = CreatorSummaryFormatter.summary(for: results2)
             expect(summary2).to(equal("Name0 Surname0"))
         }
@@ -56,7 +60,7 @@ final class CreatorSummaryFormatterSpec: QuickSpec {
                 CreatorSummaryFormatterSpec.realm.add(self.createCreators(type: "author", namePresentation: .separate, count: 2))
             }
 
-            let results = CreatorSummaryFormatterSpec.realm.objects(RCreator.self)
+            let results = CreatorSummaryFormatterSpec.realm.objects(RItem.self).first!.creators.filter("primary = true")
             let summary = CreatorSummaryFormatter.summary(for: results)
             expect(summary).to(equal("Surname1 and Surname0"))
         }
@@ -66,7 +70,7 @@ final class CreatorSummaryFormatterSpec: QuickSpec {
                 CreatorSummaryFormatterSpec.realm.add(self.createCreators(type: "author", namePresentation: .separate, count: 3))
             }
 
-            let results = CreatorSummaryFormatterSpec.realm.objects(RCreator.self)
+            let results = CreatorSummaryFormatterSpec.realm.objects(RItem.self).first!.creators.filter("primary = true")
             let summary = CreatorSummaryFormatter.summary(for: results)
             expect(summary).to(equal("Surname2 et al."))
 
@@ -75,16 +79,18 @@ final class CreatorSummaryFormatterSpec: QuickSpec {
                 CreatorSummaryFormatterSpec.realm.add(self.createCreators(type: "author", namePresentation: .separate, count: 15))
             }
 
-            let results2 = CreatorSummaryFormatterSpec.realm.objects(RCreator.self)
+            let results2 = CreatorSummaryFormatterSpec.realm.objects(RItem.self).first!.creators.filter("primary = true")
             let summary2 = CreatorSummaryFormatter.summary(for: results2)
             expect(summary2).to(equal("Surname14 et al."))
         }
     }
 
-    private func createCreators(type: String, namePresentation: ItemDetailState.Creator.NamePresentation, count: Int) -> [RCreator] {
-        return (0..<count).map { index in
+    private func createCreators(type: String, namePresentation: ItemDetailState.Creator.NamePresentation, count: Int) -> RItem {
+        let list: List<RCreator> = List()
+        for index in (0..<count) {
             let creator = RCreator()
             creator.rawType = type
+            creator.primary = true
             switch namePresentation {
             case .full:
                 creator.name = "Name\(index) Surname\(index)"
@@ -93,7 +99,12 @@ final class CreatorSummaryFormatterSpec: QuickSpec {
                 creator.lastName = "Surname\(index)"
             }
             creator.orderId = count - index
-            return creator
+            list.append(creator)
         }
+
+        let item = RItem()
+        item.key = "AAAAAA"
+        item.creators = list
+        return item
     }
 }

@@ -333,7 +333,7 @@ final class SyncActionsSpec: QuickSpec {
                     let item = RItem()
                     item.key = key
                     item.rawType = "attachment"
-                    item.groupKey.value = library.identifier
+                    item.groupKey = library.identifier
                     item.changedFields = .all
                     item.attachmentNeedsSync = true
                     realm.add(item)
@@ -389,7 +389,7 @@ final class SyncActionsSpec: QuickSpec {
                     let item = RItem()
                     item.key = key
                     item.rawType = "attachment"
-                    item.groupKey.value = library.identifier
+                    item.groupKey = library.identifier
                     item.rawChangedFields = 0
                     item.attachmentNeedsSync = true
                     realm.add(item)
@@ -446,22 +446,21 @@ final class SyncActionsSpec: QuickSpec {
                     let item = RItem()
                     item.key = key
                     item.rawType = "attachment"
-                    item.groupKey.value = library.identifier
+                    item.groupKey = library.identifier
                     item.rawChangedFields = 0
                     item.attachmentNeedsSync = true
-                    realm.add(item)
 
                     let contentField = RItemField()
                     contentField.key = FieldKeys.Item.Attachment.contentType
                     contentField.value = "text/plain"
-                    contentField.item = item
-                    realm.add(contentField)
+                    item.fields.append(contentField)
 
                     let filenameField = RItemField()
                     filenameField.key = FieldKeys.Item.Attachment.filename
                     filenameField.value = filename
-                    filenameField.item = item
-                    realm.add(filenameField)
+                    item.fields.append(filenameField)
+
+                    realm.add(item)
                 }
 
                 createStub(for: AuthorizeUploadRequest(libraryId: libraryId, userId: SyncActionsSpec.userId, key: key,
@@ -524,22 +523,21 @@ final class SyncActionsSpec: QuickSpec {
                     let item = RItem()
                     item.key = key
                     item.rawType = "attachment"
-                    item.groupKey.value = library.identifier
+                    item.groupKey = library.identifier
                     item.rawChangedFields = 0
                     item.attachmentNeedsSync = true
-                    realm.add(item)
 
                     let contentField = RItemField()
                     contentField.key = FieldKeys.Item.Attachment.contentType
                     contentField.value = "text/plain"
-                    contentField.item = item
-                    realm.add(contentField)
+                    item.fields.append(contentField)
 
                     let filenameField = RItemField()
                     filenameField.key = FieldKeys.Item.Attachment.filename
                     filenameField.value = filename
-                    filenameField.item = item
-                    realm.add(filenameField)
+                    item.fields.append(filenameField)
+
+                    realm.add(item)
                 }
 
                 createStub(for: AuthorizeUploadRequest(libraryId: libraryId, userId: SyncActionsSpec.userId, key: key, filename: filename, filesize: UInt64(data.count),
@@ -601,7 +599,7 @@ final class SyncActionsSpec: QuickSpec {
 extension SyncActionError: Equatable {
     public static func == (lhs: SyncActionError, rhs: SyncActionError) -> Bool {
         switch (lhs, rhs) {
-        case (.attachmentItemNotSubmitted, .attachmentItemNotSubmitted), (.attachmentAlreadyUploaded, .attachmentAlreadyUploaded), (.submitUpdateUnknownFailures, .submitUpdateUnknownFailures):
+        case (.attachmentItemNotSubmitted, .attachmentItemNotSubmitted), (.attachmentAlreadyUploaded, .attachmentAlreadyUploaded), (.submitUpdateFailures, .submitUpdateFailures):
             return true
         case (.attachmentMissing(let lKey, let lTitle), .attachmentMissing(let rKey, let rTitle)):
             return lKey == rKey && lTitle == rTitle

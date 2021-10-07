@@ -28,10 +28,10 @@ final class SettingsActionHandlerSpec: QuickSpec {
     private static let syncScheduler = SyncScheduler(controller: SyncController(userId: 0, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, schemaController: SchemaController(),
                                                                                 dateParser: DateParser(), backgroundUploader: backgroundUploader, syncDelayIntervals: [], conflictDelays: []))
     private static let debugLogging = DebugLogging(apiClient: apiClient, fileStorage: fileStorage)
-    private static let translatorsController = TranslatorsController(apiClient: apiClient, indexStorage: dbStorage, fileStorage: fileStorage)
+    private static let translatorsController = TranslatorsAndStylesController(apiClient: apiClient, bundledDataStorage: dbStorage, fileStorage: fileStorage)
     private static let fileCleanupController = AttachmentFileCleanupController(fileStorage: fileStorage, dbStorage: dbStorage)
     private static let handler = SettingsActionHandler(dbStorage: dbStorage, fileStorage: fileStorage, sessionController: sessionController, webSocketController: websocketController,
-                                                       syncScheduler: syncScheduler, debugLogging: debugLogging, translatorsController: translatorsController,
+                                                       syncScheduler: syncScheduler, debugLogging: debugLogging, translatorsAndStylesController: translatorsController,
                                                        fileCleanupController: fileCleanupController)
     private static var viewModel: ViewModel<SettingsActionHandler>?
     private static var disposeBag = DisposeBag()

@@ -21,22 +21,26 @@ final class TranslatorsControllerSpec: QuickSpec {
     private let baseUrl = URL(string: ApiConstants.baseUrlString)!
     private let version = TranslatorsControllerSpec.createVersion()
     private let fileStorage: FileStorageController = FileStorageController()
+    private let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: URLSessionConfiguration.default)
     private var dbConfig: Realm.Configuration!
+    private var dbStorage: DbStorage!
     private let bundledTimestamp = 1585834479
     private let translatorId = "bbf1617b-d836-4665-9aae-45f223264460"
+    private let translatorUrl = "https://acontracorriente.chass.ncsu.edu/index.php/acontracorriente/article/view/1956"
     private let bundledTranslatorTimestamp = 1471546264 // 2016-08-18 20:51:04
     private let remoteTranslatorTimestamp = 1586181600 // 2020-04-06 16:00:00
     private let remoteTimestamp = 1586182261 // 2020-04-06 16:00:00
     // We need to retain realm with memory identifier so that data are not deleted
     private var realm: Realm!
-    private var controller: TranslatorsController!
+    private var controller: TranslatorsAndStylesController!
     private var disposeBag: DisposeBag!
 
     override func spec() {
         beforeEach {
             self.dbConfig = Realm.Configuration(inMemoryIdentifier: UUID().uuidString)
+            self.dbStorage = RealmDbStorage(config: self.dbConfig)
             self.realm = try! Realm(configuration: self.dbConfig)
-            self.controller = TranslatorsControllerSpec.createController(dbConfig: self.dbConfig)
+            self.controller = TranslatorsControllerSpec.createController(apiClient: self.apiClient, bundledDataStorage: self.dbStorage, fileStorage: self.fileStorage)
             self.disposeBag = DisposeBag()
             try? self.fileStorage.remove(Files.translators)
             HTTPStubs.removeAllStubs()
@@ -45,10 +49,8 @@ final class TranslatorsControllerSpec: QuickSpec {
         it("Loads bundled data") {
             // Stub to "disable" remote request
             let response = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xml><currentTime>\(self.bundledTimestamp)</currentTime><pdftools version=\"3.04\"/></xml>"
-            let request = TranslatorsRequest(timestamp: self.bundledTimestamp,
-                                             version: self.version,
-                                             type: TranslatorsController.UpdateType.initial.rawValue)
-            createStub(for: request, baseUrl: self.baseUrl, xmlResponse: response)
+            let request = RepoRequest(timestamp: self.bundledTimestamp, version: self.version, type: TranslatorsAndStylesController.UpdateType.initial.rawValue, styles: nil)
+            createStub(for: request, ignorePostParams: true, baseUrl: self.baseUrl, xmlResponse: response)
 
             // Setup as first-time update
             self.controller.setupTest(timestamp: 0, hash: "", deleted: 0)
@@ -56,7 +58,7 @@ final class TranslatorsControllerSpec: QuickSpec {
             // Perform update and wait for results
             waitUntil(timeout: .seconds(10)) { doneAction in
                 self.controller.isLoading.skip(1).filter({ !$0 }).first()
-                    .observeOn(MainScheduler.instance)
+                    .observe(on:MainScheduler.instance)
                     .subscribe(onSuccess: { _ in
                         expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(Double(self.bundledTimestamp)))
 
@@ -68,17 +70,17 @@ final class TranslatorsControllerSpec: QuickSpec {
                         expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: Double(self.bundledTranslatorTimestamp))))
                         expect(self.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
 
-                        self.controller.translators()
-                            .observeOn(MainScheduler.instance)
+                        self.controller.translators(matching: self.translatorUrl)
+                            .observe(on:MainScheduler.instance)
                             .subscribe(onSuccess: { translators in
                                 expect(translators.first?["browserSupport"] as? String).to(equal("gcsibv"))
                                 doneAction()
-                            }, onError: { error in
+                            }, onFailure: { error in
                                 fail("Could not load translators: \(error)")
                                 doneAction()
                             })
                             .disposed(by: self.disposeBag)
-                    }, onError: { error in
+                    }, onFailure: { error in
                         fail("Could not finish loading: \(error)")
                         doneAction()
                     })
@@ -91,10 +93,8 @@ final class TranslatorsControllerSpec: QuickSpec {
         it("Updates existing outdated data with newer bundled data") {
             // Stub to "disable" remote request
             let response = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xml><currentTime>\(self.bundledTimestamp)</currentTime><pdftools version=\"3.04\"/></xml>"
-            let request = TranslatorsRequest(timestamp: self.bundledTimestamp,
-                                             version: self.version,
-                                             type: TranslatorsController.UpdateType.startup.rawValue)
-            createStub(for: request, baseUrl: self.baseUrl, xmlResponse: response)
+            let request = RepoRequest(timestamp: self.bundledTimestamp, version: self.version, type: TranslatorsAndStylesController.UpdateType.startup.rawValue, styles: nil)
+            createStub(for: request, ignorePostParams: true, baseUrl: self.baseUrl, xmlResponse: response)
 
             // Create local records
             self.controller.setupTest(timestamp: self.bundledTimestamp - 100, hash: "123abc", deleted: 0)
@@ -112,7 +112,7 @@ final class TranslatorsControllerSpec: QuickSpec {
             // Perform update and wait for results
             waitUntil(timeout: .seconds(10)) { doneAction in
                 self.controller.isLoading.skip(1).filter({ !$0 }).first()
-                    .observeOn(MainScheduler.instance)
+                    .observe(on: MainScheduler.instance)
                     .subscribe(onSuccess: { _ in
                         expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(Double(self.bundledTimestamp)))
 
@@ -124,17 +124,17 @@ final class TranslatorsControllerSpec: QuickSpec {
                         expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: Double(self.bundledTranslatorTimestamp))))
                         expect(self.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
 
-                        self.controller.translators()
-                            .observeOn(MainScheduler.instance)
+                        self.controller.translators(matching: self.translatorUrl)
+                            .observe(on: MainScheduler.instance)
                             .subscribe(onSuccess: { translators in
                                 expect(translators.first?["browserSupport"] as? String).to(equal("gcsibv"))
                                 doneAction()
-                            }, onError: { error in
+                            }, onFailure: { error in
                                 fail("Could not load translators: \(error)")
                                 doneAction()
                             })
                             .disposed(by: self.disposeBag)
-                    }, onError: { error in
+                    }, onFailure: { error in
                         fail("Could not finish loading: \(error)")
                         doneAction()
                     })
@@ -147,10 +147,8 @@ final class TranslatorsControllerSpec: QuickSpec {
         it("Doesn't update newer existing data with outdated bundled data") {
             // Stub to "disable" remote request
             let response = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xml><currentTime>\(self.bundledTimestamp)</currentTime><pdftools version=\"3.04\"/></xml>"
-            let request = TranslatorsRequest(timestamp: self.bundledTimestamp,
-                                             version: self.version,
-                                             type: TranslatorsController.UpdateType.startup.rawValue)
-            createStub(for: request, baseUrl: self.baseUrl, xmlResponse: response)
+            let request = RepoRequest(timestamp: self.bundledTimestamp, version: self.version, type: TranslatorsAndStylesController.UpdateType.startup.rawValue, styles: nil)
+            createStub(for: request, ignorePostParams: true, baseUrl: self.baseUrl, xmlResponse: response)
 
             // Create local records
             self.controller.setupTest(timestamp: self.bundledTimestamp, hash: "123abc", deleted: 0)
@@ -168,7 +166,7 @@ final class TranslatorsControllerSpec: QuickSpec {
             // Perform update and wait for results
             waitUntil(timeout: .seconds(10)) { doneAction in
                 self.controller.isLoading.skip(1).filter({ !$0 }).first()
-                    .observeOn(MainScheduler.instance)
+                    .observe(on: MainScheduler.instance)
                     .subscribe(onSuccess: { _ in
                         expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(Double(self.bundledTimestamp)))
 
@@ -180,17 +178,17 @@ final class TranslatorsControllerSpec: QuickSpec {
                         expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: Double(self.bundledTranslatorTimestamp + 100))))
                         expect(self.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
 
-                        self.controller.translators()
-                            .observeOn(MainScheduler.instance)
+                        self.controller.translators(matching: self.translatorUrl)
+                            .observe(on: MainScheduler.instance)
                             .subscribe(onSuccess: { translators in
                                 expect(translators.first?["browserSupport"] as? String).to(equal("gcsi"))
                                 doneAction()
-                            }, onError: { error in
+                            }, onFailure: { error in
                                 fail("Could not load translators: \(error)")
                                 doneAction()
                             })
                             .disposed(by: self.disposeBag)
-                    }, onError: { error in
+                    }, onFailure: { error in
                         fail("Could not finish loading: \(error)")
                         doneAction()
                     })
@@ -203,10 +201,8 @@ final class TranslatorsControllerSpec: QuickSpec {
         it("Removes translator with bundle update") {
             // Stub to "disable" remote request
             let response = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xml><currentTime>\(self.bundledTimestamp)</currentTime><pdftools version=\"3.04\"/></xml>"
-            let request = TranslatorsRequest(timestamp: self.bundledTimestamp,
-                                             version: self.version,
-                                             type: TranslatorsController.UpdateType.startup.rawValue)
-            createStub(for: request, baseUrl: self.baseUrl, xmlResponse: response)
+            let request = RepoRequest(timestamp: self.bundledTimestamp, version: self.version, type: TranslatorsAndStylesController.UpdateType.startup.rawValue, styles: nil)
+            createStub(for: request, ignorePostParams: true, baseUrl: self.baseUrl, xmlResponse: response)
 
             // Create local records
             let deletedTranslatorId = "96b9f483-c44d-5784-cdad-ce21b984"
@@ -226,7 +222,7 @@ final class TranslatorsControllerSpec: QuickSpec {
             // Perform update and wait for results
             waitUntil(timeout: .seconds(10)) { doneAction in
                 self.controller.isLoading.skip(1).filter({ !$0 }).first()
-                    .observeOn(MainScheduler.instance)
+                    .observe(on: MainScheduler.instance)
                     .subscribe(onSuccess: { _ in
                         let realm = try! Realm(configuration: self.dbConfig)
                         realm.refresh()
@@ -237,7 +233,7 @@ final class TranslatorsControllerSpec: QuickSpec {
                         expect(self.fileStorage.has(Files.translator(filename: deletedTranslatorId))).to(beFalse())
 
                         doneAction()
-                    }, onError: { error in
+                    }, onFailure: { error in
                         fail("Could not finish loading: \(error)")
                         doneAction()
                     })
@@ -251,10 +247,8 @@ final class TranslatorsControllerSpec: QuickSpec {
             // Stub to return remote translator
             let responseUrl = Bundle(for: TranslatorsControllerSpec.self).url(forResource: "translators", withExtension: "xml")
             let response = try! String(contentsOf: responseUrl!)
-            let request = TranslatorsRequest(timestamp: self.bundledTimestamp,
-                                             version: self.version,
-                                             type: TranslatorsController.UpdateType.initial.rawValue)
-            createStub(for: request, baseUrl: self.baseUrl, xmlResponse: response)
+            let request = RepoRequest(timestamp: self.bundledTimestamp, version: self.version, type: TranslatorsAndStylesController.UpdateType.initial.rawValue, styles: nil)
+            createStub(for: request, ignorePostParams: true, baseUrl: self.baseUrl, xmlResponse: response)
 
             // Setup as first-time update
             self.controller.setupTest(timestamp: 0, hash: "", deleted: 0)
@@ -262,7 +256,7 @@ final class TranslatorsControllerSpec: QuickSpec {
             // Perform update and wait for results
             waitUntil(timeout: .seconds(10)) { doneAction in
                 self.controller.isLoading.skip(1).filter({ !$0 }).first()
-                    .observeOn(MainScheduler.instance)
+                    .observe(on: MainScheduler.instance)
                     .subscribe(onSuccess: { _ in
                         expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(Double(self.remoteTimestamp)))
 
@@ -275,17 +269,17 @@ final class TranslatorsControllerSpec: QuickSpec {
                         expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: Double(self.remoteTranslatorTimestamp))))
                         expect(self.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
 
-                        self.controller.translators()
-                            .observeOn(MainScheduler.instance)
+                        self.controller.translators(matching: self.translatorUrl)
+                            .observe(on: MainScheduler.instance)
                             .subscribe(onSuccess: { translators in
                                 expect(translators.first?["browserSupport"] as? String).to(equal("gcsi"))
                                 doneAction()
-                            }, onError: { error in
+                            }, onFailure: { error in
                                 fail("Could not load translators: \(error)")
                                 doneAction()
                             })
                             .disposed(by: self.disposeBag)
-                    }, onError: { error in
+                    }, onFailure: { error in
                         fail("Could not finish loading: \(error)")
                         doneAction()
                     })
@@ -299,10 +293,8 @@ final class TranslatorsControllerSpec: QuickSpec {
             // Stup to return remove translator with priority=0
             let responseUrl = Bundle(for: TranslatorsControllerSpec.self).url(forResource: "translators_delete", withExtension: "xml")
             let response = try! String(contentsOf: responseUrl!)
-            let request = TranslatorsRequest(timestamp: self.bundledTimestamp,
-                                             version: self.version,
-                                             type: TranslatorsController.UpdateType.initial.rawValue)
-            createStub(for: request, baseUrl: self.baseUrl, xmlResponse: response)
+            let request = RepoRequest(timestamp: self.bundledTimestamp, version: self.version, type: TranslatorsAndStylesController.UpdateType.initial.rawValue, styles: nil)
+            createStub(for: request, ignorePostParams: true, baseUrl: self.baseUrl, xmlResponse: response)
 
             // Setup as first-time update so that there is a bundle update as well
             self.controller.setupTest(timestamp: 0, hash: "", deleted: 0)
@@ -310,7 +302,7 @@ final class TranslatorsControllerSpec: QuickSpec {
             // Perform update and wait for results
             waitUntil(timeout: .seconds(10)) { doneAction in
                 self.controller.isLoading.skip(1).filter({ !$0 }).first()
-                    .observeOn(MainScheduler.instance)
+                    .observe(on: MainScheduler.instance)
                     .subscribe(onSuccess: { _ in
                         let realm = try! Realm(configuration: self.dbConfig)
                         realm.refresh()
@@ -321,7 +313,7 @@ final class TranslatorsControllerSpec: QuickSpec {
                         expect(self.fileStorage.has(Files.translator(filename: self.translatorId))).to(beFalse())
 
                         doneAction()
-                    }, onError: { error in
+                    }, onFailure: { error in
                         fail("Could not finish loading: \(error)")
                         doneAction()
                     })
@@ -358,12 +350,12 @@ final class TranslatorsControllerSpec: QuickSpec {
                         expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: Double(self.bundledTranslatorTimestamp))))
                         expect(self.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
 
-                        self.controller.translators()
-                            .observeOn(MainScheduler.instance)
+                        self.controller.translators(matching: self.translatorUrl)
+                            .observe(on: MainScheduler.instance)
                             .subscribe(onSuccess: { translators in
                                 expect(translators.first?["browserSupport"] as? String).to(equal("gcsibv"))
                                 doneAction()
-                            }, onError: { error in
+                            }, onFailure: { error in
                                 fail("Could not load translators: \(error)")
                                 doneAction()
                             })
@@ -374,16 +366,13 @@ final class TranslatorsControllerSpec: QuickSpec {
         }
     }
 
-    private class func createController(dbConfig: Realm.Configuration) -> TranslatorsController {
-        let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: URLSessionConfiguration.default)
-        return TranslatorsController(apiClient: apiClient,
-                                     indexStorage: RealmDbStorage(config: dbConfig),
-                                     fileStorage: FileStorageController(),
-                                     bundle: Bundle(for: TranslatorsControllerSpec.self))
+    private class func createController(apiClient: ApiClient, bundledDataStorage: DbStorage, fileStorage: FileStorage) -> TranslatorsAndStylesController {
+        return TranslatorsAndStylesController(apiClient: apiClient, bundledDataStorage: bundledDataStorage, fileStorage: fileStorage, bundle: Bundle(for: TranslatorsControllerSpec.self))
     }
 
     private class func createVersion() -> String {
         let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? ""
-        return "\(version)-iOS"
+        let bundle = (Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? ""
+        return "\(version)-\(bundle)-iOS"
     }
 }

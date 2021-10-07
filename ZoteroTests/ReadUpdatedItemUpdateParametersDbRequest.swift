@@ -40,28 +40,26 @@ final class ReadUpdatedItemUpdateParametersSpec: QuickSpec {
                 let child = RItem()
                 child.key = childKey
                 child.changedFields = [.fields]
-                child.customLibraryKey.value = library.rawType
+                child.customLibraryKey = .myLibrary
                 realm.add(child)
 
                 let childField = RItemField()
                 childField.key = "field"
                 childField.value = "value"
                 childField.changed = true
-                realm.add(childField)
-                childField.item = child
+                child.fields.append(childField)
 
                 let parent = RItem()
                 parent.key = parentKey
                 parent.changedFields = [.fields]
-                parent.customLibraryKey.value = library.rawType
+                parent.customLibraryKey = .myLibrary
                 realm.add(parent)
 
                 let parentField = RItemField()
                 parentField.key = "field2"
                 parentField.value = "value2"
                 parentField.changed = true
-                realm.add(parentField)
-                parentField.item = parent
+                parent.fields.append(parentField)
 
                 child.parent = parent
             }
@@ -89,31 +87,29 @@ final class ReadUpdatedItemUpdateParametersSpec: QuickSpec {
                 let child = RItem()
                 child.key = childKey
                 child.changedFields = [.fields]
-                child.customLibraryKey.value = library.rawType
+                child.customLibraryKey = .myLibrary
                 realm.add(child)
 
                 let childField = RItemField()
                 childField.key = "field"
                 childField.value = "value"
-                realm.add(childField)
-                childField.item = child
+                child.fields.append(childField)
 
                 let middle = RItem()
                 middle.key = middleKey
-                middle.customLibraryKey.value = library.rawType
+                middle.customLibraryKey = .myLibrary
                 realm.add(middle)
 
                 let parent = RItem()
                 parent.key = parentKey
                 parent.changedFields = [.fields]
-                parent.customLibraryKey.value = library.rawType
+                parent.customLibraryKey = .myLibrary
                 realm.add(parent)
 
                 let parentField = RItemField()
                 parentField.key = "field2"
                 parentField.value = "value2"
-                realm.add(parentField)
-                parentField.item = parent
+                parent.fields.append(parentField)
 
                 child.parent = middle
                 middle.parent = parent

@@ -40,7 +40,7 @@ final class SyncControllerSpec: QuickSpec {
         // Create "My Library" in new realm
         try! realm.write {
             let myLibrary = RCustomLibrary()
-            myLibrary.rawType = RCustomLibraryType.myLibrary.rawValue
+            myLibrary.type = .myLibrary
             realm.add(myLibrary)
 
             let versions = RVersions()
@@ -198,7 +198,7 @@ final class SyncControllerSpec: QuickSpec {
                             expect(collection?.name).to(equal("A"))
                             expect(collection?.syncState).to(equal(.synced))
                             expect(collection?.version).to(equal(1))
-                            expect(collection?.customLibraryKey.value).to(equal(RCustomLibraryType.myLibrary.rawValue))
+                            expect(collection?.customLibraryKey).to(equal(RCustomLibraryType.myLibrary))
                             expect(collection?.parentKey).to(beNil())
                             let children = realm.objects(RCollection.self).filter(.parentKey("AAAAAAAA", in: .custom(.myLibrary)))
                             expect(children.count).to(equal(0))
@@ -209,7 +209,7 @@ final class SyncControllerSpec: QuickSpec {
                             expect(item?.version).to(equal(3))
                             expect(item?.trash).to(beFalse())
                             expect(item?.syncState).to(equal(.synced))
-                            expect(item?.customLibraryKey.value).to(equal(RCustomLibraryType.myLibrary.rawValue))
+                            expect(item?.customLibraryKey).to(equal(RCustomLibraryType.myLibrary))
                             expect(item?.collections.count).to(equal(0))
                             expect(item?.fields.count).to(equal(1))
                             expect(item?.fields.first?.key).to(equal("title"))
@@ -224,7 +224,7 @@ final class SyncControllerSpec: QuickSpec {
                             expect(item2?.version).to(equal(4))
                             expect(item2?.trash).to(beTrue())
                             expect(item2?.syncState).to(equal(.synced))
-                            expect(item2?.customLibraryKey.value).to(equal(RCustomLibraryType.myLibrary.rawValue))
+                            expect(item2?.customLibraryKey).to(equal(RCustomLibraryType.myLibrary))
                             expect(item2?.collections.count).to(equal(0))
                             expect(item?.fields.count).to(equal(1))
                             expect(item2?.parent?.key).to(equal("AAAAAAAA"))
@@ -875,7 +875,7 @@ final class SyncControllerSpec: QuickSpec {
                             expect(collection?.name).to(equal("A"))
                             expect(collection?.syncState).to(equal(.synced))
                             expect(collection?.version).to(equal(1))
-                            expect(collection?.customLibraryKey.value).to(equal(RCustomLibraryType.myLibrary.rawValue))
+                            expect(collection?.customLibraryKey).to(equal(RCustomLibraryType.myLibrary))
                             expect(collection?.parentKey).to(beNil())
                             let children = realm.objects(RCollection.self).filter(.parentKey("AAAAAAAA", in: .custom(.myLibrary)))
                             expect(children.count).to(equal(0))
@@ -885,7 +885,7 @@ final class SyncControllerSpec: QuickSpec {
                             expect(collection2?.name).to(equal("B"))
                             expect(collection2?.syncState).to(equal(.synced))
                             expect(collection2?.version).to(equal(1))
-                            expect(collection2?.customLibraryKey.value).to(equal(RCustomLibraryType.myLibrary.rawValue))
+                            expect(collection2?.customLibraryKey).to(equal(RCustomLibraryType.myLibrary))
                             expect(collection2?.parentKey).to(equal("ZZZZZZZZ"))
                             let children2 = realm.objects(RCollection.self).filter(.parentKey("BBBBBBBB", in: .custom(.myLibrary)))
                             expect(children2.count).to(equal(0))
@@ -896,7 +896,7 @@ final class SyncControllerSpec: QuickSpec {
                             let collection4 = realm.objects(RCollection.self).filter("key = %@", "ZZZZZZZZ").first
                             expect(collection4).toNot(beNil())
                             expect(collection4?.syncState).to(equal(.dirty))
-                            expect(collection4?.customLibraryKey.value).to(equal(RCustomLibraryType.myLibrary.rawValue))
+                            expect(collection4?.customLibraryKey).to(equal(RCustomLibraryType.myLibrary))
                             expect(collection4?.parentKey).to(beNil())
                             let children4 = realm.objects(RCollection.self).filter(.parentKey("ZZZZZZZZ", in: .custom(.myLibrary)))
                             expect(children4.count).to(equal(1))
@@ -947,11 +947,9 @@ final class SyncControllerSpec: QuickSpec {
 
                     let realm = SyncControllerSpec.realm!
                     try! realm.write {
-                        let library = realm.object(ofType: RCustomLibrary.self,
-                                                   forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
+                        let library = realm.object(ofType: RCustomLibrary.self, forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
 
                         let versions = RVersions()
-                        realm.add(versions)
                         library?.versions = versions
 
                         let collection = RCollection()
@@ -1024,7 +1022,7 @@ final class SyncControllerSpec: QuickSpec {
                             expect(collection?.syncState).to(equal(.synced))
                             expect(collection?.version).to(equal(1))
                             expect(collection?.deleted).to(beFalse())
-                            expect(collection?.customLibraryKey.value).to(equal(RCustomLibraryType.myLibrary.rawValue))
+                            expect(collection?.customLibraryKey).to(equal(RCustomLibraryType.myLibrary))
                             expect(collection?.parentKey).to(beNil())
                             expect(collection?.items.count).to(equal(2))
 
@@ -1163,13 +1161,11 @@ final class SyncControllerSpec: QuickSpec {
 
                     let realm = SyncControllerSpec.realm!
                     try! realm.write {
-                        let library = realm.object(ofType: RCustomLibrary.self,
-                                                   forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
+                        let library = realm.object(ofType: RCustomLibrary.self, forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
 
                         let versions = RVersions()
                         versions.collections = oldVersion
                         versions.items = oldVersion
-                        realm.add(versions)
                         library?.versions = versions
 
                         let collection = RCollection()
@@ -1192,22 +1188,19 @@ final class SyncControllerSpec: QuickSpec {
                         titleField.key = "title"
                         titleField.value = "New item"
                         titleField.changed = true
-                        titleField.item = item
-                        realm.add(titleField)
+                        item.fields.append(titleField)
 
                         let pageField = RItemField()
                         pageField.key = "numPages"
                         pageField.value = "1"
                         pageField.changed = true
-                        pageField.item = item
-                        realm.add(pageField)
+                        item.fields.append(pageField)
 
                         let unchangedField = RItemField()
                         unchangedField.key = "callNumber"
                         unchangedField.value = "somenumber"
                         unchangedField.changed = false
-                        unchangedField.item = item
-                        realm.add(unchangedField)
+                        item.fields.append(unchangedField)
                     }
 
                     let libraryId = SyncControllerSpec.userLibraryId
@@ -1291,7 +1284,6 @@ final class SyncControllerSpec: QuickSpec {
                         let versions = RVersions()
                         versions.collections = oldVersion
                         versions.items = oldVersion
-                        realm.add(versions)
                         library?.versions = versions
 
                         // Items created one after another, then CCCCCCCC has been updated and added
@@ -1380,7 +1372,6 @@ final class SyncControllerSpec: QuickSpec {
                         let versions = RVersions()
                         versions.collections = oldVersion
                         versions.items = oldVersion
-                        realm.add(versions)
                         library?.versions = versions
 
                         // Collections created in order: CCCCCCCC, BBBBBBBB, AAAAAAAA
@@ -1463,7 +1454,6 @@ final class SyncControllerSpec: QuickSpec {
                         let versions = RVersions()
                         versions.collections = oldVersion
                         versions.items = oldVersion
-                        realm.add(versions)
                         library?.versions = versions
 
                         let collection = RCollection()
@@ -1556,7 +1546,6 @@ final class SyncControllerSpec: QuickSpec {
                                                    forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
 
                         let versions = RVersions()
-                        realm.add(versions)
                         library?.versions = versions
 
                         let collection = RCollection()
@@ -1771,7 +1760,6 @@ final class SyncControllerSpec: QuickSpec {
                         versions.searches = newVersion
                         versions.settings = newVersion
                         versions.trash = newVersion
-                        realm.add(versions)
                         library?.versions = versions
 
                         let tag = RTag()
@@ -1866,7 +1854,6 @@ final class SyncControllerSpec: QuickSpec {
                         versions.searches = newVersion
                         versions.settings = newVersion
                         versions.trash = newVersion
-                        realm.add(versions)
                         library?.versions = versions
 
                         let syncedItem = RItem()
@@ -1894,8 +1881,7 @@ final class SyncControllerSpec: QuickSpec {
                         field.key = "place"
                         field.value = "value"
                         field.changed = false
-                        realm.add(field)
-                        field.item = changedItem
+                        changedItem.fields.append(field)
                     }
 
                     waitUntil(timeout: .seconds(10)) { doneAction in

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xml><currentTime>1586182261</currentTime><pdftools version="3.04"/><translator id="bbf1617b-d836-4665-9aae-45f223264460" lastUpdated="2020-04-06 16:00:00" type="4" minVersion="2.1" browserSupport="gcsi"><priority>100</priority><label>A Contra Corriente</label><creator>Sebastian Karcher</creator><target>^https?://acontracorriente\\.chass\\.ncsu\\.edu/index\\.php/acontracorriente/</target><code>/*
+<xml><currentTime>1586182261</currentTime><pdftools version="3.04"/><translator id="bbf1617b-d836-4665-9aae-45f223264460" lastUpdated="2020-04-06 16:00:00" type="4" minVersion="2.1" browserSupport="gcsi"><priority>100</priority><label>A Contra Corriente</label><creator>Sebastian Karcher</creator><target>^https?://acontracorriente\.chass\.ncsu\.edu/index\.php/acontracorriente/</target><code>/*
     ***** BEGIN LICENSE BLOCK *****
 
     Copyright © 2015-2019 Michael Berkowitz, Avram Lyon

@@ -82,7 +82,6 @@ final class SettingsCoordinator: NSObject, Coordinator {
                                   lastTranslatorUpdate: self.controllers.translatorsAndStylesController.lastUpdate,
                                   websocketConnectionState: webSocketController.connectionState.value)
         let handler = SettingsActionHandler(dbStorage: dbStorage,
-                                            bundledDataStorage: self.controllers.bundledDataStorage,
                                             fileStorage: self.controllers.fileStorage,
                                             sessionController: self.controllers.sessionController,
                                             webSocketController: webSocketController,
