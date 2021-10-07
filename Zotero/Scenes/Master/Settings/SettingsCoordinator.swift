@@ -145,13 +145,13 @@ extension SettingsCoordinator: StorageSettingsSettingsCoordinatorDelegate {
 
 extension SettingsCoordinator: SettingsCoordinatorDelegate {
     func showSync() {
-        let handler = SyncSettingsActionHandler(sessionController: self.controllers.sessionController, secureStorage: self.controllers.secureStorage)
+        let handler = SyncSettingsActionHandler(sessionController: self.controllers.sessionController, webDavController: self.controllers.webDavController)
         let state = SyncSettingsState(account: Defaults.shared.username,
-                                      fileSyncType: (Defaults.shared.webDavEnabled ? .webDav : .zotero),
-                                      scheme: Defaults.shared.webDavScheme,
-                                      url: Defaults.shared.webDavUrl,
-                                      username: Defaults.shared.webDavUsername,
-                                      password: self.controllers.secureStorage.webDavPassword ?? "")
+                                      fileSyncType: (self.controllers.webDavController.sessionStorage.isEnabled ? .webDav : .zotero),
+                                      scheme: self.controllers.webDavController.sessionStorage.scheme,
+                                      url: self.controllers.webDavController.sessionStorage.url,
+                                      username: self.controllers.webDavController.sessionStorage.username,
+                                      password: self.controllers.webDavController.sessionStorage.password)
         let viewModel = ViewModel(initialState: state, handler: handler)
         var view = ProfileView()
         view.coordinatorDelegate = self

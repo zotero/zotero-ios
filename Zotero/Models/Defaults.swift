@@ -30,11 +30,11 @@ final class Defaults {
     @CodableUserDefault(key: "webDavScheme", defaultValue: .http, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     var webDavScheme: WebDavScheme
 
-    @UserDefault(key: "webDavUsername", defaultValue: "")
-    var webDavUsername: String
+    @OptionalUserDefault(key: "webDavUsername")
+    var webDavUsername: String?
 
-    @UserDefault(key: "webDavUrl", defaultValue: "")
-    var webDavUrl: String
+    @OptionalUserDefault(key: "webDavUrl")
+    var webDavUrl: String?
 
     // MARK: - Settings
 

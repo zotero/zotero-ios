@@ -21,7 +21,8 @@ struct SyncSettingsState: ViewModelState {
     var url: String
     var username: String
     var password: String
-    var error: WebDavController.Error?
+    var isVerifyingWebDav: Bool
+    var webDavVerificationResult: Result<(), Error>?
 
     init(account: String, fileSyncType: FileSyncType, scheme: WebDavScheme, url: String, username: String, password: String) {
         self.account = account
@@ -30,6 +31,7 @@ struct SyncSettingsState: ViewModelState {
         self.url = url
         self.username = username
         self.password = password
+        self.isVerifyingWebDav = false
     }
 
     func cleanup() {}

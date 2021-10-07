@@ -9,6 +9,7 @@
 import Foundation
 
 protocol WebDavSessionStorage: AnyObject {
+    var isEnabled: Bool { get set }
     var username: String { get set }
     var url: String { get set }
     var scheme: WebDavScheme { get set }
@@ -22,35 +23,39 @@ final class SecureWebDavSessionStorage: WebDavSessionStorage {
         self.secureStorage = secureStorage
     }
 
-    var username: String {
+    var isEnabled: Bool {
         get {
-            // TODO: - remove after test
-            return "user"
-//            return Defaults.shared.webDavUsername
+            return Defaults.shared.webDavEnabled
         }
 
         set {
-            Defaults.shared.webDavUsername = newValue
+            Defaults.shared.webDavEnabled = newValue
+        }
+    }
+
+    var username: String {
+        get {
+            return Defaults.shared.webDavUsername ?? ""
+        }
+
+        set {
+            Defaults.shared.webDavUsername = newValue.isEmpty ? nil : newValue
         }
     }
 
     var url: String {
         get {
-            // TODO: - remove after test
-            return "192.168.0.101:8080"
-//            return Defaults.shared.webDavUrl
+            return Defaults.shared.webDavUrl ?? ""
         }
 
         set {
-            Defaults.shared.webDavUrl = newValue
+            Defaults.shared.webDavUrl = newValue.isEmpty ? nil : newValue
         }
     }
 
     var scheme: WebDavScheme {
         get {
-            // TODO: - remove after test
-            return .http
-//            return Defaults.shared.webDavScheme
+            return Defaults.shared.webDavScheme
         }
 
         set {
@@ -60,13 +65,11 @@ final class SecureWebDavSessionStorage: WebDavSessionStorage {
 
     var password: String {
         get {
-            // TODO: - remove after test
-            return "password"
-//            return self.secureStorage.webDavPassword
+            return self.secureStorage.webDavPassword ?? ""
         }
 
         set {
-            self.secureStorage.webDavPassword = newValue
+            self.secureStorage.webDavPassword = newValue.isEmpty ? nil : newValue
         }
     }
 }

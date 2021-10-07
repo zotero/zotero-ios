@@ -28,7 +28,7 @@ final class WebDavController {
     }
 
     private unowned let apiClient: ApiClient
-    private let sessionStorage: WebDavSessionStorage
+    let sessionStorage: WebDavSessionStorage
 
     private var verified: Bool
 

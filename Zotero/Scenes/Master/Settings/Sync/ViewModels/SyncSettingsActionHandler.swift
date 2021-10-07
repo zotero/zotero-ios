@@ -15,13 +15,13 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
     typealias Action = SyncSettingsAction
     typealias State = SyncSettingsState
 
+    private unowned let webDavController: WebDavController
     private unowned let sessionController: SessionController
-    private unowned let secureStorage: SecureStorage
     private let disposeBag: DisposeBag
 
-    init(sessionController: SessionController, secureStorage: SecureStorage) {
+    init(sessionController: SessionController, webDavController: WebDavController) {
         self.sessionController = sessionController
-        self.secureStorage = secureStorage
+        self.webDavController = webDavController
         self.disposeBag = DisposeBag()
     }
 
@@ -34,34 +34,51 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.fileSyncType = type
             }
-            Defaults.shared.webDavEnabled = type == .webDav
+            self.webDavController.sessionStorage.isEnabled = type == .webDav
 
         case .setScheme(let scheme):
             self.update(viewModel: viewModel) { state in
                 state.scheme = scheme
             }
-            Defaults.shared.webDavScheme = scheme
+            self.webDavController.sessionStorage.scheme = scheme
 
         case .setUrl(let url):
             self.update(viewModel: viewModel) { state in
                 state.url = url
             }
-            Defaults.shared.webDavUrl = url
+            self.webDavController.sessionStorage.url = url
 
         case .setUsername(let username):
             self.update(viewModel: viewModel) { state in
                 state.username = username
             }
-            Defaults.shared.webDavUsername = username
+            self.webDavController.sessionStorage.username = username
 
         case .setPassword(let password):
             self.update(viewModel: viewModel) { state in
                 state.password = password
             }
-            self.secureStorage.webDavPassword = password.isEmpty ? nil : password
+            self.webDavController.sessionStorage.password = password
 
         case .verify:
-            break
+            self.update(viewModel: viewModel) { state in
+                state.isVerifyingWebDav = true
+            }
+
+            self.webDavController.checkServer()
+                .subscribe(on: MainScheduler.instance)
+                .subscribe(with: viewModel, onSuccess: { viewModel, _ in
+                    self.update(viewModel: viewModel) { state in
+                        state.isVerifyingWebDav = false
+                        state.webDavVerificationResult = .success(())
+                    }
+                }, onFailure: { viewModel, error in
+                    self.update(viewModel: viewModel) { state in
+                        state.isVerifyingWebDav = false
+                        state.webDavVerificationResult = .failure(error)
+                    }
+                })
+                .disposed(by: self.disposeBag)
         }
     }
 }

@@ -335,6 +335,17 @@
 "errors.item_detail.dropped_fields_message" = "Are you sure you want to change the item type?\n\nThe following fields will be lost:\n\n%@";
 "errors.item_detail.cant_load_data" = "Could not load data. Please try again.";
 "errors.settings.storage" = "Could not collect storage data";
+"errors.settings.webdav.file_missing_after_upload" = "Webdav verification error";
+"errors.settings.webdav.invalid_url" = "Webdav verification error";
+"errors.settings.webdav.no_password" = "Webdav verification error";
+"errors.settings.webdav.no_url" = "Webdav verification error";
+"errors.settings.webdav.no_username" = "Webdav verification error";
+"errors.settings.webdav.non_existent_file_not_missing" = "Webdav verification error";
+"errors.settings.webdav.not_dav" = "Webdav verification error";
+"errors.settings.webdav.parent_dir_not_found" = "Webdav verification error";
+"errors.settings.webdav.zotero_dir_not_found" = "Webdav verification error";
+"errors.settings.webdav.unauthorized" = "Your username or password is incorrect.";
+"errors.settings.webdav.internet_connection" = "Unable to connect to the network. Please try again.";
 "errors.shareext.logged_out" = "Please log into the app before using this extension.";
 "errors.shareext.cant_load_data" = "Failed to load data. Please try again.";
 "errors.shareext.unknown" = "An unknown error occurred.";

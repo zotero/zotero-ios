@@ -419,6 +419,30 @@ internal enum L10n {
     internal enum Settings {
       /// Could not collect storage data
       internal static let storage = L10n.tr("Localizable", "errors.settings.storage")
+      internal enum Webdav {
+        /// Webdav verification error
+        internal static let fileMissingAfterUpload = L10n.tr("Localizable", "errors.settings.webdav.file_missing_after_upload")
+        /// Unable to connect to the network. Please try again.
+        internal static let internetConnection = L10n.tr("Localizable", "errors.settings.webdav.internet_connection")
+        /// Webdav verification error
+        internal static let invalidUrl = L10n.tr("Localizable", "errors.settings.webdav.invalid_url")
+        /// Webdav verification error
+        internal static let noPassword = L10n.tr("Localizable", "errors.settings.webdav.no_password")
+        /// Webdav verification error
+        internal static let noUrl = L10n.tr("Localizable", "errors.settings.webdav.no_url")
+        /// Webdav verification error
+        internal static let noUsername = L10n.tr("Localizable", "errors.settings.webdav.no_username")
+        /// Webdav verification error
+        internal static let nonExistentFileNotMissing = L10n.tr("Localizable", "errors.settings.webdav.non_existent_file_not_missing")
+        /// Webdav verification error
+        internal static let notDav = L10n.tr("Localizable", "errors.settings.webdav.not_dav")
+        /// Webdav verification error
+        internal static let parentDirNotFound = L10n.tr("Localizable", "errors.settings.webdav.parent_dir_not_found")
+        /// Your username or password is incorrect.
+        internal static let unauthorized = L10n.tr("Localizable", "errors.settings.webdav.unauthorized")
+        /// Webdav verification error
+        internal static let zoteroDirNotFound = L10n.tr("Localizable", "errors.settings.webdav.zotero_dir_not_found")
+      }
     }
     internal enum Shareext {
       /// Error uploading item. The item was saved to your local library.
