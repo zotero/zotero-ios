@@ -14,8 +14,6 @@ import Nimble
 import Quick
 
 final class ItemResponseSpec: QuickSpec {
-    private static let schemaController = SchemaController()
-
     override func spec() {
         it("parses item with all known fields") {
             let url = Bundle(for: type(of: self)).url(forResource: "itemresponse_knownfields", withExtension: "json")!
@@ -23,7 +21,7 @@ final class ItemResponseSpec: QuickSpec {
             let jsonData = try! JSONSerialization.jsonObject(with: data, options: .allowFragments) as! [String: Any]
 
             do {
-                _ = try ItemResponse(response: jsonData, schemaController: ItemResponseSpec.schemaController)
+                _ = try ItemResponse(response: jsonData, schemaController: TestControllers.schemaController)
             } catch let error {
                 fail("Exception thrown during parsing: \(error)")
             }
@@ -35,7 +33,7 @@ final class ItemResponseSpec: QuickSpec {
             let jsonData = try! JSONSerialization.jsonObject(with: data, options: .allowFragments) as! [String: Any]
 
             do {
-                _ = try ItemResponse(response: jsonData, schemaController: ItemResponseSpec.schemaController)
+                _ = try ItemResponse(response: jsonData, schemaController: TestControllers.schemaController)
                 fail("No exception thrown for unknown fields")
             } catch let error {
                 if let error = error as? SchemaError,

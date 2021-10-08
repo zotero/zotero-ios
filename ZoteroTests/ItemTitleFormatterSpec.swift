@@ -15,15 +15,20 @@ import RealmSwift
 import Quick
 
 final class ItemTitleFormatterSpec: QuickSpec {
-    private static let realmConfig = Realm.Configuration(inMemoryIdentifier: "TestsRealmConfig")
-    private static let realm = try! Realm(configuration: realmConfig) // Retain realm with inMemoryIdentifier so that data are not deleted
+    // Retain realm with inMemoryIdentifier so that data are not deleted
+    private let realm: Realm
+
+    required init() {
+        let config = Realm.Configuration(inMemoryIdentifier: "TestsRealmConfig")
+        self.realm = try! Realm(configuration: config)
+    }
 
     override func spec() {
         beforeEach {
-            try? ItemTitleFormatterSpec.realm.write {
-                ItemTitleFormatterSpec.realm.deleteAll()
+            try? self.realm.write {
+                self.realm.deleteAll()
             }
-            ItemTitleFormatterSpec.realm.refresh()
+            self.realm.refresh()
         }
 
         describe("letter") {
@@ -38,8 +43,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     creator.name = "Name Surname"
                     item.creators.append(creator)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -52,8 +57,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     let item = RItem()
                     item.rawType = "letter"
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -65,8 +70,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     item.rawType = "letter"
                     self.createCreators(type: "recipient", namePresentation: .separate, count: 1, in: item)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -76,8 +81,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     item2.rawType = "letter"
                     self.createCreators(type: "recipient", namePresentation: .full, count: 1, in: item2)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item2)
+                    try? self.realm.write {
+                        self.realm.add(item2)
                     }
 
                     let title2 = ItemTitleFormatter.displayTitle(for: item2)
@@ -89,8 +94,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     item.rawType = "letter"
                     self.createCreators(type: "recipient", namePresentation: .separate, count: 2, in: item)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -103,8 +108,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     creator.orderId = 2
                     self.createCreators(type: "recipient", namePresentation: .full, count: 1, in: item2)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item2)
+                    try? self.realm.write {
+                        self.realm.add(item2)
                     }
 
                     let title2 = ItemTitleFormatter.displayTitle(for: item2)
@@ -116,8 +121,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     item.rawType = "letter"
                     self.createCreators(type: "recipient", namePresentation: .separate, count: 3, in: item)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -129,8 +134,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     item.rawType = "letter"
                     self.createCreators(type: "recipient", namePresentation: .separate, count: 4, in: item)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -140,8 +145,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     item2.rawType = "letter"
                     self.createCreators(type: "recipient", namePresentation: .separate, count: 15, in: item2)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item2)
+                    try? self.realm.write {
+                        self.realm.add(item2)
                     }
 
                     let title2 = ItemTitleFormatter.displayTitle(for: item2)
@@ -157,8 +162,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     let recipient = item.creators.first(where: { $0.rawType == "recipient" })!
                     recipient.lastName = "Surname2"
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -180,8 +185,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     creator.name = "Name Surname"
                     item.creators.append(creator)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -194,8 +199,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     let item = RItem()
                     item.rawType = "interview"
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -207,8 +212,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     item.rawType = "interview"
                     self.createCreators(type: "interviewer", namePresentation: .separate, count: 1, in: item)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -218,8 +223,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     item2.rawType = "interview"
                     self.createCreators(type: "interviewer", namePresentation: .full, count: 1, in: item2)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item2)
+                    try? self.realm.write {
+                        self.realm.add(item2)
                     }
 
                     let title2 = ItemTitleFormatter.displayTitle(for: item2)
@@ -231,8 +236,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     item.rawType = "interview"
                     self.createCreators(type: "interviewer", namePresentation: .separate, count: 2, in: item)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -245,8 +250,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     creator.orderId = 2
                     self.createCreators(type: "interviewer", namePresentation: .full, count: 1, in: item2)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item2)
+                    try? self.realm.write {
+                        self.realm.add(item2)
                     }
 
                     let title2 = ItemTitleFormatter.displayTitle(for: item2)
@@ -258,8 +263,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     item.rawType = "interview"
                     self.createCreators(type: "interviewer", namePresentation: .separate, count: 3, in: item)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -271,8 +276,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     item.rawType = "interview"
                     self.createCreators(type: "interviewer", namePresentation: .separate, count: 4, in: item)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -282,8 +287,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     item2.rawType = "interview"
                     self.createCreators(type: "interviewer", namePresentation: .separate, count: 15, in: item2)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item2)
+                    try? self.realm.write {
+                        self.realm.add(item2)
                     }
 
                     let title2 = ItemTitleFormatter.displayTitle(for: item2)
@@ -299,8 +304,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     let recipient = item.creators.first(where: { $0.rawType == "interviewer" })!
                     recipient.lastName = "Surname2"
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -317,8 +322,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     item.baseTitle = "Some case"
                     item.rawType = "case"
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -335,8 +340,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     field.value = "Reporter"
                     item.fields.append(field)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -353,8 +358,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     field.value = "Court"
                     item.fields.append(field)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -376,8 +381,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     field2.value = "Court"
                     item.fields.append(field2)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -390,8 +395,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     let item = RItem()
                     item.rawType = "case"
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -407,8 +412,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     field.value = "Court"
                     item.fields.append(field)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -424,8 +429,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     field.value = "2019-01-01"
                     item.fields.append(field)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -452,8 +457,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     creator2.orderId = 0
                     item.creators.append(creator2)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)
@@ -482,8 +487,8 @@ final class ItemTitleFormatterSpec: QuickSpec {
                     creator.orderId = 0
                     item.creators.append(creator)
 
-                    try? ItemTitleFormatterSpec.realm.write {
-                        ItemTitleFormatterSpec.realm.add(item)
+                    try? self.realm.write {
+                        self.realm.add(item)
                     }
 
                     let title = ItemTitleFormatter.displayTitle(for: item)

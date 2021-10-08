@@ -20,10 +20,6 @@ import Quick
 final class TranslatorsControllerSpec: QuickSpec {
     private let baseUrl = URL(string: ApiConstants.baseUrlString)!
     private let version = TranslatorsControllerSpec.createVersion()
-    private let fileStorage: FileStorageController = FileStorageController()
-    private let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: URLSessionConfiguration.default)
-    private var dbConfig: Realm.Configuration!
-    private var dbStorage: DbStorage!
     private let bundledTimestamp = 1585834479
     private let translatorId = "bbf1617b-d836-4665-9aae-45f223264460"
     private let translatorUrl = "https://acontracorriente.chass.ncsu.edu/index.php/acontracorriente/article/view/1956"
@@ -32,17 +28,19 @@ final class TranslatorsControllerSpec: QuickSpec {
     private let remoteTimestamp = 1586182261 // 2020-04-06 16:00:00
     // We need to retain realm with memory identifier so that data are not deleted
     private var realm: Realm!
+    private var dbStorage: DbStorage!
     private var controller: TranslatorsAndStylesController!
     private var disposeBag: DisposeBag!
 
     override func spec() {
         beforeEach {
-            self.dbConfig = Realm.Configuration(inMemoryIdentifier: UUID().uuidString)
-            self.dbStorage = RealmDbStorage(config: self.dbConfig)
-            self.realm = try! Realm(configuration: self.dbConfig)
-            self.controller = TranslatorsControllerSpec.createController(apiClient: self.apiClient, bundledDataStorage: self.dbStorage, fileStorage: self.fileStorage)
+            let config = Realm.Configuration(inMemoryIdentifier: UUID().uuidString)
+            self.dbStorage = RealmDbStorage(config: config)
+            self.realm = try! Realm(configuration: config)
+            self.controller = TranslatorsControllerSpec.createController(apiClient: TestControllers.apiClient, bundledDataStorage: self.dbStorage, fileStorage: TestControllers.fileStorage)
             self.disposeBag = DisposeBag()
-            try? self.fileStorage.remove(Files.translators)
+
+            try? TestControllers.fileStorage.remove(Files.translators)
             HTTPStubs.removeAllStubs()
         }
 
@@ -62,13 +60,12 @@ final class TranslatorsControllerSpec: QuickSpec {
                     .subscribe(onSuccess: { _ in
                         expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(Double(self.bundledTimestamp)))
 
-                        let realm = try! Realm(configuration: self.dbConfig)
-                        realm.refresh()
-                        let translator = realm.objects(RTranslatorMetadata.self).filter("id = %@", self.translatorId).first
+                        self.realm.refresh()
+                        let translator = self.realm.objects(RTranslatorMetadata.self).filter("id = %@", self.translatorId).first
 
                         expect(translator).toNot(beNil())
                         expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: Double(self.bundledTranslatorTimestamp))))
-                        expect(self.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
+                        expect(TestControllers.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
 
                         self.controller.translators(matching: self.translatorUrl)
                             .observe(on:MainScheduler.instance)
@@ -107,7 +104,7 @@ final class TranslatorsControllerSpec: QuickSpec {
             }
 
             let translatorURL = Bundle(for: TranslatorsControllerSpec.self).url(forResource: "Bundled/translators/translator", withExtension: "js")!
-            try! self.fileStorage.copy(from: Files.file(from: translatorURL), to: Files.translator(filename: self.translatorId))
+            try! TestControllers.fileStorage.copy(from: Files.file(from: translatorURL), to: Files.translator(filename: self.translatorId))
 
             // Perform update and wait for results
             waitUntil(timeout: .seconds(10)) { doneAction in
@@ -116,13 +113,12 @@ final class TranslatorsControllerSpec: QuickSpec {
                     .subscribe(onSuccess: { _ in
                         expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(Double(self.bundledTimestamp)))
 
-                        let realm = try! Realm(configuration: self.dbConfig)
-                        realm.refresh()
-                        let translator = realm.objects(RTranslatorMetadata.self).filter("id = %@", self.translatorId).first
+                        self.realm.refresh()
+                        let translator = self.realm.objects(RTranslatorMetadata.self).filter("id = %@", self.translatorId).first
 
                         expect(translator).toNot(beNil())
                         expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: Double(self.bundledTranslatorTimestamp))))
-                        expect(self.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
+                        expect(TestControllers.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
 
                         self.controller.translators(matching: self.translatorUrl)
                             .observe(on: MainScheduler.instance)
@@ -161,7 +157,7 @@ final class TranslatorsControllerSpec: QuickSpec {
             }
 
             let translatorURL = Bundle(for: TranslatorsControllerSpec.self).url(forResource: "Bundled/translators/translator", withExtension: "js")!
-            try! self.fileStorage.copy(from: Files.file(from: translatorURL), to: Files.translator(filename: self.translatorId))
+            try! TestControllers.fileStorage.copy(from: Files.file(from: translatorURL), to: Files.translator(filename: self.translatorId))
 
             // Perform update and wait for results
             waitUntil(timeout: .seconds(10)) { doneAction in
@@ -170,13 +166,12 @@ final class TranslatorsControllerSpec: QuickSpec {
                     .subscribe(onSuccess: { _ in
                         expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(Double(self.bundledTimestamp)))
 
-                        let realm = try! Realm(configuration: self.dbConfig)
-                        realm.refresh()
-                        let translator = realm.objects(RTranslatorMetadata.self).filter("id = %@", self.translatorId).first
+                        self.realm.refresh()
+                        let translator = self.realm.objects(RTranslatorMetadata.self).filter("id = %@", self.translatorId).first
 
                         expect(translator).toNot(beNil())
                         expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: Double(self.bundledTranslatorTimestamp + 100))))
-                        expect(self.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
+                        expect(TestControllers.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
 
                         self.controller.translators(matching: self.translatorUrl)
                             .observe(on: MainScheduler.instance)
@@ -217,20 +212,19 @@ final class TranslatorsControllerSpec: QuickSpec {
             }
 
             let translatorURL = Bundle(for: TranslatorsControllerSpec.self).url(forResource: "Bundled/translators/translator", withExtension: "js")!
-            try! self.fileStorage.copy(from: Files.file(from: translatorURL), to: Files.translator(filename: deletedTranslatorId))
+            try! TestControllers.fileStorage.copy(from: Files.file(from: translatorURL), to: Files.translator(filename: deletedTranslatorId))
 
             // Perform update and wait for results
             waitUntil(timeout: .seconds(10)) { doneAction in
                 self.controller.isLoading.skip(1).filter({ !$0 }).first()
                     .observe(on: MainScheduler.instance)
                     .subscribe(onSuccess: { _ in
-                        let realm = try! Realm(configuration: self.dbConfig)
-                        realm.refresh()
+                        self.realm.refresh()
 
-                        let translator = realm.objects(RTranslatorMetadata.self).filter("id = %@", deletedTranslatorId).first
+                        let translator = self.realm.objects(RTranslatorMetadata.self).filter("id = %@", deletedTranslatorId).first
 
                         expect(translator).to(beNil())
-                        expect(self.fileStorage.has(Files.translator(filename: deletedTranslatorId))).to(beFalse())
+                        expect(TestControllers.fileStorage.has(Files.translator(filename: deletedTranslatorId))).to(beFalse())
 
                         doneAction()
                     }, onFailure: { error in
@@ -260,14 +254,13 @@ final class TranslatorsControllerSpec: QuickSpec {
                     .subscribe(onSuccess: { _ in
                         expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(Double(self.remoteTimestamp)))
 
-                        let realm = try! Realm(configuration: self.dbConfig)
-                        realm.refresh()
+                        self.realm.refresh()
 
-                        let translator = realm.objects(RTranslatorMetadata.self).filter("id = %@", self.translatorId).first
+                        let translator = self.realm.objects(RTranslatorMetadata.self).filter("id = %@", self.translatorId).first
 
                         expect(translator).toNot(beNil())
                         expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: Double(self.remoteTranslatorTimestamp))))
-                        expect(self.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
+                        expect(TestControllers.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
 
                         self.controller.translators(matching: self.translatorUrl)
                             .observe(on: MainScheduler.instance)
@@ -304,13 +297,12 @@ final class TranslatorsControllerSpec: QuickSpec {
                 self.controller.isLoading.skip(1).filter({ !$0 }).first()
                     .observe(on: MainScheduler.instance)
                     .subscribe(onSuccess: { _ in
-                        let realm = try! Realm(configuration: self.dbConfig)
-                        realm.refresh()
+                        self.realm.refresh()
 
-                        let translator = realm.objects(RTranslatorMetadata.self).filter("id = %@", self.translatorId).first
+                        let translator = self.realm.objects(RTranslatorMetadata.self).filter("id = %@", self.translatorId).first
 
                         expect(translator).to(beNil())
-                        expect(self.fileStorage.has(Files.translator(filename: self.translatorId))).to(beFalse())
+                        expect(TestControllers.fileStorage.has(Files.translator(filename: self.translatorId))).to(beFalse())
 
                         doneAction()
                     }, onFailure: { error in
@@ -335,7 +327,7 @@ final class TranslatorsControllerSpec: QuickSpec {
             }
 
             let translatorURL = Bundle(for: TranslatorsControllerSpec.self).url(forResource: "Bundled/translators/translator", withExtension: "js")!
-            try! self.fileStorage.copy(from: Files.file(from: translatorURL), to: Files.translator(filename: self.translatorId))
+            try! TestControllers.fileStorage.copy(from: Files.file(from: translatorURL), to: Files.translator(filename: self.translatorId))
 
             // Perform reset
 
@@ -348,7 +340,7 @@ final class TranslatorsControllerSpec: QuickSpec {
                         expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(Double(self.bundledTimestamp)))
                         expect(translator).toNot(beNil())
                         expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: Double(self.bundledTranslatorTimestamp))))
-                        expect(self.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
+                        expect(TestControllers.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
 
                         self.controller.translators(matching: self.translatorUrl)
                             .observe(on: MainScheduler.instance)

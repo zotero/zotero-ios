@@ -15,71 +15,76 @@ import RealmSwift
 import Quick
 
 final class CreatorSummaryFormatterSpec: QuickSpec {
-    private static let realmConfig = Realm.Configuration(inMemoryIdentifier: "TestsRealmConfig")
-    private static let realm = try! Realm(configuration: realmConfig) // Retain realm with inMemoryIdentifier so that data are not deleted
+    // Retain realm with inMemoryIdentifier so that data are not deleted
+    private let realm: Realm
+
+    required init() {
+        let config = Realm.Configuration(inMemoryIdentifier: "TestsRealmConfig")
+        self.realm = try! Realm(configuration: config)
+    }
 
     override func spec() {
         beforeEach {
-            try? CreatorSummaryFormatterSpec.realm.write {
-                CreatorSummaryFormatterSpec.realm.deleteAll()
+            try? self.realm.write {
+                self.realm.deleteAll()
             }
-            CreatorSummaryFormatterSpec.realm.refresh()
+            self.realm.refresh()
         }
 
         it("creates summary for no creators") {
-            try? CreatorSummaryFormatterSpec.realm.write {
-                CreatorSummaryFormatterSpec.realm.add(self.createCreators(type: "author", namePresentation: .separate, count: 0))
+            try? self.realm.write {
+                self.realm.add(self.createCreators(type: "author", namePresentation: .separate, count: 0))
             }
 
-            let results = CreatorSummaryFormatterSpec.realm.objects(RItem.self).first!.creators.filter("primary = true")
+            let results = self.realm.objects(RItem.self).first!.creators.filter("primary = true")
             let summary = CreatorSummaryFormatter.summary(for: results)
             expect(summary).to(beNil())
         }
 
         it("creates summary for 1 creator") {
-            try? CreatorSummaryFormatterSpec.realm.write {
-                CreatorSummaryFormatterSpec.realm.add(self.createCreators(type: "author", namePresentation: .separate, count: 1))
+            try? self.realm.write {
+                self.realm.add(self.createCreators(type: "author", namePresentation: .separate, count: 1))
             }
 
-            let results = CreatorSummaryFormatterSpec.realm.objects(RItem.self).first!.creators.filter("primary = true")
+            let results = self.realm.objects(RItem.self).first!.creators.filter("primary = true")
             let summary = CreatorSummaryFormatter.summary(for: results)
             expect(summary).to(equal("Surname0"))
 
-            try? CreatorSummaryFormatterSpec.realm.write {
-                CreatorSummaryFormatterSpec.realm.deleteAll()
-                CreatorSummaryFormatterSpec.realm.add(self.createCreators(type: "author", namePresentation: .full, count: 1))
+            try? self.realm.write {
+                self.realm.deleteAll()
+                self.realm.add(self.createCreators(type: "author", namePresentation: .full, count: 1))
             }
 
-            let results2 = CreatorSummaryFormatterSpec.realm.objects(RItem.self).first!.creators.filter("primary = true")
+            let results2 = self.realm.objects(RItem.self).first!.creators.filter("primary = true")
             let summary2 = CreatorSummaryFormatter.summary(for: results2)
             expect(summary2).to(equal("Name0 Surname0"))
         }
 
         it("creates summary for 2 creators") {
-            try? CreatorSummaryFormatterSpec.realm.write {
-                CreatorSummaryFormatterSpec.realm.add(self.createCreators(type: "author", namePresentation: .separate, count: 2))
+            try? self.realm.write {
+                self.realm.add(self.createCreators(type: "author", namePresentation: .separate, count: 2))
             }
 
-            let results = CreatorSummaryFormatterSpec.realm.objects(RItem.self).first!.creators.filter("primary = true")
+            let results = self.realm.objects(RItem.self).first!.creators.filter("primary = true")
             let summary = CreatorSummaryFormatter.summary(for: results)
             expect(summary).to(equal("Surname1 and Surname0"))
         }
 
         it("creates summary for 3+ creators") {
-            try? CreatorSummaryFormatterSpec.realm.write {
-                CreatorSummaryFormatterSpec.realm.add(self.createCreators(type: "author", namePresentation: .separate, count: 3))
+            try? self.realm.write {
+                self.realm.add(self.createCreators(type: "author", namePresentation: .separate, count: 3))
             }
 
-            let results = CreatorSummaryFormatterSpec.realm.objects(RItem.self).first!.creators.filter("primary = true")
+            let results = self.realm.objects(RItem.self).first!.creators.filter("primary = true")
             let summary = CreatorSummaryFormatter.summary(for: results)
             expect(summary).to(equal("Surname2 et al."))
 
-            try? CreatorSummaryFormatterSpec.realm.write {
-                CreatorSummaryFormatterSpec.realm.deleteAll()
-                CreatorSummaryFormatterSpec.realm.add(self.createCreators(type: "author", namePresentation: .separate, count: 15))
+            try? self.realm.write {
+                self.realm.deleteAll()
+                self.realm.add(self.createCreators(type: "author", namePresentation: .separate, count: 15))
             }
 
-            let results2 = CreatorSummaryFormatterSpec.realm.objects(RItem.self).first!.creators.filter("primary = true")
+            let results2 = self.realm.objects(RItem.self).first!.creators.filter("primary = true")
             let summary2 = CreatorSummaryFormatter.summary(for: results2)
             expect(summary2).to(equal("Surname14 et al."))
         }

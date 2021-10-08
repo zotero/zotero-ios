@@ -17,34 +17,57 @@ import RxSwift
 import Quick
 
 final class SettingsActionHandlerSpec: QuickSpec {
-    private static let realmConfig = Realm.Configuration(inMemoryIdentifier: "TestsRealmConfig")
-    private static let realm = try! Realm(configuration: realmConfig) // Retain realm with inMemoryIdentifier so that data are not deleted
-    private static let dbStorage = RealmDbStorage(config: SettingsActionHandlerSpec.realmConfig)
-    private static let fileStorage = FileStorageController()
-    private static let sessionController = SessionController(secureStorage: KeychainSecureStorage(), defaults: Defaults.shared)
-    private static let websocketController = WebSocketController(dbStorage: dbStorage)
-    private static let apiClient = ZoteroApiClient(baseUrl: "http://zotero.org/", configuration: .default)
-    private static let backgroundUploader = BackgroundUploader(uploadProcessor: BackgroundUploadProcessor(apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage), schemaVersion: 0)
-    private static let syncScheduler = SyncScheduler(controller: SyncController(userId: 0, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, schemaController: SchemaController(),
-                                                                                dateParser: DateParser(), backgroundUploader: backgroundUploader, syncDelayIntervals: [], conflictDelays: []))
-    private static let debugLogging = DebugLogging(apiClient: apiClient, fileStorage: fileStorage)
-    private static let translatorsController = TranslatorsAndStylesController(apiClient: apiClient, bundledDataStorage: dbStorage, fileStorage: fileStorage)
-    private static let fileCleanupController = AttachmentFileCleanupController(fileStorage: fileStorage, dbStorage: dbStorage)
-    private static let handler = SettingsActionHandler(dbStorage: dbStorage, fileStorage: fileStorage, sessionController: sessionController, webSocketController: websocketController,
-                                                       syncScheduler: syncScheduler, debugLogging: debugLogging, translatorsAndStylesController: translatorsController,
-                                                       fileCleanupController: fileCleanupController)
-    private static var viewModel: ViewModel<SettingsActionHandler>?
-    private static var disposeBag = DisposeBag()
+    // Retain realm with inMemoryIdentifier so that data are not deleted
+    private let realm: Realm
+    private let dbStorage: DbStorage
+    private let websocketController: WebSocketController
+    private let sessionController: SessionController
+    private let backgroundUploader: BackgroundUploader
+    private let syncScheduler: SyncScheduler
+    private let debugLogging: DebugLogging
+    private let translatorsController: TranslatorsAndStylesController
+    private let fileCleanupController: AttachmentFileCleanupController
+    private let handler: SettingsActionHandler
+    private var viewModel: ViewModel<SettingsActionHandler>?
+    private var disposeBag = DisposeBag()
+
+    required init() {
+        let realmConfig = Realm.Configuration(inMemoryIdentifier: "TestsRealmConfig")
+        let dbStorage = RealmDbStorage(config: realmConfig)
+        let sessionController = SessionController(secureStorage: TestControllers.secureStorage, defaults: Defaults.shared)
+        let websocketController = WebSocketController(dbStorage: dbStorage)
+        let backgroundUploader = BackgroundUploader(uploadProcessor: BackgroundUploadProcessor(apiClient: TestControllers.apiClient, dbStorage: dbStorage, fileStorage: TestControllers.fileStorage),
+                                                    schemaVersion: 0)
+        let syncScheduler = SyncScheduler(controller: SyncController(userId: 0, apiClient: TestControllers.apiClient, dbStorage: dbStorage, fileStorage: TestControllers.fileStorage,
+                                                                     schemaController: TestControllers.schemaController, dateParser: TestControllers.dateParser, backgroundUploader: backgroundUploader,
+                                                                     syncDelayIntervals: [], conflictDelays: []))
+        let debugLogging = DebugLogging(apiClient: TestControllers.apiClient, fileStorage: TestControllers.fileStorage)
+        let translatorsController = TranslatorsAndStylesController(apiClient: TestControllers.apiClient, bundledDataStorage: dbStorage, fileStorage: TestControllers.fileStorage)
+        let fileCleanupController = AttachmentFileCleanupController(fileStorage: TestControllers.fileStorage, dbStorage: dbStorage)
+
+        self.dbStorage = dbStorage
+        self.sessionController = sessionController
+        self.websocketController = websocketController
+        self.backgroundUploader = backgroundUploader
+        self.syncScheduler = syncScheduler
+        self.debugLogging = debugLogging
+        self.translatorsController = translatorsController
+        self.fileCleanupController = fileCleanupController
+        self.realm = try! Realm(configuration: realmConfig)
+        self.handler = SettingsActionHandler(dbStorage: dbStorage, fileStorage: TestControllers.fileStorage, sessionController: sessionController, webSocketController: websocketController,
+                                             syncScheduler: syncScheduler, debugLogging: debugLogging, translatorsAndStylesController: translatorsController,
+                                             fileCleanupController: fileCleanupController)
+    }
 
     override func spec() {
         beforeEach {
-            try? SettingsActionHandlerSpec.realm.write {
-                SettingsActionHandlerSpec.realm.deleteAll()
+            try? self.realm.write {
+                self.realm.deleteAll()
             }
-            SettingsActionHandlerSpec.realm.refresh()
-            SettingsActionHandlerSpec.viewModel = nil
-            SettingsActionHandlerSpec.disposeBag = DisposeBag()
-            try? SettingsActionHandlerSpec.fileStorage.remove(Files.downloads)
+            self.realm.refresh()
+            self.viewModel = nil
+            self.disposeBag = DisposeBag()
+            try? TestControllers.fileStorage.remove(Files.downloads)
         }
 
         describe("storage cleanup") {
@@ -54,12 +77,12 @@ final class SettingsActionHandlerSpec: QuickSpec {
                 let groupLibrary = Files.attachmentFile(in: .group(1), key: "bbbbbbbb", filename: "bitcoin", contentType: "application/pdf")
                 let storageData: [LibraryIdentifier: DirectoryData] = [.custom(.myLibrary): DirectoryData(fileCount: 1, mbSize: 1), .group(1): DirectoryData(fileCount: 1, mbSize: 1)]
 
-                try! SettingsActionHandlerSpec.fileStorage.write(data, to: mainLibrary, options: .atomic)
-                try! SettingsActionHandlerSpec.fileStorage.write(data, to: groupLibrary, options: .atomic)
+                try! TestControllers.fileStorage.write(data, to: mainLibrary, options: .atomic)
+                try! TestControllers.fileStorage.write(data, to: groupLibrary, options: .atomic)
 
                 waitUntil(timeout: .seconds(10)) { completion in
-                    let viewModel = ViewModel(initialState: SettingsState(storageData: storageData), handler: SettingsActionHandlerSpec.handler)
-                    SettingsActionHandlerSpec.viewModel = viewModel
+                    let viewModel = ViewModel(initialState: SettingsState(storageData: storageData), handler: self.handler)
+                    self.viewModel = viewModel
 
                     viewModel.stateObservable
                         .subscribe(onNext: { state in
@@ -67,12 +90,12 @@ final class SettingsActionHandlerSpec: QuickSpec {
                                 return
                             }
 
-                            expect(SettingsActionHandlerSpec.fileStorage.has(mainLibrary)).to(beFalse())
-                            expect(SettingsActionHandlerSpec.fileStorage.has(groupLibrary)).to(beTrue())
+                            expect(TestControllers.fileStorage.has(mainLibrary)).to(beFalse())
+                            expect(TestControllers.fileStorage.has(groupLibrary)).to(beTrue())
 
                             completion()
                         })
-                        .disposed(by: SettingsActionHandlerSpec.disposeBag)
+                        .disposed(by: self.disposeBag)
 
                     viewModel.process(action: .deleteDownloadsInLibrary(.custom(.myLibrary)))
                 }
@@ -85,26 +108,26 @@ final class SettingsActionHandlerSpec: QuickSpec {
                 let groupLibrary = Files.attachmentFile(in: .group(1), key: "bbbbbbbb", filename: "bitcoin", contentType: "application/pdf")
                 let storageData: [LibraryIdentifier: DirectoryData] = [.custom(.myLibrary): DirectoryData(fileCount: 2, mbSize: 2), .group(1): DirectoryData(fileCount: 1, mbSize: 1)]
 
-                try! SettingsActionHandlerSpec.fileStorage.write(data, to: mainLibrary, options: .atomic)
-                try! SettingsActionHandlerSpec.fileStorage.write(data, to: mainLibrary2, options: .atomic)
-                try! SettingsActionHandlerSpec.fileStorage.write(data, to: groupLibrary, options: .atomic)
+                try! TestControllers.fileStorage.write(data, to: mainLibrary, options: .atomic)
+                try! TestControllers.fileStorage.write(data, to: mainLibrary2, options: .atomic)
+                try! TestControllers.fileStorage.write(data, to: groupLibrary, options: .atomic)
 
-                try! SettingsActionHandlerSpec.realm.write {
+                try! self.realm.write {
                     let group = RGroup()
                     group.identifier = 1
-                    SettingsActionHandlerSpec.realm.add(group)
+                    self.realm.add(group)
 
                     let item = RItem()
                     item.key = "bbbbbbbb"
                     item.rawType = ItemTypes.attachment
                     item.libraryId = .custom(.myLibrary)
                     item.attachmentNeedsSync = true
-                    SettingsActionHandlerSpec.realm.add(item)
+                    self.realm.add(item)
                 }
 
                 waitUntil(timeout: .seconds(10)) { completion in
-                    let viewModel = ViewModel(initialState: SettingsState(storageData: storageData), handler: SettingsActionHandlerSpec.handler)
-                    SettingsActionHandlerSpec.viewModel = viewModel
+                    let viewModel = ViewModel(initialState: SettingsState(storageData: storageData), handler: self.handler)
+                    self.viewModel = viewModel
 
                     viewModel.stateObservable
                         .subscribe(onNext: { state in
@@ -112,13 +135,13 @@ final class SettingsActionHandlerSpec: QuickSpec {
                                 return
                             }
 
-                            expect(SettingsActionHandlerSpec.fileStorage.has(mainLibrary)).to(beFalse())
-                            expect(SettingsActionHandlerSpec.fileStorage.has(mainLibrary2)).to(beTrue())
-                            expect(SettingsActionHandlerSpec.fileStorage.has(groupLibrary)).to(beTrue())
+                            expect(TestControllers.fileStorage.has(mainLibrary)).to(beFalse())
+                            expect(TestControllers.fileStorage.has(mainLibrary2)).to(beTrue())
+                            expect(TestControllers.fileStorage.has(groupLibrary)).to(beTrue())
 
                             completion()
                         })
-                        .disposed(by: SettingsActionHandlerSpec.disposeBag)
+                        .disposed(by: self.disposeBag)
 
                     viewModel.process(action: .deleteDownloadsInLibrary(.custom(.myLibrary)))
                 }
@@ -130,18 +153,18 @@ final class SettingsActionHandlerSpec: QuickSpec {
                 let groupLibrary = Files.attachmentFile(in: .group(1), key: "bbbbbbbb", filename: "bitcoin", contentType: "application/pdf")
                 let storageData: [LibraryIdentifier: DirectoryData] = [.custom(.myLibrary): DirectoryData(fileCount: 1, mbSize: 1), .group(1): DirectoryData(fileCount: 1, mbSize: 1)]
 
-                try! SettingsActionHandlerSpec.fileStorage.write(data, to: mainLibrary, options: .atomic)
-                try! SettingsActionHandlerSpec.fileStorage.write(data, to: groupLibrary, options: .atomic)
+                try! TestControllers.fileStorage.write(data, to: mainLibrary, options: .atomic)
+                try! TestControllers.fileStorage.write(data, to: groupLibrary, options: .atomic)
 
-                try! SettingsActionHandlerSpec.realm.write {
+                try! self.realm.write {
                     let group = RGroup()
                     group.identifier = 1
-                    SettingsActionHandlerSpec.realm.add(group)
+                    self.realm.add(group)
                 }
 
                 waitUntil(timeout: .seconds(10)) { completion in
-                    let viewModel = ViewModel(initialState: SettingsState(storageData: storageData), handler: SettingsActionHandlerSpec.handler)
-                    SettingsActionHandlerSpec.viewModel = viewModel
+                    let viewModel = ViewModel(initialState: SettingsState(storageData: storageData), handler: self.handler)
+                    self.viewModel = viewModel
 
                     viewModel.stateObservable
                         .subscribe(onNext: { state in
@@ -149,12 +172,12 @@ final class SettingsActionHandlerSpec: QuickSpec {
                                 return
                             }
 
-                            expect(SettingsActionHandlerSpec.fileStorage.has(mainLibrary)).to(beFalse())
-                            expect(SettingsActionHandlerSpec.fileStorage.has(groupLibrary)).to(beFalse())
+                            expect(TestControllers.fileStorage.has(mainLibrary)).to(beFalse())
+                            expect(TestControllers.fileStorage.has(groupLibrary)).to(beFalse())
 
                             completion()
                         })
-                        .disposed(by: SettingsActionHandlerSpec.disposeBag)
+                        .disposed(by: self.disposeBag)
 
                     viewModel.process(action: .deleteAllDownloads)
                 }
