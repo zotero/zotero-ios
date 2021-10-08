@@ -365,6 +365,7 @@
 		B3202C6527103DEE00485BE4 /* TestControllers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3202C6427103DEE00485BE4 /* TestControllers.swift */; };
 		B3202C692710488200485BE4 /* OHHTTPStubs+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3202C672710488200485BE4 /* OHHTTPStubs+Helpers.swift */; };
 		B3202C6A2710488200485BE4 /* SyncControllerAction+Equatable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3202C682710488200485BE4 /* SyncControllerAction+Equatable.swift */; };
+		B3202C6C271048FF00485BE4 /* WebDavControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3202C6B271048FF00485BE4 /* WebDavControllerSpec.swift */; };
 		B32259A227070EBA0047598D /* PDFPlainReaderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32259A127070EBA0047598D /* PDFPlainReaderViewController.swift */; };
 		B322B4772673A41200BC3D08 /* ReadStyleDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B322B4762673A41200BC3D08 /* ReadStyleDbRequest.swift */; };
 		B3231334243F0F0000F1905A /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3231333243F0F0000F1905A /* SceneDelegate.swift */; };
@@ -1194,6 +1195,7 @@
 		B3202C6427103DEE00485BE4 /* TestControllers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestControllers.swift; sourceTree = "<group>"; };
 		B3202C672710488200485BE4 /* OHHTTPStubs+Helpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "OHHTTPStubs+Helpers.swift"; sourceTree = "<group>"; };
 		B3202C682710488200485BE4 /* SyncControllerAction+Equatable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "SyncControllerAction+Equatable.swift"; sourceTree = "<group>"; };
+		B3202C6B271048FF00485BE4 /* WebDavControllerSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebDavControllerSpec.swift; sourceTree = "<group>"; };
 		B32259A127070EBA0047598D /* PDFPlainReaderViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFPlainReaderViewController.swift; sourceTree = "<group>"; };
 		B322B4762673A41200BC3D08 /* ReadStyleDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadStyleDbRequest.swift; sourceTree = "<group>"; };
 		B3231333243F0F0000F1905A /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -2194,6 +2196,7 @@
 				B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */,
 				B3202C6427103DEE00485BE4 /* TestControllers.swift */,
 				B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */,
+				B3202C6B271048FF00485BE4 /* WebDavControllerSpec.swift */,
 			);
 			path = ZoteroTests;
 			sourceTree = "<group>";
@@ -4316,6 +4319,7 @@
 			files = (
 				B32A3C7A247FFF14009E2C5D /* DateParserSpec.swift in Sources */,
 				B34F9FA523743C42004ED34C /* ItemTitleFormatterSpec.swift in Sources */,
+				B3202C6C271048FF00485BE4 /* WebDavControllerSpec.swift in Sources */,
 				B39C7BDE251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersSpec.swift in Sources */,
 				B3B1EDED250242DB00D8BC1E /* ItemResponseSpec.swift in Sources */,
 				B3202C6527103DEE00485BE4 /* TestControllers.swift in Sources */,

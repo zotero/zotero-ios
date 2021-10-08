@@ -1185,7 +1185,7 @@ final class SyncControllerSpec: QuickSpec {
 
                     let collectionUpdate = UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .collection, params: [], version: oldVersion)
                     // We don't care about specific params, we just want to catch update for all objecfts of this type
-                    let collectionConditions = collectionUpdate.stubCondition(with: baseUrl, ignorePostParams: true)
+                    let collectionConditions = collectionUpdate.stubCondition(with: baseUrl, ignoreBody: true)
                     stub(condition: collectionConditions, response: { request -> HTTPStubsResponse in
                         let params = request.httpBodyStream.flatMap({ self.jsonParameters(from: $0) })
                         expect(params?.count).to(equal(1))
@@ -1200,7 +1200,7 @@ final class SyncControllerSpec: QuickSpec {
                     let itemUpdate = UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .item,
                                                     params: [], version: oldVersion)
                     // We don't care about specific params, we just want to catch update for all objecfts of this type
-                    let itemConditions = itemUpdate.stubCondition(with: baseUrl, ignorePostParams: true)
+                    let itemConditions = itemUpdate.stubCondition(with: baseUrl, ignoreBody: true)
                     stub(condition: itemConditions, response: { request -> HTTPStubsResponse in
                         let params = request.httpBodyStream.flatMap({ self.jsonParameters(from: $0) })
                         expect(params?.count).to(equal(1))
@@ -1440,7 +1440,7 @@ final class SyncControllerSpec: QuickSpec {
                     let update = UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .collection, params: [], version: oldVersion)
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     // We don't care about specific post params, we just need to catch all updates for given type
-                    createStub(for: update, ignorePostParams: true, baseUrl: baseUrl, headers: ["last-modified-version": "\(newVersion)"], statusCode: 200,
+                    createStub(for: update, ignoreBody: true, baseUrl: baseUrl, headers: ["last-modified-version": "\(newVersion)"], statusCode: 200,
                                jsonResponse: ["success": ["0": [:]], "unchanged": [], "failed": []])
 
                     waitUntil(timeout: .seconds(10)) { doneAction in

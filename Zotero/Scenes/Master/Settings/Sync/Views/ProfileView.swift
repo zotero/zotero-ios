@@ -122,8 +122,14 @@ struct WebDavSettings: View {
             return L10n.Errors.Settings.Webdav.internetConnection
         }
 
-        if let statusCode = error.unacceptableStatusCode, statusCode == 401 {
-            return L10n.Errors.Settings.Webdav.unauthorized
+        if let statusCode = error.unacceptableStatusCode {
+            switch statusCode {
+            case 401:
+                return L10n.Errors.Settings.Webdav.unauthorized
+            case 403:
+                return L10n.Errors.Settings.Webdav.forbidden
+            default: break
+            }
         }
 
         return error.localizedDescription

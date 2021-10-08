@@ -48,7 +48,7 @@ final class TranslatorsControllerSpec: QuickSpec {
             // Stub to "disable" remote request
             let response = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xml><currentTime>\(self.bundledTimestamp)</currentTime><pdftools version=\"3.04\"/></xml>"
             let request = RepoRequest(timestamp: self.bundledTimestamp, version: self.version, type: TranslatorsAndStylesController.UpdateType.initial.rawValue, styles: nil)
-            createStub(for: request, ignorePostParams: true, baseUrl: self.baseUrl, xmlResponse: response)
+            createStub(for: request, ignoreBody: true, baseUrl: self.baseUrl, xmlResponse: response)
 
             // Setup as first-time update
             self.controller.setupTest(timestamp: 0, hash: "", deleted: 0)
@@ -91,7 +91,7 @@ final class TranslatorsControllerSpec: QuickSpec {
             // Stub to "disable" remote request
             let response = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xml><currentTime>\(self.bundledTimestamp)</currentTime><pdftools version=\"3.04\"/></xml>"
             let request = RepoRequest(timestamp: self.bundledTimestamp, version: self.version, type: TranslatorsAndStylesController.UpdateType.startup.rawValue, styles: nil)
-            createStub(for: request, ignorePostParams: true, baseUrl: self.baseUrl, xmlResponse: response)
+            createStub(for: request, ignoreBody: true, baseUrl: self.baseUrl, xmlResponse: response)
 
             // Create local records
             self.controller.setupTest(timestamp: self.bundledTimestamp - 100, hash: "123abc", deleted: 0)
@@ -144,7 +144,7 @@ final class TranslatorsControllerSpec: QuickSpec {
             // Stub to "disable" remote request
             let response = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xml><currentTime>\(self.bundledTimestamp)</currentTime><pdftools version=\"3.04\"/></xml>"
             let request = RepoRequest(timestamp: self.bundledTimestamp, version: self.version, type: TranslatorsAndStylesController.UpdateType.startup.rawValue, styles: nil)
-            createStub(for: request, ignorePostParams: true, baseUrl: self.baseUrl, xmlResponse: response)
+            createStub(for: request, ignoreBody: true, baseUrl: self.baseUrl, xmlResponse: response)
 
             // Create local records
             self.controller.setupTest(timestamp: self.bundledTimestamp, hash: "123abc", deleted: 0)
@@ -197,7 +197,7 @@ final class TranslatorsControllerSpec: QuickSpec {
             // Stub to "disable" remote request
             let response = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xml><currentTime>\(self.bundledTimestamp)</currentTime><pdftools version=\"3.04\"/></xml>"
             let request = RepoRequest(timestamp: self.bundledTimestamp, version: self.version, type: TranslatorsAndStylesController.UpdateType.startup.rawValue, styles: nil)
-            createStub(for: request, ignorePostParams: true, baseUrl: self.baseUrl, xmlResponse: response)
+            createStub(for: request, ignoreBody: true, baseUrl: self.baseUrl, xmlResponse: response)
 
             // Create local records
             let deletedTranslatorId = "96b9f483-c44d-5784-cdad-ce21b984"
@@ -242,7 +242,7 @@ final class TranslatorsControllerSpec: QuickSpec {
             let responseUrl = Bundle(for: TranslatorsControllerSpec.self).url(forResource: "translators", withExtension: "xml")
             let response = try! String(contentsOf: responseUrl!)
             let request = RepoRequest(timestamp: self.bundledTimestamp, version: self.version, type: TranslatorsAndStylesController.UpdateType.initial.rawValue, styles: nil)
-            createStub(for: request, ignorePostParams: true, baseUrl: self.baseUrl, xmlResponse: response)
+            createStub(for: request, ignoreBody: true, baseUrl: self.baseUrl, xmlResponse: response)
 
             // Setup as first-time update
             self.controller.setupTest(timestamp: 0, hash: "", deleted: 0)
@@ -287,7 +287,7 @@ final class TranslatorsControllerSpec: QuickSpec {
             let responseUrl = Bundle(for: TranslatorsControllerSpec.self).url(forResource: "translators_delete", withExtension: "xml")
             let response = try! String(contentsOf: responseUrl!)
             let request = RepoRequest(timestamp: self.bundledTimestamp, version: self.version, type: TranslatorsAndStylesController.UpdateType.initial.rawValue, styles: nil)
-            createStub(for: request, ignorePostParams: true, baseUrl: self.baseUrl, xmlResponse: response)
+            createStub(for: request, ignoreBody: true, baseUrl: self.baseUrl, xmlResponse: response)
 
             // Setup as first-time update so that there is a bundle update as well
             self.controller.setupTest(timestamp: 0, hash: "", deleted: 0)

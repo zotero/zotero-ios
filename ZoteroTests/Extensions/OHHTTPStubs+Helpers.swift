@@ -14,26 +14,26 @@ import Alamofire
 import OHHTTPStubs
 import OHHTTPStubsSwift
 
-func createStub(for request: ApiRequest, ignorePostParams: Bool = false, baseUrl: URL, headers: [String: Any]? = nil, statusCode: Int32 = 200, jsonResponse: Any) {
-    stub(condition: request.stubCondition(with: baseUrl, ignorePostParams: ignorePostParams), response: { _ -> HTTPStubsResponse in
+func createStub(for request: ApiRequest, ignoreBody: Bool = false, baseUrl: URL, headers: [String: String]? = nil, statusCode: Int32 = 200, jsonResponse: Any) {
+    stub(condition: request.stubCondition(with: baseUrl, ignoreBody: ignoreBody), response: { _ -> HTTPStubsResponse in
         return HTTPStubsResponse(jsonObject: jsonResponse, statusCode: statusCode, headers: headers)
     })
 }
 
-func createStub(for request: ApiRequest, ignorePostParams: Bool = false, baseUrl: URL, headers: [String: Any]? = nil, statusCode: Int32 = 200, url: URL) {
-    stub(condition: request.stubCondition(with: baseUrl, ignorePostParams: ignorePostParams), response: { _ -> HTTPStubsResponse in
+func createStub(for request: ApiRequest, ignoreBody: Bool = false, baseUrl: URL, headers: [String: String]? = nil, statusCode: Int32 = 200, url: URL) {
+    stub(condition: request.stubCondition(with: baseUrl, ignoreBody: ignoreBody), response: { _ -> HTTPStubsResponse in
         return HTTPStubsResponse(fileURL: url, statusCode: statusCode, headers: headers)
     })
 }
 
-func createStub(for request: ApiRequest, ignorePostParams: Bool = false, baseUrl: URL, headers: [String: Any]? = nil, statusCode: Int32 = 200, xmlResponse: String) {
-    stub(condition: request.stubCondition(with: baseUrl, ignorePostParams: ignorePostParams), response: { _ -> HTTPStubsResponse in
+func createStub(for request: ApiRequest, ignoreBody: Bool = false, baseUrl: URL, headers: [String: String]? = nil, statusCode: Int32 = 200, xmlResponse: String) {
+    stub(condition: request.stubCondition(with: baseUrl, ignoreBody: ignoreBody), response: { _ -> HTTPStubsResponse in
         return HTTPStubsResponse(data: xmlResponse.data(using: .utf8)!, statusCode: statusCode, headers: headers)
     })
 }
 
 extension ApiRequest {
-    func stubCondition(with baseUrl: URL, ignorePostParams: Bool = false) -> HTTPStubsTestBlock {
+    func stubCondition(with baseUrl: URL, ignoreBody: Bool = false) -> HTTPStubsTestBlock {
         guard let urlRequest = (try? Convertible(request: self, baseUrl: baseUrl, token: nil).asURLRequest()),
               let url = urlRequest.url,
               let host = url.host else {
@@ -54,12 +54,16 @@ extension ApiRequest {
             methodCondition = isMethodHEAD()
         case .patch:
             methodCondition = isMethodPATCH()
+        case .options:
+            methodCondition = { $0.httpMethod == "OPTIONS" }
+        case .propfind:
+            methodCondition = { $0.httpMethod == "PROPFIND" }
         default:
             methodCondition = isMethodGET()
         }
 
         let bodyCondition: HTTPStubsTestBlock
-        if ignorePostParams {
+        if ignoreBody {
             bodyCondition = { _ in return true }
         } else {
             bodyCondition = { $0.ohhttpStubs_httpBody == urlRequest.ohhttpStubs_httpBody }

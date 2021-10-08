@@ -37,6 +37,10 @@ enum ApiEndpoint {
     case other(URL)
 }
 
+fileprivate struct DefaultStatusCodes {
+    static let acceptable: Set<Int> = Set(200..<300).union([304])
+}
+
 protocol ApiRequest {
     var endpoint: ApiEndpoint { get }
     var httpMethod: ApiHttpMethod { get }
@@ -50,11 +54,9 @@ protocol ApiRequest {
     func redact(response: String) -> String
 }
 
-fileprivate let statusCodes: Set<Int> = Set(200..<300).union([304])
-
 extension ApiRequest {
     var acceptableStatusCodes: Set<Int> {
-        return statusCodes
+        return DefaultStatusCodes.acceptable
     }
 
     func redact(parameters: [String: Any]) -> [String: Any] {
