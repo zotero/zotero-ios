@@ -892,7 +892,7 @@
 		B3E8FE8627143BDD00F51458 /* SyncSettingsActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E8FE8027143BDD00F51458 /* SyncSettingsActionHandler.swift */; };
 		B3E8FE8727143BDD00F51458 /* SyncSettingsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E8FE8227143BDD00F51458 /* SyncSettingsState.swift */; };
 		B3E8FE8827143BDD00F51458 /* SyncSettingsAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E8FE8327143BDD00F51458 /* SyncSettingsAction.swift */; };
-		B3E8FE8927143BDD00F51458 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E8FE8527143BDD00F51458 /* ProfileView.swift */; };
+		B3E8FE8927143BDD00F51458 /* SyncSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E8FE8527143BDD00F51458 /* SyncSettingsView.swift */; };
 		B3E9180C25ECE30A002B77AF /* CoreGraphics+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E9180B25ECE30A002B77AF /* CoreGraphics+Extensions.swift */; };
 		B3EC44612718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EC44602718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift */; };
 		B3ED688D255AE46D00D4DE78 /* Differ in Frameworks */ = {isa = PBXBuildFile; productRef = B3ED688C255AE46D00D4DE78 /* Differ */; };
@@ -1610,7 +1610,7 @@
 		B3E8FE8027143BDD00F51458 /* SyncSettingsActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncSettingsActionHandler.swift; sourceTree = "<group>"; };
 		B3E8FE8227143BDD00F51458 /* SyncSettingsState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncSettingsState.swift; sourceTree = "<group>"; };
 		B3E8FE8327143BDD00F51458 /* SyncSettingsAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncSettingsAction.swift; sourceTree = "<group>"; };
-		B3E8FE8527143BDD00F51458 /* ProfileView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		B3E8FE8527143BDD00F51458 /* SyncSettingsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncSettingsView.swift; sourceTree = "<group>"; };
 		B3E9180B25ECE30A002B77AF /* CoreGraphics+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CoreGraphics+Extensions.swift"; sourceTree = "<group>"; };
 		B3EC44602718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPreviewBoundingBoxCalculator.swift; sourceTree = "<group>"; };
 		B3F0C3F7250A1BD8002D557A /* LibrariesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrariesViewController.swift; sourceTree = "<group>"; };
@@ -3267,8 +3267,8 @@
 		B3E8FE7E27143BDD00F51458 /* Sync */ = {
 			isa = PBXGroup;
 			children = (
-				B3E8FE7F27143BDD00F51458 /* ViewModels */,
 				B3E8FE8127143BDD00F51458 /* Models */,
+				B3E8FE7F27143BDD00F51458 /* ViewModels */,
 				B3E8FE8427143BDD00F51458 /* Views */,
 			);
 			path = Sync;
@@ -3294,7 +3294,7 @@
 		B3E8FE8427143BDD00F51458 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				B3E8FE8527143BDD00F51458 /* ProfileView.swift */,
+				B3E8FE8527143BDD00F51458 /* SyncSettingsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -4101,7 +4101,7 @@
 				B36181FE24C9A7C000B30D56 /* OnboardingLayout.swift in Sources */,
 				B398A915270C6A4300968EE8 /* WebDavController.swift in Sources */,
 				B3DDDAAC24CAD6810014DF99 /* InsetLabel.swift in Sources */,
-				B3E8FE8927143BDD00F51458 /* ProfileView.swift in Sources */,
+				B3E8FE8927143BDD00F51458 /* SyncSettingsView.swift in Sources */,
 				B3593F7A241A76E600760E20 /* CollectionEditState.swift in Sources */,
 				B3C6AB28248E1B720009AC96 /* SyncBatchProcessor.swift in Sources */,
 				B351BD0E25EF7E78000451E2 /* ItemAction.swift in Sources */,

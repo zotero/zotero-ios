@@ -1,5 +1,5 @@
 //
-//  ProfileView.swift
+//  SyncSettingsView.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 15/10/2019.
@@ -8,7 +8,7 @@
 
 import SwiftUI
 
-struct ProfileView: View {
+struct SyncSettingsView: View {
     @EnvironmentObject var viewModel: ViewModel<SyncSettingsActionHandler>
 
     weak var coordinatorDelegate: SettingsCoordinatorDelegate?
@@ -166,6 +166,6 @@ fileprivate struct VerifyButton: View {
 
 struct ProfileView_Previews: PreviewProvider {
     static var previews: some View {
-        return ProfileView()
+        return SyncSettingsView()
     }
 }

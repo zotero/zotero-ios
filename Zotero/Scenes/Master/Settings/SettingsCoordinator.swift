@@ -153,7 +153,7 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
                                       username: self.controllers.webDavController.sessionStorage.username,
                                       password: self.controllers.webDavController.sessionStorage.password)
         let viewModel = ViewModel(initialState: state, handler: handler)
-        var view = ProfileView()
+        var view = SyncSettingsView()
         view.coordinatorDelegate = self
 
         let controller = UIHostingController(rootView: view.environmentObject(viewModel))
