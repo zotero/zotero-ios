@@ -34,7 +34,7 @@ struct SettingsListView: View {
                 Button(action: {
                     self.coordinatorDelegate?.showSync()
                 }, label: {
-                    SettingsListButtonRow(text: L10n.Settings.account, detailText: nil, enabled: true)
+                    SettingsListButtonRow(text: L10n.Settings.Sync.title, detailText: nil, enabled: true)
                 })
 
                 Button(action: {

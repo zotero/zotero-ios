@@ -15,7 +15,7 @@ struct SyncSettingsView: View {
 
     var body: some View {
         Form {
-            Section(header: Text("Data Syncing")) {
+            Section(header: Text(L10n.Settings.Sync.dataSyncing)) {
                 Text(self.viewModel.state.account)
 
                 Button(action: {
@@ -26,11 +26,11 @@ struct SyncSettingsView: View {
                 }
             }
 
-            Section(header: Text("File Syncing")) {
+            Section(header: Text(L10n.Settings.Sync.fileSyncing)) {
                 FileSyncingSection()
             }
         }
-        .navigationBarTitle(L10n.Settings.account)
+        .navigationBarTitle(L10n.Settings.Sync.title)
     }
 }
 
@@ -38,7 +38,7 @@ struct FileSyncingSection: View {
     @EnvironmentObject var viewModel: ViewModel<SyncSettingsActionHandler>
 
     var body: some View {
-        Picker("Sync attachment files in My Library using", selection: self.viewModel.binding(get: \.fileSyncType, action: { .setFileSyncType($0) })) {
+        Picker(L10n.Settings.Sync.fileSyncingTypeMessage, selection: self.viewModel.binding(get: \.fileSyncType, action: { .setFileSyncType($0) })) {
             Text("Zotero").tag(SyncSettingsState.FileSyncType.zotero)
             Text("WebDAV").tag(SyncSettingsState.FileSyncType.webDav)
         }
@@ -76,9 +76,9 @@ struct WebDavSettings: View {
             .pickerStyle(WheelPickerStyle())
         }
 
-        TextField("Username", text: self.viewModel.binding(get: \.username, action: { .setUsername($0) }))
+        TextField(L10n.Settings.Sync.username, text: self.viewModel.binding(get: \.username, action: { .setUsername($0) }))
 
-        SecureField("Password", text: self.viewModel.binding(get: \.password, action: { .setPassword($0) }))
+        SecureField(L10n.Settings.Sync.password, text: self.viewModel.binding(get: \.password, action: { .setPassword($0) }))
 
         if self.viewModel.state.isVerifyingWebDav {
             ActivityIndicatorView(style: .medium, isAnimating: .constant(true))
@@ -142,7 +142,7 @@ fileprivate struct VerifyButton: View {
 
     var body: some View {
         HStack {
-            Button("Verify Server") {
+            Button(L10n.Settings.Sync.verify) {
                 self.action()
             }
             .foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor)

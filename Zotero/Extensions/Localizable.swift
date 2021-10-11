@@ -788,8 +788,6 @@ internal enum L10n {
   }
 
   internal enum Settings {
-    /// Sync
-    internal static let account = L10n.tr("Localizable", "settings.account")
     /// Debug Output Logging
     internal static let debug = L10n.tr("Localizable", "settings.debug")
     /// Item count
@@ -822,12 +820,6 @@ internal enum L10n {
     internal static let stopLogging = L10n.tr("Localizable", "settings.stop_logging")
     /// Local Storage
     internal static let storage = L10n.tr("Localizable", "settings.storage")
-    /// Sync
-    internal static let sync = L10n.tr("Localizable", "settings.sync")
-    /// Cancel sync
-    internal static let syncCancel = L10n.tr("Localizable", "settings.sync_cancel")
-    /// Sync with zotero.org
-    internal static let syncZotero = L10n.tr("Localizable", "settings.sync_zotero")
     /// Settings
     internal static let title = L10n.tr("Localizable", "settings.title")
     /// Translators
@@ -921,6 +913,22 @@ internal enum L10n {
       }
       /// 1 file
       internal static let oneFile = L10n.tr("Localizable", "settings.storage.one_file")
+    }
+    internal enum Sync {
+      /// Data Syncing
+      internal static let dataSyncing = L10n.tr("Localizable", "settings.sync.data_syncing")
+      /// File Syncing
+      internal static let fileSyncing = L10n.tr("Localizable", "settings.sync.file_syncing")
+      /// Sync attachment files in My Library using
+      internal static let fileSyncingTypeMessage = L10n.tr("Localizable", "settings.sync.file_syncing_type_message")
+      /// Password
+      internal static let password = L10n.tr("Localizable", "settings.sync.password")
+      /// Sync
+      internal static let title = L10n.tr("Localizable", "settings.sync.title")
+      /// Username
+      internal static let username = L10n.tr("Localizable", "settings.sync.username")
+      /// Verify Server
+      internal static let verify = L10n.tr("Localizable", "settings.sync.verify")
     }
   }
 
