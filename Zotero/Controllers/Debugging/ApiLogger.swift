@@ -11,8 +11,17 @@ import Foundation
 import CocoaLumberjackSwift
 
 struct ApiLogger {
+    private static var urlExpression: NSRegularExpression? = {
+        do {
+            return try NSRegularExpression(pattern: #"^https?://(?<username>.*):{1}(?<password>.*)@{1}.*$"#)
+        } catch let error {
+            DDLogError("ApiLogger: can't create url redaction expression - \(error)")
+            return nil
+        }
+    }()
+
     static func identifier(method: String, url: String) -> String {
-        return "HTTP \(method) \(url)"
+        return "HTTP \(method) \(redact(url: url))"
     }
 
     static func log(request: ApiRequest, url: URL?) -> String {
@@ -36,5 +45,17 @@ struct ApiLogger {
                 DDLogInfo("\(request.redact(response: string))")
             }
         }
+    }
+
+    private static func redact(url: String) -> String {
+        guard let expression = self.urlExpression,
+              let match = expression.matches(in: url, options: [], range: NSRange(url.startIndex..., in: url)).first else { return url }
+
+        var redacted = url
+        for name in ["password", "username"] {
+            guard let range = Range(match.range(withName: name), in: url) else { continue }
+            redacted = redacted.replacingCharacters(in: range, with: "<redacted>")
+        }
+        return redacted
     }
 }
