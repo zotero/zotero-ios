@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct SavingSettingsView: View {
-    @EnvironmentObject var viewModel: ViewModel<SettingsActionHandler>
+    @EnvironmentObject var viewModel: ViewModel<SavingSettingsActionHandler>
 
     var body: some View {
         Form {

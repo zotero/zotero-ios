@@ -9,14 +9,16 @@
 import SwiftUI
 
 struct StorageSettingsListView: View {
-    @EnvironmentObject var viewModel: ViewModel<SettingsActionHandler>
+    @EnvironmentObject var viewModel: ViewModel<StorageSettingsActionHandler>
+
+    weak var coordinatorDelegate: StorageSettingsSettingsCoordinatorDelegate?
 
     var body: some View {
         Form {
             Section {
                 ForEach(self.viewModel.state.libraries) { library in
                     StorageSettingsRow(title: library.name, data: self.viewModel.state.storageData[library.identifier], deleteAction: {
-                        self.viewModel.process(action: .showDeleteLibraryQuestion(library))
+                        self.coordinatorDelegate?.showDeleteLibraryStorageAlert(for: library, viewModel: self.viewModel)
                     })
                 }
 
@@ -26,7 +28,7 @@ struct StorageSettingsListView: View {
             if self.viewModel.state.totalStorageData.fileCount > 0 {
                 Section {
                     Button(action: {
-                        self.viewModel.process(action: .showDeleteAllQuestion(true))
+                        self.coordinatorDelegate?.showDeleteAllStorageAlert(viewModel: self.viewModel)
                     }) {
                         Text(L10n.Settings.Storage.deleteAll).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                     }

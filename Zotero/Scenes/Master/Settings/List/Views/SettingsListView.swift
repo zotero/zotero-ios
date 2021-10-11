@@ -31,9 +31,11 @@ struct SettingsListView: View {
             }
 
             Section {
-                NavigationLink(destination: GeneralSettingsView().environmentObject(self.viewModel)) {
-                    Text(L10n.Settings.General.title)
-                }
+                Button(action: {
+                    self.coordinatorDelegate?.showGeneralSettings()
+                }, label: {
+                    SettingsListButtonRow(text: L10n.Settings.General.title, detailText: nil, enabled: true)
+                })
 
                 Button(action: {
                     self.coordinatorDelegate?.showExportSettings()
@@ -47,17 +49,23 @@ struct SettingsListView: View {
                     SettingsListButtonRow(text: L10n.Settings.Cite.title, detailText: nil, enabled: true)
                 })
 
-                NavigationLink(destination: SavingSettingsView().environmentObject(self.viewModel)) {
-                    Text(L10n.Settings.Saving.title)
-                }
+                Button(action: {
+                    self.coordinatorDelegate?.showSavingSettings()
+                }, label: {
+                    SettingsListButtonRow(text: L10n.Settings.Saving.title, detailText: nil, enabled: true)
+                })
 
-                NavigationLink(destination: StorageSettingsView().environmentObject(self.viewModel)) {
-                    Text(L10n.Settings.storage)
-                }
+                Button(action: {
+                    self.coordinatorDelegate?.showStorageSettings()
+                }, label: {
+                    SettingsListButtonRow(text: L10n.Settings.storage, detailText: nil, enabled: true)
+                })
 
-                NavigationLink(destination: DebugSettingsView().environmentObject(self.viewModel)) {
-                    Text(L10n.Settings.debug)
-                }
+                Button(action: {
+                    self.coordinatorDelegate?.showDebugging()
+                }, label: {
+                    SettingsListButtonRow(text: L10n.Settings.debug, detailText: nil, enabled: true)
+                })
             }
 
             Section {

@@ -19,6 +19,10 @@ protocol SettingsCoordinatorDelegate: AnyObject {
     func showCitationSettings()
     func showCitationStyleManagement(viewModel: ViewModel<CiteActionHandler>)
     func showExportSettings()
+    func showStorageSettings()
+    func showDebugging()
+    func showSavingSettings()
+    func showGeneralSettings()
     func dismiss()
     func showLogoutAlert(viewModel: ViewModel<SettingsActionHandler>)
 }
@@ -30,6 +34,11 @@ protocol CitationStyleSearchSettingsCoordinatorDelegate: AnyObject {
 protocol ExportSettingsCoordinatorDelegate: AnyObject {
     func showStylePicker(picked: @escaping (Style) -> Void)
     func showLocalePicker(picked: @escaping (ExportLocale) -> Void)
+}
+
+protocol StorageSettingsSettingsCoordinatorDelegate: AnyObject {
+    func showDeleteAllStorageAlert(viewModel: ViewModel<StorageSettingsActionHandler>)
+    func showDeleteLibraryStorageAlert(for library: Library, viewModel: ViewModel<StorageSettingsActionHandler>)
 }
 
 final class SettingsCoordinator: NSObject, Coordinator {
@@ -71,50 +80,13 @@ final class SettingsCoordinator: NSObject, Coordinator {
     }
 
     private func createListController() -> UIViewController? {
-        guard let syncScheduler = self.controllers.userControllers?.syncScheduler,
-              let webSocketController = self.controllers.userControllers?.webSocketController,
-              let dbStorage = self.controllers.userControllers?.dbStorage,
-              let fileCleanupController = self.controllers.userControllers?.fileCleanupController else { return nil }
-
-        let state = SettingsState(isSyncing: syncScheduler.syncController.inProgress,
-                                  isLogging: self.controllers.debugLogging.isEnabled,
-                                  isUpdatingTranslators: self.controllers.translatorsAndStylesController.isLoading.value,
-                                  lastTranslatorUpdate: self.controllers.translatorsAndStylesController.lastUpdate,
-                                  websocketConnectionState: webSocketController.connectionState.value)
-        let handler = SettingsActionHandler(dbStorage: dbStorage,
-                                            fileStorage: self.controllers.fileStorage,
-                                            sessionController: self.controllers.sessionController,
-                                            webSocketController: webSocketController,
-                                            syncScheduler: syncScheduler,
-                                            debugLogging: self.controllers.debugLogging,
-                                            translatorsAndStylesController: self.controllers.translatorsAndStylesController,
-                                            fileCleanupController: fileCleanupController)
-        let viewModel = ViewModel(initialState: state, handler: handler)
-
-        // Showing alerts in SwiftUI in this case doesn't work. Observe state here and show appropriate alerts.
-        viewModel.stateObservable
-                 .observe(on: MainScheduler.instance)
-                 .subscribe(onNext: { [weak self, weak viewModel] state in
-                     guard let `self` = self, let viewModel = viewModel else { return }
-
-                     if state.showDeleteAllQuestion {
-                         self.showDeleteAllStorageAlert(viewModel: viewModel)
-                     }
-
-                     if let library = state.showDeleteLibraryQuestion {
-                         self.showDeleteLibraryStorageAlert(for: library, viewModel: viewModel)
-                     }
-                 })
-                 .disposed(by: self.disposeBag)
-
-        viewModel.process(action: .startObserving)
-
+        let handler = SettingsActionHandler(sessionController: self.controllers.sessionController)
+        let viewModel = ViewModel(initialState: SettingsState(), handler: handler)
         var view = SettingsListView()
         view.coordinatorDelegate = self
 
         let controller = UIHostingController(rootView: view.environmentObject(viewModel))
         controller.preferredContentSize = SettingsCoordinator.defaultSize
-
         return controller
     }
 
@@ -141,37 +113,29 @@ final class SettingsCoordinator: NSObject, Coordinator {
     }
 }
 
-extension SettingsCoordinator {
-    private func showDeleteAllStorageAlert(viewModel: ViewModel<SettingsActionHandler>) {
+extension SettingsCoordinator: StorageSettingsSettingsCoordinatorDelegate {
+    func showDeleteAllStorageAlert(viewModel: ViewModel<StorageSettingsActionHandler>) {
         self.showDeleteQuestion(title: L10n.Settings.Storage.deleteAllQuestion,
                                 deleteAction: { [weak viewModel] in
-                                    viewModel?.process(action: .deleteAllDownloads)
-                                },
-                                cancelAction: { [weak viewModel] in
-                                    viewModel?.process(action: .showDeleteAllQuestion(false))
+                                    viewModel?.process(action: .deleteAll)
                                 })
     }
 
-    private func showDeleteLibraryStorageAlert(for library: Library, viewModel: ViewModel<SettingsActionHandler>) {
+    func showDeleteLibraryStorageAlert(for library: Library, viewModel: ViewModel<StorageSettingsActionHandler>) {
         self.showDeleteQuestion(title: L10n.Settings.Storage.deleteLibraryQuestion(library.name),
                                 deleteAction: { [weak viewModel] in
-                                    viewModel?.process(action: .deleteDownloadsInLibrary(library.identifier))
-                                },
-                                cancelAction: { [weak viewModel] in
-                                    viewModel?.process(action: .showDeleteLibraryQuestion(nil))
+                                    viewModel?.process(action: .deleteInLibrary(library.identifier))
                                 })
     }
 
-    private func showDeleteQuestion(title: String, deleteAction: @escaping () -> Void, cancelAction: @escaping () -> Void) {
+    private func showDeleteQuestion(title: String, deleteAction: @escaping () -> Void) {
         let controller = UIAlertController(title: title, message: nil, preferredStyle: .alert)
 
         controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { _ in
             deleteAction()
         }))
 
-        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: { _ in
-            cancelAction()
-        }))
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
 
         // Settings are already presented, so present over them
         self.navigationController.presentedViewController?.present(controller, animated: true, completion: nil)
@@ -198,8 +162,7 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
 
     func showCitationSettings() {
         let handler = CiteActionHandler(apiClient: self.controllers.apiClient, bundledDataStorage: self.controllers.bundledDataStorage, fileStorage: self.controllers.fileStorage)
-        let state = CiteState()
-        let viewModel = ViewModel(initialState: state, handler: handler)
+        let viewModel = ViewModel(initialState: CiteState(), handler: handler)
         var view = CiteSettingsView()
         view.coordinatorDelegate = self
 
@@ -209,9 +172,7 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
             }
         }).disposed(by: self.disposeBag)
 
-        let controller = UIHostingController(rootView: view.environmentObject(viewModel))
-        controller.preferredContentSize = SettingsCoordinator.defaultSize
-        self.navigationController.pushViewController(controller, animated: true)
+        self.pushDefaultSize(view: view.environmentObject(viewModel))
     }
 
     private func showCitationSettings(error: CiteState.Error) {
@@ -253,6 +214,30 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         self.navigationController.pushViewController(controller, animated: true)
     }
 
+    func showStorageSettings() {
+        guard let dbStorage = self.controllers.userControllers?.dbStorage,
+              let fileCleanupController = self.controllers.userControllers?.fileCleanupController else { return }
+
+        let handler = StorageSettingsActionHandler(dbStorage: dbStorage, fileStorage: self.controllers.fileStorage, fileCleanupController: fileCleanupController)
+        let viewModel = ViewModel(initialState: StorageSettingsState(), handler: handler)
+        var view = StorageSettingsView()
+        view.coordinatorDelegate = self
+        self.pushDefaultSize(view: view.environmentObject(viewModel))
+    }
+
+    func showDebugging() {
+        let handler = DebuggingActionHandler(debugLogging: self.controllers.debugLogging)
+        let viewModel = ViewModel(initialState: DebuggingState(isLogging: self.controllers.debugLogging.isEnabled), handler: handler)
+        let view = DebuggingView().environmentObject(viewModel)
+        self.pushDefaultSize(view: view)
+    }
+
+    func showSavingSettings() {
+        let viewModel = ViewModel(initialState: SavingSettingsState(), handler: SavingSettingsActionHandler())
+        let view = SavingSettingsView().environmentObject(viewModel)
+        self.pushDefaultSize(view: view)
+    }
+
     func showLogoutAlert(viewModel: ViewModel<SettingsActionHandler>) {
         let controller = UIAlertController(title: L10n.warning, message: L10n.Settings.logoutWarning, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.yes, style: .default, handler: { [weak viewModel] _ in
@@ -262,8 +247,20 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         self.navigationController.present(controller, animated: true, completion: nil)
     }
 
+    func showGeneralSettings() {
+        let viewModel = ViewModel(initialState: GeneralSettingsState(), handler: GeneralSettingsActionHandler())
+        let view = GeneralSettingsView().environmentObject(viewModel)
+        self.pushDefaultSize(view: view)
+    }
+
     func dismiss() {
         self.navigationController.dismiss(animated: true, completion: nil)
+    }
+
+    private func pushDefaultSize<V: View>(view: V) {
+        let controller = UIHostingController(rootView: view)
+        controller.preferredContentSize = SettingsCoordinator.defaultSize
+        self.navigationController.pushViewController(controller, animated: true)
     }
 }
 
