@@ -724,7 +724,7 @@
 		B3AB38B8238ED023008A1ABB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B3AB38B6238ED023008A1ABB /* Assets.xcassets */; };
 		B3AB38B9238ED023008A1ABB /* ExtensionScript.js in Resources */ = {isa = PBXBuildFile; fileRef = B3AB38B7238ED023008A1ABB /* ExtensionScript.js */; };
 		B3B1C5842664E23A00883597 /* ReadItemsForUploadDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1C5832664E23A00883597 /* ReadItemsForUploadDbRequest.swift */; };
-		B3B1C58626651E2A00883597 /* SettingsActionHandlerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1C58526651E2A00883597 /* SettingsActionHandlerSpec.swift */; };
+		B3B1C58626651E2A00883597 /* StorageSettingsActionHandlerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1C58526651E2A00883597 /* StorageSettingsActionHandlerSpec.swift */; };
 		B3B1C5892665258400883597 /* bitcoin.pdf in Resources */ = {isa = PBXBuildFile; fileRef = B3B1C5882665258400883597 /* bitcoin.pdf */; };
 		B3B1EDED250242DB00D8BC1E /* ItemResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDEC250242DB00D8BC1E /* ItemResponseSpec.swift */; };
 		B3B1EDEF250242E700D8BC1E /* CollectionResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDEE250242E700D8BC1E /* CollectionResponseSpec.swift */; };
@@ -1454,7 +1454,7 @@
 		B3AB38B6238ED023008A1ABB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B3AB38B7238ED023008A1ABB /* ExtensionScript.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = ExtensionScript.js; sourceTree = "<group>"; };
 		B3B1C5832664E23A00883597 /* ReadItemsForUploadDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadItemsForUploadDbRequest.swift; sourceTree = "<group>"; };
-		B3B1C58526651E2A00883597 /* SettingsActionHandlerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsActionHandlerSpec.swift; sourceTree = "<group>"; };
+		B3B1C58526651E2A00883597 /* StorageSettingsActionHandlerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageSettingsActionHandlerSpec.swift; sourceTree = "<group>"; };
 		B3B1C5882665258400883597 /* bitcoin.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = bitcoin.pdf; sourceTree = "<group>"; };
 		B3B1EDEC250242DB00D8BC1E /* ItemResponseSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemResponseSpec.swift; sourceTree = "<group>"; };
 		B3B1EDEE250242E700D8BC1E /* CollectionResponseSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionResponseSpec.swift; sourceTree = "<group>"; };
@@ -2153,15 +2153,15 @@
 				B32A3C83248008A2009E2C5D /* JSONs */,
 				B3B1C5872665258400883597 /* PDFs */,
 				B32A3C88248008A2009E2C5D /* XMLs */,
+				B30D59712206F60500884C4A /* Info.plist */,
 				B3B1EDEE250242E700D8BC1E /* CollectionResponseSpec.swift */,
 				B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */,
 				B32A3C79247FFF14009E2C5D /* DateParserSpec.swift */,
-				B30D59712206F60500884C4A /* Info.plist */,
 				B3B1EDEC250242DB00D8BC1E /* ItemResponseSpec.swift */,
 				B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */,
 				B39C7BDD251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersSpec.swift */,
 				B3B1EDF0250242F700D8BC1E /* SearchResponseSpec.swift */,
-				B3B1C58526651E2A00883597 /* SettingsActionHandlerSpec.swift */,
+				B3B1C58526651E2A00883597 /* StorageSettingsActionHandlerSpec.swift */,
 				B307E55D22D4A87B00592B3C /* SyncActionsSpec.swift */,
 				B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */,
 				B3202C6427103DEE00485BE4 /* TestControllers.swift */,
@@ -4238,7 +4238,7 @@
 				B3B1EDED250242DB00D8BC1E /* ItemResponseSpec.swift in Sources */,
 				B3202C6527103DEE00485BE4 /* TestControllers.swift in Sources */,
 				B3202C6A2710488200485BE4 /* SyncControllerAction+Equatable.swift in Sources */,
-				B3B1C58626651E2A00883597 /* SettingsActionHandlerSpec.swift in Sources */,
+				B3B1C58626651E2A00883597 /* StorageSettingsActionHandlerSpec.swift in Sources */,
 				B34F9FA323743C36004ED34C /* CreatorSummaryFormatterSpec.swift in Sources */,
 				B3202C692710488200485BE4 /* OHHTTPStubs+Helpers.swift in Sources */,
 				B307E55E22D4A87B00592B3C /* SyncActionsSpec.swift in Sources */,
