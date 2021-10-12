@@ -672,7 +672,6 @@
 		B386328626C5499900183062 /* TranslatorsAndStylesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsAndStylesController.swift */; };
 		B3866A582417C1BC006693C4 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3866A572417C1BC006693C4 /* ViewModel.swift */; };
 		B3866A5A2417C1C7006693C4 /* Coordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3866A592417C1C7006693C4 /* Coordinator.swift */; };
-		B3868535270D865D0068A022 /* WebDavRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3868534270D865D0068A022 /* WebDavRequest.swift */; };
 		B3868537270D90640068A022 /* RawDataEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3868536270D90640068A022 /* RawDataEncoding.swift */; };
 		B3868538270D92DA0068A022 /* RawDataEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3868536270D90640068A022 /* RawDataEncoding.swift */; };
 		B3868540270DC3AA0068A022 /* WebDavScheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B386853F270DC3AA0068A022 /* WebDavScheme.swift */; };
@@ -721,6 +720,13 @@
 		B3A2AECE26553DD8004BF3A4 /* NavigationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A2AECD26553DD8004BF3A4 /* NavigationViewController.swift */; };
 		B3A2AEDC2656511D004BF3A4 /* StylesRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A2AEDB2656511D004BF3A4 /* StylesRequest.swift */; };
 		B3A2AEDE26565211004BF3A4 /* RemoteStylesResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A2AEDD26565211004BF3A4 /* RemoteStylesResponse.swift */; };
+		B3A351D92715759D002E597A /* WebDavOptionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351D82715759D002E597A /* WebDavOptionsRequest.swift */; };
+		B3A351DB2715761D002E597A /* WebDavPropfindRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351DA2715761D002E597A /* WebDavPropfindRequest.swift */; };
+		B3A351DD2715774E002E597A /* WebDavNonexistentPropRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351DC2715774E002E597A /* WebDavNonexistentPropRequest.swift */; };
+		B3A351DF271577D0002E597A /* WebDavTestWriteRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351DE271577D0002E597A /* WebDavTestWriteRequest.swift */; };
+		B3A351E12715784A002E597A /* WebDavDownloadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351E02715784A002E597A /* WebDavDownloadRequest.swift */; };
+		B3A351E3271578B1002E597A /* WebDavDeleteRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351E2271578B1002E597A /* WebDavDeleteRequest.swift */; };
+		B3A351E527157EC6002E597A /* WebDavPropParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351E427157EC6002E597A /* WebDavPropParserDelegate.swift */; };
 		B3A6C59F252CA08300F24CBE /* PSPDFKit in Frameworks */ = {isa = PBXBuildFile; productRef = B3A6C59E252CA08300F24CBE /* PSPDFKit */; };
 		B3A94B4A2462F5D300BC7910 /* PSPDFKit+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A94B492462F5D300BC7910 /* PSPDFKit+Extensions.swift */; };
 		B3AAABD72502A40900031065 /* searchresponse_unknownfields.json in Resources */ = {isa = PBXBuildFile; fileRef = B3AAABD52502A40600031065 /* searchresponse_unknownfields.json */; };
@@ -1424,7 +1430,6 @@
 		B385B70D25C03E7E0073CA6F /* PDFExportState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFExportState.swift; sourceTree = "<group>"; };
 		B3866A572417C1BC006693C4 /* ViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
 		B3866A592417C1C7006693C4 /* Coordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coordinator.swift; sourceTree = "<group>"; };
-		B3868534270D865D0068A022 /* WebDavRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavRequest.swift; sourceTree = "<group>"; };
 		B3868536270D90640068A022 /* RawDataEncoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawDataEncoding.swift; sourceTree = "<group>"; };
 		B386853F270DC3AA0068A022 /* WebDavScheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavScheme.swift; sourceTree = "<group>"; };
 		B3886C46249234D600B7D67B /* AttachmentDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentDownloader.swift; sourceTree = "<group>"; };
@@ -1463,6 +1468,13 @@
 		B3A2AECD26553DD8004BF3A4 /* NavigationViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NavigationViewController.swift; sourceTree = "<group>"; };
 		B3A2AEDB2656511D004BF3A4 /* StylesRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StylesRequest.swift; sourceTree = "<group>"; };
 		B3A2AEDD26565211004BF3A4 /* RemoteStylesResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteStylesResponse.swift; sourceTree = "<group>"; };
+		B3A351D82715759D002E597A /* WebDavOptionsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavOptionsRequest.swift; sourceTree = "<group>"; };
+		B3A351DA2715761D002E597A /* WebDavPropfindRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavPropfindRequest.swift; sourceTree = "<group>"; };
+		B3A351DC2715774E002E597A /* WebDavNonexistentPropRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavNonexistentPropRequest.swift; sourceTree = "<group>"; };
+		B3A351DE271577D0002E597A /* WebDavTestWriteRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavTestWriteRequest.swift; sourceTree = "<group>"; };
+		B3A351E02715784A002E597A /* WebDavDownloadRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavDownloadRequest.swift; sourceTree = "<group>"; };
+		B3A351E2271578B1002E597A /* WebDavDeleteRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavDeleteRequest.swift; sourceTree = "<group>"; };
+		B3A351E427157EC6002E597A /* WebDavPropParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavPropParserDelegate.swift; sourceTree = "<group>"; };
 		B3A94B492462F5D300BC7910 /* PSPDFKit+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PSPDFKit+Extensions.swift"; sourceTree = "<group>"; };
 		B3AAABD52502A40600031065 /* searchresponse_unknownfields.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = searchresponse_unknownfields.json; sourceTree = "<group>"; };
 		B3AAABD62502A40900031065 /* searchresponse_knownfields.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = searchresponse_knownfields.json; sourceTree = "<group>"; };
@@ -1919,7 +1931,12 @@
 				B305649523FC051E003304F2 /* SubmitDeletionsRequest.swift */,
 				B305649023FC051E003304F2 /* UpdatesRequest.swift */,
 				B305649623FC051E003304F2 /* VersionsRequest.swift */,
-				B3868534270D865D0068A022 /* WebDavRequest.swift */,
+				B3A351E2271578B1002E597A /* WebDavDeleteRequest.swift */,
+				B3A351E02715784A002E597A /* WebDavDownloadRequest.swift */,
+				B3A351DC2715774E002E597A /* WebDavNonexistentPropRequest.swift */,
+				B3A351D82715759D002E597A /* WebDavOptionsRequest.swift */,
+				B3A351DA2715761D002E597A /* WebDavPropfindRequest.swift */,
+				B3A351DE271577D0002E597A /* WebDavTestWriteRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -2795,6 +2812,7 @@
 			isa = PBXGroup;
 			children = (
 				B398A914270C6A4300968EE8 /* WebDavController.swift */,
+				B3A351E427157EC6002E597A /* WebDavPropParserDelegate.swift */,
 				B398A916270C6A5B00968EE8 /* WebDavSessionStorage.swift */,
 			);
 			path = WebDAV;
@@ -3830,6 +3848,7 @@
 				B305661523FC051E003304F2 /* UploadAttachmentSyncAction.swift in Sources */,
 				B349182B25E00771006C3313 /* ReadVersionDbRequest.swift in Sources */,
 				B33979D12493ACA800A923C3 /* ImagePreviewViewController.swift in Sources */,
+				B3A351E527157EC6002E597A /* WebDavPropParserDelegate.swift in Sources */,
 				B3A2AECC26552248004BF3A4 /* SettingsCoordinator.swift in Sources */,
 				B3886C47249234D600B7D67B /* AttachmentDownloader.swift in Sources */,
 				B3E8FE6A2714344D00F51458 /* SettingsActionHandler.swift in Sources */,
@@ -4028,6 +4047,7 @@
 				B339459126DE6C2A00E59A02 /* AttachmentFileDeletedNotification.swift in Sources */,
 				B3593F62241A62DD00760E20 /* DetailCoordinator.swift in Sources */,
 				B30565EB23FC051E003304F2 /* Controllers.swift in Sources */,
+				B3A351E12715784A002E597A /* WebDavDownloadRequest.swift in Sources */,
 				B3593F78241A76E600760E20 /* CollectionEditError.swift in Sources */,
 				B31EEE5C24EBF24300E3B3AD /* StoreChangedAnnotationsDbRequest.swift in Sources */,
 				B36181EC24C96B0500B30D56 /* SearchableCollection.swift in Sources */,
@@ -4094,6 +4114,7 @@
 				B38B24B926E7664400BDD1BB /* InkSettingsViewController.swift in Sources */,
 				B30566A123FC051F003304F2 /* Library.swift in Sources */,
 				B324278225C841A600567504 /* WsResponse.swift in Sources */,
+				B3A351DD2715774E002E597A /* WebDavNonexistentPropRequest.swift in Sources */,
 				B3E8FE30271429C300F51458 /* ExportLocalePickerAction.swift in Sources */,
 				B361820124C9A7C000B30D56 /* OnboardingPageView.swift in Sources */,
 				B3D3FCA9267762EC008E243A /* ExportLocaleReader.swift in Sources */,
@@ -4171,6 +4192,7 @@
 				B3E8FE7A2714357000F51458 /* GeneralSettingsAction.swift in Sources */,
 				B3A2AEDE26565211004BF3A4 /* RemoteStylesResponse.swift in Sources */,
 				B3486B8926CFAFEA0036A267 /* SingleCitationActionHandler.swift in Sources */,
+				B3A351DF271577D0002E597A /* WebDavTestWriteRequest.swift in Sources */,
 				B3593F26241A61C700760E20 /* ItemDetailAbstractCell.swift in Sources */,
 				B30566A223FC051F003304F2 /* Attachment.swift in Sources */,
 				B3593F7B241A76E600760E20 /* CollectionPickerView.swift in Sources */,
@@ -4221,6 +4243,7 @@
 				B372CEE32486512500B423AE /* GroupRequest.swift in Sources */,
 				B3748D2226566F6900ED05F8 /* ContainerViewController.swift in Sources */,
 				B3830CDA255451AB00910FE0 /* TagPickerError.swift in Sources */,
+				B3A351D92715759D002E597A /* WebDavOptionsRequest.swift in Sources */,
 				B340868D25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift in Sources */,
 				B3E381D325F2D78A00F046CE /* ApiLogger.swift in Sources */,
 				B3E8FE192714297200F51458 /* CiteAction.swift in Sources */,
@@ -4238,7 +4261,6 @@
 				B377F2A5249373F300022943 /* AttachmentFileCleanupController.swift in Sources */,
 				B3E8FE3E27142AA300F51458 /* StylePickerActionHandler.swift in Sources */,
 				B305661823FC051E003304F2 /* LoadPermissionsSyncAction.swift in Sources */,
-				B3868535270D865D0068A022 /* WebDavRequest.swift in Sources */,
 				B3593F3E241A61C700760E20 /* ItemsTableViewHandler.swift in Sources */,
 				B3E8FE1E2714297200F51458 /* CiteSearchViewController.swift in Sources */,
 				B3DCDF102409127A0039ED0D /* CreatorTypePickerViewModelCreator.swift in Sources */,
@@ -4297,10 +4319,12 @@
 				B3593F2A241A61C700760E20 /* ItemDetailNoteCell.swift in Sources */,
 				B30565CF23FC051E003304F2 /* MarkAllLibraryObjectChangesAsSyncedDbRequest.swift in Sources */,
 				B341C8CB25CBFAD3005562E5 /* LibraryIdentifier.swift in Sources */,
+				B3A351DB2715761D002E597A /* WebDavPropfindRequest.swift in Sources */,
 				B34C410C257132730057D5F5 /* AnnotationPopoverLayout.swift in Sources */,
 				B30565D923FC051E003304F2 /* ReadCollectionDbRequest.swift in Sources */,
 				B3FE4B98268DDE4900CE123F /* CitationBibliographyExportAction.swift in Sources */,
 				B343419E260A093400093E63 /* CollectionIdentifier.swift in Sources */,
+				B3A351E3271578B1002E597A /* WebDavDeleteRequest.swift in Sources */,
 				B35C529C26383BDD007BD036 /* ReadAllDownloadedItemsDbRequest.swift in Sources */,
 				B305660723FC051E003304F2 /* LoginRequest.swift in Sources */,
 				B30566B323FC051F003304F2 /* CollectionResponse.swift in Sources */,

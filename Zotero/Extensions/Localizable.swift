@@ -424,6 +424,8 @@ internal enum L10n {
         internal static let fileMissingAfterUpload = L10n.tr("Localizable", "errors.settings.webdav.file_missing_after_upload")
         /// Forbidden access to server.
         internal static let forbidden = L10n.tr("Localizable", "errors.settings.webdav.forbidden")
+        /// Could not connect to WebDAV server.
+        internal static let hostNotFound = L10n.tr("Localizable", "errors.settings.webdav.host_not_found")
         /// Unable to connect to the network. Please try again.
         internal static let internetConnection = L10n.tr("Localizable", "errors.settings.webdav.internet_connection")
         /// Webdav verification error

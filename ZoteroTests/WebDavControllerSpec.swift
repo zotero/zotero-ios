@@ -125,6 +125,7 @@ final class WebDavControllerSpec: QuickSpec {
     private func test(with credentials: WebDavSessionStorage, successAction: @escaping () -> Void, errorAction: @escaping (Error) -> Void) {
         self.webDavController = WebDavController(apiClient: TestControllers.apiClient, sessionStorage: credentials)
         self.webDavController!.checkServer()
+            .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: {
                 successAction()
             }, onFailure: { error in

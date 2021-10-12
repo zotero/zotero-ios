@@ -8,6 +8,8 @@
 
 import SwiftUI
 
+import Alamofire
+
 struct SyncSettingsView: View {
     @EnvironmentObject var viewModel: ViewModel<SyncSettingsActionHandler>
 
@@ -118,21 +120,48 @@ struct WebDavSettings: View {
             }
         }
 
-        if error.isInternetConnectionError {
-            return L10n.Errors.Settings.Webdav.internetConnection
+        if let responseError = error as? AFResponseError, let message = self.errorMessage(for: responseError.error) {
+            return message
         }
-
-        if let statusCode = error.unacceptableStatusCode {
-            switch statusCode {
-            case 401:
-                return L10n.Errors.Settings.Webdav.unauthorized
-            case 403:
-                return L10n.Errors.Settings.Webdav.forbidden
-            default: break
-            }
+        if let error = error as? AFError, let message = self.errorMessage(for: error) {
+            return message
         }
 
         return error.localizedDescription
+    }
+
+    private func errorMessage(for error: AFError) -> String? {
+        switch error {
+        case .sessionTaskFailed(let error):
+            let nsError = error as NSError
+            if nsError.domain == NSURLErrorDomain {
+                switch nsError.code {
+                case NSURLErrorNotConnectedToInternet:
+                    return L10n.Errors.Settings.Webdav.internetConnection
+                case NSURLErrorCannotConnectToHost:
+                    return L10n.Errors.Settings.Webdav.hostNotFound
+                default: break
+                }
+            }
+
+        case .responseValidationFailed(let reason):
+            switch reason {
+            case .unacceptableStatusCode(let statusCode):
+                switch statusCode {
+                case 401:
+                    return L10n.Errors.Settings.Webdav.unauthorized
+                case 403:
+                    return L10n.Errors.Settings.Webdav.forbidden
+                default: return nil
+                }
+
+            default: break
+            }
+
+        default: break
+        }
+
+        return nil
     }
 }
 

@@ -13,7 +13,7 @@ import RxSwift
 import SwiftUI
 
 final class WebDavController {
-    enum Error: Swift.Error {
+    enum Error {
         enum Verification: Swift.Error {
             case noUrl
             case noUsername
@@ -25,33 +25,96 @@ final class WebDavController {
             case nonExistentFileNotMissing
             case fileMissingAfterUpload
         }
+
+        enum Download: Swift.Error {
+            case itemPropInvalid
+            case notChanged
+        }
     }
 
     private unowned let apiClient: ApiClient
     let sessionStorage: WebDavSessionStorage
+    private let queue: DispatchQueue
+    private let scheduler: SerialDispatchQueueScheduler
 
     private var verified: Bool
 
     init(apiClient: ApiClient, sessionStorage: WebDavSessionStorage) {
+        let queue = DispatchQueue(label: "org.zotero.WebDavController.queue", qos: .userInteractive)
+        self.queue = queue
+        self.scheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.WebDavController.scheduler")
         self.apiClient = apiClient
         self.sessionStorage = sessionStorage
         self.verified = false
     }
 
-    func checkServer() -> Single<()> {
+    /// Checks whether remote file has changed and loads URL of remote file which should be downloaded.
+    /// - parameter key: Key of attachment to download.
+    /// - parameter mtime: If file is available locally, mtime of given attachment to check whether it changed remotely. Nil if file is not available.
+    /// - parameter file: File location where file will be downloaded if needed.
+    /// - returns: Single with URL of file pointing to WebDAV server.
+    func urlForDownload(key: String, mtime: Int?, to file: File) -> Single<URL> {
+        DDLogInfo("WebDavController: download \(key)")
         return self.createUrl()
+                   .subscribe(on: self.scheduler)
+                   .flatMap({ url -> Single<URL> in
+                       guard let mtime = mtime else {
+                           return Single.just(url.appendingPathComponent("\(key).zip"))
+                       }
+
+                       // If there is a local file with given mtime, check whether the remote file changed.
+                       return self.metadata(key: key, url: url)
+                                  .flatMap({ remoteMtime, remoteHash -> Single<URL> in
+                                      if mtime == remoteMtime {
+                                          DDLogInfo("WebDavController: mtime matches remote file, skipping download")
+                                          return Single.error(Error.Download.notChanged)
+                                      } else {
+                                          return Single.just(url.appendingPathComponent("\(key).zip"))
+                                      }
+                                  })
+                   })
+    }
+
+    private func metadata(key: String, url: URL) -> Single<(Int, String)> {
+        let request = WebDavDownloadRequest(url: url.appendingPathComponent(key + ".prop"))
+        return self.apiClient.send(request: request, queue: self.queue)
+                   .do(onError: { error in
+                       DDLogError("WebDavController: \(key) item prop file not found - \(error)")
+                   })
+                   .flatMap({ data, _ -> Single<(Int, String)> in
+                       let delegate = WebDavPropParserDelegate()
+                       let parser = XMLParser(data: data)
+                       parser.delegate = delegate
+
+                       if parser.parse(), let mtime = delegate.mtime, let hash = delegate.fileHash {
+                           return Single.just((mtime, hash))
+                       } else {
+                           DDLogError("WebDavController: \(key) item prop invalid. mtime=\(delegate.mtime.flatMap(String.init) ?? "missing"); hash=\(delegate.fileHash ?? "missing")")
+                           return Single.error(Error.Download.itemPropInvalid)
+                       }
+                   })
+    }
+
+    /// Checks whether WebDAV server is available and compatible.
+    func checkServer() -> Single<()> {
+        DDLogInfo("WebDavController: checkServer")
+        return self.createUrl()
+                   .subscribe(on: self.scheduler)
                    .flatMap({ url in return self.checkIsDav(url: url) })
                    .flatMap({ url in return self.checkZoteroDirectory(url: url) })
                    .flatMap({ _ in return Single.just(()) })
                    .do(onSuccess: { [weak self] _ in
                        self?.verified = true
                        DDLogInfo("WebDavController: file sync is successfully set up")
+                   }, onError: { error in
+                       DDLogError("WebDavController: checkServer failed - \(error)")
                    })
     }
 
+    /// Checks whether server is WebDAV server.
     private func checkIsDav(url: URL) -> Single<URL> {
-        let request = WebDavRequest(url: url, httpMethod: .options, acceptableStatusCodes: [200, 404])
-        return self.apiClient.send(request: request)
+        let request = WebDavCheckRequest(url: url)
+        return self.apiClient.send(request: request, queue: self.queue)
                              .flatMap({ _, response -> Single<URL> in
                                  guard response.allHeaderFields["DAV"] != nil else {
                                      return Single.error(Error.Verification.notDav)
@@ -60,6 +123,7 @@ final class WebDavController {
                              })
     }
 
+    /// Checks whether WebDAV server contains Zotero directory and whether the directory is compatible.
     private func checkZoteroDirectory(url: URL) -> Single<URL> {
         return self.propFind(url: url)
                    .flatMap({ response -> Single<URL> in
@@ -78,13 +142,12 @@ final class WebDavController {
                    })
     }
 
+    /// Checks whether WebDAV server has access to write files.
     private func checkWritability(url: URL) -> Single<()> {
-        let testUrl = url.appendingPathComponent("zotero-test-file.prop")
-        let request = WebDavRequest(url: testUrl, httpMethod: .put, parameters: " ".data(using: .utf8)?.asParameters(), parameterEncoding: .data, headers: nil, acceptableStatusCodes: [200, 201, 204])
-        return self.apiClient.send(request: request)
+        let request = WebDavTestWriteRequest(url: url)
+        return self.apiClient.send(request: request, queue: self.queue)
                    .flatMap({ _ -> Single<()> in
-                       let request = WebDavRequest(url: testUrl, httpMethod: .get, acceptableStatusCodes: [200, 404])
-                       return self.apiClient.send(request: request)
+                       return self.apiClient.send(request: WebDavDownloadRequest(endpoint: request.endpoint), queue: self.queue)
                                   .flatMap({ _, response in
                                       if response.statusCode == 404 {
                                           return Single.error(Error.Verification.fileMissingAfterUpload)
@@ -93,11 +156,11 @@ final class WebDavController {
                                   })
                    })
                    .flatMap({ _ -> Single<()> in
-                       let request = WebDavRequest(url: testUrl, httpMethod: .delete, acceptableStatusCodes: [200, 204])
-                       return self.apiClient.send(request: request).flatMap({ _ in Single.just(()) })
+                       return self.apiClient.send(request: WebDavDeleteRequest(endpoint: request.endpoint), queue: self.queue).flatMap({ _ in Single.just(()) })
                    })
     }
 
+    /// Checks whether parent of given URL is available.
     private func checkWhetherParentAvailable(url: URL) -> Single<URL> {
         return self.propFind(url: url.deletingLastPathComponent())
                    .flatMap({ response -> Single<URL> in
@@ -109,9 +172,9 @@ final class WebDavController {
                    })
     }
 
+    /// Checks whether WebDAV server correctly responds to a request for missing file.
     private func checkWhetherReturns404ForMissingFile(url: URL) -> Single<()> {
-        let request = WebDavRequest(url: url.appendingPathComponent("nonexistent.prop"), httpMethod: .get, acceptableStatusCodes: Set(200..<300).union([404]))
-        return self.apiClient.send(request: request)
+        return self.apiClient.send(request: WebDavNonexistentPropRequest(url: url), queue: self.queue)
                              .flatMap({ _, response -> Single<()> in
                                  if response.statusCode == 404 {
                                      return Single.just(())
@@ -121,14 +184,12 @@ final class WebDavController {
                              })
     }
 
+    /// Creates a propfind request for given url.
     private func propFind(url: URL) -> Single<HTTPURLResponse> {
-        // IIS 5.1 requires at least one property in PROPFIND
-        let xmlData = "<propfind xmlns='DAV:'><prop><getcontentlength/></prop></propfind>".data(using: .utf8)
-        let request = WebDavRequest(url: url, httpMethod: .propfind, parameters: xmlData?.asParameters(), parameterEncoding: .data,
-                                    headers: ["Content-Type": "text/xml; charset=utf-8", "Depth": "0"], acceptableStatusCodes: [207, 404])
-        return self.apiClient.send(request: request).flatMap({ Single.just($1) })
+        return self.apiClient.send(request: WebDavPropfindRequest(url: url), queue: self.queue).flatMap({ Single.just($1) })
     }
 
+    /// Creates and validates WebDAV server URL based on stored session.
     private func createUrl() -> Single<URL> {
         return Single.create { [weak sessionStorage] subscriber in
             guard let sessionStorage = sessionStorage else {
@@ -184,6 +245,7 @@ final class WebDavController {
             if let url = components.url {
                 subscriber(.success(url))
             } else {
+                DDLogError("WebDavController: could not create url from components. url=\(url); host=\(host ?? "missing"); path=\(path); port=\(port.flatMap(String.init) ?? "missing")")
                 subscriber(.failure(Error.Verification.invalidUrl))
             }
 
