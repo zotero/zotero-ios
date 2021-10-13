@@ -56,6 +56,7 @@ final class AttachmentDownloader {
     private unowned let apiClient: ApiClient
     private unowned let fileStorage: FileStorage
     private unowned let dbStorage: DbStorage
+    private unowned let webDavController: WebDavController
     private let unzipQueue: DispatchQueue
     private let disposeBag: DisposeBag
     let observable: PublishSubject<Update>
@@ -65,11 +66,12 @@ final class AttachmentDownloader {
     private var progresses: [Download: (Progress, NSKeyValueObservation)]
     private var errors: [Download: Swift.Error]
 
-    init(userId: Int, apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage) {
+    init(userId: Int, apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage, webDavController: WebDavController) {
         self.userId = userId
         self.apiClient = apiClient
         self.fileStorage = fileStorage
         self.dbStorage = dbStorage
+        self.webDavController = webDavController
         self.downloadRequests = [:]
         self.progresses = [:]
         self.unzipRequests = [:]
@@ -131,6 +133,14 @@ final class AttachmentDownloader {
 
     // MARK: - Helpers
 
+    private func downloadRequest(file: File, key: String, libraryId: LibraryIdentifier, userId: Int) -> Single<FileRequest> {
+        if case .custom = libraryId, self.webDavController.sessionStorage.isEnabled {
+            return self.webDavController.urlForDownload(key: key)
+                       .flatMap({ Single.just(FileRequest(data: .external($0), destination: file)) })
+        }
+        return Single.just(FileRequest(data: .internal(libraryId, self.userId, key), destination: file))
+    }
+
     private func download(file: File, key: String, parentKey: String?, libraryId: LibraryIdentifier, hasLocalCopy: Bool) {
         let download = Download(key: key, libraryId: libraryId)
 
@@ -147,16 +157,21 @@ final class AttachmentDownloader {
         // Send first update to immediately reflect new state
         self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .progress(0))))
 
-        var isCompressed = false
+        var isCompressed = self.webDavController.sessionStorage.isEnabled
 
-        let request = FileRequest(data: .internal(libraryId, self.userId, key), destination: file)
-        self.apiClient.download(request: request)
+        self.downloadRequest(file: file, key: key, libraryId: libraryId, userId: self.userId)
+                      .asObservable()
+                      .flatMap({ request -> Observable<DownloadRequest> in
+                          return self.apiClient.download(request: request)
+                      })
                       .observe(on: MainScheduler.instance)
                       .flatMap { request -> Observable<DownloadRequest> in
                           let downloadProgress = request.downloadProgress
                           // Check headers on redirect to see whether downloaded file will be compressed zip or base file.
                           let redirector = Redirector(behavior: .modify({ task, request, response -> URLRequest? in
-                              isCompressed = response.value(forHTTPHeaderField: "Zotero-File-Compressed") == "Yes"
+                              if !isCompressed {
+                                  isCompressed = response.value(forHTTPHeaderField: "Zotero-File-Compressed") == "Yes"
+                              }
                               // If downloaded file is compressed, add download progress as incomplete (90%) and reserve the rest for unzipping. Otherwise it's a complete progress (100%).
                               progress.addChild(downloadProgress, withPendingUnitCount: (isCompressed ? 90 : 100))
                               return request

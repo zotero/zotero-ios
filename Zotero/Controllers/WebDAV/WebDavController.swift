@@ -37,42 +37,21 @@ final class WebDavController {
     private let queue: DispatchQueue
     private let scheduler: SerialDispatchQueueScheduler
 
-    private var verified: Bool
-
     init(apiClient: ApiClient, sessionStorage: WebDavSessionStorage) {
         let queue = DispatchQueue(label: "org.zotero.WebDavController.queue", qos: .userInteractive)
         self.queue = queue
         self.scheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.WebDavController.scheduler")
         self.apiClient = apiClient
         self.sessionStorage = sessionStorage
-        self.verified = false
     }
 
-    /// Checks whether remote file has changed and loads URL of remote file which should be downloaded.
-    /// - parameter key: Key of attachment to download.
-    /// - parameter mtime: If file is available locally, mtime of given attachment to check whether it changed remotely. Nil if file is not available.
-    /// - parameter file: File location where file will be downloaded if needed.
-    /// - returns: Single with URL of file pointing to WebDAV server.
-    func urlForDownload(key: String, mtime: Int?, to file: File) -> Single<URL> {
-        DDLogInfo("WebDavController: download \(key)")
-        return self.createUrl()
+    /// Creates url in WebDAV server of item which should be downloaded.
+    /// - parameter key: Key of item to download.
+    /// - returns: Single with url of item stored in WebDAV.
+    func urlForDownload(key: String) -> Single<URL> {
+        return self.checkServerIfNeeded()
                    .subscribe(on: self.scheduler)
-                   .flatMap({ url -> Single<URL> in
-                       guard let mtime = mtime else {
-                           return Single.just(url.appendingPathComponent("\(key).zip"))
-                       }
-
-                       // If there is a local file with given mtime, check whether the remote file changed.
-                       return self.metadata(key: key, url: url)
-                                  .flatMap({ remoteMtime, remoteHash -> Single<URL> in
-                                      if mtime == remoteMtime {
-                                          DDLogInfo("WebDavController: mtime matches remote file, skipping download")
-                                          return Single.error(Error.Download.notChanged)
-                                      } else {
-                                          return Single.just(url.appendingPathComponent("\(key).zip"))
-                                      }
-                                  })
-                   })
+                   .flatMap({ Single.just($0.appendingPathComponent("\(key).zip")) })
     }
 
     private func metadata(key: String, url: URL) -> Single<(Int, String)> {
@@ -95,16 +74,22 @@ final class WebDavController {
                    })
     }
 
+    private func checkServerIfNeeded() -> Single<URL> {
+        if self.sessionStorage.isVerified {
+            return self.createUrl()
+        }
+        return self.checkServer()
+    }
+
     /// Checks whether WebDAV server is available and compatible.
-    func checkServer() -> Single<()> {
+    func checkServer() -> Single<URL> {
         DDLogInfo("WebDavController: checkServer")
         return self.createUrl()
                    .subscribe(on: self.scheduler)
                    .flatMap({ url in return self.checkIsDav(url: url) })
                    .flatMap({ url in return self.checkZoteroDirectory(url: url) })
-                   .flatMap({ _ in return Single.just(()) })
                    .do(onSuccess: { [weak self] _ in
-                       self?.verified = true
+                       self?.sessionStorage.isVerified = true
                        DDLogInfo("WebDavController: file sync is successfully set up")
                    }, onError: { error in
                        DDLogError("WebDavController: checkServer failed - \(error)")

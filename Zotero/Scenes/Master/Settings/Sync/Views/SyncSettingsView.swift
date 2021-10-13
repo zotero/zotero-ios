@@ -84,10 +84,26 @@ struct WebDavSettings: View {
 
         if self.viewModel.state.isVerifyingWebDav {
             ActivityIndicatorView(style: .medium, isAnimating: .constant(true))
+        } else if let result = self.viewModel.state.webDavVerificationResult {
+            switch result {
+            case .success:
+                HStack {
+                    Text("Verified")
+
+                    Image(systemName: "checkmark")
+                        .foregroundColor(.green)
+                }
+            case .failure:
+                Button(L10n.Settings.Sync.verify) {
+                    self.viewModel.process(action: .verify)
+                }
+                .foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor)
+            }
         } else {
-            VerifyButton(result: self.viewModel.state.webDavVerificationResult) {
+            Button(L10n.Settings.Sync.verify) {
                 self.viewModel.process(action: .verify)
             }
+            .foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor)
         }
 
         if case .failure(let error) = self.viewModel.state.webDavVerificationResult {
@@ -162,34 +178,6 @@ struct WebDavSettings: View {
         }
 
         return nil
-    }
-}
-
-fileprivate struct VerifyButton: View {
-    let result: Result<(), Error>?
-    var action: () -> Void
-
-    var body: some View {
-        HStack {
-            Button(L10n.Settings.Sync.verify) {
-                self.action()
-            }
-            .foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor)
-
-            Spacer()
-
-            if let result = result {
-                switch result {
-                case .success:
-                    Image(systemName: "checkmark")
-                        .foregroundColor(.green)
-
-                case .failure:
-                    Image(systemName: "xmark")
-                        .foregroundColor(.red)
-                }
-            }
-        }
     }
 }
 

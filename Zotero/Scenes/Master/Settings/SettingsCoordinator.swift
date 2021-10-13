@@ -151,7 +151,8 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
                                       scheme: self.controllers.webDavController.sessionStorage.scheme,
                                       url: self.controllers.webDavController.sessionStorage.url,
                                       username: self.controllers.webDavController.sessionStorage.username,
-                                      password: self.controllers.webDavController.sessionStorage.password)
+                                      password: self.controllers.webDavController.sessionStorage.password,
+                                      isVerified: self.controllers.webDavController.sessionStorage.isVerified)
         let viewModel = ViewModel(initialState: state, handler: handler)
         var view = SyncSettingsView()
         view.coordinatorDelegate = self

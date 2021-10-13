@@ -39,26 +39,34 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
         case .setScheme(let scheme):
             self.update(viewModel: viewModel) { state in
                 state.scheme = scheme
+                state.webDavVerificationResult = nil
             }
             self.webDavController.sessionStorage.scheme = scheme
+            self.webDavController.sessionStorage.isVerified = false
 
         case .setUrl(let url):
             self.update(viewModel: viewModel) { state in
                 state.url = url
+                state.webDavVerificationResult = nil
             }
             self.webDavController.sessionStorage.url = url
+            self.webDavController.sessionStorage.isVerified = false
 
         case .setUsername(let username):
             self.update(viewModel: viewModel) { state in
                 state.username = username
+                state.webDavVerificationResult = nil
             }
             self.webDavController.sessionStorage.username = username
+            self.webDavController.sessionStorage.isVerified = false
 
         case .setPassword(let password):
             self.update(viewModel: viewModel) { state in
                 state.password = password
+                state.webDavVerificationResult = nil
             }
             self.webDavController.sessionStorage.password = password
+            self.webDavController.sessionStorage.isVerified = false
 
         case .verify:
             self.update(viewModel: viewModel) { state in

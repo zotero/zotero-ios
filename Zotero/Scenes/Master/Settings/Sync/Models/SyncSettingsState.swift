@@ -24,7 +24,7 @@ struct SyncSettingsState: ViewModelState {
     var isVerifyingWebDav: Bool
     var webDavVerificationResult: Result<(), Error>?
 
-    init(account: String, fileSyncType: FileSyncType, scheme: WebDavScheme, url: String, username: String, password: String) {
+    init(account: String, fileSyncType: FileSyncType, scheme: WebDavScheme, url: String, username: String, password: String, isVerified: Bool) {
         self.account = account
         self.fileSyncType = fileSyncType
         self.scheme = scheme
@@ -32,6 +32,7 @@ struct SyncSettingsState: ViewModelState {
         self.username = username
         self.password = password
         self.isVerifyingWebDav = false
+        self.webDavVerificationResult = isVerified ? .success(()) : nil
     }
 
     func cleanup() {}

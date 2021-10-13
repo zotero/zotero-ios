@@ -10,6 +10,7 @@ import Foundation
 
 protocol WebDavSessionStorage: AnyObject {
     var isEnabled: Bool { get set }
+    var isVerified: Bool { get set }
     var username: String { get set }
     var url: String { get set }
     var scheme: WebDavScheme { get set }
@@ -24,6 +25,16 @@ final class SecureWebDavSessionStorage: WebDavSessionStorage {
     }
 
     var isEnabled: Bool {
+        get {
+            return Defaults.shared.webDavEnabled
+        }
+
+        set {
+            Defaults.shared.webDavEnabled = newValue
+        }
+    }
+
+    var isVerified: Bool {
         get {
             return Defaults.shared.webDavEnabled
         }

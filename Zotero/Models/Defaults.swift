@@ -27,6 +27,9 @@ final class Defaults {
     @UserDefault(key: "webDavEnabled", defaultValue: false)
     var webDavEnabled: Bool
 
+    @UserDefault(key: "webDavVerified", defaultValue: false)
+    var webDavVerified: Bool
+
     @CodableUserDefault(key: "webDavScheme", defaultValue: .http, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     var webDavScheme: WebDavScheme
 
