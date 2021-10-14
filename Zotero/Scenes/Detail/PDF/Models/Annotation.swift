@@ -43,8 +43,10 @@ struct Annotation: Identifiable, Equatable {
     var previewBoundingBox: CGRect {
         switch self.type {
         case .image:
-            return self.boundingBox.insetBy(dx: (AnnotationsConfig.imageAnnotationLineWidth + 1), dy: (AnnotationsConfig.imageAnnotationLineWidth + 1))
-        case .ink, .note, .highlight:
+            return AnnotationPreviewBoundingBoxCalculator.imagePreviewRect(from: self.boundingBox, lineWidth: AnnotationsConfig.imageAnnotationLineWidth)
+        case .ink:
+            return AnnotationPreviewBoundingBoxCalculator.inkPreviewRect(from: self.boundingBox)
+        case .note, .highlight:
             return self.boundingBox
         }
     }

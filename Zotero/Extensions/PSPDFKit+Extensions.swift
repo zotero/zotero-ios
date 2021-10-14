@@ -85,7 +85,13 @@ extension PSPDFKit.Annotation {
 
 extension PSPDFKit.SquareAnnotation {
     override var previewBoundingBox: CGRect {
-        return self.boundingBox.insetBy(dx: (self.lineWidth + 1), dy: (self.lineWidth + 1))
+        return AnnotationPreviewBoundingBoxCalculator.imagePreviewRect(from: self.boundingBox, lineWidth: self.lineWidth)
+    }
+}
+
+extension PSPDFKit.InkAnnotation {
+    override var previewBoundingBox: CGRect {
+        return AnnotationPreviewBoundingBoxCalculator.inkPreviewRect(from: self.boundingBox)
     }
 }
 

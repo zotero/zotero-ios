@@ -882,6 +882,7 @@
 		B3E8FE7A2714357000F51458 /* GeneralSettingsAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E8FE792714357000F51458 /* GeneralSettingsAction.swift */; };
 		B3E8FE7C2714358E00F51458 /* GeneralSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E8FE7B2714358E00F51458 /* GeneralSettingsViewModel.swift */; };
 		B3E9180C25ECE30A002B77AF /* CoreGraphics+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E9180B25ECE30A002B77AF /* CoreGraphics+Extensions.swift */; };
+		B3EC44612718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EC44602718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift */; };
 		B3ED688D255AE46D00D4DE78 /* Differ in Frameworks */ = {isa = PBXBuildFile; productRef = B3ED688C255AE46D00D4DE78 /* Differ */; };
 		B3F0C3F9250A1BD8002D557A /* LibrariesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F0C3F7250A1BD8002D557A /* LibrariesViewController.swift */; };
 		B3F0C3FA250A1BD8002D557A /* LibrariesViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3F0C3F8250A1BD8002D557A /* LibrariesViewController.xib */; };
@@ -1589,6 +1590,7 @@
 		B3E8FE792714357000F51458 /* GeneralSettingsAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsAction.swift; sourceTree = "<group>"; };
 		B3E8FE7B2714358E00F51458 /* GeneralSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsViewModel.swift; sourceTree = "<group>"; };
 		B3E9180B25ECE30A002B77AF /* CoreGraphics+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CoreGraphics+Extensions.swift"; sourceTree = "<group>"; };
+		B3EC44602718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPreviewBoundingBoxCalculator.swift; sourceTree = "<group>"; };
 		B3F0C3F7250A1BD8002D557A /* LibrariesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrariesViewController.swift; sourceTree = "<group>"; };
 		B3F0C3F8250A1BD8002D557A /* LibrariesViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LibrariesViewController.xib; sourceTree = "<group>"; };
 		B3F0C3FB250A1DB8002D557A /* LibraryCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryCell.swift; sourceTree = "<group>"; };
@@ -1710,6 +1712,7 @@
 				B305649F23FC051E003304F2 /* Sync */,
 				B34ACC792514EAAB00040C17 /* AnnotationColorGenerator.swift */,
 				B34A9F6725BF1D27007C9A4A /* AnnotationConverter.swift */,
+				B3EC44602718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift */,
 				B3FBAC1824570BDE00AA00C0 /* AnnotationPreviewController.swift */,
 				B30B40642491222000FAAF6D /* AttachmentCreator.swift */,
 				B3886C46249234D600B7D67B /* AttachmentDownloader.swift */,
@@ -3891,6 +3894,7 @@
 				B33AB488246D315F00490DDE /* CheckboxButton.swift in Sources */,
 				B378F4CF242D0CC200B88A05 /* RepoRequest.swift in Sources */,
 				B30565B923FC051E003304F2 /* DeleteItemsFromCollectionDbRequest.swift in Sources */,
+				B3EC44612718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift in Sources */,
 				B30565E123FC051E003304F2 /* MarkGroupAsLocalOnlyDbRequest.swift in Sources */,
 				B305667A23FC051F003304F2 /* PreferenceKeys.swift in Sources */,
 				B31FACC625DBC6F800DD5F14 /* ConflictReceiverAlertController.swift in Sources */,
