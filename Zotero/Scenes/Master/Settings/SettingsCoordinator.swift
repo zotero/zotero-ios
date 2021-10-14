@@ -115,21 +115,21 @@ final class SettingsCoordinator: NSObject, Coordinator {
 
 extension SettingsCoordinator: StorageSettingsSettingsCoordinatorDelegate {
     func showDeleteAllStorageAlert(viewModel: ViewModel<StorageSettingsActionHandler>) {
-        self.showDeleteQuestion(title: L10n.Settings.Storage.deleteAllQuestion,
+        self.showDeleteQuestion(message: L10n.Settings.Storage.deleteAllQuestion,
                                 deleteAction: { [weak viewModel] in
                                     viewModel?.process(action: .deleteAll)
                                 })
     }
 
     func showDeleteLibraryStorageAlert(for library: Library, viewModel: ViewModel<StorageSettingsActionHandler>) {
-        self.showDeleteQuestion(title: L10n.Settings.Storage.deleteLibraryQuestion(library.name),
+        self.showDeleteQuestion(message: L10n.Settings.Storage.deleteLibraryQuestion(library.name),
                                 deleteAction: { [weak viewModel] in
                                     viewModel?.process(action: .deleteInLibrary(library.identifier))
                                 })
     }
 
-    private func showDeleteQuestion(title: String, deleteAction: @escaping () -> Void) {
-        let controller = UIAlertController(title: title, message: nil, preferredStyle: .alert)
+    private func showDeleteQuestion(message: String, deleteAction: @escaping () -> Void) {
+        let controller = UIAlertController(title: L10n.warning, message: message, preferredStyle: .alert)
 
         controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { _ in
             deleteAction()
@@ -138,7 +138,7 @@ extension SettingsCoordinator: StorageSettingsSettingsCoordinatorDelegate {
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
 
         // Settings are already presented, so present over them
-        self.navigationController.presentedViewController?.present(controller, animated: true, completion: nil)
+        self.navigationController.present(controller, animated: true, completion: nil)
     }
 }
 
