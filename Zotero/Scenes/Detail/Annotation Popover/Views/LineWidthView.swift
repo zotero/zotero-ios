@@ -85,13 +85,18 @@ final class LineWidthView: UIView {
         .disposed(by: self.disposeBag)
         self.slider = slider
 
-        let label = UILabel()
-        label.font = .preferredFont(forTextStyle: .body)
-        label.textColor = .systemGray
-        label.text = String(format: "%0.1f", self.slider.value)
-        self.valueLabel = label
+        let title = UILabel()
+        title.font = .preferredFont(forTextStyle: .body)
+        title.textColor = .black
+        title.text = L10n.Pdf.AnnotationPopover.lineWidth
 
-        let container = UIStackView(arrangedSubviews: [slider, label])
+        let value = UILabel()
+        value.font = .preferredFont(forTextStyle: .body)
+        value.textColor = .systemGray
+        value.text = String(format: "%0.1f", self.slider.value)
+        self.valueLabel = value
+
+        let container = UIStackView(arrangedSubviews: [title, slider, value])
         container.axis = .horizontal
         container.spacing = 12
         container.translatesAutoresizingMaskIntoConstraints = false

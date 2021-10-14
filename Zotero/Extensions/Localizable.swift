@@ -687,6 +687,8 @@ internal enum L10n {
       internal static let delete = L10n.tr("Localizable", "pdf.annotation_popover.delete")
       /// Do you really want to delete this annotation?
       internal static let deleteConfirm = L10n.tr("Localizable", "pdf.annotation_popover.delete_confirm")
+      /// Width
+      internal static let lineWidth = L10n.tr("Localizable", "pdf.annotation_popover.line_width")
       /// No comment
       internal static let noComment = L10n.tr("Localizable", "pdf.annotation_popover.no_comment")
       /// Edit Page Number
