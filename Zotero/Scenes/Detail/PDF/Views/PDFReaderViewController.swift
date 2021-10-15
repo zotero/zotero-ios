@@ -216,8 +216,9 @@ final class PDFReaderViewController: UIViewController {
                 if let location = state.focusDocumentLocation {
                     // If annotation was selected, focus if needed
                     self.focus(annotation: annotation, at: location, document: state.document)
-                } else {
-                    // Update selection if needed
+                } else if annotation.type != .ink || self.pdfController.annotationStateManager.state != .ink {
+                    // Update selection if needed.
+                    // Never select ink annotation if inking is active in case the user needs to continue typing.
                     self.select(annotation: annotation, pageIndex: self.pdfController.pageIndex, document: state.document)
                 }
             } else {
