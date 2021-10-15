@@ -197,8 +197,8 @@ final class AnnotationsViewController: UIViewController {
             guard finished else { return }
             if let indexPaths = state.updatedAnnotationIndexPaths {
                 reloadVisibleCells(indexPaths)
-                completion()
             }
+            completion()
         }
     }
 
