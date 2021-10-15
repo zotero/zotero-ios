@@ -99,18 +99,6 @@ final class AnnotationEditViewController: UIViewController {
         }
     }
 
-    private func confirmDeletion() {
-        let controller = UIAlertController(title: L10n.warning, message: L10n.Pdf.AnnotationPopover.deleteConfirm, preferredStyle: .alert)
-
-        controller.addAction(UIAlertAction(title: L10n.yes, style: .destructive, handler: { [weak self] _ in
-            guard let `self` = self else { return }
-            self.deleteAction(self.viewModel.state.annotation)
-        }))
-
-        controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: nil))
-        self.present(controller, animated: true, completion: nil)
-    }
-
     private func reloadHeight() {
         self.tableView.beginUpdates()
         self.tableView.endUpdates()
@@ -262,7 +250,7 @@ extension AnnotationEditViewController: UITableViewDelegate {
         switch self.sections[indexPath.section] {
         case .properties, .highlight: break
         case .actions:
-            self.confirmDeletion()
+            self.deleteAction(self.viewModel.state.annotation)
         case .pageLabel:
             self.coordinatorDelegate?.showPageLabelEditor(label: self.viewModel.state.annotation.pageLabel,
                                                           updateSubsequentPages: self.viewModel.state.updateSubsequentLabels,

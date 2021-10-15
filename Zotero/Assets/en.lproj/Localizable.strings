@@ -212,7 +212,6 @@
 "pdf.search.multiple_matches" = "Found %d matches";
 "pdf.annotation_popover.title" = "Edit Annotation";
 "pdf.annotation_popover.delete" = "Delete Annotation";
-"pdf.annotation_popover.delete_confirm" = "Do you really want to delete this annotation?";
 "pdf.annotation_popover.update_subsequent_pages" = "Update subsequent pages";
 "pdf.annotation_popover.page_label_title" = "Edit Page Number";
 "pdf.annotation_popover.no_comment" = "No comment";

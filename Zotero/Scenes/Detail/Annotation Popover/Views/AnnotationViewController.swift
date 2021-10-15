@@ -123,15 +123,7 @@ final class AnnotationViewController: UIViewController {
 
     @objc private func deleteAnnotation() {
         guard let annotation = self.viewModel.state.selectedAnnotation else { return }
-
-        let controller = UIAlertController(title: L10n.warning, message: L10n.Pdf.AnnotationPopover.deleteConfirm, preferredStyle: .alert)
-
-        controller.addAction(UIAlertAction(title: L10n.yes, style: .destructive, handler: { [weak self] _ in
-            self?.viewModel.process(action: .removeAnnotation(annotation))
-        }))
-
-        controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: nil))
-        self.present(controller, animated: true, completion: nil)
+        self.viewModel.process(action: .removeAnnotation(annotation))
     }
 
     private func showSettings() {
