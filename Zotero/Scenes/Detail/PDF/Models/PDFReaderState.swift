@@ -32,6 +32,8 @@ struct PDFReaderState: ViewModelState {
         static let itemObserving = Changes(rawValue: 1 << 7)
         static let export = Changes(rawValue: 1 << 8)
         static let activeLineWidth = Changes(rawValue: 1 << 9)
+        static let sidebarEditing = Changes(rawValue: 1 << 10)
+        static let sidebarDeletion = Changes(rawValue: 1 << 11)
     }
 
     enum AppearanceMode: UInt {
@@ -66,8 +68,13 @@ struct PDFReaderState: ViewModelState {
     var activeLineWidth: CGFloat
     var currentFilter: String?
     var changes: Changes
+    var sidebarEditingEnabled: Bool
+    /// Annotation selected when annotations are not being edited in sidebar
     var selectedAnnotation: Annotation?
     var selectedAnnotationCommentActive: Bool
+    /// Annotations selected when annotations are being edited in sidebar
+    var selectedAnnotations: [Int: Set<String>]
+    var deletionEnabled: Bool
     /// Location to focus in document
     var focusDocumentLocation: AnnotationDocumentLocation?
     /// Annotation key to focus in annotation sidebar
@@ -103,7 +110,10 @@ struct PDFReaderState: ViewModelState {
         self.comments = [:]
         self.ignoreNotifications = [:]
         self.selectedAnnotationCommentActive = false
+        self.selectedAnnotations = [:]
+        self.deletionEnabled = false
         self.shouldStoreAnnotationPreviewsIfNeeded = false
+        self.sidebarEditingEnabled = false
         self.visiblePage = 0
         self.commentFont = PDFReaderLayout.annotationLayout.font
         self.activeColor = UIColor(hex: Defaults.shared.activeColorHex)

@@ -18,9 +18,13 @@ enum PDFReaderAction {
     case startObservingAnnotationChanges
     case loadDocumentData
     case searchAnnotations(String)
-    case selectAnnotation(Annotation?)
+    case selectAnnotation(Annotation)
+    case deselectSelectedAnnotation
+    case selectAnnotationDuringEditing(Annotation)
+    case deselectAnnotationDuringEditing(Annotation)
     case selectAnnotationFromDocument(key: String, page: Int)
     case removeAnnotation(Annotation)
+    case removeSelectedAnnotations
     case annotationsAdded(annotations: [PSPDFKit.Annotation], selectFirst: Bool)
     case annotationsRemoved([PSPDFKit.Annotation])
     case annotationChanged(PSPDFKit.Annotation)
@@ -49,6 +53,7 @@ enum PDFReaderAction {
     case changeTransition(PageTransition)
     case changeAppearanceMode(PDFReaderState.AppearanceMode)
     case changeIdleTimerDisabled(Bool)
+    case setSidebarEditingEnabled(Bool)
 }
 
 #endif

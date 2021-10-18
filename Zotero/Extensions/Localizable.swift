@@ -80,6 +80,8 @@ internal enum L10n {
   internal static let retry = L10n.tr("Localizable", "retry")
   /// Save
   internal static let save = L10n.tr("Localizable", "save")
+  /// Select
+  internal static let select = L10n.tr("Localizable", "select")
   /// Share
   internal static let share = L10n.tr("Localizable", "share")
   /// Support and Feedback
@@ -590,8 +592,6 @@ internal enum L10n {
     internal static let removeFromCollectionTitle = L10n.tr("Localizable", "items.remove_from_collection_title")
     /// Search Items
     internal static let searchTitle = L10n.tr("Localizable", "items.search_title")
-    /// Select
-    internal static let select = L10n.tr("Localizable", "items.select")
     /// Select All
     internal static let selectAll = L10n.tr("Localizable", "items.select_all")
     /// Sort By

@@ -27,6 +27,8 @@ final class AnnotationsViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private weak var tableView: UITableView!
+    private weak var toolbar: UIToolbar!
+    private weak var deleteBarButton: UIBarButtonItem?
     private var dataSource: DiffableDataSource<Int, Annotation>!
     private var searchController: UISearchController!
     private var isVisible: Bool
@@ -51,8 +53,9 @@ final class AnnotationsViewController: UIViewController {
         super.viewDidLoad()
 
         self.definesPresentationContext = true
-        self.view.backgroundColor = .systemGray6
-        self.setupTableView()
+        self.setupViews()
+        self.setupToolbar(editingEnabled: self.viewModel.state.sidebarEditingEnabled, deletionEnabled: self.viewModel.state.deletionEnabled)
+        self.setupDataSource()
         self.setupSearchController()
         self.setupKeyboardObserving()
 
@@ -123,6 +126,11 @@ final class AnnotationsViewController: UIViewController {
         }
     }
 
+    private func deleteSelectedAnnotations() {
+        guard self.viewModel.state.sidebarEditingEnabled else { return }
+        self.viewModel.process(action: .removeSelectedAnnotations)
+    }
+
     private func update(state: PDFReaderState) {
         self.reloadIfNeeded(for: state) {
             if let keys = state.loadedPreviewImageAnnotationKeys {
@@ -131,6 +139,18 @@ final class AnnotationsViewController: UIViewController {
 
             if let indexPath = state.focusSidebarIndexPath {
                 self.tableView.selectRow(at: indexPath, animated: true, scrollPosition: .middle)
+            }
+
+            if state.changes.contains(.sidebarEditing) {
+                self.tableView.setEditing(state.sidebarEditingEnabled, animated: true)
+                self.tableView.beginUpdates()
+                self.tableView.endUpdates()
+
+                self.setupToolbar(editingEnabled: state.sidebarEditingEnabled, deletionEnabled: state.deletionEnabled)
+            }
+
+            if state.changes.contains(.sidebarDeletion) {
+                self.deleteBarButton?.isEnabled = state.deletionEnabled
             }
         }
     }
@@ -212,7 +232,7 @@ final class AnnotationsViewController: UIViewController {
 
     /// Scrolls to selected cell if it's not visible.
     private func focusSelectedCell() {
-        guard let indexPath = self.tableView.indexPathForSelectedRow else { return }
+        guard !self.viewModel.state.sidebarEditingEnabled, let indexPath = self.tableView.indexPathForSelectedRow else { return }
 
         let cellFrame =  self.tableView.rectForRow(at: indexPath)
         let cellBottom = cellFrame.maxY - self.tableView.contentOffset.y
@@ -255,7 +275,7 @@ final class AnnotationsViewController: UIViewController {
             comment = .init(attributedString: state.comments[annotation.key], isActive: state.selectedAnnotationCommentActive)
         }
 
-        cell.setup(with: annotation, comment: comment, preview: preview, selected: selected, availableWidth: PDFReaderLayout.sidebarWidth, library: state.library)
+        cell.setup(with: annotation, comment: comment, preview: preview, selected: selected, availableWidth: PDFReaderLayout.sidebarWidth, library: state.library, isEditing: state.sidebarEditingEnabled)
         cell.actionPublisher.subscribe(onNext: { [weak self] action in
             self?.perform(action: action, annotation: annotation)
         })
@@ -264,27 +284,49 @@ final class AnnotationsViewController: UIViewController {
 
     // MARK: - Setups
 
-    private func setupTableView() {
-        let backgroundView = UIView()
-        backgroundView.backgroundColor = .systemGray6
+    private func setupViews() {
+        self.view.backgroundColor = .systemGray6
 
         let tableView = UITableView(frame: self.view.bounds, style: .plain)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.delegate = self
         tableView.prefetchDataSource = self
         tableView.separatorStyle = .none
-        tableView.backgroundView = backgroundView
+        tableView.backgroundColor = .systemGray6
+        tableView.backgroundView?.backgroundColor = .systemGray6
         tableView.register(AnnotationCell.self, forCellReuseIdentifier: AnnotationsViewController.cellId)
-
+        tableView.setEditing(self.viewModel.state.sidebarEditingEnabled, animated: false)
+        tableView.allowsMultipleSelectionDuringEditing = true
         self.view.addSubview(tableView)
+
+        let toolbarContainer = UIView()
+        toolbarContainer.translatesAutoresizingMaskIntoConstraints = false
+        self.view.addSubview(toolbarContainer)
+
+        let toolbar = UIToolbar()
+        toolbarContainer.backgroundColor = toolbar.backgroundColor
+        toolbar.translatesAutoresizingMaskIntoConstraints = false
+        self.view.addSubview(toolbar)
 
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: self.view.topAnchor),
-            tableView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
+            tableView.bottomAnchor.constraint(equalTo: toolbarContainer.topAnchor),
             tableView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor)
+            tableView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+            toolbarContainer.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
+            toolbarContainer.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+            toolbarContainer.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
+            toolbar.topAnchor.constraint(equalTo: toolbarContainer.topAnchor),
+            toolbar.leadingAnchor.constraint(equalTo: toolbarContainer.leadingAnchor),
+            toolbar.trailingAnchor.constraint(equalTo: toolbarContainer.trailingAnchor),
+            toolbar.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor)
         ])
 
+        self.toolbar = toolbar
+        self.tableView = tableView
+    }
+
+    private func setupDataSource() {
         self.dataSource = DiffableDataSource(tableView: tableView,
                                              dequeueAction: { tableView, indexPath, _, _ in
                                                  return tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
@@ -295,8 +337,6 @@ final class AnnotationsViewController: UIViewController {
                                                  self.setup(cell: cell, with: annotation, state: self.viewModel.state)
                                              })
         self.dataSource.dataSource = self
-
-        self.tableView = tableView
     }
 
     private func setupSearchController() {
@@ -345,6 +385,40 @@ final class AnnotationsViewController: UIViewController {
                           })
                           .disposed(by: self.disposeBag)
     }
+
+    private func setupToolbar(editingEnabled: Bool, deletionEnabled: Bool) {
+        var items: [UIBarButtonItem] = []
+
+        if #available(iOS 14.0, *) {
+            items.append(UIBarButtonItem(systemItem: .flexibleSpace, primaryAction: nil, menu: nil))
+        } else {
+            items.append(UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil))
+        }
+
+        if editingEnabled {
+            let delete = UIBarButtonItem(title: L10n.delete, style: .plain, target: nil, action: nil)
+            delete.isEnabled = deletionEnabled
+            delete.rx.tap
+                  .subscribe(onNext: { [weak self] _ in
+                      self?.deleteSelectedAnnotations()
+                  })
+                  .disposed(by: self.disposeBag)
+            items.append(delete)
+            self.deleteBarButton = delete
+        } else {
+            self.deleteBarButton = nil
+        }
+
+        let select = UIBarButtonItem(title: (editingEnabled ? L10n.done : L10n.select), style: .plain, target: nil, action: nil)
+        select.rx.tap
+              .subscribe(onNext: { [weak self] _ in
+                  self?.viewModel.process(action: .setSidebarEditingEnabled(!editingEnabled))
+              })
+              .disposed(by: self.disposeBag)
+        items.append(select)
+        
+        self.toolbar.items = items
+    }
 }
 
 extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSourcePrefetching {
@@ -362,7 +436,21 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSourceP
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         guard let annotation = self.dataSource.snapshot.object(at: indexPath) else { return }
-        self.viewModel.process(action: .selectAnnotation(annotation))
+
+        if self.viewModel.state.sidebarEditingEnabled {
+            self.viewModel.process(action: .selectAnnotationDuringEditing(annotation))
+        } else {
+            self.viewModel.process(action: .selectAnnotation(annotation))
+        }
+    }
+
+    func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
+        guard self.viewModel.state.sidebarEditingEnabled, let annotation = self.dataSource.snapshot.object(at: indexPath) else { return }
+        self.viewModel.process(action: .deselectAnnotationDuringEditing(annotation))
+    }
+
+    func tableView(_ tableView: UITableView, shouldBeginMultipleSelectionInteractionAt indexPath: IndexPath) -> Bool {
+        return tableView.isEditing
     }
 }
 
@@ -372,7 +460,7 @@ extension AnnotationsViewController: AdditionalDiffableDataSource {
     }
 
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-        guard editingStyle == .delete else { return }
+        guard !self.viewModel.state.sidebarEditingEnabled && editingStyle == .delete else { return }
         guard let annotation = self.dataSource.snapshot.object(at: indexPath) else { return }
         self.viewModel.process(action: .removeAnnotation(annotation))
     }

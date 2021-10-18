@@ -697,7 +697,7 @@ final class PDFReaderViewController: UIViewController {
 
         interactions.deselectAnnotation.addActivationCondition { [weak self] _, _, _ -> Bool in
             // `interactions.deselectAnnotation.addActivationCallback` is not always called when highglight annotation tool is enabled.
-            self?.viewModel.process(action: .selectAnnotation(nil))
+            self?.viewModel.process(action: .deselectSelectedAnnotation)
             return true
         }
 
@@ -1072,7 +1072,7 @@ extension PDFReaderViewController: AnnotationStateManagerDelegate {
 extension PDFReaderViewController: UIPopoverPresentationControllerDelegate {
     func popoverPresentationControllerShouldDismissPopover(_ popoverPresentationController: UIPopoverPresentationController) -> Bool {
         if self.viewModel.state.selectedAnnotation?.type == .highlight {
-            self.viewModel.process(action: .selectAnnotation(nil))
+            self.viewModel.process(action: .deselectSelectedAnnotation)
         }
         return true
     }

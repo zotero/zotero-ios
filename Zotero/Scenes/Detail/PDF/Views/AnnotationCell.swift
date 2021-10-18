@@ -26,13 +26,11 @@ final class AnnotationCell: UITableViewCell {
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        self.selectionStyle = .none
         self.setupView()
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        self.selectionStyle = .none
         self.setupView()
     }
 
@@ -50,6 +48,8 @@ final class AnnotationCell: UITableViewCell {
     // MARK: - Setups
 
     private func setupView() {
+        self.backgroundColor = .systemGray6
+
         let selectionView = UIView()
         selectionView.backgroundColor = .systemGray6
         selectionView.layer.cornerRadius = 10
@@ -82,7 +82,7 @@ final class AnnotationCell: UITableViewCell {
         ])
     }
 
-    func setup(with annotation: Annotation, comment: AnnotationView.Comment?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, library: Library) {
+    func setup(with annotation: Annotation, comment: AnnotationView.Comment?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, library: Library, isEditing: Bool) {
         if !selected {
             self.annotationView.resignFirstResponder()
         }

@@ -562,7 +562,7 @@ final class ItemsViewController: UIViewController {
                 self?.viewModel.process(action: .stopEditing)
             }
         case .select:
-            title = L10n.Items.select
+            title = L10n.select
             accessibilityLabel = L10n.Accessibility.Items.selectItems
             action = { [weak self] _ in
                 self?.viewModel.process(action: .startEditing)

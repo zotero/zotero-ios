@@ -44,6 +44,7 @@
 "lookup" = "Look Up";
 "not_found" = "Not Found";
 "share" = "Share";
+"select" = "Select";
 
 "beta_wipe_title" = "Resync Required";
 "beta_wipe_message" = "Due to a beta update, your data must be redownloaded from zotero.org.";
@@ -100,7 +101,6 @@
 "sync.conflict_resolution.changed_item_deleted" = "The item “%@” has been removed. Do you want to keep your changes?";
 
 "items.search_title" = "Search Items";
-"items.select" = "Select";
 "items.select_all" = "Select All";
 "items.deselect_all" = "Deselect All";
 "items.sort_by" = "Sort By";
