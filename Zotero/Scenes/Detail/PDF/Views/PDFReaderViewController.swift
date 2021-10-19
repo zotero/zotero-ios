@@ -662,6 +662,7 @@ final class PDFReaderViewController: UIViewController {
         controller.delegate = self
         controller.formSubmissionDelegate = nil
         controller.annotationStateManager.add(self)
+        controller.annotationStateManager.stylusMode = .direct
         self.setup(scrubberBar: controller.userInterfaceView.scrubberBar)
         self.setup(interactions: controller.interactions)
         return controller
