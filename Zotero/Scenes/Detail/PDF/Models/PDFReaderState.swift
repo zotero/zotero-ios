@@ -33,7 +33,7 @@ struct PDFReaderState: ViewModelState {
         static let export = Changes(rawValue: 1 << 8)
         static let activeLineWidth = Changes(rawValue: 1 << 9)
         static let sidebarEditing = Changes(rawValue: 1 << 10)
-        static let sidebarDeletion = Changes(rawValue: 1 << 11)
+        static let sidebarEditingSelection = Changes(rawValue: 1 << 11)
     }
 
     enum AppearanceMode: UInt {
@@ -73,8 +73,13 @@ struct PDFReaderState: ViewModelState {
     var selectedAnnotation: Annotation?
     var selectedAnnotationCommentActive: Bool
     /// Annotations selected when annotations are being edited in sidebar
-    var selectedAnnotations: [Int: Set<String>]
+    var selectedAnnotationsDuringEditing: [Int: Set<String>]
+    var hasOneSelectedAnnotationDuringEditing: Bool {
+        guard self.selectedAnnotationsDuringEditing.values.count == 1, let set = self.selectedAnnotationsDuringEditing.values.first else { return false }
+        return set.count == 1
+    }
     var deletionEnabled: Bool
+    var mergingEnabled: Bool
     /// Location to focus in document
     var focusDocumentLocation: AnnotationDocumentLocation?
     /// Annotation key to focus in annotation sidebar
@@ -110,8 +115,9 @@ struct PDFReaderState: ViewModelState {
         self.comments = [:]
         self.ignoreNotifications = [:]
         self.selectedAnnotationCommentActive = false
-        self.selectedAnnotations = [:]
+        self.selectedAnnotationsDuringEditing = [:]
         self.deletionEnabled = false
+        self.mergingEnabled = false
         self.shouldStoreAnnotationPreviewsIfNeeded = false
         self.sidebarEditingEnabled = false
         self.visiblePage = 0

@@ -124,7 +124,7 @@ struct Annotation: Identifiable, Equatable {
         var maxX: CGFloat = 0.0
         var maxY: CGFloat = 0.0
 
-        for rect in self.rects {
+        for rect in rects {
             if rect.minX < minX {
                 minX = rect.minX
             }

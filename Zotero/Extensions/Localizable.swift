@@ -701,6 +701,8 @@ internal enum L10n {
       internal static let addComment = L10n.tr("Localizable", "pdf.annotations_sidebar.add_comment")
       /// Add tags
       internal static let addTags = L10n.tr("Localizable", "pdf.annotations_sidebar.add_tags")
+      /// Merge
+      internal static let merge = L10n.tr("Localizable", "pdf.annotations_sidebar.merge")
       /// Search
       internal static let searchTitle = L10n.tr("Localizable", "pdf.annotations_sidebar.search_title")
     }

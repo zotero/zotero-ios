@@ -29,6 +29,7 @@ final class AnnotationsViewController: UIViewController {
     private weak var tableView: UITableView!
     private weak var toolbar: UIToolbar!
     private weak var deleteBarButton: UIBarButtonItem?
+    private weak var mergeBarButton: UIBarButtonItem?
     private var dataSource: DiffableDataSource<Int, Annotation>!
     private var searchController: UISearchController!
     private var isVisible: Bool
@@ -54,7 +55,7 @@ final class AnnotationsViewController: UIViewController {
 
         self.definesPresentationContext = true
         self.setupViews()
-        self.setupToolbar(editingEnabled: self.viewModel.state.sidebarEditingEnabled, deletionEnabled: self.viewModel.state.deletionEnabled)
+        self.setupToolbar(editingEnabled: self.viewModel.state.sidebarEditingEnabled, deletionEnabled: self.viewModel.state.deletionEnabled, mergingEnabled: self.viewModel.state.mergingEnabled)
         self.setupDataSource()
         self.setupSearchController()
         self.setupKeyboardObserving()
@@ -126,11 +127,6 @@ final class AnnotationsViewController: UIViewController {
         }
     }
 
-    private func deleteSelectedAnnotations() {
-        guard self.viewModel.state.sidebarEditingEnabled else { return }
-        self.viewModel.process(action: .removeSelectedAnnotations)
-    }
-
     private func update(state: PDFReaderState) {
         self.reloadIfNeeded(for: state) {
             if let keys = state.loadedPreviewImageAnnotationKeys {
@@ -146,11 +142,12 @@ final class AnnotationsViewController: UIViewController {
                 self.tableView.beginUpdates()
                 self.tableView.endUpdates()
 
-                self.setupToolbar(editingEnabled: state.sidebarEditingEnabled, deletionEnabled: state.deletionEnabled)
+                self.setupToolbar(editingEnabled: state.sidebarEditingEnabled, deletionEnabled: state.deletionEnabled, mergingEnabled: state.mergingEnabled)
             }
 
-            if state.changes.contains(.sidebarDeletion) {
+            if state.changes.contains(.sidebarEditingSelection) {
                 self.deleteBarButton?.isEnabled = state.deletionEnabled
+                self.mergeBarButton?.isEnabled = state.mergingEnabled
             }
         }
     }
@@ -386,7 +383,7 @@ final class AnnotationsViewController: UIViewController {
                           .disposed(by: self.disposeBag)
     }
 
-    private func setupToolbar(editingEnabled: Bool, deletionEnabled: Bool) {
+    private func setupToolbar(editingEnabled: Bool, deletionEnabled: Bool, mergingEnabled: Bool) {
         var items: [UIBarButtonItem] = []
 
         if #available(iOS 14.0, *) {
@@ -396,17 +393,30 @@ final class AnnotationsViewController: UIViewController {
         }
 
         if editingEnabled {
+            let merge = UIBarButtonItem(title: L10n.Pdf.AnnotationsSidebar.merge, style: .plain, target: nil, action: nil)
+            merge.isEnabled = mergingEnabled
+            merge.rx.tap
+                 .subscribe(onNext: { [weak self] _ in
+                     guard let `self` = self, self.viewModel.state.sidebarEditingEnabled else { return }
+                     self.viewModel.process(action: .mergeSelectedAnnotations)
+                 })
+                 .disposed(by: self.disposeBag)
+            items.append(merge)
+            self.mergeBarButton = merge
+
             let delete = UIBarButtonItem(title: L10n.delete, style: .plain, target: nil, action: nil)
             delete.isEnabled = deletionEnabled
             delete.rx.tap
                   .subscribe(onNext: { [weak self] _ in
-                      self?.deleteSelectedAnnotations()
+                      guard let `self` = self, self.viewModel.state.sidebarEditingEnabled else { return }
+                      self.viewModel.process(action: .removeSelectedAnnotations)
                   })
                   .disposed(by: self.disposeBag)
             items.append(delete)
             self.deleteBarButton = delete
         } else {
             self.deleteBarButton = nil
+            self.mergeBarButton = nil
         }
 
         let select = UIBarButtonItem(title: (editingEnabled ? L10n.done : L10n.select), style: .plain, target: nil, action: nil)

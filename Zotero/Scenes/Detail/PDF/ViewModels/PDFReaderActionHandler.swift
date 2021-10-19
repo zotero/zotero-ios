@@ -84,13 +84,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             self.searchAnnotations(with: term, in: viewModel)
 
         case .selectAnnotation(let annotation):
-            guard annotation.key != viewModel.state.selectedAnnotation?.key else { return }
+            guard !viewModel.state.sidebarEditingEnabled && annotation.key != viewModel.state.selectedAnnotation?.key else { return }
             let index = viewModel.state.annotations[annotation.page]?.firstIndex(where: { annotation.key == $0.key })
             self.select(annotation: annotation, index: index, didSelectInDocument: false, in: viewModel)
 
         case .selectAnnotationFromDocument(let key, let page):
-            guard key != viewModel.state.selectedAnnotation?.key else { return }
-            guard let index = viewModel.state.annotations[page]?.firstIndex(where: { $0.key == key }) else { return }
+            guard !viewModel.state.sidebarEditingEnabled && key != viewModel.state.selectedAnnotation?.key,
+                  let index = viewModel.state.annotations[page]?.firstIndex(where: { $0.key == key }) else { return }
             let annotation = viewModel.state.annotations[page]?[index]
             self.select(annotation: annotation, index: index, didSelectInDocument: true, in: viewModel)
 
@@ -118,6 +118,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         case .removeSelectedAnnotations:
             guard viewModel.state.sidebarEditingEnabled else { return }
             self.removeSelectedAnnotations(in: viewModel)
+
+        case .mergeSelectedAnnotations:
+            guard viewModel.state.sidebarEditingEnabled else { return }
+            self.mergeSelectedAnnotations(in: viewModel)
 
         case .requestPreviews(let keys, let notify):
             self.loadPreviews(for: keys, notify: notify, in: viewModel)
@@ -238,44 +242,137 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
     private func selectDuringEditing(annotation: Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            if state.selectedAnnotations.isEmpty {
+            if state.selectedAnnotationsDuringEditing.isEmpty {
                 state.deletionEnabled = annotation.isSyncable
             } else {
                 state.deletionEnabled = state.deletionEnabled && annotation.isSyncable
             }
-            state.changes = .sidebarDeletion
 
-            if var keys = state.selectedAnnotations[annotation.page] {
+            if var keys = state.selectedAnnotationsDuringEditing[annotation.page] {
                 keys.insert(annotation.key)
-                state.selectedAnnotations[annotation.page] = keys
+                state.selectedAnnotationsDuringEditing[annotation.page] = keys
             } else {
-                state.selectedAnnotations[annotation.page] = [annotation.key]
+                state.selectedAnnotationsDuringEditing[annotation.page] = [annotation.key]
             }
+
+            if state.hasOneSelectedAnnotationDuringEditing {
+                state.mergingEnabled = false
+            } else {
+                state.mergingEnabled = self.selectedAnnotationsMergeable(selected: state.selectedAnnotationsDuringEditing, all: state.annotations)
+            }
+
+            state.changes = .sidebarEditingSelection
         }
     }
 
     private func deselectDuringEditing(annotation: Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            if var keys = state.selectedAnnotations[annotation.page] {
+            if var keys = state.selectedAnnotationsDuringEditing[annotation.page] {
                 keys.remove(annotation.key)
                 if keys.isEmpty {
-                    state.selectedAnnotations[annotation.page] = nil
+                    state.selectedAnnotationsDuringEditing[annotation.page] = nil
                 } else {
-                    state.selectedAnnotations[annotation.page] = keys
+                    state.selectedAnnotationsDuringEditing[annotation.page] = keys
                 }
             }
 
-            if state.selectedAnnotations.isEmpty {
+            if state.selectedAnnotationsDuringEditing.isEmpty {
                 if state.deletionEnabled {
                     state.deletionEnabled = false
-                    state.changes = .sidebarDeletion
+                    state.changes = .sidebarEditingSelection
                 }
-            } else if !state.deletionEnabled && !annotation.isSyncable {
-                // Check whether deletion state changed after removing this annotation
-                state.deletionEnabled = self.selectedAnnotationsDeletable(selected: state.selectedAnnotations, all: state.annotations)
-                state.changes = .sidebarDeletion
+
+                if state.mergingEnabled {
+                    state.mergingEnabled = false
+                    state.changes = .sidebarEditingSelection
+                }
+            } else {
+                if !state.deletionEnabled && !annotation.isSyncable {
+                    // Check whether deletion state changed after removing this annotation
+                    state.deletionEnabled = self.selectedAnnotationsDeletable(selected: state.selectedAnnotationsDuringEditing, all: state.annotations)
+                    state.changes = .sidebarEditingSelection
+                }
+
+                if state.hasOneSelectedAnnotationDuringEditing {
+                    if state.mergingEnabled {
+                        state.mergingEnabled = false
+                        state.changes = .sidebarEditingSelection
+                    }
+                } else {
+                    state.mergingEnabled = self.selectedAnnotationsMergeable(selected: state.selectedAnnotationsDuringEditing, all: state.annotations)
+                    state.changes = .sidebarEditingSelection
+                }
             }
         }
+    }
+
+    private func selectedAnnotationsMergeable(selected: [Int: Set<String>], all: [Int: [Annotation]]) -> Bool {
+        // Only 1 page can be selected
+        guard selected.keys.count == 1, let page = selected.keys.first, let selectedKeys = selected[page], selectedKeys.count > 1, let annotations = all[page] else { return false }
+
+        var type: AnnotationType?
+        var color: String?
+        var rects: [CGRect]?
+
+        let hasSameProperties: (Annotation) -> Bool = { annotation in
+            // Check whether annotations of one type are selected
+            if let type = type {
+                if type != annotation.type {
+                    return false
+                }
+            } else {
+                type = annotation.type
+            }
+            // Check whether annotations of one color are selected
+            if let color = color {
+                if color != annotation.color {
+                    return false
+                }
+            } else {
+                color = annotation.color
+            }
+            return true
+        }
+
+        for annotation in annotations {
+            guard selectedKeys.contains(annotation.key) else { continue }
+            guard annotation.isSyncable else { return false }
+
+            switch annotation.type {
+            case .ink:
+                if !hasSameProperties(annotation) {
+                    return false
+                }
+
+            case .highlight:
+                return false
+//                if !hasSameProperties(annotation) {
+//                    return false
+//                }
+//                // Check whether rects are overlapping
+//                if let rects = rects {
+//                    if !self.rects(rects: rects, hasIntersectionWith: annotation.rects) {
+//                        return false
+//                    }
+//                } else {
+//                    rects = annotation.rects
+//                }
+
+            case .note, .image:
+                return false
+            }
+        }
+
+        return true
+    }
+
+    private func rects(rects lRects: [CGRect], hasIntersectionWith rRects: [CGRect]) -> Bool {
+        for rect in lRects {
+            if rRects.contains(where: { $0.intersects(rect) }) {
+                return true
+            }
+        }
+        return false
     }
 
     private func selectedAnnotationsDeletable(selected: [Int: Set<String>], all: [Int: [Annotation]]) -> Bool {
@@ -300,7 +397,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                 self._select(annotation: nil, index: nil, didSelectInDocument: false, state: &state)
             } else {
                 // Deselect selected annotations during editing
-                state.selectedAnnotations = [:]
+                state.selectedAnnotationsDuringEditing = [:]
                 state.deletionEnabled = false
             }
         }
@@ -717,6 +814,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         annotations.insert(annotation, at: newIndex)
 
         state.annotations[indexPath.section] = annotations
+        state.focusSidebarIndexPath = IndexPath(row: newIndex, section: indexPath.section)
         state.changes.insert(.annotations)
     }
 
@@ -812,21 +910,205 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     }
 
     private func removeSelectedAnnotations(in viewModel: ViewModel<PDFReaderActionHandler>) {
-        var toDelete: [PSPDFKit.Annotation] = []
-        for (page, keys) in viewModel.state.selectedAnnotations {
-            let documentAnotations = viewModel.state.document.annotations(at: UInt(page))
-                                              .filter({ annotation in
-                                                  guard let key = annotation.key else { return false }
-                                                  return annotation.syncable && keys.contains(key)
-                                              })
-            toDelete.append(contentsOf: documentAnotations)
-        }
+        let toDelete = self.syncableDocumentAnnotations(from: viewModel.state.selectedAnnotationsDuringEditing, document: viewModel.state.document)
 
         guard !toDelete.isEmpty else { return }
 
         viewModel.state.document.undoController.recordCommand(named: nil, removing: toDelete) {
             viewModel.state.document.remove(annotations: toDelete, options: nil)
         }
+
+        self.update(viewModel: viewModel) { state in
+            state.mergingEnabled = false
+            state.deletionEnabled = false
+            state.selectedAnnotationsDuringEditing = [:]
+            state.changes = .sidebarEditingSelection
+        }
+    }
+
+    private func mergeSelectedAnnotations(in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard self.selectedAnnotationsMergeable(selected: viewModel.state.selectedAnnotationsDuringEditing, all: viewModel.state.annotations) else { return }
+
+        let toMerge = self.sortedSyncableAnnotationsAndDocumentAnnotations(from: viewModel.state.selectedAnnotationsDuringEditing, all: viewModel.state.annotations, document: viewModel.state.document)
+
+        guard toMerge.count > 1, let oldest = toMerge.first else { return }
+
+        switch oldest.0.type {
+        case .ink:
+            self.merge(inkAnnotations: toMerge, in: viewModel)
+        case .highlight: break
+//            self.merge(highlightAnnotations: toMerge, in: viewModel)
+        default: break
+        }
+
+        self.update(viewModel: viewModel) { state in
+            state.mergingEnabled = false
+            state.deletionEnabled = false
+            state.selectedAnnotationsDuringEditing = [:]
+            state.changes = .sidebarEditingSelection
+        }
+    }
+
+    private func merge(inkAnnotations annotations: [(Annotation, PSPDFKit.Annotation)], in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard let (oldestAnnotation, oldestDocumentAnnotation) = annotations.first, let oldestInkAnnotation = oldestDocumentAnnotation as? PSPDFKit.InkAnnotation,
+              let indexPath = self.indexPath(for: oldestAnnotation.key, in: viewModel.state.annotations) else { return }
+
+        var lines: [[DrawingPoint]] = oldestInkAnnotation.lines ?? []
+        // TODO: - enable comment merging when ink annotations support commenting
+//        var comment = oldestAnnotation.comment
+        var tags: [Tag] = oldestAnnotation.tags
+
+        for (annotation, documentAnnotation) in annotations.dropFirst() {
+            guard let inkAnnotation = documentAnnotation as? PSPDFKit.InkAnnotation else { continue }
+            if let _lines = inkAnnotation.lines {
+                lines.append(contentsOf: _lines)
+            }
+//            comment += "\n\n" + annotation.comment
+            for tag in annotation.tags {
+                if !tags.contains(tag) {
+                    tags.append(tag)
+                }
+            }
+        }
+
+        let toDeleteDocumentAnnotations = annotations.dropFirst().map({ $0.1 })
+        let toDeleteKeys = toDeleteDocumentAnnotations.compactMap({ $0.key })
+
+        self.update(viewModel: viewModel) { state in
+            state.ignoreNotifications[.PSPDFAnnotationsRemoved] = Set(toDeleteKeys)
+            state.ignoreNotifications[.PSPDFAnnotationChanged] = [oldestAnnotation.key]
+        }
+
+        viewModel.state.document.undoController.recordCommand(named: nil, in: { recorder in
+            recorder.record(changing: [oldestInkAnnotation]) {
+                oldestInkAnnotation.lines = lines
+            }
+
+            recorder.record(removing: toDeleteDocumentAnnotations) {
+                viewModel.state.document.remove(annotations: toDeleteDocumentAnnotations)
+            }
+        })
+
+        let paths = lines.map({ group in return group.map({ CGPoint(x: $0.location.x, y: $0.location.y) }) })
+        let updatedAnnotation = oldestAnnotation.copy(tags: tags).copy(paths: paths)//.copy(comment: comment)
+//        let attributedComment = self.htmlAttributedStringConverter.convert(text: comment, baseAttributes: [.font: viewModel.state.commentFont])
+
+        self.update(viewModel: viewModel) { state in
+            self.update(state: &state, with: updatedAnnotation, from: oldestAnnotation, at: indexPath, shouldReload: true)
+//            state.comments[updatedAnnotation.key] = attributedComment
+            self.remove(annotations: toDeleteDocumentAnnotations, from: &state)
+            state.previewCache.removeObject(forKey: (updatedAnnotation.key as NSString))
+            for key in toDeleteKeys {
+                state.previewCache.removeObject(forKey: (key as NSString))
+            }
+        }
+
+        let isDark = viewModel.state.interfaceStyle == .dark
+        self.annotationPreviewController.store(for: oldestInkAnnotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, isDark: isDark)
+    }
+
+//    private func merge(highlightAnnotations annotations: [(Annotation, PSPDFKit.Annotation)], in viewModel: ViewModel<PDFReaderActionHandler>) {
+//        guard let (oldestAnnotation, oldestDocumentAnnotation) = annotations.first, let oldestHighlightAnnotation = oldestDocumentAnnotation as? PSPDFKit.HighlightAnnotation,
+//              let indexPath = self.indexPath(for: oldestAnnotation.key, in: viewModel.state.annotations) else { return }
+//
+//        var rects: [CGRect] = oldestHighlightAnnotation.rects ?? []
+//        var comment = oldestAnnotation.comment
+//        var tags: [Tag] = oldestAnnotation.tags
+//
+//        for (annotation, documentAnnotation) in annotations.dropFirst() {
+//            guard let highlightAnnotation = documentAnnotation as? PSPDFKit.HighlightAnnotation else { continue }
+//            if let _rects = highlightAnnotation.rects {
+//                self.merge(rects: &rects, with: _rects)
+//            }
+//            comment += "\n\n" + annotation.comment
+//            for tag in annotation.tags {
+//                if !tags.contains(tag) {
+//                    tags.append(tag)
+//                }
+//            }
+//        }
+//
+//        let toDeleteDocumentAnnotations = annotations.dropFirst().map({ $0.1 })
+//        let toDeleteKeys = toDeleteDocumentAnnotations.compactMap({ $0.key })
+//
+//        self.update(viewModel: viewModel) { state in
+//            state.ignoreNotifications[.PSPDFAnnotationsRemoved] = Set(toDeleteKeys)
+//            state.ignoreNotifications[.PSPDFAnnotationChanged] = [oldestAnnotation.key]
+//        }
+//
+//        viewModel.state.document.undoController.recordCommand(named: nil, in: { recorder in
+//            recorder.record(changing: [oldestHighlightAnnotation]) {
+//                oldestHighlightAnnotation.rects = rects
+//                NotificationCenter.default.post(name: NSNotification.Name.PSPDFAnnotationChanged, object: oldestHighlightAnnotation,
+//                                                userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: ["rects", "boundingBox"]])
+//            }
+//
+//            recorder.record(removing: toDeleteDocumentAnnotations) {
+//                viewModel.state.document.remove(annotations: toDeleteDocumentAnnotations)
+//            }
+//        })
+//
+//        let sortIndex = AnnotationConverter.sortIndex(from: oldestHighlightAnnotation, boundingBoxConverter: self.boundingBoxConverter)
+//        let updatedAnnotation = oldestAnnotation.copy(tags: tags).copy(comment: comment).copy(rects: rects, sortIndex: sortIndex)
+//        let attributedComment = self.htmlAttributedStringConverter.convert(text: comment, baseAttributes: [.font: viewModel.state.commentFont])
+//
+//        self.update(viewModel: viewModel) { state in
+//            self.update(state: &state, with: updatedAnnotation, from: oldestAnnotation, at: indexPath, shouldReload: true)
+//            state.comments[updatedAnnotation.key] = attributedComment
+//            self.remove(annotations: toDeleteDocumentAnnotations, from: &state)
+//        }
+//    }
+
+    private func merge(rects: inout [CGRect], with rects2: [CGRect]) {
+        for rect2 in rects2 {
+            var didMerge: Bool = false
+
+            for (idx, rect) in rects.enumerated() {
+                guard rect.intersects(rect2) else { continue }
+
+                let newRect = rect.union(rect2)
+                rects[idx] = newRect
+
+                didMerge = true
+                break
+            }
+
+            if !didMerge {
+                rects.append(rect2)
+            }
+        }
+    }
+
+    private func syncableDocumentAnnotations(from selected: [Int: Set<String>], document: PSPDFKit.Document) -> [PSPDFKit.Annotation] {
+        var annotations: [PSPDFKit.Annotation] = []
+        for (page, keys) in selected {
+            let documentAnotations = document.annotations(at: UInt(page))
+                                             .filter({ annotation in
+                                                 guard let key = annotation.key else { return false }
+                                                 return annotation.syncable && keys.contains(key)
+                                             })
+            annotations.append(contentsOf: documentAnotations)
+        }
+        return annotations
+    }
+
+    private func sortedSyncableAnnotationsAndDocumentAnnotations(from selected: [Int: Set<String>], all: [Int: [Annotation]], document: PSPDFKit.Document) -> [(Annotation, PSPDFKit.Annotation)] {
+        var tuples: [(Annotation, PSPDFKit.Annotation)] = []
+
+        for (page, keys) in selected {
+            guard let annotations = all[page] else { continue }
+            let documentAnnotations = document.annotations(at: UInt(page))
+
+            for key in keys {
+                guard let annotation = annotations.first(where: { $0.isSyncable && $0.key == key }),
+                      let documentAnnotation = documentAnnotations.first(where: { $0.syncable && $0.key == key }) else { continue }
+                tuples.append((annotation, documentAnnotation))
+            }
+        }
+
+        return tuples.sorted(by: { lTuple, rTuple in
+            return (lTuple.1.creationDate ?? Date()).compare(rTuple.1.creationDate ?? Date()) == .orderedAscending
+        })
     }
 
     /// Searches through annotations and updates view with results.
@@ -1125,36 +1407,40 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         DDLogInfo("PDFReaderActionHandler: delete annotations - \(annotations.map({ "\(type(of: $0));syncable=\($0.syncable);" }))")
 
         self.update(viewModel: viewModel) { state in
-            let keys: Set<String>
-
-            if var snapshot = state.annotationsSnapshot {
-                // Search is active, delete annotation from snapshot so that it doesn't re-appear when search is cancelled
-                keys = self.remove(annotations: annotations, from: &snapshot)
-                state.annotationsSnapshot = snapshot
-                // Remove annotations from search result as well
-                self.remove(annotations: annotations, from: &state.annotations)
-            } else {
-                // Search not active, remove from all annotations
-                keys = self.remove(annotations: annotations, from: &state.annotations)
-            }
-
-            if let selectedKey = state.selectedAnnotation?.key, keys.contains(selectedKey) {
-                state.selectedAnnotation = nil
-                state.changes.insert(.selection)
-
-                if state.selectedAnnotationCommentActive {
-                    state.selectedAnnotationCommentActive = false
-                    state.changes.insert(.activeComment)
-                }
-            }
-
-            keys.forEach({ state.comments[$0] = nil })
-            state.deletedKeys = state.deletedKeys.union(keys)
-            state.insertedKeys = state.insertedKeys.subtracting(keys)
-            state.modifiedKeys = state.modifiedKeys.subtracting(keys)
-            state.changes.insert(.annotations)
-            state.changes.insert(.save)
+            self.remove(annotations: annotations, from: &state)
         }
+    }
+
+    private func remove(annotations: [PSPDFKit.Annotation], from state: inout PDFReaderState) {
+        let keys: Set<String>
+
+        if var snapshot = state.annotationsSnapshot {
+            // Search is active, delete annotation from snapshot so that it doesn't re-appear when search is cancelled
+            keys = self.remove(annotations: annotations, from: &snapshot)
+            state.annotationsSnapshot = snapshot
+            // Remove annotations from search result as well
+            self.remove(annotations: annotations, from: &state.annotations)
+        } else {
+            // Search not active, remove from all annotations
+            keys = self.remove(annotations: annotations, from: &state.annotations)
+        }
+
+        if let selectedKey = state.selectedAnnotation?.key, keys.contains(selectedKey) {
+            state.selectedAnnotation = nil
+            state.changes.insert(.selection)
+
+            if state.selectedAnnotationCommentActive {
+                state.selectedAnnotationCommentActive = false
+                state.changes.insert(.activeComment)
+            }
+        }
+
+        keys.forEach({ state.comments[$0] = nil })
+        state.deletedKeys = state.deletedKeys.union(keys)
+        state.insertedKeys = state.insertedKeys.subtracting(keys)
+        state.modifiedKeys = state.modifiedKeys.subtracting(keys)
+        state.changes.insert(.annotations)
+        state.changes.insert(.save)
     }
 
     @discardableResult

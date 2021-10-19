@@ -25,6 +25,7 @@ enum PDFReaderAction {
     case selectAnnotationFromDocument(key: String, page: Int)
     case removeAnnotation(Annotation)
     case removeSelectedAnnotations
+    case mergeSelectedAnnotations
     case annotationsAdded(annotations: [PSPDFKit.Annotation], selectFirst: Bool)
     case annotationsRemoved([PSPDFKit.Annotation])
     case annotationChanged(PSPDFKit.Annotation)
