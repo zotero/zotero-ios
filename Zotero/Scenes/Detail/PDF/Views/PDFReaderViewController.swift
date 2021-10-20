@@ -338,6 +338,9 @@ final class PDFReaderViewController: UIViewController {
 
         if stateManager.state == annotationTool {
             stateManager.setState(nil, variant: nil)
+            stateManager.stylusMode = .fromStylusManager
+            PSPDFKit.SDK.shared.applePencilManager.detected = false
+            PSPDFKit.SDK.shared.applePencilManager.enabled = false
             return
         }
 
@@ -346,7 +349,16 @@ final class PDFReaderViewController: UIViewController {
                                                                 userInterfaceStyle: self.traitCollection.userInterfaceStyle).color
         if annotationTool == .ink {
             stateManager.lineWidth = self.viewModel.state.activeLineWidth
+
+            if UIPencilInteraction.prefersPencilOnlyDrawing {
+                stateManager.stylusMode = .stylus
+            }
         }
+    }
+
+    private func updatePencilSettingsIfNeeded() {
+        guard self.pdfController.annotationStateManager.state == .ink else { return }
+        self.pdfController.annotationStateManager.stylusMode = UIPencilInteraction.prefersPencilOnlyDrawing ? .stylus : .fromStylusManager
     }
 
     private func showColorPicker(sender: UIButton) {
@@ -662,7 +674,6 @@ final class PDFReaderViewController: UIViewController {
         controller.delegate = self
         controller.formSubmissionDelegate = nil
         controller.annotationStateManager.add(self)
-        controller.annotationStateManager.stylusMode = .direct
         self.setup(scrubberBar: controller.userInterfaceView.scrubberBar)
         self.setup(interactions: controller.interactions)
         return controller
@@ -918,6 +929,7 @@ final class PDFReaderViewController: UIViewController {
                                   .subscribe(onNext: { [weak self] notification in
                                       guard let `self` = self else { return }
                                       self.viewModel.process(action: .updateAnnotationPreviews)
+                                      self.updatePencilSettingsIfNeeded()
                                   })
                                   .disposed(by: self.disposeBag)
 
