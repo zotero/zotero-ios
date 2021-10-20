@@ -32,6 +32,11 @@ final class WebDavController {
         }
     }
 
+    enum UploadResult {
+        case exists
+        case new(URL)
+    }
+
     private unowned let apiClient: ApiClient
     let sessionStorage: WebDavSessionStorage
     private let queue: DispatchQueue
@@ -54,6 +59,31 @@ final class WebDavController {
                    .flatMap({ Single.just($0.appendingPathComponent("\(key).zip")) })
     }
 
+    /// Prepares for WebDAV upload. Checks .prop file to see whether the file has been modified.
+    /// - parameter key: Key of item to upload.
+    /// - returns: URL for upload.
+    func prepareForUpload(key: String, mtime: Int, hash: String) -> Single<UploadResult> {
+        return self.checkServerIfNeeded()
+                   .flatMap({ url -> Single<UploadResult> in
+                       return self.checkMetadata(key: key, mtime: mtime, hash: hash, url: url)
+                   })
+    }
+
+    private func checkMetadata(key: String, mtime: Int, hash: String, url: URL) -> Single<UploadResult> {
+        return self.metadata(key: key, url: url)
+                   .flatMap({ remoteMtime, remoteHash -> Single<UploadResult> in
+                       if mtime == remoteMtime && hash == remoteHash {
+                           return Single.just(.exists)
+                       } else {
+                           return Single.just(.new(url))
+                       }
+                   })
+    }
+
+    /// Loads metadata of item from WebDAV server.
+    /// - parameter key: Key of item.
+    /// - parameter url: WebDAV url.
+    /// - returns: Single containing mtime and hash.
     private func metadata(key: String, url: URL) -> Single<(Int, String)> {
         let request = WebDavDownloadRequest(url: url.appendingPathComponent(key + ".prop"))
         return self.apiClient.send(request: request, queue: self.queue)
@@ -74,6 +104,8 @@ final class WebDavController {
                    })
     }
 
+    /// If server is not verified, performs verification first.
+    /// - returns: URL of WebDAV server after verification or immediately if verified.
     private func checkServerIfNeeded() -> Single<URL> {
         if self.sessionStorage.isVerified {
             return self.createUrl()
