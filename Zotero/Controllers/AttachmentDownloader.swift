@@ -57,7 +57,8 @@ final class AttachmentDownloader {
     private unowned let fileStorage: FileStorage
     private unowned let dbStorage: DbStorage
     private unowned let webDavController: WebDavController
-    private let unzipQueue: DispatchQueue
+    private let queue: DispatchQueue
+    private let scheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
     let observable: PublishSubject<Update>
 
@@ -67,6 +68,8 @@ final class AttachmentDownloader {
     private var errors: [Download: Swift.Error]
 
     init(userId: Int, apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage, webDavController: WebDavController) {
+        let queue = DispatchQueue(label: "org.zotero.AttachmentDownloader.ProcessingQueue", qos: .userInteractive)
+
         self.userId = userId
         self.apiClient = apiClient
         self.fileStorage = fileStorage
@@ -75,7 +78,8 @@ final class AttachmentDownloader {
         self.downloadRequests = [:]
         self.progresses = [:]
         self.unzipRequests = [:]
-        self.unzipQueue = DispatchQueue(label: "org.zotero.AttachmentDownloader.UnzipQueue", qos: .userInteractive)
+        self.queue = queue
+        self.scheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.AttachmentDownloader.ProcessingScheduler")
         self.errors = [:]
         self.observable = PublishSubject()
         self.disposeBag = DisposeBag()
@@ -135,7 +139,8 @@ final class AttachmentDownloader {
 
     private func downloadRequest(file: File, key: String, libraryId: LibraryIdentifier, userId: Int) -> Single<FileRequest> {
         if case .custom = libraryId, self.webDavController.sessionStorage.isEnabled {
-            return self.webDavController.urlForDownload(key: key)
+            return self.webDavController.urlForDownload(key: key, queue: self.queue)
+                       .subscribe(on: self.scheduler)
                        .flatMap({ Single.just(FileRequest(data: .external($0), destination: file)) })
         }
         return Single.just(FileRequest(data: .internal(libraryId, self.userId, key), destination: file))
@@ -220,7 +225,7 @@ final class AttachmentDownloader {
         self.downloadRequests[download] = nil
         self.unzipRequests[download] = zipProgress
 
-        self.unzipQueue.async { [weak self] in
+        self.queue.async { [weak self] in
             guard let `self` = self else { return }
             let result = self._unzip(file: file, download: download, parentKey: parentKey, progress: zipProgress)
             DispatchQueue.main.async { [weak self] in

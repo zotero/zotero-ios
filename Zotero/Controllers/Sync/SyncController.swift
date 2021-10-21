@@ -157,6 +157,7 @@ final class SyncController: SynchronizationController {
     private let schemaController: SchemaController
     private let dateParser: DateParser
     private let backgroundUploader: BackgroundUploader
+    private let webDavController: WebDavController
     // Handler for reporting sync progress to observers.
     private let progressHandler: SyncProgressHandler
     // Id of currently logged in user.
@@ -208,8 +209,8 @@ final class SyncController: SynchronizationController {
 
     // MARK: - Lifecycle
 
-    init(userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController,
-         dateParser: DateParser, backgroundUploader: BackgroundUploader, syncDelayIntervals: [Double], conflictDelays: [Int]) {
+    init(userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, dateParser: DateParser, backgroundUploader: BackgroundUploader,
+         webDavController: WebDavController, syncDelayIntervals: [Double], conflictDelays: [Int]) {
         let accessQueue = DispatchQueue(label: "org.zotero.SyncController.accessQueue", qos: .userInteractive, attributes: .concurrent)
         let workQueue = DispatchQueue(label: "org.zotero.SyncController.workQueue", qos: .userInteractive, attributes: .concurrent)
         self.userId = userId
@@ -233,6 +234,7 @@ final class SyncController: SynchronizationController {
         self.schemaController = schemaController
         self.dateParser = dateParser
         self.backgroundUploader = backgroundUploader
+        self.webDavController = webDavController
         self.syncDelayIntervals = syncDelayIntervals
     }
 
@@ -1216,8 +1218,8 @@ final class SyncController: SynchronizationController {
     private func processUploadAttachment(for upload: AttachmentUpload) {
         let result = UploadAttachmentSyncAction(key: upload.key, file: upload.file, filename: upload.filename, md5: upload.md5,
                                                 mtime: upload.mtime, libraryId: upload.libraryId, userId: self.userId, oldMd5: upload.oldMd5,
-                                                apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage,
-                                                queue: self.workQueue, scheduler: self.workScheduler).result
+                                                apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, webDavController: self.webDavController,
+                                                queue: self.workQueue, scheduler: self.workScheduler, disposeBag: self.disposeBag).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] response, progress in
                   guard let `self` = self else { return }

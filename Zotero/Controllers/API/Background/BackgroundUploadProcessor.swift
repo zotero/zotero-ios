@@ -77,11 +77,7 @@ final class BackgroundUploadProcessor {
     }
 
     func finish(upload: BackgroundUpload) -> Observable<()> {
-        let request = RegisterUploadRequest(libraryId: upload.libraryId,
-                                            userId: upload.userId,
-                                            key: upload.key,
-                                            uploadKey: upload.uploadKey,
-                                            oldMd5: nil)
+        let request = RegisterUploadRequest(libraryId: upload.libraryId, userId: upload.userId, key: upload.key, uploadKey: upload.uploadKey, oldMd5: nil)
         return self.apiClient.send(request: request)
                              .flatMap { [weak self] _ -> Single<()> in
                                  guard let `self` = self else { return Single.error(Error.expired) }

@@ -73,7 +73,8 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
                 state.isVerifyingWebDav = true
             }
 
-            self.webDavController.checkServer()
+            self.webDavController.checkServer(queue: .main)
+                .subscribe(on: MainScheduler.instance)
                 .observe(on: MainScheduler.instance)
                 .subscribe(with: viewModel, onSuccess: { viewModel, _ in
                     self.update(viewModel: viewModel) { state in

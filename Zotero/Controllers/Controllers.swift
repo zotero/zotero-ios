@@ -65,7 +65,7 @@ final class Controllers {
         let bundledDataStorage = RealmDbStorage(config: bundledDataConfiguration)
         let translatorsAndStylesController = TranslatorsAndStylesController(apiClient: apiClient, bundledDataStorage: bundledDataStorage, fileStorage: fileStorage)
         let previewSize = CGSize(width: PDFReaderLayout.sidebarWidth, height: PDFReaderLayout.sidebarWidth)
-        let webDavController = WebDavController(apiClient: apiClient, sessionStorage: SecureWebDavSessionStorage(secureStorage: secureStorage))
+        let webDavController = WebDavController(apiClient: apiClient, sessionStorage: SecureWebDavSessionStorage(secureStorage: secureStorage), fileStorage: fileStorage)
 
         self.bundledDataStorage = bundledDataStorage
         self.sessionController = sessionController
@@ -221,6 +221,7 @@ final class UserControllers {
                                             schemaController: controllers.schemaController,
                                             dateParser: controllers.dateParser,
                                             backgroundUploader: backgroundUploader,
+                                            webDavController: controllers.webDavController,
                                             syncDelayIntervals: DelayIntervals.sync,
                                             conflictDelays: DelayIntervals.conflict)
         let fileDownloader = AttachmentDownloader(userId: userId, apiClient: controllers.apiClient, fileStorage: controllers.fileStorage, dbStorage: dbStorage,

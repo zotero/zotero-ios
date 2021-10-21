@@ -66,6 +66,7 @@ final class ShareViewController: UIViewController {
     private var fileStorage: FileStorageController!
     private var debugLogging: DebugLogging!
     private var schemaController: SchemaController!
+    private var secureStorage: KeychainSecureStorage!
     private var store: ExtensionStore!
     private var storeCancellable: AnyCancellable?
     private var viewIsVisible: Bool = true
@@ -637,6 +638,8 @@ final class ShareViewController: UIViewController {
         let configuration = Database.bundledDataConfiguration(fileStorage: fileStorage)
         let bundledDataStorage = RealmDbStorage(config: configuration)
         let translatorsController = TranslatorsAndStylesController(apiClient: apiClient, bundledDataStorage: bundledDataStorage, fileStorage: fileStorage)
+        let secureStorage = KeychainSecureStorage()
+        let webDavController = WebDavController(apiClient: apiClient, sessionStorage: SecureWebDavSessionStorage(secureStorage: secureStorage), fileStorage: fileStorage)
 
         apiClient.set(authToken: session.apiToken)
         translatorsController.updateFromRepo(type: .shareExtension)
@@ -644,12 +647,13 @@ final class ShareViewController: UIViewController {
         self.dbStorage = dbStorage
         self.bundledDataStorage = bundledDataStorage
         self.translatorsController = translatorsController
+        self.secureStorage = secureStorage
         self.store = self.createStore(for: session.userId, dbStorage: dbStorage, apiClient: apiClient, schemaController: schemaController,
-                                      fileStorage: fileStorage, translatorsController: translatorsController)
+                                      fileStorage: fileStorage, webDavController: webDavController, translatorsController: translatorsController)
     }
 
-    private func createStore(for userId: Int, dbStorage: DbStorage, apiClient: ApiClient, schemaController: SchemaController,
-                             fileStorage: FileStorage, translatorsController: TranslatorsAndStylesController) -> ExtensionStore {
+    private func createStore(for userId: Int, dbStorage: DbStorage, apiClient: ApiClient, schemaController: SchemaController, fileStorage: FileStorage, webDavController: WebDavController,
+                             translatorsController: TranslatorsAndStylesController) -> ExtensionStore {
         let dateParser = DateParser()
 
         let uploadProcessor = BackgroundUploadProcessor(apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
@@ -661,6 +665,7 @@ final class ShareViewController: UIViewController {
                                             schemaController: schemaController,
                                             dateParser: dateParser,
                                             backgroundUploader: backgroundUploader,
+                                            webDavController: webDavController,
                                             syncDelayIntervals: DelayIntervals.sync,
                                             conflictDelays: DelayIntervals.conflict)
 

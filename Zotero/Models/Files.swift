@@ -42,6 +42,10 @@ struct Files {
         return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName, key])
     }
 
+    static func temporaryZipUploadFile(key: String) -> File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["uploads"], name: key, ext: "zip")
+    }
+
     static var temporaryUploadFile: File {
         return FileData(rootPath: Files.appGroupPath, relativeComponents: ["uploads"], name: UUID().uuidString, ext: "")
     }
