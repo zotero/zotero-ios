@@ -378,7 +378,7 @@ final class SyncController: SynchronizationController {
                 if !mismatchedLibraries.contains(libraryId) {
                     mismatchedLibraries.append(libraryId)
                 }
-            case .unknown, .schema, .parsing, .apiError, .unchanged, .quotaLimit, .attachmentMissing: continue
+            case .unknown, .schema, .parsing, .apiError, .unchanged, .quotaLimit, .attachmentMissing, .insufficientSpace: continue
             }
         }
 
@@ -882,7 +882,11 @@ final class SyncController: SynchronizationController {
         let batches = self.createBatchObjects(for: keys, libraryId: libraryId, object: object, version: version)
 
         guard !batches.isEmpty else {
-            return []
+            if shouldStoreVersion {
+                return [.storeVersion(version, libraryId, object)]
+            } else {
+                return []
+            }
         }
 
         var actions: [Action] = [.syncBatchesToDb(batches)]
@@ -1466,13 +1470,16 @@ final class SyncController: SynchronizationController {
         case .responseValidationFailed(let reason):
             switch reason {
             case .unacceptableStatusCode(let code):
-                if code == 304 {
+                switch code {
+                case 304:
                     return .nonFatal(.unchanged)
-                }
-                if code == 413 {
+                case 413:
                     return .nonFatal(.quotaLimit(libraryId))
+                case 507:
+                    return .nonFatal(.insufficientSpace)
+                default:
+                    return (code >= 400 && code <= 499 && code != 403) ? .fatal(.apiError(response)) : .nonFatal(.apiError(response))
                 }
-                return (code >= 400 && code <= 499 && code != 403) ? .fatal(.apiError(response)) : .nonFatal(.apiError(response))
             case .dataFileNil, .dataFileReadFailed, .missingContentType, .unacceptableContentType, .customValidationFailed:
                 return .fatal(.apiError(response))
             }

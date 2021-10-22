@@ -113,12 +113,14 @@ final class SyncToolbarController {
                 case .quotaLimit(let libraryId):
                     switch libraryId {
                     case .custom:
-                        message = L10n.Errors.SyncToolbar.personalQuotaReached
+                        message += L10n.Errors.SyncToolbar.personalQuotaReached
 
                     case .group(let groupId):
                         let groupName = (try? self.dbStorage.createCoordinator().perform(request: ReadGroupDbRequest(identifier: groupId)))?.name
-                        message = L10n.Errors.SyncToolbar.groupQuotaReached(groupName ?? "\(groupId)")
+                        message += L10n.Errors.SyncToolbar.groupQuotaReached(groupName ?? "\(groupId)")
                     }
+                case .insufficientSpace:
+                    message += L10n.Errors.SyncToolbar.insufficientSpace
                 case .unchanged: break
                 }
             }

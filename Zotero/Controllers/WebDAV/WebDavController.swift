@@ -65,10 +65,15 @@ final class WebDavController {
                    .flatMap({ Single.just($0.appendingPathComponent("\(key).zip")) })
     }
 
-    /// Prepares for WebDAV upload. Checks .prop file to see whether the file has been modified.
+    /// Prepares for WebDAV upload. Checks .prop file to see whether the file has been modified. Creates a ZIP file to upload.
     /// - parameter key: Key of item to upload.
-    /// - returns: URL for upload.
+    /// - parameter mtime: Modification time of attachment.
+    /// - parameter hash: MD5 hash of attachment.
+    /// - parameter file: `File` location of attachment.
+    /// - parameter queue: Processing queue.
+    /// - returns: `UploadRequest` which contains either WebDAV URL and File location of file to upload or indicates that file is already available on WebDAV.
     func prepareForUpload(key: String, mtime: Int, hash: String, file: File, queue: DispatchQueue) -> Single<UploadResult> {
+        DDLogInfo("WebDavController: prepare for upload")
         return self.checkServerIfNeeded(queue: queue)
                    .flatMap({ url -> Single<MetadataResult> in
                        return self.checkMetadata(key: key, mtime: mtime, hash: hash, url: url, queue: queue)
@@ -82,6 +87,7 @@ final class WebDavController {
                            return self.zip(file: file, key: key).flatMap({ return Single.just(.new(url, $0)) })
 
                        case .changed(let url):
+                           // If metadata were available on WebDAV, but they changed, remove original .prop file.
                            return self.removeExistingMetadata(key: key, url: url, queue: queue)
                                       .flatMap({ self.zip(file: file, key: key) })
                                       .flatMap({ Single.just(.new(url, $0)) })
@@ -89,9 +95,16 @@ final class WebDavController {
                    })
     }
 
+    /// Finishes upload to WebDAV. If successful, uploads new metadata .prop file to WebDAV. In both cases removes temporary ZIP file created in `prepareForUpload`.
+    /// - parameter key: Key of attachment item.
+    /// - parameter result: Indicates whether file upload was successful. If successful, contains mtime, hash and WebDAV url.
+    /// - parameter file: Optional `File` location of created temporary ZIP file. If available, removes ZIP.
+    /// - parameter queue: Processing queue.
+    /// - returns: Single indicating whether metadata were submitted and cleanup was successful.
     func finishUpload(key: String, result: Result<(Int, String, URL), Swift.Error>, file: File?, queue: DispatchQueue) -> Single<()> {
         switch result {
         case .success((let mtime, let hash, let url)):
+            DDLogInfo("WebDavController: finish successful upload")
             return self.uploadMetadata(key: key, mtime: mtime, hash: hash, url: url, queue: queue)
                        .flatMap({ _ in
                            if let file = file {
@@ -102,7 +115,7 @@ final class WebDavController {
                        })
 
         case .failure(let error):
-            DDLogError("WebDavController: finish upload error - \(error)")
+            DDLogError("WebDavController: finish failed upload - \(error)")
             if let file = file {
                 return self.remove(file: file)
             } else {
@@ -121,6 +134,8 @@ final class WebDavController {
 
     private func zip(file: File, key: String) -> Single<File> {
         return Single.create { subscriber -> Disposable in
+            DDLogInfo("WebDavController: ZIP file for upload")
+
             do {
                 let tmpFile = Files.temporaryZipUploadFile(key: key)
                 try FileManager.default.zipItem(at: file.createUrl(), to: tmpFile.createUrl())

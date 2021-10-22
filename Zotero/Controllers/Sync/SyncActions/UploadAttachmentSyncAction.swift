@@ -43,6 +43,8 @@ struct UploadAttachmentSyncAction: SyncAction {
     }
 
     private var zoteroResult: Single<(Completable, Observable<RxProgress>)> {
+        DDLogInfo("UploadAttachmentSyncAction: upload to ZFS")
+
         let upload = self.checkDatabase()
                          .flatMap { _ -> Single<UInt64> in
                              return self.validateFile()
@@ -55,9 +57,11 @@ struct UploadAttachmentSyncAction: SyncAction {
                          .flatMap { response -> Single<Swift.Result<(UploadRequest, AttachmentUploadRequest, String), SyncActionError>> in
                              switch response {
                              case .exists:
+                                 DDLogInfo("UploadAttachmentSyncAction: file exists remotely")
                                  return Single.just(.failure(SyncActionError.attachmentAlreadyUploaded))
 
                              case .new(let response):
+                                 DDLogInfo("UploadAttachmentSyncAction: file needs upload")
                                  let request = AttachmentUploadRequest(url: response.url)
                                  return self.apiClient.upload(request: request, multipartFormData: { data in
                                      response.params.forEach({ (key, value) in
@@ -76,6 +80,7 @@ struct UploadAttachmentSyncAction: SyncAction {
                              .flatMap({ result -> Single<Swift.Result<String, SyncActionError>> in
                                  switch result {
                                  case .success((let uploadRequest, let apiRequest, let uploadKey)):
+                                     DDLogInfo("UploadAttachmentSyncAction: upload file")
                                      let logId = ApiLogger.log(request: apiRequest, url: uploadRequest.request?.url)
                                      return uploadRequest.rx.responseData()
                                                             .log(identifier: logId, startTime: startTime, request: apiRequest)
@@ -91,6 +96,7 @@ struct UploadAttachmentSyncAction: SyncAction {
                              .flatMap({ result -> Single<Swift.Result<(Data, HTTPURLResponse), SyncActionError>> in
                                  switch result {
                                  case .success(let uploadKey):
+                                     DDLogInfo("UploadAttachmentSyncAction: register upload")
                                      let request = RegisterUploadRequest(libraryId: self.libraryId,
                                                                          userId: self.userId,
                                                                          key: self.key,
@@ -118,6 +124,9 @@ struct UploadAttachmentSyncAction: SyncAction {
                                     }
                                  }
                              })
+                             .do(onError: { error in
+                                 DDLogError("UploadAttachmentSyncAction: could not upload - \(error)")
+                             })
                              .asCompletable()
 
         let progress = upload.asObservable()
@@ -138,6 +147,8 @@ struct UploadAttachmentSyncAction: SyncAction {
     }
 
     private var webDavResult: Single<(Completable, Observable<RxProgress>)> {
+        DDLogInfo("UploadAttachmentSyncAction: upload to WebDAV")
+
         var file: File?
 
         let upload = self.checkDatabase()
@@ -151,9 +162,11 @@ struct UploadAttachmentSyncAction: SyncAction {
                          .flatMap { response -> Single<Swift.Result<(UploadRequest, AttachmentUploadRequest, URL), SyncActionError>> in
                              switch response {
                              case .exists:
+                                 DDLogInfo("UploadAttachmentSyncAction: file exists remotely")
                                  return Single.just(.failure(SyncActionError.attachmentAlreadyUploaded))
 
                              case .new(let url, let newFile):
+                                 DDLogInfo("UploadAttachmentSyncAction: file needs upload")
                                  file = newFile
 
                                  let request = AttachmentUploadRequest(url: url)
@@ -169,6 +182,7 @@ struct UploadAttachmentSyncAction: SyncAction {
                              .flatMap({ result -> Single<Swift.Result<URL, SyncActionError>> in
                                  switch result {
                                  case .success((let uploadRequest, let apiRequest, let url)):
+                                     DDLogInfo("UploadAttachmentSyncAction: upload file")
                                      let logId = ApiLogger.log(request: apiRequest, url: uploadRequest.request?.url)
                                      return uploadRequest.rx.responseData()
                                                             .log(identifier: logId, startTime: startTime, request: apiRequest)
@@ -180,7 +194,8 @@ struct UploadAttachmentSyncAction: SyncAction {
                                  case .failure(let error):
                                      return Single.just(.failure(error))
                                  }
-                             }).do(onError: { error in
+                             })
+                             .do(onError: { error in
                                  // If something broke during upload, remove tmp zip file
                                  self.webDavController.finishUpload(key: self.key, result: .failure(error), file: file, queue: self.queue)
                                      .subscribe(on: self.scheduler)
@@ -198,11 +213,20 @@ struct UploadAttachmentSyncAction: SyncAction {
                                                 .flatMap({ Single.just(.failure(error)) })
                                  }
                              })
+                             .flatMap({ result -> Single<Swift.Result<Int, SyncActionError>> in
+                                 switch result {
+                                 case .success:
+                                     return self.submitItemWithHashAndMtime().flatMap({ Single.just(.success($0)) })
+
+                                 case .failure(let error):
+                                     return Single.error(error)
+                                 }
+                             })
                              .observe(on: self.scheduler)
                              .flatMap({ result -> Single<()> in
                                  switch result {
-                                 case .success:
-                                     return self.markAttachmentAsUploaded(version: nil)
+                                 case .success(let version):
+                                     return self.markAttachmentAsUploaded(version: version)
 
                                  case .failure(let error):
                                     switch error {
@@ -213,6 +237,9 @@ struct UploadAttachmentSyncAction: SyncAction {
                                         return Single.error(error)
                                     }
                                  }
+                             })
+                             .do(onError: { error in
+                                 DDLogError("UploadAttachmentSyncAction: could not upload - \(error)")
                              })
                              .asCompletable()
 
@@ -233,8 +260,38 @@ struct UploadAttachmentSyncAction: SyncAction {
         return Single.just((response, progress))
     }
 
+    private func submitItemWithHashAndMtime() -> Single<Int> {
+        DDLogInfo("UploadAttachmentSyncAction: submit mtime and md5")
+
+        let loadParameters: Single<[String: Any]> = Single.create { subscriber -> Disposable in
+            do {
+                let item = try self.dbStorage.createCoordinator().perform(request: ReadItemDbRequest(libraryId: self.libraryId, key: self.key))
+                subscriber(.success(item.mtimeAndHashParameters))
+            } catch let error {
+                subscriber(.failure(error))
+                DDLogError("UploadAttachmentSyncAction: can't load params - \(error)")
+                return Disposables.create()
+            }
+            return Disposables.create()
+        }
+
+        return loadParameters.flatMap { params -> Single<(Int, Error?)> in
+            return SubmitUpdateSyncAction(parameters: [params], sinceVersion: nil, object: .item, libraryId: self.libraryId, userId: self.userId, updateLibraryVersion: false,
+                                          apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, queue: self.queue, scheduler: self.scheduler).result
+        }
+        .flatMap { version, error -> Single<Int> in
+            if let error = error {
+                return Single.error(error)
+            } else {
+                return Single.just(version)
+            }
+        }
+    }
+
     private func markAttachmentAsUploaded(version: Int?) -> Single<()> {
         return Single.create { subscriber -> Disposable in
+            DDLogInfo("UploadAttachmentSyncAction: mark as uploaded")
+
             do {
                 var requests: [DbRequest] = [MarkAttachmentUploadedDbRequest(libraryId: self.libraryId, key: self.key)]
                 if let version = version {
@@ -255,6 +312,8 @@ struct UploadAttachmentSyncAction: SyncAction {
 
     private func checkDatabase() -> Single<()> {
         return Single.create { subscriber -> Disposable in
+            DDLogInfo("UploadAttachmentSyncAction: check whether attachment item has been submitted")
+
             do {
                 let request = CheckItemIsChangedDbRequest(libraryId: self.libraryId, key: self.key)
                 let isChanged = try self.dbStorage.createCoordinator().perform(request: request)
@@ -265,6 +324,7 @@ struct UploadAttachmentSyncAction: SyncAction {
                     subscriber(.failure(SyncActionError.attachmentItemNotSubmitted))
                 }
             } catch let error {
+                DDLogError("UploadAttachmentSyncAction: could not check item submitted - \(error)")
                 subscriber(.failure(error))
             }
 
@@ -274,6 +334,8 @@ struct UploadAttachmentSyncAction: SyncAction {
 
     private func validateFile() -> Single<UInt64> {
         return Single.create { subscriber -> Disposable in
+            DDLogInfo("UploadAttachmentSyncAction: validate file to upload")
+
             let size = self.fileStorage.size(of: self.file)
 
             if size > 0 {

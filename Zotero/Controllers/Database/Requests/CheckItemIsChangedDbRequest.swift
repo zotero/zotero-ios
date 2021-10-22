@@ -20,11 +20,7 @@ struct CheckItemIsChangedDbRequest: DbResponseRequest {
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Bool {
-        guard let item = database.objects(RItem.self)
-                                 .filter(.key(self.key, in: self.libraryId))
-                                 .first else {
-            throw DbError.objectNotFound
-        }
+        guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first else { throw DbError.objectNotFound }
         return item.isChanged
     }
 }

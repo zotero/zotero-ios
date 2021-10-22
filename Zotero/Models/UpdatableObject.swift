@@ -194,6 +194,20 @@ extension RItem: Updatable {
         return parameters
     }
 
+    var mtimeAndHashParameters: [String: Any] {
+        var parameters: [String: Any] = ["key": self.key,
+                                         "version": self.version,
+                                         "dateModified": Formatter.iso8601.string(from: self.dateModified),
+                                         "dateAdded": Formatter.iso8601.string(from: self.dateAdded)]
+        if let md5 = self.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value {
+            parameters[FieldKeys.Item.Attachment.md5] = md5
+        }
+        if let mtime = self.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first.flatMap({ Int($0.value) }) {
+            parameters[FieldKeys.Item.Attachment.mtime] = mtime
+        }
+        return parameters
+    }
+
     private func createAnnotationPosition(for type: AnnotationType, changedPageIndex: Int?, changedLineWidth: Double?) -> String {
         let pageIndex = changedPageIndex ?? (self.fields.filter(.key(FieldKeys.Item.Annotation.pageIndex)).first.flatMap({ Int($0.value) }) ?? 0)
         var jsonData: [String: Any] = [FieldKeys.Item.Annotation.pageIndex: pageIndex]

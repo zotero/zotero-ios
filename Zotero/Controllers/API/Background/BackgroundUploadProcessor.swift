@@ -77,13 +77,22 @@ final class BackgroundUploadProcessor {
     }
 
     func finish(upload: BackgroundUpload) -> Observable<()> {
-        let request = RegisterUploadRequest(libraryId: upload.libraryId, userId: upload.userId, key: upload.key, uploadKey: upload.uploadKey, oldMd5: nil)
+        switch upload.type {
+        case .zotero(let uploadKey):
+            return self.finishZoteroUpload(uploadKey: uploadKey, key: upload.key, libraryId: upload.libraryId, fileUrl: upload.fileUrl, userId: upload.userId)
+        case .webdav(let mtime):
+            return self.finishWebdavUpload(key: upload.key, libraryId: upload.libraryId, mtime: mtime, md5: upload.md5, userId: upload.userId)
+        }
+    }
+
+    private func finishZoteroUpload(uploadKey: String, key: String, libraryId: LibraryIdentifier, fileUrl: URL, userId: Int) -> Observable<()> {
+        let request = RegisterUploadRequest(libraryId: libraryId, userId: userId, key: key, uploadKey: uploadKey, oldMd5: nil)
         return self.apiClient.send(request: request)
                              .flatMap { [weak self] _ -> Single<()> in
                                  guard let `self` = self else { return Single.error(Error.expired) }
 
                                  do {
-                                     let request = MarkAttachmentUploadedDbRequest(libraryId: upload.libraryId, key: upload.key)
+                                     let request = MarkAttachmentUploadedDbRequest(libraryId: libraryId, key: key)
                                      try self.dbStorage.createCoordinator().perform(request: request)
                                      return Single.just(())
                                  } catch let error {
@@ -91,11 +100,15 @@ final class BackgroundUploadProcessor {
                                  }
                              }
                              .do(onSuccess: { [weak self] _ in
-                                 self?.delete(file: Files.file(from: upload.fileUrl))
+                                 self?.delete(file: Files.file(from: fileUrl))
                              }, onError: { [weak self] _ in
-                                 self?.delete(file: Files.file(from: upload.fileUrl))
+                                 self?.delete(file: Files.file(from: fileUrl))
                              })
                              .asObservable()
+    }
+
+    private func finishWebdavUpload(key: String, libraryId: LibraryIdentifier, mtime: Int, md5: String, userId: Int) -> Observable<()> {
+        return Observable.just(())
     }
 
     private func delete(file: File) {

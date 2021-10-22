@@ -246,15 +246,21 @@ final class ExtensionStore {
     private let dbStorage: DbStorage
     private let fileStorage: FileStorage
     private let schemaController: SchemaController
+    private let webDavController: WebDavController
     private let dateParser: DateParser
     private let webViewHandler: WebViewHandler
     private let backgroundQueue: DispatchQueue
     private let backgroundScheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
 
-    init(webView: WKWebView, apiClient: ApiClient, backgroundUploader: BackgroundUploader,
-         dbStorage: DbStorage, schemaController: SchemaController, dateParser: DateParser, fileStorage: FileStorage,
-         syncController: SyncController, translatorsController: TranslatorsAndStylesController) {
+    private struct SubmissionData {
+        let filesize: UInt64
+        let md5: String
+        let mtime: Int
+    }
+
+    init(webView: WKWebView, apiClient: ApiClient, backgroundUploader: BackgroundUploader, dbStorage: DbStorage, schemaController: SchemaController, webDavController: WebDavController,
+         dateParser: DateParser, fileStorage: FileStorage, syncController: SyncController, translatorsController: TranslatorsAndStylesController) {
         let queue = DispatchQueue(label: "org.zotero.ZShare.BackgroundQueue", qos: .userInteractive)
         self.syncController = syncController
         self.apiClient = apiClient
@@ -262,6 +268,7 @@ final class ExtensionStore {
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
+        self.webDavController = webDavController
         self.dateParser = dateParser
         self.webViewHandler = WebViewHandler(webView: webView, translatorsController: translatorsController)
         self.backgroundQueue = queue
@@ -644,12 +651,12 @@ final class ExtensionStore {
                 let data = State.UploadData(item: item, attachmentKey: self.state.attachmentKey, attachmentData: attachmentData,
                                             attachmentFile: attachmentFile, defaultTitle: (self.state.title ?? "Unknown"),
                                             collections: collectionKeys, tags: tags, libraryId: libraryId, userId: userId, dateParser: self.dateParser)
-                self.upload(data: data, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage)
+                self.upload(data: data, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, webDavController: self.webDavController)
 
             case .localFile(let file, let filename):
                 DDLogInfo("ExtensionStore: upload local file")
                 let data = State.UploadData(localFile: file, filename: filename, attachmentKey: self.state.attachmentKey, collections: collectionKeys, tags: tags, libraryId: libraryId, userId: userId)
-                self.upload(data: data, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage)
+                self.upload(data: data, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, webDavController: self.webDavController)
             }
         } else if let url = self.state.url {
             DDLogInfo("ExtensionStore: submit webpage")
@@ -770,23 +777,23 @@ final class ExtensionStore {
     /// - parameter apiClient: API client
     /// - parameter dbStorage: Database storage
     /// - parameter fileStorage: File storage
-    private func upload(data: State.UploadData, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) {
-        let prepare: Single<(AuthorizeUploadResponse, String)>
-
-        switch data.type {
-        case .localFile(let location, let collections, let tags):
-            DDLogInfo("ExtensionStore: prepare upload for local file")
-            prepare = self.prepareUpload(attachment: data.attachment, collections: collections, tags: tags, file: data.file, tmpFile: location,
-                                         filename: data.filename, libraryId: data.libraryId, userId: data.userId, apiClient: apiClient,
-                                         dbStorage: dbStorage, fileStorage: fileStorage)
-        case .translated(let item, let location):
-            DDLogInfo("ExtensionStore: prepare upload for local file")
-            prepare = self.prepareUpload(item: item, attachment: data.attachment, file: data.file, tmpFile: location, filename: data.filename,
-                                         libraryId: data.libraryId, userId: data.userId, apiClient: apiClient, dbStorage: dbStorage,
-                                         fileStorage: fileStorage)
+    private func upload(data: State.UploadData, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, webDavController: WebDavController) {
+        if Defaults.shared.webDavEnabled {
+            self.uploadToWebDav(data: data, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, webDavController: webDavController)
+        } else {
+            self.uploadToZotero(data: data, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
         }
+    }
 
-        prepare.flatMap { [weak self] response, md5 -> Single<()> in
+    private func uploadToZotero(data: State.UploadData, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) {
+        let authorize = self.submit(data: data, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
+                            .flatMap { submissionData -> Single<(AuthorizeUploadResponse, String)> in
+                                return AuthorizeUploadSyncAction(key: data.attachment.key, filename: data.filename, filesize: submissionData.filesize, md5: submissionData.md5, mtime: submissionData.mtime,
+                                                                 libraryId: data.libraryId, userId: data.userId, oldMd5: nil, apiClient: apiClient, queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
+                                            .flatMap({ return Single.just(($0, submissionData.md5)) })
+                            }
+
+        authorize.flatMap { [weak self] response, md5 -> Single<()> in
                    guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
 
                    switch response {
@@ -808,8 +815,8 @@ final class ExtensionStore {
                            return Single.error(State.AttachmentState.Error.missingBackgroundUploader)
                        }
 
-                       let upload = BackgroundUpload(key: self.state.attachmentKey, libraryId: data.libraryId, userId: data.userId,
-                                                     remoteUrl: response.url, fileUrl: data.file.createUrl(), uploadKey: response.uploadKey, md5: md5)
+                       let upload = BackgroundUpload(type: .zotero(uploadKey: response.uploadKey), key: self.state.attachmentKey, libraryId: data.libraryId, userId: data.userId,
+                                                     remoteUrl: response.url, fileUrl: data.file.createUrl(), md5: md5)
                        return backgroundUploader.start(upload: upload, filename: data.filename, mimeType: ExtensionStore.defaultMimetype,
                                                        parameters: response.params, headers: ["If-None-Match": "*"])
                    }
@@ -829,8 +836,69 @@ final class ExtensionStore {
                .disposed(by: self.disposeBag)
     }
 
-    /// Prepares for file upload. Copies local file to new location appropriate for new item. Creates `RItem` instance in DB for attachment.
-    /// Submits new `RItem`s to Zotero API. Authorizes new upload to Zotero API.
+    private func uploadToWebDav(data: State.UploadData, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, webDavController: WebDavController) {
+        let prepare = self.submit(data: data, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
+                          .flatMap { submissionData -> Single<(WebDavController.UploadResult, SubmissionData)> in
+                              return webDavController.prepareForUpload(key: data.attachment.key, mtime: submissionData.mtime, hash: submissionData.md5, file: data.file, queue: self.backgroundQueue)
+                                                     .flatMap({ return Single.just(($0, submissionData)) })
+                          }
+
+        prepare.flatMap { [weak self] response, submissionData -> Single<()> in
+            guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
+
+            switch response {
+            case .exists:
+                DDLogInfo("ExtensionStore: file exists remotely")
+
+                do {
+                    let request = MarkAttachmentUploadedDbRequest(libraryId: data.libraryId, key: data.attachment.key)
+                    try dbStorage.createCoordinator().perform(request: request)
+                    return Single.just(())
+                } catch let error {
+                    return Single.error(error)
+                }
+
+            case .new(let url, let file):
+                DDLogInfo("ExtensionStore: upload authorized")
+
+                guard let backgroundUploader = self.backgroundUploader else {
+                    return Single.error(State.AttachmentState.Error.missingBackgroundUploader)
+                }
+
+                let upload = BackgroundUpload(type: .webdav(mtime: submissionData.mtime), key: self.state.attachmentKey, libraryId: data.libraryId, userId: data.userId,
+                                              remoteUrl: url, fileUrl: file.createUrl(), md5: submissionData.md5)
+                return backgroundUploader.start(upload: upload, filename: data.filename, mimeType: ExtensionStore.defaultMimetype, parameters: [:], headers: [:])
+            }
+        }
+        .observe(on: MainScheduler.instance)
+        .subscribe(onSuccess: { [weak self] _ in
+            // The `backgroundUploader` is set to `nil` so that the `URLSession` delegate no longer exists for the share extension.
+            // This way the URLSession delegate will always be called in the main (container) app, where additional upload
+            // processing is performed.
+            self?.backgroundUploader = nil
+            self?.state.attachmentState = .done
+        }, onFailure: { [weak self] error in
+            guard let `self` = self else { return }
+            DDLogError("ExtensionStore: could not submit item or attachment - \(error)")
+            self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: data.libraryId))
+        })
+        .disposed(by: self.disposeBag)
+    }
+
+    private func submit(data: State.UploadData, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<SubmissionData> {
+        switch data.type {
+        case .localFile(let location, let collections, let tags):
+            DDLogInfo("ExtensionStore: prepare upload for local file")
+            return self.prepareAndSubmit(attachment: data.attachment, collections: collections, tags: tags, file: data.file, tmpFile: location, libraryId: data.libraryId, userId: data.userId,
+                                         apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
+        case .translated(let item, let location):
+            DDLogInfo("ExtensionStore: prepare upload for local file")
+            return self.prepareAndSubmit(item: item, attachment: data.attachment, file: data.file, tmpFile: location, libraryId: data.libraryId, userId: data.userId, apiClient: apiClient,
+                                         dbStorage: dbStorage, fileStorage: fileStorage)
+        }
+    }
+
+    /// Prepares for file upload. Copies local file to new location appropriate for new item. Creates `RItem` instance in DB for attachment. Submits new `RItem`s to Zotero API.
     /// - parameter attachment: Attachment to be created and submitted.
     /// - parameter collections: Collections to which the attachment is assigned.
     /// - parameter tags: Tags picked by user.
@@ -839,39 +907,33 @@ final class ExtensionStore {
     /// - parameter filename: Filename of file to upload.
     /// - parameter libraryId: Identifier of library to which items will be submitted.
     /// - parameter userId: Id of current user.
-    /// - parameter apiClient: API client
-    /// - parameter dbStorage: Database storage
-    /// - parameter fileStorage: File storage
+    /// - parameter apiClient: API client.
+    /// - parameter dbStorage: Database storage.
+    /// - parameter fileStorage: File storage.
+    /// - parameter webDavController: WebDAV controller.
     /// - returns: `Single` with Authorization response and md5 hash of file.
-    private func prepareUpload(attachment: Attachment, collections: Set<String>, tags: [TagResponse], file: File, tmpFile: File, filename: String, libraryId: LibraryIdentifier, userId: Int,
-                               apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<(AuthorizeUploadResponse, String)> {
+    private func prepareAndSubmit(attachment: Attachment, collections: Set<String>, tags: [TagResponse], file: File, tmpFile: File, libraryId: LibraryIdentifier, userId: Int,
+                                  apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<SubmissionData> {
         return self.moveFile(from: tmpFile, to: file)
                    .subscribe(on: self.backgroundScheduler)
-                   .flatMap { [weak self] filesize -> Single<(UInt64, [String: Any], String, Int)> in
+                   .flatMap { [weak self] filesize -> Single<([String: Any], SubmissionData)> in
                        guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
                        return self.create(attachment: attachment, collections: collections, tags: tags)
-                                  .flatMap({ Single.just((filesize, $0, $1, $2)) })
+                                  .flatMap({ Single.just(($0, SubmissionData(filesize: filesize, md5: $1, mtime: $2))) })
                                   .do(onError: { [weak self] _ in
                                       // If attachment item couldn't be created in DB, remove the moved file if possible, it won't be processed even from the main app
                                       try? self?.fileStorage.remove(file)
                                   })
                    }
-                   .flatMap { filesize, parameters, md5, mtime -> Single<(UInt64, String, Int)> in
+                   .flatMap { parameters, data -> Single<SubmissionData> in
                        return SubmitUpdateSyncAction(parameters: [parameters], sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId, updateLibraryVersion: false,
                                                      apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage,
                                                      queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
-                                    .flatMap({ _ in Single.just((filesize, md5, mtime)) })
-                   }
-                   .flatMap { filesize, md5, mtime -> Single<(AuthorizeUploadResponse, String)> in
-                       return AuthorizeUploadSyncAction(key: attachment.key, filename: filename, filesize: filesize, md5: md5, mtime: mtime,
-                                                        libraryId: libraryId, userId: userId, oldMd5: nil, apiClient: apiClient,
-                                                        queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
-                                    .flatMap({ return Single.just(($0, md5)) })
+                                    .flatMap({ _ in Single.just(data) })
                    }
     }
 
-    /// Prepares for file upload. Moves file to new location appropriate for new item. Creates `RItem` instances in DB for item and attachment.
-    /// Submits new `RItem`s to Zotero API. Authorizes new upload to Zotero API.
+    /// Prepares for file upload. Moves file to new location appropriate for new item. Creates `RItem` instances in DB for item and attachment. Submits new `RItem`s to Zotero API.
     /// - parameter item: Item to be created and submitted.
     /// - parameter attachment: Attachment to be created and submitted.
     /// - parameter file: File to upload.
@@ -881,32 +943,26 @@ final class ExtensionStore {
     /// - parameter userId: Id of current user.
     /// - parameter apiClient: API client
     /// - parameter dbStorage: Database storage
-    /// - parameter fileStorage: File storage 
+    /// - parameter fileStorage: File storage
     /// - returns: `Single` with Authorization response and md5 hash of file.
-    private func prepareUpload(item: ItemResponse, attachment: Attachment, file: File, tmpFile: File, filename: String, libraryId: LibraryIdentifier, userId: Int,
-                               apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<(AuthorizeUploadResponse, String)> {
+    private func prepareAndSubmit(item: ItemResponse, attachment: Attachment, file: File, tmpFile: File, libraryId: LibraryIdentifier, userId: Int,
+                                  apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<SubmissionData> {
         return self.moveFile(from: tmpFile, to: file)
                    .subscribe(on: self.backgroundScheduler)
-                   .flatMap { [weak self] filesize -> Single<(UInt64, [[String: Any]], String, Int)> in
+                   .flatMap { [weak self] filesize -> Single<([[String: Any]], SubmissionData)> in
                        guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
                        return self.createItems(item: item, attachment: attachment)
-                                  .flatMap({ Single.just((filesize, $0, $1, $2)) })
+                                  .flatMap({ Single.just(($0, SubmissionData(filesize: filesize, md5: $1, mtime: $2))) })
                                   .do(onError: { [weak self] _ in
                                       // If attachment item couldn't be created in DB, remove the moved file if possible, it won't be processed even from the main app
                                       try? self?.fileStorage.remove(file)
                                   })
                    }
-                   .flatMap { filesize, parameters, md5, mtime -> Single<(UInt64, String, Int)> in
+                   .flatMap { parameters, data -> Single<SubmissionData> in
                        return SubmitUpdateSyncAction(parameters: parameters, sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId, updateLibraryVersion: false,
                                                      apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage,
                                                      queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
-                                    .flatMap({ _ in Single.just((filesize, md5, mtime)) })
-                   }
-                   .flatMap { filesize, md5, mtime -> Single<(AuthorizeUploadResponse, String)> in
-                       return AuthorizeUploadSyncAction(key: attachment.key, filename: filename, filesize: filesize, md5: md5, mtime: mtime,
-                                                        libraryId: libraryId, userId: userId, oldMd5: nil, apiClient: apiClient,
-                                                        queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
-                                    .flatMap({ return Single.just(($0, md5)) })
+                                    .flatMap({ _ in Single.just(data) })
                    }
     }
 

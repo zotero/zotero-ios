@@ -527,6 +527,8 @@ internal enum L10n {
       }
       /// Could not sync groups. Please try again.
       internal static let groupsFailed = L10n.tr("Localizable", "errors.sync_toolbar.groups_failed")
+      /// You have insufficient space on your server. Some files were not uploaded. Other Zotero data will continue to sync to our server.
+      internal static let insufficientSpace = L10n.tr("Localizable", "errors.sync_toolbar.insufficient_space")
       /// Unable to connect to the network. Please try again.
       internal static let internetConnection = L10n.tr("Localizable", "errors.sync_toolbar.internet_connection")
       /// No libraries found. Please sign out and back in again.

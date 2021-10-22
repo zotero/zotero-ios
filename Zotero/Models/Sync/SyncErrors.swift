@@ -51,6 +51,7 @@ enum SyncError {
         case quotaLimit(LibraryIdentifier)
         case unchanged
         case attachmentMissing(key: String, title: String)
+        case insufficientSpace
 
         var isVersionMismatch: Bool {
             switch self {

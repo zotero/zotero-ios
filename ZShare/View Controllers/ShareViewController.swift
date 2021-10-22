@@ -674,6 +674,7 @@ final class ShareViewController: UIViewController {
                               backgroundUploader: backgroundUploader,
                               dbStorage: dbStorage,
                               schemaController: schemaController,
+                              webDavController: webDavController,
                               dateParser: dateParser,
                               fileStorage: fileStorage,
                               syncController: syncController,
