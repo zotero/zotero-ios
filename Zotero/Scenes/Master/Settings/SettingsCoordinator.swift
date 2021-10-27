@@ -7,9 +7,10 @@
 //
 
 import UIKit
+import SafariServices
 import SwiftUI
 
-import SafariServices
+import CocoaLumberjackSwift
 import RxSwift
 
 protocol SettingsCoordinatorDelegate: AnyObject {
@@ -145,14 +146,22 @@ extension SettingsCoordinator: StorageSettingsSettingsCoordinatorDelegate {
 
 extension SettingsCoordinator: SettingsCoordinatorDelegate {
     func showSync() {
-        let handler = SyncSettingsActionHandler(sessionController: self.controllers.sessionController, webDavController: self.controllers.webDavController)
+        guard let dbStorage = self.controllers.userControllers?.dbStorage,
+              let syncScheduler = self.controllers.userControllers?.syncScheduler,
+              let webDavController = self.controllers.userControllers?.webDavController else {
+            DDLogError("SettingsCoordinator: can't show sync, missing userControllers")
+            return
+        }
+
+        let handler = SyncSettingsActionHandler(dbStorage: dbStorage, fileStorage: self.controllers.fileStorage, sessionController: self.controllers.sessionController,
+                                                webDavController: webDavController, syncScheduler: syncScheduler)
         let state = SyncSettingsState(account: Defaults.shared.username,
-                                      fileSyncType: (self.controllers.webDavController.sessionStorage.isEnabled ? .webDav : .zotero),
-                                      scheme: self.controllers.webDavController.sessionStorage.scheme,
-                                      url: self.controllers.webDavController.sessionStorage.url,
-                                      username: self.controllers.webDavController.sessionStorage.username,
-                                      password: self.controllers.webDavController.sessionStorage.password,
-                                      isVerified: self.controllers.webDavController.sessionStorage.isVerified)
+                                      fileSyncType: (webDavController.sessionStorage.isEnabled ? .webDav : .zotero),
+                                      scheme: webDavController.sessionStorage.scheme,
+                                      url: webDavController.sessionStorage.url,
+                                      username: webDavController.sessionStorage.username,
+                                      password: webDavController.sessionStorage.password,
+                                      isVerified: webDavController.sessionStorage.isVerified)
         let viewModel = ViewModel(initialState: state, handler: handler)
         var view = SyncSettingsView()
         view.coordinatorDelegate = self

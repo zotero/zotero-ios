@@ -543,6 +543,8 @@ internal enum L10n {
       internal static let personalQuotaReached = L10n.tr("Localizable", "errors.sync_toolbar.personal_quota_reached")
       /// Quota Reached.
       internal static let quotaReachedShort = L10n.tr("Localizable", "errors.sync_toolbar.quota_reached_short")
+      /// Zotero services are temporarily unavailable. Please try again in a few minutes.
+      internal static let unavailable = L10n.tr("Localizable", "errors.sync_toolbar.unavailable")
     }
     internal enum Translators {
       /// Could not update translators from bundle. Would you like to try again?

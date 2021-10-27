@@ -15,18 +15,25 @@ import Alamofire
 import Nimble
 import OHHTTPStubs
 import OHHTTPStubsSwift
+import RealmSwift
 import RxSwift
 import Quick
 
 final class WebDavControllerSpec: QuickSpec {
-    private let defaultCredentials = WebDavCredentials(username: "user", password: "password", scheme: .http, url: "127.0.0.1:9999")
+    private let defaultCredentials = WebDavCredentials(username: "user", password: "password", scheme: .http, url: "127.0.0.1:9999", isVerified: false)
     private let defaultUrl = URL(string: "http://user:password@127.0.0.1:9999/zotero/")!
     private let baseUrl = URL(string: ApiConstants.baseUrlString)!
     private var webDavController: WebDavController?
     private var disposeBag: DisposeBag = DisposeBag()
+    // We need to retain realm with memory identifier so that data are not deleted
+    private var realm: Realm!
+    private var dbStorage: DbStorage!
 
     override func spec() {
         beforeEach {
+            let config = Realm.Configuration(inMemoryIdentifier: UUID().uuidString)
+            self.dbStorage = RealmDbStorage(config: config)
+            self.realm = try! Realm(configuration: config)
             self.webDavController = nil
             self.disposeBag = DisposeBag()
             HTTPStubs.removeAllStubs()
@@ -58,7 +65,7 @@ final class WebDavControllerSpec: QuickSpec {
             }
 
             it("should show an error for a 403") {
-                createStub(for: WebDavRequest(url: self.defaultUrl, httpMethod: .options, acceptableStatusCodes: []), baseUrl: self.baseUrl, statusCode: 403, jsonResponse: [])
+                createStub(for: WebDavCheckRequest(url: self.defaultUrl), baseUrl: self.baseUrl, statusCode: 403, jsonResponse: [])
 
                 waitUntil(timeout: .seconds(10)) { finished in
                     self.test(with: self.defaultCredentials) {
@@ -77,17 +84,16 @@ final class WebDavControllerSpec: QuickSpec {
             }
 
             it("should show an error for a 404 for the parent directory") {
-                createStub(for: WebDavRequest(url: self.defaultUrl, httpMethod: .options, acceptableStatusCodes: []), baseUrl: self.baseUrl, headers: ["DAV": "1"], statusCode: 200, jsonResponse: [])
-                createStub(for: WebDavRequest(url: self.defaultUrl, httpMethod: .propfind, acceptableStatusCodes: []), ignoreBody: true, baseUrl: self.baseUrl, statusCode: 404, jsonResponse: [])
-                createStub(for: WebDavRequest(url: self.defaultUrl.deletingLastPathComponent(), httpMethod: .propfind, acceptableStatusCodes: []),
-                           ignoreBody: true, baseUrl: self.baseUrl, statusCode: 404, jsonResponse: [])
+                createStub(for: WebDavCheckRequest(url: self.defaultUrl), baseUrl: self.baseUrl, headers: ["DAV": "1"], statusCode: 200, jsonResponse: [])
+                createStub(for: WebDavPropfindRequest(url: self.defaultUrl), ignoreBody: true, baseUrl: self.baseUrl, statusCode: 404, jsonResponse: [])
+                createStub(for: WebDavPropfindRequest(url: self.defaultUrl.deletingLastPathComponent()), ignoreBody: true, baseUrl: self.baseUrl, statusCode: 404, jsonResponse: [])
 
                 waitUntil(timeout: .seconds(10)) { finished in
                     self.test(with: self.defaultCredentials) {
                         fail("Succeeded with unreachable server")
                         finished()
                     } errorAction: { error in
-                        if let error = error as? WebDavController.Error.Verification, error == .parentDirNotFound {
+                        if let error = error as? WebDavError.Verification, error == .parentDirNotFound {
                             finished()
                             return
                         }
@@ -99,17 +105,16 @@ final class WebDavControllerSpec: QuickSpec {
             }
 
             it("should show an error for a 200 for a nonexistent file") {
-                createStub(for: WebDavRequest(url: self.defaultUrl, httpMethod: .options, acceptableStatusCodes: []), baseUrl: self.baseUrl, headers: ["DAV": "1"], statusCode: 200, jsonResponse: [])
-                createStub(for: WebDavRequest(url: self.defaultUrl, httpMethod: .propfind, acceptableStatusCodes: []), ignoreBody: true, baseUrl: self.baseUrl, statusCode: 207, jsonResponse: [])
-                createStub(for: WebDavRequest(url: self.defaultUrl.appendingPathComponent("nonexistent.prop"), httpMethod: .get, acceptableStatusCodes: []),
-                           ignoreBody: true, baseUrl: self.baseUrl, statusCode: 200, jsonResponse: [])
+                createStub(for: WebDavCheckRequest(url: self.defaultUrl), baseUrl: self.baseUrl, headers: ["DAV": "1"], statusCode: 200, jsonResponse: [])
+                createStub(for: WebDavPropfindRequest(url: self.defaultUrl), ignoreBody: true, baseUrl: self.baseUrl, statusCode: 207, jsonResponse: [])
+                createStub(for: WebDavNonexistentPropRequest(url: self.defaultUrl), ignoreBody: true, baseUrl: self.baseUrl, statusCode: 200, jsonResponse: [])
 
                 waitUntil(timeout: .seconds(10)) { finished in
                     self.test(with: self.defaultCredentials) {
                         fail("Succeeded with unreachable server")
                         finished()
                     } errorAction: { error in
-                        if let error = error as? WebDavController.Error.Verification, error == .nonExistentFileNotMissing {
+                        if let error = error as? WebDavError.Verification, error == .nonExistentFileNotMissing {
                             finished()
                             return
                         }
@@ -123,30 +128,14 @@ final class WebDavControllerSpec: QuickSpec {
     }
 
     private func test(with credentials: WebDavSessionStorage, successAction: @escaping () -> Void, errorAction: @escaping (Error) -> Void) {
-        self.webDavController = WebDavController(apiClient: TestControllers.apiClient, sessionStorage: credentials)
-        self.webDavController!.checkServer()
+        self.webDavController = WebDavControllerImpl(apiClient: TestControllers.apiClient, dbStorage: self.dbStorage, fileStorage: TestControllers.fileStorage, sessionStorage: credentials)
+        self.webDavController!.checkServer(queue: .main)
             .observe(on: MainScheduler.instance)
-            .subscribe(onSuccess: {
+            .subscribe(onSuccess: { _ in
                 successAction()
             }, onFailure: { error in
                 errorAction(error)
             })
             .disposed(by: self.disposeBag)
-    }
-}
-
-fileprivate class WebDavCredentials: WebDavSessionStorage {
-    var isEnabled: Bool
-    var username: String
-    var url: String
-    var scheme: WebDavScheme
-    var password: String
-
-    init(username: String, password: String, scheme: WebDavScheme, url: String) {
-        self.isEnabled = true
-        self.username = username
-        self.password = password
-        self.scheme = scheme
-        self.url = url
     }
 }

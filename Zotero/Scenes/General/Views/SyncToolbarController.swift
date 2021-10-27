@@ -95,6 +95,8 @@ final class SyncToolbarController {
                     message += L10n.Errors.SyncToolbar.groupPermissions
                 case .noInternetConnection:
                     message += L10n.Errors.SyncToolbar.internetConnection
+                case .serviceUnavailable:
+                    message += L10n.Errors.SyncToolbar.unavailable
                 }
             } else if let error = error as? SyncError.NonFatal {
                 switch error {

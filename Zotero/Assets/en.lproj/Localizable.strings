@@ -324,6 +324,7 @@
 "errors.sync_toolbar.group_quota_reached" = "The group \“%@\” has reached its Zotero File Storage quota. Some files were not uploaded. Other Zotero data will continue to sync to the server.\nThe group owner can increase the group's storage capacity from the storage settings section on zotero.org.";
 "errors.sync_toolbar.insufficient_space" = "You have insufficient space on your server. Some files were not uploaded. Other Zotero data will continue to sync to our server.";
 "errors.sync_toolbar.quota_reached_short" = "Quota Reached.";
+"errors.sync_toolbar.unavailable" = "Zotero services are temporarily unavailable. Please try again in a few minutes.";
 "errors.items.loading" = "Could not load items.";
 "errors.items.deletion" = "Could not remove item.";
 "errors.items.deletion_from_collection" = "Could not remove item from collection.";

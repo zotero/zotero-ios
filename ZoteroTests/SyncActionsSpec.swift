@@ -23,17 +23,23 @@ final class SyncActionsSpec: QuickSpec {
     private let userId = 100
     // We need to retain realm with memory identifier so that data are not deleted
     private let realm: Realm
+    private let webDavController: WebDavController
     private let dbStorage: DbStorage
     private let disposeBag: DisposeBag
 
     required init() {
         let config = Realm.Configuration(inMemoryIdentifier: "TestsRealmConfig")
         self.realm = try! Realm(configuration: config)
+        self.webDavController = WebDavTestController()
         self.dbStorage = RealmDbStorage(config: config)
         self.disposeBag = DisposeBag()
     }
 
     override func spec() {
+        beforeSuite {
+            Defaults.shared.webDavEnabled = false
+        }
+
         beforeEach {
             try? TestControllers.fileStorage.remove(Files.downloads)
 
@@ -342,8 +348,10 @@ final class SyncActionsSpec: QuickSpec {
                                                apiClient: TestControllers.apiClient,
                                                dbStorage: self.dbStorage,
                                                fileStorage: TestControllers.fileStorage,
+                                               webDavController: self.webDavController,
                                                queue: DispatchQueue.main,
-                                               scheduler: MainScheduler.instance).result
+                                               scheduler: MainScheduler.instance,
+                                               disposeBag: self.disposeBag).result
                                          .subscribe(onSuccess: { response, _ in
                                              response.subscribe(onCompleted: {
                                                  fail("Upload didn't fail with unsubmitted item")
@@ -396,8 +404,10 @@ final class SyncActionsSpec: QuickSpec {
                                                apiClient: TestControllers.apiClient,
                                                dbStorage: self.dbStorage,
                                                fileStorage: TestControllers.fileStorage,
+                                               webDavController: self.webDavController,
                                                queue: DispatchQueue.main,
-                                               scheduler: MainScheduler.instance).result
+                                               scheduler: MainScheduler.instance,
+                                               disposeBag: self.disposeBag).result
                                          .flatMap({ response, _ -> Single<Never> in
                                              return response.asObservable().asSingle()
                                          })
@@ -468,8 +478,10 @@ final class SyncActionsSpec: QuickSpec {
                                                apiClient: TestControllers.apiClient,
                                                dbStorage: self.dbStorage,
                                                fileStorage: TestControllers.fileStorage,
+                                               webDavController: self.webDavController,
                                                queue: DispatchQueue.main,
-                                               scheduler: MainScheduler.instance).result
+                                               scheduler: MainScheduler.instance,
+                                               disposeBag: self.disposeBag).result
                                          .flatMap({ response, _ -> Single<()> in
                                              return Single.create { subscriber -> Disposable in
                                                 response.subscribe(onCompleted: {
@@ -484,6 +496,14 @@ final class SyncActionsSpec: QuickSpec {
                                          .subscribe(onSuccess: { _ in
                                              doneAction()
                                          }, onFailure: { error in
+                                             if let error = error as? SyncActionError {
+                                                 switch error {
+                                                 case .attachmentAlreadyUploaded:
+                                                     doneAction()
+                                                     return
+                                                 default: break
+                                                 }
+                                             }
                                              fail("Unknown error: \(error.localizedDescription)")
                                              doneAction()
                                          })
@@ -549,8 +569,10 @@ final class SyncActionsSpec: QuickSpec {
                                                apiClient: TestControllers.apiClient,
                                                dbStorage: self.dbStorage,
                                                fileStorage: TestControllers.fileStorage,
+                                               webDavController: self.webDavController,
                                                queue: DispatchQueue.main,
-                                               scheduler: MainScheduler.instance).result
+                                               scheduler: MainScheduler.instance,
+                                               disposeBag: self.disposeBag).result
                                          .flatMap({ response, _ -> Single<()> in
                                              return Single.create { subscriber -> Disposable in
                                                 response.subscribe(onCompleted: {
@@ -591,4 +613,41 @@ extension SyncActionError: Equatable {
             return false
         }
     }
+}
+
+fileprivate class WebDavTestController: WebDavController {
+    enum Error: Swift.Error {
+        case shouldntBeCalled
+    }
+
+    let sessionStorage: WebDavSessionStorage
+
+    init() {
+        self.sessionStorage = WebDavSession()
+    }
+
+    func checkServer(queue: DispatchQueue) -> Single<URL> {
+        return Single.error(Error.shouldntBeCalled)
+    }
+
+    func urlForDownload(key: String, queue: DispatchQueue) -> Single<URL> {
+        return Single.error(Error.shouldntBeCalled)
+    }
+
+    func prepareForUpload(key: String, mtime: Int, hash: String, file: File, queue: DispatchQueue) -> Single<WebDavUploadResult> {
+        return Single.error(Error.shouldntBeCalled)
+    }
+
+    func finishUpload(key: String, result: Result<(Int, String, URL), Swift.Error>, file: File?, queue: DispatchQueue) -> Single<()> {
+        return Single.error(Error.shouldntBeCalled)
+    }
+}
+
+fileprivate class WebDavSession: WebDavSessionStorage {
+    var isEnabled: Bool = false
+    var isVerified: Bool = false
+    var username: String = ""
+    var url: String = ""
+    var scheme: WebDavScheme = .http
+    var password: String = ""
 }

@@ -40,6 +40,7 @@ enum SyncError {
         case cancelled
         case preconditionErrorCantBeResolved
         case cantResolveConflict
+        case serviceUnavailable
     }
 
     enum NonFatal: Error {

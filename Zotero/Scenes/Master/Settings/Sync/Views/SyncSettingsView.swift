@@ -113,7 +113,7 @@ struct WebDavSettings: View {
     }
 
     private func errorMessage(for error: Error) -> String {
-        if let error = error as? WebDavController.Error.Verification {
+        if let error = error as? WebDavError.Verification {
             switch error {
             case .fileMissingAfterUpload:
                 return L10n.Errors.Settings.Webdav.fileMissingAfterUpload

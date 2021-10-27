@@ -30,7 +30,6 @@ final class Controllers {
     let htmlAttributedStringConverter: HtmlAttributedStringConverter
     let userInitialized: PassthroughSubject<Result<Bool, Error>, Never>
     let idleTimerController: IdleTimerController
-    let webDavController: WebDavController
     fileprivate let lastBuildNumber: Int?
 
     var userControllers: UserControllers?
@@ -65,7 +64,6 @@ final class Controllers {
         let bundledDataStorage = RealmDbStorage(config: bundledDataConfiguration)
         let translatorsAndStylesController = TranslatorsAndStylesController(apiClient: apiClient, bundledDataStorage: bundledDataStorage, fileStorage: fileStorage)
         let previewSize = CGSize(width: PDFReaderLayout.sidebarWidth, height: PDFReaderLayout.sidebarWidth)
-        let webDavController = WebDavController(apiClient: apiClient, sessionStorage: SecureWebDavSessionStorage(secureStorage: secureStorage), fileStorage: fileStorage)
 
         self.bundledDataStorage = bundledDataStorage
         self.sessionController = sessionController
@@ -81,7 +79,6 @@ final class Controllers {
         self.urlDetector = urlDetector
         self.dateParser = DateParser()
         self.htmlAttributedStringConverter = HtmlAttributedStringConverter()
-        self.webDavController = webDavController
         self.userInitialized = PassthroughSubject()
         self.lastBuildNumber = Defaults.shared.lastBuildNumber
         self.idleTimerController = IdleTimerController()
@@ -195,6 +192,7 @@ final class UserControllers {
     let webSocketController: WebSocketController
     let fileCleanupController: AttachmentFileCleanupController
     let citationController: CitationController
+    let webDavController: WebDavController
     private let isFirstLaunch: Bool
     private let lastBuildNumber: Int?
     private unowned let translatorsAndStylesController: TranslatorsAndStylesController
@@ -209,28 +207,20 @@ final class UserControllers {
     /// Instance is initialized on login or when app launches while user is logged in
     init(userId: Int, controllers: Controllers) throws {
         let dbStorage = try UserControllers.createDbStorage(for: userId, controllers: controllers)
-        let backgroundUploadProcessor = BackgroundUploadProcessor(apiClient: controllers.apiClient,
-                                                                  dbStorage: dbStorage,
-                                                                  fileStorage: controllers.fileStorage)
+        let webDavSession = SecureWebDavSessionStorage(secureStorage: controllers.secureStorage)
+        let webDavController = WebDavControllerImpl(apiClient: controllers.apiClient, dbStorage: dbStorage, fileStorage: controllers.fileStorage, sessionStorage: webDavSession)
+        let backgroundUploadProcessor = BackgroundUploadProcessor(apiClient: controllers.apiClient, dbStorage: dbStorage, fileStorage: controllers.fileStorage, webDavController: webDavController)
         let backgroundUploader = BackgroundUploader(uploadProcessor: backgroundUploadProcessor, schemaVersion: controllers.schemaController.version)
-
-        let syncController = SyncController(userId: userId,
-                                            apiClient: controllers.apiClient,
-                                            dbStorage: dbStorage,
-                                            fileStorage: controllers.fileStorage,
-                                            schemaController: controllers.schemaController,
-                                            dateParser: controllers.dateParser,
-                                            backgroundUploader: backgroundUploader,
-                                            webDavController: controllers.webDavController,
-                                            syncDelayIntervals: DelayIntervals.sync,
+        let syncController = SyncController(userId: userId, apiClient: controllers.apiClient, dbStorage: dbStorage, fileStorage: controllers.fileStorage, schemaController: controllers.schemaController,
+                                            dateParser: controllers.dateParser, backgroundUploader: backgroundUploader, webDavController: webDavController, syncDelayIntervals: DelayIntervals.sync,
                                             conflictDelays: DelayIntervals.conflict)
-        let fileDownloader = AttachmentDownloader(userId: userId, apiClient: controllers.apiClient, fileStorage: controllers.fileStorage, dbStorage: dbStorage,
-                                                  webDavController: controllers.webDavController)
+        let fileDownloader = AttachmentDownloader(userId: userId, apiClient: controllers.apiClient, fileStorage: controllers.fileStorage, dbStorage: dbStorage, webDavController: webDavController)
         let webSocketController = WebSocketController(dbStorage: dbStorage)
         let fileCleanupController = AttachmentFileCleanupController(fileStorage: controllers.fileStorage, dbStorage: dbStorage)
 
         self.dbStorage = dbStorage
         self.syncScheduler = SyncScheduler(controller: syncController)
+        self.webDavController = webDavController
         self.changeObserver = RealmObjectUserChangeObserver(dbStorage: dbStorage)
         self.itemLocaleController = RItemLocaleController(schemaController: controllers.schemaController, dbStorage: dbStorage)
         self.backgroundUploader = backgroundUploader

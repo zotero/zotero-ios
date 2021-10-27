@@ -240,6 +240,7 @@ final class ExtensionStore {
     private static let defaultLibraryId: LibraryIdentifier = .custom(.myLibrary)
     private static let defaultExtension = "pdf"
     private static let defaultMimetype = "application/pdf"
+    private static let zipMimetype = "application/zip"
 
     private let syncController: SyncController
     private let apiClient: ApiClient
@@ -788,8 +789,9 @@ final class ExtensionStore {
     private func uploadToZotero(data: State.UploadData, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) {
         let authorize = self.submit(data: data, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
                             .flatMap { submissionData -> Single<(AuthorizeUploadResponse, String)> in
-                                return AuthorizeUploadSyncAction(key: data.attachment.key, filename: data.filename, filesize: submissionData.filesize, md5: submissionData.md5, mtime: submissionData.mtime,
-                                                                 libraryId: data.libraryId, userId: data.userId, oldMd5: nil, apiClient: apiClient, queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
+                                return AuthorizeUploadSyncAction(key: data.attachment.key, filename: data.filename, filesize: submissionData.filesize, md5: submissionData.md5,
+                                                                 mtime: submissionData.mtime, libraryId: data.libraryId, userId: data.userId, oldMd5: nil, apiClient: apiClient,
+                                                                 queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
                                             .flatMap({ return Single.just(($0, submissionData.md5)) })
                             }
 
@@ -797,12 +799,13 @@ final class ExtensionStore {
                    guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
 
                    switch response {
-                   case .exists:
+                   case .exists(let version):
                        DDLogInfo("ExtensionStore: file exists remotely")
 
                        do {
-                           let request = MarkAttachmentUploadedDbRequest(libraryId: data.libraryId, key: data.attachment.key)
-                           try dbStorage.createCoordinator().perform(request: request)
+                           let request = MarkAttachmentUploadedDbRequest(libraryId: data.libraryId, key: data.attachment.key, version: version)
+                           let request2 = UpdateVersionsDbRequest(version: version, libraryId: data.libraryId, type: .object(.item))
+                           try dbStorage.createCoordinator().perform(requests: [request, request2])
                            return Single.just(())
                        } catch let error {
                            return Single.error(error)
@@ -817,8 +820,7 @@ final class ExtensionStore {
 
                        let upload = BackgroundUpload(type: .zotero(uploadKey: response.uploadKey), key: self.state.attachmentKey, libraryId: data.libraryId, userId: data.userId,
                                                      remoteUrl: response.url, fileUrl: data.file.createUrl(), md5: md5)
-                       return backgroundUploader.start(upload: upload, filename: data.filename, mimeType: ExtensionStore.defaultMimetype,
-                                                       parameters: response.params, headers: ["If-None-Match": "*"])
+                       return backgroundUploader.start(upload: upload, filename: data.filename, mimeType: ExtensionStore.defaultMimetype, parameters: response.params, headers: ["If-None-Match": "*"])
                    }
                }
                .observe(on: MainScheduler.instance)
@@ -838,7 +840,7 @@ final class ExtensionStore {
 
     private func uploadToWebDav(data: State.UploadData, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, webDavController: WebDavController) {
         let prepare = self.submit(data: data, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
-                          .flatMap { submissionData -> Single<(WebDavController.UploadResult, SubmissionData)> in
+                          .flatMap { submissionData -> Single<(WebDavUploadResult, SubmissionData)> in
                               return webDavController.prepareForUpload(key: data.attachment.key, mtime: submissionData.mtime, hash: submissionData.md5, file: data.file, queue: self.backgroundQueue)
                                                      .flatMap({ return Single.just(($0, submissionData)) })
                           }
@@ -851,7 +853,7 @@ final class ExtensionStore {
                 DDLogInfo("ExtensionStore: file exists remotely")
 
                 do {
-                    let request = MarkAttachmentUploadedDbRequest(libraryId: data.libraryId, key: data.attachment.key)
+                    let request = MarkAttachmentUploadedDbRequest(libraryId: data.libraryId, key: data.attachment.key, version: nil)
                     try dbStorage.createCoordinator().perform(request: request)
                     return Single.just(())
                 } catch let error {
@@ -867,20 +869,39 @@ final class ExtensionStore {
 
                 let upload = BackgroundUpload(type: .webdav(mtime: submissionData.mtime), key: self.state.attachmentKey, libraryId: data.libraryId, userId: data.userId,
                                               remoteUrl: url, fileUrl: file.createUrl(), md5: submissionData.md5)
-                return backgroundUploader.start(upload: upload, filename: data.filename, mimeType: ExtensionStore.defaultMimetype, parameters: [:], headers: [:])
+                return backgroundUploader.start(upload: upload, filename: (data.attachment.key + ".zip"), mimeType: ExtensionStore.zipMimetype, parameters: [:], headers: [:])
             }
         }
         .observe(on: MainScheduler.instance)
         .subscribe(onSuccess: { [weak self] _ in
+            guard let `self` = self else { return }
             // The `backgroundUploader` is set to `nil` so that the `URLSession` delegate no longer exists for the share extension.
             // This way the URLSession delegate will always be called in the main (container) app, where additional upload
             // processing is performed.
-            self?.backgroundUploader = nil
-            self?.state.attachmentState = .done
+            self.backgroundUploader = nil
+            // Perform `finishUpload(key:result:file:queue:)` so that `WebDavController` removes original ZIP file. Background uploader creates a temporary file for upload which is later deleted,
+            // so this is no longer needed.
+            self.webDavController.finishUpload(key: self.state.attachmentKey, result: .failure(State.AttachmentState.Error.expired), file: data.file, queue: self.backgroundQueue)
+                .subscribe(onSuccess: { [weak self] in
+                    self?.state.attachmentState = .done
+                }, onFailure: { [weak self] _ in
+                    self?.state.attachmentState = .done
+                })
+                .disposed(by: self.disposeBag)
         }, onFailure: { [weak self] error in
             guard let `self` = self else { return }
             DDLogError("ExtensionStore: could not submit item or attachment - \(error)")
+
             self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: data.libraryId))
+
+            // Perform `finishUpload(key:result:file:queue:)` so that `WebDavController` removes ZIP file in case of failure.
+            self.webDavController.finishUpload(key: self.state.attachmentKey, result: .failure(State.AttachmentState.Error.expired), file: data.file, queue: self.backgroundQueue)
+                .subscribe(onSuccess: { [weak self] in
+                    self?.state.attachmentState = .done
+                }, onFailure: { [weak self] _ in
+                    self?.state.attachmentState = .done
+                })
+                .disposed(by: self.disposeBag)
         })
         .disposed(by: self.disposeBag)
     }

@@ -33,10 +33,10 @@ struct AuthorizeUploadSyncAction: SyncAction {
                                              filesize: self.filesize, md5: self.md5, mtime: self.mtime, oldMd5: self.oldMd5)
         return self.apiClient.send(request: request, queue: self.queue)
                              .observe(on: self.scheduler)
-                             .flatMap { (data, _) -> Single<AuthorizeUploadResponse> in
+                             .flatMap { (data, response) -> Single<AuthorizeUploadResponse> in
                                 do {
                                     let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
-                                    let response = try AuthorizeUploadResponse(from: jsonObject)
+                                    let response = try AuthorizeUploadResponse(from: jsonObject, headers: response.allHeaderFields)
                                     return Single.just(response)
                                 } catch {
                                     return Single.error(error)

@@ -1279,6 +1279,16 @@ final class SyncController: SynchronizationController {
             return
         }
 
+        if let error = error as? SyncActionError {
+            switch error {
+            case .attachmentAlreadyUploaded:
+                // This is not a real error message, it's used to skip through some logic when attachment is already stored remotely. Continue as if no error occured.
+                nextAction()
+                return
+            default: break
+            }
+        }
+
         if self.handleUpdatePreconditionFailureIfNeeded(for: error, libraryId: libraryId) {
             return
         }
@@ -1477,6 +1487,8 @@ final class SyncController: SynchronizationController {
                     return .nonFatal(.quotaLimit(libraryId))
                 case 507:
                     return .nonFatal(.insufficientSpace)
+                case 503:
+                    return .fatal(.serviceUnavailable)
                 default:
                     return (code >= 400 && code <= 499 && code != 403) ? .fatal(.apiError(response)) : .nonFatal(.apiError(response))
                 }

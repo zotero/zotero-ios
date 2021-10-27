@@ -9,16 +9,16 @@
 import Foundation
 
 enum AuthorizeUploadResponse {
-    case exists
+    case exists(Int)
     case new(AuthorizeNewUploadResponse)
 
-    init(from jsonObject: Any) throws {
+    init(from jsonObject: Any, headers: [AnyHashable: Any]) throws {
         guard let data = jsonObject as? [String: Any] else {
             throw Parsing.Error.notDictionary
         }
 
         if data["exists"] != nil {
-            self = .exists
+            self = .exists(headers.lastModifiedVersion)
         } else {
             self = try .new(AuthorizeNewUploadResponse(from: data))
         }

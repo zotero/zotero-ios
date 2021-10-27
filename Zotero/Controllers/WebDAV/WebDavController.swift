@@ -12,47 +12,59 @@ import CocoaLumberjackSwift
 import RxSwift
 import SwiftUI
 
-final class WebDavController {
-    enum Error {
-        enum Verification: Swift.Error {
-            case noUrl
-            case noUsername
-            case noPassword
-            case invalidUrl
-            case notDav
-            case parentDirNotFound
-            case zoteroDirNotFound
-            case nonExistentFileNotMissing
-            case fileMissingAfterUpload
-        }
+enum WebDavUploadResult {
+    case exists
+    case new(URL, File)
+}
 
-        enum Download: Swift.Error {
-            case itemPropInvalid
-            case notChanged
-        }
-
-        enum Upload: Swift.Error {
-            case cantCreatePropData
-        }
+enum WebDavError {
+    enum Verification: Swift.Error {
+        case noUrl
+        case noUsername
+        case noPassword
+        case invalidUrl
+        case notDav
+        case parentDirNotFound
+        case zoteroDirNotFound
+        case nonExistentFileNotMissing
+        case fileMissingAfterUpload
     }
 
-    enum UploadResult {
-        case exists
-        case new(URL, File)
+    enum Download: Swift.Error {
+        case itemPropInvalid
+        case notChanged
     }
 
+    enum Upload: Swift.Error {
+        case cantCreatePropData
+    }
+}
+
+protocol WebDavController: AnyObject {
+    var sessionStorage: WebDavSessionStorage { get }
+
+    func checkServer(queue: DispatchQueue) -> Single<URL>
+    func urlForDownload(key: String, queue: DispatchQueue) -> Single<URL>
+    func prepareForUpload(key: String, mtime: Int, hash: String, file: File, queue: DispatchQueue) -> Single<WebDavUploadResult>
+    func finishUpload(key: String, result: Result<(Int, String, URL), Swift.Error>, file: File?, queue: DispatchQueue) -> Single<()>
+}
+
+final class WebDavControllerImpl: WebDavController {
     fileprivate enum MetadataResult {
         case unchanged
+        case mtimeChanged(Int)
         case changed(URL)
         case new(URL)
     }
 
     private unowned let apiClient: ApiClient
+    private unowned let dbStorage: DbStorage
     private unowned let fileStorage: FileStorage
     let sessionStorage: WebDavSessionStorage
 
-    init(apiClient: ApiClient, sessionStorage: WebDavSessionStorage, fileStorage: FileStorage) {
+    init(apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, sessionStorage: WebDavSessionStorage) {
         self.apiClient = apiClient
+        self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.sessionStorage = sessionStorage
     }
@@ -65,26 +77,29 @@ final class WebDavController {
                    .flatMap({ Single.just($0.appendingPathComponent("\(key).zip")) })
     }
 
-    /// Prepares for WebDAV upload. Checks .prop file to see whether the file has been modified. Creates a ZIP file to upload.
+    /// Prepares for WebDAV upload. Checks .prop file to see whether the file has been modified. Creates a ZIP file to upload. Updates mtime in db in case it's the only thing that changed.
     /// - parameter key: Key of item to upload.
     /// - parameter mtime: Modification time of attachment.
     /// - parameter hash: MD5 hash of attachment.
     /// - parameter file: `File` location of attachment.
     /// - parameter queue: Processing queue.
     /// - returns: `UploadRequest` which contains either WebDAV URL and File location of file to upload or indicates that file is already available on WebDAV.
-    func prepareForUpload(key: String, mtime: Int, hash: String, file: File, queue: DispatchQueue) -> Single<UploadResult> {
+    func prepareForUpload(key: String, mtime: Int, hash: String, file: File, queue: DispatchQueue) -> Single<WebDavUploadResult> {
         DDLogInfo("WebDavController: prepare for upload")
         return self.checkServerIfNeeded(queue: queue)
                    .flatMap({ url -> Single<MetadataResult> in
                        return self.checkMetadata(key: key, mtime: mtime, hash: hash, url: url, queue: queue)
                    })
-                   .flatMap({ result -> Single<UploadResult> in
+                   .flatMap({ result -> Single<WebDavUploadResult> in
                        switch result {
                        case .unchanged:
                            return Single.just(.exists)
 
                        case .new(let url):
                            return self.zip(file: file, key: key).flatMap({ return Single.just(.new(url, $0)) })
+
+                       case .mtimeChanged(let mtime):
+                           return self.update(mtime: mtime, key: key).flatMap({ Single.just(.exists) })
 
                        case .changed(let url):
                            // If metadata were available on WebDAV, but they changed, remove original .prop file.
@@ -124,6 +139,17 @@ final class WebDavController {
         }
     }
 
+    private func update(mtime: Int, key: String) -> Single<()> {
+        return Single.create { subscriber -> Disposable in
+            do {
+                try self.dbStorage.createCoordinator().perform(request: StoreMtimeForAttachmentDbRequest(mtime: mtime, key: key, libraryId: .custom(.myLibrary)))
+            } catch let error {
+                DDLogError("WebDavController: can't update mtime - \(error)")
+            }
+            return Disposables.create()
+        }
+    }
+
     private func remove(file: File) -> Single<()> {
         return Single.create { subscriber -> Disposable in
             try? self.fileStorage.remove(file)
@@ -138,9 +164,12 @@ final class WebDavController {
 
             do {
                 let tmpFile = Files.temporaryZipUploadFile(key: key)
+                try self.fileStorage.createDirectories(for: tmpFile)
+                try? self.fileStorage.remove(tmpFile)
                 try FileManager.default.zipItem(at: file.createUrl(), to: tmpFile.createUrl())
                 subscriber(.success(tmpFile))
             } catch let error {
+                DDLogError("WebDavController: can't zip file - \(error)")
                 subscriber(.failure(error))
             }
             return Disposables.create()
@@ -156,7 +185,7 @@ final class WebDavController {
     private func uploadMetadata(key: String, mtime: Int, hash: String, url: URL, queue: DispatchQueue) -> Single<()> {
         DDLogInfo("WebDavController: upload metadata for \(key)")
         let metadataProp = "<properties version=\"1\"><mtime>\(mtime)</mtime><hash>\(hash)</hash></properties>"
-        guard let data = metadataProp.data(using: .utf8) else { return Single.error(Error.Upload.cantCreatePropData) }
+        guard let data = metadataProp.data(using: .utf8) else { return Single.error(WebDavError.Upload.cantCreatePropData) }
         return self.apiClient.send(request: WebDavWriteRequest(url: url.appendingPathComponent(key + ".prop"), data: data), queue: queue)
                    .flatMap({ _ in return Single.just(()) })
     }
@@ -167,8 +196,8 @@ final class WebDavController {
                    .flatMap({ remoteData -> Single<MetadataResult> in
                        guard let (remoteMtime, remoteHash) = remoteData else { return Single.just(.new(url)) }
 
-                       if mtime == remoteMtime && hash == remoteHash {
-                           return Single.just(.unchanged)
+                       if hash == remoteHash {
+                           return Single.just(mtime == remoteMtime ? .unchanged : .mtimeChanged(remoteMtime))
                        } else {
                            return Single.just(.changed(url))
                        }
@@ -199,7 +228,7 @@ final class WebDavController {
                            return Single.just((mtime, hash))
                        } else {
                            DDLogError("WebDavController: \(key) item prop invalid. mtime=\(delegate.mtime.flatMap(String.init) ?? "missing"); hash=\(delegate.fileHash ?? "missing")")
-                           return Single.error(Error.Download.itemPropInvalid)
+                           return Single.error(WebDavError.Download.itemPropInvalid)
                        }
                    })
     }
@@ -233,7 +262,7 @@ final class WebDavController {
         return self.apiClient.send(request: request, queue: queue)
                              .flatMap({ _, response -> Single<URL> in
                                  guard response.allHeaderFields["DAV"] != nil else {
-                                     return Single.error(Error.Verification.notDav)
+                                     return Single.error(WebDavError.Verification.notDav)
                                  }
                                  return Single.just(url)
                              })
@@ -266,7 +295,7 @@ final class WebDavController {
                        return self.apiClient.send(request: WebDavDownloadRequest(endpoint: request.endpoint), queue: queue)
                                   .flatMap({ _, response in
                                       if response.statusCode == 404 {
-                                          return Single.error(Error.Verification.fileMissingAfterUpload)
+                                          return Single.error(WebDavError.Verification.fileMissingAfterUpload)
                                       }
                                       return Single.just(())
                                   })
@@ -281,9 +310,9 @@ final class WebDavController {
         return self.propFind(url: url.deletingLastPathComponent(), queue: queue)
                    .flatMap({ response -> Single<URL> in
                        if response.statusCode == 207 {
-                           return Single.error(Error.Verification.zoteroDirNotFound)
+                           return Single.error(WebDavError.Verification.zoteroDirNotFound)
                        } else {
-                           return Single.error(Error.Verification.parentDirNotFound)
+                           return Single.error(WebDavError.Verification.parentDirNotFound)
                        }
                    })
     }
@@ -295,7 +324,7 @@ final class WebDavController {
                                  if response.statusCode == 404 {
                                      return Single.just(())
                                  } else {
-                                     return Single.error(Error.Verification.nonExistentFileNotMissing)
+                                     return Single.error(WebDavError.Verification.nonExistentFileNotMissing)
                                  }
                              })
     }
@@ -310,32 +339,32 @@ final class WebDavController {
         return Single.create { [weak sessionStorage] subscriber in
             guard let sessionStorage = sessionStorage else {
                 DDLogError("WebDavController: session storage not found")
-                subscriber(.failure(Error.Verification.noUsername))
+                subscriber(.failure(WebDavError.Verification.noUsername))
                 return Disposables.create()
             }
             let username = sessionStorage.username
             guard !username.isEmpty else {
                 DDLogError("WebDavController: username not found")
-                subscriber(.failure(Error.Verification.noUsername))
+                subscriber(.failure(WebDavError.Verification.noUsername))
                 return Disposables.create()
             }
             let password = sessionStorage.password
             guard !password.isEmpty else {
                 DDLogError("WebDavController: username not found")
-                subscriber(.failure(Error.Verification.noPassword))
+                subscriber(.failure(WebDavError.Verification.noPassword))
                 return Disposables.create()
             }
             let url = sessionStorage.url
             guard !url.isEmpty else {
                 DDLogError("WebDavController: url not found")
-                subscriber(.failure(Error.Verification.noUrl))
+                subscriber(.failure(WebDavError.Verification.noUrl))
                 return Disposables.create()
             }
 
             let urlComponents = url.components(separatedBy: "/")
             guard !urlComponents.isEmpty else {
                 DDLogError("WebDavController: url components empty - \(url)")
-                subscriber(.failure(Error.Verification.invalidUrl))
+                subscriber(.failure(WebDavError.Verification.invalidUrl))
                 return Disposables.create()
             }
 
@@ -362,7 +391,7 @@ final class WebDavController {
                 subscriber(.success(url))
             } else {
                 DDLogError("WebDavController: could not create url from components. url=\(url); host=\(host ?? "missing"); path=\(path); port=\(port.flatMap(String.init) ?? "missing")")
-                subscriber(.failure(Error.Verification.invalidUrl))
+                subscriber(.failure(WebDavError.Verification.invalidUrl))
             }
 
             return Disposables.create()

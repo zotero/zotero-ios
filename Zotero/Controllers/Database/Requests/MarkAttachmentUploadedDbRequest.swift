@@ -13,6 +13,7 @@ import RealmSwift
 struct MarkAttachmentUploadedDbRequest: DbRequest {
     let libraryId: LibraryIdentifier
     let key: String
+    let version: Int?
 
     var needsWrite: Bool { return true }
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
@@ -22,5 +23,8 @@ struct MarkAttachmentUploadedDbRequest: DbRequest {
                                        .filter(.key(self.key, in: self.libraryId)).first else { return }
         attachment.attachmentNeedsSync = false
         attachment.changeType = .sync
+        if let version = self.version {
+            attachment.version = version
+        }
     }
 }

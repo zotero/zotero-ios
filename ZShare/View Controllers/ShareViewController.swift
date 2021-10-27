@@ -639,7 +639,7 @@ final class ShareViewController: UIViewController {
         let bundledDataStorage = RealmDbStorage(config: configuration)
         let translatorsController = TranslatorsAndStylesController(apiClient: apiClient, bundledDataStorage: bundledDataStorage, fileStorage: fileStorage)
         let secureStorage = KeychainSecureStorage()
-        let webDavController = WebDavController(apiClient: apiClient, sessionStorage: SecureWebDavSessionStorage(secureStorage: secureStorage), fileStorage: fileStorage)
+        let webDavController = WebDavControllerImpl(apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, sessionStorage: SecureWebDavSessionStorage(secureStorage: secureStorage))
 
         apiClient.set(authToken: session.apiToken)
         translatorsController.updateFromRepo(type: .shareExtension)
@@ -656,7 +656,7 @@ final class ShareViewController: UIViewController {
                              translatorsController: TranslatorsAndStylesController) -> ExtensionStore {
         let dateParser = DateParser()
 
-        let uploadProcessor = BackgroundUploadProcessor(apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
+        let uploadProcessor = BackgroundUploadProcessor(apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, webDavController: webDavController)
         let backgroundUploader = BackgroundUploader(uploadProcessor: uploadProcessor, schemaVersion: schemaController.version)
         let syncController = SyncController(userId: userId,
                                             apiClient: apiClient,

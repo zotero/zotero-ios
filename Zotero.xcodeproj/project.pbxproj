@@ -355,6 +355,9 @@
 		B31941DD24531F6600BF6296 /* AnnotationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */; };
 		B319D6B6265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B319D6B5265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift */; };
 		B319D6B8265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B319D6B7265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift */; };
+		B31DDA9E27299BD1002CFA05 /* StoreMtimeForAttachmentDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31DDA9D27299BD1002CFA05 /* StoreMtimeForAttachmentDbRequest.swift */; };
+		B31DDA9F27299DF9002CFA05 /* StoreMtimeForAttachmentDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31DDA9D27299BD1002CFA05 /* StoreMtimeForAttachmentDbRequest.swift */; };
+		B31DDAA12729A7DC002CFA05 /* WebDavCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31DDAA02729A7DC002CFA05 /* WebDavCredentials.swift */; };
 		B31EEE5724EBCAF100E3B3AD /* RRect.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5624EBCAF100E3B3AD /* RRect.swift */; };
 		B31EEE5824EBCB2C00E3B3AD /* RRect.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5624EBCAF100E3B3AD /* RRect.swift */; };
 		B31EEE5A24EBD18200E3B3AD /* ReadAnnotationsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5924EBD18200E3B3AD /* ReadAnnotationsDbRequest.swift */; };
@@ -720,7 +723,7 @@
 		B3A2AECE26553DD8004BF3A4 /* NavigationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A2AECD26553DD8004BF3A4 /* NavigationViewController.swift */; };
 		B3A2AEDC2656511D004BF3A4 /* StylesRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A2AEDB2656511D004BF3A4 /* StylesRequest.swift */; };
 		B3A2AEDE26565211004BF3A4 /* RemoteStylesResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A2AEDD26565211004BF3A4 /* RemoteStylesResponse.swift */; };
-		B3A351D92715759D002E597A /* WebDavOptionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351D82715759D002E597A /* WebDavOptionsRequest.swift */; };
+		B3A351D92715759D002E597A /* WebDavCheckRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351D82715759D002E597A /* WebDavCheckRequest.swift */; };
 		B3A351DB2715761D002E597A /* WebDavPropfindRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351DA2715761D002E597A /* WebDavPropfindRequest.swift */; };
 		B3A351DD2715774E002E597A /* WebDavNonexistentPropRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351DC2715774E002E597A /* WebDavNonexistentPropRequest.swift */; };
 		B3A351DF271577D0002E597A /* WebDavTestWriteRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351DE271577D0002E597A /* WebDavTestWriteRequest.swift */; };
@@ -917,6 +920,7 @@
 		B3F3D644255ECF3500F310C2 /* AnnotationViewSeparator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D643255ECF3500F310C2 /* AnnotationViewSeparator.swift */; };
 		B3F47C01243B339F004F8B1E /* TranslatorsControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */; };
 		B3F47E0025B5F550006FA96F /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B30B550424B85A6200F94B59 /* Images.xcassets */; };
+		B3F4F2A12728015700685E1A /* MarkAttachmentsNotUploadedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F4F2A02728015700685E1A /* MarkAttachmentsNotUploadedDbRequest.swift */; };
 		B3F7B0682524A78F00E51377 /* CocoaLumberjack in Frameworks */ = {isa = PBXBuildFile; productRef = B3F7B0672524A78F00E51377 /* CocoaLumberjack */; };
 		B3F7B06A2524A78F00E51377 /* CocoaLumberjackSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B3F7B0692524A78F00E51377 /* CocoaLumberjackSwift */; };
 		B3F7B06F2524A8B700E51377 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = B3F7B06E2524A8B700E51377 /* Alamofire */; };
@@ -932,7 +936,7 @@
 		B3FC7435272195D600F55531 /* WebDavDeleteRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351E2271578B1002E597A /* WebDavDeleteRequest.swift */; };
 		B3FC7436272195DE00F55531 /* WebDavDownloadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351E02715784A002E597A /* WebDavDownloadRequest.swift */; };
 		B3FC7437272195E100F55531 /* WebDavNonexistentPropRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351DC2715774E002E597A /* WebDavNonexistentPropRequest.swift */; };
-		B3FC7438272195E400F55531 /* WebDavOptionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351D82715759D002E597A /* WebDavOptionsRequest.swift */; };
+		B3FC7438272195E400F55531 /* WebDavCheckRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351D82715759D002E597A /* WebDavCheckRequest.swift */; };
 		B3FC7439272195E700F55531 /* WebDavPropfindRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351DA2715761D002E597A /* WebDavPropfindRequest.swift */; };
 		B3FC743A272195EA00F55531 /* WebDavTestWriteRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351DE271577D0002E597A /* WebDavTestWriteRequest.swift */; };
 		B3FC743B272195ED00F55531 /* WebDavWriteRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FC7430272181E500F55531 /* WebDavWriteRequest.swift */; };
@@ -1203,6 +1207,8 @@
 		B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationsViewController.swift; sourceTree = "<group>"; };
 		B319D6B5265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllItemsForUploadDbRequest.swift; sourceTree = "<group>"; };
 		B319D6B7265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllDownloadedAndForUploadItemsDbRequest.swift; sourceTree = "<group>"; };
+		B31DDA9D27299BD1002CFA05 /* StoreMtimeForAttachmentDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreMtimeForAttachmentDbRequest.swift; sourceTree = "<group>"; };
+		B31DDAA02729A7DC002CFA05 /* WebDavCredentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavCredentials.swift; sourceTree = "<group>"; };
 		B31EEE5624EBCAF100E3B3AD /* RRect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RRect.swift; sourceTree = "<group>"; };
 		B31EEE5924EBD18200E3B3AD /* ReadAnnotationsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAnnotationsDbRequest.swift; sourceTree = "<group>"; };
 		B31EEE5B24EBF24300E3B3AD /* StoreChangedAnnotationsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreChangedAnnotationsDbRequest.swift; sourceTree = "<group>"; };
@@ -1479,7 +1485,7 @@
 		B3A2AECD26553DD8004BF3A4 /* NavigationViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NavigationViewController.swift; sourceTree = "<group>"; };
 		B3A2AEDB2656511D004BF3A4 /* StylesRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StylesRequest.swift; sourceTree = "<group>"; };
 		B3A2AEDD26565211004BF3A4 /* RemoteStylesResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteStylesResponse.swift; sourceTree = "<group>"; };
-		B3A351D82715759D002E597A /* WebDavOptionsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavOptionsRequest.swift; sourceTree = "<group>"; };
+		B3A351D82715759D002E597A /* WebDavCheckRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavCheckRequest.swift; sourceTree = "<group>"; };
 		B3A351DA2715761D002E597A /* WebDavPropfindRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavPropfindRequest.swift; sourceTree = "<group>"; };
 		B3A351DC2715774E002E597A /* WebDavNonexistentPropRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavNonexistentPropRequest.swift; sourceTree = "<group>"; };
 		B3A351DE271577D0002E597A /* WebDavTestWriteRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavTestWriteRequest.swift; sourceTree = "<group>"; };
@@ -1651,6 +1657,7 @@
 		B3F3D643255ECF3500F310C2 /* AnnotationViewSeparator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewSeparator.swift; sourceTree = "<group>"; };
 		B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsControllerSpec.swift; sourceTree = "<group>"; };
 		B3F47C04243B4BC0004F8B1E /* Bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Bundled; sourceTree = "<group>"; };
+		B3F4F2A02728015700685E1A /* MarkAttachmentsNotUploadedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkAttachmentsNotUploadedDbRequest.swift; sourceTree = "<group>"; };
 		B3F83807263960FA00E128A6 /* ItemAccessory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemAccessory.swift; sourceTree = "<group>"; };
 		B3FBAC1824570BDE00AA00C0 /* AnnotationPreviewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPreviewController.swift; sourceTree = "<group>"; };
 		B3FC7430272181E500F55531 /* WebDavWriteRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavWriteRequest.swift; sourceTree = "<group>"; };
@@ -1825,6 +1832,7 @@
 				B305645223FC051E003304F2 /* InitializeCustomLibrariesDbRequest.swift */,
 				B37F58652672229D00C4089B /* InstallStyleDbRequest.swift */,
 				B305645423FC051E003304F2 /* MarkAllLibraryObjectChangesAsSyncedDbRequest.swift */,
+				B3F4F2A02728015700685E1A /* MarkAttachmentsNotUploadedDbRequest.swift */,
 				B305645623FC051E003304F2 /* MarkAttachmentUploadedDbRequest.swift */,
 				B305645A23FC051E003304F2 /* MarkCollectionAndItemsAsDeletedDbRequest.swift */,
 				B35FC1EF2628490C00858772 /* MarkFileAsDownloadedDbRequest.swift */,
@@ -1871,6 +1879,7 @@
 				B305646723FC051E003304F2 /* StoreCollectionsDbRequest.swift */,
 				B305645323FC051E003304F2 /* StoreGroupDbRequest.swift */,
 				B305643B23FC051E003304F2 /* StoreItemsDbResponseRequest.swift */,
+				B31DDA9D27299BD1002CFA05 /* StoreMtimeForAttachmentDbRequest.swift */,
 				B3A14DF725A7666C00DF5334 /* StorePageForItemDbRequest.swift */,
 				B305643C23FC051E003304F2 /* StoreSearchesDbRequest.swift */,
 				B305645123FC051E003304F2 /* StoreSettingsDbRequest.swift */,
@@ -1943,10 +1952,10 @@
 				B305649523FC051E003304F2 /* SubmitDeletionsRequest.swift */,
 				B305649023FC051E003304F2 /* UpdatesRequest.swift */,
 				B305649623FC051E003304F2 /* VersionsRequest.swift */,
+				B3A351D82715759D002E597A /* WebDavCheckRequest.swift */,
 				B3A351E2271578B1002E597A /* WebDavDeleteRequest.swift */,
 				B3A351E02715784A002E597A /* WebDavDownloadRequest.swift */,
 				B3A351DC2715774E002E597A /* WebDavNonexistentPropRequest.swift */,
-				B3A351D82715759D002E597A /* WebDavOptionsRequest.swift */,
 				B3A351DA2715761D002E597A /* WebDavPropfindRequest.swift */,
 				B3A351DE271577D0002E597A /* WebDavTestWriteRequest.swift */,
 				B3FC7430272181E500F55531 /* WebDavWriteRequest.swift */,
@@ -2227,6 +2236,7 @@
 				B3202C6427103DEE00485BE4 /* TestControllers.swift */,
 				B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */,
 				B3202C6B271048FF00485BE4 /* WebDavControllerSpec.swift */,
+				B31DDAA02729A7DC002CFA05 /* WebDavCredentials.swift */,
 			);
 			path = ZoteroTests;
 			sourceTree = "<group>";
@@ -4257,7 +4267,7 @@
 				B372CEE32486512500B423AE /* GroupRequest.swift in Sources */,
 				B3748D2226566F6900ED05F8 /* ContainerViewController.swift in Sources */,
 				B3830CDA255451AB00910FE0 /* TagPickerError.swift in Sources */,
-				B3A351D92715759D002E597A /* WebDavOptionsRequest.swift in Sources */,
+				B3A351D92715759D002E597A /* WebDavCheckRequest.swift in Sources */,
 				B340868D25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift in Sources */,
 				B3E381D325F2D78A00F046CE /* ApiLogger.swift in Sources */,
 				B3E8FE192714297200F51458 /* CiteAction.swift in Sources */,
@@ -4287,9 +4297,11 @@
 				B361820D24C9B9D900B30D56 /* NoRotationHostingController.swift in Sources */,
 				B3486B8D26CFAFEA0036A267 /* SingleCitationViewController.swift in Sources */,
 				B3E8FE782714356900F51458 /* GeneralSettingsState.swift in Sources */,
+				B3F4F2A12728015700685E1A /* MarkAttachmentsNotUploadedDbRequest.swift in Sources */,
 				B3E8FE6C2714344D00F51458 /* SettingsAction.swift in Sources */,
 				B3401D612568047D00BB8D6E /* AnnotationViewTextView.swift in Sources */,
 				B30B40612490D84300FAAF6D /* ItemCellModel.swift in Sources */,
+				B31DDA9E27299BD1002CFA05 /* StoreMtimeForAttachmentDbRequest.swift in Sources */,
 				B3C9D60A24DA9D49003EA1EE /* CollectionsSearchAction.swift in Sources */,
 				B3C9D60524DA921B003EA1EE /* CollectionsSearchViewController.swift in Sources */,
 				B3E8FE162714297200F51458 /* CiteActionHandler.swift in Sources */,
@@ -4364,6 +4376,7 @@
 				B3202C6A2710488200485BE4 /* SyncControllerAction+Equatable.swift in Sources */,
 				B3B1C58626651E2A00883597 /* StorageSettingsActionHandlerSpec.swift in Sources */,
 				B34F9FA323743C36004ED34C /* CreatorSummaryFormatterSpec.swift in Sources */,
+				B31DDAA12729A7DC002CFA05 /* WebDavCredentials.swift in Sources */,
 				B3202C692710488200485BE4 /* OHHTTPStubs+Helpers.swift in Sources */,
 				B307E55E22D4A87B00592B3C /* SyncActionsSpec.swift in Sources */,
 				B3B1EDEF250242E700D8BC1E /* CollectionResponseSpec.swift in Sources */,
@@ -4392,7 +4405,7 @@
 				B305676223FC0A0B003304F2 /* DelayIntervals.swift in Sources */,
 				B305676323FC0A0B003304F2 /* DeletableObject.swift in Sources */,
 				B3E4463D248FBD00007FE8AB /* RLink.swift in Sources */,
-				B3FC7438272195E400F55531 /* WebDavOptionsRequest.swift in Sources */,
+				B3FC7438272195E400F55531 /* WebDavCheckRequest.swift in Sources */,
 				B372CEE7248673DF00B423AE /* GroupRequest.swift in Sources */,
 				B305676623FC0A0B003304F2 /* ItemTypes.swift in Sources */,
 				B305676D23FC0A47003304F2 /* SchemaController.swift in Sources */,
@@ -4474,6 +4487,7 @@
 				B305677123FC0A5A003304F2 /* ZoteroApiClient.swift in Sources */,
 				B3D037202604FCBA00BCFB05 /* FileAttachmentView.swift in Sources */,
 				B305677B23FC0C72003304F2 /* Formatter.swift in Sources */,
+				B31DDA9F27299DF9002CFA05 /* StoreMtimeForAttachmentDbRequest.swift in Sources */,
 				B300B33924292A7F00C1FE1E /* SyncTranslatorsDbRequest.swift in Sources */,
 				B3E44640248FBD4A007FE8AB /* RRelation.swift in Sources */,
 				B30566E723FC0821003304F2 /* RegisterUploadRequest.swift in Sources */,

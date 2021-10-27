@@ -79,6 +79,16 @@ extension ObservableType where Element == (HTTPURLResponse, Data) {
 
     func log(identifier: String, startTime: CFAbsoluteTime, request: ApiRequest) -> Observable<Element> {
         return self.do(onNext: { response in
+                   ApiLogger.logData(result: .success(response), time: CFAbsoluteTimeGetCurrent() - startTime, identifier: identifier, request: request)
+               }, onError: { error in
+                   ApiLogger.logData(result: .failure(error), time: CFAbsoluteTimeGetCurrent() - startTime, identifier: identifier, request: request)
+               })
+    }
+}
+
+extension ObservableType where Element == HTTPURLResponse {
+    func log(identifier: String, startTime: CFAbsoluteTime, request: ApiRequest) -> Observable<Element> {
+        return self.do(onNext: { response in
                    ApiLogger.log(result: .success(response), time: CFAbsoluteTimeGetCurrent() - startTime, identifier: identifier, request: request)
                }, onError: { error in
                    ApiLogger.log(result: .failure(error), time: CFAbsoluteTimeGetCurrent() - startTime, identifier: identifier, request: request)
@@ -166,9 +176,9 @@ extension DataResponse where Success == Data {
         let identifier = ApiLogger.identifier(method: request.httpMethod.rawValue, url: (httpRequest.url?.absoluteString ?? request.debugUrl))
         switch self.result {
         case .success(let data):
-            ApiLogger.log(result: .success((response, data)), time: CFAbsoluteTimeGetCurrent() - startTime, identifier: identifier, request: request)
+            ApiLogger.logData(result: .success((response, data)), time: CFAbsoluteTimeGetCurrent() - startTime, identifier: identifier, request: request)
         case .failure(let error):
-            ApiLogger.log(result: .failure(error), time: CFAbsoluteTimeGetCurrent() - startTime, identifier: identifier, request: request)
+            ApiLogger.logData(result: .failure(error), time: CFAbsoluteTimeGetCurrent() - startTime, identifier: identifier, request: request)
         }
         return self
     }

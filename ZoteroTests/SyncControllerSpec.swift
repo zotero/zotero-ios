@@ -27,6 +27,7 @@ final class SyncControllerSpec: QuickSpec {
     private var realmConfig: Realm.Configuration!
     private var realm: Realm!
     private var syncController: SyncController!
+    private var webDavController: WebDavController!
 
     private func createNewSyncController() {
         // Create new realm with empty data
@@ -43,15 +44,18 @@ final class SyncControllerSpec: QuickSpec {
         }
         // Create DB storage with the same config
         let dbStorage = RealmDbStorage(config: config)
+        // Create WebDavController
+        let webDavSession = WebDavCredentials(username: "user", password: "password", scheme: .http, url: "127.0.0.1:9999", isVerified: false)
+        let webDavController = WebDavControllerImpl(apiClient: TestControllers.apiClient, dbStorage: dbStorage, fileStorage: TestControllers.fileStorage, sessionStorage: webDavSession)
         // Create background uploader with storage
-        let backgroundUploader = BackgroundUploader(uploadProcessor: BackgroundUploadProcessor(apiClient: TestControllers.apiClient, dbStorage: dbStorage, fileStorage: TestControllers.fileStorage),
-                                                    schemaVersion: 3)
+        let backgroundProcessor = BackgroundUploadProcessor(apiClient: TestControllers.apiClient, dbStorage: dbStorage, fileStorage: TestControllers.fileStorage, webDavController: webDavController)
+        let backgroundUploader = BackgroundUploader(uploadProcessor: backgroundProcessor, schemaVersion: 3)
 
         self.realmConfig = config
         self.realm = realm
         self.syncController = SyncController(userId: self.userId, apiClient: TestControllers.apiClient, dbStorage: dbStorage, fileStorage: TestControllers.fileStorage,
                                              schemaController: TestControllers.schemaController, dateParser: TestControllers.dateParser, backgroundUploader: backgroundUploader,
-                                             syncDelayIntervals: [0, 1, 2, 3], conflictDelays: [0, 1, 2, 3])
+                                             webDavController: webDavController, syncDelayIntervals: [0, 1, 2, 3], conflictDelays: [0, 1, 2, 3])
         self.syncController.set(coordinator: TestConflictCoordinator())
     }
 

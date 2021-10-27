@@ -33,7 +33,17 @@ struct ApiLogger {
         return identifier
     }
 
-    static func log(result: Result<(HTTPURLResponse, Data), Error>, time: CFAbsoluteTime, identifier: String, request: ApiRequest) {
+    static func log(result: Result<HTTPURLResponse, Error>, time: CFAbsoluteTime, identifier: String, request: ApiRequest) {
+        switch result {
+        case .failure(let error):
+            DDLogInfo("\(String(format: "(+%07.0f)", (time * 1000)))\(identifier) failed - \(error)")
+
+        case .success((let response)):
+            DDLogInfo("\(String(format: "(+%07.0f)", (time * 1000)))\(identifier) succeeded with \(response.statusCode)")
+        }
+    }
+
+    static func logData(result: Result<(HTTPURLResponse, Data), Error>, time: CFAbsoluteTime, identifier: String, request: ApiRequest) {
         switch result {
         case .failure(let error):
             DDLogInfo("\(String(format: "(+%07.0f)", (time * 1000)))\(identifier) failed - \(error)")
