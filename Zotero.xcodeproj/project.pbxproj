@@ -661,6 +661,8 @@
 		B37D8E6424DC21D300F526C5 /* CollectionCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B37D8E6324DC21D300F526C5 /* CollectionCell.xib */; };
 		B37D8E6924DC2BEE00F526C5 /* CollectionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37D8E6824DC2BEE00F526C5 /* CollectionRow.swift */; };
 		B37D8E6A24DC2BF300F526C5 /* CollectionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37D8E6824DC2BEE00F526C5 /* CollectionRow.swift */; };
+		B37DD576272AAF500038537D /* FilterAttachmentsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37DD575272AAF500038537D /* FilterAttachmentsDbRequest.swift */; };
+		B37DD577272AB0930038537D /* FilterAttachmentsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37DD575272AAF500038537D /* FilterAttachmentsDbRequest.swift */; };
 		B37F58662672229D00C4089B /* InstallStyleDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37F58652672229D00C4089B /* InstallStyleDbRequest.swift */; };
 		B37F7ABC23955031008A51B4 /* CreateItemRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */; };
 		B3830CDA255451AB00910FE0 /* TagPickerError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CD7255451AA00910FE0 /* TagPickerError.swift */; };
@@ -1434,6 +1436,7 @@
 		B37C5B6E26454130009A37E5 /* NoteEditorViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NoteEditorViewController.xib; sourceTree = "<group>"; };
 		B37D8E6324DC21D300F526C5 /* CollectionCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CollectionCell.xib; sourceTree = "<group>"; };
 		B37D8E6824DC2BEE00F526C5 /* CollectionRow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionRow.swift; sourceTree = "<group>"; };
+		B37DD575272AAF500038537D /* FilterAttachmentsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterAttachmentsDbRequest.swift; sourceTree = "<group>"; };
 		B37F58652672229D00C4089B /* InstallStyleDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallStyleDbRequest.swift; sourceTree = "<group>"; };
 		B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateItemRequest.swift; sourceTree = "<group>"; };
 		B3830CD7255451AA00910FE0 /* TagPickerError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagPickerError.swift; sourceTree = "<group>"; };
@@ -1829,6 +1832,7 @@
 				B305644923FC051E003304F2 /* EditItemDetailDbRequest.swift */,
 				B305644D23FC051E003304F2 /* EditNoteDbRequest.swift */,
 				B3B613F6260B844B00B92017 /* EmptyTrashDbRequest.swift */,
+				B37DD575272AAF500038537D /* FilterAttachmentsDbRequest.swift */,
 				B305645223FC051E003304F2 /* InitializeCustomLibrariesDbRequest.swift */,
 				B37F58652672229D00C4089B /* InstallStyleDbRequest.swift */,
 				B305645423FC051E003304F2 /* MarkAllLibraryObjectChangesAsSyncedDbRequest.swift */,
@@ -4194,6 +4198,7 @@
 				B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */,
 				B319D6B8265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift in Sources */,
 				B30566A723FC051F003304F2 /* DelayIntervals.swift in Sources */,
+				B37DD576272AAF500038537D /* FilterAttachmentsDbRequest.swift in Sources */,
 				B3E8FE042714292E00F51458 /* StorageSettingsAction.swift in Sources */,
 				B3A081C025D2AD390088EC24 /* LoadDeletionsSyncAction.swift in Sources */,
 				B3DCDF1F240945B40039ED0D /* CollectionPickerActionHandler.swift in Sources */,
@@ -4512,6 +4517,7 @@
 				B34ACC7F2514EB6100040C17 /* AnnotationColorGenerator.swift in Sources */,
 				B305670423FC08A6003304F2 /* ReadAllCustomLibrariesDbRequest.swift in Sources */,
 				B305676E23FC0A52003304F2 /* ApiClient.swift in Sources */,
+				B37DD577272AB0930038537D /* FilterAttachmentsDbRequest.swift in Sources */,
 				B30566E623FC081F003304F2 /* SettingsRequest.swift in Sources */,
 				B305670C23FC08BA003304F2 /* ReadItemDbRequest.swift in Sources */,
 				B305670923FC08B3003304F2 /* ReadCollectionDbRequest.swift in Sources */,

@@ -725,9 +725,7 @@ final class SyncController: SynchronizationController {
                     case .group(let groupId):
                         // We need to check permissions for group
                         if libraryData.canEditMetadata {
-                            let actions = self.createUpdateActions(updates: libraryData.updates,
-                                                                   deletions: libraryData.deletions,
-                                                                   libraryId: libraryId)
+                            let actions = self.createUpdateActions(updates: libraryData.updates, deletions: libraryData.deletions, libraryId: libraryId)
                             writeCount += actions.count
                             allActions.append(contentsOf: actions)
                         } else {
@@ -1113,7 +1111,8 @@ final class SyncController: SynchronizationController {
 
     private func performDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String],
                                   conflictMode: PerformDeletionsDbRequest.ConflictResolutionMode) {
-        let action = PerformDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, conflictMode: conflictMode, dbStorage: self.dbStorage)
+        let action = PerformDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, conflictMode: conflictMode, dbStorage: self.dbStorage,
+                                                webDavController: self.webDavController)
         action.result.subscribe(on: self.workScheduler)
                      .subscribe(onSuccess: { [weak self] conflicts in
                          self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1248,9 +1247,8 @@ final class SyncController: SynchronizationController {
     }
 
     private func processSubmitDeletion(for batch: DeleteBatch) {
-        let result = SubmitDeletionSyncAction(keys: batch.keys, object: batch.object, version: batch.version, libraryId: batch.libraryId,
-                                              userId: self.userId, apiClient: self.apiClient, dbStorage: self.dbStorage,
-                                              queue: self.workQueue, scheduler: self.workScheduler).result
+        let result = SubmitDeletionSyncAction(keys: batch.keys, object: batch.object, version: batch.version, libraryId: batch.libraryId, userId: self.userId, apiClient: self.apiClient,
+                                              dbStorage: self.dbStorage, webDavController: self.webDavController, queue: self.workQueue, scheduler: self.workScheduler).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] version in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in

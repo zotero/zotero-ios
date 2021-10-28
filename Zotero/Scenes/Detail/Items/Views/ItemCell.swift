@@ -99,7 +99,7 @@ final class ItemCell: UITableViewCell {
         self.key = item.key
 
         self.typeImageView.image = UIImage(named: item.typeIconName)
-        self.titleLabel.text = item.title.isEmpty ? " " : item.title
+        self.titleLabel.text = "(\(item.key))" + (item.title.isEmpty ? " " : item.title)
         self.titleLabel.accessibilityLabel = self.titleAccessibilityLabel(for: item)
         self.subtitleLabel.text = item.subtitle.isEmpty ? " " : item.subtitle
         self.subtitleLabel.accessibilityLabel = item.subtitle

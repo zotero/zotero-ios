@@ -47,6 +47,7 @@ protocol WebDavController: AnyObject {
     func urlForDownload(key: String, queue: DispatchQueue) -> Single<URL>
     func prepareForUpload(key: String, mtime: Int, hash: String, file: File, queue: DispatchQueue) -> Single<WebDavUploadResult>
     func finishUpload(key: String, result: Result<(Int, String, URL), Swift.Error>, file: File?, queue: DispatchQueue) -> Single<()>
+    func delete(keys: [String], queue: DispatchQueue) -> Single<()>
 }
 
 final class WebDavControllerImpl: WebDavController {
@@ -137,6 +138,32 @@ final class WebDavControllerImpl: WebDavController {
                 return Single.just(())
             }
         }
+    }
+
+    func delete(keys: [String], queue: DispatchQueue) -> Single<()> {
+        return self.checkServerIfNeeded(queue: queue)
+                   .flatMap { url -> Single<()> in
+                       var singles: [Observable<()>] = []
+                       for key in keys {
+                           singles.append(self.delete(url: url.appendingPathComponent(key + ".prop"), queue: queue))
+                           singles.append(self.delete(url: url.appendingPathComponent(key + ".zip"), queue: queue))
+                       }
+                       let observable: Observable<()> = Observable.concat(singles)
+
+                       return Single.create { subscriber -> Disposable in
+                           return observable.subscribe(onNext: nil,
+                                                       onError: { error in
+                                                           subscriber(.failure(error))
+                                                       }, onCompleted: {
+                                                           subscriber(.success(()))
+                                                       }, onDisposed: nil)
+                       }
+                   }
+    }
+
+    private func delete(url: URL, queue: DispatchQueue) -> Observable<()> {
+        let request = WebDavDeleteRequest(url: url)
+        return self.apiClient.send(request: request, queue: queue).flatMap({ _ in return Single.just(()) }).asObservable()
     }
 
     private func update(mtime: Int, key: String) -> Single<()> {
