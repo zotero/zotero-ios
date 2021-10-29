@@ -109,6 +109,8 @@ final class SyncController: SynchronizationController {
         case markGroupAsLocalOnly(Int)
         /// Fetch group data and store to db.
         case syncGroupToDb(Int)
+        /// Removes files of deleted attachment items from remote WebDAV storage.
+        case performWebDavDeletions(LibraryIdentifier)
 
         var logString: String {
             switch self {
@@ -138,7 +140,8 @@ final class SyncController: SynchronizationController {
                  .revertLibraryToOriginal,
                  .markChangesAsResolved,
                  .resolveDeletedGroup,
-                 .resolveGroupMetadataWritePermission:
+                 .resolveGroupMetadataWritePermission,
+                 .performWebDavDeletions:
                 return "\(self)"
             }
         }
@@ -378,7 +381,7 @@ final class SyncController: SynchronizationController {
                 if !mismatchedLibraries.contains(libraryId) {
                     mismatchedLibraries.append(libraryId)
                 }
-            case .unknown, .schema, .parsing, .apiError, .unchanged, .quotaLimit, .attachmentMissing, .insufficientSpace: continue
+            case .unknown, .schema, .parsing, .apiError, .unchanged, .quotaLimit, .attachmentMissing, .insufficientSpace, .webDavDeletion, .webDavDeletionFailed: continue
             }
         }
 
@@ -530,6 +533,8 @@ final class SyncController: SynchronizationController {
             self.resolve(conflict: .groupRemoved(groupId, name))
         case .resolveGroupMetadataWritePermission(let groupId, let name):
             self.resolve(conflict: .groupWriteDenied(groupId, name))
+        case .performWebDavDeletions(let libraryId):
+            self.performWebDavDeletions(libraryId: libraryId)
         }
     }
 
@@ -707,13 +712,7 @@ final class SyncController: SynchronizationController {
         var allActions: [Action] = []
 
         for libraryData in data {
-            let libraryId: LibraryIdentifier
-            switch libraryData.identifier {
-            case .custom(let type):
-                libraryId = .custom(type)
-            case .group(let identifier):
-                libraryId = .group(identifier)
-            }
+            let libraryId = libraryData.identifier
 
             switch creationOptions {
             case .forceDownloads:
@@ -739,6 +738,11 @@ final class SyncController: SynchronizationController {
                     }
                 } else if creationOptions == .automatic {
                     allActions.append(contentsOf: self.createDownloadActions(for: libraryId, versions: libraryData.versions))
+                }
+
+                // If there are pending WebDAV deletions, always try to remove remaining files.
+                if libraryData.hasWebDavDeletions {
+                    allActions.append(.performWebDavDeletions(libraryId))
                 }
             }
         }
@@ -1111,8 +1115,7 @@ final class SyncController: SynchronizationController {
 
     private func performDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String],
                                   conflictMode: PerformDeletionsDbRequest.ConflictResolutionMode) {
-        let action = PerformDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, conflictMode: conflictMode, dbStorage: self.dbStorage,
-                                                webDavController: self.webDavController)
+        let action = PerformDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, conflictMode: conflictMode, dbStorage: self.dbStorage)
         action.result.subscribe(on: self.workScheduler)
                      .subscribe(onSuccess: { [weak self] conflicts in
                          self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1380,6 +1383,25 @@ final class SyncController: SynchronizationController {
         case .nonFatal(let error):
             self.handleNonFatal(error: error, libraryId: libraryId, version: nil)
         }
+    }
+
+    private func performWebDavDeletions(libraryId: LibraryIdentifier) {
+        let result = DeleteWebDavFilesSyncAction(libraryId: libraryId, dbStorage: self.dbStorage, webDavController: self.webDavController, queue: self.workQueue).result
+        result.subscribe(on: self.workScheduler)
+              .subscribe(onSuccess: { [weak self] failures in
+                  self?.accessQueue.async(flags: .barrier) { [weak self] in
+                      if failures.isEmpty {
+                          self?.processNextAction()
+                      } else {
+                          self?.handleNonFatal(error: .webDavDeletion(count: failures.count, library: libraryId.debugName), libraryId: libraryId, version: nil)
+                      }
+                  }
+              }, onFailure: { [weak self] error in
+                  self?.accessQueue.async(flags: .barrier) { [weak self] in
+                      self?.handleNonFatal(error: .webDavDeletionFailed(error: error.localizedDescription, library: libraryId.debugName), libraryId: libraryId, version: nil)
+                  }
+              })
+              .disposed(by: self.disposeBag)
     }
 
     // MARK: - Helpers
@@ -1679,7 +1701,8 @@ fileprivate extension SyncController.Action {
              .syncSettings(let libraryId, _),
              .markChangesAsResolved(let libraryId),
              .revertLibraryToOriginal(let libraryId),
-             .createUploadActions(let libraryId):
+             .createUploadActions(let libraryId),
+             .performWebDavDeletions(let libraryId):
             return libraryId
         }
     }
@@ -1688,11 +1711,9 @@ fileprivate extension SyncController.Action {
         switch self {
         case .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncDeletions:
             return true
-        case .loadKeyPermissions, .createLibraryActions, .syncSettings, .syncVersions,
-             .storeVersion, .submitDeleteBatch, .submitWriteBatch, .deleteGroup,
-             .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal, .uploadAttachment,
-             .createUploadActions, .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb, .performDeletions, .restoreDeletions,
-             .storeDeletionVersion:
+        case .loadKeyPermissions, .createLibraryActions, .syncSettings, .syncVersions, .storeVersion, .submitDeleteBatch, .submitWriteBatch, .deleteGroup, .markChangesAsResolved,
+             .markGroupAsLocalOnly, .revertLibraryToOriginal, .uploadAttachment, .createUploadActions, .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb, .performDeletions, .restoreDeletions,
+             .storeDeletionVersion, .performWebDavDeletions:
             return false
         }
     }
@@ -1701,11 +1722,9 @@ fileprivate extension SyncController.Action {
         switch self {
         case .submitDeleteBatch, .submitWriteBatch, .uploadAttachment:
             return true
-        case .loadKeyPermissions, .createLibraryActions, .syncSettings, .syncVersions,
-             .storeVersion, .syncDeletions, .deleteGroup,
-             .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal,
-             .createUploadActions, .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncGroupVersions,
-             .syncGroupToDb, .syncBatchesToDb, .performDeletions, .restoreDeletions, .storeDeletionVersion:
+        case .loadKeyPermissions, .createLibraryActions, .syncSettings, .syncVersions, .storeVersion, .syncDeletions, .deleteGroup, .markChangesAsResolved, .markGroupAsLocalOnly,
+             .revertLibraryToOriginal, .createUploadActions, .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb, .performDeletions,
+             .restoreDeletions, .storeDeletionVersion, .performWebDavDeletions:
             return false
         }
     }
@@ -1718,11 +1737,9 @@ fileprivate extension SyncController.Action {
             return "Write \(batch.parameters.count) changes for \(batch.object) in \(batch.libraryId.debugName)\n\(batch.parameters)"
         case .uploadAttachment(let upload):
             return "Upload \(upload.filename) (\(upload.contentType)) in \(upload.libraryId.debugName)\n\(upload.file.createUrl().absoluteString)"
-        case .loadKeyPermissions, .createLibraryActions, .syncSettings, .syncVersions,
-             .storeVersion, .syncDeletions, .deleteGroup,
-             .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal,
-             .createUploadActions, .resolveDeletedGroup, .resolveGroupMetadataWritePermission,
-             .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb, .performDeletions, .restoreDeletions, .storeDeletionVersion:
+        case .loadKeyPermissions, .createLibraryActions, .syncSettings, .syncVersions, .storeVersion, .syncDeletions, .deleteGroup, .markChangesAsResolved, .markGroupAsLocalOnly,
+             .revertLibraryToOriginal, .createUploadActions, .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb, .performDeletions,
+             .restoreDeletions, .storeDeletionVersion, .performWebDavDeletions:
             return "Unknown action"
         }
     }

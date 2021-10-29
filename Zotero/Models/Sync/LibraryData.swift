@@ -17,10 +17,9 @@ struct LibraryData {
     let updates: [WriteBatch]
     let deletions: [DeleteBatch]
     let hasUpload: Bool
+    let hasWebDavDeletions: Bool
 
-    private static func updates(from chunkedParams: [SyncObject: [[[String: Any]]]],
-                                version: Int,
-                                libraryId: LibraryIdentifier) -> [WriteBatch] {
+    private static func updates(from chunkedParams: [SyncObject: [[[String: Any]]]], version: Int, libraryId: LibraryIdentifier) -> [WriteBatch] {
         var batches: [WriteBatch] = []
 
         let appendBatch: (SyncObject) -> Void = { object in
@@ -37,9 +36,7 @@ struct LibraryData {
         return batches
     }
 
-    private static func deletions(from chunkedKeys: [SyncObject: [[String]]],
-                                  version: Int,
-                                  libraryId: LibraryIdentifier) -> [DeleteBatch] {
+    private static func deletions(from chunkedKeys: [SyncObject: [[String]]], version: Int, libraryId: LibraryIdentifier) -> [DeleteBatch] {
         var batches: [DeleteBatch] = []
 
         let appendBatch: (SyncObject) -> Void = { object in
@@ -55,7 +52,7 @@ struct LibraryData {
         return batches
     }
 
-    init(object: RCustomLibrary, loadVersions: Bool, userId: Int, chunkedUpdateParams: [SyncObject: [[[String: Any]]]], chunkedDeletionKeys: [SyncObject: [[String]]], hasUpload: Bool) {
+    init(object: RCustomLibrary, loadVersions: Bool, userId: Int, chunkedUpdateParams: [SyncObject: [[[String: Any]]]], chunkedDeletionKeys: [SyncObject: [[String]]], hasUpload: Bool, hasWebDavDeletions: Bool) {
         let type = object.type
         let versions = loadVersions ? Versions(versions: object.versions) : Versions.empty
         let maxVersion = versions.max
@@ -68,9 +65,10 @@ struct LibraryData {
         self.hasUpload = hasUpload
         self.updates = LibraryData.updates(from: chunkedUpdateParams, version: maxVersion, libraryId: .custom(type))
         self.deletions = LibraryData.deletions(from: chunkedDeletionKeys, version: maxVersion, libraryId: .custom(type))
+        self.hasWebDavDeletions = hasWebDavDeletions
     }
 
-    init(object: RGroup, loadVersions: Bool, chunkedUpdateParams: [SyncObject: [[[String: Any]]]], chunkedDeletionKeys: [SyncObject: [[String]]], hasUpload: Bool) {
+    init(object: RGroup, loadVersions: Bool, chunkedUpdateParams: [SyncObject: [[[String: Any]]]], chunkedDeletionKeys: [SyncObject: [[String]]], hasUpload: Bool, hasWebDavDeletions: Bool) {
         let versions = loadVersions ? Versions(versions: object.versions) : Versions.empty
         let maxVersion = versions.max
 
@@ -82,12 +80,12 @@ struct LibraryData {
         self.hasUpload = hasUpload
         self.updates = LibraryData.updates(from: chunkedUpdateParams, version: maxVersion, libraryId: .group(object.identifier))
         self.deletions = LibraryData.deletions(from: chunkedDeletionKeys, version: maxVersion, libraryId: .group(object.identifier))
+        self.hasWebDavDeletions = hasWebDavDeletions
     }
 
     // MARK: - Testing only
 
-    init(identifier: LibraryIdentifier, name: String, versions: Versions,
-         updates: [WriteBatch] = [], deletions: [DeleteBatch] = []) {
+    init(identifier: LibraryIdentifier, name: String, versions: Versions, updates: [WriteBatch] = [], deletions: [DeleteBatch] = []) {
         self.identifier = identifier
         self.name = name
         self.versions = versions
@@ -96,5 +94,6 @@ struct LibraryData {
         self.updates = updates
         self.deletions = deletions
         self.hasUpload = false
+        self.hasWebDavDeletions = false
     }
 }

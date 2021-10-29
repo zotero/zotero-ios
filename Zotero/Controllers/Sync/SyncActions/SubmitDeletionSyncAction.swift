@@ -33,31 +33,9 @@ struct SubmitDeletionSyncAction: SyncAction {
                              .flatMap({ _, response -> Single<Int> in
                                  return Single.just(response.allHeaderFields.lastModifiedVersion)
                              })
-                             .flatMap({ version -> Single<(Int, [String])> in
-                                 return self.loadWebDavAttachmentKeys().flatMap({ Single.just((version, $0)) })
+                             .flatMap({ version -> Single<Int> in
+                                 return self.deleteFromDb(version: version).flatMap({ Single.just(version) })
                              })
-                             .flatMap({ version, keys -> Single<(Int, [String])> in
-                                 return self.deleteFromDb(version: version).flatMap({ Single.just((version, keys)) })
-                             })
-                             .flatMap({ version, keys -> Single<Int> in
-                                 guard !keys.isEmpty else { return Single.just(version) }
-                                 return self.webDavController.delete(keys: keys, queue: self.queue).flatMap({ Single.just(version) })
-                             })
-    }
-
-    private func loadWebDavAttachmentKeys() -> Single<[String]> {
-        guard self.libraryId == .custom(.myLibrary) && self.object == .item && self.webDavController.sessionStorage.isEnabled else { return Single.just([]) }
-
-        return Single.create { subscriber in
-            do {
-                let keys = try self.dbStorage.createCoordinator().perform(request: FilterAttachmentsDbRequest(keys: self.keys, libraryId: self.libraryId))
-                subscriber(.success(keys))
-            } catch let error {
-                DDLogError("SubmitDeletionSyncAction: can't filter attachments from keys - \(error)")
-                subscriber(.failure(error))
-            }
-            return Disposables.create()
-        }
     }
 
     private func deleteFromDb(version: Int) -> Single<()> {
@@ -71,6 +49,7 @@ struct SubmitDeletionSyncAction: SyncAction {
                     requests.insert(DeleteObjectsDbRequest<RCollection>(keys: self.keys, libraryId: self.libraryId), at: 0)
                 case .item, .trash:
                     requests.insert(DeleteObjectsDbRequest<RItem>(keys: self.keys, libraryId: self.libraryId), at: 0)
+                    requests.append(CreateWebDavDeletionsDbRequest(keys: self.keys, libraryId: self.libraryId))
                 case .search:
                     requests.insert(DeleteObjectsDbRequest<RSearch>(keys: self.keys, libraryId: self.libraryId), at: 0)
                 case .settings: break

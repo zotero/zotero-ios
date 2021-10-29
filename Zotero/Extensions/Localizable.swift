@@ -545,6 +545,14 @@ internal enum L10n {
       internal static let quotaReachedShort = L10n.tr("Localizable", "errors.sync_toolbar.quota_reached_short")
       /// Zotero services are temporarily unavailable. Please try again in a few minutes.
       internal static let unavailable = L10n.tr("Localizable", "errors.sync_toolbar.unavailable")
+      /// Could not delete files from your WebDAV server: "%@".
+      internal static func webdavError(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "errors.sync_toolbar.webdav_error", String(describing: p1))
+      }
+      /// Could not delete %d file(s) from your WebDAV server.
+      internal static func webdavError2(_ p1: Int) -> String {
+        return L10n.tr("Localizable", "errors.sync_toolbar.webdav_error2", p1)
+      }
     }
     internal enum Translators {
       /// Could not update translators from bundle. Would you like to try again?

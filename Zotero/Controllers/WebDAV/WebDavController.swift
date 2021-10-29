@@ -40,6 +40,12 @@ enum WebDavError {
     }
 }
 
+struct WebDavDeletionResult {
+    let succeeded: [String]
+    let missing: [String]
+    let failed: [String]
+}
+
 protocol WebDavController: AnyObject {
     var sessionStorage: WebDavSessionStorage { get }
 
@@ -47,7 +53,7 @@ protocol WebDavController: AnyObject {
     func urlForDownload(key: String, queue: DispatchQueue) -> Single<URL>
     func prepareForUpload(key: String, mtime: Int, hash: String, file: File, queue: DispatchQueue) -> Single<WebDavUploadResult>
     func finishUpload(key: String, result: Result<(Int, String, URL), Swift.Error>, file: File?, queue: DispatchQueue) -> Single<()>
-    func delete(keys: [String], queue: DispatchQueue) -> Single<()>
+    func delete(keys: [String], queue: DispatchQueue) -> Single<WebDavDeletionResult>
 }
 
 final class WebDavControllerImpl: WebDavController {
@@ -62,12 +68,14 @@ final class WebDavControllerImpl: WebDavController {
     private unowned let dbStorage: DbStorage
     private unowned let fileStorage: FileStorage
     let sessionStorage: WebDavSessionStorage
+    private let deletionQueue: DispatchQueue
 
     init(apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, sessionStorage: WebDavSessionStorage) {
         self.apiClient = apiClient
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.sessionStorage = sessionStorage
+        self.deletionQueue = DispatchQueue(label: "org.zotero.WebDavController.DeletionQueue", qos: .utility)
     }
 
     /// Creates url in WebDAV server of item which should be downloaded.
@@ -140,9 +148,9 @@ final class WebDavControllerImpl: WebDavController {
         }
     }
 
-    func delete(keys: [String], queue: DispatchQueue) -> Single<()> {
+    func delete(keys: [String], queue: DispatchQueue) -> Single<WebDavDeletionResult> {
         return self.checkServerIfNeeded(queue: queue)
-                   .flatMap { url -> Single<()> in
+                   .flatMap { url -> Single<WebDavDeletionResult> in
                        var singles: [Observable<()>] = []
                        for key in keys {
                            singles.append(self.delete(url: url.appendingPathComponent(key + ".prop"), queue: queue))
@@ -155,7 +163,7 @@ final class WebDavControllerImpl: WebDavController {
                                                        onError: { error in
                                                            subscriber(.failure(error))
                                                        }, onCompleted: {
-                                                           subscriber(.success(()))
+                                                           subscriber(.success(WebDavDeletionResult(succeeded: [], missing: [], failed: [])))
                                                        }, onDisposed: nil)
                        }
                    }

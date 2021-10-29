@@ -53,6 +53,8 @@ enum SyncError {
         case unchanged
         case attachmentMissing(key: String, title: String)
         case insufficientSpace
+        case webDavDeletion(count: Int, library: String)
+        case webDavDeletionFailed(error: String, library: String)
 
         var isVersionMismatch: Bool {
             switch self {

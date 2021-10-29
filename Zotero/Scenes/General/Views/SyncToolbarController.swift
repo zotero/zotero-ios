@@ -123,6 +123,10 @@ final class SyncToolbarController {
                     }
                 case .insufficientSpace:
                     message += L10n.Errors.SyncToolbar.insufficientSpace
+                case .webDavDeletionFailed(let error, _):
+                    message += L10n.Errors.SyncToolbar.webdavError(error)
+                case .webDavDeletion(let count, _):
+                    message += L10n.Errors.SyncToolbar.webdavError2(count)
                 case .unchanged: break
                 }
             }
