@@ -12,23 +12,23 @@ import CocoaLumberjackSwift
 import RxSwift
 
 struct DeleteWebDavFilesSyncAction: SyncAction {
-    typealias Result = [String]
+    typealias Result = Set<String>
 
     let libraryId: LibraryIdentifier
     unowned let dbStorage: DbStorage
     unowned let webDavController: WebDavController
     let queue: DispatchQueue
 
-    var result: Single<[String]> {
+    var result: Single<Set<String>> {
         return self.loadDeletions()
                    .flatMap({ keys -> Single<WebDavDeletionResult> in
                        return self.webDavController.delete(keys: keys, queue: self.queue)
                    })
-                   .flatMap({ result -> Single<[String]> in
+                   .flatMap({ result -> Single<Set<String>> in
                        if result.succeeded.isEmpty && result.missing.isEmpty {
                            return Single.just(result.failed)
                        }
-                       return self.removeDeletions(keys: (result.succeeded + result.missing)).flatMap({ Single.just(result.failed) })
+                       return self.removeDeletions(keys: (result.succeeded.union(result.missing))).flatMap({ Single.just(result.failed) })
                    })
     }
 
@@ -45,7 +45,7 @@ struct DeleteWebDavFilesSyncAction: SyncAction {
         }
     }
 
-    private func removeDeletions(keys: [String]) -> Single<()> {
+    private func removeDeletions(keys: Set<String>) -> Single<()> {
         return Single.create { subscriber in
             do {
                 try self.dbStorage.createCoordinator().perform(request: DeleteWebDavDeletionsDbRequest(keys: keys, libraryId: self.libraryId))

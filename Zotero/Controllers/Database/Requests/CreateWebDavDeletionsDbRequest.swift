@@ -10,21 +10,41 @@ import Foundation
 
 import RealmSwift
 
-struct CreateWebDavDeletionsDbRequest: DbRequest {
+struct CreateWebDavDeletionsDbRequest: DbResponseRequest {
+    typealias Response = Bool
+
     let keys: [String]
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return true }
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
-    func process(in database: Realm) throws {
-        // Create web dav deletion only for attachment items.
-        let items = database.objects(RItem.self).filter(.keys(self.keys, in: self.libraryId)).filter(.item(type: ItemTypes.attachment))
+    func process(in database: Realm) throws -> Bool {
+        var didCreateDeletion = false
+        let items = database.objects(RItem.self).filter(.keys(self.keys, in: self.libraryId))
+
         for item in items {
-            let deletion = RWebDavDeletion()
-            deletion.key = item.key
-            deletion.libraryId = self.libraryId
-            database.add(deletion)
+            if item.rawType == ItemTypes.attachment {
+                // Create WebDAV deletion only for attachment items.
+                didCreateDeletion = didCreateDeletion || self.createDeletionIfNeeded(for: item.key, database: database)
+            } else {
+                // Check children of deleted items for attachments.
+                let items = item.children.filter(.item(type: ItemTypes.attachment))
+                for item in items {
+                    didCreateDeletion = didCreateDeletion || self.createDeletionIfNeeded(for: item.key, database: database)
+                }
+            }
         }
+
+        return didCreateDeletion
+    }
+
+    private func createDeletionIfNeeded(for key: String, database: Realm) -> Bool {
+        guard database.objects(RWebDavDeletion.self).filter(.key(key, in: self.libraryId)).first == nil else { return false }
+        let deletion = RWebDavDeletion()
+        deletion.key = key
+        deletion.libraryId = self.libraryId
+        database.add(deletion)
+        return true
     }
 }

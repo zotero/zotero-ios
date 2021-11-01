@@ -11,7 +11,7 @@ import Foundation
 import RealmSwift
 
 struct DeleteWebDavDeletionsDbRequest: DbRequest {
-    let keys: [String]
+    let keys: Set<String>
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return true }

@@ -106,7 +106,7 @@ protocol ApiClient: AnyObject {
     func download(request: ApiDownloadRequest) -> Observable<DownloadRequest>
     func upload(request: ApiRequest, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<UploadRequest>
     func upload(request: ApiRequest, data: Data) -> Single<UploadRequest>
-    func operation(from request: ApiRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data, HTTPURLResponse), Error>) -> Void) -> ApiOperation
+    func operation(from request: ApiRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data?, HTTPURLResponse), Error>) -> Void) -> ApiOperation
 }
 
 protocol ApiRequestCreator: AnyObject {

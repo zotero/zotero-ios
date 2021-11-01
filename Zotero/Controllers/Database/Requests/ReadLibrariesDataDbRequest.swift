@@ -16,6 +16,7 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
     let identifiers: [LibraryIdentifier]?
     let fetchUpdates: Bool
     let loadVersions: Bool
+    let webDavEnabled: Bool
 
     var needsWrite: Bool { return false }
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
@@ -34,7 +35,7 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
             let libraryId = LibraryIdentifier.custom(library.type)
             let (updates, hasUpload) = try self.updates(for: libraryId, database: database)
             let deletions = try self.deletions(for: libraryId, database: database)
-            let hasWebDavDeletions = !Defaults.shared.webDavEnabled ? false : !database.objects(RWebDavDeletion.self).isEmpty
+            let hasWebDavDeletions = !self.webDavEnabled ? false : !database.objects(RWebDavDeletion.self).isEmpty
             return LibraryData(object: library, loadVersions: self.loadVersions, userId: userId, chunkedUpdateParams: updates, chunkedDeletionKeys: deletions, hasUpload: hasUpload,
                                hasWebDavDeletions: hasWebDavDeletions)
         })

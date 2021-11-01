@@ -97,7 +97,7 @@ final class ZoteroApiClient: ApiClient {
                               .asSingle()
     }
 
-    func operation(from request: ApiRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data, HTTPURLResponse), Error>) -> Void) -> ApiOperation {
+    func operation(from request: ApiRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data?, HTTPURLResponse), Error>) -> Void) -> ApiOperation {
         return ApiOperation(apiRequest: request, requestCreator: self, queue: queue, completion: completion)
     }
 

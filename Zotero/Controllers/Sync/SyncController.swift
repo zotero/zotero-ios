@@ -664,7 +664,8 @@ final class SyncController: SynchronizationController {
     }
 
     private func processCreateLibraryActions(for libraries: LibrarySyncType, options: CreateLibraryActionsOptions) {
-        let result = LoadLibraryDataSyncAction(type: libraries, fetchUpdates: (options != .forceDownloads), loadVersions: (self.type != .full), dbStorage: self.dbStorage).result
+        let result = LoadLibraryDataSyncAction(type: libraries, fetchUpdates: (options != .forceDownloads), loadVersions: (self.type != .full),
+                                               webDavEnabled: self.webDavController.sessionStorage.isEnabled, dbStorage: self.dbStorage).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] data in
                   self?.finishCreateLibraryActions(with: .success((data, options)))
@@ -1250,12 +1251,16 @@ final class SyncController: SynchronizationController {
     }
 
     private func processSubmitDeletion(for batch: DeleteBatch) {
-        let result = SubmitDeletionSyncAction(keys: batch.keys, object: batch.object, version: batch.version, libraryId: batch.libraryId, userId: self.userId, apiClient: self.apiClient,
-                                              dbStorage: self.dbStorage, webDavController: self.webDavController, queue: self.workQueue, scheduler: self.workScheduler).result
+        let result = SubmitDeletionSyncAction(keys: batch.keys, object: batch.object, version: batch.version, libraryId: batch.libraryId, userId: self.userId,
+                                              webDavEnabled: self.webDavController.sessionStorage.isEnabled, apiClient: self.apiClient, dbStorage: self.dbStorage, queue: self.workQueue,
+                                              scheduler: self.workScheduler).result
         result.subscribe(on: self.workScheduler)
-              .subscribe(onSuccess: { [weak self] version in
+              .subscribe(onSuccess: { [weak self] version, didCreateDeletions in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.progressHandler.reportWriteBatchSynced(size: batch.keys.count)
+                      if didCreateDeletions {
+                          self?.addWebDavDeletionsActionIfNeeded(libraryId: batch.libraryId)
+                      }
                       self?.finishSubmission(error: nil, newVersion: version, libraryId: batch.libraryId, object: batch.object)
                   }
               }, onFailure: { [weak self] error in
@@ -1670,6 +1675,27 @@ final class SyncController: SynchronizationController {
         toDelete.reversed().forEach { self.queue.remove(at: $0) }
 
         self.processNextAction()
+    }
+
+    private func addWebDavDeletionsActionIfNeeded(libraryId: LibraryIdentifier) {
+        var libraryIndex = 0
+        for action in self.queue {
+            if action.libraryId != libraryId {
+                break
+            }
+
+            switch action {
+            case .performWebDavDeletions:
+                // If WebDAV deletions action for this library is already available, don't do anything
+                return
+
+            default:
+                libraryIndex += 1
+            }
+        }
+
+        // Insert deletions action to queue at the end of this library actions
+        self.queue.insert(.performWebDavDeletions(libraryId), at: libraryIndex)
     }
 }
 

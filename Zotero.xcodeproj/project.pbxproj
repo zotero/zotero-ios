@@ -662,6 +662,7 @@
 		B378F4D0242D0D5500B88A05 /* RepoRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4CE242D0CC200B88A05 /* RepoRequest.swift */; };
 		B378F4D1242D0E4900B88A05 /* RepoParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4CC242CD45700B88A05 /* RepoParserDelegate.swift */; };
 		B378F4D2242D0EE700B88A05 /* Translator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4C8242CC8EF00B88A05 /* Translator.swift */; };
+		B37ACB932730338A002EF4E1 /* DeleteAllWebDavDeletionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37ACB922730338A002EF4E1 /* DeleteAllWebDavDeletionsDbRequest.swift */; };
 		B37BF0AB25A5E2AD00AE0268 /* SquareAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37BF0AA25A5E2AD00AE0268 /* SquareAnnotation.swift */; };
 		B37BF0B125A6035D00AE0268 /* ReadDocumentDataDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37BF0B025A6035D00AE0268 /* ReadDocumentDataDbRequest.swift */; };
 		B37C5B6926453C33009A37E5 /* NoteEditorActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37C5B6826453C33009A37E5 /* NoteEditorActionHandler.swift */; };
@@ -1443,6 +1444,7 @@
 		B378F4C8242CC8EF00B88A05 /* Translator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Translator.swift; sourceTree = "<group>"; };
 		B378F4CC242CD45700B88A05 /* RepoParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepoParserDelegate.swift; sourceTree = "<group>"; };
 		B378F4CE242D0CC200B88A05 /* RepoRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepoRequest.swift; sourceTree = "<group>"; };
+		B37ACB922730338A002EF4E1 /* DeleteAllWebDavDeletionsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteAllWebDavDeletionsDbRequest.swift; sourceTree = "<group>"; };
 		B37BF0AA25A5E2AD00AE0268 /* SquareAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareAnnotation.swift; sourceTree = "<group>"; };
 		B37BF0B025A6035D00AE0268 /* ReadDocumentDataDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadDocumentDataDbRequest.swift; sourceTree = "<group>"; };
 		B37C5B6826453C33009A37E5 /* NoteEditorActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorActionHandler.swift; sourceTree = "<group>"; };
@@ -1841,6 +1843,7 @@
 				B305644323FC051E003304F2 /* CreateItemDbRequest.swift */,
 				B305645D23FC051E003304F2 /* CreateNoteDbRequest.swift */,
 				B3100919272C00BA003FC743 /* CreateWebDavDeletionsDbRequest.swift */,
+				B37ACB922730338A002EF4E1 /* DeleteAllWebDavDeletionsDbRequest.swift */,
 				B305644223FC051E003304F2 /* DeleteGroupDbRequest.swift */,
 				B305643E23FC051E003304F2 /* DeleteItemsFromCollectionDbRequest.swift */,
 				B305643823FC051E003304F2 /* DeleteObjectsDbRequest.swift */,
@@ -4064,6 +4067,7 @@
 				B3DCDF1B24091EBE0039ED0D /* SinglePickerRow.swift in Sources */,
 				B30565B723FC051E003304F2 /* StoreSearchesDbRequest.swift in Sources */,
 				B32259A227070EBA0047598D /* PDFPlainReaderViewController.swift in Sources */,
+				B37ACB932730338A002EF4E1 /* DeleteAllWebDavDeletionsDbRequest.swift in Sources */,
 				B3451B55264ECBA9000EDF16 /* ReadGroupDbRequest.swift in Sources */,
 				B3593F30241A61C700760E20 /* ItemDetailAddCell.swift in Sources */,
 				B3B8800525FB546300904235 /* DeviceInfoProvider.swift in Sources */,

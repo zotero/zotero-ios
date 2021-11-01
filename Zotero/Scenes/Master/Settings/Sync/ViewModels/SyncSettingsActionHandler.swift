@@ -83,7 +83,13 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
 
         do {
             let keys = self.downloadedAttachmentKeys()
-            try self.dbStorage.createCoordinator().perform(request: MarkAttachmentsNotUploadedDbRequest(keys: keys, libraryId: .custom(.myLibrary)))
+
+            var requests: [DbRequest] = [MarkAttachmentsNotUploadedDbRequest(keys: keys, libraryId: .custom(.myLibrary))]
+            if type == .zotero {
+                requests.append(DeleteAllWebDavDeletionsDbRequest())
+            }
+
+            try self.dbStorage.createCoordinator().perform(requests: requests)
 
             self.update(viewModel: viewModel) { state in
                 state.fileSyncType = type

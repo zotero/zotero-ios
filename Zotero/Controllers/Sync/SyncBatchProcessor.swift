@@ -8,6 +8,7 @@
 
 import Foundation
 
+import Alamofire
 import CocoaLumberjackSwift
 
 typealias SyncBatchResponse = (failedIds: [String], parsingErrors: [Error], conflicts: [StoreItemsError])
@@ -33,8 +34,7 @@ final class SyncBatchProcessor {
 
     // MARK: - Lifecycle
 
-    init(batches: [DownloadBatch], userId: Int, apiClient: ApiClient, dbStorage: DbStorage,
-         fileStorage: FileStorage, schemaController: SchemaController, dateParser: DateParser,
+    init(batches: [DownloadBatch], userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, dateParser: DateParser,
          progress: @escaping (Int) -> Void, completion: @escaping (Result<SyncBatchResponse, Error>) -> Void) {
         let queue = OperationQueue()
         queue.maxConcurrentOperationCount = 4
@@ -75,12 +75,16 @@ final class SyncBatchProcessor {
         self.requestQueue.addOperations(operations, waitUntilFinished: false)
     }
 
-    private func process(result: Result<(Data, HTTPURLResponse), Error>, batch: DownloadBatch) {
+    private func process(result: Result<(Data?, HTTPURLResponse), Error>, batch: DownloadBatch) {
         guard !self.isFinished else { return }
 
         switch result {
         case .success(let response):
-            self.process(data: response.0, headers: response.1.allHeaderFields, batch: batch)
+            if let data = response.0 {
+                self.process(data: data, headers: response.1.allHeaderFields, batch: batch)
+            } else {
+                self.cancel(with: AFError.responseSerializationFailed(reason: .inputDataNilOrZeroLength))
+            }
         case .failure(let error):
             self.cancel(with: error)
         }

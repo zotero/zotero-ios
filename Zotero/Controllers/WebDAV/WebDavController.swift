@@ -41,9 +41,9 @@ enum WebDavError {
 }
 
 struct WebDavDeletionResult {
-    let succeeded: [String]
-    let missing: [String]
-    let failed: [String]
+    let succeeded: Set<String>
+    let missing: Set<String>
+    let failed: Set<String>
 }
 
 protocol WebDavController: AnyObject {
@@ -54,6 +54,7 @@ protocol WebDavController: AnyObject {
     func prepareForUpload(key: String, mtime: Int, hash: String, file: File, queue: DispatchQueue) -> Single<WebDavUploadResult>
     func finishUpload(key: String, result: Result<(Int, String, URL), Swift.Error>, file: File?, queue: DispatchQueue) -> Single<()>
     func delete(keys: [String], queue: DispatchQueue) -> Single<WebDavDeletionResult>
+    func cancelDeletions()
 }
 
 final class WebDavControllerImpl: WebDavController {
@@ -68,14 +69,18 @@ final class WebDavControllerImpl: WebDavController {
     private unowned let dbStorage: DbStorage
     private unowned let fileStorage: FileStorage
     let sessionStorage: WebDavSessionStorage
-    private let deletionQueue: DispatchQueue
+    private let deletionQueue: OperationQueue
 
     init(apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, sessionStorage: WebDavSessionStorage) {
+        let queue = OperationQueue()
+        queue.maxConcurrentOperationCount = 4
+        queue.qualityOfService = .userInteractive
+
         self.apiClient = apiClient
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.sessionStorage = sessionStorage
-        self.deletionQueue = DispatchQueue(label: "org.zotero.WebDavController.DeletionQueue", qos: .utility)
+        self.deletionQueue = queue
     }
 
     /// Creates url in WebDAV server of item which should be downloaded.
@@ -151,22 +156,63 @@ final class WebDavControllerImpl: WebDavController {
     func delete(keys: [String], queue: DispatchQueue) -> Single<WebDavDeletionResult> {
         return self.checkServerIfNeeded(queue: queue)
                    .flatMap { url -> Single<WebDavDeletionResult> in
-                       var singles: [Observable<()>] = []
-                       for key in keys {
-                           singles.append(self.delete(url: url.appendingPathComponent(key + ".prop"), queue: queue))
-                           singles.append(self.delete(url: url.appendingPathComponent(key + ".zip"), queue: queue))
-                       }
-                       let observable: Observable<()> = Observable.concat(singles)
-
-                       return Single.create { subscriber -> Disposable in
-                           return observable.subscribe(onNext: nil,
-                                                       onError: { error in
-                                                           subscriber(.failure(error))
-                                                       }, onCompleted: {
-                                                           subscriber(.success(WebDavDeletionResult(succeeded: [], missing: [], failed: [])))
-                                                       }, onDisposed: nil)
-                       }
+                       return self.performDeletions(withBaseUrl: url, keys: keys, queue: queue)
                    }
+    }
+
+    func cancelDeletions() {
+        guard !self.deletionQueue.isSuspended else { return }
+        self.deletionQueue.cancelAllOperations()
+    }
+
+    private func performDeletions(withBaseUrl url: URL, keys: [String], queue: DispatchQueue) -> Single<WebDavDeletionResult> {
+        return Single.create { subscriber in
+            var count = 0
+            var operations: [ApiOperation] = []
+            var succeeded: Set<String> = []
+            var missing: Set<String> = []
+            var failed: Set<String> = []
+
+            let processResult: (String, Swift.Result<(Data?, HTTPURLResponse), Error>) -> Void = { key, result in
+                switch result {
+                case .success:
+                    if !failed.contains(key) && !missing.contains(key) {
+                        succeeded.insert(key)
+                    }
+
+                case .failure:
+                    succeeded.remove(key)
+                    missing.remove(key)
+                    failed.insert(key)
+                }
+
+                count -= 1
+
+                if count == 0 {
+                    subscriber(.success(WebDavDeletionResult(succeeded: succeeded, missing: missing, failed: failed)))
+                }
+            }
+
+            for key in keys {
+                let propRequest = WebDavDeleteRequest(url: url.appendingPathComponent(key + ".prop"))
+                let propOperation = self.apiClient.operation(from: propRequest, queue: queue) { result in
+                    processResult(key, result)
+                }
+                operations.append(propOperation)
+
+                let zipRequest = WebDavDeleteRequest(url: url.appendingPathComponent(key + ".zip"))
+                let zipOperation = self.apiClient.operation(from: zipRequest, queue: queue) { result in
+                    processResult(key, result)
+                }
+                operations.append(zipOperation)
+            }
+
+            count = operations.count
+
+            self.deletionQueue.addOperations(operations, waitUntilFinished: false)
+
+            return Disposables.create()
+        }
     }
 
     private func delete(url: URL, queue: DispatchQueue) -> Observable<()> {
