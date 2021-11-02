@@ -165,48 +165,48 @@ final class AttachmentDownloader {
         var isCompressed = self.webDavController.sessionStorage.isEnabled
 
         self.downloadRequest(file: file, key: key, libraryId: libraryId, userId: self.userId)
-                      .asObservable()
-                      .flatMap({ request -> Observable<DownloadRequest> in
-                          return self.apiClient.download(request: request)
-                      })
-                      .observe(on: MainScheduler.instance)
-                      .flatMap { request -> Observable<DownloadRequest> in
-                          let downloadProgress = request.downloadProgress
-                          // Check headers on redirect to see whether downloaded file will be compressed zip or base file.
-                          let redirector = Redirector(behavior: .modify({ task, request, response -> URLRequest? in
-                              if !isCompressed {
-                                  isCompressed = response.value(forHTTPHeaderField: "Zotero-File-Compressed") == "Yes"
-                              }
-                              // If downloaded file is compressed, add download progress as incomplete (90%) and reserve the rest for unzipping. Otherwise it's a complete progress (100%).
-                              progress.addChild(downloadProgress, withPendingUnitCount: (isCompressed ? 90 : 100))
-                              return request
-                          }))
-                          return Observable.just(request.redirect(using: redirector))
-                      }
-                      .do(onNext: { [weak self] request in
-                          // Store download request so that it can be cancelled
-                          self?.downloadRequests[download] = request
-                      })
-                      .subscribe(onError: { [weak self] error in
-                          self?.finish(download: download, parentKey: parentKey, result: .failure(error), hasLocalCopy: hasLocalCopy)
-                      }, onCompleted: { [weak self] in
-                          guard let `self` = self else { return }
-                          if let error = self.checkFileResponse(for: file) {
-                              self.finish(download: download, parentKey: parentKey, result: .failure(error), hasLocalCopy: hasLocalCopy)
-                          } else if isCompressed {
-                              self.unzip(file: file, download: download, parentKey: parentKey, progress: progress, hasLocalCopy: hasLocalCopy)
-                          } else {
-                              self.finish(download: download, parentKey: parentKey, result: .success(()), hasLocalCopy: hasLocalCopy)
-                          }
-                      })
-                    .disposed(by: self.disposeBag)
+            .asObservable()
+            .flatMap({ request -> Observable<DownloadRequest> in
+                return self.apiClient.download(request: request)
+            })
+            .observe(on: MainScheduler.instance)
+            .flatMap { request -> Observable<DownloadRequest> in
+                let downloadProgress = request.downloadProgress
+                // Check headers on redirect to see whether downloaded file will be compressed zip or base file.
+                let redirector = Redirector(behavior: .modify({ task, request, response -> URLRequest? in
+                    if !isCompressed {
+                        isCompressed = response.value(forHTTPHeaderField: "Zotero-File-Compressed") == "Yes"
+                    }
+                    // If downloaded file is compressed, add download progress as incomplete (90%) and reserve the rest for unzipping. Otherwise it's a complete progress (100%).
+                    progress.addChild(downloadProgress, withPendingUnitCount: (isCompressed ? 90 : 100))
+                    return request
+                }))
+                return Observable.just(request.redirect(using: redirector))
+            }
+            .do(onNext: { [weak self] request in
+                // Store download request so that it can be cancelled
+                self?.downloadRequests[download] = request
+            })
+            .subscribe(onError: { [weak self] error in
+                self?.finish(download: download, parentKey: parentKey, result: .failure(error), hasLocalCopy: hasLocalCopy)
+            }, onCompleted: { [weak self] in
+                guard let `self` = self else { return }
+                if let error = self.checkFileResponse(for: file) {
+                    self.finish(download: download, parentKey: parentKey, result: .failure(error), hasLocalCopy: hasLocalCopy)
+                } else if isCompressed {
+                    self.unzip(file: file, download: download, parentKey: parentKey, progress: progress, hasLocalCopy: hasLocalCopy)
+                } else {
+                    self.finish(download: download, parentKey: parentKey, result: .success(()), hasLocalCopy: hasLocalCopy)
+                }
+            })
+          .disposed(by: self.disposeBag)
     }
 
     /// Alamofire bug workaround
     /// When the request returns 404 "Not found" Alamofire download doesn't recognize it and just downloads the file with content "Not found".
     private func checkFileResponse(for file: File) -> Swift.Error? {
-        if self.fileStorage.size(of: file) == 9 &&
-           (try? self.fileStorage.read(file)).flatMap({ String(data: $0, encoding: .utf8) }) == "Not found" {
+        let size = self.fileStorage.size(of: file)
+        if size == 0 || (size == 9 && (try? self.fileStorage.read(file)).flatMap({ String(data: $0, encoding: .utf8) }) == "Not found") {
             try? self.fileStorage.remove(file)
             return AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 404))
         }

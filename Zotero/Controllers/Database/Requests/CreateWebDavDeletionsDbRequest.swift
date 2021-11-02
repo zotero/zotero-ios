@@ -26,12 +26,12 @@ struct CreateWebDavDeletionsDbRequest: DbResponseRequest {
         for item in items {
             if item.rawType == ItemTypes.attachment {
                 // Create WebDAV deletion only for attachment items.
-                didCreateDeletion = didCreateDeletion || self.createDeletionIfNeeded(for: item.key, database: database)
+                didCreateDeletion = self.createDeletionIfNeeded(for: item.key, database: database) || didCreateDeletion
             } else {
                 // Check children of deleted items for attachments.
                 let items = item.children.filter(.item(type: ItemTypes.attachment))
                 for item in items {
-                    didCreateDeletion = didCreateDeletion || self.createDeletionIfNeeded(for: item.key, database: database)
+                    didCreateDeletion = self.createDeletionIfNeeded(for: item.key, database: database) || didCreateDeletion
                 }
             }
         }

@@ -224,8 +224,10 @@ final class WebDavControllerImpl: WebDavController {
         return Single.create { subscriber -> Disposable in
             do {
                 try self.dbStorage.createCoordinator().perform(request: StoreMtimeForAttachmentDbRequest(mtime: mtime, key: key, libraryId: .custom(.myLibrary)))
+                subscriber(.success(()))
             } catch let error {
                 DDLogError("WebDavController: can't update mtime - \(error)")
+                subscriber(.failure(error))
             }
             return Disposables.create()
         }

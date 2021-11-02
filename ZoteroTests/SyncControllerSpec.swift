@@ -45,7 +45,7 @@ final class SyncControllerSpec: QuickSpec {
         // Create DB storage with the same config
         let dbStorage = RealmDbStorage(config: config)
         // Create WebDavController
-        let webDavSession = WebDavCredentials(username: "user", password: "password", scheme: .http, url: "127.0.0.1:9999", isVerified: false)
+        let webDavSession = WebDavCredentials(isEnabled: false, username: "", password: "", scheme: .http, url: "", isVerified: false)
         let webDavController = WebDavControllerImpl(apiClient: TestControllers.apiClient, dbStorage: dbStorage, fileStorage: TestControllers.fileStorage, sessionStorage: webDavSession)
         // Create background uploader with storage
         let backgroundProcessor = BackgroundUploadProcessor(apiClient: TestControllers.apiClient, dbStorage: dbStorage, fileStorage: TestControllers.fileStorage, webDavController: webDavController)
@@ -1906,7 +1906,7 @@ extension InputStream {
     }
 }
 
-fileprivate struct TestConflictCoordinator: ConflictReceiver & DebugPermissionReceiver {
+struct TestConflictCoordinator: ConflictReceiver & DebugPermissionReceiver {
     func resolve(conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void) {
         switch conflict {
         case .objectsRemovedRemotely(let libraryId, let collections, let items, let searches, let tags):

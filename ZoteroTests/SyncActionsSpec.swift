@@ -641,6 +641,12 @@ fileprivate class WebDavTestController: WebDavController {
     func finishUpload(key: String, result: Result<(Int, String, URL), Swift.Error>, file: File?, queue: DispatchQueue) -> Single<()> {
         return Single.error(Error.shouldntBeCalled)
     }
+
+    func delete(keys: [String], queue: DispatchQueue) -> Single<WebDavDeletionResult> {
+        return Single.error(Error.shouldntBeCalled)
+    }
+
+    func cancelDeletions() {}
 }
 
 fileprivate class WebDavSession: WebDavSessionStorage {

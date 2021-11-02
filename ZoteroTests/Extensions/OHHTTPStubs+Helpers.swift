@@ -14,8 +14,9 @@ import Alamofire
 import OHHTTPStubs
 import OHHTTPStubsSwift
 
-func createStub(for request: ApiRequest, ignoreBody: Bool = false, baseUrl: URL, headers: [String: String]? = nil, statusCode: Int32 = 200, jsonResponse: Any) {
+func createStub(for request: ApiRequest, ignoreBody: Bool = false, baseUrl: URL, headers: [String: String]? = nil, statusCode: Int32 = 200, jsonResponse: Any, responseAction: (() -> Void)? = nil) {
     stub(condition: request.stubCondition(with: baseUrl, ignoreBody: ignoreBody), response: { _ -> HTTPStubsResponse in
+        responseAction?()
         return HTTPStubsResponse(jsonObject: jsonResponse, statusCode: statusCode, headers: headers)
     })
 }
@@ -29,6 +30,12 @@ func createStub(for request: ApiRequest, ignoreBody: Bool = false, baseUrl: URL,
 func createStub(for request: ApiRequest, ignoreBody: Bool = false, baseUrl: URL, headers: [String: String]? = nil, statusCode: Int32 = 200, xmlResponse: String) {
     stub(condition: request.stubCondition(with: baseUrl, ignoreBody: ignoreBody), response: { _ -> HTTPStubsResponse in
         return HTTPStubsResponse(data: xmlResponse.data(using: .utf8)!, statusCode: statusCode, headers: headers)
+    })
+}
+
+func createStub(for request: ApiRequest, ignoreBody: Bool = false, baseUrl: URL, responseError: Error) {
+    stub(condition: request.stubCondition(with: baseUrl, ignoreBody: ignoreBody), response: { _ -> HTTPStubsResponse in
+        return HTTPStubsResponse(error: responseError)
     })
 }
 

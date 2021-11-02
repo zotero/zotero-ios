@@ -36,7 +36,7 @@ struct UploadAttachmentSyncAction: SyncAction {
     var result: Single<(Completable, Observable<RxProgress>)> {
         switch self.libraryId {
         case .custom:
-            return Defaults.shared.webDavEnabled ? self.webDavResult : self.zoteroResult
+            return self.webDavController.sessionStorage.isEnabled ? self.webDavResult : self.zoteroResult
         case .group:
             return self.zoteroResult
         }

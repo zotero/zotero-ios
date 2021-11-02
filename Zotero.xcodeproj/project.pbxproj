@@ -637,6 +637,7 @@
 		B36CBD5A25DD3BDD003C4613 /* ConflictAlertQueueHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36CBD5925DD3BDD003C4613 /* ConflictAlertQueueHandler.swift */; };
 		B36CBD6225DD4257003C4613 /* ChangedItemsDeletedAlertQueueHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36CBD6125DD4257003C4613 /* ChangedItemsDeletedAlertQueueHandler.swift */; };
 		B36E9D4925E51B0E00CD1109 /* AnnotationPosition.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36E9D4825E51B0E00CD1109 /* AnnotationPosition.swift */; };
+		B36EBFF5273162DD00CD788D /* bitcoin.zip in Resources */ = {isa = PBXBuildFile; fileRef = B36EBFF4273162DD00CD788D /* bitcoin.zip */; };
 		B371494C25D585EA00D6391E /* RestoreDeletionsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340868825D574D6000F4446 /* RestoreDeletionsSyncAction.swift */; };
 		B371494F25D585EF00D6391E /* MarkObjectsAsChangedByUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340868C25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift */; };
 		B372CEE02486504600B423AE /* GroupVersionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372CEDF2486504600B423AE /* GroupVersionsRequest.swift */; };
@@ -1431,6 +1432,7 @@
 		B36CBD5925DD3BDD003C4613 /* ConflictAlertQueueHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictAlertQueueHandler.swift; sourceTree = "<group>"; };
 		B36CBD6125DD4257003C4613 /* ChangedItemsDeletedAlertQueueHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangedItemsDeletedAlertQueueHandler.swift; sourceTree = "<group>"; };
 		B36E9D4825E51B0E00CD1109 /* AnnotationPosition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPosition.swift; sourceTree = "<group>"; };
+		B36EBFF4273162DD00CD788D /* bitcoin.zip */ = {isa = PBXFileReference; lastKnownFileType = archive.zip; path = bitcoin.zip; sourceTree = "<group>"; };
 		B372CEDF2486504600B423AE /* GroupVersionsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupVersionsRequest.swift; sourceTree = "<group>"; };
 		B372CEE22486512500B423AE /* GroupRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupRequest.swift; sourceTree = "<group>"; };
 		B372CEE4248670AF00B423AE /* FetchAndStoreGroupSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchAndStoreGroupSyncAction.swift; sourceTree = "<group>"; };
@@ -2931,6 +2933,7 @@
 		B3B1C5872665258400883597 /* PDFs */ = {
 			isa = PBXGroup;
 			children = (
+				B36EBFF4273162DD00CD788D /* bitcoin.zip */,
 				B3B1C5882665258400883597 /* bitcoin.pdf */,
 			);
 			path = PDFs;
@@ -3674,6 +3677,7 @@
 				B3AAABD72502A40900031065 /* searchresponse_unknownfields.json in Resources */,
 				B32A3C8B248008A2009E2C5D /* test_keys.json in Resources */,
 				B3B1EDFE2502498100D8BC1E /* collectionresponse_unknownfields.json in Resources */,
+				B36EBFF5273162DD00CD788D /* bitcoin.zip in Resources */,
 				B3AAABD82502A40900031065 /* searchresponse_knownfields.json in Resources */,
 				B3B1EDF52502456000D8BC1E /* itemresponse_knownfields.json in Resources */,
 			);
