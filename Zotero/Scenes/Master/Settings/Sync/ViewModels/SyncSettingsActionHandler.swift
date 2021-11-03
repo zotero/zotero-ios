@@ -106,7 +106,14 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
 
     private func downloadedAttachmentKeys() -> [String] {
         guard let contents: [File] = try? self.fileStorage.contentsOfDirectory(at: Files.downloads(for: .custom(.myLibrary))) else { return [] }
-        return contents.filter({ return $0.relativeComponents.count == 3 && ($0.relativeComponents.last ?? "").count == KeyGenerator.length })
+        return contents.filter({ file in
+                           if file.relativeComponents.count == 3 && (file.relativeComponents.last ?? "").count == KeyGenerator.length {
+                               // Check whether folder actually contains an attachment to avoid "attachment missing" errors.
+                               let contents: [URL] = (try? self.fileStorage.contentsOfDirectory(at: file)) ?? []
+                               return contents.count > 0
+                           }
+                           return false
+                       })
                        .compactMap({ $0.relativeComponents.last })
     }
 
