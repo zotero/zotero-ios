@@ -123,5 +123,10 @@ final class Defaults {
         self.shareExtensionIncludeAttachment = true
         self.selectedLibrary = .custom(.myLibrary)
         self.selectedCollectionId = .custom(.all)
+        self.webDavUrl = nil
+        self.webDavScheme = .http
+        self.webDavEnabled = false
+        self.webDavUsername = nil
+        self.webDavVerified = false
     }
 }

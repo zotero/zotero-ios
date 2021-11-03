@@ -13,6 +13,8 @@ import KeychainSwift
 protocol SecureStorage: AnyObject {
     var apiToken: String? { get set }
     var webDavPassword: String? { get set }
+
+    func reset()
 }
 
 final class KeychainSecureStorage: SecureStorage {
@@ -28,6 +30,11 @@ final class KeychainSecureStorage: SecureStorage {
     var apiToken: String?
     @SecureString(key: "webDavPassword", keychain: KeychainSecureStorage.keychain)
     var webDavPassword: String?
+
+    func reset() {
+        self.apiToken = nil
+        self.webDavPassword = nil
+    }
 }
 
 @propertyWrapper

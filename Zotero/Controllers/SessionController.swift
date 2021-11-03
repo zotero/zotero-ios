@@ -61,7 +61,7 @@ final class SessionController: ObservableObject {
 
     func reset() {
         self.defaults.reset()
-        self.secureStorage.apiToken = nil
+        self.secureStorage.reset()
         self.sessionData = nil
     }
 }
