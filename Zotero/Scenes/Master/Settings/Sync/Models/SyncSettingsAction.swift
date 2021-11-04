@@ -16,4 +16,5 @@ enum SyncSettingsAction {
     case setUsername(String)
     case setPassword(String)
     case verify
+    case cancelVerification
 }

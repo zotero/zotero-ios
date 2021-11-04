@@ -20,7 +20,6 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
     private unowned let webDavController: WebDavController
     private unowned let sessionController: SessionController
     private unowned let syncScheduler: SynchronizationScheduler
-    private let disposeBag: DisposeBag
 
     init(dbStorage: DbStorage, fileStorage: FileStorage, sessionController: SessionController, webDavController: WebDavController, syncScheduler: SynchronizationScheduler) {
         self.dbStorage = dbStorage
@@ -28,7 +27,6 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
         self.sessionController = sessionController
         self.webDavController = webDavController
         self.syncScheduler = syncScheduler
-        self.disposeBag = DisposeBag()
     }
 
     func process(action: SyncSettingsAction, in viewModel: ViewModel<SyncSettingsActionHandler>) {
@@ -73,6 +71,16 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
 
         case .verify:
             self.verify(in: viewModel)
+
+        case .cancelVerification:
+            self.cancelVerification(viewModel: viewModel)
+        }
+    }
+
+    private func cancelVerification(viewModel: ViewModel<SyncSettingsActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            state.isVerifyingWebDav = false
+            state.apiDisposeBag = DisposeBag()
         }
     }
 
@@ -138,7 +146,7 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
                     state.webDavVerificationResult = .failure(error)
                 }
             })
-            .disposed(by: self.disposeBag)
+            .disposed(by: viewModel.state.apiDisposeBag)
     }
 }
 

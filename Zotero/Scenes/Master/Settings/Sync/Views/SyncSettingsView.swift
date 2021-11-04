@@ -94,7 +94,17 @@ struct WebDavSettings: View {
             .disableAutocorrection(true)
 
         if self.viewModel.state.isVerifyingWebDav {
-            ActivityIndicatorView(style: .medium, isAnimating: .constant(true))
+            HStack {
+                ActivityIndicatorView(style: .medium, isAnimating: .constant(true))
+
+                Spacer()
+
+                Button(L10n.cancel) {
+                    self.viewModel.process(action: .cancelVerification)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor)
+            }
         } else if let result = self.viewModel.state.webDavVerificationResult {
             switch result {
             case .success:
@@ -171,7 +181,7 @@ struct WebDavSettings: View {
                 switch nsError.code {
                 case NSURLErrorNotConnectedToInternet:
                     return L10n.Errors.Settings.Webdav.internetConnection
-                case NSURLErrorCannotConnectToHost:
+                case NSURLErrorCannotConnectToHost, NSURLErrorTimedOut:
                     return L10n.Errors.Settings.Webdav.hostNotFound
                 default: break
                 }
@@ -194,7 +204,7 @@ struct WebDavSettings: View {
         default: break
         }
 
-        return nil
+        return L10n.Errors.Settings.Webdav.hostNotFound
     }
 }
 

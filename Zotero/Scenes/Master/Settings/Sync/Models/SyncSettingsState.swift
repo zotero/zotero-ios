@@ -8,6 +8,8 @@
 
 import Foundation
 
+import RxSwift
+
 struct SyncSettingsState: ViewModelState {
     enum FileSyncType: Hashable {
         case zotero
@@ -23,6 +25,7 @@ struct SyncSettingsState: ViewModelState {
     var password: String
     var isVerifyingWebDav: Bool
     var webDavVerificationResult: Result<(), Error>?
+    var apiDisposeBag: DisposeBag
 
     init(account: String, fileSyncType: FileSyncType, scheme: WebDavScheme, url: String, username: String, password: String, isVerified: Bool) {
         self.account = account
@@ -33,6 +36,7 @@ struct SyncSettingsState: ViewModelState {
         self.password = password
         self.isVerifyingWebDav = false
         self.webDavVerificationResult = isVerified ? .success(()) : nil
+        self.apiDisposeBag = DisposeBag()
     }
 
     func cleanup() {}
