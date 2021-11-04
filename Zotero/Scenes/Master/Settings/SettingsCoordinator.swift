@@ -27,6 +27,7 @@ protocol SettingsCoordinatorDelegate: AnyObject {
     func showGeneralSettings()
     func dismiss()
     func showLogoutAlert(viewModel: ViewModel<SyncSettingsActionHandler>)
+    func showSchemePicker(viewModel: ViewModel<SyncSettingsActionHandler>)
 }
 
 protocol CitationStyleSearchSettingsCoordinatorDelegate: AnyObject {
@@ -288,6 +289,24 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
     private func pushDefaultSize<V: View>(view: V) {
         let controller = UIHostingController(rootView: view)
         controller.preferredContentSize = SettingsCoordinator.defaultSize
+        self.navigationController.pushViewController(controller, animated: true)
+    }
+
+    func showSchemePicker(viewModel: ViewModel<SyncSettingsActionHandler>) {
+        let state = SinglePickerState(objects: [SinglePickerModel(id: WebDavScheme.https.rawValue, name: WebDavScheme.https.rawValue),
+                                                SinglePickerModel(id: WebDavScheme.http.rawValue, name: WebDavScheme.http.rawValue)],
+                                      selectedRow: viewModel.state.scheme.rawValue)
+        let handler = SinglePickerActionHandler()
+
+        let view = SinglePickerView(requiresSaveButton: false, requiresCancelButton: false, saveAction: { [weak viewModel] value in
+            guard let scheme = WebDavScheme(rawValue: value) else { return }
+            viewModel?.process(action: .setScheme(scheme))
+        }, closeAction: { [weak self] completion in
+            self?.navigationController.popViewController(animated: true)
+            completion?()
+        })
+
+        let controller = UIHostingController(rootView: view.environmentObject(ViewModel(initialState: state, handler: handler)))
         self.navigationController.pushViewController(controller, animated: true)
     }
 }

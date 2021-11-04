@@ -30,7 +30,7 @@ final class Defaults {
     @UserDefault(key: "webDavVerified", defaultValue: false)
     var webDavVerified: Bool
 
-    @CodableUserDefault(key: "webDavScheme", defaultValue: .http, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
+    @CodableUserDefault(key: "webDavScheme", defaultValue: .https, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     var webDavScheme: WebDavScheme
 
     @OptionalUserDefault(key: "webDavUsername")
@@ -124,7 +124,7 @@ final class Defaults {
         self.selectedLibrary = .custom(.myLibrary)
         self.selectedCollectionId = .custom(.all)
         self.webDavUrl = nil
-        self.webDavScheme = .http
+        self.webDavScheme = .https
         self.webDavEnabled = false
         self.webDavUsername = nil
         self.webDavVerified = false

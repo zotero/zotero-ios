@@ -29,15 +29,23 @@ struct SyncSettingsView: View {
             }
 
             Section(header: Text(L10n.Settings.Sync.fileSyncing)) {
-                FileSyncingSection()
+                self.fileSyncSection
             }
         }
         .navigationBarTitle(L10n.Settings.Sync.title)
+    }
+
+    private var fileSyncSection: some View {
+        var view = FileSyncingSection()
+        view.coordinatorDelegate = self.coordinatorDelegate
+        return view
     }
 }
 
 struct FileSyncingSection: View {
     @EnvironmentObject var viewModel: ViewModel<SyncSettingsActionHandler>
+
+    weak var coordinatorDelegate: SettingsCoordinatorDelegate?
 
     var body: some View {
         Picker(L10n.Settings.Sync.fileSyncingTypeMessage, selection: self.viewModel.binding(get: \.fileSyncType, action: { .setFileSyncType($0) })) {
@@ -46,41 +54,44 @@ struct FileSyncingSection: View {
         }
 
         if self.viewModel.state.fileSyncType == .webDav {
-            WebDavSettings()
+            self.webDavSettings
         }
+    }
+
+    private var webDavSettings: some View {
+        var view = WebDavSettings()
+        view.coordinatorDelegate = self.coordinatorDelegate
+        return view
     }
 }
 
 struct WebDavSettings: View {
     @EnvironmentObject var viewModel: ViewModel<SyncSettingsActionHandler>
 
-    @State private var schemePickerVisible: Bool = false
+    weak var coordinatorDelegate: SettingsCoordinatorDelegate?
 
     var body: some View {
         HStack {
-            Button(self.viewModel.state.scheme.rawValue) {
-                self.schemePickerVisible.toggle()
+            Button(self.viewModel.state.scheme.rawValue + "://") {
+                self.coordinatorDelegate?.showSchemePicker(viewModel: self.viewModel)
             }
+            .buttonStyle(PlainButtonStyle())
             .foregroundColor(Color(UIColor.label))
 
-            Text("://")
-
             TextField("URL", text: self.viewModel.binding(get: \.url, action: { .setUrl($0) }))
+                .autocapitalization(.none)
+                .disableAutocorrection(true)
 
             Text("/zotero/")
         }
 
-        if self.schemePickerVisible {
-            Picker("", selection: self.viewModel.binding(get: \.scheme, action: { .setScheme($0) })) {
-                Text("http").tag(WebDavScheme.http)
-                Text("https").tag(WebDavScheme.https)
-            }
-            .pickerStyle(WheelPickerStyle())
-        }
-
         TextField(L10n.Settings.Sync.username, text: self.viewModel.binding(get: \.username, action: { .setUsername($0) }))
+            .autocapitalization(.none)
+            .disableAutocorrection(true)
 
         SecureField(L10n.Settings.Sync.password, text: self.viewModel.binding(get: \.password, action: { .setPassword($0) }))
+            .autocapitalization(.none)
+            .disableAutocorrection(true)
 
         if self.viewModel.state.isVerifyingWebDav {
             ActivityIndicatorView(style: .medium, isAnimating: .constant(true))
@@ -97,19 +108,25 @@ struct WebDavSettings: View {
                 Button(L10n.Settings.Sync.verify) {
                     self.viewModel.process(action: .verify)
                 }
-                .foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor)
+                .foregroundColor(self.canVerifyServer ? Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor : .gray)
+                .disabled(!self.canVerifyServer)
             }
         } else {
             Button(L10n.Settings.Sync.verify) {
                 self.viewModel.process(action: .verify)
             }
-            .foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor)
+            .foregroundColor(self.canVerifyServer ? Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor : .gray)
+            .disabled(!self.canVerifyServer)
         }
 
         if case .failure(let error) = self.viewModel.state.webDavVerificationResult {
             Text(self.errorMessage(for: error))
                 .foregroundColor(.red)
         }
+    }
+
+    private var canVerifyServer: Bool {
+        return !self.viewModel.state.url.isEmpty && !self.viewModel.state.username.isEmpty && !self.viewModel.state.password.isEmpty
     }
 
     private func errorMessage(for error: Error) -> String {

@@ -27,6 +27,7 @@ struct SinglePickerView: View {
                 }) {
                     SinglePickerRow(text: object.name, isSelected: self.viewModel.state.selectedRow == object.id)
                 }
+                .foregroundColor(Color(UIColor.label))
             }
         }
         .navigationBarItems(leading: self.leadingItems, trailing: self.trailingItems)
