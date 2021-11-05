@@ -62,7 +62,7 @@ struct UploadAttachmentSyncAction: SyncAction {
 
                              case .new(let response):
                                  DDLogInfo("UploadAttachmentSyncAction: file needs upload")
-                                 let request = AttachmentUploadRequest(url: response.url)
+                                 let request = AttachmentUploadRequest(url: response.url, httpMethod: .post)
                                  return self.apiClient.upload(request: request, multipartFormData: { data in
                                      response.params.forEach({ (key, value) in
                                          if let stringData = value.data(using: .utf8) {
@@ -141,11 +141,9 @@ struct UploadAttachmentSyncAction: SyncAction {
                                  DDLogInfo("UploadAttachmentSyncAction: file needs upload")
                                  file = newFile
 
-                                 let request = AttachmentUploadRequest(url: url)
-                                 return self.apiClient.upload(request: request, multipartFormData: { data in
-                                     data.append(newFile.createUrl(), withName: "file", fileName: (self.key + ".zip"), mimeType: "application/zip")
-                                 })
-                                 .flatMap({ Single.just(($0, request, url)) })
+                                 let request = AttachmentUploadRequest(url: url.appendingPathComponent(self.key + ".zip"), httpMethod: .put)
+                                 return self.apiClient.upload(request: request, fromFile: newFile)
+                                            .flatMap({ Single.just(($0, request, url)) })
                              }
                          }
 

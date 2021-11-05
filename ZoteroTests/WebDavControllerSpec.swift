@@ -246,7 +246,7 @@ final class WebDavControllerSpec: QuickSpec {
                 createStub(for: WebDavDeleteRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [])
                 createStub(for: WebDavWriteRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop"), data: Data()),
                            ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [])
-                createStub(for: AttachmentUploadRequest(url: self.webDavUrl), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [])
+                createStub(for: AttachmentUploadRequest(url: self.webDavUrl, httpMethod: .put), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [])
 
                 let updatesRequest = UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .item, params: [], version: nil)
                 stub(condition: updatesRequest.stubCondition(with: self.apiBaseUrl, ignoreBody: true), response: { request -> HTTPStubsResponse in

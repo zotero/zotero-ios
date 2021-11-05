@@ -30,6 +30,15 @@ final class BackgroundUploadProcessor {
         self.webDavController = webDavController
     }
 
+    func createRequest(for upload: BackgroundUpload, filename: String, mimeType: String, parameters: [String: String]?, headers: [String: String]?) -> Single<(URLRequest, URL)> {
+        switch upload.type {
+        case .webdav:
+            return self.createPutRequest(for: upload, filename: filename, mimeType: mimeType)
+        case .zotero:
+            return self.createMultipartformRequest(for: upload, filename: filename, mimeType: mimeType, parameters: parameters, headers: headers)
+        }
+    }
+
     /// Creates a multipartform request for a file upload. The original file is copied to another folder so that it can be streamed from it.
     /// It needs to be deleted once the upload finishes (successful or not).
     /// - parameter upload: Backgroud upload to prepare
@@ -78,12 +87,31 @@ final class BackgroundUploadProcessor {
         }
     }
 
-    private func uploadUrl(for upload: BackgroundUpload) -> URL {
-        switch upload.type {
-        case .zotero:
-            return upload.remoteUrl
-        case .webdav:
-            return upload.remoteUrl.appendingPathComponent(upload.key + ".zip")
+    func createPutRequest(for upload: BackgroundUpload, filename: String, mimeType: String) -> Single<(URLRequest, URL)> {
+        return Single.create { [weak self] subscriber -> Disposable in
+            guard let `self` = self else {
+                subscriber(.failure(Error.expired))
+                return Disposables.create()
+            }
+
+            let newFile = Files.temporaryUploadFile
+            let newFileUrl = newFile.createUrl()
+
+            do {
+                // Create temporary file for upload and write multipartform data to it.
+                try self.fileStorage.createDirectories(for: newFile)
+                try self.fileStorage.copy(from: upload.fileUrl.path, to: newFile)
+                // Create upload request and validate it.
+                let request = try URLRequest(url: upload.remoteUrl.appendingPathComponent(upload.key + ".zip"), method: .put)
+                try request.validate()
+
+                subscriber(.success((request, newFileUrl)))
+            } catch let error {
+                DDLogError("BackgroundUploadProcessor: can't create multipartform data - \(error)")
+                subscriber(.failure(error))
+            }
+
+            return Disposables.create()
         }
     }
 

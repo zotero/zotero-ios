@@ -65,7 +65,7 @@ final class BackgroundUploader: NSObject {
     }
 
     func start(upload: BackgroundUpload, filename: String, mimeType: String, parameters: [String: String], headers: [String: String]) -> Single<()> {
-        return self.uploadProcessor.createMultipartformRequest(for: upload, filename: filename, mimeType: mimeType, parameters: parameters, headers: headers)
+        return self.uploadProcessor.createRequest(for: upload, filename: filename, mimeType: mimeType, parameters: parameters, headers: headers)
                                    .flatMap({ [weak self] request, url in
                                        self?.startUpload(upload.copy(with: url), request: request)
                                        return Single.just(())

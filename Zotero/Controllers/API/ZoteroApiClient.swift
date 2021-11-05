@@ -124,6 +124,12 @@ final class ZoteroApiClient: ApiClient {
         let method = HTTPMethod(rawValue: request.httpMethod.rawValue)
         return self.manager.rx.upload(multipartFormData: multipartFormData, to: convertible, method: method, headers: request.headers.flatMap(HTTPHeaders.init)).asSingle()
     }
+
+    func upload(request: ApiRequest, fromFile file: File) -> Single<UploadRequest> {
+        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
+        let method = HTTPMethod(rawValue: request.httpMethod.rawValue)
+        return self.manager.rx.upload(file.createUrl(), to: convertible, method: method, headers: request.headers.flatMap(HTTPHeaders.init)).asSingle()
+    }
 }
 
 extension ZoteroApiClient: ApiRequestCreator {
