@@ -208,7 +208,7 @@ final class UserControllers {
     init(userId: Int, controllers: Controllers) throws {
         let dbStorage = try UserControllers.createDbStorage(for: userId, controllers: controllers)
         let webDavSession = SecureWebDavSessionStorage(secureStorage: controllers.secureStorage)
-        let webDavController = WebDavControllerImpl(apiClient: controllers.apiClient, dbStorage: dbStorage, fileStorage: controllers.fileStorage, sessionStorage: webDavSession)
+        let webDavController = WebDavControllerImpl(dbStorage: dbStorage, fileStorage: controllers.fileStorage, sessionStorage: webDavSession)
         let backgroundUploadProcessor = BackgroundUploadProcessor(apiClient: controllers.apiClient, dbStorage: dbStorage, fileStorage: controllers.fileStorage, webDavController: webDavController)
         let backgroundUploader = BackgroundUploader(uploadProcessor: backgroundUploadProcessor, schemaVersion: controllers.schemaController.version)
         let syncController = SyncController(userId: userId, apiClient: controllers.apiClient, dbStorage: dbStorage, fileStorage: controllers.fileStorage, schemaController: controllers.schemaController,

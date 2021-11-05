@@ -517,7 +517,7 @@ final class WebDavControllerSpec: QuickSpec {
     }
 
     private func testCheckServer(with credentials: WebDavSessionStorage, successAction: @escaping () -> Void, errorAction: @escaping (Error) -> Void) {
-        self.webDavController = WebDavControllerImpl(apiClient: TestControllers.apiClient, dbStorage: self.dbStorage, fileStorage: TestControllers.fileStorage, sessionStorage: credentials)
+        self.webDavController = WebDavControllerImpl(dbStorage: self.dbStorage, fileStorage: TestControllers.fileStorage, sessionStorage: credentials)
         self.webDavController!.checkServer(queue: .main)
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { _ in
@@ -529,7 +529,7 @@ final class WebDavControllerSpec: QuickSpec {
     }
 
     private func testDownload(attachment: Attachment, successAction: @escaping () -> Void, errorAction: @escaping (Error) -> Void) {
-        self.webDavController = WebDavControllerImpl(apiClient: TestControllers.apiClient, dbStorage: self.dbStorage, fileStorage: TestControllers.fileStorage, sessionStorage: self.verifiedCredentials)
+        self.webDavController = WebDavControllerImpl(dbStorage: self.dbStorage, fileStorage: TestControllers.fileStorage, sessionStorage: self.verifiedCredentials)
         self.downloader = AttachmentDownloader(userId: self.userId, apiClient: TestControllers.apiClient, fileStorage: TestControllers.fileStorage, dbStorage: self.dbStorage, webDavController: self.webDavController!)
 
         self.downloader?.observable
@@ -549,7 +549,7 @@ final class WebDavControllerSpec: QuickSpec {
 
     private func testSync(syncFinishedAction: @escaping () -> Void) {
         // Create webdav controller
-        let webDavController = WebDavControllerImpl(apiClient: TestControllers.apiClient, dbStorage: self.dbStorage, fileStorage: TestControllers.fileStorage, sessionStorage: self.verifiedCredentials)
+        let webDavController = WebDavControllerImpl(dbStorage: self.dbStorage, fileStorage: TestControllers.fileStorage, sessionStorage: self.verifiedCredentials)
         // Create background uploader with storage
         let backgroundProcessor = BackgroundUploadProcessor(apiClient: TestControllers.apiClient, dbStorage: self.dbStorage, fileStorage: TestControllers.fileStorage, webDavController: webDavController)
         let backgroundUploader = BackgroundUploader(uploadProcessor: backgroundProcessor, schemaVersion: 3)

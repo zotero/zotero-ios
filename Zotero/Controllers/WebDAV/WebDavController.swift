@@ -65,18 +65,21 @@ final class WebDavControllerImpl: WebDavController {
         case new(URL)
     }
 
-    private unowned let apiClient: ApiClient
+    private let apiClient: ApiClient
     private unowned let dbStorage: DbStorage
     private unowned let fileStorage: FileStorage
     let sessionStorage: WebDavSessionStorage
     private let deletionQueue: OperationQueue
 
-    init(apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, sessionStorage: WebDavSessionStorage) {
+    init(dbStorage: DbStorage, fileStorage: FileStorage, sessionStorage: WebDavSessionStorage) {
         let queue = OperationQueue()
         queue.maxConcurrentOperationCount = 4
         queue.qualityOfService = .userInteractive
 
-        self.apiClient = apiClient
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 15
+
+        self.apiClient = ZoteroApiClient(baseUrl: "http://zotero.org/", configuration: configuration)
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.sessionStorage = sessionStorage

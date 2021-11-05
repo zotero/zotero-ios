@@ -639,7 +639,7 @@ final class ShareViewController: UIViewController {
         let bundledDataStorage = RealmDbStorage(config: configuration)
         let translatorsController = TranslatorsAndStylesController(apiClient: apiClient, bundledDataStorage: bundledDataStorage, fileStorage: fileStorage)
         let secureStorage = KeychainSecureStorage()
-        let webDavController = WebDavControllerImpl(apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, sessionStorage: SecureWebDavSessionStorage(secureStorage: secureStorage))
+        let webDavController = WebDavControllerImpl(dbStorage: dbStorage, fileStorage: fileStorage, sessionStorage: SecureWebDavSessionStorage(secureStorage: secureStorage))
 
         apiClient.set(authToken: session.apiToken)
         translatorsController.updateFromRepo(type: .shareExtension)
