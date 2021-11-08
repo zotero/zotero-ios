@@ -548,7 +548,15 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         let attachment = viewModel.state.data.attachments[index]
 
         switch update.kind {
-        case .cancelled, .progress, .failed:
+        case .cancelled, .failed:
+            self.update(viewModel: viewModel) { state in
+                if state.attachmentToOpen == update.key {
+                    state.attachmentToOpen = nil
+                }
+                state.updateAttachmentIndex = index
+            }
+
+        case .progress:
             self.update(viewModel: viewModel) { state in
                 state.updateAttachmentIndex = index
             }

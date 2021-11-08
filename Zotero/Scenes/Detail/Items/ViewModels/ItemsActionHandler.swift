@@ -307,7 +307,15 @@ struct ItemsActionHandler: ViewModelActionHandler {
                 state.updateItemKey = updateKey
             }
 
-        case .cancelled, .failed, .progress:
+        case .cancelled, .failed:
+            self.update(viewModel: viewModel) { state in
+                if update.key == state.attachmentToOpen {
+                    state.attachmentToOpen = nil
+                }
+                state.updateItemKey = updateKey
+            }
+
+        case .progress:
             self.update(viewModel: viewModel) { state in
                 state.updateItemKey = updateKey
             }
