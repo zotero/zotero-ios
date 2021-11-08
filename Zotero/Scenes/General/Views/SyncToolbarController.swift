@@ -11,7 +11,7 @@ import UIKit
 import RxSwift
 
 final class SyncToolbarController {
-    private static let finishVisibilityTime: RxTimeInterval = .seconds(2)
+    private static let finishVisibilityTime: RxTimeInterval = .milliseconds(2500)
     private unowned let viewController: UINavigationController
     private unowned let dbStorage: DbStorage
     private let disposeBag: DisposeBag
@@ -39,39 +39,53 @@ final class SyncToolbarController {
     // MARK: - Actions
 
     private func update(progress: SyncProgress, in controller: UINavigationController) {
-        self.set(progress: progress, in: controller)
-
-        if controller.isToolbarHidden {
-            controller.setToolbarHidden(false, animated: true)
-        }
-
         self.pendingErrors = nil
 
-        if case .aborted(let error) = progress {
+        switch progress {
+        case .aborted(let error):
             switch error {
             case .cancelled:
                 self.pendingErrors = nil
-                controller.setToolbarHidden(true, animated: true)
+                if !controller.isToolbarHidden {
+                    controller.setToolbarHidden(true, animated: true)
+                }
+
             default:
                 self.pendingErrors = [error]
+                if controller.isToolbarHidden {
+                    controller.setToolbarHidden(false, animated: true)
+                }
+                self.set(progress: progress, in: controller)
             }
-        } else if case .finished(let errors) = progress {
+
+        case .finished(let errors):
             if errors.isEmpty {
                 self.pendingErrors = nil
-                self.hideToolbarWithDelay(in: controller)
-            } else {
-                self.pendingErrors = errors
+                if !controller.isToolbarHidden {
+                    controller.setToolbarHidden(true, animated: true)
+                }
+                return
             }
+
+            self.pendingErrors = errors
+            if controller.isToolbarHidden {
+                controller.setToolbarHidden(false, animated: true)
+            }
+            self.set(progress: progress, in: controller)
+            self.hideToolbarWithDelay(in: controller)
+
+        default: break
         }
     }
 
     private func showErrorAlert(with errors: [Error]) {
+        self.viewController.setToolbarHidden(true, animated: true)
+
         let controller = UIAlertController(title: L10n.error, message: self.alertMessage(from: errors), preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { [weak self] _ in
             self?.pendingErrors = nil
         }))
         self.viewController.present(controller, animated: true, completion: nil)
-        self.viewController.setToolbarHidden(true, animated: true)
     }
 
     private func alertMessage(from errors: [Error]) -> String {
