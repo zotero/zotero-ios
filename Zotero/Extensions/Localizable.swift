@@ -270,6 +270,8 @@ internal enum L10n {
     internal static let allItems = L10n.tr("Localizable", "collections.all_items")
     /// Collapse All
     internal static let collapseAll = L10n.tr("Localizable", "collections.collapse_all")
+    /// Create Bibliography from Collection
+    internal static let createBibliography = L10n.tr("Localizable", "collections.create_bibliography")
     /// Create Collection
     internal static let createTitle = L10n.tr("Localizable", "collections.create_title")
     /// Delete Collection
@@ -347,6 +349,8 @@ internal enum L10n {
       internal static let openSettings = L10n.tr("Localizable", "errors.citation.open_settings")
     }
     internal enum Collections {
+      /// Could not load items for bibliography.
+      internal static let bibliographyFailed = L10n.tr("Localizable", "errors.collections.bibliography_failed")
       /// Please enter a collection name
       internal static let emptyName = L10n.tr("Localizable", "errors.collections.empty_name")
       /// Unable to save collection

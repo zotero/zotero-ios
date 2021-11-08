@@ -23,6 +23,8 @@ protocol MasterLibrariesCoordinatorDelegate: AnyObject {
 
 protocol MasterCollectionsCoordinatorDelegate: MainCoordinatorDelegate {
     func showEditView(for data: CollectionStateEditingData, library: Library)
+    func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
+    func showCiteExportError()
 }
 
 final class MasterCoordinator: NSObject, Coordinator {
@@ -174,5 +176,22 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
 
     var isSplit: Bool {
         return self.mainCoordinatorDelegate.isSplit
+    }
+
+    func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
+        let navigationController = NavigationViewController()
+        let containerController = ContainerViewController(rootViewController: navigationController)
+        let coordinator = CitationBibliographyExportCoordinator(itemIds: itemIds, libraryId: libraryId, navigationController: navigationController, controllers: self.controllers)
+        coordinator.parentCoordinator = self
+        self.childCoordinators.append(coordinator)
+        coordinator.start(animated: false)
+
+        self.navigationController.present(containerController, animated: true, completion: nil)
+    }
+
+    func showCiteExportError() {
+        let controller = UIAlertController(title: L10n.error, message: L10n.Errors.Collections.bibliographyFailed, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
+        self.navigationController.present(controller, animated: true, completion: nil)
     }
 }

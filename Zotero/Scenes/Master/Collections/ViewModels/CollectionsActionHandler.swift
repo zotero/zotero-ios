@@ -73,6 +73,26 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
         case .collapseAll:
             self.set(allCollapsed: true, in: viewModel)
+
+        case .loadItemKeysForBibliography(let collection):
+            self.loadItemKeysForBibliography(collection: collection, in: viewModel)
+        }
+    }
+
+    private func loadItemKeysForBibliography(collection: Collection, in viewModel: ViewModel<CollectionsActionHandler>) {
+        guard let key = collection.identifier.key else { return }
+
+        do {
+            let items = try self.dbStorage.createCoordinator().perform(request: ReadItemsDbRequest(type: .collection(key, collection.name), libraryId: viewModel.state.libraryId))
+            let keys = Set(items.map({ $0.key }))
+            self.update(viewModel: viewModel) { state in
+                state.itemKeysForBibliography = .success(keys)
+            }
+        } catch let error {
+            DDLogError("CollectionsActionHandler: can't load bibliography items - \(error)")
+            self.update(viewModel: viewModel) { state in
+                state.itemKeysForBibliography = .failure(error)
+            }
         }
     }
 

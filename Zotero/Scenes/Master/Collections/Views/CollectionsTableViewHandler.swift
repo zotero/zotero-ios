@@ -152,10 +152,13 @@ final class CollectionsTableViewHandler: NSObject {
             let subcollection = UIAction(title: L10n.Collections.newSubcollection, image: UIImage(systemName: "folder.badge.plus")) { [weak self] _ in
                 self?.viewModel.process(action: .startEditing(.addSubcollection(collection)))
             }
+            let createBibliography = UIAction(title: L10n.Collections.createBibliography, image: UIImage(systemName: "doc.on.doc")) { [weak self] _ in
+                self?.viewModel.process(action: .loadItemKeysForBibliography(collection))
+            }
             let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
                 self?.viewModel.process(action: .deleteCollection(key))
             }
-            return UIMenu(title: "", children: [edit, subcollection, delete])
+            return UIMenu(title: "", children: [edit, subcollection, createBibliography, delete])
 
         case .custom(let type):
             switch type {

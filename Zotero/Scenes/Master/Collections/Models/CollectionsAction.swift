@@ -19,4 +19,5 @@ enum CollectionsAction {
     case startEditing(CollectionsState.EditingType)
     case select(CollectionIdentifier)
     case toggleCollapsed(Collection)
+    case loadItemKeysForBibliography(Collection)
 }

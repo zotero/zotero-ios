@@ -81,6 +81,7 @@
 "collections.empty_trash" = "Empty Trash";
 "collections.collapse_all" = "Collapse All";
 "collections.expand_all" = "Expand All";
+"collections.create_bibliography" = "Create Bibliography from Collection";
 
 "sync_toolbar.starting" = "Sync starting";
 "sync_toolbar.groups" = "Syncing groups";
@@ -306,6 +307,7 @@
 "errors.libraries.cantLoad" = "Unable to load libraries";
 "errors.collections.empty_name" = "Please enter a collection name";
 "errors.collections.save_failed" = "Unable to save collection";
+"errors.collections.bibliography_failed" = "Could not load items for bibliography.";
 "errors.sync_toolbar.finished_with_errors" = "Finished sync (%@)";
 "errors.sync_toolbar.one_error" = "1 issue";
 "errors.sync_toolbar.multiple_errors" = "%d issues";

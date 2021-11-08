@@ -89,6 +89,14 @@ final class CollectionsViewController: UIViewController {
         if let data = state.editingData {
             self.coordinatorDelegate?.showEditView(for: data, library: state.library)
         }
+        if let result = state.itemKeysForBibliography {
+            switch result {
+            case .success(let keys):
+                self.coordinatorDelegate?.showCiteExport(for: keys, libraryId: state.libraryId)
+            case .failure:
+                self.coordinatorDelegate?.showCiteExportError()
+            }
+        }
     }
 
     // MARK: - Actions
