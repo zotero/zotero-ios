@@ -941,6 +941,8 @@ internal enum L10n {
       internal static let title = L10n.tr("Localizable", "settings.sync.title")
       /// Username
       internal static let username = L10n.tr("Localizable", "settings.sync.username")
+      /// Verified
+      internal static let verified = L10n.tr("Localizable", "settings.sync.verified")
       /// Verify Server
       internal static let verify = L10n.tr("Localizable", "settings.sync.verify")
     }

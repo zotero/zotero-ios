@@ -238,6 +238,7 @@
 "settings.sync.username" = "Username";
 "settings.sync.password" = "Password";
 "settings.sync.verify" = "Verify Server";
+"settings.sync.verified" = "Verified";
 "settings.permission" = "User Permission";
 "settings.permission_subtitle" = "Ask for user permission for each write action";
 "settings.translators" = "Translators";

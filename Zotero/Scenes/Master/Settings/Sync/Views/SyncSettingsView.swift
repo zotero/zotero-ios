@@ -105,28 +105,25 @@ struct WebDavSettings: View {
                 .buttonStyle(PlainButtonStyle())
                 .foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor)
             }
-        } else if let result = self.viewModel.state.webDavVerificationResult {
-            switch result {
-            case .success:
-                HStack {
-                    Text("Verified")
-
-                    Image(systemName: "checkmark")
-                        .foregroundColor(.green)
-                }
-            case .failure:
+        } else {
+            HStack {
                 Button(L10n.Settings.Sync.verify) {
                     self.viewModel.process(action: .verify)
                 }
                 .foregroundColor(self.canVerifyServer ? Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor : .gray)
                 .disabled(!self.canVerifyServer)
+
+                if let result = self.viewModel.state.webDavVerificationResult, case .success = result {
+                    Spacer()
+
+                    HStack {
+                        Text(L10n.Settings.Sync.verified)
+
+                        Image(systemName: "checkmark")
+                            .foregroundColor(.green)
+                    }
+                }
             }
-        } else {
-            Button(L10n.Settings.Sync.verify) {
-                self.viewModel.process(action: .verify)
-            }
-            .foregroundColor(self.canVerifyServer ? Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor : .gray)
-            .disabled(!self.canVerifyServer)
         }
 
         if case .failure(let error) = self.viewModel.state.webDavVerificationResult {

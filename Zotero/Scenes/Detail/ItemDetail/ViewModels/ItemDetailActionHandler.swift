@@ -178,7 +178,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 }
                 type = .existing(item)
             case .duplication(let itemKey, _):
-                let item = try dbStorage.createCoordinator().perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: itemKey))
+                let item = try self.dbStorage.createCoordinator().perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: itemKey))
                 type = .existing(item)
             }
 
