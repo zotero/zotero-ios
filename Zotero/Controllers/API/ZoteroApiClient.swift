@@ -106,6 +106,9 @@ final class ZoteroApiClient: ApiClient {
         return self.manager.rx.download(convertible) { _, _ -> (destinationURL: URL, options: DownloadRequest.Options) in
                                   return (request.downloadUrl, [.createIntermediateDirectories, .removePreviousFile])
                               }
+                              .flatMap { downloadRequest in
+                                  return Observable.just(downloadRequest.validate(statusCode: request.acceptableStatusCodes))
+                              }
     }
 
     func upload(request: ApiRequest, data: Data) -> Single<UploadRequest> {
