@@ -423,6 +423,7 @@
 		B337A5AC244F228500AFD13D /* Localizable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337A5AB244F228500AFD13D /* Localizable.swift */; };
 		B337A5AE244F35A900AFD13D /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = B337A5AA244F1DEB00AFD13D /* Localizable.strings */; };
 		B337A5AF244F362D00AFD13D /* Localizable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337A5AB244F228500AFD13D /* Localizable.swift */; };
+		B338E820273AA9B20003DECD /* DisappearActionHostingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B338E81F273AA9B20003DECD /* DisappearActionHostingController.swift */; };
 		B339459126DE6C2A00E59A02 /* AttachmentFileDeletedNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = B339459026DE6C2900E59A02 /* AttachmentFileDeletedNotification.swift */; };
 		B33979D12493ACA800A923C3 /* ImagePreviewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33979CF2493ACA800A923C3 /* ImagePreviewViewController.swift */; };
 		B33AB488246D315F00490DDE /* CheckboxButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33AB487246D315F00490DDE /* CheckboxButton.swift */; };
@@ -1272,6 +1273,7 @@
 		B33791D623BF7B2900919210 /* CreateItemWithAttachmentDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CreateItemWithAttachmentDbRequest.swift; sourceTree = "<group>"; };
 		B337A5A9244F1DEB00AFD13D /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		B337A5AB244F228500AFD13D /* Localizable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Localizable.swift; sourceTree = "<group>"; };
+		B338E81F273AA9B20003DECD /* DisappearActionHostingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisappearActionHostingController.swift; sourceTree = "<group>"; };
 		B339459026DE6C2900E59A02 /* AttachmentFileDeletedNotification.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AttachmentFileDeletedNotification.swift; sourceTree = "<group>"; };
 		B33979CF2493ACA800A923C3 /* ImagePreviewViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePreviewViewController.swift; sourceTree = "<group>"; };
 		B33AB487246D315F00490DDE /* CheckboxButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckboxButton.swift; sourceTree = "<group>"; };
@@ -3011,6 +3013,7 @@
 				B37D8E6824DC2BEE00F526C5 /* CollectionRow.swift */,
 				B3748D2126566F6900ED05F8 /* ContainerViewController.swift */,
 				B3D3E713264BD0F200A521DE /* DiffableDataSource.swift */,
+				B338E81F273AA9B20003DECD /* DisappearActionHostingController.swift */,
 				B3DCDF01240912060039ED0D /* DocumentPickerViewController.swift */,
 				B30B40622490F09400FAAF6D /* FileAttachmentView.swift */,
 				B33979CF2493ACA800A923C3 /* ImagePreviewViewController.swift */,
@@ -4064,6 +4067,7 @@
 				B3DCDEE12408F5200039ED0D /* MainViewController.swift in Sources */,
 				B30566A923FC051F003304F2 /* File.swift in Sources */,
 				B305669B23FC051F003304F2 /* RSearch.swift in Sources */,
+				B338E820273AA9B20003DECD /* DisappearActionHostingController.swift in Sources */,
 				B305667423FC051F003304F2 /* MD5+Url.swift in Sources */,
 				B31FACCA25DBC71200DD5F14 /* ConflictReceiverAlertHandler.swift in Sources */,
 				B398A917270C6A5B00968EE8 /* WebDavSessionStorage.swift in Sources */,

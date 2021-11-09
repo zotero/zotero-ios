@@ -167,7 +167,11 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         var view = SyncSettingsView()
         view.coordinatorDelegate = self
 
-        let controller = UIHostingController(rootView: view.environmentObject(viewModel))
+        let controller = DisappearActionHostingController(rootView: view.environmentObject(viewModel))
+        controller.willDisappear = {
+            // Dismiss keyboard when controller disappears, SwiftUI sometimes keeps an active field visible even when it's removed from view hierarchy.
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
         controller.preferredContentSize = SettingsCoordinator.defaultSize
         self.navigationController.pushViewController(controller, animated: true)
     }
