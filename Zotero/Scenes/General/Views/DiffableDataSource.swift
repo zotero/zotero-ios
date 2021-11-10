@@ -183,7 +183,7 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
 
     private func animateSectionAndRowChanges(for snapshot: DiffableDataSourceSnapshot<Section, Object>, reloadAnimation: UITableView.RowAnimation, insertAnimation: UITableView.RowAnimation,
                                 deleteAnimation: UITableView.RowAnimation, in tableView: UITableView, completion: ((Bool) -> Void)?) {
-        let (sectionInsert, sectionDelete, rowReload, rowInsert, rowDelete, rowMove, editingChanged) = self.diff(from: self.snapshot, to: snapshot)
+        let (sectionInsert, sectionDelete, rowReload, rowInsert, rowDelete, editingChanged) = self.diff(from: self.snapshot, to: snapshot)
 
 //        if sectionInsert.isEmpty && sectionDelete.isEmpty && rowInsert.isEmpty && rowDelete.isEmpty && rowMove.isEmpty {
 //            self.snapshot = snapshot
@@ -219,31 +219,26 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
             if editingChanged {
                 tableView.setEditing(snapshot.isEditing, animated: true)
             }
-            if !rowMove.isEmpty {
-                rowMove.forEach({ tableView.moveRow(at: $0.0, to: $0.1) })
-            }
         }, completion: completion)
     }
 
     private func diff(from oldSnapshot: DiffableDataSourceSnapshot<Section, Object>, to newSnapshot: DiffableDataSourceSnapshot<Section, Object>)
-                -> (sectionInsert: IndexSet, sectionDelete: IndexSet, rowReload: [IndexPath], rowInsert: [IndexPath], rowDelete: [IndexPath], rowMove: [(IndexPath, IndexPath)], editingChanged: Bool) {
+                -> (sectionInsert: IndexSet, sectionDelete: IndexSet, rowReload: [IndexPath], rowInsert: [IndexPath], rowDelete: [IndexPath], editingChanged: Bool) {
         let (sectionReload, sectionInsert, sectionDelete) = self.diff(from: oldSnapshot.sections.count, to: newSnapshot.sections.count)
 
         var rowReload: [IndexPath] = []
         var rowInsert: [IndexPath] = []
         var rowDelete: [IndexPath] = []
-        var rowMove: [(IndexPath, IndexPath)] = []
 
         for section in sectionReload {
-            let (reload, insert, delete, move) = self.diff(from: (oldSnapshot.objects[oldSnapshot.sections[section]] ?? []), to: (newSnapshot.objects[newSnapshot.sections[section]] ?? []), in: section)
+            let (reload, insert, delete) = self.diff(from: (oldSnapshot.objects[oldSnapshot.sections[section]] ?? []), to: (newSnapshot.objects[newSnapshot.sections[section]] ?? []), in: section)
 
             rowReload.append(contentsOf: reload)
             rowInsert.append(contentsOf: insert)
             rowDelete.append(contentsOf: delete)
-            rowMove.append(contentsOf: move)
         }
 
-        return (sectionInsert, sectionDelete, rowReload, rowInsert, rowDelete, rowMove, (oldSnapshot.isEditing != newSnapshot.isEditing))
+        return (sectionInsert, sectionDelete, rowReload, rowInsert, rowDelete, (oldSnapshot.isEditing != newSnapshot.isEditing))
     }
 
     private func diff(from oldSections: Int, to newSections: Int) -> (reload: IndexSet, insert: IndexSet, delete: IndexSet) {
@@ -258,12 +253,11 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
         return (IndexSet(0..<oldSections), IndexSet(oldSections..<newSections), [])
     }
 
-    private func diff(from oldObjects: [Object], to newObjects: [Object], in section: Int) -> (reload: [IndexPath], insert: [IndexPath], delete: [IndexPath], move: [(IndexPath, IndexPath)]) {
-        let diff = oldObjects.extendedDiff(newObjects)
+    private func diff(from oldObjects: [Object], to newObjects: [Object], in section: Int) -> (reload: [IndexPath], insert: [IndexPath], delete: [IndexPath]) {
+        let diff = oldObjects.diff(newObjects)
 
         var insertions: Set<Int> = []
         var deletions: Set<Int> = []
-        var moves: [(Int, Int)] = []
 
         diff.elements.forEach { element in
             switch element {
@@ -271,8 +265,6 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
                 deletions.insert(index)
             case .insert(let index):
                 insertions.insert(index)
-            case .move(let from, let to):
-                moves.append((from, to))
             }
         }
 
@@ -282,8 +274,7 @@ class DiffableDataSource<Section: Hashable, Object: Hashable>: NSObject, UITable
 
         return (reloads.map({ IndexPath(row: $0, section: section) }),
                 insertions.map({ IndexPath(row: $0, section: section) }),
-                deletions.map({ IndexPath(row: $0, section: section) }),
-                moves.map({ (IndexPath(row: $0.0, section: section), IndexPath(row: $0.1, section: section)) }))
+                deletions.map({ IndexPath(row: $0, section: section) }))
     }
 
     private func updateVisibleCells(for indexPaths: [IndexPath], in tableView: UITableView) {
