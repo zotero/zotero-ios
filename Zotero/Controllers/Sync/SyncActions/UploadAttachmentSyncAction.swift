@@ -13,7 +13,7 @@ import CocoaLumberjackSwift
 import RxAlamofire
 import RxSwift
 
-struct UploadAttachmentSyncAction: SyncAction {
+class UploadAttachmentSyncAction: SyncAction {
     typealias Result = (Completable, Observable<RxProgress>) // Upload completion, Upload progress
 
     let key: String
@@ -33,6 +33,30 @@ struct UploadAttachmentSyncAction: SyncAction {
     let scheduler: SchedulerType
     let disposeBag: DisposeBag
 
+    /// Indicates whether this action has failed performing before it could submit anything to Zotero backend. It could happen that we have only attachment upload enqueued, there are remote changes
+    /// on Zotero backend, but since the upload failed before it talked to the backend, remote changes would be ignored (no 412 received, no download actions added to queue, issue #381).
+    var failedBeforeZoteroApiRequest: Bool
+
+    init(key: String, file: File, filename: String, md5: String, mtime: Int, libraryId: LibraryIdentifier, userId: Int, oldMd5: String?, apiClient: ApiClient, dbStorage: DbStorage,
+         fileStorage: FileStorage, webDavController: WebDavController, queue: DispatchQueue, scheduler: SchedulerType, disposeBag: DisposeBag) {
+        self.key = key
+        self.file = file
+        self.filename = filename
+        self.md5 = md5
+        self.mtime = mtime
+        self.libraryId = libraryId
+        self.userId = userId
+        self.oldMd5 = oldMd5
+        self.apiClient = apiClient
+        self.dbStorage = dbStorage
+        self.fileStorage = fileStorage
+        self.webDavController = webDavController
+        self.queue = queue
+        self.scheduler = scheduler
+        self.disposeBag = disposeBag
+        self.failedBeforeZoteroApiRequest = true
+    }
+
     var result: Single<(Completable, Observable<RxProgress>)> {
         switch self.libraryId {
         case .custom:
@@ -50,6 +74,7 @@ struct UploadAttachmentSyncAction: SyncAction {
                              return self.validateFile()
                          }
                          .flatMap { filesize -> Single<AuthorizeUploadResponse> in
+                             self.failedBeforeZoteroApiRequest = false
                              return AuthorizeUploadSyncAction(key: self.key, filename: self.filename, filesize: filesize, md5: self.md5, mtime: self.mtime, libraryId: self.libraryId,
                                                               userId: self.userId, oldMd5: self.oldMd5, apiClient: self.apiClient, queue: self.queue, scheduler: self.scheduler).result
                          }
@@ -212,6 +237,7 @@ struct UploadAttachmentSyncAction: SyncAction {
         }
 
         return loadParameters.flatMap { params -> Single<(Int, Error?)> in
+            self.failedBeforeZoteroApiRequest = false
             return SubmitUpdateSyncAction(parameters: [params], sinceVersion: nil, object: .item, libraryId: self.libraryId, userId: self.userId, updateLibraryVersion: false,
                                           apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, queue: self.queue, scheduler: self.scheduler).result
         }

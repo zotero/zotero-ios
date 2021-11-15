@@ -240,6 +240,12 @@ final class AttachmentDownloader {
         do {
             // Rename downloaded file extension to zip
             try self.fileStorage.move(from: file, to: zipFile)
+            // Remove other contents of folder so that zip extraction doesn't fail
+            let files: [File] = try self.fileStorage.contentsOfDirectory(at: zipFile.directory)
+            for file in files {
+                guard file.name != zipFile.name && file.ext != zipFile.ext else { continue }
+                try? self.fileStorage.remove(file)
+            }
             // Unzip it to the same directory
             try FileManager.default.unzipItem(at: zipFile.createUrl(), to: zipFile.createRelativeUrl(), progress: progress)
             // Try removing zip file, don't return error if it fails, we've got what we wanted.

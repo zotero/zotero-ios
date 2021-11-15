@@ -547,15 +547,14 @@ final class SyncActionsSpec: QuickSpec {
                 }
 
                 createStub(for: AuthorizeUploadRequest(libraryId: libraryId, userId: self.userId, key: key, filename: filename, filesize: UInt64(data.count), md5: fileMd5, mtime: 123, oldMd5: nil),
-                           baseUrl: baseUrl, jsonResponse: ["url": "https://www.zotero.org/", "uploadKey": "key", "params": ["key": "key"]])
+                           baseUrl: baseUrl, jsonResponse: ["url": "https://www.upload-test.org/", "uploadKey": "key", "params": ["key": "key"]])
                 createStub(for: RegisterUploadRequest(libraryId: libraryId, userId: self.userId, key: key, uploadKey: "key", oldMd5: nil),
                            baseUrl: baseUrl, headers: nil, statusCode: 204, jsonResponse: [:])
                 stub(condition: { request -> Bool in
-                    return request.url?.absoluteString == "https://www.zotero.org/"
+                    return request.url?.absoluteString == "https://www.upload-test.org/"
                 }, response: { _ -> HTTPStubsResponse in
                     return HTTPStubsResponse(jsonObject: [:], statusCode: 201, headers: nil)
                 })
-
 
                 waitUntil(timeout: .seconds(10), action: { doneAction in
                     UploadAttachmentSyncAction(key: key,

@@ -19,7 +19,7 @@ class WebDavCredentials: WebDavSessionStorage {
     var password: String
 
     init(isEnabled: Bool, username: String, password: String, scheme: WebDavScheme, url: String, isVerified: Bool) {
-        self.isEnabled = true
+        self.isEnabled = isEnabled
         self.isVerified = isVerified
         self.username = username
         self.password = password

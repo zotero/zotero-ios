@@ -199,6 +199,12 @@ final class SyncController: SynchronizationController {
     private var conflictCoordinator: ConflictCoordinator?
     // Used for syncing batches of objects in `.syncBatchesToDb` action
     private var batchProcessor: SyncBatchProcessor?
+    // Indicates whether sync submitted any writes or deletes to Zotero backend.
+    private var didEnqueueWriteActionsToZoteroBackend: Bool
+    // Number of uploads that were enqueued during this sync
+    private var enqueuedUploads: Int
+    // Number of uploads which failed before making a HTTP request to Zotero backend. Used to detect whether sync should check remote changes after unsuccessful uploads (#381).
+    private var uploadsFailedBeforeReachingZoteroBackend: Int
 
     private var isSyncing: Bool {
         return self.processingAction != nil || !self.queue.isEmpty
@@ -239,6 +245,9 @@ final class SyncController: SynchronizationController {
         self.backgroundUploader = backgroundUploader
         self.webDavController = webDavController
         self.syncDelayIntervals = syncDelayIntervals
+        self.didEnqueueWriteActionsToZoteroBackend = false
+        self.enqueuedUploads = 0
+        self.uploadsFailedBeforeReachingZoteroBackend = 0
     }
 
     // MARK: - SynchronizationController
@@ -349,6 +358,9 @@ final class SyncController: SynchronizationController {
         self.batchProcessor = nil
         self.libraryType = .all
         self.createActionOptions = .automatic
+        self.didEnqueueWriteActionsToZoteroBackend = false
+        self.enqueuedUploads = 0
+        self.uploadsFailedBeforeReachingZoteroBackend = 0
     }
 
     // MARK: - Error handling
@@ -694,6 +706,8 @@ final class SyncController: SynchronizationController {
                 libraryNames = nameDictionary
             }
             let (actions, queueIndex, writeCount) = self.createLibraryActions(for: data, creationOptions: options)
+            // If `options != .automatic`, this is most likely a 412, or other kind of retry action, so we definitely already had write actions before. We don't need to check for this anymore.
+            self.didEnqueueWriteActionsToZoteroBackend = options != .automatic || writeCount > 0
 
             self.accessQueue.async(flags: .barrier) { [weak self] in
                 self?.createActionOptions = options
@@ -726,14 +740,14 @@ final class SyncController: SynchronizationController {
                         // We need to check permissions for group
                         if libraryData.canEditMetadata {
                             let actions = self.createUpdateActions(updates: libraryData.updates, deletions: libraryData.deletions, libraryId: libraryId)
-                            writeCount += actions.count
+                            writeCount += actions.count - 1
                             allActions.append(contentsOf: actions)
                         } else {
                             allActions.append(.resolveGroupMetadataWritePermission(groupId, libraryData.name))
                         }
                     case .custom:
                         let actions = self.createUpdateActions(updates: libraryData.updates, deletions: libraryData.deletions, libraryId: libraryId)
-                         writeCount += actions.count
+                         writeCount += actions.count - 1
                         // We can always write to custom libraries
                         allActions.append(contentsOf: actions)
                     }
@@ -797,10 +811,14 @@ final class SyncController: SynchronizationController {
               .subscribe(onSuccess: { [weak self] uploads in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.progressHandler.reportUpload(count: uploads.count)
+                      self?.enqueuedUploads = uploads.count
+                      self?.uploadsFailedBeforeReachingZoteroBackend = 0
                       self?.enqueue(actions: uploads.map({ .uploadAttachment($0) }), at: 0)
                   }
               }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
+                      self?.enqueuedUploads = 0
+                      self?.uploadsFailedBeforeReachingZoteroBackend = 0
                       self?.finishCompletableAction(error: error, libraryId: libraryId)
                   }
               })
@@ -1223,11 +1241,11 @@ final class SyncController: SynchronizationController {
     }
 
     private func processUploadAttachment(for upload: AttachmentUpload) {
-        let result = UploadAttachmentSyncAction(key: upload.key, file: upload.file, filename: upload.filename, md5: upload.md5,
+        let action = UploadAttachmentSyncAction(key: upload.key, file: upload.file, filename: upload.filename, md5: upload.md5,
                                                 mtime: upload.mtime, libraryId: upload.libraryId, userId: self.userId, oldMd5: upload.oldMd5,
                                                 apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, webDavController: self.webDavController,
-                                                queue: self.workQueue, scheduler: self.workScheduler, disposeBag: self.disposeBag).result
-        result.subscribe(on: self.workScheduler)
+                                                queue: self.workQueue, scheduler: self.workScheduler, disposeBag: self.disposeBag)
+        action.result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] response, progress in
                   guard let `self` = self else { return }
 
@@ -1240,7 +1258,7 @@ final class SyncController: SynchronizationController {
                           }, onError: { [weak self] error in
                               self?.accessQueue.async(flags: .barrier) { [weak self] in
                                   self?.progressHandler.reportUploaded()
-                                  self?.finishSubmission(error: error, newVersion: nil, libraryId: upload.libraryId, object: .item)
+                                  self?.finishSubmission(error: error, newVersion: nil, libraryId: upload.libraryId, object: .item, failedBeforeReachingApi: action.failedBeforeZoteroApiRequest)
                               }
                           })
                           .disposed(by: self.disposeBag)
@@ -1272,7 +1290,7 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
-    private func finishSubmission(error: Error?, newVersion: Int?, libraryId: LibraryIdentifier, object: SyncObject) {
+    private func finishSubmission(error: Error?, newVersion: Int?, libraryId: LibraryIdentifier, object: SyncObject, failedBeforeReachingApi: Bool = false) {
         let nextAction: () -> Void = {
             if let version = newVersion {
                 self.updateVersionInNextWriteBatch(to: version)
@@ -1308,8 +1326,27 @@ final class SyncController: SynchronizationController {
                 if let version = newVersion {
                     self.updateVersionInNextWriteBatch(to: version)
                 }
+                if failedBeforeReachingApi {
+                    self.handleAllUploadsFailedBeforeReachingZoteroBackend(in: libraryId)
+                }
             })
         }
+    }
+
+    /// Handles case from issue #381. If there were only uploads enqueued and they all failed before reaching Zotero backend, the sync didn't check whether there are remote changes, so this function
+    /// adds download actions to check for remote changes.
+    private func handleAllUploadsFailedBeforeReachingZoteroBackend(in libraryId: LibraryIdentifier) {
+        // If there were write actions (write, delete item) to Zotero backend, we don't need to check for this anymore. If there were remote changes, we would have gotten 412 from backend already.
+        guard !self.didEnqueueWriteActionsToZoteroBackend && self.enqueuedUploads > 0 else { return }
+        self.uploadsFailedBeforeReachingZoteroBackend += 1
+        // Check whether all uploads failed and whether there are no more actions for this library in queue.
+        guard self.enqueuedUploads == self.uploadsFailedBeforeReachingZoteroBackend && self.queue.first?.libraryId != libraryId else { return }
+        // Reset flags so that we don't end up here again at some point.
+        self.didEnqueueWriteActionsToZoteroBackend = false
+        self.enqueuedUploads = 0
+        self.uploadsFailedBeforeReachingZoteroBackend = 0
+        // Enqueue download actions to check for remote changes
+        self.queue.insert(.createLibraryActions(.specific([libraryId]), .forceDownloads), at: 0)
     }
 
     private func deleteGroup(with groupId: Int) {
@@ -1644,7 +1681,7 @@ final class SyncController: SynchronizationController {
         DDLogInfo("Sync: received unchanged error, store version: \(lastVersion)")
         self.lastReturnedVersion = lastVersion
 
-        // If current sync type is `.all` we don't want to skip anything.
+        // If current sync type is `.full` we don't want to skip anything.
         guard self.type != .full else {
             self.processNextAction()
             return

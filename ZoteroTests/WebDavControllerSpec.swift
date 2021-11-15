@@ -246,7 +246,7 @@ final class WebDavControllerSpec: QuickSpec {
                 createStub(for: WebDavDeleteRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [])
                 createStub(for: WebDavWriteRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop"), data: Data()),
                            ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [])
-                createStub(for: AttachmentUploadRequest(url: self.webDavUrl, httpMethod: .put), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [])
+                createStub(for: AttachmentUploadRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".zip"), httpMethod: .put), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [])
 
                 let updatesRequest = UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .item, params: [], version: nil)
                 stub(condition: updatesRequest.stubCondition(with: self.apiBaseUrl, ignoreBody: true), response: { request -> HTTPStubsResponse in
@@ -259,7 +259,7 @@ final class WebDavControllerSpec: QuickSpec {
                     }
                 })
 
-                waitUntil(timeout: .seconds(10)) { doneAction in
+                waitUntil(timeout: .seconds(100000000)) { doneAction in
                     self.testSync {
                         let item = try! self.dbStorage.createCoordinator().perform(request: ReadItemDbRequest(libraryId: libraryId, key: itemKey))
 
