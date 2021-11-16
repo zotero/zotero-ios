@@ -22,6 +22,7 @@ final class BackgroundUploader: NSObject {
 
     private var session: URLSession!
     private var finishedUploads: [BackgroundUpload]
+    private var failedUploads: [BackgroundUpload]
     private var uploadsFinishedProcessing: Bool
     private var disposeBag: DisposeBag
 
@@ -35,6 +36,7 @@ final class BackgroundUploader: NSObject {
         self.context = BackgroundUploaderContext()
         self.uploadProcessor = uploadProcessor
         self.finishedUploads = []
+        self.failedUploads = []
         self.uploadsFinishedProcessing = true
         self.disposeBag = DisposeBag()
 
@@ -67,7 +69,11 @@ final class BackgroundUploader: NSObject {
     func start(upload: BackgroundUpload, filename: String, mimeType: String, parameters: [String: String], headers: [String: String]) -> Single<()> {
         return self.uploadProcessor.createRequest(for: upload, filename: filename, mimeType: mimeType, parameters: parameters, headers: headers)
                                    .flatMap({ [weak self] request, url in
-                                       self?.startUpload(upload.copy(with: url), request: request)
+                                       var newUpload = upload
+                                       if upload.fileUrl != url {
+                                           newUpload = upload.copy(with: url)
+                                       }
+                                       self?.startUpload(newUpload, request: request)
                                        return Single.just(())
                                    })
     }
@@ -82,8 +88,8 @@ final class BackgroundUploader: NSObject {
 
     // MARK: - Finishing upload
 
-    private func finishUploads(uploads: [BackgroundUpload]) {
-        guard !uploads.isEmpty else {
+    private func finish(successfulUploads: [BackgroundUpload], failedUploads: [BackgroundUpload]) {
+        guard !successfulUploads.isEmpty || !failedUploads.isEmpty else {
             self.uploadsFinishedProcessing = true
             self.completeBackgroundSession()
             return
@@ -92,7 +98,7 @@ final class BackgroundUploader: NSObject {
         // Start background task so that we can send register requests to API and store results in DB.
         self.startBackgroundTask()
         // Create actions for all uploads for this background session.
-        let actions = uploads.map({ self.uploadProcessor.finish(upload: $0) })
+        let actions = failedUploads.map({ self.uploadProcessor.finish(upload: $0, successful: false) }) + successfulUploads.map({ self.uploadProcessor.finish(upload: $0, successful: true) })
         // Process all actions, call appropriate completion handlers and finish the background task.
         Observable.concat(actions)
                   .observe(on: MainScheduler.instance)
@@ -158,13 +164,16 @@ extension BackgroundUploader: URLSessionTaskDelegate {
             if let upload = self.context.loadUpload(for: task.taskIdentifier) {
                 if error == nil && task.error == nil {
                     self.finishedUploads.append(upload)
+                } else {
+                    self.failedUploads.append(upload)
                 }
                 self.context.deleteUpload(with: task.taskIdentifier)
             }
 
             if self.context.activeUploads.isEmpty {
-                self.finishUploads(uploads: self.finishedUploads)
+                self.finish(successfulUploads: self.finishedUploads, failedUploads: self.failedUploads)
                 self.finishedUploads = []
+                self.failedUploads = []
             }
         }
     }

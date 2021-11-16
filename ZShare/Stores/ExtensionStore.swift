@@ -879,29 +879,11 @@ final class ExtensionStore {
             // This way the URLSession delegate will always be called in the main (container) app, where additional upload
             // processing is performed.
             self.backgroundUploader = nil
-            // Perform `finishUpload(key:result:file:queue:)` so that `WebDavController` removes original ZIP file. Background uploader creates a temporary file for upload which is later deleted,
-            // so this is no longer needed.
-            self.webDavController.finishUpload(key: self.state.attachmentKey, result: .failure(State.AttachmentState.Error.expired), file: data.file, queue: self.backgroundQueue)
-                .subscribe(onSuccess: { [weak self] in
-                    self?.state.attachmentState = .done
-                }, onFailure: { [weak self] _ in
-                    self?.state.attachmentState = .done
-                })
-                .disposed(by: self.disposeBag)
+            self.state.attachmentState = .done
         }, onFailure: { [weak self] error in
             guard let `self` = self else { return }
             DDLogError("ExtensionStore: could not submit item or attachment - \(error)")
-
             self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: data.libraryId))
-
-            // Perform `finishUpload(key:result:file:queue:)` so that `WebDavController` removes ZIP file in case of failure.
-            self.webDavController.finishUpload(key: self.state.attachmentKey, result: .failure(State.AttachmentState.Error.expired), file: data.file, queue: self.backgroundQueue)
-                .subscribe(onSuccess: { [weak self] in
-                    self?.state.attachmentState = .done
-                }, onFailure: { [weak self] _ in
-                    self?.state.attachmentState = .done
-                })
-                .disposed(by: self.disposeBag)
         })
         .disposed(by: self.disposeBag)
     }

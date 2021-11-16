@@ -33,7 +33,7 @@ final class BackgroundUploadProcessor {
     func createRequest(for upload: BackgroundUpload, filename: String, mimeType: String, parameters: [String: String]?, headers: [String: String]?) -> Single<(URLRequest, URL)> {
         switch upload.type {
         case .webdav:
-            return self.createPutRequest(for: upload, filename: filename, mimeType: mimeType)
+            return self.createPutRequest(for: upload, filename: filename, mimeType: mimeType).flatMap({ Single.just(($0, upload.fileUrl)) })
         case .zotero:
             return self.createMultipartformRequest(for: upload, filename: filename, mimeType: mimeType, parameters: parameters, headers: headers)
         }
@@ -65,7 +65,7 @@ final class BackgroundUploadProcessor {
             }
             formData.append(upload.fileUrl, withName: "file", fileName: filename, mimeType: mimeType)
 
-            let newFile = Files.temporaryUploadFile
+            let newFile = Files.temporaryMultipartformUploadFile
             let newFileUrl = newFile.createUrl()
 
             do {
@@ -87,25 +87,14 @@ final class BackgroundUploadProcessor {
         }
     }
 
-    func createPutRequest(for upload: BackgroundUpload, filename: String, mimeType: String) -> Single<(URLRequest, URL)> {
-        return Single.create { [weak self] subscriber -> Disposable in
-            guard let `self` = self else {
-                subscriber(.failure(Error.expired))
-                return Disposables.create()
-            }
-
-            let newFile = Files.temporaryUploadFile
-            let newFileUrl = newFile.createUrl()
-
+    func createPutRequest(for upload: BackgroundUpload, filename: String, mimeType: String) -> Single<URLRequest> {
+        return Single.create { subscriber -> Disposable in
             do {
-                // Create temporary file for upload and write multipartform data to it.
-                try self.fileStorage.createDirectories(for: newFile)
-                try self.fileStorage.copy(from: upload.fileUrl.path, to: newFile)
                 // Create upload request and validate it.
                 let request = try URLRequest(url: upload.remoteUrl.appendingPathComponent(upload.key + ".zip"), method: .put)
                 try request.validate()
 
-                subscriber(.success((request, newFileUrl)))
+                subscriber(.success(request))
             } catch let error {
                 DDLogError("BackgroundUploadProcessor: can't create multipartform data - \(error)")
                 subscriber(.failure(error))
@@ -115,7 +104,12 @@ final class BackgroundUploadProcessor {
         }
     }
 
-    func finish(upload: BackgroundUpload) -> Observable<()> {
+    func finish(upload: BackgroundUpload, successful: Bool) -> Observable<()> {
+        if !successful {
+            // If upload failed, remove temporary upload data (multipartform in case of ZFS, zip in case of WebDAV).
+            self.delete(file: Files.file(from: upload.fileUrl))
+        }
+
         switch upload.type {
         case .zotero(let uploadKey):
             return self.finishZoteroUpload(uploadKey: uploadKey, key: upload.key, libraryId: upload.libraryId, fileUrl: upload.fileUrl, userId: upload.userId)
@@ -159,10 +153,10 @@ final class BackgroundUploadProcessor {
                        return self.markAttachmentAsUploaded(version: version, key: key, libraryId: libraryId)
                    })
                    .do(onSuccess: { [weak self] _ in
-                       // Remove temporary upload file created in `createMultipartformRequest`
+                       // Remove temporary upload zip file created by webdav controller
                        self?.delete(file: Files.file(from: fileUrl))
                    }, onError: { [weak self] _ in
-                       // Remove temporary upload file created in `createMultipartformRequest`
+                       // Remove temporary upload zip file created by webdav controller
                        self?.delete(file: Files.file(from: fileUrl))
                    })
                    .asObservable()

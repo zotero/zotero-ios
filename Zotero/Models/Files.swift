@@ -46,7 +46,7 @@ struct Files {
         return FileData(rootPath: Files.appGroupPath, relativeComponents: ["uploads"], name: key, ext: "zip")
     }
 
-    static var temporaryUploadFile: File {
+    static var temporaryMultipartformUploadFile: File {
         return FileData(rootPath: Files.appGroupPath, relativeComponents: ["uploads"], name: UUID().uuidString, ext: "")
     }
 
