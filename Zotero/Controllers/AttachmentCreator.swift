@@ -232,7 +232,7 @@ struct AttachmentCreator {
             } else {
                 return .local
             }
-        } else if item.links.contains(where: { $0.type == LinkType.enclosure.rawValue }) {
+        } else if Defaults.shared.webDavEnabled || item.links.contains(where: { $0.type == LinkType.enclosure.rawValue }) {
             return .remote
         } else {
             return .remoteMissing
