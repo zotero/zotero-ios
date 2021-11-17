@@ -11,7 +11,7 @@ import Foundation
 import Alamofire
 import CocoaLumberjackSwift
 
-typealias SyncBatchResponse = (failedIds: [String], parsingErrors: [Error], conflicts: [StoreItemsError])
+typealias SyncBatchResponse = (failedIds: [String], parsingErrors: [Error], conflicts: [StoreItemsResponse.Error])
 
 final class SyncBatchProcessor {
     private let storageQueue: DispatchQueue
@@ -28,7 +28,7 @@ final class SyncBatchProcessor {
 
     private var failedIds: [String]
     private var parsingErrors: [Error]
-    private var itemConflicts: [StoreItemsError]
+    private var itemConflicts: [StoreItemsResponse.Error]
     private var isFinished: Bool
     private var processedCount: Int
 
@@ -161,11 +161,13 @@ final class SyncBatchProcessor {
             // Cache JSONs locally for later use (in CR)
             self.storeIndividualObjects(from: objects, type: .item, libraryId: libraryId)
 
-            // BETA: - forcing preferRemoteData to true for beta, it should be false here so that we report conflicts
-            let conflicts = try coordinator.perform(request: StoreItemsDbResponseRequest(responses: items, schemaController: self.schemaController, dateParser: self.dateParser, preferResponseData: true))
+            // BETA: - forcing preferResponseData to true for beta, it should be false here so that we report conflicts
+            let response = try coordinator.perform(request: StoreItemsDbResponseRequest(responses: items, schemaController: self.schemaController, dateParser: self.dateParser, preferResponseData: true))
             let failedKeys = self.failedKeys(from: expectedKeys, parsedKeys: items.map({ $0.key }), errors: errors)
 
-            return (failedKeys, errors, conflicts)
+            self.renameExistingFiles(changes: response.changedFilenames, libraryId: libraryId)
+
+            return (failedKeys, errors, response.conflicts)
 
         case .settings:
             return ([], [], [])
@@ -176,6 +178,24 @@ final class SyncBatchProcessor {
         // Keys that were not successfully parsed will be marked for resync so that the sync process can continue without them for now.
         // Filter out parsed keys.
         return expectedKeys.filter({ !parsedKeys.contains($0) })
+    }
+
+    private func renameExistingFiles(changes: [StoreItemsResponse.FilenameChange], libraryId: LibraryIdentifier) {
+        for change in changes {
+            let oldFile = Files.attachmentFile(in: libraryId, key: change.key, filename: change.oldName, contentType: change.contentType)
+
+            guard self.fileStorage.has(oldFile) else { continue }
+
+            let newFile = Files.attachmentFile(in: libraryId, key: change.key, filename: change.newName, contentType: change.contentType)
+
+            do {
+                try self.fileStorage.move(from: oldFile, to: newFile)
+            } catch let error {
+                DDLogWarn("SyncBatchProcessor: can't rename file - \(error)")
+                // If it can't be moved, at least delete the old one. It'll have to be re-downloaded anyway.
+                try? self.fileStorage.remove(oldFile)
+            }
+        }
     }
 
     private func storeIndividualObjects(from jsonObjects: [[String: Any]], type: SyncObject, libraryId: LibraryIdentifier) {

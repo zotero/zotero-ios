@@ -11,28 +11,25 @@ import Foundation
 import CocoaLumberjackSwift
 import RealmSwift
 
-enum StoreItemsError: Error {
-    case itemDeleted(ItemResponse)
-    case itemChanged(ItemResponse)
-}
-
-struct StoreItemsDbRequest: DbRequest {
-    let responses: [ItemResponse]
-    unowned let schemaController: SchemaController
-    unowned let dateParser: DateParser
-
-    var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
-
-    func process(in database: Realm) throws {
-        for response in self.responses {
-            try StoreItemDbRequest(response: response, schemaController: self.schemaController, dateParser: self.dateParser, preferRemoteData: true).process(in: database)
-        }
+struct StoreItemsResponse {
+    struct FilenameChange {
+        let key: String
+        let oldName: String
+        let newName: String
+        let contentType: String
     }
+
+    enum Error: Swift.Error {
+        case itemDeleted(ItemResponse)
+        case itemChanged(ItemResponse)
+    }
+
+    let changedFilenames: [FilenameChange]
+    let conflicts: [Error]
 }
 
 struct StoreItemsDbResponseRequest: DbResponseRequest {
-    typealias Response = [StoreItemsError]
+    typealias Response = StoreItemsResponse
 
     let responses: [ItemResponse]
     unowned let schemaController: SchemaController
@@ -42,22 +39,30 @@ struct StoreItemsDbResponseRequest: DbResponseRequest {
     var needsWrite: Bool { return true }
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
-    func process(in database: Realm) throws -> [StoreItemsError] {
-        var errors: [StoreItemsError] = []
+    func process(in database: Realm) throws -> StoreItemsResponse {
+        var filenameChanges: [StoreItemsResponse.FilenameChange] = []
+        var errors: [StoreItemsResponse.Error] = []
+
         for response in self.responses {
             do {
-                try StoreItemDbRequest(response: response, schemaController: self.schemaController, dateParser: self.dateParser, preferRemoteData: self.preferResponseData).process(in: database)
-            } catch let error as StoreItemsError {
+                let change = try StoreItemDbRequest(response: response, schemaController: self.schemaController, dateParser: self.dateParser, preferRemoteData: self.preferResponseData).process(in: database)
+                if let change = change {
+                    filenameChanges.append(change)
+                }
+            } catch let error as StoreItemsResponse.Error {
                 errors.append(error)
             } catch let error {
                 throw error
             }
         }
-        return errors
+
+        return StoreItemsResponse(changedFilenames: filenameChanges, conflicts: errors)
     }
 }
 
-struct StoreItemDbRequest: DbRequest {
+struct StoreItemDbRequest: DbResponseRequest {
+    typealias Response = StoreItemsResponse.FilenameChange?
+
     let response: ItemResponse
     unowned let schemaController: SchemaController
     unowned let dateParser: DateParser
@@ -66,7 +71,7 @@ struct StoreItemDbRequest: DbRequest {
     var needsWrite: Bool { return true }
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
-    func process(in database: Realm) throws {
+    func process(in database: Realm) throws -> StoreItemsResponse.FilenameChange? {
         guard let libraryId = self.response.library.libraryId else { throw DbError.primaryKeyUnavailable }
 
         let item: RItem
@@ -79,11 +84,11 @@ struct StoreItemDbRequest: DbRequest {
 
         if !self.preferRemoteData {
             if item.deleted {
-                throw StoreItemsError.itemDeleted(self.response)
+                throw StoreItemsResponse.Error.itemDeleted(self.response)
             }
 
             if item.isChanged {
-                throw StoreItemsError.itemChanged(self.response)
+                throw StoreItemsResponse.Error.itemChanged(self.response)
             }
         }
 
@@ -106,7 +111,7 @@ struct StoreItemDbRequest: DbRequest {
             item.resetChanges()
         }
 
-        self.syncFields(data: self.response, item: item, database: database, schemaController: schemaController)
+        let filenameChange = self.syncFields(data: self.response, item: item, database: database, schemaController: schemaController)
         self.syncParent(key: self.response.parentKey, libraryId: libraryId, item: item, database: database)
         self.syncCollections(keys: self.response.collectionKeys, libraryId: libraryId, item: item, database: database)
         self.syncTags(self.response.tags, libraryId: libraryId, item: item, database: database)
@@ -119,9 +124,14 @@ struct StoreItemDbRequest: DbRequest {
 
         // Item title depends on item type, creators and fields, so we update derived titles (displayTitle and sortTitle) after everything else synced
         item.updateDerivedTitles()
+
+        return filenameChange
     }
 
-    private func syncFields(data: ItemResponse, item: RItem, database: Realm, schemaController: SchemaController) {
+    private func syncFields(data: ItemResponse, item: RItem, database: Realm, schemaController: SchemaController) -> StoreItemsResponse.FilenameChange? {
+        var oldName: String?
+        var newName: String?
+        var contentType: String?
         let allFieldKeys = Array(data.fields.keys)
 
         let toRemove = item.fields.filter("NOT key IN %@", allFieldKeys)
@@ -133,11 +143,15 @@ struct StoreItemDbRequest: DbRequest {
         var sortIndex: String?
         var md5: String?
 
-        allFieldKeys.forEach { key in
+        for key in allFieldKeys {
             let value = data.fields[key] ?? ""
             var field: RItemField
 
             if let existing = item.fields.filter(.key(key)).first {
+                if (existing.key == FieldKeys.Item.Attachment.filename || existing.baseKey == FieldKeys.Item.Attachment.filename) && existing.value != value {
+                    oldName = existing.value
+                    newName = value
+                }
                 existing.value = value
                 field = existing
             } else {
@@ -163,6 +177,8 @@ struct StoreItemDbRequest: DbRequest {
                 sortIndex = value
             case (FieldKeys.Item.Attachment.md5, _):
                 md5 = value
+            case (FieldKeys.Item.Attachment.contentType, _), (_, FieldKeys.Item.Attachment.contentType):
+                contentType = value
             default: break
             }
         }
@@ -172,6 +188,11 @@ struct StoreItemDbRequest: DbRequest {
         item.set(publicationTitle: publicationTitle)
         item.annotationSortIndex = sortIndex ?? ""
         item.backendMd5 = md5 ?? ""
+
+        if let oldName = oldName, let newName = newName, let contentType = contentType {
+            return StoreItemsResponse.FilenameChange(key: item.key, oldName: oldName, newName: newName, contentType: contentType)
+        }
+        return nil
     }
 
     private func sync(rects: [[Double]], in item: RItem, database: Realm) {

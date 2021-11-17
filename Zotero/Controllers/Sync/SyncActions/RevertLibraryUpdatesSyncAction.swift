@@ -36,9 +36,14 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
                                                              })
 
                 let storeCollectionsRequest = StoreCollectionsDbRequest(response: collections.responses)
-                let storeItemsRequest = StoreItemsDbRequest(responses: items.responses, schemaController: self.schemaController, dateParser: self.dateParser)
                 let storeSearchesRequest = StoreSearchesDbRequest(response: searches.responses)
-                try coordinator.perform(requests: [storeCollectionsRequest, storeItemsRequest, storeSearchesRequest])
+                try coordinator.perform(requests: [storeCollectionsRequest, storeSearchesRequest])
+
+                // Force response data here, since we're reverting
+                let storeItemsRequest = StoreItemsDbResponseRequest(responses: items.responses, schemaController: self.schemaController, dateParser: self.dateParser, preferResponseData: true)
+                let changes = try coordinator.perform(request: storeItemsRequest).changedFilenames
+
+                self.renameExistingFiles(changes: changes, libraryId: self.libraryId)
 
                 subscriber(.success([.collection: collections.failed, .search: searches.failed, .item: items.failed]))
             } catch let error {
@@ -49,12 +54,26 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
         }
     }
 
-    private func loadCachedJsonForObject<Obj: Syncable&UpdatableObject, Response>(of type: Obj.Type,
-                                                                                  objectType: SyncObject,
-                                                                                  in libraryId: LibraryIdentifier,
-                                                                                  coordinator: DbCoordinator,
-                                                                                  createResponse: ([String: Any])
-                                                                            throws -> Response) throws -> (responses: [Response], failed: [String]) {
+    private func renameExistingFiles(changes: [StoreItemsResponse.FilenameChange], libraryId: LibraryIdentifier) {
+        for change in changes {
+            let oldFile = Files.attachmentFile(in: libraryId, key: change.key, filename: change.oldName, contentType: change.contentType)
+
+            guard self.fileStorage.has(oldFile) else { continue }
+
+            let newFile = Files.attachmentFile(in: libraryId, key: change.key, filename: change.newName, contentType: change.contentType)
+
+            do {
+                try self.fileStorage.move(from: oldFile, to: newFile)
+            } catch let error {
+                DDLogWarn("RevertLibraryUpdatesSyncAction: can't rename file - \(error)")
+                // If it can't be moved, at least delete the old one. It'll have to be re-downloaded anyway.
+                try? self.fileStorage.remove(oldFile)
+            }
+        }
+    }
+
+    private func loadCachedJsonForObject<Obj: Syncable&UpdatableObject, Response>(of type: Obj.Type, objectType: SyncObject, in libraryId: LibraryIdentifier, coordinator: DbCoordinator,
+                                                                                  createResponse: ([String: Any]) throws -> Response) throws -> (responses: [Response], failed: [String]) {
         let request = ReadAnyChangedObjectsInLibraryDbRequest<Obj>(libraryId: libraryId)
         let objects = try coordinator.perform(request: request)
 
