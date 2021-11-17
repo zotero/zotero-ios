@@ -919,8 +919,7 @@ final class SyncControllerSpec: QuickSpec {
                     }
                 }
 
-                it("should add items that exist remotely in a locally deleted," +
-                   " remotely modified collection back to collection") {
+                it("should add items that exist remotely in a locally deleted, remotely modified collection back to collection") {
                     let header = ["last-modified-version" : "1"]
                     let libraryId = self.userLibraryId
                     let objects = SyncObject.allCases
@@ -1131,6 +1130,91 @@ final class SyncControllerSpec: QuickSpec {
 //                        self.syncController.start(type: .normal, libraries: .all)
 //                    }
 //                }
+
+                it("renames local file if remote filename changed") {
+                    let header = ["last-modified-version" : "3"]
+                    let itemKey = "AAAAAAAA"
+                    let libraryId = self.userLibraryId
+                    let oldFilename = "filename"
+                    let newFilename = "new filename"
+                    let contentType = "text/plain"
+                    let objects = SyncObject.allCases
+                    let objectKeys: [SyncObject: String] = [.item: itemKey]
+                    let versionResponses: [SyncObject: Any] = [.item: [itemKey: 3]]
+                    let objectResponses: [SyncObject: Any] = [.item: [["key": itemKey,
+                                                                       "version": 3,
+                                                                       "library": ["id": 0, "type": "user", "name": "A"],
+                                                                       "data": ["title": "New title", "filename": newFilename, "contentType": contentType, "itemType": "attachment", "linkMode": LinkMode.importedFile.rawValue]]]]
+
+                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
+                    createStub(for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0),
+                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors" : ["value": [], "version": 3]])
+                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:])
+                    objects.forEach { object in
+                        createStub(for: VersionsRequest(libraryId: libraryId, userId: self.userId, objectType: object, version: 0),
+                                   baseUrl: baseUrl, headers: header, jsonResponse: (versionResponses[object] ?? [:]))
+                    }
+                    objects.forEach { object in
+                        createStub(for: ObjectsRequest(libraryId: libraryId, userId: self.userId, objectType: object, keys: (objectKeys[object] ?? "")),
+                                   baseUrl: baseUrl, headers: header, jsonResponse: (objectResponses[object] ?? [:]))
+                    }
+                    createStub(for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
+                               baseUrl: baseUrl, headers: header, jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []])
+
+                    let file = Files.attachmentFile(in: libraryId, key: itemKey, filename: oldFilename, contentType: contentType)
+                    let data = "file".data(using: .utf8)!
+                    try! TestControllers.fileStorage.write(data, to: file, options: .atomic)
+
+                    self.createNewSyncController()
+
+                    let realm = self.realm!
+                    try! realm.write {
+                        let item = RItem()
+                        item.key = itemKey
+                        item.baseTitle = "Item"
+                        item.rawType = ItemTypes.attachment
+                        item.libraryId = .custom(.myLibrary)
+
+                        let filenameField = RItemField()
+                        filenameField.key = FieldKeys.Item.Attachment.filename
+                        filenameField.value = oldFilename
+                        item.fields.append(filenameField)
+
+                        let contentTypeField = RItemField()
+                        contentTypeField.key = FieldKeys.Item.Attachment.contentType
+                        contentTypeField.value = contentType
+                        item.fields.append(contentTypeField)
+
+                        let linkModeField = RItemField()
+                        linkModeField.key = FieldKeys.Item.Attachment.linkMode
+                        linkModeField.value = LinkMode.importedFile.rawValue
+                        item.fields.append(linkModeField)
+
+                        realm.add(item)
+                    }
+
+                    waitUntil(timeout: .seconds(10000000000)) { doneAction in
+                        self.syncController.reportFinish = { _ in
+                            let realm = try! Realm(configuration: self.realmConfig)
+                            realm.refresh()
+
+                            let item = realm.objects(RItem.self).filter(.key(itemKey, in: libraryId)).first
+                            let filename = item?.fields.first(where: { $0.key == FieldKeys.Item.Attachment.filename })?.value
+                            expect(filename).to(equal(newFilename))
+
+                            let newFile = Files.attachmentFile(in: libraryId, key: itemKey, filename: newFilename, contentType: contentType)
+                            expect(TestControllers.fileStorage.has(newFile)).to(beTrue())
+                            expect(TestControllers.fileStorage.has(file)).to(beFalse())
+
+                            try? TestControllers.fileStorage.remove(file)
+                            try? TestControllers.fileStorage.remove(newFile)
+
+                            doneAction()
+                        }
+
+                        self.syncController?.start(type: .normal, libraries: .all)
+                    }
+                }
             }
 
             describe("Upload") {

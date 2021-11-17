@@ -84,7 +84,7 @@ final class SyncActionsSpec: QuickSpec {
 
                 let coordinator = try! self.dbStorage.createCoordinator()
                 // Store original objects to db
-                _ = try! coordinator.perform(request: StoreItemsDbRequest(responses: [itemResponse], schemaController: TestControllers.schemaController, dateParser: TestControllers.dateParser))
+                _ = try! coordinator.perform(request: StoreItemsDbResponseRequest(responses: [itemResponse], schemaController: TestControllers.schemaController, dateParser: TestControllers.dateParser, preferResponseData: true))
                 try! coordinator.perform(request: StoreCollectionsDbRequest(response: [collectionResponse]))
                 try! coordinator.perform(request: StoreSearchesDbRequest(response: [searchResponse]))
 
@@ -215,7 +215,7 @@ final class SyncActionsSpec: QuickSpec {
 
                 let coordinator = try! self.dbStorage.createCoordinator()
                 // Store original objects to db
-                _ = try! coordinator.perform(request: StoreItemsDbRequest(responses: [itemResponse], schemaController: TestControllers.schemaController, dateParser: TestControllers.dateParser))
+                _ = try! coordinator.perform(request: StoreItemsDbResponseRequest(responses: [itemResponse], schemaController: TestControllers.schemaController, dateParser: TestControllers.dateParser, preferResponseData: true))
                 try! coordinator.perform(request: StoreCollectionsDbRequest(response: [collectionResponse]))
 
                 // Change some objects so that they are updated locally
