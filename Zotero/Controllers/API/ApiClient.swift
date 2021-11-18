@@ -32,8 +32,15 @@ enum ApiHttpMethod: String {
     case propfind = "PROPFIND"
 }
 
+enum ApiEndpointType {
+    case zotero
+    case webDav
+    case other
+}
+
 enum ApiEndpoint {
     case zotero(path: String)
+    case webDav(URL)
     case other(URL)
 }
 
@@ -71,17 +78,8 @@ extension ApiRequest {
         switch self.endpoint {
         case .zotero(let path):
             return ApiConstants.baseUrlString + path
-        case .other(let url):
+        case .other(let url), .webDav(let url):
             return url.absoluteString
-        }
-    }
-
-    func endpointData(withBase baseUrl: URL, authToken: String?) -> (url: URL, authToken: String?) {
-        switch self.endpoint {
-        case .zotero(let path):
-            return (baseUrl.appendingPathComponent(path), authToken)
-        case .other(let url):
-            return (url, nil)
         }
     }
 }
@@ -98,7 +96,8 @@ typealias RequestCompletion<Response> = (Swift.Result<Response, Error>) -> Void
 typealias ResponseHeaders = [AnyHashable: Any]
 
 protocol ApiClient: AnyObject {
-    func set(authToken: String?)
+    func token(for endpoint: ApiEndpointType) -> String?
+    func set(authToken: String?, for endpoint: ApiEndpointType)
     func send<Request: ApiResponseRequest>(request: Request) -> Single<(Request.Response, HTTPURLResponse)>
     func send<Request: ApiResponseRequest>(request: Request, queue: DispatchQueue) -> Single<(Request.Response, HTTPURLResponse)>
     func send(request: ApiRequest) -> Single<(Data, HTTPURLResponse)>

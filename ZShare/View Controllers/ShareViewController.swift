@@ -430,6 +430,8 @@ final class ShareViewController: UIViewController {
 
     private func errorMessage(for error: ExtensionStore.State.AttachmentState.Error) -> String? {
         switch error {
+        case .webDavNotVerified:
+            return L10n.Errors.Shareext.webdavNotVerified
         case .cantLoadSchema:
             return L10n.Errors.Shareext.cantLoadSchema
         case .cantLoadWebData:
@@ -641,7 +643,7 @@ final class ShareViewController: UIViewController {
         let secureStorage = KeychainSecureStorage()
         let webDavController = WebDavControllerImpl(dbStorage: dbStorage, fileStorage: fileStorage, sessionStorage: SecureWebDavSessionStorage(secureStorage: secureStorage))
 
-        apiClient.set(authToken: session.apiToken)
+        apiClient.set(authToken: ("Bearer " + session.apiToken), for: .zotero)
         translatorsController.updateFromRepo(type: .shareExtension)
 
         self.dbStorage = dbStorage

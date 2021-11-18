@@ -9,12 +9,8 @@
 import Foundation
 
 struct AttachmentUploadRequest: ApiRequest {
-    let url: URL
+    let endpoint: ApiEndpoint
     let httpMethod: ApiHttpMethod
-
-    var endpoint: ApiEndpoint {
-        return .other(self.url)
-    }
 
     var parameters: [String : Any]? {
         return nil

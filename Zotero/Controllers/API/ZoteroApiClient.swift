@@ -28,7 +28,7 @@ final class ZoteroApiClient: ApiClient {
     private let url: URL
     private let manager: Alamofire.Session
 
-    private var token: String?
+    private var tokens: [ApiEndpointType: String]
 
     init(baseUrl: String, configuration: URLSessionConfiguration) {
         guard let url = URL(string: baseUrl) else {
@@ -37,10 +37,15 @@ final class ZoteroApiClient: ApiClient {
 
         self.url = url
         self.manager = Alamofire.Session(configuration: configuration)
+        self.tokens = [:]
     }
 
-    func set(authToken: String?) {
-        self.token = authToken
+    func token(for endpoint: ApiEndpointType) -> String? {
+        return self.tokens[endpoint]
+    }
+
+    func set(authToken: String?, for endpoint: ApiEndpointType) {
+        self.tokens[endpoint] = authToken
     }
 
     func send<Request: ApiResponseRequest>(request: Request) -> Single<(Request.Response, HTTPURLResponse)> {
@@ -48,7 +53,7 @@ final class ZoteroApiClient: ApiClient {
     }
 
     func send<Request: ApiResponseRequest>(request: Request, queue: DispatchQueue) -> Single<(Request.Response, HTTPURLResponse)> {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
+        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
         let startTime = CFAbsoluteTimeGetCurrent()
         return self.manager.rx.request(urlRequest: convertible)
                               .validate(acceptableStatusCodes: request.acceptableStatusCodes)
@@ -78,7 +83,7 @@ final class ZoteroApiClient: ApiClient {
     }
 
     func send(request: ApiRequest, queue: DispatchQueue) -> Single<(Data, HTTPURLResponse)> {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
+        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
         let startTime = CFAbsoluteTimeGetCurrent()
         return self.manager.rx.request(urlRequest: convertible)
                               .validate(acceptableStatusCodes: request.acceptableStatusCodes)
@@ -102,7 +107,7 @@ final class ZoteroApiClient: ApiClient {
     }
 
     func download(request: ApiDownloadRequest) -> Observable<DownloadRequest> {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
+        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
         return self.manager.rx.download(convertible) { _, _ -> (destinationURL: URL, options: DownloadRequest.Options) in
                                   return (request.downloadUrl, [.createIntermediateDirectories, .removePreviousFile])
                               }
@@ -112,32 +117,49 @@ final class ZoteroApiClient: ApiClient {
     }
 
     func upload(request: ApiRequest, data: Data) -> Single<UploadRequest> {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
+        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
         let method = HTTPMethod(rawValue: request.httpMethod.rawValue)
-        let headers = request.headers.flatMap(HTTPHeaders.init)
+        let headers = HTTPHeaders(convertible.allHeaders)
         return Single.create { [weak self] subscriber -> Disposable in
             guard let `self` = self else { return Disposables.create() }
-            subscriber(.success(self.manager.upload(data, to: convertible, method: method, headers: headers)))
+            subscriber(.success(self.manager.upload(data, to: convertible, method: method, headers: headers).validate(statusCode: request.acceptableStatusCodes)))
             return Disposables.create()
         }
     }
 
     func upload(request: ApiRequest, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<UploadRequest> {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
+        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
         let method = HTTPMethod(rawValue: request.httpMethod.rawValue)
-        return self.manager.rx.upload(multipartFormData: multipartFormData, to: convertible, method: method, headers: request.headers.flatMap(HTTPHeaders.init)).asSingle()
+        return self.manager.rx.upload(multipartFormData: multipartFormData, to: convertible, method: method, headers: HTTPHeaders(convertible.allHeaders))
+                              .flatMap({ return Observable.just($0.validate(statusCode: request.acceptableStatusCodes)) })
+                              .asSingle()
     }
 
     func upload(request: ApiRequest, fromFile file: File) -> Single<UploadRequest> {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
+        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
         let method = HTTPMethod(rawValue: request.httpMethod.rawValue)
-        return self.manager.rx.upload(file.createUrl(), to: convertible, method: method, headers: request.headers.flatMap(HTTPHeaders.init)).asSingle()
+        return self.manager.rx.upload(file.createUrl(), to: convertible, method: method, headers: HTTPHeaders(convertible.allHeaders))
+                              .flatMap({ return Observable.just($0.validate(statusCode: request.acceptableStatusCodes)) })
+                              .asSingle()
+    }
+
+    private func token(for endpoint: ApiEndpoint) -> String? {
+        let endpointType: ApiEndpointType
+        switch endpoint {
+        case .zotero:
+            endpointType = .zotero
+        case .webDav:
+            endpointType = .webDav
+        case .other:
+            endpointType = .other
+        }
+        return self.tokens[endpointType]
     }
 }
 
 extension ZoteroApiClient: ApiRequestCreator {
     func dataRequest(for request: ApiRequest) -> DataRequest {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
+        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
         return self.manager.request(convertible).validate(acceptableStatusCodes: request.acceptableStatusCodes)
     }
 }

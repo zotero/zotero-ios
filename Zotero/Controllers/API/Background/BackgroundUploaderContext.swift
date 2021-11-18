@@ -11,7 +11,7 @@ import Foundation
 final class BackgroundUploaderContext {
     private static let key = "uploads"
 
-    private let userDefault = UserDefaults(suiteName: AppGroup.identifier) ?? UserDefaults.standard
+    private let userDefault = UserDefaults.zotero
 
     // MARK: - Actions
 

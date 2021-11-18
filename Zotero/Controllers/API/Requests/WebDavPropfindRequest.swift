@@ -17,7 +17,7 @@ struct WebDavPropfindRequest: ApiRequest {
     let acceptableStatusCodes: Set<Int>
 
     init(url: URL) {
-        self.endpoint = .other(url)
+        self.endpoint = .webDav(url)
         self.httpMethod = .propfind
         // IIS 5.1 requires at least one property in PROPFIND
         self.parameters = "<propfind xmlns='DAV:'><prop><getcontentlength/></prop></propfind>".data(using: .utf8)?.asParameters()

@@ -6,6 +6,7 @@
 //  Copyright © 2021 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import CocoaLumberjackSwift
 import Foundation
 
 protocol WebDavSessionStorage: AnyObject {
@@ -15,6 +16,8 @@ protocol WebDavSessionStorage: AnyObject {
     var url: String { get set }
     var scheme: WebDavScheme { get set }
     var password: String { get set }
+
+    func createToken() throws -> String
 }
 
 final class SecureWebDavSessionStorage: WebDavSessionStorage {
@@ -82,5 +85,21 @@ final class SecureWebDavSessionStorage: WebDavSessionStorage {
         set {
             self.secureStorage.webDavPassword = newValue.isEmpty ? nil : newValue
         }
+    }
+
+    func createToken() throws -> String {
+        let username = self.username
+        guard !username.isEmpty else {
+            DDLogError("WebDavSessionStorage: username not found")
+            throw WebDavError.Verification.noUsername
+        }
+        let password = self.password
+        guard !password.isEmpty else {
+            DDLogError("WebDavSessionStorage: password not found")
+            throw WebDavError.Verification.noPassword
+        }
+
+        let token = "\(username):\(password)".data(using: .utf8).flatMap({ $0.base64EncodedString(options: .endLineWithLineFeed) }) ?? ""
+        return "Basic \(token)"
     }
 }

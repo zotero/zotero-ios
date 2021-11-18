@@ -32,8 +32,8 @@ final class BackgroundUploadProcessor {
 
     func createRequest(for upload: BackgroundUpload, filename: String, mimeType: String, parameters: [String: String]?, headers: [String: String]?) -> Single<(URLRequest, URL)> {
         switch upload.type {
-        case .webdav:
-            return self.createPutRequest(for: upload, filename: filename, mimeType: mimeType).flatMap({ Single.just(($0, upload.fileUrl)) })
+        case .webdav(_, let authToken):
+            return self.createPutRequest(for: upload, filename: filename, mimeType: mimeType, authToken: authToken).flatMap({ Single.just(($0, upload.fileUrl)) })
         case .zotero:
             return self.createMultipartformRequest(for: upload, filename: filename, mimeType: mimeType, parameters: parameters, headers: headers)
         }
@@ -87,11 +87,12 @@ final class BackgroundUploadProcessor {
         }
     }
 
-    func createPutRequest(for upload: BackgroundUpload, filename: String, mimeType: String) -> Single<URLRequest> {
+    func createPutRequest(for upload: BackgroundUpload, filename: String, mimeType: String, authToken: String) -> Single<URLRequest> {
         return Single.create { subscriber -> Disposable in
             do {
                 // Create upload request and validate it.
-                let request = try URLRequest(url: upload.remoteUrl.appendingPathComponent(upload.key + ".zip"), method: .put)
+                var request = try URLRequest(url: upload.remoteUrl.appendingPathComponent(upload.key + ".zip"), method: .put)
+                request.setValue(authToken, forHTTPHeaderField: "Authorization")
                 try request.validate()
 
                 subscriber(.success(request))
@@ -113,7 +114,7 @@ final class BackgroundUploadProcessor {
         switch upload.type {
         case .zotero(let uploadKey):
             return self.finishZoteroUpload(uploadKey: uploadKey, key: upload.key, libraryId: upload.libraryId, fileUrl: upload.fileUrl, userId: upload.userId)
-        case .webdav(let mtime):
+        case .webdav(let mtime, _):
             return self.finishWebdavUpload(key: upload.key, libraryId: upload.libraryId, mtime: mtime, md5: upload.md5, userId: upload.userId, fileUrl: upload.fileUrl, webDavUrl: upload.remoteUrl)
         }
     }

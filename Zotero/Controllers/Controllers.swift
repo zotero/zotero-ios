@@ -130,7 +130,7 @@ final class Controllers {
 
     private func initializeSession(with data: SessionData, isLogin: Bool, debugLogging: DebugLogging) {
         do {
-            self.apiClient.set(authToken: data.apiToken)
+            self.apiClient.set(authToken: ("Bearer " + data.apiToken), for: .zotero)
 
             debugLogging.start(type: .immediate)
 
@@ -150,7 +150,7 @@ final class Controllers {
             DDLogError("Controllers: can't create UserControllers - \(error)")
 
             // Initialization failed, clear everything
-            self.apiClient.set(authToken: nil)
+            self.apiClient.set(authToken: nil, for: .zotero)
             self.userControllers = nil
             // Stop observing session so that we don't get another event after reset
             self.sessionCancellable = nil
@@ -172,7 +172,7 @@ final class Controllers {
         // Disable ongoing sync and unsubscribe from websocket
         controllers?.disableSync(apiKey: self.apiKey)
         // Clear session and controllers
-        self.apiClient.set(authToken: nil)
+        self.apiClient.set(authToken: nil, for: .zotero)
         self.userControllers = nil
         // Report user logged out
         self.userInitialized.send(.success(false))

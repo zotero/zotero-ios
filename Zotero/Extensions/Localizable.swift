@@ -491,6 +491,8 @@ internal enum L10n {
       internal static let translationFailed = L10n.tr("Localizable", "errors.shareext.translation_failed")
       /// An unknown error occurred.
       internal static let unknown = L10n.tr("Localizable", "errors.shareext.unknown")
+      /// WebDAV verification error
+      internal static let webdavNotVerified = L10n.tr("Localizable", "errors.shareext.webdav_not_verified")
     }
     internal enum Styles {
       /// Could not add style “%@”.

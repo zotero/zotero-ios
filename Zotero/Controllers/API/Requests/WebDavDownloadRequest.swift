@@ -17,7 +17,7 @@ struct WebDavDownloadRequest: ApiRequest {
     let acceptableStatusCodes: Set<Int>
 
     init(url: URL) {
-        self.endpoint = .other(url)
+        self.endpoint = .webDav(url)
         self.httpMethod = .get
         self.parameters = nil
         self.encoding = .url

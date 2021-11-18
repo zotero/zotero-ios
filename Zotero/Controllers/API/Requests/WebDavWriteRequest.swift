@@ -17,7 +17,7 @@ struct WebDavWriteRequest: ApiRequest {
     let acceptableStatusCodes: Set<Int>
 
     init(url: URL, data: Data) {
-        self.endpoint = .other(url)
+        self.endpoint = .webDav(url)
         self.httpMethod = .put
         self.parameters = data.asParameters()
         self.encoding = .data

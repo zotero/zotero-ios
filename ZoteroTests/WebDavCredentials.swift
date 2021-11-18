@@ -18,6 +18,10 @@ class WebDavCredentials: WebDavSessionStorage {
     var scheme: WebDavScheme
     var password: String
 
+    func createToken() throws -> String {
+        return "\(self.username):\(self.password)".data(using: .utf8)!.base64EncodedString()
+    }
+
     init(isEnabled: Bool, username: String, password: String, scheme: WebDavScheme, url: String, isVerified: Bool) {
         self.isEnabled = isEnabled
         self.isVerified = isVerified

@@ -137,13 +137,14 @@ final class AttachmentDownloader {
 
     // MARK: - Helpers
 
-    private func downloadRequest(file: File, key: String, libraryId: LibraryIdentifier, userId: Int) -> Single<FileRequest> {
+    private func downloadRequest(file: File, key: String, libraryId: LibraryIdentifier, userId: Int) -> Observable<DownloadRequest> {
         if case .custom = libraryId, self.webDavController.sessionStorage.isEnabled {
-            return self.webDavController.urlForDownload(key: key, queue: self.queue)
+            return self.webDavController.download(key: key, file: file, queue: self.queue)
                        .subscribe(on: self.scheduler)
-                       .flatMap({ Single.just(FileRequest(data: .external($0), destination: file)) })
         }
-        return Single.just(FileRequest(data: .internal(libraryId, self.userId, key), destination: file))
+
+        let request = FileRequest(libraryId: libraryId, userId: self.userId, key: key, destination: file)
+        return self.apiClient.download(request: request)
     }
 
     private func download(file: File, key: String, parentKey: String?, libraryId: LibraryIdentifier, hasLocalCopy: Bool) {
@@ -165,10 +166,6 @@ final class AttachmentDownloader {
         var isCompressed = self.webDavController.sessionStorage.isEnabled
 
         self.downloadRequest(file: file, key: key, libraryId: libraryId, userId: self.userId)
-            .asObservable()
-            .flatMap({ request -> Observable<DownloadRequest> in
-                return self.apiClient.download(request: request)
-            })
             .observe(on: MainScheduler.instance)
             .flatMap { request -> Observable<DownloadRequest> in
                 let downloadProgress = request.downloadProgress

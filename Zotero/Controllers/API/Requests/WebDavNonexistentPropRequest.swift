@@ -17,7 +17,7 @@ struct WebDavNonexistentPropRequest: ApiRequest {
     let acceptableStatusCodes: Set<Int>
 
     init(url: URL) {
-        self.endpoint = .other(url.appendingPathComponent("nonexistent.prop"))
+        self.endpoint = .webDav(url.appendingPathComponent("nonexistent.prop"))
         self.httpMethod = .get
         self.parameters = nil
         self.encoding = .url

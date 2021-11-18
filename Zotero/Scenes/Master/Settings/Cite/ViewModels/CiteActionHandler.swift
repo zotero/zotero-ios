@@ -48,7 +48,7 @@ struct CiteActionHandler: ViewModelActionHandler {
 
         // If it doesn't, we need to download and process it.
         let file = Files.style(filename: remoteStyle.name)
-        let request = FileRequest(data: .external(remoteStyle.href), destination: file)
+        let request = FileRequest(url: remoteStyle.href, destination: file)
 
         self.apiClient.download(request: request)
                       .subscribe(on: self.scheduler)
@@ -80,7 +80,7 @@ struct CiteActionHandler: ViewModelActionHandler {
         }
 
         let file = Files.style(filename: dependencyUrl.lastPathComponent)
-        let request = FileRequest(data: .external(dependencyUrl), destination: file)
+        let request = FileRequest(url: dependencyUrl, destination: file)
 
         self.apiClient.download(request: request)
                       .subscribe(on: self.scheduler)

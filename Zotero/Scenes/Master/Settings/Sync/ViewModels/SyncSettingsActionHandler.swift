@@ -43,7 +43,7 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
                 state.webDavVerificationResult = nil
             }
             self.webDavController.sessionStorage.scheme = scheme
-            self.webDavController.sessionStorage.isVerified = false
+            self.webDavController.resetVerification()
 
         case .setUrl(let url):
             self.update(viewModel: viewModel) { state in
@@ -51,7 +51,7 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
                 state.webDavVerificationResult = nil
             }
             self.webDavController.sessionStorage.url = url
-            self.webDavController.sessionStorage.isVerified = false
+            self.webDavController.resetVerification()
 
         case .setUsername(let username):
             self.update(viewModel: viewModel) { state in
@@ -59,7 +59,7 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
                 state.webDavVerificationResult = nil
             }
             self.webDavController.sessionStorage.username = username
-            self.webDavController.sessionStorage.isVerified = false
+            self.webDavController.resetVerification()
 
         case .setPassword(let password):
             self.update(viewModel: viewModel) { state in
@@ -67,7 +67,7 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
                 state.webDavVerificationResult = nil
             }
             self.webDavController.sessionStorage.password = password
-            self.webDavController.sessionStorage.isVerified = false
+            self.webDavController.resetVerification()
 
         case .verify:
             self.verify(in: viewModel)

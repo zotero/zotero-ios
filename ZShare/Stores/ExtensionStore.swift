@@ -68,6 +68,7 @@ final class ExtensionStore {
                 case parseError(Parsing.Error)
                 case schemaError(SchemaError)
                 case quotaLimit(LibraryIdentifier)
+                case webDavNotVerified
 
                 var isFatal: Bool {
                     switch self {
@@ -607,7 +608,7 @@ final class ExtensionStore {
     /// Starts download of PDF attachment. Downloads it to temporary folder.
     /// - parameter url: URL of file to download
     private func download(url: URL, to file: File) -> Observable<RxProgress> {
-        let request = FileRequest(data: .external(url), destination: file)
+        let request = FileRequest(url: url, destination: file)
         return self.apiClient.download(request: request)
                              .subscribe(on: self.backgroundScheduler)
                              .flatMap { request in
@@ -845,8 +846,8 @@ final class ExtensionStore {
                                                      .flatMap({ return Single.just(($0, submissionData)) })
                           }
 
-        prepare.flatMap { [weak self] response, submissionData -> Single<()> in
-            guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
+        prepare.flatMap { [weak self, weak webDavController] response, submissionData -> Single<()> in
+            guard let `self` = self, let webDavController = webDavController else { return Single.error(State.AttachmentState.Error.expired) }
 
             switch response {
             case .exists:
@@ -866,8 +867,11 @@ final class ExtensionStore {
                 guard let backgroundUploader = self.backgroundUploader else {
                     return Single.error(State.AttachmentState.Error.missingBackgroundUploader)
                 }
+                guard let authToken = webDavController.authToken else {
+                    return Single.error(State.AttachmentState.Error.webDavNotVerified)
+                }
 
-                let upload = BackgroundUpload(type: .webdav(mtime: submissionData.mtime), key: self.state.attachmentKey, libraryId: data.libraryId, userId: data.userId,
+                let upload = BackgroundUpload(type: .webdav(mtime: submissionData.mtime, authToken: authToken), key: self.state.attachmentKey, libraryId: data.libraryId, userId: data.userId,
                                               remoteUrl: url, fileUrl: file.createUrl(), md5: submissionData.md5)
                 return backgroundUploader.start(upload: upload, filename: (data.attachment.key + ".zip"), mimeType: ExtensionStore.zipMimetype, parameters: [:], headers: [:])
             }

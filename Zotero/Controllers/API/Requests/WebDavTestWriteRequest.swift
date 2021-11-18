@@ -17,7 +17,7 @@ struct WebDavTestWriteRequest: ApiRequest {
     let acceptableStatusCodes: Set<Int>
 
     init(url: URL) {
-        self.endpoint = .other(url.appendingPathComponent("zotero-test-file.prop"))
+        self.endpoint = .webDav(url.appendingPathComponent("zotero-test-file.prop"))
         self.httpMethod = .put
         self.parameters = " ".data(using: .utf8)?.asParameters()
         self.encoding = .data

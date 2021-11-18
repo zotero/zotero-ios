@@ -9,22 +9,8 @@
 import Foundation
 
 struct FileRequest: ApiDownloadRequest {
-    enum EndpointData {
-        case `internal`(LibraryIdentifier, Int, String)
-        case external(URL)
-    }
-
-    let data: EndpointData
+    let endpoint: ApiEndpoint
     let destination: File
-
-    var endpoint: ApiEndpoint {
-        switch self.data {
-        case .external(let url):
-            return .other(url)
-        case .internal(let libraryId, let userId, let key):
-            return .zotero(path: "\(libraryId.apiPath(userId: userId))/items/\(key)/file")
-        }
-    }
 
     var httpMethod: ApiHttpMethod {
         return .get
@@ -44,5 +30,20 @@ struct FileRequest: ApiDownloadRequest {
 
     var downloadUrl: URL {
         return self.destination.createUrl()
+    }
+
+    init(libraryId: LibraryIdentifier, userId: Int, key: String, destination: File) {
+        self.endpoint = .zotero(path: "\(libraryId.apiPath(userId: userId))/items/\(key)/file")
+        self.destination = destination
+    }
+
+    init(webDavUrl url: URL, destination: File) {
+        self.endpoint = .webDav(url)
+        self.destination = destination
+    }
+
+    init(url: URL, destination: File) {
+        self.endpoint = .other(url)
+        self.destination = destination
     }
 }

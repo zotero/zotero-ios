@@ -19,13 +19,25 @@ struct Convertible {
     private let headers: [String: String]
 
     init(request: ApiRequest, baseUrl: URL, token: String?) {
-        let (url, token) = request.endpointData(withBase: baseUrl, authToken: token)
-        self.url = url
+        switch request.endpoint {
+        case .zotero(let path):
+            self.url = baseUrl.appendingPathComponent(path)
+        case .webDav(let url), .other(let url):
+            self.url = url
+        }
         self.token = token
         self.httpMethod = request.httpMethod
         self.encoding = request.encoding.alamoEncoding
         self.parameters = request.parameters
         self.headers = request.headers ?? [:]
+    }
+
+    var allHeaders: [String: String] {
+        var headers = self.headers
+        if let token = self.token {
+            headers["Authorization"] = token
+        }
+        return headers
     }
 }
 
@@ -36,7 +48,7 @@ extension Convertible: URLRequestConvertible {
         request.httpMethod = self.httpMethod.rawValue
         request.allHTTPHeaderFields = self.headers
         if let token = self.token {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.setValue(token, forHTTPHeaderField: "Authorization")
         }
         return try self.encoding.encode(request as URLRequestConvertible, with: self.parameters)
     }

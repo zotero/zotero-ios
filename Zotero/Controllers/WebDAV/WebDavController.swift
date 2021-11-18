@@ -8,6 +8,7 @@
 
 import Foundation
 
+import Alamofire
 import CocoaLumberjackSwift
 import RxSwift
 import SwiftUI
@@ -48,13 +49,16 @@ struct WebDavDeletionResult {
 
 protocol WebDavController: AnyObject {
     var sessionStorage: WebDavSessionStorage { get }
+    var authToken: String? { get }
 
     func checkServer(queue: DispatchQueue) -> Single<URL>
-    func urlForDownload(key: String, queue: DispatchQueue) -> Single<URL>
+    func download(key: String, file: File, queue: DispatchQueue) -> Observable<DownloadRequest>
     func prepareForUpload(key: String, mtime: Int, hash: String, file: File, queue: DispatchQueue) -> Single<WebDavUploadResult>
+    func upload(request: AttachmentUploadRequest, fromFile file: File) -> Single<UploadRequest>
     func finishUpload(key: String, result: Result<(Int, String, URL), Swift.Error>, file: File?, queue: DispatchQueue) -> Single<()>
     func delete(keys: [String], queue: DispatchQueue) -> Single<WebDavDeletionResult>
     func cancelDeletions()
+    func resetVerification()
 }
 
 final class WebDavControllerImpl: WebDavController {
@@ -71,6 +75,10 @@ final class WebDavControllerImpl: WebDavController {
     let sessionStorage: WebDavSessionStorage
     private let deletionQueue: OperationQueue
 
+    var authToken: String? {
+        return self.apiClient.token(for: .webDav)
+    }
+
     init(dbStorage: DbStorage, fileStorage: FileStorage, sessionStorage: WebDavSessionStorage) {
         let queue = OperationQueue()
         queue.maxConcurrentOperationCount = 4
@@ -84,14 +92,25 @@ final class WebDavControllerImpl: WebDavController {
         self.fileStorage = fileStorage
         self.sessionStorage = sessionStorage
         self.deletionQueue = queue
+
+        if self.sessionStorage.isVerified, let token = try? self.sessionStorage.createToken() {
+            self.apiClient.set(authToken: token, for: .webDav)
+        }
+    }
+
+    func resetVerification() {
+        self.sessionStorage.isVerified = false
+        self.apiClient.set(authToken: nil, for: .webDav)
     }
 
     /// Creates url in WebDAV server of item which should be downloaded.
     /// - parameter key: Key of item to download.
     /// - returns: Single with url of item stored in WebDAV.
-    func urlForDownload(key: String, queue: DispatchQueue) -> Single<URL> {
+    func download(key: String, file: File, queue: DispatchQueue) -> Observable<DownloadRequest> {
         return self.checkServerIfNeeded(queue: queue)
-                   .flatMap({ Single.just($0.appendingPathComponent("\(key).zip")) })
+                   .asObservable()
+                   .flatMap({ Observable.just($0.appendingPathComponent("\(key).zip")) })
+                   .flatMap({ self.apiClient.download(request: FileRequest(webDavUrl: $0, destination: file)) })
     }
 
     /// Prepares for WebDAV upload. Checks .prop file to see whether the file has been modified. Creates a ZIP file to upload. Updates mtime in db in case it's the only thing that changed.
@@ -125,6 +144,10 @@ final class WebDavControllerImpl: WebDavController {
                                       .flatMap({ Single.just(.new(url, $0)) })
                        }
                    })
+    }
+
+    func upload(request: AttachmentUploadRequest, fromFile file: File) -> Single<UploadRequest> {
+        return self.apiClient.upload(request: request, fromFile: file)
     }
 
     /// Finishes upload to WebDAV. If successful, uploads new metadata .prop file to WebDAV. In both cases removes temporary ZIP file created in `prepareForUpload`.
@@ -331,13 +354,18 @@ final class WebDavControllerImpl: WebDavController {
     /// Checks whether WebDAV server is available and compatible.
     func checkServer(queue: DispatchQueue) -> Single<URL> {
         DDLogInfo("WebDavController: checkServer")
-        return self.createUrl()
+        return self.createToken()
+                   .do(onSuccess: { [weak self] token in
+                       self?.apiClient.set(authToken: token, for: .webDav)
+                   })
+                   .flatMap({ _ in return self.createUrl() })
                    .flatMap({ url in return self.checkIsDav(url: url, queue: queue) })
                    .flatMap({ url in return self.checkZoteroDirectory(url: url, queue: queue) })
                    .do(onSuccess: { [weak self] _ in
                        self?.sessionStorage.isVerified = true
                        DDLogInfo("WebDavController: file sync is successfully set up")
-                   }, onError: { error in
+                   }, onError: { [weak self] error in
+                       self?.apiClient.set(authToken: nil, for: .webDav)
                        DDLogError("WebDavController: checkServer failed - \(error)")
                    })
     }
@@ -428,18 +456,6 @@ final class WebDavControllerImpl: WebDavController {
                 subscriber(.failure(WebDavError.Verification.noUsername))
                 return Disposables.create()
             }
-            let username = sessionStorage.username
-            guard !username.isEmpty else {
-                DDLogError("WebDavController: username not found")
-                subscriber(.failure(WebDavError.Verification.noUsername))
-                return Disposables.create()
-            }
-            let password = sessionStorage.password
-            guard !password.isEmpty else {
-                DDLogError("WebDavController: username not found")
-                subscriber(.failure(WebDavError.Verification.noPassword))
-                return Disposables.create()
-            }
             let url = sessionStorage.url
             guard !url.isEmpty else {
                 DDLogError("WebDavController: url not found")
@@ -467,8 +483,6 @@ final class WebDavControllerImpl: WebDavController {
 
             var components = URLComponents()
             components.scheme = sessionStorage.scheme.rawValue
-            components.user = username
-            components.password = password
             components.host = host
             components.path = path
             components.port = port
@@ -478,6 +492,25 @@ final class WebDavControllerImpl: WebDavController {
             } else {
                 DDLogError("WebDavController: could not create url from components. url=\(url); host=\(host ?? "missing"); path=\(path); port=\(port.flatMap(String.init) ?? "missing")")
                 subscriber(.failure(WebDavError.Verification.invalidUrl))
+            }
+
+            return Disposables.create()
+        }
+    }
+
+    private func createToken() -> Single<String> {
+        return Single.create { [weak sessionStorage] subscriber in
+            guard let sessionStorage = sessionStorage else {
+                DDLogError("WebDavController: session storage not found")
+                subscriber(.failure(WebDavError.Verification.noUsername))
+                return Disposables.create()
+            }
+
+            do {
+                let token = try sessionStorage.createToken()
+                subscriber(.success(token))
+            } catch let error {
+                subscriber(.failure(error))
             }
 
             return Disposables.create()

@@ -17,7 +17,7 @@ struct WebDavDeleteRequest: ApiRequest {
     let acceptableStatusCodes: Set<Int>
 
     init(url: URL) {
-        self.endpoint = .other(url)
+        self.endpoint = .webDav(url)
         self.httpMethod = .delete
         self.parameters = nil
         self.encoding = .url
