@@ -347,7 +347,7 @@ final class WebDavControllerImpl: WebDavController {
         let request = WebDavCheckRequest(url: url)
         return self.apiClient.send(request: request, queue: queue)
                              .flatMap({ _, response -> Single<URL> in
-                                 guard response.allHeaderFields["DAV"] != nil else {
+                                 guard response.allHeaderFields["dav"] != nil || response.allHeaderFields["DAV"] != nil else {
                                      return Single.error(WebDavError.Verification.notDav)
                                  }
                                  return Single.just(url)

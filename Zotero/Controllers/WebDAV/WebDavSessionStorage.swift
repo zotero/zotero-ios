@@ -36,11 +36,11 @@ final class SecureWebDavSessionStorage: WebDavSessionStorage {
 
     var isVerified: Bool {
         get {
-            return Defaults.shared.webDavEnabled
+            return Defaults.shared.webDavVerified
         }
 
         set {
-            Defaults.shared.webDavEnabled = newValue
+            Defaults.shared.webDavVerified = newValue
         }
     }
 
