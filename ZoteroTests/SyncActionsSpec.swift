@@ -620,6 +620,7 @@ fileprivate class WebDavTestController: WebDavController {
     }
 
     let sessionStorage: WebDavSessionStorage
+    var authToken: String?
 
     init() {
         self.sessionStorage = WebDavSession()
@@ -629,11 +630,15 @@ fileprivate class WebDavTestController: WebDavController {
         return Single.error(Error.shouldntBeCalled)
     }
 
-    func urlForDownload(key: String, queue: DispatchQueue) -> Single<URL> {
-        return Single.error(Error.shouldntBeCalled)
+    func download(key: String, file: File, queue: DispatchQueue) -> Observable<DownloadRequest> {
+        return Observable.error(Error.shouldntBeCalled)
     }
 
     func prepareForUpload(key: String, mtime: Int, hash: String, file: File, queue: DispatchQueue) -> Single<WebDavUploadResult> {
+        return Single.error(Error.shouldntBeCalled)
+    }
+
+    func upload(request: AttachmentUploadRequest, fromFile file: File) -> Single<UploadRequest> {
         return Single.error(Error.shouldntBeCalled)
     }
 
@@ -643,6 +648,10 @@ fileprivate class WebDavTestController: WebDavController {
 
     func delete(keys: [String], queue: DispatchQueue) -> Single<WebDavDeletionResult> {
         return Single.error(Error.shouldntBeCalled)
+    }
+
+    func resetVerification() {
+        self.sessionStorage.isVerified = false
     }
 
     func cancelDeletions() {}
@@ -655,4 +664,8 @@ fileprivate class WebDavSession: WebDavSessionStorage {
     var url: String = ""
     var scheme: WebDavScheme = .http
     var password: String = ""
+
+    func createToken() throws -> String {
+        return "\(self.username):\(self.password)".data(using: .utf8).flatMap({ $0.base64EncodedString(options: []) }) ?? ""
+    }
 }

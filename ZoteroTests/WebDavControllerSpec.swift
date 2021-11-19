@@ -138,7 +138,7 @@ final class WebDavControllerSpec: QuickSpec {
                 let contentType = "application/pdf"
                 let attachment = Attachment(type: .file(filename: filename, contentType: contentType, location: .remote, linkType: .importedUrl), title: "Test", key: "aaaaaa", libraryId: .custom(.myLibrary))
                 let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
-                let request = FileRequest(data: .external(self.webDavUrl.appendingPathComponent(attachment.key + ".zip")), destination: file)
+                let request = FileRequest(webDavUrl: self.webDavUrl.appendingPathComponent(attachment.key + ".zip"), destination: file)
 
                 createStub(for: request, baseUrl: self.apiBaseUrl, responseError: AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 404)))
 
@@ -158,7 +158,7 @@ final class WebDavControllerSpec: QuickSpec {
                 let zipUrl = URL(fileURLWithPath: Bundle(for: WebDavControllerSpec.self).path(forResource: "bitcoin", ofType: "zip")!)
                 let attachment = Attachment(type: .file(filename: filename, contentType: contentType, location: .remote, linkType: .importedUrl), title: "Test", key: "AAAAAA", libraryId: .custom(.myLibrary))
                 let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
-                let request = FileRequest(data: .external(self.webDavUrl.appendingPathComponent(attachment.key + ".zip")), destination: file)
+                let request = FileRequest(webDavUrl: self.webDavUrl.appendingPathComponent(attachment.key + ".zip"), destination: file)
 
                 createStub(for: request, ignoreBody: true, baseUrl: self.apiBaseUrl, headers: ["Zotero-File-Compressed": "Yes"], statusCode: 200, url: zipUrl)
 
@@ -246,7 +246,7 @@ final class WebDavControllerSpec: QuickSpec {
                 createStub(for: WebDavDeleteRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [])
                 createStub(for: WebDavWriteRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop"), data: Data()),
                            ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [])
-                createStub(for: AttachmentUploadRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".zip"), httpMethod: .put), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [])
+                createStub(for: AttachmentUploadRequest(endpoint: .webDav(self.webDavUrl.appendingPathComponent(itemKey + ".zip")), httpMethod: .put), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [])
 
                 let updatesRequest = UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .item, params: [], version: nil)
                 stub(condition: updatesRequest.stubCondition(with: self.apiBaseUrl, ignoreBody: true), response: { request -> HTTPStubsResponse in
