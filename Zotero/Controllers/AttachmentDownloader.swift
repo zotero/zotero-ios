@@ -87,7 +87,7 @@ final class AttachmentDownloader {
 
     // MARK: - Actions
 
-    func download(attachment: Attachment, parentKey: String?) {
+    func downloadIfNeeded(attachment: Attachment, parentKey: String?) {
         switch attachment.type {
         case .url:
             self.observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .ready)))

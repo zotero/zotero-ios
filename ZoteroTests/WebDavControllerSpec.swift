@@ -544,7 +544,7 @@ final class WebDavControllerSpec: QuickSpec {
             })
             .disposed(by: self.disposeBag)
 
-        self.downloader?.download(attachment: attachment, parentKey: nil)
+        self.downloader?.downloadIfNeeded(attachment: attachment, parentKey: nil)
     }
 
     private func testSync(syncFinishedAction: @escaping () -> Void) {

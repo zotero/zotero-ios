@@ -24,7 +24,17 @@ struct AttachmentCreator {
 
     static func mainAttachment(for item: RItem, fileStorage: FileStorage) -> Attachment? {
         if item.rawType == ItemTypes.attachment {
-            return self.attachment(for: item, fileStorage: fileStorage, urlDetector: nil)
+            // If item is attachment, create `Attachment` and ignore linked attachments.
+            if let attachment = self.attachment(for: item, fileStorage: fileStorage, urlDetector: nil) {
+                switch attachment.type {
+                case .url:
+                    return attachment
+                case .file(_, _, _, let linkType) where linkType == .importedFile || linkType == .importedUrl:
+                    return attachment
+                default: break
+                }
+            }
+            return nil
         }
 
         var attachmentData = self.attachmentData(for: item)

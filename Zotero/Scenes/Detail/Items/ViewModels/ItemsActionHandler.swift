@@ -220,7 +220,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
         for key in keys {
             let (progress, _) = self.fileDownloader.data(for: key, libraryId: viewModel.state.library.identifier)
             guard progress == nil, let attachment = viewModel.state.itemAccessories[key]?.attachment else { return }
-            self.fileDownloader.download(attachment: attachment, parentKey: (attachment.key == key ? nil : key))
+            self.fileDownloader.downloadIfNeeded(attachment: attachment, parentKey: (attachment.key == key ? nil : key))
         }
     }
 
@@ -291,7 +291,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
                 state.attachmentToOpen = attachment.key
             }
 
-            self.fileDownloader.download(attachment: attachment, parentKey: parentKey)
+            self.fileDownloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey)
         }
     }
 

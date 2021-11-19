@@ -335,6 +335,8 @@ internal enum L10n {
       internal static let cantOpenAttachment = L10n.tr("Localizable", "errors.attachments.cant_open_attachment")
       /// Unable to unzip snapshot
       internal static let cantUnzipSnapshot = L10n.tr("Localizable", "errors.attachments.cant_unzip_snapshot")
+      /// Linked files are not supported. You can still access them on your desktop client.
+      internal static let incompatibleAttachment = L10n.tr("Localizable", "errors.attachments.incompatible_attachment")
     }
     internal enum Citation {
       /// Could not generate bibliography.

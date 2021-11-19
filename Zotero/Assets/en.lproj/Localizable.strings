@@ -304,6 +304,7 @@
 "errors.versionMismatch" = "A remote change was made during the sync";
 "errors.unknown" = "Unknown error";
 "errors.attachments.cant_unzip_snapshot" = "Unable to unzip snapshot";
+"errors.attachments.incompatible_attachment" = "Linked files are not supported. You can still access them on your desktop client.";
 "errors.attachments.cant_open_attachment" = "The attached file could not be found.";
 "errors.login.invalid_password" = "Invalid password";
 "errors.login.invalid_username" = "Invalid username";

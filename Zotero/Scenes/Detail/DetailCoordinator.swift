@@ -30,7 +30,7 @@ protocol DetailCoordinatorAttachmentProvider {
 protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showCollectionPicker(in library: Library, completed: @escaping (Set<String>) -> Void)
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library)
-    func showAttachmentError(_ error: Error, retryAction: @escaping () -> Void)
+    func showAttachmentError(_ error: Error, retryAction: (() -> Void)?)
     func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
@@ -55,7 +55,7 @@ protocol DetailItemDetailCoordinatorDelegate: AnyObject {
     func show(doi: String)
     func showCreatorCreation(for itemType: String, saved: @escaping CreatorEditSaveAction)
     func showCreatorEditor(for creator: ItemDetailState.Creator, itemType: String, saved: @escaping CreatorEditSaveAction, deleted: @escaping CreatorEditDeleteAction)
-    func showAttachmentError(_ error: Error, retryAction: @escaping () -> Void)
+    func showAttachmentError(_ error: Error, retryAction: (() -> Void)?)
     func showDeletedAlertForItem(completion: @escaping (Bool) -> Void)
     func show(error: ItemDetailError, viewModel: ViewModel<ItemDetailActionHandler>)
     func showDataReloaded(completion: @escaping () -> Void)
@@ -608,19 +608,25 @@ extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
 }
 
 extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
-    func showAttachmentError(_ error: Error, retryAction: @escaping () -> Void) {
+    func showAttachmentError(_ error: Error, retryAction: (() -> Void)?) {
+        var isLinkedFileError = false
         let message: String
         if let error = error as? ItemDetailError, error == .cantUnzipSnapshot {
             message = L10n.Errors.Attachments.cantUnzipSnapshot
+        } else if let error = error as? AttachmentDownloader.Error, error == .incompatibleAttachment {
+            message = L10n.Errors.Attachments.incompatibleAttachment
+            isLinkedFileError = true
         } else {
             message = L10n.Errors.Attachments.cantOpenAttachment
         }
 
         let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
-        controller.addAction(UIAlertAction(title: L10n.retry, style: .default, handler: { _ in
-            retryAction()
-        }))
+        if let action = retryAction, !isLinkedFileError {
+            controller.addAction(UIAlertAction(title: L10n.retry, style: .default, handler: { _ in
+                action()
+            }))
+        }
         self.topViewController.present(controller, animated: true, completion: nil)
     }
 

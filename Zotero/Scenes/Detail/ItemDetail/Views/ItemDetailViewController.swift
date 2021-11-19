@@ -390,6 +390,12 @@ final class ItemDetailViewController: UIViewController {
                         self.viewModel.process(action: .attachmentOpened(update.key))
                         self.coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
                     }
+
+                case .failed(let error):
+                    if let error = error as? AttachmentDownloader.Error, error == .incompatibleAttachment {
+                        // Show error immediately for linked files
+                        self.coordinatorDelegate?.showAttachmentError(error, retryAction: nil)
+                    }
                 default: break
                 }
             })

@@ -537,7 +537,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         if progress != nil {
             self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
         } else {
-            self.fileDownloader.download(attachment: attachment, parentKey: viewModel.state.type.previewKey)
+            self.fileDownloader.downloadIfNeeded(attachment: attachment, parentKey: viewModel.state.type.previewKey)
         }
     }
 
