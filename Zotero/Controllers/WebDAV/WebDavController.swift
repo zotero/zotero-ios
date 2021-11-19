@@ -86,6 +86,7 @@ final class WebDavControllerImpl: WebDavController {
 
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 15
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
 
         self.apiClient = ZoteroApiClient(baseUrl: "http://zotero.org/", configuration: configuration)
         self.dbStorage = dbStorage
@@ -406,7 +407,7 @@ final class WebDavControllerImpl: WebDavController {
         let request = WebDavTestWriteRequest(url: url)
         return self.apiClient.send(request: request, queue: queue)
                    .flatMap({ _ -> Single<()> in
-                       return self.apiClient.send(request: WebDavDownloadRequest(endpoint: request.endpoint), queue: queue)
+                       return self.apiClient.send(request: WebDavDownloadRequest(endpoint: request.endpoint, logLevel: .headersAndFailure), queue: queue)
                                   .flatMap({ _, response in
                                       if response.statusCode == 404 {
                                           return Single.error(WebDavError.Verification.fileMissingAfterUpload)
@@ -415,7 +416,7 @@ final class WebDavControllerImpl: WebDavController {
                                   })
                    })
                    .flatMap({ _ -> Single<()> in
-                       return self.apiClient.send(request: WebDavDeleteRequest(endpoint: request.endpoint), queue: queue).flatMap({ _ in Single.just(()) })
+                       return self.apiClient.send(request: WebDavDeleteRequest(endpoint: request.endpoint, logLevel: .headersAndFailure), queue: queue).flatMap({ _ in Single.just(()) })
                    })
     }
 
