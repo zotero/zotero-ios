@@ -15,22 +15,25 @@ struct WebDavDownloadRequest: ApiRequest {
     let encoding: ApiParameterEncoding
     let headers: [String : String]?
     let acceptableStatusCodes: Set<Int>
+    let logParams: ApiLogParameters
 
-    init(url: URL) {
+    init(url: URL, logParams: ApiLogParameters = []) {
         self.endpoint = .webDav(url)
         self.httpMethod = .get
         self.parameters = nil
         self.encoding = .url
         self.headers = nil
         self.acceptableStatusCodes = [200, 404]
+        self.logParams = logParams
     }
 
-    init(endpoint: ApiEndpoint) {
+    init(endpoint: ApiEndpoint, logParams: ApiLogParameters = []) {
         self.endpoint = endpoint
         self.httpMethod = .get
         self.parameters = nil
         self.encoding = .url
         self.headers = nil
         self.acceptableStatusCodes = [200, 404]
+        self.logParams = logParams
     }
 }

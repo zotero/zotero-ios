@@ -54,13 +54,11 @@ final class ZoteroApiClient: ApiClient {
 
     func send<Request: ApiResponseRequest>(request: Request, queue: DispatchQueue) -> Single<(Request.Response, HTTPURLResponse)> {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
-        let startTime = CFAbsoluteTimeGetCurrent()
         return self.manager.rx.request(urlRequest: convertible)
                               .validate(acceptableStatusCodes: request.acceptableStatusCodes)
-                              .log(request: request)
-                              .flatMap({ dataRequest, logId -> Observable<(Request.Response, HTTPURLResponse)> in
-                                  return dataRequest.rx.responseDataWithResponseError(queue: queue, acceptableStatusCodes: request.acceptableStatusCodes)
-                                                       .log(identifier: logId, startTime: startTime, request: request)
+                              .flatMap({ dataRequest -> Observable<(Request.Response, HTTPURLResponse)> in
+                                  return dataRequest.rx.responseDataWithResponseError(queue: queue, acceptableStatusCodes: request.acceptableStatusCodes,
+                                                                                      encoding: request.encoding, logParams: request.logParams)
                                                        .retryIfNeeded()
                                                        .flatMap { response, data -> Observable<(Request.Response, HTTPURLResponse)> in
                                                            do {
@@ -84,36 +82,50 @@ final class ZoteroApiClient: ApiClient {
 
     func send(request: ApiRequest, queue: DispatchQueue) -> Single<(Data, HTTPURLResponse)> {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
-        let startTime = CFAbsoluteTimeGetCurrent()
         return self.manager.rx.request(urlRequest: convertible)
                               .validate(acceptableStatusCodes: request.acceptableStatusCodes)
-                              .log(request: request)
-                              .flatMap({ dataRequest, logId -> Observable<(Data, HTTPURLResponse)> in
-                                  return dataRequest.rx.responseDataWithResponseError(queue: queue, acceptableStatusCodes: request.acceptableStatusCodes)
-                                                       .log(identifier: logId, startTime: startTime, request: request)
-                                                       .retryIfNeeded()
-                                                       .flatMap { (response, data) -> Observable<(Data, HTTPURLResponse)> in
-                                                           if response.statusCode == 304 {
-                                                               return Observable.error(ZoteroApiError.unchanged)
-                                                           }
-                                                           return Observable.just((data, response))
-                                                       }
+                              .flatMap({ dataRequest -> Observable<(Data, HTTPURLResponse)> in
+                                  return dataRequest.rx
+                                                    .responseDataWithResponseError(queue: queue, acceptableStatusCodes: request.acceptableStatusCodes,
+                                                                                   encoding: request.encoding, logParams: request.logParams)
+                                                    .retryIfNeeded()
+                                                    .flatMap { (response, data) -> Observable<(Data, HTTPURLResponse)> in
+                                                        if response.statusCode == 304 {
+                                                            return Observable.error(ZoteroApiError.unchanged)
+                                                        }
+                                                        return Observable.just((data, response))
+                                                    }
                               })
                               .asSingle()
     }
 
-    func operation(from request: ApiRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data?, HTTPURLResponse), Error>) -> Void) -> ApiOperation {
+    func operation(from request: ApiRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(HTTPURLResponse, Data?), Error>) -> Void) -> ApiOperation {
         return ApiOperation(apiRequest: request, requestCreator: self, queue: queue, completion: completion)
     }
 
     func download(request: ApiDownloadRequest) -> Observable<DownloadRequest> {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
+        var logData: ApiLogger.StartData?
         return self.manager.rx.download(convertible) { _, _ -> (destinationURL: URL, options: DownloadRequest.Options) in
                                   return (request.downloadUrl, [.createIntermediateDirectories, .removePreviousFile])
                               }
                               .flatMap { downloadRequest in
                                   return Observable.just(downloadRequest.validate(statusCode: request.acceptableStatusCodes))
                               }
+                              .do(onNext: { downloadRequest in
+                                  downloadRequest.onURLRequestCreation { _request in
+                                      logData = ApiLogger.log(urlRequest: _request, encoding: request.encoding, logParams: request.logParams)
+                                  }
+                              }, onError: { error in
+                                  if let data = logData {
+                                      ApiLogger.logDownload(result: .failure(error), startData: data)
+                                  }
+                              }, onCompleted: {
+                                  if let data = logData {
+                                      ApiLogger.logDownload(result: .success(()), startData: data)
+                                  }
+                              })
+
     }
 
     func upload(request: ApiRequest, data: Data) -> Single<UploadRequest> {

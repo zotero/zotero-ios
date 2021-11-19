@@ -21,7 +21,7 @@ extension Data {
 /// Convert the parameters into a json array, and it is added as the request body.
 /// The array must be sent as parameters using its `asParameters` method.
 struct RawDataEncoding: ParameterEncoding {
-    fileprivate static let parametersKey = "dataParametersKey"
+    static let parametersKey = "dataParametersKey"
 
     public func encode(_ urlRequest: URLRequestConvertible, with parameters: Parameters?) throws -> URLRequest {
         var urlRequest = try urlRequest.asURLRequest()

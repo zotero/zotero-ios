@@ -21,7 +21,7 @@ extension Array {
 /// Convert the parameters into a json array, and it is added as the request body.
 /// The array must be sent as parameters using its `asParameters` method.
 struct ArrayEncoding: ParameterEncoding {
-    fileprivate static let arrayParametersKey = "arrayParametersKey"
+    static let arrayParametersKey = "arrayParametersKey"
 
     /// The options for writing the parameters as JSON data.
     public let options: JSONSerialization.WritingOptions

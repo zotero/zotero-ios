@@ -75,13 +75,13 @@ final class SyncBatchProcessor {
         self.requestQueue.addOperations(operations, waitUntilFinished: false)
     }
 
-    private func process(result: Result<(Data?, HTTPURLResponse), Error>, batch: DownloadBatch) {
+    private func process(result: Result<(HTTPURLResponse, Data?), Error>, batch: DownloadBatch) {
         guard !self.isFinished else { return }
 
         switch result {
         case .success(let response):
-            if let data = response.0 {
-                self.process(data: data, headers: response.1.allHeaderFields, batch: batch)
+            if let data = response.1 {
+                self.process(data: data, headers: response.0.allHeaderFields, batch: batch)
             } else {
                 self.cancel(with: AFError.responseSerializationFailed(reason: .inputDataNilOrZeroLength))
             }

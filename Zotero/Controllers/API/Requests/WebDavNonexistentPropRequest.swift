@@ -15,6 +15,7 @@ struct WebDavNonexistentPropRequest: ApiRequest {
     let encoding: ApiParameterEncoding
     let headers: [String : String]?
     let acceptableStatusCodes: Set<Int>
+    let logParams: ApiLogParameters
 
     init(url: URL) {
         self.endpoint = .webDav(url.appendingPathComponent("nonexistent.prop"))
@@ -23,5 +24,6 @@ struct WebDavNonexistentPropRequest: ApiRequest {
         self.encoding = .url
         self.headers = nil
         self.acceptableStatusCodes = Set(200..<300).union([404])
+        self.logParams = .headers
     }
 }

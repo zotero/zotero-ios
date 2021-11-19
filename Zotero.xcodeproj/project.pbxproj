@@ -854,6 +854,12 @@
 		B3DDC0CB2667824D00B2DFD1 /* RegularExpression+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DDC0CA2667824D00B2DFD1 /* RegularExpression+Extensions.swift */; };
 		B3DDC0CC2667825E00B2DFD1 /* RegularExpression+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DDC0CA2667824D00B2DFD1 /* RegularExpression+Extensions.swift */; };
 		B3DDDAAC24CAD6810014DF99 /* InsetLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DDDAAB24CAD6810014DF99 /* InsetLabel.swift */; };
+		B3DF9AD22747AAD2007933CB /* ApiRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DF9AD12747AAD2007933CB /* ApiRequest.swift */; };
+		B3DF9AD32747AAD9007933CB /* ApiRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DF9AD12747AAD2007933CB /* ApiRequest.swift */; };
+		B3DF9AD52747AB4F007933CB /* ApiEndpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DF9AD42747AB4F007933CB /* ApiEndpoint.swift */; };
+		B3DF9AD62747AB55007933CB /* ApiEndpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DF9AD42747AB4F007933CB /* ApiEndpoint.swift */; };
+		B3DF9AD82747AB63007933CB /* ApiLogParameters.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DF9AD72747AB63007933CB /* ApiLogParameters.swift */; };
+		B3DF9AD92747AB65007933CB /* ApiLogParameters.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DF9AD72747AB63007933CB /* ApiLogParameters.swift */; };
 		B3E02C0D26848CA900FFB419 /* AnnotationViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3E02C0C26848CA900FFB419 /* AnnotationViewController.xib */; };
 		B3E1BEC9254B0B9500D9BB27 /* ItemDetailFieldEditCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E1BEC7254B0B9500D9BB27 /* ItemDetailFieldEditCell.swift */; };
 		B3E1BECA254B0B9500D9BB27 /* ItemDetailFieldEditCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3E1BEC8254B0B9500D9BB27 /* ItemDetailFieldEditCell.xib */; };
@@ -1605,6 +1611,9 @@
 		B3DD9CE92256340400DE6BAA /* licenses.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = licenses.plist; path = "pdf-keys/licenses.plist"; sourceTree = SOURCE_ROOT; };
 		B3DDC0CA2667824D00B2DFD1 /* RegularExpression+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RegularExpression+Extensions.swift"; sourceTree = "<group>"; };
 		B3DDDAAB24CAD6810014DF99 /* InsetLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsetLabel.swift; sourceTree = "<group>"; };
+		B3DF9AD12747AAD2007933CB /* ApiRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiRequest.swift; sourceTree = "<group>"; };
+		B3DF9AD42747AB4F007933CB /* ApiEndpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiEndpoint.swift; sourceTree = "<group>"; };
+		B3DF9AD72747AB63007933CB /* ApiLogParameters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiLogParameters.swift; sourceTree = "<group>"; };
 		B3E02C0C26848CA900FFB419 /* AnnotationViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AnnotationViewController.xib; sourceTree = "<group>"; };
 		B3E1BEC7254B0B9500D9BB27 /* ItemDetailFieldEditCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailFieldEditCell.swift; sourceTree = "<group>"; };
 		B3E1BEC8254B0B9500D9BB27 /* ItemDetailFieldEditCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemDetailFieldEditCell.xib; sourceTree = "<group>"; };
@@ -1939,7 +1948,10 @@
 				B305648623FC051E003304F2 /* Background */,
 				B305648E23FC051E003304F2 /* Requests */,
 				B305648B23FC051E003304F2 /* ApiClient.swift */,
+				B3DF9AD42747AB4F007933CB /* ApiEndpoint.swift */,
+				B3DF9AD72747AB63007933CB /* ApiLogParameters.swift */,
 				B3C6AB2A248E3EB90009AC96 /* ApiOperation.swift */,
+				B3DF9AD12747AAD2007933CB /* ApiRequest.swift */,
 				B305649D23FC051E003304F2 /* ArrayEncoding.swift */,
 				B305648D23FC051E003304F2 /* ObservableRequestExtensions.swift */,
 				B3868536270D90640068A022 /* RawDataEncoding.swift */,
@@ -3918,6 +3930,7 @@
 				B3593F28241A61C700760E20 /* ItemDetailFieldCell.swift in Sources */,
 				B361A3012511F98700271173 /* LinkMode.swift in Sources */,
 				B3429B8124BDE73A008359FC /* UIDevice+Extensions.swift in Sources */,
+				B3DF9AD22747AAD2007933CB /* ApiRequest.swift in Sources */,
 				B3DCDF0E240912500039ED0D /* SinglePickerActionHandler.swift in Sources */,
 				B3593F162668E29C00FA4BB2 /* Style.swift in Sources */,
 				B3593F37241A61C700760E20 /* ItemDetailViewController.swift in Sources */,
@@ -3940,6 +3953,7 @@
 				B3593F36241A61C700760E20 /* ItemDetailSectionView.swift in Sources */,
 				B305661423FC051E003304F2 /* Licenses.swift in Sources */,
 				B3E4463C248FBBA3007FE8AB /* RLink.swift in Sources */,
+				B3DF9AD82747AB63007933CB /* ApiLogParameters.swift in Sources */,
 				B305660423FC051E003304F2 /* ObservableRequestExtensions.swift in Sources */,
 				B305667D23FC051F003304F2 /* Color+Extension.swift in Sources */,
 				B367330D24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift in Sources */,
@@ -3952,6 +3966,7 @@
 				B3A94B4A2462F5D300BC7910 /* PSPDFKit+Extensions.swift in Sources */,
 				B305661323FC051E003304F2 /* ArrayEncoding.swift in Sources */,
 				B305667723FC051F003304F2 /* UIFont+Extensions.swift in Sources */,
+				B3DF9AD52747AB4F007933CB /* ApiEndpoint.swift in Sources */,
 				B322B4772673A41200BC3D08 /* ReadStyleDbRequest.swift in Sources */,
 				B3E8FE8827143BDD00F51458 /* SyncSettingsAction.swift in Sources */,
 				B37BF0AB25A5E2AD00AE0268 /* SquareAnnotation.swift in Sources */,
@@ -4527,6 +4542,7 @@
 				B305673823FC0933003304F2 /* SyncController.swift in Sources */,
 				B36459DF2644119600A0C2C0 /* TagPickerCell.swift in Sources */,
 				B305673623FC092F003304F2 /* UploadAttachmentSyncAction.swift in Sources */,
+				B3DF9AD62747AB55007933CB /* ApiEndpoint.swift in Sources */,
 				B305677123FC0A5A003304F2 /* ZoteroApiClient.swift in Sources */,
 				B3D037202604FCBA00BCFB05 /* FileAttachmentView.swift in Sources */,
 				B305677B23FC0C72003304F2 /* Formatter.swift in Sources */,
@@ -4576,6 +4592,7 @@
 				B36459E3264411F300A0C2C0 /* TagColorGenerator.swift in Sources */,
 				B337A5AF244F362D00AFD13D /* Localizable.swift in Sources */,
 				B30566E123FC080C003304F2 /* BackgroundUpload.swift in Sources */,
+				B3DF9AD32747AAD9007933CB /* ApiRequest.swift in Sources */,
 				B305673023FC0921003304F2 /* SubmitDeletionSyncAction.swift in Sources */,
 				B3FC7436272195DE00F55531 /* WebDavDownloadRequest.swift in Sources */,
 				B3FC7437272195E100F55531 /* WebDavNonexistentPropRequest.swift in Sources */,
@@ -4702,6 +4719,7 @@
 				B30B550C24B8623900F94B59 /* Assets.swift in Sources */,
 				B305672823FC090F003304F2 /* LoadLibraryDataSyncAction.swift in Sources */,
 				B377F2A3249373AB00022943 /* Notifications.swift in Sources */,
+				B3DF9AD92747AB65007933CB /* ApiLogParameters.swift in Sources */,
 				B325DBB624375DD500EFF0F5 /* DebugPermissionResponse.swift in Sources */,
 				B305672D23FC091A003304F2 /* MarkGroupAsLocalOnlySyncAction.swift in Sources */,
 				B3B8800A25FB590900904235 /* DeviceInfoProvider.swift in Sources */,

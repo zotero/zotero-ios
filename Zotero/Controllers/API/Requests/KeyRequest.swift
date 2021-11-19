@@ -24,8 +24,4 @@ struct KeyRequest: ApiRequest {
     var parameters: [String : Any]? { return nil }
 
     var headers: [String : String]? { return nil }
-
-    func redact(response: String) -> String {
-        return KeysResponseProcessor.redact(response: response)
-    }
 }

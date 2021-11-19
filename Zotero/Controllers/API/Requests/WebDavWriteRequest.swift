@@ -15,6 +15,7 @@ struct WebDavWriteRequest: ApiRequest {
     let encoding: ApiParameterEncoding
     let headers: [String : String]?
     let acceptableStatusCodes: Set<Int>
+    let logParams: ApiLogParameters
 
     init(url: URL, data: Data) {
         self.endpoint = .webDav(url)
@@ -23,5 +24,6 @@ struct WebDavWriteRequest: ApiRequest {
         self.encoding = .data
         self.headers = nil
         self.acceptableStatusCodes = [200, 201, 204]
+        self.logParams = .headers
     }
 }

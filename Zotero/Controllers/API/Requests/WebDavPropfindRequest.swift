@@ -15,6 +15,7 @@ struct WebDavPropfindRequest: ApiRequest {
     let encoding: ApiParameterEncoding
     let headers: [String : String]?
     let acceptableStatusCodes: Set<Int>
+    let logParams: ApiLogParameters
 
     init(url: URL) {
         self.endpoint = .webDav(url)
@@ -24,5 +25,6 @@ struct WebDavPropfindRequest: ApiRequest {
         self.encoding = .data
         self.headers = ["Content-Type": "text/xml; charset=utf-8", "Depth": "0"]
         self.acceptableStatusCodes = [207, 404]
+        self.logParams = .headers
     }
 }

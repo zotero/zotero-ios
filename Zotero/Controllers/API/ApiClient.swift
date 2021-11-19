@@ -32,67 +32,6 @@ enum ApiHttpMethod: String {
     case propfind = "PROPFIND"
 }
 
-enum ApiEndpointType {
-    case zotero
-    case webDav
-    case other
-}
-
-enum ApiEndpoint {
-    case zotero(path: String)
-    case webDav(URL)
-    case other(URL)
-}
-
-fileprivate struct DefaultStatusCodes {
-    static let acceptable: Set<Int> = Set(200..<300).union([304])
-}
-
-protocol ApiRequest {
-    var endpoint: ApiEndpoint { get }
-    var httpMethod: ApiHttpMethod { get }
-    var parameters: [String: Any]? { get }
-    var encoding: ApiParameterEncoding { get }
-    var headers: [String: String]? { get }
-    var debugUrl: String { get }
-    var acceptableStatusCodes: Set<Int> { get }
-
-    func redact(parameters: [String: Any]) -> [String: Any]
-    func redact(response: String) -> String
-}
-
-extension ApiRequest {
-    var acceptableStatusCodes: Set<Int> {
-        return DefaultStatusCodes.acceptable
-    }
-
-    func redact(parameters: [String: Any]) -> [String: Any] {
-        return parameters
-    }
-
-    func redact(response: String) -> String {
-        return response
-    }
-
-    var debugUrl: String {
-        switch self.endpoint {
-        case .zotero(let path):
-            return ApiConstants.baseUrlString + path
-        case .other(let url), .webDav(let url):
-            return url.absoluteString
-        }
-    }
-}
-
-protocol ApiResponseRequest: ApiRequest {
-    associatedtype Response: Decodable
-}
-
-protocol ApiDownloadRequest: ApiRequest {
-    var downloadUrl: URL { get }
-}
-
-typealias RequestCompletion<Response> = (Swift.Result<Response, Error>) -> Void
 typealias ResponseHeaders = [AnyHashable: Any]
 
 protocol ApiClient: AnyObject {
@@ -106,7 +45,7 @@ protocol ApiClient: AnyObject {
     func upload(request: ApiRequest, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<UploadRequest>
     func upload(request: ApiRequest, data: Data) -> Single<UploadRequest>
     func upload(request: ApiRequest, fromFile file: File) -> Single<UploadRequest>
-    func operation(from request: ApiRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data?, HTTPURLResponse), Error>) -> Void) -> ApiOperation
+    func operation(from request: ApiRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(HTTPURLResponse, Data?), Error>) -> Void) -> ApiOperation
 }
 
 protocol ApiRequestCreator: AnyObject {

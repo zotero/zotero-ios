@@ -8,9 +8,16 @@
 
 import Foundation
 
+import Alamofire
 import CocoaLumberjackSwift
 
 struct ApiLogger {
+    struct StartData {
+        let id: String
+        let time: CFAbsoluteTime
+        let logParams: ApiLogParameters
+    }
+
     private static var urlExpression: NSRegularExpression? = {
         do {
             return try NSRegularExpression(pattern: #"^https?://(?<username>.*):{1}(?<password>.*)@{1}.*$"#)
@@ -20,50 +27,140 @@ struct ApiLogger {
         }
     }()
 
+    private static var passwordExpression: NSRegularExpression? = {
+        do {
+            return try NSRegularExpression(pattern: #""password":"(?<password>.*?)""#)
+        } catch let error {
+            DDLogError("ApiLogger: can't create password redaction expression - \(error)")
+            return nil
+        }
+    }()
+
+    // MARK: - Logging
+
+    static func log(urlRequest: URLRequest, encoding: ApiParameterEncoding, logParams: ApiLogParameters) -> StartData {
+        let identifier = self.logRequestIdentifier(urlRequest: urlRequest, logParams: logParams)
+        self.logRequestBody(urlRequest: urlRequest, encoding: encoding, logParams: logParams)
+
+        if logParams.contains(.headers), let headers = urlRequest.allHTTPHeaderFields {
+            self.log(headers: headers)
+        }
+
+        return StartData(id: identifier, time: CFAbsoluteTimeGetCurrent(), logParams: logParams)
+    }
+
+    static func logSuccessfulResponse(statusCode: Int, data: Data?, headers: [AnyHashable: Any]?, startData: StartData) {
+        self.logResponseIdentifier(statusCode: statusCode, success: true, startData: startData)
+
+        if startData.logParams.contains(.headers) {
+            self.log(headers: headers ?? [:])
+        }
+        if startData.logParams.contains(.response), let data = data, let string = String(data: data, encoding: .utf8) {
+            DDLogInfo(string)
+        }
+    }
+
+    static func logFailedresponse(error: AFResponseError, statusCode: Int, startData: StartData) {
+        self.logResponseIdentifier(statusCode: statusCode, success: false, startData: startData)
+
+        if startData.logParams.contains(.headers) {
+            self.log(headers: error.headers ?? [:])
+        }
+
+        if error.response.isEmpty {
+            DDLogError("\(error.error)")
+        } else {
+            DDLogError(error.response)
+        }
+    }
+
+    static func logDownload(result: Result<(), Error>, startData: StartData) {
+        let time = CFAbsoluteTimeGetCurrent() - startData.time
+        let timeString = String(format: "(+%07.0f)", (time * 1000))
+
+        switch result {
+        case .success:
+            DDLogInfo("\(timeString)\(startData.id) download succeeded")
+        case .failure(let error):
+            DDLogInfo("\(timeString)\(startData.id) download failed")
+            DDLogError("\(error)")
+        }
+    }
+
+    // MARK: - Helpers
+
     static func identifier(method: String, url: String) -> String {
         return "HTTP \(method) \(redact(url: url))"
     }
 
-    static func log(request: ApiRequest, url: URL?) -> String {
-        let identifier = ApiLogger.identifier(method: request.httpMethod.rawValue, url: url?.absoluteString ?? request.debugUrl)
+    private static func logRequestIdentifier(urlRequest: URLRequest, logParams: ApiLogParameters) -> String {
+        let method = urlRequest.httpMethod ?? "-"
+        let url = urlRequest.url?.absoluteString ?? "-"
+        let identifier = ApiLogger.identifier(method: method, url: url)
         DDLogInfo(identifier)
-        if request.encoding != .url, let params = request.parameters {
-            DDLogInfo("\(request.redact(parameters: params))")
-        }
         return identifier
     }
 
-    static func log(result: Result<HTTPURLResponse, Error>, time: CFAbsoluteTime, identifier: String, request: ApiRequest) {
-        switch result {
-        case .failure(let error):
-            DDLogInfo("\(String(format: "(+%07.0f)", (time * 1000)))\(identifier) failed - \(error)")
+    private static func logResponseIdentifier(statusCode: Int, success: Bool, startData: StartData) {
+        let time = CFAbsoluteTimeGetCurrent() - startData.time
+        let timeString = String(format: "(+%07.0f)", (time * 1000))
+        DDLogInfo("\(timeString)\(startData.id) \(success ? "succeeded" : "failed") with \(statusCode)")
+    }
 
-        case .success((let response)):
-            DDLogInfo("\(String(format: "(+%07.0f)", (time * 1000)))\(identifier) succeeded with \(response.statusCode)")
+    private static func logRequestBody(urlRequest: URLRequest, encoding: ApiParameterEncoding, logParams: ApiLogParameters) {
+        switch encoding {
+        case .json, .array:
+            if let data = urlRequest.httpBody, let string = String(data: data, encoding: .utf8) {
+                DDLogInfo(self.redact(parameters: string))
+            }
+
+        case .data:
+            if let data = urlRequest.httpBody {
+                DDLogInfo("Data: \(data.count) bytes")
+            }
+
+        case .url: return
         }
     }
 
-    static func logData(result: Result<(HTTPURLResponse, Data), Error>, time: CFAbsoluteTime, identifier: String, request: ApiRequest) {
-        switch result {
-        case .failure(let error):
-            DDLogInfo("\(String(format: "(+%07.0f)", (time * 1000)))\(identifier) failed - \(error)")
+    private static func log(headers: [AnyHashable: Any]) {
+        guard !headers.isEmpty,
+              let data = try? JSONSerialization.data(withJSONObject: self.redact(headers: headers), options: .prettyPrinted),
+              let string = String(data: data, encoding: .utf8) else { return }
+        DDLogInfo(string)
+    }
 
-        case .success((let response, let data)):
-            DDLogInfo("\(String(format: "(+%07.0f)", (time * 1000)))\(identifier) succeeded with \(response.statusCode)")
-            // Log only object responses
-            if request is ObjectsRequest, let string = String(data: data, encoding: .utf8) {
-                DDLogInfo("\(request.redact(response: string))")
-            }
+    // MARK: - Redacting
+
+    private static func redact(headers: [AnyHashable: Any]) -> [AnyHashable: Any] {
+        var redacted = headers
+        if headers["Zotero-API-Key"] != nil {
+            redacted["Zotero-API-Key"] = "<redacted>"
         }
+        if headers["Authorization"] != nil {
+            redacted["Authorization"] = "<redacted>"
+        }
+        return redacted
     }
 
     private static func redact(url: String) -> String {
-        guard let expression = self.urlExpression,
-              let match = expression.matches(in: url, options: [], range: NSRange(url.startIndex..., in: url)).first else { return url }
+        return url.redact(with: self.urlExpression, groups: ["password", "username"])
+    }
 
-        var redacted = url
-        for name in ["password", "username"] {
-            guard let range = Range(match.range(withName: name), in: url) else { continue }
+    private static func redact(parameters: String) -> String {
+        return parameters.redact(with: self.passwordExpression, groups: ["password"])
+    }
+}
+
+extension String {
+    fileprivate func redact(with expression: NSRegularExpression?, groups: [String]) -> String {
+        guard !groups.isEmpty,
+              let expression = expression,
+              let match = expression.matches(in: self, options: [], range: NSRange(self.startIndex..., in: self)).first else { return self }
+
+        var redacted = self
+        for name in groups {
+            guard let range = Range(match.range(withName: name), in: self) else { continue }
             redacted = redacted.replacingCharacters(in: range, with: "<redacted>")
         }
         return redacted

@@ -42,4 +42,8 @@ struct ObjectsRequest: ApiRequest {
     var headers: [String : String]? {
         return nil
     }
+
+    var logParams: ApiLogParameters {
+        return .response
+    }
 }

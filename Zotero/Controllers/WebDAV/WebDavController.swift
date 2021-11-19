@@ -200,7 +200,7 @@ final class WebDavControllerImpl: WebDavController {
             var missing: Set<String> = []
             var failed: Set<String> = []
 
-            let processResult: (String, Swift.Result<(Data?, HTTPURLResponse), Error>) -> Void = { key, result in
+            let processResult: (String, Swift.Result<(HTTPURLResponse, Data?), Error>) -> Void = { key, result in
                 switch result {
                 case .success:
                     if !failed.contains(key) && !missing.contains(key) {
@@ -407,7 +407,7 @@ final class WebDavControllerImpl: WebDavController {
         let request = WebDavTestWriteRequest(url: url)
         return self.apiClient.send(request: request, queue: queue)
                    .flatMap({ _ -> Single<()> in
-                       return self.apiClient.send(request: WebDavDownloadRequest(endpoint: request.endpoint, logLevel: .headersAndFailure), queue: queue)
+                       return self.apiClient.send(request: WebDavDownloadRequest(endpoint: request.endpoint, logParams: .headers), queue: queue)
                                   .flatMap({ _, response in
                                       if response.statusCode == 404 {
                                           return Single.error(WebDavError.Verification.fileMissingAfterUpload)
@@ -416,7 +416,7 @@ final class WebDavControllerImpl: WebDavController {
                                   })
                    })
                    .flatMap({ _ -> Single<()> in
-                       return self.apiClient.send(request: WebDavDeleteRequest(endpoint: request.endpoint, logLevel: .headersAndFailure), queue: queue).flatMap({ _ in Single.just(()) })
+                       return self.apiClient.send(request: WebDavDeleteRequest(endpoint: request.endpoint, logParams: .headers), queue: queue).flatMap({ _ in Single.just(()) })
                    })
     }
 

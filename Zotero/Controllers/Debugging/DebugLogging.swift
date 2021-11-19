@@ -181,16 +181,17 @@ final class DebugLogging {
         }
 
         let debugRequest = DebugLogUploadRequest()
-        let startTime = CFAbsoluteTimeGetCurrent()
         self.apiClient.upload(request: debugRequest, data: data)
                       .subscribe(on: self.scheduler)
                       .flatMap { request -> Single<(HTTPURLResponse, Data)> in
-                          let logId = ApiLogger.log(request: debugRequest, url: request.request?.url)
                           request.uploadProgress { progress in
                               DDLogInfo("DebugLogging: progress \(progress.fractionCompleted)")
                               progressAlert(progress.fractionCompleted)
                           }
-                          return request.rx.responseData().subscribe(on: self.scheduler).log(identifier: logId, startTime: startTime, request: debugRequest).asSingle()
+                          return request.rx
+                                        .responseDataWithResponseError(queue: self.queue, acceptableStatusCodes: DefaultStatusCodes.acceptable,
+                                                                       encoding: debugRequest.encoding, logParams: debugRequest.logParams)
+                                        .subscribe(on: self.scheduler).asSingle()
                       }
                       .flatMap { _, data -> Single<String> in
                           let delegate = DebugResponseParserDelegate()

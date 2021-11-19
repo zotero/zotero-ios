@@ -100,13 +100,11 @@ class UploadAttachmentSyncAction: SyncAction {
                              }
                          }
 
-        let startTime = CFAbsoluteTimeGetCurrent()
         let response = upload.observe(on: self.scheduler)
                              .flatMap({ uploadRequest, apiRequest, uploadKey -> Single<String> in
                                  DDLogInfo("UploadAttachmentSyncAction: upload file")
-                                 let logId = ApiLogger.log(request: apiRequest, url: uploadRequest.request?.url)
-                                 return uploadRequest.rx.responseData()
-                                                        .log(identifier: logId, startTime: startTime, request: apiRequest)
+                                 return uploadRequest.rx.responseDataWithResponseError(queue: self.queue, acceptableStatusCodes: DefaultStatusCodes.acceptable,
+                                                                                       encoding: apiRequest.encoding, logParams: apiRequest.logParams)
                                                         .asSingle()
                                                         .flatMap({ _ in
                                                             return Single.just(uploadKey)
@@ -172,13 +170,10 @@ class UploadAttachmentSyncAction: SyncAction {
                              }
                          }
 
-        let startTime = CFAbsoluteTimeGetCurrent()
         let response = upload.observe(on: self.scheduler)
                              .flatMap({ uploadRequest, apiRequest, url -> Single<URL> in
                                  DDLogInfo("UploadAttachmentSyncAction: upload file")
-                                 let logId = ApiLogger.log(request: apiRequest, url: uploadRequest.request?.url)
-                                 return uploadRequest.rx.response()
-                                                        .log(identifier: logId, startTime: startTime, request: apiRequest)
+                                 return uploadRequest.rx.responseDataWithResponseError(queue: self.queue, encoding: apiRequest.encoding, logParams: apiRequest.logParams)
                                                         .asSingle()
                                                         .flatMap({ _ in Single.just(url) })
                              })
