@@ -70,6 +70,7 @@ struct SubmitUpdateSyncAction: SyncAction {
     private func submitOther() -> Single<(Int, Error?)> {
         let request = UpdatesRequest(libraryId: self.libraryId, userId: self.userId, objectType: self.object, params: self.parameters, version: self.sinceVersion)
         return self.apiClient.send(request: request, queue: self.queue)
+                             .mapData(httpMethod: request.httpMethod.rawValue)
                              .observe(on: self.scheduler)
                              .flatMap({ data, response -> Single<(UpdatesResponse, Int)> in
                                  do {

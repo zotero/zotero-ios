@@ -10,7 +10,6 @@ import Foundation
 
 import Alamofire
 import CocoaLumberjackSwift
-import RxAlamofire
 import RxSwift
 
 struct AFResponseError: Error {
@@ -36,10 +35,22 @@ extension RetryDelay {
     }
 }
 
-extension ObservableType where Element == (HTTPURLResponse, Data) {
+extension PrimitiveSequence where Trait == SingleTrait, Element == (Data?, HTTPURLResponse) {
+    func mapData(httpMethod: String) -> Single<(Data, HTTPURLResponse)> {
+        self.flatMap { data, response in
+            if let data = data {
+                return Single.just((data, response))
+            }
+
+            let error = ZoteroApiError.responseMissing(ApiLogger.identifier(method: httpMethod, url: (response.url?.absoluteString ?? "")))
+            return Single.error(error)
+        }
+    }
+}
+
+extension ObservableType where Element == (Data?, HTTPURLResponse) {
     func retryIfNeeded() -> Observable<Element> {
-        return self.retry(maxAttemptCount: 10,
-                          retryDelay: { error -> RetryDelay? in
+        return self.retry(maxAttemptCount: 10, retryDelay: { error -> RetryDelay? in
             guard let responseError = error as? AFResponseError else { return nil }
             switch responseError.error {
             case .responseValidationFailed(let reason):
@@ -78,20 +89,6 @@ extension ObservableType where Element == (HTTPURLResponse, Data) {
     }
 }
 
-extension ObservableType where Element == DataRequest {
-    func responseDataWithResponseError(queue: DispatchQueue, encoding: ApiParameterEncoding, logParams: ApiLogParameters) -> Observable<(HTTPURLResponse, Data?)> {
-        return self.flatMap { $0.rx.responseDataWithResponseError(queue: queue, encoding: encoding, logParams: logParams) }
-    }
-
-    func responseDataWithResponseError(queue: DispatchQueue, acceptableStatusCodes: Set<Int>, encoding: ApiParameterEncoding, logParams: ApiLogParameters) -> Observable<(HTTPURLResponse, Data)> {
-        return self.flatMap { $0.rx.responseDataWithResponseError(queue: queue, acceptableStatusCodes: acceptableStatusCodes, encoding: encoding, logParams: logParams) }
-    }
-
-    func validate(acceptableStatusCodes: Set<Int>) -> Observable<Element> {
-        return self.map { $0.validate(acceptableStatusCodes: acceptableStatusCodes) }
-    }
-}
-
 extension DataRequest {
     func validate(acceptableStatusCodes: Set<Int>) -> Self {
        return self.validate(contentType: self.acceptableContentTypes)
@@ -108,19 +105,17 @@ extension DataRequest {
     }
 }
 
-extension Reactive where Base: DataRequest {
-    func responseDataWithResponseError(queue: DispatchQueue, acceptableStatusCodes: Set<Int>, encoding: ApiParameterEncoding, logParams: ApiLogParameters) -> Observable<(HTTPURLResponse, Data)> {
-        return self.responseResultWithResponseError(queue: queue, responseSerializer: DataResponseSerializer(emptyResponseCodes: acceptableStatusCodes), encoding: encoding, logParams: logParams)
-    }
+extension Request: ReactiveCompatible {}
 
-    func responseDataWithResponseError(queue: DispatchQueue, encoding: ApiParameterEncoding, logParams: ApiLogParameters) -> Observable<(HTTPURLResponse, Data?)> {
+extension Reactive where Base: DataRequest {
+    func loggedResponseDataWithResponseError(queue: DispatchQueue, encoding: ApiParameterEncoding, logParams: ApiLogParameters) -> Observable<(Data?, HTTPURLResponse)> {
         return Observable.create { observer in
             var logData: ApiLogger.StartData?
 
             let dataRequest = self.base.response(queue: queue) { response in
                 switch response.logAndCreateResult(logData: logData) {
-                case .success((let response, let data)):
-                    observer.on(.next((response, data)))
+                case .success((let data, let response)):
+                    observer.on(.next((data, response)))
                     observer.on(.completed)
 
                 case .failure(let error):
@@ -132,90 +127,106 @@ extension Reactive where Base: DataRequest {
                 logData = ApiLogger.log(urlRequest: request, encoding: encoding, logParams: logParams)
             }
 
+            dataRequest.resume()
+
             return Disposables.create {
                 dataRequest.cancel()
             }
         }
     }
+}
 
-    private func responseResultWithResponseError<T: DataResponseSerializerProtocol>(queue: DispatchQueue, responseSerializer: T,
-                                                                                    encoding: ApiParameterEncoding, logParams: ApiLogParameters) -> Observable<(HTTPURLResponse, T.SerializedObject)> {
+extension Reactive where Base: DownloadRequest {
+    func loggedResponseWithResponseError(queue: DispatchQueue, encoding: ApiParameterEncoding, logParams: ApiLogParameters) -> Observable<Base> {
         return Observable.create { observer in
             var logData: ApiLogger.StartData?
 
-            let dataRequest = self.base.response(queue: queue, responseSerializer: responseSerializer) { response in
-                switch response.result {
-                case .success(let result):
-                    if let httpResponse = response.response {
-                        if let data = logData {
-                            ApiLogger.logSuccessfulResponse(statusCode: (response.response?.statusCode ?? -1), data: response.data, headers: response.response?.allHeaderFields ?? [:], startData: data)
-                        }
+            let downloadRequest = self.base.response(queue: queue) { response in
+                switch response.logAndCreateResult(logData: logData) {
+                case .success:
+                    observer.on(.completed)
 
-                        observer.on(.next((httpResponse, result)))
-                        observer.on(.completed)
-                    } else {
-                        let responseString = ResponseCreator.string(from: response.data, mimeType: (response.response?.mimeType ?? "")) ?? ""
-                        let error = AFResponseError(error: AFError.responseSerializationFailed(reason: .inputDataNilOrZeroLength), headers: response.response?.allHeaderFields, response: responseString)
-
-                        if let data = logData {
-                            ApiLogger.logFailedresponse(error: error, statusCode: (response.response?.statusCode ?? -1), startData: data)
-                        }
-
-                        observer.on(.error(error))
-                    }
                 case .failure(let error):
-                    let responseString = ResponseCreator.string(from: response.data, mimeType: (response.response?.mimeType ?? "")) ?? ""
-                    let responseError = AFResponseError(error: error, headers: response.response?.allHeaderFields, response: responseString)
-
-                    if let data = logData {
-                        ApiLogger.logFailedresponse(error: responseError, statusCode: (response.response?.statusCode ?? -1), startData: data)
-                    }
-
-                    observer.on(.error(responseError))
+                    observer.on(.error(error))
                 }
             }
 
-            dataRequest.onURLRequestCreation(on: queue) { request in
+            downloadRequest.onURLRequestCreation(on: queue) { request in
                 logData = ApiLogger.log(urlRequest: request, encoding: encoding, logParams: logParams)
             }
 
+            observer.on(.next(self.base))
+
             return Disposables.create {
-                dataRequest.cancel()
+                downloadRequest.cancel()
             }
         }
     }
+}
 
-
+extension Progress {
+    var observable: Observable<Progress> {
+        return Observable.create { subscriber in
+            var observer: NSKeyValueObservation? = self.observe(\.fractionCompleted) { progress, _ in
+                subscriber.on(.next(progress))
+                if progress.isFinished || progress.isCancelled {
+                    subscriber.on(.completed)
+                }
+            }
+            return Disposables.create {
+                if observer != nil {
+                    observer = nil
+                }
+            }
+        }
+    }
 }
 
 extension AFDataResponse where Success == Data?, Failure == AFError {
-    func logAndCreateResult(logData: ApiLogger.StartData?) -> Result<(HTTPURLResponse, Data?), AFResponseError> {
+    func logAndCreateResult(logData: ApiLogger.StartData?) -> Result<(Data?, HTTPURLResponse), AFResponseError> {
         switch self.result {
         case .success(let data):
             if let httpResponse = self.response {
                 if let logData = logData {
                     ApiLogger.logSuccessfulResponse(statusCode: (self.response?.statusCode ?? -1), data: data, headers: (self.response?.allHeaderFields ?? [:]), startData: logData)
                 }
-                return .success((httpResponse, data))
+                return .success((data, httpResponse))
             }
-
-            let responseString = ResponseCreator.string(from: data, mimeType: (self.response?.mimeType ?? "")) ?? ""
-            let error = AFResponseError(error: AFError.responseSerializationFailed(reason: .inputDataNilOrZeroLength), headers: self.response?.allHeaderFields, response: responseString)
-
-            if let data = logData {
-                ApiLogger.logFailedresponse(error: error, statusCode: (self.response?.statusCode ?? -1), startData: data)
-            }
-
-            return .failure(error)
+            // Should not happen
+            let afError = AFError.responseValidationFailed(reason: .customValidationFailed(error: ZoteroApiError.responseMissing(logData?.id ?? "")))
+            return .failure(self.createResponseError(with: afError, data: data, response: nil, logData: logData))
 
         case .failure(let error):
-            let responseString = ResponseCreator.string(from: self.data, mimeType: (self.response?.mimeType ?? "")) ?? ""
-            let responseError = AFResponseError(error: error, headers: self.response?.allHeaderFields, response: responseString)
+            return .failure(self.createResponseError(with: error, data: self.data, response: self.response, logData: logData))
+        }
+    }
 
+    private func createResponseError(with error: AFError, data: Data?, response: HTTPURLResponse?, logData: ApiLogger.StartData?) -> AFResponseError {
+        let responseString = data.flatMap({ ResponseCreator.string(from: $0, mimeType: (response?.mimeType ?? "")) }) ?? "No Response"
+        let responseError = AFResponseError(error: error, headers: response?.allHeaderFields, response: responseString)
+
+        if let data = logData {
+            ApiLogger.logFailedresponse(error: responseError, statusCode: (self.response?.statusCode ?? -1), startData: data)
+        }
+
+        return responseError
+    }
+}
+
+extension AFDownloadResponse where Success == URL?, Failure == AFError {
+    func logAndCreateResult(logData: ApiLogger.StartData?) -> Result<(), AFResponseError> {
+        switch self.result {
+        case .success:
+            if let logData = logData {
+                ApiLogger.logSuccessfulResponse(statusCode: (self.response?.statusCode ?? -1), data: nil, headers: (self.response?.allHeaderFields ?? [:]), startData: logData)
+            }
+            return .success(())
+
+        case .failure(let error):
+            let responseError = AFResponseError(error: error, headers: self.response?.allHeaderFields, response: "Download failed")
             if let data = logData {
                 ApiLogger.logFailedresponse(error: responseError, statusCode: (self.response?.statusCode ?? -1), startData: data)
             }
-
             return .failure(responseError)
         }
     }

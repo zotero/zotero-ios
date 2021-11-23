@@ -29,10 +29,33 @@ enum WebDavError {
         case zoteroDirNotFound
         case nonExistentFileNotMissing
         case fileMissingAfterUpload
+
+        var message: String {
+            switch self {
+            case .fileMissingAfterUpload:
+                return L10n.Errors.Settings.Webdav.fileMissingAfterUpload
+            case .invalidUrl:
+                return L10n.Errors.Settings.Webdav.invalidUrl
+            case .noPassword:
+                return L10n.Errors.Settings.Webdav.noPassword
+            case .noUrl:
+                return L10n.Errors.Settings.Webdav.noUrl
+            case .noUsername:
+                return L10n.Errors.Settings.Webdav.noUsername
+            case .nonExistentFileNotMissing:
+                return L10n.Errors.Settings.Webdav.nonExistentFileNotMissing
+            case .notDav:
+                return L10n.Errors.Settings.Webdav.notDav
+            case .parentDirNotFound:
+                return L10n.Errors.Settings.Webdav.parentDirNotFound
+            case .zoteroDirNotFound:
+                return L10n.Errors.Settings.Webdav.zoteroDirNotFound
+            }
+        }
     }
 
     enum Download: Swift.Error {
-        case itemPropInvalid
+        case itemPropInvalid(String)
         case notChanged
     }
 
@@ -54,7 +77,7 @@ protocol WebDavController: AnyObject {
     func checkServer(queue: DispatchQueue) -> Single<URL>
     func download(key: String, file: File, queue: DispatchQueue) -> Observable<DownloadRequest>
     func prepareForUpload(key: String, mtime: Int, hash: String, file: File, queue: DispatchQueue) -> Single<WebDavUploadResult>
-    func upload(request: AttachmentUploadRequest, fromFile file: File) -> Single<UploadRequest>
+    func upload(request: AttachmentUploadRequest, fromFile file: File, queue: DispatchQueue) -> Single<(Data?, HTTPURLResponse)>
     func finishUpload(key: String, result: Result<(Int, String, URL), Swift.Error>, file: File?, queue: DispatchQueue) -> Single<()>
     func delete(keys: [String], queue: DispatchQueue) -> Single<WebDavDeletionResult>
     func cancelDeletions()
@@ -111,7 +134,7 @@ final class WebDavControllerImpl: WebDavController {
         return self.checkServerIfNeeded(queue: queue)
                    .asObservable()
                    .flatMap({ Observable.just($0.appendingPathComponent("\(key).zip")) })
-                   .flatMap({ self.apiClient.download(request: FileRequest(webDavUrl: $0, destination: file)) })
+                   .flatMap({ self.apiClient.download(request: FileRequest(webDavUrl: $0, destination: file), queue: queue) })
     }
 
     /// Prepares for WebDAV upload. Checks .prop file to see whether the file has been modified. Creates a ZIP file to upload. Updates mtime in db in case it's the only thing that changed.
@@ -147,8 +170,8 @@ final class WebDavControllerImpl: WebDavController {
                    })
     }
 
-    func upload(request: AttachmentUploadRequest, fromFile file: File) -> Single<UploadRequest> {
-        return self.apiClient.upload(request: request, fromFile: file)
+    func upload(request: AttachmentUploadRequest, fromFile file: File, queue: DispatchQueue) -> Single<(Data?, HTTPURLResponse)> {
+        return self.apiClient.upload(request: request, fromFile: file, queue: queue)
     }
 
     /// Finishes upload to WebDAV. If successful, uploads new metadata .prop file to WebDAV. In both cases removes temporary ZIP file created in `prepareForUpload`.
@@ -200,7 +223,7 @@ final class WebDavControllerImpl: WebDavController {
             var missing: Set<String> = []
             var failed: Set<String> = []
 
-            let processResult: (String, Swift.Result<(HTTPURLResponse, Data?), Error>) -> Void = { key, result in
+            let processResult: (String, Swift.Result<(Data?, HTTPURLResponse), Error>) -> Void = { key, result in
                 switch result {
                 case .success:
                     if !failed.contains(key) && !missing.contains(key) {
@@ -330,6 +353,10 @@ final class WebDavControllerImpl: WebDavController {
                            return Single.just(nil)
                        }
 
+                       guard let data = data else {
+                           return Single.error(ZoteroApiError.responseMissing(ApiLogger.identifier(method: request.httpMethod.rawValue, url: (response.url?.absoluteString ?? ""))))
+                       }
+
                        let delegate = WebDavPropParserDelegate()
                        let parser = XMLParser(data: data)
                        parser.delegate = delegate
@@ -338,7 +365,7 @@ final class WebDavControllerImpl: WebDavController {
                            return Single.just((mtime, hash))
                        } else {
                            DDLogError("WebDavController: \(key) item prop invalid. mtime=\(delegate.mtime.flatMap(String.init) ?? "missing"); hash=\(delegate.fileHash ?? "missing")")
-                           return Single.error(WebDavError.Download.itemPropInvalid)
+                           return Single.error(WebDavError.Download.itemPropInvalid(String(data: data, encoding: .utf8) ?? ""))
                        }
                    })
     }

@@ -18,14 +18,17 @@ struct CiteActionHandler: ViewModelActionHandler {
     private unowned let apiClient: ApiClient
     private unowned let bundledDataStorage: DbStorage
     private unowned let fileStorage: FileStorage
+    private let queue: DispatchQueue
     private let scheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
 
     init(apiClient: ApiClient, bundledDataStorage: DbStorage, fileStorage: FileStorage) {
+        let queue = DispatchQueue(label: "org.zotero.CitationStylesActionHandler.Queue", qos: .userInitiated)
         self.apiClient = apiClient
         self.bundledDataStorage = bundledDataStorage
         self.fileStorage = fileStorage
-        self.scheduler = SerialDispatchQueueScheduler(internalSerialQueueName: "org.zotero.CitationStylesActionHandler")
+        self.queue = queue
+        self.scheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.CitationStylesActionHandler.Scheduler")
         self.disposeBag = DisposeBag()
     }
 
@@ -50,7 +53,7 @@ struct CiteActionHandler: ViewModelActionHandler {
         let file = Files.style(filename: remoteStyle.name)
         let request = FileRequest(url: remoteStyle.href, destination: file)
 
-        self.apiClient.download(request: request)
+        self.apiClient.download(request: request, queue: self.queue)
                       .subscribe(on: self.scheduler)
                       .observe(on: self.scheduler)
                       .subscribe(with: viewModel, onError: { viewModel, error in
@@ -82,7 +85,7 @@ struct CiteActionHandler: ViewModelActionHandler {
         let file = Files.style(filename: dependencyUrl.lastPathComponent)
         let request = FileRequest(url: dependencyUrl, destination: file)
 
-        self.apiClient.download(request: request)
+        self.apiClient.download(request: request, queue: self.queue)
                       .subscribe(on: self.scheduler)
                       .observe(on: self.scheduler)
                       .subscribe(with: viewModel, onError: { viewModel, error in

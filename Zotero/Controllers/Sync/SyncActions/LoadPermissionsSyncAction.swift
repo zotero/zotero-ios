@@ -18,11 +18,13 @@ struct LoadPermissionsSyncAction: SyncAction {
     let scheduler: SchedulerType
 
     var result: Single<KeyResponse> {
-        return self.apiClient.send(request: KeyRequest(), queue: self.queue)
+        let request = KeyRequest()
+        return self.apiClient.send(request: request, queue: self.queue)
+                             .mapData(httpMethod: request.httpMethod.rawValue)
                              .observe(on: self.scheduler)
-                             .flatMap { response, _ in
+                             .flatMap { data, _ in
                                  do {
-                                     let json = try JSONSerialization.jsonObject(with: response, options: .allowFragments)
+                                     let json = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
                                      let keyResponse = try KeyResponse(response: json)
                                      return Single.just(keyResponse)
                                  } catch let error {

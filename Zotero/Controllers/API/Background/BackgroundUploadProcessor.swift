@@ -180,7 +180,7 @@ final class BackgroundUploadProcessor {
 
         return loadParameters.flatMap { parameters -> Single<(Data, HTTPURLResponse)> in
             let request = UpdatesRequest(libraryId: libraryId, userId: userId, objectType: .item, params: [parameters], version: nil)
-            return self.apiClient.send(request: request)
+            return self.apiClient.send(request: request).mapData(httpMethod: request.httpMethod.rawValue)
         }
         .flatMap({ data, response -> Single<(UpdatesResponse, Int)> in
             do {

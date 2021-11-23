@@ -13,7 +13,6 @@ import CocoaLumberjackSwift
 import RealmSwift
 import RxCocoa
 import RxSwift
-import RxAlamofire
 
 protocol SyncAction {
     associatedtype Result
@@ -393,7 +392,8 @@ final class SyncController: SynchronizationController {
                 if !mismatchedLibraries.contains(libraryId) {
                     mismatchedLibraries.append(libraryId)
                 }
-            case .unknown, .schema, .parsing, .apiError, .unchanged, .quotaLimit, .attachmentMissing, .insufficientSpace, .webDavDeletion, .webDavDeletionFailed: continue
+            case .unknown, .schema, .parsing, .apiError, .unchanged, .quotaLimit, .attachmentMissing,
+                 .insufficientSpace, .webDavDeletion, .webDavDeletionFailed, .webDavVerification, .webDavDownload: continue
             }
         }
 
@@ -1245,25 +1245,18 @@ final class SyncController: SynchronizationController {
                                                 mtime: upload.mtime, libraryId: upload.libraryId, userId: self.userId, oldMd5: upload.oldMd5,
                                                 apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, webDavController: self.webDavController,
                                                 queue: self.workQueue, scheduler: self.workScheduler, disposeBag: self.disposeBag)
-        action.result.subscribe(on: self.workScheduler)
-              .subscribe(onSuccess: { [weak self] response, progress in
-                  guard let `self` = self else { return }
-
-                  response.subscribe(on: self.workScheduler)
-                          .subscribe(onCompleted: { [weak self] in
-                              self?.accessQueue.async(flags: .barrier) { [weak self] in
-                                  self?.progressHandler.reportUploaded()
-                                  self?.finishSubmission(error: nil, newVersion: nil, libraryId: upload.libraryId, object: .item)
-                              }
-                          }, onError: { [weak self] error in
-                              self?.accessQueue.async(flags: .barrier) { [weak self] in
-                                  self?.progressHandler.reportUploaded()
-                                  self?.finishSubmission(error: error, newVersion: nil, libraryId: upload.libraryId, object: .item, failedBeforeReachingApi: action.failedBeforeZoteroApiRequest)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
-
-                  // TODO: - observe upload progress
+        action.result
+              .subscribe(on: self.workScheduler)
+              .subscribe(with: self, onSuccess: { `self`, _ in
+                  self.accessQueue.async(flags: .barrier) { [weak self] in
+                      self?.progressHandler.reportUploaded()
+                      self?.finishSubmission(error: nil, newVersion: nil, libraryId: upload.libraryId, object: .item)
+                  }
+              }, onFailure: { `self`, error in
+                  self.accessQueue.async(flags: .barrier) { [weak self] in
+                      self?.progressHandler.reportUploaded()
+                      self?.finishSubmission(error: error, newVersion: nil, libraryId: upload.libraryId, object: .item, failedBeforeReachingApi: action.failedBeforeZoteroApiRequest)
+                  }
               })
               .disposed(by: self.disposeBag)
     }
@@ -1504,9 +1497,18 @@ final class SyncController: SynchronizationController {
             }
         }
 
+        if let error = error as? WebDavError.Verification {
+            return .nonFatal(.webDavVerification(error))
+        }
+
+        if let error = error as? WebDavError.Download {
+            return .nonFatal(.webDavDownload(error))
+        }
+
         if let error = error as? ZoteroApiError {
             switch error {
             case .unchanged: return .nonFatal(.unchanged)
+            case .responseMissing: return .nonFatal(.unknown("missing response"))
             }
         }
 

@@ -13,12 +13,12 @@ import Alamofire
 class ApiOperation: AsynchronousOperation {
     private let apiRequest: ApiRequest
     private let queue: DispatchQueue
-    private let completion: (Swift.Result<(HTTPURLResponse, Data?), Error>) -> Void
+    private let completion: (Swift.Result<(Data?, HTTPURLResponse), Error>) -> Void
     private unowned let requestCreator: ApiRequestCreator
 
     private var request: DataRequest?
 
-    init(apiRequest: ApiRequest, requestCreator: ApiRequestCreator, queue: DispatchQueue, completion: @escaping (Swift.Result<(HTTPURLResponse, Data?), Error>) -> Void) {
+    init(apiRequest: ApiRequest, requestCreator: ApiRequestCreator, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data?, HTTPURLResponse), Error>) -> Void) {
         self.apiRequest = apiRequest
         self.queue = queue
         self.completion = completion

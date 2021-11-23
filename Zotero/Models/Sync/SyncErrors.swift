@@ -55,6 +55,8 @@ enum SyncError {
         case insufficientSpace
         case webDavDeletion(count: Int, library: String)
         case webDavDeletionFailed(error: String, library: String)
+        case webDavVerification(WebDavError.Verification)
+        case webDavDownload(WebDavError.Download)
 
         var isVersionMismatch: Bool {
             switch self {

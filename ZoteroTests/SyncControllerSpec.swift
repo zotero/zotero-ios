@@ -16,7 +16,6 @@ import Nimble
 import OHHTTPStubs
 import OHHTTPStubsSwift
 import RealmSwift
-import RxAlamofire
 import RxSwift
 import Quick
 

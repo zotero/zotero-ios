@@ -10,7 +10,6 @@ import UIKit
 
 import Alamofire
 import CocoaLumberjackSwift
-import RxAlamofire
 import RxSwift
 import ZIPFoundation
 
@@ -140,11 +139,10 @@ final class AttachmentDownloader {
     private func downloadRequest(file: File, key: String, libraryId: LibraryIdentifier, userId: Int) -> Observable<DownloadRequest> {
         if case .custom = libraryId, self.webDavController.sessionStorage.isEnabled {
             return self.webDavController.download(key: key, file: file, queue: self.queue)
-                       .subscribe(on: self.scheduler)
         }
 
         let request = FileRequest(libraryId: libraryId, userId: self.userId, key: key, destination: file)
-        return self.apiClient.download(request: request)
+        return self.apiClient.download(request: request, queue: self.queue)
     }
 
     private func download(file: File, key: String, parentKey: String?, libraryId: LibraryIdentifier, hasLocalCopy: Bool) {
@@ -166,7 +164,7 @@ final class AttachmentDownloader {
         var isCompressed = self.webDavController.sessionStorage.isEnabled
 
         self.downloadRequest(file: file, key: key, libraryId: libraryId, userId: self.userId)
-            .observe(on: MainScheduler.instance)
+            .subscribe(on: self.scheduler)
             .flatMap { request -> Observable<DownloadRequest> in
                 let downloadProgress = request.downloadProgress
                 // Check headers on redirect to see whether downloaded file will be compressed zip or base file.
@@ -180,11 +178,13 @@ final class AttachmentDownloader {
                 }))
                 return Observable.just(request.redirect(using: redirector))
             }
-            .do(onNext: { [weak self] request in
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] request in
                 // Store download request so that it can be cancelled
                 self?.downloadRequests[download] = request
-            })
-            .subscribe(onError: { [weak self] error in
+                // Start request
+                request.resume()
+            }, onError: { [weak self] error in
                 self?.finish(download: download, parentKey: parentKey, result: .failure(error), hasLocalCopy: hasLocalCopy)
             }, onCompleted: { [weak self] in
                 guard let `self` = self else { return }

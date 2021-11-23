@@ -119,15 +119,6 @@
         }
       },
       {
-        "package": "RxAlamofire",
-        "repositoryURL": "https://github.com/RxSwiftCommunity/RxAlamofire",
-        "state": {
-          "branch": null,
-          "revision": "9535b58695b91fb67f56d58d6fd0c76462d7743a",
-          "version": "6.1.2"
-        }
-      },
-      {
         "package": "RxSwift",
         "repositoryURL": "https://github.com/ReactiveX/RxSwift",
         "state": {

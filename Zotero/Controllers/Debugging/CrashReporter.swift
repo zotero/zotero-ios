@@ -94,6 +94,7 @@ final class CrashReporter {
     private func submit(crashLog: String) -> Observable<String> {
         let request = CrashUploadRequest(crashLog: crashLog, deviceInfo: DeviceInfoProvider.crashString)
         return self.apiClient.send(request: request, queue: self.queue)
+                             .mapData(httpMethod: request.httpMethod.rawValue)
                              .asObservable()
                              .retry(.exponentialDelayed(maxCount: 10, initial: 5, multiplier: 1.5))
                              .observe(on: self.scheduler)

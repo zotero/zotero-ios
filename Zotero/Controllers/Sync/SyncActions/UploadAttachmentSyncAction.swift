@@ -10,11 +10,10 @@ import Foundation
 
 import Alamofire
 import CocoaLumberjackSwift
-import RxAlamofire
 import RxSwift
 
 class UploadAttachmentSyncAction: SyncAction {
-    typealias Result = (Completable, Observable<RxProgress>) // Upload completion, Upload progress
+    typealias Result = ()
 
     let key: String
     let file: File
@@ -57,7 +56,7 @@ class UploadAttachmentSyncAction: SyncAction {
         self.failedBeforeZoteroApiRequest = true
     }
 
-    var result: Single<(Completable, Observable<RxProgress>)> {
+    var result: Single<()> {
         switch self.libraryId {
         case .custom:
             return self.webDavController.sessionStorage.isEnabled ? self.webDavResult : self.zoteroResult
@@ -66,154 +65,115 @@ class UploadAttachmentSyncAction: SyncAction {
         }
     }
 
-    private var zoteroResult: Single<(Completable, Observable<RxProgress>)> {
+    private var zoteroResult: Single<()> {
         DDLogInfo("UploadAttachmentSyncAction: upload to ZFS")
 
-        let upload = self.checkDatabase()
-                         .flatMap { _ -> Single<UInt64> in
-                             return self.validateFile()
-                         }
-                         .flatMap { filesize -> Single<AuthorizeUploadResponse> in
-                             self.failedBeforeZoteroApiRequest = false
-                             return AuthorizeUploadSyncAction(key: self.key, filename: self.filename, filesize: filesize, md5: self.md5, mtime: self.mtime, libraryId: self.libraryId,
-                                                              userId: self.userId, oldMd5: self.oldMd5, apiClient: self.apiClient, queue: self.queue, scheduler: self.scheduler).result
-                         }
-                         .observe(on: self.scheduler)
-                         .flatMap { response -> Single<(UploadRequest, AttachmentUploadRequest, String)> in
-                             switch response {
-                             case .exists(let version):
-                                 DDLogInfo("UploadAttachmentSyncAction: file exists remotely")
-                                 return self.markAttachmentAsUploaded(version: version).flatMap({ Single.error(SyncActionError.attachmentAlreadyUploaded) })
+        return self.checkDatabase()
+                   .flatMap { _ -> Single<UInt64> in
+                       return self.validateFile()
+                   }
+                   .flatMap { filesize -> Single<AuthorizeUploadResponse> in
+                       self.failedBeforeZoteroApiRequest = false
+                       return AuthorizeUploadSyncAction(key: self.key, filename: self.filename, filesize: filesize, md5: self.md5, mtime: self.mtime, libraryId: self.libraryId,
+                                                        userId: self.userId, oldMd5: self.oldMd5, apiClient: self.apiClient, queue: self.queue, scheduler: self.scheduler).result
+                   }
+                   .observe(on: self.scheduler)
+                   .flatMap { response -> Single<String> in
+                       switch response {
+                       case .exists(let version):
+                           DDLogInfo("UploadAttachmentSyncAction: file exists remotely")
+                           return self.markAttachmentAsUploaded(version: version).flatMap({ Single.error(SyncActionError.attachmentAlreadyUploaded) })
 
-                             case .new(let response):
-                                 DDLogInfo("UploadAttachmentSyncAction: file needs upload")
-                                 let request = AttachmentUploadRequest(endpoint: .other(response.url), httpMethod: .post)
-                                 return self.apiClient.upload(request: request, multipartFormData: { data in
-                                     response.params.forEach({ (key, value) in
-                                         if let stringData = value.data(using: .utf8) {
-                                             data.append(stringData, withName: key)
-                                         }
-                                     })
-                                     data.append(self.file.createUrl(), withName: "file", fileName: self.filename, mimeType: self.file.mimeType)
-                                 })
-                                 .flatMap({ Single.just(($0, request, response.uploadKey)) })
-                             }
-                         }
-
-        let response = upload.observe(on: self.scheduler)
-                             .flatMap({ uploadRequest, apiRequest, uploadKey -> Single<String> in
-                                 DDLogInfo("UploadAttachmentSyncAction: upload file")
-                                 return uploadRequest.rx.responseDataWithResponseError(queue: self.queue, acceptableStatusCodes: DefaultStatusCodes.acceptable,
-                                                                                       encoding: apiRequest.encoding, logParams: apiRequest.logParams)
-                                                        .asSingle()
-                                                        .flatMap({ _ in
-                                                            return Single.just(uploadKey)
-                                                        })
-                             })
-                             .flatMap({ uploadKey -> Single<HTTPURLResponse> in
-                                 DDLogInfo("UploadAttachmentSyncAction: register upload")
-                                 let request = RegisterUploadRequest(libraryId: self.libraryId, userId: self.userId, key: self.key, uploadKey: uploadKey, oldMd5: self.oldMd5)
-                                 return self.apiClient.send(request: request, queue: self.queue).flatMap({ Single.just($0.1) })
-                             })
-                             .observe(on: self.scheduler)
-                             .flatMap({ response -> Single<()> in
-                                 return self.markAttachmentAsUploaded(version: response.allHeaderFields.lastModifiedVersion)
-                             })
-                             .do(onError: { error in
-                                 if let error = error as? SyncActionError {
-                                     switch error {
-                                     case .attachmentAlreadyUploaded: return
-                                     default: break
-                                     }
-                                 }
-                                 DDLogError("UploadAttachmentSyncAction: could not upload - \(error)")
-                             })
-                             .asCompletable()
-
-        let progress = upload.asObservable()
-                             .flatMap({ uploadRequest, _, _ -> Observable<RxProgress> in
-                                 return uploadRequest.rx.progress()
-                             })
-                             .do(onNext: { progress in
-                                DDLogInfo("--- Upload progress: \(progress.completed) ---")
-                             })
-
-        return Single.just((response, progress))
+                       case .new(let response):
+                           DDLogInfo("UploadAttachmentSyncAction: file needs upload")
+                           let request = AttachmentUploadRequest(endpoint: .other(response.url), httpMethod: .post)
+                           return self.apiClient.upload(request: request, queue: self.queue, multipartFormData: { data in
+                               response.params.forEach({ (key, value) in
+                                   if let stringData = value.data(using: .utf8) {
+                                       data.append(stringData, withName: key)
+                                   }
+                               })
+                               data.append(self.file.createUrl(), withName: "file", fileName: self.filename, mimeType: self.file.mimeType)
+                           })
+                           .flatMap({ _ in Single.just(response.uploadKey) })
+                       }
+                   }
+                   .observe(on: self.scheduler)
+                   .flatMap({ uploadKey -> Single<HTTPURLResponse> in
+                       DDLogInfo("UploadAttachmentSyncAction: register upload")
+                       let request = RegisterUploadRequest(libraryId: self.libraryId, userId: self.userId, key: self.key, uploadKey: uploadKey, oldMd5: self.oldMd5)
+                       return self.apiClient.send(request: request, queue: self.queue).flatMap({ Single.just($0.1) })
+                   })
+                   .observe(on: self.scheduler)
+                   .flatMap({ response -> Single<()> in
+                       return self.markAttachmentAsUploaded(version: response.allHeaderFields.lastModifiedVersion)
+                   })
+                   .do(onError: { error in
+                       if let error = error as? SyncActionError {
+                           switch error {
+                           case .attachmentAlreadyUploaded: return
+                           default: break
+                           }
+                       }
+                       DDLogError("UploadAttachmentSyncAction: could not upload - \(error)")
+                   })
     }
 
-    private var webDavResult: Single<(Completable, Observable<RxProgress>)> {
+    private var webDavResult: Single<()> {
         DDLogInfo("UploadAttachmentSyncAction: upload to WebDAV")
 
         var file: File?
+        return self.checkDatabase()
+                   .flatMap { _ -> Single<UInt64> in
+                       return self.validateFile()
+                   }
+                   .flatMap { filesize -> Single<WebDavUploadResult> in
+                       return self.webDavController.prepareForUpload(key: self.key, mtime: self.mtime, hash: self.md5, file: self.file, queue: self.queue)
+                   }
+                   .observe(on: self.scheduler)
+                   .flatMap { response -> Single<URL> in
+                       switch response {
+                       case .exists:
+                           DDLogInfo("UploadAttachmentSyncAction: file exists remotely")
+                           return self.markAttachmentAsUploaded(version: nil).flatMap({ Single.error(SyncActionError.attachmentAlreadyUploaded) })
 
-        let upload = self.checkDatabase()
-                         .flatMap { _ -> Single<UInt64> in
-                             return self.validateFile()
-                         }
-                         .flatMap { filesize -> Single<WebDavUploadResult> in
-                             return self.webDavController.prepareForUpload(key: self.key, mtime: self.mtime, hash: self.md5, file: self.file, queue: self.queue)
-                         }
-                         .observe(on: self.scheduler)
-                         .flatMap { response -> Single<(UploadRequest, AttachmentUploadRequest, URL)> in
-                             switch response {
-                             case .exists:
-                                 DDLogInfo("UploadAttachmentSyncAction: file exists remotely")
-                                 return self.markAttachmentAsUploaded(version: nil).flatMap({ Single.error(SyncActionError.attachmentAlreadyUploaded) })
+                       case .new(let url, let newFile):
+                           DDLogInfo("UploadAttachmentSyncAction: file needs upload")
+                           file = newFile
 
-                             case .new(let url, let newFile):
-                                 DDLogInfo("UploadAttachmentSyncAction: file needs upload")
-                                 file = newFile
-
-                                 let request = AttachmentUploadRequest(endpoint: .webDav(url.appendingPathComponent(self.key + ".zip")), httpMethod: .put)
-                                 return self.webDavController.upload(request: request, fromFile: newFile)
-                                            .flatMap({ Single.just(($0, request, url)) })
-                             }
-                         }
-
-        let response = upload.observe(on: self.scheduler)
-                             .flatMap({ uploadRequest, apiRequest, url -> Single<URL> in
-                                 DDLogInfo("UploadAttachmentSyncAction: upload file")
-                                 return uploadRequest.rx.responseDataWithResponseError(queue: self.queue, encoding: apiRequest.encoding, logParams: apiRequest.logParams)
-                                                        .asSingle()
-                                                        .flatMap({ _ in Single.just(url) })
-                             })
-                             .do(onError: { error in
-                                 // If something broke during upload, remove tmp zip file
-                                 self.webDavController.finishUpload(key: self.key, result: .failure(error), file: file, queue: self.queue)
-                                     .subscribe(on: self.scheduler)
-                                     .subscribe()
-                                     .disposed(by: self.disposeBag)
-                             })
-                             .flatMap({ url -> Single<()> in
-                                 return self.webDavController.finishUpload(key: self.key, result: .success((self.mtime, self.md5, url)), file: file, queue: self.queue)
-                             })
-                             .flatMap({ _ -> Single<Int> in
-                                 return self.submitItemWithHashAndMtime().flatMap({ Single.just($0) })
-                             })
-                             .observe(on: self.scheduler)
-                             .flatMap({ version -> Single<()> in
-                                 return self.markAttachmentAsUploaded(version: version)
-                             })
-                             .do(onError: { error in
-                                 if let error = error as? SyncActionError {
-                                     switch error {
-                                     case .attachmentAlreadyUploaded: return
-                                     default: break
-                                     }
-                                 }
-                                 DDLogError("UploadAttachmentSyncAction: could not upload - \(error)")
-                             })
-                             .asCompletable()
-
-        let progress = upload.asObservable()
-                             .flatMap({ uploadRequest, _, _ -> Observable<RxProgress> in
-                                 return uploadRequest.rx.progress()
-                             })
-                             .do(onNext: { progress in
-                                DDLogInfo("--- Upload progress: \(progress.completed) ---")
-                             })
-
-        return Single.just((response, progress))
+                           let request = AttachmentUploadRequest(endpoint: .webDav(url.appendingPathComponent(self.key + ".zip")), httpMethod: .put)
+                           return self.webDavController.upload(request: request, fromFile: newFile, queue: self.queue)
+                                      .flatMap({ _ in Single.just(url) })
+                       }
+                   }
+                   .observe(on: self.scheduler)
+                   .do(onError: { error in
+                       guard let file = file else { return }
+                       // If something broke during upload, remove tmp zip file
+                       self.webDavController.finishUpload(key: self.key, result: .failure(error), file: file, queue: self.queue)
+                           .subscribe(on: self.scheduler)
+                           .subscribe()
+                           .disposed(by: self.disposeBag)
+                   })
+                   .flatMap({ url -> Single<()> in
+                       return self.webDavController.finishUpload(key: self.key, result: .success((self.mtime, self.md5, url)), file: file, queue: self.queue)
+                   })
+                   .flatMap({ _ -> Single<Int> in
+                       return self.submitItemWithHashAndMtime().flatMap({ Single.just($0) })
+                   })
+                   .observe(on: self.scheduler)
+                   .flatMap({ version -> Single<()> in
+                       return self.markAttachmentAsUploaded(version: version)
+                   })
+                   .do(onError: { error in
+                       if let error = error as? SyncActionError {
+                           switch error {
+                           case .attachmentAlreadyUploaded: return
+                           default: break
+                           }
+                       }
+                       DDLogError("UploadAttachmentSyncAction: could not upload - \(error)")
+                   })
     }
 
     private func submitItemWithHashAndMtime() -> Single<Int> {

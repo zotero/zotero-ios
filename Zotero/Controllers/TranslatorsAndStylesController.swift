@@ -214,6 +214,7 @@ final class TranslatorsAndStylesController {
         let bundle = (Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? ""
         let request = RepoRequest(timestamp: self.lastTimestamp, version: "\(version)-\(bundle)-iOS", type: type.rawValue, styles: self.styles(for: type))
         return self.apiClient.send(request: request, queue: self.queue)
+                             .mapData(httpMethod: request.httpMethod.rawValue)
                              .observe(on: self.scheduler)
                              .flatMap { data, _ -> Single<(Int, [Translator], [(String, String)])> in
                                  do {

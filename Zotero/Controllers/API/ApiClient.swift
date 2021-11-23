@@ -9,7 +9,6 @@
 import Foundation
 
 import Alamofire
-import RxAlamofire
 import RxSwift
 
 enum ApiParameterEncoding {
@@ -39,13 +38,13 @@ protocol ApiClient: AnyObject {
     func set(authToken: String?, for endpoint: ApiEndpointType)
     func send<Request: ApiResponseRequest>(request: Request) -> Single<(Request.Response, HTTPURLResponse)>
     func send<Request: ApiResponseRequest>(request: Request, queue: DispatchQueue) -> Single<(Request.Response, HTTPURLResponse)>
-    func send(request: ApiRequest) -> Single<(Data, HTTPURLResponse)>
-    func send(request: ApiRequest, queue: DispatchQueue) -> Single<(Data, HTTPURLResponse)>
-    func download(request: ApiDownloadRequest) -> Observable<DownloadRequest>
-    func upload(request: ApiRequest, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<UploadRequest>
-    func upload(request: ApiRequest, data: Data) -> Single<UploadRequest>
-    func upload(request: ApiRequest, fromFile file: File) -> Single<UploadRequest>
-    func operation(from request: ApiRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(HTTPURLResponse, Data?), Error>) -> Void) -> ApiOperation
+    func send(request: ApiRequest) -> Single<(Data?, HTTPURLResponse)>
+    func send(request: ApiRequest, queue: DispatchQueue) -> Single<(Data?, HTTPURLResponse)>
+    func download(request: ApiDownloadRequest, queue: DispatchQueue) -> Observable<DownloadRequest>
+    func upload(request: ApiRequest, queue: DispatchQueue, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<(Data?, HTTPURLResponse)>
+    func upload(request: ApiRequest, data: Data, queue: DispatchQueue) -> Single<(Data?, HTTPURLResponse)>
+    func upload(request: ApiRequest, fromFile file: File, queue: DispatchQueue) -> Single<(Data?, HTTPURLResponse)>
+    func operation(from request: ApiRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data?, HTTPURLResponse), Error>) -> Void) -> ApiOperation
 }
 
 protocol ApiRequestCreator: AnyObject {

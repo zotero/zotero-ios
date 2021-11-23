@@ -14,7 +14,6 @@ import WebKit
 import Alamofire
 import CocoaLumberjackSwift
 import RxSwift
-import RxAlamofire
 
 /// `ExtensionStore` performs fetching of basic website data, runs the translation server which translates the web data, downloads item data with
 /// pdf attachment if available and uploads new item to Zotero.
@@ -87,7 +86,7 @@ final class ExtensionStore {
 
             case decoding
             case translating(String)
-            case downloading(Float)
+            case downloading(Double)
             case processed
             case submitting
             case done
@@ -377,7 +376,7 @@ final class ExtensionStore {
             self.download(url: url, to: file)
                 .observe(on: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] progress in
-                    self?.state.attachmentState = .downloading(progress.completed)
+                    self?.state.attachmentState = .downloading(progress.fractionCompleted)
                 }, onError: { [weak self] error in
                     DDLogError("ExtensionStore: could not download shared file - \(url.absoluteString) - \(error)")
                     self?.state.attachmentState = .failed(.downloadFailed)
@@ -544,7 +543,7 @@ final class ExtensionStore {
         self.download(url: url, to: file)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] progress in
-                self?.state.attachmentState = .downloading(progress.completed)
+                self?.state.attachmentState = .downloading(progress.fractionCompleted)
             }, onError: { [weak self] error in
                 DDLogError("ExtensionStore: could not download translated file - \(url.absoluteString) - \(error)")
                 self?.state.attachmentState = .failed(.downloadFailed)
@@ -607,12 +606,15 @@ final class ExtensionStore {
 
     /// Starts download of PDF attachment. Downloads it to temporary folder.
     /// - parameter url: URL of file to download
-    private func download(url: URL, to file: File) -> Observable<RxProgress> {
+    private func download(url: URL, to file: File) -> Observable<Progress> {
         let request = FileRequest(url: url, destination: file)
-        return self.apiClient.download(request: request)
+        return self.apiClient.download(request: request, queue: .main)
                              .subscribe(on: self.backgroundScheduler)
+                             .do(onNext: { request in
+                                 request.resume()
+                             })
                              .flatMap { request in
-                                 return request.rx.progress()
+                                 return request.downloadProgress.observable
                              }
     }
 

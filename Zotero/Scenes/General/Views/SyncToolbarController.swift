@@ -11,7 +11,7 @@ import UIKit
 import RxSwift
 
 final class SyncToolbarController {
-    private static let finishVisibilityTime: RxTimeInterval = .milliseconds(2500)
+    private static let finishVisibilityTime: RxTimeInterval = .seconds(4)
     private unowned let viewController: UINavigationController
     private unowned let dbStorage: DbStorage
     private let disposeBag: DisposeBag
@@ -141,6 +141,16 @@ final class SyncToolbarController {
                     message += L10n.Errors.SyncToolbar.webdavError(error)
                 case .webDavDeletion(let count, _):
                     message += L10n.Errors.SyncToolbar.webdavError2(count)
+                case .webDavVerification(let error):
+                    message = error.message
+                case .webDavDownload(let error):
+                    switch error {
+                    case .itemPropInvalid(let string):
+                        message = L10n.Errors.SyncToolbar.webdavItemProp(string)
+                    case .notChanged:
+                        // Should not happen
+                        message = ""
+                    }
                 case .unchanged: break
                 }
             }

@@ -9,7 +9,6 @@
 import Foundation
 
 import CocoaLumberjackSwift
-import RxAlamofire
 import RxSwift
 
 protocol DebugLoggingCoordinator: AnyObject {
@@ -181,19 +180,11 @@ final class DebugLogging {
         }
 
         let debugRequest = DebugLogUploadRequest()
-        self.apiClient.upload(request: debugRequest, data: data)
+        self.apiClient.upload(request: debugRequest, data: data, queue: self.queue)
                       .subscribe(on: self.scheduler)
-                      .flatMap { request -> Single<(HTTPURLResponse, Data)> in
-                          request.uploadProgress { progress in
-                              DDLogInfo("DebugLogging: progress \(progress.fractionCompleted)")
-                              progressAlert(progress.fractionCompleted)
-                          }
-                          return request.rx
-                                        .responseDataWithResponseError(queue: self.queue, acceptableStatusCodes: DefaultStatusCodes.acceptable,
-                                                                       encoding: debugRequest.encoding, logParams: debugRequest.logParams)
-                                        .subscribe(on: self.scheduler).asSingle()
-                      }
-                      .flatMap { _, data -> Single<String> in
+                      .flatMap { data, _ -> Single<String> in
+                          guard let data = data else { return Single.error(Error.responseParsing) }
+
                           let delegate = DebugResponseParserDelegate()
                           let parser = XMLParser(data: data)
                           parser.delegate = delegate

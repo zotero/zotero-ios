@@ -557,6 +557,10 @@ internal enum L10n {
       internal static func webdavError2(_ p1: Int) -> String {
         return L10n.tr("Localizable", "errors.sync_toolbar.webdav_error2", p1)
       }
+      /// Invalid prop file: %@
+      internal static func webdavItemProp(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "errors.sync_toolbar.webdav_item_prop", String(describing: p1))
+      }
     }
     internal enum Translators {
       /// Could not update translators from bundle. Would you like to try again?

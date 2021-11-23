@@ -138,26 +138,7 @@ struct WebDavSettings: View {
 
     private func errorMessage(for error: Error) -> String {
         if let error = error as? WebDavError.Verification {
-            switch error {
-            case .fileMissingAfterUpload:
-                return L10n.Errors.Settings.Webdav.fileMissingAfterUpload
-            case .invalidUrl:
-                return L10n.Errors.Settings.Webdav.invalidUrl
-            case .noPassword:
-                return L10n.Errors.Settings.Webdav.noPassword
-            case .noUrl:
-                return L10n.Errors.Settings.Webdav.noUrl
-            case .noUsername:
-                return L10n.Errors.Settings.Webdav.noUsername
-            case .nonExistentFileNotMissing:
-                return L10n.Errors.Settings.Webdav.nonExistentFileNotMissing
-            case .notDav:
-                return L10n.Errors.Settings.Webdav.notDav
-            case .parentDirNotFound:
-                return L10n.Errors.Settings.Webdav.parentDirNotFound
-            case .zoteroDirNotFound:
-                return L10n.Errors.Settings.Webdav.zoteroDirNotFound
-            }
+            return error.message
         }
 
         if let responseError = error as? AFResponseError, let message = self.errorMessage(for: responseError.error) {

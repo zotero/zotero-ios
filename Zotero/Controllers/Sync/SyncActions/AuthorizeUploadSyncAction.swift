@@ -32,6 +32,7 @@ struct AuthorizeUploadSyncAction: SyncAction {
         let request = AuthorizeUploadRequest(libraryId: self.libraryId, userId: self.userId, key: self.key, filename: self.filename,
                                              filesize: self.filesize, md5: self.md5, mtime: self.mtime, oldMd5: self.oldMd5)
         return self.apiClient.send(request: request, queue: self.queue)
+                             .mapData(httpMethod: request.httpMethod.rawValue)
                              .observe(on: self.scheduler)
                              .flatMap { (data, response) -> Single<AuthorizeUploadResponse> in
                                 do {
