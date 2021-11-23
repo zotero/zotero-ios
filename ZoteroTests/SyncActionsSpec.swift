@@ -352,21 +352,15 @@ final class SyncActionsSpec: QuickSpec {
                                                queue: DispatchQueue.main,
                                                scheduler: MainScheduler.instance,
                                                disposeBag: self.disposeBag).result
-                                         .subscribe(onSuccess: { response, _ in
-                                             response.subscribe(onCompleted: {
-                                                 fail("Upload didn't fail with unsubmitted item")
-                                                 doneAction()
-                                             }, onError: { error in
-                                                 if let handlerError = error as? SyncActionError {
-                                                     expect(handlerError).to(equal(.attachmentItemNotSubmitted))
-                                                 } else {
-                                                     fail("Unknown error: \(error.localizedDescription)")
-                                                 }
-                                                 doneAction()
-                                             })
-                                             .disposed(by: self.disposeBag)
+                                         .subscribe(onSuccess: { _ in
+                                             fail("Upload didn't fail with unsubmitted item")
+                                             doneAction()
                                          }, onFailure: { error in
-                                             fail("Unknown error: \(error.localizedDescription)")
+                                             if let handlerError = error as? SyncActionError {
+                                                 expect(handlerError).to(equal(.attachmentItemNotSubmitted))
+                                             } else {
+                                                 fail("Unknown error: \(error.localizedDescription)")
+                                             }
                                              doneAction()
                                          })
                                          .disposed(by: self.disposeBag)
@@ -408,9 +402,6 @@ final class SyncActionsSpec: QuickSpec {
                                                queue: DispatchQueue.main,
                                                scheduler: MainScheduler.instance,
                                                disposeBag: self.disposeBag).result
-                                         .flatMap({ response, _ -> Single<Never> in
-                                             return response.asObservable().asSingle()
-                                         })
                                          .subscribe(onSuccess: { _ in
                                              fail("Upload didn't fail with unsubmitted item")
                                              doneAction()
@@ -482,17 +473,6 @@ final class SyncActionsSpec: QuickSpec {
                                                queue: DispatchQueue.main,
                                                scheduler: MainScheduler.instance,
                                                disposeBag: self.disposeBag).result
-                                         .flatMap({ response, _ -> Single<()> in
-                                             return Single.create { subscriber -> Disposable in
-                                                response.subscribe(onCompleted: {
-                                                            subscriber(.success(()))
-                                                        }, onError: { error in
-                                                            subscriber(.failure(error))
-                                                        })
-                                                        .disposed(by: self.disposeBag)
-                                                return Disposables.create()
-                                             }
-                                         })
                                          .subscribe(onSuccess: { _ in
                                              doneAction()
                                          }, onFailure: { error in
@@ -572,17 +552,6 @@ final class SyncActionsSpec: QuickSpec {
                                                queue: DispatchQueue.main,
                                                scheduler: MainScheduler.instance,
                                                disposeBag: self.disposeBag).result
-                                         .flatMap({ response, _ -> Single<()> in
-                                             return Single.create { subscriber -> Disposable in
-                                                response.subscribe(onCompleted: {
-                                                            subscriber(.success(()))
-                                                        }, onError: { error in
-                                                            subscriber(.failure(error))
-                                                        })
-                                                        .disposed(by: self.disposeBag)
-                                                return Disposables.create()
-                                             }
-                                         })
                                          .subscribe(onSuccess: { _ in
                                              self.realm.refresh()
 
@@ -638,7 +607,7 @@ fileprivate class WebDavTestController: WebDavController {
         return Single.error(Error.shouldntBeCalled)
     }
 
-    func upload(request: AttachmentUploadRequest, fromFile file: File) -> Single<UploadRequest> {
+    func upload(request: AttachmentUploadRequest, fromFile file: File, queue: DispatchQueue) -> Single<(Data?, HTTPURLResponse)> {
         return Single.error(Error.shouldntBeCalled)
     }
 
