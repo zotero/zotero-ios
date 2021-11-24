@@ -99,7 +99,7 @@ final class BackgroundUploader: NSObject {
         // Start background task so that we can send register requests to API and store results in DB.
         self.startBackgroundTask(expireAction: { [weak self] in
             // If background task expires before all uploads are processed, remove taskIds from context, so that they are processed by main app when opened.
-            self?.remove(tasks: taskIds)
+            self?.context.deleteUploads(with: taskIds)
         })
         // Create actions for all uploads for this background session.
         let actions = failedUploads.map({ self.uploadProcessor.finish(upload: $0.1, successful: false) }) + successfulUploads.map({ self.uploadProcessor.finish(upload: $0.1, successful: true) })
@@ -108,22 +108,16 @@ final class BackgroundUploader: NSObject {
                   .observe(on: MainScheduler.instance)
                   .subscribe(onError: { [weak self] error in
                       self?.uploadsFinishedProcessing = true
-                      self?.remove(tasks: taskIds)
+                      self?.context.deleteUploads(with: taskIds)
                       self?.completeBackgroundSession()
                       self?.endBackgroundTask()
                   }, onCompleted: { [weak self] in
                       self?.uploadsFinishedProcessing = true
-                      self?.remove(tasks: taskIds)
+                      self?.context.deleteUploads(with: taskIds)
                       self?.completeBackgroundSession()
                       self?.endBackgroundTask()
                   })
                   .disposed(by: self.disposeBag)
-    }
-
-    private func remove(tasks: [Int]) {
-        for id in tasks {
-            self.context.deleteUpload(with: id)
-        }
     }
 
     private func completeBackgroundSession() {
@@ -182,7 +176,7 @@ extension BackgroundUploader: URLSessionTaskDelegate {
                 }
             }
 
-            if self.context.activeUploads.isEmpty {
+            if self.context.activeUploads.count == (self.finishedUploads.count + self.failedUploads.count) {
                 self.finish(successfulUploads: self.finishedUploads, failedUploads: self.failedUploads)
                 self.finishedUploads = []
                 self.failedUploads = []

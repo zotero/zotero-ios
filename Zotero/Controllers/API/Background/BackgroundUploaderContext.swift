@@ -35,6 +35,14 @@ final class BackgroundUploaderContext {
         self.userDefault.set(object: uploads, forKey: BackgroundUploaderContext.key)
     }
 
+    func deleteUploads(with taskIds: [Int]) {
+        var uploads = self.userDefault.object([Int: BackgroundUpload].self, with: BackgroundUploaderContext.key) ?? [:]
+        for id in taskIds {
+            uploads[id] = nil
+        }
+        self.userDefault.set(object: uploads, forKey: BackgroundUploaderContext.key)
+    }
+
     func deleteAllUploads() {
         self.userDefault.removeObject(forKey: BackgroundUploaderContext.key)
     }
