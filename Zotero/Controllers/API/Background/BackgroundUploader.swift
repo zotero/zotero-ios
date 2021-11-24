@@ -21,8 +21,8 @@ final class BackgroundUploader: NSObject {
     private let uploadProcessor: BackgroundUploadProcessor
 
     private var session: URLSession!
-    private var finishedUploads: [BackgroundUpload]
-    private var failedUploads: [BackgroundUpload]
+    private var finishedUploads: [(Int, BackgroundUpload)]
+    private var failedUploads: [(Int, BackgroundUpload)]
     private var uploadsFinishedProcessing: Bool
     private var disposeBag: DisposeBag
 
@@ -88,30 +88,42 @@ final class BackgroundUploader: NSObject {
 
     // MARK: - Finishing upload
 
-    private func finish(successfulUploads: [BackgroundUpload], failedUploads: [BackgroundUpload]) {
+    private func finish(successfulUploads: [(Int, BackgroundUpload)], failedUploads: [(Int, BackgroundUpload)]) {
         guard !successfulUploads.isEmpty || !failedUploads.isEmpty else {
             self.uploadsFinishedProcessing = true
             self.completeBackgroundSession()
             return
         }
 
+        let taskIds = successfulUploads.map({ $0.0 }) + failedUploads.map({ $0.0 })
         // Start background task so that we can send register requests to API and store results in DB.
-        self.startBackgroundTask()
+        self.startBackgroundTask(expireAction: { [weak self] in
+            // If background task expires before all uploads are processed, remove taskIds from context, so that they are processed by main app when opened.
+            self?.remove(tasks: taskIds)
+        })
         // Create actions for all uploads for this background session.
-        let actions = failedUploads.map({ self.uploadProcessor.finish(upload: $0, successful: false) }) + successfulUploads.map({ self.uploadProcessor.finish(upload: $0, successful: true) })
+        let actions = failedUploads.map({ self.uploadProcessor.finish(upload: $0.1, successful: false) }) + successfulUploads.map({ self.uploadProcessor.finish(upload: $0.1, successful: true) })
         // Process all actions, call appropriate completion handlers and finish the background task.
         Observable.concat(actions)
                   .observe(on: MainScheduler.instance)
                   .subscribe(onError: { [weak self] error in
                       self?.uploadsFinishedProcessing = true
+                      self?.remove(tasks: taskIds)
                       self?.completeBackgroundSession()
                       self?.endBackgroundTask()
                   }, onCompleted: { [weak self] in
                       self?.uploadsFinishedProcessing = true
+                      self?.remove(tasks: taskIds)
                       self?.completeBackgroundSession()
                       self?.endBackgroundTask()
                   })
                   .disposed(by: self.disposeBag)
+    }
+
+    private func remove(tasks: [Int]) {
+        for id in tasks {
+            self.context.deleteUpload(with: id)
+        }
     }
 
     private func completeBackgroundSession() {
@@ -121,11 +133,12 @@ final class BackgroundUploader: NSObject {
 
     /// Starts background task in the main app. We can limit this to the main app, because the share extension is always closed after the upload
     /// is started, so the upload will be finished in the main app.
-    private func startBackgroundTask() {
+    private func startBackgroundTask(expireAction: @escaping () -> Void) {
         #if MAINAPP
         guard UIApplication.shared.applicationState == .background else { return }
         self.backgroundTaskId = UIApplication.shared.beginBackgroundTask(withName: "org.zotero.background.upload.finish") { [weak self] in
             guard let `self` = self else { return }
+            expireAction()
             // If the background time expired, cancel ongoing upload processing
             self.disposeBag = DisposeBag()
             UIApplication.shared.endBackgroundTask(self.backgroundTaskId)
@@ -163,11 +176,10 @@ extension BackgroundUploader: URLSessionTaskDelegate {
 
             if let upload = self.context.loadUpload(for: task.taskIdentifier) {
                 if error == nil && task.error == nil {
-                    self.finishedUploads.append(upload)
+                    self.finishedUploads.append((task.taskIdentifier, upload))
                 } else {
-                    self.failedUploads.append(upload)
+                    self.failedUploads.append((task.taskIdentifier, upload))
                 }
-                self.context.deleteUpload(with: task.taskIdentifier)
             }
 
             if self.context.activeUploads.isEmpty {

@@ -1966,7 +1966,7 @@ final class SyncControllerSpec: QuickSpec {
                     let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: "text/plain")
                     let expected: [SyncController.Action] = [.loadKeyPermissions, .syncGroupVersions,
                                                              .createLibraryActions(.all, .automatic),
-                                                             .createUploadActions(libraryId),
+                                                             .createUploadActions(libraryId: libraryId, hadOtherWriteActions: false),
                                                              .uploadAttachment(AttachmentUpload(libraryId: libraryId, key: key, filename: filename, contentType: "text/plain", md5: "", mtime: 0, file: file, oldMd5: nil)),
                                                              .createLibraryActions(.specific([libraryId]), .forceDownloads),
                                                              .syncSettings(libraryId, 0),
@@ -2024,6 +2024,83 @@ final class SyncControllerSpec: QuickSpec {
                     }
                 }
 
+                it("should check for remote changes if all upload actions are ongoing in background and no other write actions were performed before") {
+                    let libraryId = self.userLibraryId
+                    let key = "AAAAAAAA"
+                    let filename = "doc2.txt"
+                    let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: "text/plain")
+                    let fileMd5 = "md5hash"
+                    let expected: [SyncController.Action] = [.loadKeyPermissions, .syncGroupVersions,
+                                                             .createLibraryActions(.all, .automatic),
+                                                             .createUploadActions(libraryId: libraryId, hadOtherWriteActions: false),
+                                                             .createLibraryActions(.specific([libraryId]), .forceDownloads),
+                                                             .syncSettings(libraryId, 0),
+                                                             .syncVersions(libraryId: libraryId, object: .collection, version: 0, checkRemote: false),
+                                                             .syncVersions(libraryId: libraryId, object: .search, version: 0, checkRemote: false),
+                                                             .syncVersions(libraryId: libraryId, object: .item, version: 0, checkRemote: false),
+                                                             .syncVersions(libraryId: libraryId, object: .trash, version: 0, checkRemote: false)]
+
+                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
+                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: nil, statusCode: 200, jsonResponse: [:])
+                    createStub(for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0), baseUrl: baseUrl, statusCode: 304, jsonResponse: [:])
+
+                    self.createNewSyncController()
+
+                    let taskId = 1
+                    let backgroundUpload = BackgroundUpload(type: .zotero(uploadKey: "abc"), key: key, libraryId: libraryId, userId: self.userId, remoteUrl: URL(string: "https://zotero.org/")!,
+                                                            fileUrl: file.createUrl(), md5: fileMd5, completion: nil)
+                    let backgroundContext = BackgroundUploaderContext()
+                    backgroundContext.saveUpload(backgroundUpload, taskId: taskId)
+
+                    try! self.realm.write {
+                        let item = RItem()
+                        item.key = key
+                        item.rawType = "attachment"
+                        item.customLibraryKey = .myLibrary
+                        item.rawChangedFields = 0
+                        item.attachmentNeedsSync = true
+
+                        let contentField = RItemField()
+                        contentField.key = FieldKeys.Item.Attachment.contentType
+                        contentField.value = "text/plain"
+                        item.fields.append(contentField)
+
+                        let filenameField = RItemField()
+                        filenameField.key = FieldKeys.Item.Attachment.filename
+                        filenameField.value = filename
+                        item.fields.append(filenameField)
+
+                        let linkModeField = RItemField()
+                        linkModeField.key = FieldKeys.Item.Attachment.linkMode
+                        linkModeField.value = LinkMode.importedFile.rawValue
+                        item.fields.append(linkModeField)
+
+                        let md5Field = RItemField()
+                        md5Field.key = FieldKeys.Item.Attachment.md5
+                        md5Field.value = fileMd5
+                        item.fields.append(md5Field)
+
+                        self.realm.add(item)
+                    }
+
+                    waitUntil(timeout: .seconds(10)) { doneAction in
+                        self.syncController.reportFinish = { result in
+                            switch result {
+                            case .success(let data):
+                                expect(data.0).to(equal(expected))
+                            case .failure(let error):
+                                fail("Failure: \(error)")
+                            }
+
+                            backgroundContext.deleteUpload(with: taskId)
+
+                            doneAction()
+                        }
+
+                        self.syncController.start(type: .normal, libraries: .all)
+                    }
+                }
+
                 it("shouldn't check for remote changes if some write action succeeded to reach zotero backend") {
                     let libraryId = self.userLibraryId
 
@@ -2040,7 +2117,7 @@ final class SyncControllerSpec: QuickSpec {
 
                     let expected: [SyncController.Action] = [.loadKeyPermissions, .syncGroupVersions,
                                                              .createLibraryActions(.all, .automatic),
-                                                             .createUploadActions(libraryId),
+                                                             .createUploadActions(libraryId: libraryId, hadOtherWriteActions: false),
                                                              .uploadAttachment(AttachmentUpload(libraryId: libraryId, key: key, filename: filename, contentType: "text/plain", md5: "", mtime: 0, file: file, oldMd5: nil)),
                                                              .uploadAttachment(AttachmentUpload(libraryId: libraryId, key: key2, filename: filename2, contentType: "text/plain", md5: "", mtime: 0, file: file2, oldMd5: nil))]
 

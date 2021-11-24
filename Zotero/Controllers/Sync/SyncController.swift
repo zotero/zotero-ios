@@ -73,7 +73,7 @@ final class SyncController: SynchronizationController {
         /// Loads required libraries, spawns actions for each.
         case createLibraryActions(LibrarySyncType, CreateLibraryActionsOptions)
         /// Loads items that need upload, spawns actions for each.
-        case createUploadActions(LibraryIdentifier)
+        case createUploadActions(libraryId: LibraryIdentifier, hadOtherWriteActions: Bool)
         /// Starts `SyncBatchProcessor` which downloads and stores all batches.
         case syncBatchesToDb([DownloadBatch])
         /// Store new version for given library-object.
@@ -501,8 +501,8 @@ final class SyncController: SynchronizationController {
             self.processKeyCheckAction()
         case .createLibraryActions(let libraries, let options):
             self.processCreateLibraryActions(for: libraries, options: options)
-        case .createUploadActions(let libraryId):
-            self.processCreateUploadActions(for: libraryId)
+        case .createUploadActions(let libraryId, let hadOtherWriteActions):
+            self.processCreateUploadActions(for: libraryId, hadOtherWriteActions: hadOtherWriteActions)
         case .syncGroupVersions:
             self.progressHandler.reportGroupsSync()
             self.processSyncGroupVersions()
@@ -776,7 +776,7 @@ final class SyncController: SynchronizationController {
         if !deletions.isEmpty {
             actions.append(contentsOf: deletions.map({ .submitDeleteBatch($0) }))
         }
-        actions.append(.createUploadActions(libraryId))
+        actions.append(.createUploadActions(libraryId: libraryId, hadOtherWriteActions: (!updates.isEmpty || !deletions.isEmpty)))
         return actions
     }
 
@@ -805,15 +805,12 @@ final class SyncController: SynchronizationController {
         }
     }
 
-    private func processCreateUploadActions(for libraryId: LibraryIdentifier) {
+    private func processCreateUploadActions(for libraryId: LibraryIdentifier, hadOtherWriteActions: Bool) {
         let result = LoadUploadDataSyncAction(libraryId: libraryId, backgroundUploader: self.backgroundUploader, dbStorage: self.dbStorage).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] uploads in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.progressHandler.reportUpload(count: uploads.count)
-                      self?.enqueuedUploads = uploads.count
-                      self?.uploadsFailedBeforeReachingZoteroBackend = 0
-                      self?.enqueue(actions: uploads.map({ .uploadAttachment($0) }), at: 0)
+                      self?.process(uploads: uploads, hadOtherWriteActions: hadOtherWriteActions, libraryId: libraryId)
                   }
               }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -823,6 +820,26 @@ final class SyncController: SynchronizationController {
                   }
               })
               .disposed(by: self.disposeBag)
+    }
+
+    private func process(uploads: [AttachmentUpload], hadOtherWriteActions: Bool, libraryId: LibraryIdentifier) {
+        if uploads.isEmpty {
+            // If no uploads were loaded (probably because there are ongoing background uploads) and there were other write actions performed, continue with next actions.
+            if hadOtherWriteActions {
+                self.processNextAction()
+                return
+            }
+
+            // If there were no other actions performed, we need to check for remote changes for this library.
+            self.queue.insert(.createLibraryActions(.specific([libraryId]), .forceDownloads), at: 0)
+            self.processNextAction()
+            return
+        }
+
+        self.progressHandler.reportUpload(count: uploads.count)
+        self.enqueuedUploads = uploads.count
+        self.uploadsFailedBeforeReachingZoteroBackend = 0
+        self.enqueue(actions: uploads.map({ .uploadAttachment($0) }), at: 0)
     }
 
     private func processSyncGroupVersions() {
@@ -1766,7 +1783,7 @@ fileprivate extension SyncController.Action {
              .syncSettings(let libraryId, _),
              .markChangesAsResolved(let libraryId),
              .revertLibraryToOriginal(let libraryId),
-             .createUploadActions(let libraryId),
+             .createUploadActions(let libraryId, _),
              .performWebDavDeletions(let libraryId):
             return libraryId
         }
