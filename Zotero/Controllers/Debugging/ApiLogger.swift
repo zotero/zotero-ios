@@ -133,6 +133,9 @@ struct ApiLogger {
     // MARK: - Redacting
 
     private static func redact(headers: [AnyHashable: Any]) -> [AnyHashable: Any] {
+        #if DEBUG
+        return headers
+        #else
         var redacted = headers
         if headers["Zotero-API-Key"] != nil {
             redacted["Zotero-API-Key"] = "<redacted>"
@@ -141,14 +144,23 @@ struct ApiLogger {
             redacted["Authorization"] = "<redacted>"
         }
         return redacted
+        #endif
     }
 
     private static func redact(url: String) -> String {
+        #if DEBUG
+        return url
+        #else
         return url.redact(with: self.urlExpression, groups: ["password", "username"])
+        #endif
     }
 
     private static func redact(parameters: String) -> String {
+        #if DEBUG
+        return parameters
+        #else
         return parameters.redact(with: self.passwordExpression, groups: ["password"])
+        #endif
     }
 }
 
