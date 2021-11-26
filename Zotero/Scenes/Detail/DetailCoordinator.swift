@@ -613,9 +613,14 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         let message: String
         if let error = error as? ItemDetailError, error == .cantUnzipSnapshot {
             message = L10n.Errors.Attachments.cantUnzipSnapshot
-        } else if let error = error as? AttachmentDownloader.Error, error == .incompatibleAttachment {
-            message = L10n.Errors.Attachments.incompatibleAttachment
-            isLinkedFileError = true
+        } else if let error = error as? AttachmentDownloader.Error {
+            switch error {
+            case .incompatibleAttachment:
+                message = L10n.Errors.Attachments.incompatibleAttachment
+                isLinkedFileError = true
+            case .zipDidntContainRequestedFile:
+                message = L10n.Errors.Attachments.cantOpenAttachment
+            }
         } else {
             message = L10n.Errors.Attachments.cantOpenAttachment
         }

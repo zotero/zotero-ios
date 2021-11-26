@@ -16,6 +16,7 @@ import ZIPFoundation
 final class AttachmentDownloader {
     enum Error: Swift.Error {
         case incompatibleAttachment
+        case zipDidntContainRequestedFile
     }
 
     struct Update {
@@ -247,8 +248,16 @@ final class AttachmentDownloader {
             try FileManager.default.unzipItem(at: zipFile.createUrl(), to: zipFile.createRelativeUrl(), progress: progress)
             // Try removing zip file, don't return error if it fails, we've got what we wanted.
             try? self.fileStorage.remove(zipFile)
+            // Rename unzipped file if zip contained only 1 file and the names don't match
+            let unzippedFiles: [File] = (try self.fileStorage.contentsOfDirectory(at: file.directory)).filter({ $0.mimeType == file.mimeType })
+            if unzippedFiles.count == 1, let unzipped = unzippedFiles.first, unzipped.name != file.name {
+                try self.fileStorage.move(from: unzipped, to: file)
+            }
 
-            return .success(())
+            if self.fileStorage.has(file) {
+                return .success(())
+            }
+            return .failure(Error.zipDidntContainRequestedFile)
         } catch let error {
             return .failure(error)
         }
