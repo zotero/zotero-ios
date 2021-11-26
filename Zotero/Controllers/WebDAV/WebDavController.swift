@@ -26,7 +26,7 @@ enum WebDavError {
         case invalidUrl
         case notDav
         case parentDirNotFound
-        case zoteroDirNotFound
+        case zoteroDirNotFound(String)
         case nonExistentFileNotMissing
         case fileMissingAfterUpload
 
@@ -75,6 +75,7 @@ protocol WebDavController: AnyObject {
     var authToken: String? { get }
 
     func checkServer(queue: DispatchQueue) -> Single<URL>
+    func createZoteroDirectory(queue: DispatchQueue) -> Single<()>
     func download(key: String, file: File, queue: DispatchQueue) -> Observable<DownloadRequest>
     func prepareForUpload(key: String, mtime: Int, hash: String, file: File, queue: DispatchQueue) -> Single<WebDavUploadResult>
     func upload(request: AttachmentUploadRequest, fromFile file: File, queue: DispatchQueue) -> Single<(Data?, HTTPURLResponse)>
@@ -392,10 +393,16 @@ final class WebDavControllerImpl: WebDavController {
                    .do(onSuccess: { [weak self] _ in
                        self?.sessionStorage.isVerified = true
                        DDLogInfo("WebDavController: file sync is successfully set up")
-                   }, onError: { [weak self] error in
-                       self?.apiClient.set(authToken: nil, for: .webDav)
+                   }, onError: { error in
                        DDLogError("WebDavController: checkServer failed - \(error)")
                    })
+    }
+
+    func createZoteroDirectory(queue: DispatchQueue) -> Single<()> {
+        return self.createUrl()
+                    .flatMap { url in
+                        return self.apiClient.send(request: WebDavCreateZoteroDirectoryRequest(url: url)).flatMap({ _ in Single.just(()) })
+                    }
     }
 
     /// Checks whether server is WebDAV server.
@@ -452,7 +459,7 @@ final class WebDavControllerImpl: WebDavController {
         return self.propFind(url: url.deletingLastPathComponent(), queue: queue)
                    .flatMap({ response -> Single<URL> in
                        if response.statusCode == 207 {
-                           return Single.error(WebDavError.Verification.zoteroDirNotFound)
+                           return Single.error(WebDavError.Verification.zoteroDirNotFound(url.absoluteString))
                        } else {
                            return Single.error(WebDavError.Verification.parentDirNotFound)
                        }

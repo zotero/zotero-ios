@@ -475,7 +475,14 @@ extension AppCoordinator: ConflictReceiver {
     }
 }
 
-extension AppCoordinator: DebugPermissionReceiver {
+extension AppCoordinator: SyncRequestReceiver {
+    func askToCreateZoteroDirectory(url: String, create: @escaping () -> Void, cancel: @escaping () -> Void) {
+        let controller = UIAlertController(title: L10n.Settings.Sync.DirectoryNotFound.title, message: L10n.Settings.Sync.DirectoryNotFound.message(url), preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: { _ in cancel() }))
+        controller.addAction(UIAlertAction(title: L10n.create, style: .default, handler: { _ in create() }))
+        self.viewController?.present(controller, animated: true, completion: nil)
+    }
+
     func askForPermission(message: String, completed: @escaping (DebugPermissionResponse) -> Void) {
         DispatchQueue.main.async { [weak self] in
             self?._askForPermission(message: message, completed: completed)

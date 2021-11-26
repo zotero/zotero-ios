@@ -17,4 +17,6 @@ enum SyncSettingsAction {
     case setPassword(String)
     case verify
     case cancelVerification
+    case createZoteroDirectory
+    case cancelZoteroDirectoryCreation
 }

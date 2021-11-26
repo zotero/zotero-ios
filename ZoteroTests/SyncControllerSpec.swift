@@ -2233,7 +2233,7 @@ extension InputStream {
     }
 }
 
-struct TestConflictCoordinator: ConflictReceiver & DebugPermissionReceiver {
+struct TestConflictCoordinator: ConflictReceiver & SyncRequestReceiver {
     func resolve(conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void) {
         switch conflict {
         case .objectsRemovedRemotely(let libraryId, let collections, let items, let searches, let tags):

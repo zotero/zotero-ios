@@ -29,6 +29,7 @@ enum ApiHttpMethod: String {
     case trace    = "TRACE"
     case connect  = "CONNECT"
     case propfind = "PROPFIND"
+    case mkcol    = "MKCOL"
 }
 
 typealias ResponseHeaders = [AnyHashable: Any]

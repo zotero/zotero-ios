@@ -12,8 +12,9 @@ protocol ConflictReceiver {
     func resolve(conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void)
 }
 
-protocol DebugPermissionReceiver {
+protocol SyncRequestReceiver {
     func askForPermission(message: String, completed: @escaping (DebugPermissionResponse) -> Void)
+    func askToCreateZoteroDirectory(url: String, create: @escaping () -> Void, cancel: @escaping () -> Void)
 }
 
-typealias ConflictCoordinator = ConflictReceiver & DebugPermissionReceiver
+typealias ConflictCoordinator = ConflictReceiver & SyncRequestReceiver

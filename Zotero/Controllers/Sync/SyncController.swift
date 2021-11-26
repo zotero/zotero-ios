@@ -1300,7 +1300,7 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
-    private func finishSubmission(error: Error?, newVersion: Int?, libraryId: LibraryIdentifier, object: SyncObject, failedBeforeReachingApi: Bool = false) {
+    private func finishSubmission(error: Error?, newVersion: Int?, libraryId: LibraryIdentifier, object: SyncObject, failedBeforeReachingApi: Bool = false, ignoreWebDav: Bool = false) {
         let nextAction: () -> Void = {
             if let version = newVersion {
                 self.updateVersionInNextWriteBatch(to: version)
@@ -1324,6 +1324,12 @@ final class SyncController: SynchronizationController {
         }
 
         if self.handleUpdatePreconditionFailureIfNeeded(for: error, libraryId: libraryId) {
+            return
+        }
+
+        if !ignoreWebDav &&
+            self.handleZoteroDirectoryMissing(for: error, continue: { [weak self] in self?.finishSubmission(error: error, newVersion: newVersion, libraryId: libraryId, object: object,
+                                                                                                            failedBeforeReachingApi: failedBeforeReachingApi, ignoreWebDav: true) }) {
             return
         }
 
@@ -1450,10 +1456,17 @@ final class SyncController: SynchronizationController {
                   }
               }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.handleNonFatal(error: .webDavDeletionFailed(error: error.localizedDescription, library: libraryId.debugName), libraryId: libraryId, version: nil)
+                      self?.handleWebDavDeletions(error: error, libraryId: libraryId)
                   }
               })
               .disposed(by: self.disposeBag)
+    }
+
+    private func handleWebDavDeletions(error: Error, libraryId: LibraryIdentifier, ignoreWebDav: Bool = false) {
+        if !ignoreWebDav && self.handleZoteroDirectoryMissing(for: error, continue: { [weak self] in self?.handleWebDavDeletions(error: error, libraryId: libraryId, ignoreWebDav: true) }) {
+            return
+        }
+        self.handleNonFatal(error: .webDavDeletionFailed(error: error.localizedDescription, library: libraryId.debugName), libraryId: libraryId, version: nil)
     }
 
     // MARK: - Helpers
@@ -1590,6 +1603,43 @@ final class SyncController: SynchronizationController {
         case .responseSerializationFailed, .createUploadableFailed, .downloadedFileMoveFailed, .explicitlyCancelled:
             return .nonFatal(.apiError(response))
         }
+    }
+
+    private func handleZoteroDirectoryMissing(for error: Error, continue: @escaping () -> Void) -> Bool {
+        guard let error = error as? WebDavError.Verification, case .zoteroDirNotFound(let url) = error else { return false }
+
+        DispatchQueue.main.async {
+            self.conflictCoordinator?.askToCreateZoteroDirectory(url: url, create: { [weak self] in
+                self?.createZoteroDirectoryAndContinue(errorAction: { [weak self] in
+                    self?.accessQueue.async {
+                        `continue`()
+                    }
+                })
+            }, cancel: { [weak self] in
+                self?.accessQueue.async {
+                    `continue`()
+                }
+            })
+        }
+
+        return true
+    }
+
+    private func createZoteroDirectoryAndContinue(errorAction: @escaping () -> Void) {
+        self.webDavController.createZoteroDirectory(queue: self.workQueue)
+                             .subscribe(on: self.workScheduler)
+                             .subscribe(onSuccess: { [weak self] _ in
+                                 self?.accessQueue.async {
+                                     guard let action = self?.processingAction else { return }
+                                     self?.workQueue.async {
+                                         self?.process(action: action)
+                                     }
+                                 }
+                             }, onFailure: { error in
+                                 DDLogError("SyncController: can't create zotero directory - \(error)")
+                                 errorAction()
+                             })
+                             .disposed(by: self.disposeBag)
     }
 
     /// Handles precondition error, if required. Precondition error is handled by removing all actions for current library. Then downloading all

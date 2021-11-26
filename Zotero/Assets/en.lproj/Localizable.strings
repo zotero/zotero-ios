@@ -45,6 +45,7 @@
 "not_found" = "Not Found";
 "share" = "Share";
 "select" = "Select";
+"create" = "Create";
 
 "beta_wipe_title" = "Resync Required";
 "beta_wipe_message" = "Due to a beta update, your data must be redownloaded from zotero.org.";
@@ -238,6 +239,8 @@
 "settings.sync.username" = "Username";
 "settings.sync.password" = "Password";
 "settings.sync.verify" = "Verify Server";
+"settings.sync.directory_not_found.title" = "Directory not found";
+"settings.sync.directory_not_found.message" = "%@ does not exist.\n\nDo you want to create it now?";
 "settings.sync.verified" = "Verified";
 "settings.permission" = "User Permission";
 "settings.permission_subtitle" = "Ask for user permission for each write action";

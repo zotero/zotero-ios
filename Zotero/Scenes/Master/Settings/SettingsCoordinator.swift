@@ -28,6 +28,7 @@ protocol SettingsCoordinatorDelegate: AnyObject {
     func dismiss()
     func showLogoutAlert(viewModel: ViewModel<SyncSettingsActionHandler>)
     func showSchemePicker(viewModel: ViewModel<SyncSettingsActionHandler>)
+    func promptZoteroDirCreation(url: String, create: @escaping () -> Void, cancel: @escaping () -> Void)
 }
 
 protocol CitationStyleSearchSettingsCoordinatorDelegate: AnyObject {
@@ -155,7 +156,7 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         }
 
         let handler = SyncSettingsActionHandler(dbStorage: dbStorage, fileStorage: self.controllers.fileStorage, sessionController: self.controllers.sessionController,
-                                                webDavController: webDavController, syncScheduler: syncScheduler)
+                                                webDavController: webDavController, syncScheduler: syncScheduler, coordinatorDelegate: self)
         let state = SyncSettingsState(account: Defaults.shared.username,
                                       fileSyncType: (webDavController.sessionStorage.isEnabled ? .webDav : .zotero),
                                       scheme: webDavController.sessionStorage.scheme,
@@ -312,6 +313,13 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
 
         let controller = UIHostingController(rootView: view.environmentObject(ViewModel(initialState: state, handler: handler)))
         self.navigationController.pushViewController(controller, animated: true)
+    }
+
+    func promptZoteroDirCreation(url: String, create: @escaping () -> Void, cancel: @escaping () -> Void) {
+        let controller = UIAlertController(title: L10n.Settings.Sync.DirectoryNotFound.title, message: L10n.Settings.Sync.DirectoryNotFound.message(url), preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: { _ in cancel() }))
+        controller.addAction(UIAlertAction(title: L10n.create, style: .default, handler: { _ in create() }))
+        self.navigationController.present(controller, animated: true, completion: nil)
     }
 }
 

@@ -636,6 +636,8 @@
 		B36CBD4C25DD397D003C4613 /* ConflictAlertQueueController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36CBD4B25DD397D003C4613 /* ConflictAlertQueueController.swift */; };
 		B36CBD5A25DD3BDD003C4613 /* ConflictAlertQueueHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36CBD5925DD3BDD003C4613 /* ConflictAlertQueueHandler.swift */; };
 		B36CBD6225DD4257003C4613 /* ChangedItemsDeletedAlertQueueHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36CBD6125DD4257003C4613 /* ChangedItemsDeletedAlertQueueHandler.swift */; };
+		B36E4F66275123F4001FB99D /* WebDavCreateZoteroDirectoryRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36E4F65275123F4001FB99D /* WebDavCreateZoteroDirectoryRequest.swift */; };
+		B36E4F682751242C001FB99D /* WebDavCreateZoteroDirectoryRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36E4F65275123F4001FB99D /* WebDavCreateZoteroDirectoryRequest.swift */; };
 		B36E9D4925E51B0E00CD1109 /* AnnotationPosition.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36E9D4825E51B0E00CD1109 /* AnnotationPosition.swift */; };
 		B36EBFF5273162DD00CD788D /* bitcoin.zip in Resources */ = {isa = PBXBuildFile; fileRef = B36EBFF4273162DD00CD788D /* bitcoin.zip */; };
 		B371494C25D585EA00D6391E /* RestoreDeletionsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340868825D574D6000F4446 /* RestoreDeletionsSyncAction.swift */; };
@@ -1437,6 +1439,7 @@
 		B36CBD4B25DD397D003C4613 /* ConflictAlertQueueController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictAlertQueueController.swift; sourceTree = "<group>"; };
 		B36CBD5925DD3BDD003C4613 /* ConflictAlertQueueHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictAlertQueueHandler.swift; sourceTree = "<group>"; };
 		B36CBD6125DD4257003C4613 /* ChangedItemsDeletedAlertQueueHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangedItemsDeletedAlertQueueHandler.swift; sourceTree = "<group>"; };
+		B36E4F65275123F4001FB99D /* WebDavCreateZoteroDirectoryRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavCreateZoteroDirectoryRequest.swift; sourceTree = "<group>"; };
 		B36E9D4825E51B0E00CD1109 /* AnnotationPosition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPosition.swift; sourceTree = "<group>"; };
 		B36EBFF4273162DD00CD788D /* bitcoin.zip */ = {isa = PBXFileReference; lastKnownFileType = archive.zip; path = bitcoin.zip; sourceTree = "<group>"; };
 		B372CEDF2486504600B423AE /* GroupVersionsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupVersionsRequest.swift; sourceTree = "<group>"; };
@@ -1990,6 +1993,7 @@
 				B305649023FC051E003304F2 /* UpdatesRequest.swift */,
 				B305649623FC051E003304F2 /* VersionsRequest.swift */,
 				B3A351D82715759D002E597A /* WebDavCheckRequest.swift */,
+				B36E4F65275123F4001FB99D /* WebDavCreateZoteroDirectoryRequest.swift */,
 				B3A351E2271578B1002E597A /* WebDavDeleteRequest.swift */,
 				B3A351E02715784A002E597A /* WebDavDownloadRequest.swift */,
 				B3A351DC2715774E002E597A /* WebDavNonexistentPropRequest.swift */,
@@ -3868,6 +3872,7 @@
 				B372CEE92486748500B423AE /* MarkGroupForResyncSyncAction.swift in Sources */,
 				B378F4C9242CC8EF00B88A05 /* Translator.swift in Sources */,
 				B30565BA23FC051E003304F2 /* EditCollectionDbRequest.swift in Sources */,
+				B36E4F66275123F4001FB99D /* WebDavCreateZoteroDirectoryRequest.swift in Sources */,
 				B3E8FE062714292E00F51458 /* StorageSettingsRow.swift in Sources */,
 				B34C40F525710B430057D5F5 /* AnnotationEditViewController.swift in Sources */,
 				B305662823FC051F003304F2 /* SyncScheduler.swift in Sources */,
@@ -4613,6 +4618,7 @@
 				B341C8D425CBFF8A005562E5 /* LibraryIdentifier.swift in Sources */,
 				B30566FF23FC0869003304F2 /* MarkItemsAsTrashedDbRequest.swift in Sources */,
 				B305671D23FC08E2003304F2 /* SyncVersionsDbRequest.swift in Sources */,
+				B36E4F682751242C001FB99D /* WebDavCreateZoteroDirectoryRequest.swift in Sources */,
 				B30566ED23FC082F003304F2 /* SchemaRequest.swift in Sources */,
 				B30566DA23FC07E0003304F2 /* Library.swift in Sources */,
 				B371494F25D585EF00D6391E /* MarkObjectsAsChangedByUser.swift in Sources */,

@@ -26,6 +26,8 @@ internal enum L10n {
   internal static let close = L10n.tr("Localizable", "close")
   /// Copy
   internal static let copy = L10n.tr("Localizable", "copy")
+  /// Create
+  internal static let create = L10n.tr("Localizable", "create")
   /// Creator
   internal static let creator = L10n.tr("Localizable", "creator")
   /// Date
@@ -953,6 +955,14 @@ internal enum L10n {
       internal static let verified = L10n.tr("Localizable", "settings.sync.verified")
       /// Verify Server
       internal static let verify = L10n.tr("Localizable", "settings.sync.verify")
+      internal enum DirectoryNotFound {
+        /// %@ does not exist.\n\nDo you want to create it now?
+        internal static func message(_ p1: Any) -> String {
+          return L10n.tr("Localizable", "settings.sync.directory_not_found.message", String(describing: p1))
+        }
+        /// Directory not found
+        internal static let title = L10n.tr("Localizable", "settings.sync.directory_not_found.title")
+      }
     }
   }
 

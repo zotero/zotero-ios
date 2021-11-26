@@ -20,13 +20,16 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
     private unowned let webDavController: WebDavController
     private unowned let sessionController: SessionController
     private unowned let syncScheduler: SynchronizationScheduler
+    private weak var coordinatorDelegate: SettingsCoordinatorDelegate?
 
-    init(dbStorage: DbStorage, fileStorage: FileStorage, sessionController: SessionController, webDavController: WebDavController, syncScheduler: SynchronizationScheduler) {
+    init(dbStorage: DbStorage, fileStorage: FileStorage, sessionController: SessionController, webDavController: WebDavController, syncScheduler: SynchronizationScheduler,
+         coordinatorDelegate: SettingsCoordinatorDelegate?) {
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.sessionController = sessionController
         self.webDavController = webDavController
         self.syncScheduler = syncScheduler
+        self.coordinatorDelegate = coordinatorDelegate
     }
 
     func process(action: SyncSettingsAction, in viewModel: ViewModel<SyncSettingsActionHandler>) {
@@ -70,10 +73,14 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
             self.webDavController.resetVerification()
 
         case .verify:
-            self.verify(in: viewModel)
+            self.verify(tryCreatingZoteroDir: false, in: viewModel)
 
         case .cancelVerification:
             self.cancelVerification(viewModel: viewModel)
+
+        case .createZoteroDirectory: break
+
+        case .cancelZoteroDirectoryCreation: break
         }
     }
 
@@ -125,28 +132,54 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
                        .compactMap({ $0.relativeComponents.last })
     }
 
-    private func verify(in viewModel: ViewModel<SyncSettingsActionHandler>) {
-        self.update(viewModel: viewModel) { state in
-            state.isVerifyingWebDav = true
+    private func verify(tryCreatingZoteroDir: Bool, in viewModel: ViewModel<SyncSettingsActionHandler>) {
+        if !viewModel.state.isVerifyingWebDav {
+            self.update(viewModel: viewModel) { state in
+                state.isVerifyingWebDav = true
+            }
         }
 
-        self.webDavController.checkServer(queue: .main)
-            .subscribe(on: MainScheduler.instance)
-            .observe(on: MainScheduler.instance)
-            .subscribe(with: viewModel, onSuccess: { viewModel, _ in
-                self.update(viewModel: viewModel) { state in
-                    state.isVerifyingWebDav = false
-                    state.webDavVerificationResult = .success(())
-                }
+        let initial: Single<()>
+        if tryCreatingZoteroDir {
+            initial = self.webDavController.createZoteroDirectory(queue: .main)
+        } else {
+            initial = .just(())
+        }
 
-                self.syncScheduler.request(syncType: .normal)
-            }, onFailure: { viewModel, error in
-                self.update(viewModel: viewModel) { state in
-                    state.isVerifyingWebDav = false
-                    state.webDavVerificationResult = .failure(error)
-                }
-            })
-            .disposed(by: viewModel.state.apiDisposeBag)
+        initial.flatMap { _ in self.webDavController.checkServer(queue: .main) }
+               .subscribe(on: MainScheduler.instance)
+               .observe(on: MainScheduler.instance)
+               .subscribe(with: viewModel, onSuccess: { viewModel, _ in
+                   self.update(viewModel: viewModel) { state in
+                       state.isVerifyingWebDav = false
+                       state.webDavVerificationResult = .success(())
+                   }
+                   self.syncScheduler.request(syncType: .normal)
+               }, onFailure: { viewModel, error in
+                   self.handleVerification(error: error, in: viewModel)
+               })
+               .disposed(by: viewModel.state.apiDisposeBag)
+    }
+
+    private func handleVerification(error: Error, in viewModel: ViewModel<SyncSettingsActionHandler>) {
+        if let delegate = coordinatorDelegate, let error = error as? WebDavError.Verification, case .zoteroDirNotFound(let url) = error {
+            delegate.promptZoteroDirCreation(url: url,
+                                             create: {
+                                                 self.verify(tryCreatingZoteroDir: true, in: viewModel)
+                                             },
+                                             cancel: {
+                                                 self.update(viewModel: viewModel) { state in
+                                                     state.webDavVerificationResult = .failure(error)
+                                                     state.isVerifyingWebDav = false
+                                                 }
+                                             })
+            return
+        }
+
+        self.update(viewModel: viewModel) { state in
+            state.webDavVerificationResult = .failure(error)
+            state.isVerifyingWebDav = false
+        }
     }
 }
 
