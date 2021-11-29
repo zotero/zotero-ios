@@ -11,6 +11,15 @@ import Foundation
 struct AttachmentUploadRequest: ApiRequest {
     let endpoint: ApiEndpoint
     let httpMethod: ApiHttpMethod
+    let headers: [String : String]?
+    let logParams: ApiLogParameters
+
+    init(endpoint: ApiEndpoint, httpMethod: ApiHttpMethod, headers: [String: String]? = nil, logParams: ApiLogParameters = []) {
+        self.endpoint = endpoint
+        self.httpMethod = httpMethod
+        self.headers = headers
+        self.logParams = logParams
+    }
 
     var parameters: [String : Any]? {
         return nil
@@ -18,9 +27,5 @@ struct AttachmentUploadRequest: ApiRequest {
 
     var encoding: ApiParameterEncoding {
         return .url
-    }
-
-    var headers: [String : String]? {
-        return ["If-None-Match": "*"]
     }
 }

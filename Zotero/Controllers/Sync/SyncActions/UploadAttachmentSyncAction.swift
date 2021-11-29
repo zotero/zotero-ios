@@ -86,7 +86,7 @@ class UploadAttachmentSyncAction: SyncAction {
 
                        case .new(let response):
                            DDLogInfo("UploadAttachmentSyncAction: file needs upload")
-                           let request = AttachmentUploadRequest(endpoint: .other(response.url), httpMethod: .post)
+                           let request = AttachmentUploadRequest(endpoint: .other(response.url), httpMethod: .post, headers: ["If-None-Match": "*"])
                            return self.apiClient.upload(request: request, queue: self.queue, multipartFormData: { data in
                                response.params.forEach({ (key, value) in
                                    if let stringData = value.data(using: .utf8) {
@@ -141,7 +141,7 @@ class UploadAttachmentSyncAction: SyncAction {
                            DDLogInfo("UploadAttachmentSyncAction: file needs upload")
                            file = newFile
 
-                           let request = AttachmentUploadRequest(endpoint: .webDav(url.appendingPathComponent(self.key + ".zip")), httpMethod: .put)
+                           let request = AttachmentUploadRequest(endpoint: .webDav(url.appendingPathComponent(self.key + ".zip")), httpMethod: .put, logParams: .headers)
                            return self.webDavController.upload(request: request, fromFile: newFile, queue: self.queue)
                                       .flatMap({ _ in Single.just(url) })
                        }
