@@ -13,7 +13,7 @@ typealias BackgroundUploadCompletion = (Result<BackgroundUpload, Error>) -> Void
 struct BackgroundUpload: Codable {
     enum Kind: Codable {
         case zotero(uploadKey: String)
-        case webdav(mtime: Int, authToken: String)
+        case webdav(mtime: Int)
 
         private enum CodingKeys: String, CodingKey {
             case zoteroUploadKey, webdavMtime
@@ -25,8 +25,7 @@ struct BackgroundUpload: Codable {
                 self = .zotero(uploadKey: uploadKey)
             } else {
                 let mtime = try container.decode(Int.self, forKey: .webdavMtime)
-                // Don't need to store auth token, it's used only when background upload is started
-                self = .webdav(mtime: mtime, authToken: "")
+                self = .webdav(mtime: mtime)
             }
         }
 
@@ -36,8 +35,7 @@ struct BackgroundUpload: Codable {
             switch self {
             case .zotero(let uploadKey):
                 try container.encode(uploadKey, forKey: .zoteroUploadKey)
-            case .webdav(let mtime, _):
-                // Don't need to store auth token, it's used only when background upload is started
+            case .webdav(let mtime):
                 try container.encode(mtime, forKey: .webdavMtime)
             }
         }

@@ -869,11 +869,8 @@ final class ExtensionStore {
                 guard let backgroundUploader = self.backgroundUploader else {
                     return Single.error(State.AttachmentState.Error.missingBackgroundUploader)
                 }
-                guard let authToken = webDavController.authToken else {
-                    return Single.error(State.AttachmentState.Error.webDavNotVerified)
-                }
 
-                let upload = BackgroundUpload(type: .webdav(mtime: submissionData.mtime, authToken: authToken), key: self.state.attachmentKey, libraryId: data.libraryId, userId: data.userId,
+                let upload = BackgroundUpload(type: .webdav(mtime: submissionData.mtime), key: self.state.attachmentKey, libraryId: data.libraryId, userId: data.userId,
                                               remoteUrl: url, fileUrl: file.createUrl(), md5: submissionData.md5)
                 return backgroundUploader.start(upload: upload, filename: (data.attachment.key + ".zip"), mimeType: ExtensionStore.zipMimetype, parameters: [:], headers: [:])
             }

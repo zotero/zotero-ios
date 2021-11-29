@@ -24,11 +24,30 @@ enum ZoteroApiError: Error {
     case responseMissing(String)
 }
 
+fileprivate enum ApiAuthType {
+    case authHeader(String)
+    case credentials(username: String, password: String)
+
+    var authHeader: String? {
+        switch self {
+        case .authHeader(let header): return header
+        case .credentials: return nil
+        }
+    }
+
+    var credentials: (username: String, password: String)? {
+        switch self {
+        case .credentials(let username, let password): return (username, password)
+        case .authHeader: return nil
+        }
+    }
+}
+
 final class ZoteroApiClient: ApiClient {
     private let url: URL
     private let manager: Alamofire.Session
 
-    private var tokens: [ApiEndpointType: String]
+    private var tokens: [ApiEndpointType: ApiAuthType]
 
     init(baseUrl: String, configuration: URLSessionConfiguration) {
         guard let url = URL(string: baseUrl) else {
@@ -40,12 +59,16 @@ final class ZoteroApiClient: ApiClient {
         self.tokens = [:]
     }
 
-    func token(for endpoint: ApiEndpointType) -> String? {
-        return self.tokens[endpoint]
+    func set(authToken: String?, for endpoint: ApiEndpointType) {
+        self.tokens[endpoint] = authToken.flatMap({ .authHeader($0) })
     }
 
-    func set(authToken: String?, for endpoint: ApiEndpointType) {
-        self.tokens[endpoint] = authToken
+    func set(credentials: (String, String)?, for endpoint: ApiEndpointType) {
+        if let credentials = credentials {
+            self.tokens[endpoint] = .credentials(username: credentials.0, password: credentials.1)
+        } else {
+            self.tokens[endpoint] = nil
+        }
     }
 
     /// Creates and starts a data request, takes care of retrying request in case of failure. Responds on main queue.
@@ -56,7 +79,7 @@ final class ZoteroApiClient: ApiClient {
     /// Creates and starts a data request, takes care of retrying request in case of failure.
     func send(request: ApiRequest, queue: DispatchQueue) -> Single<(Data?, HTTPURLResponse)> {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
-        return self.createRequest { $0.request(convertible).validate(acceptableStatusCodes: request.acceptableStatusCodes) }
+        return self.createRequest(for: request.endpoint) { $0.request(convertible).validate(acceptableStatusCodes: request.acceptableStatusCodes) }
                    .flatMap({ (dataRequest: DataRequest) -> Single<(Data?, HTTPURLResponse)> in
                        return dataRequest.rx.loggedResponseDataWithResponseError(queue: queue, encoding: request.encoding, logParams: request.logParams)
                                          .retryIfNeeded()
@@ -97,7 +120,7 @@ final class ZoteroApiClient: ApiClient {
     /// Creates download request. Request needs to be started manually.
     func download(request: ApiDownloadRequest, queue: DispatchQueue) -> Observable<DownloadRequest> {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
-        return self.createRequest { manager -> DownloadRequest in
+        return self.createRequest(for: request.endpoint) { manager -> DownloadRequest in
                        return manager.download(convertible) { _, _ in (request.downloadUrl, [.createIntermediateDirectories, .removePreviousFile]) }
                                      .validate(statusCode: request.acceptableStatusCodes)
                    }
@@ -129,7 +152,7 @@ final class ZoteroApiClient: ApiClient {
     }
 
     private func createUploadRequest(request: ApiRequest, queue: DispatchQueue, create: @escaping (Alamofire.Session) -> UploadRequest) -> Single<(Data?, HTTPURLResponse)> {
-        return self.createRequest { create($0).validate(acceptableStatusCodes: request.acceptableStatusCodes) }
+        return self.createRequest(for: request.endpoint) { create($0).validate(acceptableStatusCodes: request.acceptableStatusCodes) }
                    .flatMap({ uploadRequest -> Single<(Data?, HTTPURLResponse)> in
                        return uploadRequest.rx.loggedResponseDataWithResponseError(queue: queue, encoding: request.encoding, logParams: request.logParams)
                                            .retryIfNeeded()
@@ -143,25 +166,30 @@ final class ZoteroApiClient: ApiClient {
                    })
     }
 
-    private func createRequest<R: Request>(create: @escaping (Alamofire.Session) -> R) -> Single<R> {
+    private func createRequest<R: Request>(for endpoint: ApiEndpoint, create: @escaping (Alamofire.Session) -> R) -> Single<R> {
         return Single.create { subscriber in
-            let alamoRequest = create(self.manager)
+            var alamoRequest = create(self.manager)
+            if let credentials = self.tokens[self.endpointType(for: endpoint)]?.credentials {
+                alamoRequest = alamoRequest.authenticate(username: credentials.username, password: credentials.password)
+            }
             subscriber(.success(alamoRequest))
             return Disposables.create()
         }
     }
 
-    private func token(for endpoint: ApiEndpoint) -> String? {
-        let endpointType: ApiEndpointType
+    private func endpointType(for endpoint: ApiEndpoint) -> ApiEndpointType {
         switch endpoint {
         case .zotero:
-            endpointType = .zotero
+            return .zotero
         case .webDav:
-            endpointType = .webDav
+            return .webDav
         case .other:
-            endpointType = .other
+            return .other
         }
-        return self.tokens[endpointType]
+    }
+
+    private func token(for endpoint: ApiEndpoint) -> String? {
+        return self.tokens[self.endpointType(for: endpoint)]?.authHeader
     }
 }
 

@@ -72,7 +72,6 @@ struct WebDavDeletionResult {
 
 protocol WebDavController: AnyObject {
     var sessionStorage: WebDavSessionStorage { get }
-    var authToken: String? { get }
 
     func checkServer(queue: DispatchQueue) -> Single<URL>
     func createZoteroDirectory(queue: DispatchQueue) -> Single<()>
@@ -99,10 +98,6 @@ final class WebDavControllerImpl: WebDavController {
     let sessionStorage: WebDavSessionStorage
     private let deletionQueue: OperationQueue
 
-    var authToken: String? {
-        return self.apiClient.token(for: .webDav)
-    }
-
     init(dbStorage: DbStorage, fileStorage: FileStorage, sessionStorage: WebDavSessionStorage) {
         let queue = OperationQueue()
         queue.maxConcurrentOperationCount = 4
@@ -118,14 +113,14 @@ final class WebDavControllerImpl: WebDavController {
         self.sessionStorage = sessionStorage
         self.deletionQueue = queue
 
-        if self.sessionStorage.isVerified, let token = try? self.sessionStorage.createToken() {
-            self.apiClient.set(authToken: token, for: .webDav)
+        if self.sessionStorage.isVerified {
+            self.apiClient.set(credentials: (self.sessionStorage.username, self.sessionStorage.password), for: .webDav)
         }
     }
 
     func resetVerification() {
         self.sessionStorage.isVerified = false
-        self.apiClient.set(authToken: nil, for: .webDav)
+        self.apiClient.set(credentials: nil, for: .webDav)
     }
 
     /// Creates url in WebDAV server of item which should be downloaded.
@@ -383,9 +378,9 @@ final class WebDavControllerImpl: WebDavController {
     /// Checks whether WebDAV server is available and compatible.
     func checkServer(queue: DispatchQueue) -> Single<URL> {
         DDLogInfo("WebDavController: checkServer")
-        return self.createToken()
-                   .do(onSuccess: { [weak self] token in
-                       self?.apiClient.set(authToken: token, for: .webDav)
+        return self.loadCredentials()
+                   .do(onSuccess: { [weak self] credentials in
+                       self?.apiClient.set(credentials: credentials, for: .webDav)
                    })
                    .flatMap({ _ in return self.createUrl() })
                    .flatMap({ url in return self.checkIsDav(url: url, queue: queue) })
@@ -393,7 +388,8 @@ final class WebDavControllerImpl: WebDavController {
                    .do(onSuccess: { [weak self] _ in
                        self?.sessionStorage.isVerified = true
                        DDLogInfo("WebDavController: file sync is successfully set up")
-                   }, onError: { error in
+                   }, onError: { [weak self] error in
+                       self?.apiClient.set(credentials: nil, for: .webDav)
                        DDLogError("WebDavController: checkServer failed - \(error)")
                    })
     }
@@ -533,21 +529,27 @@ final class WebDavControllerImpl: WebDavController {
         }
     }
 
-    private func createToken() -> Single<String> {
+    private func loadCredentials() -> Single<(String, String)> {
         return Single.create { [weak sessionStorage] subscriber in
             guard let sessionStorage = sessionStorage else {
                 DDLogError("WebDavController: session storage not found")
                 subscriber(.failure(WebDavError.Verification.noUsername))
                 return Disposables.create()
             }
-
-            do {
-                let token = try sessionStorage.createToken()
-                subscriber(.success(token))
-            } catch let error {
-                subscriber(.failure(error))
+            let username = sessionStorage.username
+            guard !username.isEmpty else {
+                DDLogError("WebDavController: username not found")
+                subscriber(.failure(WebDavError.Verification.noUsername))
+                return Disposables.create()
+            }
+            let password = sessionStorage.password
+            guard !password.isEmpty else {
+                DDLogError("WebDavController: password not found")
+                subscriber(.failure(WebDavError.Verification.noPassword))
+                return Disposables.create()
             }
 
+            subscriber(.success((username, password)))
             return Disposables.create()
         }
     }

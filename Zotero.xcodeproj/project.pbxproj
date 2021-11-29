@@ -1946,13 +1946,13 @@
 			children = (
 				B305648623FC051E003304F2 /* Background */,
 				B305648E23FC051E003304F2 /* Requests */,
+				B305648D23FC051E003304F2 /* Alamofire+RxSwift.swift */,
 				B305648B23FC051E003304F2 /* ApiClient.swift */,
 				B3DF9AD42747AB4F007933CB /* ApiEndpoint.swift */,
 				B3DF9AD72747AB63007933CB /* ApiLogParameters.swift */,
 				B3C6AB2A248E3EB90009AC96 /* ApiOperation.swift */,
 				B3DF9AD12747AAD2007933CB /* ApiRequest.swift */,
 				B305649D23FC051E003304F2 /* ArrayEncoding.swift */,
-				B305648D23FC051E003304F2 /* Alamofire+RxSwift.swift */,
 				B3868536270D90640068A022 /* RawDataEncoding.swift */,
 				B305648C23FC051E003304F2 /* ZoteroApiClient.swift */,
 			);

@@ -35,8 +35,8 @@ enum ApiHttpMethod: String {
 typealias ResponseHeaders = [AnyHashable: Any]
 
 protocol ApiClient: AnyObject {
-    func token(for endpoint: ApiEndpointType) -> String?
     func set(authToken: String?, for endpoint: ApiEndpointType)
+    func set(credentials: (String, String)?, for endpoint: ApiEndpointType)
     func send<Request: ApiResponseRequest>(request: Request) -> Single<(Request.Response, HTTPURLResponse)>
     func send<Request: ApiResponseRequest>(request: Request, queue: DispatchQueue) -> Single<(Request.Response, HTTPURLResponse)>
     func send(request: ApiRequest) -> Single<(Data?, HTTPURLResponse)>
