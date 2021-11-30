@@ -52,10 +52,11 @@ final class SyncControllerSpec: QuickSpec {
 
         self.realmConfig = config
         self.realm = realm
+        self.webDavController = webDavController
         self.syncController = SyncController(userId: self.userId, apiClient: TestControllers.apiClient, dbStorage: dbStorage, fileStorage: TestControllers.fileStorage,
                                              schemaController: TestControllers.schemaController, dateParser: TestControllers.dateParser, backgroundUploader: backgroundUploader,
                                              webDavController: webDavController, syncDelayIntervals: [0, 1, 2, 3], conflictDelays: [0, 1, 2, 3])
-        self.syncController.set(coordinator: TestConflictCoordinator())
+        self.syncController.set(coordinator: TestConflictCoordinator(createZoteroDirectory: true))
     }
 
     override func spec() {
@@ -2203,6 +2204,103 @@ final class SyncControllerSpec: QuickSpec {
                     }
                 }
             }
+
+            describe("WebDAV") {
+                it("Creates zotero directory if missing and continues upload") {
+                    let libraryId = self.userLibraryId
+                    let key = "AAAAAAAA"
+                    let filename = "test.txt"
+                    let data = "test string".data(using: .utf8)!
+                    let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: "text/plain")
+                    try! FileStorageController().write(data, to: file, options: .atomicWrite)
+                    let md5 = md5(from: file.createUrl())!
+                    let webDavUrl = URL(string: "http://test.com/zotero/")!
+                    var didCreateParent = false
+
+                    let expected: [SyncController.Action] = [.loadKeyPermissions, .syncGroupVersions,
+                                                             .createLibraryActions(.all, .automatic),
+                                                             .createUploadActions(libraryId: libraryId, hadOtherWriteActions: false),
+                                                             .uploadAttachment(AttachmentUpload(libraryId: libraryId, key: key, filename: filename, contentType: "text/plain", md5: md5, mtime: 0, file: file, oldMd5: nil))]
+
+                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
+                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: nil, statusCode: 200, jsonResponse: [:])
+                    createStub(for: WebDavCheckRequest(url: webDavUrl), baseUrl: webDavUrl, headers: ["dav": "1"], statusCode: 200, jsonResponse: [:])
+                    stub(condition: WebDavPropfindRequest(url: webDavUrl).stubCondition(with: webDavUrl, ignoreBody: true), response: { _ -> HTTPStubsResponse in
+                        return HTTPStubsResponse(jsonObject: [:], statusCode: didCreateParent ? 207 : 404, headers: nil)
+                    })
+                    createStub(for: WebDavPropfindRequest(url: webDavUrl.deletingLastPathComponent()), baseUrl: webDavUrl, headers: nil, statusCode: 207, jsonResponse: [:])
+                    createStub(for: WebDavCreateZoteroDirectoryRequest(url: webDavUrl), baseUrl: webDavUrl, headers: nil, statusCode: 200, jsonResponse: [:], responseAction: {
+                        didCreateParent = true
+                    })
+                    createStub(for: WebDavNonexistentPropRequest(url: webDavUrl), baseUrl: webDavUrl, headers: nil, statusCode: 404, jsonResponse: [:])
+                    let writeRequest = WebDavTestWriteRequest(url: webDavUrl)
+                    createStub(for: writeRequest, baseUrl: webDavUrl, headers: nil, statusCode: 200, jsonResponse: [:])
+                    createStub(for: WebDavDownloadRequest(endpoint: writeRequest.endpoint), baseUrl: webDavUrl, headers: nil, statusCode: 200, jsonResponse: [:])
+                    createStub(for: WebDavDeleteRequest(endpoint: writeRequest.endpoint), baseUrl: webDavUrl, headers: nil, statusCode: 200, jsonResponse: [:])
+                    createStub(for: WebDavDownloadRequest(url: webDavUrl.appendingPathComponent(key + ".prop")), baseUrl: webDavUrl, headers: nil, statusCode: 404, jsonResponse: [:])
+                    createStub(for: WebDavWriteRequest(url: webDavUrl.appendingPathComponent(key + ".zip"), data: data), ignoreBody: true, baseUrl: webDavUrl, headers: nil, statusCode: 200, jsonResponse: [:])
+                    createStub(for: WebDavWriteRequest(url: webDavUrl.appendingPathComponent(key + ".prop"), data: data), ignoreBody: true, baseUrl: webDavUrl, headers: nil, statusCode: 200, jsonResponse: [:])
+                    createStub(for: UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .item, params: [], version: nil), ignoreBody: true, baseUrl: baseUrl, headers: nil, statusCode: 200, jsonResponse: [:])
+
+                    self.createNewSyncController()
+
+                    self.webDavController.sessionStorage.isEnabled = true
+                    self.webDavController.sessionStorage.scheme = .http
+                    self.webDavController.sessionStorage.url = "test.com"
+                    self.webDavController.sessionStorage.isVerified = false
+                    self.webDavController.sessionStorage.username = "user"
+                    self.webDavController.sessionStorage.password = "password"
+
+                    try! self.realm.write {
+                        let item = RItem()
+                        item.key = key
+                        item.rawType = "attachment"
+                        item.customLibraryKey = .myLibrary
+                        item.rawChangedFields = 0
+                        item.attachmentNeedsSync = true
+
+                        let contentField = RItemField()
+                        contentField.key = FieldKeys.Item.Attachment.contentType
+                        contentField.value = "text/plain"
+                        item.fields.append(contentField)
+
+                        let md5Field = RItemField()
+                        md5Field.key = FieldKeys.Item.Attachment.md5
+                        md5Field.value = md5
+                        item.fields.append(md5Field)
+
+                        let filenameField = RItemField()
+                        filenameField.key = FieldKeys.Item.Attachment.filename
+                        filenameField.value = filename
+                        item.fields.append(filenameField)
+
+                        let linkModeField = RItemField()
+                        linkModeField.key = FieldKeys.Item.Attachment.linkMode
+                        linkModeField.value = LinkMode.importedFile.rawValue
+                        item.fields.append(linkModeField)
+
+                        self.realm.add(item)
+                    }
+
+                    waitUntil(timeout: .seconds(10)) { doneAction in
+                        self.syncController.reportFinish = { result in
+                            switch result {
+                            case .success(let data):
+                                expect(data.0).to(equal(expected))
+                                expect(didCreateParent).to(beTrue())
+                            case .failure(let error):
+                                fail("Failure: \(error)")
+                            }
+
+                            try? FileStorageController().remove(file)
+
+                            doneAction()
+                        }
+
+                        self.syncController.start(type: .normal, libraries: .all)
+                    }
+                }
+            }
         }
     }
 
@@ -2234,6 +2332,16 @@ extension InputStream {
 }
 
 struct TestConflictCoordinator: ConflictReceiver & SyncRequestReceiver {
+    let createZoteroDirectory: Bool
+
+    func askToCreateZoteroDirectory(url: String, create: @escaping () -> Void, cancel: @escaping () -> Void) {
+        if self.createZoteroDirectory {
+            create()
+        } else {
+            cancel()
+        }
+    }
+
     func resolve(conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void) {
         switch conflict {
         case .objectsRemovedRemotely(let libraryId, let collections, let items, let searches, let tags):

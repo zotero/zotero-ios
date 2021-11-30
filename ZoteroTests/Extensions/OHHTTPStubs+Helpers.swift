@@ -65,6 +65,8 @@ extension ApiRequest {
             methodCondition = { $0.httpMethod == "OPTIONS" }
         case .propfind:
             methodCondition = { $0.httpMethod == "PROPFIND" }
+        case .mkcol:
+            methodCondition = { $0.httpMethod == "MKCOL" }
         default:
             methodCondition = isMethodGET()
         }

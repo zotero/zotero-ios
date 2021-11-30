@@ -99,7 +99,7 @@ final class WebDavControllerSpec: QuickSpec {
                         fail("Succeeded with unreachable server")
                         finished()
                     } errorAction: { error in
-                        if let error = error as? WebDavError.Verification, error == .parentDirNotFound {
+                        if let error = error as? WebDavError.Verification, case .parentDirNotFound = error {
                             finished()
                             return
                         }
@@ -120,7 +120,7 @@ final class WebDavControllerSpec: QuickSpec {
                         fail("Succeeded with unreachable server")
                         finished()
                     } errorAction: { error in
-                        if let error = error as? WebDavError.Verification, error == .nonExistentFileNotMissing {
+                        if let error = error as? WebDavError.Verification, case .nonExistentFileNotMissing = error {
                             finished()
                             return
                         }
@@ -557,7 +557,7 @@ final class WebDavControllerSpec: QuickSpec {
         let syncController = SyncController(userId: self.userId, apiClient: TestControllers.apiClient, dbStorage: self.dbStorage, fileStorage: TestControllers.fileStorage,
                                             schemaController: TestControllers.schemaController, dateParser: TestControllers.dateParser, backgroundUploader: backgroundUploader,
                                             webDavController: webDavController, syncDelayIntervals: [0, 1, 2, 3], conflictDelays: [0, 1, 2, 3])
-        syncController.set(coordinator: TestConflictCoordinator())
+        syncController.set(coordinator: TestConflictCoordinator(createZoteroDirectory: false))
 
         self.syncController = syncController
         self.webDavController = webDavController

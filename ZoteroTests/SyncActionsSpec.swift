@@ -623,6 +623,10 @@ fileprivate class WebDavTestController: WebDavController {
         self.sessionStorage.isVerified = false
     }
 
+    func createZoteroDirectory(queue: DispatchQueue) -> Single<()> {
+        return Single.error(Error.shouldntBeCalled)
+    }
+
     func cancelDeletions() {}
 }
 
