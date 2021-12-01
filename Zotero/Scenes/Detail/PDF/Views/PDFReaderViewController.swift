@@ -333,20 +333,23 @@ final class PDFReaderViewController: UIViewController {
         self.coordinatorDelegate?.showAnnotationPopover(viewModel: self.viewModel, sourceRect: frame, popoverDelegate: self)
     }
 
-    private func toggle(annotationTool: PSPDFKit.Annotation.Tool) {
+    private func toggle(annotationTool: PSPDFKit.Annotation.Tool, resetPencilManager: Bool = true) {
         let stateManager = self.pdfController.annotationStateManager
+        stateManager.stylusMode = .fromStylusManager
 
         if stateManager.state == annotationTool {
             stateManager.setState(nil, variant: nil)
-            stateManager.stylusMode = .fromStylusManager
-            PSPDFKit.SDK.shared.applePencilManager.detected = false
-            PSPDFKit.SDK.shared.applePencilManager.enabled = false
+            if resetPencilManager {
+                PSPDFKit.SDK.shared.applePencilManager.detected = false
+                PSPDFKit.SDK.shared.applePencilManager.enabled = false
+            }
             return
         }
 
         stateManager.setState(annotationTool, variant: nil)
         stateManager.drawColor = AnnotationColorGenerator.color(from: self.viewModel.state.activeColor, isHighlight: (annotationTool == .highlight),
                                                                 userInterfaceStyle: self.traitCollection.userInterfaceStyle).color
+
         if annotationTool == .ink {
             stateManager.lineWidth = self.viewModel.state.activeLineWidth
 
@@ -494,7 +497,8 @@ final class PDFReaderViewController: UIViewController {
                 let shouldSelect = (self.isSidebarVisible || annotations.first is PSPDFKit.NoteAnnotation) && !self.viewModel.state.sidebarEditingEnabled
                 // If Image annotation is active after adding the annotation, deactivate it
                 if annotations.first is PSPDFKit.SquareAnnotation && self.pdfController.annotationStateManager.state == .square {
-                    self.toggle(annotationTool: .square)
+                    // Don't reset apple pencil detection here, this is automatic action, not performed by user.
+                    self.toggle(annotationTool: .square, resetPencilManager: false)
                 }
                 self.viewModel.process(action: .annotationsAdded(annotations: annotations, selectFirst: shouldSelect))
             } else {
