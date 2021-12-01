@@ -1570,6 +1570,13 @@ final class SyncController: SynchronizationController {
     /// - error: `AFError` to check.
     /// - returns: `SyncError` with appropriate error, if abort is required, `nil` otherwise.
     private func alamoErrorRequiresAbort(_ error: AFError, response: String, libraryId: LibraryIdentifier) -> SyncError {
+        let responseMessage: () -> String = {
+            if response == "No Response" {
+                return error.localizedDescription
+            }
+            return response
+        }
+
         switch error {
         case .responseValidationFailed(let reason):
             switch reason {
@@ -1584,10 +1591,10 @@ final class SyncController: SynchronizationController {
                 case 503:
                     return .fatal(.serviceUnavailable)
                 default:
-                    return (code >= 400 && code <= 499 && code != 403) ? .fatal(.apiError(response)) : .nonFatal(.apiError(response))
+                    return (code >= 400 && code <= 499 && code != 403) ? .fatal(.apiError(responseMessage())) : .nonFatal(.apiError(responseMessage()))
                 }
             case .dataFileNil, .dataFileReadFailed, .missingContentType, .unacceptableContentType, .customValidationFailed:
-                return .fatal(.apiError(response))
+                return .fatal(.apiError(responseMessage()))
             }
         case .sessionTaskFailed(let error):
             let nsError = error as NSError
@@ -1599,9 +1606,9 @@ final class SyncController: SynchronizationController {
         case .multipartEncodingFailed, .parameterEncodingFailed, .parameterEncoderFailed, .invalidURL, .createURLRequestFailed,
              .requestAdaptationFailed, .requestRetryFailed, .serverTrustEvaluationFailed, .sessionDeinitialized, .sessionInvalidated,
              .urlRequestValidationFailed:
-            return .fatal(.apiError(response))
+            return .fatal(.apiError(responseMessage()))
         case .responseSerializationFailed, .createUploadableFailed, .downloadedFileMoveFailed, .explicitlyCancelled:
-            return .nonFatal(.apiError(response))
+            return .nonFatal(.apiError(responseMessage()))
         }
     }
 

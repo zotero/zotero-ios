@@ -67,7 +67,7 @@ struct ApiLogger {
             self.log(headers: error.headers ?? [:])
         }
 
-        if error.response.isEmpty {
+        if error.response.isEmpty || error.response == "No Response" {
             DDLogError("\(error.error)")
         } else {
             DDLogError(error.response)
