@@ -61,7 +61,7 @@ Zotero.HTTP = new function() {
 	 *     request succeeds, or rejected if the browser is offline or a non-2XX status response
 	 *     code is received (or a code not in options.successCodes if provided).
 	 */
-	this.request = function(method, url, options = {}) {
+	this.request = async function(method, url, options = {}) {
 		// Default options
 		options = Object.assign({
 			body: null,
@@ -76,7 +76,54 @@ Zotero.HTTP = new function() {
             method: method
 		}, options);
 
-        return Zotero.Messaging.sendMessage(window.webkit.messageHandlers.requestHandler, options);
+        try {
+            var response = await Zotero.Messaging.sendMessage(window.webkit.messageHandlers.requestHandler, options);
+            var status = response.status;
+            var responseText = response.responseText;
+            var headers = response.headers;
+        } catch (err) {
+            status = err["status"];
+            headers = {};
+            responseText = err["responseText"];
+        }
+
+        let invalidDefaultStatus = options.successCodes === null && (status < 200 || status >= 300);
+        let invalidStatus = Array.isArray(options.successCodes) && !options.successCodes.includes(status);
+        if (invalidDefaultStatus || invalidStatus) {
+            throw new Zotero.HTTP.StatusError({status, responseText}, url);
+        }
+
+        let headerString = Object.keys(headers).map(key => `${key}: ${headers[key]}`).join("\n");
+        Object.keys(headers).forEach(key => headers[key.toLowerCase()] = headers[key]);
+
+        var response = responseText;
+
+        switch (options.responseType) {
+        case "document":
+            let parser = new DOMParser();
+            var contentType = headers["content-type"];
+            if (contentType != 'application/xml' && contentType != 'text/xml') {
+                contentType = 'text/html';
+            }
+            let doc = parser.parseFromString(responseText, contentType);
+            response = doc;
+            break;
+
+        case "json":
+            response = JSON.parse(responseText);
+            break;
+
+        default: break;
+        }
+
+        return {
+            status: status,
+            responseText: responseText,
+            response: response,
+            responseHeaders: headerString,
+            getAllResponseHeaders: () => headerString,
+            getResponseHeader: name => headers[name.toLowerCase()]
+        };
 	};
 	/**
 	* Send an HTTP GET request via XMLHTTPRequest

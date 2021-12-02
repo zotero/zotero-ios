@@ -238,7 +238,7 @@ final class WebViewHandler: NSObject {
             DDLogInfo("\(options)")
 
             let error = "Incorrect URL request from javascript".data(using: .utf8)
-            let script = self.javascript(for: messageId, statusCode: -1, successCodes: [200], data: error)
+                  let script = self.javascript(for: messageId, statusCode: -1, successCodes: [200], data: error, headers: [:])
 
             inMainThread { [weak self] in
                 self?.webView?.evaluateJavaScript(script, completionHandler: nil)
@@ -274,8 +274,8 @@ final class WebViewHandler: NSObject {
         request.timeoutInterval = timeout
 
         let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 400
-            guard let script = self?.javascript(for: messageId, statusCode: statusCode, successCodes: successCodes, data: data) else { return }
+            guard let response = response as? HTTPURLResponse,
+                  let script = self?.javascript(for: messageId, statusCode: response.statusCode, successCodes: successCodes, data: data, headers: response.allHeaderFields) else { return }
 
             DispatchQueue.main.async {
                 self?.webView?.evaluateJavaScript(script, completionHandler: nil)
@@ -290,13 +290,13 @@ final class WebViewHandler: NSObject {
         self.webView?.evaluateJavaScript(script, completionHandler: nil)
     }
 
-    private func javascript(for messageId: Int, statusCode: Int, successCodes: [Int], data: Data?) -> String {
+    private func javascript(for messageId: Int, statusCode: Int, successCodes: [Int], data: Data?, headers: [AnyHashable: Any]) -> String {
         let isSuccess = successCodes.isEmpty ? 200..<300 ~= statusCode : successCodes.contains(statusCode)
         let responseText = data.flatMap({ String(data: $0, encoding: .utf8) }) ?? ""
 
         var payload: [String: Any]
         if isSuccess {
-            payload = ["status": statusCode, "responseText": responseText]
+            payload = ["status": statusCode, "responseText": responseText, "headers": headers]
         } else {
             payload = ["error": ["status": statusCode, "responseText": responseText]]
         }
