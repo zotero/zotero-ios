@@ -20,7 +20,7 @@ import RxSwift
 ///
 /// These steps are performed for each share:
 /// 1. Website data (url, title, cookies and full HTML) are loaded from `NSExtensionItem`,
-/// 2. Translation server is run in a hidden WebView (handled by `WebViewHandler`). It loads item data and attachment if available,
+/// 2. Translation server is run in a hidden WebView (handled by `TranslationWebViewHandler`). It loads item data and attachment if available,
 /// 3. If there are multiple items available a picker is shown to the user and after picking an item, translation is finished for that item,
 /// 4. If available, pdf attachment is downloaded,
 /// 5. The item (with attachment) is stored to DB and necessary API requests are made to submit the item (and prepare for upload),
@@ -63,7 +63,7 @@ final class ExtensionStore {
                 case fileMissing
                 case missingBackgroundUploader
                 case downloadedFileNotPdf
-                case webViewError(WebViewHandler.Error)
+                case webViewError(TranslationWebViewHandler.Error)
                 case parseError(Parsing.Error)
                 case schemaError(SchemaError)
                 case quotaLimit(LibraryIdentifier)
@@ -236,6 +236,9 @@ final class ExtensionStore {
     @Published var state: State
     // The background uploader is optional because it needs to be deinitialized after starting the upload. See more in comment where the uploader is nilled.
     private var backgroundUploader: BackgroundUploader?
+    // Optional handler to deal with webs that provide PDFs through redirection
+    private var redirectHandler: RedirectWebViewHandler?
+    private weak var webView: WKWebView?
 
     private static let defaultLibraryId: LibraryIdentifier = .custom(.myLibrary)
     private static let defaultExtension = "pdf"
@@ -249,7 +252,7 @@ final class ExtensionStore {
     private let schemaController: SchemaController
     private let webDavController: WebDavController
     private let dateParser: DateParser
-    private let webViewHandler: WebViewHandler
+    private let translationHandler: TranslationWebViewHandler
     private let backgroundQueue: DispatchQueue
     private let backgroundScheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
@@ -263,6 +266,7 @@ final class ExtensionStore {
     init(webView: WKWebView, apiClient: ApiClient, backgroundUploader: BackgroundUploader, dbStorage: DbStorage, schemaController: SchemaController, webDavController: WebDavController,
          dateParser: DateParser, fileStorage: FileStorage, syncController: SyncController, translatorsController: TranslatorsAndStylesController) {
         let queue = DispatchQueue(label: "org.zotero.ZShare.BackgroundQueue", qos: .userInteractive)
+        self.webView = webView
         self.syncController = syncController
         self.apiClient = apiClient
         self.backgroundUploader = backgroundUploader
@@ -271,7 +275,7 @@ final class ExtensionStore {
         self.schemaController = schemaController
         self.webDavController = webDavController
         self.dateParser = dateParser
-        self.webViewHandler = WebViewHandler(webView: webView, translatorsController: translatorsController)
+        self.translationHandler = TranslationWebViewHandler(webView: webView, translatorsController: translatorsController)
         self.backgroundQueue = queue
         self.backgroundScheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.ZShare.BackgroundScheduler")
         self.state = State()
@@ -331,19 +335,19 @@ final class ExtensionStore {
             state.url = url.absoluteString
             self.state = state
             DDLogInfo("ExtensionStore: start translation")
-            self.webViewHandler.translate(url: url, title: title, html: html, cookies: cookies, frames: frames)
+            self.translationHandler.translate(url: url, title: title, html: html, cookies: cookies, frames: frames)
 
         case .remoteUrl(let url):
             DDLogInfo("ExtensionStore: load web")
-            self.webViewHandler.loadWebData(from: url)
-                               .subscribe(onSuccess: { [weak self] attachment in
-                                   self?.process(attachment: attachment)
-                               }, onFailure: { [weak self] error in
-                                   guard let `self` = self else { return }
-                                   DDLogError("ExtensionStore: webview could not load data - \(error)")
-                                   self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: nil))
-                               })
-                               .disposed(by: self.disposeBag)
+            self.translationHandler.loadWebData(from: url)
+                                   .subscribe(onSuccess: { [weak self] attachment in
+                                       self?.process(attachment: attachment)
+                                   }, onFailure: { [weak self] error in
+                                       guard let `self` = self else { return }
+                                       DDLogError("ExtensionStore: webview could not load data - \(error)")
+                                       self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: nil))
+                                   })
+                                   .disposed(by: self.disposeBag)
 
         case .fileUrl(let url):
             let filename = url.lastPathComponent
@@ -479,26 +483,26 @@ final class ExtensionStore {
 
     /// Observes `WebViewHandler` translation process and acts accordingly.
     private func setupWebHandlerObserving() {
-        self.webViewHandler.observable
-                           .observe(on: MainScheduler.instance)
-                           .subscribe(onNext: { [weak self] action in
-                               switch action {
-                               case .loadedItems(let data):
-                                   DDLogInfo("ExtensionStore: webview action - loaded \(data.count) zotero items")
-                                   self?.processItems(data)
-                               case .selectItem(let data):
-                                   DDLogInfo("ExtensionStore: webview action - loaded \(data.count) list items")
-                                   self?.state.itemPicker = State.ItemPicker(items: data, picked: nil)
-                               case .reportProgress(let progress):
-                                   DDLogInfo("ExtensionStore: webview action - progress \(progress)")
-                                   self?.state.attachmentState = .translating(progress)
-                               }
-                           }, onError: { [weak self] error in
-                               guard let `self` = self else { return }
-                               DDLogError("ExtensionStore: web view error - \(error)")
-                               self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: nil))
-                           })
-                           .disposed(by: self.disposeBag)
+        self.translationHandler.observable
+                               .observe(on: MainScheduler.instance)
+                               .subscribe(onNext: { [weak self] action in
+                                   switch action {
+                                   case .loadedItems(let data):
+                                       DDLogInfo("ExtensionStore: webview action - loaded \(data.count) zotero items")
+                                       self?.processItems(data)
+                                   case .selectItem(let data):
+                                       DDLogInfo("ExtensionStore: webview action - loaded \(data.count) list items")
+                                       self?.state.itemPicker = State.ItemPicker(items: data, picked: nil)
+                                   case .reportProgress(let progress):
+                                       DDLogInfo("ExtensionStore: webview action - progress \(progress)")
+                                       self?.state.attachmentState = .translating(progress)
+                                   }
+                               }, onError: { [weak self] error in
+                                   guard let `self` = self else { return }
+                                   DDLogError("ExtensionStore: web view error - \(error)")
+                                   self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: nil))
+                               })
+                               .disposed(by: self.disposeBag)
 
     }
 
@@ -531,7 +535,10 @@ final class ExtensionStore {
         DDLogInfo("ExtensionStore: parsed item with attachment, download attachment")
 
         let file = Files.shareExtensionTmpItem(key: self.state.attachmentKey, ext: ExtensionStore.defaultExtension)
+        self.download(item: item, attachment: attachment, attachmentUrl: url, to: file)
+    }
 
+    private func download(item: ItemResponse, attachment: [String: Any], attachmentUrl url: URL, to file: File) {
         var state = self.state
         state.attachmentState = .downloading(0)
         state.processedAttachment = .itemWithAttachment(item: item, attachment: attachment, attachmentFile: file)
@@ -541,25 +548,63 @@ final class ExtensionStore {
         self.download(url: url, to: file)
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] _ in
-                guard let `self` = self else { return }
-
-                var state = self.state
-                if self.fileStorage.isPdf(file: file) {
-                    DDLogInfo("ExtensionStore: downloaded pdf")
-                    state.attachmentState = .processed
-                } else {
-                    DDLogInfo("ExtensionStore: downloaded unsupported attachment")
-                    state.processedAttachment = .item(item)
-                    state.attachmentState = .failed(.downloadedFileNotPdf)
-                    // Remove downloaded file, it won't be used anymore
-                    try? self.fileStorage.remove(file)
-                }
-                self.state = state
+                self?.processDownload(of: attachment, url: url, file: file, item: item)
             }, onFailure: { [weak self] error in
                 DDLogError("ExtensionStore: could not download translated file - \(url.absoluteString) - \(error)")
                 self?.state.attachmentState = .failed(.downloadFailed)
             })
             .disposed(by: self.disposeBag)
+    }
+
+    private func processDownload(of attachment: [String: Any], url: URL, file: File, item: ItemResponse) {
+        if self.fileStorage.isPdf(file: file) {
+            DDLogInfo("ExtensionStore: downloaded pdf")
+            self.state.attachmentState = .processed
+            return
+        }
+
+        DDLogInfo("ExtensionStore: downloaded unsupported attachment")
+
+        // Remove downloaded file, it won't be used anymore
+        try? self.fileStorage.remove(file)
+
+        guard (url.host ?? "").contains("sciencedirect") else {
+            var state = self.state
+            state.processedAttachment = .item(item)
+            state.attachmentState = .failed(.downloadedFileNotPdf)
+            self.state = state
+            return
+        }
+
+        // Try loading the url in webview to bypass redirects
+
+        DDLogInfo("ExtensionStore: detected sciencedirect, trying redirect")
+
+        self.getRedirectedPdfUrl(from: url) { [weak self] newUrl in
+            guard let `self` = self else { return }
+
+            if let url = newUrl {
+                self.download(item: item, attachment: attachment, attachmentUrl: url, to: file)
+                return
+            }
+
+            // Didn't help, report failed PDF download
+            var state = self.state
+            state.processedAttachment = .item(item)
+            state.attachmentState = .failed(.downloadedFileNotPdf)
+            self.state = state
+        }
+    }
+
+    private func getRedirectedPdfUrl(from url: URL, completion: @escaping (URL?) -> Void) {
+        guard let webView = self.webView else {
+            completion(nil)
+            return
+        }
+
+        let handler = RedirectWebViewHandler(url: url, timeout: 10, webView: webView)
+        handler.getPdfUrl(completion: completion)
+        self.redirectHandler = handler
     }
 
     /// Tries to parse `ItemResponse` from data returned by translation server. It prioritizes items with attachments if there are multiple items.
@@ -595,7 +640,7 @@ final class ExtensionStore {
     /// Sets picked item if multiple items were found.
     func pickItem(_ data: (String, String)) {
         self.state.itemPicker?.picked = data.1
-        self.webViewHandler.selectItem(data)
+        self.translationHandler.selectItem(data)
     }
 
     // MARK: - Attachment Download
@@ -733,7 +778,7 @@ final class ExtensionStore {
             DDLogError("ExtensionStore: schema failed - \(error)")
             return .schemaError(error)
         }
-        if let error = error as? WebViewHandler.Error {
+        if let error = error as? TranslationWebViewHandler.Error {
             return .webViewError(error)
         }
         if let responseError = error as? AFResponseError {

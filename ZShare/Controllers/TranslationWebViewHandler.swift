@@ -1,5 +1,5 @@
 //
-//  WebViewHandler.swift
+//  TranslationWebViewHandler.swift
 //  ZShare
 //
 //  Created by Michal Rentka on 05/12/2019.
@@ -12,7 +12,7 @@ import WebKit
 import CocoaLumberjackSwift
 import RxSwift
 
-final class WebViewHandler: NSObject {
+final class TranslationWebViewHandler: NSObject {
     /// Actions that can be returned by this handler.
     /// - loadedItems: Items have been translated.
     /// - selectItem: Multiple items have been found on this website and the user needs to choose one.
@@ -52,7 +52,7 @@ final class WebViewHandler: NSObject {
 
     private let translatorsController: TranslatorsAndStylesController
     private let disposeBag: DisposeBag
-    let observable: PublishSubject<WebViewHandler.Action>
+    let observable: PublishSubject<TranslationWebViewHandler.Action>
 
     private weak var webView: WKWebView?
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
@@ -305,7 +305,7 @@ final class WebViewHandler: NSObject {
     }
 }
 
-extension WebViewHandler: WKNavigationDelegate {
+extension TranslationWebViewHandler: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         // Wait for javascript to load
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
@@ -321,7 +321,7 @@ extension WebViewHandler: WKNavigationDelegate {
 
 /// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.
 /// Each message contains a `messageId` in the body, which is used to identify the message in case a response is expected.
-extension WebViewHandler: WKScriptMessageHandler {
+extension TranslationWebViewHandler: WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let handler = JSHandlers(rawValue: message.name) else { return }
 
