@@ -375,12 +375,7 @@ final class ExtensionStore {
             DDLogInfo("ExtensionStore: download file")
             self.download(url: url, to: file)
                 .observe(on: MainScheduler.instance)
-                .subscribe(onNext: { [weak self] progress in
-                    self?.state.attachmentState = .downloading(progress.fractionCompleted)
-                }, onError: { [weak self] error in
-                    DDLogError("ExtensionStore: could not download shared file - \(url.absoluteString) - \(error)")
-                    self?.state.attachmentState = .failed(.downloadFailed)
-                }, onCompleted: { [weak self] in
+                .subscribe(onSuccess: { [weak self] _ in
                     guard let `self` = self else { return }
 
                     var state = self.state
@@ -397,6 +392,9 @@ final class ExtensionStore {
                         try? self.fileStorage.remove(file)
                     }
                     self.state = state
+                }, onFailure: { [weak self] error in
+                    DDLogError("ExtensionStore: could not download shared file - \(url.absoluteString) - \(error)")
+                    self?.state.attachmentState = .failed(.downloadFailed)
                 })
                 .disposed(by: self.disposeBag)
         }
@@ -542,12 +540,7 @@ final class ExtensionStore {
 
         self.download(url: url, to: file)
             .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] progress in
-                self?.state.attachmentState = .downloading(progress.fractionCompleted)
-            }, onError: { [weak self] error in
-                DDLogError("ExtensionStore: could not download translated file - \(url.absoluteString) - \(error)")
-                self?.state.attachmentState = .failed(.downloadFailed)
-            }, onCompleted: { [weak self] in
+            .subscribe(onSuccess: { [weak self] _ in
                 guard let `self` = self else { return }
 
                 var state = self.state
@@ -562,6 +555,9 @@ final class ExtensionStore {
                     try? self.fileStorage.remove(file)
                 }
                 self.state = state
+            }, onFailure: { [weak self] error in
+                DDLogError("ExtensionStore: could not download translated file - \(url.absoluteString) - \(error)")
+                self?.state.attachmentState = .failed(.downloadFailed)
             })
             .disposed(by: self.disposeBag)
     }
@@ -606,16 +602,31 @@ final class ExtensionStore {
 
     /// Starts download of PDF attachment. Downloads it to temporary folder.
     /// - parameter url: URL of file to download
-    private func download(url: URL, to file: File) -> Observable<Progress> {
+    private func download(url: URL, to file: File) -> Single<DownloadRequest> {
         let request = FileRequest(url: url, destination: file)
         return self.apiClient.download(request: request, queue: .main)
                              .subscribe(on: self.backgroundScheduler)
-                             .do(onNext: { request in
+                             .do(onNext: { [weak self] request in
+                                 if let `self` = self {
+                                     self.observe(downloadProgress: request.downloadProgress)
+                                 }
                                  request.resume()
                              })
-                             .flatMap { request in
-                                 return request.downloadProgress.observable
-                             }
+                             .asSingle()
+    }
+
+    private func observe(downloadProgress: Progress) {
+        downloadProgress.observable
+                       .observe(on: MainScheduler.instance)
+                       .subscribe(onNext: { [weak self] progress in
+                           guard let `self` = self else { return }
+                           switch self.state.attachmentState {
+                           case .downloading:
+                               self.state.attachmentState = .downloading(progress.fractionCompleted)
+                           default: break
+                           }
+                       })
+                       .disposed(by: self.disposeBag)
     }
 
     // MARK: - Submission
