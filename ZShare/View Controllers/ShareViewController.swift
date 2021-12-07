@@ -28,6 +28,7 @@ final class ShareViewController: UIViewController {
     @IBOutlet private weak var attachmentIcon: FileAttachmentView!
     @IBOutlet private weak var attachmentTitleLabel: UILabel!
     @IBOutlet private weak var attachmentProgressView: CircularProgressView!
+    @IBOutlet private weak var attachmentActivityIndicator: UIActivityIndicatorView!
     // Collection picker
     @IBOutlet private weak var collectionPickerStackContainer: UIView!
     @IBOutlet private weak var collectionPickerTitleLabel: UILabel!
@@ -312,14 +313,22 @@ final class ShareViewController: UIViewController {
 
         switch attachmentState {
         case .downloading(let progress):
-            self.attachmentProgressView.isHidden = false
+            self.attachmentProgressView.isHidden = progress == 0
+            self.attachmentActivityIndicator.isHidden = progress > 0
             self.attachmentProgressView.progress = CGFloat(progress)
+            if progress == 0 && !self.attachmentActivityIndicator.isAnimating {
+                self.attachmentActivityIndicator.startAnimating()
+            }
 
             self.attachmentIcon.alpha = 0.5
             self.attachmentTitleLabel.alpha = 0.5
         default:
             if !self.attachmentContainer.isHidden {
                 self.attachmentProgressView.isHidden = true
+                if self.attachmentActivityIndicator.isAnimating {
+                    self.attachmentActivityIndicator.stopAnimating()
+                }
+                self.attachmentActivityIndicator.isHidden = true
                 self.attachmentIcon.alpha = 1
                 self.attachmentTitleLabel.alpha = 1
             }

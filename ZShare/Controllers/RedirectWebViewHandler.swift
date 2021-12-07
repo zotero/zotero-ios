@@ -16,14 +16,14 @@ typealias RedirectWebViewCompletion = (URL?) -> Void
 
 final class RedirectWebViewHandler: NSObject {
     private let initialUrl: URL
-    private let timeout: Int
+    private let timeout: RxTimeInterval
     private let timerScheduler: SerialDispatchQueueScheduler
 
     private weak var webView: WKWebView?
     private var completionHandler: RedirectWebViewCompletion?
     private var disposeBag: DisposeBag?
 
-    init(url: URL, timeout: Int, webView: WKWebView) {
+    init(url: URL, timeoutPerRedirect timeout: RxTimeInterval, webView: WKWebView) {
         self.initialUrl = url
         self.timeout = timeout
         self.webView = webView
@@ -42,14 +42,13 @@ final class RedirectWebViewHandler: NSObject {
 
         self.completionHandler = completion
         webView.load(URLRequest(url: self.initialUrl))
-        self.startTimer()
     }
 
     private func startTimer() {
         let disposeBag = DisposeBag()
         self.disposeBag = disposeBag
 
-        Single<Int>.timer(.seconds(self.timeout), scheduler: self.timerScheduler)
+        Single<Int>.timer(self.timeout, scheduler: self.timerScheduler)
                    .observe(on: MainScheduler.instance)
                    .subscribe(onSuccess: { [weak self] _ in
                        guard let `self` = self else { return }
@@ -70,6 +69,7 @@ final class RedirectWebViewHandler: NSObject {
 extension RedirectWebViewHandler: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
         guard let mimeType = navigationResponse.response.mimeType else {
+            self.startTimer()
             decisionHandler(.allow)
             return
         }
@@ -80,13 +80,12 @@ extension RedirectWebViewHandler: WKNavigationDelegate {
 
             // Don't load web
             decisionHandler(.cancel)
-            inMainThread { [weak self] in
-                // Cancel timer
-                self?.disposeBag = nil
-                // Return url
-                self?.completionHandler?(navigationResponse.response.url)
-            }
+            // Cancel timer
+            self.disposeBag = nil
+            // Return url
+            self.completionHandler?(navigationResponse.response.url)
         default:
+            self.startTimer()
             decisionHandler(.allow)
         }
     }

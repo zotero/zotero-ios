@@ -602,7 +602,7 @@ final class ExtensionStore {
             return
         }
 
-        let handler = RedirectWebViewHandler(url: url, timeout: 10, webView: webView)
+        let handler = RedirectWebViewHandler(url: url, timeoutPerRedirect: .seconds(2), webView: webView)
         handler.getPdfUrl(completion: completion)
         self.redirectHandler = handler
     }

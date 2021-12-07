@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="18122" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="Ca0-DH-Y1a">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="19455" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="Ca0-DH-Y1a">
     <device id="ipad10_9rounded" orientation="portrait" layout="fullscreen" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="18093"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="19454"/>
         <capability name="Image references" minToolsVersion="12.0"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
@@ -20,7 +20,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <containerView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="OUf-EM-tXb">
-                                <rect key="frame" x="0.0" y="0.0" width="820" height="1160"/>
+                                <rect key="frame" x="0.0" y="24" width="820" height="1136"/>
                                 <connections>
                                     <segue destination="LjU-Se-Pjm" kind="embed" id="yx3-Rs-WXo"/>
                                 </connections>
@@ -48,11 +48,11 @@
             <objects>
                 <viewController id="j1y-V4-xli" customClass="ShareViewController" customModule="ZShare" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" opaque="NO" contentMode="scaleToFill" id="wbc-yd-nQP">
-                        <rect key="frame" x="0.0" y="0.0" width="820" height="1160"/>
+                        <rect key="frame" x="0.0" y="0.0" width="820" height="1136"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="hty-3M-Kkk">
-                                <rect key="frame" x="0.0" y="50" width="820" height="1110"/>
+                                <rect key="frame" x="0.0" y="74" width="820" height="1062"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Nmy-Tf-sbG">
                                         <rect key="frame" x="0.0" y="0.0" width="820" height="517.5"/>
@@ -99,9 +99,12 @@
                                                                                         <nil key="highlightedColor"/>
                                                                                     </label>
                                                                                     <view contentMode="scaleToFill" horizontalHuggingPriority="1" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="EjL-NF-tp3">
-                                                                                        <rect key="frame" x="101.5" y="0.0" width="594.5" height="28"/>
+                                                                                        <rect key="frame" x="101.5" y="0.0" width="558.5" height="28"/>
                                                                                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                                                     </view>
+                                                                                    <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="p0a-VR-M2E">
+                                                                                        <rect key="frame" x="676" y="0.0" width="20" height="28"/>
+                                                                                    </activityIndicatorView>
                                                                                     <view contentMode="scaleToFill" horizontalHuggingPriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="8rq-dX-d2y" customClass="CircularProgressView" customModule="ZShare" customModuleProvider="target">
                                                                                         <rect key="frame" x="712" y="0.0" width="28" height="28"/>
                                                                                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
@@ -394,7 +397,7 @@
                                 <viewLayoutGuide key="frameLayoutGuide" id="Nnh-22-d8k"/>
                             </scrollView>
                             <wkWebView hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ymF-El-U9O">
-                                <rect key="frame" x="0.0" y="50" width="820" height="1110"/>
+                                <rect key="frame" x="0.0" y="74" width="820" height="1062"/>
                                 <color key="backgroundColor" red="0.36078431370000003" green="0.38823529410000002" blue="0.4039215686" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <wkWebViewConfiguration key="configuration">
                                     <audiovisualMediaTypes key="mediaTypesRequiringUserActionForPlayback" none="YES"/>
@@ -402,10 +405,10 @@
                                 </wkWebViewConfiguration>
                             </wkWebView>
                             <view hidden="YES" alpha="0.0" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Wjm-HE-CN5">
-                                <rect key="frame" x="0.0" y="50" width="820" height="1110"/>
+                                <rect key="frame" x="0.0" y="74" width="820" height="1062"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="TcG-bZ-skf">
-                                        <rect key="frame" x="373.5" y="522" width="73" height="66"/>
+                                        <rect key="frame" x="373.5" y="498" width="73" height="66"/>
                                         <subviews>
                                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="rS5-fW-7WG">
                                                 <rect key="frame" x="16" y="12" width="41" height="44"/>
@@ -458,6 +461,7 @@
                     </view>
                     <navigationItem key="navigationItem" id="u21-L1-csQ"/>
                     <connections>
+                        <outlet property="attachmentActivityIndicator" destination="p0a-VR-M2E" id="gGI-bE-F1c"/>
                         <outlet property="attachmentContainer" destination="PmC-54-qKT" id="K1d-LZ-8VY"/>
                         <outlet property="attachmentContainerLeft" destination="UjX-CV-kiC" id="H6G-j4-1Iu"/>
                         <outlet property="attachmentIcon" destination="9Gh-yn-tvy" id="vcP-3V-tVK"/>
@@ -506,7 +510,7 @@
                 <navigationController automaticallyAdjustsScrollViewInsets="NO" id="LjU-Se-Pjm" sceneMemberID="viewController">
                     <toolbarItems/>
                     <navigationBar key="navigationBar" contentMode="scaleToFill" id="owv-SU-LmX">
-                        <rect key="frame" x="0.0" y="0.0" width="820" height="50"/>
+                        <rect key="frame" x="0.0" y="24" width="820" height="50"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </navigationBar>
                     <nil name="viewControllers"/>
