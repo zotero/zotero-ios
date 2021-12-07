@@ -74,19 +74,6 @@ struct ApiLogger {
         }
     }
 
-    static func logDownload(result: Result<(), Error>, startData: StartData) {
-        let time = CFAbsoluteTimeGetCurrent() - startData.time
-        let timeString = String(format: "(+%07.0f)", (time * 1000))
-
-        switch result {
-        case .success:
-            DDLogInfo("\(timeString)\(startData.id) download succeeded")
-        case .failure(let error):
-            DDLogInfo("\(timeString)\(startData.id) download failed")
-            DDLogError("\(error)")
-        }
-    }
-
     // MARK: - Helpers
 
     static func identifier(method: String, url: String) -> String {
