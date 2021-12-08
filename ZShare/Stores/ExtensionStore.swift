@@ -649,84 +649,17 @@ final class ExtensionStore {
 
     /// Starts download of PDF attachment. Downloads it to temporary folder.
     /// - parameter url: URL of file to download
-    private func download(url: URL, to file: File) -> Single<()> {
-        // Alamofire 5.4.4 doesn't report download progress properly on some urls (https://github.com/Alamofire/Alamofire/issues/3526). Until it's fixed it's replaced with `URLSession` alternative.
+    private func download(url: URL, to file: File) -> Single<DownloadRequest> {
         let request = FileRequest(url: url, destination: file)
-
-        return Single.create { [weak self] subscriber in
-            var startData: ApiLogger.StartData?
-
-            let logFailure: (AFError, [AnyHashable: Any], Int) -> AFResponseError = { afError, headers, statusCode in
-                let responseError = AFResponseError(error: afError, headers: headers, response: "Download failed")
-                if let data = startData {
-                    ApiLogger.logFailedresponse(error: responseError, statusCode: statusCode, startData: data)
-                }
-                return responseError
-            }
-
-            let task = URLSession.shared.downloadTask(with: url) { tmpFileUrl, response, error in
-                guard let response = response as? HTTPURLResponse, let tmpFileUrl = tmpFileUrl else {
-                    if let error = error {
-                        DDLogError("ExtensionStore: download error - \(error)")
-                        // Temporarily convert URLSession Error to some AFError with underlying error so that it's not lost.
-                        let afError = AFError.requestAdaptationFailed(error: error)
-                        subscriber(.failure(logFailure(afError, [:], -1)))
-                    } else {
-                        // This shouldn't happen, either error or response should be available, but just in case throw some error.
-                        let error = AFError.responseValidationFailed(reason: .dataFileNil)
-                        subscriber(.failure(logFailure(error, [:], -1)))
-                    }
-                    return
-                }
-
-                guard request.acceptableStatusCodes.contains(response.statusCode) else {
-                    let error = AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: response.statusCode))
-                    subscriber(.failure(logFailure(error, response.allHeaderFields, response.statusCode)))
-                    return
-                }
-
-                guard let `self` = self else { return }
-
-                do {
-                    try self.fileStorage.createDirectories(for: file)
-                    try self.fileStorage.move(from: Files.file(from: tmpFileUrl), to: file)
-
-                    if let data = startData {
-                        ApiLogger.logSuccessfulResponse(statusCode: response.statusCode, data: nil, headers: response.allHeaderFields, startData: data)
-                    }
-
-                    subscriber(.success(()))
-                } catch let error {
-                    DDLogError("ExtensionStore: can't  move downloaded file - \(error)")
-                    let afError = AFError.downloadedFileMoveFailed(error: error, source: tmpFileUrl, destination: file.createUrl())
-                    subscriber(.failure(logFailure(afError, response.allHeaderFields, response.statusCode)))
-                }
-            }
-
-            if let `self` = self {
-                self.observe(downloadProgress: task.progress)
-            }
-
-            if let _request = task.currentRequest {
-                startData = ApiLogger.log(urlRequest: _request, encoding: request.encoding, logParams: request.logParams)
-            }
-
-            task.resume()
-
-            return Disposables.create { [weak task] in
-                task?.cancel()
-            }
-        }
-
-//        return self.apiClient.download(request: request, queue: .main)
-//                             .subscribe(on: self.backgroundScheduler)
-//                             .do(onNext: { [weak self] request in
-//                                 if let `self` = self {
-//                                     self.observe(downloadProgress: request.downloadProgress)
-//                                 }
-//                                 request.resume()
-//                             })
-//                             .asSingle()
+        return self.apiClient.download(request: request, queue: .main)
+                             .subscribe(on: self.backgroundScheduler)
+                             .do(onNext: { [weak self] request in
+                                 if let `self` = self {
+                                     self.observe(downloadProgress: request.downloadProgress)
+                                 }
+                                 request.resume()
+                             })
+                             .asSingle()
     }
 
     private func observe(downloadProgress: Progress) {
