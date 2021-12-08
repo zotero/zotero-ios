@@ -77,13 +77,15 @@ extension RedirectWebViewHandler: WKNavigationDelegate {
         switch mimeType {
         case "application/pdf":
             DDLogInfo("RedirectWebViewHandler: redirection detected pdf - \(navigationResponse.response.url?.absoluteString ?? "-")")
-
+            inMainThread {
+                // Cancel timer
+                self.disposeBag = nil
+                // Return url
+                self.completionHandler?(navigationResponse.response.url)
+                self.completionHandler = nil
+            }
             // Don't load web
             decisionHandler(.cancel)
-            // Cancel timer
-            self.disposeBag = nil
-            // Return url
-            self.completionHandler?(navigationResponse.response.url)
         default:
             self.startTimer()
             decisionHandler(.allow)
