@@ -42,12 +42,16 @@ struct Files {
         return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName, key])
     }
 
+    static var uploads: File {
+        return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["uploads"])
+    }
+
     static func temporaryZipUploadFile(key: String) -> File {
         return FileData(rootPath: Files.appGroupPath, relativeComponents: ["uploads"], name: key, ext: "zip")
     }
 
     static var temporaryMultipartformUploadFile: File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["uploads"], name: UUID().uuidString, ext: "")
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["uploads"], name: UUID().uuidString, contentType: "")
     }
 
     static func temporaryFile(ext: String) -> File {
@@ -158,6 +162,9 @@ struct Files {
         }
         var name = url.deletingPathExtension().lastPathComponent
         name = name.removingPercentEncoding ?? name
+        if components.last == name {
+            components = components.dropLast()
+        }
         return FileData(rootPath: root, relativeComponents: components, name: name, ext: url.pathExtension)
     }
 

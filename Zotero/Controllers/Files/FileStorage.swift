@@ -47,14 +47,21 @@ final class FileStorageController: FileStorage {
     }
 
     func remove(_ file: File) throws {
-        if file.isDirectory {
+        let url = file.createUrl()
+        var isDirectory: ObjCBool = false
+
+        guard self.fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory) else { return }
+
+        if isDirectory.boolValue {
             // This File instance is a directory, remove its contents.
-            let contents = try self.fileManager.contentsOfDirectory(at: file.createUrl(), includingPropertiesForKeys: [], options: [])
+            let contents = try self.fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: [], options: [])
             for url in contents {
                 try self.fileManager.removeItem(at: url)
             }
         }
-        try self.fileManager.removeItem(at: file.createUrl())
+
+        // Delete the file/directory itself.
+        try self.fileManager.removeItem(at: url)
     }
 
     func copy(from path: String, to toFile: File) throws {

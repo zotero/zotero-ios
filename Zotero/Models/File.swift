@@ -15,7 +15,6 @@ protocol File {
     var name: String { get }
     var ext: String { get }
     var mimeType: String { get }
-    var isDirectory: Bool { get }
     var directory: File { get }
 
     func createUrl() -> URL
@@ -24,15 +23,15 @@ protocol File {
 }
 
 extension File {
-    var isDirectory: Bool {
-        return self.name.isEmpty && self.ext.isEmpty && self.mimeType.isEmpty
-    }
-
     func createUrl() -> URL {
-        if self.isDirectory {
-            return self.createRelativeUrl()
+        var url = self.createRelativeUrl()
+        if !self.name.isEmpty {
+            url = url.appendingPathComponent(self.name)
         }
-        return self.createRelativeUrl().appendingPathComponent(self.name).appendingPathExtension(self.ext)
+        if !self.ext.isEmpty {
+            url = url.appendingPathExtension(self.ext)
+        }
+        return url
     }
 
     func createRelativeUrl() -> URL {
@@ -44,9 +43,6 @@ extension File {
     }
 
     var directory: File {
-        if self.isDirectory {
-            return self
-        }
         return FileData.directory(rootPath: self.rootPath, relativeComponents: self.relativeComponents)
     }
 

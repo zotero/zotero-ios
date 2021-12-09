@@ -21,7 +21,7 @@ struct LoadUploadDataSyncAction: SyncAction {
     var result: Single<[AttachmentUpload]> {
         return self.loadUploads(libraryId: self.libraryId)
                    .flatMap { uploads in
-                       let backgroundUploads = self.backgroundUploader.ongoingUploads()
+                       let backgroundUploads = self.backgroundUploader.ongoingUploadMd5s
                        return Single.just(uploads.filter({ !backgroundUploads.contains($0.md5) }))
                    }
     }

@@ -430,7 +430,7 @@ struct Database {
 
     /// Creates map of attachment keys from each library which are stored locally.
     private static func createAttachmentFileMap(fileStorage: FileStorage) -> [LibraryIdentifier: Set<String>] {
-        guard let downloadContents = (try? fileStorage.contentsOfDirectory(at: Files.downloads))?.filter({ $0.isDirectory }) else { return [:] }
+        guard let downloadContents = (try? fileStorage.contentsOfDirectory(at: Files.downloads))?.filter({ $0.name.isEmpty && $0.mimeType.isEmpty }) else { return [:] }
 
         let libraryIdsAndFiles = downloadContents.compactMap({ file in file.relativeComponents.last?.libraryIdFromFolderName.flatMap({ ($0, file) }) })
 
@@ -439,7 +439,7 @@ struct Database {
             guard let files: [File] = try? fileStorage.contentsOfDirectory(at: file) else { continue }
             var keys: Set<String> = []
             for file in files {
-                guard !file.isDirectory else { continue }
+                guard !file.name.isEmpty else { continue }
                 keys.insert(file.name)
             }
             attachmentMap[libraryId] = keys

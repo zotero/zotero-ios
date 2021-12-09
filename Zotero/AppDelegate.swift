@@ -120,6 +120,54 @@ final class AppDelegate: UIResponder {
         }
     }
 
+    private func removeFinishedUploadFiles() {
+        let didDeleteFiles = UserDefaults.standard.bool(forKey: "DidDeleteFinishedUploadFiles")
+
+        guard !didDeleteFiles && self.controllers.fileStorage.has(Files.uploads),
+              let userControllers = self.controllers.userControllers else { return }
+
+        do {
+            let contents: [File] = try self.controllers.fileStorage.contentsOfDirectory(at: Files.uploads)
+
+            guard !contents.isEmpty else { return }
+
+            let backgroundUploads = userControllers.backgroundUploader.ongoingUploads
+            let forUploadResults = try userControllers.dbStorage.createCoordinator().perform(request: ReadAllItemsForUploadDbRequest())
+            let keysForUpload = Set(forUploadResults.map({ $0.key }))
+            let webDavEnabled = userControllers.webDavController.sessionStorage.isEnabled
+            var filesToDelete: [File] = []
+
+            for file in contents {
+                if file.name.isEmpty && file.mimeType.isEmpty {
+                    // Background Zotero upload
+                    if !webDavEnabled && backgroundUploads.contains(where: { $0.fileUrl.lastPathComponent == file.relativeComponents.last }) {
+                        // If file is being uploaded in background, don't delete
+                        continue
+                    }
+                    filesToDelete.append(file)
+                    continue
+                }
+
+                if file.ext == "zip" && !file.name.isEmpty {
+                    // Background/foreground WebDAV upload
+                    if webDavEnabled && (backgroundUploads.contains(where: { $0.fileUrl.deletingPathExtension().lastPathComponent == file.name }) || keysForUpload.contains(file.name)) {
+                        // If file is being uploaded in background or queued to upload during sync, don't delete
+                        continue
+                    }
+                    filesToDelete.append(file)
+                }
+            }
+
+            for file in filesToDelete {
+                try? self.controllers.fileStorage.remove(file)
+            }
+
+            UserDefaults.standard.setValue(true, forKey: "DidDeleteFinishedUploadFiles")
+        } catch let error {
+            DDLogError("AppDelegate: can't remove finished uploads - \(error)")
+        }
+    }
+
     // MARK: - Setups
 
     private func setupLogs() {
@@ -205,6 +253,7 @@ extension AppDelegate: UIApplicationDelegate {
 
         DispatchQueue.global(qos: .userInteractive).async {
             self.migrateFileStructure()
+            self.removeFinishedUploadFiles()
         }
 
         return true

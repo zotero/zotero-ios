@@ -55,15 +55,19 @@ final class BackgroundUploader: NSObject {
         self.session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
     }
 
+    var ongoingUploads: [BackgroundUpload] {
+        return self.context.activeUploads
+    }
+
+    var ongoingUploadMd5s: [String] {
+        return self.context.activeUploads.map({ $0.md5 })
+    }
+
     // MARK: - Actions
 
     func cancel() {
         self.session.invalidateAndCancel()
         self.context.deleteAllUploads()
-    }
-
-    func ongoingUploads() -> [String] {
-        return self.context.activeUploads.map({ $0.md5 })
     }
 
     func start(upload: BackgroundUpload, filename: String, mimeType: String, parameters: [String: String], headers: [String: String]) -> Single<()> {
