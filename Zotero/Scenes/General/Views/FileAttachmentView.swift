@@ -15,6 +15,7 @@ final class FileAttachmentView: UIView {
     enum Style {
         case list
         case detail
+        case shareExtension
     }
 
     enum State {
@@ -220,7 +221,7 @@ final class FileAttachmentView: UIView {
 
     private func badgeBorderWidth(for style: Style) -> CGFloat {
         switch style {
-        case .detail: return FileAttachmentView.badgeDetailBorderWidth
+        case .detail, .shareExtension: return FileAttachmentView.badgeDetailBorderWidth
         case .list: return FileAttachmentView.badgeListBorderWidth
         }
     }
@@ -250,19 +251,20 @@ final class FileAttachmentView: UIView {
         switch type {
         case .download:
             switch style {
-            case .detail: return Asset.Images.Attachments.badgeDetailDownload
+            case .detail, .shareExtension: return Asset.Images.Attachments.badgeDetailDownload
             case .list: return Asset.Images.Attachments.badgeListDownload
             }
 
         case .failed:
             switch style {
             case .detail: return Asset.Images.Attachments.badgeDetailFailed
+            case .shareExtension: return Asset.Images.Attachments.badgeShareextFailed
             case .list: return Asset.Images.Attachments.badgeListFailed
             }
 
         case .missing:
             switch style {
-            case .detail: return Asset.Images.Attachments.badgeDetailMissing
+            case .detail, .shareExtension: return Asset.Images.Attachments.badgeDetailMissing
             case .list: return Asset.Images.Attachments.badgeListMissing
             }
         }
@@ -272,19 +274,19 @@ final class FileAttachmentView: UIView {
         switch attachmentType {
         case .url:
             switch style {
-            case .detail: return Asset.Images.Attachments.detailLinkedUrl
+            case .detail, .shareExtension: return Asset.Images.Attachments.detailLinkedUrl
             case .list: return Asset.Images.Attachments.listLink
             }
         case .file(_, let contentType, _, let linkType):
             switch linkType {
             case .embeddedImage:
                 switch style {
-                case .detail: return Asset.Images.Attachments.detailImage
+                case .detail, .shareExtension: return Asset.Images.Attachments.detailImage
                 case .list: return Asset.Images.Attachments.listImage
                 }
             case .linkedFile:
                 switch style {
-                case .detail:
+                case .detail, .shareExtension:
                     switch contentType {
                     case "application/pdf": return Asset.Images.Attachments.detailLinkedPdf
                     default: return Asset.Images.Attachments.detailLinkedDocument
@@ -295,23 +297,23 @@ final class FileAttachmentView: UIView {
             case .importedUrl where contentType == "text/html":
                 switch style {
                 case .list: return Asset.Images.Attachments.listWebPageSnapshot
-                case .detail: return Asset.Images.Attachments.detailWebpageSnapshot
+                case .detail, .shareExtension: return Asset.Images.Attachments.detailWebpageSnapshot
                 }
             case .importedFile, .importedUrl:
                 switch contentType {
                 case "image/png", "image/jpeg", "image/gif":
                     switch style {
-                    case .detail: return Asset.Images.Attachments.detailImage
+                    case .detail, .shareExtension: return Asset.Images.Attachments.detailImage
                     case .list: return Asset.Images.Attachments.listImage
                     }
                 case "application/pdf":
                     switch style {
-                    case .detail: return Asset.Images.Attachments.detailPdf
+                    case .detail, .shareExtension: return Asset.Images.Attachments.detailPdf
                     case .list: return Asset.Images.Attachments.listPdf
                     }
                 default:
                     switch style {
-                    case .detail: return Asset.Images.Attachments.detailDocument
+                    case .detail, .shareExtension: return Asset.Images.Attachments.detailDocument
                     case .list: return Asset.Images.Attachments.listDocument
                     }
                 }

@@ -66,6 +66,7 @@ internal enum Asset {
       internal static let badgeListDownload = ImageAsset(name: "Attachments/badge-list-download")
       internal static let badgeListFailed = ImageAsset(name: "Attachments/badge-list-failed")
       internal static let badgeListMissing = ImageAsset(name: "Attachments/badge-list-missing")
+      internal static let badgeShareextFailed = ImageAsset(name: "Attachments/badge-shareext-failed")
       internal static let detailDocument = ImageAsset(name: "Attachments/detail-document")
       internal static let detailImage = ImageAsset(name: "Attachments/detail-image")
       internal static let detailLinkedDocument = ImageAsset(name: "Attachments/detail-linked-document")
