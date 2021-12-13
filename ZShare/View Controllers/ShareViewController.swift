@@ -683,7 +683,7 @@ final class ShareViewController: UIViewController {
         let dateParser = DateParser()
 
         let uploadProcessor = BackgroundUploadProcessor(apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, webDavController: webDavController)
-        let backgroundUploader = BackgroundUploader(uploadProcessor: uploadProcessor, schemaVersion: schemaController.version)
+        let backgroundUploader = BackgroundUploader(uploadProcessor: uploadProcessor, schemaVersion: schemaController.version, backgroundTaskController: nil)
         let syncController = SyncController(userId: userId,
                                             apiClient: apiClient,
                                             dbStorage: dbStorage,

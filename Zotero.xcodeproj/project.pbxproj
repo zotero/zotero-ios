@@ -363,6 +363,8 @@
 		B31941DD24531F6600BF6296 /* AnnotationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */; };
 		B319D6B6265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B319D6B5265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift */; };
 		B319D6B8265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B319D6B7265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift */; };
+		B31D4A722767840800E22DCC /* BackgroundTaskController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31D4A712767840800E22DCC /* BackgroundTaskController.swift */; };
+		B31D4A732767841800E22DCC /* BackgroundTaskController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31D4A712767840800E22DCC /* BackgroundTaskController.swift */; };
 		B31DDA9E27299BD1002CFA05 /* StoreMtimeForAttachmentDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31DDA9D27299BD1002CFA05 /* StoreMtimeForAttachmentDbRequest.swift */; };
 		B31DDA9F27299DF9002CFA05 /* StoreMtimeForAttachmentDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31DDA9D27299BD1002CFA05 /* StoreMtimeForAttachmentDbRequest.swift */; };
 		B31DDAA12729A7DC002CFA05 /* WebDavCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31DDAA02729A7DC002CFA05 /* WebDavCredentials.swift */; };
@@ -1233,6 +1235,7 @@
 		B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationsViewController.swift; sourceTree = "<group>"; };
 		B319D6B5265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllItemsForUploadDbRequest.swift; sourceTree = "<group>"; };
 		B319D6B7265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllDownloadedAndForUploadItemsDbRequest.swift; sourceTree = "<group>"; };
+		B31D4A712767840800E22DCC /* BackgroundTaskController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundTaskController.swift; sourceTree = "<group>"; };
 		B31DDA9D27299BD1002CFA05 /* StoreMtimeForAttachmentDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreMtimeForAttachmentDbRequest.swift; sourceTree = "<group>"; };
 		B31DDAA02729A7DC002CFA05 /* WebDavCredentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavCredentials.swift; sourceTree = "<group>"; };
 		B31DFE7C2746917A005CD69B /* FileRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileRequest.swift; sourceTree = "<group>"; };
@@ -1805,6 +1808,7 @@
 				B30B40642491222000FAAF6D /* AttachmentCreator.swift */,
 				B3886C46249234D600B7D67B /* AttachmentDownloader.swift */,
 				B377F2A4249373F300022943 /* AttachmentFileCleanupController.swift */,
+				B31D4A712767840800E22DCC /* BackgroundTaskController.swift */,
 				B3BD2BB225C98D2900275EF9 /* BackgroundTimer.swift */,
 				B32AB57A25ADB891003CF0C6 /* CommentIconDrawingController.swift */,
 				B305647023FC051E003304F2 /* Controllers.swift */,
@@ -4175,6 +4179,7 @@
 				B305669523FC051F003304F2 /* DeletableObject.swift in Sources */,
 				B305660823FC051E003304F2 /* KeyRequest.swift in Sources */,
 				B32A273C254841B80081E061 /* CreatorEditViewController.swift in Sources */,
+				B31D4A722767840800E22DCC /* BackgroundTaskController.swift in Sources */,
 				B3593AD724B601AB00CA0B57 /* PDFSearchCell.swift in Sources */,
 				B30566AC23FC051F003304F2 /* Predicates.swift in Sources */,
 				B30566A023FC051F003304F2 /* KeyedResponse.swift in Sources */,
@@ -4613,6 +4618,7 @@
 				B33791D723BF7B2A00919210 /* CreateItemWithAttachmentDbRequest.swift in Sources */,
 				B305671C23FC08DF003304F2 /* StoreSettingsDbRequest.swift in Sources */,
 				B305673C23FC0988003304F2 /* SettingsResponse.swift in Sources */,
+				B31D4A732767841800E22DCC /* BackgroundTaskController.swift in Sources */,
 				B353F1FC242E23680062EE24 /* ResetTranslatorsDbRequest.swift in Sources */,
 				B36459E0264411AC00A0C2C0 /* ViewModel.swift in Sources */,
 				B3902DE62480DBB7007EE48E /* DateParser.swift in Sources */,

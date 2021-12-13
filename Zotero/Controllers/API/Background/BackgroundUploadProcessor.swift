@@ -137,6 +137,7 @@ final class BackgroundUploadProcessor {
 
     private func delete(file: File) {
         do {
+            DDLogInfo("BackgroundUploadProcessor: delete file after upload - \(file.createUrl().path)")
             try self.fileStorage.remove(file)
         } catch let error {
             DDLogError("BackgroundUploadProcessor: can't remove uploaded file - \(error)")

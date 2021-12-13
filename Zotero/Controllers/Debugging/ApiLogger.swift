@@ -89,8 +89,13 @@ struct ApiLogger {
     }
 
     private static func logResponseIdentifier(statusCode: Int, success: Bool, startData: StartData) {
-        let time = CFAbsoluteTimeGetCurrent() - startData.time
-        let timeString = String(format: "(+%07.0f)", (time * 1000))
+        let timeString: String
+        if startData.time == 0 {
+            timeString = "+0000000"
+        } else {
+            let time = CFAbsoluteTimeGetCurrent() - startData.time
+            timeString = String(format: "(+%07.0f)", (time * 1000))
+        }
         DDLogInfo("\(timeString)\(startData.id) \(success ? "succeeded" : "failed") with \(statusCode)")
     }
 

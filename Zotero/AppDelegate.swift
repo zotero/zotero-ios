@@ -131,11 +131,15 @@ final class AppDelegate: UIResponder {
 
             guard !contents.isEmpty else { return }
 
-            let backgroundUploads = userControllers.backgroundUploader.ongoingUploads
-            let forUploadResults = try userControllers.dbStorage.createCoordinator().perform(request: ReadAllItemsForUploadDbRequest())
-            let keysForUpload = Set(forUploadResults.map({ $0.key }))
+            let backgroundUploads = userControllers.backgroundUploader.uploads
             let webDavEnabled = userControllers.webDavController.sessionStorage.isEnabled
+            var keysForUpload: Set<String> = []
             var filesToDelete: [File] = []
+
+            if webDavEnabled {
+                let forUploadResults = try userControllers.dbStorage.createCoordinator().perform(request: ReadAllItemsForUploadDbRequest())
+                keysForUpload = Set(forUploadResults.map({ $0.key }))
+            }
 
             for file in contents {
                 if file.name.isEmpty && file.mimeType.isEmpty {
@@ -266,6 +270,9 @@ extension AppDelegate: UIApplicationDelegate {
     func applicationWillEnterForeground(_ application: UIApplication) {
         self.controllers.willEnterForeground()
         NotificationCenter.default.post(name: .willEnterForeground, object: nil)
+
+        let uploads = self.controllers.userControllers?.backgroundUploader.uploads ?? []
+        DDLogInfo("AppDelegate: background uploads in progress: \(uploads.map({ ($0.key, $0.fileUrl.lastPathComponent) }))")
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
@@ -273,12 +280,12 @@ extension AppDelegate: UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
-        let controllers = self.controllers ?? Controllers()
-        if let uploader = controllers.userControllers?.backgroundUploader {
-            uploader.backgroundCompletionHandler = completionHandler
-        } else {
+        guard self.controllers.sessionController.isLoggedIn else {
             completionHandler()
+            return
         }
+
+        self.controllers.backgroundTaskController.completionHandler = completionHandler
     }
 
     // MARK: UISceneSession Lifecycle

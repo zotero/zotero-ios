@@ -30,6 +30,7 @@ final class Controllers {
     let htmlAttributedStringConverter: HtmlAttributedStringConverter
     let userInitialized: PassthroughSubject<Result<Bool, Error>, Never>
     let idleTimerController: IdleTimerController
+    let backgroundTaskController: BackgroundTaskController
     fileprivate let lastBuildNumber: Int?
 
     var userControllers: UserControllers?
@@ -82,6 +83,7 @@ final class Controllers {
         self.userInitialized = PassthroughSubject()
         self.lastBuildNumber = Defaults.shared.lastBuildNumber
         self.idleTimerController = IdleTimerController()
+        self.backgroundTaskController = BackgroundTaskController()
 
         Defaults.shared.lastBuildNumber = DeviceInfoProvider.buildNumber
         self.startObservingSession()
@@ -210,7 +212,8 @@ final class UserControllers {
         let webDavSession = SecureWebDavSessionStorage(secureStorage: controllers.secureStorage)
         let webDavController = WebDavControllerImpl(dbStorage: dbStorage, fileStorage: controllers.fileStorage, sessionStorage: webDavSession)
         let backgroundUploadProcessor = BackgroundUploadProcessor(apiClient: controllers.apiClient, dbStorage: dbStorage, fileStorage: controllers.fileStorage, webDavController: webDavController)
-        let backgroundUploader = BackgroundUploader(uploadProcessor: backgroundUploadProcessor, schemaVersion: controllers.schemaController.version)
+        let backgroundUploader = BackgroundUploader(uploadProcessor: backgroundUploadProcessor, schemaVersion: controllers.schemaController.version,
+                                                    backgroundTaskController: controllers.backgroundTaskController)
         let syncController = SyncController(userId: userId, apiClient: controllers.apiClient, dbStorage: dbStorage, fileStorage: controllers.fileStorage, schemaController: controllers.schemaController,
                                             dateParser: controllers.dateParser, backgroundUploader: backgroundUploader, webDavController: webDavController, syncDelayIntervals: DelayIntervals.sync,
                                             conflictDelays: DelayIntervals.conflict)

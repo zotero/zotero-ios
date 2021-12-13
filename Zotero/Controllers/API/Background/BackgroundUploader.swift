@@ -6,6 +6,7 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import Alamofire
 import Foundation
 
 import CocoaLumberjackSwift
@@ -19,30 +20,14 @@ final class BackgroundUploader: NSObject {
 
     private let context: BackgroundUploaderContext
     private let uploadProcessor: BackgroundUploadProcessor
+    private unowned let backgroundTaskController: BackgroundTaskController?
 
     private var session: URLSession!
-    private var finishedUploads: [(Int, BackgroundUpload)]
-    private var failedUploads: [(Int, BackgroundUpload)]
-    private var uploadsFinishedProcessing: Bool
-    private var disposeBag: DisposeBag
 
-    #if MAINAPP
-    private var backgroundTaskId: UIBackgroundTaskIdentifier
-    #endif
-
-    var backgroundCompletionHandler: (() -> Void)?
-
-    init(uploadProcessor: BackgroundUploadProcessor, schemaVersion: Int) {
+    init(uploadProcessor: BackgroundUploadProcessor, schemaVersion: Int, backgroundTaskController: BackgroundTaskController?) {
         self.context = BackgroundUploaderContext()
         self.uploadProcessor = uploadProcessor
-        self.finishedUploads = []
-        self.failedUploads = []
-        self.uploadsFinishedProcessing = true
-        self.disposeBag = DisposeBag()
-
-        #if MAINAPP
-        self.backgroundTaskId = .invalid
-        #endif
+        self.backgroundTaskController = backgroundTaskController
 
         super.init()
 
@@ -52,15 +37,19 @@ final class BackgroundUploader: NSObject {
         configuration.sharedContainerIdentifier = AppGroup.identifier
         configuration.timeoutIntervalForRequest = ApiConstants.requestTimeout
         configuration.timeoutIntervalForResource = ApiConstants.resourceTimeout
-        self.session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
+
+        let delegate: URLSessionDelegate?
+        #if MAINAPP
+        delegate = self
+        #else
+        delegate = nil
+        #endif
+
+        self.session = URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
     }
 
-    var ongoingUploads: [BackgroundUpload] {
-        return self.context.activeUploads
-    }
-
-    var ongoingUploadMd5s: [String] {
-        return self.context.activeUploads.map({ $0.md5 })
+    var uploads: [BackgroundUpload] {
+        return self.context.uploads
     }
 
     // MARK: - Actions
@@ -82,76 +71,45 @@ final class BackgroundUploader: NSObject {
                                    })
     }
 
+    private func process(upload: BackgroundUpload, taskId: Int, didFail: Bool, backgroundTaskController: BackgroundTaskController) {
+        #if MAINAPP
+        var disposeBag: DisposeBag = DisposeBag()
+
+        let backgroundTask = backgroundTaskController.startTask()
+        backgroundTask.expirationHandler = { [weak self] in
+            // Remove upload from context so that it's processed by main app
+            self?.context.deleteUpload(with: taskId)
+            // Cancel upload finishing action.
+            disposeBag = DisposeBag()
+        }
+
+        self.uploadProcessor.finish(upload: upload, successful: !didFail)
+                            .observe(on: MainScheduler.instance)
+                            .subscribe(onError: { [weak self] error in
+                                DDLogError("BackgroundUploader: failed processing finished tasks - \(error)")
+                                // Remove upload from context so that it's processed by main app
+                                self?.context.deleteUpload(with: taskId)
+                                // End background task
+                                backgroundTaskController.end(task: backgroundTask)
+                            }, onCompleted: { [weak self] in
+                                DDLogError("BackgroundUploader: done processing finished tasks")
+                                // Remove upload from context so that it's processed by main app
+                                self?.context.deleteUpload(with: taskId)
+                                // End background task
+                                backgroundTaskController.end(task: backgroundTask)
+                            })
+                            .disposed(by: disposeBag)
+        #endif
+    }
+
     // MARK: - Uploading
 
     private func startUpload(_ upload: BackgroundUpload, request: URLRequest) {
+        _ = ApiLogger.log(urlRequest: request, encoding: .url, logParams: .headers)
+
         let task = self.session.uploadTask(with: request, fromFile: upload.fileUrl)
-        self.context.saveUpload(upload, taskId: task.taskIdentifier)
+        self.context.save(upload: upload, taskId: task.taskIdentifier)
         task.resume()
-    }
-
-    // MARK: - Finishing upload
-
-    private func finish(successfulUploads: [(Int, BackgroundUpload)], failedUploads: [(Int, BackgroundUpload)]) {
-        guard !successfulUploads.isEmpty || !failedUploads.isEmpty else {
-            self.uploadsFinishedProcessing = true
-            self.completeBackgroundSession()
-            return
-        }
-
-        let taskIds = successfulUploads.map({ $0.0 }) + failedUploads.map({ $0.0 })
-        // Start background task so that we can send register requests to API and store results in DB.
-        self.startBackgroundTask(expireAction: { [weak self] in
-            // If background task expires before all uploads are processed, remove taskIds from context, so that they are processed by main app when opened.
-            self?.context.deleteUploads(with: taskIds)
-        })
-        // Create actions for all uploads for this background session.
-        let actions = failedUploads.map({ self.uploadProcessor.finish(upload: $0.1, successful: false) }) + successfulUploads.map({ self.uploadProcessor.finish(upload: $0.1, successful: true) })
-        // Process all actions, call appropriate completion handlers and finish the background task.
-        Observable.concat(actions)
-                  .observe(on: MainScheduler.instance)
-                  .subscribe(onError: { [weak self] error in
-                      self?.uploadsFinishedProcessing = true
-                      self?.context.deleteUploads(with: taskIds)
-                      self?.completeBackgroundSession()
-                      self?.endBackgroundTask()
-                  }, onCompleted: { [weak self] in
-                      self?.uploadsFinishedProcessing = true
-                      self?.context.deleteUploads(with: taskIds)
-                      self?.completeBackgroundSession()
-                      self?.endBackgroundTask()
-                  })
-                  .disposed(by: self.disposeBag)
-    }
-
-    private func completeBackgroundSession() {
-        self.backgroundCompletionHandler?()
-        self.backgroundCompletionHandler = nil
-    }
-
-    /// Starts background task in the main app. We can limit this to the main app, because the share extension is always closed after the upload
-    /// is started, so the upload will be finished in the main app.
-    private func startBackgroundTask(expireAction: @escaping () -> Void) {
-        #if MAINAPP
-        guard UIApplication.shared.applicationState == .background else { return }
-        self.backgroundTaskId = UIApplication.shared.beginBackgroundTask(withName: "org.zotero.background.upload.finish") { [weak self] in
-            guard let `self` = self else { return }
-            expireAction()
-            // If the background time expired, cancel ongoing upload processing
-            self.disposeBag = DisposeBag()
-            UIApplication.shared.endBackgroundTask(self.backgroundTaskId)
-            self.backgroundTaskId = .invalid
-        }
-        #endif
-    }
-
-    /// Ends the background task in the main app.
-    private func endBackgroundTask() {
-        #if MAINAPP
-        guard self.backgroundTaskId != .invalid else { return }
-        UIApplication.shared.endBackgroundTask(self.backgroundTaskId)
-        self.backgroundTaskId = .invalid
-        #endif
     }
 }
 
@@ -159,32 +117,50 @@ extension BackgroundUploader: URLSessionDelegate {
     /// Background uploads started in share extension are started in background session and the share extension is closed immediately.
     /// The background url session always finishes in main app. We need to ask for additional time to register uploads and write results to DB.
     func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
-        inMainThread {
-            if self.uploadsFinishedProcessing {
-                self.completeBackgroundSession()
-            }
-        }
     }
 }
 
 extension BackgroundUploader: URLSessionTaskDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Swift.Error?) {
-        inMainThread {
-            self.uploadsFinishedProcessing = false
+        guard let upload = self.context.loadUpload(for: task.taskIdentifier) else { return }
 
-            if let upload = self.context.loadUpload(for: task.taskIdentifier) {
-                if error == nil && task.error == nil {
-                    self.finishedUploads.append((task.taskIdentifier, upload))
-                } else {
-                    self.failedUploads.append((task.taskIdentifier, upload))
-                }
-            }
-
-            if self.context.activeUploads.count == (self.finishedUploads.count + self.failedUploads.count) {
-                self.finish(successfulUploads: self.finishedUploads, failedUploads: self.failedUploads)
-                self.finishedUploads = []
-                self.failedUploads = []
-            }
+        DDLogInfo("BackgroundUploader: finished background task \(task.taskIdentifier); \(upload.key); \(upload.fileUrl.lastPathComponent)")
+        
+        let didFail = self.log(task: task, error: error)
+        if let controller = self.backgroundTaskController {
+            self.process(upload: upload, taskId: task.taskIdentifier, didFail: didFail, backgroundTaskController: controller)
+        } else {
+            self.context.deleteUpload(with: task.taskIdentifier)
         }
+    }
+
+    /// Logs response of `URLSessionTask` and returns whether request was successfull or not.
+    /// - parameter task: `URLSessionTask` to log.
+    /// - parameter error: `Error` provided by task delegate.
+    /// - returns: `true` if task failed, `false` otherwise.
+    private func log(task: URLSessionTask, error: Swift.Error?) -> Bool {
+        let logId = ApiLogger.identifier(method: task.originalRequest?.httpMethod ?? "POST", url: task.originalRequest?.url?.absoluteString ?? "")
+        let logStartData = ApiLogger.StartData(id: logId, time: 0, logParams: .headers)
+
+        if error != nil || task.error != nil {
+            let someError = error ?? task.error
+            let responseError = AFResponseError(error: .createURLRequestFailed(error: someError!), headers: [:], response: "Upload failed")
+            ApiLogger.logFailedresponse(error: responseError, statusCode: 0, startData: logStartData)
+            return true
+        }
+
+        guard let response = task.response as? HTTPURLResponse else {
+            ApiLogger.logSuccessfulResponse(statusCode: 0, data: nil, headers: [:], startData: logStartData)
+            return false
+        }
+
+        if 200..<300 ~= response.statusCode {
+            ApiLogger.logSuccessfulResponse(statusCode: response.statusCode, data: nil, headers: response.allHeaderFields, startData: logStartData)
+            return false
+        }
+
+        let responseError = AFResponseError(error: .responseValidationFailed(reason: .unacceptableStatusCode(code: response.statusCode)), headers: response.allHeaderFields, response: "Upload failed")
+        ApiLogger.logFailedresponse(error: responseError, statusCode: response.statusCode, startData: logStartData)
+        return true
     }
 }
