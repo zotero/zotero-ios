@@ -483,8 +483,6 @@ final class ShareViewController: UIViewController {
             return L10n.Errors.Shareext.unknown
         case .fileMissing:
             return L10n.Errors.Shareext.missingFile
-        case .missingBackgroundUploader:
-            return L10n.Errors.Shareext.backgroundUploaderFailure
         case .apiFailure:
             return L10n.Errors.Shareext.apiError
         case .webDavFailure:
@@ -681,16 +679,16 @@ final class ShareViewController: UIViewController {
     private func createStore(for userId: Int, dbStorage: DbStorage, apiClient: ApiClient, schemaController: SchemaController, fileStorage: FileStorage, webDavController: WebDavController,
                              translatorsController: TranslatorsAndStylesController) -> ExtensionStore {
         let dateParser = DateParser()
-
-        let uploadProcessor = BackgroundUploadProcessor(apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, webDavController: webDavController)
-        let backgroundUploader = BackgroundUploader(uploadProcessor: uploadProcessor, schemaVersion: schemaController.version, backgroundTaskController: nil)
+        let requestProvider = BackgroundUploaderRequestProvider(fileStorage: fileStorage)
+        let backgroundUploadContext = BackgroundUploaderContext()
+        let backgroundUploader = BackgroundUploader(context: backgroundUploadContext, requestProvider: requestProvider, schemaVersion: schemaController.version)
         let syncController = SyncController(userId: userId,
                                             apiClient: apiClient,
                                             dbStorage: dbStorage,
                                             fileStorage: fileStorage,
                                             schemaController: schemaController,
                                             dateParser: dateParser,
-                                            backgroundUploader: backgroundUploader,
+                                            backgroundUploaderContext: backgroundUploadContext,
                                             webDavController: webDavController,
                                             syncDelayIntervals: DelayIntervals.sync,
                                             conflictDelays: DelayIntervals.conflict)

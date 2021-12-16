@@ -189,7 +189,7 @@ final class UserControllers {
     let changeObserver: ObjectUserChangeObserver
     let dbStorage: DbStorage
     let itemLocaleController: RItemLocaleController
-    let backgroundUploader: BackgroundUploader
+    let backgroundUploadObserver: BackgroundUploadObserver
     let fileDownloader: AttachmentDownloader
     let webSocketController: WebSocketController
     let fileCleanupController: AttachmentFileCleanupController
@@ -211,11 +211,11 @@ final class UserControllers {
         let dbStorage = try UserControllers.createDbStorage(for: userId, controllers: controllers)
         let webDavSession = SecureWebDavSessionStorage(secureStorage: controllers.secureStorage)
         let webDavController = WebDavControllerImpl(dbStorage: dbStorage, fileStorage: controllers.fileStorage, sessionStorage: webDavSession)
+        let backgroundUploadContext = BackgroundUploaderContext()
         let backgroundUploadProcessor = BackgroundUploadProcessor(apiClient: controllers.apiClient, dbStorage: dbStorage, fileStorage: controllers.fileStorage, webDavController: webDavController)
-        let backgroundUploader = BackgroundUploader(uploadProcessor: backgroundUploadProcessor, schemaVersion: controllers.schemaController.version,
-                                                    backgroundTaskController: controllers.backgroundTaskController)
+        let backgroundUploadObserver = BackgroundUploadObserver(context: backgroundUploadContext, processor: backgroundUploadProcessor, backgroundTaskController: controllers.backgroundTaskController)
         let syncController = SyncController(userId: userId, apiClient: controllers.apiClient, dbStorage: dbStorage, fileStorage: controllers.fileStorage, schemaController: controllers.schemaController,
-                                            dateParser: controllers.dateParser, backgroundUploader: backgroundUploader, webDavController: webDavController, syncDelayIntervals: DelayIntervals.sync,
+                                            dateParser: controllers.dateParser, backgroundUploaderContext: backgroundUploadContext, webDavController: webDavController, syncDelayIntervals: DelayIntervals.sync,
                                             conflictDelays: DelayIntervals.conflict)
         let fileDownloader = AttachmentDownloader(userId: userId, apiClient: controllers.apiClient, fileStorage: controllers.fileStorage, dbStorage: dbStorage, webDavController: webDavController)
         let webSocketController = WebSocketController(dbStorage: dbStorage)
@@ -226,7 +226,7 @@ final class UserControllers {
         self.webDavController = webDavController
         self.changeObserver = RealmObjectUserChangeObserver(dbStorage: dbStorage)
         self.itemLocaleController = RItemLocaleController(schemaController: controllers.schemaController, dbStorage: dbStorage)
-        self.backgroundUploader = backgroundUploader
+        self.backgroundUploadObserver = backgroundUploadObserver
         self.fileDownloader = fileDownloader
         self.webSocketController = webSocketController
         self.fileCleanupController = fileCleanupController
@@ -284,6 +284,10 @@ final class UserControllers {
         self.webSocketController.connect(apiKey: apiKey, completed: { [weak self] in
             guard let `self` = self else { return }
             self.syncScheduler.request(syncType: self.requiresFullSync ? .full : .normal)
+            self.backgroundUploadObserver.observeNewSessions(syncAction: { [weak self] in
+                // In case there are some uploads which were not processed by background uploader, request a normal sync so that files are uploaded
+                self?.syncScheduler.request(syncType: .normal)
+            })
         })
     }
 
@@ -308,7 +312,7 @@ final class UserControllers {
         // Clear DB storage
         self.dbStorage.clear()
         // Cancel all pending background uploads
-        self.backgroundUploader.cancel()
+        self.backgroundUploadObserver.cancelAllUploads()
     }
 
     // MARK: - Helpers

@@ -131,7 +131,7 @@ final class AppDelegate: UIResponder {
 
             guard !contents.isEmpty else { return }
 
-            let backgroundUploads = userControllers.backgroundUploader.uploads
+            let backgroundUploads = userControllers.backgroundUploadObserver.context.uploads
             let webDavEnabled = userControllers.webDavController.sessionStorage.isEnabled
             var keysForUpload: Set<String> = []
             var filesToDelete: [File] = []
@@ -270,9 +270,6 @@ extension AppDelegate: UIApplicationDelegate {
     func applicationWillEnterForeground(_ application: UIApplication) {
         self.controllers.willEnterForeground()
         NotificationCenter.default.post(name: .willEnterForeground, object: nil)
-
-        let uploads = self.controllers.userControllers?.backgroundUploader.uploads ?? []
-        DDLogInfo("AppDelegate: background uploads in progress: \(uploads.map({ ($0.key, $0.fileUrl.lastPathComponent) }))")
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
@@ -280,12 +277,12 @@ extension AppDelegate: UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
-        guard self.controllers.sessionController.isLoggedIn else {
+        guard let userControllers = self.controllers.userControllers else {
             completionHandler()
             return
         }
 
-        self.controllers.backgroundTaskController.completionHandler = completionHandler
+        userControllers.backgroundUploadObserver.handleEventsForBackgroundURLSession(with: identifier, completionHandler: completionHandler)
     }
 
     // MARK: UISceneSession Lifecycle

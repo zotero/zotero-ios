@@ -61,7 +61,6 @@ final class ExtensionStore {
                 case expired
                 case unknown
                 case fileMissing
-                case missingBackgroundUploader
                 case downloadedFileNotPdf
                 case webViewError(TranslationWebViewHandler.Error)
                 case parseError(Parsing.Error)
@@ -243,8 +242,6 @@ final class ExtensionStore {
     }
 
     @Published var state: State
-    // The background uploader is optional because it needs to be deinitialized after starting the upload. See more in comment where the uploader is nilled.
-    private var backgroundUploader: BackgroundUploader?
     // Optional handler to deal with webs that provide PDFs through redirection
     private var redirectHandler: RedirectWebViewHandler?
     private weak var webView: WKWebView?
@@ -262,6 +259,7 @@ final class ExtensionStore {
     private let webDavController: WebDavController
     private let dateParser: DateParser
     private let translationHandler: TranslationWebViewHandler
+    private let backgroundUploader: BackgroundUploader
     private let backgroundQueue: DispatchQueue
     private let backgroundScheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
@@ -890,13 +888,9 @@ final class ExtensionStore {
                    case .new(let response):
                        DDLogInfo("ExtensionStore: upload authorized")
 
-                       guard let backgroundUploader = self.backgroundUploader else {
-                           return Single.error(State.AttachmentState.Error.missingBackgroundUploader)
-                       }
-
                        let upload = BackgroundUpload(type: .zotero(uploadKey: response.uploadKey), key: self.state.attachmentKey, libraryId: data.libraryId, userId: data.userId,
                                                      remoteUrl: response.url, fileUrl: data.file.createUrl(), md5: md5)
-                       return backgroundUploader.start(upload: upload, filename: data.filename, mimeType: ExtensionStore.defaultMimetype, parameters: response.params, headers: ["If-None-Match": "*"])
+                       return self.backgroundUploader.start(upload: upload, filename: data.filename, mimeType: ExtensionStore.defaultMimetype, parameters: response.params, headers: ["If-None-Match": "*"])
                    }
                }
                .observe(on: MainScheduler.instance)
@@ -944,13 +938,9 @@ final class ExtensionStore {
             case .new(let url, let file):
                 DDLogInfo("ExtensionStore: upload authorized")
 
-                guard let backgroundUploader = self.backgroundUploader else {
-                    return Single.error(State.AttachmentState.Error.missingBackgroundUploader)
-                }
-
                 let upload = BackgroundUpload(type: .webdav(mtime: submissionData.mtime), key: self.state.attachmentKey, libraryId: data.libraryId, userId: data.userId,
                                               remoteUrl: url, fileUrl: file.createUrl(), md5: submissionData.md5)
-                return backgroundUploader.start(upload: upload, filename: (data.attachment.key + ".zip"), mimeType: ExtensionStore.zipMimetype, parameters: [:], headers: [:])
+                return self.backgroundUploader.start(upload: upload, filename: (data.attachment.key + ".zip"), mimeType: ExtensionStore.zipMimetype, parameters: [:], headers: [:])
             }
         }
         .observe(on: MainScheduler.instance)

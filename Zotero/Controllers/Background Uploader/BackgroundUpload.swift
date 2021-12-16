@@ -48,14 +48,15 @@ struct BackgroundUpload: Codable {
     let remoteUrl: URL
     let fileUrl: URL
     let md5: String
+    let sessionId: String
 
     var completion: BackgroundUploadCompletion?
 
     private enum CodingKeys: String, CodingKey {
-        case type, key, libraryId, userId, remoteUrl, fileUrl, md5, uploadKey
+        case type, key, libraryId, userId, remoteUrl, fileUrl, md5, uploadKey, sessionId
     }
 
-    init(type: Kind, key: String, libraryId: LibraryIdentifier, userId: Int, remoteUrl: URL, fileUrl: URL, md5: String, completion: BackgroundUploadCompletion? = nil) {
+    init(type: Kind, key: String, libraryId: LibraryIdentifier, userId: Int, remoteUrl: URL, fileUrl: URL, md5: String, sessionId: String = "", completion: BackgroundUploadCompletion? = nil) {
         self.type = type
         self.key = key
         self.libraryId = libraryId
@@ -63,6 +64,7 @@ struct BackgroundUpload: Codable {
         self.remoteUrl = remoteUrl
         self.fileUrl = fileUrl
         self.md5 = md5
+        self.sessionId = sessionId
         self.completion = completion
     }
 
@@ -74,6 +76,9 @@ struct BackgroundUpload: Codable {
         self.remoteUrl = try container.decode(URL.self, forKey: .remoteUrl)
         self.fileUrl = try container.decode(URL.self, forKey: .fileUrl)
         self.md5 = try container.decode(String.self, forKey: .md5)
+
+        // Backwards compatibility
+        self.sessionId = (try? container.decode(String.self, forKey: .sessionId)) ?? ""
 
         if let uploadKey = try? container.decode(String.self, forKey: .uploadKey) {
             // Backwards compatibility
@@ -92,6 +97,7 @@ struct BackgroundUpload: Codable {
         try container.encode(self.remoteUrl, forKey: .remoteUrl)
         try container.encode(self.fileUrl, forKey: .fileUrl)
         try container.encode(self.md5, forKey: .md5)
+        try container.encode(self.sessionId, forKey: .sessionId)
     }
 
     func copy(with fileUrl: URL) -> BackgroundUpload {
@@ -102,6 +108,19 @@ struct BackgroundUpload: Codable {
                                 remoteUrl: self.remoteUrl,
                                 fileUrl: fileUrl,
                                 md5: self.md5,
+                                sessionId: self.sessionId,
+                                completion: self.completion)
+    }
+
+    func copy(with sessionId: String) -> BackgroundUpload {
+        return BackgroundUpload(type: self.type,
+                                key: self.key,
+                                libraryId: self.libraryId,
+                                userId: self.userId,
+                                remoteUrl: self.remoteUrl,
+                                fileUrl: self.fileUrl,
+                                md5: self.md5,
+                                sessionId: sessionId,
                                 completion: self.completion)
     }
 }

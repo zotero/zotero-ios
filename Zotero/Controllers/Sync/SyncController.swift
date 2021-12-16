@@ -158,7 +158,7 @@ final class SyncController: SynchronizationController {
     private let fileStorage: FileStorage
     private let schemaController: SchemaController
     private let dateParser: DateParser
-    private let backgroundUploader: BackgroundUploader
+    private let backgroundUploaderContext: BackgroundUploaderContext
     private let webDavController: WebDavController
     // Handler for reporting sync progress to observers.
     private let progressHandler: SyncProgressHandler
@@ -217,7 +217,7 @@ final class SyncController: SynchronizationController {
 
     // MARK: - Lifecycle
 
-    init(userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, dateParser: DateParser, backgroundUploader: BackgroundUploader,
+    init(userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, dateParser: DateParser, backgroundUploaderContext: BackgroundUploaderContext,
          webDavController: WebDavController, syncDelayIntervals: [Double], conflictDelays: [Int]) {
         let accessQueue = DispatchQueue(label: "org.zotero.SyncController.accessQueue", qos: .userInteractive, attributes: .concurrent)
         let workQueue = DispatchQueue(label: "org.zotero.SyncController.workQueue", qos: .userInteractive, attributes: .concurrent)
@@ -241,7 +241,7 @@ final class SyncController: SynchronizationController {
         self.fileStorage = fileStorage
         self.schemaController = schemaController
         self.dateParser = dateParser
-        self.backgroundUploader = backgroundUploader
+        self.backgroundUploaderContext = backgroundUploaderContext
         self.webDavController = webDavController
         self.syncDelayIntervals = syncDelayIntervals
         self.didEnqueueWriteActionsToZoteroBackend = false
@@ -806,7 +806,7 @@ final class SyncController: SynchronizationController {
     }
 
     private func processCreateUploadActions(for libraryId: LibraryIdentifier, hadOtherWriteActions: Bool) {
-        let result = LoadUploadDataSyncAction(libraryId: libraryId, backgroundUploader: self.backgroundUploader, dbStorage: self.dbStorage).result
+        let result = LoadUploadDataSyncAction(libraryId: libraryId, backgroundUploaderContext: self.backgroundUploaderContext, dbStorage: self.dbStorage).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] uploads in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in

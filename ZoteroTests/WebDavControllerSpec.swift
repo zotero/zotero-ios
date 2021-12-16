@@ -552,7 +552,7 @@ final class WebDavControllerSpec: QuickSpec {
         let webDavController = WebDavControllerImpl(dbStorage: self.dbStorage, fileStorage: TestControllers.fileStorage, sessionStorage: self.verifiedCredentials)
         // Create background uploader with storage
         let backgroundProcessor = BackgroundUploadProcessor(apiClient: TestControllers.apiClient, dbStorage: self.dbStorage, fileStorage: TestControllers.fileStorage, webDavController: webDavController)
-        let backgroundUploader = BackgroundUploader(uploadProcessor: backgroundProcessor, schemaVersion: 3)
+        let backgroundUploader = BackgroundUploaderRequestProvider(uploadProcessor: backgroundProcessor, schemaVersion: 3)
         // Create sync controller
         let syncController = SyncController(userId: self.userId, apiClient: TestControllers.apiClient, dbStorage: self.dbStorage, fileStorage: TestControllers.fileStorage,
                                             schemaController: TestControllers.schemaController, dateParser: TestControllers.dateParser, backgroundUploader: backgroundUploader,
