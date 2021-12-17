@@ -22,6 +22,7 @@ final class BackgroundUploadObserver: NSObject {
     let context: BackgroundUploaderContext
     private let backgroundTaskController: BackgroundTaskController
     private let processor: BackgroundUploadProcessor
+    private let disposeBag: DisposeBag
 
     private var sessions: [String: URLSession]
     private var finishedTasks: [String: [FinishedTask]]
@@ -34,29 +35,86 @@ final class BackgroundUploadObserver: NSObject {
         self.finishedTasks = [:]
         self.completionHandlers = [:]
         self.context = BackgroundUploaderContext()
+        self.disposeBag = DisposeBag()
 
         super.init()
     }
 
-    func observeNewSessions(syncAction: @escaping () -> Void) {
-        let ids = self.context.sessionIds
+    func updateSessions() {
+        let (timedOutUploads, remainingSessionIds) = self.invalidateTimedOut(uploads: self.context.uploadsWithTaskIds, andSessions: Set(self.context.sessionIds))
 
-        DDLogInfo("BackgroundUploadObserver: active sessions \(ids)")
+        let remainingUploads = self.context.uploadsWithTaskIds
+        DDLogInfo("BackgroundUploadObserver: active sessions (\(remainingSessionIds.count)) \(remainingSessionIds)")
+        DDLogInfo("BackgroundUploadObserver: active uploads (\(remainingUploads.count)) \(remainingUploads.values.map({ ($0.key, $0.sessionId) }))")
 
-        #if DEBUG
-        let uploads = self.context.uploads
-        DDLogInfo("BackgroundUploadObserver: active uploads (\(uploads.count)) \(uploads.map({ ($0.key, $0.sessionId) }))")
-        #endif
+        self.startObservingNew(sessionIdentifiers: remainingSessionIds)
 
-        for id in ids {
-            guard self.sessions[id] == nil else { continue }
+        // Remove temporary upload files
+        let deleteActions =  timedOutUploads.map({ self.processor.finish(upload: $0, successful: false) })
+        Observable.concat(deleteActions).subscribe().disposed(by: self.disposeBag)
+    }
 
-            DDLogInfo("BackgroundUploadObserver: start observing \(id)")
+    private func invalidateTimedOut(uploads: [Int: BackgroundUpload], andSessions activeSessionIds: Set<String>) -> ([BackgroundUpload], Set<String>) {
+        var remainingSessionIds: Set<String> = []
+        var uploadsToRemove: [(Int, BackgroundUpload)] = []
 
-            let session = URLSessionCreator.createSession(for: id, delegate: self)
-            self.sessions[id] = session
+        // Collect uploads that timed out and remaining active sessions of active uploads
+        for (taskId, upload) in uploads {
+            let timeout = self.timeout(for: upload.size)
 
-            // TODO: - check for timed out session and cancel sessions/uploads
+            if Date().timeIntervalSince(upload.date) >= timeout {
+                uploadsToRemove.append((taskId, upload))
+                DDLogInfo("BackgroundUploadObserver: upload \(taskId); \(upload.key); \(upload.fileUrl.lastPathComponent) timed out")
+                continue
+            }
+
+            if !upload.sessionId.isEmpty {
+                remainingSessionIds.insert(upload.sessionId)
+            }
+        }
+
+        // Remove uploads which timed out
+        self.context.deleteUploads(with: uploadsToRemove.map({ $0.0 }))
+        // Save remaining active sessions
+        self.context.saveSessions(with: Array(remainingSessionIds))
+
+        // Remove inactive sessions from memory so that they are not observed any more and cancel their tasks.
+        let invalidatedSessionIds = activeSessionIds.subtracting(remainingSessionIds)
+        for sessionId in invalidatedSessionIds {
+            if let session = self.sessions[sessionId] {
+                self.sessions[sessionId] = nil
+                session.invalidateAndCancel()
+            } else {
+                let session = URLSessionCreator.createSession(for: sessionId, delegate: nil)
+                session.invalidateAndCancel()
+            }
+        }
+
+        if !invalidatedSessionIds.isEmpty {
+            DDLogInfo("BackgroundUploadObserver: invalidated sessions \(invalidatedSessionIds)")
+        }
+
+        return (uploadsToRemove.map({ $0.1 }), remainingSessionIds)
+    }
+
+    private func startObservingNew(sessionIdentifiers identifiers: Set<String>) {
+        for identifier in identifiers {
+            guard self.sessions[identifier] == nil else { continue }
+
+            DDLogInfo("BackgroundUploadObserver: start observing \(identifier)")
+
+            let session = URLSessionCreator.createSession(for: identifier, delegate: self)
+            self.sessions[identifier] = session
+        }
+    }
+
+    private func timeout(for size: UInt64) -> TimeInterval {
+        switch size / 1048576 {
+        case 0..<5: return 600      // 10 minutes for files <5mb
+        case 5..<10: return 1800    // 30 minutes for files <10mb
+        case 10..<50: return 3600   // 1 hour for files < 50mb
+        case 50..<100: return 10800 // 3 hours for files < 100mb
+        default: return 86400       // 1 day
         }
     }
 
@@ -110,15 +168,14 @@ final class BackgroundUploadObserver: NSObject {
             self?.completionHandlers[sessionId] = nil
             // End background task
             self?.backgroundTaskController.end(task: backgroundTask)
-
         }
 
         Observable.concat(actions)
                   .observe(on: MainScheduler.instance)
-                  .subscribe(onError: { [weak self] error in
+                  .subscribe(onError: { error in
                       DDLogError("BackgroundUploadObserver: couldn't finish tasks for \(sessionId) - \(error)")
                       finishAction()
-                  }, onCompleted: { [weak self] in
+                  }, onCompleted: {
                       DDLogError("BackgroundUploadObserver: finished tasks for \(sessionId)")
                       finishAction()
                   })
@@ -139,7 +196,7 @@ extension BackgroundUploadObserver: URLSessionDelegate {
         if self.sessions[sessionId] != nil {
             self.sessions[sessionId] = nil
         }
-        self.context.delete(identifier: sessionId)
+        self.context.deleteSession(with: sessionId)
     }
 }
 

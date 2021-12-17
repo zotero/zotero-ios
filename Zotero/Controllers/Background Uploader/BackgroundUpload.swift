@@ -49,14 +49,16 @@ struct BackgroundUpload: Codable {
     let fileUrl: URL
     let md5: String
     let sessionId: String
+    let date: Date
+    let size: UInt64
 
     var completion: BackgroundUploadCompletion?
 
     private enum CodingKeys: String, CodingKey {
-        case type, key, libraryId, userId, remoteUrl, fileUrl, md5, uploadKey, sessionId
+        case type, key, libraryId, userId, remoteUrl, fileUrl, md5, uploadKey, sessionId, date, size
     }
 
-    init(type: Kind, key: String, libraryId: LibraryIdentifier, userId: Int, remoteUrl: URL, fileUrl: URL, md5: String, sessionId: String = "", completion: BackgroundUploadCompletion? = nil) {
+    init(type: Kind, key: String, libraryId: LibraryIdentifier, userId: Int, remoteUrl: URL, fileUrl: URL, md5: String, date: Date, size: UInt64 = 0, sessionId: String = "", completion: BackgroundUploadCompletion? = nil) {
         self.type = type
         self.key = key
         self.libraryId = libraryId
@@ -65,6 +67,8 @@ struct BackgroundUpload: Codable {
         self.fileUrl = fileUrl
         self.md5 = md5
         self.sessionId = sessionId
+        self.date = date
+        self.size = size
         self.completion = completion
     }
 
@@ -76,9 +80,10 @@ struct BackgroundUpload: Codable {
         self.remoteUrl = try container.decode(URL.self, forKey: .remoteUrl)
         self.fileUrl = try container.decode(URL.self, forKey: .fileUrl)
         self.md5 = try container.decode(String.self, forKey: .md5)
-
         // Backwards compatibility
         self.sessionId = (try? container.decode(String.self, forKey: .sessionId)) ?? ""
+        self.size = (try? container.decode(UInt64.self, forKey: .size)) ?? 0
+        self.date = (try? container.decode(Date.self, forKey: .date)) ?? Date(timeIntervalSince1970: 0)
 
         if let uploadKey = try? container.decode(String.self, forKey: .uploadKey) {
             // Backwards compatibility
@@ -98,9 +103,11 @@ struct BackgroundUpload: Codable {
         try container.encode(self.fileUrl, forKey: .fileUrl)
         try container.encode(self.md5, forKey: .md5)
         try container.encode(self.sessionId, forKey: .sessionId)
+        try container.encode(self.date, forKey: .date)
+        try container.encode(self.size, forKey: .size)
     }
 
-    func copy(with fileUrl: URL) -> BackgroundUpload {
+    func copy(withFileUrl fileUrl: URL, size: UInt64, andSessionId sessionId: String) -> BackgroundUpload {
         return BackgroundUpload(type: self.type,
                                 key: self.key,
                                 libraryId: self.libraryId,
@@ -108,18 +115,8 @@ struct BackgroundUpload: Codable {
                                 remoteUrl: self.remoteUrl,
                                 fileUrl: fileUrl,
                                 md5: self.md5,
-                                sessionId: self.sessionId,
-                                completion: self.completion)
-    }
-
-    func copy(with sessionId: String) -> BackgroundUpload {
-        return BackgroundUpload(type: self.type,
-                                key: self.key,
-                                libraryId: self.libraryId,
-                                userId: self.userId,
-                                remoteUrl: self.remoteUrl,
-                                fileUrl: self.fileUrl,
-                                md5: self.md5,
+                                date: self.date,
+                                size: size,
                                 sessionId: sessionId,
                                 completion: self.completion)
     }

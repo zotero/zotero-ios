@@ -23,19 +23,19 @@ final class BackgroundUploaderRequestProvider {
         self.fileStorage = fileStorage
     }
 
-    func createRequest(for upload: BackgroundUpload, filename: String, mimeType: String, parameters: [String: String]?, headers: [String: String]?, schemaVersion: Int) -> Single<(URLRequest, URL, Int64)> {
+    func createRequest(for upload: BackgroundUpload, filename: String, mimeType: String, parameters: [String: String]?, headers: [String: String]?, schemaVersion: Int) -> Single<(URLRequest, URL, UInt64)> {
         switch upload.type {
         case .webdav:
             return self.createPutRequest(for: upload)
                        .flatMap({ request in
                            let size = self.fileStorage.size(of: Files.file(from: upload.fileUrl))
-                           return Single.just((request, upload.fileUrl, Int64(size)))
+                           return Single.just((request, upload.fileUrl, size))
                        })
         case .zotero:
             return self.createMultipartformRequest(for: upload, filename: filename, mimeType: mimeType, parameters: parameters, headers: headers, schemaVersion: schemaVersion)
                        .flatMap({ request, url in
                            let size = self.fileStorage.size(of: Files.file(from: url))
-                           return Single.just((request, url, Int64(size)))
+                           return Single.just((request, url, size))
                        })
         }
     }

@@ -21,13 +21,17 @@ final class BackgroundUploaderContext {
         return self.userDefault.object([String].self, with: BackgroundUploaderContext.sessionIdsKey) ?? []
     }
 
-    func save(identifier: String) {
+    func saveSession(with identifier: String) {
         var ids = self.sessionIds
         ids.append(identifier)
         self.userDefault.set(object: ids, forKey: BackgroundUploaderContext.sessionIdsKey)
     }
 
-    func delete(identifier: String) {
+    func saveSessions(with identifiers: [String]) {
+        self.userDefault.set(object: identifiers, forKey: BackgroundUploaderContext.sessionIdsKey)
+    }
+
+    func deleteSession(with identifier: String) {
         var ids = self.sessionIds
         if let index = ids.firstIndex(of: identifier) {
             ids.remove(at: index)
@@ -43,6 +47,10 @@ final class BackgroundUploaderContext {
 
     var uploads: [BackgroundUpload] {
         return self.userDefault.object([Int: BackgroundUpload].self, with: BackgroundUploaderContext.activeKey).flatMap({ Array($0.values) }) ?? []
+    }
+
+    var uploadsWithTaskIds: [Int: BackgroundUpload] {
+        return self.userDefault.object([Int: BackgroundUpload].self, with: BackgroundUploaderContext.activeKey) ?? [:]
     }
 
     func loadUpload(for taskId: Int) -> BackgroundUpload? {
@@ -63,6 +71,10 @@ final class BackgroundUploaderContext {
     func save(upload: BackgroundUpload, taskId: Int) {
         var uploads = self.userDefault.object([Int: BackgroundUpload].self, with: BackgroundUploaderContext.activeKey) ?? [:]
         uploads[taskId] = upload
+        self.userDefault.set(object: uploads, forKey: BackgroundUploaderContext.activeKey)
+    }
+
+    func save(uploads: [Int: BackgroundUpload]) {
         self.userDefault.set(object: uploads, forKey: BackgroundUploaderContext.activeKey)
     }
 

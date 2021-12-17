@@ -888,8 +888,9 @@ final class ExtensionStore {
                    case .new(let response):
                        DDLogInfo("ExtensionStore: upload authorized")
 
+                       // sessionId and size are set by background uploader.
                        let upload = BackgroundUpload(type: .zotero(uploadKey: response.uploadKey), key: self.state.attachmentKey, libraryId: data.libraryId, userId: data.userId,
-                                                     remoteUrl: response.url, fileUrl: data.file.createUrl(), md5: md5)
+                                                     remoteUrl: response.url, fileUrl: data.file.createUrl(), md5: md5, date: Date())
                        return self.backgroundUploader.start(upload: upload, filename: data.filename, mimeType: ExtensionStore.defaultMimetype, parameters: response.params, headers: ["If-None-Match": "*"])
                    }
                }
@@ -939,7 +940,7 @@ final class ExtensionStore {
                 DDLogInfo("ExtensionStore: upload authorized")
 
                 let upload = BackgroundUpload(type: .webdav(mtime: submissionData.mtime), key: self.state.attachmentKey, libraryId: data.libraryId, userId: data.userId,
-                                              remoteUrl: url, fileUrl: file.createUrl(), md5: submissionData.md5)
+                                              remoteUrl: url, fileUrl: file.createUrl(), md5: submissionData.md5, date: Date())
                 return self.backgroundUploader.start(upload: upload, filename: (data.attachment.key + ".zip"), mimeType: ExtensionStore.zipMimetype, parameters: [:], headers: [:])
             }
         }

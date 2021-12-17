@@ -32,8 +32,14 @@ final class BackgroundUploadProcessor {
     func finish(upload: BackgroundUpload, successful: Bool) -> Observable<()> {
         if !successful {
             // If upload failed, remove temporary upload data (multipartform in case of ZFS, zip in case of WebDAV).
-            self.delete(file: Files.file(from: upload.fileUrl))
-            return Observable.just(())
+            return Observable.create { [weak self] subscriber in
+                self?.delete(file: Files.file(from: upload.fileUrl))
+
+                subscriber.on(.next(()))
+                subscriber.on(.completed)
+
+                return Disposables.create()
+            }
         }
 
         switch upload.type {

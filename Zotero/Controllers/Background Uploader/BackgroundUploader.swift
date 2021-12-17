@@ -32,27 +32,36 @@ final class BackgroundUploader {
 
     func start(upload: BackgroundUpload, filename: String, mimeType: String, parameters: [String: String], headers: [String: String]) -> Single<()> {
         return self.requestProvider.createRequest(for: upload, filename: filename, mimeType: mimeType, parameters: parameters, headers: headers, schemaVersion: self.schemaVersion)
-                                   .flatMap({ [weak self] request, url, size in
-                                       var newUpload = upload
-                                       if upload.fileUrl != url {
-                                           newUpload = upload.copy(with: url)
-                                       }
-                                       self?.startUpload(newUpload, request: request, size: size)
+                                   .flatMap({ request, url, size -> Single<(URL, UInt64, URLRequest, URLSession)> in
+                                       return self.createSession().flatMap({ Single.just((url, size, request, $0)) })
+                                   })
+                                   .flatMap({ url, size, request, session -> Single<(BackgroundUpload, URLRequest, URLSession)> in
+                                       let newUpload = upload.copy(withFileUrl: url, size: size, andSessionId: session.configuration.identifier!)
+                                       return Single.just((newUpload, request, session))
+                                   })
+                                   .flatMap({ upload, request, session -> Single<()> in
+                                       self.start(upload: upload, request: request, session: session)
                                        return Single.just(())
                                    })
     }
 
-    private func startUpload(_ upload: BackgroundUpload, request: URLRequest, size: Int64) {
+    private func createSession() -> Single<URLSession> {
+        return Single.create { [weak self] subscriber in
+            let sessionId = UUID().uuidString
+            let session = URLSessionCreator.createSession(for: sessionId, delegate: nil)
+            self?.context.saveSession(with: sessionId)
+            subscriber(.success(session))
+            return Disposables.create()
+        }
+    }
+
+    private func start(upload: BackgroundUpload, request: URLRequest, session: URLSession) {
         _ = ApiLogger.log(urlRequest: request, encoding: .url, logParams: .headers)
 
-        let sessionId = UUID().uuidString
-        let session = URLSessionCreator.createSession(for: sessionId, delegate: nil)
-        self.context.save(identifier: sessionId)
-
         let task = session.uploadTask(with: request, fromFile: upload.fileUrl)
-//        task.countOfBytesClientExpectsToSend = size
+        task.countOfBytesClientExpectsToSend = Int64(upload.size)
         task.earliestBeginDate = Date(timeIntervalSinceNow: 5)
-        self.context.save(upload: upload.copy(with: sessionId), taskId: task.taskIdentifier)
+        self.context.save(upload: upload, taskId: task.taskIdentifier)
 
         task.resume()
     }

@@ -283,11 +283,9 @@ final class UserControllers {
         // Connect to websockets and start sync
         self.webSocketController.connect(apiKey: apiKey, completed: { [weak self] in
             guard let `self` = self else { return }
+            // Call this before sync so that background uploads are updated and taken care of by sync if needed.
+            self.backgroundUploadObserver.updateSessions()
             self.syncScheduler.request(syncType: self.requiresFullSync ? .full : .normal)
-            self.backgroundUploadObserver.observeNewSessions(syncAction: { [weak self] in
-                // In case there are some uploads which were not processed by background uploader, request a normal sync so that files are uploaded
-                self?.syncScheduler.request(syncType: .normal)
-            })
         })
     }
 
