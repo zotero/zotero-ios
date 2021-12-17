@@ -46,15 +46,12 @@ final class SyncControllerSpec: QuickSpec {
         // Create WebDavController
         let webDavSession = WebDavCredentials(isEnabled: false, username: "", password: "", scheme: .http, url: "", isVerified: false)
         let webDavController = WebDavControllerImpl(dbStorage: dbStorage, fileStorage: TestControllers.fileStorage, sessionStorage: webDavSession)
-        // Create background uploader with storage
-        let backgroundProcessor = BackgroundUploadProcessor(apiClient: TestControllers.apiClient, dbStorage: dbStorage, fileStorage: TestControllers.fileStorage, webDavController: webDavController)
-        let backgroundUploader = BackgroundUploader(uploadProcessor: backgroundProcessor, schemaVersion: 3)
 
         self.realmConfig = config
         self.realm = realm
         self.webDavController = webDavController
         self.syncController = SyncController(userId: self.userId, apiClient: TestControllers.apiClient, dbStorage: dbStorage, fileStorage: TestControllers.fileStorage,
-                                             schemaController: TestControllers.schemaController, dateParser: TestControllers.dateParser, backgroundUploader: backgroundUploader,
+                                             schemaController: TestControllers.schemaController, dateParser: TestControllers.dateParser, backgroundUploaderContext: BackgroundUploaderContext(),
                                              webDavController: webDavController, syncDelayIntervals: [0, 1, 2, 3], conflictDelays: [0, 1, 2, 3])
         self.syncController.set(coordinator: TestConflictCoordinator(createZoteroDirectory: true))
     }
@@ -2049,9 +2046,9 @@ final class SyncControllerSpec: QuickSpec {
 
                     let taskId = 1
                     let backgroundUpload = BackgroundUpload(type: .zotero(uploadKey: "abc"), key: key, libraryId: libraryId, userId: self.userId, remoteUrl: URL(string: "https://zotero.org/")!,
-                                                            fileUrl: file.createUrl(), md5: fileMd5, completion: nil)
+                                                            fileUrl: file.createUrl(), md5: fileMd5, date: Date(), completion: nil)
                     let backgroundContext = BackgroundUploaderContext()
-                    backgroundContext.saveUpload(backgroundUpload, taskId: taskId)
+                    backgroundContext.save(upload: backgroundUpload, taskId: taskId)
 
                     try! self.realm.write {
                         let item = RItem()

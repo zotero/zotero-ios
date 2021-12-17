@@ -550,12 +550,9 @@ final class WebDavControllerSpec: QuickSpec {
     private func testSync(syncFinishedAction: @escaping () -> Void) {
         // Create webdav controller
         let webDavController = WebDavControllerImpl(dbStorage: self.dbStorage, fileStorage: TestControllers.fileStorage, sessionStorage: self.verifiedCredentials)
-        // Create background uploader with storage
-        let backgroundProcessor = BackgroundUploadProcessor(apiClient: TestControllers.apiClient, dbStorage: self.dbStorage, fileStorage: TestControllers.fileStorage, webDavController: webDavController)
-        let backgroundUploader = BackgroundUploaderRequestProvider(uploadProcessor: backgroundProcessor, schemaVersion: 3)
         // Create sync controller
         let syncController = SyncController(userId: self.userId, apiClient: TestControllers.apiClient, dbStorage: self.dbStorage, fileStorage: TestControllers.fileStorage,
-                                            schemaController: TestControllers.schemaController, dateParser: TestControllers.dateParser, backgroundUploader: backgroundUploader,
+                                            schemaController: TestControllers.schemaController, dateParser: TestControllers.dateParser, backgroundUploaderContext: BackgroundUploaderContext(),
                                             webDavController: webDavController, syncDelayIntervals: [0, 1, 2, 3], conflictDelays: [0, 1, 2, 3])
         syncController.set(coordinator: TestConflictCoordinator(createZoteroDirectory: false))
 
