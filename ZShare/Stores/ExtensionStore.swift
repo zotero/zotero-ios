@@ -68,6 +68,7 @@ final class ExtensionStore {
                 case schemaError(SchemaError)
                 case quotaLimit(LibraryIdentifier)
                 case webDavNotVerified
+                case webDavFailure
 
                 var isFatal: Bool {
                     switch self {
@@ -541,8 +542,8 @@ final class ExtensionStore {
     private func download(item: ItemResponse, attachment: [String: Any], attachmentUrl url: URL, to file: File) {
         var state = self.state
         state.attachmentState = .downloading(0)
-        state.processedAttachment = .itemWithAttachment(item: item, attachment: attachment, attachmentFile: file)
-        state.items = state.processedAttachment
+        state.items = .itemWithAttachment(item: item, attachment: attachment, attachmentFile: file)
+        state.processedAttachment = .item(item)
         self.state = state
 
         self.download(url: url, to: file)
@@ -559,7 +560,10 @@ final class ExtensionStore {
     private func processDownload(of attachment: [String: Any], url: URL, file: File, item: ItemResponse) {
         if self.fileStorage.isPdf(file: file) {
             DDLogInfo("ExtensionStore: downloaded pdf")
-            self.state.attachmentState = .processed
+            var state = self.state
+            state.attachmentState = .processed
+            state.processedAttachment = .itemWithAttachment(item: item, attachment: attachment, attachmentFile: file)
+            self.state = state
             return
         }
 
@@ -569,10 +573,7 @@ final class ExtensionStore {
         try? self.fileStorage.remove(file)
 
         guard (url.host ?? "").contains("sciencedirect") else {
-            var state = self.state
-            state.processedAttachment = .item(item)
-            state.attachmentState = .failed(.downloadedFileNotPdf)
-            self.state = state
+            self.state.attachmentState = .failed(.downloadedFileNotPdf)
             return
         }
 
@@ -591,10 +592,7 @@ final class ExtensionStore {
             }
 
             // Didn't help, report failed PDF download
-            var state = self.state
-            state.processedAttachment = .item(item)
-            state.attachmentState = .failed(.downloadedFileNotPdf)
-            self.state = state
+            self.state.attachmentState = .failed(.downloadedFileNotPdf)
         }
     }
 
@@ -784,15 +782,16 @@ final class ExtensionStore {
             return .webViewError(error)
         }
         if let responseError = error as? AFResponseError {
-            return self.alamoErrorRequiresAbort(responseError.error, libraryId: libraryId)
+            return self.alamoErrorRequiresAbort(responseError.error, url: responseError.url, libraryId: libraryId)
         }
         if let alamoError = error as? AFError {
-            return self.alamoErrorRequiresAbort(alamoError, libraryId: libraryId)
+            return self.alamoErrorRequiresAbort(alamoError, url: nil, libraryId: libraryId)
         }
         return .unknown
     }
 
-    private func alamoErrorRequiresAbort(_ error: AFError, libraryId: LibraryIdentifier?) -> State.AttachmentState.Error {
+    private func alamoErrorRequiresAbort(_ error: AFError, url: URL?, libraryId: LibraryIdentifier?) -> State.AttachmentState.Error {
+        let defaultError: State.AttachmentState.Error = (url?.absoluteString ?? "").contains(ApiConstants.baseUrlString) ? .apiFailure : .webDavFailure
         switch error {
         case .responseValidationFailed(let reason):
             switch reason {
@@ -800,12 +799,12 @@ final class ExtensionStore {
                 if code == 413, let libraryId = libraryId {
                     return .quotaLimit(libraryId)
                 }
-                return .apiFailure
+                return defaultError
             default:
-                return .apiFailure
+                return defaultError
             }
         default:
-            return .apiFailure
+            return defaultError
         }
     }
 
@@ -906,8 +905,8 @@ final class ExtensionStore {
                                                      .flatMap({ return Single.just(($0, submissionData)) })
                           }
 
-        prepare.flatMap { [weak self, weak webDavController] response, submissionData -> Single<()> in
-            guard let `self` = self, let webDavController = webDavController else { return Single.error(State.AttachmentState.Error.expired) }
+        prepare.flatMap { [weak self] response, submissionData -> Single<()> in
+            guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
 
             switch response {
             case .exists:

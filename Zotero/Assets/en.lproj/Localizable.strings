@@ -366,7 +366,7 @@
 "errors.shareext.unknown" = "An unknown error occurred.";
 "errors.shareext.cant_load_schema" = "An error occurred. Please open the Zotero app, sync, and try again.";
 "errors.shareext.cant_load_data" = "An error occurred. Please try again.";
-"errors.shareext.download_failed" = "Could not download file";
+"errors.shareext.download_failed" = "Could not download file.";
 "errors.shareext.items_not_found" = "No items found on page";
 "errors.shareext.parsing_error" = "Error parsing translator response";
 "errors.shareext.schema_error" = "Some data could not be downloaded. It may have been saved with a newer version of Zotero.";
@@ -380,6 +380,7 @@
 "errors.shareext.failed_additional" = "You can still save this page as a webpage item.";
 "errors.shareext.file_not_pdf" = "Unable to save PDF";
 "errors.shareext.api_error" = "Error uploading item. The item was saved to your local library.";
+"errors.shareext.webdav_error" = "Error uploading attachment to your WebDAV server. The item was saved to your library.";
 "errors.shareext.personal_quota_reached" = "You have reached your Zotero Storage quota, and the file could not be uploaded. See your account settings for additional storage options.\n\nThe file was saved to your local library.";
 "errors.shareext.group_quota_reached" = "The group \“%@\” has reached its Zotero Storage quota, and the file could not be uploaded. The group owner can view their account settings for additional storage options.\n\nThe file was saved to the local library.";
 "errors.shareext.webdav_not_verified" = "WebDAV verification error";

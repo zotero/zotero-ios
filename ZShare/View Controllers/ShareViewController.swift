@@ -223,9 +223,10 @@ final class ShareViewController: UIViewController {
     }
 
     private func update(to state: ExtensionStore.State) {
+        let hasItem = state.processedAttachment != nil
         self.log(attachmentState: state.attachmentState, itemState: state.itemPicker)
         self.updateItemsUi(for: state.title, items: state.items, attachmentState: state.attachmentState)
-        self.update(attachmentState: state.attachmentState, itemState: state.itemPicker)
+        self.update(attachmentState: state.attachmentState, itemState: state.itemPicker, hasItem: hasItem)
         self.update(collectionPicker: state.collectionPicker, recents: state.recents)
         self.update(itemPicker: state.itemPicker, items: state.items)
         self.updateTagPicker(with: state.tags)
@@ -262,9 +263,9 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func update(attachmentState state: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPicker?) {
+    private func update(attachmentState state: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPicker?, hasItem: Bool) {
         self.updateNavigationItems(for: state)
-        self.updateBottomProgress(for: state, itemState: itemState)
+        self.updateBottomProgress(for: state, itemState: itemState, hasItem: hasItem)
     }
 
     private func updateItemsUi(for title: String?, items: ExtensionStore.State.ProcessedAttachment?, attachmentState: ExtensionStore.State.AttachmentState) {
@@ -343,9 +344,13 @@ final class ShareViewController: UIViewController {
     }
 
     private func updateNavigationItems(for state: ExtensionStore.State.AttachmentState) {
-        if case .quotaLimit = state.error {
-            self.navigationItem.leftBarButtonItem = nil
-            self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(ShareViewController.cancel))
+        if let error = state.error {
+            switch error {
+            case .quotaLimit, .webDavFailure, .apiFailure:
+                self.navigationItem.leftBarButtonItem = nil
+                self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(ShareViewController.cancel))
+            default: break
+            }
             return
         }
 
@@ -353,7 +358,7 @@ final class ShareViewController: UIViewController {
         self.navigationItem.rightBarButtonItem?.isEnabled = state.isSubmittable
     }
 
-    private func updateBottomProgress(for state: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPicker?) {
+    private func updateBottomProgress(for state: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPicker?, hasItem: Bool) {
         if let state = itemState, state.picked == nil {
             // Don't show progress bar when waiting for item pick
             self.bottomProgressContainer.isHidden = true
@@ -395,7 +400,7 @@ final class ShareViewController: UIViewController {
             self.collectionPickerStackContainer.isHidden = hidePickers
             self.tagPickerStackContainer.isHidden = hidePickers
             self.itemPickerStackContainer.isHidden = true
-            self.show(error: error)
+            self.show(error: error, hasItem: hasItem)
 
         case .done:
             self.debugLogging.storeLogs { [unowned self] in
@@ -411,7 +416,7 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func show(error: ExtensionStore.State.AttachmentState.Error) {
+    private func show(error: ExtensionStore.State.AttachmentState.Error, hasItem: Bool) {
         guard var message = self.errorMessage(for: error) else {
             self.failureLabel.isHidden = true
             return
@@ -427,7 +432,9 @@ final class ShareViewController: UIViewController {
             case .quotaLimit:
                 self.failureLabel.textAlignment = .left
             default:
-                message += "\n" + L10n.Errors.Shareext.failedAdditional
+                if !hasItem {
+                    message += "\n" + L10n.Errors.Shareext.failedAdditional
+                }
                 self.failureLabel.textAlignment = .center
             }
             self.failureLabel.textColor = .darkGray
@@ -472,7 +479,7 @@ final class ShareViewController: UIViewController {
             return L10n.Errors.Shareext.missingFile
         case .missingBackgroundUploader:
             return L10n.Errors.Shareext.backgroundUploaderFailure
-        case .apiFailure:
+        case .apiFailure, .webDavFailure:
             return L10n.Errors.Shareext.apiError
         case .quotaLimit(let libraryId):
             switch libraryId {

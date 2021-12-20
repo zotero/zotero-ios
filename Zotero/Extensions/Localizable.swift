@@ -461,7 +461,7 @@ internal enum L10n {
       internal static let cantLoadData = L10n.tr("Localizable", "errors.shareext.cant_load_data")
       /// An error occurred. Please open the Zotero app, sync, and try again.
       internal static let cantLoadSchema = L10n.tr("Localizable", "errors.shareext.cant_load_schema")
-      /// Could not download file
+      /// Could not download file.
       internal static let downloadFailed = L10n.tr("Localizable", "errors.shareext.download_failed")
       /// You can still save this page as a webpage item.
       internal static let failedAdditional = L10n.tr("Localizable", "errors.shareext.failed_additional")
@@ -495,6 +495,8 @@ internal enum L10n {
       internal static let translationFailed = L10n.tr("Localizable", "errors.shareext.translation_failed")
       /// An unknown error occurred.
       internal static let unknown = L10n.tr("Localizable", "errors.shareext.unknown")
+      /// Error uploading attachment to your WebDAV server. The item was saved to your library.
+      internal static let webdavError = L10n.tr("Localizable", "errors.shareext.webdav_error")
       /// WebDAV verification error
       internal static let webdavNotVerified = L10n.tr("Localizable", "errors.shareext.webdav_not_verified")
     }
