@@ -479,8 +479,10 @@ final class ShareViewController: UIViewController {
             return L10n.Errors.Shareext.missingFile
         case .missingBackgroundUploader:
             return L10n.Errors.Shareext.backgroundUploaderFailure
-        case .apiFailure, .webDavFailure:
+        case .apiFailure:
             return L10n.Errors.Shareext.apiError
+        case .webDavFailure:
+            return L10n.Errors.Shareext.webdavError
         case .quotaLimit(let libraryId):
             switch libraryId {
             case .custom:
