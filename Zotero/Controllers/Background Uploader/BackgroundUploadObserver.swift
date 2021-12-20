@@ -193,6 +193,7 @@ extension BackgroundUploadObserver: URLSessionDelegate {
         }
         self.finishedTasks[sessionId] = nil
 
+        session.invalidateAndCancel()
         if self.sessions[sessionId] != nil {
             self.sessions[sessionId] = nil
         }
