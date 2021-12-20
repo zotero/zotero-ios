@@ -235,7 +235,7 @@ extension AFDownloadResponse where Success == URL?, Failure == AFError {
 
 fileprivate struct ResponseCreator {
     static func string(from data: Data?, mimeType: String) -> String? {
-        guard mimeType == "text/plain" else { return nil }
+        guard mimeType == "text/plain" || mimeType == "text/html" else { return nil }
         return data.flatMap({ String(data: $0, encoding: .utf8) })
     }
 }
