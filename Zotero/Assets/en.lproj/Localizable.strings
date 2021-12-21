@@ -366,7 +366,7 @@
 "errors.shareext.unknown" = "An unknown error occurred.";
 "errors.shareext.cant_load_schema" = "An error occurred. Please open the Zotero app, sync, and try again.";
 "errors.shareext.cant_load_data" = "An error occurred. Please try again.";
-"errors.shareext.download_failed" = "Could not download file.";
+"errors.shareext.download_failed" = "Could not download file";
 "errors.shareext.items_not_found" = "No items found on page";
 "errors.shareext.parsing_error" = "Error parsing translator response";
 "errors.shareext.schema_error" = "Some data could not be downloaded. It may have been saved with a newer version of Zotero.";
