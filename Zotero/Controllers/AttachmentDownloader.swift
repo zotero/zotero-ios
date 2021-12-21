@@ -162,7 +162,7 @@ final class AttachmentDownloader {
         // Send first update to immediately reflect new state
         self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .progress(0))))
 
-        var isCompressed = self.webDavController.sessionStorage.isEnabled
+        var isCompressed = self.webDavController.sessionStorage.isEnabled && !libraryId.isGroupLibrary
 
         self.downloadRequest(file: file, key: key, libraryId: libraryId, userId: self.userId)
             .subscribe(on: self.scheduler)

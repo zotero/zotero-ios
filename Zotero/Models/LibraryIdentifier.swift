@@ -15,6 +15,15 @@ enum LibraryIdentifier: Equatable, Hashable {
     case group(Int)
 }
 
+extension LibraryIdentifier {
+    var isGroupLibrary: Bool {
+        switch self {
+        case .custom: return false
+        case .group: return true
+        }
+    }
+}
+
 extension LibraryIdentifier: Codable {
     enum CodingKeys: CodingKey {
         case custom
