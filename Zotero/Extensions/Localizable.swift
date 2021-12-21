@@ -495,7 +495,7 @@ internal enum L10n {
       internal static let translationFailed = L10n.tr("Localizable", "errors.shareext.translation_failed")
       /// An unknown error occurred.
       internal static let unknown = L10n.tr("Localizable", "errors.shareext.unknown")
-      /// Error uploading attachment to your WebDAV server. The item was saved to your library.
+      /// Error uploading attachment to WebDAV server.
       internal static let webdavError = L10n.tr("Localizable", "errors.shareext.webdav_error")
       /// WebDAV verification error
       internal static let webdavNotVerified = L10n.tr("Localizable", "errors.shareext.webdav_not_verified")
