@@ -23,6 +23,9 @@ struct MarkAttachmentUploadedDbRequest: DbRequest {
                                        .filter(.key(self.key, in: self.libraryId)).first else { return }
         attachment.attachmentNeedsSync = false
         attachment.changeType = .sync
+        if let md5 = attachment.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value {
+            attachment.backendMd5 = md5
+        }
         if let version = self.version {
             attachment.version = version
         }
