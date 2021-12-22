@@ -349,9 +349,9 @@ final class ShareViewController: UIViewController {
             case .quotaLimit, .webDavFailure, .apiFailure:
                 self.navigationItem.leftBarButtonItem = nil
                 self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(ShareViewController.cancel))
+                return
             default: break
             }
-            return
         }
 
         self.navigationItem.leftBarButtonItem?.isEnabled = state.isCancellable

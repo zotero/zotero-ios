@@ -461,7 +461,7 @@ internal enum L10n {
       internal static let cantLoadData = L10n.tr("Localizable", "errors.shareext.cant_load_data")
       /// An error occurred. Please open the Zotero app, sync, and try again.
       internal static let cantLoadSchema = L10n.tr("Localizable", "errors.shareext.cant_load_schema")
-      /// Could not download file.
+      /// Could not download file
       internal static let downloadFailed = L10n.tr("Localizable", "errors.shareext.download_failed")
       /// You can still save this page as a webpage item.
       internal static let failedAdditional = L10n.tr("Localizable", "errors.shareext.failed_additional")
