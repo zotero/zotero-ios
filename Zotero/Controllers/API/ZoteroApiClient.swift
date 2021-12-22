@@ -79,7 +79,7 @@ final class ZoteroApiClient: ApiClient {
     /// Creates and starts a data request, takes care of retrying request in case of failure.
     func send(request: ApiRequest, queue: DispatchQueue) -> Single<(Data?, HTTPURLResponse)> {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
-        return self.createRequest(for: request.endpoint) { $0.request(convertible).validate(acceptableStatusCodes: request.acceptableStatusCodes) }
+        return self.createRequestSingle(for: request.endpoint) { $0.request(convertible).validate(acceptableStatusCodes: request.acceptableStatusCodes) }
                    .flatMap({ (dataRequest: DataRequest) -> Single<(Data?, HTTPURLResponse)> in
                        return dataRequest.rx.loggedResponseDataWithResponseError(queue: queue, encoding: request.encoding, logParams: request.logParams)
                                          .retryIfNeeded()
@@ -120,7 +120,7 @@ final class ZoteroApiClient: ApiClient {
     /// Creates download request. Request needs to be started manually.
     func download(request: ApiDownloadRequest, queue: DispatchQueue) -> Observable<DownloadRequest> {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
-        return self.createRequest(for: request.endpoint) { manager -> DownloadRequest in
+        return self.createRequestSingle(for: request.endpoint) { manager -> DownloadRequest in
                        return manager.download(convertible) { _, _ in (request.downloadUrl, [.createIntermediateDirectories, .removePreviousFile]) }
                                      .validate(statusCode: request.acceptableStatusCodes)
                    }
@@ -152,7 +152,7 @@ final class ZoteroApiClient: ApiClient {
     }
 
     private func createUploadRequest(request: ApiRequest, queue: DispatchQueue, create: @escaping (Alamofire.Session) -> UploadRequest) -> Single<(Data?, HTTPURLResponse)> {
-        return self.createRequest(for: request.endpoint) { create($0).validate(acceptableStatusCodes: request.acceptableStatusCodes) }
+        return self.createRequestSingle(for: request.endpoint) { create($0).validate(acceptableStatusCodes: request.acceptableStatusCodes) }
                    .flatMap({ uploadRequest -> Single<(Data?, HTTPURLResponse)> in
                        return uploadRequest.rx.loggedResponseDataWithResponseError(queue: queue, encoding: request.encoding, logParams: request.logParams)
                                            .retryIfNeeded()
@@ -166,15 +166,20 @@ final class ZoteroApiClient: ApiClient {
                    })
     }
 
-    private func createRequest<R: Request>(for endpoint: ApiEndpoint, create: @escaping (Alamofire.Session) -> R) -> Single<R> {
+    private func createRequestSingle<R: Request>(for endpoint: ApiEndpoint, create: @escaping (Alamofire.Session) -> R) -> Single<R> {
         return Single.create { subscriber in
-            var alamoRequest = create(self.manager)
-            if let credentials = self.tokens[self.endpointType(for: endpoint)]?.credentials {
-                alamoRequest = alamoRequest.authenticate(username: credentials.username, password: credentials.password)
-            }
+            let alamoRequest = self.createRequest(for: endpoint, create: create)
             subscriber(.success(alamoRequest))
             return Disposables.create()
         }
+    }
+
+    private func createRequest<R: Request>(for endpoint: ApiEndpoint, create: @escaping (Alamofire.Session) -> R) -> R {
+        var alamoRequest = create(self.manager)
+        if let credentials = self.tokens[self.endpointType(for: endpoint)]?.credentials {
+            alamoRequest = alamoRequest.authenticate(username: credentials.username, password: credentials.password)
+        }
+        return alamoRequest
     }
 
     private func endpointType(for endpoint: ApiEndpoint) -> ApiEndpointType {
@@ -196,7 +201,7 @@ final class ZoteroApiClient: ApiClient {
 extension ZoteroApiClient: ApiRequestCreator {
     func dataRequest(for request: ApiRequest) -> DataRequest {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
-        return self.manager.request(convertible).validate(acceptableStatusCodes: request.acceptableStatusCodes)
+        return self.createRequest(for: request.endpoint) { $0.request(convertible).validate(acceptableStatusCodes: request.acceptableStatusCodes) }
     }
 }
 

@@ -261,11 +261,6 @@ final class WebDavControllerImpl: WebDavController {
         }
     }
 
-    private func delete(url: URL, queue: DispatchQueue) -> Observable<()> {
-        let request = WebDavDeleteRequest(url: url)
-        return self.apiClient.send(request: request, queue: queue).flatMap({ _ in return Single.just(()) }).asObservable()
-    }
-
     private func update(mtime: Int, key: String) -> Single<()> {
         return Single.create { subscriber -> Disposable in
             do {
