@@ -228,7 +228,7 @@ extension BackgroundUploadObserver: URLSessionTaskDelegate {
 
         if error != nil || task.error != nil {
             let someError = error ?? task.error
-            let responseError = AFResponseError(error: .createURLRequestFailed(error: someError!), headers: [:], response: "Upload failed")
+            let responseError = AFResponseError(url: task.originalRequest?.url, error: .createURLRequestFailed(error: someError!), headers: [:], response: "Upload failed")
             ApiLogger.logFailedresponse(error: responseError, statusCode: 0, startData: logStartData)
             return true
         }
@@ -243,7 +243,7 @@ extension BackgroundUploadObserver: URLSessionTaskDelegate {
             return false
         }
 
-        let responseError = AFResponseError(error: .responseValidationFailed(reason: .unacceptableStatusCode(code: response.statusCode)), headers: response.allHeaderFields, response: "Upload failed")
+        let responseError = AFResponseError(url: task.originalRequest?.url, error: .responseValidationFailed(reason: .unacceptableStatusCode(code: response.statusCode)), headers: response.allHeaderFields, response: "Upload failed")
         ApiLogger.logFailedresponse(error: responseError, statusCode: response.statusCode, startData: logStartData)
         return true
     }
