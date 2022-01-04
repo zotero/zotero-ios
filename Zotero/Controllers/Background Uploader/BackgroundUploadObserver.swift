@@ -27,6 +27,8 @@ final class BackgroundUploadObserver: NSObject {
     private var sessions: [String: URLSession]
     private var finishedTasks: [String: [FinishedTask]]
     private var completionHandlers: [String: () -> Void]
+    private var shareExtensionSessionIdDisposeBag: DisposeBag
+    private var testDisposeBag: DisposeBag
 
     init(context: BackgroundUploaderContext, processor: BackgroundUploadProcessor, backgroundTaskController: BackgroundTaskController) {
         self.backgroundTaskController = backgroundTaskController
@@ -36,25 +38,52 @@ final class BackgroundUploadObserver: NSObject {
         self.completionHandlers = [:]
         self.context = BackgroundUploaderContext()
         self.disposeBag = DisposeBag()
+        self.shareExtensionSessionIdDisposeBag = DisposeBag()
+        self.testDisposeBag = DisposeBag()
 
         super.init()
     }
 
+    func startObservingInShareExtension(session: URLSession) {
+        guard let sessionId = session.configuration.identifier else { return }
+        inMainThread { [weak self] in
+            self?.sessions[sessionId] = session
+        }
+    }
+
+    func stopObservingActiveSessionsInShareExtension() {
+        guard let (sessionId, _) = self.sessions.first else { return }
+        self.sessions = [:]
+        self.context.deleteShareExtensionSession(with: sessionId)
+    }
+
+    func stopObservingShareExtensionChanges() {
+        self.shareExtensionSessionIdDisposeBag = DisposeBag()
+    }
+
     func updateSessions() {
-        let (timedOutUploads, remainingSessionIds) = self.invalidateTimedOut(uploads: self.context.uploadsWithTaskIds, andSessions: Set(self.context.sessionIds))
+        inMainThread { [weak self] in
+            guard let `self` = self else { return }
+            self._updateSessions(uploadsWithTaskIds: self.context.uploadsWithTaskIds, sessionIds: Set(self.context.sessionIds), shareExtensionSessionIds: Set(self.context.shareExtensionSessionIds))
+        }
+    }
+
+    private func _updateSessions(uploadsWithTaskIds: [Int: BackgroundUpload], sessionIds: Set<String>, shareExtensionSessionIds: Set<String>) {
+        let (timedOutUploads, remainingSessionIds, remainingShareExtensionSessionIds) = self.invalidateTimedOut(uploads: uploadsWithTaskIds, sessions: sessionIds, andShareExtensionSessions: shareExtensionSessionIds)
 
         let remainingUploads = self.context.uploadsWithTaskIds
         DDLogInfo("BackgroundUploadObserver: active sessions (\(remainingSessionIds.count)) \(remainingSessionIds)")
         DDLogInfo("BackgroundUploadObserver: active uploads (\(remainingUploads.count)) \(remainingUploads.values.map({ ($0.key, $0.sessionId) }))")
 
         self.startObservingNew(sessionIdentifiers: remainingSessionIds)
+        self.waitForShareExtensionSessionIdChange(from: remainingShareExtensionSessionIds)
 
         // Remove temporary upload files
         let deleteActions =  timedOutUploads.map({ self.processor.finish(upload: $0, successful: false) })
         Observable.concat(deleteActions).subscribe().disposed(by: self.disposeBag)
     }
 
-    private func invalidateTimedOut(uploads: [Int: BackgroundUpload], andSessions activeSessionIds: Set<String>) -> ([BackgroundUpload], Set<String>) {
+    private func invalidateTimedOut(uploads: [Int: BackgroundUpload], sessions activeSessionIds: Set<String>, andShareExtensionSessions shareExtensionSessions: Set<String>) -> ([BackgroundUpload], Set<String>, Set<String>) {
         var remainingSessionIds: Set<String> = []
         var uploadsToRemove: [(Int, BackgroundUpload)] = []
 
@@ -73,10 +102,14 @@ final class BackgroundUploadObserver: NSObject {
             }
         }
 
+        let remainingShareExtensionSesssions = remainingSessionIds.intersection(shareExtensionSessions)
+
         // Remove uploads which timed out
         self.context.deleteUploads(with: uploadsToRemove.map({ $0.0 }))
         // Save remaining active sessions
         self.context.saveSessions(with: Array(remainingSessionIds))
+        // Apply to share extension sessions as well
+        self.context.saveShareExtensionSessions(with: Array(remainingShareExtensionSesssions))
 
         // Remove inactive sessions from memory so that they are not observed any more and cancel their tasks.
         let invalidatedSessionIds = activeSessionIds.subtracting(remainingSessionIds)
@@ -94,7 +127,7 @@ final class BackgroundUploadObserver: NSObject {
             DDLogInfo("BackgroundUploadObserver: invalidated sessions \(invalidatedSessionIds)")
         }
 
-        return (uploadsToRemove.map({ $0.1 }), remainingSessionIds)
+        return (uploadsToRemove.map({ $0.1 }), remainingSessionIds.subtracting(remainingShareExtensionSesssions), remainingShareExtensionSesssions)
     }
 
     private func startObservingNew(sessionIdentifiers identifiers: Set<String>) {
@@ -106,6 +139,33 @@ final class BackgroundUploadObserver: NSObject {
             let session = URLSessionCreator.createSession(for: identifier, delegate: self)
             self.sessions[identifier] = session
         }
+    }
+
+    private func waitForShareExtensionSessionIdChange(from shareExtensionSessionIds: Set<String>) {
+        // Reset dispose bag to cancel previous timer if it's running/
+        self.shareExtensionSessionIdDisposeBag = DisposeBag()
+        // If there are no session ids observed by share extension we don't need to wait for any changes.
+        guard !shareExtensionSessionIds.isEmpty else { return }
+        // Wait for 5 seconds and check whether some share extension finished observing its session.
+        Single<Int>.timer(.seconds(5), scheduler: MainScheduler.instance)
+                   .subscribe(onSuccess: { [weak self] _ in
+                       self?.updateSessionsIfShareExtensionSessionIdsChanged(from: shareExtensionSessionIds)
+                   })
+                   .disposed(by: self.shareExtensionSessionIdDisposeBag)
+    }
+
+    private func updateSessionsIfShareExtensionSessionIdsChanged(from oldShareExtensionSessionIds: Set<String>) {
+        let shareExtensionSessionIds = Set(self.context.shareExtensionSessionIds)
+
+        // Check whether some session ids are not observed by its share extension anymore
+        let finishedShareExtensionSessionIds = oldShareExtensionSessionIds.subtracting(shareExtensionSessionIds)
+
+        guard !finishedShareExtensionSessionIds.isEmpty else {
+            self.waitForShareExtensionSessionIdChange(from: shareExtensionSessionIds)
+            return
+        }
+
+        self._updateSessions(uploadsWithTaskIds: self.context.uploadsWithTaskIds, sessionIds: Set(self.context.sessionIds), shareExtensionSessionIds: shareExtensionSessionIds)
     }
 
     private func timeout(for size: UInt64) -> TimeInterval {
@@ -144,11 +204,11 @@ final class BackgroundUploadObserver: NSObject {
     private func process(finishedTasks tasks: [FinishedTask], for sessionId: String) {
         let taskIds = tasks.map({ $0.taskId })
         let actions = tasks.map({ self.processor.finish(upload: $0.upload, successful: !$0.didFail) })
-        var disposeBag = DisposeBag()
+        self.testDisposeBag = DisposeBag()
 
         let backgroundTask = self.backgroundTaskController.startTask(expirationHandler: { [weak self] in
             // Cancel upload finishing actions.
-            disposeBag = DisposeBag()
+            self?.testDisposeBag = DisposeBag()
             // Remove upload from context so that it's processed by main app
             self?.context.deleteUploads(with: taskIds)
             // Call completion handler from AppDelegate
@@ -179,7 +239,7 @@ final class BackgroundUploadObserver: NSObject {
                       DDLogError("BackgroundUploadObserver: finished tasks for \(sessionId)")
                       finishAction()
                   })
-                  .disposed(by: disposeBag)
+                  .disposed(by: self.testDisposeBag)
     }
 }
 
@@ -198,6 +258,7 @@ extension BackgroundUploadObserver: URLSessionDelegate {
             self.sessions[sessionId] = nil
         }
         self.context.deleteSession(with: sessionId)
+        self.context.deleteShareExtensionSession(with: sessionId)
     }
 }
 
@@ -216,6 +277,11 @@ extension BackgroundUploadObserver: URLSessionTaskDelegate {
         } else {
             self.finishedTasks[sessionId] = [finishedTask]
         }
+
+        #if !MAINAPP
+        // This method is not called from share extension and since there is always just one task, we can call it here manually
+        self.urlSessionDidFinishEvents(forBackgroundURLSession: session)
+        #endif
     }
 
     /// Logs response of `URLSessionTask` and returns whether request was successfull or not.

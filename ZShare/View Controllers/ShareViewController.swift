@@ -682,6 +682,9 @@ final class ShareViewController: UIViewController {
         let requestProvider = BackgroundUploaderRequestProvider(fileStorage: fileStorage)
         let backgroundUploadContext = BackgroundUploaderContext()
         let backgroundUploader = BackgroundUploader(context: backgroundUploadContext, requestProvider: requestProvider, schemaVersion: schemaController.version)
+        let backgroundProcessor = BackgroundUploadProcessor(apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, webDavController: webDavController)
+        let backgroundTaskController = BackgroundTaskController()
+        let backgroundUploadObserver = BackgroundUploadObserver(context: backgroundUploadContext, processor: backgroundProcessor, backgroundTaskController: backgroundTaskController)
         let syncController = SyncController(userId: userId,
                                             apiClient: apiClient,
                                             dbStorage: dbStorage,
@@ -696,6 +699,7 @@ final class ShareViewController: UIViewController {
         return ExtensionStore(webView: self.webView,
                               apiClient: apiClient,
                               backgroundUploader: backgroundUploader,
+                              backgroundUploadObserver: backgroundUploadObserver,
                               dbStorage: dbStorage,
                               schemaController: schemaController,
                               webDavController: webDavController,

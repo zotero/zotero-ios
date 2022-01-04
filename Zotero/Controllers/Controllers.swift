@@ -304,6 +304,7 @@ final class UserControllers {
         self.webSocketController.disconnect(apiKey: apiKey)
         self.disposeBag = DisposeBag()
         self.itemLocaleController.storeLocale()
+        self.backgroundUploadObserver.stopObservingShareExtensionChanges()
     }
 
     fileprivate func logout() {

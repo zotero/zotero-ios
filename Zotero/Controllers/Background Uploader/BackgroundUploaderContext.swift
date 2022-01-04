@@ -12,6 +12,7 @@ final class BackgroundUploaderContext {
     /// Key for uploads that are not yet uploaded.
     private static let activeKey = "uploads"
     private static let sessionIdsKey = "activeUrlSessionIds"
+    private static let extensionSessionIdsKey = "shareExtensionObservedUrlSessionIds"
 
     private let userDefault = UserDefaults.zotero
 
@@ -33,14 +34,34 @@ final class BackgroundUploaderContext {
 
     func deleteSession(with identifier: String) {
         var ids = self.sessionIds
-        if let index = ids.firstIndex(of: identifier) {
-            ids.remove(at: index)
-        }
+        guard let index = ids.firstIndex(of: identifier) else { return }
+        ids.remove(at: index)
         self.userDefault.set(object: ids, forKey: BackgroundUploaderContext.sessionIdsKey)
     }
 
     func deleteAllSessionIds() {
         self.userDefault.removeObject(forKey: BackgroundUploaderContext.sessionIdsKey)
+    }
+
+    var shareExtensionSessionIds: [String] {
+        return self.userDefault.object([String].self, with: BackgroundUploaderContext.extensionSessionIdsKey) ?? []
+    }
+
+    func saveShareExtensionSession(with identifier: String) {
+        var ids = self.shareExtensionSessionIds
+        ids.append(identifier)
+        self.userDefault.set(object: ids, forKey: BackgroundUploaderContext.extensionSessionIdsKey)
+    }
+
+    func saveShareExtensionSessions(with identifiers: [String]) {
+        self.userDefault.set(object: identifiers, forKey: BackgroundUploaderContext.extensionSessionIdsKey)
+    }
+
+    func deleteShareExtensionSession(with identifier: String) {
+        var ids = self.shareExtensionSessionIds
+        guard let index = ids.firstIndex(of: identifier) else { return }
+        ids.remove(at: index)
+        self.userDefault.set(object: ids, forKey: BackgroundUploaderContext.extensionSessionIdsKey)
     }
 
     // MARK: - Uploads

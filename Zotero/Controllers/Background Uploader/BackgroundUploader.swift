@@ -30,26 +30,27 @@ final class BackgroundUploader {
 
     // MARK: - Actions
 
-    func start(upload: BackgroundUpload, filename: String, mimeType: String, parameters: [String: String], headers: [String: String]) -> Single<()> {
+    func start(upload: BackgroundUpload, filename: String, mimeType: String, parameters: [String: String], headers: [String: String], delegate: URLSessionTaskDelegate?) -> Single<URLSession> {
         return self.requestProvider.createRequest(for: upload, filename: filename, mimeType: mimeType, parameters: parameters, headers: headers, schemaVersion: self.schemaVersion)
                                    .flatMap({ request, url, size -> Single<(URL, UInt64, URLRequest, URLSession)> in
-                                       return self.createSession().flatMap({ Single.just((url, size, request, $0)) })
+                                       return self.createSession(delegate: delegate).flatMap({ Single.just((url, size, request, $0)) })
                                    })
                                    .flatMap({ url, size, request, session -> Single<(BackgroundUpload, URLRequest, URLSession)> in
                                        let newUpload = upload.copy(withFileUrl: url, size: size, andSessionId: session.configuration.identifier!)
                                        return Single.just((newUpload, request, session))
                                    })
-                                   .flatMap({ upload, request, session -> Single<()> in
+                                   .flatMap({ upload, request, session -> Single<URLSession> in
                                        self.start(upload: upload, request: request, session: session)
-                                       return Single.just(())
+                                       return Single.just(session)
                                    })
     }
 
-    private func createSession() -> Single<URLSession> {
+    private func createSession(delegate: URLSessionTaskDelegate?) -> Single<URLSession> {
         return Single.create { [weak self] subscriber in
             let sessionId = UUID().uuidString
-            let session = URLSessionCreator.createSession(for: sessionId, delegate: nil)
+            let session = URLSessionCreator.createSession(for: sessionId, delegate: delegate)
             self?.context.saveSession(with: sessionId)
+            self?.context.saveShareExtensionSession(with: sessionId)
             subscriber(.success(session))
             return Disposables.create()
         }
@@ -60,7 +61,6 @@ final class BackgroundUploader {
 
         let task = session.uploadTask(with: request, fromFile: upload.fileUrl)
         task.countOfBytesClientExpectsToSend = Int64(upload.size)
-        task.earliestBeginDate = Date(timeIntervalSinceNow: 5)
         self.context.save(upload: upload, taskId: task.taskIdentifier)
 
         task.resume()

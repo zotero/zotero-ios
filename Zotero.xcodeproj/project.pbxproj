@@ -877,6 +877,8 @@
 		B3E44640248FBD4A007FE8AB /* RRelation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E4463E248FBD2E007FE8AB /* RRelation.swift */; };
 		B3E44642248FBE9B007FE8AB /* LinkType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E44641248FBE9B007FE8AB /* LinkType.swift */; };
 		B3E44643248FBF12007FE8AB /* LinkType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E44641248FBE9B007FE8AB /* LinkType.swift */; };
+		B3E7C150278348DC00076131 /* BackgroundUploadObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32EBFB9276A89190003897E /* BackgroundUploadObserver.swift */; };
+		B3E7C151278348F200076131 /* BackgroundUploadProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32EBFB6276A89190003897E /* BackgroundUploadProcessor.swift */; };
 		B3E8FE022714292E00F51458 /* StorageSettingsActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E8FDF92714292E00F51458 /* StorageSettingsActionHandler.swift */; };
 		B3E8FE032714292E00F51458 /* StorageSettingsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E8FDFB2714292E00F51458 /* StorageSettingsState.swift */; };
 		B3E8FE042714292E00F51458 /* StorageSettingsAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E8FDFC2714292E00F51458 /* StorageSettingsAction.swift */; };
@@ -4639,6 +4641,7 @@
 				B36E4F682751242C001FB99D /* WebDavCreateZoteroDirectoryRequest.swift in Sources */,
 				B30566ED23FC082F003304F2 /* SchemaRequest.swift in Sources */,
 				B30566DA23FC07E0003304F2 /* Library.swift in Sources */,
+				B3E7C151278348F200076131 /* BackgroundUploadProcessor.swift in Sources */,
 				B371494F25D585EF00D6391E /* MarkObjectsAsChangedByUser.swift in Sources */,
 				B3593F192668E74800FA4BB2 /* Style.swift in Sources */,
 				B3CF8830266DFFAF009CFC20 /* ReadStylesDbRequest.swift in Sources */,
@@ -4650,6 +4653,7 @@
 				B3AB38A5238EC02D008A1ABB /* ShareViewController.swift in Sources */,
 				B305670623FC08AB003304F2 /* ReadUserChangedObjectsDbRequest.swift in Sources */,
 				B36459E52644121300A0C2C0 /* UIColor+Custom.swift in Sources */,
+				B3E7C150278348DC00076131 /* BackgroundUploadObserver.swift in Sources */,
 				B305672123FC08EF003304F2 /* RealmDbStorage.swift in Sources */,
 				B30566E223FC0810003304F2 /* DeletionsRequest.swift in Sources */,
 				B3100922272C098D003FC743 /* ReadWebDavDeletionsDbRequest.swift in Sources */,

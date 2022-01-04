@@ -260,6 +260,7 @@ final class ExtensionStore {
     private let dateParser: DateParser
     private let translationHandler: TranslationWebViewHandler
     private let backgroundUploader: BackgroundUploader
+    private let backgroundUploadObserver: BackgroundUploadObserver
     private let backgroundQueue: DispatchQueue
     private let backgroundScheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
@@ -270,13 +271,14 @@ final class ExtensionStore {
         let mtime: Int
     }
 
-    init(webView: WKWebView, apiClient: ApiClient, backgroundUploader: BackgroundUploader, dbStorage: DbStorage, schemaController: SchemaController, webDavController: WebDavController,
-         dateParser: DateParser, fileStorage: FileStorage, syncController: SyncController, translatorsController: TranslatorsAndStylesController) {
+    init(webView: WKWebView, apiClient: ApiClient, backgroundUploader: BackgroundUploader, backgroundUploadObserver: BackgroundUploadObserver, dbStorage: DbStorage, schemaController: SchemaController,
+         webDavController: WebDavController, dateParser: DateParser, fileStorage: FileStorage, syncController: SyncController, translatorsController: TranslatorsAndStylesController) {
         let queue = DispatchQueue(label: "org.zotero.ZShare.BackgroundQueue", qos: .userInteractive)
         self.webView = webView
         self.syncController = syncController
         self.apiClient = apiClient
         self.backgroundUploader = backgroundUploader
+        self.backgroundUploadObserver = backgroundUploadObserver
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
@@ -290,6 +292,10 @@ final class ExtensionStore {
 
         self.setupSyncObserving()
         self.setupWebHandlerObserving()
+    }
+
+    deinit {
+        self.backgroundUploadObserver.stopObservingActiveSessionsInShareExtension()
     }
 
     // MARK: - Actions
@@ -891,7 +897,12 @@ final class ExtensionStore {
                        // sessionId and size are set by background uploader.
                        let upload = BackgroundUpload(type: .zotero(uploadKey: response.uploadKey), key: self.state.attachmentKey, libraryId: data.libraryId, userId: data.userId,
                                                      remoteUrl: response.url, fileUrl: data.file.createUrl(), md5: md5, date: Date())
-                       return self.backgroundUploader.start(upload: upload, filename: data.filename, mimeType: ExtensionStore.defaultMimetype, parameters: response.params, headers: ["If-None-Match": "*"])
+                       return self.backgroundUploader.start(upload: upload, filename: data.filename, mimeType: ExtensionStore.defaultMimetype, parameters: response.params,
+                                                            headers: ["If-None-Match": "*"], delegate: self.backgroundUploadObserver)
+                                  .flatMap({ session in
+                                      self.backgroundUploadObserver.startObservingInShareExtension(session: session)
+                                      return Single.just(())
+                                  })
                    }
                }
                .observe(on: MainScheduler.instance)
@@ -941,7 +952,12 @@ final class ExtensionStore {
 
                 let upload = BackgroundUpload(type: .webdav(mtime: submissionData.mtime), key: self.state.attachmentKey, libraryId: data.libraryId, userId: data.userId,
                                               remoteUrl: url, fileUrl: file.createUrl(), md5: submissionData.md5, date: Date())
-                return self.backgroundUploader.start(upload: upload, filename: (data.attachment.key + ".zip"), mimeType: ExtensionStore.zipMimetype, parameters: [:], headers: [:])
+                return self.backgroundUploader.start(upload: upload, filename: (data.attachment.key + ".zip"), mimeType: ExtensionStore.zipMimetype, parameters: [:], headers: [:],
+                                                     delegate: self.backgroundUploadObserver)
+                           .flatMap({ session in
+                               self.backgroundUploadObserver.startObservingInShareExtension(session: session)
+                               return Single.just(())
+                           })
             }
         }
         .observe(on: MainScheduler.instance)

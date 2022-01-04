@@ -8,7 +8,6 @@
 
 import UIKit
 
-#if MAINAPP
 struct BackgroundTask {
     fileprivate let taskId: UIBackgroundTaskIdentifier
     fileprivate let expirationHandler: (() -> Void)?
@@ -26,11 +25,26 @@ final class BackgroundTaskController {
     /// Starts background task in the main app. We can limit this to the main app, because the share extension is always closed after the upload
     /// is started, so the upload will be finished in the main app.
     func startTask(expirationHandler: (() -> Void)?) -> BackgroundTask {
-        let taskId = UIApplication.shared.beginBackgroundTask(withName: "org.zotero.finishUpload.\(UUID().uuidString)") { [weak self] in
+        let taskId: UIBackgroundTaskIdentifier
+
+        #if MAINAPP
+        taskId = UIApplication.shared.beginBackgroundTask(withName: "org.zotero.finishUpload.\(UUID().uuidString)") { [weak self] in
             self?.queue.sync {
                 self?.expireTasks()
             }
         }
+        #else
+        taskId = UIBackgroundTaskIdentifier(rawValue: .random(in: 0..<Int.max))
+
+        let processInfo = ProcessInfo()
+        processInfo.performExpiringActivity(withReason: "org.zotero.finishUpload.\(UUID().uuidString)") { [weak self] expired in
+            guard expired else { return }
+
+            self?.queue.sync {
+                self?.expireTasks()
+            }
+        }
+        #endif
 
         let task = BackgroundTask(taskId: taskId, expirationHandler: expirationHandler)
         self.queue.async(flags: .barrier) { [weak self] in
@@ -44,7 +58,9 @@ final class BackgroundTaskController {
         self.queue.async(flags: .barrier) { [weak self] in
             self?.tasks[task.taskId] = nil
         }
+        #if MAINAPP
         UIApplication.shared.endBackgroundTask(task.taskId)
+        #endif
     }
 
     private func expireTasks() {
@@ -63,9 +79,10 @@ final class BackgroundTaskController {
         }
 
         // End all tasks
+        #if MAINAPP
         for task in tasks.values {
             UIApplication.shared.endBackgroundTask(task.taskId)
         }
+        #endif
     }
 }
-#endif
