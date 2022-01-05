@@ -294,10 +294,6 @@ final class ExtensionStore {
         self.setupWebHandlerObserving()
     }
 
-    deinit {
-        self.backgroundUploadObserver.stopObservingActiveSessionsInShareExtension()
-    }
-
     // MARK: - Actions
 
     func start(with extensionItem: NSExtensionItem) {

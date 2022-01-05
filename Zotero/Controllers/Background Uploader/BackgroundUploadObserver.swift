@@ -28,7 +28,7 @@ final class BackgroundUploadObserver: NSObject {
     private var finishedTasks: [String: [FinishedTask]]
     private var completionHandlers: [String: () -> Void]
     private var shareExtensionSessionIdDisposeBag: DisposeBag
-    private var testDisposeBag: DisposeBag
+    private var backgroundProcessingDisposeBag: DisposeBag
 
     init(context: BackgroundUploaderContext, processor: BackgroundUploadProcessor, backgroundTaskController: BackgroundTaskController) {
         self.backgroundTaskController = backgroundTaskController
@@ -39,10 +39,16 @@ final class BackgroundUploadObserver: NSObject {
         self.context = BackgroundUploaderContext()
         self.disposeBag = DisposeBag()
         self.shareExtensionSessionIdDisposeBag = DisposeBag()
-        self.testDisposeBag = DisposeBag()
+        self.backgroundProcessingDisposeBag = DisposeBag()
 
         super.init()
     }
+
+    #if !MAINAPP
+    deinit {
+        self.stopObservingActiveSessionsInShareExtension()
+    }
+    #endif
 
     func startObservingInShareExtension(session: URLSession) {
         guard let sessionId = session.configuration.identifier else { return }
@@ -79,8 +85,10 @@ final class BackgroundUploadObserver: NSObject {
         self.waitForShareExtensionSessionIdChange(from: remainingShareExtensionSessionIds)
 
         // Remove temporary upload files
-        let deleteActions =  timedOutUploads.map({ self.processor.finish(upload: $0, successful: false) })
-        Observable.concat(deleteActions).subscribe().disposed(by: self.disposeBag)
+        if !timedOutUploads.isEmpty {
+            let deleteActions =  timedOutUploads.map({ self.processor.finish(upload: $0, successful: false) })
+            Observable.concat(deleteActions).subscribe().disposed(by: self.disposeBag)
+        }
     }
 
     private func invalidateTimedOut(uploads: [Int: BackgroundUpload], sessions activeSessionIds: Set<String>, andShareExtensionSessions shareExtensionSessions: Set<String>) -> ([BackgroundUpload], Set<String>, Set<String>) {
@@ -203,24 +211,8 @@ final class BackgroundUploadObserver: NSObject {
 
     private func process(finishedTasks tasks: [FinishedTask], for sessionId: String) {
         let taskIds = tasks.map({ $0.taskId })
-        let actions = tasks.map({ self.processor.finish(upload: $0.upload, successful: !$0.didFail) })
-        self.testDisposeBag = DisposeBag()
 
-        let backgroundTask = self.backgroundTaskController.startTask(expirationHandler: { [weak self] in
-            // Cancel upload finishing actions.
-            self?.testDisposeBag = DisposeBag()
-            // Remove upload from context so that it's processed by main app
-            self?.context.deleteUploads(with: taskIds)
-            // Call completion handler from AppDelegate
-            inMainThread {
-                self?.completionHandlers[sessionId]?()
-                self?.completionHandlers[sessionId] = nil
-            }
-        })
-
-        DDLogError("BackgroundUploadObserver: process tasks for \(sessionId)")
-
-        let finishAction: () -> Void = { [weak self] in
+        let finishAction: (BackgroundTask) -> Void = { [weak self] backgroundTask in
             // Detele processed uploads from context
             self?.context.deleteUploads(with: taskIds)
             // Call completion handler from AppDelegate
@@ -230,16 +222,34 @@ final class BackgroundUploadObserver: NSObject {
             self?.backgroundTaskController.end(task: backgroundTask)
         }
 
-        Observable.concat(actions)
-                  .observe(on: MainScheduler.instance)
-                  .subscribe(onError: { error in
-                      DDLogError("BackgroundUploadObserver: couldn't finish tasks for \(sessionId) - \(error)")
-                      finishAction()
-                  }, onCompleted: {
-                      DDLogError("BackgroundUploadObserver: finished tasks for \(sessionId)")
-                      finishAction()
-                  })
-                  .disposed(by: self.testDisposeBag)
+        self.backgroundTaskController.start(task: { task in
+            let actions = tasks.map({ self.processor.finish(upload: $0.upload, successful: !$0.didFail) })
+            self.backgroundProcessingDisposeBag = DisposeBag()
+
+            DDLogError("BackgroundUploadObserver: process tasks for \(sessionId)")
+
+            Observable.concat(actions)
+                      .observe(on: MainScheduler.instance)
+                      .subscribe(onError: { error in
+                          DDLogError("BackgroundUploadObserver: couldn't finish tasks for \(sessionId) - \(error)")
+                          finishAction(task)
+                      }, onCompleted: {
+                          DDLogInfo("BackgroundUploadObserver: finished tasks for \(sessionId)")
+                          finishAction(task)
+                      })
+                      .disposed(by: self.backgroundProcessingDisposeBag)
+        }, expirationHandler: {
+            DDLogInfo("BackgroundUploadObserver: tasks expired for \(sessionId)")
+            // Cancel upload finishing actions.
+            self.backgroundProcessingDisposeBag = DisposeBag()
+            // Remove upload from context so that it's processed by main app
+            self.context.deleteUploads(with: taskIds)
+            // Call completion handler from AppDelegate
+            inMainThread {
+                self.completionHandlers[sessionId]?()
+                self.completionHandlers[sessionId] = nil
+            }
+        })
     }
 }
 

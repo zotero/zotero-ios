@@ -24,33 +24,39 @@ final class BackgroundTaskController {
 
     /// Starts background task in the main app. We can limit this to the main app, because the share extension is always closed after the upload
     /// is started, so the upload will be finished in the main app.
-    func startTask(expirationHandler: (() -> Void)?) -> BackgroundTask {
-        let taskId: UIBackgroundTaskIdentifier
+    func start(task taskAction: @escaping (BackgroundTask) -> Void, expirationHandler: (() -> Void)?) {
+        let task: BackgroundTask
 
         #if MAINAPP
-        taskId = UIApplication.shared.beginBackgroundTask(withName: "org.zotero.finishUpload.\(UUID().uuidString)") { [weak self] in
+        let taskId = UIApplication.shared.beginBackgroundTask(withName: "org.zotero.finishUpload.\(UUID().uuidString)") { [weak self] in
             self?.queue.sync {
                 self?.expireTasks()
             }
         }
+        task = BackgroundTask(taskId: taskId, expirationHandler: expirationHandler)
         #else
-        taskId = UIBackgroundTaskIdentifier(rawValue: .random(in: 0..<Int.max))
+        let taskId = UIBackgroundTaskIdentifier(rawValue: .random(in: 0..<Int.max))
+        task = BackgroundTask(taskId: taskId, expirationHandler: expirationHandler)
 
         let processInfo = ProcessInfo()
         processInfo.performExpiringActivity(withReason: "org.zotero.finishUpload.\(UUID().uuidString)") { [weak self] expired in
-            guard expired else { return }
-
-            self?.queue.sync {
-                self?.expireTasks()
+            if expired {
+                self?.queue.sync {
+                    self?.expireTasks()
+                }
+            } else {
+                taskAction(task)
             }
         }
         #endif
 
-        let task = BackgroundTask(taskId: taskId, expirationHandler: expirationHandler)
         self.queue.async(flags: .barrier) { [weak self] in
             self?.tasks[taskId] = task
         }
-        return task
+
+        #if MAINAPP
+        taskAction(task)
+        #endif
     }
 
     /// Ends the background task in the main app.
