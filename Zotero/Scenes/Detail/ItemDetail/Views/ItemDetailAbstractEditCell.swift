@@ -53,7 +53,8 @@ final class ItemDetailAbstractEditCell: RxTableViewCell {
         paragraphStyle.maximumLineHeight = ItemDetailLayout.lineHeight
 
         let attributes: [NSAttributedString.Key: Any] = [.paragraphStyle: paragraphStyle,
-                                                         .font: UIFont.preferredFont(forTextStyle: .body)]
+                                                         .font: UIFont.preferredFont(forTextStyle: .body),
+                                                         .foregroundColor: UIColor.label]
         let attributedText = NSAttributedString(string: abstract, attributes: attributes)
 
         self.contentTextView.attributedText = attributedText
