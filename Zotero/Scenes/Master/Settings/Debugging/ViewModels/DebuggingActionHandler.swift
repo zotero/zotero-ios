@@ -25,12 +25,18 @@ struct DebuggingActionHandler: ViewModelActionHandler {
         switch action {
         case .startImmediateLogging:
             self.debugLogging.start(type: .immediate)
+            self.update(viewModel: viewModel) { state in
+                state.isLogging = true
+            }
 
         case .startLoggingOnNextLaunch:
             self.debugLogging.start(type: .nextLaunch)
 
         case .stopLogging:
             self.debugLogging.stop()
+            self.update(viewModel: viewModel) { state in
+                state.isLogging = false
+            }
         }
     }
 }
