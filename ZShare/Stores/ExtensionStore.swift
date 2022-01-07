@@ -903,10 +903,6 @@ final class ExtensionStore {
                }
                .observe(on: MainScheduler.instance)
                .subscribe(onSuccess: { [weak self] _ in
-                   // The `backgroundUploader` is set to `nil` so that the `URLSession` delegate no longer exists for the share extension.
-                   // This way the URLSession delegate will always be called in the main (container) app, where additional upload
-                   // processing is performed.
-                   self?.backgroundUploader = nil
                    self?.state.isDone = true
                }, onFailure: { [weak self] error in
                    guard let `self` = self else { return }
@@ -958,12 +954,7 @@ final class ExtensionStore {
         }
         .observe(on: MainScheduler.instance)
         .subscribe(onSuccess: { [weak self] _ in
-            guard let `self` = self else { return }
-            // The `backgroundUploader` is set to `nil` so that the `URLSession` delegate no longer exists for the share extension.
-            // This way the URLSession delegate will always be called in the main (container) app, where additional upload
-            // processing is performed.
-            self.backgroundUploader = nil
-            self.state.isDone = true
+            self?.state.isDone = true
         }, onFailure: { [weak self] error in
             guard let `self` = self else { return }
 
