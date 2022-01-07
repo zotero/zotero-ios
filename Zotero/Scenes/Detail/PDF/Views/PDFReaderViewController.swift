@@ -48,6 +48,7 @@ final class PDFReaderViewController: UIViewController {
     private var insertedKeys: Set<String>
     private var deletedKeys: Set<String>
     private var modifiedKeys: Set<String>
+    private var lastGestureRecognizerTouch: UITouch?
 
     private lazy var shareButton: UIBarButtonItem = {
         let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
@@ -333,7 +334,7 @@ final class PDFReaderViewController: UIViewController {
         self.coordinatorDelegate?.showAnnotationPopover(viewModel: self.viewModel, sourceRect: frame, popoverDelegate: self)
     }
 
-    private func toggle(annotationTool: PSPDFKit.Annotation.Tool, resetPencilManager: Bool = true) {
+    private func toggle(annotationTool: PSPDFKit.Annotation.Tool, tappedWithStylus: Bool, resetPencilManager: Bool = true) {
         let stateManager = self.pdfController.annotationStateManager
         stateManager.stylusMode = .fromStylusManager
 
@@ -344,6 +345,9 @@ final class PDFReaderViewController: UIViewController {
                 PSPDFKit.SDK.shared.applePencilManager.enabled = false
             }
             return
+        } else if tappedWithStylus {
+            PSPDFKit.SDK.shared.applePencilManager.detected = true
+            PSPDFKit.SDK.shared.applePencilManager.enabled = true
         }
 
         stateManager.setState(annotationTool, variant: nil)
@@ -498,7 +502,7 @@ final class PDFReaderViewController: UIViewController {
                 // If Image annotation is active after adding the annotation, deactivate it
                 if annotations.first is PSPDFKit.SquareAnnotation && self.pdfController.annotationStateManager.state == .square {
                     // Don't reset apple pencil detection here, this is automatic action, not performed by user.
-                    self.toggle(annotationTool: .square, resetPencilManager: false)
+                    self.toggle(annotationTool: .square, tappedWithStylus: false, resetPencilManager: false)
                 }
                 self.viewModel.process(action: .annotationsAdded(annotations: annotations, selectFirst: shouldSelect))
             } else {
@@ -563,6 +567,23 @@ final class PDFReaderViewController: UIViewController {
             return self.insertedKeys.remove(key) == nil ? index : nil
         }
         return (filteredDeletions, filteredInsertions, filteredModifications)
+    }
+
+    @objc private func annotationControlTapped(sender: UIButton, event: UIEvent) {
+        let tool: PSPDFKit.Annotation.Tool
+        if sender == self.createNoteButton {
+            tool = .note
+        } else if sender == self.createAreaButton {
+            tool = .square
+        } else if sender == self.createHighlightButton {
+            tool = .highlight
+        } else {
+            fatalError()
+        }
+
+        let isStylus = event.allTouches?.first?.type == .stylus
+
+        self.toggle(annotationTool: tool, tappedWithStylus: isStylus)
     }
 
     // MARK: - Selection
@@ -769,56 +790,43 @@ final class PDFReaderViewController: UIViewController {
         highlight.accessibilityLabel = L10n.Accessibility.Pdf.highlightAnnotationTool
         highlight.setImage(Asset.Images.Annotations.highlighterLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
         highlight.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        highlight.rx
-                 .controlEvent(.touchDown)
-                 .subscribe(onNext: { [weak self] _ in
-                    self?.toggle(annotationTool: .highlight)
-                 })
-                 .disposed(by: self.disposeBag)
+        highlight.addTarget(self, action: #selector(PDFReaderViewController.annotationControlTapped(sender:event:)), for: .touchDown)
         self.createHighlightButton = highlight
 
         let note = CheckboxButton(type: .custom)
         note.accessibilityLabel = L10n.Accessibility.Pdf.noteAnnotationTool
         note.setImage(Asset.Images.Annotations.noteLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
         note.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        note.rx
-            .controlEvent(.touchDown)
-            .subscribe(onNext: { [weak self] _ in
-                self?.toggle(annotationTool: .note)
-            })
-            .disposed(by: self.disposeBag)
+        note.addTarget(self, action: #selector(PDFReaderViewController.annotationControlTapped(sender:event:)), for: .touchDown)
         self.createNoteButton = note
 
         let area = CheckboxButton(type: .custom)
         area.accessibilityLabel = L10n.Accessibility.Pdf.imageAnnotationTool
         area.setImage(Asset.Images.Annotations.areaLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
         area.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        area.rx
-            .controlEvent(.touchDown)
-            .subscribe(onNext: { [weak self] _ in
-                self?.toggle(annotationTool: .square)
-            })
-            .disposed(by: self.disposeBag)
+        area.addTarget(self, action: #selector(PDFReaderViewController.annotationControlTapped(sender:event:)), for: .touchDown)
         self.createAreaButton = area
 
         let inkLongPress = UILongPressGestureRecognizer()
+        inkLongPress.delegate = self
         inkLongPress.rx
                     .event
                     .subscribe(with: self, onNext: { `self`, recognizer in
                         if recognizer.state == .began, let view = recognizer.view {
                             self.coordinatorDelegate?.showInkSettings(sender: view, viewModel: self.viewModel)
                             if self.pdfController.annotationStateManager.state != .ink {
-                                self.toggle(annotationTool: .ink)
+                                self.toggle(annotationTool: .ink, tappedWithStylus: (self.lastGestureRecognizerTouch?.type == .stylus))
                             }
                         }
                     })
                     .disposed(by: self.disposeBag)
 
         let inkTap = UITapGestureRecognizer()
+        inkTap.delegate = self
         inkTap.rx
               .event
-              .subscribe(with: self, onNext: { `self`, _ in
-                  self.toggle(annotationTool: .ink)
+              .subscribe(with: self, onNext: { `self`, test in
+                  self.toggle(annotationTool: .ink, tappedWithStylus: (self.lastGestureRecognizerTouch?.type == .stylus))
               })
               .disposed(by: self.disposeBag)
         inkTap.require(toFail: inkLongPress)
@@ -1180,6 +1188,13 @@ final class SelectionView: UIView {
         self.layer.borderWidth = 2.5
         self.layer.cornerRadius = 2.5
         self.layer.masksToBounds = true
+    }
+}
+
+extension PDFReaderViewController: UIGestureRecognizerDelegate {
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        self.lastGestureRecognizerTouch = touch
+        return true
     }
 }
 
