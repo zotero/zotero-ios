@@ -33,12 +33,12 @@ import RxSwift
 /// Sync is also run in background so that the user can see a current list of collections and pick a Collection where the item should be stored.
 final class ExtensionStore {
     struct State {
-        enum CollectionPicker {
+        enum CollectionPickerState {
             case loading, failed
             case picked(Library, Collection?)
         }
 
-        struct ItemPicker {
+        struct ItemPickerState {
             let items: [(key: String, value: String)]
             var picked: String?
         }
@@ -89,8 +89,6 @@ final class ExtensionStore {
             case translating(String)
             case downloading(Double)
             case processed
-            case submitting
-            case done
             case failed(Error)
 
             var error: Error? {
@@ -108,15 +106,6 @@ final class ExtensionStore {
                     return true
                 default:
                     return false
-                }
-            }
-
-            var isCancellable: Bool {
-                switch self {
-                case .submitting:
-                    return false
-                default:
-                    return true
                 }
             }
 
@@ -209,28 +198,47 @@ final class ExtensionStore {
             }
         }
 
+        // Newly generated key for attachment (used to store attachment file at correct location)
         let attachmentKey: String
-
-        var selectedCollectionId: CollectionIdentifier
-        var selectedLibraryId: LibraryIdentifier
+        // Title of website where share extension is visible
         var title: String?
+        // URL of website where share extension is visible
         var url: String?
-        var attachmentState: AttachmentState
-        var collectionPicker: CollectionPicker
+        // Selected collection in collection picker
+        var selectedCollectionId: CollectionIdentifier
+        // Library id of selected collection in collection picker
+        var selectedLibraryId: LibraryIdentifier
+        // State of collection picker
+        var collectionPickerState: CollectionPickerState
+        // Recently picked collections in collection picker
         var recents: [RecentData]
-        var itemPicker: ItemPicker?
-        var items: ProcessedAttachment?
+        // Item picker state
+        var itemPickerState: ItemPickerState?
+        // State of attachment
+        var attachmentState: AttachmentState
+        // Item that was decoded and is expected to be saved by share extension (shown in UI)
+        var expectedItem: ItemResponse?
+        // Attachment that was decoded and is expected to be saved by share extension (shown in UI)
+        var expectedAttachment: (String, File)?
+        // Actually processed item/attachment/both which were successfully decoded, downloaded and are ready for submission.
         var processedAttachment: ProcessedAttachment?
+        // Tags decoded with item
         var tags: [Tag]
+        // `true` when share extension is submitting item/attachment/both, `false` otherwise
+        var isSubmitting: Bool
+        // `true` when share extension should close
+        var isDone: Bool
 
         init() {
             self.attachmentKey = KeyGenerator.newKey
             self.selectedCollectionId = Defaults.shared.selectedCollectionId
             self.selectedLibraryId = Defaults.shared.selectedLibrary
-            self.collectionPicker = .loading
+            self.collectionPickerState = .loading
             self.attachmentState = .decoding
             self.recents = []
             self.tags = []
+            self.isSubmitting = false
+            self.isDone = false
         }
     }
 
@@ -358,7 +366,7 @@ final class ExtensionStore {
                 .subscribe(with: self, onSuccess: { `self`, _ in
                     var state = self.state
                     state.processedAttachment = .localFile(file: tmpFile, filename: filename)
-                    state.items = state.processedAttachment
+                    state.expectedAttachment = (filename, tmpFile)
                     state.attachmentState = .processed
                     self.state = state
                 }, onFailure: { `self`, error in
@@ -374,7 +382,7 @@ final class ExtensionStore {
             state.url = url.absoluteString
             state.title = url.absoluteString
             state.attachmentState = .downloading(0)
-            state.items = .localFile(file: file, filename: filename)
+            state.expectedAttachment = (filename, file)
             self.state = state
 
             DDLogInfo("ExtensionStore: download file")
@@ -392,7 +400,7 @@ final class ExtensionStore {
                         DDLogInfo("ExtensionStore: downloaded unsupported file")
                         state.processedAttachment = nil
                         state.attachmentState = .failed(.downloadedFileNotPdf)
-                        state.items = nil
+                        state.expectedAttachment = nil
                         // Remove downloaded file, it won't be used anymore
                         try? self.fileStorage.remove(file)
                     }
@@ -493,7 +501,7 @@ final class ExtensionStore {
                                        self?.processItems(data)
                                    case .selectItem(let data):
                                        DDLogInfo("ExtensionStore: webview action - loaded \(data.count) list items")
-                                       self?.state.itemPicker = State.ItemPicker(items: data, picked: nil)
+                                       self?.state.itemPickerState = State.ItemPickerState(items: data, picked: nil)
                                    case .reportProgress(let progress):
                                        DDLogInfo("ExtensionStore: webview action - progress \(progress)")
                                        self?.state.attachmentState = .translating(progress)
@@ -527,7 +535,7 @@ final class ExtensionStore {
             DDLogInfo("ExtensionStore: parsed item without attachment")
             var state = self.state
             state.processedAttachment = .item(item)
-            state.items = .item(item)
+            state.expectedItem = item
             state.attachmentState = .processed
             self.state = state
             return
@@ -540,9 +548,12 @@ final class ExtensionStore {
     }
 
     private func download(item: ItemResponse, attachment: [String: Any], attachmentUrl url: URL, to file: File) {
+        let attachmentTitle = ((attachment["title"] as? String) ?? self.state.title) ?? ""
+
         var state = self.state
         state.attachmentState = .downloading(0)
-        state.items = .itemWithAttachment(item: item, attachment: attachment, attachmentFile: file)
+        state.expectedItem = item
+        state.expectedAttachment = (attachmentTitle, file)
         state.processedAttachment = .item(item)
         self.state = state
 
@@ -639,7 +650,7 @@ final class ExtensionStore {
 
     /// Sets picked item if multiple items were found.
     func pickItem(_ data: (String, String)) {
-        self.state.itemPicker?.picked = data.1
+        self.state.itemPickerState?.picked = data.1
         self.translationHandler.selectItem(data)
     }
 
@@ -683,14 +694,14 @@ final class ExtensionStore {
             return
         }
 
-        self.state.attachmentState = .submitting
+        self.state.isSubmitting = true
 
         let tags = self.state.tags.map({ TagResponse(tag: $0.name, type: $0.type) })
         let libraryId: LibraryIdentifier
         let collectionKeys: Set<String>
         let userId = Defaults.shared.userId
 
-        switch self.state.collectionPicker {
+        switch self.state.collectionPickerState {
         case .picked(let library, let collection):
             libraryId = library.identifier
             collectionKeys = collection?.identifier.key.flatMap({ [$0] }) ?? []
@@ -757,11 +768,16 @@ final class ExtensionStore {
             }
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] _ in
-                self?.state.attachmentState = .done
+                self?.state.isDone = true
             }, onFailure: { [weak self] error in
                 guard let `self` = self else { return }
+
                 DDLogError("ExtensionStore: could not submit standalone item - \(error)")
-                self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: libraryId))
+
+                var state = self.state
+                state.attachmentState = .failed(self.attachmentError(from: error, libraryId: libraryId))
+                state.isSubmitting = false
+                self.state = state
             })
             .disposed(by: self.disposeBag)
     }
@@ -889,11 +905,16 @@ final class ExtensionStore {
                    // This way the URLSession delegate will always be called in the main (container) app, where additional upload
                    // processing is performed.
                    self?.backgroundUploader = nil
-                   self?.state.attachmentState = .done
+                   self?.state.isDone = true
                }, onFailure: { [weak self] error in
                    guard let `self` = self else { return }
+
                    DDLogError("ExtensionStore: could not submit item or attachment - \(error)")
-                   self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: data.libraryId))
+
+                   var state = self.state
+                   state.attachmentState = .failed(self.attachmentError(from: error, libraryId: data.libraryId))
+                   state.isSubmitting = false
+                   self.state = state
                })
                .disposed(by: self.disposeBag)
     }
@@ -939,11 +960,16 @@ final class ExtensionStore {
             // This way the URLSession delegate will always be called in the main (container) app, where additional upload
             // processing is performed.
             self.backgroundUploader = nil
-            self.state.attachmentState = .done
+            self.state.isDone = true
         }, onFailure: { [weak self] error in
             guard let `self` = self else { return }
+
             DDLogError("ExtensionStore: could not submit item or attachment - \(error)")
-            self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: data.libraryId))
+
+            var state = self.state
+            state.attachmentState = .failed(self.attachmentError(from: error, libraryId: data.libraryId))
+            state.isSubmitting = false
+            self.state = state
         })
         .disposed(by: self.disposeBag)
     }
@@ -1178,7 +1204,7 @@ final class ExtensionStore {
         var state = self.state
         state.selectedLibraryId = library.identifier
         state.selectedCollectionId = collection?.identifier ?? Collection(custom: .all).identifier
-        state.collectionPicker = .picked(library, collection)
+        state.collectionPickerState = .picked(library, collection)
         if let change = additionalStateChange {
             change(&state)
         }
@@ -1220,16 +1246,16 @@ final class ExtensionStore {
                 }
 
                 var state = self.state
-                state.collectionPicker = .picked(library, collection)
+                state.collectionPickerState = .picked(library, collection)
                 state.recents = recents
                 self.state = state
             } catch let error {
                 DDLogError("ExtensionStore: can't load collections - \(error)")
                 let library = Library(identifier: ExtensionStore.defaultLibraryId, name: RCustomLibraryType.myLibrary.libraryName, metadataEditable: true, filesEditable: true)
-                self.state.collectionPicker = .picked(library, nil)
+                self.state.collectionPickerState = .picked(library, nil)
             }
         } else {
-            self.state.collectionPicker = .failed
+            self.state.collectionPickerState = .failed
         }
     }
 }

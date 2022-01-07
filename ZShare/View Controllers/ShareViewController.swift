@@ -182,7 +182,7 @@ final class ShareViewController: UIViewController {
     }
 
     @IBAction private func showItemPicker() {
-        guard let items = self.store.state.itemPicker?.items else { return }
+        guard let items = self.store.state.itemPickerState?.items else { return }
 
         let view = ItemPickerView(data: items) { [weak self] picked in
             self?.store.pickItem(picked)
@@ -223,12 +223,25 @@ final class ShareViewController: UIViewController {
     }
 
     private func update(to state: ExtensionStore.State) {
+        if state.isDone {
+            DDLogInfo("State: done")
+            // Don't do anything for `.done`, the extension is supposed to just close at this point.
+            self.debugLogging.storeLogs { [unowned self] in
+                self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+            }
+            return
+        }
+
+        if state.isSubmitting {
+            DDLogInfo("State: submitting")
+        }
+
         let hasItem = state.processedAttachment != nil
-        self.log(attachmentState: state.attachmentState, itemState: state.itemPicker)
-        self.updateItemsUi(for: state.title, items: state.items, attachmentState: state.attachmentState)
-        self.update(attachmentState: state.attachmentState, itemState: state.itemPicker, hasItem: hasItem)
-        self.update(collectionPicker: state.collectionPicker, recents: state.recents)
-        self.update(itemPicker: state.itemPicker, items: state.items)
+        self.log(attachmentState: state.attachmentState, itemState: state.itemPickerState)
+        self.update(item: state.expectedItem, attachment: state.expectedAttachment, attachmentState: state.attachmentState, defaultTitle: state.title)
+        self.update(attachmentState: state.attachmentState, itemState: state.itemPickerState, hasItem: hasItem, isSubmitting: state.isSubmitting)
+        self.update(collectionPicker: state.collectionPickerState, recents: state.recents)
+        self.update(itemPicker: state.itemPickerState, hasExpectedItem: (state.expectedItem != nil || state.expectedAttachment != nil))
         self.updateTagPicker(with: state.tags)
 
         if self.viewIsVisible {
@@ -236,20 +249,16 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func log(attachmentState: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPicker?) {
+    private func log(attachmentState: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPickerState?) {
         switch attachmentState {
         case .decoding:
             DDLogInfo("State: decoding")
-        case .done:
-            DDLogInfo("State: done")
         case .downloading(let progress):
             DDLogInfo("State: downloading \(progress)")
         case .failed(let error):
             DDLogInfo("State: failed with \(error)")
         case .processed:
             DDLogInfo("State: processed")
-        case .submitting:
-            DDLogInfo("State: submitting")
         case .translating(let name):
             DDLogInfo("State: translating with \(name)")
         }
@@ -263,56 +272,65 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func update(attachmentState state: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPicker?, hasItem: Bool) {
-        self.updateNavigationItems(for: state)
-        self.updateBottomProgress(for: state, itemState: itemState, hasItem: hasItem)
+    private func update(attachmentState state: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPickerState?, hasItem: Bool, isSubmitting: Bool) {
+        self.updateNavigationItems(for: state, isSubmitting: isSubmitting)
+        self.updateBottomProgress(for: state, itemState: itemState, hasItem: hasItem, isSubmitting: isSubmitting)
     }
 
-    private func updateItemsUi(for title: String?, items: ExtensionStore.State.ProcessedAttachment?, attachmentState: ExtensionStore.State.AttachmentState) {
+    private func update(item: ItemResponse?, attachment: (String, File)?, attachmentState: ExtensionStore.State.AttachmentState, defaultTitle title: String?) {
         self.translationContainer.isHidden = false
 
-        guard let items = items else {
+        if item == nil && attachment == nil {
+            // If no item or attachment were found, either translation is in progress or there was a fatal error.
             guard !attachmentState.translationInProgress, let title = title else {
+                // If translation is in progress, hide whole container, there is nothing to show yet.
                 self.translationContainer.isHidden = true
                 return
             }
 
-            self.setItem(title: title, image: UIImage(named: ItemTypes.iconName(for: ItemTypes.webpage, contentType: nil)))
+            // If there was a fatal error, we can always at least save a webpage item, so show that in UI
+            self.itemContainer.isHidden = false
+            self.attachmentContainer.isHidden = true
+            self.setItem(title: title, type: ItemTypes.webpage)
 
             return
         }
 
-        switch items {
-        case .item(let item):
-            let titleKey = self.schemaController.titleKey(for: item.rawType)
-            let itemTitle = titleKey.flatMap({ item.fields[$0] }) ?? title ?? ""
-            let image = UIImage(named: ItemTypes.iconName(for: item.rawType, contentType: nil))
-            self.setItem(title: itemTitle, image: image)
+        self.itemContainer.isHidden = item == nil
+        self.attachmentContainer.isHidden = attachment == nil
 
-        case .itemWithAttachment(let item, let attachment, let file):
-            self.itemContainer.isHidden = false
-            self.attachmentContainer.isHidden = false
-
-            let titleKey = self.schemaController.titleKey(for: item.rawType)
-            let itemTitle = titleKey.flatMap({ item.fields[$0] }) ?? title
-
-            self.itemIcon.image = UIImage(named: ItemTypes.iconName(for: item.rawType, contentType: nil))
-            self.itemTitleLabel.text = itemTitle
+        if let item = item, let (attachmentTitle, file) = attachment {
+            // Item with attachment was found, show their metadata
+            let itemTitle = self.itemTitle(for: item, schemaController: self.schemaController, defaultValue: title ?? "")
+            self.setItem(title: itemTitle, type: item.rawType)
             self.attachmentContainerLeft.constant = ShareViewController.childAttachmentLeftOffset
-            self.attachmentIcon.set(state: .stateFrom(type: .file(filename: "", contentType: file.mimeType, location: .local, linkType: .importedFile), progress: nil, error: attachmentState.error), style: .shareExtension)
-            self.attachmentTitleLabel.text = (attachment["title"] as? String) ?? title
-
-        case .localFile(let file, let filename):
-            self.itemContainer.isHidden = true
-            self.attachmentContainer.isHidden = false
-
+            self.setAttachment(title: attachmentTitle, file: file, state: attachmentState)
+        } else if let item = item {
+            // Only item was found, show metadata
+            let title = self.itemTitle(for: item, schemaController: self.schemaController, defaultValue: title ?? "")
+            self.setItem(title: title, type: item.rawType)
+        } else if let (title, file) = attachment {
+            // Only attachment (local/remote file) was found, show metadata
             self.attachmentContainerLeft.constant = 0
-            self.attachmentIcon.set(state: .stateFrom(type: .file(filename: "", contentType: file.mimeType, location: .local, linkType: .importedFile), progress: nil, error: nil), style: .detail)
-            
-            self.attachmentTitleLabel.text = filename
+            self.setAttachment(title: title, file: file, state: attachmentState)
         }
+    }
 
-        switch attachmentState {
+    private func itemTitle(for item: ItemResponse, schemaController: SchemaController, defaultValue: String) -> String {
+        return schemaController.titleKey(for: item.rawType).flatMap({ item.fields[$0] }) ?? defaultValue
+    }
+
+    private func setItem(title: String, type: String) {
+        self.itemTitleLabel.text = title
+        self.itemIcon.image = UIImage(named: ItemTypes.iconName(for: type, contentType: nil))
+    }
+
+    private func setAttachment(title: String, file: File, state: ExtensionStore.State.AttachmentState) {
+        self.attachmentTitleLabel.text = title
+        let iconState = FileAttachmentView.State.stateFrom(type: .file(filename: "", contentType: file.mimeType, location: .local, linkType: .importedFile), progress: nil, error: state.error)
+        self.attachmentIcon.set(state: iconState, style: .shareExtension)
+
+        switch state {
         case .downloading(let progress):
             self.attachmentProgressView.isHidden = progress == 0
             self.attachmentActivityIndicator.isHidden = progress > 0
@@ -336,14 +354,7 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func setItem(title: String, image: UIImage?) {
-        self.itemContainer.isHidden = false
-        self.attachmentContainer.isHidden = true
-        self.itemIcon.image = image
-        self.itemTitleLabel.text = title
-    }
-
-    private func updateNavigationItems(for state: ExtensionStore.State.AttachmentState) {
+    private func updateNavigationItems(for state: ExtensionStore.State.AttachmentState, isSubmitting: Bool) {
         if let error = state.error {
             switch error {
             case .quotaLimit, .webDavFailure, .apiFailure:
@@ -354,11 +365,11 @@ final class ShareViewController: UIViewController {
             }
         }
 
-        self.navigationItem.leftBarButtonItem?.isEnabled = state.isCancellable
+        self.navigationItem.leftBarButtonItem?.isEnabled = !isSubmitting
         self.navigationItem.rightBarButtonItem?.isEnabled = state.isSubmittable
     }
 
-    private func updateBottomProgress(for state: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPicker?, hasItem: Bool) {
+    private func updateBottomProgress(for state: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPickerState?, hasItem: Bool, isSubmitting: Bool) {
         if let state = itemState, state.picked == nil {
             // Don't show progress bar when waiting for item pick
             self.bottomProgressContainer.isHidden = true
@@ -368,45 +379,40 @@ final class ShareViewController: UIViewController {
         let message: String?
         let showActivityIndicator: Bool
 
-        switch state {
-        case .decoding:
-            message = L10n.Shareext.decodingAttachment
-            showActivityIndicator = true
-
-        case .processed:
-            message = nil
-            showActivityIndicator = false
-
-        case .translating(let _message):
-            message = _message
-            showActivityIndicator = true
-
-        case .downloading:
-            message = nil
-            showActivityIndicator = true
-
-        case .submitting:
+        if isSubmitting {
             message = nil
             showActivityIndicator = false
             self.showSavingOverlay()
+        } else {
+            switch state {
+            case .decoding:
+                message = L10n.Shareext.decodingAttachment
+                showActivityIndicator = true
 
-        case .failed(let error):
-            message = nil
-            showActivityIndicator = false
+            case .processed:
+                message = nil
+                showActivityIndicator = false
 
-            let hidePickers = error.isFatalOrQuota
+            case .translating(let _message):
+                message = _message
+                showActivityIndicator = true
 
-            self.hideSavingOverlay()
-            self.collectionPickerStackContainer.isHidden = hidePickers
-            self.tagPickerStackContainer.isHidden = hidePickers
-            self.itemPickerStackContainer.isHidden = true
-            self.show(error: error, hasItem: hasItem)
+            case .downloading:
+                message = nil
+                showActivityIndicator = true
 
-        case .done:
-            self.debugLogging.storeLogs { [unowned self] in
-                self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+            case .failed(let error):
+                message = nil
+                showActivityIndicator = false
+
+                let hidePickers = error.isFatalOrQuota
+
+                self.hideSavingOverlay()
+                self.collectionPickerStackContainer.isHidden = hidePickers
+                self.tagPickerStackContainer.isHidden = hidePickers
+                self.itemPickerStackContainer.isHidden = true
+                self.show(error: error, hasItem: hasItem)
             }
-            return
         }
 
         self.bottomProgressContainer.isHidden = message == nil
@@ -497,8 +503,8 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func update(itemPicker state: ExtensionStore.State.ItemPicker?, items: ExtensionStore.State.ProcessedAttachment?) {
-        guard let state = state, items == nil else {
+    private func update(itemPicker state: ExtensionStore.State.ItemPickerState?, hasExpectedItem: Bool) {
+        guard let state = state, !hasExpectedItem else {
             self.itemPickerStackContainer.isHidden = true
             return
         }
@@ -521,7 +527,7 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func update(collectionPicker state: ExtensionStore.State.CollectionPicker, recents: [RecentData]) {
+    private func update(collectionPicker state: ExtensionStore.State.CollectionPickerState, recents: [RecentData]) {
         switch state {
         case .picked(let library, let collection):
             if self.collectionPickerLoadingContainer != nil {
