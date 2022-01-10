@@ -366,7 +366,7 @@ final class ShareViewController: UIViewController {
         }
 
         self.navigationItem.leftBarButtonItem?.isEnabled = !isSubmitting
-        self.navigationItem.rightBarButtonItem?.isEnabled = state.isSubmittable
+        self.navigationItem.rightBarButtonItem?.isEnabled = !isSubmitting && state.isSubmittable
     }
 
     private func updateBottomProgress(for state: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPickerState?, hasItem: Bool, isSubmitting: Bool) {
