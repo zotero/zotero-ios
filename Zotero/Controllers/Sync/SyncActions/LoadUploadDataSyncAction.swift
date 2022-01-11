@@ -17,6 +17,7 @@ struct LoadUploadDataSyncAction: SyncAction {
 
     unowned let backgroundUploaderContext: BackgroundUploaderContext
     unowned let dbStorage: DbStorage
+    unowned let fileStorage: FileStorage
 
     var result: Single<[AttachmentUpload]> {
         return self.loadUploads(libraryId: self.libraryId)
@@ -29,7 +30,7 @@ struct LoadUploadDataSyncAction: SyncAction {
     private func loadUploads(libraryId: LibraryIdentifier) -> Single<[AttachmentUpload]> {
         return Single.create { subscriber -> Disposable in
             do {
-                let request = ReadAttachmentUploadsDbRequest(libraryId: libraryId)
+                let request = ReadAttachmentUploadsDbRequest(libraryId: libraryId, fileStorage: self.fileStorage)
                 let uploads = try self.dbStorage.createCoordinator().perform(request: request)
                 subscriber(.success(uploads))
             } catch let error {

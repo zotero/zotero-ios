@@ -9,8 +9,14 @@
 import Foundation
 
 import RealmSwift
+import CocoaLumberjackSwift
 
 struct CreateAttachmentDbRequest: DbResponseRequest {
+    enum Error: Swift.Error {
+        case cantCreateMd5
+        case incorrectMd5Value
+    }
+
     typealias Response = RItem
 
     let attachment: Attachment
@@ -77,7 +83,15 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
                 switch self.attachment.type {
                 case .file(let filename, let contentType, _, _):
                     let file = Files.attachmentFile(in: self.attachment.libraryId, key: self.attachment.key, filename: filename, contentType: contentType)
-                    value = md5(from: file.createUrl()) ?? ""
+                    if let md5Value = md5(from: file.createUrl()) {
+                        if md5Value == "<null>" {
+                            DDLogError("CreateAttachmentDbRequest: incorrect md5 value for attachment \(self.attachment.key)")
+                            throw Error.incorrectMd5Value
+                        }
+                        value = md5Value
+                    } else {
+                        throw Error.cantCreateMd5
+                    }
                 case .url: continue
                 }
             case FieldKeys.Item.Attachment.mtime:

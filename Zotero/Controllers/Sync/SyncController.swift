@@ -806,7 +806,7 @@ final class SyncController: SynchronizationController {
     }
 
     private func processCreateUploadActions(for libraryId: LibraryIdentifier, hadOtherWriteActions: Bool) {
-        let result = LoadUploadDataSyncAction(libraryId: libraryId, backgroundUploaderContext: self.backgroundUploaderContext, dbStorage: self.dbStorage).result
+        let result = LoadUploadDataSyncAction(libraryId: libraryId, backgroundUploaderContext: self.backgroundUploaderContext, dbStorage: self.dbStorage, fileStorage: self.fileStorage).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] uploads in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in

@@ -68,6 +68,8 @@ final class ExtensionStore {
                 case quotaLimit(LibraryIdentifier)
                 case webDavNotVerified
                 case webDavFailure
+                case md5Missing
+                case mtimeMissing
 
                 var isFatal: Bool {
                     switch self {
@@ -1120,8 +1122,12 @@ final class ExtensionStore {
 
                 let (item, attachment) = try coordinator.perform(request: request)
 
-                let mtime = attachment.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first.flatMap({ Int($0.value) }) ?? 0
-                let md5 = attachment.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value ?? ""
+                guard let mtime = attachment.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first.flatMap({ Int($0.value) }) else {
+                    throw State.AttachmentState.Error.mtimeMissing
+                }
+                guard let md5 = attachment.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value else {
+                    throw State.AttachmentState.Error.md5Missing
+                }
 
                 var parameters: [[String: Any]] = []
                 if let updateParameters = item.updateParameters {
@@ -1160,8 +1166,12 @@ final class ExtensionStore {
                 }
 
                 let attachment = try coordinator.perform(request: request)
-                let mtime = attachment.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first.flatMap({ Int($0.value) }) ?? 0
-                let md5 = attachment.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value ?? ""
+                guard let mtime = attachment.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first.flatMap({ Int($0.value) }) else {
+                    throw State.AttachmentState.Error.mtimeMissing
+                }
+                guard let md5 = attachment.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value else {
+                    throw State.AttachmentState.Error.md5Missing
+                }
 
                 subscriber(.success((attachment.updateParameters ?? [:], md5, mtime)))
             } catch let error {

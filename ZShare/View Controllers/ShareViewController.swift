@@ -496,7 +496,7 @@ final class ShareViewController: UIViewController {
                 let groupName = (try? self.dbStorage.createCoordinator().perform(request: ReadGroupDbRequest(identifier: groupId)))?.name
                 return L10n.Errors.Shareext.groupQuotaReached(groupName ?? "\(groupId)")
             }
-        case .downloadedFileNotPdf:
+        case .downloadedFileNotPdf, .md5Missing, .mtimeMissing:
             return nil
         }
     }

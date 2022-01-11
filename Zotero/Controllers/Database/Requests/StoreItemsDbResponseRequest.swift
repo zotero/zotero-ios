@@ -177,6 +177,9 @@ struct StoreItemDbRequest: DbResponseRequest {
                 sortIndex = value
             case (FieldKeys.Item.Attachment.md5, _):
                 md5 = value
+                if value == "<null>" {
+                    DDLogError("StoreItemDbRequest: incorrect md5 value for synced item \(self.response.key)")
+                }
             case (FieldKeys.Item.Attachment.contentType, _), (_, FieldKeys.Item.Attachment.contentType):
                 contentType = value
             default: break
