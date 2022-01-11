@@ -35,7 +35,7 @@ struct ReadAttachmentUploadsDbRequest: DbResponseRequest {
                 DDLogError("ReadAttachmentUploadsDbRequest: mtime field value not a number (\"\(mtimeField.value)\") !!!")
                 return nil
             }
-            guard let md5Field = item.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first else {
+            guard let md5Field = item.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first else {
                 DDLogError("ReadAttachmentUploadsDbRequest: md5 field missing !!!")
                 return nil
             }
