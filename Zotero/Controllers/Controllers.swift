@@ -263,7 +263,7 @@ final class UserControllers {
         self.changeObserver.observable
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] changedLibraries in
-                self?.syncScheduler.requestNormalSync(for: changedLibraries)
+                self?.syncScheduler.request(sync: .normal, libraries: .specific(changedLibraries), applyDelay: true)
             })
             .disposed(by: self.disposeBag)
 
@@ -285,7 +285,7 @@ final class UserControllers {
             guard let `self` = self else { return }
             // Call this before sync so that background uploads are updated and taken care of by sync if needed.
             self.backgroundUploadObserver.updateSessions()
-            self.syncScheduler.request(syncType: self.requiresFullSync ? .full : .normal)
+            self.syncScheduler.request(sync: (self.requiresFullSync ? .full : .normal), libraries: .all)
         })
     }
 

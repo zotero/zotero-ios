@@ -669,7 +669,7 @@ final class SyncController: SynchronizationController {
                   }
               }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.abort(error: (self?.syncError(from: error, libraryId: .custom(.myLibrary)).fatal ?? .permissionLoadingFailed))
+                      self?.abort(error: (self?.syncError(from: error, data: .from(libraryId: .custom(.myLibrary))).fatal ?? .permissionLoadingFailed))
                   }
               })
               .disposed(by: self.disposeBag)
@@ -691,7 +691,7 @@ final class SyncController: SynchronizationController {
         switch result {
         case .failure(let error):
             self.accessQueue.async(flags: .barrier) { [weak self] in
-                self?.abort(error: self?.syncError(from: error, libraryId: .custom(.myLibrary)).fatal ?? .allLibrariesFetchFailed)
+                self?.abort(error: self?.syncError(from: error, data: .from(libraryId: .custom(.myLibrary))).fatal ?? .allLibrariesFetchFailed)
             }
 
         case .success((let data, let options)):
@@ -816,7 +816,7 @@ final class SyncController: SynchronizationController {
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.enqueuedUploads = 0
                       self?.uploadsFailedBeforeReachingZoteroBackend = 0
-                      self?.finishCompletableAction(error: error, libraryId: libraryId)
+                      self?.finishCompletableAction(error: (error, .from(libraryId: libraryId)))
                   }
               })
               .disposed(by: self.disposeBag)
@@ -853,7 +853,7 @@ final class SyncController: SynchronizationController {
                   }
               }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.abort(error: self?.syncError(from: error, libraryId: .custom(.myLibrary)).fatal ?? .groupSyncFailed)
+                      self?.abort(error: self?.syncError(from: error, data: .from(libraryId: .custom(.myLibrary))).fatal ?? .groupSyncFailed)
                   }
               })
               .disposed(by: self.disposeBag)
@@ -956,7 +956,7 @@ final class SyncController: SynchronizationController {
     }
 
     private func finishFailedSyncVersions(libraryId: LibraryIdentifier, object: SyncObject, error: Error, version: Int) {
-        switch self.syncError(from: error, libraryId: libraryId) {
+        switch self.syncError(from: error, data: .from(libraryId: libraryId)) {
         case .fatal(let error):
             self.abort(error: error)
 
@@ -995,7 +995,7 @@ final class SyncController: SynchronizationController {
     private func finishBatchesSyncAction(for libraryId: LibraryIdentifier, object: SyncObject, result: Swift.Result<SyncBatchResponse, Error>) {
         switch result {
         case .success((let failedKeys, let parseErrors, _))://let itemConflicts)):
-            self.nonFatalErrors.append(contentsOf: parseErrors.map({ self.syncError(from: $0, libraryId: libraryId).nonFatal ?? .unknown($0.localizedDescription) }))
+            self.nonFatalErrors.append(contentsOf: parseErrors.map({ self.syncError(from: $0, data: .from(libraryId: libraryId)).nonFatal ?? .unknown($0.localizedDescription) }))
 
             // Decoding of other objects is performed in batches, out of the whole batch only some objects may fail,
             // so these failures are reported as success (because some succeeded) and failed ones are marked for resync
@@ -1027,7 +1027,7 @@ final class SyncController: SynchronizationController {
         case .failure(let error):
             DDLogError("Sync: batch failed - \(error)")
 
-            switch self.syncError(from: error, libraryId: libraryId) {
+            switch self.syncError(from: error, data: .from(libraryId: libraryId)) {
             case .fatal(let error):
                 self.abort(error: error)
             case .nonFatal(let error):
@@ -1059,7 +1059,7 @@ final class SyncController: SynchronizationController {
 
         DDLogError("Sync: group failed - \(error)")
 
-        switch self.syncError(from: error, libraryId: .group(identifier)) {
+        switch self.syncError(from: error, data: .from(libraryId: .group(identifier))) {
         case .fatal(let error):
             self.accessQueue.async(flags: .barrier) { [weak self] in
                 self?.abort(error: error)
@@ -1078,11 +1078,11 @@ final class SyncController: SynchronizationController {
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishCompletableAction(error: nil, libraryId: libraryId)
+                      self?.finishCompletableAction(error: nil)
                   }
               }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishCompletableAction(error: error, libraryId: libraryId)
+                      self?.finishCompletableAction(error: (error, .from(libraryId: libraryId)))
                   }
               })
               .disposed(by: self.disposeBag)
@@ -1093,11 +1093,11 @@ final class SyncController: SynchronizationController {
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishCompletableAction(error: nil, libraryId: .group(identifier))
+                      self?.finishCompletableAction(error: nil)
                   }
               }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishCompletableAction(error: error, libraryId: .group(identifier))
+                      self?.finishCompletableAction(error: (error, .from(libraryId: .group(identifier))))
                   }
               })
               .disposed(by: self.disposeBag)
@@ -1108,11 +1108,11 @@ final class SyncController: SynchronizationController {
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishCompletableAction(error: nil, libraryId: libraryId)
+                      self?.finishCompletableAction(error: nil)
                   }
               }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishCompletableAction(error: error, libraryId: libraryId)
+                      self?.finishCompletableAction(error: (error, .from(syncObject: object, keys: (keys as? [String]) ?? [], libraryId: libraryId)))
                   }
               })
               .disposed(by: self.disposeBag)
@@ -1175,7 +1175,7 @@ final class SyncController: SynchronizationController {
             }
 
         case .failure(let error):
-            switch self.syncError(from: error, libraryId: libraryId) {
+            switch self.syncError(from: error, data: .from(libraryId: libraryId)) {
             case .fatal(let error):
                 self.abort(error: error)
             case .nonFatal(let error):
@@ -1189,11 +1189,11 @@ final class SyncController: SynchronizationController {
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] data in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishCompletableAction(error: nil, libraryId: libraryId)
+                      self?.finishCompletableAction(error: nil)
                   }
               }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                    self?.finishCompletableAction(error: error, libraryId: libraryId)
+                      self?.finishCompletableAction(error: (error, .init(itemKeys: items, libraryId: libraryId)))
                   }
               })
               .disposed(by: self.disposeBag)
@@ -1227,7 +1227,7 @@ final class SyncController: SynchronizationController {
             }
 
         case .failure(let error):
-            switch self.syncError(from: error, libraryId: libraryId) {
+            switch self.syncError(from: error, data: .from(libraryId: libraryId)) {
             case .fatal(let error):
                 self.abort(error: error)
 
@@ -1246,12 +1246,12 @@ final class SyncController: SynchronizationController {
               .subscribe(onSuccess: { [weak self] (version, error) in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.progressHandler.reportWriteBatchSynced(size: batch.parameters.count)
-                      self?.finishSubmission(error: error, newVersion: version, libraryId: batch.libraryId, object: batch.object)
+                      self?.finishSubmission(error: error, newVersion: version, keys: batch.parameters.compactMap({ $0["key"] as? String }), libraryId: batch.libraryId, object: batch.object)
                   }
               }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.progressHandler.reportWriteBatchSynced(size: batch.parameters.count)
-                      self?.finishSubmission(error: error, newVersion: batch.version, libraryId: batch.libraryId, object: batch.object)
+                      self?.finishSubmission(error: error, newVersion: batch.version, keys: batch.parameters.compactMap({ $0["key"] as? String }), libraryId: batch.libraryId, object: batch.object)
                   }
               })
               .disposed(by: self.disposeBag)
@@ -1267,12 +1267,12 @@ final class SyncController: SynchronizationController {
               .subscribe(with: self, onSuccess: { `self`, _ in
                   self.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.progressHandler.reportUploaded()
-                      self?.finishSubmission(error: nil, newVersion: nil, libraryId: upload.libraryId, object: .item)
+                      self?.finishSubmission(error: nil, newVersion: nil, keys: [upload.key], libraryId: upload.libraryId, object: .item)
                   }
               }, onFailure: { `self`, error in
                   self.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.progressHandler.reportUploaded()
-                      self?.finishSubmission(error: error, newVersion: nil, libraryId: upload.libraryId, object: .item, failedBeforeReachingApi: action.failedBeforeZoteroApiRequest)
+                      self?.finishSubmission(error: error, newVersion: nil, keys: [upload.key], libraryId: upload.libraryId, object: .item, failedBeforeReachingApi: action.failedBeforeZoteroApiRequest)
                   }
               })
               .disposed(by: self.disposeBag)
@@ -1289,18 +1289,18 @@ final class SyncController: SynchronizationController {
                       if didCreateDeletions {
                           self?.addWebDavDeletionsActionIfNeeded(libraryId: batch.libraryId)
                       }
-                      self?.finishSubmission(error: nil, newVersion: version, libraryId: batch.libraryId, object: batch.object)
+                      self?.finishSubmission(error: nil, newVersion: version, keys: batch.keys, libraryId: batch.libraryId, object: batch.object)
                   }
               }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.progressHandler.reportWriteBatchSynced(size: batch.keys.count)
-                      self?.finishSubmission(error: error, newVersion: batch.version, libraryId: batch.libraryId, object: batch.object)
+                      self?.finishSubmission(error: error, newVersion: batch.version, keys: batch.keys, libraryId: batch.libraryId, object: batch.object)
                   }
               })
               .disposed(by: self.disposeBag)
     }
 
-    private func finishSubmission(error: Error?, newVersion: Int?, libraryId: LibraryIdentifier, object: SyncObject, failedBeforeReachingApi: Bool = false, ignoreWebDav: Bool = false) {
+    private func finishSubmission(error: Error?, newVersion: Int?, keys: [String], libraryId: LibraryIdentifier, object: SyncObject, failedBeforeReachingApi: Bool = false, ignoreWebDav: Bool = false) {
         let nextAction: () -> Void = {
             if let version = newVersion {
                 self.updateVersionInNextWriteBatch(to: version)
@@ -1328,12 +1328,12 @@ final class SyncController: SynchronizationController {
         }
 
         if !ignoreWebDav &&
-            self.handleZoteroDirectoryMissing(for: error, continue: { [weak self] in self?.finishSubmission(error: error, newVersion: newVersion, libraryId: libraryId, object: object,
+            self.handleZoteroDirectoryMissing(for: error, continue: { [weak self] in self?.finishSubmission(error: error, newVersion: newVersion, keys: keys, libraryId: libraryId, object: object,
                                                                                                             failedBeforeReachingApi: failedBeforeReachingApi, ignoreWebDav: true) }) {
             return
         }
 
-        switch self.syncError(from: error, libraryId: libraryId) {
+        switch self.syncError(from: error, data: .from(syncObject: object, keys: keys, libraryId: libraryId)) {
         case .fatal(let error):
             self.abort(error: error)
 
@@ -1370,11 +1370,11 @@ final class SyncController: SynchronizationController {
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishCompletableAction(error: nil, libraryId: .group(groupId))
+                      self?.finishCompletableAction(error: nil)
                   }
               }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishCompletableAction(error: error, libraryId: .group(groupId))
+                      self?.finishCompletableAction(error: (error, .from(libraryId: .group(groupId))))
                   }
               })
               .disposed(by: self.disposeBag)
@@ -1385,11 +1385,11 @@ final class SyncController: SynchronizationController {
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                    self?.finishCompletableAction(error: nil, libraryId: .group(groupId))
+                      self?.finishCompletableAction(error: nil)
                   }
               }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishCompletableAction(error: error, libraryId: .group(groupId))
+                      self?.finishCompletableAction(error: (error, .from(libraryId: .group(groupId))))
                   }
               })
               .disposed(by: self.disposeBag)
@@ -1400,11 +1400,11 @@ final class SyncController: SynchronizationController {
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishCompletableAction(error: nil, libraryId: libraryId)
+                      self?.finishCompletableAction(error: nil)
                   }
               }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishCompletableAction(error: error, libraryId: libraryId)
+                      self?.finishCompletableAction(error: (error, .from(libraryId: libraryId)))
                   }
               })
               .disposed(by: self.disposeBag)
@@ -1418,28 +1418,28 @@ final class SyncController: SynchronizationController {
               .subscribe(onSuccess: { [weak self] failures in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       // TODO: - report failures?
-                      self?.finishCompletableAction(error: nil, libraryId: libraryId)
+                      self?.finishCompletableAction(error: nil)
                   }
               }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishCompletableAction(error: nil, libraryId: libraryId)
+                      self?.finishCompletableAction(error: nil)
                   }
               })
               .disposed(by: self.disposeBag)
     }
 
-    private func finishCompletableAction(error: Error?, libraryId: LibraryIdentifier) {
-        guard let error = error else {
+    private func finishCompletableAction(error errorData: (Error, SyncError.ErrorData)?) {
+        guard let (error, data) = errorData else {
             self.processNextAction()
             return
         }
 
-        switch self.syncError(from: error, libraryId: libraryId) {
+        switch self.syncError(from: error, data: data) {
         case .fatal(let error):
             self.abort(error: error)
 
         case .nonFatal(let error):
-            self.handleNonFatal(error: error, libraryId: libraryId, version: nil)
+            self.handleNonFatal(error: error, libraryId: data.libraryId, version: nil)
         }
     }
 
@@ -1507,7 +1507,7 @@ final class SyncController: SynchronizationController {
     /// - parameter error: Error to check.
     /// - parameter libraryId: Library identifier in which the error happened.
     /// - returns: Appropriate `SyncError`.
-    private func syncError(from error: Error, libraryId: LibraryIdentifier) -> SyncError {
+    private func syncError(from error: Error, data: SyncError.ErrorData) -> SyncError {
         if let error = error as? SyncError.Fatal {
             return .fatal(error)
         }
@@ -1544,10 +1544,10 @@ final class SyncController: SynchronizationController {
 
         // Check other networking errors
         if let responseError = error as? AFResponseError {
-            return self.alamoErrorRequiresAbort(responseError.error, response: responseError.response, libraryId: libraryId)
+            return self.alamoErrorRequiresAbort(responseError.error, response: responseError.response, data: data)
         }
         if let alamoError = error as? AFError {
-            return self.alamoErrorRequiresAbort(alamoError, response: "No response", libraryId: libraryId)
+            return self.alamoErrorRequiresAbort(alamoError, response: "No response", data: data)
         }
 
         // Check realm errors, every "core" error is bad. Can't create new Realm instance, can't continue with sync
@@ -1569,7 +1569,7 @@ final class SyncController: SynchronizationController {
     /// Checks whether given `AFError` is fatal and requires abort.
     /// - error: `AFError` to check.
     /// - returns: `SyncError` with appropriate error, if abort is required, `nil` otherwise.
-    private func alamoErrorRequiresAbort(_ error: AFError, response: String, libraryId: LibraryIdentifier) -> SyncError {
+    private func alamoErrorRequiresAbort(_ error: AFError, response: String, data: SyncError.ErrorData) -> SyncError {
         let responseMessage: () -> String = {
             if response == "No Response" {
                 return error.localizedDescription
@@ -1585,30 +1585,30 @@ final class SyncController: SynchronizationController {
                 case 304:
                     return .nonFatal(.unchanged)
                 case 413:
-                    return .nonFatal(.quotaLimit(libraryId))
+                    return .nonFatal(.quotaLimit(data.libraryId))
                 case 507:
                     return .nonFatal(.insufficientSpace)
                 case 503:
                     return .fatal(.serviceUnavailable)
                 default:
-                    return (code >= 400 && code <= 499 && code != 403) ? .fatal(.apiError(responseMessage())) : .nonFatal(.apiError(responseMessage()))
+                    return (code >= 400 && code <= 499 && code != 403) ? .fatal(.apiError(response: responseMessage(), data: data)) : .nonFatal(.apiError(response: responseMessage(), data: data))
                 }
             case .dataFileNil, .dataFileReadFailed, .missingContentType, .unacceptableContentType, .customValidationFailed:
-                return .fatal(.apiError(responseMessage()))
+                return .fatal(.apiError(response: responseMessage(), data: data))
             }
         case .sessionTaskFailed(let error):
             let nsError = error as NSError
             if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorNotConnectedToInternet {
                 return .fatal(.noInternetConnection)
             } else {
-                return .fatal(.apiError(error.localizedDescription))
+                return .fatal(.apiError(response: error.localizedDescription, data: data))
             }
         case .multipartEncodingFailed, .parameterEncodingFailed, .parameterEncoderFailed, .invalidURL, .createURLRequestFailed,
              .requestAdaptationFailed, .requestRetryFailed, .serverTrustEvaluationFailed, .sessionDeinitialized, .sessionInvalidated,
              .urlRequestValidationFailed:
-            return .fatal(.apiError(responseMessage()))
+            return .fatal(.apiError(response: responseMessage(), data: data))
         case .responseSerializationFailed, .createUploadableFailed, .downloadedFileMoveFailed, .explicitlyCancelled:
-            return .nonFatal(.apiError(responseMessage()))
+            return .nonFatal(.apiError(response: responseMessage(), data: data))
         }
     }
 

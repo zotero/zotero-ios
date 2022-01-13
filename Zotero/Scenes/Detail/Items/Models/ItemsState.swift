@@ -51,7 +51,7 @@ struct ItemsState: ViewModelState {
     var bibliographyError: Error?
     var attachmentToOpen: String?
 
-    init(type: ItemFetchType, library: Library, sortType: ItemsSortType, error: ItemsError?) {
+    init(type: ItemFetchType, library: Library, sortType: ItemsSortType, searchTerm: String?, error: ItemsError?) {
         self.type = type
         self.library = library
         self.filters = []
@@ -62,6 +62,7 @@ struct ItemsState: ViewModelState {
         self.selectedItems = []
         self.changes = []
         self.sortType = sortType
+        self.searchTerm = searchTerm
         self.processingBibliography = false
     }
 

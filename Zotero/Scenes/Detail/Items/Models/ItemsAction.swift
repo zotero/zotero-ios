@@ -27,6 +27,7 @@ enum ItemsAction {
     case restoreItems(Set<String>)
     case saveNote(String, String, [Tag])
     case search(String)
+    case initialSearch(String)
     case selectItem(String)
     case setSortField(ItemsSortType.Field)
     case startEditing
@@ -41,4 +42,5 @@ enum ItemsAction {
     case attachmentOpened(String)
     case updateKeys(items: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int])
     case quickCopyBibliography(Set<String>, LibraryIdentifier, WKWebView)
+    case startSync
 }

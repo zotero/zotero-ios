@@ -68,14 +68,19 @@ final class MasterCoordinator: NSObject, Coordinator {
         return controller
     }
 
-    private func storeIfNeeded(libraryId: LibraryIdentifier) -> CollectionIdentifier {
+    private func storeIfNeeded(libraryId: LibraryIdentifier, preselectedCollection collectionId: CollectionIdentifier? = nil) -> CollectionIdentifier {
         if Defaults.shared.selectedLibrary == libraryId {
+            if let collectionId = collectionId {
+                Defaults.shared.selectedCollectionId = collectionId
+                return collectionId
+            }
             return Defaults.shared.selectedCollectionId
-        } else {
-            Defaults.shared.selectedLibrary = libraryId
-            Defaults.shared.selectedCollectionId = .custom(.all)
-            return .custom(.all)
         }
+
+        let collectionId = collectionId ?? .custom(.all)
+        Defaults.shared.selectedLibrary = libraryId
+        Defaults.shared.selectedCollectionId = collectionId
+        return collectionId
     }
 }
 
@@ -132,6 +137,15 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
 
         let collectionId = self.storeIfNeeded(libraryId: libraryId)
+
+        let controller = self.createCollectionsViewController(libraryId: libraryId, selectedCollectionId: collectionId, dbStorage: dbStorage)
+        self.navigationController.pushViewController(controller, animated: true)
+    }
+
+    func showCollections(for libraryId: LibraryIdentifier, preselectedCollection collectionId: CollectionIdentifier) {
+        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+
+        let collectionId = self.storeIfNeeded(libraryId: libraryId, preselectedCollection: collectionId)
 
         let controller = self.createCollectionsViewController(libraryId: libraryId, selectedCollectionId: collectionId, dbStorage: dbStorage)
         self.navigationController.pushViewController(controller, animated: true)

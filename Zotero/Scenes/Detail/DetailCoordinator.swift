@@ -126,15 +126,17 @@ final class DetailCoordinator: Coordinator {
 
     let collection: Collection
     let library: Library
+    let searchItemKeys: [String]?
     private unowned let controllers: Controllers
     unowned let navigationController: UINavigationController
     private let disposeBag: DisposeBag
 
     private weak var citationNavigationController: UINavigationController?
 
-    init(library: Library, collection: Collection, navigationController: UINavigationController, controllers: Controllers) {
+    init(library: Library, collection: Collection, searchItemKeys: [String]?, navigationController: UINavigationController, controllers: Controllers) {
         self.library = library
         self.collection = collection
+        self.searchItemKeys = searchItemKeys
         self.navigationController = navigationController
         self.controllers = controllers
         self.childCoordinators = []
@@ -144,14 +146,15 @@ final class DetailCoordinator: Coordinator {
     func start(animated: Bool) {
         guard let userControllers = self.controllers.userControllers else { return }
         let controller = self.createItemsViewController(collection: self.collection, library: self.library, dbStorage: userControllers.dbStorage, fileDownloader: userControllers.fileDownloader,
-                                                        citationController: userControllers.citationController, fileCleanupController: userControllers.fileCleanupController)
+                                                        syncScheduler: userControllers.syncScheduler, citationController: userControllers.citationController, fileCleanupController: userControllers.fileCleanupController)
         self.navigationController.setViewControllers([controller], animated: animated)
     }
 
-    private func createItemsViewController(collection: Collection, library: Library, dbStorage: DbStorage, fileDownloader: AttachmentDownloader,
+    private func createItemsViewController(collection: Collection, library: Library, dbStorage: DbStorage, fileDownloader: AttachmentDownloader, syncScheduler: SynchronizationScheduler,
                                            citationController: CitationController, fileCleanupController: AttachmentFileCleanupController) -> ItemsViewController {
         let type = self.fetchType(from: collection)
-        let state = ItemsState(type: type, library: library, sortType: .default, error: nil)
+        let searchTerm = self.searchItemKeys?.joined(separator: ", ") ?? ""
+        let state = ItemsState(type: type, library: library, sortType: .default, searchTerm: searchTerm, error: nil)
         let handler = ItemsActionHandler(dbStorage: dbStorage,
                                          fileStorage: self.controllers.fileStorage,
                                          schemaController: self.controllers.schemaController,
@@ -159,7 +162,8 @@ final class DetailCoordinator: Coordinator {
                                          fileDownloader: fileDownloader,
                                          citationController: citationController,
                                          bundledDataStorage: self.controllers.bundledDataStorage,
-                                         fileCleanupController: fileCleanupController)
+                                         fileCleanupController: fileCleanupController,
+                                         syncScheduler: syncScheduler)
         return ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: self.controllers, coordinatorDelegate: self)
     }
 

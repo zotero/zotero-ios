@@ -551,6 +551,10 @@ internal enum L10n {
       internal static let personalQuotaReached = L10n.tr("Localizable", "errors.sync_toolbar.personal_quota_reached")
       /// Quota Reached.
       internal static let quotaReachedShort = L10n.tr("Localizable", "errors.sync_toolbar.quota_reached_short")
+      /// Show Item
+      internal static let showItem = L10n.tr("Localizable", "errors.sync_toolbar.show_item")
+      /// Show Items
+      internal static let showItems = L10n.tr("Localizable", "errors.sync_toolbar.show_items")
       /// Zotero services are temporarily unavailable. Please try again in a few minutes.
       internal static let unavailable = L10n.tr("Localizable", "errors.sync_toolbar.unavailable")
       /// Could not delete files from your WebDAV server: "%@".

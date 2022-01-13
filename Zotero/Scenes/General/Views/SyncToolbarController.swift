@@ -17,11 +17,15 @@ final class SyncToolbarController {
     private let disposeBag: DisposeBag
 
     private var pendingErrors: [Error]?
+    private var timerDisposeBag: DisposeBag
+
+    weak var coordinatorDelegate: MainCoordinatorSyncToolbarDelegate?
 
     init(parent: UINavigationController, progressObservable: PublishSubject<SyncProgress>, dbStorage: DbStorage) {
         self.viewController = parent
         self.dbStorage = dbStorage
         self.disposeBag = DisposeBag()
+        self.timerDisposeBag = DisposeBag()
 
         parent.setToolbarHidden(true, animated: false)
         parent.toolbar.barTintColor = UIColor(dynamicProvider: { traitCollection in
@@ -46,6 +50,7 @@ final class SyncToolbarController {
             switch error {
             case .cancelled:
                 self.pendingErrors = nil
+                self.timerDisposeBag = DisposeBag()
                 if !controller.isToolbarHidden {
                     controller.setToolbarHidden(true, animated: true)
                 }
@@ -61,6 +66,7 @@ final class SyncToolbarController {
         case .finished(let errors):
             if errors.isEmpty {
                 self.pendingErrors = nil
+                self.timerDisposeBag = DisposeBag()
                 if !controller.isToolbarHidden {
                     controller.setToolbarHidden(true, animated: true)
                 }
@@ -74,6 +80,9 @@ final class SyncToolbarController {
             self.set(progress: progress, in: controller)
             self.hideToolbarWithDelay(in: controller)
 
+        case .starting:
+            self.hideToolbarWithDelay(in: controller)
+
         default: break
         }
     }
@@ -81,95 +90,99 @@ final class SyncToolbarController {
     private func showErrorAlert(with errors: [Error]) {
         self.viewController.setToolbarHidden(true, animated: true)
 
-        let controller = UIAlertController(title: L10n.error, message: self.alertMessage(from: errors), preferredStyle: .alert)
+        guard let error = errors.first else { return }
+        
+        let (message, data) = self.alertMessage(from: error)
+
+        let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { [weak self] _ in
             self?.pendingErrors = nil
         }))
+        if let data = data, let keys = data.itemKeys, !keys.isEmpty {
+            let title = keys.count == 1 ? L10n.Errors.SyncToolbar.showItem : L10n.Errors.SyncToolbar.showItems
+            controller.addAction(UIAlertAction(title: title, style: .default, handler: { [weak self] _ in
+                self?.coordinatorDelegate?.showItems(with: keys, in: data.libraryId)
+            }))
+        }
         self.viewController.present(controller, animated: true, completion: nil)
     }
 
-    private func alertMessage(from errors: [Error]) -> String {
-        var message = ""
-
-        for (idx, error) in errors.enumerated() {
-            if let error = error as? SyncError.Fatal {
-                switch error {
-                case .cancelled, .uploadObjectConflict: return "" // should not happen
-                case .apiError(let response):
-                    message += L10n.Errors.api(response)
-                case .dbError:
-                    message += L10n.Errors.db
-                case .allLibrariesFetchFailed:
-                    message += L10n.Errors.SyncToolbar.librariesMissing
-                case .cantResolveConflict, .preconditionErrorCantBeResolved:
-                    message += L10n.Errors.SyncToolbar.conflictRetryLimit
-                case .groupSyncFailed:
-                    message += L10n.Errors.SyncToolbar.groupsFailed
-                case .missingGroupPermissions, .permissionLoadingFailed:
-                    message += L10n.Errors.SyncToolbar.groupPermissions
-                case .noInternetConnection:
-                    message += L10n.Errors.SyncToolbar.internetConnection
-                case .serviceUnavailable:
-                    message += L10n.Errors.SyncToolbar.unavailable
-                }
-            } else if let error = error as? SyncError.NonFatal {
-                switch error {
-                case .schema:
-                    message += L10n.Errors.schema
-                case .parsing:
-                    message += L10n.Errors.parsing
-                case .apiError(let response):
-                    message += L10n.Errors.api(response)
-                case .versionMismatch:
-                    message += L10n.Errors.versionMismatch
-                case .unknown(let _message):
-                    message += _message.isEmpty ? L10n.Errors.unknown : _message
-                case .attachmentMissing(let key, let title):
-                    message += L10n.Errors.SyncToolbar.attachmentMissing("\(title) (\(key))")
-                case .quotaLimit(let libraryId):
-                    switch libraryId {
-                    case .custom:
-                        message += L10n.Errors.SyncToolbar.personalQuotaReached
-
-                    case .group(let groupId):
-                        let groupName = (try? self.dbStorage.createCoordinator().perform(request: ReadGroupDbRequest(identifier: groupId)))?.name
-                        message += L10n.Errors.SyncToolbar.groupQuotaReached(groupName ?? "\(groupId)")
-                    }
-                case .insufficientSpace:
-                    message += L10n.Errors.SyncToolbar.insufficientSpace
-                case .webDavDeletionFailed(let error, _):
-                    message += L10n.Errors.SyncToolbar.webdavError(error)
-                case .webDavDeletion(let count, _):
-                    message += L10n.Errors.SyncToolbar.webdavError2(count)
-                case .webDavVerification(let error):
-                    message = error.message
-                case .webDavDownload(let error):
-                    switch error {
-                    case .itemPropInvalid(let string):
-                        message = L10n.Errors.SyncToolbar.webdavItemProp(string)
-                    case .notChanged:
-                        // Should not happen
-                        message = ""
-                    }
-                case .unchanged: break
-                }
-            }
-
-            if idx != errors.count - 1 {
-                message += "\n\n"
+    private func alertMessage(from error: Error) -> (message: String, additionalData: SyncError.ErrorData?) {
+        if let error = error as? SyncError.Fatal {
+            switch error {
+            case .cancelled, .uploadObjectConflict: break // should not happen
+            case .apiError(let response, let data):
+                return (L10n.Errors.api(response), data)
+            case .dbError:
+                return (L10n.Errors.db, nil)
+            case .allLibrariesFetchFailed:
+                return (L10n.Errors.SyncToolbar.librariesMissing, nil)
+            case .cantResolveConflict, .preconditionErrorCantBeResolved:
+                return (L10n.Errors.SyncToolbar.conflictRetryLimit, nil)
+            case .groupSyncFailed:
+                return (L10n.Errors.SyncToolbar.groupsFailed, nil)
+            case .missingGroupPermissions, .permissionLoadingFailed:
+                return (L10n.Errors.SyncToolbar.groupPermissions, nil)
+            case .noInternetConnection:
+                return (L10n.Errors.SyncToolbar.internetConnection, nil)
+            case .serviceUnavailable:
+                return (L10n.Errors.SyncToolbar.unavailable, nil)
             }
         }
 
-        return message
+        if let error = error as? SyncError.NonFatal {
+            switch error {
+            case .schema:
+                return (L10n.Errors.schema, nil)
+            case .parsing:
+                return (L10n.Errors.parsing, nil)
+            case .apiError(let response, let data):
+                return (L10n.Errors.api(response), data)
+            case .versionMismatch:
+                return (L10n.Errors.versionMismatch, nil)
+            case .unknown(let _message):
+                return _message.isEmpty ? (L10n.Errors.unknown, nil) : (_message, nil)
+            case .attachmentMissing(let key, let title):
+                return (L10n.Errors.SyncToolbar.attachmentMissing("\(title) (\(key))"), nil)
+            case .quotaLimit(let libraryId):
+                switch libraryId {
+                case .custom:
+                    return (L10n.Errors.SyncToolbar.personalQuotaReached, nil)
+
+                case .group(let groupId):
+                    let groupName = (try? self.dbStorage.createCoordinator().perform(request: ReadGroupDbRequest(identifier: groupId)))?.name
+                    return (L10n.Errors.SyncToolbar.groupQuotaReached(groupName ?? "\(groupId)"), nil)
+                }
+            case .insufficientSpace:
+                return (L10n.Errors.SyncToolbar.insufficientSpace, nil)
+            case .webDavDeletionFailed(let error, _):
+                return (L10n.Errors.SyncToolbar.webdavError(error), nil)
+            case .webDavDeletion(let count, _):
+                return (L10n.Errors.SyncToolbar.webdavError2(count), nil)
+            case .webDavVerification(let error):
+                return (error.message, nil)
+            case .webDavDownload(let error):
+                switch error {
+                case .itemPropInvalid(let string):
+                    return (L10n.Errors.SyncToolbar.webdavItemProp(string), nil)
+                case .notChanged: break // Should not happen
+                }
+            case .unchanged: break
+            }
+        }
+
+        return ("", nil)
     }
 
     private func hideToolbarWithDelay(in controller: UINavigationController) {
+        self.timerDisposeBag = DisposeBag()
+
         Single<Int>.timer(SyncToolbarController.finishVisibilityTime,
                           scheduler: MainScheduler.instance)
                    .subscribe(onSuccess: { [weak controller] _ in
                        controller?.setToolbarHidden(true, animated: true)
                    })
-                   .disposed(by: self.disposeBag)
+                   .disposed(by: self.timerDisposeBag)
     }
 
     private func set(progress: SyncProgress, in controller: UINavigationController) {
@@ -227,9 +240,9 @@ final class SyncToolbarController {
             let issues = errors.count == 1 ? L10n.Errors.SyncToolbar.oneError : L10n.Errors.SyncToolbar.multipleErrors(errors.count)
             return L10n.Errors.SyncToolbar.finishedWithErrors(issues)
         case .deletions(let name):
-            return  L10n.SyncToolbar.deletion(name)
+            return L10n.SyncToolbar.deletion(name)
         case .aborted(let error):
-            return L10n.SyncToolbar.aborted(self.alertMessage(from: [error]))
+            return L10n.SyncToolbar.aborted(self.alertMessage(from: error).message)
         }
     }
 

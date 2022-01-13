@@ -27,10 +27,11 @@ struct ItemsActionHandler: ViewModelActionHandler {
     private unowned let citationController: CitationController
     private unowned let bundledDataStorage: DbStorage
     private unowned let fileCleanupController: AttachmentFileCleanupController
+    private unowned let syncScheduler: SynchronizationScheduler
     private let disposeBag: DisposeBag
 
     init(dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, urlDetector: UrlDetector, fileDownloader: AttachmentDownloader, citationController: CitationController,
-         bundledDataStorage: DbStorage, fileCleanupController: AttachmentFileCleanupController) {
+         bundledDataStorage: DbStorage, fileCleanupController: AttachmentFileCleanupController, syncScheduler: SynchronizationScheduler) {
         self.backgroundQueue = DispatchQueue.global(qos: .userInitiated)
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
@@ -40,6 +41,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
         self.citationController = citationController
         self.bundledDataStorage = bundledDataStorage
         self.fileCleanupController = fileCleanupController
+        self.syncScheduler = syncScheduler
         self.disposeBag = DisposeBag()
     }
 
@@ -81,7 +83,10 @@ struct ItemsActionHandler: ViewModelActionHandler {
             self.saveNote(text: text, tags: tags, key: key, in: viewModel)
 
         case .search(let text):
-            self.search(for: (text.isEmpty ? nil : text), in: viewModel)
+            self.search(for: (text.isEmpty ? nil : text), ignoreOriginal: false, in: viewModel)
+
+        case .initialSearch(let text):
+            self.search(for: (text.isEmpty ? nil : text), ignoreOriginal: true, in: viewModel)
 
         case .setSortField(let field):
             var sortType = viewModel.state.sortType
@@ -155,6 +160,10 @@ struct ItemsActionHandler: ViewModelActionHandler {
 
         case .removeDownloads(let ids):
             self.fileCleanupController.delete(.allForItems(ids, viewModel.state.library.identifier), completed: nil)
+
+        case .startSync:
+            guard !self.syncScheduler.syncController.inProgress else { return }
+            self.syncScheduler.request(sync: .ignoreIndividualDelays, libraries: .specific([viewModel.state.library.identifier]))
         }
     }
 
@@ -519,8 +528,8 @@ struct ItemsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func search(for text: String?, in viewModel: ViewModel<ItemsActionHandler>) {
-        guard text != viewModel.state.searchTerm else { return }
+    private func search(for text: String?, ignoreOriginal: Bool, in viewModel: ViewModel<ItemsActionHandler>) {
+        guard ignoreOriginal || text != viewModel.state.searchTerm else { return }
 
         let results = self.results(for: text, filters: viewModel.state.filters, fetchType: viewModel.state.type, sortType: viewModel.state.sortType, libraryId: viewModel.state.library.identifier)
 

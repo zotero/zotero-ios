@@ -112,7 +112,7 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
             self.webDavController.sessionStorage.isEnabled = type == .webDav
 
             if type == .zotero {
-                self.syncScheduler.request(syncType: .normal)
+                self.syncScheduler.request(sync: .normal, libraries: .all)
             }
         } catch let error {
             DDLogError("SyncSettingsActionHandler: can't mark all attachments not uploaded - \(error)")
@@ -154,7 +154,7 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
                        state.isVerifyingWebDav = false
                        state.webDavVerificationResult = .success(())
                    }
-                   self.syncScheduler.request(syncType: .normal)
+                   self.syncScheduler.request(sync: .normal, libraries: .all)
                }, onFailure: { viewModel, error in
                    self.handleVerification(error: error, in: viewModel)
                })

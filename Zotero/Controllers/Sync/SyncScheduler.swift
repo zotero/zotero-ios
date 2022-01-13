@@ -14,8 +14,8 @@ import RxSwift
 protocol SynchronizationScheduler: AnyObject {
     var syncController: SynchronizationController { get }
 
-    func request(syncType: SyncController.SyncType)
-    func requestNormalSync(for libraries: [LibraryIdentifier])
+    func request(sync type: SyncController.SyncType, libraries: SyncController.LibrarySyncType)
+    func request(sync type: SyncController.SyncType, libraries: SyncController.LibrarySyncType, applyDelay: Bool)
     func cancelSync()
 }
 
@@ -72,12 +72,16 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
                   .disposed(by: self.disposeBag)
     }
 
-    func request(syncType: SyncController.SyncType) {
-        self.enqueueAndStartTimer(action: (syncType, .all))
+    func request(sync type: SyncController.SyncType, libraries: SyncController.LibrarySyncType) {
+        self.request(sync: type, libraries: libraries, applyDelay: false)
     }
 
-    func requestNormalSync(for libraries: [LibraryIdentifier]) {
-        self.enqueueAndStartTimer(action: (.normal, .specific(libraries)))
+    func request(sync type: SyncController.SyncType, libraries: SyncController.LibrarySyncType, applyDelay: Bool) {
+        if applyDelay {
+            self.enqueueAndStartTimer(action: (type, libraries))
+        } else {
+            self.enqueueAndStart(action: (type, libraries))
+        }
     }
 
     func webSocketUpdate(libraryId: LibraryIdentifier) {
@@ -94,24 +98,28 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
         }
     }
 
+    private func enqueueAndStart(action: SchedulerAction) {
+        self.queue.async(flags: .barrier) { [weak self] in
+            self?._enqueueAndStart(action: action)
+        }
+    }
+
+    private func _enqueueAndStart(action: SchedulerAction) {
+        guard action.syncType != .full || self.canPerformFullSync else { return }
+        self.enqueue(action: action)
+        self.startNextAction()
+    }
+
     private func enqueueAndStartTimer(action: SchedulerAction) {
         self.queue.async(flags: .barrier) { [weak self] in
-            guard let `self` = self else { return }
-            self._enqueueAndStartTimer(action: action)
+            self?._enqueueAndStartTimer(action: action)
         }
     }
 
     private func _enqueueAndStartTimer(action: SchedulerAction) {
         guard action.syncType != .full || self.canPerformFullSync else { return }
-
         self.enqueue(action: action)
-
-        switch action.1 {
-        case .all:
-            self.startNextAction()
-        case .specific:
-            self.startTimer()
-        }
+        self.startTimer()
     }
 
     private func enqueue(action: SchedulerAction) {
@@ -137,6 +145,7 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
         guard self.inProgress == nil else { return }
 
         self.timerDisposeBag = DisposeBag()
+
         Single<Int>.timer(SyncScheduler.timeout, scheduler: self.scheduler)
                    .subscribe(onSuccess: { [weak self] _ in
                        self?.startNextAction()
@@ -146,9 +155,9 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
 
     private func startNextAction() {
         guard self.inProgress == nil, let (syncType, librarySyncType) = self.nextAction else { return }
+
         self.inProgress = self.nextAction
         self.nextAction = nil
-
         self.lastSyncDate = Date()
         if syncType == .full {
             self.lastFullSyncDate = self.lastSyncDate

@@ -21,6 +21,10 @@ protocol SplitControllerDelegate: AnyObject {
     var isSplit: Bool { get }
 }
 
+protocol MainCoordinatorSyncToolbarDelegate: AnyObject {
+    func showItems(with keys: [String], in libraryId: LibraryIdentifier)
+}
+
 final class MainViewController: UISplitViewController {
     // Constants
     private let controllers: Controllers
@@ -71,6 +75,16 @@ final class MainViewController: UISplitViewController {
         self.didAppear = true
     }
 
+    private func showItems(for collection: Collection, in library: Library, searchItemKeys: [String]?) {
+        let navigationController = UINavigationController()
+
+        let coordinator = DetailCoordinator(library: library, collection: collection, searchItemKeys: searchItemKeys, navigationController: navigationController, controllers: self.controllers)
+        coordinator.start(animated: false)
+        self.detailCoordinator = coordinator
+
+        self.showDetailViewController(navigationController, sender: nil)
+    }
+
     // MARK: - Setups
 
     private func setupControllers() {
@@ -84,6 +98,7 @@ final class MainViewController: UISplitViewController {
         if let progressObservable = self.controllers.userControllers?.syncScheduler.syncController.progressObservable,
            let dbStorage = self.controllers.userControllers?.dbStorage {
             self.syncToolbarController = SyncToolbarController(parent: masterController, progressObservable: progressObservable, dbStorage: dbStorage)
+            self.syncToolbarController?.coordinatorDelegate = self
         }
     }
 }
@@ -104,14 +119,16 @@ extension MainViewController: UISplitViewControllerDelegate {
 extension MainViewController: MainCoordinatorDelegate {
     func showItems(for collection: Collection, in library: Library, isInitial: Bool) {
         guard !self.isSplit || self.detailCoordinator?.library != library || self.detailCoordinator?.collection.identifier != collection.identifier else { return }
+        self.showItems(for: collection, in: library, searchItemKeys: nil)
+    }
+}
 
-        let navigationController = UINavigationController()
-
-        let coordinator = DetailCoordinator(library: library, collection: collection, navigationController: navigationController, controllers: self.controllers)
-        coordinator.start(animated: false)
-        self.detailCoordinator = coordinator
-
-        self.showDetailViewController(navigationController, sender: nil)
+extension MainViewController: MainCoordinatorSyncToolbarDelegate {
+    func showItems(with keys: [String], in libraryId: LibraryIdentifier) {
+        guard let dbStorage = self.controllers.userControllers?.dbStorage,
+              let library = try? dbStorage.createCoordinator().perform(request: ReadLibraryDbRequest(libraryId: libraryId)) else { return }
+        self.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(.all))
+        self.showItems(for: Collection(custom: .all), in: library, searchItemKeys: keys)
     }
 }
 

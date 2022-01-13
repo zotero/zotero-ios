@@ -42,7 +42,7 @@ final class ItemsViewController: UIViewController {
     private static let itemBatchingLimit = 150
 
     private let viewModel: ViewModel<ItemsActionHandler>
-    private let controllers: Controllers
+    private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
     private var tableViewHandler: ItemsTableViewHandler!
@@ -91,8 +91,12 @@ final class ItemsViewController: UIViewController {
         self.setupFileObservers()
         self.setupAppStateObserver()
         self.setupOverlay()
-
         self.startObservingSyncProgress()
+
+        if let term = self.viewModel.state.searchTerm {
+            self.viewModel.process(action: .initialSearch(term))
+            self.searchBarContainer?.searchBar.text = term
+        }
         if let results = self.viewModel.state.results {
             self.startObserving(results: results)
         }
@@ -117,11 +121,11 @@ final class ItemsViewController: UIViewController {
                              .disposed(by: self.disposeBag)
 
         self.viewModel.stateObservable
-                  .observe(on: MainScheduler.instance)
-                  .subscribe(with: self, onNext: { `self`, state in
-                      self.update(state: state)
-                  })
-                  .disposed(by: self.disposeBag)
+                      .observe(on: MainScheduler.instance)
+                      .subscribe(with: self, onNext: { `self`, state in
+                          self.update(state: state)
+                      })
+                      .disposed(by: self.disposeBag)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -449,8 +453,7 @@ final class ItemsViewController: UIViewController {
     }
 
     @objc private func startSync() {
-        guard let scheduler = self.controllers.userControllers?.syncScheduler, !scheduler.syncController.inProgress else { return }
-        scheduler.request(syncType: .ignoreIndividualDelays)
+        self.viewModel.process(action: .startSync)
     }
 
     // MARK: - Setups
@@ -599,8 +602,7 @@ final class ItemsViewController: UIViewController {
     @discardableResult
     private func setupSearchBar(for windowSize: CGSize) -> SearchBarPosition {
         // Detect current position of search bar
-        let current: SearchBarPosition? = self.navigationItem.searchController != nil ? .navigationItem :
-                                                                                        (self.navigationItem.titleView != nil ? .titleView : nil)
+        let current: SearchBarPosition? = self.navigationItem.searchController != nil ? .navigationItem : (self.navigationItem.titleView != nil ? .titleView : nil)
         // The search bar can change position based on current window size. If the window is too narrow, the search bar appears in
         // navigationItem, otherwise it can appear in titleView.
         let new: SearchBarPosition = UIDevice.current.isCompactWidth(size: windowSize) ? .navigationItem : .titleView
@@ -642,6 +644,7 @@ final class ItemsViewController: UIViewController {
     private func setup(searchBar: UISearchBar) {
         searchBar.placeholder = L10n.Items.searchTitle
         searchBar.rx.text.observe(on: MainScheduler.instance)
+                         .skip(1)
                          .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
                          .subscribe(onNext: { [weak self] text in
                              self?.viewModel.process(action: .search(text ?? ""))

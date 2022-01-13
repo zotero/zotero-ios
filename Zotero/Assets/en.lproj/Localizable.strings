@@ -333,6 +333,8 @@
 "errors.sync_toolbar.webdav_error" = "Could not delete files from your WebDAV server: \"%@\".";
 "errors.sync_toolbar.webdav_error2" = "Could not delete %d file(s) from your WebDAV server.";
 "errors.sync_toolbar.webdav_item_prop" = "Invalid prop file: %@";
+"errors.sync_toolbar.show_item" = "Show Item";
+"errors.sync_toolbar.show_items" = "Show Items";
 "errors.items.loading" = "Could not load items.";
 "errors.items.deletion" = "Could not remove item.";
 "errors.items.deletion_from_collection" = "Could not remove item from collection.";

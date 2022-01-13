@@ -11,6 +11,24 @@ import Foundation
 import Alamofire
 
 enum SyncError {
+    struct ErrorData {
+        let itemKeys: [String]?
+        let libraryId: LibraryIdentifier
+
+        static func from(libraryId: LibraryIdentifier) -> ErrorData {
+            return ErrorData(itemKeys: nil, libraryId: libraryId)
+        }
+
+        static func from(syncObject: SyncObject, keys: [String], libraryId: LibraryIdentifier) -> ErrorData {
+            switch syncObject {
+            case .item:
+                return ErrorData(itemKeys: keys, libraryId: libraryId)
+            case .collection, .search, .settings, .trash:
+                return ErrorData(itemKeys: nil, libraryId: libraryId)
+            }
+        }
+    }
+
     case fatal(Fatal)
     case nonFatal(NonFatal)
 
@@ -30,7 +48,7 @@ enum SyncError {
 
     enum Fatal: Error {
         case noInternetConnection
-        case apiError(String)
+        case apiError(response: String, data: ErrorData)
         case dbError
         case groupSyncFailed
         case allLibrariesFetchFailed
@@ -45,7 +63,7 @@ enum SyncError {
 
     enum NonFatal: Error {
         case versionMismatch(LibraryIdentifier)
-        case apiError(String)
+        case apiError(response: String, data: ErrorData)
         case unknown(String)
         case schema(SchemaError)
         case parsing(Parsing.Error)

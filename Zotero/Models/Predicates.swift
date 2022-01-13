@@ -245,7 +245,20 @@ extension NSPredicate {
     }
 
     static func itemSearch(for text: String) -> NSPredicate {
+        var allPredicates = itemSearchSubpredicates(for: text)
+        let components = text.components(separatedBy: ",")
+        for component in components {
+            let trimmed = component.trimmingCharacters(in: .whitespacesAndNewlines)
+            allPredicates.append(contentsOf: itemSearchSubpredicates(for: trimmed))
+        }
+        return NSCompoundPredicate(orPredicateWithSubpredicates: allPredicates)
+    }
+
+    private static func itemSearchSubpredicates(for text: String) -> [NSPredicate] {
+        let keyPredicate = NSPredicate(format: "key == %@", text)
+        let childrenPredicate = NSPredicate(format: "any children.key == %@", text)
         let titlePredicate = NSPredicate(format: "displayTitle contains[c] %@", text)
+        let tagPredicate = NSPredicate(format: "any tags.tag.name contains[c] %@", text)
 
         let creatorFullNamePredicate = NSPredicate(format: "any creators.name contains[c] %@", text)
         let creatorFirstNamePredicate = NSPredicate(format: "any creators.firstName contains[c] %@", text)
@@ -254,11 +267,7 @@ extension NSPredicate {
                                                                                   creatorFirstNamePredicate,
                                                                                   creatorLastNamePredicate])
 
-        let tagPredicate = NSPredicate(format: "any tags.tag.name contains[c] %@", text)
-
-        return NSCompoundPredicate(orPredicateWithSubpredicates: [titlePredicate,
-                                                                  creatorPredicate,
-                                                                  tagPredicate])
+        return [keyPredicate, childrenPredicate, titlePredicate, creatorPredicate, tagPredicate]
     }
 
     static func linkType(_ type: LinkType) -> NSPredicate {
