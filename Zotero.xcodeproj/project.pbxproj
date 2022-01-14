@@ -801,7 +801,6 @@
 		B3BC6B1E250F79C4006A8B9C /* FieldKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC6B1C250F797B006A8B9C /* FieldKeys.swift */; };
 		B3BC6B20250FA437006A8B9C /* SchemaError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC6B1F250FA437006A8B9C /* SchemaError.swift */; };
 		B3BC6B21250FA50F006A8B9C /* SchemaError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC6B1F250FA437006A8B9C /* SchemaError.swift */; };
-		B3BD2BA025C95ED300275EF9 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = B3BD2B9F25C95ED300275EF9 /* Starscream */; };
 		B3BD2BB325C98D2900275EF9 /* BackgroundTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BD2BB225C98D2900275EF9 /* BackgroundTimer.swift */; };
 		B3BD86BC258CBCD600EF6674 /* SearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BD86BB258CBCD600EF6674 /* SearchBar.swift */; };
 		B3C6AB28248E1B720009AC96 /* SyncBatchProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6AB27248E1B720009AC96 /* SyncBatchProcessor.swift */; };
@@ -842,6 +841,7 @@
 		B3D84BEA27917BE1005DDD7C /* CreatorTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D84BE927917BE1005DDD7C /* CreatorTypes.swift */; };
 		B3D84BEB27917D07005DDD7C /* CreatorTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D84BE927917BE1005DDD7C /* CreatorTypes.swift */; };
 		B3D84BED27917E3D005DDD7C /* UpdateCreatorSummaryFormatDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D84BEC27917E3D005DDD7C /* UpdateCreatorSummaryFormatDbRequest.swift */; };
+		B3D84BF027919FDE005DDD7C /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = B3D84BEF27919FDE005DDD7C /* Starscream */; };
 		B3DCDEE12408F5200039ED0D /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDEE02408F5200039ED0D /* MainViewController.swift */; };
 		B3DCDF06240912060039ED0D /* DocumentPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDF01240912060039ED0D /* DocumentPickerViewController.swift */; };
 		B3DCDF07240912060039ED0D /* NoteEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDF02240912060039ED0D /* NoteEditorViewController.swift */; };
@@ -1739,7 +1739,7 @@
 				B35E4B9525248BAD000EA134 /* RxBlocking in Frameworks */,
 				B3445F4626EF5EE9007D4009 /* CrashReporter in Frameworks */,
 				B356A3842524A66A003F1943 /* ZIPFoundation in Frameworks */,
-				B3BD2BA025C95ED300275EF9 /* Starscream in Frameworks */,
+				B3D84BF027919FDE005DDD7C /* Starscream in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3483,9 +3483,9 @@
 				B356A39F2524A703003F1943 /* CocoaLumberjack */,
 				B3A6C59E252CA08300F24CBE /* PSPDFKit */,
 				B3ED688C255AE46D00D4DE78 /* Differ */,
-				B3BD2B9F25C95ED300275EF9 /* Starscream */,
 				B35C9C072642A0BC0004C47E /* RealmSwift */,
 				B3445F4526EF5EE9007D4009 /* CrashReporter */,
+				B3D84BEF27919FDE005DDD7C /* Starscream */,
 			);
 			productName = Zotero;
 			productReference = B30D59552206F60400884C4A /* Zotero.app */;
@@ -3624,9 +3624,9 @@
 				B356A39C2524A703003F1943 /* XCRemoteSwiftPackageReference "CocoaLumberjack" */,
 				B3A6C59D252CA08200F24CBE /* XCRemoteSwiftPackageReference "PSPDFKit-SP" */,
 				B3ED688B255AE46D00D4DE78 /* XCRemoteSwiftPackageReference "Differ" */,
-				B3BD2B9E25C95ED300275EF9 /* XCRemoteSwiftPackageReference "Starscream" */,
 				B35C9C042642A0BC0004C47E /* XCRemoteSwiftPackageReference "realm-cocoa" */,
 				B3445F4426EF5EE9007D4009 /* XCRemoteSwiftPackageReference "plcrashreporter" */,
+				B3D84BEE27919FDE005DDD7C /* XCRemoteSwiftPackageReference "Starscream" */,
 			);
 			productRefGroup = B30D59562206F60400884C4A /* Products */;
 			projectDirPath = "";
@@ -5603,7 +5603,7 @@
 			repositoryURL = "https://github.com/microsoft/plcrashreporter";
 			requirement = {
 				kind = exactVersion;
-				version = 1.10.0;
+				version = 1.10.1;
 			};
 		};
 		B356A361252490B3003F1943 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
@@ -5611,7 +5611,7 @@
 			repositoryURL = "https://github.com/Alamofire/Alamofire";
 			requirement = {
 				kind = exactVersion;
-				version = 5.4.3;
+				version = 5.5.0;
 			};
 		};
 		B356A367252490DB003F1943 /* XCRemoteSwiftPackageReference "keychain-swift" */ = {
@@ -5619,7 +5619,7 @@
 			repositoryURL = "https://github.com/evgenyneu/keychain-swift";
 			requirement = {
 				kind = exactVersion;
-				version = 19.0.0;
+				version = 20.0.0;
 			};
 		};
 		B356A3732524A601003F1943 /* XCRemoteSwiftPackageReference "RxSwiftExt" */ = {
@@ -5635,7 +5635,7 @@
 			repositoryURL = "https://github.com/kirualex/SwiftyGif";
 			requirement = {
 				kind = exactVersion;
-				version = 5.4.0;
+				version = 5.4.2;
 			};
 		};
 		B356A3822524A66A003F1943 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
@@ -5643,7 +5643,7 @@
 			repositoryURL = "https://github.com/weichsel/ZIPFoundation";
 			requirement = {
 				kind = exactVersion;
-				version = 0.9.12;
+				version = 0.9.14;
 			};
 		};
 		B356A3882524A698003F1943 /* XCRemoteSwiftPackageReference "Nimble" */ = {
@@ -5675,7 +5675,7 @@
 			repositoryURL = "https://github.com/CocoaLumberjack/CocoaLumberjack";
 			requirement = {
 				kind = exactVersion;
-				version = 3.7.2;
+				version = 3.7.4;
 			};
 		};
 		B35C9C042642A0BC0004C47E /* XCRemoteSwiftPackageReference "realm-cocoa" */ = {
@@ -5683,7 +5683,7 @@
 			repositoryURL = "https://github.com/realm/realm-cocoa";
 			requirement = {
 				kind = exactVersion;
-				version = 10.15.1;
+				version = 10.21.1;
 			};
 		};
 		B35E4B8B25248B3C000EA134 /* XCRemoteSwiftPackageReference "RxSwift" */ = {
@@ -5699,10 +5699,10 @@
 			repositoryURL = "https://github.com/PSPDFKit/PSPDFKit-SP";
 			requirement = {
 				kind = exactVersion;
-				version = 11.0.0;
+				version = 11.2.0;
 			};
 		};
-		B3BD2B9E25C95ED300275EF9 /* XCRemoteSwiftPackageReference "Starscream" */ = {
+		B3D84BEE27919FDE005DDD7C /* XCRemoteSwiftPackageReference "Starscream" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/daltoniam/Starscream";
 			requirement = {
@@ -5836,9 +5836,9 @@
 			package = B3A6C59D252CA08200F24CBE /* XCRemoteSwiftPackageReference "PSPDFKit-SP" */;
 			productName = PSPDFKit;
 		};
-		B3BD2B9F25C95ED300275EF9 /* Starscream */ = {
+		B3D84BEF27919FDE005DDD7C /* Starscream */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B3BD2B9E25C95ED300275EF9 /* XCRemoteSwiftPackageReference "Starscream" */;
+			package = B3D84BEE27919FDE005DDD7C /* XCRemoteSwiftPackageReference "Starscream" */;
 			productName = Starscream;
 		};
 		B3ED688C255AE46D00D4DE78 /* Differ */ = {

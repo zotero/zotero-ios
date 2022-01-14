@@ -6,8 +6,8 @@
         "repositoryURL": "https://github.com/Alamofire/Alamofire",
         "state": {
           "branch": null,
-          "revision": "f96b619bcb2383b43d898402283924b80e2c4bae",
-          "version": "5.4.3"
+          "revision": "f82c23a8a7ef8dc1a49a8bfc6a96883e79121864",
+          "version": "5.5.0"
         }
       },
       {
@@ -15,8 +15,8 @@
         "repositoryURL": "https://github.com/CocoaLumberjack/CocoaLumberjack",
         "state": {
           "branch": null,
-          "revision": "e518eb6e362df327574ba5e04269cd6d29f40aec",
-          "version": "3.7.2"
+          "revision": "80ada1f753b0d53d9b57c465936a7c4169375002",
+          "version": "3.7.4"
         }
       },
       {
@@ -51,8 +51,8 @@
         "repositoryURL": "https://github.com/evgenyneu/keychain-swift",
         "state": {
           "branch": null,
-          "revision": "96fb84f45a96630e7583903bd7e08cf095c7a7ef",
-          "version": "19.0.0"
+          "revision": "d108a1fa6189e661f91560548ef48651ed8d93b9",
+          "version": "20.0.0"
         }
       },
       {
@@ -78,8 +78,8 @@
         "repositoryURL": "https://github.com/microsoft/plcrashreporter",
         "state": {
           "branch": null,
-          "revision": "59513acde6194d93617afcf7b2c81c88638a6af2",
-          "version": "1.10.0"
+          "revision": "6b27393cad517c067dceea85fadf050e70c4ceaa",
+          "version": "1.10.1"
         }
       },
       {
@@ -87,8 +87,8 @@
         "repositoryURL": "https://github.com/PSPDFKit/PSPDFKit-SP",
         "state": {
           "branch": null,
-          "revision": "a7ff085d76a6702b6801b4d2aae4fbeebc74be63",
-          "version": "11.0.0"
+          "revision": "44c6f807635cc4fb83c841f0a03492fcf60b3e0d",
+          "version": "11.2.0"
         }
       },
       {
@@ -105,8 +105,8 @@
         "repositoryURL": "https://github.com/realm/realm-cocoa",
         "state": {
           "branch": null,
-          "revision": "4cbe20f31b1bcc20190c724632143b4f9b8ac3e3",
-          "version": "10.15.1"
+          "revision": "39177714b95bb5b1b29fffe28f1c7da77eef8e8b",
+          "version": "10.21.1"
         }
       },
       {
@@ -114,8 +114,8 @@
         "repositoryURL": "https://github.com/realm/realm-core",
         "state": {
           "branch": null,
-          "revision": "23f60515a00f076a9e3f2dc672fe1ae07601ee90",
-          "version": "11.4.1"
+          "revision": "f1976f0d96d9b06fbe0afbd60090b1c3966b1e23",
+          "version": "11.8.0"
         }
       },
       {
@@ -159,8 +159,8 @@
         "repositoryURL": "https://github.com/kirualex/SwiftyGif",
         "state": {
           "branch": null,
-          "revision": "0cd770feed5807d9fd4fa8df5ad74b56b814b0c8",
-          "version": "5.4.0"
+          "revision": "8d576b09553aea8e345e1b35c3b71cb6a84ac999",
+          "version": "5.4.2"
         }
       },
       {
@@ -168,8 +168,8 @@
         "repositoryURL": "https://github.com/weichsel/ZIPFoundation",
         "state": {
           "branch": null,
-          "revision": "cf10bbff6ac3b873e97b36b9784c79866a051a8e",
-          "version": "0.9.12"
+          "revision": "7254c74b49cec2cb81520523ba993c671f71b066",
+          "version": "0.9.14"
         }
       }
     ]
