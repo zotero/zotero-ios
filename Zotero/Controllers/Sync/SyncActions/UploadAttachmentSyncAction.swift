@@ -256,7 +256,6 @@ class UploadAttachmentSyncAction: SyncAction {
             let size = self.fileStorage.size(of: self.file)
 
             if size > 0 {
-                let item = try? self.dbStorage.createCoordinator().perform(request: ReadItemDbRequest(libraryId: self.libraryId, key: self.key))
                 subscriber(.success(size))
             } else {
                 DDLogError("UploadAttachmentSyncAction: missing attachment - \(self.file.createUrl().absoluteString)")

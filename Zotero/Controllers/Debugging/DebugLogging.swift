@@ -159,7 +159,7 @@ final class DebugLogging {
     }
 
     private func submit(logs: [URL], customAlertMessage: ((String) -> String)?) {
-        guard let (completionAlert, progressAlert) = self.coordinator?.createDebugAlertActions() else { return }
+        guard let (completionAlert, _) = self.coordinator?.createDebugAlertActions() else { return }
 
         let data: Data
         do {

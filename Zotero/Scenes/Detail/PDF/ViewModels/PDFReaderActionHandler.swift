@@ -312,7 +312,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
         var type: AnnotationType?
         var color: String?
-        var rects: [CGRect]?
+//        var rects: [CGRect]?
 
         let hasSameProperties: (Annotation) -> Bool = { annotation in
             // Check whether annotations of one type are selected
