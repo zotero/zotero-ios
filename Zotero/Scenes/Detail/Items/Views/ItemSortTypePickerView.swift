@@ -23,6 +23,7 @@ struct ItemSortTypePickerView: View {
                     SortTypeRow(title: sortType.title,
                                 isSelected: (self.sortBy == sortType))
                 }
+                .foregroundColor(Color(.label))
             }
         }
         .navigationBarTitle(Text(L10n.Items.sortBy), displayMode: .inline)
