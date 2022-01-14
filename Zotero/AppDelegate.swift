@@ -172,6 +172,23 @@ final class AppDelegate: UIResponder {
         }
     }
 
+    private func updateCreatorSummaryFormat() {
+        guard !UserDefaults.standard.bool(forKey: "DidUpdateCreatorSummaryFormat") else { return }
+
+        guard let dbStorage = self.controllers.userControllers?.dbStorage else {
+            // User logged out, don't need to update
+            UserDefaults.standard.set(true, forKey: "DidUpdateCreatorSummaryFormat")
+            return
+        }
+
+        do {
+            try dbStorage.createCoordinator().perform(request: UpdateCreatorSummaryFormatDbRequest())
+            UserDefaults.standard.set(true, forKey: "DidUpdateCreatorSummaryFormat")
+        } catch let error {
+            DDLogError("AppDelegate: can't update creator summary format - \(error)")
+        }
+    }
+
     // MARK: - Setups
 
     private func setupLogs() {
@@ -258,6 +275,7 @@ extension AppDelegate: UIApplicationDelegate {
         DispatchQueue.global(qos: .userInteractive).async {
             self.migrateFileStructure()
             self.removeFinishedUploadFiles()
+            self.updateCreatorSummaryFormat()
         }
 
         return true

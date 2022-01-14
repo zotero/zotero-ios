@@ -192,7 +192,7 @@ final class RItem: Object {
     }
 
     func updateCreatorSummary() {
-        self.creatorSummary = CreatorSummaryFormatter.summary(for: self.creators.filter("primary = true"))
+        self.creatorSummary = CreatorSummaryFormatter.summary(for: self.creators)
         self.sortCreatorSummary = self.creatorSummary?.lowercased()
         self.hasCreatorSummary = self.creatorSummary != nil
     }

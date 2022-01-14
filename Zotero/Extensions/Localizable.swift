@@ -682,6 +682,16 @@ internal enum L10n {
       /// Move to Trash
       internal static let trash = L10n.tr("Localizable", "items.action.trash")
     }
+    internal enum CreatorSummary {
+      /// %@ and %@
+      internal static func and(_ p1: Any, _ p2: Any) -> String {
+        return L10n.tr("Localizable", "items.creator_summary.and", String(describing: p1), String(describing: p2))
+      }
+      /// %@ et al.
+      internal static func etal(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "items.creator_summary.etal", String(describing: p1))
+      }
+    }
     internal enum Filters {
       /// Downloaded Files
       internal static let downloads = L10n.tr("Localizable", "items.filters.downloads")

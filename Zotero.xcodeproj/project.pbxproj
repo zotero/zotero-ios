@@ -839,6 +839,9 @@
 		B3D58D6725EE280300D8FA31 /* DebugResponseParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D58D6125EE26A600D8FA31 /* DebugResponseParserDelegate.swift */; };
 		B3D58D6B25EE437700D8FA31 /* CircularProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D58D6A25EE437700D8FA31 /* CircularProgressView.swift */; };
 		B3D58D7025EE43E700D8FA31 /* CircularProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D58D6A25EE437700D8FA31 /* CircularProgressView.swift */; };
+		B3D84BEA27917BE1005DDD7C /* CreatorTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D84BE927917BE1005DDD7C /* CreatorTypes.swift */; };
+		B3D84BEB27917D07005DDD7C /* CreatorTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D84BE927917BE1005DDD7C /* CreatorTypes.swift */; };
+		B3D84BED27917E3D005DDD7C /* UpdateCreatorSummaryFormatDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D84BEC27917E3D005DDD7C /* UpdateCreatorSummaryFormatDbRequest.swift */; };
 		B3DCDEE12408F5200039ED0D /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDEE02408F5200039ED0D /* MainViewController.swift */; };
 		B3DCDF06240912060039ED0D /* DocumentPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDF01240912060039ED0D /* DocumentPickerViewController.swift */; };
 		B3DCDF07240912060039ED0D /* NoteEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDF02240912060039ED0D /* NoteEditorViewController.swift */; };
@@ -1605,6 +1608,8 @@
 		B3D58D5525ED856F00D8FA31 /* DebugLogUploadRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogUploadRequest.swift; sourceTree = "<group>"; };
 		B3D58D6125EE26A600D8FA31 /* DebugResponseParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugResponseParserDelegate.swift; sourceTree = "<group>"; };
 		B3D58D6A25EE437700D8FA31 /* CircularProgressView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CircularProgressView.swift; sourceTree = "<group>"; };
+		B3D84BE927917BE1005DDD7C /* CreatorTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorTypes.swift; sourceTree = "<group>"; };
+		B3D84BEC27917E3D005DDD7C /* UpdateCreatorSummaryFormatDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCreatorSummaryFormatDbRequest.swift; sourceTree = "<group>"; };
 		B3DCDEE02408F5200039ED0D /* MainViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		B3DCDF01240912060039ED0D /* DocumentPickerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DocumentPickerViewController.swift; sourceTree = "<group>"; };
 		B3DCDF02240912060039ED0D /* NoteEditorViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NoteEditorViewController.swift; sourceTree = "<group>"; };
@@ -1940,6 +1945,7 @@
 				B300B3372429254900C1FE1E /* SyncTranslatorsDbRequest.swift */,
 				B305646323FC051E003304F2 /* SyncVersionsDbRequest.swift */,
 				B3B3FF82266A380D0061E3B2 /* UninstallStyleDbRequest.swift */,
+				B3D84BEC27917E3D005DDD7C /* UpdateCreatorSummaryFormatDbRequest.swift */,
 				B305644E23FC051E003304F2 /* UpdateItemLocaleDbRequest.swift */,
 				B305645F23FC051E003304F2 /* UpdateVersionsDbRequest.swift */,
 			);
@@ -2119,6 +2125,7 @@
 				B325DBAE24375D8D00EFF0F5 /* Conflict.swift */,
 				B325DBB124375DAC00EFF0F5 /* ConflictResolution.swift */,
 				B305654023FC051E003304F2 /* Convertible.swift */,
+				B3D84BE927917BE1005DDD7C /* CreatorTypes.swift */,
 				B325DBB424375DD200EFF0F5 /* DebugPermissionResponse.swift */,
 				B305655323FC051E003304F2 /* Defaults.swift */,
 				B305653F23FC051E003304F2 /* DelayIntervals.swift */,
@@ -3978,6 +3985,7 @@
 				B3E8FE76271434F200F51458 /* GeneralSettingsView.swift in Sources */,
 				B30566C323FC051F003304F2 /* SyncObject.swift in Sources */,
 				B325DBAF24375D8D00EFF0F5 /* Conflict.swift in Sources */,
+				B3D84BEA27917BE1005DDD7C /* CreatorTypes.swift in Sources */,
 				B3A94B4A2462F5D300BC7910 /* PSPDFKit+Extensions.swift in Sources */,
 				B305661323FC051E003304F2 /* ArrayEncoding.swift in Sources */,
 				B305667723FC051F003304F2 /* UIFont+Extensions.swift in Sources */,
@@ -4044,6 +4052,7 @@
 				B37D8E6924DC2BEE00F526C5 /* CollectionRow.swift in Sources */,
 				B3593F56241A61C700760E20 /* CollectionCell.swift in Sources */,
 				B3B953C8245981A600FC96DB /* PDFReaderState.swift in Sources */,
+				B3D84BED27917E3D005DDD7C /* UpdateCreatorSummaryFormatDbRequest.swift in Sources */,
 				B3F3D632255EC5F200F310C2 /* AnnotationViewHighlightContent.swift in Sources */,
 				B395EFE725494B2300CEBD9F /* CreatorEditState.swift in Sources */,
 				B30565C523FC051E003304F2 /* MarkItemsAsTrashedDbRequest.swift in Sources */,
@@ -4490,6 +4499,7 @@
 				B3748D2026566F4800ED05F8 /* ContainerViewController.swift in Sources */,
 				B305676B23FC0A0B003304F2 /* Tag.swift in Sources */,
 				B305676C23FC0A0B003304F2 /* UpdatableObject.swift in Sources */,
+				B3D84BEB27917D07005DDD7C /* CreatorTypes.swift in Sources */,
 				B305673D23FC09AF003304F2 /* LibraryResponse.swift in Sources */,
 				B325DBB324375DB100EFF0F5 /* ConflictResolution.swift in Sources */,
 				B305677723FC0BEE003304F2 /* UserDefault+Extensions.swift in Sources */,
