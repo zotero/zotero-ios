@@ -48,7 +48,7 @@ struct AnnotationViewLayout {
             self.showsContent = true
             self.commentMinHeight = nil
             self.scrollableBody = false
-            self.backgroundColor = .white
+            self.backgroundColor = .systemBackground
             self.showDoneButton = false
             
         case .popover:
