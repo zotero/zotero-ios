@@ -93,7 +93,7 @@ final class ItemsViewController: UIViewController {
         self.setupOverlay()
         self.startObservingSyncProgress()
 
-        if let term = self.viewModel.state.searchTerm {
+        if let term = self.viewModel.state.searchTerm, !term.isEmpty {
             self.viewModel.process(action: .initialSearch(term))
             self.searchBarContainer?.searchBar.text = term
         }

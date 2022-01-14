@@ -153,7 +153,7 @@ final class DetailCoordinator: Coordinator {
     private func createItemsViewController(collection: Collection, library: Library, dbStorage: DbStorage, fileDownloader: AttachmentDownloader, syncScheduler: SynchronizationScheduler,
                                            citationController: CitationController, fileCleanupController: AttachmentFileCleanupController) -> ItemsViewController {
         let type = self.fetchType(from: collection)
-        let searchTerm = self.searchItemKeys?.joined(separator: ", ") ?? ""
+        let searchTerm = self.searchItemKeys?.joined(separator: ", ")
         let state = ItemsState(type: type, library: library, sortType: .default, searchTerm: searchTerm, error: nil)
         let handler = ItemsActionHandler(dbStorage: dbStorage,
                                          fileStorage: self.controllers.fileStorage,
