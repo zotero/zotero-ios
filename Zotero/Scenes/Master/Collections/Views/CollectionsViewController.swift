@@ -63,7 +63,7 @@ final class CollectionsViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        self.selectIfNeeded(collectionId: self.viewModel.state.selectedCollectionId)
+        self.selectIfNeeded(collectionId: self.viewModel.state.selectedCollectionId, scrollToPosition: true)
         if self.coordinatorDelegate?.isSplit == true, let collection = self.viewModel.state.collections.first(where: { $0.identifier == self.viewModel.state.selectedCollectionId }) {
             self.coordinatorDelegate?.showItems(for: collection, in: self.viewModel.state.library, isInitial: true)
         }
@@ -74,7 +74,7 @@ final class CollectionsViewController: UIViewController {
     private func update(to state: CollectionsState) {
         if state.changes.contains(.results) {
             self.tableViewHandler.updateCollections(animated: true, completed: { [weak self] in
-                self?.selectIfNeeded(collectionId: state.selectedCollectionId)
+                self?.selectIfNeeded(collectionId: state.selectedCollectionId, scrollToPosition: false)
             })
         }
         if state.changes.contains(.allItemCount) {
@@ -114,17 +114,17 @@ final class CollectionsViewController: UIViewController {
         self.present(controller, animated: true, completion: nil)
     }
 
-    private func selectIfNeeded(collectionId: CollectionIdentifier) {
+    private func selectIfNeeded(collectionId: CollectionIdentifier, scrollToPosition: Bool) {
         // Selection is disabled in compact mode (when UISplitViewController is a single column instead of master + detail).
         guard self.coordinatorDelegate?.isSplit == true else { return }
-        self.tableViewHandler.selectIfNeeded(collectionId: collectionId)
+        self.tableViewHandler.selectIfNeeded(collectionId: collectionId, scrollToPosition: scrollToPosition)
     }
 
     private func select(searchResult: Collection) {
         let isSplit = self.coordinatorDelegate?.isSplit ?? false
 
         if isSplit {
-            self.selectIfNeeded(collectionId: searchResult.identifier)
+            self.selectIfNeeded(collectionId: searchResult.identifier, scrollToPosition: false)
         }
 
         // We don't need to always show it on iPad, since the currently selected collection is visible. So we show only a new one. On iPhone

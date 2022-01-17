@@ -38,10 +38,10 @@ final class CollectionsTableViewHandler: NSObject {
 
     // MARK: - Actions
 
-    func selectIfNeeded(collectionId: CollectionIdentifier) {
+    func selectIfNeeded(collectionId: CollectionIdentifier, scrollToPosition: Bool) {
         if let indexPath = self.dataSource.snapshot.indexPath(where: { $0.identifier == collectionId }) {
             guard self.tableView.indexPathForSelectedRow != indexPath else { return }
-            self.tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
+            self.tableView.selectRow(at: indexPath, animated: false, scrollPosition: scrollToPosition ? .middle : .none)
         } else if let indexPath = self.tableView.indexPathForSelectedRow {
             self.tableView.deselectRow(at: indexPath, animated: false)
         }

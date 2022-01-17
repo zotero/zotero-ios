@@ -11,6 +11,7 @@ import UIKit
 import SafariServices
 import SwiftUI
 
+import CocoaLumberjackSwift
 import RxSwift
 
 protocol MainCoordinatorDelegate: SplitControllerDelegate {
@@ -125,10 +126,20 @@ extension MainViewController: MainCoordinatorDelegate {
 
 extension MainViewController: MainCoordinatorSyncToolbarDelegate {
     func showItems(with keys: [String], in libraryId: LibraryIdentifier) {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage,
-              let library = try? dbStorage.createCoordinator().perform(request: ReadLibraryDbRequest(libraryId: libraryId)) else { return }
-        self.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(.all))
-        self.showItems(for: Collection(custom: .all), in: library, searchItemKeys: keys)
+        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+
+        do {
+            let coordinator = try dbStorage.createCoordinator()
+
+            let library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
+            let isAnyInTrash = try coordinator.perform(request: CheckAnyItemIsInTrashDbRequest(libraryId: libraryId, keys: keys))
+            let collectionType: CollectionIdentifier.CustomType = isAnyInTrash ? .trash : .all
+
+            self.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(collectionType))
+            self.showItems(for: Collection(custom: collectionType), in: library, searchItemKeys: keys)
+        } catch let error {
+            DDLogError("MainViewController: can't load searched keys - \(error)")
+        }
     }
 }
 
