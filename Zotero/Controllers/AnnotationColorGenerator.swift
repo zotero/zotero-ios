@@ -10,7 +10,7 @@ import UIKit
 
 struct AnnotationColorGenerator {
     private static let highlightOpacity: CGFloat = 0.5
-    private static let highlightDarkOpacity: CGFloat = 0.7
+    private static let highlightDarkOpacity: CGFloat = 0.4
 
     static func color(from color: UIColor, isHighlight: Bool, userInterfaceStyle: UIUserInterfaceStyle) -> (color: UIColor, alpha: CGFloat) {
         if !isHighlight {

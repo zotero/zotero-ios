@@ -11,6 +11,16 @@ import UIKit
 import PSPDFKit
 
 final class HighlightAnnotation: PSPDFKit.HighlightAnnotation {
+
+    override init() {
+        super.init()
+        self.blendMode = .normal
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     override var shouldDrawNoteIconIfNeeded: Bool {
         return false
     }
