@@ -23,6 +23,7 @@ struct TagPickerState: ViewModelState {
     var selectedTags: Set<String>
     var searchTerm: String
     var showAddTagButton: Bool
+    var addedTagName: String?
     var error: TagPickerError?
     var changes: Changes
 
@@ -38,5 +39,6 @@ struct TagPickerState: ViewModelState {
     mutating func cleanup() {
         self.changes = []
         self.error = nil
+        self.addedTagName = nil
     }
 }

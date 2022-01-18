@@ -56,6 +56,8 @@ struct TagPickerActionHandler: ViewModelActionHandler {
 
             state.snapshot = nil
             state.searchTerm = ""
+            state.addedTagName = name
+            state.showAddTagButton = false
             state.changes = .tags
         }
     }

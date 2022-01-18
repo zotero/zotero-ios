@@ -56,7 +56,7 @@ final class TagPickerViewController: UIViewController {
     private func update(to state: TagPickerState) {
         if state.changes.contains(.tags) {
             self.tableView.reloadData()
-            self.select(selected: state.selectedTags, tags: state.tags)
+            self.select(selected: state.selectedTags, tags: state.tags, focusTagName: state.addedTagName)
         }
 
         if let error = state.error {
@@ -64,17 +64,17 @@ final class TagPickerViewController: UIViewController {
         }
     }
 
-    private func select(selected: Set<String>, tags: [Tag]) {
+    private func select(selected: Set<String>, tags: [Tag], focusTagName: String?) {
         for name in selected {
             guard let index = tags.firstIndex(where: { $0.name == name }) else { continue }
-            self.tableView.selectRow(at: IndexPath(row: index, section: TagPickerViewController.tagsSection), animated: false, scrollPosition: .none)
+            self.tableView.selectRow(at: IndexPath(row: index, section: TagPickerViewController.tagsSection), animated: false, scrollPosition: (focusTagName == name ? .middle: .none))
         }
     }
 
     private func addTagIfNeeded() {
         // When there are no search results during search, add current search query
         guard let searchController = self.navigationItem.searchController,
-              !self.viewModel.state.searchTerm.isEmpty && self.viewModel.state.tags.isEmpty,
+              !self.viewModel.state.searchTerm.isEmpty,
               let text = searchController.searchBar.text, !text.isEmpty else { return }
         self.viewModel.process(action: .add(text))
         searchController.searchBar.text = nil
