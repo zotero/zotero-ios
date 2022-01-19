@@ -55,10 +55,14 @@ struct Files {
     }
 
     static func temporaryFile(ext: String) -> File {
-        return FileData(rootPath: Files.cachesRootPath, relativeComponents: [], name: UUID().uuidString, ext: ext)
+        return FileData(rootPath: Files.cachesRootPath, relativeComponents: ["Zotero"], name: UUID().uuidString, ext: ext)
     }
 
     // MARK: - JSON cache
+
+    static var jsonCache: File {
+        return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["jsons"])
+    }
 
     static func jsonCacheFile(for object: SyncObject, libraryId: LibraryIdentifier, key: String) -> File {
         let objectName: String
@@ -72,8 +76,7 @@ struct Files {
         case .settings:
             objectName = "settings"
         }
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["jsons"],
-                        name: "\(libraryId.folderName)_\(objectName)_\(key)", ext: "json")
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["jsons"], name: "\(libraryId.folderName)_\(objectName)_\(key)", ext: "json")
     }
 
     // MARK: - Database
@@ -140,12 +143,12 @@ struct Files {
 
     // MARK: - Share extension
 
-    static func shareExtensionTmpItem(key: String, ext: String) -> File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["tmp"], name: "item_\(key)", ext: ext)
+    static func shareExtensionDownload(key: String, ext: String) -> File {
+        return FileData(rootPath: Files.cachesRootPath, relativeComponents: ["Zotero", "shareext", "downloads"], name: "item_\(key)", ext: ext)
     }
 
-    static func shareExtensionTmpItem(key: String, contentType: String) -> File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["tmp"], name: "item_\(key)", contentType: contentType)
+    static func shareExtensionDownload(key: String, contentType: String) -> File {
+        return FileData(rootPath: Files.cachesRootPath, relativeComponents: ["Zotero", "shareext", "downloads"], name: "item_\(key)", contentType: contentType)
     }
 
     // MARK: - Helper

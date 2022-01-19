@@ -125,17 +125,18 @@ final class Controllers {
         } else {
             self.clearSession()
             self.apiKey = nil
-            // Clear cache files on logout
-            try? self.fileStorage.remove(Files.cache)
         }
     }
 
     private func initializeSession(with data: SessionData, isLogin: Bool, debugLogging: DebugLogging) {
         do {
+            // Set API auth token
             self.apiClient.set(authToken: ("Bearer " + data.apiToken), for: .zotero)
 
+            // Start logging to catch user controller issues
             debugLogging.start(type: .immediate)
 
+            // Initialize user controllers
             let controllers = try UserControllers(userId: data.userId, controllers: self)
             if isLogin {
                 controllers.enableSync(apiKey: data.apiToken)
@@ -143,10 +144,11 @@ final class Controllers {
             self.userControllers = controllers
 
             if !debugLogging.didStartFromLaunch {
-                // If debug logging was started from launch by user, don't cancel ongoing logging. Otherwise cancel it, since nothing interesting happen during initialization.
+                // If debug logging was started from launch by user, don't cancel ongoing logging. Otherwise cancel it, since nothing interesting happened during initialization.
                 debugLogging.cancel()
             }
 
+            // Show main screen
             self.userInitialized.send(.success(true))
         } catch let error {
             DDLogError("Controllers: can't create UserControllers - \(error)")
@@ -173,13 +175,26 @@ final class Controllers {
 
         // Disable ongoing sync and unsubscribe from websocket
         controllers?.disableSync(apiKey: self.apiKey)
-        // Clear session and controllers
-        self.apiClient.set(authToken: nil, for: .zotero)
+        // Cancel all background uploads
+        controllers?.backgroundUploadObserver.cancelAllUploads()
+        // Clear user controllers
         self.userControllers = nil
-        // Report user logged out
+        // Clear API auth token
+        self.apiClient.set(authToken: nil, for: .zotero)
+        // Remove cache files
+        try? self.fileStorage.remove(Files.cache)
+        // Remove cached item jsons
+        try? self.fileStorage.remove(Files.jsonCache)
+        // Remove annotation preview cache
+        try? self.fileStorage.remove(Files.annotationPreviews)
+        // Remove interrupted upload files
+        try? self.fileStorage.remove(Files.uploads)
+        // Remove downloaded files
+        try? self.fileStorage.remove(Files.downloads)
+        // Report user logged out and show login screen
         self.userInitialized.send(.success(false))
-        // Clear data
-        controllers?.logout()
+        // Remove database
+        controllers?.dbStorage.clear()
     }
 }
 
@@ -305,13 +320,6 @@ final class UserControllers {
         self.disposeBag = DisposeBag()
         self.itemLocaleController.storeLocale()
         self.backgroundUploadObserver.stopObservingShareExtensionChanges()
-    }
-
-    fileprivate func logout() {
-        // Clear DB storage
-        self.dbStorage.clear()
-        // Cancel all pending background uploads
-        self.backgroundUploadObserver.cancelAllUploads()
     }
 
     // MARK: - Helpers

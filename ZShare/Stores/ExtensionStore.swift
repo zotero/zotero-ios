@@ -378,7 +378,7 @@ final class ExtensionStore {
 
         case .remoteFileUrl(let url, let contentType):
             let filename = url.lastPathComponent
-            let file = Files.shareExtensionTmpItem(key: self.state.attachmentKey, contentType: contentType)
+            let file = Files.shareExtensionDownload(key: self.state.attachmentKey, contentType: contentType)
 
             var state = self.state
             state.url = url.absoluteString
@@ -545,7 +545,7 @@ final class ExtensionStore {
 
         DDLogInfo("ExtensionStore: parsed item with attachment, download attachment")
 
-        let file = Files.shareExtensionTmpItem(key: self.state.attachmentKey, ext: ExtensionStore.defaultExtension)
+        let file = Files.shareExtensionDownload(key: self.state.attachmentKey, ext: ExtensionStore.defaultExtension)
         self.download(item: item, attachment: attachment, attachmentUrl: url, to: file)
     }
 
