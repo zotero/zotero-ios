@@ -281,7 +281,6 @@ struct StoreItemDbRequest: DbResponseRequest {
         guard let key = key else {
             if item.parent != nil {
                 item.parent = nil
-                item.updateMainAttachment()
             }
             return
         }
@@ -299,7 +298,6 @@ struct StoreItemDbRequest: DbResponseRequest {
         }
 
         item.parent = parent
-        parent.updateMainAttachment()
     }
 
     private func syncCollections(keys: Set<String>, libraryId: LibraryIdentifier, item: RItem, database: Realm) {

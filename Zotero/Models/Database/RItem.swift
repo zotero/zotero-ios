@@ -60,7 +60,6 @@ final class RItem: Object {
 
     // MARK: - Attachment data
     @Persisted var backendMd5: String
-    @Persisted var mainAttachment: RItem?
     @Persisted var fileDownloaded: Bool
     // MARK: - Annotation data
     @Persisted var rects: List<RRect>
@@ -120,13 +119,6 @@ final class RItem: Object {
     @Persisted var changeType: UpdatableChangeType
     /// Indicates whether the object is deleted locally and needs to be synced with backend
     @Persisted var deleted: Bool
-
-    var attachment: RItem? {
-        if self.rawType == ItemTypes.attachment {
-            return self
-        }
-        return self.mainAttachment
-    }
 
     var doi: String? {
         return self.fields.filter(.key(FieldKeys.Item.doi)).first.flatMap({ field -> String? in
@@ -195,38 +187,6 @@ final class RItem: Object {
         self.creatorSummary = CreatorSummaryFormatter.summary(for: self.creators)
         self.sortCreatorSummary = self.creatorSummary?.lowercased()
         self.hasCreatorSummary = self.creatorSummary != nil
-    }
-
-    /// Chooses main attachment in the following order:
-    /// - oldest PDF attachment matching parent URL,
-    /// - oldest PDF attachment not matching parent URL,
-    func updateMainAttachment() {
-        guard self.parent == nil else {
-            self.mainAttachment = nil
-            return
-        }
-
-        let attachments = self.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty, trash: false))
-                                       .sorted(byKeyPath: "dateAdded", ascending: true)
-                                       .filter({ attachment in
-                                           let linkMode = attachment.fields.filter(.key(FieldKeys.Item.Attachment.linkMode)).first?.value
-                                           return linkMode == "imported_file" || linkMode == "imported_url"
-                                       })
-                                       .filter({ $0.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value == "application/pdf" })
-
-        guard attachments.count > 0 else {
-            self.mainAttachment = nil
-            return
-        }
-
-        let url = self.fields.filter(.key(FieldKeys.Item.Attachment.url)).first?.value
-
-        if let url = url, let matchingUrl = attachments.first(where: { $0.fields.filter(.key(FieldKeys.Item.Attachment.url)).first?.value == url }) {
-            self.mainAttachment = matchingUrl
-            return
-        }
-
-        self.mainAttachment = attachments.first
     }
 }
 

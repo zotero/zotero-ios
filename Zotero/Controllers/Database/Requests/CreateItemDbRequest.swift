@@ -132,8 +132,6 @@ struct CreateItemDbRequest: DbResponseRequest {
 
         // Item title depends on item type, creators and fields, so derived titles (displayTitle and sortTitle) are updated after everything else synced
         item.updateDerivedTitles()
-        // Main attachment depends on attachments, so it's updated after everything else
-        item.updateMainAttachment()
         // Update changed fields
         item.changedFields = changes
         item.changeType = .user

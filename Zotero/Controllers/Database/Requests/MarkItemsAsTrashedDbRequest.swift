@@ -24,10 +24,6 @@ struct MarkItemsAsTrashedDbRequest: DbRequest {
             item.trash = self.trashed
             item.changeType = .user
             item.changedFields.insert(.trash)
-
-            if item.parent?.mainAttachment?.key == item.key {
-                item.parent?.updateMainAttachment()
-            }
         }
     }
 }

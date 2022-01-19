@@ -173,15 +173,10 @@ struct EditItemDetailDbRequest: DbRequest {
     private func updateAttachments(with data: ItemDetailState.Data, snapshot: ItemDetailState.Data, item: RItem, database: Realm) throws {
         let attachmentsToRemove = item.children.filter(.item(type: ItemTypes.attachment))
                                                .filter(.key(in: data.deletedAttachments))
-        var hasMainAttachmentChange = false
 
         attachmentsToRemove.forEach {
             $0.trash = true
             $0.changedFields.insert(.trash)
-
-            if !hasMainAttachmentChange {
-                hasMainAttachmentChange = $0.key == item.mainAttachment?.key
-            }
         }
 
         for attachment in data.attachments {
@@ -203,12 +198,7 @@ struct EditItemDetailDbRequest: DbRequest {
                 childItem.libraryId = self.libraryId
                 childItem.parent = item
                 childItem.changedFields.insert(.parent)
-                hasMainAttachmentChange = true
             }
-        }
-
-        if hasMainAttachmentChange {
-            item.updateMainAttachment()
         }
     }
 

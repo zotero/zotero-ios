@@ -33,6 +33,5 @@ struct MoveItemsToParentDbRequest: DbRequest {
 
         // Update the parent item, so that it's updated in the item list to show attachment/note marker
         parent.changeType = .user
-        parent.updateMainAttachment()
     }
 }

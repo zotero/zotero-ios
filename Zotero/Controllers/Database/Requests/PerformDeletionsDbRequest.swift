@@ -64,15 +64,8 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
             case .deleteConflicts: break
             }
 
-            let wasMainAttachment = object.parent?.mainAttachment?.key == object.key
-            let parent = object.parent
-
             object.willRemove(in: database)
             database.delete(object)
-
-            if wasMainAttachment {
-                parent?.updateMainAttachment()
-            }
         }
 
         return conflicts
