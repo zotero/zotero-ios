@@ -114,7 +114,6 @@
 		B305662B23FC051F003304F2 /* SyncProgressHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564B723FC051E003304F2 /* SyncProgressHandler.swift */; };
 		B305662D23FC051F003304F2 /* ItemTitleFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564B923FC051E003304F2 /* ItemTitleFormatter.swift */; };
 		B305667123FC051F003304F2 /* Threading+Extras.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650423FC051E003304F2 /* Threading+Extras.swift */; };
-		B305667223FC051F003304F2 /* Controllers+EnvironmentValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650523FC051E003304F2 /* Controllers+EnvironmentValues.swift */; };
 		B305667323FC051F003304F2 /* FileManager+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650623FC051E003304F2 /* FileManager+Utils.swift */; };
 		B305667423FC051F003304F2 /* MD5+Url.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650723FC051E003304F2 /* MD5+Url.swift */; };
 		B305667523FC051F003304F2 /* String+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650823FC051E003304F2 /* String+Extensions.swift */; };
@@ -1140,7 +1139,6 @@
 		B30564B723FC051E003304F2 /* SyncProgressHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncProgressHandler.swift; sourceTree = "<group>"; };
 		B30564B923FC051E003304F2 /* ItemTitleFormatter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemTitleFormatter.swift; sourceTree = "<group>"; };
 		B305650423FC051E003304F2 /* Threading+Extras.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Threading+Extras.swift"; sourceTree = "<group>"; };
-		B305650523FC051E003304F2 /* Controllers+EnvironmentValues.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Controllers+EnvironmentValues.swift"; sourceTree = "<group>"; };
 		B305650623FC051E003304F2 /* FileManager+Utils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "FileManager+Utils.swift"; sourceTree = "<group>"; };
 		B305650723FC051E003304F2 /* MD5+Url.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "MD5+Url.swift"; sourceTree = "<group>"; };
 		B305650823FC051E003304F2 /* String+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "String+Extensions.swift"; sourceTree = "<group>"; };
@@ -2066,7 +2064,6 @@
 				B3C6AB2C248E3F840009AC96 /* AsynchronousOperation.swift */,
 				B305678F23FC1D9B003304F2 /* CollectionDifference+Separated.swift */,
 				B305651023FC051E003304F2 /* Color+Extension.swift */,
-				B305650523FC051E003304F2 /* Controllers+EnvironmentValues.swift */,
 				B3E9180B25ECE30A002B77AF /* CoreGraphics+Extensions.swift */,
 				B3129854270EE9DE002376F9 /* Error+Helpers.swift */,
 				B305650623FC051E003304F2 /* FileManager+Utils.swift */,
@@ -3893,7 +3890,6 @@
 				B3D3E714264BD0F200A521DE /* DiffableDataSource.swift in Sources */,
 				B39D33712400150B00EF2ACB /* CreateAttachmentsDbRequest.swift in Sources */,
 				B3A081E125D2D8050088EC24 /* CollectionEditHostingViewController.swift in Sources */,
-				B305667223FC051F003304F2 /* Controllers+EnvironmentValues.swift in Sources */,
 				B3486B8B26CFAFEA0036A267 /* SingleCitationAction.swift in Sources */,
 				B3593F3C241A61C700760E20 /* ItemsSortType.swift in Sources */,
 				B372CEE92486748500B423AE /* MarkGroupForResyncSyncAction.swift in Sources */,
