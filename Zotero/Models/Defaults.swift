@@ -128,5 +128,21 @@ final class Defaults {
         self.webDavEnabled = false
         self.webDavUsername = nil
         self.webDavVerified = false
+        self.quickCopyLocaleId = "en-US"
+        self.quickCopyAsHtml = false
+        self.quickCopyStyleId = "http://www.zotero.org/styles/chicago-note-bibliography"
+        self.showSubcollectionItems = false
+
+        #if MAINAPP
+        self.itemsSortType = .default
+        self.exportOutputMethod = .copy
+        self.exportOutputMode = .bibliography
+        self.activeLineWidth = 1
+
+        #if PDFENABLED
+        self.activeColorHex = AnnotationsConfig.defaultActiveColor
+        self.pdfSettings = PDFSettingsState.default
+        #endif
+        #endif
     }
 }
