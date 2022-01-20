@@ -85,6 +85,12 @@ final class Controllers {
         self.idleTimerController = IdleTimerController()
         self.backgroundTaskController = BackgroundTaskController()
 
+        if let error = sessionController.initError {
+            debugLogging.start(type: .immediate)
+            DDLogError("Controllers: session controller failed to initialize properly - \(error)")
+            debugLogging.stop(ignoreEmptyLogs: true, customAlertMessage: { L10n.migrationDebug($0) })
+        }
+
         Defaults.shared.lastBuildNumber = DeviceInfoProvider.buildNumber
         self.startObservingSession()
         self.update(with: self.sessionController.sessionData, isLogin: false, debugLogging: debugLogging)

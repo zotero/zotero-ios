@@ -6,7 +6,7 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
-import Foundation
+import UIKit
 
 typealias SessionData = (userId: Int, apiToken: String)
 
@@ -21,10 +21,15 @@ struct DebugSessionConstants {
 }
 
 final class SessionController: ObservableObject {
+    enum Error: Swift.Error {
+        case keychainNotAccessible(Bool)
+    }
+
     @Published var sessionData: SessionData?
     var isLoggedIn: Bool {
         return self.sessionData != nil
     }
+    private(set) var initError: Error?
 
     private let defaults: Defaults
     private let secureStorage: SecureStorage
@@ -49,6 +54,12 @@ final class SessionController: ObservableObject {
             self.sessionData = (userId, token)
         } else {
             self.sessionData = nil
+        }
+
+        if userId > 0 && apiToken == nil {
+            #if MAINAPP
+            self.initError = .keychainNotAccessible(UIApplication.shared.isProtectedDataAvailable)
+            #endif
         }
     }
 
