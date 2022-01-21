@@ -17,6 +17,7 @@ struct UpdateCreatorSummaryFormatDbRequest: DbRequest {
     func process(in database: Realm) throws {
         let itemsWithCreators = database.objects(RItem.self).filter("creators.@count > 0")
         for item in itemsWithCreators {
+            guard !item.isInvalidated else { continue }
             item.updateCreatorSummary()
         }
     }
