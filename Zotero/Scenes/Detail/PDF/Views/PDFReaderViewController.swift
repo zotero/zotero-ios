@@ -110,7 +110,7 @@ final class PDFReaderViewController: UIViewController {
     weak var coordinatorDelegate: (DetailPdfCoordinatorDelegate & DetailAnnotationsCoordinatorDelegate)?
 
     var isSidebarVisible: Bool {
-        return self.annotationsControllerLeft.constant == 0
+        return self.annotationsControllerLeft?.constant == 0
     }
 
     // MARK: - Lifecycle
@@ -169,6 +169,8 @@ final class PDFReaderViewController: UIViewController {
         let isCompactSize = UIDevice.current.isCompactWidth(size: size)
         let sizeDidChange = isCompactSize != self.isCompactSize
         self.isCompactSize = isCompactSize
+
+        guard self.viewIfLoaded != nil else { return }
 
         if self.isSidebarVisible && sizeDidChange {
             self.pdfControllerLeft.constant = isCompactSize ? 0 : PDFReaderLayout.sidebarWidth
