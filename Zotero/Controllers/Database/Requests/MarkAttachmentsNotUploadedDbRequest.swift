@@ -20,6 +20,7 @@ struct MarkAttachmentsNotUploadedDbRequest: DbRequest {
     func process(in database: Realm) throws {
         let attachments = database.objects(RItem.self).filter(.keys(self.keys, in: self.libraryId))
         for attachment in attachments {
+            guard !attachment.isInvalidated else { continue }
             attachment.attachmentNeedsSync = true
             attachment.changeType = .sync
         }
