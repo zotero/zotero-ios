@@ -6,7 +6,7 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
-import CommonCrypto
+import CryptoKit
 import Foundation
 
 import CocoaLumberjackSwift
@@ -21,17 +21,14 @@ func md5(from url: URL) -> String? {
             file.closeFile()
         }
 
-        // Create and initialize MD5 context:
-        var context = CC_MD5_CTX()
-        CC_MD5_Init(&context)
-
-        // Read up to `bufferSize` bytes, until EOF is reached, and update MD5 context:
+        // Create and initialize MD5 hasher:
+        var md5 = CryptoKit.Insecure.MD5()
+        
+        // Read up to `bufferSize` bytes, until EOF is reached, and update MD5 hash:
         while autoreleasepool(invoking: {
             let data = file.readData(ofLength: bufferSize)
             if data.count > 0 {
-                data.withUnsafeBytes {
-                    _ = CC_MD5_Update(&context, $0.baseAddress, numericCast(data.count))
-                }
+                md5.update(data: data)
                 return true // Continue
             } else {
                 return false // End of file
@@ -39,8 +36,7 @@ func md5(from url: URL) -> String? {
         }) { }
 
         // Compute the MD5 digest:
-        var digest: [UInt8] = Array(repeating: 0, count: Int(CC_MD5_DIGEST_LENGTH))
-        _ = CC_MD5_Final(&digest, &context)
+        let digest = md5.finalize()
 
         return Data(digest).map({ String(format: "%02hhx", $0) }).joined()
     } catch {
