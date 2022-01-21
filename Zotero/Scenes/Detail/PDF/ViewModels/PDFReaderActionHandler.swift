@@ -676,11 +676,14 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             state.annotations.forEach { page, _ in
                 let annotations = state.document.annotations(at: PageIndex(page))
                 annotations.forEach { annotation in
-                    let (color, alpha) = AnnotationColorGenerator.color(from: UIColor(hex: annotation.baseColor),
-                                                                        isHighlight: (annotation is PSPDFKit.HighlightAnnotation),
-                                                                        userInterfaceStyle: interfaceStyle)
+                    let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: annotation.baseColor),
+                                                                                   isHighlight: (annotation is PSPDFKit.HighlightAnnotation),
+                                                                                   userInterfaceStyle: interfaceStyle)
                     annotation.color = color
                     annotation.alpha = alpha
+                    if let blendMode = blendMode {
+                        annotation.blendMode = blendMode
+                    }
                 }
             }
         }
@@ -822,12 +825,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         guard !changes.isEmpty else { return }
 
         if changes.contains(.color) {
-            let (color, alpha) = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color),
-                                                                isHighlight: (annotation.type == .highlight),
-                                                                userInterfaceStyle: state.interfaceStyle)
+            let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color),
+                                                                           isHighlight: (annotation.type == .highlight),
+                                                                           userInterfaceStyle: state.interfaceStyle)
             pdfAnnotation.baseColor = annotation.color
             pdfAnnotation.color = color
             pdfAnnotation.alpha = alpha
+            if let blendMode = blendMode {
+                pdfAnnotation.blendMode = blendMode
+            }
         }
 
         if changes.contains(.comment) {
@@ -1359,7 +1365,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         
         var newZoteroAnnotations: [Annotation] = []
 
-        let isDark = viewModel.state.interfaceStyle == .dark
+        let interfaceStyle = viewModel.state.interfaceStyle
+        let isDark = interfaceStyle == .dark
         let libraryId = viewModel.state.library.identifier
         // TODO: - group editability temporarily disabled
         let editability: Annotation.Editability //= viewModel.state.library.metadataEditable ? .editable : .notEditable
@@ -1374,12 +1381,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         for annotation in annotations {
             // Either annotation is new (not syncable) or the user used undo/redo and we check whether the annotation exists
             guard !annotation.syncable || viewModel.state.annotations[Int(annotation.pageIndex)]?.first(where: { $0.key == annotation.key }) == nil,
-                  let zoteroAnnotation = AnnotationConverter.annotation(from: annotation, color: (annotation.color?.hexString ?? activeColor), editability: editability, isNew: true, isSyncable: true,
+                  let zoteroAnnotation = AnnotationConverter.annotation(from: annotation, color: activeColor, editability: editability, isNew: true, isSyncable: true,
                                                                         username: viewModel.state.username, boundingBoxConverter: self.boundingBoxConverter) else { continue }
 
             newZoteroAnnotations.append(zoteroAnnotation)
 
             if !annotation.syncable {
+                if let blendMode = AnnotationColorGenerator.blendMode(for: interfaceStyle, isHighlight: (zoteroAnnotation.type == .highlight)) {
+                    annotation.blendMode = blendMode
+                }
                 annotation.customData = [AnnotationsConfig.keyKey: zoteroAnnotation.key,
                                          AnnotationsConfig.baseColorKey: activeColor,
                                          AnnotationsConfig.syncableKey: true]

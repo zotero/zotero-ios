@@ -210,7 +210,7 @@ struct AnnotationConverter {
     }
 
     static func annotation(from zoteroAnnotation: Annotation, type: Kind, interfaceStyle: UIUserInterfaceStyle) -> PSPDFKit.Annotation {
-        let (color, alpha) = AnnotationColorGenerator.color(from: UIColor(hex: zoteroAnnotation.color), isHighlight: (zoteroAnnotation.type == .highlight), userInterfaceStyle: interfaceStyle)
+        let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: zoteroAnnotation.color), isHighlight: (zoteroAnnotation.type == .highlight), userInterfaceStyle: interfaceStyle)
         let annotation: PSPDFKit.Annotation
 
         switch zoteroAnnotation.type {
@@ -236,6 +236,10 @@ struct AnnotationConverter {
             if zoteroAnnotation.editability != .editable {
                 annotation.flags.update(with: .locked)
             }
+        }
+
+        if let blendMode = blendMode {
+            annotation.blendMode = blendMode
         }
 
         annotation.pageIndex = UInt(zoteroAnnotation.page)
