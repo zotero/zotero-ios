@@ -12,13 +12,31 @@ import Foundation
 import CocoaLumberjackSwift
 
 func md5(from url: URL) -> String? {
+    let bufferSize = 1024 * 1024
 
     do {
-        // Read data from file URL
-        let fileData = try Data(contentsOf: url)
+        // Open file for reading:
+        let file = try FileHandle(forReadingFrom: url)
+        defer {
+            file.closeFile()
+        }
+
+        // Create and initialize MD5 hasher:
+        var md5 = CryptoKit.Insecure.MD5()
+        
+        // Read up to `bufferSize` bytes, until EOF is reached, and update MD5 hash:
+        while autoreleasepool(invoking: {
+            let data = file.readData(ofLength: bufferSize)
+            if data.count > 0 {
+                md5.update(data: data)
+                return true // Continue
+            } else {
+                return false // End of file
+            }
+        }) { }
 
         // Compute the MD5 digest:
-        let digest = Insecure.MD5.hash(data: fileData)
+        let digest = md5.finalize()
 
         return Data(digest).map({ String(format: "%02hhx", $0) }).joined()
     } catch {
