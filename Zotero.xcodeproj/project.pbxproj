@@ -4847,7 +4847,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Manual;
-				COPY_PHASE_STRIP = NO;
+				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -4911,7 +4911,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				COPY_PHASE_STRIP = NO;
+				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -4944,6 +4944,7 @@
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = YES;
 				CURRENT_PROJECT_VERSION = 180;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8LAYR367YV;
@@ -4981,6 +4982,7 @@
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = YES;
 				CURRENT_PROJECT_VERSION = 180;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
@@ -5015,6 +5017,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = YES;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
@@ -5045,6 +5048,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = YES;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -5069,6 +5073,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = YES;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -5093,6 +5098,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = YES;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -5117,6 +5123,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = YES;
 				CURRENT_PROJECT_VERSION = 180;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
@@ -5149,6 +5156,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = YES;
 				CURRENT_PROJECT_VERSION = 180;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
@@ -5181,6 +5189,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = YES;
 				CURRENT_PROJECT_VERSION = 180;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
@@ -5241,7 +5250,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Manual;
-				COPY_PHASE_STRIP = NO;
+				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -5279,6 +5288,7 @@
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = YES;
 				CURRENT_PROJECT_VERSION = 180;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8LAYR367YV;
@@ -5315,6 +5325,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = YES;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
@@ -5344,6 +5355,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = YES;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -5396,7 +5408,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				COPY_PHASE_STRIP = NO;
+				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -5429,6 +5441,7 @@
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = YES;
 				CURRENT_PROJECT_VERSION = 180;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
@@ -5464,6 +5477,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = YES;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -5488,6 +5502,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = YES;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -5512,6 +5527,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = YES;
 				CURRENT_PROJECT_VERSION = 180;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
