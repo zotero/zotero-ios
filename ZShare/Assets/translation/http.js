@@ -125,6 +125,68 @@ Zotero.HTTP = new function() {
             getResponseHeader: name => headers[name.toLowerCase()]
         };
 	};
+
+    /**
+     * Load one or more documents
+     *
+     * This should stay in sync with the equivalent function in the client
+     *
+     * @param {String|String[]} urls - URL(s) of documents to load
+     * @param {Function} processor - Callback to be executed for each document loaded
+     * @param {CookieJar} [cookieSandbox] Cookie sandbox object
+     * @return {Promise<Array>} - A promise for an array of results from the processor runs
+     */
+    this.processDocuments = async function (urls, processor, options = {}) {
+        // Handle old signature: urls, processor, onDone, onError
+        if (arguments.length > 3) {
+            Zotero.debug("Zotero.HTTP.processDocuments() now takes only 2 arguments -- update your code");
+            var onDone = arguments[3];
+            var onError = arguments[4];
+        }
+
+        var cookieSandbox = options.cookieSandbox;
+        var headers = options.headers;
+
+        if (typeof urls == "string") urls = [urls];
+        var funcs = urls.map(url => () => {
+            return Zotero.HTTP.request(
+                "GET",
+                url,
+                {
+                    responseType: 'document',
+                    cookieSandbox,
+                    headers
+                }
+            )
+            .then((req) => {
+                return processor(req.response, req.responseURL);
+            });
+        });
+
+        // Run processes serially
+        // TODO: Add some concurrency?
+        var f;
+        var results = [];
+        while (f = funcs.shift()) {
+            try {
+                results.push(await f());
+            }
+            catch (e) {
+                if (onError) {
+                    onError(e);
+                }
+                throw e;
+            }
+        }
+
+        // Deprecated
+        if (onDone) {
+            onDone();
+        }
+
+        return results;
+    }
+
 	/**
 	* Send an HTTP GET request via XMLHTTPRequest
 	*
