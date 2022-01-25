@@ -13,6 +13,7 @@ import KeychainSwift
 protocol SecureStorage: AnyObject {
     var apiToken: String? { get set }
     var webDavPassword: String? { get set }
+    var lastResultCode: OSStatus { get }
 
     func reset()
 }
@@ -31,9 +32,12 @@ final class KeychainSecureStorage: SecureStorage {
     @SecureString(key: "webDavPassword", keychain: KeychainSecureStorage.keychain)
     var webDavPassword: String?
 
+    var lastResultCode: OSStatus {
+        return KeychainSecureStorage.keychain.lastResultCode
+    }
+
     func reset() {
-        self.apiToken = nil
-        self.webDavPassword = nil
+        KeychainSecureStorage.keychain.clear()
     }
 }
 

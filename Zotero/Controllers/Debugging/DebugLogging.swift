@@ -39,7 +39,6 @@ final class DebugLogging {
 
     private unowned let apiClient: ApiClient
     private unowned let fileStorage: FileStorage
-    let isEnabledPublisher: PublishSubject<Bool>
     private let queue: DispatchQueue
     private let scheduler: ConcurrentDispatchQueueScheduler
     private let disposeBag: DisposeBag
@@ -48,7 +47,6 @@ final class DebugLogging {
     private(set) var isEnabled: Bool {
         didSet {
             self.coordinator?.setDebugWindow(visible: self.isEnabled)
-            self.isEnabledPublisher.on(.next(self.isEnabled))
         }
     }
     private(set) var didStartFromLaunch: Bool
@@ -70,7 +68,6 @@ final class DebugLogging {
         self.fileStorage = fileStorage
         self.queue = queue
         self.didStartFromLaunch = false
-        self.isEnabledPublisher = PublishSubject()
         self.scheduler = ConcurrentDispatchQueueScheduler(queue: queue)
         self.disposeBag = DisposeBag()
     }

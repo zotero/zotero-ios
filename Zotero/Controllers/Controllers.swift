@@ -28,9 +28,9 @@ final class Controllers {
     let urlDetector: UrlDetector
     let dateParser: DateParser
     let htmlAttributedStringConverter: HtmlAttributedStringConverter
-    let userInitialized: PassthroughSubject<Result<Bool, Error>, Never>
     let idleTimerController: IdleTimerController
     let backgroundTaskController: BackgroundTaskController
+    let userInitialized: PassthroughSubject<Result<Bool, Error>, Never>
     fileprivate let lastBuildNumber: Int?
 
     var userControllers: UserControllers?
@@ -85,16 +85,12 @@ final class Controllers {
         self.idleTimerController = IdleTimerController()
         self.backgroundTaskController = BackgroundTaskController()
 
-        if let error = sessionController.initError {
-            debugLogging.start(type: .immediate)
-            DDLogError("Controllers: session controller failed to initialize properly - \(error)")
-            debugLogging.stop(ignoreEmptyLogs: true, customAlertMessage: { L10n.migrationDebug($0) })
-        }
-
         Defaults.shared.lastBuildNumber = DeviceInfoProvider.buildNumber
-        self.startObservingSession()
-        self.update(with: self.sessionController.sessionData, isLogin: false, debugLogging: debugLogging)
+
+        self.initializeSessionIfPossible()
     }
+
+    // MARK: - App lifecycle
 
     func willEnterForeground() {
         self.crashReporter.processPendingReports()
@@ -108,10 +104,61 @@ final class Controllers {
         guard let controllers = self.userControllers else { return }
         controllers.disableSync(apiKey: nil)
     }
-    
+
     func willTerminate() {
         guard let controllers = self.userControllers else { return }
         controllers.disableSync(apiKey: nil)
+    }
+
+    // MARK: - Actions
+
+    private func initializeSessionIfPossible(failOnError: Bool = false) {
+        do {
+            // Try to initialize session
+            try self.sessionController.initializeSession()
+            // Start observing further session changes
+            self.startObservingSession()
+            // Start with initialized session
+            self.update(with: self.sessionController.sessionData, isLogin: false, debugLogging: debugLogging)
+        } catch let error {
+            if !failOnError {
+                // If this is first failure, start logging issues and wait for protected data
+                self.debugLogging.start(type: .immediate)
+                DDLogError("Controllers: session controller failed to initialize properly - \(error)")
+                self.waitForProtectedDataAvailability { [weak self] in
+                    self?.initializeSessionIfPossible(failOnError: true)
+                }
+                return
+            }
+
+            // If we already tried to wait for protected data availability and failed, we'll just show login screen and report an error.
+
+            // Start observing further session changes so that user can log in
+            self.startObservingSession()
+            // Show login screen
+            self.update(with: nil, isLogin: false, debugLogging: self.debugLogging)
+
+            if self.debugLogging.isEnabled {
+                // Stop debug logging
+                DDLogError("Controllers: session controller failed to initialize properly - \(error)")
+                self.debugLogging.stop(ignoreEmptyLogs: true, customAlertMessage: { L10n.loginDebug($0) })
+            }
+        }
+    }
+
+    private func waitForProtectedDataAvailability(numberOfChecks: Int = 0, completed: @escaping () -> Void) {
+        let isAvailable = UIApplication.shared.isProtectedDataAvailable
+
+        DDLogInfo("Controllers: waiting for protection availability: \(isAvailable); numberOfChecks: \(numberOfChecks)")
+
+        if isAvailable || numberOfChecks == 4 {
+            completed()
+            return
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) { [weak self] in
+            self?.waitForProtectedDataAvailability(numberOfChecks: numberOfChecks + 1, completed: completed)
+        }
     }
 
     private func startObservingSession() {

@@ -50,6 +50,10 @@ internal enum L10n {
   internal static let itemType = L10n.tr("Localizable", "item_type")
   /// Last Updated
   internal static let lastUpdated = L10n.tr("Localizable", "last_updated")
+  /// App failed to log in. Please log in again and report this Debug ID %@ to Zotero forums.
+  internal static func loginDebug(_ p1: Any) -> String {
+    return L10n.tr("Localizable", "login_debug", String(describing: p1))
+  }
   /// Look Up
   internal static let lookup = L10n.tr("Localizable", "lookup")
   /// App failed to initialize and can't function properly. Please report this Debug ID %@ to Zotero forums.

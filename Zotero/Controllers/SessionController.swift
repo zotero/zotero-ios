@@ -22,14 +22,14 @@ struct DebugSessionConstants {
 
 final class SessionController: ObservableObject {
     enum Error: Swift.Error {
-        case keychainNotAccessible(Bool)
+        case keychainNotAccessible(protectedDataAvailable: Bool, lastResultCode: OSStatus)
     }
 
     @Published var sessionData: SessionData?
     var isLoggedIn: Bool {
         return self.sessionData != nil
     }
-    private(set) var initError: Error?
+    private(set) var isInitialized: Bool
 
     private let defaults: Defaults
     private let secureStorage: SecureStorage
@@ -37,29 +37,41 @@ final class SessionController: ObservableObject {
     init(secureStorage: SecureStorage, defaults: Defaults) {
         self.defaults = defaults
         self.secureStorage = secureStorage
+        self.isInitialized = false
+    }
 
-        var apiToken = secureStorage.apiToken
-        var userId = defaults.userId
+    func initializeSession() throws {
+        var apiToken = self.secureStorage.apiToken
+        var userId = self.defaults.userId
 
         if (apiToken == nil || userId == 0),
            let debugUserId = DebugSessionConstants.userId,
            let debugApiToken = DebugSessionConstants.apiToken {
             apiToken = debugApiToken
             userId = debugUserId
-            secureStorage.apiToken = debugApiToken
-            defaults.userId = debugUserId
+            self.secureStorage.apiToken = debugApiToken
+            self.defaults.userId = debugUserId
         }
+
+        if userId > 0 && apiToken == nil {
+            #if MAINAPP
+            let isAvailable = UIApplication.shared.isProtectedDataAvailable
+
+            if isAvailable {
+                // If protected data is available and api token can't be loaded anyway, set `isInitialized` to `true` so that login screen is shown to the user
+                self.isInitialized = true
+            }
+
+            throw Error.keychainNotAccessible(protectedDataAvailable: isAvailable, lastResultCode: self.secureStorage.lastResultCode)
+            #endif
+        }
+
+        self.isInitialized = true
 
         if let token = apiToken, userId > 0 {
             self.sessionData = (userId, token)
         } else {
             self.sessionData = nil
-        }
-
-        if userId > 0 && apiToken == nil {
-            #if MAINAPP
-            self.initError = .keychainNotAccessible(UIApplication.shared.isProtectedDataAvailable)
-            #endif
         }
     }
 
@@ -68,6 +80,7 @@ final class SessionController: ObservableObject {
         self.defaults.username = username
         self.secureStorage.apiToken = apiToken
         self.sessionData = (userId, apiToken)
+        self.isInitialized = true
     }
 
     func reset() {

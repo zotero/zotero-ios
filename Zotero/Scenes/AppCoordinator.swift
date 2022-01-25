@@ -53,13 +53,17 @@ final class AppCoordinator: NSObject {
     }
 
     func start() {
-        self.showMainScreen(isLogged: self.controllers.sessionController.isLoggedIn, animated: false)
+        if !self.controllers.sessionController.isInitialized {
+            self.showLaunchScreen()
+        } else {
+            self.showMainScreen(isLogged: self.controllers.sessionController.isLoggedIn, animated: false)
+        }
 
         // If db needs to be wiped and this is the first start of the app, show beta alert
         if self.controllers.userControllers?.dbStorage.willPerformBetaWipe == true && self.controllers.sessionController.isLoggedIn {
             self.showBetaAlert()
         }
-        if self.controllers.debugLogging.isEnabled {
+        if self.controllers.sessionController.isInitialized && self.controllers.debugLogging.isEnabled {
             self.setDebugWindow(visible: true)
         }
 
@@ -69,6 +73,11 @@ final class AppCoordinator: NSObject {
     }
 
     // MARK: - Navigation
+
+    private func showLaunchScreen() {
+        guard let controller = UIStoryboard(name: "LaunchScreen", bundle: nil).instantiateInitialViewController() else { return }
+        self.window?.rootViewController = controller
+    }
 
     private func showMainScreen(isLogged: Bool, animated: Bool) {
         guard let window = self.window else { return }

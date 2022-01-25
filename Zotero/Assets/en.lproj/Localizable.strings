@@ -50,6 +50,7 @@
 "beta_wipe_title" = "Resync Required";
 "beta_wipe_message" = "Due to a beta update, your data must be redownloaded from zotero.org.";
 "migration_debug" = "App failed to initialize and can't function properly. Please report this Debug ID %@ to Zotero forums.";
+"login_debug" = "App failed to log in. Please log in again and report this Debug ID %@ to Zotero forums.";
 
 "day_suffixes" = "st,nd,rd,th";
 
