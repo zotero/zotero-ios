@@ -1537,7 +1537,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
     /// Loads annotations from DB, converts them to Zotero annotations and adds matching PSPDFKit annotations to document.
     private func loadDocumentData(in viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard let boundingBoxConverter = self.boundingBoxConverter else { return }
+        guard let boundingBoxConverter = self.boundingBoxConverter, viewModel.state.document.pageCount > 0 else { return }
 
         do {
             let isDark = viewModel.state.interfaceStyle == .dark
