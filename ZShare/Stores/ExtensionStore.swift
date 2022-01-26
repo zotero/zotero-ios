@@ -335,6 +335,9 @@ final class ExtensionStore {
             return self.loadUrl(from: itemProvider)
                        .flatMap({ $0.isFileURL ? Single.just(.fileUrl($0)) : Single.just(.remoteUrl($0)) })
         }
+
+        DDLogError("ExtensionStore: attachments=\(extensionItem.attachments?.count ?? -1)")
+
         return Single.error(State.AttachmentState.Error.cantLoadWebData)
     }
 

@@ -129,8 +129,8 @@ final class ShareViewController: UIViewController {
                                                   }
 
         // Load initial data
-        if let extensionItem = self.extensionContext?.inputItems.first as? NSExtensionItem {
-            DDLogInfo("Load extension item")
+        if let context = self.extensionContext, let extensionItem = context.inputItems.first as? NSExtensionItem {
+            DDLogInfo("Load extension item (\(context.inputItems.count))")
             self.store?.start(with: extensionItem)
         } else {
             self.showInitialError(message: L10n.Errors.Shareext.cantLoadData)
