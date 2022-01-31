@@ -334,6 +334,9 @@ final class ExtensionStore {
             DDLogInfo("ExtensionStore: item provider for URL")
             return self.loadUrl(from: itemProvider)
                        .flatMap({ $0.isFileURL ? Single.just(.fileUrl($0)) : Single.just(.remoteUrl($0)) })
+        } else if let itemProvider = extensionItem.attachments?.first(where: { $0.hasItemConformingToTypeIdentifier(kUTTypePlainText as String) }) {
+            DDLogInfo("ExtensionStore: item provider for plain text")
+            return self.loadPlainText(from: itemProvider)
         }
 
         DDLogError("ExtensionStore: attachments=\(extensionItem.attachments?.count ?? -1)")
@@ -485,6 +488,42 @@ final class ExtensionStore {
                 } else {
                     DDLogError("ExtensionStore: script data don't contain required info")
                     DDLogError("\(data)")
+                    subscriber(.failure(State.AttachmentState.Error.cantLoadWebData))
+                }
+            })
+
+            return Disposables.create()
+        }
+    }
+
+    private func loadPlainText(from itemProvider: NSItemProvider) -> Single<State.RawAttachment> {
+        return Single.create { [weak itemProvider] subscriber in
+            guard let itemProvider = itemProvider else {
+                subscriber(.failure(State.AttachmentState.Error.cantLoadWebData))
+                return Disposables.create()
+            }
+
+            DDLogInfo("ExtensionStore: load item provider")
+
+            itemProvider.loadItem(forTypeIdentifier: (kUTTypePlainText as String), options: nil, completionHandler: { item, error -> Void in
+                DDLogInfo("ExtensionStore: loaded item provider")
+                if let error = error {
+                    DDLogError("ExtensionStore: url plaintext error - \(error)")
+                }
+
+                if let string = item as? String {
+                    DDLogInfo("ExtensionStore: loaded plaintext")
+
+                    if let url = URL(string: string), !url.isFileURL {
+                        DDLogInfo("ExtensionStore: plaintext was url - \(string)")
+                        subscriber(.success(.remoteUrl(url)))
+                    } else {
+                        DDLogInfo("ExtensionStore: plaintext not url - \(string)")
+                        subscriber(.failure(State.AttachmentState.Error.cantLoadWebData))
+                    }
+
+                } else {
+                    DDLogError("ExtensionStore: can't load plaintext")
                     subscriber(.failure(State.AttachmentState.Error.cantLoadWebData))
                 }
             })
