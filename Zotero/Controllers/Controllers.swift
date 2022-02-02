@@ -116,10 +116,10 @@ final class Controllers {
         do {
             // Try to initialize session
             try self.sessionController.initializeSession()
+            // Start with initialized session
+            self.update(with: self.sessionController.sessionData, isLogin: false, debugLogging: self.debugLogging)
             // Start observing further session changes
             self.startObservingSession()
-            // Start with initialized session
-            self.update(with: self.sessionController.sessionData, isLogin: false, debugLogging: debugLogging)
         } catch let error {
             if !failOnError {
                 // If this is first failure, start logging issues and wait for protected data
@@ -133,16 +133,16 @@ final class Controllers {
 
             // If we already tried to wait for protected data availability and failed, we'll just show login screen and report an error.
 
-            // Start observing further session changes so that user can log in
-            self.startObservingSession()
-            // Show login screen
-            self.update(with: nil, isLogin: false, debugLogging: self.debugLogging)
-
             if self.debugLogging.isEnabled {
                 // Stop debug logging
                 DDLogError("Controllers: session controller failed to initialize properly - \(error)")
                 self.debugLogging.stop(ignoreEmptyLogs: true, customAlertMessage: { L10n.loginDebug($0) })
             }
+
+            // Show login screen
+            self.update(with: nil, isLogin: false, debugLogging: self.debugLogging)
+            // Start observing further session changes so that user can log in
+            self.startObservingSession()
         }
     }
 
@@ -151,7 +151,7 @@ final class Controllers {
 
         DDLogInfo("Controllers: waiting for protection availability: \(isAvailable); numberOfChecks: \(numberOfChecks)")
 
-        if isAvailable || numberOfChecks == 4 {
+        if numberOfChecks > 0 && (isAvailable || numberOfChecks == 4) {
             completed()
             return
         }
@@ -173,7 +173,7 @@ final class Controllers {
 
     private func update(with data: SessionData?, isLogin: Bool, debugLogging: DebugLogging) {
         if let data = data {
-            self.initializeSession(with: data, isLogin: isLogin, debugLogging: debugLogging)
+            self.set(sessionData: data, isLogin: isLogin, debugLogging: debugLogging)
             self.apiKey = data.apiToken
         } else {
             self.clearSession()
@@ -181,7 +181,7 @@ final class Controllers {
         }
     }
 
-    private func initializeSession(with data: SessionData, isLogin: Bool, debugLogging: DebugLogging) {
+    private func set(sessionData data: SessionData, isLogin: Bool, debugLogging: DebugLogging) {
         do {
             // Set API auth token
             self.apiClient.set(authToken: ("Bearer " + data.apiToken), for: .zotero)

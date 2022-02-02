@@ -92,7 +92,7 @@ struct Files {
     // MARK: - Logging
 
     static var debugLogDirectory: File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["debug_logs"], name: "", ext: "")
+        return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["debug_logs"])
     }
 
     // MARK: - Bundled
