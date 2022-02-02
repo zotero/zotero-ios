@@ -777,14 +777,9 @@ final class PDFReaderViewController: UIViewController {
     }
 
     private func createAnnotationControlButtons() -> [UIButton] {
-        switch self.viewModel.state.library.identifier {
-        case .group: return []
-        case .custom: break
+        guard self.viewModel.state.library.metadataEditable else {
+            return []
         }
-        // TODO: - group editing temporarily disabled
-//        guard self.viewModel.state.library.metadataEditable else {
-//            return []
-//        }
 
         let symbolConfig = UIImage.SymbolConfiguration(scale: .large)
 
@@ -987,19 +982,9 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
         return false
     }
 
-    func pdfViewController(_ pdfController: PDFViewController,
-                           shouldShow menuItems: [MenuItem],
-                           atSuggestedTargetRect rect: CGRect,
-                           for annotations: [PSPDFKit.Annotation]?,
-                           in annotationRect: CGRect,
+    func pdfViewController(_ pdfController: PDFViewController, shouldShow menuItems: [MenuItem], atSuggestedTargetRect rect: CGRect, for annotations: [PSPDFKit.Annotation]?, in annotationRect: CGRect,
                            on pageView: PDFPageView) -> [MenuItem] {
-        guard annotations == nil else { return [] }
-
-        // TODO: - group editing disabled temporarily
-        switch self.viewModel.state.library.identifier {
-        case .group: return []
-        case .custom: break
-        }
+        guard annotations == nil && self.viewModel.state.library.metadataEditable else { return [] }
 
         let pageRect = pageView.convert(rect, to: pageView.pdfCoordinateSpace)
 
@@ -1014,10 +999,10 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
     func pdfViewController(_ pdfController: PDFViewController, shouldShow menuItems: [MenuItem], atSuggestedTargetRect rect: CGRect,
                            forSelectedText selectedText: String, in textRect: CGRect, on pageView: PDFPageView) -> [MenuItem] {
         let identifiers: [String]
-        // TODO: - group editing disabled temporarily
-        switch self.viewModel.state.library.identifier {
-        case .custom: identifiers = [TextMenu.copy.rawValue, TextMenu.annotationMenuHighlight.rawValue, TextMenu.define.rawValue, TextMenu.search.rawValue, TextMenu.speak.rawValue, TextMenu.share.rawValue]
-        case .group: identifiers = [TextMenu.copy.rawValue, TextMenu.define.rawValue, TextMenu.search.rawValue, TextMenu.speak.rawValue, TextMenu.share.rawValue]
+        if self.viewModel.state.library.metadataEditable {
+            identifiers = [TextMenu.copy.rawValue, TextMenu.annotationMenuHighlight.rawValue, TextMenu.define.rawValue, TextMenu.search.rawValue, TextMenu.speak.rawValue, TextMenu.share.rawValue]
+        } else {
+            identifiers = [TextMenu.copy.rawValue, TextMenu.define.rawValue, TextMenu.search.rawValue, TextMenu.speak.rawValue, TextMenu.share.rawValue]
         }
 
         // Filter unwanted items

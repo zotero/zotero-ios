@@ -11,9 +11,13 @@ import UIKit
 import CocoaLumberjackSwift
 
 struct Annotation: Identifiable, Equatable {
+    /// Editability of annotations
+    /// - notEditable: Annotation is not editable at all.
+    /// - deletable: Annotations can only be deleted.
+    /// - editable: Annotations can be edited.
     enum Editability: Equatable, Hashable {
         case notEditable
-        case metadataEditable
+        case deletable
         case editable
     }
 
@@ -51,9 +55,9 @@ struct Annotation: Identifiable, Equatable {
         }
     }
 
-    func isEditable(in library: Library) -> Bool {
-        return self.editability != .notEditable && (library.metadataEditable || self.isAuthor)
-    }
+//    func isEditable(in library: Library) -> Bool {
+//        return self.editability != .notEditable && (library.metadataEditable || self.isAuthor)
+//    }
 
     init(key: String, type: AnnotationType, page: Int, pageLabel: String, rects: [CGRect], paths: [[CGPoint]], lineWidth: CGFloat?, author: String, isAuthor: Bool, color: String, comment: String,
          text: String?, sortIndex: String, dateModified: Date, tags: [Tag], didChange: Bool, editability: Editability, isSyncable: Bool) {

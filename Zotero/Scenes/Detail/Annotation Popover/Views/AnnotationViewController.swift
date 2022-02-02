@@ -12,8 +12,6 @@ import RxSwift
 
 #if PDFENABLED
 
-typealias AnnotationViewControllerAction = (AnnotationView.Action, Annotation, UIButton) -> Void
-
 final class AnnotationViewController: UIViewController {
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private unowned let attributedStringConverter: HtmlAttributedStringConverter
@@ -31,7 +29,7 @@ final class AnnotationViewController: UIViewController {
     weak var coordinatorDelegate: AnnotationPopoverAnnotationCoordinatorDelegate?
 
     private var commentPlaceholder: String {
-        let canEdit = self.viewModel.state.selectedAnnotation?.isEditable(in: self.viewModel.state.library) ?? false
+        let canEdit = self.viewModel.state.selectedAnnotation?.editability == .editable
         return canEdit ? L10n.Pdf.AnnotationsSidebar.addComment : L10n.Pdf.AnnotationPopover.noComment
     }
 
@@ -167,11 +165,10 @@ final class AnnotationViewController: UIViewController {
         guard let annotation = self.viewModel.state.selectedAnnotation else { return }
 
         let layout = AnnotationPopoverLayout.annotationLayout
-        let canEdit = annotation.isEditable(in: self.viewModel.state.library)
 
         // Setup header
         let header = AnnotationViewHeader(layout: layout)
-        header.setup(with: annotation, isEditable: canEdit, showDoneButton: false, accessibilityType: .view)
+        header.setup(with: annotation, isEditable: (annotation.editability == .editable), showDoneButton: false, accessibilityType: .view)
         header.menuTap
               .subscribe(with: self, onNext: { `self`, _ in
                   self.showSettings()
@@ -193,7 +190,7 @@ final class AnnotationViewController: UIViewController {
             let commentView = AnnotationViewTextView(layout: layout, placeholder: self.commentPlaceholder)
             let comment = AnnotationView.attributedString(from: self.attributedStringConverter.convert(text: annotation.comment, baseAttributes: [.font: layout.font]), layout: layout)
             commentView.setup(text: comment)
-            commentView.isUserInteractionEnabled = canEdit
+            commentView.isUserInteractionEnabled = annotation.editability == .editable
             commentView.textObservable
                        .subscribe(with: self, onNext: { `self`, data in
                            self.viewModel.process(action: .setComment(key: annotation.key, comment: data.0))
@@ -210,7 +207,7 @@ final class AnnotationViewController: UIViewController {
         }
 
         // Setup color picker
-        if canEdit {
+        if annotation.editability == .editable {
             let colorPickerContainer = UIView()
             colorPickerContainer.backgroundColor = Asset.Colors.defaultCellBackground.color
             colorPickerContainer.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
@@ -265,7 +262,7 @@ final class AnnotationViewController: UIViewController {
             tags.setup(with: AnnotationView.attributedString(from: annotation.tags, layout: layout))
         }
         tags.isHidden = annotation.tags.isEmpty
-        tags.isEnabled = canEdit
+        tags.isEnabled = annotation.editability == .editable
         tags.tap
             .subscribe(with: self, onNext: { `self`, _ in
                 self.showTagPicker()
@@ -277,7 +274,7 @@ final class AnnotationViewController: UIViewController {
 
         self.containerStackView.addArrangedSubview(tags)
 
-        if canEdit {
+        if annotation.editability == .editable {
             let tagButton = AnnotationViewButton(layout: layout)
             tagButton.setTitle(L10n.Pdf.AnnotationsSidebar.addTags, for: .normal)
             tagButton.isHidden = !annotation.tags.isEmpty
@@ -291,7 +288,9 @@ final class AnnotationViewController: UIViewController {
 
             self.containerStackView.addArrangedSubview(tagButton)
             self.containerStackView.addArrangedSubview(AnnotationViewSeparator())
+        }
 
+        if annotation.editability == .deletable {
             // MARK: - Setup delete button
             let button = UIButton()
             button.addTarget(self, action: #selector(AnnotationViewController.deleteAnnotation), for: .touchUpInside)

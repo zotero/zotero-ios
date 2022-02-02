@@ -44,7 +44,14 @@ struct AnnotationConverter {
 
     // MARK: - DB -> Memory
 
-    static func annotation(from item: RItem, editability: Annotation.Editability, currentUserId: Int, username: String, boundingBoxConverter: AnnotationBoundingBoxConverter) -> Annotation? {
+    /// Create Zotero annotation from existing database item.
+    /// - parameter item: RItem object.
+    /// - parameter library: Library where annotation is stored.
+    /// - parameter currentUserId: Id of currently logged in user.
+    /// - parameter username: Username of current user.
+    /// - parameter boundingBoxConverter: Converter for bounding boxes.
+    /// - returns: Matching Zotero annotation.
+    static func annotation(from item: RItem, library: Library, currentUserId: Int, username: String, boundingBoxConverter: AnnotationBoundingBoxConverter) -> Annotation? {
         guard let rawType = item.fieldValue(for: FieldKeys.Item.Annotation.type),
               let pageIndex = item.fieldValue(for: FieldKeys.Item.Annotation.pageIndex).flatMap(Int.init),
               let pageLabel = item.fieldValue(for: FieldKeys.Item.Annotation.pageLabel),
@@ -56,6 +63,7 @@ struct AnnotationConverter {
             return nil
         }
 
+        var editability: Annotation.Editability = library.metadataEditable ? .editable : .notEditable
         let text = item.fields.filter(.key(FieldKeys.Item.Annotation.text)).first?.value
 
         if type == .highlight && text == nil {
@@ -65,20 +73,24 @@ struct AnnotationConverter {
 
         let isAuthor: Bool
         let author: String
-        if item.customLibraryKey != nil {
+        if library.identifier == .custom(.myLibrary) {
             // In "My Library" current user is always author
             isAuthor = true
             author = username
         } else {
             // In group library compare `createdBy` user to current user
             isAuthor = item.createdBy?.identifier == currentUserId
+            // In group library if annotation is not created by user it can only be deleted.
+            if !isAuthor && editability == .editable {
+                editability = .deletable
+            }
             // Users can only edit their own annotations
-            if isAuthor {
-                author = username
-            } else if let name = item.createdBy?.name, !name.isEmpty {
+            if let name = item.createdBy?.name, !name.isEmpty {
                 author = name
             } else if let name = item.createdBy?.username, !name.isEmpty {
                 author = name
+            } else if isAuthor {
+                author = username
             } else {
                 author = L10n.unknown
             }
@@ -123,12 +135,11 @@ struct AnnotationConverter {
     /// Create Zotero annotation from existing PSPDFKit annotation.
     /// - parameter annotation: PSPDFKit annotation.
     /// - parameter color: Base color of annotation (can differ from current `PSPDPFKit.Annotation.color`)
-    /// - parameter editability: Type of editability for given annotation.
+    /// - parameter library: Library where annotation is stored.
     /// - parameter isNew: Indicating, whether the annotation has just been created.
     /// - parameter username: Username of current user.
     /// - returns: Matching Zotero annotation.
-    static func annotation(from annotation: PSPDFKit.Annotation, color: String, editability: Annotation.Editability, isNew: Bool, isSyncable: Bool, username: String,
-                           boundingBoxConverter: AnnotationBoundingBoxConverter?) -> Annotation? {
+    static func annotation(from annotation: PSPDFKit.Annotation, color: String, library: Library, isNew: Bool, isSyncable: Bool, username: String, boundingBoxConverter: AnnotationBoundingBoxConverter?) -> Annotation? {
         guard let document = annotation.document, AnnotationsConfig.supported.contains(annotation.type) else { return nil }
 
         let key = isSyncable ? (annotation.key ?? KeyGenerator.newKey) : annotation.uuid
@@ -176,6 +187,15 @@ struct AnnotationConverter {
             lineWidth = annotation.lineWidth
         } else {
             return nil
+        }
+
+        let editability: Annotation.Editability
+        if !isNew {
+            editability = .notEditable
+        } else if library.identifier == .custom(.myLibrary) {
+            editability = .editable
+        } else {
+            editability = isAuthor ? .editable : .deletable
         }
 
         return Annotation(key: key,
@@ -233,8 +253,8 @@ struct AnnotationConverter {
                                      AnnotationsConfig.keyKey: zoteroAnnotation.key,
                                      AnnotationsConfig.syncableKey: true]
 
-            if zoteroAnnotation.editability != .editable {
-                annotation.flags.update(with: .locked)
+            if zoteroAnnotation.editability == .notEditable {
+                annotation.flags.update(with: .readOnly)
             }
         }
 

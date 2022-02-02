@@ -41,10 +41,10 @@ final class AnnotationEditViewController: UIViewController {
 
     init(viewModel: ViewModel<AnnotationEditActionHandler>, includeColorPicker: Bool, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
         var sections: [Section] = [.pageLabel, .actions]
-        if includeColorPicker {
+        if includeColorPicker && viewModel.state.annotation.editability == .editable {
             sections.insert(.properties, at: 0)
         }
-        if viewModel.state.annotation.type == .highlight {
+        if viewModel.state.annotation.type == .highlight && viewModel.state.annotation.editability == .editable {
             sections.insert(.highlight, at: 0)
         }
 
@@ -160,6 +160,8 @@ final class AnnotationEditViewController: UIViewController {
         }).disposed(by: self.disposeBag)
         self.navigationItem.leftBarButtonItem = cancel
 
+        guard self.viewModel.state.annotation.editability == .editable else { return }
+
         let save = UIBarButtonItem(title: L10n.save, style: .done, target: nil, action: nil)
         save.rx.tap
                .subscribe(onNext: { [weak self] in
@@ -231,7 +233,11 @@ extension AnnotationEditViewController: UITableViewDataSource {
 
         case .pageLabel:
             cell.textLabel?.text = L10n.page + " " + self.viewModel.state.annotation.pageLabel
-            cell.accessoryType = .disclosureIndicator
+            if self.viewModel.state.annotation.editability == .editable {
+                cell.accessoryType = .disclosureIndicator
+            } else {
+                cell.accessoryType = .none
+            }
 
         case .actions:
             cell.textLabel?.text = L10n.Pdf.AnnotationPopover.delete
@@ -252,8 +258,9 @@ extension AnnotationEditViewController: UITableViewDelegate {
         case .actions:
             self.deleteAction(self.viewModel.state.annotation)
         case .pageLabel:
-            self.coordinatorDelegate?.showPageLabelEditor(label: self.viewModel.state.annotation.pageLabel,
-                                                          updateSubsequentPages: self.viewModel.state.updateSubsequentLabels,
+            guard self.viewModel.state.annotation.editability == .editable else { return }
+
+            self.coordinatorDelegate?.showPageLabelEditor(label: self.viewModel.state.annotation.pageLabel, updateSubsequentPages: self.viewModel.state.updateSubsequentLabels,
                                                           saveAction: { [weak self] newLabel, shouldUpdateSubsequentPages in
                 self?.viewModel.process(action: .setPageLabel(newLabel, shouldUpdateSubsequentPages))
             })

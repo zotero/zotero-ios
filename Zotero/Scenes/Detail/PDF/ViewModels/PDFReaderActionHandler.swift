@@ -450,15 +450,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     private func syncItems(results: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int], in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard !deletions.isEmpty || !insertions.isEmpty || !modifications.isEmpty else { return }
 
-        // TODO: - group editability temporarily disabled
-        let editability: Annotation.Editability // = library.metadataEditable ? .editable : .notEditable
-        switch viewModel.state.library.identifier {
-        case .custom:
-            editability = .editable
-        case .group:
-            editability = .notEditable
-        }
-
         var deletedAnnotations: [PSPDFKit.Annotation] = []
         var addedAnnotations: [Annotation] = []
         var modifiedAnnotations: [(PSPDFKit.Annotation, Annotation, PdfAnnotationChanges)] = []
@@ -470,7 +461,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                 let item = results[idx]
                 guard !state.deletedKeys.contains(item.key), // If annotation was deleted, it'll be stored as deleted anyway or CR will happen
                       let boundingBoxConverter = self.boundingBoxConverter,
-                      let annotation = AnnotationConverter.annotation(from: item, editability: editability, currentUserId: state.userId,
+                      let annotation = AnnotationConverter.annotation(from: item, library: viewModel.state.library, currentUserId: state.userId,
                                                                       username: state.username, boundingBoxConverter: boundingBoxConverter) else { continue }
 
                 var changes: PdfAnnotationChanges = []
@@ -538,7 +529,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             var insertedKeys: Set<String> = []
             for idx in insertions {
                 guard let boundingBoxConverter = self.boundingBoxConverter,
-                      let annotation = AnnotationConverter.annotation(from: results[idx], editability: editability, currentUserId: state.userId,
+                      let annotation = AnnotationConverter.annotation(from: results[idx], library: viewModel.state.library, currentUserId: state.userId,
                                                                       username: state.username, boundingBoxConverter: boundingBoxConverter) else { continue }
                 addedAnnotations.append(annotation)
                 insertedKeys.insert(annotation.key)
@@ -1368,20 +1359,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         let interfaceStyle = viewModel.state.interfaceStyle
         let isDark = interfaceStyle == .dark
         let libraryId = viewModel.state.library.identifier
-        // TODO: - group editability temporarily disabled
-        let editability: Annotation.Editability //= viewModel.state.library.metadataEditable ? .editable : .notEditable
-        switch libraryId {
-        case .custom:
-            editability = .editable
-        case .group:
-            editability = .notEditable
-        }
         let activeColor = viewModel.state.activeColor.hexString
 
         for annotation in annotations {
             // Either annotation is new (not syncable) or the user used undo/redo and we check whether the annotation exists
             guard !annotation.syncable || viewModel.state.annotations[Int(annotation.pageIndex)]?.first(where: { $0.key == annotation.key }) == nil,
-                  let zoteroAnnotation = AnnotationConverter.annotation(from: annotation, color: activeColor, editability: editability, isNew: true, isSyncable: true,
+                  let zoteroAnnotation = AnnotationConverter.annotation(from: annotation, color: activeColor, library: viewModel.state.library, isNew: true, isSyncable: true,
                                                                         username: viewModel.state.username, boundingBoxConverter: self.boundingBoxConverter) else { continue }
 
             newZoteroAnnotations.append(zoteroAnnotation)
@@ -1548,7 +1531,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             // Create PSPDFKit annotations from Zotero annotations
             let pspdfkitAnnotations = AnnotationConverter.annotations(from: zoteroAnnotations, interfaceStyle: viewModel.state.interfaceStyle)
             // Create Zotero non-editable annotations from supported document annotations
-            self.loadAnnotations(from: viewModel.state.document, username: viewModel.state.username, font: viewModel.state.commentFont, addTo: &zoteroAnnotations, comments: &comments)
+            self.loadAnnotations(from: viewModel.state.document, library: viewModel.state.library, username: viewModel.state.username, font: viewModel.state.commentFont, addTo: &zoteroAnnotations, comments: &comments)
 
             self.update(viewModel: viewModel) { state in
                 state.annotations = zoteroAnnotations
@@ -1579,7 +1562,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func loadAnnotations(from document: PSPDFKit.Document, username: String, font: UIFont, addTo allAnnotations: inout [Int: [Annotation]], comments: inout [String: NSAttributedString]) {
+    private func loadAnnotations(from document: PSPDFKit.Document, library: Library, username: String, font: UIFont, addTo allAnnotations: inout [Int: [Annotation]], comments: inout [String: NSAttributedString]) {
         for (_, pdfAnnotations) in document.allAnnotations(of: AnnotationsConfig.supported) {
             for pdfAnnotation in pdfAnnotations {
                 // Check whether square annotation was previously created by Zotero. If it's just "normal" square (instead of our image) annotation, don't convert it to Zotero annotation.
@@ -1588,7 +1571,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                 }
 
                 let color = pdfAnnotation.color?.hexString ?? "#000000"
-                guard let annotation = AnnotationConverter.annotation(from: pdfAnnotation, color: color, editability: .notEditable, isNew: false, isSyncable: false, username: username,
+                guard let annotation = AnnotationConverter.annotation(from: pdfAnnotation, color: color, library: library, isNew: false, isSyncable: false, username: username,
                                                                       boundingBoxConverter: self.boundingBoxConverter) else { continue }
 
                 var annotations = allAnnotations[annotation.page] ?? []
@@ -1612,21 +1595,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
         let page = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: library.identifier))
         let items = try coordinator.perform(request: ReadAnnotationsDbRequest(attachmentKey: key, libraryId: library.identifier))
-        // TODO: - group editability temporarily disabled
-        let editability: Annotation.Editability // = library.metadataEditable ? .editable : .notEditable
-        switch library.identifier {
-        case .custom:
-            editability = .editable
-        case .group:
-            editability = .notEditable
-        }
 
         var annotations: [Int: [Annotation]] = [:]
         var comments: [String: NSAttributedString] = [:]
         var positions: [AnnotationPosition] = []
 
         for item in items {
-            guard let annotation = AnnotationConverter.annotation(from: item, editability: editability, currentUserId: userId,
+            guard let annotation = AnnotationConverter.annotation(from: item, library: library, currentUserId: userId,
                                                                   username: username, boundingBoxConverter: boundingBoxConverter) else { continue }
 
             positions.append(AnnotationPosition(page: annotation.page, key: annotation.key))
