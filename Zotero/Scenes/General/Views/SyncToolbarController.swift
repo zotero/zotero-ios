@@ -142,8 +142,8 @@ final class SyncToolbarController {
                 return (L10n.Errors.versionMismatch, nil)
             case .unknown(let _message):
                 return _message.isEmpty ? (L10n.Errors.unknown, nil) : (_message, nil)
-            case .attachmentMissing(let key, let title):
-                return (L10n.Errors.SyncToolbar.attachmentMissing("\(title) (\(key))"), nil)
+            case .attachmentMissing(let key, let libraryId, let title):
+                return (L10n.Errors.SyncToolbar.attachmentMissing("\(title) (\(key))"), SyncError.ErrorData(itemKeys: [key], libraryId: libraryId))
             case .quotaLimit(let libraryId):
                 switch libraryId {
                 case .custom:

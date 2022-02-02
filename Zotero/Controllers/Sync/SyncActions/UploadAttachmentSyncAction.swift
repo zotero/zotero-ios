@@ -261,7 +261,7 @@ class UploadAttachmentSyncAction: SyncAction {
                 DDLogError("UploadAttachmentSyncAction: missing attachment - \(self.file.createUrl().absoluteString)")
                 let item = try? self.dbStorage.createCoordinator().perform(request: ReadItemDbRequest(libraryId: self.libraryId, key: self.key))
                 let title = item?.displayTitle ?? L10n.notFound
-                subscriber(.failure(SyncActionError.attachmentMissing(key: self.key, title: title)))
+                subscriber(.failure(SyncActionError.attachmentMissing(key: self.key, libraryId: self.libraryId, title: title)))
             }
 
             return Disposables.create()

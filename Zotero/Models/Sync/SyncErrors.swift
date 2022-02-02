@@ -69,7 +69,7 @@ enum SyncError {
         case parsing(Parsing.Error)
         case quotaLimit(LibraryIdentifier)
         case unchanged
-        case attachmentMissing(key: String, title: String)
+        case attachmentMissing(key: String, libraryId: LibraryIdentifier, title: String)
         case insufficientSpace
         case webDavDeletion(count: Int, library: String)
         case webDavDeletionFailed(error: String, library: String)
@@ -94,7 +94,7 @@ enum SyncError {
 enum SyncActionError: Error {
     case attachmentItemNotSubmitted,
          attachmentAlreadyUploaded,
-         attachmentMissing(key: String, title: String),
+         attachmentMissing(key: String, libraryId: LibraryIdentifier, title: String),
          submitUpdateFailures(String)
 }
 
