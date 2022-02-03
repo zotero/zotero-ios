@@ -28,6 +28,8 @@ class UploadAttachmentSyncAction: SyncAction {
     unowned let dbStorage: DbStorage
     unowned let fileStorage: FileStorage
     unowned let webDavController: WebDavController
+    unowned let schemaController: SchemaController
+    unowned let dateParser: DateParser
     let queue: DispatchQueue
     let scheduler: SchedulerType
     let disposeBag: DisposeBag
@@ -37,7 +39,7 @@ class UploadAttachmentSyncAction: SyncAction {
     var failedBeforeZoteroApiRequest: Bool
 
     init(key: String, file: File, filename: String, md5: String, mtime: Int, libraryId: LibraryIdentifier, userId: Int, oldMd5: String?, apiClient: ApiClient, dbStorage: DbStorage,
-         fileStorage: FileStorage, webDavController: WebDavController, queue: DispatchQueue, scheduler: SchedulerType, disposeBag: DisposeBag) {
+         fileStorage: FileStorage, webDavController: WebDavController, schemaController: SchemaController, dateParser: DateParser, queue: DispatchQueue, scheduler: SchedulerType, disposeBag: DisposeBag) {
         self.key = key
         self.file = file
         self.filename = filename
@@ -50,6 +52,8 @@ class UploadAttachmentSyncAction: SyncAction {
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.webDavController = webDavController
+        self.schemaController = schemaController
+        self.dateParser = dateParser
         self.queue = queue
         self.scheduler = scheduler
         self.disposeBag = disposeBag
@@ -194,7 +198,8 @@ class UploadAttachmentSyncAction: SyncAction {
         return loadParameters.flatMap { params -> Single<(Int, Error?)> in
             self.failedBeforeZoteroApiRequest = false
             return SubmitUpdateSyncAction(parameters: [params], sinceVersion: nil, object: .item, libraryId: self.libraryId, userId: self.userId, updateLibraryVersion: false,
-                                          apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, queue: self.queue, scheduler: self.scheduler).result
+                                          apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, schemaController: self.schemaController, dateParser: self.dateParser,
+                                          queue: self.queue, scheduler: self.scheduler).result
         }
         .flatMap { version, error -> Single<Int> in
             if let error = error {

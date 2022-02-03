@@ -92,35 +92,39 @@ struct StoreItemDbRequest: DbResponseRequest {
             }
         }
 
-        item.key = self.response.key
-        item.rawType = self.response.rawType
-        item.localizedType = self.schemaController.localized(itemType: self.response.rawType) ?? ""
-        item.inPublications = self.response.inPublications
-        item.version = self.response.version
-        item.trash = self.response.isTrash
-        item.dateModified = self.response.dateModified
-        item.dateAdded = self.response.dateAdded
+        if self.preferRemoteData {
+            item.deleted = false
+            item.resetChanges()
+        }
+
+        return StoreItemDbRequest.update(item: item, libraryId: libraryId, with: self.response, schemaController: self.schemaController, dateParser: self.dateParser, database: database)
+    }
+
+    static func update(item: RItem, libraryId: LibraryIdentifier, with response: ItemResponse, schemaController: SchemaController, dateParser: DateParser, database: Realm) -> StoreItemsResponse.FilenameChange? {
+        item.key = response.key
+        item.rawType = response.rawType
+        item.localizedType = schemaController.localized(itemType: response.rawType) ?? ""
+        item.inPublications = response.inPublications
+        item.version = response.version
+        item.trash = response.isTrash
+        item.dateModified = response.dateModified
+        item.dateAdded = response.dateAdded
         item.syncState = .synced
         item.syncRetries = 0
         item.lastSyncDate = Date(timeIntervalSince1970: 0)
         item.changeType = .sync
         item.libraryId = libraryId
 
-        if self.preferRemoteData {
-            item.deleted = false
-            item.resetChanges()
-        }
-
-        let filenameChange = self.syncFields(data: self.response, item: item, database: database, schemaController: schemaController)
-        self.syncParent(key: self.response.parentKey, libraryId: libraryId, item: item, database: database)
-        self.syncCollections(keys: self.response.collectionKeys, libraryId: libraryId, item: item, database: database)
-        self.syncTags(self.response.tags, libraryId: libraryId, item: item, database: database)
-        self.syncCreators(data: self.response, item: item, database: database)
-        self.syncRelations(data: self.response, item: item, database: database)
-        self.syncLinks(data: self.response, item: item, database: database)
-        self.syncUsers(createdBy: self.response.createdBy, lastModifiedBy: self.response.lastModifiedBy, item: item, database: database)
-        self.sync(rects: self.response.rects ?? [], in: item, database: database)
-        self.sync(paths: self.response.paths ?? [], in: item, database: database)
+        let filenameChange = self.syncFields(data: response, item: item, database: database, schemaController: schemaController, dateParser: dateParser)
+        self.syncParent(key: response.parentKey, libraryId: libraryId, item: item, database: database)
+        self.syncCollections(keys: response.collectionKeys, libraryId: libraryId, item: item, database: database)
+        self.syncTags(response.tags, libraryId: libraryId, item: item, database: database)
+        self.syncCreators(data: response, item: item, schemaController: schemaController, database: database)
+        self.syncRelations(data: response, item: item, database: database)
+        self.syncLinks(data: response, item: item, database: database)
+        self.syncUsers(createdBy: response.createdBy, lastModifiedBy: response.lastModifiedBy, item: item, database: database)
+        self.sync(rects: response.rects ?? [], in: item, database: database)
+        self.sync(paths: response.paths ?? [], in: item, database: database)
 
         // Item title depends on item type, creators and fields, so we update derived titles (displayTitle and sortTitle) after everything else synced
         item.updateDerivedTitles()
@@ -128,7 +132,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         return filenameChange
     }
 
-    private func syncFields(data: ItemResponse, item: RItem, database: Realm, schemaController: SchemaController) -> StoreItemsResponse.FilenameChange? {
+    private static func syncFields(data: ItemResponse, item: RItem, database: Realm, schemaController: SchemaController, dateParser: DateParser) -> StoreItemsResponse.FilenameChange? {
         var oldName: String?
         var newName: String?
         var contentType: String?
@@ -157,7 +161,7 @@ struct StoreItemDbRequest: DbResponseRequest {
             } else {
                 field = RItemField()
                 field.key = key
-                field.baseKey = self.schemaController.baseKey(for: data.rawType, field: key)
+                field.baseKey = schemaController.baseKey(for: data.rawType, field: key)
                 field.value = value
                 item.fields.append(field)
             }
@@ -178,7 +182,7 @@ struct StoreItemDbRequest: DbResponseRequest {
             case (FieldKeys.Item.Attachment.md5, _):
                 md5 = value
                 if value == "<null>" {
-                    DDLogError("StoreItemDbRequest: incorrect md5 value for synced item \(self.response.key)")
+                    DDLogError("StoreItemDbRequest: incorrect md5 value for synced item \(data.key)")
                 }
             case (FieldKeys.Item.Attachment.contentType, _), (_, FieldKeys.Item.Attachment.contentType):
                 contentType = value
@@ -186,7 +190,7 @@ struct StoreItemDbRequest: DbResponseRequest {
             }
         }
 
-        item.setDateFieldMetadata(date, parser: self.dateParser)
+        item.setDateFieldMetadata(date, parser: dateParser)
         item.set(publisher: publisher)
         item.set(publicationTitle: publicationTitle)
         item.annotationSortIndex = sortIndex ?? ""
@@ -198,7 +202,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         return nil
     }
 
-    private func sync(rects: [[Double]], in item: RItem, database: Realm) {
+    private static func sync(rects: [[Double]], in item: RItem, database: Realm) {
         guard self.rects(rects, differFrom: item.rects) else { return }
 
         database.delete(item.rects)
@@ -212,7 +216,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         }
     }
 
-    private func rects(_ rects: [[Double]], differFrom itemRects: List<RRect>) -> Bool {
+    private static func rects(_ rects: [[Double]], differFrom itemRects: List<RRect>) -> Bool {
         if rects.count != itemRects.count {
             return true
         }
@@ -227,7 +231,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         return false
     }
 
-    private func sync(paths: [[Double]], in item: RItem, database: Realm) {
+    private static func sync(paths: [[Double]], in item: RItem, database: Realm) {
         guard self.paths(paths, differFrom: item.paths) else { return }
 
         for path in item.paths {
@@ -250,7 +254,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         }
     }
 
-    private func paths(_ paths: [[Double]], differFrom itemPaths: List<RPath>) -> Bool {
+    private static func paths(_ paths: [[Double]], differFrom itemPaths: List<RPath>) -> Bool {
         if paths.count != itemPaths.count {
             return true
         }
@@ -277,7 +281,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         return false
     }
 
-    private func syncParent(key: String?, libraryId: LibraryIdentifier, item: RItem, database: Realm) {
+    private static func syncParent(key: String?, libraryId: LibraryIdentifier, item: RItem, database: Realm) {
         guard let key = key else {
             if item.parent != nil {
                 item.parent = nil
@@ -300,7 +304,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         item.parent = parent
     }
 
-    private func syncCollections(keys: Set<String>, libraryId: LibraryIdentifier, item: RItem, database: Realm) {
+    private static func syncCollections(keys: Set<String>, libraryId: LibraryIdentifier, item: RItem, database: Realm) {
         // Remove item from collections, which are not in the `keys` array anymore
         for collection in item.collections.filter(.key(notIn: keys)) {
             guard let index = collection.items.index(of: item) else { continue }
@@ -332,7 +336,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         }
     }
 
-    private func syncTags(_ tags: [TagResponse], libraryId: LibraryIdentifier, item: RItem, database: Realm) {
+    private static func syncTags(_ tags: [TagResponse], libraryId: LibraryIdentifier, item: RItem, database: Realm) {
         // Remove item from tags, which are not in the `tags` array anymore
         database.delete(item.tags.filter(.tagName(notIn: tags.map({ $0.tag }))))
 
@@ -368,7 +372,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         }
     }
 
-    private func syncCreators(data: ItemResponse, item: RItem, database: Realm) {
+    private static func syncCreators(data: ItemResponse, item: RItem, schemaController: SchemaController, database: Realm) {
         database.delete(item.creators)
 
         for object in data.creators.enumerated() {
@@ -382,14 +386,14 @@ struct StoreItemDbRequest: DbResponseRequest {
             creator.lastName = lastName
             creator.name = name
             creator.orderId = object.offset
-            creator.primary = self.schemaController.creatorIsPrimary(creator.rawType, itemType: item.rawType)
+            creator.primary = schemaController.creatorIsPrimary(creator.rawType, itemType: item.rawType)
             item.creators.append(creator)
         }
 
         item.updateCreatorSummary()
     }
 
-    private func syncRelations(data: ItemResponse, item: RItem, database: Realm) {
+    private static func syncRelations(data: ItemResponse, item: RItem, database: Realm) {
         let allKeys = Array(data.relations.keys)
         let toRemove = item.relations.filter("NOT type IN %@", allKeys)
         database.delete(toRemove)
@@ -419,7 +423,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         }
     }
 
-    private func syncLinks(data: ItemResponse, item: RItem, database: Realm) {
+    private static func syncLinks(data: ItemResponse, item: RItem, database: Realm) {
         database.delete(item.links)
 
         guard let links = data.links else { return }
@@ -438,7 +442,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         }
     }
 
-    private func syncLink(data: LinkResponse, type: String, item: RItem, database: Realm) {
+    private static func syncLink(data: LinkResponse, type: String, item: RItem, database: Realm) {
         let link = RLink()
         link.type = type
         link.contentType = data.type ?? ""
@@ -448,7 +452,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         item.links.append(link)
     }
 
-    private func syncUsers(createdBy: UserResponse?, lastModifiedBy: UserResponse?, item: RItem, database: Realm) {
+    private static func syncUsers(createdBy: UserResponse?, lastModifiedBy: UserResponse?, item: RItem, database: Realm) {
         if item.createdBy?.isInvalidated == true || item.createdBy?.identifier != createdBy?.id {
             let user = item.createdBy?.isInvalidated == true ? nil : item.createdBy
 
@@ -470,7 +474,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         }
     }
 
-    private func createUser(from response: UserResponse, in database: Realm) -> RUser {
+    private static func createUser(from response: UserResponse, in database: Realm) -> RUser {
         if let user = database.object(ofType: RUser.self, forPrimaryKey: response.id) {
             return user
         }

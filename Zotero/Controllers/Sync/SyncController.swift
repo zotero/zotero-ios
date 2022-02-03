@@ -1020,7 +1020,7 @@ final class SyncController: SynchronizationController {
                 self.processNextAction()
             } else {
                 self.workQueue.async { [weak self] in
-                    self?.markForResync(keys: Array(failedKeys), libraryId: libraryId, object: object)
+                    self?.markForResync(keys: failedKeys, libraryId: libraryId, object: object)
                 }
             }
 
@@ -1103,7 +1103,7 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
-    private func markForResync(keys: [Any], libraryId: LibraryIdentifier, object: SyncObject) {
+    private func markForResync(keys: [String], libraryId: LibraryIdentifier, object: SyncObject) {
         let result = MarkForResyncSyncAction(keys: keys, object: object, libraryId: libraryId, dbStorage: self.dbStorage).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] _ in
@@ -1112,7 +1112,7 @@ final class SyncController: SynchronizationController {
                   }
               }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishCompletableAction(error: (error, .from(syncObject: object, keys: (keys as? [String]) ?? [], libraryId: libraryId)))
+                      self?.finishCompletableAction(error: (error, .from(syncObject: object, keys: keys, libraryId: libraryId)))
                   }
               })
               .disposed(by: self.disposeBag)
@@ -1238,12 +1238,11 @@ final class SyncController: SynchronizationController {
     }
 
     private func processSubmitUpdate(for batch: WriteBatch) {
-        let result = SubmitUpdateSyncAction(parameters: batch.parameters, sinceVersion: batch.version, object: batch.object,
-                                            libraryId: batch.libraryId, userId: self.userId, updateLibraryVersion: true, apiClient: self.apiClient,
-                                            dbStorage: self.dbStorage, fileStorage: self.fileStorage,
+        let result = SubmitUpdateSyncAction(parameters: batch.parameters, sinceVersion: batch.version, object: batch.object, libraryId: batch.libraryId, userId: self.userId, updateLibraryVersion: true,
+                                            apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, schemaController: self.schemaController, dateParser: self.dateParser,
                                             queue: self.workQueue, scheduler: self.workScheduler).result
         result.subscribe(on: self.workScheduler)
-              .subscribe(onSuccess: { [weak self] (version, error) in
+              .subscribe(onSuccess: { [weak self] version, error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.progressHandler.reportWriteBatchSynced(size: batch.parameters.count)
                       self?.finishSubmission(error: error, newVersion: version, keys: batch.parameters.compactMap({ $0["key"] as? String }), libraryId: batch.libraryId, object: batch.object)
@@ -1258,10 +1257,9 @@ final class SyncController: SynchronizationController {
     }
 
     private func processUploadAttachment(for upload: AttachmentUpload) {
-        let action = UploadAttachmentSyncAction(key: upload.key, file: upload.file, filename: upload.filename, md5: upload.md5,
-                                                mtime: upload.mtime, libraryId: upload.libraryId, userId: self.userId, oldMd5: upload.oldMd5,
-                                                apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, webDavController: self.webDavController,
-                                                queue: self.workQueue, scheduler: self.workScheduler, disposeBag: self.disposeBag)
+        let action = UploadAttachmentSyncAction(key: upload.key, file: upload.file, filename: upload.filename, md5: upload.md5, mtime: upload.mtime, libraryId: upload.libraryId, userId: self.userId,
+                                                oldMd5: upload.oldMd5, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, webDavController: self.webDavController,
+                                                schemaController: self.schemaController, dateParser: self.dateParser, queue: self.workQueue, scheduler: self.workScheduler, disposeBag: self.disposeBag)
         action.result
               .subscribe(on: self.workScheduler)
               .subscribe(with: self, onSuccess: { `self`, _ in

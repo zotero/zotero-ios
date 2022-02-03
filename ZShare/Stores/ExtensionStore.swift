@@ -808,7 +808,8 @@ final class ExtensionStore {
             .subscribe(on: self.backgroundScheduler)
             .flatMap { parameters in
                 return SubmitUpdateSyncAction(parameters: [parameters], sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId, updateLibraryVersion: false, apiClient: apiClient,
-                                              dbStorage: dbStorage, fileStorage: fileStorage, queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
+                                              dbStorage: dbStorage, fileStorage: fileStorage, schemaController: self.schemaController, dateParser: self.dateParser, queue: self.backgroundQueue,
+                                              scheduler: self.backgroundScheduler).result
             }
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] _ in
@@ -1053,9 +1054,9 @@ final class ExtensionStore {
                                   })
                    }
                    .flatMap { parameters, data -> Single<SubmissionData> in
-                       return SubmitUpdateSyncAction(parameters: [parameters], sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId, updateLibraryVersion: false,
-                                                     apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage,
-                                                     queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
+                       return SubmitUpdateSyncAction(parameters: [parameters], sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId, updateLibraryVersion: false, apiClient: apiClient,
+                                                     dbStorage: dbStorage, fileStorage: fileStorage, schemaController: self.schemaController, dateParser: self.dateParser, queue: self.backgroundQueue,
+                                                     scheduler: self.backgroundScheduler).result
                                     .flatMap({ _ in Single.just(data) })
                    }
     }
@@ -1086,9 +1087,9 @@ final class ExtensionStore {
                                   })
                    }
                    .flatMap { parameters, data -> Single<SubmissionData> in
-                       return SubmitUpdateSyncAction(parameters: parameters, sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId, updateLibraryVersion: false,
-                                                     apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage,
-                                                     queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
+                       return SubmitUpdateSyncAction(parameters: parameters, sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId, updateLibraryVersion: false, apiClient: apiClient,
+                                                     dbStorage: dbStorage, fileStorage: fileStorage, schemaController: self.schemaController, dateParser: self.dateParser, queue: self.backgroundQueue,
+                                                     scheduler: self.backgroundScheduler).result
                                     .flatMap({ _ in Single.just(data) })
                    }
     }

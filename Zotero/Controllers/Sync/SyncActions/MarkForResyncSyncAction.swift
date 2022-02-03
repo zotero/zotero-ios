@@ -14,7 +14,7 @@ import RxSwift
 struct MarkForResyncSyncAction: SyncAction {
     typealias Result = ()
 
-    let keys: [Any]
+    let keys: [String]
     let object: SyncObject
     let libraryId: LibraryIdentifier
 
@@ -26,13 +26,13 @@ struct MarkForResyncSyncAction: SyncAction {
                 let request: DbRequest
                 switch self.object {
                 case .collection:
-                    request = try MarkForResyncDbAction<RCollection>(libraryId: self.libraryId, keys: self.keys)
+                    request = MarkForResyncDbAction<RCollection>(libraryId: self.libraryId, keys: self.keys)
                 case .item, .trash:
-                    request = try MarkForResyncDbAction<RItem>(libraryId: self.libraryId, keys: self.keys)
+                    request = MarkForResyncDbAction<RItem>(libraryId: self.libraryId, keys: self.keys)
                 case .search:
-                    request = try MarkForResyncDbAction<RSearch>(libraryId: self.libraryId, keys: self.keys)
+                    request = MarkForResyncDbAction<RSearch>(libraryId: self.libraryId, keys: self.keys)
                 case .settings:
-                    request = try MarkForResyncDbAction<RPageIndex>(libraryId: self.libraryId, keys: self.keys)
+                    request = MarkForResyncDbAction<RPageIndex>(libraryId: self.libraryId, keys: self.keys)
                 }
                 try self.dbStorage.createCoordinator().perform(request: request)
                 subscriber(.success(()))

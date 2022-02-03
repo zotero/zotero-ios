@@ -32,23 +32,28 @@ struct StoreSearchesDbRequest: DbRequest {
             database.add(search)
         }
 
+        // No CR for searches, if it was changed or deleted locally, just restore it
+        search.deleted = false
+        search.resetChanges()
+
+        StoreSearchesDbRequest.update(search: search, data: data, libraryId: libraryId, database: database)
+    }
+
+    static func update(search: RSearch, data: SearchResponse, libraryId: LibraryIdentifier, database: Realm) {
         search.key = data.key
         search.name = data.data.name
         search.version = data.version
         search.syncState = .synced
         search.syncRetries = 0
         search.lastSyncDate = Date(timeIntervalSince1970: 0)
+        search.changeType = .sync
         search.libraryId = libraryId
         search.trash = data.data.isTrash
-
-        // No CR for searches, if it was changed or deleted locally, just restore it
-        search.deleted = false
-        search.resetChanges()
 
         self.syncConditions(data: data, search: search, database: database)
     }
 
-    private func syncConditions(data: SearchResponse, search: RSearch, database: Realm) {
+    private static func syncConditions(data: SearchResponse, search: RSearch, database: Realm) {
         database.delete(search.conditions)
 
         for object in data.data.conditions.enumerated() {

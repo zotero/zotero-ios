@@ -17,17 +17,17 @@ struct MarkForResyncDbAction<Obj: SyncableObject&Updatable>: DbRequest {
     var needsWrite: Bool { return true }
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
-    init(libraryId: LibraryIdentifier, keys: [Any]) throws {
-        guard let typedKeys = keys as? [String] else { throw DbError.primaryKeyWrongType }
+    init(libraryId: LibraryIdentifier, keys: [String]) {
         self.libraryId = libraryId
-        self.keys = typedKeys
+        self.keys = keys
     }
 
     func process(in database: Realm) throws {
         let syncDate = Date()
         var toCreate: [String] = self.keys
         let objects = database.objects(Obj.self).filter(.keys(self.keys, in: self.libraryId))
-        objects.forEach { object in
+        
+        for object in objects {
             if object.syncState == .synced {
                 object.syncState = .outdated
             }
@@ -39,7 +39,7 @@ struct MarkForResyncDbAction<Obj: SyncableObject&Updatable>: DbRequest {
             }
         }
 
-        toCreate.forEach { key in
+        for key in toCreate {
             let object = Obj()
             object.key = key
             object.syncState = .dirty

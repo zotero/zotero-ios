@@ -34,24 +34,28 @@ struct StoreCollectionsDbRequest: DbRequest {
             database.add(collection)
         }
 
+        // No CR for collections, if it was changed or deleted locally, just restore it
+        collection.deleted = false
+        collection.resetChanges()
+
+        StoreCollectionsDbRequest.update(collection: collection, data: data, libraryId: libraryId, database: database)
+    }
+
+    static func update(collection: RCollection, data: CollectionResponse, libraryId: LibraryIdentifier, database: Realm) {
         collection.key = data.key
         collection.name = data.data.name
         collection.version = data.version
         collection.syncState = .synced
         collection.syncRetries = 0
         collection.lastSyncDate = Date(timeIntervalSince1970: 0)
+        collection.changeType = .sync
         collection.libraryId = libraryId
         collection.trash = data.data.isTrash
-
-        // No CR for collections, if it was changed or deleted locally, just restore it
-        collection.deleted = false
-        collection.resetChanges()
 
         self.syncParent(libraryId: libraryId, data: data.data, collection: collection, database: database)
     }
 
-    private func syncParent(libraryId: LibraryIdentifier, data: CollectionResponse.Data,
-                            collection: RCollection, database: Realm) {
+    private static func syncParent(libraryId: LibraryIdentifier, data: CollectionResponse.Data, collection: RCollection, database: Realm) {
         collection.parentKey = nil
 
         guard let key = data.parentCollection else { return }

@@ -20,12 +20,66 @@ struct MarkObjectsAsSyncedDbRequest<Obj: UpdatableObject&Syncable>: DbRequest {
 
     func process(in database: Realm) throws {
         let objects = database.objects(Obj.self).filter(.keys(self.keys, in: self.libraryId))
-        objects.forEach { object in
+        for object in objects {
             if object.version != self.version {
                 object.version = self.version
             }
             object.resetChanges()
         }
+    }
+}
+
+struct MarkCollectionAsSyncedAndUpdateDbRequest: DbRequest {
+    let libraryId: LibraryIdentifier
+    let response: CollectionResponse
+    let version: Int
+
+    var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
+
+    func process(in database: Realm) throws {
+        guard let collection = database.objects(RCollection.self).filter(.key(self.response.key, in: self.libraryId)).first else { return }
+
+        StoreCollectionsDbRequest.update(collection: collection, data: self.response, libraryId: self.libraryId, database: database)
+        collection.resetChanges()
+        collection.version = self.version
+    }
+}
+
+struct MarkItemAsSyncedAndUpdateDbRequest: DbRequest {
+    let libraryId: LibraryIdentifier
+    let response: ItemResponse
+    let version: Int
+
+    unowned let schemaController: SchemaController
+    unowned let dateParser: DateParser
+
+    var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
+
+    func process(in database: Realm) throws {
+        guard let item = database.objects(RItem.self).filter(.key(self.response.key, in: self.libraryId)).first else { return }
+
+        _ = StoreItemDbRequest.update(item: item, libraryId: self.libraryId, with: self.response, schemaController: self.schemaController, dateParser: self.dateParser, database: database)
+        item.resetChanges()
+        item.version = self.version
+    }
+}
+
+struct MarkSearchAsSyncedAndUpdateDbRequest: DbRequest {
+    let libraryId: LibraryIdentifier
+    let response: SearchResponse
+    let version: Int
+
+    var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
+
+    func process(in database: Realm) throws {
+        guard let search = database.objects(RSearch.self).filter(.key(self.response.key, in: self.libraryId)).first else { return }
+
+        StoreSearchesDbRequest.update(search: search, data: self.response, libraryId: self.libraryId, database: database)
+        search.resetChanges()
+        search.version = self.version
     }
 }
 

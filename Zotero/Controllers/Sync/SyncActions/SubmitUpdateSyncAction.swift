@@ -25,6 +25,8 @@ struct SubmitUpdateSyncAction: SyncAction {
     unowned let apiClient: ApiClient
     unowned let dbStorage: DbStorage
     unowned let fileStorage: FileStorage
+    unowned let schemaController: SchemaController
+    unowned let dateParser: DateParser
     let queue: DispatchQueue
     let scheduler: SchedulerType
 
@@ -78,63 +80,156 @@ struct SubmitUpdateSyncAction: SyncAction {
                                      let json = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
                                      return Single.just((try UpdatesResponse(json: json), newVersion))
                                  } catch let error {
+                                     DDLogError("SubmitUpdateSyncAction: can't parse updates response - \(error)")
                                      return Single.error(error)
                                  }
                              })
                              .flatMap({ response, newVersion -> Single<(Int, Error?)> in
-                                let syncedKeys = self.keys(from: (response.successful + response.unchanged), parameters: self.parameters)
-
-                                 do {
-                                     var requests: [DbRequest]
-                                     if self.updateLibraryVersion {
-                                         requests = [UpdateVersionsDbRequest(version: newVersion, libraryId: self.libraryId, type: .object(self.object))]
-                                     } else {
-                                         requests = []
-                                     }
-                                     if !syncedKeys.isEmpty {
-                                         switch self.object {
-                                         case .collection:
-                                             requests.insert(MarkObjectsAsSyncedDbRequest<RCollection>(libraryId: self.libraryId, keys: syncedKeys, version: newVersion), at: 0)
-                                         case .item, .trash:
-                                            // Cache JSONs locally for later use (in CR)
-                                            self.storeIndividualItemJsonObjects(from: response.successfulJsonObjects, libraryId: self.libraryId)
-                                            requests.insert(MarkObjectsAsSyncedDbRequest<RItem>(libraryId: self.libraryId, keys: syncedKeys, version: newVersion), at: 0)
-                                         case .search:
-                                            requests.insert(MarkObjectsAsSyncedDbRequest<RSearch>(libraryId: self.libraryId, keys: syncedKeys, version: newVersion), at: 0)
-                                         case .settings: break
-                                         }
-                                     }
-                                     try self.dbStorage.createCoordinator().perform(requests: requests)
-                                 } catch let error {
-                                     return Single.just((newVersion, error))
-                                 }
-
-                                 if response.failed.first(where: { $0.code == 412 }) != nil {
-                                     return Single.just((newVersion, PreconditionErrorType.objectConflict))
-                                 }
-
-                                 if let failed = response.failed.first(where: { $0.code == 409 }) {
-                                     return Single.just((newVersion, SyncActionError.submitUpdateFailures(failed.message)))
-                                 }
-
-                                 if !response.failed.isEmpty {
-                                     let errorMessages = response.failed.map({ $0.message }).joined(separator: "\n")
-                                     DDLogError("SubmitUpdateSyncAction: unknown failures - \(response.failed)")
-                                     return Single.just((newVersion, SyncActionError.submitUpdateFailures(errorMessages)))
-                                 }
-
-                                 return Single.just((newVersion, nil))
+                                 return self.process(response: response, newVersion: newVersion)
                              })
     }
 
-    private func keys(from indices: [String], parameters: [[String: Any]]) -> [String] {
-        return indices.compactMap({ Int($0) }).map({ parameters[$0] }).compactMap({ $0["key"] as? String })
+    private func process(response: UpdatesResponse, newVersion: Int) -> Single<(Int, Error?)> {
+        return Single.create { subscriber in
+            let requests = self.createRequests(response: response, version: newVersion, updateLibraryVersion: self.updateLibraryVersion)
+
+            if !response.successfulJsonObjects.isEmpty {
+                switch self.object {
+                case .item, .trash:
+                    // Cache JSONs locally for later use (in CR)
+                    self.storeIndividualItemJsonObjects(from: Array(response.successfulJsonObjects.values), libraryId: self.libraryId)
+                case .collection, .search, .settings: break
+                }
+            }
+
+            if !requests.isEmpty {
+                do {
+                    try self.dbStorage.createCoordinator().perform(requests: requests)
+                } catch let error {
+                    DDLogError("SubmitUpdateSyncAction: can't store local changes - \(error)")
+                    subscriber(.success((newVersion, error)))
+                    return Disposables.create()
+                }
+            }
+
+            if response.failed.first(where: { $0.code == 412 }) != nil {
+                subscriber(.success((newVersion, PreconditionErrorType.objectConflict)))
+                return Disposables.create()
+            }
+
+            if let failed = response.failed.first(where: { $0.code == 409 }) {
+                subscriber(.success((newVersion, SyncActionError.submitUpdateFailures(failed.message))))
+                return Disposables.create()
+            }
+
+            if !response.failed.isEmpty {
+                let errorMessages = response.failed.map({ $0.message }).joined(separator: "\n")
+                DDLogError("SubmitUpdateSyncAction: unknown failures - \(response.failed)")
+                subscriber(.success((newVersion, SyncActionError.submitUpdateFailures(errorMessages))))
+                return Disposables.create()
+            }
+
+            subscriber(.success((newVersion, nil)))
+            return Disposables.create()
+        }
     }
 
-    private func storeIndividualItemJsonObjects(from jsonObject: Any, libraryId: LibraryIdentifier) {
-        guard let array = jsonObject as? [[String: Any]] else { return }
+    private func process(response: UpdatesResponse) -> (unchangedKeys: [String], parsingFailedKeys: [String], changedCollections: [CollectionResponse], changedItems: [ItemResponse], changedSearches: [SearchResponse]) {
+        var unchangedKeys: [String] = Array(response.unchanged.values)
+        var changedCollections: [CollectionResponse] = []
+        var changedItems: [ItemResponse] = []
+        var changedSearches: [SearchResponse] = []
+        var parsingFailedKeys: [String] = []
 
-        for object in array {
+        for (idx, json) in response.successfulJsonObjects {
+            guard let key = response.successful[idx] else { continue }
+
+            do {
+                switch self.object {
+                case .collection:
+                    let response = try CollectionResponse(response: json)
+                    changedCollections.append(response)
+                case .item, .trash:
+                    let response = try ItemResponse(response: json, schemaController: self.schemaController)
+                    changedItems.append(response)
+                case .search:
+                    let response = try SearchResponse(response: json)
+                    changedSearches.append(response)
+                case .settings: break
+                }
+            } catch let error {
+                DDLogError("SubmitUpdateSyncAction: could not parse json for object \(self.object) - \(error)")
+                // Since changes were submitted to backend and only the response can't be parsed, we'll mark it as submitted so that we don't try to resubmit the same changes.
+                unchangedKeys.append(key)
+                // We'll also mark this object as outdated so that it's updated from backend on next sync.
+                parsingFailedKeys.append(key)
+            }
+        }
+
+        return (unchangedKeys, parsingFailedKeys, changedCollections, changedItems, changedSearches)
+    }
+
+    private func createRequests(response: UpdatesResponse, version: Int, updateLibraryVersion: Bool) -> [DbRequest] {
+        let (unchangedKeys, parsingFailedKeys, changedCollections, changedItems, changedSearches) = self.process(response: response)
+
+        var requests: [DbRequest] = []
+
+        if !unchangedKeys.isEmpty {
+            // Mark unchanged objects as submitted.
+            switch self.object {
+            case .collection:
+                requests.append(MarkObjectsAsSyncedDbRequest<RCollection>(libraryId: self.libraryId, keys: unchangedKeys, version: version))
+            case .item, .trash:
+                requests.append(MarkObjectsAsSyncedDbRequest<RItem>(libraryId: self.libraryId, keys: unchangedKeys, version: version))
+            case .search:
+                requests.append(MarkObjectsAsSyncedDbRequest<RSearch>(libraryId: self.libraryId, keys: unchangedKeys, version: version))
+            case .settings: break
+            }
+        }
+
+        if !parsingFailedKeys.isEmpty {
+            // Marked objects which failed to parse response as outdated so that they are updated on next sync.
+            switch self.object {
+            case .collection:
+                requests.append(MarkForResyncDbAction<RCollection>(libraryId: self.libraryId, keys: unchangedKeys))
+            case .item, .trash:
+                requests.append(MarkForResyncDbAction<RItem>(libraryId: self.libraryId, keys: unchangedKeys))
+            case .search:
+                requests.append(MarkForResyncDbAction<RSearch>(libraryId: self.libraryId, keys: unchangedKeys))
+            case .settings: break
+            }
+        }
+
+        if !changedItems.isEmpty {
+            // Update collections locally based on response from backend and mark as submitted.
+            for response in changedCollections {
+                requests.append(MarkCollectionAsSyncedAndUpdateDbRequest(libraryId: self.libraryId, response: response, version: version))
+            }
+        }
+
+        if !changedItems.isEmpty {
+            // Update items locally based on response from backend and mark as submitted.
+            for response in changedItems {
+                requests.append(MarkItemAsSyncedAndUpdateDbRequest(libraryId: self.libraryId, response: response, version: version, schemaController: self.schemaController, dateParser: self.dateParser))
+            }
+        }
+
+        if !changedItems.isEmpty {
+            // Update searches locally based on response from backend and mark as submitted.
+            for response in changedSearches {
+                requests.append(MarkSearchAsSyncedAndUpdateDbRequest(libraryId: self.libraryId, response: response, version: version))
+            }
+        }
+
+        if updateLibraryVersion {
+            requests.append(UpdateVersionsDbRequest(version: version, libraryId: self.libraryId, type: .object(self.object)))
+        }
+
+        return requests
+    }
+
+    private func storeIndividualItemJsonObjects(from jsonObjects: [[String: Any]], libraryId: LibraryIdentifier) {
+        for object in jsonObjects {
             guard let key = object["key"] as? String else { continue }
 
             do {

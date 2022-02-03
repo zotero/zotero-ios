@@ -9,9 +9,9 @@
 import Foundation
 
 struct UpdatesResponse {
-    let successful: [String]
-    let successfulJsonObjects: [Any]
-    let unchanged: [String]
+    let successful: [String: String]
+    let successfulJsonObjects: [String: [String: Any]]
+    let unchanged: [String: String]
     let failed: [FailedUpdateResponse]
 
     init(json: Any) throws {
@@ -19,12 +19,9 @@ struct UpdatesResponse {
             throw Parsing.Error.notDictionary
         }
 
-        let successful = (dictionary["success"] as? [String: Any]) ?? [:]
-        self.successful = Array(successful.keys)
-        let successfulJsons = (dictionary["successful"] as? [String: Any]) ?? [:]
-        self.successfulJsonObjects = Array(successfulJsons.values)
-        let unchanged = (dictionary["unchanged"] as? [String: Any]) ?? [:]
-        self.unchanged = Array(unchanged.keys)
+        self.successful = (dictionary["success"] as? [String: String]) ?? [:]
+        self.successfulJsonObjects = (dictionary["successful"] as? [String: [String: Any]]) ?? [:]
+        self.unchanged = (dictionary["unchanged"] as? [String: String]) ?? [:]
         let failed = (dictionary["failed"] as? [String: [String: Any]]) ?? [:]
         self.failed = failed.values.map(FailedUpdateResponse.init)
      }

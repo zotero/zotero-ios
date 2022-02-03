@@ -13,7 +13,6 @@ import RealmSwift
 enum DbError: Error {
     case objectNotFound
     case primaryKeyUnavailable
-    case primaryKeyWrongType
     case invalidRequest(String)
 
     var isObjectNotFound: Bool {
