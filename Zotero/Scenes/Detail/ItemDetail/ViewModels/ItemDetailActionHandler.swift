@@ -220,20 +220,22 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     }
 
     private func shouldReloadData(for changes: [PropertyChange]) -> Bool {
-        guard let change = changes.first(where: { $0.name == "changeType" }), let newValue = change.newValue as? Int, let type = UpdatableChangeType(rawValue: newValue) else { return true }
+        guard let changeTypeChange = changes.first(where: { $0.name == "changeType" }), let newValue = changeTypeChange.newValue as? Int, let type = UpdatableChangeType(rawValue: newValue),
+              let changedFieldsChange = changes.first(where: { $0.name == "rawChangedFields" }) else { return true }
 
         switch type {
         case .user:
             // This change was made by user, ignore
             return false
         case .sync:
-            // This change was made by sync. Check whether it was just marking the object as synced or an actual change. When marking as synced, these attributed are updated:
-            // `version`, `rawChangeType` and `rawChangedFields`.
-            if changes.count != 3 {
-                return true
-            }
-            let changes = Set(changes.map({ $0.name }))
-            return !changes.contains("version") || !changes.contains("rawChangedFields") || !changes.contains("changeType")
+            // This change was made by sync. Check whether it was just marking the object as synced or an actual change.
+
+            guard let oldChangedFieldsValue = changedFieldsChange.oldValue as? RItemChanges.RawValue,
+                  let newChangedFieldsValue = changedFieldsChange.newValue as? RItemChanges.RawValue else { return true }
+
+            // If this change was made as a response to data submission to API then `rawChangedFields` was set back to 0 (synced) from some previous non-zero value. Otherwise it's a change from backend
+            // and it should reload UI.
+            return oldChangedFieldsValue == 0 || newChangedFieldsValue > 0
         }
     }
 
