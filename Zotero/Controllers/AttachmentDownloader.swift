@@ -277,7 +277,7 @@ final class AttachmentDownloader {
 
         case .failure(let error):
             DDLogError("AttachmentDownloader: failed to download attachment \(download.key), \(download.libraryId) - \(error)")
-            let isCancelError = (error as? Alamofire.AFError)?.isExplicitlyCancelledError == true || (error as? Archive.ArchiveError) == .cancelledOperation
+            let isCancelError = (error as? AFResponseError)?.error.isExplicitlyCancelledError == true || (error as? Archive.ArchiveError) == .cancelledOperation
             self.errors[download] = (isCancelError || hasLocalCopy) ? nil : error
 
             if isCancelError {
