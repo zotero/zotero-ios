@@ -44,7 +44,7 @@ struct CollectionPickerView: View {
                     }
                     .padding(.trailing, 20)
                 }
-                .listRowInsets(EdgeInsets(top: 0, leading: CollectionRow.inset(for: collection.level, baseOffset: 0), bottom: 0, trailing: 0))
+//                .listRowInsets(EdgeInsets(top: 0, leading: CollectionRow.inset(for: collection.level, baseOffset: 0), bottom: 0, trailing: 0))
             }
         }
         .navigationBarTitle(Text(L10n.Collections.pickerTitle))

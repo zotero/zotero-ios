@@ -34,7 +34,7 @@ struct ReadRecentCollections: DbResponseRequest {
                 continue
             }
 
-            let collection = Collection(object: rCollection, level: 0, visible: true, hasChildren: false, parentKey: nil, itemCount: 0)
+            let collection = Collection(object: rCollection, itemCount: 0)
 
             recent.append(RecentData(collection: collection, library: library, isRecent: true))
 

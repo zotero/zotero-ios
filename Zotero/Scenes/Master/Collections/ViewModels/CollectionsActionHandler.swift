@@ -97,121 +97,121 @@ struct CollectionsActionHandler: ViewModelActionHandler {
     }
 
     private func set(allCollapsed: Bool, in viewModel: ViewModel<CollectionsActionHandler>) {
-        var changedCollections: [String] = []
-
-        self.update(viewModel: viewModel) { state in
-            var lastTopParent: CollectionIdentifier = .custom(.all)
-
-            for (idx, collection) in state.collections.enumerated() {
-                if collection.hasChildren {
-                    state.collections[idx].collapsed = allCollapsed
-                    switch collection.identifier {
-                    case .collection(let key):
-                        changedCollections.append(key)
-                    case .custom, .search: break
-                    }
-                }
-                
-                state.collections[idx].visible = allCollapsed ? (collection.level == 0) : true
-
-                // If collapsing, update selected collection if needed
-                if allCollapsed {
-                    if collection.level == 0 {
-                        lastTopParent = collection.identifier
-                    } else if state.selectedCollectionId == collection.identifier {
-                        state.selectedCollectionId = lastTopParent
-                        state.changes.insert(.selection)
-                    }
-                }
-            }
-
-            state.collectionsToggledCount = changedCollections.count
-            state.changes.insert(.results)
-        }
-
-        let libraryId = viewModel.state.libraryId
-
-        self.queue.async {
-            do {
-                // Since this request has to be performed in background (otherwise the main queue freezes due to writes from multiple threads during sync),
-                // we can't pass `NotificationToken` to ignore next notification. So we store a flag which will be toggled in observation.
-                let request = SetCollectionsCollapsedDbRequest(keys: changedCollections, collapsed: allCollapsed, libraryId: libraryId)
-                try self.dbStorage.createCoordinator().perform(request: request)
-            } catch let error {
-                DDLogError("CollectionsActionHandler: can't change collapsed all - \(error)")
-            }
-        }
+//        var changedCollections: [String] = []
+//
+//        self.update(viewModel: viewModel) { state in
+//            var lastTopParent: CollectionIdentifier = .custom(.all)
+//
+//            for (idx, collection) in state.collections.enumerated() {
+//                if collection.hasChildren {
+//                    state.collections[idx].collapsed = allCollapsed
+//                    switch collection.identifier {
+//                    case .collection(let key):
+//                        changedCollections.append(key)
+//                    case .custom, .search: break
+//                    }
+//                }
+//
+//                state.collections[idx].visible = allCollapsed ? (collection.level == 0) : true
+//
+//                // If collapsing, update selected collection if needed
+//                if allCollapsed {
+//                    if collection.level == 0 {
+//                        lastTopParent = collection.identifier
+//                    } else if state.selectedCollectionId == collection.identifier {
+//                        state.selectedCollectionId = lastTopParent
+//                        state.changes.insert(.selection)
+//                    }
+//                }
+//            }
+//
+//            state.collectionsToggledCount = changedCollections.count
+//            state.changes.insert(.results)
+//        }
+//
+//        let libraryId = viewModel.state.libraryId
+//
+//        self.queue.async {
+//            do {
+//                // Since this request has to be performed in background (otherwise the main queue freezes due to writes from multiple threads during sync),
+//                // we can't pass `NotificationToken` to ignore next notification. So we store a flag which will be toggled in observation.
+//                let request = SetCollectionsCollapsedDbRequest(keys: changedCollections, collapsed: allCollapsed, libraryId: libraryId)
+//                try self.dbStorage.createCoordinator().perform(request: request)
+//            } catch let error {
+//                DDLogError("CollectionsActionHandler: can't change collapsed all - \(error)")
+//            }
+//        }
     }
 
     private func toggleCollapsed(for collection: Collection, in viewModel: ViewModel<CollectionsActionHandler>) {
-        guard let index = viewModel.state.collections.firstIndex(of: collection),
-              let key = collection.identifier.key else { return }
-
-        let collapsed = !collection.collapsed
-        let libraryId = viewModel.state.library.identifier
-        self.update(viewModel: viewModel) { state in
-            self.set(collapsed: collapsed, startIndex: index, in: &state)
-        }
-
-        self.queue.async {
-            do {
-                // Since this request has to be performed in background (otherwise the main queue freezes due to writes from multiple threads during sync),
-                // we can't pass `NotificationToken` to ignore next notification. So we store key of collapsed collection which will be updated and this updated will be filtered out in observation.
-                let request = SetCollectionCollapsedDbRequest(collapsed: collapsed, key: key, libraryId: libraryId)
-                try self.dbStorage.createCoordinator().perform(request: request)
-            } catch let error {
-                DDLogError("CollectionsActionHandler: can't change collapsed - \(error)")
-            }
-        }
+//        guard let index = viewModel.state.collections.firstIndex(of: collection),
+//              let key = collection.identifier.key else { return }
+//
+//        let collapsed = !collection.collapsed
+//        let libraryId = viewModel.state.library.identifier
+//        self.update(viewModel: viewModel) { state in
+//            self.set(collapsed: collapsed, startIndex: index, in: &state)
+//        }
+//
+//        self.queue.async {
+//            do {
+//                // Since this request has to be performed in background (otherwise the main queue freezes due to writes from multiple threads during sync),
+//                // we can't pass `NotificationToken` to ignore next notification. So we store key of collapsed collection which will be updated and this updated will be filtered out in observation.
+//                let request = SetCollectionCollapsedDbRequest(collapsed: collapsed, key: key, libraryId: libraryId)
+//                try self.dbStorage.createCoordinator().perform(request: request)
+//            } catch let error {
+//                DDLogError("CollectionsActionHandler: can't change collapsed - \(error)")
+//            }
+//        }
     }
 
     private func set(collapsed: Bool, startIndex index: Int, in state: inout CollectionsState) {
         // Set `collapsed` flag for collection. Toggled collection is always visible.
-        state.collections[index].collapsed = collapsed
-        state.collections[index].visible = true
-
-        let collection = state.collections[index]
-
-        if let key = collection.identifier.key {
-            state.collapsedKeys.append(key)
-        }
-        state.changes.insert(.results)
-
-        var ignoreLevel: Int?
-
-        // Find collections which should be shown/hidden
-        for idx in ((index + 1)..<state.collections.count) {
-            let _collection = state.collections[idx]
-
-            if collection.level >= _collection.level {
-                break
-            }
-
-            if collapsed {
-                // Select collapsed cell if selection is among collapsed children
-                if _collection.identifier == state.selectedCollectionId {
-                    state.selectedCollectionId = collection.identifier
-                    state.changes.insert(.selection)
-                }
-                // Hide all children
-                state.collections[idx].visible = false
-            } else {
-                if let level = ignoreLevel {
-                    // If parent was collapsed, don't show children
-                    if _collection.level >= level {
-                        continue
-                    } else {
-                        ignoreLevel = nil
-                    }
-                }
-                // Show all children which are not collapsed
-                state.collections[idx].visible = true
-                if _collection.collapsed {
-                    // Don't show children of collapsed collection
-                    ignoreLevel = _collection.level + 1
-                }
-            }
-        }
+//        state.collections[index].collapsed = collapsed
+//        state.collections[index].visible = true
+//
+//        let collection = state.collections[index]
+//
+//        if let key = collection.identifier.key {
+//            state.collapsedKeys.append(key)
+//        }
+//        state.changes.insert(.results)
+//
+//        var ignoreLevel: Int?
+//
+//        // Find collections which should be shown/hidden
+//        for idx in ((index + 1)..<state.collections.count) {
+//            let _collection = state.collections[idx]
+//
+//            if collection.level >= _collection.level {
+//                break
+//            }
+//
+//            if collapsed {
+//                // Select collapsed cell if selection is among collapsed children
+//                if _collection.identifier == state.selectedCollectionId {
+//                    state.selectedCollectionId = collection.identifier
+//                    state.changes.insert(.selection)
+//                }
+//                // Hide all children
+//                state.collections[idx].visible = false
+//            } else {
+//                if let level = ignoreLevel {
+//                    // If parent was collapsed, don't show children
+//                    if _collection.level >= level {
+//                        continue
+//                    } else {
+//                        ignoreLevel = nil
+//                    }
+//                }
+//                // Show all children which are not collapsed
+//                state.collections[idx].visible = true
+//                if _collection.collapsed {
+//                    // Don't show children of collapsed collection
+//                    ignoreLevel = _collection.level + 1
+//                }
+//            }
+//        }
     }
 
     private func loadData(in viewModel: ViewModel<CollectionsActionHandler>) {
@@ -226,42 +226,47 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 //            let publicationItemsCount = try coordinator.perform(request: ReadItemsDbRequest(type: .publications, libraryId: libraryId)).count
             let trashItems = try coordinator.perform(request: ReadItemsDbRequest(type: .trash, libraryId: libraryId))
 
-            var allCollections: [Collection] = [Collection(custom: .all, itemCount: allItems.count),
-               //                                 Collection(custom: .publications, itemCount: publicationItemsCount),
-                                                Collection(custom: .trash, itemCount: trashItems.count)]
-            allCollections.insert(contentsOf: CollectionTreeBuilder.collections(from: collections, libraryId: libraryId, selectedId: viewModel.state.selectedCollectionId, collapseState: .basedOnDb, includeItemCounts: true),// +
-//                                              CollectionTreeBuilder.collections(from: searches),
-                                  at: 1)
+            let collectionsResult = CollectionTreeBuilder.collections(from: collections, libraryId: libraryId, includeItemCounts: true)
 
-            let collectionsToken = collections.observe({ [weak viewModel] changes in
-                guard let viewModel = viewModel else { return }
-                switch changes {
-                case .update(let objects, let deletions, let insertions, let modifications):
-                    if deletions.isEmpty && insertions.isEmpty {
-                        // Check whether single collection was collapsed
-                        if modifications.count == 1, let key = modifications.first.flatMap({ objects[$0].key }), viewModel.state.collapsedKeys.contains(key) {
-                            // See `toggleCollapsed(for:in:)` why this needs to be filtered out.
-                            self.update(viewModel: viewModel) { state in
-                                if let index = state.collapsedKeys.firstIndex(of: key) {
-                                    state.collapsedKeys.remove(at: index)
-                                }
-                            }
-                            return
-                        }
-                        // Check whether all collections were collapsed
-                        if modifications.count == viewModel.state.collectionsToggledCount {
-                            self.update(viewModel: viewModel) { state in
-                                state.collectionsToggledCount = nil
-                            }
-                            return
-                        }
-                    }
-                    let collections = CollectionTreeBuilder.collections(from: objects, libraryId: libraryId, selectedId: viewModel.state.selectedCollectionId, collapseState: .basedOnDb, includeItemCounts: true)
-                    self.update(collections: collections, in: viewModel)
-                case .initial: break
-                case .error: break
-                }
-            })
+            var allCollections: [CollectionIdentifier: Collection] = collectionsResult.collections
+            var rootCollections: [CollectionIdentifier] = collectionsResult.root
+            let childCollections: [CollectionIdentifier: [CollectionIdentifier]] = collectionsResult.children
+            let collapsedState: [CollectionIdentifier: Bool] = collectionsResult.collapsed
+
+            allCollections[.custom(.all)] = Collection(custom: .all, itemCount: allItems.count)
+            allCollections[.custom(.trash)] = Collection(custom: .trash, itemCount: trashItems.count)
+            rootCollections.insert(.custom(.all), at: 0)
+            rootCollections.append(.custom(.trash))
+
+//            let collectionsToken = collections.observe({ [weak viewModel] changes in
+//                guard let viewModel = viewModel else { return }
+//                switch changes {
+//                case .update(let objects, let deletions, let insertions, let modifications):
+//                    if deletions.isEmpty && insertions.isEmpty {
+//                        // Check whether single collection was collapsed
+//                        if modifications.count == 1, let key = modifications.first.flatMap({ objects[$0].key }), viewModel.state.collapsedKeys.contains(key) {
+//                            // See `toggleCollapsed(for:in:)` why this needs to be filtered out.
+//                            self.update(viewModel: viewModel) { state in
+//                                if let index = state.collapsedKeys.firstIndex(of: key) {
+//                                    state.collapsedKeys.remove(at: index)
+//                                }
+//                            }
+//                            return
+//                        }
+//                        // Check whether all collections were collapsed
+//                        if modifications.count == viewModel.state.collectionsToggledCount {
+//                            self.update(viewModel: viewModel) { state in
+//                                state.collectionsToggledCount = nil
+//                            }
+//                            return
+//                        }
+//                    }
+//                    let collections = CollectionTreeBuilder.collections(from: objects, libraryId: libraryId, selectedId: viewModel.state.selectedCollectionId, collapseState: .basedOnDb, includeItemCounts: true)
+//                    self.update(collections: collections, in: viewModel)
+//                case .initial: break
+//                case .error: break
+//                }
+//            })
 
 //            let searchesToken = searches.observe({ [weak viewModel] changes in
 //                guard let viewModel = viewModel else { return }
@@ -296,8 +301,11 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
             self.update(viewModel: viewModel) { state in
                 state.collections = allCollections
+                state.rootCollections = rootCollections
+                state.childCollections = childCollections
+                state.collapsedState = collapsedState
                 state.library = library
-                state.collectionsToken = collectionsToken
+//                state.collectionsToken = collectionsToken
 //                state.searchesToken = searchesToken
                 state.itemsToken = itemsToken
                 state.trashToken = trashToken
@@ -358,11 +366,11 @@ struct CollectionsActionHandler: ViewModelActionHandler {
             key = collection.identifier.key
             name = collection.name
 
-            if let parentKey = collection.parentKey, let coordinator = try? self.dbStorage.createCoordinator() {
-                let request = ReadCollectionDbRequest(libraryId: viewModel.state.library.identifier, key: parentKey)
-                let rCollection = try? coordinator.perform(request: request)
-                parent = rCollection.flatMap { Collection(object: $0, level: 0, visible: true, hasChildren: true, parentKey: $0.parentKey, itemCount: 0) }
-            }
+//            if let parentKey = collection.parentKey, let coordinator = try? self.dbStorage.createCoordinator() {
+//                let request = ReadCollectionDbRequest(libraryId: viewModel.state.library.identifier, key: parentKey)
+//                let rCollection = try? coordinator.perform(request: request)
+//                parent = rCollection.flatMap { Collection(object: $0, level: 0, visible: true, hasChildren: true, parentKey: $0.parentKey, itemCount: 0) }
+//            }
         }
 
         self.update(viewModel: viewModel) { state in
@@ -372,37 +380,37 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
     private func update(allItemsCount: Int, in viewModel: ViewModel<CollectionsActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            state.collections[0].itemCount = allItemsCount
+            state.collections[.custom(.all)]?.itemCount = allItemsCount
             state.changes = .allItemCount
         }
     }
 
     private func update(trashItemCount: Int, in viewModel: ViewModel<CollectionsActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            state.collections[state.collections.count - 1] = Collection(custom: .trash, itemCount: trashItemCount)
+            state.collections[.custom(.trash)]?.itemCount = trashItemCount
             state.changes = .trashItemCount
         }
     }
 
     private func update(collections: [Collection], in viewModel: ViewModel<CollectionsActionHandler>) {
-        guard !collections.isEmpty else { return }
-
-        var original = viewModel.state.collections
-        var selectedId = viewModel.state.selectedCollectionId
-
-        self.update(original: &original, with: collections)
-        if !original.contains(where: { $0.identifier == selectedId }) {
-            selectedId = original.first?.identifier ?? .custom(.all)
-        }
-
-        self.update(viewModel: viewModel) { state in
-            state.collections = original
-            state.changes.insert(.results)
-            if selectedId != state.selectedCollectionId {
-                state.changes.insert(.selection)
-                state.selectedCollectionId = selectedId
-            }
-        }
+//        guard !collections.isEmpty else { return }
+//
+//        var original = viewModel.state.collections
+//        var selectedId = viewModel.state.selectedCollectionId
+//
+//        self.update(original: &original, with: collections)
+//        if !original.contains(where: { $0.identifier == selectedId }) {
+//            selectedId = original.first?.identifier ?? .custom(.all)
+//        }
+//
+//        self.update(viewModel: viewModel) { state in
+//            state.collections = original
+//            state.changes.insert(.results)
+//            if selectedId != state.selectedCollectionId {
+//                state.changes.insert(.selection)
+//                state.selectedCollectionId = selectedId
+//            }
+//        }
     }
 
     /// Updates existing collections of the same type. If no collection of given type exists yet, collections are inserted

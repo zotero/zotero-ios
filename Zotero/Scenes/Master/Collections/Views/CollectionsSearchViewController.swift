@@ -92,12 +92,12 @@ final class CollectionsSearchViewController: UIViewController {
     }
 
     private func setupDataSource() {
-        self.dataSource = UITableViewDiffableDataSource(tableView: self.tableView,
-                                                        cellProvider: { tableView, indexPath, object -> UITableViewCell? in
-            let cell = tableView.dequeueReusableCell(withIdentifier: CollectionsSearchViewController.cellId, for: indexPath) as? CollectionCell
-            cell?.set(searchableCollection: object)
-            return cell
-        })
+//        self.dataSource = UITableViewDiffableDataSource(tableView: self.tableView,
+//                                                        cellProvider: { tableView, indexPath, object -> UITableViewCell? in
+//            let cell = tableView.dequeueReusableCell(withIdentifier: CollectionsSearchViewController.cellId, for: indexPath) as? CollectionCell
+//            cell?.set(searchableCollection: object)
+//            return cell
+//        })
     }
 
     private func setupTableView(with keyboardData: KeyboardData) {

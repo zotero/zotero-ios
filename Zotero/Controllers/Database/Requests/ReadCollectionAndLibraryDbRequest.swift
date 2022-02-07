@@ -25,7 +25,7 @@ struct ReadCollectionAndLibraryDbRequest: DbResponseRequest {
         switch self.collectionId {
         case .collection(let key):
             let rCollection = try ReadCollectionDbRequest(libraryId: self.libraryId, key: key).process(in: database)
-            let collection = Collection(object: rCollection, level: 0, visible: true, hasChildren: false, parentKey: nil, itemCount: 0)
+            let collection = Collection(object: rCollection, itemCount: 0)
             return (collection, library)
             
         default:

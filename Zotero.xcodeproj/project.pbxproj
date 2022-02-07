@@ -450,6 +450,7 @@
 		B34341BA260A49E800093E63 /* ReadLibraryDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34341A4260A16AB00093E63 /* ReadLibraryDbRequest.swift */; };
 		B3445F4626EF5EE9007D4009 /* CrashReporter in Frameworks */ = {isa = PBXBuildFile; productRef = B3445F4526EF5EE9007D4009 /* CrashReporter */; };
 		B3451B55264ECBA9000EDF16 /* ReadGroupDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3451B54264ECBA9000EDF16 /* ReadGroupDbRequest.swift */; };
+		B34673CF27B14F0D00444C96 /* CollectionCellContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34673CE27B14F0D00444C96 /* CollectionCellContentView.swift */; };
 		B347F2BA24DC4D5D000D5FF6 /* CapHeightLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B347F2B924DC4D5D000D5FF6 /* CapHeightLabel.swift */; };
 		B3486B8926CFAFEA0036A267 /* SingleCitationActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3486B8226CFAFEA0036A267 /* SingleCitationActionHandler.swift */; };
 		B3486B8A26CFAFEA0036A267 /* SingleCitationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3486B8426CFAFEA0036A267 /* SingleCitationState.swift */; };
@@ -677,7 +678,7 @@
 		B37C5B6B26453C4F009A37E5 /* NoteEditorState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37C5B6A26453C4F009A37E5 /* NoteEditorState.swift */; };
 		B37C5B6D26453C58009A37E5 /* NoteEditorAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37C5B6C26453C58009A37E5 /* NoteEditorAction.swift */; };
 		B37C5B6F26454130009A37E5 /* NoteEditorViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B37C5B6E26454130009A37E5 /* NoteEditorViewController.xib */; };
-		B37D8E6424DC21D300F526C5 /* CollectionCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B37D8E6324DC21D300F526C5 /* CollectionCell.xib */; };
+		B37D8E6424DC21D300F526C5 /* CollectionCellContentView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B37D8E6324DC21D300F526C5 /* CollectionCellContentView.xib */; };
 		B37D8E6924DC2BEE00F526C5 /* CollectionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37D8E6824DC2BEE00F526C5 /* CollectionRow.swift */; };
 		B37D8E6A24DC2BF300F526C5 /* CollectionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37D8E6824DC2BEE00F526C5 /* CollectionRow.swift */; };
 		B37DD576272AAF500038537D /* FilterAttachmentsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37DD575272AAF500038537D /* FilterAttachmentsDbRequest.swift */; };
@@ -1310,6 +1311,7 @@
 		B34341AA260A48A200093E63 /* ReadAllWritableGroupsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllWritableGroupsDbRequest.swift; sourceTree = "<group>"; };
 		B34341B3260A496200093E63 /* ReadCollectionAndLibraryDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadCollectionAndLibraryDbRequest.swift; sourceTree = "<group>"; };
 		B3451B54264ECBA9000EDF16 /* ReadGroupDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadGroupDbRequest.swift; sourceTree = "<group>"; };
+		B34673CE27B14F0D00444C96 /* CollectionCellContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionCellContentView.swift; sourceTree = "<group>"; };
 		B347F2B924DC4D5D000D5FF6 /* CapHeightLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapHeightLabel.swift; sourceTree = "<group>"; };
 		B3486B8226CFAFEA0036A267 /* SingleCitationActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SingleCitationActionHandler.swift; sourceTree = "<group>"; };
 		B3486B8426CFAFEA0036A267 /* SingleCitationState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SingleCitationState.swift; sourceTree = "<group>"; };
@@ -1477,7 +1479,7 @@
 		B37C5B6A26453C4F009A37E5 /* NoteEditorState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorState.swift; sourceTree = "<group>"; };
 		B37C5B6C26453C58009A37E5 /* NoteEditorAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorAction.swift; sourceTree = "<group>"; };
 		B37C5B6E26454130009A37E5 /* NoteEditorViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NoteEditorViewController.xib; sourceTree = "<group>"; };
-		B37D8E6324DC21D300F526C5 /* CollectionCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CollectionCell.xib; sourceTree = "<group>"; };
+		B37D8E6324DC21D300F526C5 /* CollectionCellContentView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CollectionCellContentView.xib; sourceTree = "<group>"; };
 		B37D8E6824DC2BEE00F526C5 /* CollectionRow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionRow.swift; sourceTree = "<group>"; };
 		B37DD575272AAF500038537D /* FilterAttachmentsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterAttachmentsDbRequest.swift; sourceTree = "<group>"; };
 		B37F58652672229D00C4089B /* InstallStyleDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallStyleDbRequest.swift; sourceTree = "<group>"; };
@@ -2780,7 +2782,8 @@
 			isa = PBXGroup;
 			children = (
 				B3593F11241A61C700760E20 /* CollectionCell.swift */,
-				B37D8E6324DC21D300F526C5 /* CollectionCell.xib */,
+				B34673CE27B14F0D00444C96 /* CollectionCellContentView.swift */,
+				B37D8E6324DC21D300F526C5 /* CollectionCellContentView.xib */,
 				B3C9D60324DA921B003EA1EE /* CollectionsSearchViewController.swift */,
 				B3C9D60424DA921B003EA1EE /* CollectionsSearchViewController.xib */,
 				B3593F15241A61C700760E20 /* CollectionsTableViewHandler.swift */,
@@ -3669,7 +3672,7 @@
 				B34C410025711C990057D5F5 /* ColorPickerCell.xib in Resources */,
 				B3593AD824B601AB00CA0B57 /* PDFSearchCell.xib in Resources */,
 				B3F0C3FE250A1DB8002D557A /* LibraryCell.xib in Resources */,
-				B37D8E6424DC21D300F526C5 /* CollectionCell.xib in Resources */,
+				B37D8E6424DC21D300F526C5 /* CollectionCellContentView.xib in Resources */,
 				B3593F23241A61C700760E20 /* ItemDetailSectionView.xib in Resources */,
 				B3593F42241A61C700760E20 /* ItemsViewController.xib in Resources */,
 				B37C5B6F26454130009A37E5 /* NoteEditorViewController.xib in Resources */,
@@ -3929,6 +3932,7 @@
 				B3E8FE732714344D00F51458 /* SettingsToggleRow.swift in Sources */,
 				B3E8FE2C271429C300F51458 /* ExportLocalePickerActionHandler.swift in Sources */,
 				B3E8FE1A2714297200F51458 /* CiteSearchAction.swift in Sources */,
+				B34673CF27B14F0D00444C96 /* CollectionCellContentView.swift in Sources */,
 				B3C9D60C24DA9DEA003EA1EE /* CollectionsSearchActionHandler.swift in Sources */,
 				B324277825C82E6500567504 /* UnsubscribeWsMessage.swift in Sources */,
 				B3593F3D241A61C700760E20 /* ItemsState.swift in Sources */,
@@ -4956,7 +4960,7 @@
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				INFOPLIST_FILE = Zotero/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.7;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -4993,7 +4997,7 @@
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				INFOPLIST_FILE = Zotero/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.7;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -5132,7 +5136,7 @@
 					"$(PROJECT_DIR)",
 				);
 				INFOPLIST_FILE = ZShare/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.7;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -5165,7 +5169,7 @@
 					"$(PROJECT_DIR)",
 				);
 				INFOPLIST_FILE = ZShare/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.7;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -5198,7 +5202,7 @@
 					"$(PROJECT_DIR)",
 				);
 				INFOPLIST_FILE = ZShare/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.7;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -5300,7 +5304,7 @@
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				INFOPLIST_FILE = Zotero/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.7;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -5453,7 +5457,7 @@
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				INFOPLIST_FILE = Zotero/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.7;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -5536,7 +5540,7 @@
 					"$(PROJECT_DIR)",
 				);
 				INFOPLIST_FILE = ZShare/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.7;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

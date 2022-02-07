@@ -8,96 +8,92 @@
 
 import UIKit
 
-final class CollectionCell: UITableViewCell {
-    private static let imageWidth: CGFloat = 44
-    private static let baseOffset: CGFloat = 36.0
-    private static let levelOffset: CGFloat = 16.0
+final class CollectionCell: UICollectionViewListCell {
+    struct ContentConfiguration: UIContentConfiguration {
+        let collection: Collection
+        let hasChildren: Bool
+        let isCollapsed: Bool
 
-    @IBOutlet private weak var leftConstraint: NSLayoutConstraint!
-    @IBOutlet private weak var iconImage: UIImageView!
-    @IBOutlet private weak var titleLabel: UILabel!
-    @IBOutlet private weak var badgeContainer: UIView!
-    @IBOutlet private weak var badgeLabel: UILabel!
-    @IBOutlet private weak var chevronButton: UIButton!
-    // These 2 need to be strong because they are being activated/deactivated
-    @IBOutlet private var contentToRightConstraint: NSLayoutConstraint!
-    @IBOutlet private var contentToBadgeConstraint: NSLayoutConstraint!
+        var toggleCollapsed: (() -> Void)?
 
-    private var toggleCollapsedAction: (() -> Void)?
-
-    override func awakeFromNib() {
-        super.awakeFromNib()
-
-        self.badgeContainer.layer.masksToBounds = true
-        self.badgeContainer.backgroundColor = self.badgeBackgroundColor
-        self.contentToRightConstraint.isActive = false
-        self.chevronButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: CollectionCell.levelOffset, bottom: 0, right: CollectionCell.levelOffset)
-    }
-
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        self.badgeContainer.backgroundColor = self.badgeBackgroundColor
-    }
-
-    override func layoutIfNeeded() {
-        super.layoutIfNeeded()
-        self.badgeContainer.layer.cornerRadius = self.badgeContainer.frame.height / 2.0
-    }
-
-    @IBAction private func toggleCollapsed() {
-        self.toggleCollapsedAction?()
-    }
-
-    func set(collection: Collection, toggleCollapsed: @escaping () -> Void) {
-        self.toggleCollapsedAction = toggleCollapsed
-        self.setup(with: collection)
-        self.separatorInset = UIEdgeInsets(top: 0, left: self.separatorInset(for: collection.level), bottom: 0, right: 0)
-    }
-
-    func set(searchableCollection: SearchableCollection) {
-        self.setup(with: searchableCollection.collection)
-        self.contentView.alpha = searchableCollection.isActive ? 1 : 0.4
-        self.separatorInset = UIEdgeInsets(top: 0, left: self.separatorInset(for: searchableCollection.collection.level), bottom: 0, right: 0)
-    }
-
-    func updateBadgeView(for collection: Collection) {
-        self.badgeContainer.isHidden = collection.itemCount == 0
-        if !self.badgeContainer.isHidden {
-            self.badgeLabel.text = "\(collection.itemCount)"
-            self.badgeLabel.accessibilityLabel = "\(collection.itemCount) \(L10n.Accessibility.Collections.items)"
-        }
-        self.contentToBadgeConstraint.isActive = !self.badgeContainer.isHidden || !self.chevronButton.isHidden
-        self.contentToRightConstraint.isActive = !self.contentToBadgeConstraint.isActive
-    }
-
-    private func setup(with collection: Collection) {
-        self.iconImage.image = UIImage(named: collection.iconName)?.withRenderingMode(.alwaysTemplate)
-        self.titleLabel.text = collection.name
-        self.titleLabel.accessibilityLabel = collection.name
-
-        self.leftConstraint.constant = self.inset(for: collection.level)
-        self.chevronButton.isHidden = !collection.hasChildren
-        if !self.chevronButton.isHidden {
-            let configuration = UIImage.SymbolConfiguration(scale: .small)
-            let name = collection.collapsed ? "chevron.right" : "chevron.down"
-            self.chevronButton.setImage(UIImage(systemName: name, withConfiguration: configuration), for: .normal)
-            self.chevronButton.accessibilityLabel = collection.collapsed ? L10n.Accessibility.Collections.expand : L10n.Accessibility.Collections.collapse
+        func makeContentView() -> UIView & UIContentView {
+            return ContentView(baseConfiguration: self)
         }
 
-        self.updateBadgeView(for: collection)
+        func updated(for state: UIConfigurationState) -> ContentConfiguration {
+            return self
+        }
     }
 
-    private func separatorInset(for level: Int) -> CGFloat {
-        return self.inset(for: level) + CollectionCell.imageWidth
+    struct SearchContentConfiguration: UIContentConfiguration {
+        let collection: Collection
+        let hasChildren: Bool
+        let isActive: Bool
+
+        func makeContentView() -> UIView & UIContentView {
+            return ContentView(searchConfiguration: self)
+        }
+
+        func updated(for state: UIConfigurationState) -> SearchContentConfiguration {
+            return self
+        }
     }
 
-    private func inset(for level: Int) -> CGFloat {
-        return CollectionCell.baseOffset + (CGFloat(level) * CollectionCell.levelOffset)
-    }
+    final class ContentView: UIView, UIContentView {
+        var configuration: UIContentConfiguration {
+            didSet {
+                if let configuration = self.configuration as? ContentConfiguration {
+                    self.apply(configuration: configuration)
+                } else if let configuration = self.configuration as? SearchContentConfiguration {
+                    self.apply(configuration: configuration)
+                }
+            }
+        }
 
-    private var badgeBackgroundColor: UIColor {
-        return UIColor { traitCollection -> UIColor in
-            return UIColor.systemGray.withAlphaComponent(traitCollection.userInterfaceStyle == .dark ? 0.5 : 0.2)
+        fileprivate weak var contentView: CollectionCellContentView?
+
+        private init(configuration: UIContentConfiguration) {
+            self.configuration = configuration
+
+            super.init(frame: .zero)
+
+            guard let view = UINib.init(nibName: "CollectionCellContentView", bundle: nil).instantiate(withOwner: self)[0] as? CollectionCellContentView else { return }
+            self.setup(view: view)
+        }
+
+        convenience init(baseConfiguration: ContentConfiguration) {
+            self.init(configuration: baseConfiguration)
+            self.apply(configuration: baseConfiguration)
+        }
+
+        convenience init(searchConfiguration: SearchContentConfiguration) {
+            self.init(configuration: searchConfiguration)
+            self.apply(configuration: searchConfiguration)
+        }
+
+        required init?(coder: NSCoder) {
+            fatalError()
+        }
+
+        private func apply(configuration: ContentConfiguration) {
+            self.contentView?.set(collection: configuration.collection, hasChildren: configuration.hasChildren, isCollapsed: configuration.isCollapsed, toggleCollapsed: configuration.toggleCollapsed)
+        }
+
+        private func apply(configuration: SearchContentConfiguration) {
+            self.contentView?.set(collection: configuration.collection, hasChildren: configuration.hasChildren, isActive: configuration.isActive)
+        }
+
+        private func setup(view: CollectionCellContentView) {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            self.addSubview(view)
+            self.contentView = view
+
+            NSLayoutConstraint.activate([
+                view.leadingAnchor.constraint(equalTo: self.leadingAnchor),
+                self.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                view.topAnchor.constraint(equalTo: self.topAnchor),
+                self.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            ])
         }
     }
 }

@@ -34,7 +34,10 @@ struct CollectionsState: ViewModelState {
 
     var library: Library
     var selectedCollectionId: CollectionIdentifier
-    var collections: [Collection]
+    var collections: [CollectionIdentifier: Collection]
+    var rootCollections: [CollectionIdentifier]
+    var childCollections: [CollectionIdentifier: [CollectionIdentifier]]
+    var collapsedState: [CollectionIdentifier: Bool]
     var editingData: CollectionStateEditingData?
     var changes: Changes
     var collectionsToken: NotificationToken?
@@ -43,27 +46,30 @@ struct CollectionsState: ViewModelState {
     var trashToken: NotificationToken?
     var error: CollectionsError?
     // Used to filter out unnecessary Realm observed notification when collapsing collections.
-    var collapsedKeys: [String]
+//    var collapsedKeys: [String]
     // Used to filter out unnecessary Realm observed notification when collapsing all collections.
-    var collectionsToggledCount: Int?
+//    var collectionsToggledCount: Int?
     // Used when user wants to create bibliography from whole collection.
     var itemKeysForBibliography: Swift.Result<Set<String>, Error>?
 
-    var hasExpandableCollection: Bool {
-        return self.collections.contains(where: { $0.level > 0 })
-    }
-
-    var areAllExpanded: Bool {
-        return !self.collections.contains(where: { !$0.visible })
-    }
+//    var hasExpandableCollection: Bool {
+//        return self.collections.contains(where: { $0.level > 0 })
+//    }
+//
+//    var areAllExpanded: Bool {
+//        return !self.collections.contains(where: { !$0.visible })
+//    }
 
     init(libraryId: LibraryIdentifier, selectedCollectionId: CollectionIdentifier) {
         self.libraryId = libraryId
         self.library = Library(identifier: .custom(.myLibrary), name: "", metadataEditable: false, filesEditable: false)
         self.selectedCollectionId = selectedCollectionId
-        self.collections = []
+        self.collections = [:]
+        self.rootCollections = []
+        self.childCollections = [:]
+        self.collapsedState = [:]
         self.changes = []
-        self.collapsedKeys = []
+//        self.collapsedKeys = []
     }
 
     mutating func cleanup() {

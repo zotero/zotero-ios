@@ -54,7 +54,7 @@ final class MainViewController: UISplitViewController {
 
         self.setupControllers()
 
-        self.preferredDisplayMode = .allVisible
+        self.preferredDisplayMode = .oneBesideSecondary
     }
 
     required init?(coder aDecoder: NSCoder) {

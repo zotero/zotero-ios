@@ -25,7 +25,7 @@ struct CollectionsPickerView: View {
                     SelectableCollectionRow(collection: collection, selected: self.isSelected(collection: collection))
                 }
                 .buttonStyle(BorderlessButtonStyle())
-                .listRowInsets(EdgeInsets(top: 0, leading: self.inset(for: collection.level), bottom: 0, trailing: 0))
+//                .listRowInsets(EdgeInsets(top: 0, leading: self.inset(for: collection.level), bottom: 0, trailing: 0))
             }
         }
         .animation(.none)
