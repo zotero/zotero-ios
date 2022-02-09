@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="17132" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="19529" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17105"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="19519"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
@@ -12,9 +12,9 @@
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="CollectionsSearchViewController" customModule="Zotero" customModuleProvider="target">
             <connections>
+                <outlet property="collectionView" destination="npI-uy-k5B" id="sE2-f6-fgg"/>
                 <outlet property="searchBar" destination="kKA-Jy-thd" id="TAG-TD-Wje"/>
                 <outlet property="searchBarSeparatorHeight" destination="UVA-aR-QbC" id="q3E-Lh-9n5"/>
-                <outlet property="tableView" destination="N4u-mQ-Llw" id="GBz-wX-8Fc"/>
                 <outlet property="view" destination="i5M-Pr-FkT" id="sfx-zR-JGt"/>
             </connections>
         </placeholder>
@@ -40,22 +40,28 @@
                         <constraint firstAttribute="height" constant="1" id="UVA-aR-QbC"/>
                     </constraints>
                 </view>
-                <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="N4u-mQ-Llw">
-                    <rect key="frame" x="0.0" y="95" width="414" height="801"/>
+                <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="none" translatesAutoresizingMaskIntoConstraints="NO" id="npI-uy-k5B">
+                    <rect key="frame" x="0.0" y="95" width="414" height="767"/>
                     <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                </tableView>
+                    <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="10" minimumInteritemSpacing="10" id="La8-4B-I4G">
+                        <size key="itemSize" width="128" height="128"/>
+                        <size key="headerReferenceSize" width="0.0" height="0.0"/>
+                        <size key="footerReferenceSize" width="0.0" height="0.0"/>
+                        <inset key="sectionInset" minX="0.0" minY="0.0" maxX="0.0" maxY="0.0"/>
+                    </collectionViewFlowLayout>
+                </collectionView>
             </subviews>
             <viewLayoutGuide key="safeArea" id="fnl-2z-Ty3"/>
             <color key="backgroundColor" name="navbarBackground"/>
             <constraints>
-                <constraint firstItem="N4u-mQ-Llw" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" id="1Zd-fU-eO8"/>
-                <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="N4u-mQ-Llw" secondAttribute="trailing" id="DWx-YQ-HCh"/>
-                <constraint firstItem="N4u-mQ-Llw" firstAttribute="top" secondItem="qWI-2N-7Qy" secondAttribute="bottom" id="Epj-JA-Qzk"/>
-                <constraint firstAttribute="bottom" secondItem="N4u-mQ-Llw" secondAttribute="bottom" id="HZS-2T-RQZ"/>
+                <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="npI-uy-k5B" secondAttribute="trailing" id="5g0-MZ-5Oh"/>
+                <constraint firstItem="fnl-2z-Ty3" firstAttribute="bottom" secondItem="npI-uy-k5B" secondAttribute="bottom" id="M1O-Ac-pT3"/>
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="qWI-2N-7Qy" secondAttribute="trailing" id="OGT-VL-qKW"/>
                 <constraint firstItem="kKA-Jy-thd" firstAttribute="top" secondItem="fnl-2z-Ty3" secondAttribute="top" id="U7Y-LL-Ybw"/>
+                <constraint firstItem="npI-uy-k5B" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" id="cdG-NO-Xkj"/>
                 <constraint firstItem="qWI-2N-7Qy" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" id="fB5-RR-VUu"/>
                 <constraint firstItem="kKA-Jy-thd" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" id="fnj-dZ-ZsO"/>
+                <constraint firstItem="npI-uy-k5B" firstAttribute="top" secondItem="qWI-2N-7Qy" secondAttribute="bottom" id="kmL-ac-8ag"/>
                 <constraint firstItem="kKA-Jy-thd" firstAttribute="trailing" secondItem="fnl-2z-Ty3" secondAttribute="trailing" id="skm-OH-t2b"/>
                 <constraint firstItem="qWI-2N-7Qy" firstAttribute="top" secondItem="kKA-Jy-thd" secondAttribute="bottom" id="vWl-RK-G2U"/>
             </constraints>

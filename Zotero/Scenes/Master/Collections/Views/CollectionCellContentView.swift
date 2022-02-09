@@ -9,16 +9,13 @@
 import UIKit
 
 final class CollectionCellContentView: UIView {
-    private static let imageWidth: CGFloat = 44
-    private static let baseOffset: CGFloat = 36.0
-    private static let levelOffset: CGFloat = 16.0
-
-    @IBOutlet private weak var leftConstraint: NSLayoutConstraint!
     @IBOutlet private weak var iconImage: UIImageView!
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var badgeContainer: UIView!
     @IBOutlet private weak var badgeLabel: UILabel!
     @IBOutlet private weak var chevronButton: UIButton!
+    @IBOutlet private weak var leftConstraint: NSLayoutConstraint!
+    @IBOutlet private weak var separatorHeight: NSLayoutConstraint!
     // These 2 need to be strong because they are being activated/deactivated
     @IBOutlet private var contentToRightConstraint: NSLayoutConstraint!
     @IBOutlet private var contentToBadgeConstraint: NSLayoutConstraint!
@@ -31,7 +28,8 @@ final class CollectionCellContentView: UIView {
         self.badgeContainer.layer.masksToBounds = true
         self.badgeContainer.backgroundColor = self.badgeBackgroundColor
         self.contentToRightConstraint.isActive = false
-        self.chevronButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: CollectionCellContentView.levelOffset, bottom: 0, right: CollectionCellContentView.levelOffset)
+        self.chevronButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+        self.separatorHeight.constant = 1 / UIScreen.main.scale
     }
 
     override func layoutSubviews() {
@@ -43,17 +41,24 @@ final class CollectionCellContentView: UIView {
         self.toggleCollapsedAction?()
     }
 
+    func set(collapsed: Bool) {
+        let configuration = UIImage.SymbolConfiguration(scale: .small)
+        let name = collapsed ? "chevron.right" : "chevron.down"
+        self.chevronButton.setImage(UIImage(systemName: name, withConfiguration: configuration), for: .normal)
+        self.chevronButton.accessibilityLabel = collapsed ? L10n.Accessibility.Collections.expand : L10n.Accessibility.Collections.collapse
+    }
+
     func set(collection: Collection, hasChildren: Bool, isCollapsed: Bool, toggleCollapsed: (() -> Void)?) {
+        self.leftConstraint.constant = 32
         self.toggleCollapsedAction = toggleCollapsed
-        self.setup(with: collection, hasChildren: hasChildren, isCollapsed: isCollapsed)
-//        self.separatorInset = UIEdgeInsets(top: 0, left: self.separatorInset(for: collection.level), bottom: 0, right: 0)
+        self.setup(with: collection, hasChildren: hasChildren, isCollapsed: isCollapsed, chevronButtonVisible: hasChildren)
     }
 
     func set(collection: Collection, hasChildren: Bool, isActive: Bool) {
+        self.leftConstraint.constant = 8
         self.toggleCollapsedAction = nil
-        self.setup(with: collection, hasChildren: hasChildren, isCollapsed: false)
+        self.setup(with: collection, hasChildren: hasChildren, isCollapsed: false, chevronButtonVisible: false)
         self.alpha = isActive ? 1 : 0.4
-//        self.separatorInset = UIEdgeInsets(top: 0, left: self.separatorInset(for: searchableCollection.collection.level), bottom: 0, right: 0)
     }
 
     func updateBadgeView(for collection: Collection) {
@@ -66,30 +71,18 @@ final class CollectionCellContentView: UIView {
         self.contentToRightConstraint.isActive = !self.contentToBadgeConstraint.isActive
     }
 
-    private func setup(with collection: Collection, hasChildren: Bool, isCollapsed: Bool) {
+    private func setup(with collection: Collection, hasChildren: Bool, isCollapsed: Bool, chevronButtonVisible: Bool) {
         self.iconImage.image = UIImage(named: collection.iconName(hasChildren: hasChildren))?.withRenderingMode(.alwaysTemplate)
         self.titleLabel.text = collection.name
         self.titleLabel.accessibilityLabel = collection.name
 
-//        self.leftConstraint.constant = self.inset(for: collection.level)
-        self.chevronButton.isHidden = !hasChildren
+        self.chevronButton.isHidden = !chevronButtonVisible
         if !self.chevronButton.isHidden {
-            let configuration = UIImage.SymbolConfiguration(scale: .small)
-            let name = isCollapsed ? "chevron.right" : "chevron.down"
-            self.chevronButton.setImage(UIImage(systemName: name, withConfiguration: configuration), for: .normal)
-            self.chevronButton.accessibilityLabel = isCollapsed ? L10n.Accessibility.Collections.expand : L10n.Accessibility.Collections.collapse
+            self.set(collapsed: isCollapsed)
         }
 
         self.updateBadgeView(for: collection)
     }
-
-//    private func separatorInset(for level: Int) -> CGFloat {
-//        return self.inset(for: level) + CollectionCellContentView.imageWidth
-//    }
-//
-//    private func inset(for level: Int) -> CGFloat {
-//        return CollectionCellContentView.baseOffset + (CGFloat(level) * CollectionCellContentView.levelOffset)
-//    }
 
     private var badgeBackgroundColor: UIColor {
         return UIColor { traitCollection -> UIColor in

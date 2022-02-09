@@ -25,7 +25,7 @@ struct SetCollectionCollapsedDbRequest: DbRequest {
 }
 
 struct SetCollectionsCollapsedDbRequest: DbRequest {
-    let keys: [String]
+    let keys: Set<String>
     let collapsed: Bool
     let libraryId: LibraryIdentifier
 

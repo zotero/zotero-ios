@@ -62,13 +62,6 @@ extension CollectionIdentifier {
         case .custom: return nil
         }
     }
-
-    func isSameType(as identifier: CollectionIdentifier) -> Bool {
-        switch (self, identifier) {
-        case (.collection, .collection), (.search, .search), (.custom, .custom): return true
-        default: return false
-        }
-    }
 }
 
 extension CollectionIdentifier: Codable {

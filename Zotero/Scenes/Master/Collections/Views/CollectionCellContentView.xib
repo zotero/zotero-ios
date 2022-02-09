@@ -6,6 +6,7 @@
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="19519"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -58,6 +59,13 @@
                         <constraint firstItem="kJY-uM-2ty" firstAttribute="top" secondItem="r1z-3b-OY9" secondAttribute="top" constant="2" id="kM0-PO-l2r"/>
                     </constraints>
                 </view>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="TzH-A8-qCJ">
+                    <rect key="frame" x="96" y="114" width="332" height="1"/>
+                    <color key="backgroundColor" systemColor="separatorColor"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="1" id="JAA-z7-3Bk"/>
+                    </constraints>
+                </view>
             </subviews>
             <viewLayoutGuide key="safeArea" id="wvP-6W-2wi"/>
             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
@@ -67,9 +75,12 @@
                 <constraint firstItem="wvP-6W-2wi" firstAttribute="bottom" secondItem="IeU-Uw-X8S" secondAttribute="bottom" constant="8" id="2Lx-Yj-s1b"/>
                 <constraint firstAttribute="trailingMargin" secondItem="r1z-3b-OY9" secondAttribute="trailing" id="9Dd-7J-Laf"/>
                 <constraint firstItem="r1z-3b-OY9" firstAttribute="centerY" secondItem="TOf-tl-J3O" secondAttribute="centerY" id="HcB-MI-JQg"/>
+                <constraint firstAttribute="bottom" secondItem="TzH-A8-qCJ" secondAttribute="bottom" id="IOS-CI-rUV"/>
                 <constraint firstItem="IeU-Uw-X8S" firstAttribute="leading" secondItem="TOf-tl-J3O" secondAttribute="leadingMargin" constant="32" id="TK3-ha-lRD"/>
                 <constraint firstItem="wvP-6W-2wi" firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="IeU-Uw-X8S" secondAttribute="trailing" constant="16" id="ZHh-wh-rgp"/>
+                <constraint firstItem="TzH-A8-qCJ" firstAttribute="leading" secondItem="BLO-St-lag" secondAttribute="leading" id="aKM-YT-Esx"/>
                 <constraint firstItem="r1z-3b-OY9" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="IeU-Uw-X8S" secondAttribute="trailing" constant="16" id="bOP-za-RGZ"/>
+                <constraint firstAttribute="trailing" secondItem="TzH-A8-qCJ" secondAttribute="trailing" id="h1A-SU-fuG"/>
                 <constraint firstItem="IeU-Uw-X8S" firstAttribute="top" secondItem="wvP-6W-2wi" secondAttribute="top" constant="8" id="uyC-me-YPU"/>
                 <constraint firstItem="IeU-Uw-X8S" firstAttribute="leading" secondItem="nRM-lX-IgP" secondAttribute="trailing" constant="-4" id="wCl-LM-cyd"/>
             </constraints>
@@ -81,7 +92,8 @@
                 <outlet property="contentToBadgeConstraint" destination="bOP-za-RGZ" id="NCY-zZ-Nyz"/>
                 <outlet property="contentToRightConstraint" destination="ZHh-wh-rgp" id="0ss-bn-ofF"/>
                 <outlet property="iconImage" destination="hiG-ag-qE9" id="G2C-ge-oeS"/>
-                <outlet property="leftConstraint" destination="TK3-ha-lRD" id="9Qb-pu-2Nl"/>
+                <outlet property="leftConstraint" destination="TK3-ha-lRD" id="Uv7-4I-6X2"/>
+                <outlet property="separatorHeight" destination="JAA-z7-3Bk" id="BNX-Vo-3qZ"/>
                 <outlet property="titleLabel" destination="BLO-St-lag" id="sFS-1b-bEN"/>
             </connections>
             <point key="canvasLocation" x="-818.84057971014499" y="-24.441964285714285"/>
@@ -93,5 +105,8 @@
         <namedColor name="zoteroBlue">
             <color red="0.25098039215686274" green="0.44313725490196076" blue="0.90196078431372551" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
+        <systemColor name="separatorColor">
+            <color red="0.23529411764705882" green="0.23529411764705882" blue="0.2627450980392157" alpha="0.28999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
     </resources>
 </document>

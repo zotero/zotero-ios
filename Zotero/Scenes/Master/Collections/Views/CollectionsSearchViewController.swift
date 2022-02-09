@@ -13,14 +13,14 @@ import RxSwift
 final class CollectionsSearchViewController: UIViewController {
     @IBOutlet private weak var searchBar: UISearchBar!
     @IBOutlet private weak var searchBarSeparatorHeight: NSLayoutConstraint!
-    @IBOutlet private weak var tableView: UITableView!
+    @IBOutlet private weak var collectionView: UICollectionView!
 
-    private static let cellId = "CollectionRow"
+    private let collectionsSection: Int = 0
     private let viewModel: ViewModel<CollectionsSearchActionHandler>
     private let selectAction: (Collection) -> Void
     private let disposeBag: DisposeBag
 
-    private var dataSource: UITableViewDiffableDataSource<Int, SearchableCollection>!
+    private var dataSource: UICollectionViewDiffableDataSource<Int, SearchableCollection>!
 
     init(viewModel: ViewModel<CollectionsSearchActionHandler>, selectAction: @escaping (Collection) -> Void) {
         self.viewModel = viewModel
@@ -38,13 +38,13 @@ final class CollectionsSearchViewController: UIViewController {
 
         self.searchBarSeparatorHeight.constant = 1 / UIScreen.main.scale
         self.setupSearchBar()
-        self.setupTableView()
+        self.setupCollectionView()
         self.setupKeyboardObserving()
         self.setupDataSource()
 
         self.viewModel.stateObservable
-                      .observe(on: MainScheduler.instance)
                       .skip(1)
+                      .observe(on: MainScheduler.instance)
                       .subscribe(onNext: { [weak self] state in
                           self?.update(to: state)
                       })
@@ -54,11 +54,37 @@ final class CollectionsSearchViewController: UIViewController {
     // MARK: - UI state
 
     private func update(to state: CollectionsSearchState) {
-        var snapshot = NSDiffableDataSourceSnapshot<Int, SearchableCollection>()
-        snapshot.appendSections([0])
-        snapshot.appendItems(state.filtered, toSection: 0)
-        self.dataSource.apply(snapshot, animatingDifferences: true, completion: nil)
+        var snapshot = NSDiffableDataSourceSectionSnapshot<SearchableCollection>()
+        self.add(children: state.rootCollections, to: nil, in: &snapshot, allChildren: state.childCollections, allCollections: state.filtered)
+        snapshot.expand(snapshot.items)
+        self.dataSource.apply(snapshot, to: 0, animatingDifferences: true)
     }
+
+    private func add(children: [CollectionIdentifier], to parent: SearchableCollection?, in snapshot: inout NSDiffableDataSourceSectionSnapshot<SearchableCollection>,
+                     allChildren: [CollectionIdentifier: [CollectionIdentifier]], allCollections: [CollectionIdentifier: SearchableCollection]) {
+        guard !children.isEmpty else { return }
+
+        let collections = children.compactMap({ allCollections[$0] })
+        snapshot.append(collections, to: parent)
+
+        for searchable in collections {
+            guard let children = allChildren[searchable.collection.identifier] else { continue }
+            self.add(children: children, to: searchable, in: &snapshot, allChildren: allChildren, allCollections: allCollections)
+        }
+    }
+
+    private lazy var cellRegistration: UICollectionView.CellRegistration<CollectionCell, SearchableCollection> = {
+        return UICollectionView.CellRegistration<CollectionCell, SearchableCollection> { [weak self] cell, indexPath, searchable in
+            guard let `self` = self else { return }
+
+            let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
+            let hasChildren = snapshot.snapshot(of: searchable, includingParent: false).items.count > 0
+            let configuration = CollectionCell.SearchContentConfiguration(collection: searchable.collection, hasChildren: hasChildren, isActive: searchable.isActive)
+
+            cell.contentConfiguration = configuration
+            cell.backgroundConfiguration = .listPlainCell()
+        }
+    }()
 
    // MARK: - Setups
 
@@ -67,6 +93,7 @@ final class CollectionsSearchViewController: UIViewController {
 
         self.searchBar.rx.text
                          .observe(on: MainScheduler.instance)
+                         .skip(1)
                          .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
                          .subscribe(onNext: { [weak self] text in
                             self?.viewModel.process(action: .search(text ?? ""))
@@ -84,26 +111,32 @@ final class CollectionsSearchViewController: UIViewController {
         self.searchBar.becomeFirstResponder()
     }
 
-    private func setupTableView() {
-        self.tableView.translatesAutoresizingMaskIntoConstraints = false
-        self.tableView.delegate = self
-        self.tableView.rowHeight = 44
-        self.tableView.register(UINib(nibName: "CollectionCell", bundle: nil), forCellReuseIdentifier: CollectionsSearchViewController.cellId)
+    private func setupCollectionView() {
+        self.collectionView.delegate = self
+        self.collectionView.collectionViewLayout = UICollectionViewCompositionalLayout { section, environment in
+            var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
+            configuration.showsSeparators = false
+            return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
+        }
     }
 
     private func setupDataSource() {
-//        self.dataSource = UITableViewDiffableDataSource(tableView: self.tableView,
-//                                                        cellProvider: { tableView, indexPath, object -> UITableViewCell? in
-//            let cell = tableView.dequeueReusableCell(withIdentifier: CollectionsSearchViewController.cellId, for: indexPath) as? CollectionCell
-//            cell?.set(searchableCollection: object)
-//            return cell
-//        })
+        let registration = self.cellRegistration
+
+        let dataSource = UICollectionViewDiffableDataSource<Int, SearchableCollection>(collectionView: collectionView, cellProvider: { collectionView, indexPath, searchable in
+            return collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: searchable)
+        })
+        self.dataSource = dataSource
+
+        var snapshot = NSDiffableDataSourceSnapshot<Int, SearchableCollection>()
+        snapshot.appendSections([0])
+        dataSource.apply(snapshot, animatingDifferences: false)
     }
 
-    private func setupTableView(with keyboardData: KeyboardData) {
-        var insets = self.tableView.contentInset
+    private func setupCollectionView(with keyboardData: KeyboardData) {
+        var insets = self.collectionView.contentInset
         insets.bottom = keyboardData.endFrame.height
-        self.tableView.contentInset = insets
+        self.collectionView.contentInset = insets
     }
 
     private func setupKeyboardObserving() {
@@ -112,7 +145,7 @@ final class CollectionsSearchViewController: UIViewController {
                           .observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] notification in
                               if let data = notification.keyboardData {
-                                  self?.setupTableView(with: data)
+                                  self?.setupCollectionView(with: data)
                               }
                           })
                           .disposed(by: self.disposeBag)
@@ -122,7 +155,7 @@ final class CollectionsSearchViewController: UIViewController {
                           .observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] notification in
                               if let data = notification.keyboardData {
-                                  self?.setupTableView(with: data)
+                                  self?.setupCollectionView(with: data)
                               }
                           })
                           .disposed(by: self.disposeBag)
@@ -130,8 +163,8 @@ final class CollectionsSearchViewController: UIViewController {
 
 }
 
-extension CollectionsSearchViewController: UITableViewDelegate {
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+extension CollectionsSearchViewController: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         guard let collection = self.dataSource.itemIdentifier(for: indexPath)?.collection else { return }
         self.selectAction(collection)
         self.dismiss(animated: true, completion: nil)

@@ -592,8 +592,7 @@ extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
     }
 
     func showAttachmentPicker(save: @escaping ([URL]) -> Void) {
-        let documentTypes = [String(kUTTypePDF), String(kUTTypePNG), String(kUTTypeJPEG)]
-        let controller = DocumentPickerViewController(documentTypes: documentTypes, in: .import)
+        let controller = DocumentPickerViewController(forOpeningContentTypes: [.pdf, .png, .jpeg])
         controller.popoverPresentationController?.sourceView = self.navigationController.visibleViewController?.view
         controller.observable
                   .observe(on: MainScheduler.instance)

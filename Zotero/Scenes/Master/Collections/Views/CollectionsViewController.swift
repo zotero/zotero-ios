@@ -14,15 +14,13 @@ import RealmSwift
 import RxSwift
 
 final class CollectionsViewController: UIViewController {
-//    @IBOutlet private weak var tableView: UITableView!
     @IBOutlet private weak var collectionView: UICollectionView!
 
     private let viewModel: ViewModel<CollectionsActionHandler>
     private unowned let dragDropController: DragDropController
     private let disposeBag: DisposeBag
 
-//    private var tableViewHandler: CollectionsTableViewHandler!
-    private var dataSource: UICollectionViewDiffableDataSource<Int, Collection>!
+    private var collectionViewHandler: ExpandableCollectionsCollectionViewHandler!
     weak var coordinatorDelegate: MasterCollectionsCoordinatorDelegate?
 
     init(viewModel: ViewModel<CollectionsActionHandler>, dragDropController: DragDropController) {
@@ -42,27 +40,12 @@ final class CollectionsViewController: UIViewController {
 
         self.viewModel.process(action: .loadData)
 
-
-        self.navigationController?.navigationBar.isTranslucent = true
-        self.navigationController?.navigationBar.backgroundColor = .clear
-        self.navigationController?.navigationBar.shadowImage = UIImage()
-        self.navigationController?.navigationBar.setBackgroundImage(UIImage(), for: .default)
-
         self.setupTitleWithContextMenu(self.viewModel.state.library.name)
         if self.viewModel.state.library.metadataEditable {
             self.setupAddNavbarItem()
         }
-        self.setupCollectionView()
-        self.setupDataSource()
-
-        self.updateDataSource(root: self.viewModel.state.rootCollections, children: self.viewModel.state.childCollections, collapsed: self.viewModel.state.collapsedState,
-                              collections: self.viewModel.state.collections, selected: self.viewModel.state.selectedCollectionId, animated: false)
-//        self.tableViewHandler = CollectionsTableViewHandler(tableView: self.tableView,
-//                                                            viewModel: self.viewModel,
-//                                                            dragDropController: self.dragDropController,
-//                                                            splitDelegate: self.coordinatorDelegate)
-//
-//        self.tableViewHandler.updateCollections(animated: false)
+        self.collectionViewHandler = ExpandableCollectionsCollectionViewHandler(collectionView: self.collectionView, dragDropController: self.dragDropController, viewModel: self.viewModel, splitDelegate: self.coordinatorDelegate)
+        self.updateCollections(to: self.viewModel.state, animated: false)
 
         self.viewModel.stateObservable
                       .observe(on: MainScheduler.instance)
@@ -85,24 +68,27 @@ final class CollectionsViewController: UIViewController {
 
     private func update(to state: CollectionsState) {
         if state.changes.contains(.results) {
-            self.updateDataSource(root: state.rootCollections, children: state.childCollections, collapsed: state.collapsedState, collections: state.collections,
-                                  selected: state.selectedCollectionId, animated: true)
-//            self.tableViewHandler.updateCollections(animated: true, completed: { [weak self] in
-//                self?.selectIfNeeded(collectionId: state.selectedCollectionId, scrollToPosition: false)
-//            })
+            self.updateCollections(to: state, animated: true)
+            self.selectIfNeeded(collectionId: state.selectedCollectionId, scrollToPosition: false)
         }
-//        if state.changes.contains(.allItemCount) {
-//            self.tableViewHandler.updateAllItemCell()
-//        }
-//        if state.changes.contains(.trashItemCount) {
-//            self.tableViewHandler.updateTrashItemCell()
-//        }
-//        if state.changes.contains(.selection), let collection = state.collections.first(where: { $0.identifier == state.selectedCollectionId }) {
-//            self.coordinatorDelegate?.showItems(for: collection, in: state.library, isInitial: false)
-//        }
+        
+        if state.changes.contains(.allItemCount) || state.changes.contains(.trashItemCount) {
+            self.updateCollections(to: state, animated: false)
+        }
+
+        if state.changes.contains(.selection), let collection = state.collections[state.selectedCollectionId] {
+            self.coordinatorDelegate?.showItems(for: collection, in: state.library, isInitial: false)
+            self.selectIfNeeded(collectionId: state.selectedCollectionId, scrollToPosition: false)
+        }
+
+        if state.changes.contains(.collapsedState) {
+            self.collectionViewHandler.update(collapsedState: state.collapsedState)
+        }
+
         if let data = state.editingData {
             self.coordinatorDelegate?.showEditView(for: data, library: state.library)
         }
+
         if let result = state.itemKeysForBibliography {
             switch result {
             case .success(let keys):
@@ -113,47 +99,17 @@ final class CollectionsViewController: UIViewController {
         }
     }
 
+    private func updateCollections(to state: CollectionsState, animated: Bool) {
+        self.collectionViewHandler.update(root: state.rootCollections, children: state.childCollections, collapsed: state.collapsedState, collections: state.collections,
+                                          selected: state.selectedCollectionId, animated: animated)
+    }
+
     // MARK: - Actions
-
-    private func updateDataSource(root: [CollectionIdentifier], children: [CollectionIdentifier: [CollectionIdentifier]], collapsed: [CollectionIdentifier: Bool],
-                                  collections: [CollectionIdentifier: Collection], selected: CollectionIdentifier?, animated: Bool) {
-        var snapshot = NSDiffableDataSourceSectionSnapshot<Collection>()
-        self.add(children: root, to: nil, in: &snapshot, allChildren: children, allCollections: collections)
-        self.dataSource.apply(snapshot, to: 0, animatingDifferences: animated)
-
-
-    }
-
-    private func add(children: [CollectionIdentifier], to parent: Collection?, in snapshot: inout NSDiffableDataSourceSectionSnapshot<Collection>,
-                     allChildren: [CollectionIdentifier: [CollectionIdentifier]], allCollections: [CollectionIdentifier: Collection]) {
-        guard !children.isEmpty else { return }
-
-        let collections = children.compactMap({ allCollections[$0] })
-        snapshot.append(collections, to: parent)
-
-        for collection in collections {
-            guard let children = allChildren[collection.identifier] else { continue }
-            self.add(children: children, to: collection, in: &snapshot, allChildren: allChildren, allCollections: allCollections)
-        }
-    }
-
-    private func showSearch() {
-//        let collections = self.viewModel.state.collections.filter({ !$0.identifier.isCustom })
-//                                                          .map({ SearchableCollection(isActive: true, collection: $0) })
-//        let viewModel = ViewModel(initialState: CollectionsSearchState(collections: collections), handler: CollectionsSearchActionHandler())
-//        let controller = CollectionsSearchViewController(viewModel: viewModel, selectAction: { [weak self] collection in
-//            self?.select(searchResult: collection)
-//        })
-//        controller.modalPresentationStyle = .overCurrentContext
-//        controller.modalTransitionStyle = .crossDissolve
-//        controller.isModalInPresentation = true
-//        self.present(controller, animated: true, completion: nil)
-    }
 
     private func selectIfNeeded(collectionId: CollectionIdentifier, scrollToPosition: Bool) {
         // Selection is disabled in compact mode (when UISplitViewController is a single column instead of master + detail).
-//        guard self.coordinatorDelegate?.isSplit == true else { return }
-//        self.tableViewHandler.selectIfNeeded(collectionId: collectionId, scrollToPosition: scrollToPosition)
+        guard self.coordinatorDelegate?.isSplit == true else { return }
+        self.collectionViewHandler.selectIfNeeded(collectionId: collectionId, scrollToPosition: scrollToPosition)
     }
 
     private func select(searchResult: Collection) {
@@ -170,64 +126,19 @@ final class CollectionsViewController: UIViewController {
     }
 
     private func createCollapseAllContextMenu() -> UIMenu? {
-//        guard self.viewModel.state.hasExpandableCollection else { return nil }
-        let allExpanded = false//self.viewModel.state.areAllExpanded
+        guard self.collectionViewHandler.hasExpandableCollection else { return nil }
+
+        let allExpanded = self.collectionViewHandler.allCollectionsExpanded
+        let selectedCollectionIsRoot = self.collectionViewHandler.selectedCollectionIsRoot
         let title = allExpanded ? L10n.Collections.collapseAll : L10n.Collections.expandAll
         let action = UIAction(title: title) { [weak self] _ in
-            self?.viewModel.process(action: (allExpanded ? .collapseAll : .expandAll))
+            self?.viewModel.process(action: (allExpanded ? .collapseAll(selectedCollectionIsRoot: selectedCollectionIsRoot) : .expandAll(selectedCollectionIsRoot: selectedCollectionIsRoot)))
         }
+    
         return UIMenu(title: "", children: [action])
     }
 
-    private func toggleCollapsed(for collection: Collection) {
-        var snapshot = self.dataSource.snapshot(for: 0)
-        if snapshot.isExpanded(collection) {
-            snapshot.collapse([collection])
-        } else {
-            snapshot.expand([collection])
-        }
-        self.dataSource.apply(snapshot, to: 0)
-    }
-
-    private lazy var cellRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, Collection> = {
-        return UICollectionView.CellRegistration<UICollectionViewListCell, Collection> { [weak self] cell, indexPath, collection in
-            guard let `self` = self else { return }
-
-            let snapshot = self.dataSource.snapshot(for: 0)
-            let isCollapsed = !snapshot.isExpanded(collection)
-            let hasChildren = snapshot.snapshot(of: collection, includingParent: false).items.count > 0
-
-            var configuration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren, isCollapsed: isCollapsed)
-            configuration.toggleCollapsed = { [weak self] in
-                self?.toggleCollapsed(for: collection)
-            }
-
-            cell.contentConfiguration = configuration
-            cell.backgroundConfiguration = .listPlainCell()
-        }
-    }()
-
     // MARK: - Setups
-
-    private func setupDataSource() {
-        let registration = self.cellRegistration
-
-        let dataSource = UICollectionViewDiffableDataSource<Int, Collection>(collectionView: self.collectionView, cellProvider: { collectionView, indexPath, collection in
-            return collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: collection)
-        })
-        self.dataSource = dataSource
-
-        var snapshot = NSDiffableDataSourceSnapshot<Int, Collection>()
-        snapshot.appendSections([0])
-        self.dataSource.apply(snapshot, animatingDifferences: false)
-    }
-
-    private func setupCollectionView() {
-        self.collectionView?.collectionViewLayout = UICollectionViewCompositionalLayout { index, environment in
-            let configuration = UICollectionLayoutListConfiguration(appearance: .plain)
-            return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
-        }
-    }
 
     private func setupAddNavbarItem() {
         let addItem = UIBarButtonItem(image: UIImage(systemName: "plus"), style: .plain, target: nil, action: nil)
@@ -242,7 +153,10 @@ final class CollectionsViewController: UIViewController {
         searchItem.accessibilityLabel = L10n.Accessibility.Collections.searchCollections
         searchItem.rx.tap
                   .subscribe(onNext: { [weak self] _ in
-                    self?.showSearch()
+                      guard let `self` = self else { return }
+                      self.coordinatorDelegate?.showSearch(for: self.viewModel.state, in: self, selectAction: { [weak self] collection in
+                          self?.select(searchResult: collection)
+                      })
                   })
                   .disposed(by: self.disposeBag)
 

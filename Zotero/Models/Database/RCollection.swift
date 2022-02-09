@@ -27,6 +27,8 @@ extension RCollectionChanges {
 }
 
 final class RCollection: Object {
+    static let observableKeypathsForList: [String] = ["name", "parentKey", "items"]
+
     @Persisted(indexed: true) var key: String
     @Persisted var name: String
     @Persisted var dateModified: Date

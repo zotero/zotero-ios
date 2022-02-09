@@ -21,7 +21,8 @@ struct CollectionsState: ViewModelState {
         static let results = Changes(rawValue: 1 << 0)
         static let selection = Changes(rawValue: 1 << 1)
         static let allItemCount = Changes(rawValue: 1 << 2)
-        static let trashItemCount = Changes(rawValue: 1 << 2)
+        static let trashItemCount = Changes(rawValue: 1 << 3)
+        static let collapsedState = Changes(rawValue: 1 << 4)
     }
 
     enum EditingType {
@@ -45,20 +46,8 @@ struct CollectionsState: ViewModelState {
     var itemsToken: NotificationToken?
     var trashToken: NotificationToken?
     var error: CollectionsError?
-    // Used to filter out unnecessary Realm observed notification when collapsing collections.
-//    var collapsedKeys: [String]
-    // Used to filter out unnecessary Realm observed notification when collapsing all collections.
-//    var collectionsToggledCount: Int?
     // Used when user wants to create bibliography from whole collection.
     var itemKeysForBibliography: Swift.Result<Set<String>, Error>?
-
-//    var hasExpandableCollection: Bool {
-//        return self.collections.contains(where: { $0.level > 0 })
-//    }
-//
-//    var areAllExpanded: Bool {
-//        return !self.collections.contains(where: { !$0.visible })
-//    }
 
     init(libraryId: LibraryIdentifier, selectedCollectionId: CollectionIdentifier) {
         self.libraryId = libraryId
@@ -69,7 +58,6 @@ struct CollectionsState: ViewModelState {
         self.childCollections = [:]
         self.collapsedState = [:]
         self.changes = []
-//        self.collapsedKeys = []
     }
 
     mutating func cleanup() {

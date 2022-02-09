@@ -25,6 +25,7 @@ protocol MasterCollectionsCoordinatorDelegate: MainCoordinatorDelegate {
     func showEditView(for data: CollectionStateEditingData, library: Library)
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
     func showCiteExportError()
+    func showSearch(for state: CollectionsState, in controller: UIViewController, selectAction: @escaping (Collection) -> Void)
 }
 
 final class MasterCoordinator: NSObject, Coordinator {
@@ -207,5 +208,18 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
         let controller = UIAlertController(title: L10n.error, message: L10n.Errors.Collections.bibliographyFailed, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
         self.navigationController.present(controller, animated: true, completion: nil)
+    }
+
+    func showSearch(for state: CollectionsState, in controller: UIViewController, selectAction: @escaping (Collection) -> Void) {
+        let collections = state.collections.filter({ key, value in return !key.isCustom })
+        let searchState = CollectionsSearchState(collections: collections, rootCollections: state.rootCollections, childCollections: state.childCollections)
+        let viewModel = ViewModel(initialState: searchState, handler: CollectionsSearchActionHandler())
+
+        let searchController = CollectionsSearchViewController(viewModel: viewModel, selectAction: selectAction)
+        searchController.modalPresentationStyle = .overCurrentContext
+        searchController.modalTransitionStyle = .crossDissolve
+        searchController.isModalInPresentation = true
+
+        controller.present(searchController, animated: true, completion: nil)
     }
 }

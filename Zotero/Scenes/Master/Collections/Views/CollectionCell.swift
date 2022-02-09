@@ -12,9 +12,9 @@ final class CollectionCell: UICollectionViewListCell {
     struct ContentConfiguration: UIContentConfiguration {
         let collection: Collection
         let hasChildren: Bool
-        let isCollapsed: Bool
 
         var toggleCollapsed: (() -> Void)?
+        var isCollapsedProvider: (() -> Bool)?
 
         func makeContentView() -> UIView & UIContentView {
             return ContentView(baseConfiguration: self)
@@ -75,8 +75,13 @@ final class CollectionCell: UICollectionViewListCell {
             fatalError()
         }
 
+        fileprivate func set(collapsed: Bool) {
+            self.contentView?.set(collapsed: collapsed)
+        }
+
         private func apply(configuration: ContentConfiguration) {
-            self.contentView?.set(collection: configuration.collection, hasChildren: configuration.hasChildren, isCollapsed: configuration.isCollapsed, toggleCollapsed: configuration.toggleCollapsed)
+            let isCollapsed = configuration.isCollapsedProvider?() ?? false
+            self.contentView?.set(collection: configuration.collection, hasChildren: configuration.hasChildren, isCollapsed: isCollapsed, toggleCollapsed: configuration.toggleCollapsed)
         }
 
         private func apply(configuration: SearchContentConfiguration) {
@@ -95,5 +100,21 @@ final class CollectionCell: UICollectionViewListCell {
                 self.bottomAnchor.constraint(equalTo: view.bottomAnchor)
             ])
         }
+    }
+
+    var collection: Collection? {
+        guard let contentView = self.contentView as? ContentView else { return nil }
+
+        if let configuration = contentView.configuration as? ContentConfiguration {
+            return configuration.collection
+        }
+        if let configuration = contentView.configuration as? SearchContentConfiguration {
+            return configuration.collection
+        }
+        return nil
+    }
+
+    func set(collapsed: Bool) {
+        (self.contentView as? ContentView)?.set(collapsed: collapsed)
     }
 }

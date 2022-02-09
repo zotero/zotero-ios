@@ -13,11 +13,6 @@ import RealmSwift
 struct Collection: Identifiable, Equatable, Hashable {
     let identifier: CollectionIdentifier
     let name: String
-//    var level: Int
-//    let parentKey: String?
-//    var hasChildren: Bool
-//    var collapsed: Bool
-//    var visible: Bool
     var itemCount: Int
 
     var id: CollectionIdentifier {
