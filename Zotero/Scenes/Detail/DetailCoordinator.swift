@@ -28,7 +28,7 @@ protocol DetailCoordinatorAttachmentProvider {
 }
 
 protocol DetailItemsCoordinatorDelegate: AnyObject {
-    func showCollectionPicker(in library: Library, completed: @escaping (Set<String>) -> Void)
+    func showCollectionsPicker(in library: Library, completed: @escaping (Set<String>) -> Void)
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library)
     func showAttachmentError(_ error: Error, retryAction: (() -> Void)?)
     func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
@@ -437,24 +437,15 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.navigationController.pushViewController(controller, animated: true)
     }
 
-    func showCollectionPicker(in library: Library, completed: @escaping (Set<String>) -> Void) {
+    func showCollectionsPicker(in library: Library, completed: @escaping (Set<String>) -> Void) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-        let state = CollectionPickerState(library: library, excludedKeys: [], selected: [])
-        let handler = CollectionPickerActionHandler(dbStorage: dbStorage)
+
+        let state = CollectionsPickerState(library: library, excludedKeys: [], selected: [])
+        let handler = CollectionsPickerActionHandler(dbStorage: dbStorage)
         let viewModel = ViewModel(initialState: state, handler: handler)
+        let controller = CollectionsPickerViewController(mode: .multiple(selected: completed), viewModel: viewModel)
 
-        // SWIFTUI BUG: - We need to call loadData here, because when we do so in `onAppear` in SwiftUI `View` we'll crash when data change
-        // instantly in that function. If we delay it, the user will see unwanted animation of data on screen. If we call it here, data
-        // is available immediately.
-        viewModel.process(action: .loadData)
-
-        let view = CollectionsPickerView(completionAction: completed,
-                                         closeAction: { [weak self] in
-                                            self?.topViewController.dismiss(animated: true, completion: nil)
-                                         })
-                                         .environmentObject(viewModel)
-
-        let navigationController = UINavigationController(rootViewController: UIHostingController(rootView: view))
+        let navigationController = UINavigationController(rootViewController: controller)
         navigationController.isModalInPresentation = true
         navigationController.modalPresentationStyle = .formSheet
         self.topViewController.present(navigationController, animated: true, completion: nil)

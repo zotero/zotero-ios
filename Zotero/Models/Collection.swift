@@ -64,6 +64,12 @@ struct Collection: Identifiable, Equatable, Hashable {
         }
     }
 
+    private init(identifier: CollectionIdentifier, name: String, itemCount: Int) {
+        self.identifier = identifier
+        self.name = name
+        self.itemCount = itemCount
+    }
+
     func isCustom(type: CollectionIdentifier.CustomType) -> Bool {
         switch self.identifier {
         case .custom(let customType):
@@ -71,5 +77,9 @@ struct Collection: Identifiable, Equatable, Hashable {
         case .collection, .search:
             return false
         }
+    }
+
+    func copy(with itemCount: Int) -> Collection {
+        return Collection(identifier: self.identifier, name: self.name, itemCount: itemCount)
     }
 }

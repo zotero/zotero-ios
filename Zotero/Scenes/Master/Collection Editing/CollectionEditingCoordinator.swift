@@ -79,22 +79,15 @@ extension CollectionEditingCoordinator: CollectionEditingCoordinatorDelegate {
         self.navigationController.pushViewController(controller, animated: true)
     }
 
-    private func createCollectionPickerViewController(library: Library, selected: String,
-                                                      excludedKeys: Set<String>, dbStorage: DbStorage,
+    private func createCollectionPickerViewController(library: Library, selected: String, excludedKeys: Set<String>, dbStorage: DbStorage,
                                                       collectionEditViewModel: ViewModel<CollectionEditActionHandler>) -> UIViewController {
-        let state = CollectionPickerState(library: library, excludedKeys: excludedKeys, selected: [selected])
-        let handler = CollectionPickerActionHandler(dbStorage: dbStorage)
+        let completion: (Collection) -> Void = { [weak collectionEditViewModel] collection in
+            collectionEditViewModel?.process(action: .setParent(collection))
+        }
+        let state = CollectionsPickerState(library: library, excludedKeys: excludedKeys, selected: [selected])
+        let handler = CollectionsPickerActionHandler(dbStorage: dbStorage)
         let viewModel = ViewModel(initialState: state, handler: handler)
-
-        // SWIFTUI BUG: - We need to call loadData here, because when we do so in `onAppear` in SwiftUI `View` we'll crash when data change
-        // instantly in that function. If we delay it, the user will see unwanted animation of data on screen. If we call it here, data
-        // is available immediately.
-        viewModel.process(action: .loadData)
-
-        let view = CollectionPickerView(saveAction: { [weak collectionEditViewModel] parent in
-            collectionEditViewModel?.process(action: .setParent(parent))
-        })
-        return UIHostingController(rootView: view.environmentObject(viewModel))
+        return CollectionsPickerViewController(mode: .single(title: L10n.Collections.pickerTitle, selected: completion), viewModel: viewModel)
     }
 
     func dismiss() {

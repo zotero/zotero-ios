@@ -93,24 +93,15 @@ struct CollectionsActionHandler: ViewModelActionHandler {
     }
 
     private func set(allCollapsed: Bool, selectedCollectionIsRoot: Bool, in viewModel: ViewModel<CollectionsActionHandler>) {
-        var changedCollections: Set<String> = []
+        var changedCollections: Set<CollectionIdentifier> = []
 
         self.update(viewModel: viewModel) { state in
+            changedCollections = state.collectionTree.setAll(collapsed: allCollapsed)
             state.changes = .collapsedState
 
-            if allCollapsed && !state.rootCollections.contains(state.selectedCollectionId) {
+            if allCollapsed && !state.collectionTree.isRoot(identifier: state.selectedCollectionId) {
                 state.selectedCollectionId = .custom(.all)
                 state.changes.insert(.selection)
-            }
-
-            for collectionId in state.collapsedState.keys {
-                guard let value = state.collapsedState[collectionId], value != allCollapsed else { continue }
-
-                state.collapsedState[collectionId] = allCollapsed
-
-                if let key = collectionId.key {
-                    changedCollections.insert(key)
-                }
             }
         }
 
@@ -118,7 +109,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
         self.queue.async {
             do {
-                let request = SetCollectionsCollapsedDbRequest(keys: changedCollections, collapsed: allCollapsed, libraryId: libraryId)
+                let request = SetCollectionsCollapsedDbRequest(identifiers: changedCollections, collapsed: allCollapsed, libraryId: libraryId)
                 try self.dbStorage.createCoordinator().perform(request: request)
             } catch let error {
                 DDLogError("CollectionsActionHandler: can't change collapsed all - \(error)")
@@ -127,18 +118,19 @@ struct CollectionsActionHandler: ViewModelActionHandler {
     }
 
     private func toggleCollapsed(for collection: Collection, in viewModel: ViewModel<CollectionsActionHandler>) {
-        guard let collapsed = viewModel.state.collapsedState[collection.identifier], let key = collection.identifier.key else { return }
+        guard let collapsed = viewModel.state.collectionTree.isCollapsed(identifier: collection.identifier) else { return }
 
         let newCollapsed = !collapsed
         let libraryId = viewModel.state.library.identifier
 
         // Update local state
         self.update(viewModel: viewModel) { state in
-            state.collapsedState[collection.identifier] = newCollapsed
+            state.collectionTree.set(collapsed: newCollapsed, to: collection.identifier)
             state.changes = .collapsedState
 
             // If a collection is being collapsed and selected collection is a child of collapsed collection, select currently collapsed collection
-            if newCollapsed && !state.rootCollections.contains(state.selectedCollectionId) && self.child(of: collection.identifier, containsSelectedId: state.selectedCollectionId, in: state.childCollections) {
+            if state.selectedCollectionId != collection.identifier && newCollapsed && !state.collectionTree.isRoot(identifier: state.selectedCollectionId) &&
+               state.collectionTree.identifier(state.selectedCollectionId, isChildOf: collection.identifier) {
                 state.selectedCollectionId = collection.identifier
                 state.changes.insert(.selection)
             }
@@ -147,7 +139,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
         // Store change to database
         self.queue.async {
             do {
-                let request = SetCollectionCollapsedDbRequest(collapsed: !collapsed, key: key, libraryId: libraryId)
+                let request = SetCollectionCollapsedDbRequest(collapsed: !collapsed, identifier: collection.identifier, libraryId: libraryId)
                 try self.dbStorage.createCoordinator().perform(request: request)
             } catch let error {
                 DDLogError("CollectionsActionHandler: can't change collapsed - \(error)")
@@ -183,17 +175,9 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 //            let publicationItemsCount = try coordinator.perform(request: ReadItemsDbRequest(type: .publications, libraryId: libraryId)).count
             let trashItems = try coordinator.perform(request: ReadItemsDbRequest(type: .trash, libraryId: libraryId))
 
-            let collectionsResult = CollectionTreeBuilder.collections(from: collections, libraryId: libraryId, includeItemCounts: true)
-
-            var allCollections: [CollectionIdentifier: Collection] = collectionsResult.collections
-            var rootCollections: [CollectionIdentifier] = collectionsResult.root
-            let childCollections: [CollectionIdentifier: [CollectionIdentifier]] = collectionsResult.children
-            let collapsedState: [CollectionIdentifier: Bool] = collectionsResult.collapsed
-
-            allCollections[.custom(.all)] = Collection(custom: .all, itemCount: allItems.count)
-            allCollections[.custom(.trash)] = Collection(custom: .trash, itemCount: trashItems.count)
-            rootCollections.insert(.custom(.all), at: 0)
-            rootCollections.append(.custom(.trash))
+            let collectionTree = CollectionTreeBuilder.collections(from: collections, libraryId: libraryId)
+            collectionTree.insert(collection: Collection(custom: .all, itemCount: allItems.count), at: 0)
+            collectionTree.append(collection: Collection(custom: .trash, itemCount: trashItems.count))
 
             let collectionsToken = collections.observe(keyPaths: RCollection.observableKeypathsForList, { [weak viewModel] changes in
                 guard let viewModel = viewModel else { return }
@@ -237,10 +221,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
             })
 
             self.update(viewModel: viewModel) { state in
-                state.collections = allCollections
-                state.rootCollections = rootCollections
-                state.childCollections = childCollections
-                state.collapsedState = collapsedState
+                state.collectionTree = collectionTree
                 state.library = library
                 state.collectionsToken = collectionsToken
 //                state.searchesToken = searchesToken
@@ -317,11 +298,11 @@ struct CollectionsActionHandler: ViewModelActionHandler {
             key = collection.identifier.key
             name = collection.name
 
-//            if let parentKey = collection.parentKey, let coordinator = try? self.dbStorage.createCoordinator() {
-//                let request = ReadCollectionDbRequest(libraryId: viewModel.state.library.identifier, key: parentKey)
-//                let rCollection = try? coordinator.perform(request: request)
-//                parent = rCollection.flatMap { Collection(object: $0, level: 0, visible: true, hasChildren: true, parentKey: $0.parentKey, itemCount: 0) }
-//            }
+            if let parentKey = viewModel.state.collectionTree.parent(of: collection.identifier)?.key, let coordinator = try? self.dbStorage.createCoordinator() {
+                let request = ReadCollectionDbRequest(libraryId: viewModel.state.library.identifier, key: parentKey)
+                let rCollection = try? coordinator.perform(request: request)
+                parent = rCollection.flatMap { Collection(object: $0, itemCount: 0) }
+            }
         }
 
         self.update(viewModel: viewModel) { state in
@@ -331,82 +312,30 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
     private func update(allItemsCount: Int, in viewModel: ViewModel<CollectionsActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            state.collections[.custom(.all)]?.itemCount = allItemsCount
+            state.collectionTree.update(collection: Collection(custom: .all, itemCount: allItemsCount))
             state.changes = .allItemCount
         }
     }
 
     private func update(trashItemCount: Int, in viewModel: ViewModel<CollectionsActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            state.collections[.custom(.trash)]?.itemCount = trashItemCount
+            state.collectionTree.update(collection: Collection(custom: .trash, itemCount: trashItemCount))
             state.changes = .trashItemCount
         }
     }
 
     private func update(collections: Results<RCollection>, viewModel: ViewModel<CollectionsActionHandler>) {
-        let result = CollectionTreeBuilder.collections(from: collections, libraryId: viewModel.state.libraryId, includeItemCounts: true)
+        let tree = CollectionTreeBuilder.collections(from: collections, libraryId: viewModel.state.libraryId)
 
         self.update(viewModel: viewModel) { state in
-            // Replace root collection ids
-            self.replaceIds(in: &state.rootCollections, from: result.root, matchingId: { $0.isCollection })
-            // Replace collections in original `collections` dictionary.
-            self.replaceValues(in: &state.collections, from: result.collections, matchingId: { $0.isCollection })
-            // Replace all collections in original `children` dictionary
-            self.replaceValues(in: &state.childCollections, from: result.children, matchingId: { $0.isCollection })
-            // Replace collapsed state in original `collapsed` dictionary
-            self.replaceValues(in: &state.collapsedState, from: result.collapsed, matchingId: { $0.isCollection })
-
+            state.collectionTree.replace(identifiersMatching: { $0.isCollection }, with: tree)
             state.changes = .results
 
             // Check whether selection still exists
-            if state.collections[state.selectedCollectionId] == nil {
-                state.selectedCollectionId = state.rootCollections.first ?? .custom(.all)
+            if state.collectionTree.collection(for: state.selectedCollectionId) == nil {
+                state.selectedCollectionId = .custom(.all)
                 state.changes.insert(.selection)
             }
         }
-    }
-
-    private func replaceValues<T>(in dictionary: inout [CollectionIdentifier: T], from newDictionary: [CollectionIdentifier: T], matchingId: (CollectionIdentifier) -> Bool) {
-        // Remove all values matching id
-        for key in dictionary.keys {
-            guard matchingId(key) else { continue }
-            dictionary[key] = nil
-        }
-
-        // Move all values from new dictionary to original
-        for (key, value) in newDictionary {
-            dictionary[key] = value
-        }
-    }
-
-    private func replaceIds(in array: inout [CollectionIdentifier], from newArray: [CollectionIdentifier], matchingId: (CollectionIdentifier) -> Bool) {
-        var startIndex = -1
-        var endIndex = -1
-
-        for (idx, collectionId) in array.enumerated() {
-            if startIndex == -1 {
-                if matchingId(collectionId) {
-                    startIndex = idx
-                }
-            } else if endIndex == -1 {
-                if !matchingId(collectionId) {
-                    endIndex = idx
-                    break
-                }
-            }
-        }
-
-        if startIndex == -1 {
-            // No object of given type found, insert after .all
-            array.insert(contentsOf: newArray, at: 1)
-            return
-        }
-
-        if endIndex == -1 { // last cell was of the same type, so endIndex is at the end
-            endIndex = array.count
-        }
-
-        array.remove(atOffsets: IndexSet(integersIn: startIndex..<endIndex))
-        array.insert(contentsOf: newArray, at: startIndex)
     }
 }

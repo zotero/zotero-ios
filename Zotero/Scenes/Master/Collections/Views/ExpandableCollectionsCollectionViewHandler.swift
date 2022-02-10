@@ -65,54 +65,45 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
         }
     }
 
-    // MARK: - Expandability Controls
-    func update(collapsedState: [CollectionIdentifier: Bool]) {
-        var snapshot = self.dataSource.snapshot(for: self.collectionsSection)
-        let (collapsed, expanded) = self.separateExpandedFromCollapsed(collections: snapshot.items, collapsedState: collapsedState)
-        snapshot.collapse(collapsed)
-        snapshot.expand(expanded)
-        self.dataSource.apply(snapshot, to: 0)
-    }
-
     // MARK: - Data Source
 
-    func update(root: [CollectionIdentifier], children: [CollectionIdentifier: [CollectionIdentifier]], collapsed: [CollectionIdentifier: Bool], collections: [CollectionIdentifier: Collection], selected: CollectionIdentifier?, animated: Bool) {
-        var snapshot = NSDiffableDataSourceSectionSnapshot<Collection>()
-        self.add(children: root, to: nil, in: &snapshot, allChildren: children, allCollections: collections)
-
-        let (collapsed, expanded) = self.separateExpandedFromCollapsed(collections: snapshot.items, collapsedState: collapsed)
-        snapshot.collapse(collapsed)
-        snapshot.expand(expanded)
-
-        self.dataSource.apply(snapshot, to: 0, animatingDifferences: animated)
+    func update(with tree: CollectionTree, animated: Bool) {
+        self.dataSource.apply(tree.createSnapshot(), to: 0, animatingDifferences: animated)
     }
 
-    private func separateExpandedFromCollapsed(collections: [Collection], collapsedState: [CollectionIdentifier: Bool]) -> (collapsed: [Collection], expanded: [Collection]) {
-        var collapsed: [Collection] = []
-        var expanded: [Collection] = []
-
-        for collection in collections {
-            let isCollapsed = collapsedState[collection.identifier] ?? true
-            if isCollapsed {
-                collapsed.append(collection)
-            } else {
-                expanded.append(collection)
+    private func createContextMenu(for collection: Collection) -> UIMenu? {
+        switch collection.identifier {
+        case .collection(let key):
+            guard self.viewModel.state.library.metadataEditable else { return nil }
+            let edit = UIAction(title: L10n.edit, image: UIImage(systemName: "pencil")) { [weak self] _ in
+                self?.viewModel.process(action: .startEditing(.edit(collection)))
             }
-        }
+            let subcollection = UIAction(title: L10n.Collections.newSubcollection, image: UIImage(systemName: "folder.badge.plus")) { [weak self] _ in
+                self?.viewModel.process(action: .startEditing(.addSubcollection(collection)))
+            }
+            let createBibliography = UIAction(title: L10n.Collections.createBibliography, image: UIImage(systemName: "doc.on.doc")) { [weak self] _ in
+                self?.viewModel.process(action: .loadItemKeysForBibliography(collection))
+            }
+            let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
+                self?.viewModel.process(action: .deleteCollection(key))
+            }
+            return UIMenu(title: "", children: [edit, subcollection, createBibliography, delete])
 
-        return (collapsed, expanded)
-    }
+        case .custom(let type):
+            switch type {
+            case .trash:
+                guard self.viewModel.state.library.metadataEditable && collection.itemCount > 0 else { return nil }
+                let trash = UIAction(title: L10n.Collections.emptyTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
+                    self?.viewModel.process(action: .emptyTrash)
+                }
+                return UIMenu(title: "", children: [trash])
 
-    private func add(children: [CollectionIdentifier], to parent: Collection?, in snapshot: inout NSDiffableDataSourceSectionSnapshot<Collection>,
-                     allChildren: [CollectionIdentifier: [CollectionIdentifier]], allCollections: [CollectionIdentifier: Collection]) {
-        guard !children.isEmpty else { return }
+            case .publications, .all:
+                return nil
+            }
 
-        let collections = children.compactMap({ allCollections[$0] })
-        snapshot.append(collections, to: parent)
-
-        for collection in collections {
-            guard let children = allChildren[collection.identifier] else { continue }
-            self.add(children: children, to: collection, in: &snapshot, allChildren: allChildren, allCollections: allCollections)
+        case .search:
+            return nil
         }
     }
 
@@ -123,7 +114,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
             let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
             let hasChildren = snapshot.snapshot(of: collection, includingParent: false).items.count > 0
 
-            var configuration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren)
+            var configuration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren, isBasic: false)
             configuration.isCollapsedProvider = { [weak self] in
                 guard let `self` = self else { return false }
                 return !self.dataSource.snapshot(for: self.collectionsSection).isExpanded(collection)
@@ -173,5 +164,40 @@ extension ExpandableCollectionsCollectionViewHandler: UICollectionViewDelegate {
         // on the other hand we see only the collection list, so we always need to open the item list for selected collection.
         guard self.splitDelegate?.isSplit == false ? true : collection.identifier != self.viewModel.state.selectedCollectionId else { return }
         self.viewModel.process(action: .select(collection.identifier))
+    }
+
+    func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        guard let collection = self.dataSource.itemIdentifier(for: indexPath) else { return nil }
+        return self.createContextMenu(for: collection).flatMap({ menu in UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: { _ in menu }) })
+    }
+}
+
+extension ExpandableCollectionsCollectionViewHandler: UICollectionViewDropDelegate {
+    func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator) {
+        guard let indexPath = coordinator.destinationIndexPath,
+              let key = self.dataSource.itemIdentifier(for: indexPath)?.identifier.key else { return }
+
+        switch coordinator.proposal.operation {
+        case .copy:
+            self.dragDropController.itemKeys(from: coordinator.items.map({ $0.dragItem })) { [weak self] keys in
+                self?.viewModel.process(action: .assignKeysToCollection(keys, key))
+            }
+        default: break
+        }
+    }
+
+    func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal {
+        if !self.viewModel.state.library.metadataEditable {
+            return UICollectionViewDropProposal(operation: .forbidden)
+        }
+        // Allow only local drag session
+        guard session.localDragSession != nil else { return UICollectionViewDropProposal(operation: .forbidden) }
+
+        // Allow only dropping to user collections, not custom collections, such as "All Items" or "My Publications"
+        if let destination = destinationIndexPath, let collection = self.dataSource.itemIdentifier(for: destination), collection.identifier.isCollection {
+            return UICollectionViewDropProposal(operation: .copy, intent: .insertIntoDestinationIndexPath)
+        }
+
+        return UICollectionViewDropProposal(operation: .forbidden)
     }
 }

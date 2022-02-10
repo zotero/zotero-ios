@@ -13,9 +13,7 @@ import SwiftUI
 import RealmSwift
 import RxSwift
 
-final class CollectionsViewController: UIViewController {
-    @IBOutlet private weak var collectionView: UICollectionView!
-
+final class CollectionsViewController: UICollectionViewController {
     private let viewModel: ViewModel<CollectionsActionHandler>
     private unowned let dragDropController: DragDropController
     private let disposeBag: DisposeBag
@@ -28,7 +26,7 @@ final class CollectionsViewController: UIViewController {
         self.dragDropController = dragDropController
         self.disposeBag = DisposeBag()
 
-        super.init(nibName: "CollectionsViewController", bundle: nil)
+        super.init(collectionViewLayout: UICollectionViewFlowLayout())
     }
 
     required init?(coder: NSCoder) {
@@ -45,7 +43,7 @@ final class CollectionsViewController: UIViewController {
             self.setupAddNavbarItem()
         }
         self.collectionViewHandler = ExpandableCollectionsCollectionViewHandler(collectionView: self.collectionView, dragDropController: self.dragDropController, viewModel: self.viewModel, splitDelegate: self.coordinatorDelegate)
-        self.updateCollections(to: self.viewModel.state, animated: false)
+        self.collectionViewHandler.update(with: self.viewModel.state.collectionTree, animated: false)
 
         self.viewModel.stateObservable
                       .observe(on: MainScheduler.instance)
@@ -59,7 +57,7 @@ final class CollectionsViewController: UIViewController {
         super.viewWillAppear(animated)
 
         self.selectIfNeeded(collectionId: self.viewModel.state.selectedCollectionId, scrollToPosition: true)
-        if self.coordinatorDelegate?.isSplit == true, let collection = self.viewModel.state.collections[self.viewModel.state.selectedCollectionId] {
+        if self.coordinatorDelegate?.isSplit == true, let collection = self.viewModel.state.collectionTree.collection(for: self.viewModel.state.selectedCollectionId) {
             self.coordinatorDelegate?.showItems(for: collection, in: self.viewModel.state.library, isInitial: true)
         }
     }
@@ -68,21 +66,17 @@ final class CollectionsViewController: UIViewController {
 
     private func update(to state: CollectionsState) {
         if state.changes.contains(.results) {
-            self.updateCollections(to: state, animated: true)
+            self.collectionViewHandler.update(with: state.collectionTree, animated: true)
             self.selectIfNeeded(collectionId: state.selectedCollectionId, scrollToPosition: false)
-        }
-        
-        if state.changes.contains(.allItemCount) || state.changes.contains(.trashItemCount) {
-            self.updateCollections(to: state, animated: false)
+        } else if state.changes.contains(.allItemCount) || state.changes.contains(.trashItemCount) {
+            self.collectionViewHandler.update(with: state.collectionTree, animated: false)
+        } else if state.changes.contains(.collapsedState) {
+            self.collectionViewHandler.update(with: state.collectionTree, animated: true)
         }
 
-        if state.changes.contains(.selection), let collection = state.collections[state.selectedCollectionId] {
+        if state.changes.contains(.selection), let collection = state.collectionTree.collection(for: state.selectedCollectionId) {
             self.coordinatorDelegate?.showItems(for: collection, in: state.library, isInitial: false)
             self.selectIfNeeded(collectionId: state.selectedCollectionId, scrollToPosition: false)
-        }
-
-        if state.changes.contains(.collapsedState) {
-            self.collectionViewHandler.update(collapsedState: state.collapsedState)
         }
 
         if let data = state.editingData {
@@ -97,11 +91,6 @@ final class CollectionsViewController: UIViewController {
                 self.coordinatorDelegate?.showCiteExportError()
             }
         }
-    }
-
-    private func updateCollections(to state: CollectionsState, animated: Bool) {
-        self.collectionViewHandler.update(root: state.rootCollections, children: state.childCollections, collapsed: state.collapsedState, collections: state.collections,
-                                          selected: state.selectedCollectionId, animated: animated)
     }
 
     // MARK: - Actions

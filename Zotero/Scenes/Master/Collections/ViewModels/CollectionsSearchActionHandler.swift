@@ -24,42 +24,10 @@ struct CollectionsSearchActionHandler: ViewModelActionHandler {
     private func search(for term: String, in viewModel: ViewModel<CollectionsSearchActionHandler>) {
         self.update(viewModel: viewModel) { state in
             if term.isEmpty {
-                state.filtered = [:]
+                state.collectionTree.cancelSearch()
             } else {
-                state.filtered = self.filter(collections: state.collections, with: term, rootCollections: viewModel.state.rootCollections, childCollections: viewModel.state.childCollections)
+                state.collectionTree.search(for: term)
             }
         }
-    }
-
-    private func filter(collections: [CollectionIdentifier: Collection], with text: String, rootCollections: [CollectionIdentifier],
-                        childCollections: [CollectionIdentifier: [CollectionIdentifier]]) -> [CollectionIdentifier: SearchableCollection] {
-        var filtered: [CollectionIdentifier: SearchableCollection] = [:]
-        self.add(collections: rootCollections, ifTheyContain: text, to: &filtered, childCollections: childCollections, allCollections: collections)
-        return filtered
-    }
-
-    @discardableResult
-    private func add(collections: [CollectionIdentifier], ifTheyContain text: String, to filtered: inout [CollectionIdentifier: SearchableCollection],
-                     childCollections: [CollectionIdentifier: [CollectionIdentifier]], allCollections: [CollectionIdentifier: Collection]) -> Bool {
-        var containsText = false
-
-        for collectionId in collections {
-            guard let collection = allCollections[collectionId] else { continue }
-
-            if collection.name.localizedCaseInsensitiveContains(text) {
-                containsText = true
-                filtered[collectionId] = SearchableCollection(isActive: true, collection: collection)
-            }
-
-            if let children = childCollections[collectionId] {
-                let childrenContainText = self.add(collections: children, ifTheyContain: text, to: &filtered, childCollections: childCollections, allCollections: allCollections)
-                if !containsText && childrenContainText {
-                    filtered[collectionId] = SearchableCollection(isActive: false, collection: collection)
-                    containsText = true
-                }
-            }
-        }
-
-        return containsText
     }
 }

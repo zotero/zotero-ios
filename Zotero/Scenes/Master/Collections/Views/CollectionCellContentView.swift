@@ -48,40 +48,55 @@ final class CollectionCellContentView: UIView {
         self.chevronButton.accessibilityLabel = collapsed ? L10n.Accessibility.Collections.expand : L10n.Accessibility.Collections.collapse
     }
 
+    func setBasic(collection: Collection, hasChildren: Bool) {
+        self.leftConstraint.constant = 8
+        self.toggleCollapsedAction = nil
+
+        self.setup(with: collection, hasChildren: hasChildren)
+        self.updateBadgeView(for: 0)
+        self.setupChevron(visible: false, isCollapsed: false)
+    }
+
     func set(collection: Collection, hasChildren: Bool, isCollapsed: Bool, toggleCollapsed: (() -> Void)?) {
         self.leftConstraint.constant = 32
         self.toggleCollapsedAction = toggleCollapsed
-        self.setup(with: collection, hasChildren: hasChildren, isCollapsed: isCollapsed, chevronButtonVisible: hasChildren)
+
+        self.setup(with: collection, hasChildren: hasChildren)
+        self.updateBadgeView(for: collection.itemCount)
+        self.setupChevron(visible: hasChildren, isCollapsed: isCollapsed)
     }
 
     func set(collection: Collection, hasChildren: Bool, isActive: Bool) {
         self.leftConstraint.constant = 8
         self.toggleCollapsedAction = nil
-        self.setup(with: collection, hasChildren: hasChildren, isCollapsed: false, chevronButtonVisible: false)
         self.alpha = isActive ? 1 : 0.4
+
+        self.setup(with: collection, hasChildren: hasChildren)
+        self.updateBadgeView(for: collection.itemCount)
+        self.setupChevron(visible: false, isCollapsed: false)
     }
 
-    func updateBadgeView(for collection: Collection) {
-        self.badgeContainer.isHidden = collection.itemCount == 0
+    func updateBadgeView(for itemCount: Int) {
+        self.badgeContainer.isHidden = itemCount == 0
         if !self.badgeContainer.isHidden {
-            self.badgeLabel.text = "\(collection.itemCount)"
-            self.badgeLabel.accessibilityLabel = "\(collection.itemCount) \(L10n.Accessibility.Collections.items)"
+            self.badgeLabel.text = "\(itemCount)"
+            self.badgeLabel.accessibilityLabel = "\(itemCount) \(L10n.Accessibility.Collections.items)"
         }
         self.contentToBadgeConstraint.isActive = !self.badgeContainer.isHidden || !self.chevronButton.isHidden
         self.contentToRightConstraint.isActive = !self.contentToBadgeConstraint.isActive
     }
 
-    private func setup(with collection: Collection, hasChildren: Bool, isCollapsed: Bool, chevronButtonVisible: Bool) {
+    private func setupChevron(visible: Bool, isCollapsed: Bool) {
+        self.chevronButton.isHidden = !visible
+        if visible {
+            self.set(collapsed: isCollapsed)
+        }
+    }
+
+    private func setup(with collection: Collection, hasChildren: Bool) {
         self.iconImage.image = UIImage(named: collection.iconName(hasChildren: hasChildren))?.withRenderingMode(.alwaysTemplate)
         self.titleLabel.text = collection.name
         self.titleLabel.accessibilityLabel = collection.name
-
-        self.chevronButton.isHidden = !chevronButtonVisible
-        if !self.chevronButton.isHidden {
-            self.set(collapsed: isCollapsed)
-        }
-
-        self.updateBadgeView(for: collection)
     }
 
     private var badgeBackgroundColor: UIColor {

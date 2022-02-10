@@ -9,17 +9,10 @@
 import Foundation
 
 struct CollectionsSearchState: ViewModelState {
-    let collections: [CollectionIdentifier: Collection]
-    let rootCollections: [CollectionIdentifier]
-    let childCollections: [CollectionIdentifier: [CollectionIdentifier]]
+    let collectionTree: CollectionTree
 
-    var filtered: [CollectionIdentifier: SearchableCollection]
-
-    init(collections: [CollectionIdentifier: Collection], rootCollections: [CollectionIdentifier], childCollections: [CollectionIdentifier: [CollectionIdentifier]]) {
-        self.collections = collections
-        self.rootCollections = rootCollections
-        self.childCollections = childCollections
-        self.filtered = [:]
+    init(collectionsTree: CollectionTree) {
+        self.collectionTree = collectionsTree
     }
 
     mutating func cleanup() {}

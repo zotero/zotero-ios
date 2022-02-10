@@ -400,7 +400,7 @@ extension ItemsTableViewHandler: UITableViewDropDelegate {
 
         switch coordinator.proposal.operation {
         case .copy:
-            self.dragDropController.itemKeys(from: coordinator.items) { [weak self] keys in
+            self.dragDropController.itemKeys(from: coordinator.items.map({ $0.dragItem })) { [weak self] keys in
                 self?.viewModel.process(action: .moveItems(keys, key))
             }
         default: break

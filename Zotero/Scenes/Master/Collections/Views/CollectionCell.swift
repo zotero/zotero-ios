@@ -12,6 +12,7 @@ final class CollectionCell: UICollectionViewListCell {
     struct ContentConfiguration: UIContentConfiguration {
         let collection: Collection
         let hasChildren: Bool
+        let isBasic: Bool
 
         var toggleCollapsed: (() -> Void)?
         var isCollapsedProvider: (() -> Bool)?
@@ -80,8 +81,12 @@ final class CollectionCell: UICollectionViewListCell {
         }
 
         private func apply(configuration: ContentConfiguration) {
-            let isCollapsed = configuration.isCollapsedProvider?() ?? false
-            self.contentView?.set(collection: configuration.collection, hasChildren: configuration.hasChildren, isCollapsed: isCollapsed, toggleCollapsed: configuration.toggleCollapsed)
+            if configuration.isBasic {
+                self.contentView?.setBasic(collection: configuration.collection, hasChildren: configuration.hasChildren)
+            } else {
+                let isCollapsed = configuration.isCollapsedProvider?() ?? false
+                self.contentView?.set(collection: configuration.collection, hasChildren: configuration.hasChildren, isCollapsed: isCollapsed, toggleCollapsed: configuration.toggleCollapsed)
+            }
         }
 
         private func apply(configuration: SearchContentConfiguration) {

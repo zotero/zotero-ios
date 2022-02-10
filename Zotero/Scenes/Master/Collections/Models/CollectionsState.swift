@@ -34,11 +34,8 @@ struct CollectionsState: ViewModelState {
     let libraryId: LibraryIdentifier
 
     var library: Library
+    var collectionTree: CollectionTree
     var selectedCollectionId: CollectionIdentifier
-    var collections: [CollectionIdentifier: Collection]
-    var rootCollections: [CollectionIdentifier]
-    var childCollections: [CollectionIdentifier: [CollectionIdentifier]]
-    var collapsedState: [CollectionIdentifier: Bool]
     var editingData: CollectionStateEditingData?
     var changes: Changes
     var collectionsToken: NotificationToken?
@@ -53,11 +50,8 @@ struct CollectionsState: ViewModelState {
         self.libraryId = libraryId
         self.library = Library(identifier: .custom(.myLibrary), name: "", metadataEditable: false, filesEditable: false)
         self.selectedCollectionId = selectedCollectionId
-        self.collections = [:]
-        self.rootCollections = []
-        self.childCollections = [:]
-        self.collapsedState = [:]
         self.changes = []
+        self.collectionTree = CollectionTree(nodes: [], collections: [:], collapsed: [:])
     }
 
     mutating func cleanup() {

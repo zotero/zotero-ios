@@ -211,8 +211,7 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
     }
 
     func showSearch(for state: CollectionsState, in controller: UIViewController, selectAction: @escaping (Collection) -> Void) {
-        let collections = state.collections.filter({ key, value in return !key.isCustom })
-        let searchState = CollectionsSearchState(collections: collections, rootCollections: state.rootCollections, childCollections: state.childCollections)
+        let searchState = CollectionsSearchState(collectionsTree: state.collectionTree)
         let viewModel = ViewModel(initialState: searchState, handler: CollectionsSearchActionHandler())
 
         let searchController = CollectionsSearchViewController(viewModel: viewModel, selectAction: selectAction)

@@ -54,23 +54,7 @@ final class CollectionsSearchViewController: UIViewController {
     // MARK: - UI state
 
     private func update(to state: CollectionsSearchState) {
-        var snapshot = NSDiffableDataSourceSectionSnapshot<SearchableCollection>()
-        self.add(children: state.rootCollections, to: nil, in: &snapshot, allChildren: state.childCollections, allCollections: state.filtered)
-        snapshot.expand(snapshot.items)
-        self.dataSource.apply(snapshot, to: 0, animatingDifferences: true)
-    }
-
-    private func add(children: [CollectionIdentifier], to parent: SearchableCollection?, in snapshot: inout NSDiffableDataSourceSectionSnapshot<SearchableCollection>,
-                     allChildren: [CollectionIdentifier: [CollectionIdentifier]], allCollections: [CollectionIdentifier: SearchableCollection]) {
-        guard !children.isEmpty else { return }
-
-        let collections = children.compactMap({ allCollections[$0] })
-        snapshot.append(collections, to: parent)
-
-        for searchable in collections {
-            guard let children = allChildren[searchable.collection.identifier] else { continue }
-            self.add(children: children, to: searchable, in: &snapshot, allChildren: allChildren, allCollections: allCollections)
-        }
+        self.dataSource.apply(state.collectionTree.createSearchSnapshot(), to: 0, animatingDifferences: true)
     }
 
     private lazy var cellRegistration: UICollectionView.CellRegistration<CollectionCell, SearchableCollection> = {
@@ -165,8 +149,11 @@ final class CollectionsSearchViewController: UIViewController {
 
 extension CollectionsSearchViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        guard let collection = self.dataSource.itemIdentifier(for: indexPath)?.collection else { return }
-        self.selectAction(collection)
+        guard let searchable = self.dataSource.itemIdentifier(for: indexPath), searchable.isActive else {
+            collectionView.deselectItem(at: indexPath, animated: false)
+            return
+        }
+        self.selectAction(searchable.collection)
         self.dismiss(animated: true, completion: nil)
     }
 }

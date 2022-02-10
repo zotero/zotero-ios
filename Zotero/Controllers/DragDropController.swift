@@ -20,15 +20,15 @@ final class DragDropController {
         return dragItem.localObject as? RItem
     }
 
-    func itemKeys(from dropItems: [UITableViewDropItem], completed: @escaping ([String]) -> Void) {
+    func itemKeys(from dragItems: [UIDragItem], completed: @escaping ([String]) -> Void) {
         var keys: [String] = []
 
         let group = DispatchGroup()
 
-        dropItems.forEach { dropItem in
+        for dragItem in dragItems {
             group.enter()
 
-            dropItem.dragItem.itemProvider.loadObject(ofClass: NSString.self) { nsString, error in
+            dragItem.itemProvider.loadObject(ofClass: NSString.self) { nsString, error in
                 if let key = nsString as? String {
                     keys.append(key)
                 }

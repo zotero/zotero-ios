@@ -304,7 +304,7 @@ final class ItemsViewController: UIViewController {
         switch action {
         case .addToCollection:
             guard !selectedKeys.isEmpty else { return }
-            self.coordinatorDelegate?.showCollectionPicker(in: self.viewModel.state.library, completed: { [weak self] collections in
+            self.coordinatorDelegate?.showCollectionsPicker(in: self.viewModel.state.library, completed: { [weak self] collections in
                 self?.viewModel.process(action: .assignItemsToCollections(items: selectedKeys, collections: collections))
                 completionAction?(true)
             })
