@@ -64,11 +64,11 @@ final class ShareViewController: UIViewController {
     private var translatorsController: TranslatorsAndStylesController!
     private var dbStorage: DbStorage!
     private var bundledDataStorage: DbStorage!
-    private var fileStorage: FileStorageController!
+    private var fileStorage: FileStorage!
     private var debugLogging: DebugLogging!
     private var schemaController: SchemaController!
     private var secureStorage: KeychainSecureStorage!
-    private var store: ExtensionStore!
+    private var viewModel: ExtensionViewModel!
     private var storeCancellable: AnyCancellable?
     private var viewIsVisible: Bool = true
 
@@ -84,36 +84,28 @@ final class ShareViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        DDLogInfo("View loaded")
-
         DDLog.add(DDOSLogger.sharedInstance)
 
-        self.fileStorage = FileStorageController()
+        let fileStorage = FileStorageController()
+        let schemaController = SchemaController()
+        let apiClient = self.setupApiClient(schemaController: schemaController)
 
-        self.schemaController = SchemaController()
-        let configuration = URLSessionConfiguration.default
-        configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description,
-                                               "Zotero-Schema-Version": self.schemaController.version]
-        configuration.sharedContainerIdentifier = AppGroup.identifier
-        configuration.timeoutIntervalForRequest = ApiConstants.requestTimeout
-        configuration.timeoutIntervalForResource = ApiConstants.resourceTimeout
-        let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
-
-        self.debugLogging = DebugLogging(apiClient: apiClient, fileStorage: self.fileStorage)
+        // Start logging as soon as possible
+        self.debugLogging = DebugLogging(apiClient: apiClient, fileStorage: fileStorage)
         self.debugLogging.startLoggingOnLaunchIfNeeded()
 
-        let sessionController = SessionController(secureStorage: KeychainSecureStorage(), defaults: Defaults.shared)
-        try? sessionController.initializeSession()
-        let session = sessionController.sessionData
+        DDLogInfo("View loaded")
+
+        let session = self.setupSession()
 
         self.setupNavbar(loggedIn: (session != nil))
 
-        if let session = session {
-            self.setupControllers(with: session, apiClient: apiClient, schemaController: self.schemaController)
-        } else {
+        guard let session = session else {
             self.showInitialError(message: L10n.Errors.Shareext.loggedOut)
             return
         }
+
+        self.setupControllers(with: session, apiClient: apiClient, fileStorage: fileStorage, schemaController: schemaController)
 
         DDLogInfo("Controllers initialized")
 
@@ -123,15 +115,15 @@ final class ShareViewController: UIViewController {
         self.attachmentIcon.set(backgroundColor: .white)
 
         // Setup observing
-        self.storeCancellable = self.store?.$state.receive(on: DispatchQueue.main)
-                                                  .sink { [weak self] state in
-                                                      self?.update(to: state)
-                                                  }
+        self.storeCancellable = self.viewModel?.$state.receive(on: DispatchQueue.main)
+                                                      .sink { [weak self] state in
+                                                          self?.update(to: state)
+                                                      }
 
         // Load initial data
         if let context = self.extensionContext, let extensionItem = context.inputItems.first as? NSExtensionItem {
             DDLogInfo("Load extension item (\(context.inputItems.count))")
-            self.store?.start(with: extensionItem)
+            self.viewModel?.start(with: extensionItem)
         } else {
             self.showInitialError(message: L10n.Errors.Shareext.cantLoadData)
         }
@@ -171,11 +163,11 @@ final class ShareViewController: UIViewController {
     @IBAction private func showTagPicker() {
         guard let dbStorage = self.dbStorage else { return }
 
-        let state = TagPickerState(libraryId: self.store.state.selectedLibraryId, selectedTags: Set(self.store.state.tags.map({ $0.name })))
+        let state = TagPickerState(libraryId: self.viewModel.state.selectedLibraryId, selectedTags: Set(self.viewModel.state.tags.map({ $0.name })))
         let handler = TagPickerActionHandler(dbStorage: dbStorage)
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = TagPickerViewController(viewModel: viewModel, saveAction: { [weak self] tags in
-            self?.store.set(tags: tags)
+            self?.viewModel.set(tags: tags)
         })
         controller.preferredContentSize = ShareViewController.pickerSize
 
@@ -184,10 +176,10 @@ final class ShareViewController: UIViewController {
     }
 
     @IBAction private func showItemPicker() {
-        guard let items = self.store.state.itemPickerState?.items else { return }
+        guard let items = self.viewModel.state.itemPickerState?.items else { return }
 
         let view = ItemPickerView(data: items) { [weak self] picked in
-            self?.store.pickItem(picked)
+            self?.viewModel.pickItem(picked)
             self?.navigationController?.popViewController(animated: true)
         }
 
@@ -200,31 +192,31 @@ final class ShareViewController: UIViewController {
     @IBAction private func showCollectionPicker() {
         guard let dbStorage = self.dbStorage else { return }
 
-        let store = AllCollectionPickerStore(selectedCollectionId: self.store.state.selectedCollectionId, selectedLibraryId: self.store.state.selectedLibraryId, dbStorage: dbStorage)
-        let view = AllCollectionPickerView { [weak self] collection, library in
-            self?.store?.set(collection: collection, library: library)
+        let state = AllCollectionPickerState(selectedCollectionId: self.viewModel.state.selectedCollectionId, selectedLibraryId: self.viewModel.state.selectedLibraryId)
+        let handler = AllCollectionPickerActionHandler(dbStorage: dbStorage)
+        let controller = AllCollectionPickerViewController(viewModel: ViewModel(initialState: state, handler: handler))
+        controller.pickedAction = { [weak self] collection, library in
+            self?.viewModel?.set(collection: collection, library: library)
             self?.navigationController?.popViewController(animated: true)
         }
-        .environmentObject(store)
-
-        let controller = UIHostingController(rootView: view)
         controller.preferredContentSize = ShareViewController.pickerSize
+        
         self.navigationController?.preferredContentSize = ShareViewController.pickerSize
         self.navigationController?.pushViewController(controller, animated: true)
     }
 
     @objc private func done() {
-        self.store?.submit()
+        self.viewModel?.submit()
     }
 
     @objc private func cancel() {
-        self.store?.cancel()
+        self.viewModel?.cancel()
         self.debugLogging.storeLogs { [unowned self] in
             self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
         }
     }
 
-    private func update(to state: ExtensionStore.State) {
+    private func update(to state: ExtensionViewModel.State) {
         if state.isDone {
             DDLogInfo("State: done")
             // Don't do anything for `.done`, the extension is supposed to just close at this point.
@@ -251,7 +243,7 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func log(attachmentState: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPickerState?) {
+    private func log(attachmentState: ExtensionViewModel.State.AttachmentState, itemState: ExtensionViewModel.State.ItemPickerState?) {
         switch attachmentState {
         case .decoding:
             DDLogInfo("State: decoding")
@@ -274,12 +266,12 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func update(attachmentState state: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPickerState?, hasItem: Bool, isSubmitting: Bool) {
+    private func update(attachmentState state: ExtensionViewModel.State.AttachmentState, itemState: ExtensionViewModel.State.ItemPickerState?, hasItem: Bool, isSubmitting: Bool) {
         self.updateNavigationItems(for: state, isSubmitting: isSubmitting)
         self.updateBottomProgress(for: state, itemState: itemState, hasItem: hasItem, isSubmitting: isSubmitting)
     }
 
-    private func update(item: ItemResponse?, attachment: (String, File)?, attachmentState: ExtensionStore.State.AttachmentState, defaultTitle title: String?) {
+    private func update(item: ItemResponse?, attachment: (String, File)?, attachmentState: ExtensionViewModel.State.AttachmentState, defaultTitle title: String?) {
         self.translationContainer.isHidden = false
 
         if item == nil && attachment == nil {
@@ -327,7 +319,7 @@ final class ShareViewController: UIViewController {
         self.itemIcon.image = UIImage(named: ItemTypes.iconName(for: type, contentType: nil))
     }
 
-    private func setAttachment(title: String, file: File, state: ExtensionStore.State.AttachmentState) {
+    private func setAttachment(title: String, file: File, state: ExtensionViewModel.State.AttachmentState) {
         self.attachmentTitleLabel.text = title
         let iconState = FileAttachmentView.State.stateFrom(type: .file(filename: "", contentType: file.mimeType, location: .local, linkType: .importedFile), progress: nil, error: state.error)
         self.attachmentIcon.set(state: iconState, style: .shareExtension)
@@ -356,7 +348,7 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func updateNavigationItems(for state: ExtensionStore.State.AttachmentState, isSubmitting: Bool) {
+    private func updateNavigationItems(for state: ExtensionViewModel.State.AttachmentState, isSubmitting: Bool) {
         if let error = state.error {
             switch error {
             case .quotaLimit, .webDavFailure, .apiFailure:
@@ -371,7 +363,7 @@ final class ShareViewController: UIViewController {
         self.navigationItem.rightBarButtonItem?.isEnabled = !isSubmitting && state.isSubmittable
     }
 
-    private func updateBottomProgress(for state: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPickerState?, hasItem: Bool, isSubmitting: Bool) {
+    private func updateBottomProgress(for state: ExtensionViewModel.State.AttachmentState, itemState: ExtensionViewModel.State.ItemPickerState?, hasItem: Bool, isSubmitting: Bool) {
         if let state = itemState, state.picked == nil {
             // Don't show progress bar when waiting for item pick
             self.bottomProgressContainer.isHidden = true
@@ -424,7 +416,7 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func show(error: ExtensionStore.State.AttachmentState.Error, hasItem: Bool) {
+    private func show(error: ExtensionViewModel.State.AttachmentState.Error, hasItem: Bool) {
         guard var message = self.errorMessage(for: error) else {
             self.failureLabel.isHidden = true
             return
@@ -452,7 +444,7 @@ final class ShareViewController: UIViewController {
         self.failureLabel.isHidden = false
     }
 
-    private func errorMessage(for error: ExtensionStore.State.AttachmentState.Error) -> String? {
+    private func errorMessage(for error: ExtensionViewModel.State.AttachmentState.Error) -> String? {
         switch error {
         case .webDavNotVerified:
             return L10n.Errors.Shareext.webdavNotVerified
@@ -503,7 +495,7 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func update(itemPicker state: ExtensionStore.State.ItemPickerState?, hasExpectedItem: Bool) {
+    private func update(itemPicker state: ExtensionViewModel.State.ItemPickerState?, hasExpectedItem: Bool) {
         guard let state = state, !hasExpectedItem else {
             self.itemPickerStackContainer.isHidden = true
             return
@@ -527,7 +519,7 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func update(collectionPicker state: ExtensionStore.State.CollectionPickerState, recents: [RecentData]) {
+    private func update(collectionPicker state: ExtensionViewModel.State.CollectionPickerState, recents: [RecentData]) {
         switch state {
         case .picked(let library, let collection):
             if self.collectionPickerLoadingContainer != nil {
@@ -562,7 +554,7 @@ final class ShareViewController: UIViewController {
             let selected = recent.collection?.identifier == collection?.identifier && recent.library.identifier == library.identifier
             row.setup(with: (recent.collection?.name ?? recent.library.name), isSelected: selected)
             row.tapAction = { [weak self] in
-                self?.store.setFromRecent(collection: recent.collection, library: recent.library)
+                self?.viewModel.setFromRecent(collection: recent.collection, library: recent.library)
             }
         }
     }
@@ -657,8 +649,22 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func setupControllers(with session: SessionData, apiClient: ApiClient, schemaController: SchemaController) {
-        let fileStorage = FileStorageController()
+    private func setupSession() -> SessionData? {
+        let sessionController = SessionController(secureStorage: KeychainSecureStorage(), defaults: Defaults.shared)
+        try? sessionController.initializeSession()
+        return sessionController.sessionData
+    }
+
+    private func setupApiClient(schemaController: SchemaController) -> ApiClient {
+        let configuration = URLSessionConfiguration.default
+        configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description, "Zotero-Schema-Version": schemaController.version]
+        configuration.sharedContainerIdentifier = AppGroup.identifier
+        configuration.timeoutIntervalForRequest = ApiConstants.requestTimeout
+        configuration.timeoutIntervalForResource = ApiConstants.resourceTimeout
+        return ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
+    }
+
+    private func setupControllers(with session: SessionData, apiClient: ApiClient, fileStorage: FileStorage, schemaController: SchemaController) {
         let dbUrl = Files.dbFile(for: session.userId).createUrl()
         let dbStorage = RealmDbStorage(config: Database.mainConfiguration(url: dbUrl, fileStorage: fileStorage))
         let configuration = Database.bundledDataConfiguration(fileStorage: fileStorage)
@@ -670,16 +676,18 @@ final class ShareViewController: UIViewController {
         apiClient.set(authToken: ("Bearer " + session.apiToken), for: .zotero)
         translatorsController.updateFromRepo(type: .shareExtension)
 
+        self.fileStorage = fileStorage
+        self.schemaController = schemaController
         self.dbStorage = dbStorage
         self.bundledDataStorage = bundledDataStorage
         self.translatorsController = translatorsController
         self.secureStorage = secureStorage
-        self.store = self.createStore(for: session.userId, dbStorage: dbStorage, apiClient: apiClient, schemaController: schemaController,
-                                      fileStorage: fileStorage, webDavController: webDavController, translatorsController: translatorsController)
+        self.viewModel = self.createViewModel(for: session.userId, dbStorage: dbStorage, apiClient: apiClient, schemaController: schemaController, fileStorage: fileStorage,
+                                              webDavController: webDavController, translatorsController: translatorsController)
     }
 
-    private func createStore(for userId: Int, dbStorage: DbStorage, apiClient: ApiClient, schemaController: SchemaController, fileStorage: FileStorage, webDavController: WebDavController,
-                             translatorsController: TranslatorsAndStylesController) -> ExtensionStore {
+    private func createViewModel(for userId: Int, dbStorage: DbStorage, apiClient: ApiClient, schemaController: SchemaController, fileStorage: FileStorage, webDavController: WebDavController,
+                             translatorsController: TranslatorsAndStylesController) -> ExtensionViewModel {
         let dateParser = DateParser()
         let requestProvider = BackgroundUploaderRequestProvider(fileStorage: fileStorage)
         let backgroundUploadContext = BackgroundUploaderContext()
@@ -687,27 +695,12 @@ final class ShareViewController: UIViewController {
         let backgroundProcessor = BackgroundUploadProcessor(apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, webDavController: webDavController)
         let backgroundTaskController = BackgroundTaskController()
         let backgroundUploadObserver = BackgroundUploadObserver(context: backgroundUploadContext, processor: backgroundProcessor, backgroundTaskController: backgroundTaskController)
-        let syncController = SyncController(userId: userId,
-                                            apiClient: apiClient,
-                                            dbStorage: dbStorage,
-                                            fileStorage: fileStorage,
-                                            schemaController: schemaController,
-                                            dateParser: dateParser,
-                                            backgroundUploaderContext: backgroundUploadContext,
-                                            webDavController: webDavController,
-                                            syncDelayIntervals: DelayIntervals.sync,
+        let syncController = SyncController(userId: userId, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, schemaController: schemaController, dateParser: dateParser,
+                                            backgroundUploaderContext: backgroundUploadContext, webDavController: webDavController, syncDelayIntervals: DelayIntervals.sync,
                                             conflictDelays: DelayIntervals.conflict)
 
-        return ExtensionStore(webView: self.webView,
-                              apiClient: apiClient,
-                              backgroundUploader: backgroundUploader,
-                              backgroundUploadObserver: backgroundUploadObserver,
-                              dbStorage: dbStorage,
-                              schemaController: schemaController,
-                              webDavController: webDavController,
-                              dateParser: dateParser,
-                              fileStorage: fileStorage,
-                              syncController: syncController,
-                              translatorsController: translatorsController)
+        return ExtensionViewModel(webView: self.webView, apiClient: apiClient, backgroundUploader: backgroundUploader, backgroundUploadObserver: backgroundUploadObserver, dbStorage: dbStorage,
+                                  schemaController: schemaController, webDavController: webDavController, dateParser: dateParser, fileStorage: fileStorage, syncController: syncController,
+                                  translatorsController: translatorsController)
     }
 }

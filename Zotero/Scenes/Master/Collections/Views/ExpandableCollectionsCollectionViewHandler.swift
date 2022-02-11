@@ -41,6 +41,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
 
         collectionView.collectionViewLayout = self.createCollectionViewLayout()
         self.collectionView.delegate = self
+        self.collectionView.dropDelegate = self
         self.dataSource = self.createDataSource(for: collectionView)
     }
 
@@ -114,7 +115,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
             let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
             let hasChildren = snapshot.snapshot(of: collection, includingParent: false).items.count > 0
 
-            var configuration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren, isBasic: false)
+            var configuration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren, accessories: [.chevron, .badge])
             configuration.isCollapsedProvider = { [weak self] in
                 guard let `self` = self else { return false }
                 return !self.dataSource.snapshot(for: self.collectionsSection).isExpanded(collection)

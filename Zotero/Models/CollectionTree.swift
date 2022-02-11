@@ -182,10 +182,32 @@ extension CollectionTree {
         }
     }
 
+    private func addMapped<T, R>(mapping: (R) -> T, nodes: [Node], to parent: T?, in snapshot: inout NSDiffableDataSourceSectionSnapshot<T>, allCollections: [CollectionIdentifier: R]) {
+        guard !nodes.isEmpty else { return }
+
+        let collections = nodes.map({ allCollections[$0.identifier] })
+        snapshot.append(collections.compactMap({ $0 }).map(mapping), to: parent)
+
+        for (idx, collection) in collections.enumerated() {
+            guard let collection = collection else { continue }
+            let node = nodes[idx]
+            self.addMapped(mapping: mapping, nodes: node.children, to: mapping(collection), in: &snapshot, allCollections: allCollections)
+        }
+    }
+
     func createSnapshot(collapseState: CollapseState = .basedOnDb) -> NSDiffableDataSourceSectionSnapshot<Collection> {
         var snapshot = NSDiffableDataSourceSectionSnapshot<Collection>()
         self.add(nodes: self.nodes, to: nil, in: &snapshot, allCollections: self.collections)
         self.apply(collapseState: collapseState, to: &snapshot)
+        return snapshot
+    }
+
+    func createMappedSnapshot<T>(mapping: (Collection) -> T, parent: T? = nil) -> NSDiffableDataSourceSectionSnapshot<T> {
+        var snapshot = NSDiffableDataSourceSectionSnapshot<T>()
+        if let parent = parent {
+            snapshot.append([parent], to: nil)
+        }
+        self.addMapped(mapping: mapping, nodes: self.nodes, to: parent, in: &snapshot, allCollections: self.collections)
         return snapshot
     }
 
@@ -222,6 +244,15 @@ extension CollectionTree {
         var snapshot = NSDiffableDataSourceSectionSnapshot<SearchableCollection>()
         self.add(nodes: self.nodes, to: nil, in: &snapshot, allCollections: self.filtered)
         snapshot.expand(snapshot.items)
+        return snapshot
+    }
+
+    func createMappedSearchSnapshot<T>(mapping: (SearchableCollection) -> T, parent: T? = nil) -> NSDiffableDataSourceSectionSnapshot<T> {
+        var snapshot = NSDiffableDataSourceSectionSnapshot<T>()
+        if let parent = parent {
+            snapshot.append([parent], to: nil)
+        }
+        self.addMapped(mapping: mapping, nodes: self.nodes, to: parent, in: &snapshot, allCollections: self.filtered)
         return snapshot
     }
 }

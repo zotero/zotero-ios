@@ -48,32 +48,24 @@ final class CollectionCellContentView: UIView {
         self.chevronButton.accessibilityLabel = collapsed ? L10n.Accessibility.Collections.expand : L10n.Accessibility.Collections.collapse
     }
 
-    func setBasic(collection: Collection, hasChildren: Bool) {
-        self.leftConstraint.constant = 8
-        self.toggleCollapsedAction = nil
-
-        self.setup(with: collection, hasChildren: hasChildren)
-        self.updateBadgeView(for: 0)
-        self.setupChevron(visible: false, isCollapsed: false)
-    }
-
-    func set(collection: Collection, hasChildren: Bool, isCollapsed: Bool, toggleCollapsed: (() -> Void)?) {
-        self.leftConstraint.constant = 32
+    func set(collection: Collection, hasChildren: Bool, isCollapsed: Bool, accessories: CollectionCell.Accessories, toggleCollapsed: (() -> Void)?) {
         self.toggleCollapsedAction = toggleCollapsed
+        self.leftConstraint.constant = (accessories.contains(.chevron) || accessories.contains(.chevronSpace)) ? 32 : 8
 
         self.setup(with: collection, hasChildren: hasChildren)
-        self.updateBadgeView(for: collection.itemCount)
-        self.setupChevron(visible: hasChildren, isCollapsed: isCollapsed)
+        self.updateBadgeView(for: accessories.contains(.badge) ? collection.itemCount : 0)
+        self.setupChevron(visible: (accessories.contains(.chevron) && hasChildren), isCollapsed: isCollapsed)
     }
 
-    func set(collection: Collection, hasChildren: Bool, isActive: Bool) {
-        self.leftConstraint.constant = 8
-        self.toggleCollapsedAction = nil
-        self.alpha = isActive ? 1 : 0.4
+    func set(libraryName: String, isCollapsed: Bool, accessories: CollectionCell.Accessories, toggleCollapsed: (() -> Void)?) {
+        self.toggleCollapsedAction = toggleCollapsed
+        self.leftConstraint.constant = (accessories.contains(.chevron) || accessories.contains(.chevronSpace)) ? 32 : 8
 
-        self.setup(with: collection, hasChildren: hasChildren)
-        self.updateBadgeView(for: collection.itemCount)
-        self.setupChevron(visible: false, isCollapsed: false)
+        self.iconImage.image = Asset.Images.Cells.library.image.withRenderingMode(.alwaysTemplate)
+        self.titleLabel.text = libraryName
+
+        self.updateBadgeView(for: 0)
+        self.setupChevron(visible: accessories.contains(.chevron), isCollapsed: isCollapsed)
     }
 
     func updateBadgeView(for itemCount: Int) {

@@ -9,10 +9,24 @@
 import UIKit
 
 final class CollectionCell: UICollectionViewListCell {
+    struct Accessories: OptionSet {
+        typealias RawValue = Int8
+
+        var rawValue: Int8
+
+        init(rawValue: Int8) {
+            self.rawValue = rawValue
+        }
+
+        static let badge = Accessories(rawValue: 1 << 0)
+        static let chevron = Accessories(rawValue: 1 << 1)
+        static let chevronSpace = Accessories(rawValue: 1 << 2)
+    }
+    
     struct ContentConfiguration: UIContentConfiguration {
         let collection: Collection
         let hasChildren: Bool
-        let isBasic: Bool
+        let accessories: Accessories
 
         var toggleCollapsed: (() -> Void)?
         var isCollapsedProvider: (() -> Bool)?
@@ -30,6 +44,7 @@ final class CollectionCell: UICollectionViewListCell {
         let collection: Collection
         let hasChildren: Bool
         let isActive: Bool
+        let accessories: Accessories
 
         func makeContentView() -> UIView & UIContentView {
             return ContentView(searchConfiguration: self)
@@ -40,12 +55,30 @@ final class CollectionCell: UICollectionViewListCell {
         }
     }
 
+    struct LibraryContentConfiguration: UIContentConfiguration {
+        let name: String
+        let accessories: Accessories
+
+        var toggleCollapsed: (() -> Void)?
+        var isCollapsedProvider: (() -> Bool)?
+
+        func makeContentView() -> UIView & UIContentView {
+            return ContentView(libraryConfiguration: self)
+        }
+
+        func updated(for state: UIConfigurationState) -> LibraryContentConfiguration {
+            return self
+        }
+    }
+
     final class ContentView: UIView, UIContentView {
         var configuration: UIContentConfiguration {
             didSet {
                 if let configuration = self.configuration as? ContentConfiguration {
                     self.apply(configuration: configuration)
                 } else if let configuration = self.configuration as? SearchContentConfiguration {
+                    self.apply(configuration: configuration)
+                } else if let configuration = self.configuration as? LibraryContentConfiguration {
                     self.apply(configuration: configuration)
                 }
             }
@@ -72,6 +105,11 @@ final class CollectionCell: UICollectionViewListCell {
             self.apply(configuration: searchConfiguration)
         }
 
+        convenience init(libraryConfiguration: LibraryContentConfiguration) {
+            self.init(configuration: libraryConfiguration)
+            self.apply(configuration: libraryConfiguration)
+        }
+
         required init?(coder: NSCoder) {
             fatalError()
         }
@@ -81,16 +119,18 @@ final class CollectionCell: UICollectionViewListCell {
         }
 
         private func apply(configuration: ContentConfiguration) {
-            if configuration.isBasic {
-                self.contentView?.setBasic(collection: configuration.collection, hasChildren: configuration.hasChildren)
-            } else {
-                let isCollapsed = configuration.isCollapsedProvider?() ?? false
-                self.contentView?.set(collection: configuration.collection, hasChildren: configuration.hasChildren, isCollapsed: isCollapsed, toggleCollapsed: configuration.toggleCollapsed)
-            }
+            let isCollapsed = configuration.isCollapsedProvider?() ?? false
+            self.contentView?.set(collection: configuration.collection, hasChildren: configuration.hasChildren, isCollapsed: isCollapsed, accessories: configuration.accessories, toggleCollapsed: configuration.toggleCollapsed)
         }
 
         private func apply(configuration: SearchContentConfiguration) {
-            self.contentView?.set(collection: configuration.collection, hasChildren: configuration.hasChildren, isActive: configuration.isActive)
+            self.contentView?.set(collection: configuration.collection, hasChildren: configuration.hasChildren, isCollapsed: false, accessories: configuration.accessories, toggleCollapsed: nil)
+            self.contentView?.alpha = configuration.isActive ? 1 : 0.4
+        }
+
+        private func apply(configuration: LibraryContentConfiguration) {
+            let isCollapsed = configuration.isCollapsedProvider?() ?? false
+            self.contentView?.set(libraryName: configuration.name, isCollapsed: isCollapsed, accessories: configuration.accessories, toggleCollapsed: configuration.toggleCollapsed)
         }
 
         private func setup(view: CollectionCellContentView) {

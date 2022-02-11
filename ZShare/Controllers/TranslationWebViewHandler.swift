@@ -78,7 +78,7 @@ final class TranslationWebViewHandler: NSObject {
 
     // MARK: - Actions
 
-    func loadWebData(from url: URL) -> Single<ExtensionStore.State.RawAttachment> {
+    func loadWebData(from url: URL) -> Single<ExtensionViewModel.State.RawAttachment> {
         guard let webView = self.webView else { return Single.error(Error.webViewMissing) }
 
         DDLogInfo("WebViewHandler: load web data")
@@ -93,7 +93,7 @@ final class TranslationWebViewHandler: NSObject {
                        DDLogInfo("WebViewHandler: call data extraction js")
                        return webView.call(javascript: script)
                    })
-                   .flatMap({ data -> Single<ExtensionStore.State.RawAttachment> in
+                   .flatMap({ data -> Single<ExtensionViewModel.State.RawAttachment> in
                        guard let payload = data as? [String: Any],
                              let isFile = payload["isFile"] as? Bool else {
                            DDLogError("WebViewHandler: extracted data missing response")

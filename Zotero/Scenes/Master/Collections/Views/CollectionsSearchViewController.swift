@@ -63,7 +63,7 @@ final class CollectionsSearchViewController: UIViewController {
 
             let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
             let hasChildren = snapshot.snapshot(of: searchable, includingParent: false).items.count > 0
-            let configuration = CollectionCell.SearchContentConfiguration(collection: searchable.collection, hasChildren: hasChildren, isActive: searchable.isActive)
+            let configuration = CollectionCell.SearchContentConfiguration(collection: searchable.collection, hasChildren: hasChildren, isActive: searchable.isActive, accessories: [.badge])
 
             cell.contentConfiguration = configuration
             cell.backgroundConfiguration = .listPlainCell()

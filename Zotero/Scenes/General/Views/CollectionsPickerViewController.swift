@@ -159,7 +159,7 @@ class CollectionsPickerViewController: UICollectionViewController {
 
             let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
             let hasChildren = snapshot.snapshot(of: collection, includingParent: false).items.count > 0
-            let configuration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren, isBasic: true)
+            let configuration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren, accessories: [])
 
             cell.contentConfiguration = configuration
             cell.backgroundConfiguration = .listPlainCell()

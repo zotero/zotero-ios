@@ -42,8 +42,13 @@ final class CollectionsViewController: UICollectionViewController {
         if self.viewModel.state.library.metadataEditable {
             self.setupAddNavbarItem()
         }
+
         self.collectionViewHandler = ExpandableCollectionsCollectionViewHandler(collectionView: self.collectionView, dragDropController: self.dragDropController, viewModel: self.viewModel, splitDelegate: self.coordinatorDelegate)
         self.collectionViewHandler.update(with: self.viewModel.state.collectionTree, animated: false)
+
+        if self.coordinatorDelegate?.isSplit == true, let collection = self.viewModel.state.collectionTree.collection(for: self.viewModel.state.selectedCollectionId) {
+            self.coordinatorDelegate?.showItems(for: collection, in: self.viewModel.state.library, isInitial: true)
+        }
 
         self.viewModel.stateObservable
                       .observe(on: MainScheduler.instance)
@@ -53,12 +58,11 @@ final class CollectionsViewController: UICollectionViewController {
                       .disposed(by: self.disposeBag)
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
 
-        self.selectIfNeeded(collectionId: self.viewModel.state.selectedCollectionId, scrollToPosition: true)
-        if self.coordinatorDelegate?.isSplit == true, let collection = self.viewModel.state.collectionTree.collection(for: self.viewModel.state.selectedCollectionId) {
-            self.coordinatorDelegate?.showItems(for: collection, in: self.viewModel.state.library, isInitial: true)
+        if !self.collectionView.visibleCells.isEmpty && (self.collectionView.indexPathsForSelectedItems ?? []).isEmpty {
+            self.selectIfNeeded(collectionId: self.viewModel.state.selectedCollectionId, scrollToPosition: true)
         }
     }
 
@@ -75,8 +79,8 @@ final class CollectionsViewController: UICollectionViewController {
         }
 
         if state.changes.contains(.selection), let collection = state.collectionTree.collection(for: state.selectedCollectionId) {
-            self.coordinatorDelegate?.showItems(for: collection, in: state.library, isInitial: false)
             self.selectIfNeeded(collectionId: state.selectedCollectionId, scrollToPosition: false)
+            self.coordinatorDelegate?.showItems(for: collection, in: state.library, isInitial: false)
         }
 
         if let data = state.editingData {

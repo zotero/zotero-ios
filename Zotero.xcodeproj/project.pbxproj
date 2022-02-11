@@ -432,6 +432,15 @@
 		B339459126DE6C2A00E59A02 /* AttachmentFileDeletedNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = B339459026DE6C2900E59A02 /* AttachmentFileDeletedNotification.swift */; };
 		B33979D12493ACA800A923C3 /* ImagePreviewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33979CF2493ACA800A923C3 /* ImagePreviewViewController.swift */; };
 		B33AB488246D315F00490DDE /* CheckboxButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33AB487246D315F00490DDE /* CheckboxButton.swift */; };
+		B33E8A4327B6768D00CBC7DE /* CollectionTreeBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C8DD8127B502960084E1AD /* CollectionTreeBuilder.swift */; };
+		B33E8A4427B6769A00CBC7DE /* CollectionTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3325F6E27B41D69007C7137 /* CollectionTree.swift */; };
+		B33E8A4627B69FFE00CBC7DE /* AllCollectionPickerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33E8A4527B69FFE00CBC7DE /* AllCollectionPickerState.swift */; };
+		B33E8A4827B6A07100CBC7DE /* AllCollectionPickerAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33E8A4727B6A07100CBC7DE /* AllCollectionPickerAction.swift */; };
+		B33E8A4A27B6A1D000CBC7DE /* AllCollectionPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33E8A4927B6A1D000CBC7DE /* AllCollectionPickerViewController.swift */; };
+		B33E8A4B27B6A39100CBC7DE /* CollectionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F11241A61C700760E20 /* CollectionCell.swift */; };
+		B33E8A4C27B6A7BE00CBC7DE /* SearchableCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36181EB24C96B0500B30D56 /* SearchableCollection.swift */; };
+		B33E8A4D27B6AAE600CBC7DE /* CollectionCellContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34673CE27B14F0D00444C96 /* CollectionCellContentView.swift */; };
+		B33E8A4E27B6AAF000CBC7DE /* CollectionCellContentView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B37D8E6324DC21D300F526C5 /* CollectionCellContentView.xib */; };
 		B3401D572567D8F700BB8D6E /* AnnotationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3401D552567D8F700BB8D6E /* AnnotationViewController.swift */; };
 		B3401D5B2567DAAE00BB8D6E /* AnnotationPopoverCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3401D5A2567DAAE00BB8D6E /* AnnotationPopoverCoordinator.swift */; };
 		B3401D612568047D00BB8D6E /* AnnotationViewTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3401D602568047D00BB8D6E /* AnnotationViewTextView.swift */; };
@@ -754,9 +763,8 @@
 		B3AAABD82502A40900031065 /* searchresponse_knownfields.json in Resources */ = {isa = PBXBuildFile; fileRef = B3AAABD62502A40900031065 /* searchresponse_knownfields.json */; };
 		B3AAD70D23CE16010042C4AB /* CreateBackendItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AAD70C23CE16010042C4AB /* CreateBackendItemDbRequest.swift */; };
 		B3AB38A5238EC02D008A1ABB /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A0238EC02D008A1ABB /* ShareViewController.swift */; };
-		B3AB38A6238EC02D008A1ABB /* AllCollectionPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A2238EC02D008A1ABB /* AllCollectionPickerView.swift */; };
-		B3AB38A7238EC02D008A1ABB /* ExtensionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A4238EC02D008A1ABB /* ExtensionStore.swift */; };
-		B3AB38A9238EC060008A1ABB /* AllCollectionPickerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A8238EC060008A1ABB /* AllCollectionPickerStore.swift */; };
+		B3AB38A7238EC02D008A1ABB /* ExtensionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A4238EC02D008A1ABB /* ExtensionViewModel.swift */; };
+		B3AB38A9238EC060008A1ABB /* AllCollectionPickerActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A8238EC060008A1ABB /* AllCollectionPickerActionHandler.swift */; };
 		B3AB38B8238ED023008A1ABB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B3AB38B6238ED023008A1ABB /* Assets.xcassets */; };
 		B3AB38B9238ED023008A1ABB /* ExtensionScript.js in Resources */ = {isa = PBXBuildFile; fileRef = B3AB38B7238ED023008A1ABB /* ExtensionScript.js */; };
 		B3B1C5842664E23A00883597 /* ReadItemsForUploadDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1C5832664E23A00883597 /* ReadItemsForUploadDbRequest.swift */; };
@@ -1297,6 +1305,9 @@
 		B339459026DE6C2900E59A02 /* AttachmentFileDeletedNotification.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AttachmentFileDeletedNotification.swift; sourceTree = "<group>"; };
 		B33979CF2493ACA800A923C3 /* ImagePreviewViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePreviewViewController.swift; sourceTree = "<group>"; };
 		B33AB487246D315F00490DDE /* CheckboxButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckboxButton.swift; sourceTree = "<group>"; };
+		B33E8A4527B69FFE00CBC7DE /* AllCollectionPickerState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllCollectionPickerState.swift; sourceTree = "<group>"; };
+		B33E8A4727B6A07100CBC7DE /* AllCollectionPickerAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllCollectionPickerAction.swift; sourceTree = "<group>"; };
+		B33E8A4927B6A1D000CBC7DE /* AllCollectionPickerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AllCollectionPickerViewController.swift; sourceTree = "<group>"; };
 		B3401D552567D8F700BB8D6E /* AnnotationViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationViewController.swift; sourceTree = "<group>"; };
 		B3401D5A2567DAAE00BB8D6E /* AnnotationPopoverCoordinator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationPopoverCoordinator.swift; sourceTree = "<group>"; };
 		B3401D602568047D00BB8D6E /* AnnotationViewTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewTextView.swift; sourceTree = "<group>"; };
@@ -1540,9 +1551,8 @@
 		B3AAABD62502A40900031065 /* searchresponse_knownfields.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = searchresponse_knownfields.json; sourceTree = "<group>"; };
 		B3AAD70C23CE16010042C4AB /* CreateBackendItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateBackendItemDbRequest.swift; sourceTree = "<group>"; };
 		B3AB38A0238EC02D008A1ABB /* ShareViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
-		B3AB38A2238EC02D008A1ABB /* AllCollectionPickerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AllCollectionPickerView.swift; sourceTree = "<group>"; };
-		B3AB38A4238EC02D008A1ABB /* ExtensionStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExtensionStore.swift; sourceTree = "<group>"; };
-		B3AB38A8238EC060008A1ABB /* AllCollectionPickerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllCollectionPickerStore.swift; sourceTree = "<group>"; };
+		B3AB38A4238EC02D008A1ABB /* ExtensionViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExtensionViewModel.swift; sourceTree = "<group>"; };
+		B3AB38A8238EC060008A1ABB /* AllCollectionPickerActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllCollectionPickerActionHandler.swift; sourceTree = "<group>"; };
 		B3AB38B6238ED023008A1ABB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B3AB38B7238ED023008A1ABB /* ExtensionScript.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = ExtensionScript.js; sourceTree = "<group>"; };
 		B3B1C5832664E23A00883597 /* ReadItemsForUploadDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadItemsForUploadDbRequest.swift; sourceTree = "<group>"; };
@@ -2311,7 +2321,7 @@
 				B3A27ACB25BEE8FA00DE0BB2 /* Controllers */,
 				B33791D523BF7B2900919210 /* DbRequests */,
 				B3A05E9E2614983E0077CCCC /* Models */,
-				B3AB38A3238EC02D008A1ABB /* Stores */,
+				B3AB38A3238EC02D008A1ABB /* ViewModels */,
 				B3AB389F238EC02D008A1ABB /* View Controllers */,
 				B3AB38A1238EC02D008A1ABB /* Views */,
 				B311B3232386A39800BCF592 /* Info.plist */,
@@ -2908,6 +2918,8 @@
 		B3A05E9E2614983E0077CCCC /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				B33E8A4727B6A07100CBC7DE /* AllCollectionPickerAction.swift */,
+				B33E8A4527B69FFE00CBC7DE /* AllCollectionPickerState.swift */,
 				B3A05E9F261498530077CCCC /* RecentData.swift */,
 			);
 			path = Models;
@@ -2926,6 +2938,7 @@
 		B3AB389F238EC02D008A1ABB /* View Controllers */ = {
 			isa = PBXGroup;
 			children = (
+				B33E8A4927B6A1D000CBC7DE /* AllCollectionPickerViewController.swift */,
 				B3748D1F26566F4800ED05F8 /* ContainerViewController.swift */,
 				B3AB38A0238EC02D008A1ABB /* ShareViewController.swift */,
 			);
@@ -2935,7 +2948,6 @@
 		B3AB38A1238EC02D008A1ABB /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				B3AB38A2238EC02D008A1ABB /* AllCollectionPickerView.swift */,
 				B3B6759426205A3C003231A5 /* CollectionRowView.swift */,
 				B3B6759A26205A48003231A5 /* CollectionRowView.xib */,
 				B3027C1D23BDB2B8007F5B26 /* ItemPickerView.swift */,
@@ -2946,13 +2958,13 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
-		B3AB38A3238EC02D008A1ABB /* Stores */ = {
+		B3AB38A3238EC02D008A1ABB /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
-				B3AB38A8238EC060008A1ABB /* AllCollectionPickerStore.swift */,
-				B3AB38A4238EC02D008A1ABB /* ExtensionStore.swift */,
+				B3AB38A8238EC060008A1ABB /* AllCollectionPickerActionHandler.swift */,
+				B3AB38A4238EC02D008A1ABB /* ExtensionViewModel.swift */,
 			);
-			path = Stores;
+			path = ViewModels;
 			sourceTree = "<group>";
 		};
 		B3AB38B5238ED023008A1ABB /* Assets */ = {
@@ -3737,6 +3749,7 @@
 				B36459DE2644119100A0C2C0 /* TagPickerViewController.xib in Resources */,
 				B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */,
 				B36459E926441A2000A0C2C0 /* TagRow.xib in Resources */,
+				B33E8A4E27B6AAF000CBC7DE /* CollectionCellContentView.xib in Resources */,
 				B355B8FF239951E800E837B9 /* translation in Resources */,
 				B32AB57E25ADCEED003CF0C6 /* Bundled in Resources */,
 				B3AB38B9238ED023008A1ABB /* ExtensionScript.js in Resources */,
@@ -4560,8 +4573,9 @@
 				B30566F923FC085A003304F2 /* InitializeCustomLibrariesDbRequest.swift in Sources */,
 				B305671B23FC08DC003304F2 /* StoreSearchesDbRequest.swift in Sources */,
 				B30566FE23FC0867003304F2 /* MarkGroupAsLocalOnlyDbRequest.swift in Sources */,
-				B3AB38A9238EC060008A1ABB /* AllCollectionPickerStore.swift in Sources */,
+				B3AB38A9238EC060008A1ABB /* AllCollectionPickerActionHandler.swift in Sources */,
 				B305673923FC0936003304F2 /* SyncProgressHandler.swift in Sources */,
+				B33E8A4427B6769A00CBC7DE /* CollectionTree.swift in Sources */,
 				B305672323FC08F6003304F2 /* FileStorage.swift in Sources */,
 				B305670B23FC08B8003304F2 /* ReadDeletedObjectsDbRequest.swift in Sources */,
 				B305673823FC0933003304F2 /* SyncController.swift in Sources */,
@@ -4578,6 +4592,7 @@
 				B37D8E6A24DC2BF300F526C5 /* CollectionRow.swift in Sources */,
 				B3868541270DC3AA0068A022 /* WebDavScheme.swift in Sources */,
 				B331F9AF2653CEA00099F6A6 /* ReadGroupDbRequest.swift in Sources */,
+				B33E8A4B27B6A39100CBC7DE /* CollectionCell.swift in Sources */,
 				B3DDC0CC2667825E00B2DFD1 /* RegularExpression+Extensions.swift in Sources */,
 				B30566EB23FC082A003304F2 /* ObjectsRequest.swift in Sources */,
 				B30566FB23FC085E003304F2 /* MarkAttachmentUploadedDbRequest.swift in Sources */,
@@ -4599,7 +4614,7 @@
 				B30566E623FC081F003304F2 /* SettingsRequest.swift in Sources */,
 				B305670C23FC08BA003304F2 /* ReadItemDbRequest.swift in Sources */,
 				B305670923FC08B3003304F2 /* ReadCollectionDbRequest.swift in Sources */,
-				B3AB38A7238EC02D008A1ABB /* ExtensionStore.swift in Sources */,
+				B3AB38A7238EC02D008A1ABB /* ExtensionViewModel.swift in Sources */,
 				B3501F5425139B40007961DB /* Rounding+Extensions.swift in Sources */,
 				B34341A1260A0A4800093E63 /* CollectionIdentifier.swift in Sources */,
 				B3868538270D92DA0068A022 /* RawDataEncoding.swift in Sources */,
@@ -4612,6 +4627,7 @@
 				B305670F23FC08C1003304F2 /* ReadSearchDbRequest.swift in Sources */,
 				B325DBB024375D9E00EFF0F5 /* Conflict.swift in Sources */,
 				B305672F23FC091F003304F2 /* StoreVersionSyncAction.swift in Sources */,
+				B33E8A4D27B6AAE600CBC7DE /* CollectionCellContentView.swift in Sources */,
 				B3D58D7025EE43E700D8FA31 /* CircularProgressView.swift in Sources */,
 				B36459E3264411F300A0C2C0 /* TagColorGenerator.swift in Sources */,
 				B337A5AF244F362D00AFD13D /* Localizable.swift in Sources */,
@@ -4650,14 +4666,18 @@
 				B30566ED23FC082F003304F2 /* SchemaRequest.swift in Sources */,
 				B30566DA23FC07E0003304F2 /* Library.swift in Sources */,
 				B3E7C151278348F200076131 /* BackgroundUploadProcessor.swift in Sources */,
+				B33E8A4627B69FFE00CBC7DE /* AllCollectionPickerState.swift in Sources */,
+				B33E8A4A27B6A1D000CBC7DE /* AllCollectionPickerViewController.swift in Sources */,
 				B371494F25D585EF00D6391E /* MarkObjectsAsChangedByUser.swift in Sources */,
 				B3593F192668E74800FA4BB2 /* Style.swift in Sources */,
 				B3CF8830266DFFAF009CFC20 /* ReadStylesDbRequest.swift in Sources */,
 				B3FC7435272195D600F55531 /* WebDavDeleteRequest.swift in Sources */,
+				B33E8A4327B6768D00CBC7DE /* CollectionTreeBuilder.swift in Sources */,
 				B32EBFC5276A89360003897E /* URLSessionCreator.swift in Sources */,
 				B34A73012670CC3300A7B186 /* SyncRepoResponseDbRequest.swift in Sources */,
 				B305677623FC0BE0003304F2 /* CreatorSummaryFormatter.swift in Sources */,
 				B38CD21F241128FE004299EA /* KeysResponseProcessor.swift in Sources */,
+				B33E8A4C27B6A7BE00CBC7DE /* SearchableCollection.swift in Sources */,
 				B3AB38A5238EC02D008A1ABB /* ShareViewController.swift in Sources */,
 				B305670623FC08AB003304F2 /* ReadUserChangedObjectsDbRequest.swift in Sources */,
 				B36459E52644121300A0C2C0 /* UIColor+Custom.swift in Sources */,
@@ -4683,6 +4703,7 @@
 				B300B33A24292B7300C1FE1E /* RTranslatorMetadata.swift in Sources */,
 				B305672B23FC0916003304F2 /* MarkChangesAsResolvedSyncAction.swift in Sources */,
 				B305673323FC0927003304F2 /* SyncGroupVersionsSyncAction.swift in Sources */,
+				B33E8A4827B6A07100CBC7DE /* AllCollectionPickerAction.swift in Sources */,
 				B310091B272C0110003FC743 /* CreateWebDavDeletionsDbRequest.swift in Sources */,
 				B3D58D5B25ED861500D8FA31 /* DebugLogUploadRequest.swift in Sources */,
 				B3FC743A272195EA00F55531 /* WebDavTestWriteRequest.swift in Sources */,
@@ -4716,7 +4737,6 @@
 				B30566F823FC0858003304F2 /* DeleteObjectsDbRequest.swift in Sources */,
 				B30566E523FC081D003304F2 /* KeyRequest.swift in Sources */,
 				B305670123FC089F003304F2 /* MarkObjectsAsSyncedDbRequest.swift in Sources */,
-				B3AB38A6238EC02D008A1ABB /* AllCollectionPickerView.swift in Sources */,
 				B36459E726441A1800A0C2C0 /* TagRow.swift in Sources */,
 				B3FC74322721857C00F55531 /* WebDavController.swift in Sources */,
 				B3B78C47266FB11D00E91D02 /* WKWebView+Extensions.swift in Sources */,
