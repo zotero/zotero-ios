@@ -11,6 +11,7 @@ import UIKit
 final class CollectionTree {
     struct Node: Hashable {
         let identifier: CollectionIdentifier
+        let parent: CollectionIdentifier?
         let children: [Node]
     }
 
@@ -43,13 +44,13 @@ extension CollectionTree {
     func append(collection: Collection, collapsed: Bool = true) {
         self.collections[collection.identifier] = collection
         self.collapsed[collection.identifier] = collapsed
-        self.nodes.append(Node(identifier: collection.identifier, children: []))
+        self.nodes.append(Node(identifier: collection.identifier, parent: nil, children: []))
     }
 
     func insert(collection: Collection, collapsed: Bool = true, at index: Int) {
         self.collections[collection.identifier] = collection
         self.collapsed[collection.identifier] = collapsed
-        self.nodes.insert(Node(identifier: collection.identifier, children: []), at: index)
+        self.nodes.insert(Node(identifier: collection.identifier, parent: nil, children: []), at: index)
     }
 }
 
@@ -195,10 +196,10 @@ extension CollectionTree {
         }
     }
 
-    func createSnapshot(collapseState: CollapseState = .basedOnDb) -> NSDiffableDataSourceSectionSnapshot<Collection> {
+    func createSnapshot(selectedId: CollectionIdentifier? = nil, collapseState: CollapseState = .basedOnDb) -> NSDiffableDataSourceSectionSnapshot<Collection> {
         var snapshot = NSDiffableDataSourceSectionSnapshot<Collection>()
         self.add(nodes: self.nodes, to: nil, in: &snapshot, allCollections: self.collections)
-        self.apply(collapseState: collapseState, to: &snapshot)
+        self.apply(selectedId: selectedId, collapseState: collapseState, to: &snapshot)
         return snapshot
     }
 
@@ -211,17 +212,35 @@ extension CollectionTree {
         return snapshot
     }
 
-    private func apply(collapseState: CollapseState, to snapshot: inout NSDiffableDataSourceSectionSnapshot<Collection>) {
+    private func apply(selectedId: CollectionIdentifier?, collapseState: CollapseState, to snapshot: inout NSDiffableDataSourceSectionSnapshot<Collection>) {
+        let expandParents: (CollectionIdentifier , inout NSDiffableDataSourceSectionSnapshot<Collection>) -> Void = { identifier, snapshot in
+            let parents = self.parentChain(for: identifier)
+            if !parents.isEmpty {
+                snapshot.expand(parents)
+            }
+        }
+
         switch collapseState {
         case .expandedAll:
             snapshot.expand(snapshot.items)
         case .collapsedAll:
             snapshot.collapse(snapshot.items)
+            if let identifier = selectedId {
+                expandParents(identifier, &snapshot)
+            }
         case .basedOnDb:
             let (collapsed, expanded) = self.separateExpandedFromCollapsed(collections: snapshot.items, collapsedState: self.collapsed)
             snapshot.collapse(collapsed)
             snapshot.expand(expanded)
+            if let identifier = selectedId {
+                expandParents(identifier, &snapshot)
+            }
         }
+    }
+
+    private func parentChain(for identifier: CollectionIdentifier, parents: [Collection] = []) -> [Collection] {
+        guard let node = self.firstNode(with: identifier, in: self.nodes), let parentId = node.parent, let parentCollection = self.collections[parentId] else { return parents }
+        return self.parentChain(for: parentId, parents: [parentCollection] + parents)
     }
 
     private func separateExpandedFromCollapsed(collections: [Collection], collapsedState: [CollectionIdentifier: Bool]) -> (collapsed: [Collection], expanded: [Collection]) {

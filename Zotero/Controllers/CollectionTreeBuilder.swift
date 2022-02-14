@@ -38,7 +38,7 @@ struct CollectionTreeBuilder {
             collapsedState[collection.identifier] = rCollection.collapsed
 
             let children = self.collections(for: collection.identifier, from: rCollections, libraryId: libraryId, allCollections: &allCollections, collapsedState: &collapsedState)
-            let node = CollectionTree.Node(identifier: collection.identifier, children: children)
+            let node = CollectionTree.Node(identifier: collection.identifier, parent: parent, children: children)
             let insertionIndex = self.insertionIndex(for: node, in: nodes, collections: allCollections)
             nodes.insert(node, at: insertionIndex)
         }

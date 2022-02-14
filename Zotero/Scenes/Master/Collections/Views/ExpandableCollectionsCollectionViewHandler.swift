@@ -47,7 +47,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
 
     // MARK: - Scrolling
 
-    func selectIfNeeded(collectionId: CollectionIdentifier, scrollToPosition: Bool) {
+    func selectIfNeeded(collectionId: CollectionIdentifier, tree: CollectionTree, scrollToPosition: Bool) {
         let selectedIndexPaths = self.collectionView.indexPathsForSelectedItems ?? []
 
         if selectedIndexPaths.count > 1 {
@@ -55,6 +55,14 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
             for indexPath in selectedIndexPaths {
                 self.collectionView.deselectItem(at: indexPath, animated: false)
             }
+        }
+
+        if self.dataSource.snapshot(for: self.collectionsSection).visibleItems.first(where: { $0.identifier == collectionId }) == nil {
+            // Selection is collapsed, we need to expand and select it then
+            self.update(with: tree, selectedId: collectionId, animated: false) { [weak self] in
+                self?.selectIfNeeded(collectionId: collectionId, tree: tree, scrollToPosition: scrollToPosition)
+            }
+            return
         }
 
         if let index = self.dataSource.snapshot(for: self.collectionsSection).visibleItems.firstIndex(where: { $0.identifier == collectionId }) {
@@ -68,8 +76,8 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
 
     // MARK: - Data Source
 
-    func update(with tree: CollectionTree, animated: Bool) {
-        self.dataSource.apply(tree.createSnapshot(), to: 0, animatingDifferences: animated)
+    func update(with tree: CollectionTree, selectedId: CollectionIdentifier, animated: Bool, completion: (() -> Void)? = nil) {
+        self.dataSource.apply(tree.createSnapshot(selectedId: selectedId), to: 0, animatingDifferences: animated, completion: completion)
     }
 
     private func createContextMenu(for collection: Collection) -> UIMenu? {

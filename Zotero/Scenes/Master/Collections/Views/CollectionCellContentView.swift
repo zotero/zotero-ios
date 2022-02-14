@@ -41,7 +41,7 @@ final class CollectionCellContentView: UIView {
         self.toggleCollapsedAction?()
     }
 
-    func set(collapsed: Bool) {
+    private func set(collapsed: Bool) {
         let configuration = UIImage.SymbolConfiguration(scale: .small)
         let name = collapsed ? "chevron.right" : "chevron.down"
         self.chevronButton.setImage(UIImage(systemName: name, withConfiguration: configuration), for: .normal)

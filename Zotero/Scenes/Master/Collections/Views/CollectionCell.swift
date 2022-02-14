@@ -114,10 +114,6 @@ final class CollectionCell: UICollectionViewListCell {
             fatalError()
         }
 
-        fileprivate func set(collapsed: Bool) {
-            self.contentView?.set(collapsed: collapsed)
-        }
-
         private func apply(configuration: ContentConfiguration) {
             let isCollapsed = configuration.isCollapsedProvider?() ?? false
             self.contentView?.set(collection: configuration.collection, hasChildren: configuration.hasChildren, isCollapsed: isCollapsed, accessories: configuration.accessories, toggleCollapsed: configuration.toggleCollapsed)
@@ -157,9 +153,5 @@ final class CollectionCell: UICollectionViewListCell {
             return configuration.collection
         }
         return nil
-    }
-
-    func set(collapsed: Bool) {
-        (self.contentView as? ContentView)?.set(collapsed: collapsed)
     }
 }

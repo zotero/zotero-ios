@@ -44,7 +44,7 @@ final class CollectionsViewController: UICollectionViewController {
         }
 
         self.collectionViewHandler = ExpandableCollectionsCollectionViewHandler(collectionView: self.collectionView, dragDropController: self.dragDropController, viewModel: self.viewModel, splitDelegate: self.coordinatorDelegate)
-        self.collectionViewHandler.update(with: self.viewModel.state.collectionTree, animated: false)
+        self.collectionViewHandler.update(with: self.viewModel.state.collectionTree, selectedId: self.viewModel.state.selectedCollectionId, animated: false)
 
         if self.coordinatorDelegate?.isSplit == true, let collection = self.viewModel.state.collectionTree.collection(for: self.viewModel.state.selectedCollectionId) {
             self.coordinatorDelegate?.showItems(for: collection, in: self.viewModel.state.library, isInitial: true)
@@ -62,25 +62,27 @@ final class CollectionsViewController: UICollectionViewController {
         super.viewDidLayoutSubviews()
 
         if !self.collectionView.visibleCells.isEmpty && (self.collectionView.indexPathsForSelectedItems ?? []).isEmpty {
-            self.selectIfNeeded(collectionId: self.viewModel.state.selectedCollectionId, scrollToPosition: true)
+            self.selectIfNeeded(collectionId: self.viewModel.state.selectedCollectionId, tree: self.viewModel.state.collectionTree, scrollToPosition: true)
         }
     }
 
     // MARK: - UI state
 
     private func update(to state: CollectionsState) {
-        if state.changes.contains(.results) {
-            self.collectionViewHandler.update(with: state.collectionTree, animated: true)
-            self.selectIfNeeded(collectionId: state.selectedCollectionId, scrollToPosition: false)
-        } else if state.changes.contains(.allItemCount) || state.changes.contains(.trashItemCount) {
-            self.collectionViewHandler.update(with: state.collectionTree, animated: false)
-        } else if state.changes.contains(.collapsedState) {
-            self.collectionViewHandler.update(with: state.collectionTree, animated: true)
+        let (requiresUpdate, animatedUpdate) = self.requiresDataSourceUpdate(state: state)
+
+        if requiresUpdate {
+            self.collectionViewHandler.update(with: state.collectionTree, selectedId: state.selectedCollectionId, animated: animatedUpdate) { [weak self] in
+                self?.selectIfNeeded(collectionId: state.selectedCollectionId, tree: state.collectionTree, scrollToPosition: false)
+            }
         }
 
         if state.changes.contains(.selection), let collection = state.collectionTree.collection(for: state.selectedCollectionId) {
-            self.selectIfNeeded(collectionId: state.selectedCollectionId, scrollToPosition: false)
             self.coordinatorDelegate?.showItems(for: collection, in: state.library, isInitial: false)
+
+            if !requiresUpdate {
+                self.selectIfNeeded(collectionId: state.selectedCollectionId, tree: state.collectionTree, scrollToPosition: false)
+            }
         }
 
         if let data = state.editingData {
@@ -97,21 +99,26 @@ final class CollectionsViewController: UICollectionViewController {
         }
     }
 
+    private func requiresDataSourceUpdate(state: CollectionsState) -> (requires: Bool, animated: Bool) {
+        if state.changes.contains(.results) || state.changes.contains(.collapsedState) {
+            return (true, true)
+        }
+        if state.changes.contains(.allItemCount) || state.changes.contains(.trashItemCount) {
+            return (true, false)
+        }
+        return (false, false)
+    }
+
     // MARK: - Actions
 
-    private func selectIfNeeded(collectionId: CollectionIdentifier, scrollToPosition: Bool) {
+    private func selectIfNeeded(collectionId: CollectionIdentifier, tree: CollectionTree, scrollToPosition: Bool) {
         // Selection is disabled in compact mode (when UISplitViewController is a single column instead of master + detail).
         guard self.coordinatorDelegate?.isSplit == true else { return }
-        self.collectionViewHandler.selectIfNeeded(collectionId: collectionId, scrollToPosition: scrollToPosition)
+        self.collectionViewHandler.selectIfNeeded(collectionId: collectionId, tree: tree, scrollToPosition: scrollToPosition)
     }
 
     private func select(searchResult: Collection) {
         let isSplit = self.coordinatorDelegate?.isSplit ?? false
-
-        if isSplit {
-            self.selectIfNeeded(collectionId: searchResult.identifier, scrollToPosition: false)
-        }
-
         // We don't need to always show it on iPad, since the currently selected collection is visible. So we show only a new one. On iPhone
         // on the other hand we see only the collection list, so we always need to open the item list for selected collection.
         guard !isSplit ? true : searchResult.identifier != self.viewModel.state.selectedCollectionId else { return }
