@@ -72,7 +72,7 @@ Zotero.HTTP = new function() {
 			responseType: '',
 			responseCharset: null,
 			successCodes: null,
-            url: url.includes('%') ? url : encodeURI(url),
+            url: url,
             method: method
 		}, options);
 

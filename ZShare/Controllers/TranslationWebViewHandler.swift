@@ -232,7 +232,7 @@ final class TranslationWebViewHandler: NSObject {
     /// - parameter options: Options for HTTP request.
     private func sendRequest(with options: [String: Any], for messageId: Int) {
         guard let urlString = options["url"] as? String,
-              let url = URL(string: urlString),
+              let url = URL(string: urlString) ?? urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed).flatMap(URL.init),
               let method = options["method"] as? String else {
             DDLogInfo("Incorrect URL request from javascript")
             DDLogInfo("\(options)")
