@@ -90,10 +90,6 @@ final class AnnotationView: UIView {
 
     // MARK: - Setups
 
-    func setupHeader(with annotation: Annotation, selected: Bool, hasWritePermission: Bool, accessibilityType: AccessibilityType) {
-        self.header.setup(with: annotation, isEditable: (hasWritePermission && selected), showDoneButton: self.layout.showDoneButton, accessibilityType: accessibilityType)
-    }
-
     /// Setups up annotation view with given annotation and additional data.
     /// - parameter annotation: Annotation to show in view.
     /// - parameter comment: Comment to show. If nil, comment field is not shown.
@@ -105,7 +101,7 @@ final class AnnotationView: UIView {
         let color = UIColor(hex: annotation.color)
         let canEdit = annotation.editability == .editable && selected
 
-        self.header.setup(with: annotation, isEditable: (annotation.editability != .notEditable && selected), showDoneButton: self.layout.showDoneButton, accessibilityType: .cell)
+        self.header.setup(with: annotation, isEditable: (annotation.editability != .notEditable && selected), showsLock: annotation.editability != .editable, showDoneButton: self.layout.showDoneButton, accessibilityType: .cell)
         self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth, accessibilityType: .cell)
         self.setup(comment: comment, canEdit: canEdit)
         self.setupTags(for: annotation, canEdit: canEdit, accessibilityEnabled: selected)

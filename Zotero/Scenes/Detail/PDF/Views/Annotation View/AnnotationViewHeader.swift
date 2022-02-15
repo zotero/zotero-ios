@@ -17,6 +17,7 @@ final class AnnotationViewHeader: UIView {
     private weak var authorLabel: UILabel!
     private weak var menuButton: UIButton!
     private weak var doneButton: UIButton?
+    private weak var lockIcon: UIImageView?
     private weak var rightBarButtonsStackView: UIStackView!
 
     private var authorTrailingToContainer: NSLayoutConstraint!
@@ -66,23 +67,25 @@ final class AnnotationViewHeader: UIView {
         return annotationName + ", " + L10n.page + " " + pageLabel
     }
 
-    private func setup(type: AnnotationType, color: UIColor, pageLabel: String, author: String, showsMenuButton: Bool, showsDoneButton: Bool, accessibilityType: AnnotationView.AccessibilityType) {
+    private func setup(type: AnnotationType, color: UIColor, pageLabel: String, author: String, showsMenuButton: Bool, showsDoneButton: Bool, showsLock: Bool, accessibilityType: AnnotationView.AccessibilityType) {
         self.typeImageView.image = self.image(for: type)?.withRenderingMode(.alwaysTemplate)
         self.typeImageView.tintColor = color
         self.pageLabel.text = L10n.page + " " + pageLabel
         self.authorLabel.text = author
         self.menuButton.isHidden = !showsMenuButton
-        self.authorTrailingToButton.isActive = showsMenuButton
-        self.authorTrailingToContainer.isActive = !showsMenuButton
+        self.lockIcon?.isHidden = !showsLock
+
+        let hasRightItems = !self.rightBarButtonsStackView.arrangedSubviews.filter({ !$0.isHidden }).isEmpty
+        self.authorTrailingToButton.isActive = hasRightItems
+        self.authorTrailingToContainer.isActive = !hasRightItems
 
         self.setupAccessibility(type: type, pageLabel: pageLabel, author: author, accessibilityType: accessibilityType)
     }
 
-    func setup(with annotation: Annotation, isEditable: Bool, showDoneButton: Bool, accessibilityType: AnnotationView.AccessibilityType) {
+    func setup(with annotation: Annotation, isEditable: Bool, showsLock: Bool, showDoneButton: Bool, accessibilityType: AnnotationView.AccessibilityType) {
         let color = UIColor(hex: annotation.color)
         let author = annotation.isAuthor ? "" : annotation.author
-        self.setup(type: annotation.type, color: color, pageLabel: annotation.pageLabel, author: author, showsMenuButton: isEditable,
-                   showsDoneButton: showDoneButton, accessibilityType: accessibilityType)
+        self.setup(type: annotation.type, color: color, pageLabel: annotation.pageLabel, author: author, showsMenuButton: isEditable, showsDoneButton: showDoneButton, showsLock: showsLock, accessibilityType: accessibilityType)
     }
 
     private func setupAccessibility(type: AnnotationType, pageLabel: String, author: String, accessibilityType: AnnotationView.AccessibilityType) {
@@ -101,21 +104,21 @@ final class AnnotationViewHeader: UIView {
 
     private func setupView(with layout: AnnotationViewLayout) {
         let typeImageView = UIImageView()
-        typeImageView.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        typeImageView.setContentCompressionResistancePriority(UILayoutPriority(rawValue: 1000), for: .horizontal)
         typeImageView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         typeImageView.contentMode = .scaleAspectFit
         typeImageView.translatesAutoresizingMaskIntoConstraints = false
 
         let pageLabel = UILabel()
         pageLabel.font = layout.pageLabelFont
-        pageLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        pageLabel.setContentCompressionResistancePriority(UILayoutPriority(rawValue: 1000), for: .horizontal)
         pageLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         pageLabel.translatesAutoresizingMaskIntoConstraints = false
 
         let authorLabel = UILabel()
         authorLabel.font = layout.font
         authorLabel.textColor = .systemGray
-        authorLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        authorLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         authorLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
         authorLabel.translatesAutoresizingMaskIntoConstraints = false
 
@@ -126,7 +129,7 @@ final class AnnotationViewHeader: UIView {
         menuButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         menuButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
 
-        var rightButtons = [menuButton]
+        var rightButtons: [UIView] = [menuButton]
 
         if layout.showDoneButton {
             let doneButton = UIButton()
@@ -139,6 +142,12 @@ final class AnnotationViewHeader: UIView {
             self.doneButton = doneButton
         }
 
+        let lock = UIImageView(image: UIImage(systemName: "lock")?.withAlignmentRectInsets(UIEdgeInsets(top: 0, left: 0, bottom: 0, right: -4)))
+        lock.tintColor = .systemGray
+        lock.contentMode = .scaleAspectFit
+        lock.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        rightButtons.append(lock)
+
         let rightBarButtons = UIStackView(arrangedSubviews: rightButtons)
         rightBarButtons.spacing = 0
         rightBarButtons.axis = .horizontal
@@ -150,6 +159,7 @@ final class AnnotationViewHeader: UIView {
         self.pageLabel = pageLabel
         self.authorLabel = authorLabel
         self.menuButton = menuButton
+        self.lockIcon = lock
         self.rightBarButtonsStackView = rightBarButtons
 
         self.addSubview(typeImageView)
@@ -157,8 +167,8 @@ final class AnnotationViewHeader: UIView {
         self.addSubview(authorLabel)
         self.addSubview(rightBarButtons)
 
-        self.authorTrailingToContainer = authorLabel.trailingAnchor.constraint(greaterThanOrEqualTo: self.trailingAnchor, constant: -layout.horizontalInset)
-        self.authorTrailingToButton = authorLabel.trailingAnchor.constraint(greaterThanOrEqualTo: rightBarButtons.leadingAnchor, constant: layout.horizontalInset)
+        self.authorTrailingToContainer = self.trailingAnchor.constraint(greaterThanOrEqualTo: authorLabel.trailingAnchor, constant: layout.horizontalInset)
+        self.authorTrailingToButton = rightBarButtons.leadingAnchor.constraint(greaterThanOrEqualTo: authorLabel.trailingAnchor, constant: layout.horizontalInset)
         let authorCenter = authorLabel.centerXAnchor.constraint(equalTo: self.centerXAnchor)
         authorCenter.priority = UILayoutPriority(rawValue: 750)
 
