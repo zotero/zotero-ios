@@ -273,7 +273,7 @@ struct AnnotationConverter {
                                      AnnotationsConfig.keyKey: zoteroAnnotation.key,
                                      AnnotationsConfig.syncableKey: true]
 
-            if zoteroAnnotation.editability == .notEditable {
+            if zoteroAnnotation.editability != .editable {
                 annotation.flags.update(with: .readOnly)
             }
         }

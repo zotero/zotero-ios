@@ -902,6 +902,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         guard let documentAnnotation = viewModel.state.document.annotations(at: UInt(annotation.page)).first(where: { $0.syncable && $0.key == annotation.key }) else { return }
 
         viewModel.state.document.undoController.recordCommand(named: nil, removing: [documentAnnotation]) {
+            if documentAnnotation.flags.contains(.readOnly) {
+                documentAnnotation.flags.remove(.readOnly)
+            }
             viewModel.state.document.remove(annotations: [documentAnnotation], options: nil)
         }
     }
@@ -912,6 +915,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         guard !toDelete.isEmpty else { return }
 
         viewModel.state.document.undoController.recordCommand(named: nil, removing: toDelete) {
+            for annotation in toDelete {
+                if annotation.flags.contains(.readOnly) {
+                    annotation.flags.remove(.readOnly)
+                }
+            }
             viewModel.state.document.remove(annotations: toDelete, options: nil)
         }
 
