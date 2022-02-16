@@ -63,7 +63,6 @@ struct AnnotationConverter {
             return nil
         }
 
-        var editability: Annotation.Editability = library.metadataEditable ? .editable : .notEditable
         let text = item.fields.filter(.key(FieldKeys.Item.Annotation.text)).first?.value
 
         if type == .highlight && text == nil {
@@ -71,43 +70,12 @@ struct AnnotationConverter {
             return nil
         }
 
-        let isAuthor: Bool
-        let author: String
-        if library.identifier == .custom(.myLibrary) {
-            // In "My Library" current user is always author
-            isAuthor = true
-            author = username
-        } else {
-            // In group library compare `createdBy` user to current user
-            isAuthor = item.createdBy?.identifier == currentUserId
-            // In group library if annotation is not created by user it can only be deleted.
-            if !isAuthor && editability == .editable {
-                editability = .deletable
-            }
-            // Users can only edit their own annotations
-            if let name = item.createdBy?.name, !name.isEmpty {
-                author = name
-            } else if let name = item.createdBy?.username, !name.isEmpty {
-                author = name
-            } else if isAuthor {
-                author = username
-            } else {
-                author = L10n.unknown
-            }
-        }
-
+        let (isAuthor, authorName) = self.authorData(for: item, library: library, currentUserId: currentUserId, username: username)
+        let editability = self.editability(for: library, isAuthor: isAuthor)
         let comment = item.fieldValue(for: FieldKeys.Item.Annotation.comment) ?? ""
         let rects: [CGRect] = item.rects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX), height: ($0.maxY - $0.minY)) })
                                         .compactMap({ boundingBoxConverter.convertFromDb(rect: $0, page: PageIndex(pageIndex)) })
-        var paths: [[CGPoint]] = []
-        for path in item.paths.sorted(byKeyPath: "sortIndex") {
-            guard path.coordinates.count % 2 == 0 else { continue }
-            let sortedCoordinates = path.coordinates.sorted(byKeyPath: "sortIndex")
-            let lines = (0..<(path.coordinates.count / 2)).map({ idx -> CGPoint in
-                return CGPoint(x: sortedCoordinates[idx * 2].value, y: sortedCoordinates[(idx * 2) + 1].value)
-            })
-            paths.append(lines)
-        }
+        let paths = self.paths(for: item)
         let lineWidth = (item.fields.filter(.key(FieldKeys.Item.Annotation.lineWidth)).first?.value).flatMap(Double.init).flatMap(CGFloat.init)
 
         return Annotation(key: item.key,
@@ -117,7 +85,7 @@ struct AnnotationConverter {
                           rects: rects,
                           paths: paths,
                           lineWidth: lineWidth,
-                          author: author,
+                          author: authorName,
                           isAuthor: isAuthor,
                           color: color,
                           comment: comment,
@@ -128,6 +96,58 @@ struct AnnotationConverter {
                           didChange: false,
                           editability: editability,
                           isSyncable: true)
+    }
+
+    private static func authorData(for item: RItem, library: Library, currentUserId: Int, username: String) -> (isAuthor: Bool, name: String) {
+        if let authorName = item.fieldValue(for: FieldKeys.Item.Annotation.authorName) {
+            let isAuthor = library.identifier == .custom(.myLibrary) ? true : item.createdBy?.identifier == currentUserId
+            return (isAuthor, authorName)
+        }
+
+        if let createdBy = item.createdBy {
+            let isAuthor = createdBy.identifier == currentUserId
+
+            if !createdBy.name.isEmpty {
+                return (isAuthor, createdBy.name)
+            }
+
+            if !createdBy.username.isEmpty {
+                return (isAuthor, createdBy.username)
+            }
+
+            let name = isAuthor ? username : L10n.unknown
+            return (isAuthor, name)
+        }
+
+        let isAuthor = library.identifier == .custom(.myLibrary)
+        let name = isAuthor ? username : L10n.unknown
+        return (isAuthor, name)
+    }
+
+    private static func editability(for library: Library, isAuthor: Bool) -> Annotation.Editability {
+        switch library.identifier {
+        case .custom:
+            return library.metadataEditable ? .editable : .notEditable
+
+        case .group:
+            if !library.metadataEditable {
+                return .notEditable
+            }
+            return isAuthor ? .editable : .deletable
+        }
+    }
+
+    private static func paths(for item: RItem) -> [[CGPoint]] {
+        var paths: [[CGPoint]] = []
+        for path in item.paths.sorted(byKeyPath: "sortIndex") {
+            guard path.coordinates.count % 2 == 0 else { continue }
+            let sortedCoordinates = path.coordinates.sorted(byKeyPath: "sortIndex")
+            let lines = (0..<(path.coordinates.count / 2)).map({ idx -> CGPoint in
+                return CGPoint(x: sortedCoordinates[idx * 2].value, y: sortedCoordinates[(idx * 2) + 1].value)
+            })
+            paths.append(lines)
+        }
+        return paths
     }
 
     // MARK: - PSPDFKit -> Zotero

@@ -61,6 +61,7 @@ struct FieldKeys {
             static let rects = "rects"
             static let paths = "paths"
             static let lineWidth = "width"
+            static let authorName = "annotationAuthorName"
 
             static func fields(for type: AnnotationType) -> [String] {
                 switch type {
