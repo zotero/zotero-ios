@@ -38,8 +38,4 @@ struct Library: Equatable, Identifiable, Hashable {
         self.metadataEditable = metadataEditable
         self.filesEditable = filesEditable
     }
-
-    static func ==(lhs: Library, rhs: Library) -> Bool {
-        return lhs.identifier == rhs.identifier
-    }
 }
