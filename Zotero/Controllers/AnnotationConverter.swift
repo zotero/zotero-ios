@@ -99,7 +99,7 @@ struct AnnotationConverter {
     }
 
     private static func authorData(for item: RItem, library: Library, currentUserId: Int, username: String) -> (isAuthor: Bool, name: String) {
-        if let authorName = item.fieldValue(for: FieldKeys.Item.Annotation.authorName) {
+        if let authorName = item.fields.filter(.key(FieldKeys.Item.Annotation.authorName)).first?.value {
             let isAuthor = library.identifier == .custom(.myLibrary) ? true : item.createdBy?.identifier == currentUserId
             return (isAuthor, authorName)
         }

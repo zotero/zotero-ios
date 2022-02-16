@@ -27,7 +27,10 @@ final class AnnotationsViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private weak var tableView: UITableView!
+    private weak var toolbarContainer: UIView!
     private weak var toolbar: UIToolbar!
+    private var tableViewToToolbar: NSLayoutConstraint!
+    private var tableViewToBottom: NSLayoutConstraint!
     private weak var deleteBarButton: UIBarButtonItem?
     private weak var mergeBarButton: UIBarButtonItem?
     private var dataSource: DiffableDataSource<Int, Annotation>!
@@ -297,13 +300,17 @@ final class AnnotationsViewController: UIViewController {
         self.view.addSubview(tableView)
 
         let toolbarContainer = UIView()
+        toolbarContainer.isHidden = !self.viewModel.state.library.metadataEditable
         toolbarContainer.translatesAutoresizingMaskIntoConstraints = false
         self.view.addSubview(toolbarContainer)
 
         let toolbar = UIToolbar()
         toolbarContainer.backgroundColor = toolbar.backgroundColor
         toolbar.translatesAutoresizingMaskIntoConstraints = false
-        self.view.addSubview(toolbar)
+        toolbarContainer.addSubview(toolbar)
+
+        let tableViewToToolbar = tableView.bottomAnchor.constraint(equalTo: toolbarContainer.topAnchor)
+        let tableViewToBottom = tableView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
 
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: self.view.topAnchor),
@@ -319,8 +326,17 @@ final class AnnotationsViewController: UIViewController {
             toolbar.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor)
         ])
 
+        if self.viewModel.state.library.metadataEditable {
+            tableViewToToolbar.isActive = true
+        } else {
+            tableViewToBottom.isActive = true
+        }
+
         self.toolbar = toolbar
+        self.toolbarContainer = toolbarContainer
         self.tableView = tableView
+        self.tableViewToBottom = tableViewToBottom
+        self.tableViewToToolbar = tableViewToToolbar
     }
 
     private func setupDataSource() {
@@ -384,6 +400,8 @@ final class AnnotationsViewController: UIViewController {
     }
 
     private func setupToolbar(editingEnabled: Bool, deletionEnabled: Bool, mergingEnabled: Bool) {
+        guard !self.toolbarContainer.isHidden else { return }
+
         var items: [UIBarButtonItem] = []
 
         if #available(iOS 14.0, *) {
