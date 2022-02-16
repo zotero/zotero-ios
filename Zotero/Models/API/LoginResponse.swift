@@ -12,6 +12,7 @@ struct LoginResponse {
     let key: String
     let userId: Int
     let name: String
+    let displayName: String
 }
 
 extension LoginResponse: Decodable {
@@ -19,6 +20,7 @@ extension LoginResponse: Decodable {
         case key
         case userId = "userID"
         case name = "username"
+        case displayName = "displayName"
     }
 
     init(from decoder: Decoder) throws {
@@ -26,6 +28,7 @@ extension LoginResponse: Decodable {
         let key = try container.decode(String.self, forKey: .key)
         let userId = try container.decode(Int.self, forKey: .userId)
         let name = try container.decode(String.self, forKey: .name)
-        self.init(key: key, userId: userId, name: name)
+        let displayName = try container.decode(String.self, forKey: .displayName)
+        self.init(key: key, userId: userId, name: name, displayName: displayName)
     }
 }

@@ -75,9 +75,10 @@ final class SessionController: ObservableObject {
         }
     }
 
-    func register(userId: Int, username: String, apiToken: String) {
+    func register(userId: Int, username: String, displayName: String, apiToken: String) {
         self.defaults.userId = userId
         self.defaults.username = username
+        self.defaults.displayName = displayName
         self.secureStorage.apiToken = apiToken
         self.sessionData = (userId, apiToken)
         self.isInitialized = true

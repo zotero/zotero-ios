@@ -82,9 +82,9 @@ final class AnnotationViewHeader: UIView {
         self.setupAccessibility(type: type, pageLabel: pageLabel, author: author, accessibilityType: accessibilityType)
     }
 
-    func setup(with annotation: Annotation, isEditable: Bool, showsLock: Bool, showDoneButton: Bool, accessibilityType: AnnotationView.AccessibilityType) {
+    func setup(with annotation: Annotation, libraryId: LibraryIdentifier, isEditable: Bool, showsLock: Bool, showDoneButton: Bool, accessibilityType: AnnotationView.AccessibilityType) {
         let color = UIColor(hex: annotation.color)
-        let author = annotation.isAuthor ? "" : annotation.author
+        let author = libraryId == .custom(.myLibrary) ? "" : annotation.author
         self.setup(type: annotation.type, color: color, pageLabel: annotation.pageLabel, author: author, showsMenuButton: isEditable, showsDoneButton: showDoneButton, showsLock: showsLock, accessibilityType: accessibilityType)
     }
 

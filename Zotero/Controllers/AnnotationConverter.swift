@@ -49,9 +49,10 @@ struct AnnotationConverter {
     /// - parameter library: Library where annotation is stored.
     /// - parameter currentUserId: Id of currently logged in user.
     /// - parameter username: Username of current user.
+    /// - parameter displayName: Display name of current user.
     /// - parameter boundingBoxConverter: Converter for bounding boxes.
     /// - returns: Matching Zotero annotation.
-    static func annotation(from item: RItem, library: Library, currentUserId: Int, username: String, boundingBoxConverter: AnnotationBoundingBoxConverter) -> Annotation? {
+    static func annotation(from item: RItem, library: Library, currentUserId: Int, username: String, displayName: String, boundingBoxConverter: AnnotationBoundingBoxConverter) -> Annotation? {
         guard let rawType = item.fieldValue(for: FieldKeys.Item.Annotation.type),
               let pageIndex = item.fieldValue(for: FieldKeys.Item.Annotation.pageIndex).flatMap(Int.init),
               let pageLabel = item.fieldValue(for: FieldKeys.Item.Annotation.pageLabel),
@@ -70,7 +71,7 @@ struct AnnotationConverter {
             return nil
         }
 
-        let (isAuthor, authorName) = self.authorData(for: item, library: library, currentUserId: currentUserId, username: username)
+        let (isAuthor, authorName) = self.authorData(for: item, library: library, currentUserId: currentUserId, username: username, displayName: displayName)
         let editability = self.editability(for: library, isAuthor: isAuthor)
         let comment = item.fieldValue(for: FieldKeys.Item.Annotation.comment) ?? ""
         let rects: [CGRect] = item.rects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX), height: ($0.maxY - $0.minY)) })
@@ -98,7 +99,7 @@ struct AnnotationConverter {
                           isSyncable: true)
     }
 
-    private static func authorData(for item: RItem, library: Library, currentUserId: Int, username: String) -> (isAuthor: Bool, name: String) {
+    private static func authorData(for item: RItem, library: Library, currentUserId: Int, username: String, displayName: String) -> (isAuthor: Bool, name: String) {
         if let authorName = item.fields.filter(.key(FieldKeys.Item.Annotation.authorName)).first?.value {
             let isAuthor = library.identifier == .custom(.myLibrary) ? true : item.createdBy?.identifier == currentUserId
             return (isAuthor, authorName)
@@ -115,12 +116,12 @@ struct AnnotationConverter {
                 return (isAuthor, createdBy.username)
             }
 
-            let name = isAuthor ? username : L10n.unknown
+            let name = isAuthor ? self.createName(from: displayName, username: username) : L10n.unknown
             return (isAuthor, name)
         }
 
         let isAuthor = library.identifier == .custom(.myLibrary)
-        let name = isAuthor ? username : L10n.unknown
+        let name = isAuthor ? self.createName(from: displayName, username: username) : L10n.unknown
         return (isAuthor, name)
     }
 
@@ -158,18 +159,25 @@ struct AnnotationConverter {
     /// - parameter library: Library where annotation is stored.
     /// - parameter isNew: Indicating, whether the annotation has just been created.
     /// - parameter username: Username of current user.
+    /// - parameter displayName: Display name of current user.
     /// - returns: Matching Zotero annotation.
-    static func annotation(from annotation: PSPDFKit.Annotation, color: String, library: Library, isNew: Bool, isSyncable: Bool, username: String, boundingBoxConverter: AnnotationBoundingBoxConverter?) -> Annotation? {
+    static func annotation(from annotation: PSPDFKit.Annotation, color: String, library: Library, isNew: Bool, isSyncable: Bool, username: String, displayName: String, boundingBoxConverter: AnnotationBoundingBoxConverter?) -> Annotation? {
         guard let document = annotation.document, AnnotationsConfig.supported.contains(annotation.type) else { return nil }
 
         let key = isSyncable ? (annotation.key ?? KeyGenerator.newKey) : annotation.uuid
         let page = Int(annotation.pageIndex)
         let pageLabel = document.pageLabelForPage(at: annotation.pageIndex, substituteWithPlainLabel: false) ?? "\(annotation.pageIndex + 1)"
-        let author = isNew ? username : (annotation.user ?? "")
         let isAuthor = isNew ? true : (annotation.user == username)
         let comment = annotation.contents.flatMap({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }) ?? ""
         let sortIndex = self.sortIndex(from: annotation, boundingBoxConverter: boundingBoxConverter)
         let date = Date()
+
+        let author: String
+        if isNew || isAuthor {
+            author = self.createName(from: displayName, username: username)
+        } else {
+            author = annotation.user ?? L10n.unknown
+        }
 
         let type: AnnotationType
         let rects: [CGRect]
@@ -236,6 +244,16 @@ struct AnnotationConverter {
                           didChange: isNew,
                           editability: editability,
                           isSyncable: isSyncable)
+    }
+
+    private static func createName(from displayName: String, username: String) -> String {
+        if !displayName.isEmpty {
+            return displayName
+        }
+        if !username.isEmpty {
+            return username
+        }
+        return L10n.unknown
     }
 
     // MARK: - Zotero -> PSPDFKit

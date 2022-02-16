@@ -77,12 +77,12 @@ struct LoginActionHandler: ViewModelActionHandler {
         let request = LoginRequest(username: viewModel.state.username, password: viewModel.state.password)
         self.apiClient.send(request: request)
                       .observe(on: self.scheduler)
-                      .flatMap { response, _ -> Single<(Int, String, String)> in
-                          return Single.just((response.userId, response.name, response.key))
+                      .flatMap { response, _ -> Single<(Int, String, String, String)> in
+                          return Single.just((response.userId, response.name, response.displayName, response.key))
                       }
                       .observe(on: MainScheduler.instance)
-                      .subscribe(onSuccess: { userId, username, token in
-                          self.sessionController.register(userId: userId, username: username, apiToken: token)
+                      .subscribe(onSuccess: { userId, username, displayName, token in
+                          self.sessionController.register(userId: userId, username: username, displayName: displayName, apiToken: token)
                       }, onFailure: { [weak viewModel] error in
                           DDLogError("LoginStore: could not log in - \(error)")
                           guard let viewModel = viewModel else { return }

@@ -10,6 +10,7 @@ import Foundation
 
 struct KeyResponse {
     let username: String
+    let displayName: String
     let user: AccessPermissions.Permissions
     let defaultGroup: AccessPermissions.Permissions?
     let groups: [Int: AccessPermissions.Permissions]
@@ -20,6 +21,7 @@ struct KeyResponse {
         let accessData: [String: Any] = try data.apiGet(key: "access")
 
         self.username = (data["username"] as? String) ?? ""
+        self.displayName = (data["displayName"] as? String) ?? ""
 
         let libraryData = accessData["user"] as? [String: Any]
         self.user = AccessPermissions.Permissions(data: libraryData)
@@ -52,5 +54,6 @@ struct KeyResponse {
         self.defaultGroup = AccessPermissions.Permissions(data: nil)
         self.groups = [:]
         self.username = ""
+        self.displayName = ""
     }
 }

@@ -651,7 +651,7 @@ final class SyncController: SynchronizationController {
     private func processKeyCheckAction() {
         let result = LoadPermissionsSyncAction(apiClient: self.apiClient, queue: self.workQueue, scheduler: self.workScheduler).result
         result.subscribe(on: self.workScheduler)
-              .flatMap { response -> Single<(AccessPermissions, String)> in
+              .flatMap { response -> Single<(AccessPermissions, String, String)> in
                   let permissions = AccessPermissions(user: response.user,
                                                       groupDefault: response.defaultGroup,
                                                       groups: response.groups)
@@ -659,11 +659,12 @@ final class SyncController: SynchronizationController {
                   if let group = permissions.groupDefault, (!group.library || !group.write) {
                       return Single.error(SyncError.Fatal.missingGroupPermissions)
                   }
-                  return Single.just((permissions, response.username))
+                  return Single.just((permissions, response.username, response.displayName))
               }
-              .subscribe(onSuccess: { [weak self] permissions, username in
+              .subscribe(onSuccess: { [weak self] permissions, username, displayName in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       Defaults.shared.username = username
+                      Defaults.shared.displayName = displayName
                       self?.accessPermissions = permissions
                       self?.processNextAction()
                   }

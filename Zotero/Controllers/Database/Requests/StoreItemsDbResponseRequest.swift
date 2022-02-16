@@ -476,6 +476,12 @@ struct StoreItemDbRequest: DbResponseRequest {
 
     private static func createUser(from response: UserResponse, in database: Realm) -> RUser {
         if let user = database.object(ofType: RUser.self, forPrimaryKey: response.id) {
+            if user.name != response.name {
+                user.name = response.name
+            }
+            if user.username != response.username {
+                user.username = response.username
+            }
             return user
         }
 

@@ -101,7 +101,7 @@ final class AnnotationView: UIView {
         let color = UIColor(hex: annotation.color)
         let canEdit = annotation.editability == .editable && selected
 
-        self.header.setup(with: annotation, isEditable: (annotation.editability != .notEditable && selected), showsLock: annotation.editability != .editable, showDoneButton: self.layout.showDoneButton, accessibilityType: .cell)
+        self.header.setup(with: annotation, libraryId: library.identifier, isEditable: (annotation.editability != .notEditable && selected), showsLock: annotation.editability != .editable, showDoneButton: self.layout.showDoneButton, accessibilityType: .cell)
         self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth, accessibilityType: .cell)
         self.setup(comment: comment, canEdit: canEdit)
         self.setupTags(for: annotation, canEdit: canEdit, accessibilityEnabled: selected)

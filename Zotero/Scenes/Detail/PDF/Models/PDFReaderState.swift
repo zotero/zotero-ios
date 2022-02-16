@@ -49,6 +49,7 @@ struct PDFReaderState: ViewModelState {
     let commentFont: UIFont
     let userId: Int
     let username: String
+    let displayName: String
 
     var interfaceStyle: UIUserInterfaceStyle
     var annotations: [Int: [Annotation]]
@@ -98,11 +99,12 @@ struct PDFReaderState: ViewModelState {
     var ignoreNotifications: [Notification.Name: Set<String>]
     var settings: PDFSettingsState
 
-    init(url: URL, key: String, library: Library, settings: PDFSettingsState, userId: Int, username: String, interfaceStyle: UIUserInterfaceStyle) {
+    init(url: URL, key: String, library: Library, settings: PDFSettingsState, userId: Int, username: String, displayName: String, interfaceStyle: UIUserInterfaceStyle) {
         self.key = key
         self.library = library
         self.userId = userId
         self.username = username
+        self.displayName = displayName
         self.interfaceStyle = interfaceStyle
         self.settings = settings
         self.deletedKeys = []

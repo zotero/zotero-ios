@@ -19,6 +19,9 @@ final class Defaults {
     @UserDefault(key: "username", defaultValue: "")
     var username: String
 
+    @UserDefault(key: "displayName", defaultValue: "")
+    var displayName: String
+
     @UserDefault(key: "userid", defaultValue: 0)
     var userId: Int
 
@@ -118,6 +121,7 @@ final class Defaults {
     func reset() {
         self.askForSyncPermission = false
         self.username = ""
+        self.displayName = ""
         self.userId = 0
         self.shareExtensionIncludeTags = true
         self.shareExtensionIncludeAttachment = true
