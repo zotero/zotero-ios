@@ -583,7 +583,7 @@ extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
     }
 
     func showAttachmentPicker(save: @escaping ([URL]) -> Void) {
-        let controller = DocumentPickerViewController(forOpeningContentTypes: [.pdf, .png, .jpeg])
+        let controller = DocumentPickerViewController(forOpeningContentTypes: [.pdf, .png, .jpeg], asCopy: true)
         controller.popoverPresentationController?.sourceView = self.navigationController.visibleViewController?.view
         controller.observable
                   .observe(on: MainScheduler.instance)

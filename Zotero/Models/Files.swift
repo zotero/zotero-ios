@@ -159,7 +159,6 @@ struct Files {
 
     static func file(from url: URL) -> File {
         var (root, components) = self.rootAndComponents(from: url)
-        components = components.map({ $0.removingPercentEncoding ?? $0 })
         if url.pathExtension.isEmpty {
             return FileData(rootPath: root, relativeComponents: components, name: "", type: .directory)
         }
@@ -193,11 +192,11 @@ struct Files {
             return (self.documentsRootPath, self.components(from: urlString, excluding: range))
         }
 
-        return (urlString, [])
+        return ((urlString.removingPercentEncoding ?? urlString), [])
     }
 
     private static func components(from string: String, excluding: Range<String.Index>) -> [String] {
-        return string[excluding.upperBound..<string.endIndex].components(separatedBy: "/").filter({ !$0.isEmpty && $0 != "/" })
+        return string[excluding.upperBound..<string.endIndex].components(separatedBy: "/").filter({ !$0.isEmpty && $0 != "/" }).map({ $0.removingPercentEncoding ?? $0 })
     }
 
     private static func split(filename: String) -> (name: String, extension: String) {

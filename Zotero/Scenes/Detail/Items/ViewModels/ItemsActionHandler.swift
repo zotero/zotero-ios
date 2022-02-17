@@ -476,7 +476,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
             do {
                 try self.fileStorage.move(from: original, to: file)
             } catch let error {
-                DDLogError("ItemsActionHandler: can't move file from \(error)")
+                DDLogError("ItemsActionHandler: can't move file - \(error)")
                 continue
             }
 
