@@ -167,7 +167,7 @@ struct AnnotationConverter {
         let key = isSyncable ? (annotation.key ?? KeyGenerator.newKey) : annotation.uuid
         let page = Int(annotation.pageIndex)
         let pageLabel = document.pageLabelForPage(at: annotation.pageIndex, substituteWithPlainLabel: false) ?? "\(annotation.pageIndex + 1)"
-        let isAuthor = isNew ? true : (annotation.user == username)
+        let isAuthor = isNew ? true : (annotation.user == displayName || annotation.user == username)
         let comment = annotation.contents.flatMap({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }) ?? ""
         let sortIndex = self.sortIndex(from: annotation, boundingBoxConverter: boundingBoxConverter)
         let date = Date()
@@ -262,8 +262,9 @@ struct AnnotationConverter {
     /// - parameter zoteroAnnotations: Annotations to convert.
     /// - returns: Array of PSPDFKit annotations that can be added to document.
     static func annotations(from zoteroAnnotations: [Int: [Annotation]], type: Kind = .zotero, interfaceStyle: UIUserInterfaceStyle) -> [PSPDFKit.Annotation] {
-        return zoteroAnnotations.values.flatMap({ $0 }).map({
-            return self.annotation(from: $0, type: type, interfaceStyle: interfaceStyle)
+        return zoteroAnnotations.values.flatMap({ $0 }).compactMap({ annotation in
+            guard annotation.isSyncable else { return nil }
+            return self.annotation(from: annotation, type: type, interfaceStyle: interfaceStyle)
         })
     }
 
@@ -284,7 +285,7 @@ struct AnnotationConverter {
 
         switch type {
         case .export:
-            annotation.key = zoteroAnnotation.key
+            annotation.customData = nil
 
         case .zotero:
             annotation.customData = [AnnotationsConfig.baseColorKey: zoteroAnnotation.color,
