@@ -399,32 +399,10 @@ struct ItemResponse {
         switch itemType {
         case ItemTypes.annotation:
             // Annotations don't have some fields that are returned by backend in schema, so we have to filter them out here manually.
-            switch field {
-            case FieldKeys.Item.Annotation.color,
-                 FieldKeys.Item.Annotation.comment,
-                 FieldKeys.Item.Annotation.pageLabel,
-                 FieldKeys.Item.Annotation.position,
-                 FieldKeys.Item.Annotation.text,
-                 FieldKeys.Item.Annotation.type,
-                 FieldKeys.Item.Annotation.sortIndex:
-                return true
-            default:
-                return false
-            }
+            return FieldKeys.Item.Annotation.knownKeys.contains(field)
         case ItemTypes.attachment:
             // Attachments don't have some fields that are returned by backend in schema, so we have to filter them out here manually.
-            switch field {
-            case FieldKeys.Item.Attachment.contentType,
-                 FieldKeys.Item.Attachment.md5,
-                 FieldKeys.Item.Attachment.mtime,
-                 FieldKeys.Item.Attachment.filename,
-                 FieldKeys.Item.Attachment.linkMode,
-                 FieldKeys.Item.Attachment.charset,
-                 FieldKeys.Item.Attachment.path:
-                return true
-            default:
-                return false
-            }
+            return FieldKeys.Item.Attachment.knownKeys.contains(field)
         default:
             // Field not found in schema and is not a special case.
             return false

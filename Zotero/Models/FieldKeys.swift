@@ -44,6 +44,10 @@ struct FieldKeys {
             static let charset = "charset"
             static let path = "path"
 
+            static var knownKeys: Set<String> {
+                return [Attachment.title, Attachment.contentType, Attachment.md5, Attachment.mtime, Attachment.filename, Attachment.linkMode, Attachment.charset, Attachment.path, Attachment.url]
+            }
+
             static var fieldKeys: [String] {
                 return [Item.title, Attachment.filename, Attachment.contentType, Attachment.linkMode, Attachment.md5, Attachment.mtime, Attachment.url]
             }
@@ -62,6 +66,10 @@ struct FieldKeys {
             static let paths = "paths"
             static let lineWidth = "width"
             static let authorName = "annotationAuthorName"
+
+            static var knownKeys: Set<String> {
+                return [Annotation.color, Annotation.comment, Annotation.pageLabel, Annotation.position, Annotation.text, Annotation.type, Annotation.sortIndex, Annotation.authorName]
+            }
 
             static func fields(for type: AnnotationType) -> [String] {
                 switch type {
@@ -95,8 +103,7 @@ struct FieldKeys {
             return !clean(doi: value).isEmpty
         }
 
-        static let knownNonFieldKeys: [String] = ["creators", "itemType", "version", "key", "tags", "deleted", "collections", "relations",
-                                                  "dateAdded", "dateModified", "parentItem", "inPublications"]
+        static let knownNonFieldKeys: [String] = ["creators", "itemType", "version", "key", "tags", "deleted", "collections", "relations", "dateAdded", "dateModified", "parentItem", "inPublications"]
     }
 
     struct Search {
