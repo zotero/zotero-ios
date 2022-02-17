@@ -156,7 +156,11 @@ struct StoreItemDbRequest: DbResponseRequest {
                     oldName = existing.value
                     newName = value
                 }
-                existing.value = value
+                // Backend returns "<null>" for md5 and mtime for item which was submitted, but attachment has not yet been uploaded. Just ignore these values, we have correct values stored locally
+                // and they'll be submitted on upload of attachment.
+                if value != "<null>" || existing.value.isEmpty {
+                    existing.value = value
+                }
                 field = existing
             } else {
                 field = RItemField()
@@ -180,9 +184,8 @@ struct StoreItemDbRequest: DbResponseRequest {
             case (FieldKeys.Item.Annotation.sortIndex, _):
                 sortIndex = value
             case (FieldKeys.Item.Attachment.md5, _):
-                md5 = value
-                if value == "<null>" {
-                    DDLogError("StoreItemDbRequest: incorrect md5 value for synced item \(data.key)")
+                if value != "<null>" {
+                    md5 = value
                 }
             case (FieldKeys.Item.Attachment.contentType, _), (_, FieldKeys.Item.Attachment.contentType):
                 contentType = value
