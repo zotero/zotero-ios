@@ -55,7 +55,7 @@ struct ApiLogger {
         if startData.logParams.contains(.headers) {
             self.log(headers: headers ?? [:])
         }
-        if let data = data, let string = String(data: data, encoding: .utf8) {
+        if startData.logParams.contains(.response), let data = data, let string = String(data: data, encoding: .utf8) {
             DDLogInfo(string)
         }
     }
