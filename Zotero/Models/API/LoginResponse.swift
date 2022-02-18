@@ -28,7 +28,7 @@ extension LoginResponse: Decodable {
         let key = try container.decode(String.self, forKey: .key)
         let userId = try container.decode(Int.self, forKey: .userId)
         let name = try container.decode(String.self, forKey: .name)
-        let displayName = try container.decode(String.self, forKey: .displayName)
-        self.init(key: key, userId: userId, name: name, displayName: displayName)
+        let displayName = try? container.decode(String.self, forKey: .displayName)
+        self.init(key: key, userId: userId, name: name, displayName: displayName ?? "")
     }
 }
