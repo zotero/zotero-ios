@@ -25,6 +25,7 @@ final class ItemsViewController: UIViewController {
         case selectAll
         case deselectAll
         case add
+        case emptyTrash
     }
 
     private enum OverlayState {
@@ -417,6 +418,7 @@ final class ItemsViewController: UIViewController {
                 let correctedModifications = Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions)
                 self.viewModel.process(action: .updateKeys(items: results, deletions: deletions, insertions: insertions, modifications: correctedModifications))
                 self.tableViewHandler.reload(snapshot: results.freeze(), modifications: modifications, insertions: insertions, deletions: deletions)
+                self.updateEmptyTrashButton(toEnabled: !results.isEmpty)
             case .error(let error):
                 DDLogError("ItemsViewController: could not load results - \(error)")
                 self.viewModel.process(action: .observingFailed)
@@ -454,6 +456,13 @@ final class ItemsViewController: UIViewController {
 
     @objc private func startSync() {
         self.viewModel.process(action: .startSync)
+    }
+
+    private func emptyTrash() {
+        let count = self.viewModel.state.results?.count ?? 0
+        self.coordinatorDelegate?.showDeletionQuestion(count: count, confirmAction: { [weak self] in
+            self?.viewModel.process(action: .emptyTrash)
+        }, cancelAction: {})
     }
 
     // MARK: - Setups
@@ -521,22 +530,39 @@ final class ItemsViewController: UIViewController {
         }
     }
 
+    private func updateEmptyTrashButton(toEnabled enabled: Bool) {
+        guard self.viewModel.state.type.isTrash, let item = self.navigationItem.rightBarButtonItems?.first(where: { button in RightBarButtonItem(rawValue: button.tag) == .emptyTrash }) else { return }
+        item.isEnabled = enabled
+    }
+
     private func setupRightBarButtonItems(for state: ItemsState) {
         let currentItems = (self.navigationItem.rightBarButtonItems ?? []).compactMap({ RightBarButtonItem(rawValue: $0.tag) })
         let expectedItems = self.rightBarButtonItemTypes(for: state)
         guard currentItems != expectedItems else { return }
         self.navigationItem.rightBarButtonItems = expectedItems.map({ self.createRightBarButtonItem($0) }).reversed()
+        self.updateEmptyTrashButton(toEnabled: state.results?.isEmpty == false)
     }
 
     private func rightBarButtonItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
-        if !state.isEditing {
-            return [.add, .select]
+        let selectItems = self.rightBarButtonSelectItemTypes(for: state)
+        if state.type.isTrash {
+            return selectItems + [.emptyTrash]
+        } else {
+            return [.add] + selectItems
         }
+    }
+
+    private func rightBarButtonSelectItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
+        if !state.isEditing {
+            return [.select]
+        }
+
         let allSelected = state.selectedItems.count == (state.results?.count ?? 0)
         if allSelected {
-            return [.add, .deselectAll, .done]
+            return [.deselectAll, .done]
         }
-        return [.add, .selectAll, .done]
+
+        return [.selectAll, .done]
     }
 
     private func createRightBarButtonItem(_ type: RightBarButtonItem) -> UIBarButtonItem {
@@ -577,6 +603,13 @@ final class ItemsViewController: UIViewController {
             action = { [weak self] item in
                 guard let `self` = self else { return }
                 self.coordinatorDelegate?.showAddActions(viewModel: self.viewModel, button: item)
+            }
+
+        case .emptyTrash:
+            title = L10n.Collections.emptyTrash
+            accessibilityLabel = L10n.Collections.emptyTrash
+            action = { [weak self] _ in
+                self?.emptyTrash()
             }
         }
 

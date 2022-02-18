@@ -164,6 +164,21 @@ struct ItemsActionHandler: ViewModelActionHandler {
         case .startSync:
             guard !self.syncScheduler.syncController.inProgress else { return }
             self.syncScheduler.request(sync: .ignoreIndividualDelays, libraries: .specific([viewModel.state.library.identifier]))
+
+        case .emptyTrash:
+            self.emptyTrash(in: viewModel)
+        }
+    }
+
+    private func emptyTrash(in viewModel: ViewModel<ItemsActionHandler>) {
+        let libraryId = viewModel.state.library.identifier
+
+        self.backgroundQueue.async {
+            do {
+                try self.dbStorage.createCoordinator().perform(request: EmptyTrashDbRequest(libraryId: libraryId))
+            } catch let error {
+                DDLogError("ItemsActionHandler: can't empty trash - \(error)")
+            }
         }
     }
 
