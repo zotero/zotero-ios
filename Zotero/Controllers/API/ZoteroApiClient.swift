@@ -49,13 +49,14 @@ final class ZoteroApiClient: ApiClient {
 
     private var tokens: [ApiEndpointType: ApiAuthType]
 
-    init(baseUrl: String, configuration: URLSessionConfiguration) {
+    init(baseUrl: String, configuration: URLSessionConfiguration, includeCredentialDelegate: Bool = false) {
         guard let url = URL(string: baseUrl) else {
             fatalError("Incorrect base url provided for ZoteroApiClient")
         }
 
         self.url = url
-        self.manager = Alamofire.Session(configuration: configuration)
+        let delegate = includeCredentialDelegate ? CredentialSessionDelegate() : SessionDelegate()
+        self.manager = Alamofire.Session(configuration: configuration, delegate: delegate)
         self.tokens = [:]
     }
 
@@ -66,6 +67,7 @@ final class ZoteroApiClient: ApiClient {
     func set(credentials: (String, String)?, for endpoint: ApiEndpointType) {
         if let credentials = credentials {
             self.tokens[endpoint] = .credentials(username: credentials.0, password: credentials.1)
+            (self.manager.delegate as? CredentialSessionDelegate)?.credential = URLCredential(user: credentials.0, password: credentials.1, persistence: .forSession)
         } else {
             self.tokens[endpoint] = nil
         }
@@ -210,5 +212,17 @@ extension ResponseHeaders {
         // Workaround for broken headers (stored in case-sensitive dictionary)
         return ((self["Last-Modified-Version"] as? String) ??
                 (self["last-modified-version"] as? String)).flatMap(Int.init) ?? 0
+    }
+}
+
+fileprivate final class CredentialSessionDelegate: SessionDelegate {
+    var credential: URLCredential?
+
+    override func urlSession(_ session: URLSession, task: URLSessionTask, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        if let credential = self.credential {
+            completionHandler(.useCredential, credential)
+        } else {
+            completionHandler(.performDefaultHandling, nil)
+        }
     }
 }

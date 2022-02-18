@@ -107,7 +107,7 @@ final class WebDavControllerImpl: WebDavController {
         configuration.timeoutIntervalForRequest = 15
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
 
-        self.apiClient = ZoteroApiClient(baseUrl: "http://zotero.org/", configuration: configuration)
+        self.apiClient = ZoteroApiClient(baseUrl: "http://zotero.org/", configuration: configuration, includeCredentialDelegate: true)
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.sessionStorage = sessionStorage
