@@ -29,7 +29,7 @@ struct ItemsState: ViewModelState {
         case downloadedFiles
     }
 
-    let type: ItemFetchType
+    let collection: Collection
     let library: Library
 
     var sortType: ItemsSortType
@@ -51,8 +51,8 @@ struct ItemsState: ViewModelState {
     var bibliographyError: Error?
     var attachmentToOpen: String?
 
-    init(type: ItemFetchType, library: Library, sortType: ItemsSortType, searchTerm: String?, error: ItemsError?) {
-        self.type = type
+    init(collection: Collection, library: Library, sortType: ItemsSortType, searchTerm: String?, error: ItemsError?) {
+        self.collection = collection
         self.library = library
         self.filters = []
         self.keys = []

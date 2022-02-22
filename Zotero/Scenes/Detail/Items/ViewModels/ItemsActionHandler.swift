@@ -228,7 +228,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
 
     private func loadInitialState(in viewModel: ViewModel<ItemsActionHandler>) {
         let sortType = Defaults.shared.itemsSortType
-        let request = ReadItemsDbRequest(type: viewModel.state.type, libraryId: viewModel.state.library.identifier)
+        let request = ReadItemsDbRequest(collectionId: viewModel.state.collection.identifier, libraryId: viewModel.state.library.identifier)
         let results = try? self.dbStorage.createCoordinator().perform(request: request).sorted(by: sortType.descriptors)
 
         self.update(viewModel: viewModel) { state in
@@ -381,7 +381,8 @@ struct ItemsActionHandler: ViewModelActionHandler {
     // MARK: - Toolbar actions
 
     private func deleteItemsFromCollection(keys: Set<String>, in viewModel: ViewModel<ItemsActionHandler>) {
-        guard let key = viewModel.state.type.collectionKey else { return }
+        guard case .collection(let key) = viewModel.state.collection.identifier else { return }
+
         let request = DeleteItemsFromCollectionDbRequest(collectionKey: key, itemKeys: keys, libraryId: viewModel.state.library.identifier)
         self.perform(request: request) { [weak viewModel] error in
             guard let viewModel = viewModel else { return }
@@ -436,7 +437,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
     // MARK: - Overlay actions
 
     private func changeSortType(to sortType: ItemsSortType, in viewModel: ViewModel<ItemsActionHandler>) {
-        let results = self.results(for: viewModel.state.searchTerm, filters: viewModel.state.filters, fetchType: viewModel.state.type, sortType: sortType, libraryId: viewModel.state.library.identifier)
+        let results = self.results(for: viewModel.state.searchTerm, filters: viewModel.state.filters, collectionId: viewModel.state.collection.identifier, sortType: sortType, libraryId: viewModel.state.library.identifier)
 
         self.update(viewModel: viewModel) { state in
             state.sortType = sortType
@@ -450,7 +451,13 @@ struct ItemsActionHandler: ViewModelActionHandler {
     private func saveNote(text: String, tags: [Tag], key: String, in viewModel: ViewModel<ItemsActionHandler>) {
         let note = Note(key: key, text: text, tags: tags)
         let libraryId = viewModel.state.library.identifier
-        let collectionKey = viewModel.state.type.collectionKey
+        let collectionKey: String?
+        switch viewModel.state.collection.identifier {
+        case .collection(let key):
+            collectionKey = key
+        case .custom, .search:
+            collectionKey = nil
+        }
 
         let handleError: (Error) -> Void = { [weak viewModel] error in
             DispatchQueue.main.async {
@@ -508,7 +515,14 @@ struct ItemsActionHandler: ViewModelActionHandler {
             return
         }
 
-        let collections: Set<String> = viewModel.state.type.collectionKey.flatMap({ [$0] }) ?? []
+        let collections: Set<String>
+        switch viewModel.state.collection.identifier {
+        case .collection(let key):
+            collections = [key]
+        case .search, .custom:
+            collections = []
+        }
+
         let type = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
         let request = CreateAttachmentsDbRequest(attachments: attachments, localizedType: type, collections: collections)
 
@@ -534,7 +548,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
     private func filter(with filters: [ItemsState.Filter], in viewModel: ViewModel<ItemsActionHandler>) {
         guard filters != viewModel.state.filters else { return }
 
-        let results = self.results(for: viewModel.state.searchTerm, filters: filters, fetchType: viewModel.state.type, sortType: viewModel.state.sortType, libraryId: viewModel.state.library.identifier)
+        let results = self.results(for: viewModel.state.searchTerm, filters: filters, collectionId: viewModel.state.collection.identifier, sortType: viewModel.state.sortType, libraryId: viewModel.state.library.identifier)
 
         self.update(viewModel: viewModel) { state in
             state.filters = filters
@@ -546,7 +560,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
     private func search(for text: String?, ignoreOriginal: Bool, in viewModel: ViewModel<ItemsActionHandler>) {
         guard ignoreOriginal || text != viewModel.state.searchTerm else { return }
 
-        let results = self.results(for: text, filters: viewModel.state.filters, fetchType: viewModel.state.type, sortType: viewModel.state.sortType, libraryId: viewModel.state.library.identifier)
+        let results = self.results(for: text, filters: viewModel.state.filters, collectionId: viewModel.state.collection.identifier, sortType: viewModel.state.sortType, libraryId: viewModel.state.library.identifier)
 
         self.update(viewModel: viewModel) { state in
             state.searchTerm = text
@@ -555,8 +569,8 @@ struct ItemsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func results(for searchText: String?, filters: [ItemsState.Filter], fetchType: ItemFetchType, sortType: ItemsSortType, libraryId: LibraryIdentifier) -> Results<RItem>? {
-        let request = ReadItemsDbRequest(type: fetchType, libraryId: libraryId)
+    private func results(for searchText: String?, filters: [ItemsState.Filter], collectionId: CollectionIdentifier, sortType: ItemsSortType, libraryId: LibraryIdentifier) -> Results<RItem>? {
+        let request = ReadItemsDbRequest(collectionId: collectionId, libraryId: libraryId)
         guard var results = (try? self.dbStorage.createCoordinator().perform(request: request)) else { return nil }
         if let text = searchText, !text.isEmpty {
             results = results.filter(.itemSearch(for: text))

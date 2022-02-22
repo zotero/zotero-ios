@@ -53,7 +53,7 @@ struct CollectionTreeBuilder {
     }
 
     private static func collection(from rCollection: RCollection, libraryId: LibraryIdentifier) -> Collection {
-        let itemCount = rCollection.items.count == 0 ? 0 : rCollection.items.filter(.items(for: .collection(rCollection.key, ""), libraryId: libraryId)).count
+        let itemCount = rCollection.items.count == 0 ? 0 : rCollection.items.filter(.items(for: .collection(rCollection.key), libraryId: libraryId)).count
         return Collection(object: rCollection, itemCount: itemCount)
     }
 }

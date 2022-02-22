@@ -20,4 +20,5 @@ enum CollectionsAction {
     case select(CollectionIdentifier)
     case toggleCollapsed(Collection)
     case loadItemKeysForBibliography(Collection)
+    case downloadAttachments(CollectionIdentifier)
 }

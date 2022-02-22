@@ -84,6 +84,7 @@
 "collections.collapse_all" = "Collapse All";
 "collections.expand_all" = "Expand All";
 "collections.create_bibliography" = "Create Bibliography from Collection";
+"collections.download_attachments" = "Download Attachments";
 
 "sync_toolbar.starting" = "Sync starting";
 "sync_toolbar.groups" = "Syncing groups";

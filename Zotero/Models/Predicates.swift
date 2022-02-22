@@ -197,15 +197,19 @@ extension NSPredicate {
         return predicates
     }
 
-    static func items(for type: ItemFetchType, libraryId: LibraryIdentifier) -> NSPredicate {
-        var predicates = self.baseItemPredicates(isTrash: type.isTrash, libraryId: libraryId)
+    static func items(for collectionId: CollectionIdentifier, libraryId: LibraryIdentifier) -> NSPredicate {
+        var predicates = self.baseItemPredicates(isTrash: collectionId.isTrash, libraryId: libraryId)
 
-        switch type {
-        case .all, .search, .trash: break
-        case .publications:
-            predicates.append(NSPredicate(format: "any collections.key = %@", "unknown"))
-        case .collection(let key, _):
+        switch collectionId {
+        case .custom(let type):
+            switch type {
+            case .publications:
+                predicates.append(NSPredicate(format: "any collections.key = %@", "unknown"))
+            case .all, .trash: break
+            }
+        case .collection(let key):
             predicates.append(NSPredicate(format: "any collections.key = %@", key))
+        case .search: break
         }
 
         return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)

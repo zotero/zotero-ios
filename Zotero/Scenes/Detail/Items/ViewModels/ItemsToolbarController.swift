@@ -43,16 +43,17 @@ final class ItemsToolbarController {
     }
 
     private static func editingActions(for state: ItemsState) -> [ItemAction] {
-        var actions: [ItemAction] = []
-        if state.type.isTrash {
-            actions = [ItemAction(type: .restore), ItemAction(type: .delete)]
-        } else {
-            actions = [ItemAction(type: .addToCollection), ItemAction(type: .duplicate), ItemAction(type: .trash)]
-            if state.type.collectionKey != nil {
-                actions.insert(ItemAction(type: .removeFromCollection), at: 1)
-            }
-            actions.append(ItemAction(type: .share))
+        if state.collection.identifier.isTrash {
+            return [ItemAction(type: .restore), ItemAction(type: .delete)]
         }
+
+        var actions = [ItemAction(type: .addToCollection), ItemAction(type: .duplicate), ItemAction(type: .trash)]
+        switch state.collection.identifier {
+        case .collection:
+            actions.insert(ItemAction(type: .removeFromCollection), at: 1)
+        case .custom, .search: break
+        }
+        actions.append(ItemAction(type: .share))
         return actions
     }
 

@@ -16,7 +16,9 @@ struct CollectionsActionHandler: ViewModelActionHandler {
     typealias State = CollectionsState
 
     private let queue: DispatchQueue
-    private let dbStorage: DbStorage
+    private unowned let fileStorage: FileStorage
+    private unowned let dbStorage: DbStorage
+    private unowned let attachmentDownloader: AttachmentDownloader
 
     init(dbStorage: DbStorage) {
         self.queue = DispatchQueue.global(qos: .userInitiated)
@@ -60,6 +62,25 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
         case .loadItemKeysForBibliography(let collection):
             self.loadItemKeysForBibliography(collection: collection, in: viewModel)
+
+        case .downloadAttachments(let identifier):
+            self.downloadAttachments(in: identifier, viewModel: viewModel)
+        }
+    }
+
+    private func downloadAttachments(in collectionId: CollectionIdentifier, viewModel: ViewModel<CollectionsActionHandler>) {
+        do {
+            let items = try self.dbStorage.createCoordinator().perform(request: ReadAllAttachmentsFromCollectionDbRequest(collectionId: collectionId, libraryId: viewModel.state.libraryId))
+            let attachments = items.compactMap({ item -> (Attachment, String?)? in
+                guard let attachment = AttachmentCreator.attachment(for: item, fileStorage: self.fileStorage, urlDetector: nil) else { return nil }
+                return (attachment, item.parent?.key)
+            })
+
+            for (attachment, parentKey) in attachments {
+                self.attachmentDownloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey)
+            }
+        } catch let error {
+            DDLogError("CollectionsActionHandler: download attachments - \(error)")
         }
     }
 
@@ -76,10 +97,8 @@ struct CollectionsActionHandler: ViewModelActionHandler {
     }
 
     private func loadItemKeysForBibliography(collection: Collection, in viewModel: ViewModel<CollectionsActionHandler>) {
-        guard let key = collection.identifier.key else { return }
-
         do {
-            let items = try self.dbStorage.createCoordinator().perform(request: ReadItemsDbRequest(type: .collection(key, collection.name), libraryId: viewModel.state.libraryId))
+            let items = try self.dbStorage.createCoordinator().perform(request: ReadItemsDbRequest(collectionId: collection.identifier, libraryId: viewModel.state.libraryId))
             let keys = Set(items.map({ $0.key }))
             self.update(viewModel: viewModel) { state in
                 state.itemKeysForBibliography = .success(keys)
@@ -171,9 +190,9 @@ struct CollectionsActionHandler: ViewModelActionHandler {
             let library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
             let collections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: libraryId))
 //            let searches = try coordinator.perform(request: ReadSearchesDbRequest(libraryId: libraryId))
-            let allItems = try coordinator.perform(request: ReadItemsDbRequest(type: .all, libraryId: libraryId))
+            let allItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.all), libraryId: libraryId))
 //            let publicationItemsCount = try coordinator.perform(request: ReadItemsDbRequest(type: .publications, libraryId: libraryId)).count
-            let trashItems = try coordinator.perform(request: ReadItemsDbRequest(type: .trash, libraryId: libraryId))
+            let trashItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.trash), libraryId: libraryId))
 
             let collectionTree = CollectionTreeBuilder.collections(from: collections, libraryId: libraryId)
             collectionTree.insert(collection: Collection(custom: .all, itemCount: allItems.count), at: 0)

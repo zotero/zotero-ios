@@ -1,16 +1,16 @@
 //
-//  ReadItemsDbRequest.swift
+//  ReadAttachmentsDbRequest.swift
 //  Zotero
 //
-//  Created by Michal Rentka on 11/02/2019.
-//  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
+//  Created by Michal Rentka on 22.02.2022.
+//  Copyright © 2022 Corporation for Digital Scholarship. All rights reserved.
 //
 
 import Foundation
 
 import RealmSwift
 
-struct ReadItemsDbRequest: DbResponseRequest {
+struct ReadAllAttachmentsFromCollectionDbRequest: DbResponseRequest {
     typealias Response = Results<RItem>
 
     let collectionId: CollectionIdentifier
@@ -36,19 +36,5 @@ struct ReadItemsDbRequest: DbResponseRequest {
             keys.append(contentsOf: self.selfAndSubcollectionKeys(for: child.key, in: database))
         }
         return keys
-    }
-}
-
-struct ReadItemsWithKeysDbRequest: DbResponseRequest {
-    typealias Response = Results<RItem>
-
-    let keys: Set<String>
-    let libraryId: LibraryIdentifier
-
-    var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
-
-    func process(in database: Realm) throws -> Results<RItem> {
-        return database.objects(RItem.self).filter(.keys(self.keys, in: self.libraryId))
     }
 }

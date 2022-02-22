@@ -63,7 +63,7 @@ final class ItemsTableViewHandler: NSObject {
     }
 
     private func createContextMenuActions(for item: RItem, state: ItemsState) -> [ItemAction] {
-        if state.type.isTrash {
+        if state.collection.identifier.isTrash {
             return [ItemAction(type: .restore), ItemAction(type: .delete)]
         }
 
@@ -93,7 +93,7 @@ final class ItemsTableViewHandler: NSObject {
         actions.append(ItemAction(type: .addToCollection))
 
         // Add removing from collection only if item is in current collection.
-        if let key = state.type.collectionKey, item.collections.filter(.key(key)).first != nil {
+        if case .collection(let key) = state.collection.identifier, item.collections.filter(.key(key)).first != nil {
             actions.append(ItemAction(type: .removeFromCollection))
         }
 
@@ -103,12 +103,12 @@ final class ItemsTableViewHandler: NSObject {
     }
 
     private func createTrailingCellActions(for item: RItem, state: ItemsState) -> [ItemAction] {
-        if state.type.isTrash {
+        if state.collection.identifier.isTrash {
             return [ItemAction(type: .delete), ItemAction(type: .restore)]
         }
         var trailingActions: [ItemAction] = [ItemAction(type: .trash), ItemAction(type: .addToCollection)]
         // Allow removing from collection only if item is in current collection. This can happen when "Show items from subcollection" is enabled.
-        if let key = state.type.collectionKey, item.collections.filter(.key(key)).first != nil {
+        if case .collection(let key) = state.collection.identifier, item.collections.filter(.key(key)).first != nil {
             trailingActions.insert(ItemAction(type: .removeFromCollection), at: 1)
         }
         return trailingActions

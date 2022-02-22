@@ -284,6 +284,8 @@ internal enum L10n {
     internal static let delete = L10n.tr("Localizable", "collections.delete")
     /// Delete Collection and Items
     internal static let deleteWithItems = L10n.tr("Localizable", "collections.delete_with_items")
+    /// Download Attachments
+    internal static let downloadAttachments = L10n.tr("Localizable", "collections.download_attachments")
     /// Edit Collection
     internal static let editTitle = L10n.tr("Localizable", "collections.edit_title")
     /// Empty Trash

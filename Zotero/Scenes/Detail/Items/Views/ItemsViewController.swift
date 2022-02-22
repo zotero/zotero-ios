@@ -210,7 +210,7 @@ final class ItemsViewController: UIViewController {
         }
 
         if let key = state.itemKeyToDuplicate {
-            self.coordinatorDelegate?.showItemDetail(for: .duplication(itemKey: key, collectionKey: self.viewModel.state.type.collectionKey), library: self.viewModel.state.library)
+            self.coordinatorDelegate?.showItemDetail(for: .duplication(itemKey: key, collectionKey: self.viewModel.state.collection.identifier.key), library: self.viewModel.state.library)
         }
 
         if state.processingBibliography {
@@ -515,23 +515,11 @@ final class ItemsViewController: UIViewController {
 
     private func setupTitle() {
         guard UIDevice.current.userInterfaceIdiom == .phone else { return }
-
-        switch self.viewModel.state.type {
-        case .all:
-            self.title = L10n.Collections.allItems
-        case .publications:
-            self.title = L10n.Collections.myPublications
-        case .trash:
-            self.title = L10n.Collections.trash
-        case .collection(_, let name):
-            self.title = name
-        case .search(_, let name):
-            self.title = name
-        }
+        self.title = self.viewModel.state.collection.name
     }
 
     private func updateEmptyTrashButton(toEnabled enabled: Bool) {
-        guard self.viewModel.state.type.isTrash, let item = self.navigationItem.rightBarButtonItems?.first(where: { button in RightBarButtonItem(rawValue: button.tag) == .emptyTrash }) else { return }
+        guard self.viewModel.state.collection.identifier.isTrash, let item = self.navigationItem.rightBarButtonItems?.first(where: { button in RightBarButtonItem(rawValue: button.tag) == .emptyTrash }) else { return }
         item.isEnabled = enabled
     }
 
@@ -545,7 +533,7 @@ final class ItemsViewController: UIViewController {
 
     private func rightBarButtonItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
         let selectItems = self.rightBarButtonSelectItemTypes(for: state)
-        if state.type.isTrash {
+        if state.collection.identifier.isTrash {
             return selectItems + [.emptyTrash]
         } else {
             return [.add] + selectItems

@@ -41,6 +41,17 @@ extension CollectionIdentifier {
         }
     }
 
+    var isTrash: Bool {
+        switch self {
+        case .custom(let type):
+            switch type {
+            case .trash: return true
+            case .all, .publications: return false
+            }
+        default: return false
+        }
+    }
+
     var isCollection: Bool {
         switch self {
         case .collection: return true

@@ -84,6 +84,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
         switch collection.identifier {
         case .collection(let key):
             guard self.viewModel.state.library.metadataEditable else { return nil }
+
             let edit = UIAction(title: L10n.edit, image: UIImage(systemName: "pencil")) { [weak self] _ in
                 self?.viewModel.process(action: .startEditing(.edit(collection)))
             }
@@ -96,7 +97,17 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
             let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
                 self?.viewModel.process(action: .deleteCollection(key))
             }
-            return UIMenu(title: "", children: [edit, subcollection, createBibliography, delete])
+
+            var actions: [UIAction] = [edit, subcollection, createBibliography, delete]
+
+            if collection.itemCount > 0 {
+                let downloadAttachments = UIAction(title: L10n.Collections.downloadAttachments, image: UIImage(named: "arrow.down.to.line")) { [weak self] _ in
+                    self?.viewModel.process(action: .downloadAttachments(collection.identifier))
+                }
+                actions.insert(downloadAttachments, at: 0)
+            }
+
+            return UIMenu(title: "", children: actions)
 
         case .custom(let type):
             switch type {
@@ -108,7 +119,10 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
                 return UIMenu(title: "", children: [trash])
 
             case .publications, .all:
-                return nil
+                let downloadAttachments = UIAction(title: L10n.Collections.downloadAttachments, image: UIImage(named: "arrow.down.to.line")) { [weak self] _ in
+                    self?.viewModel.process(action: .downloadAttachments(collection.identifier))
+                }
+                return UIMenu(title: "", children: [downloadAttachments])
             }
 
         case .search:

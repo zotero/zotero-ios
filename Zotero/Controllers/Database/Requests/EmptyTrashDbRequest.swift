@@ -17,7 +17,7 @@ struct EmptyTrashDbRequest: DbRequest {
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
-        database.objects(RItem.self).filter(.items(for: .trash, libraryId: self.libraryId)).forEach {
+        database.objects(RItem.self).filter(.items(for: .custom(.trash), libraryId: self.libraryId)).forEach {
             $0.deleted = true
             $0.changeType = .user
         }

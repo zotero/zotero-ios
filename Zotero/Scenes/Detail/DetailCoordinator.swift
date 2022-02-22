@@ -152,9 +152,8 @@ final class DetailCoordinator: Coordinator {
 
     private func createItemsViewController(collection: Collection, library: Library, dbStorage: DbStorage, fileDownloader: AttachmentDownloader, syncScheduler: SynchronizationScheduler,
                                            citationController: CitationController, fileCleanupController: AttachmentFileCleanupController) -> ItemsViewController {
-        let type = self.fetchType(from: collection)
         let searchTerm = self.searchItemKeys?.joined(separator: ", ")
-        let state = ItemsState(type: type, library: library, sortType: .default, searchTerm: searchTerm, error: nil)
+        let state = ItemsState(collection: collection, library: library, sortType: .default, searchTerm: searchTerm, error: nil)
         let handler = ItemsActionHandler(dbStorage: dbStorage,
                                          fileStorage: self.controllers.fileStorage,
                                          schemaController: self.controllers.schemaController,
@@ -165,24 +164,6 @@ final class DetailCoordinator: Coordinator {
                                          fileCleanupController: fileCleanupController,
                                          syncScheduler: syncScheduler)
         return ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: self.controllers, coordinatorDelegate: self)
-    }
-
-    private func fetchType(from collection: Collection) -> ItemFetchType {
-        switch collection.identifier {
-        case .collection(let key):
-            return .collection(key, collection.name)
-        case .search(let key):
-            return .search(key, collection.name)
-        case .custom(let type):
-            switch type {
-            case .all:
-                return .all
-            case .publications:
-                return .publications
-            case .trash:
-                return .trash
-            }
-        }
     }
 
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier) {
@@ -346,7 +327,14 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
         controller.addAction(UIAlertAction(title: L10n.Items.new, style: .default, handler: { [weak self, weak viewModel] _ in
             guard let `self` = self, let viewModel = viewModel else { return }
-            self.showItemCreation(library: viewModel.state.library, collectionKey: viewModel.state.type.collectionKey)
+            let collectionKey: String?
+            switch viewModel.state.collection.identifier {
+            case .collection(let key):
+                collectionKey = key
+            case .search, .custom:
+                collectionKey = nil
+            }
+            self.showItemCreation(library: viewModel.state.library, collectionKey: collectionKey)
         }))
 
         controller.addAction(UIAlertAction(title: L10n.Items.newNote, style: .default, handler: { [weak self, weak viewModel] _ in
