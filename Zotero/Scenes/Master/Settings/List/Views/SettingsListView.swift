@@ -68,7 +68,7 @@ struct SettingsListView: View {
                 })
             }
 
-            Section {
+            Section(footer: self.footer) {
                 Button(action: {
                     self.coordinatorDelegate?.showSupport()
                 }, label: {
@@ -88,6 +88,28 @@ struct SettingsListView: View {
         .navigationBarTitle(Text(L10n.Settings.title), displayMode: .inline)
         .navigationBarItems(leading: Button(action: { self.coordinatorDelegate?.dismiss() },
                                             label: { Text(L10n.close).padding(.vertical, 10).padding(.trailing, 10) }))
+    }
+
+    private var footer: some View {
+        GeometryReader { proxy in
+            VStack(alignment: .center) {
+                Text(self.versionBuildString)
+                    .font(.footnote)
+                    .foregroundColor(Color(UIColor.systemGray))
+                Text(L10n.Settings.tapToCopy)
+                    .font(.footnote)
+                    .foregroundColor(Color(UIColor.systemGray))
+            }
+            .frame(width: proxy.size.width, alignment: .center)
+        }
+        .onTapGesture {
+            UIPasteboard.general.string = self.versionBuildString
+        }
+    }
+
+    private var versionBuildString: String {
+        guard let version = DeviceInfoProvider.versionString, let build = DeviceInfoProvider.buildString else { return "" }
+        return L10n.Settings.versionAndBuild(version, build)
     }
 
     private var textColor: UIColor {

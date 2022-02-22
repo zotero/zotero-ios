@@ -10,27 +10,32 @@ import UIKit
 
 struct DeviceInfoProvider {
     static var crashString: String {
-        return "device => \(device), os => \(osVersion), version => \(version ?? "Unknown")"
+        return "device => \(device), os => \(osVersion), version => \(versionAndBuild ?? "Unknown")"
     }
 
     static var debugString: String {
         return """
-        Version: \(version ?? "Unknown")
+        Version: \(versionAndBuild ?? "Unknown")
         Device: \(device)
         OS: \(osVersion)
         """
     }
 
-    static var version: String? {
-        guard let infoDictionary = Bundle.main.infoDictionary,
-              let version = infoDictionary["CFBundleShortVersionString"] as? String,
-              let build = infoDictionary["CFBundleVersion"] as? String else { return nil }
+    static var versionAndBuild: String? {
+        guard let version = self.versionString, let build = self.buildString else { return nil }
         return "\(version) (\(build))"
     }
 
+    static var versionString: String? {
+        return Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+    }
+
+    static var buildString: String? {
+        return Bundle.main.infoDictionary?["CFBundleVersion"] as? String
+    }
+
     static var buildNumber: Int? {
-        let buildString = Bundle.main.infoDictionary?["CFBundleVersion"] as? String
-        return buildString.flatMap(Int.init)
+        return self.buildString.flatMap(Int.init)
     }
 
     static var osVersion: String {

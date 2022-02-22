@@ -864,6 +864,8 @@ internal enum L10n {
     internal static let stopLogging = L10n.tr("Localizable", "settings.stop_logging")
     /// Local Storage
     internal static let storage = L10n.tr("Localizable", "settings.storage")
+    /// Tap to copy.
+    internal static let tapToCopy = L10n.tr("Localizable", "settings.tapToCopy")
     /// Settings
     internal static let title = L10n.tr("Localizable", "settings.title")
     /// Translators
@@ -872,6 +874,10 @@ internal enum L10n {
     internal static let translatorsUpdate = L10n.tr("Localizable", "settings.translators_update")
     /// Updating…
     internal static let translatorsUpdating = L10n.tr("Localizable", "settings.translators_updating")
+    /// Version: %@. Build: %@.
+    internal static func versionAndBuild(_ p1: Any, _ p2: Any) -> String {
+      return L10n.tr("Localizable", "settings.versionAndBuild", String(describing: p1), String(describing: p2))
+    }
     /// Connect to Server
     internal static let websocketConnect = L10n.tr("Localizable", "settings.websocket_connect")
     /// Connected
