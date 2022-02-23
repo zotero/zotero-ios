@@ -20,9 +20,11 @@ struct CollectionsActionHandler: ViewModelActionHandler {
     private unowned let dbStorage: DbStorage
     private unowned let attachmentDownloader: AttachmentDownloader
 
-    init(dbStorage: DbStorage) {
+    init(dbStorage: DbStorage, fileStorage: FileStorage, attachmentDownloader: AttachmentDownloader) {
         self.queue = DispatchQueue.global(qos: .userInitiated)
         self.dbStorage = dbStorage
+        self.fileStorage = fileStorage
+        self.attachmentDownloader = attachmentDownloader
     }
 
     func process(action: CollectionsAction, in viewModel: ViewModel<CollectionsActionHandler>) {

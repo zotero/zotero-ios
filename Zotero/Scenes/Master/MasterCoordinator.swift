@@ -48,9 +48,10 @@ final class MasterCoordinator: NSObject, Coordinator {
     }
 
     func start(animated: Bool) {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-        let librariesController = self.createLibrariesViewController(dbStorage: dbStorage)
-        let collectionsController = self.createCollectionsViewController(libraryId: self.visibleLibraryId, selectedCollectionId: Defaults.shared.selectedCollectionId, dbStorage: dbStorage)
+        guard let userControllers = self.controllers.userControllers else { return }
+        let librariesController = self.createLibrariesViewController(dbStorage: userControllers.dbStorage)
+        let collectionsController = self.createCollectionsViewController(libraryId: self.visibleLibraryId, selectedCollectionId: Defaults.shared.selectedCollectionId,
+                                                                         dbStorage: userControllers.dbStorage, attachmentDownloader: userControllers.fileDownloader)
         self.navigationController.setViewControllers([librariesController, collectionsController], animated: animated)
     }
 
@@ -61,8 +62,8 @@ final class MasterCoordinator: NSObject, Coordinator {
         return controller
     }
 
-    private func createCollectionsViewController(libraryId: LibraryIdentifier, selectedCollectionId: CollectionIdentifier, dbStorage: DbStorage) -> CollectionsViewController {
-        let handler = CollectionsActionHandler(dbStorage: dbStorage)
+    private func createCollectionsViewController(libraryId: LibraryIdentifier, selectedCollectionId: CollectionIdentifier, dbStorage: DbStorage, attachmentDownloader: AttachmentDownloader) -> CollectionsViewController {
+        let handler = CollectionsActionHandler(dbStorage: dbStorage, fileStorage: self.controllers.fileStorage, attachmentDownloader: attachmentDownloader)
         let state = CollectionsState(libraryId: libraryId, selectedCollectionId: selectedCollectionId)
         let controller = CollectionsViewController(viewModel: ViewModel(initialState: state, handler: handler), dragDropController: self.controllers.dragDropController)
         controller.coordinatorDelegate = self
@@ -87,12 +88,12 @@ final class MasterCoordinator: NSObject, Coordinator {
 
 extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
     func showDefaultLibrary() {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+        guard let userControllers = self.controllers.userControllers else { return }
 
         let libraryId = LibraryIdentifier.custom(.myLibrary)
         let collectionId = self.storeIfNeeded(libraryId: libraryId)
 
-        let controller = self.createCollectionsViewController(libraryId: libraryId, selectedCollectionId: collectionId, dbStorage: dbStorage)
+        let controller = self.createCollectionsViewController(libraryId: libraryId, selectedCollectionId: collectionId, dbStorage: userControllers.dbStorage, attachmentDownloader: userControllers.fileDownloader)
 
         let animated: Bool
         var viewControllers = self.navigationController.viewControllers
@@ -135,20 +136,20 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
     }
 
     func showCollections(for libraryId: LibraryIdentifier) {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+        guard let userControllers = self.controllers.userControllers else { return }
 
         let collectionId = self.storeIfNeeded(libraryId: libraryId)
 
-        let controller = self.createCollectionsViewController(libraryId: libraryId, selectedCollectionId: collectionId, dbStorage: dbStorage)
+        let controller = self.createCollectionsViewController(libraryId: libraryId, selectedCollectionId: collectionId, dbStorage: userControllers.dbStorage, attachmentDownloader: userControllers.fileDownloader)
         self.navigationController.pushViewController(controller, animated: true)
     }
 
     func showCollections(for libraryId: LibraryIdentifier, preselectedCollection collectionId: CollectionIdentifier) {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+        guard let userControllers = self.controllers.userControllers else { return }
 
         let collectionId = self.storeIfNeeded(libraryId: libraryId, preselectedCollection: collectionId)
 
-        let controller = self.createCollectionsViewController(libraryId: libraryId, selectedCollectionId: collectionId, dbStorage: dbStorage)
+        let controller = self.createCollectionsViewController(libraryId: libraryId, selectedCollectionId: collectionId, dbStorage: userControllers.dbStorage, attachmentDownloader: userControllers.fileDownloader)
         self.navigationController.pushViewController(controller, animated: true)
     }
 

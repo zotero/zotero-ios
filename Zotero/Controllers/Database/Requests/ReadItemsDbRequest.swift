@@ -23,17 +23,16 @@ struct ReadItemsDbRequest: DbResponseRequest {
         if Defaults.shared.showSubcollectionItems,
            case .collection(let key) = self.collectionId {
             let keys = self.selfAndSubcollectionKeys(for: key, in: database)
-            return database.objects(RItem.self).filter(.itemsForCollections(keys: keys, libraryId: self.libraryId))
+            return database.objects(RItem.self).filter(.items(forCollections: keys, libraryId: self.libraryId))
         }
         return database.objects(RItem.self).filter(.items(for: self.collectionId, libraryId: self.libraryId))
     }
 
-    private func selfAndSubcollectionKeys(for key: String, in database: Realm) -> [String] {
-        var keys: [String] = [key]
+    private func selfAndSubcollectionKeys(for key: String, in database: Realm) -> Set<String> {
+        var keys: Set<String> = [key]
         let children = database.objects(RCollection.self).filter(.parentKey(key, in: self.libraryId))
         for child in children {
-            keys.append(child.key)
-            keys.append(contentsOf: self.selfAndSubcollectionKeys(for: child.key, in: database))
+            keys.formUnion(self.selfAndSubcollectionKeys(for: child.key, in: database))
         }
         return keys
     }

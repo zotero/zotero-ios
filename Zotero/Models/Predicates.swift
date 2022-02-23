@@ -201,21 +201,15 @@ extension NSPredicate {
         var predicates = self.baseItemPredicates(isTrash: collectionId.isTrash, libraryId: libraryId)
 
         switch collectionId {
-        case .custom(let type):
-            switch type {
-            case .publications:
-                predicates.append(NSPredicate(format: "any collections.key = %@", "unknown"))
-            case .all, .trash: break
-            }
         case .collection(let key):
             predicates.append(NSPredicate(format: "any collections.key = %@", key))
-        case .search: break
+        case .search, .custom: break
         }
 
         return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
     }
 
-    static func itemsForCollections(keys: [String], libraryId: LibraryIdentifier) -> NSPredicate {
+    static func items(forCollections keys: Set<String>, libraryId: LibraryIdentifier) -> NSPredicate {
         var predicates = self.baseItemPredicates(isTrash: false, libraryId: libraryId)
         predicates.append(NSPredicate(format: "any collections.key in %@", keys))
         return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
@@ -226,6 +220,34 @@ extension NSPredicate {
         if let trash = trash {
             predicates.append(.isTrash(trash))
         }
+        return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+    }
+
+    private static func baseAllAttachmentsPredicates(for libraryId: LibraryIdentifier) -> [NSPredicate] {
+        return [.library(with: libraryId), .notSyncState(.dirty), .deleted(false), .isTrash(false), .item(type: ItemTypes.attachment)]
+    }
+
+    static func allAttachments(for collectionId: CollectionIdentifier, libraryId: LibraryIdentifier) -> NSPredicate {
+        var predicates: [NSPredicate] = self.baseAllAttachmentsPredicates(for: libraryId)
+
+        switch collectionId {
+        case .collection(let key):
+            let selfInCollection = NSPredicate(format: "any collections.key = %@", key)
+            let parentInCollection = NSPredicate(format: "any parent.collections.key = %@", key)
+            predicates.append(NSCompoundPredicate(orPredicateWithSubpredicates: [selfInCollection, parentInCollection]))
+        case .search, .custom: break
+        }
+
+        return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+    }
+
+    static func allAttachments(forCollections keys: Set<String>, libraryId: LibraryIdentifier) -> NSPredicate {
+        var predicates: [NSPredicate] = self.baseAllAttachmentsPredicates(for: libraryId)
+
+        let selfInCollections = NSPredicate(format: "any collections.key in %@", keys)
+        let parentInCollections = NSPredicate(format: "any parent.collections.key in %@", keys)
+        predicates.append(NSCompoundPredicate(orPredicateWithSubpredicates: [selfInCollections, parentInCollections]))
+
         return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
     }
 
