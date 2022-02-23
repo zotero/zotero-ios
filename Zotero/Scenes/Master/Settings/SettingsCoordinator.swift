@@ -17,7 +17,6 @@ protocol SettingsCoordinatorDelegate: AnyObject {
     func showSync()
     func showPrivacyPolicy()
     func showSupport()
-    func showAboutBeta()
     func showCitationSettings()
     func showCitationStyleManagement(viewModel: ViewModel<CiteActionHandler>)
     func showExportSettings()
@@ -175,10 +174,6 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         }
         controller.preferredContentSize = SettingsCoordinator.defaultSize
         self.navigationController.pushViewController(controller, animated: true)
-    }
-
-    func showAboutBeta() {
-        self.showSafari(with: URL(string: "https://www.zotero.org/support/ios_beta?app=1")!)
     }
 
     func showSupport() {

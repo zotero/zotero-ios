@@ -17,15 +17,6 @@ struct SettingsListView: View {
         Form {
             Section {
                 Button(action: {
-                    self.coordinatorDelegate?.showAboutBeta()
-                }, label: {
-                    Text(L10n.aboutBeta)
-                        .foregroundColor(Color(self.textColor))
-                })
-            }
-
-            Section {
-                Button(action: {
                     self.coordinatorDelegate?.showGeneralSettings()
                 }, label: {
                     SettingsListButtonRow(text: L10n.Settings.General.title, detailText: nil, enabled: true)
