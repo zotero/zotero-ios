@@ -290,8 +290,7 @@
 "settings.export.default_format" = "Default Format";
 "settings.export.language" = "Language";
 "settings.export.copy_as_html" = "Copy as HTML";
-"settings.versionAndBuild" = "Version: %@. Build: %@.";
-"settings.tapToCopy" = "Tap to copy.";
+"settings.versionAndBuild" = "Version %@ Build %@";
 
 "shareext.save" = "Save to Zotero";
 "shareext.decoding_attachment" = "Searching for items";

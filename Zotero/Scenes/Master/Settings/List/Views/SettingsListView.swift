@@ -85,18 +85,10 @@ struct SettingsListView: View {
 
     private var footer: some View {
         GeometryReader { proxy in
-            VStack(alignment: .center) {
-                Text(self.versionBuildString)
-                    .font(.footnote)
-                    .foregroundColor(Color(UIColor.systemGray))
-                Text(L10n.Settings.tapToCopy)
-                    .font(.footnote)
-                    .foregroundColor(Color(UIColor.systemGray))
-            }
-            .frame(width: proxy.size.width, alignment: .center)
-        }
-        .onTapGesture {
-            UIPasteboard.general.string = self.versionBuildString
+            Text(self.versionBuildString)
+                .font(.footnote)
+                .foregroundColor(Color(UIColor.systemGray))
+                .frame(width: proxy.size.width, alignment: .center)
         }
     }
 

@@ -52,7 +52,7 @@ final class SettingsCoordinator: NSObject, Coordinator {
     private unowned let controllers: Controllers
     private let startsWithExport: Bool
     private let disposeBag: DisposeBag
-    private static let defaultSize: CGSize = CGSize(width: 580, height: 620)
+    private static let defaultSize: CGSize = CGSize(width: 580, height: 560)
 
     private var searchController: UISearchController?
 
