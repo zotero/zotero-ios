@@ -975,7 +975,7 @@ internal enum L10n {
       internal static let fileSyncingTypeMessage = L10n.tr("Localizable", "settings.sync.file_syncing_type_message")
       /// Password
       internal static let password = L10n.tr("Localizable", "settings.sync.password")
-      /// Sync
+      /// Account
       internal static let title = L10n.tr("Localizable", "settings.sync.title")
       /// Username
       internal static let username = L10n.tr("Localizable", "settings.sync.username")

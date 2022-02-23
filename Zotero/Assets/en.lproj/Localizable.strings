@@ -236,7 +236,7 @@
 "settings.general.show_subcollections_title" = "Show Items from Subcollections";
 "settings.item_count" = "Item count";
 "settings.item_count_subtitle" = "Show item count for all collections.";
-"settings.sync.title" = "Sync";
+"settings.sync.title" = "Account";
 "settings.sync.data_syncing" = "Data Syncing";
 "settings.sync.file_syncing" = "File Syncing";
 "settings.sync.file_syncing_type_message" = "Sync attachment files in My Library using";

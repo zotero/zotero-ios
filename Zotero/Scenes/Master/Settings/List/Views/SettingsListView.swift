@@ -17,15 +17,17 @@ struct SettingsListView: View {
         Form {
             Section {
                 Button(action: {
-                    self.coordinatorDelegate?.showGeneralSettings()
-                }, label: {
-                    SettingsListButtonRow(text: L10n.Settings.General.title, detailText: nil, enabled: true)
-                })
-
-                Button(action: {
                     self.coordinatorDelegate?.showSync()
                 }, label: {
                     SettingsListButtonRow(text: L10n.Settings.Sync.title, detailText: nil, enabled: true)
+                })
+            }
+
+            Section {
+                Button(action: {
+                    self.coordinatorDelegate?.showGeneralSettings()
+                }, label: {
+                    SettingsListButtonRow(text: L10n.Settings.General.title, detailText: nil, enabled: true)
                 })
 
                 Button(action: {
