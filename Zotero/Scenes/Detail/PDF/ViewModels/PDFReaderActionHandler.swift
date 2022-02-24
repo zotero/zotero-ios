@@ -883,7 +883,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                               },
                               shouldReload: { original, new in
                                   // Reload only if aspect ratio or text changed.
-                                  return original.boundingBox.heightToWidthRatio.roundedDecimal(to: 2) != new.boundingBox.heightToWidthRatio.roundedDecimal(to: 2) || original.text != new.text
+                                  return Decimal(original.boundingBox.heightToWidthRatio).rounded(to: 2) != Decimal(new.boundingBox.heightToWidthRatio).rounded(to: 2) || original.text != new.text
                               },
                               in: viewModel)
 
@@ -1361,32 +1361,25 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     /// - parameter viewModel: ViewModel.
     private func add(annotations: [PSPDFKit.Annotation], selectFirst: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
         DDLogInfo("PDFReaderActionHandler: add annotations - \(annotations.map({ "\(type(of: $0));syncable=\($0.syncable);" }))")
-        
-        var newZoteroAnnotations: [Annotation] = []
 
-        let interfaceStyle = viewModel.state.interfaceStyle
-        let isDark = interfaceStyle == .dark
-        let libraryId = viewModel.state.library.identifier
         let activeColor = viewModel.state.activeColor.hexString
+        var newZoteroAnnotations: [Annotation] = []
 
         for annotation in annotations {
             // Either annotation is new (not syncable) or the user used undo/redo and we check whether the annotation exists
-            guard !annotation.syncable || viewModel.state.annotations[Int(annotation.pageIndex)]?.first(where: { $0.key == annotation.key }) == nil,
-                  let zoteroAnnotation = AnnotationConverter.annotation(from: annotation, color: activeColor, library: viewModel.state.library, isNew: true, isSyncable: true,
-                                                                        username: viewModel.state.username, displayName: viewModel.state.displayName, boundingBoxConverter: self.boundingBoxConverter) else { continue }
+            guard !annotation.syncable || viewModel.state.annotations[Int(annotation.pageIndex)]?.first(where: { $0.key == annotation.key }) == nil else { continue }
 
-            newZoteroAnnotations.append(zoteroAnnotation)
+            let splitAnnotations = self.splitIfNeeded(annotation: annotation, activeColor: activeColor, in: viewModel)
 
-            if !annotation.syncable {
-                if let blendMode = AnnotationColorGenerator.blendMode(for: interfaceStyle, isHighlight: (zoteroAnnotation.type == .highlight)) {
-                    annotation.blendMode = blendMode
-                }
-                annotation.customData = [AnnotationsConfig.keyKey: zoteroAnnotation.key,
-                                         AnnotationsConfig.baseColorKey: activeColor,
-                                         AnnotationsConfig.syncableKey: true]
+            if splitAnnotations.count > 1 {
+                viewModel.state.document.remove(annotations: [annotation], options: [.suppressNotifications: true])
+                viewModel.state.document.add(annotations: splitAnnotations, options: [.suppressNotifications: true])
             }
 
-            self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark)
+            for annotation in splitAnnotations {
+                guard let zoteroAnnotation = self.processCreation(of: annotation, activeColor: activeColor, in: viewModel) else { continue }
+                newZoteroAnnotations.append(zoteroAnnotation)
+            }
         }
 
         guard !newZoteroAnnotations.isEmpty else { return }
@@ -1397,6 +1390,158 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             state.insertedKeys = state.insertedKeys.union(keys)
             state.deletedKeys = state.deletedKeys.subtracting(keys)
             state.changes.insert(.save)
+        }
+    }
+
+    private func processCreation(of annotation: PSPDFKit.Annotation, activeColor: String, in viewModel: ViewModel<PDFReaderActionHandler>) -> Annotation? {
+        guard let zoteroAnnotation = AnnotationConverter.annotation(from: annotation, color: activeColor, library: viewModel.state.library, isNew: true, isSyncable: true,
+                                                                    username: viewModel.state.username, displayName: viewModel.state.displayName, boundingBoxConverter: self.boundingBoxConverter) else { return nil }
+
+        if !annotation.syncable {
+            if let blendMode = AnnotationColorGenerator.blendMode(for: viewModel.state.interfaceStyle, isHighlight: (zoteroAnnotation.type == .highlight)) {
+                annotation.blendMode = blendMode
+            }
+            annotation.customData = [AnnotationsConfig.keyKey: zoteroAnnotation.key,
+                                     AnnotationsConfig.baseColorKey: activeColor,
+                                     AnnotationsConfig.syncableKey: true]
+        }
+
+        self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, isDark: (viewModel.state.interfaceStyle == .dark))
+
+        return zoteroAnnotation
+    }
+
+    /// Splits annotation if it exceedes position limit. If it is within limit, it returs original annotation.
+    /// - parameter annotation: Annotation to split
+    /// - parameter activeColor: Currently active color
+    /// - parameter viewModel: View model
+    /// - returns: Array with original annotation if limit was not exceeded. Otherwise array of new split annotations.
+    private func splitIfNeeded(annotation: PSPDFKit.Annotation, activeColor: String, in viewModel: ViewModel<PDFReaderActionHandler>) -> [PSPDFKit.Annotation] {
+        if let annotation = annotation as? HighlightAnnotation {
+            if let splitRects = self.splitRectsIfNeeded(of: annotation) {
+                return self.createAnnotations(from: splitRects, original: annotation)
+            }
+            return [annotation]
+        }
+
+        if let annotation = annotation as? InkAnnotation {
+            if let splitPaths = self.splitPathsIfNeeded(of: annotation) {
+                return self.createAnnotations(from: splitPaths, original: annotation)
+            }
+            return [annotation]
+        }
+
+        return [annotation]
+    }
+
+    private func splitRectsIfNeeded(of annotation: HighlightAnnotation) -> [[CGRect]]? {
+        guard let rects = annotation.rects, !rects.isEmpty else { return nil }
+
+        var count = 2 // 2 for starting and ending brackets of array
+        var splitRects: [[CGRect]] = []
+        var currentRects: [CGRect] = []
+
+        for rect in rects {
+            let size = "\(Decimal(rect.minX).rounded(to: 3))".count + "\(Decimal(rect.minY).rounded(to: 3))".count +
+                       "\(Decimal(rect.maxX).rounded(to: 3))".count + "\(Decimal(rect.maxY).rounded(to: 3))".count + 6 // 4 commas (3 inbetween numbers, 1 after brackets) and 2 brackets for array
+
+            if count + size > AnnotationsConfig.positionSizeLimit {
+                if !currentRects.isEmpty {
+                    splitRects.append(currentRects)
+                    currentRects = []
+                }
+                count = 2
+            }
+
+            currentRects.append(rect)
+            count += size
+        }
+
+        if !currentRects.isEmpty {
+            splitRects.append(currentRects)
+        }
+
+        if splitRects.count == 1 {
+            return nil
+        }
+        return splitRects
+    }
+
+    private func createAnnotations(from splitRects: [[CGRect]], original: HighlightAnnotation) -> [HighlightAnnotation] {
+        guard splitRects.count > 1 else { return [original] }
+        return []
+    }
+
+    private func splitPathsIfNeeded(of annotation: InkAnnotation) -> [[[DrawingPoint]]]? {
+        guard let paths = annotation.lines, !paths.isEmpty else { return [] }
+
+        var count = 2 // 2 for starting and ending brackets of array
+        var splitPaths: [[[DrawingPoint]]] = []
+        var currentLines: [[DrawingPoint]] = []
+        var currentPoints: [DrawingPoint] = []
+
+        for subpaths in paths {
+            if count + 3 > AnnotationsConfig.positionSizeLimit {
+                if !currentPoints.isEmpty {
+                    currentLines.append(currentPoints)
+                    currentPoints = []
+                }
+                if !currentLines.isEmpty {
+                    splitPaths.append(currentLines)
+                    currentLines = []
+                }
+                count = 2
+            }
+
+            count += 3 // brackets for this group of points + comma
+
+            for point in subpaths {
+                let location = point.location
+                let size = "\(Decimal(location.x).rounded(to: 3))".count + "\(Decimal(location.y).rounded(to: 3))".count + 2 // 2 commas (1 inbetween numbers, 1 after tuple)
+
+                if count + size > AnnotationsConfig.positionSizeLimit {
+                    if !currentPoints.isEmpty {
+                        currentLines.append(currentPoints)
+                        currentPoints = []
+                    }
+                    if !currentLines.isEmpty {
+                        splitPaths.append(currentLines)
+                        currentLines = []
+                    }
+                    count = 5
+                }
+
+                count += size
+                currentPoints.append(point)
+            }
+
+            currentLines.append(currentPoints)
+            currentPoints = []
+        }
+
+        if !currentPoints.isEmpty {
+            currentLines.append(currentPoints)
+        }
+        if !currentLines.isEmpty {
+            splitPaths.append(currentLines)
+        }
+
+        if splitPaths.count == 1 {
+            return nil
+        }
+        return splitPaths
+    }
+
+    private func createAnnotations(from splitPaths: [[[DrawingPoint]]], original: InkAnnotation) -> [InkAnnotation] {
+        guard splitPaths.count > 1 else { return [original] }
+        return splitPaths.map { paths in
+            let new = InkAnnotation(lines: paths)
+            new.lineWidth = original.lineWidth
+            new.color = original.color
+            new.contents = original.contents
+            new.pageIndex = original.pageIndex
+            new.customData = original.customData
+            return new
         }
     }
 

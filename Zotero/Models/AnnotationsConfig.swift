@@ -26,6 +26,8 @@ struct AnnotationsConfig {
     // Size of note annotation in PDF document.
     static let noteAnnotationSize: CGSize = CGSize(width: 22, height: 22)
 
+    static let positionSizeLimit = 1000
+
     #if PDFENABLED
     static let supported: PSPDFKit.Annotation.Kind = [.note, .highlight, .square, .ink]
     #endif

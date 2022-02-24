@@ -9,49 +9,33 @@
 import UIKit
 
 extension Double {
-    func roundedDecimal(to places: Int) -> Decimal {
-        guard self.isFinite else { return Decimal(0) }
-
-        var original = Decimal(self)
-        var result: Decimal = 0
-        NSDecimalRound(&result, &original, places, .bankers)
-        return result
-    }
-
     func rounded(to places: Int) -> Double {
         guard self.isFinite else { return self }
-        return (self.roundedDecimal(to: places) as NSNumber).doubleValue
+        return (Decimal(self).rounded(to: places) as NSNumber).doubleValue
     }
 }
 
 extension CGFloat {
-    func roundedDecimal(to places: Int) -> Decimal {
-        guard self.isFinite else { return Decimal(0) }
-
-        var original = Decimal(self)
-        var result: Decimal = 0
-        NSDecimalRound(&result, &original, places, .bankers)
-        return result
-    }
-
     func rounded(to places: Int) -> CGFloat {
         guard self.isFinite else { return self }
-        return CGFloat((self.roundedDecimal(to: places) as NSNumber).doubleValue)
+        return CGFloat((Decimal(self).rounded(to: places) as NSNumber).doubleValue)
     }
 }
 
 extension Float {
-    func roundedDecimal(to places: Int) -> Decimal {
-        guard self.isFinite else { return Decimal(0) }
-
-        var original = Decimal(Double(self))
-        var result: Decimal = 0
-        NSDecimalRound(&result, &original, places, .bankers)
-        return result
-    }
-
     func rounded(to places: Int) -> Float {
         guard self.isFinite else { return self }
-        return (self.roundedDecimal(to: places) as NSNumber).floatValue
+        return (Decimal(Double(self)).rounded(to: places) as NSNumber).floatValue
+    }
+}
+
+extension Decimal {
+    func rounded(to places: Int, mode: NSDecimalNumber.RoundingMode = .bankers) -> Decimal {
+        guard self.isFinite else { return Decimal(0) }
+
+        var original = self
+        var result: Decimal = 0
+        NSDecimalRound(&result, &original, places, mode)
+        return result
     }
 }

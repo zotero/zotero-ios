@@ -75,7 +75,7 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
             case FieldKeys.Item.Annotation.pageIndex:
                 newValue = "\(annotation.page)"
             case FieldKeys.Item.Annotation.lineWidth:
-                newValue = annotation.lineWidth.flatMap({ "\($0.roundedDecimal(to: 3))" }) ?? ""
+                newValue = annotation.lineWidth.flatMap({ "\(Decimal($0).rounded(to: 3))" }) ?? ""
             case FieldKeys.Item.Annotation.pageLabel:
                 newValue = annotation.pageLabel
             case FieldKeys.Item.Annotation.sortIndex:
