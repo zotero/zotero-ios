@@ -832,6 +832,7 @@
 		B3CE697624DD7D6A00D333AF /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B30B550224B85A3A00F94B59 /* Colors.xcassets */; };
 		B3CF8830266DFFAF009CFC20 /* ReadStylesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B331F9B4265400D70099F6A6 /* ReadStylesDbRequest.swift */; };
 		B3D037202604FCBA00BCFB05 /* FileAttachmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B40622490F09400FAAF6D /* FileAttachmentView.swift */; };
+		B3D0793627CCF63800C454D6 /* AnnotationBoundingBoxCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D0793527CCF63800C454D6 /* AnnotationBoundingBoxCalculator.swift */; };
 		B3D0994726DCCEF700B04FAA /* RPathCoordinate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D0994626DCCEF700B04FAA /* RPathCoordinate.swift */; };
 		B3D0994826DCCF6500B04FAA /* RPathCoordinate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D0994626DCCEF700B04FAA /* RPathCoordinate.swift */; };
 		B3D0AC98255C14AB007648F5 /* PDFReaderLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D0AC97255C14AB007648F5 /* PDFReaderLayout.swift */; };
@@ -1609,6 +1610,7 @@
 		B3CBB120248A439A00C4228F /* Notification+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Notification+Extensions.swift"; sourceTree = "<group>"; };
 		B3CBB122248A44D100C4228F /* KeyboardData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardData.swift; sourceTree = "<group>"; };
 		B3CBB124248A46D500C4228F /* NotificationCenter+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationCenter+Extensions.swift"; sourceTree = "<group>"; };
+		B3D0793527CCF63800C454D6 /* AnnotationBoundingBoxCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationBoundingBoxCalculator.swift; sourceTree = "<group>"; };
 		B3D0994626DCCEF700B04FAA /* RPathCoordinate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPathCoordinate.swift; sourceTree = "<group>"; };
 		B3D0AC97255C14AB007648F5 /* PDFReaderLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReaderLayout.swift; sourceTree = "<group>"; };
 		B3D16BF024E161C70002663B /* LoginViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewController.swift; sourceTree = "<group>"; };
@@ -1827,6 +1829,7 @@
 				B398A913270C6A4300968EE8 /* WebDAV */,
 				B34ACC792514EAAB00040C17 /* AnnotationColorGenerator.swift */,
 				B34A9F6725BF1D27007C9A4A /* AnnotationConverter.swift */,
+				B3D0793527CCF63800C454D6 /* AnnotationBoundingBoxCalculator.swift */,
 				B3EC44602718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift */,
 				B3FBAC1824570BDE00AA00C0 /* AnnotationPreviewController.swift */,
 				B30B40642491222000FAAF6D /* AttachmentCreator.swift */,
@@ -4321,6 +4324,7 @@
 				B3486B8926CFAFEA0036A267 /* SingleCitationActionHandler.swift in Sources */,
 				B3A351DF271577D0002E597A /* WebDavTestWriteRequest.swift in Sources */,
 				B3593F26241A61C700760E20 /* ItemDetailAbstractCell.swift in Sources */,
+				B3D0793627CCF63800C454D6 /* AnnotationBoundingBoxCalculator.swift in Sources */,
 				B30566A223FC051F003304F2 /* Attachment.swift in Sources */,
 				B30565BF23FC051E003304F2 /* CheckItemIsChangedDbRequest.swift in Sources */,
 				B3E8FE6E2714344D00F51458 /* SettingsListButtonRow.swift in Sources */,

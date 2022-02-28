@@ -1372,8 +1372,17 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             let splitAnnotations = self.splitIfNeeded(annotation: annotation, activeColor: activeColor, in: viewModel)
 
             if splitAnnotations.count > 1 {
-                viewModel.state.document.remove(annotations: [annotation], options: [.suppressNotifications: true])
-                viewModel.state.document.add(annotations: splitAnnotations, options: [.suppressNotifications: true])
+                DDLogInfo("PDFReaderActionHandler: did split annotations into \(splitAnnotations.count)")
+
+                viewModel.state.document.undoController.recordCommand(named: nil, in: { recorder in
+                    recorder.record(removing: [annotation]) {
+                        viewModel.state.document.remove(annotations: [annotation], options: [.suppressNotifications: true])
+                    }
+
+                    recorder.record(adding: splitAnnotations) {
+                        viewModel.state.document.add(annotations: splitAnnotations, options: [.suppressNotifications: true])
+                    }
+                })
             }
 
             for annotation in splitAnnotations {
@@ -1435,7 +1444,14 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     }
 
     private func splitRectsIfNeeded(of annotation: HighlightAnnotation) -> [[CGRect]]? {
-        guard let rects = annotation.rects, !rects.isEmpty else { return nil }
+        guard var rects = annotation.rects, !rects.isEmpty else { return nil }
+
+        rects.sort { lRect, rRect in
+            if lRect.minY == rRect.minY {
+                return lRect.minX < rRect.minX
+            }
+            return lRect.minY > rRect.minY
+        }
 
         var count = 2 // 2 for starting and ending brackets of array
         var splitRects: [[CGRect]] = []
@@ -1469,7 +1485,18 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
     private func createAnnotations(from splitRects: [[CGRect]], original: HighlightAnnotation) -> [HighlightAnnotation] {
         guard splitRects.count > 1 else { return [original] }
-        return []
+        return splitRects.map { rects -> HighlightAnnotation in
+            let new = HighlightAnnotation()
+            new.rects = rects
+            new.boundingBox = AnnotationBoundingBoxCalculator.boundingBox(from: rects)
+            new.alpha = original.alpha
+            new.color = original.color
+            new.blendMode = original.blendMode
+            new.contents = original.contents
+            new.pageIndex = original.pageIndex
+            new.customData = original.customData
+            return new
+        }
     }
 
     private func splitPathsIfNeeded(of annotation: InkAnnotation) -> [[[DrawingPoint]]]? {
@@ -1537,7 +1564,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         return splitPaths.map { paths in
             let new = InkAnnotation(lines: paths)
             new.lineWidth = original.lineWidth
+            new.alpha = original.alpha
             new.color = original.color
+            new.blendMode = original.blendMode
             new.contents = original.contents
             new.pageIndex = original.pageIndex
             new.customData = original.customData
