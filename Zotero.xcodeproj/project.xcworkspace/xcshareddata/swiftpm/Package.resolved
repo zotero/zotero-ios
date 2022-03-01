@@ -87,8 +87,8 @@
         "repositoryURL": "https://github.com/PSPDFKit/PSPDFKit-SP",
         "state": {
           "branch": null,
-          "revision": "44c6f807635cc4fb83c841f0a03492fcf60b3e0d",
-          "version": "11.2.0"
+          "revision": "8e6fc0d57bc73021f2a2d1cab8f787c538fb2331",
+          "version": "11.2.2"
         }
       },
       {
@@ -105,8 +105,8 @@
         "repositoryURL": "https://github.com/realm/realm-cocoa",
         "state": {
           "branch": null,
-          "revision": "39177714b95bb5b1b29fffe28f1c7da77eef8e8b",
-          "version": "10.21.1"
+          "revision": "7feb5799dc10316aaf9dd9f9152abe18fa983d51",
+          "version": "10.23.0"
         }
       },
       {
@@ -114,8 +114,8 @@
         "repositoryURL": "https://github.com/realm/realm-core",
         "state": {
           "branch": null,
-          "revision": "f1976f0d96d9b06fbe0afbd60090b1c3966b1e23",
-          "version": "11.8.0"
+          "revision": "6b81f1a7a2d421f9e0b9e7f04e76bcf736a54409",
+          "version": "11.9.0"
         }
       },
       {
@@ -123,8 +123,8 @@
         "repositoryURL": "https://github.com/ReactiveX/RxSwift",
         "state": {
           "branch": null,
-          "revision": "7c17a6ccca06b5c107cfa4284e634562ddaf5951",
-          "version": "6.2.0"
+          "revision": "4f96dc3548b316b0affe1117bc0be52f03b97b80",
+          "version": "6.5.0"
         }
       },
       {
