@@ -112,12 +112,14 @@ struct SubmitUpdateSyncAction: SyncAction {
                 }
             }
 
-            if response.failed.first(where: { $0.code == 412 }) != nil {
+            if let failed = response.failed.first(where: { $0.code == 412 }) {
+                DDLogError("SubmitUpdateSyncAction: failed \(failed.key ?? "unknown key") (\(failed.code)) - \(failed.message)")
                 subscriber(.success((newVersion, PreconditionErrorType.objectConflict)))
                 return Disposables.create()
             }
 
             if let failed = response.failed.first(where: { $0.code == 409 }) {
+                DDLogError("SubmitUpdateSyncAction: failed \(failed.key ?? "unknown key") (\(failed.code)) - \(failed.message)")
                 subscriber(.success((newVersion, SyncActionError.submitUpdateFailures(failed.message))))
                 return Disposables.create()
             }
