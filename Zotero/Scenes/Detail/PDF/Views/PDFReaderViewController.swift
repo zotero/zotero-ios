@@ -1096,10 +1096,20 @@ extension PDFReaderViewController: AnnotationBoundingBoxConverter {
         return rect.applying(pageInfo.transform)
     }
 
+    func convertFromDb(point: CGPoint, page: PageIndex) -> CGPoint? {
+        let tmpRect = CGRect(origin: point, size: CGSize(width: 1, height: 1))
+        return self.convertFromDb(rect: tmpRect, page: page)?.origin
+    }
+
     /// Converts from PSPDFKit to database rect. Database stores rects in RAW PDF Coordinate space. PSPDFKit works with Normalized PDF Coordinate Space.
     func convertToDb(rect: CGRect, page: PageIndex) -> CGRect? {
         guard let pageInfo = self.viewModel.state.document.pageInfoForPage(at: page) else { return nil }
         return rect.applying(pageInfo.transform.inverted())
+    }
+
+    func convertToDb(point: CGPoint, page: PageIndex) -> CGPoint? {
+        let tmpRect = CGRect(origin: point, size: CGSize(width: 1, height: 1))
+        return self.convertToDb(rect: tmpRect, page: page)?.origin
     }
 
     /// Converts from PSPDFKit to sort index rect. PSPDFKit works with Normalized PDF Coordinate Space. Sort index stores y coordinate in RAW View Coordinate Space.

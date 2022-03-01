@@ -74,9 +74,10 @@ struct AnnotationConverter {
         let (isAuthor, authorName) = self.authorData(for: item, library: library, currentUserId: currentUserId, username: username, displayName: displayName)
         let editability = self.editability(for: library, isAuthor: isAuthor)
         let comment = item.fieldValue(for: FieldKeys.Item.Annotation.comment) ?? ""
+        let _pageIndex = PageIndex(pageIndex)
         let rects: [CGRect] = item.rects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX), height: ($0.maxY - $0.minY)) })
-                                        .compactMap({ boundingBoxConverter.convertFromDb(rect: $0, page: PageIndex(pageIndex)) })
-        let paths = self.paths(for: item)
+                                        .compactMap({ boundingBoxConverter.convertFromDb(rect: $0, page: _pageIndex) })
+        let paths = self.paths(for: item, pageIndex: _pageIndex, boundingBoxConverter: boundingBoxConverter)
         let lineWidth = (item.fields.filter(.key(FieldKeys.Item.Annotation.lineWidth)).first?.value).flatMap(Double.init).flatMap(CGFloat.init)
 
         return Annotation(key: item.key,
@@ -138,13 +139,14 @@ struct AnnotationConverter {
         }
     }
 
-    private static func paths(for item: RItem) -> [[CGPoint]] {
+    private static func paths(for item: RItem, pageIndex: PageIndex, boundingBoxConverter: AnnotationBoundingBoxConverter) -> [[CGPoint]] {
         var paths: [[CGPoint]] = []
         for path in item.paths.sorted(byKeyPath: "sortIndex") {
             guard path.coordinates.count % 2 == 0 else { continue }
             let sortedCoordinates = path.coordinates.sorted(byKeyPath: "sortIndex")
-            let lines = (0..<(path.coordinates.count / 2)).map({ idx -> CGPoint in
-                return CGPoint(x: sortedCoordinates[idx * 2].value, y: sortedCoordinates[(idx * 2) + 1].value)
+            let lines = (0..<(path.coordinates.count / 2)).compactMap({ idx -> CGPoint? in
+                let point = CGPoint(x: sortedCoordinates[idx * 2].value, y: sortedCoordinates[(idx * 2) + 1].value)
+                return boundingBoxConverter.convertFromDb(point: point, page: pageIndex)
             })
             paths.append(lines)
         }

@@ -42,6 +42,7 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
     }
 
     private func sync(annotation: Annotation, to parent: RItem, database: Realm) throws {
+        let pageIndex = UInt(annotation.page)
         let item: RItem
 
         if let existing = parent.children.filter(.key(annotation.key)).first {
@@ -54,8 +55,8 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
 
         self.syncFields(annotation: annotation, in: item, database: database)
         self.sync(tags: annotation.tags, in: item, database: database)
-        self.sync(rects: annotation.rects.compactMap({ self.boundingBoxConverter.convertToDb(rect: $0, page: UInt(annotation.page)) }), in: item, database: database)
-        self.sync(paths: annotation.paths, in: item, database: database)
+        self.sync(rects: annotation.rects.compactMap({ self.boundingBoxConverter.convertToDb(rect: $0, page: pageIndex) }), in: item, database: database)
+        self.sync(paths: annotation.paths.map({ line in return line.compactMap({ self.boundingBoxConverter.convertToDb(point: $0, page: pageIndex) }) }), in: item, database: database)
 
         if !item.changedFields.isEmpty {
             item.changeType = .user

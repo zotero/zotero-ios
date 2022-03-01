@@ -18,6 +18,8 @@ import RxSwift
 protocol AnnotationBoundingBoxConverter: AnyObject {
     func convertToDb(rect: CGRect, page: PageIndex) -> CGRect?
     func convertFromDb(rect: CGRect, page: PageIndex) -> CGRect?
+    func convertToDb(point: CGPoint, page: PageIndex) -> CGPoint?
+    func convertFromDb(point: CGPoint, page: PageIndex) -> CGPoint?
     func sortIndexMinY(rect: CGRect, page: PageIndex) -> CGFloat?
     func textOffset(rect: CGRect, page: PageIndex) -> Int?
 }
