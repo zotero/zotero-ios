@@ -199,16 +199,6 @@
 "creator_editor.switch_to_dual" = "Switch to two fields";
 "creator_editor.delete_confirmation" = "Do you really want to delete this creator?";
 
-"pdf.scroll_direction.title" = "Scroll Direction: %@";
-"pdf.scroll_direction.horizontal" = "Horizontal";
-"pdf.scroll_direction.vertical" = "Vertical";
-"pdf.page_transition.title" = "Page Transition: %@";
-"pdf.page_transition.jump" = "Jump";
-"pdf.page_transition.continuous" = "Continuous";
-"pdf.appearance.title" = "Appearance: %@";
-"pdf.appearance.auto" = "Automatic";
-"pdf.appearance.light_mode" = "Light Mode";
-"pdf.appearance.dark_mode" = "Dark Mode";
 "pdf.annotations_sidebar.search_title" = "Search";
 "pdf.annotations_sidebar.add_comment" = "Add comment";
 "pdf.annotations_sidebar.add_tags" = "Add tags";
@@ -226,8 +216,26 @@
 "pdf.deleted_title" = "Deleted";
 "pdf.deleted_message" = "This document has been deleted. Do you want to restore it?";
 "pdf.line_width_point" = "%0.1f pt";
-"pdf.idle_timer_enable" = "Allow device to sleep";
-"pdf.idle_timer_disable" = "Keep screen on";
+
+"pdf.settings.idle_timer_title" = "Allow device to sleep";
+"pdf.settings.scroll_direction.title" = "Scroll Direction";
+"pdf.settings.scroll_direction.horizontal" = "Horizontal";
+"pdf.settings.scroll_direction.vertical" = "Vertical";
+"pdf.settings.page_transition.title" = "Page Transition";
+"pdf.settings.page_transition.jump" = "Jump";
+"pdf.settings.page_transition.continuous" = "Continuous";
+"pdf.settings.appearance.title" = "Appearance";
+"pdf.settings.appearance.auto" = "Automatic";
+"pdf.settings.appearance.light_mode" = "Light";
+"pdf.settings.appearance.dark_mode" = "Dark";
+"pdf.settings.page_mode.title" = "Page Mode";
+"pdf.settings.page_mode.single" = "Single";
+"pdf.settings.page_mode.double" = "Double";
+"pdf.settings.page_mode.automatic" = "Automatic";
+"pdf.settings.page_fitting.title" = "Page Fitting";
+"pdf.settings.page_fitting.fit" = "Fit";
+"pdf.settings.page_fitting.fill" = "Fill";
+"pdf.settings.page_fitting.automatic" = "Automatic";
 
 "settings.title" = "Settings";
 "settings.logout" = "Sign Out";

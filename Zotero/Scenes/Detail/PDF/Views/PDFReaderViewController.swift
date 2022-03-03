@@ -206,10 +206,14 @@ final class PDFReaderViewController: UIViewController {
             self.updateInterface(to: state.settings)
 
             if self.pdfController.configuration.scrollDirection != state.settings.direction ||
-               self.pdfController.configuration.pageTransition != state.settings.transition {
+               self.pdfController.configuration.pageTransition != state.settings.transition ||
+               self.pdfController.configuration.pageMode != state.settings.pageMode ||
+               self.pdfController.configuration.spreadFitting != state.settings.pageFitting {
                 self.pdfController.updateConfiguration { configuration in
                     configuration.scrollDirection = state.settings.direction
                     configuration.pageTransition = state.settings.transition
+                    configuration.pageMode = state.settings.pageMode
+                    configuration.spreadFitting = state.settings.pageFitting
                 }
             }
         }
@@ -293,7 +297,7 @@ final class PDFReaderViewController: UIViewController {
         self.navigationItem.rightBarButtonItems = items
     }
 
-    private func updateInterface(to settings: PDFSettingsState) {
+    private func updateInterface(to settings: PDFSettings) {
         switch settings.appearanceMode {
         case .automatic:
             self.pdfController.appearanceModeManager.appearanceMode = self.traitCollection.userInterfaceStyle == .dark ? .night : []
@@ -448,8 +452,8 @@ final class PDFReaderViewController: UIViewController {
     }
 
     private func showSettings(sender: UIBarButtonItem) {
-        self.coordinatorDelegate?.showSettings(state: self.viewModel.state.settings, sender: sender, completion: { [weak self] action in
-            self?.viewModel.process(action: action)
+        self.coordinatorDelegate?.showSettings(with: self.viewModel.state.settings, sender: sender, completion: { [weak self] settings in
+            self?.viewModel.process(action: .setSettings(settings))
         })
     }
 
@@ -679,10 +683,12 @@ final class PDFReaderViewController: UIViewController {
         self.annotationsControllerLeft = sidebarLeftConstraint
     }
 
-    private func createPdfController(with document: PSPDFKit.Document, settings: PDFSettingsState) -> PDFViewController {
+    private func createPdfController(with document: PSPDFKit.Document, settings: PDFSettings) -> PDFViewController {
         let pdfConfiguration = PDFConfiguration { builder in
             builder.scrollDirection = settings.direction
             builder.pageTransition = settings.transition
+            builder.pageMode = settings.pageMode
+            builder.spreadFitting = settings.pageFitting
             builder.documentLabelEnabled = .NO
             builder.allowedAppearanceModes = [.night]
             builder.isCreateAnnotationMenuEnabled = true

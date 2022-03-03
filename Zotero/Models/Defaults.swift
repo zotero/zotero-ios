@@ -87,8 +87,8 @@ final class Defaults {
     @UserDefault(key: "PDFReaderState.activeColor", defaultValue: AnnotationsConfig.defaultActiveColor)
     var activeColorHex: String
 
-    @CodableUserDefault(key: "PDFReaderSettings", defaultValue: PDFSettingsState.default, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder, defaults: .standard)
-    var pdfSettings: PDFSettingsState
+    @CodableUserDefault(key: "PDFReaderSettings", defaultValue: PDFSettings.default, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder, defaults: .standard)
+    var pdfSettings: PDFSettings
     #endif
 
     // MARK: - Citation / Bibliography Export
@@ -145,7 +145,7 @@ final class Defaults {
 
         #if PDFENABLED
         self.activeColorHex = AnnotationsConfig.defaultActiveColor
-        self.pdfSettings = PDFSettingsState.default
+        self.pdfSettings = PDFSettings.default
         #endif
         #endif
     }

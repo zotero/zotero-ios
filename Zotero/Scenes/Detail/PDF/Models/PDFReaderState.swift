@@ -37,9 +37,9 @@ struct PDFReaderState: ViewModelState {
     }
 
     enum AppearanceMode: UInt {
-        case automatic
         case light
         case dark
+        case automatic
     }
 
     let key: String
@@ -97,9 +97,9 @@ struct PDFReaderState: ViewModelState {
     /// Used to ignore next insertion/deletion notification of annotations. Used when there is a remote change of annotations. PSPDFKit can't suppress notifications when adding/deleting annotations
     /// to/from document. So when a remote change comes in, the document is edited and emits notifications which would try to do the same work again.
     var ignoreNotifications: [Notification.Name: Set<String>]
-    var settings: PDFSettingsState
+    var settings: PDFSettings
 
-    init(url: URL, key: String, library: Library, settings: PDFSettingsState, userId: Int, username: String, displayName: String, interfaceStyle: UIUserInterfaceStyle) {
+    init(url: URL, key: String, library: Library, settings: PDFSettings, userId: Int, username: String, displayName: String, interfaceStyle: UIUserInterfaceStyle) {
         self.key = key
         self.library = library
         self.userId = userId

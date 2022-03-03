@@ -50,11 +50,9 @@ enum PDFReaderAction {
     case updateDbPositions(objects: Results<RItem>, deletions: [Int], insertions: [Int])
     case notificationReceived(Notification.Name)
     case annotationChangeNotificationReceived(String)
-    case changeDirection(ScrollDirection)
-    case changeTransition(PageTransition)
-    case changeAppearanceMode(PDFReaderState.AppearanceMode)
-    case changeIdleTimerDisabled(Bool)
     case setSidebarEditingEnabled(Bool)
+    case setSettings(PDFSettings)
+    case changeIdleTimerDisabled(Bool)
 }
 
 #endif

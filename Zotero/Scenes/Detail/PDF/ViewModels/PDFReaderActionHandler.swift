@@ -225,17 +225,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                 }
             }
 
-        case .changeAppearanceMode(let mode):
-            self.updateSettings(action: { $0.appearanceMode = mode }, in: viewModel)
-
-        case .changeDirection(let direction):
-            self.updateSettings(action: { $0.direction = direction }, in: viewModel)
-
-        case .changeTransition(let transition):
-            self.updateSettings(action: { $0.transition = transition }, in: viewModel)
+        case .setSettings(let settings):
+            self.update(settings: settings, in: viewModel)
 
         case .changeIdleTimerDisabled(let disabled):
-            self.changeIdleTimer(disabled: disabled, in: viewModel)
+            var settings = viewModel.state.settings
+            settings.idleTimerDisabled = disabled
+            self.update(settings: settings, in: viewModel)
 
         case .setSidebarEditingEnabled(let enabled):
             self.setSidebar(editing: enabled, in: viewModel)
@@ -420,14 +416,14 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func updateSettings(action: (inout PDFSettingsState) -> Void, in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func update(settings: PDFSettings, in viewModel: ViewModel<PDFReaderActionHandler>) {
         // Update local state
         self.update(viewModel: viewModel) { state in
-            action(&state.settings)
+            state.settings = settings
             state.changes = .settings
         }
         // Store new settings to defaults
-        Defaults.shared.pdfSettings = viewModel.state.settings
+        Defaults.shared.pdfSettings = settings
     }
 
     private func updateDbPositions(objects: Results<RItem>, deletions: [Int], insertions: [Int], in viewModel: ViewModel<PDFReaderActionHandler>) {

@@ -750,10 +750,6 @@ internal enum L10n {
     internal static let deletedMessage = L10n.tr("Localizable", "pdf.deleted_message")
     /// Deleted
     internal static let deletedTitle = L10n.tr("Localizable", "pdf.deleted_title")
-    /// Keep screen on
-    internal static let idleTimerDisable = L10n.tr("Localizable", "pdf.idle_timer_disable")
-    /// Allow device to sleep
-    internal static let idleTimerEnable = L10n.tr("Localizable", "pdf.idle_timer_enable")
     /// %0.1f pt
     internal static func lineWidthPoint(_ p1: Float) -> String {
       return L10n.tr("Localizable", "pdf.line_width_point", p1)
@@ -782,38 +778,6 @@ internal enum L10n {
       /// Search
       internal static let searchTitle = L10n.tr("Localizable", "pdf.annotations_sidebar.search_title")
     }
-    internal enum Appearance {
-      /// Automatic
-      internal static let auto = L10n.tr("Localizable", "pdf.appearance.auto")
-      /// Dark Mode
-      internal static let darkMode = L10n.tr("Localizable", "pdf.appearance.dark_mode")
-      /// Light Mode
-      internal static let lightMode = L10n.tr("Localizable", "pdf.appearance.light_mode")
-      /// Appearance: %@
-      internal static func title(_ p1: Any) -> String {
-        return L10n.tr("Localizable", "pdf.appearance.title", String(describing: p1))
-      }
-    }
-    internal enum PageTransition {
-      /// Continuous
-      internal static let continuous = L10n.tr("Localizable", "pdf.page_transition.continuous")
-      /// Jump
-      internal static let jump = L10n.tr("Localizable", "pdf.page_transition.jump")
-      /// Page Transition: %@
-      internal static func title(_ p1: Any) -> String {
-        return L10n.tr("Localizable", "pdf.page_transition.title", String(describing: p1))
-      }
-    }
-    internal enum ScrollDirection {
-      /// Horizontal
-      internal static let horizontal = L10n.tr("Localizable", "pdf.scroll_direction.horizontal")
-      /// Scroll Direction: %@
-      internal static func title(_ p1: Any) -> String {
-        return L10n.tr("Localizable", "pdf.scroll_direction.title", String(describing: p1))
-      }
-      /// Vertical
-      internal static let vertical = L10n.tr("Localizable", "pdf.scroll_direction.vertical")
-    }
     internal enum Search {
       /// Search failed
       internal static let failed = L10n.tr("Localizable", "pdf.search.failed")
@@ -825,6 +789,56 @@ internal enum L10n {
       internal static let oneMatch = L10n.tr("Localizable", "pdf.search.one_match")
       /// Search in Document
       internal static let title = L10n.tr("Localizable", "pdf.search.title")
+    }
+    internal enum Settings {
+      /// Allow device to sleep
+      internal static let idleTimerTitle = L10n.tr("Localizable", "pdf.settings.idle_timer_title")
+      internal enum Appearance {
+        /// Automatic
+        internal static let auto = L10n.tr("Localizable", "pdf.settings.appearance.auto")
+        /// Dark
+        internal static let darkMode = L10n.tr("Localizable", "pdf.settings.appearance.dark_mode")
+        /// Light
+        internal static let lightMode = L10n.tr("Localizable", "pdf.settings.appearance.light_mode")
+        /// Appearance
+        internal static let title = L10n.tr("Localizable", "pdf.settings.appearance.title")
+      }
+      internal enum PageFitting {
+        /// Automatic
+        internal static let automatic = L10n.tr("Localizable", "pdf.settings.page_fitting.automatic")
+        /// Fill
+        internal static let fill = L10n.tr("Localizable", "pdf.settings.page_fitting.fill")
+        /// Fit
+        internal static let fit = L10n.tr("Localizable", "pdf.settings.page_fitting.fit")
+        /// Page Fitting
+        internal static let title = L10n.tr("Localizable", "pdf.settings.page_fitting.title")
+      }
+      internal enum PageMode {
+        /// Automatic
+        internal static let automatic = L10n.tr("Localizable", "pdf.settings.page_mode.automatic")
+        /// Double
+        internal static let double = L10n.tr("Localizable", "pdf.settings.page_mode.double")
+        /// Single
+        internal static let single = L10n.tr("Localizable", "pdf.settings.page_mode.single")
+        /// Page Mode
+        internal static let title = L10n.tr("Localizable", "pdf.settings.page_mode.title")
+      }
+      internal enum PageTransition {
+        /// Continuous
+        internal static let continuous = L10n.tr("Localizable", "pdf.settings.page_transition.continuous")
+        /// Jump
+        internal static let jump = L10n.tr("Localizable", "pdf.settings.page_transition.jump")
+        /// Page Transition
+        internal static let title = L10n.tr("Localizable", "pdf.settings.page_transition.title")
+      }
+      internal enum ScrollDirection {
+        /// Horizontal
+        internal static let horizontal = L10n.tr("Localizable", "pdf.settings.scroll_direction.horizontal")
+        /// Scroll Direction
+        internal static let title = L10n.tr("Localizable", "pdf.settings.scroll_direction.title")
+        /// Vertical
+        internal static let vertical = L10n.tr("Localizable", "pdf.settings.scroll_direction.vertical")
+      }
     }
   }
 

@@ -84,7 +84,7 @@ protocol DetailPdfCoordinatorDelegate: AnyObject {
     func lookup(text: String, rect: CGRect, view: UIView)
     func showDeletedAlertForPdf(completion: @escaping (Bool) -> Void)
     func pdfDidDeinitialize()
-    func showSettings(state: PDFSettingsState, sender: UIBarButtonItem, completion: @escaping (PDFReaderAction) -> Void)
+    func showSettings(with settings: PDFSettings, sender: UIBarButtonItem, completion: @escaping (PDFSettings) -> Void)
     func showInkSettings(sender: UIView, viewModel: ViewModel<PDFReaderActionHandler>)
     func showReader(document: Document)
 }
@@ -895,51 +895,29 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         self.pdfSearchController = nil
     }
 
-    private func showAppearanceModePicker(for current: PDFReaderState.AppearanceMode, completed: @escaping (PDFReaderState.AppearanceMode) -> Void) {
-        let models = [SinglePickerModel(id: "\(PDFReaderState.AppearanceMode.automatic.rawValue)", name: L10n.Pdf.Appearance.auto),
-                      SinglePickerModel(id: "\(PDFReaderState.AppearanceMode.light.rawValue)", name: L10n.Pdf.Appearance.lightMode),
-                      SinglePickerModel(id: "\(PDFReaderState.AppearanceMode.dark.rawValue)", name: L10n.Pdf.Appearance.darkMode)]
-        let state = SinglePickerState(objects: models, selectedRow: "\(current.rawValue)")
-        let viewModel = ViewModel(initialState: state, handler: SinglePickerActionHandler())
-        self.presentPicker(viewModel: viewModel, requiresSaveButton: false, saveAction: { picked in
-            guard let mode = UInt(picked).flatMap({ PDFReaderState.AppearanceMode(rawValue: $0) }) else { return }
-            completed(mode)
-        })
-    }
+    func showSettings(with settings: PDFSettings, sender: UIBarButtonItem, completion: @escaping (PDFSettings) -> Void) {
+        #if PDFENABLED
+        let state = PDFSettingsState(settings: settings)
+        let viewModel = ViewModel(initialState: state, handler: PDFSettingsActionHandler())
 
-    func showSettings(state: PDFSettingsState, sender: UIBarButtonItem, completion: @escaping (PDFReaderAction) -> Void) {
-        let directionString = state.direction == .horizontal ? L10n.Pdf.ScrollDirection.horizontal : L10n.Pdf.ScrollDirection.vertical
-        let transitionString = state.transition == .scrollContinuous ? L10n.Pdf.PageTransition.continuous : L10n.Pdf.PageTransition.jump
-        let appearanceString: String
-        switch state.appearanceMode {
-        case .automatic:
-            appearanceString = L10n.Pdf.Appearance.auto
-        case .dark:
-            appearanceString = L10n.Pdf.Appearance.darkMode
-        case .light:
-            appearanceString = L10n.Pdf.Appearance.lightMode
+
+        let controller: UIViewController
+
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            let _controller = PDFSettingsViewController(viewModel: viewModel)
+            _controller.changeHandler = completion
+            controller = _controller
+        } else {
+            let _controller = PDFSettingsViewController(viewModel: viewModel)
+            _controller.changeHandler = completion
+            controller = UINavigationController(rootViewController: _controller)
         }
 
-        let idleTimerString = state.idleTimerDisabled ? L10n.Pdf.idleTimerEnable : L10n.Pdf.idleTimerDisable
-
-        let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         controller.popoverPresentationController?.barButtonItem = sender
-        controller.addAction(UIAlertAction(title: idleTimerString, style: .default, handler: { _ in
-            completion(.changeIdleTimerDisabled(!state.idleTimerDisabled))
-        }))
-        controller.addAction(UIAlertAction(title: L10n.Pdf.Appearance.title(appearanceString), style: .default, handler: { [weak self] _ in
-            self?.showAppearanceModePicker(for: state.appearanceMode, completed: { appearanceMode in
-                completion(.changeAppearanceMode(appearanceMode))
-            })
-        }))
-        controller.addAction(UIAlertAction(title: L10n.Pdf.PageTransition.title(transitionString), style: .default, handler: { _ in
-            completion(.changeTransition(state.transition == .scrollContinuous ? .scrollPerSpread : .scrollContinuous))
-        }))
-        controller.addAction(UIAlertAction(title: L10n.Pdf.ScrollDirection.title(directionString), style: .default, handler: { _ in
-            completion(.changeDirection(state.direction == .vertical ? .horizontal : .vertical))
-        }))
-        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
+        controller.preferredContentSize = CGSize(width: 480, height: 306)
         self.topViewController.present(controller, animated: true, completion: nil)
+        #endif
     }
 
     func showInkSettings(sender: UIView, viewModel: ViewModel<PDFReaderActionHandler>) {
@@ -954,7 +932,6 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .fullScreen
         self.topViewController.present(navigationController, animated: true, completion: nil)
-
     }
 }
 
