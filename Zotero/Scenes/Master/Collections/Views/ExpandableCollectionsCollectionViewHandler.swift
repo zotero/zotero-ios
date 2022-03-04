@@ -101,7 +101,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
             var actions: [UIAction] = [edit, subcollection, createBibliography, delete]
 
             if collection.itemCount > 0 {
-                let downloadAttachments = UIAction(title: L10n.Collections.downloadAttachments, image: UIImage(named: "arrow.down.to.line")) { [weak self] _ in
+                let downloadAttachments = UIAction(title: L10n.Collections.downloadAttachments, image: UIImage(systemName: "arrow.down.to.line.compact")) { [weak self] _ in
                     self?.viewModel.process(action: .downloadAttachments(collection.identifier))
                 }
                 actions.insert(downloadAttachments, at: 0)
@@ -119,7 +119,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
                 return UIMenu(title: "", children: [trash])
 
             case .publications, .all:
-                let downloadAttachments = UIAction(title: L10n.Collections.downloadAttachments, image: UIImage(named: "arrow.down.to.line")) { [weak self] _ in
+                let downloadAttachments = UIAction(title: L10n.Collections.downloadAttachments, image: UIImage(systemName: "arrow.down.to.line.compact")) { [weak self] _ in
                     self?.viewModel.process(action: .downloadAttachments(collection.identifier))
                 }
                 return UIMenu(title: "", children: [downloadAttachments])
