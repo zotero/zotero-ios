@@ -17,6 +17,8 @@ struct ItemTypes {
     static let webpage = "webpage"
     static let annotation = "annotation"
     static let document = "document"
+
+    static var excludedFromTypePicker: Set<String> = [ItemTypes.attachment, ItemTypes.annotation]
 }
 
 extension ItemTypes {
@@ -98,7 +100,7 @@ extension ItemTypes {
         case "webpage":
             return Asset.Images.ItemTypes.webPage.name
         default:
-            return "unknown"
+            return Asset.Images.ItemTypes.document.name
         }
     }
 }
