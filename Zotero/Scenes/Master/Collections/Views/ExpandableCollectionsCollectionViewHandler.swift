@@ -57,7 +57,8 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
             }
         }
 
-        if self.dataSource.snapshot(for: self.collectionsSection).visibleItems.first(where: { $0.identifier == collectionId }) == nil {
+        let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
+        if snapshot.visibleItems.first(where: { $0.identifier == collectionId }) == nil && snapshot.items.first(where: { $0.identifier == collectionId }) != nil {
             // Selection is collapsed, we need to expand and select it then
             self.update(with: tree, selectedId: collectionId, animated: false) { [weak self] in
                 self?.selectIfNeeded(collectionId: collectionId, tree: tree, scrollToPosition: scrollToPosition)
@@ -160,7 +161,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
         })
 
         var snapshot = NSDiffableDataSourceSnapshot<Int, Collection>()
-        snapshot.appendSections([0])
+        snapshot.appendSections([self.collectionsSection])
         dataSource.apply(snapshot, animatingDifferences: false)
 
         return dataSource
