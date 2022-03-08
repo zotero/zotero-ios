@@ -46,8 +46,12 @@ final class CollectionsViewController: UICollectionViewController {
         self.collectionViewHandler = ExpandableCollectionsCollectionViewHandler(collectionView: self.collectionView, dragDropController: self.dragDropController, viewModel: self.viewModel, splitDelegate: self.coordinatorDelegate)
         self.collectionViewHandler.update(with: self.viewModel.state.collectionTree, selectedId: self.viewModel.state.selectedCollectionId, animated: false)
 
-        if self.coordinatorDelegate?.isSplit == true, let collection = self.viewModel.state.collectionTree.collection(for: self.viewModel.state.selectedCollectionId) {
-            self.coordinatorDelegate?.showItems(for: collection, in: self.viewModel.state.library, isInitial: true)
+        if self.coordinatorDelegate?.isSplit == true {
+            if let collection = self.viewModel.state.collectionTree.collection(for: self.viewModel.state.selectedCollectionId) {
+                self.coordinatorDelegate?.showItems(for: collection, in: self.viewModel.state.library, isInitial: true)
+            } else {
+                self.viewModel.process(action: .select(.custom(.all)))
+            }
         }
 
         self.viewModel.stateObservable

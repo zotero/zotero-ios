@@ -135,7 +135,8 @@ final class AllCollectionPickerViewController: UICollectionViewController {
                 var configuration = CollectionCell.LibraryContentConfiguration(name: library.name, accessories: [.chevron])
                 configuration.isCollapsedProvider = { [weak self] in
                     guard let `self` = self else { return false }
-                    return !self.dataSource.snapshot(for: section).isExpanded(row)
+                    let snapshot = self.dataSource.snapshot(for: section)
+                    return snapshot.items.contains(row) ? !snapshot.isExpanded(row) : false
                 }
                 configuration.toggleCollapsed = { [weak self, weak cell] in
                     guard let `self` = self, let cell = cell else { return }

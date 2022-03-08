@@ -58,7 +58,13 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
         }
 
         let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
-        if snapshot.visibleItems.first(where: { $0.identifier == collectionId }) == nil && snapshot.items.first(where: { $0.identifier == collectionId }) != nil {
+
+        if snapshot.items.first(where: { $0.identifier == collectionId }) == nil {
+            // Collection is not stored in this snapshot, nothing to select.
+            return
+        }
+
+        if snapshot.visibleItems.first(where: { $0.identifier == collectionId }) == nil {
             // Selection is collapsed, we need to expand and select it then
             self.update(with: tree, selectedId: collectionId, animated: false) { [weak self] in
                 self?.selectIfNeeded(collectionId: collectionId, tree: tree, scrollToPosition: scrollToPosition)
@@ -141,7 +147,8 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
             var configuration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren, accessories: [.chevron, .badge])
             configuration.isCollapsedProvider = { [weak self] in
                 guard let `self` = self else { return false }
-                return !self.dataSource.snapshot(for: self.collectionsSection).isExpanded(collection)
+                let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
+                return snapshot.items.contains(collection) ? !snapshot.isExpanded(collection) : false
             }
             configuration.toggleCollapsed = { [weak self, weak cell] in
                 guard let `self` = self, let cell = cell else { return }
