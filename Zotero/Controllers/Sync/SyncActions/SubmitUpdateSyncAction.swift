@@ -202,7 +202,7 @@ struct SubmitUpdateSyncAction: SyncAction {
             }
         }
 
-        if !changedItems.isEmpty {
+        if !changedCollections.isEmpty {
             // Update collections locally based on response from backend and mark as submitted.
             for response in changedCollections {
                 requests.append(MarkCollectionAsSyncedAndUpdateDbRequest(libraryId: self.libraryId, response: response, version: version))
@@ -216,7 +216,7 @@ struct SubmitUpdateSyncAction: SyncAction {
             }
         }
 
-        if !changedItems.isEmpty {
+        if !changedSearches.isEmpty {
             // Update searches locally based on response from backend and mark as submitted.
             for response in changedSearches {
                 requests.append(MarkSearchAsSyncedAndUpdateDbRequest(libraryId: self.libraryId, response: response, version: version))
