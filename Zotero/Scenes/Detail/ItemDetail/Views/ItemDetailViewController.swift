@@ -169,7 +169,10 @@ final class ItemDetailViewController: UIViewController {
     /// - parameter state: New state.
     private func update(to state: ItemDetailState) {
         if state.changes.contains(.item) {
-            self.itemChanged(state: state)
+            // Another viewModel state update is made inside `subscribe(onNext:)`, to avoid reentrancy process it later on main queue.
+            DispatchQueue.main.async {
+                self.itemChanged(state: state)
+            }
         } else if state.changes.contains(.reloadedData) {
             let wasHidden = self.tableView.isHidden
             self.tableView.isHidden = state.isLoadingData
