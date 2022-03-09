@@ -418,8 +418,11 @@ extension ItemsTableViewHandler: UITableViewDropDelegate {
             return UITableViewDropProposal(operation: .forbidden)
         }
 
+        let dragItemsLibraryId = session.items.compactMap({ $0.localObject as? RItem }).compactMap({ $0.libraryId }).first
         let item = results[destinationIndexPath.row]
-        if item.rawType == ItemTypes.note || item.rawType == ItemTypes.attachment ||        // allow dropping only to non-standalone items
+
+        if dragItemsLibraryId != item.libraryId ||                                          // allow dropping only to the same library
+           item.rawType == ItemTypes.note || item.rawType == ItemTypes.attachment ||        // allow dropping only to non-standalone items
            session.items.compactMap({ self.dragDropController.item(from: $0) })             // allow drops of only standalone items
                         .contains(where: { $0.rawType != ItemTypes.attachment && $0.rawType != ItemTypes.note }) {
            return UITableViewDropProposal(operation: .forbidden)
