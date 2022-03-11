@@ -382,34 +382,43 @@ final class SyncController: SynchronizationController {
 
     /// Reports non-fatal errors. These happened during sync, but didn't need to stop it. Enqueues a new sync if needed.
     private func reportFinish(nonFatalErrors errors: [SyncError.NonFatal]) {
-        self.progressHandler.reportFinish(with: errors)
-
         // Find libraries which reported version mismatch.
-        var mismatchedLibraries: [LibraryIdentifier] = []
+        var retryLibraries: [LibraryIdentifier] = []
+        var reportErrors: [SyncError.NonFatal] = []
+
         for error in errors {
             switch error {
             case .versionMismatch(let libraryId):
-                if !mismatchedLibraries.contains(libraryId) {
-                    mismatchedLibraries.append(libraryId)
+                if !retryLibraries.contains(libraryId) {
+                    retryLibraries.append(libraryId)
                 }
-            case .unknown, .schema, .parsing, .apiError, .unchanged, .quotaLimit, .attachmentMissing,
-                 .insufficientSpace, .webDavDeletion, .webDavDeletionFailed, .webDavVerification, .webDavDownload: continue
+
+            case .annotationDidSplit(let libraryId):
+                if !retryLibraries.contains(libraryId) {
+                    retryLibraries.append(libraryId)
+                }
+
+            case .unknown, .schema, .parsing, .apiError, .unchanged, .quotaLimit, .attachmentMissing, .insufficientSpace, .webDavDeletion, .webDavDeletionFailed, .webDavVerification, .webDavDownload:
+                reportErrors.append(error)
             }
         }
 
         // Retry only on version-mismatched libraries (remote version increased during sync). If there were errors during parsing, schema or other, they won't be fixed by another immediate sync.
-        guard !mismatchedLibraries.isEmpty else {
+        guard !retryLibraries.isEmpty else {
+            self.progressHandler.reportFinish(with: errors)
             self.previousType = nil
             self.observable.on(.next(nil))
             return
         }
 
-        if self.previousType == nil {
-            // If there was no previous retry, retry mismatched libraries.
+        if self.previousType == nil { // If there was no previous retry, retry mismatched libraries.
+            // Report only errors for which we're not retrying.
+            self.progressHandler.reportFinish(with: reportErrors)
             self.previousType = self.type
-            self.observable.on(.next((self.type, .specific(mismatchedLibraries))))
-        } else {
-            // If there was one retry already, stop trying. Changes will be synced later.
+            self.observable.on(.next((self.type, .specific(retryLibraries))))
+        } else { // If there was one retry already, stop trying. Changes will be synced later.
+            // There was already a retry before, report all errors
+            self.progressHandler.reportFinish(with: errors)
             self.previousType = nil
             self.observable.on(.next(nil))
         }
@@ -1521,6 +1530,8 @@ final class SyncController: SynchronizationController {
                 return .nonFatal(.unknown(error.localizedDescription))
             case .attachmentMissing(let key, let libraryId, let title):
                 return .nonFatal(.attachmentMissing(key: key, libraryId: libraryId, title: title))
+            case .annotationNeededSplitting(let libraryId):
+                return .nonFatal(.annotationDidSplit(libraryId))
             case .submitUpdateFailures(let messages):
                 return .nonFatal(.unknown(messages))
             }

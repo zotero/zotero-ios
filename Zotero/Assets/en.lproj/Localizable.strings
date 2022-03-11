@@ -348,6 +348,7 @@
 "errors.sync_toolbar.webdav_item_prop" = "Invalid prop file: %@";
 "errors.sync_toolbar.show_item" = "Show Item";
 "errors.sync_toolbar.show_items" = "Show Items";
+"errors.sync_toolbar.annotation_long" = "Annotation position is too long";
 "errors.items.loading" = "Could not load items.";
 "errors.items.deletion" = "Could not remove item.";
 "errors.items.deletion_from_collection" = "Could not remove item from collection.";

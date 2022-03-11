@@ -70,6 +70,7 @@ enum SyncError {
         case quotaLimit(LibraryIdentifier)
         case unchanged
         case attachmentMissing(key: String, libraryId: LibraryIdentifier, title: String)
+        case annotationDidSplit(LibraryIdentifier)
         case insufficientSpace
         case webDavDeletion(count: Int, library: String)
         case webDavDeletionFailed(error: String, library: String)
@@ -95,7 +96,8 @@ enum SyncActionError: Error {
     case attachmentItemNotSubmitted,
          attachmentAlreadyUploaded,
          attachmentMissing(key: String, libraryId: LibraryIdentifier, title: String),
-         submitUpdateFailures(String)
+         submitUpdateFailures(String),
+         annotationNeededSplitting(LibraryIdentifier)
 }
 
 enum PreconditionErrorType: Error {

@@ -167,6 +167,8 @@ final class SyncToolbarController {
                     return (L10n.Errors.SyncToolbar.webdavItemProp(string), nil)
                 case .notChanged: break // Should not happen
                 }
+            case .annotationDidSplit:
+                return (L10n.Errors.SyncToolbar.annotationLong, nil)
             case .unchanged: break
             }
         }

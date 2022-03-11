@@ -78,7 +78,8 @@ struct SubmitUpdateSyncAction: SyncAction {
                                  do {
                                      let newVersion = response.allHeaderFields.lastModifiedVersion
                                      let json = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
-                                     return Single.just((try UpdatesResponse(json: json), newVersion))
+                                     let keys = self.parameters.map({ $0["key"] as? String })
+                                     return Single.just((try UpdatesResponse(json: json, keys: keys), newVersion))
                                  } catch let error {
                                      DDLogError("SubmitUpdateSyncAction: can't parse updates response - \(error)")
                                      return Single.error(error)
@@ -112,28 +113,47 @@ struct SubmitUpdateSyncAction: SyncAction {
                 }
             }
 
-            if let failed = response.failed.first(where: { $0.code == 412 }) {
-                DDLogError("SubmitUpdateSyncAction: failed \(failed.key ?? "unknown key") (\(failed.code)) - \(failed.message)")
-                subscriber(.success((newVersion, PreconditionErrorType.objectConflict)))
-                return Disposables.create()
-            }
-
-            if let failed = response.failed.first(where: { $0.code == 409 }) {
-                DDLogError("SubmitUpdateSyncAction: failed \(failed.key ?? "unknown key") (\(failed.code)) - \(failed.message)")
-                subscriber(.success((newVersion, SyncActionError.submitUpdateFailures(failed.message))))
-                return Disposables.create()
-            }
-
-            if !response.failed.isEmpty {
-                let errorMessages = response.failed.map({ $0.message }).joined(separator: "\n")
-                DDLogError("SubmitUpdateSyncAction: unknown failures - \(response.failed)")
-                subscriber(.success((newVersion, SyncActionError.submitUpdateFailures(errorMessages))))
-                return Disposables.create()
-            }
-
-            subscriber(.success((newVersion, nil)))
+            let error = self.process(failedResponses: response.failed, in: self.libraryId)
+            subscriber(.success((newVersion, error)))
             return Disposables.create()
         }
+    }
+
+    private func process(failedResponses: [FailedUpdateResponse], in libraryId: LibraryIdentifier) -> Error? {
+        guard !failedResponses.isEmpty else { return nil }
+
+        var splitKeys: Set<String> = []
+
+        for response in failedResponses {
+            switch response.code {
+            case 412:
+                DDLogError("SubmitUpdateSyncAction: failed \(response.key ?? "unknown key") - \(response.message). Library \(libraryId)")
+                return PreconditionErrorType.objectConflict
+
+            case 400 where response.message == "Annotation position is too long":
+                if let key = response.key {
+                    splitKeys.insert(key)
+                }
+
+            default: continue
+            }
+        }
+
+        if !splitKeys.isEmpty {
+            DDLogWarn("SubmitUpdateSyncAction: annotations too long: \(splitKeys) in \(libraryId)")
+
+            do {
+                try self.dbStorage.createCoordinator().perform(request: SplitAnnotationsDbRequest(keys: splitKeys, libraryId: libraryId))
+                return SyncActionError.annotationNeededSplitting(libraryId)
+            } catch let error {
+                DDLogError("SubmitUpdateSyncAction: could not split annotations - \(error)")
+            }
+        }
+
+        DDLogError("SubmitUpdateSyncAction: failures - \(failedResponses)")
+
+        let errorMessages = failedResponses.map({ $0.message }).joined(separator: "\n")
+        return SyncActionError.submitUpdateFailures(errorMessages)
     }
 
     private func process(response: UpdatesResponse) -> (unchangedKeys: [String], parsingFailedKeys: [String], changedCollections: [CollectionResponse], changedItems: [ItemResponse], changedSearches: [SearchResponse]) {

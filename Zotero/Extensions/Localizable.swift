@@ -523,6 +523,8 @@ internal enum L10n {
       internal static let loading = L10n.tr("Localizable", "errors.styles_search.loading")
     }
     internal enum SyncToolbar {
+      /// Annotation position is too long
+      internal static let annotationLong = L10n.tr("Localizable", "errors.sync_toolbar.annotation_long")
       /// Unable to upload attachment: %@. Please try removing and re-adding the attachment.
       internal static func attachmentMissing(_ p1: Any) -> String {
         return L10n.tr("Localizable", "errors.sync_toolbar.attachment_missing", String(describing: p1))

@@ -118,7 +118,7 @@ final class BackgroundUploadProcessor {
             do {
                 let newVersion = response.allHeaderFields.lastModifiedVersion
                 let json = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
-                return Single.just((try UpdatesResponse(json: json), newVersion))
+                return Single.just((try UpdatesResponse(json: json, keys: [key]), newVersion))
             } catch let error {
                 return Single.error(error)
             }

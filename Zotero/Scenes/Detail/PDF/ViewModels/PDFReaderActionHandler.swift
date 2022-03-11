@@ -24,6 +24,16 @@ protocol AnnotationBoundingBoxConverter: AnyObject {
     func textOffset(rect: CGRect, page: PageIndex) -> Int?
 }
 
+extension DrawingPoint: SplittablePathPoint {
+    var x: Double {
+        return self.location.x
+    }
+
+    var y: Double {
+        return self.location.y
+    }
+}
+
 final class PDFReaderActionHandler: ViewModelActionHandler {
     typealias Action = PDFReaderAction
     typealias State = PDFReaderState
@@ -1425,14 +1435,14 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     /// - returns: Array with original annotation if limit was not exceeded. Otherwise array of new split annotations.
     private func splitIfNeeded(annotation: PSPDFKit.Annotation, activeColor: String, in viewModel: ViewModel<PDFReaderActionHandler>) -> [PSPDFKit.Annotation] {
         if let annotation = annotation as? HighlightAnnotation {
-            if let splitRects = self.splitRectsIfNeeded(of: annotation) {
+            if let rects = annotation.rects, let splitRects = AnnotationSplitter.splitRectsIfNeeded(rects: rects) {
                 return self.createAnnotations(from: splitRects, original: annotation)
             }
             return [annotation]
         }
 
         if let annotation = annotation as? InkAnnotation {
-            if let splitPaths = self.splitPathsIfNeeded(of: annotation) {
+            if let paths = annotation.lines, let splitPaths = AnnotationSplitter.splitPathsIfNeeded(paths: paths) {
                 return self.createAnnotations(from: splitPaths, original: annotation)
             }
             return [annotation]
