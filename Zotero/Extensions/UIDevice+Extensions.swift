@@ -9,7 +9,7 @@
 import UIKit
 
 extension UIDevice {
-    fileprivate static let compactWidthLimit: CGFloat = 414
+    fileprivate static let compactWidthLimit: CGFloat = 428
 
     /// Decides whether width of given size is "compact". Compact width means it's less or equal than a width of iPhone Max screen in portrait.
     /// - parameter size: Size of current view.
