@@ -83,10 +83,21 @@ final class CreatorEditViewController: UIViewController {
         if state.changes.contains(.namePresentation) {
             self.updateLayout(for: state.creator)
         }
+
         if state.changes.contains(.type) {
             self.typeValue.text = state.creator.localizedType
             self.navigationItem.title = state.creator.localizedType
         }
+
+        if state.changes.contains(.name) {
+            self.navigationItem.rightBarButtonItem?.isEnabled = state.isValid
+        }
+    }
+
+    private func save() {
+        guard self.viewModel.state.isValid else { return }
+        self.saveAction(self.viewModel.state.creator)
+        self.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 
     private func updateLayout(for creator: ItemDetailState.Creator) {
@@ -209,11 +220,10 @@ final class CreatorEditViewController: UIViewController {
         self.navigationItem.leftBarButtonItem = cancel
 
         let save = UIBarButtonItem(title: L10n.save, style: .done, target: nil, action: nil)
+        save.isEnabled = self.viewModel.state.isValid
         save.rx.tap
               .subscribe(onNext: { [weak self] in
-                  guard let `self` = self else { return }
-                  self.saveAction(self.viewModel.state.creator)
-                  self.presentingViewController?.dismiss(animated: true, completion: nil)
+                  self?.save()
               })
               .disposed(by: self.disposeBag)
         self.navigationItem.rightBarButtonItem = save

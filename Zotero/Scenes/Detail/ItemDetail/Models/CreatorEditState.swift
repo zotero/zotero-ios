@@ -16,12 +16,19 @@ struct CreatorEditState: ViewModelState {
 
         static let namePresentation = Changes(rawValue: 1 << 0)
         static let type = Changes(rawValue: 1 << 1)
+        static let name = Changes(rawValue: 1 << 2)
     }
 
     let itemType: String
 
     var creator: ItemDetailState.Creator
     var changes: Changes
+    var isValid: Bool {
+        switch self.creator.namePresentation {
+        case .full: return !self.creator.fullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .separate: return !self.creator.firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !self.creator.lastName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+    }
 
     init(itemType: String, creator: ItemDetailState.Creator) {
         self.itemType = itemType

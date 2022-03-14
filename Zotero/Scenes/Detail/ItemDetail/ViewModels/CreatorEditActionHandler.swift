@@ -27,13 +27,16 @@ struct CreatorEditActionHandler: ViewModelActionHandler {
                 state.changes = .type
             case .setNamePresentation(let namePresentation):
                 state.creator.namePresentation = namePresentation
-                state.changes = .namePresentation
+                state.changes = [.name, .namePresentation]
             case .setFullName(let name):
                 state.creator.fullName = name
+                state.changes = .name
             case .setFirstName(let name):
                 state.creator.firstName = name
+                state.changes = .name
             case .setLastName(let name):
                 state.creator.lastName = name
+                state.changes = .name
             }
         }
     }
