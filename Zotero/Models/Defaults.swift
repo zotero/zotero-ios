@@ -78,6 +78,13 @@ final class Defaults {
     var itemsSortType: ItemsSortType
     #endif
 
+    // MARK: - Item Detail
+
+    #if MAINAPP
+    @CodableUserDefault(key: "LastUsedCreatorNamePresentation", defaultValue: .separate, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
+    var creatorNamePresentation: ItemDetailState.Creator.NamePresentation
+    #endif
+
     // MARK: - PDF Settings
 
     @UserDefault(key: "PdfReaderLineWidth", defaultValue: 2)

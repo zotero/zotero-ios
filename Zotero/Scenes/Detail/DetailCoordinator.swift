@@ -620,7 +620,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
     func showCreatorCreation(for itemType: String, saved: @escaping CreatorEditSaveAction) {
         guard let schema = self.controllers.schemaController.creators(for: itemType)?.first(where: { $0.primary }),
               let localized = self.controllers.schemaController.localized(creator: schema.creatorType) else { return }
-        let creator = ItemDetailState.Creator(type: schema.creatorType, primary: schema.primary, localizedType: localized)
+        let creator = ItemDetailState.Creator(type: schema.creatorType, primary: schema.primary, localizedType: localized, namePresentation: Defaults.shared.creatorNamePresentation)
         self._showCreatorEditor(for: creator, itemType: itemType, saved: saved, deleted: nil)
     }
 

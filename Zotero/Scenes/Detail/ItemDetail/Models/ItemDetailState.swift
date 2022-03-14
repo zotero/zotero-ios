@@ -71,7 +71,7 @@ struct ItemDetailState: ViewModelState {
     }
 
     struct Creator: Identifiable, Equatable, Hashable {
-        enum NamePresentation: Equatable {
+        enum NamePresentation: Int, Codable {
             case separate, full
 
             mutating func toggle() {
@@ -128,7 +128,7 @@ struct ItemDetailState: ViewModelState {
             self.namePresentation = fullName.isEmpty ? .separate : .full
         }
 
-        init(type: String, primary: Bool, localizedType: String) {
+        init(type: String, primary: Bool, localizedType: String, namePresentation: NamePresentation) {
             self.id = UUID()
             self.type = type
             self.primary = primary
@@ -136,7 +136,7 @@ struct ItemDetailState: ViewModelState {
             self.fullName = ""
             self.firstName = ""
             self.lastName = ""
-            self.namePresentation = .full
+            self.namePresentation = namePresentation
         }
 
         private mutating func change(namePresentation: NamePresentation) {

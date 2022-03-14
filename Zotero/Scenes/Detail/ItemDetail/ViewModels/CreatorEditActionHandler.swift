@@ -28,6 +28,7 @@ struct CreatorEditActionHandler: ViewModelActionHandler {
             case .setNamePresentation(let namePresentation):
                 state.creator.namePresentation = namePresentation
                 state.changes = [.name, .namePresentation]
+                Defaults.shared.creatorNamePresentation = namePresentation
             case .setFullName(let name):
                 state.creator.fullName = name
                 state.changes = .name
