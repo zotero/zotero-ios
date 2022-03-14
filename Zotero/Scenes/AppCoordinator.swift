@@ -17,7 +17,7 @@ protocol AppDelegateCoordinatorDelegate: AnyObject {
 }
 
 protocol AppOnboardingCoordinatorDelegate: AnyObject {
-    func showAboutBeta()
+    func showAbout()
     func presentLogin()
     func presentRegister()
 }
@@ -356,8 +356,8 @@ extension AppCoordinator: AppOnboardingCoordinatorDelegate {
 }
 
 extension AppCoordinator: AppLoginCoordinatorDelegate {
-    func showAboutBeta() {
-        let controller = SFSafariViewController(url: URL(string: "https://www.zotero.org/support/ios_beta?app=1")!)
+    func showAbout() {
+        let controller = SFSafariViewController(url: URL(string: "https://www.zotero.org/")!)
         self.window?.rootViewController?.present(controller, animated: true, completion: nil)
     }
 

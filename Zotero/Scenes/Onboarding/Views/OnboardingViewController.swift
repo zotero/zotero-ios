@@ -100,8 +100,8 @@ final class OnboardingViewController: UIViewController {
         self.coordinatorDelegate?.presentRegister()
     }
 
-    @IBAction private func showBeta() {
-        self.coordinatorDelegate?.showAboutBeta()
+    @IBAction private func showAbout() {
+        self.coordinatorDelegate?.showAbout()
     }
 
     // MARK: - Setups
@@ -178,7 +178,7 @@ final class OnboardingViewController: UIViewController {
         self.signInButton.layer.masksToBounds = true
         self.signInButton.setTitle(L10n.Onboarding.signIn, for: .normal)
         self.createAccountButton.setTitle(L10n.Onboarding.createAccount, for: .normal)
-        self.learnMoreButton.setTitle(L10n.aboutBeta, for: .normal)
+        self.learnMoreButton.setTitle(L10n.aboutZotero, for: .normal)
     }
 
     private func setupPageControl(with pageData: [(String, UIImage)]) {

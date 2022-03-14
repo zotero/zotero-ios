@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="17701" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
-    <device id="ipad11_0rounded" orientation="portrait" layout="fullscreen" appearance="light"/>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="19529" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <dependencies>
-        <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17703"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="19519"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
@@ -51,10 +49,10 @@
                     <color key="backgroundColor" systemColor="systemPinkColor"/>
                 </view>
                 <stackView opaque="NO" contentMode="scaleToFill" ambiguous="YES" axis="vertical" spacing="17" translatesAutoresizingMaskIntoConstraints="NO" id="Mb3-CK-6Bh">
-                    <rect key="frame" x="274" y="748" width="286" height="134.5"/>
+                    <rect key="frame" x="274" y="748" width="286" height="125"/>
                     <subviews>
                         <pageControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" numberOfPages="3" translatesAutoresizingMaskIntoConstraints="NO" id="bvA-YW-oOq">
-                            <rect key="frame" x="0.0" y="0.0" width="286" height="27.5"/>
+                            <rect key="frame" x="0.0" y="0.0" width="286" height="26"/>
                             <color key="pageIndicatorTintColor" systemColor="systemGray4Color"/>
                             <color key="currentPageIndicatorTintColor" systemColor="systemGrayColor"/>
                             <connections>
@@ -62,10 +60,10 @@
                             </connections>
                         </pageControl>
                         <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="fhW-3r-g8K">
-                            <rect key="frame" x="0.0" y="44.5" width="286" height="90"/>
+                            <rect key="frame" x="0.0" y="43" width="286" height="82"/>
                             <subviews>
                                 <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="fP5-W2-mpS">
-                                    <rect key="frame" x="0.0" y="0.0" width="286" height="45"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="286" height="41"/>
                                     <color key="backgroundColor" name="zoteroBlueWithDarkMode"/>
                                     <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                     <color key="tintColor" name="zoteroBlueWithDarkMode"/>
@@ -78,7 +76,7 @@
                                     </connections>
                                 </button>
                                 <button hidden="YES" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="3eu-Zz-3t3">
-                                    <rect key="frame" x="0.0" y="94.5" width="286" height="0.0"/>
+                                    <rect key="frame" x="0.0" y="85.5" width="286" height="0.0"/>
                                     <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                     <color key="tintColor" name="zoteroBlue"/>
                                     <inset key="contentEdgeInsets" minX="0.0" minY="12" maxX="0.0" maxY="12"/>
@@ -90,14 +88,14 @@
                                     </connections>
                                 </button>
                                 <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="VU2-Kt-oa6">
-                                    <rect key="frame" x="0.0" y="45" width="286" height="45"/>
+                                    <rect key="frame" x="0.0" y="41" width="286" height="41"/>
                                     <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                     <inset key="contentEdgeInsets" minX="0.0" minY="12" maxX="0.0" maxY="12"/>
                                     <state key="normal" title="Button">
                                         <color key="titleColor" name="zoteroBlueWithDarkMode"/>
                                     </state>
                                     <connections>
-                                        <action selector="showBeta" destination="-1" eventType="touchUpInside" id="ggd-30-EYK"/>
+                                        <action selector="showAbout" destination="-1" eventType="touchUpInside" id="ggd-30-EYK"/>
                                     </connections>
                                 </button>
                             </subviews>
