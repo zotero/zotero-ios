@@ -177,6 +177,8 @@ final class OnboardingViewController: UIViewController {
         self.signInButton.layer.cornerRadius = 12
         self.signInButton.layer.masksToBounds = true
         self.signInButton.setTitle(L10n.Onboarding.signIn, for: .normal)
+        self.createAccountButton.layer.cornerRadius = 12
+        self.createAccountButton.layer.masksToBounds = true
         self.createAccountButton.setTitle(L10n.Onboarding.createAccount, for: .normal)
         self.learnMoreButton.setTitle(L10n.aboutZotero, for: .normal)
     }

@@ -621,7 +621,6 @@
 		B361820324C9A7C000B30D56 /* OnboardingViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B36181F824C9A7C000B30D56 /* OnboardingViewController.xib */; };
 		B361820424C9A7C000B30D56 /* OnboardingPageView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B36181F924C9A7C000B30D56 /* OnboardingPageView.xib */; };
 		B361820524C9A7C000B30D56 /* OnboardingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36181FA24C9A7C000B30D56 /* OnboardingViewController.swift */; };
-		B361820624C9A7C000B30D56 /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36181FB24C9A7C000B30D56 /* RegisterView.swift */; };
 		B361820824C9B53600B30D56 /* KeyboardResponder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B361820724C9B53600B30D56 /* KeyboardResponder.swift */; };
 		B361820D24C9B9D900B30D56 /* NoRotationHostingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B361820C24C9B9D900B30D56 /* NoRotationHostingController.swift */; };
 		B361820F24C9B9E800B30D56 /* SelectableTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B361820E24C9B9E800B30D56 /* SelectableTextField.swift */; };
@@ -1461,7 +1460,6 @@
 		B36181F824C9A7C000B30D56 /* OnboardingViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = OnboardingViewController.xib; sourceTree = "<group>"; };
 		B36181F924C9A7C000B30D56 /* OnboardingPageView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = OnboardingPageView.xib; sourceTree = "<group>"; };
 		B36181FA24C9A7C000B30D56 /* OnboardingViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OnboardingViewController.swift; sourceTree = "<group>"; };
-		B36181FB24C9A7C000B30D56 /* RegisterView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
 		B361820724C9B53600B30D56 /* KeyboardResponder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardResponder.swift; sourceTree = "<group>"; };
 		B361820C24C9B9D900B30D56 /* NoRotationHostingController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NoRotationHostingController.swift; sourceTree = "<group>"; };
 		B361820E24C9B9E800B30D56 /* SelectableTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectableTextField.swift; sourceTree = "<group>"; };
@@ -2913,7 +2911,6 @@
 				B36181F924C9A7C000B30D56 /* OnboardingPageView.xib */,
 				B36181FA24C9A7C000B30D56 /* OnboardingViewController.swift */,
 				B36181F824C9A7C000B30D56 /* OnboardingViewController.xib */,
-				B36181FB24C9A7C000B30D56 /* RegisterView.swift */,
 				B3D16BF024E161C70002663B /* LoginViewController.swift */,
 				B3D16BF124E161C70002663B /* LoginViewController.xib */,
 			);
@@ -4066,7 +4063,6 @@
 				B30566C623FC051F003304F2 /* LibraryObject.swift in Sources */,
 				B3868537270D90640068A022 /* RawDataEncoding.swift in Sources */,
 				B37C5B6D26453C58009A37E5 /* NoteEditorAction.swift in Sources */,
-				B361820624C9A7C000B30D56 /* RegisterView.swift in Sources */,
 				B30566C223FC051F003304F2 /* LibraryData.swift in Sources */,
 				B391480726D9093E0016B7B2 /* UIPasteboard+Extensions.swift in Sources */,
 				B30566B123FC051F003304F2 /* KeyResponse.swift in Sources */,

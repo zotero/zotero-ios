@@ -349,15 +349,14 @@ extension AppCoordinator: AppOnboardingCoordinatorDelegate {
     }
 
     func presentRegister() {
-        let view = RegisterView()
-        let controller = UIHostingController(rootView: view)
+        let controller = SFSafariViewController(url: URL(string: "https://www.zotero.org/user/register?app=1")!)
         self.window?.rootViewController?.present(controller, animated: true, completion: nil)
     }
 }
 
 extension AppCoordinator: AppLoginCoordinatorDelegate {
     func showAbout() {
-        let controller = SFSafariViewController(url: URL(string: "https://www.zotero.org/")!)
+        let controller = SFSafariViewController(url: URL(string: "https://www.zotero.org/?app=1")!)
         self.window?.rootViewController?.present(controller, animated: true, completion: nil)
     }
 

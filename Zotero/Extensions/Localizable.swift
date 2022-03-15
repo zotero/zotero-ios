@@ -737,7 +737,7 @@ internal enum L10n {
     internal static let access = L10n.tr("Localizable", "onboarding.access")
     /// <b>Highlight and take notes</b> directly in your PDFs as you read them.
     internal static let annotate = L10n.tr("Localizable", "onboarding.annotate")
-    /// Create Account
+    /// Sign Up
     internal static let createAccount = L10n.tr("Localizable", "onboarding.create_account")
     /// <b>Tap to collect</b> articles and books directly from the web, including their PDFs and full metadata.
     internal static let share = L10n.tr("Localizable", "onboarding.share")
