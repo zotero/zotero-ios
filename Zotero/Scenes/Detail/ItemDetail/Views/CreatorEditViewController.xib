@@ -129,7 +129,7 @@
                                                 <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="NHK-Ir-yMo">
                                                     <rect key="frame" x="67.5" y="0.0" width="314.5" height="43"/>
                                                     <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
-                                                    <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
+                                                    <textInputTraits key="textInputTraits" autocapitalizationType="sentences" autocorrectionType="no"/>
                                                 </textField>
                                             </subviews>
                                             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
@@ -163,7 +163,7 @@
                                                 <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="FmB-PD-Y1o">
                                                     <rect key="frame" x="67.5" y="0.0" width="314.5" height="43"/>
                                                     <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
-                                                    <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
+                                                    <textInputTraits key="textInputTraits" autocapitalizationType="sentences" autocorrectionType="no"/>
                                                 </textField>
                                             </subviews>
                                             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
