@@ -324,6 +324,7 @@ struct AnnotationConverter {
 
         square.boundingBox = annotation.boundingBox.rounded(to: 3)
         square.borderColor = color
+        square.lineWidth = AnnotationsConfig.imageAnnotationLineWidth
 
         return square
     }
