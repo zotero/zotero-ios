@@ -411,22 +411,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func changeIdleTimer(disabled: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard viewModel.state.settings.idleTimerDisabled != disabled else { return }
-
-        if disabled {
-            self.idleTimerController.disable()
-        } else {
-            self.idleTimerController.enable()
-        }
-
-        // This setting doesn't affect the view, so we don't need to report `changes` and since it's not persisted, we don't need to update `Defaults`.
-        self.update(viewModel: viewModel) { state in
-            state.settings.idleTimerDisabled = disabled
-        }
-    }
-
     private func update(settings: PDFSettings, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        if viewModel.state.settings.idleTimerDisabled != settings.idleTimerDisabled {
+            if settings.idleTimerDisabled {
+                self.idleTimerController.disable()
+            } else {
+                self.idleTimerController.enable()
+            }
+        }
+
         // Update local state
         self.update(viewModel: viewModel) { state in
             state.settings = settings
