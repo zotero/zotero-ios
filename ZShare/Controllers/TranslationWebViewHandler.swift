@@ -274,11 +274,20 @@ final class TranslationWebViewHandler: NSObject {
         request.timeoutInterval = timeout
 
         let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-            guard let response = response as? HTTPURLResponse,
-                  let script = self?.javascript(for: messageId, statusCode: response.statusCode, successCodes: successCodes, data: data, headers: response.allHeaderFields) else { return }
+            guard let `self` = self else { return }
+
+            let script: String
+
+            if let response = response as? HTTPURLResponse {
+                script = self.javascript(for: messageId, statusCode: response.statusCode, successCodes: successCodes, data: data, headers: response.allHeaderFields)
+            } else if let error = error {
+                script = self.javascript(for: messageId, statusCode: -1, successCodes: successCodes, data: error.localizedDescription.data(using: .utf8), headers: [:])
+            } else {
+                script = self.javascript(for: messageId, statusCode: -1, successCodes: successCodes, data: "unknown error".data(using: .utf8), headers: [:])
+            }
 
             DispatchQueue.main.async {
-                self?.webView?.evaluateJavaScript(script, completionHandler: nil)
+                self.webView?.evaluateJavaScript(script, completionHandler: nil)
             }
         }
         task.resume()
