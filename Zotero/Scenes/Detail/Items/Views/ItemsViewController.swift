@@ -312,7 +312,14 @@ final class ItemsViewController: UIViewController {
 
         case .createParent:
             guard let key = selectedKeys.first, case .attachment(let attachment) = self.viewModel.state.itemAccessories[key] else { return }
-            self.coordinatorDelegate?.showItemDetail(for: .creation(type: ItemTypes.document, child: attachment, collectionKey: nil), library: self.viewModel.state.library)
+            var collectionKey: String?
+            switch self.viewModel.state.collection.identifier {
+            case .collection(let _key):
+                collectionKey = _key
+            default: break
+            }
+
+            self.coordinatorDelegate?.showItemDetail(for: .creation(type: ItemTypes.document, child: attachment, collectionKey: collectionKey), library: self.viewModel.state.library)
 
         case .delete:
             guard !selectedKeys.isEmpty else { return }
