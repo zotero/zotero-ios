@@ -65,8 +65,6 @@ class AttachmentDownloadOperation: AsynchronousOperation {
         self.state = .downloading
         self.disposeBag = disposeBag
 
-        DDLogInfo("!!! DOWNLOAD \(self.download.key)")
-
         self.downloadRequest(file: self.file, key: self.download.key, libraryId: self.download.libraryId, userId: self.userId)
             .flatMap { [weak self] request -> Observable<DownloadRequest> in
                 let downloadProgress = request.downloadProgress
