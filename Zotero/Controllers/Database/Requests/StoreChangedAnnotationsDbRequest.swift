@@ -140,25 +140,23 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
         }
         database.delete(item.paths)
 
-        for idx in 0..<10 {
-            for (idx, path) in paths.enumerated() {
-                let rPath = RPath()
-                rPath.sortIndex = idx
+        for (idx, path) in paths.enumerated() {
+            let rPath = RPath()
+            rPath.sortIndex = idx
 
-                for (idy, point) in path.enumerated() {
-                    let rXCoordinate = RPathCoordinate()
-                    rXCoordinate.value = Double(point.x)
-                    rXCoordinate.sortIndex = idy * 2
-                    rPath.coordinates.append(rXCoordinate)
+            for (idy, point) in path.enumerated() {
+                let rXCoordinate = RPathCoordinate()
+                rXCoordinate.value = Double(point.x)
+                rXCoordinate.sortIndex = idy * 2
+                rPath.coordinates.append(rXCoordinate)
 
-                    let rYCoordinate = RPathCoordinate()
-                    rYCoordinate.value = Double(point.y)
-                    rYCoordinate.sortIndex = (idy * 2) + 1
-                    rPath.coordinates.append(rYCoordinate)
-                }
-
-                item.paths.append(rPath)
+                let rYCoordinate = RPathCoordinate()
+                rYCoordinate.value = Double(point.y)
+                rYCoordinate.sortIndex = (idy * 2) + 1
+                rPath.coordinates.append(rYCoordinate)
             }
+
+            item.paths.append(rPath)
         }
 
         item.changedFields.insert(.paths)

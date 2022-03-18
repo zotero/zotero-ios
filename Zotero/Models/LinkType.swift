@@ -9,7 +9,7 @@
 import Foundation
 
 enum LinkType: String {
-    case `self` = "self"
+    case me = "self"
     case alternate = "alternate"
     case up = "up"
     case enclosure = "enclosure"

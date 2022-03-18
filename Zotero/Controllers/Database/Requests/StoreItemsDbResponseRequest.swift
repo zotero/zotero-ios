@@ -432,7 +432,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         guard let links = data.links else { return }
 
         if let link = links.`self` {
-            self.syncLink(data: link, type: LinkType.`self`.rawValue, item: item, database: database)
+            self.syncLink(data: link, type: LinkType.me.rawValue, item: item, database: database)
         }
         if let link = links.up {
             self.syncLink(data: link, type: LinkType.up.rawValue, item: item, database: database)

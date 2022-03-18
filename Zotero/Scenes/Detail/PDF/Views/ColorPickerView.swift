@@ -21,7 +21,7 @@ struct ColorPickerView: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            ForEach(0..<self.numberOfRows) { row in
+            ForEach(0..<self.numberOfRows, id: \.self) { row in
                 HStack(spacing: 12) {
                     ForEach(AnnotationsConfig.colors, id: \.self) { color in
                         Circle().foregroundColor(Color(hex: color))
