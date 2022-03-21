@@ -75,7 +75,7 @@ struct AnnotationConverter {
         let editability = self.editability(for: library, isAuthor: isAuthor)
         let comment = item.fieldValue(for: FieldKeys.Item.Annotation.comment) ?? ""
         let _pageIndex = PageIndex(pageIndex)
-        let rects: [CGRect] = item.rects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX), height: ($0.maxY - $0.minY)) })
+        let rects: [CGRect] = item.rects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX).rounded(to: 3), height: ($0.maxY - $0.minY).rounded(to: 3)) })
                                         .compactMap({ boundingBoxConverter.convertFromDb(rect: $0, page: _pageIndex) })
         let paths = self.paths(for: item, pageIndex: _pageIndex, boundingBoxConverter: boundingBoxConverter)
         let lineWidth = (item.fields.filter(.key(FieldKeys.Item.Annotation.lineWidth)).first?.value).flatMap(Double.init).flatMap(CGFloat.init)
@@ -189,19 +189,19 @@ struct AnnotationConverter {
 
         if let annotation = annotation as? PSPDFKit.NoteAnnotation {
             type = .note
-            rects = [CGRect(origin: annotation.boundingBox.origin, size: AnnotationsConfig.noteAnnotationSize)]
+            rects = [CGRect(origin: annotation.boundingBox.origin.rounded(to: 3), size: AnnotationsConfig.noteAnnotationSize)]
             text = nil
             paths = []
             lineWidth = nil
         } else if let annotation = annotation as? PSPDFKit.HighlightAnnotation {
             type = .highlight
-            rects = annotation.rects ?? [annotation.boundingBox]
+            rects = (annotation.rects ?? [annotation.boundingBox]).map({ $0.rounded(to: 3) })
             text = annotation.markedUpString.trimmingCharacters(in: .whitespacesAndNewlines)
             paths = []
             lineWidth = nil
         } else if let annotation = annotation as? PSPDFKit.SquareAnnotation {
             type = .image
-            rects = [annotation.boundingBox]
+            rects = [annotation.boundingBox.rounded(to: 3)]
             text = nil
             paths = []
             lineWidth = nil
@@ -211,7 +211,7 @@ struct AnnotationConverter {
             text = nil
             paths = annotation.lines.flatMap({ lines -> [[CGPoint]] in
                 return lines.map({ group in
-                    return group.map({ $0.location })
+                    return group.map({ $0.location.rounded(to: 3) })
                 })
             }) ?? []
             lineWidth = annotation.lineWidth

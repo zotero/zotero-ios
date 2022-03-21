@@ -48,6 +48,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         static let boundingBox = PdfAnnotationChanges(rawValue: 1 << 2)
         static let rects = PdfAnnotationChanges(rawValue: 1 << 3)
         static let lineWidth = PdfAnnotationChanges(rawValue: 1 << 4)
+        static let paths = PdfAnnotationChanges(rawValue: 1 << 5)
 
         static func stringValues(from changes: PdfAnnotationChanges) -> [String] {
             switch changes {
@@ -56,6 +57,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             case .rects: return ["rects"]
             case .boundingBox: return ["boundingBox"]
             case .lineWidth: return ["lineWidth"]
+            case .paths: return ["lines"]
             default: return []
             }
         }
@@ -583,17 +585,37 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         annotations[annotation.page] = pageAnnotations
 
         var changes: PdfAnnotationChanges = []
+
         if oldAnnotation.color != annotation.color {
             changes.insert(.color)
         }
+
         if oldAnnotation.comment != annotation.comment {
             changes.insert(.comment)
         }
-        if oldAnnotation.boundingBox != annotation.boundingBox {
-            changes.insert(.boundingBox)
-        }
-        if oldAnnotation.rects != annotation.rects {
-            changes.insert(.rects)
+
+        DDLogInfo("OLD \(oldAnnotation.boundingBox) VS NEW \(annotation.boundingBox)")
+
+        switch annotation.type {
+        case .highlight:
+            if oldAnnotation.boundingBox != annotation.boundingBox || oldAnnotation.rects != annotation.rects {
+                changes.insert(.boundingBox)
+                changes.insert(.rects)
+            }
+
+        case .ink:
+            if oldAnnotation.paths != annotation.paths {
+                changes.insert(.paths)
+            }
+
+            if oldAnnotation.lineWidth != annotation.lineWidth {
+                changes.insert(.lineWidth)
+            }
+
+        case .image, .note:
+            if oldAnnotation.boundingBox != annotation.boundingBox {
+                changes.insert(.boundingBox)
+            }
         }
 
         return changes
@@ -841,6 +863,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             pdfAnnotation.rects = annotation.rects
         }
 
+        if changes.contains(.paths) {
+            let lines = annotation.paths.map { coordinates in
+                return coordinates.map({ DrawingPoint(cgPoint: $0) })
+            }
+            (pdfAnnotation as? InkAnnotation)?.lines = lines
+        }
+
         if changes.contains(.lineWidth), let inkAnnotation = pdfAnnotation as? PSPDFKit.InkAnnotation {
             inkAnnotation.lineWidth = annotation.lineWidth ?? 1
         }
@@ -856,12 +885,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         guard pdfAnnotation.syncable, let key = pdfAnnotation.key else { return }
 
         let sortIndex = AnnotationConverter.sortIndex(from: pdfAnnotation, boundingBoxConverter: self.boundingBoxConverter)
-        let rects = pdfAnnotation.rects ?? [pdfAnnotation.boundingBox]
+        let rects = (pdfAnnotation.rects ?? [pdfAnnotation.boundingBox]).map({ $0.rounded(to: 3) })
         let highlightText = (pdfAnnotation as? PSPDFKit.HighlightAnnotation)?.markedUpString.trimmingCharacters(in: .whitespacesAndNewlines)
         var paths: [[CGPoint]] = []
         var lineWidth: CGFloat?
         if let inkAnnotation = pdfAnnotation as? PSPDFKit.InkAnnotation {
-            paths = inkAnnotation.lines.flatMap({ paths in return paths.map({ path in return path.map({ $0.location }) }) }) ?? []
+            paths = inkAnnotation.lines.flatMap({ paths in return paths.map({ path in return path.map({ $0.location.rounded(to: 3) }) }) }) ?? []
             lineWidth = inkAnnotation.lineWidth
         }
 

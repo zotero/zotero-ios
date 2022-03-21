@@ -51,13 +51,9 @@ struct Annotation: Identifiable, Equatable {
         case .ink:
             return AnnotationPreviewBoundingBoxCalculator.inkPreviewRect(from: self.boundingBox)
         case .note, .highlight:
-            return self.boundingBox
+            return self.boundingBox.rounded(to: 3)
         }
     }
-
-//    func isEditable(in library: Library) -> Bool {
-//        return self.editability != .notEditable && (library.metadataEditable || self.isAuthor)
-//    }
 
     init(key: String, type: AnnotationType, page: Int, pageLabel: String, rects: [CGRect], paths: [[CGPoint]], lineWidth: CGFloat?, author: String, isAuthor: Bool, color: String, comment: String,
          text: String?, sortIndex: String, dateModified: Date, tags: [Tag], didChange: Bool, editability: Editability, isSyncable: Bool) {
@@ -86,7 +82,7 @@ struct Annotation: Identifiable, Equatable {
             return AnnotationBoundingBoxCalculator.boundingBox(from: self.paths, lineWidth: lineWidth)
         }
         if self.rects.count == 1 {
-            return self.rects[0]
+            return self.rects[0].rounded(to: 3)
         }
         return AnnotationBoundingBoxCalculator.boundingBox(from: self.rects)
     }

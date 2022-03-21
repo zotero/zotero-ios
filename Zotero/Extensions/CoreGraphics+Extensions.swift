@@ -52,3 +52,9 @@ extension CGRect {
         return sqrt(((fromPoint.0 - toPoint.0) * (fromPoint.0 - toPoint.0)) + (fromPoint.1 - toPoint.1) * (fromPoint.1 - toPoint.1))
     }
 }
+
+extension CGPoint {
+    func rounded(to places: Int) -> CGPoint {
+        return CGPoint(x: self.x.rounded(to: places), y: self.y.rounded(to: places))
+    }
+}
