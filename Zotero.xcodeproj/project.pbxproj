@@ -772,6 +772,8 @@
 		B3AB38A9238EC060008A1ABB /* AllCollectionPickerActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A8238EC060008A1ABB /* AllCollectionPickerActionHandler.swift */; };
 		B3AB38B8238ED023008A1ABB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B3AB38B6238ED023008A1ABB /* Assets.xcassets */; };
 		B3AB38B9238ED023008A1ABB /* ExtensionScript.js in Resources */ = {isa = PBXBuildFile; fileRef = B3AB38B7238ED023008A1ABB /* ExtensionScript.js */; };
+		B3AB43A827E8A68D006F3E4E /* Dictionary+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB43A727E8A68D006F3E4E /* Dictionary+Extensions.swift */; };
+		B3AB43A927E8A81D006F3E4E /* Dictionary+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB43A727E8A68D006F3E4E /* Dictionary+Extensions.swift */; };
 		B3ADBCB827CFB64B00B7041F /* PDFSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ADBCB727CFB64B00B7041F /* PDFSettingsViewController.swift */; };
 		B3ADBCBA27CFB66C00B7041F /* PDFSettingsActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ADBCB927CFB66C00B7041F /* PDFSettingsActionHandler.swift */; };
 		B3ADBCBC27CFB67A00B7041F /* PDFSettingsAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ADBCBB27CFB67A00B7041F /* PDFSettingsAction.swift */; };
@@ -1570,6 +1572,7 @@
 		B3AB38A8238EC060008A1ABB /* AllCollectionPickerActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllCollectionPickerActionHandler.swift; sourceTree = "<group>"; };
 		B3AB38B6238ED023008A1ABB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B3AB38B7238ED023008A1ABB /* ExtensionScript.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = ExtensionScript.js; sourceTree = "<group>"; };
+		B3AB43A727E8A68D006F3E4E /* Dictionary+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Dictionary+Extensions.swift"; sourceTree = "<group>"; };
 		B3ADBCB727CFB64B00B7041F /* PDFSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSettingsViewController.swift; sourceTree = "<group>"; };
 		B3ADBCB927CFB66C00B7041F /* PDFSettingsActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSettingsActionHandler.swift; sourceTree = "<group>"; };
 		B3ADBCBB27CFB67A00B7041F /* PDFSettingsAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSettingsAction.swift; sourceTree = "<group>"; };
@@ -2101,6 +2104,7 @@
 				B305678F23FC1D9B003304F2 /* CollectionDifference+Separated.swift */,
 				B305651023FC051E003304F2 /* Color+Extension.swift */,
 				B3E9180B25ECE30A002B77AF /* CoreGraphics+Extensions.swift */,
+				B3AB43A727E8A68D006F3E4E /* Dictionary+Extensions.swift */,
 				B3129854270EE9DE002376F9 /* Error+Helpers.swift */,
 				B305650623FC051E003304F2 /* FileManager+Utils.swift */,
 				B337A5AB244F228500AFD13D /* Localizable.swift */,
@@ -4012,6 +4016,7 @@
 				B3BC6B20250FA437006A8B9C /* SchemaError.swift in Sources */,
 				B31901942629C9CB00209E33 /* ItemsFilterViewController.swift in Sources */,
 				B32AB57B25ADB891003CF0C6 /* CommentIconDrawingController.swift in Sources */,
+				B3AB43A827E8A68D006F3E4E /* Dictionary+Extensions.swift in Sources */,
 				B30565E523FC051E003304F2 /* RItemLocaleController.swift in Sources */,
 				B37C5B6926453C33009A37E5 /* NoteEditorActionHandler.swift in Sources */,
 				B3E8FE8627143BDD00F51458 /* SyncSettingsActionHandler.swift in Sources */,
@@ -4704,6 +4709,7 @@
 				B305673C23FC0988003304F2 /* SettingsResponse.swift in Sources */,
 				B31D4A732767841800E22DCC /* BackgroundTaskController.swift in Sources */,
 				B353F1FC242E23680062EE24 /* ResetTranslatorsDbRequest.swift in Sources */,
+				B3AB43A927E8A81D006F3E4E /* Dictionary+Extensions.swift in Sources */,
 				B36459E0264411AC00A0C2C0 /* ViewModel.swift in Sources */,
 				B32EBFC3276A892E0003897E /* BackgroundUploader.swift in Sources */,
 				B3902DE62480DBB7007EE48E /* DateParser.swift in Sources */,

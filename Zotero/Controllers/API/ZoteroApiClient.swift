@@ -210,8 +210,7 @@ extension ZoteroApiClient: ApiRequestCreator {
 extension ResponseHeaders {
     var lastModifiedVersion: Int {
         // Workaround for broken headers (stored in case-sensitive dictionary)
-        return ((self["Last-Modified-Version"] as? String) ??
-                (self["last-modified-version"] as? String)).flatMap(Int.init) ?? 0
+        return (self.value(forCaseInsensitive: "last-modified-version") as? String).flatMap(Int.init) ?? 0
     }
 }
 
