@@ -149,14 +149,13 @@ final class AnnotationViewController: UIViewController {
         })
     }
 
-    private func scrollToBottomIfNeeded() {
-        guard self.containerStackView.frame.height > self.scrollView.frame.height else {
-            self.scrollView.isScrollEnabled = false
-            return
-        }
-        self.scrollView.isScrollEnabled = true
-        let yOffset = self.scrollView.contentSize.height - self.scrollView.bounds.height + self.scrollView.contentInset.bottom
-        self.scrollView.setContentOffset(CGPoint(x: 0, y: yOffset), animated: true)
+    private func scrollToCursorIfNeeded() {
+        guard let commentView = self.comment, commentView.textView.isFirstResponder, let selectedPosition = commentView.textView.selectedTextRange?.start else { return }
+        let caretRect = commentView.textView.caretRect(for: selectedPosition)
+        guard (commentView.frame.origin.y + caretRect.origin.y) > self.scrollView.frame.height else { return }
+
+        let rect = CGRect(x: caretRect.origin.x, y: (commentView.frame.origin.y + caretRect.origin.y) + 10, width: caretRect.size.width, height: caretRect.size.height)
+        self.scrollView.scrollRectToVisible(rect, animated: true)
     }
 
     // MARK: - Setups
@@ -197,7 +196,7 @@ final class AnnotationViewController: UIViewController {
                            self.viewModel.process(action: .setComment(key: annotation.key, comment: data.0))
                            if data.1 {
                                self.updatePreferredContentSize()
-                               self.scrollToBottomIfNeeded()
+                               self.scrollToCursorIfNeeded()
                            }
                        })
                        .disposed(by: self.disposeBag)

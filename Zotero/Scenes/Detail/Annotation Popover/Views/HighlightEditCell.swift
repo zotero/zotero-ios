@@ -22,6 +22,11 @@ final class HighlightEditCell: UITableViewCell {
         }
     }
 
+    var caretRect: CGRect? {
+        guard self.textView.isFirstResponder, let selectedPosition = self.textView.selectedTextRange?.start else { return nil }
+        return self.textView.caretRect(for: selectedPosition)
+    }
+
     override func awakeFromNib() {
         super.awakeFromNib()
 

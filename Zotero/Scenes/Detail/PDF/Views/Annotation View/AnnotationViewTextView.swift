@@ -11,7 +11,7 @@ import UIKit
 import RxSwift
 
 final class AnnotationViewTextView: UIView {
-    private weak var textView: AnnotationTextView!
+    private(set) weak var textView: UITextView!
 
     private let layout: AnnotationViewLayout
     private let placeholder: String

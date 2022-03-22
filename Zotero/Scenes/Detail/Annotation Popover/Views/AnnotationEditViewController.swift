@@ -104,15 +104,17 @@ final class AnnotationEditViewController: UIViewController {
         self.tableView.endUpdates()
     }
 
-    private func focusHighlightCell() {
+    private func scrollToHighlightCursor() {
         let indexPath = IndexPath(row: 0, section: 0)
 
-        let cellBottom = self.tableView.rectForRow(at: indexPath).maxY - self.tableView.contentOffset.y
-        let tableViewBottom = self.tableView.superview!.bounds.maxY - self.tableView.contentInset.bottom
+        guard let cell = self.tableView.cellForRow(at: indexPath) as? HighlightEditCell, let cellCaretRect = cell.caretRect else { return }
 
-        guard cellBottom > tableViewBottom else { return }
+        let rowRect = self.tableView.rectForRow(at: indexPath)
+        let caretRect = CGRect(x: (rowRect.minX + cellCaretRect.minX), y: (rowRect.minY + cellCaretRect.minY) + 10, width: cellCaretRect.width, height: cellCaretRect.height)
 
-        self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: false)
+        guard caretRect.maxY > (self.tableView.contentInset.top + self.tableView.frame.height) else { return }
+
+        self.tableView.scrollRectToVisible(caretRect, animated: false)
     }
 
     private func updatePreferredContentSize() {
@@ -225,7 +227,7 @@ extension AnnotationEditViewController: UITableViewDataSource {
                         if needsHeightReload {
                             self?.updatePreferredContentSize()
                             self?.reloadHeight()
-                            self?.focusHighlightCell()
+                            self?.scrollToHighlightCursor()
                         }
                     })
                     .disposed(by: self.disposeBag)
