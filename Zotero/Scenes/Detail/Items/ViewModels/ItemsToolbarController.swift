@@ -35,7 +35,6 @@ final class ItemsToolbarController {
         self.disposeBag = DisposeBag()
 
         self.createToolbarItems(for: initialState)
-        self.viewController.navigationController?.setToolbarHidden(false, animated: false)
     }
 
     func willAppear() {
