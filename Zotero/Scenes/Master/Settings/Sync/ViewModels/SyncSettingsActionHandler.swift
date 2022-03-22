@@ -53,7 +53,12 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
                 state.url = url
                 state.webDavVerificationResult = nil
             }
-            self.webDavController.sessionStorage.url = url
+
+            var decodedUrl = url
+            if url.contains("%") {
+                decodedUrl = url.removingPercentEncoding ?? url
+            }
+            self.webDavController.sessionStorage.url = decodedUrl
             self.webDavController.resetVerification()
 
         case .setUsername(let username):
