@@ -594,8 +594,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             changes.insert(.comment)
         }
 
-        DDLogInfo("OLD \(oldAnnotation.boundingBox) VS NEW \(annotation.boundingBox)")
-
         switch annotation.type {
         case .highlight:
             if oldAnnotation.boundingBox != annotation.boundingBox || oldAnnotation.rects != annotation.rects {
