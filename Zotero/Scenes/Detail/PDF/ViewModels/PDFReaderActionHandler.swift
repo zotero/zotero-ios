@@ -1235,7 +1235,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     }
 
     private func filter(annotation: Annotation, with term: String) -> Bool {
-        return annotation.author.localizedCaseInsensitiveContains(term) ||
+        return annotation.key.lowercased() == term.lowercased() ||
+               annotation.author.localizedCaseInsensitiveContains(term) ||
                annotation.comment.localizedCaseInsensitiveContains(term) ||
                (annotation.text ?? "").localizedCaseInsensitiveContains(term) ||
                annotation.tags.contains(where: { $0.name.localizedCaseInsensitiveContains(term) })

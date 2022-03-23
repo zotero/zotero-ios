@@ -14,6 +14,7 @@ final class SearchBar: UIView {
     private static let cancelOffset: CGFloat = 8
 
     private weak var textField: UITextField!
+    private weak var clearButton: UIButton!
     private weak var cancelButton: UIButton!
     private var cancelRightConstraint: NSLayoutConstraint!
     private var textFieldRightConstraint: NSLayoutConstraint!
@@ -21,19 +22,23 @@ final class SearchBar: UIView {
     private let insets: UIEdgeInsets
     private let cornerRadius: CGFloat
     private let disposeBag: DisposeBag
-
-    var text: Observable<String> {
-        return self.textField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.textField.text ?? "") })
-    }
+    let text: BehaviorSubject<String>
 
     // MARK: - Lifecycle
 
     init(frame: CGRect, insets: UIEdgeInsets, cornerRadius: CGFloat) {
         self.insets = insets
         self.cornerRadius = cornerRadius
+        self.text = BehaviorSubject(value: "")
         self.disposeBag = DisposeBag()
         super.init(frame: frame)
         self.setupView()
+
+        self.textField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.textField.text ?? "") }).subscribe(onNext: { [weak self] text in
+            self?.text.on(.next(text))
+            self?.clearButton.isHidden = text.isEmpty
+        })
+        .disposed(by: self.disposeBag)
     }
 
     required init?(coder: NSCoder) {
@@ -43,7 +48,6 @@ final class SearchBar: UIView {
     // MARK: - Actions
 
     private func setCancel(active: Bool) {
-
         self.cancelRightConstraint.isActive = active
         self.textFieldRightConstraint.isActive = !active
 
@@ -60,6 +64,12 @@ final class SearchBar: UIView {
                            guard finished else { return }
                            self.cancelButton.isHidden = !active
                        })
+    }
+
+    private func clear() {
+        self.clearButton.isHidden = true
+        self.textField.text = ""
+        self.text.on(.next(""))
     }
 
     // MARK: - Setups
@@ -81,10 +91,37 @@ final class SearchBar: UIView {
         textField.attributedPlaceholder = NSAttributedString(string: L10n.Searchbar.placeholder, attributes: [.foregroundColor: Asset.Colors.searchMagnifyingGlass.color])
         textField.translatesAutoresizingMaskIntoConstraints = false
         textField.returnKeyType = .search
+        textField.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        let clear = UIButton()
+        clear.translatesAutoresizingMaskIntoConstraints = false
+        clear.accessibilityLabel = L10n.Searchbar.accessibilityClear
+        clear.tintColor = .systemGray
+        clear.isHidden = true
+        clear.rx.tap.subscribe(onNext: { [weak self] in
+            self?.clear()
+        })
+        .disposed(by: self.disposeBag)
+        clear.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        clear.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+
+        let clearImage = UIImage(systemName: "xmark.circle.fill", withConfiguration: UIImage.SymbolConfiguration(scale: .medium))?.withRenderingMode(.alwaysTemplate)
+
+        if #available(iOS 15.0, *) {
+            var clearConfiguration = UIButton.Configuration.plain()
+            clearConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: self.cornerRadius, bottom: 8, trailing: self.cornerRadius)
+            clearConfiguration.image = clearImage
+            clear.configuration = clearConfiguration
+        } else {
+            clear.setImage(clearImage, for: .normal)
+            clear.contentEdgeInsets = UIEdgeInsets(top: 8, left: self.cornerRadius, bottom: 8, right: self.cornerRadius)
+        }
 
         let cancel = UIButton(type: .custom)
         cancel.translatesAutoresizingMaskIntoConstraints = false
         cancel.setTitle(L10n.cancel, for: .normal)
+        cancel.accessibilityLabel = L10n.Searchbar.accessibilityCancel
         cancel.setTitleColor(Asset.Colors.zoteroBlueWithDarkMode.color, for: .normal)
         cancel.contentEdgeInsets = UIEdgeInsets(top: 0, left: SearchBar.cancelOffset, bottom: 0, right: self.insets.right)
         cancel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
@@ -98,6 +135,7 @@ final class SearchBar: UIView {
 
         background.addSubview(icon)
         background.addSubview(textField)
+        background.addSubview(clear)
         self.addSubview(background)
         self.addSubview(cancel)
 
@@ -119,7 +157,10 @@ final class SearchBar: UIView {
             textField.topAnchor.constraint(equalTo: background.topAnchor),
             background.bottomAnchor.constraint(equalTo: textField.bottomAnchor),
             textField.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: 8),
-            background.trailingAnchor.constraint(equalTo: textField.trailingAnchor, constant: self.cornerRadius),
+            // Clear button
+            clear.centerYAnchor.constraint(equalTo: textField.centerYAnchor),
+            clear.leadingAnchor.constraint(equalTo: textField.trailingAnchor, constant: 8),
+            background.trailingAnchor.constraint(equalTo: clear.trailingAnchor),
             // Cancel button
             background.trailingAnchor.constraint(equalTo: cancel.leadingAnchor),
             cancel.topAnchor.constraint(equalTo: self.topAnchor),
@@ -127,6 +168,7 @@ final class SearchBar: UIView {
         ])
 
         self.textField = textField
+        self.clearButton = clear
         self.cancelButton = cancel
     }
 }

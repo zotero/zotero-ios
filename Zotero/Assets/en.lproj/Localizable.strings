@@ -312,6 +312,8 @@
 "shareext.tags_title" = "Tags";
 
 "searchbar.placeholder" = "Search";
+"searchbar.accessibility_cancel" = "Cancel Search";
+"searchbar.accessibility_clear" = "Clear Search";
 
 "errors.schema" = "Some data in My Library could not be downloaded. It may have been saved with a newer version of Zotero.\n\nOther data will continue to sync.";
 "errors.parsing" = "Could not parse some data. Other data will continue to sync.";

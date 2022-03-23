@@ -845,6 +845,10 @@ internal enum L10n {
   }
 
   internal enum Searchbar {
+    /// Cancel Search
+    internal static let accessibilityCancel = L10n.tr("Localizable", "searchbar.accessibility_cancel")
+    /// Clear Search
+    internal static let accessibilityClear = L10n.tr("Localizable", "searchbar.accessibility_clear")
     /// Search
     internal static let placeholder = L10n.tr("Localizable", "searchbar.placeholder")
   }
