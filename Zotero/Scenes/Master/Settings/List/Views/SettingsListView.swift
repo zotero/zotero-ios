@@ -79,8 +79,11 @@ struct SettingsListView: View {
         }
         .listStyle(GroupedListStyle())
         .navigationBarTitle(Text(L10n.Settings.title), displayMode: .inline)
-        .navigationBarItems(leading: Button(action: { self.coordinatorDelegate?.dismiss() },
-                                            label: { Text(L10n.close).padding(.vertical, 10).padding(.trailing, 10) }))
+        .navigationBarItems(leading: self.closeButton)
+    }
+
+    private var closeButton: some View {
+        Button(action: { self.coordinatorDelegate?.dismiss() }, label: { Text(L10n.close).padding(.vertical, 10).padding(.trailing, 10) }) .foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor)
     }
 
     private var footer: some View {
