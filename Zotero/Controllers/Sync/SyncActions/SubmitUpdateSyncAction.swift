@@ -21,6 +21,7 @@ struct SubmitUpdateSyncAction: SyncAction {
     let libraryId: LibraryIdentifier
     let userId: Int
     let updateLibraryVersion: Bool
+    private let splitMessage = "Annotation position is too long"
 
     unowned let apiClient: ApiClient
     unowned let dbStorage: DbStorage
@@ -130,7 +131,7 @@ struct SubmitUpdateSyncAction: SyncAction {
                 DDLogError("SubmitUpdateSyncAction: failed \(response.key ?? "unknown key") - \(response.message). Library \(libraryId)")
                 return PreconditionErrorType.objectConflict
 
-            case 400 where response.message == "Annotation position is too long":
+            case 400 where response.message == self.splitMessage:
                 if let key = response.key {
                     splitKeys.insert(key)
                 }
@@ -144,7 +145,7 @@ struct SubmitUpdateSyncAction: SyncAction {
 
             do {
                 try self.dbStorage.createCoordinator().perform(request: SplitAnnotationsDbRequest(keys: splitKeys, libraryId: libraryId))
-                return SyncActionError.annotationNeededSplitting(libraryId)
+                return SyncActionError.annotationNeededSplitting(message: self.splitMessage, libraryId: libraryId)
             } catch let error {
                 DDLogError("SubmitUpdateSyncAction: could not split annotations - \(error)")
             }

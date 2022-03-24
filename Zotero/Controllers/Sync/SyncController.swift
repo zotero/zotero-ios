@@ -393,7 +393,7 @@ final class SyncController: SynchronizationController {
                     retryLibraries.append(libraryId)
                 }
 
-            case .annotationDidSplit(let libraryId):
+            case .annotationDidSplit(_, let libraryId):
                 if !retryLibraries.contains(libraryId) {
                     retryLibraries.append(libraryId)
                 }
@@ -1530,8 +1530,8 @@ final class SyncController: SynchronizationController {
                 return .nonFatal(.unknown(error.localizedDescription))
             case .attachmentMissing(let key, let libraryId, let title):
                 return .nonFatal(.attachmentMissing(key: key, libraryId: libraryId, title: title))
-            case .annotationNeededSplitting(let libraryId):
-                return .nonFatal(.annotationDidSplit(libraryId))
+            case .annotationNeededSplitting(let message, let libraryId):
+                return .nonFatal(.annotationDidSplit(message: message, libraryId: libraryId))
             case .submitUpdateFailures(let messages):
                 return .nonFatal(.unknown(messages))
             }
