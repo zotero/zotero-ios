@@ -26,7 +26,6 @@ class ContainerViewController: UIViewController {
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
         self.modalPresentationStyle = .pageSheet
-        self.isModalInPresentation = true
     }
 
     required init?(coder: NSCoder) {
