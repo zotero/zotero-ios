@@ -74,6 +74,7 @@
 "collections.all_items" = "All Items";
 "collections.my_publications" = "My Publications";
 "collections.trash" = "Trash";
+"collections.unfiled" = "Unfiled Items";
 "collections.new_subcollection" = "New Subcollection";
 "collections.edit_title" = "Edit Collection";
 "collections.delete" = "Delete Collection";

@@ -302,6 +302,8 @@ internal enum L10n {
     internal static let searchTitle = L10n.tr("Localizable", "collections.search_title")
     /// Trash
     internal static let trash = L10n.tr("Localizable", "collections.trash")
+    /// Unfiled Items
+    internal static let unfiled = L10n.tr("Localizable", "collections.unfiled")
   }
 
   internal enum CreatorEditor {

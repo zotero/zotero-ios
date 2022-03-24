@@ -203,7 +203,13 @@ extension NSPredicate {
         switch collectionId {
         case .collection(let key):
             predicates.append(NSPredicate(format: "any collections.key = %@", key))
-        case .search, .custom: break
+        case .custom(let type):
+            switch type {
+            case .unfiled:
+                predicates.append(NSPredicate(format: "collections.@count == 0"))
+            case .all, .publications, .trash: break
+            }
+        case .search: break
         }
 
         return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)

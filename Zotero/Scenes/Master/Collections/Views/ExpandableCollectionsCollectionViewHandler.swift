@@ -125,7 +125,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
                 }
                 return UIMenu(title: "", children: [trash])
 
-            case .publications, .all:
+            case .publications, .all, .unfiled:
                 let downloadAttachments = UIAction(title: L10n.Collections.downloadAttachments, image: UIImage(systemName: "arrow.down.to.line.compact")) { [weak self] _ in
                     self?.viewModel.process(action: .downloadAttachments(collection.identifier))
                 }

@@ -33,6 +33,8 @@ struct Collection: Identifiable, Equatable, Hashable {
             switch type {
             case .all, .publications:
                 return Asset.Images.Cells.document.name
+            case .unfiled:
+                return Asset.Images.Cells.unfiled.name
             case .trash:
                 return Asset.Images.Cells.trash.name
             }
@@ -61,6 +63,8 @@ struct Collection: Identifiable, Equatable, Hashable {
             self.name = L10n.Collections.myPublications
         case .trash:
             self.name = L10n.Collections.trash
+        case .unfiled:
+            self.name = L10n.Collections.unfiled
         }
     }
 

@@ -191,18 +191,17 @@ struct CollectionsActionHandler: ViewModelActionHandler {
             let coordinator = try self.dbStorage.createCoordinator()
             let library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
             let collections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: libraryId))
-//            let searches = try coordinator.perform(request: ReadSearchesDbRequest(libraryId: libraryId))
             let allItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.all), libraryId: libraryId))
-//            let publicationItemsCount = try coordinator.perform(request: ReadItemsDbRequest(type: .publications, libraryId: libraryId)).count
+            let unfiledItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.unfiled), libraryId: libraryId))
             let trashItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.trash), libraryId: libraryId))
 
             let collectionTree = CollectionTreeBuilder.collections(from: collections, libraryId: libraryId)
             collectionTree.insert(collection: Collection(custom: .all, itemCount: allItems.count), at: 0)
+            collectionTree.append(collection: Collection(custom: .unfiled, itemCount: unfiledItems.count))
             collectionTree.append(collection: Collection(custom: .trash, itemCount: trashItems.count))
 
             let collectionsToken = collections.observe(keyPaths: RCollection.observableKeypathsForList, { [weak viewModel] changes in
                 guard let viewModel = viewModel else { return }
-
                 switch changes {
                 case .update(let objects, _, _, _): self.update(collections: objects, viewModel: viewModel)
                 case .initial: break
@@ -210,43 +209,16 @@ struct CollectionsActionHandler: ViewModelActionHandler {
                 }
             })
 
-//            let searchesToken = searches.observe({ [weak viewModel] changes in
-//                guard let viewModel = viewModel else { return }
-//                switch changes {
-//                case .update(let objects, _, _, _):
-//                    let collections = CollectionTreeBuilder.collections(from: objects)
-//                    self.update(collections: collections, in: viewModel)
-//                case .initial: break
-//                case .error: break
-//                }
-//            })
-
-            let itemsToken = allItems.observe({ [weak viewModel] changes in
-                guard let viewModel = viewModel else { return }
-                switch changes {
-                case .update(let objects, _, _, _):
-                    self.update(allItemsCount: objects.count, in: viewModel)
-                case .initial: break
-                case .error: break
-                }
-            })
-
-            let trashToken = trashItems.observe({ [weak viewModel] changes in
-                guard let viewModel = viewModel else { return }
-                switch changes {
-                case .update(let objects, _, _, _):
-                    self.update(trashItemCount: objects.count, in: viewModel)
-                case .initial: break
-                case .error: break
-                }
-            })
+            let itemsToken = self.observeItemCount(in: allItems, for: .all, in: viewModel)
+            let unfiledToken = self.observeItemCount(in: unfiledItems, for: .unfiled, in: viewModel)
+            let trashToken = self.observeItemCount(in: trashItems, for: .trash, in: viewModel)
 
             self.update(viewModel: viewModel) { state in
                 state.collectionTree = collectionTree
                 state.library = library
                 state.collectionsToken = collectionsToken
-//                state.searchesToken = searchesToken
                 state.itemsToken = itemsToken
+                state.unfiledToken = unfiledToken
                 state.trashToken = trashToken
             }
         } catch let error {
@@ -331,17 +303,31 @@ struct CollectionsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func update(allItemsCount: Int, in viewModel: ViewModel<CollectionsActionHandler>) {
-        self.update(viewModel: viewModel) { state in
-            state.collectionTree.update(collection: Collection(custom: .all, itemCount: allItemsCount))
-            state.changes = .allItemCount
-        }
+    private func observeItemCount(in results: Results<RItem>, for customType: CollectionIdentifier.CustomType, in viewModel: ViewModel<CollectionsActionHandler>) -> NotificationToken {
+        return results.observe({ [weak viewModel] changes in
+            guard let viewModel = viewModel else { return }
+            switch changes {
+            case .update(let objects, _, _, _):
+                self.update(itemsCount: objects.count, for: customType, in: viewModel)
+            case .initial: break
+            case .error: break
+            }
+        })
     }
 
-    private func update(trashItemCount: Int, in viewModel: ViewModel<CollectionsActionHandler>) {
+    private func update(itemsCount: Int, for customType: CollectionIdentifier.CustomType, in viewModel: ViewModel<CollectionsActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            state.collectionTree.update(collection: Collection(custom: .trash, itemCount: trashItemCount))
-            state.changes = .trashItemCount
+            state.collectionTree.update(collection: Collection(custom: customType, itemCount: itemsCount))
+
+            switch customType {
+            case .all:
+                state.changes = .allItemCount
+            case .unfiled:
+                state.changes = .trashItemCount
+            case .trash:
+                state.changes = .trashItemCount
+            case .publications: break
+            }
         }
     }
 
