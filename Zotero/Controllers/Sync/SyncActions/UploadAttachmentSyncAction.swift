@@ -185,7 +185,7 @@ class UploadAttachmentSyncAction: SyncAction {
 
         let loadParameters: Single<[String: Any]> = Single.create { subscriber -> Disposable in
             do {
-                let item = try self.dbStorage.createCoordinator().perform(request: ReadItemDbRequest(libraryId: self.libraryId, key: self.key))
+                let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: self.libraryId, key: self.key))
                 subscriber(.success(item.mtimeAndHashParameters))
             } catch let error {
                 subscriber(.failure(error))
@@ -220,7 +220,7 @@ class UploadAttachmentSyncAction: SyncAction {
                     requests.append(UpdateVersionsDbRequest(version: version, libraryId: self.libraryId, type: .object(.item)))
                 }
 
-                try self.dbStorage.createCoordinator().perform(requests: requests)
+                try self.dbStorage.perform(writeRequests: requests)
 
                 subscriber(.success(()))
             } catch let error {
@@ -238,7 +238,7 @@ class UploadAttachmentSyncAction: SyncAction {
 
             do {
                 let request = CheckItemIsChangedDbRequest(libraryId: self.libraryId, key: self.key)
-                let isChanged = try self.dbStorage.createCoordinator().perform(request: request)
+                let isChanged = try self.dbStorage.perform(request: request)
                 if !isChanged {
                     subscriber(.success(()))
                 } else {
@@ -264,7 +264,7 @@ class UploadAttachmentSyncAction: SyncAction {
                 subscriber(.success(size))
             } else {
                 DDLogError("UploadAttachmentSyncAction: missing attachment - \(self.file.createUrl().absoluteString)")
-                let item = try? self.dbStorage.createCoordinator().perform(request: ReadItemDbRequest(libraryId: self.libraryId, key: self.key))
+                let item = try? self.dbStorage.perform(request: ReadItemDbRequest(libraryId: self.libraryId, key: self.key))
                 let title = item?.displayTitle ?? L10n.notFound
                 subscriber(.failure(SyncActionError.attachmentMissing(key: self.key, libraryId: self.libraryId, title: title)))
             }

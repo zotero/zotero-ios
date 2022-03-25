@@ -23,7 +23,7 @@ struct StoreVersionSyncAction: SyncAction {
         return Single.create { subscriber -> Disposable in
             do {
                 let request = UpdateVersionsDbRequest(version: self.version, libraryId: self.libraryId, type: self.type)
-                try self.dbStorage.createCoordinator().perform(request: request)
+                try self.dbStorage.perform(request: request)
                 subscriber(.success(()))
             } catch let error {
                 subscriber(.failure(error))

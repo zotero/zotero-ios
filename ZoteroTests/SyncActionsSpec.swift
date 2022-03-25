@@ -82,11 +82,10 @@ final class SyncActionsSpec: QuickSpec {
                 let searchResponse = try! SearchResponse(response: searchJson)
                 let itemResponse = try! ItemResponse(response: itemJson, schemaController: TestControllers.schemaController)
 
-                let coordinator = try! self.dbStorage.createCoordinator()
                 // Store original objects to db
-                _ = try! coordinator.perform(request: StoreItemsDbResponseRequest(responses: [itemResponse], schemaController: TestControllers.schemaController, dateParser: TestControllers.dateParser, preferResponseData: true))
-                try! coordinator.perform(request: StoreCollectionsDbRequest(response: [collectionResponse]))
-                try! coordinator.perform(request: StoreSearchesDbRequest(response: [searchResponse]))
+                _ = try! self.dbStorage.perform(request: StoreItemsDbResponseRequest(responses: [itemResponse], schemaController: TestControllers.schemaController, dateParser: TestControllers.dateParser, preferResponseData: true))
+                try! self.dbStorage.perform(request: StoreCollectionsDbRequest(response: [collectionResponse]))
+                try! self.dbStorage.perform(request: StoreSearchesDbRequest(response: [searchResponse]))
 
                 // Change some objects so that they are updated locally
                 try! coordinator.perform(request: EditCollectionDbRequest(libraryId: .group(1234123), key: "BBBBBBBB", name: "New name", parentKey: nil))
@@ -213,10 +212,9 @@ final class SyncActionsSpec: QuickSpec {
                 let collectionResponse = try! CollectionResponse(response: collectionJson)
                 let itemResponse = try! ItemResponse(response: itemJson, schemaController: TestControllers.schemaController)
 
-                let coordinator = try! self.dbStorage.createCoordinator()
                 // Store original objects to db
-                _ = try! coordinator.perform(request: StoreItemsDbResponseRequest(responses: [itemResponse], schemaController: TestControllers.schemaController, dateParser: TestControllers.dateParser, preferResponseData: true))
-                try! coordinator.perform(request: StoreCollectionsDbRequest(response: [collectionResponse]))
+                _ = try! self.dbStorage.perform(request: StoreItemsDbResponseRequest(responses: [itemResponse], schemaController: TestControllers.schemaController, dateParser: TestControllers.dateParser, preferResponseData: true))
+                try! self.dbStorage.perform(request: StoreCollectionsDbRequest(response: [collectionResponse]))
 
                 // Change some objects so that they are updated locally
                 try! coordinator.perform(request: EditCollectionDbRequest(libraryId: .group(1234123), key: "BBBBBBBB", name: "New name", parentKey: nil))

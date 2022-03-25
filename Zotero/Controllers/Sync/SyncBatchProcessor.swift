@@ -129,7 +129,6 @@ final class SyncBatchProcessor {
     }
 
     private func sync(data: Data, libraryId: LibraryIdentifier, object: SyncObject, userId: Int, expectedKeys: [String]) throws -> SyncBatchResponse {
-        let coordinator = try self.dbStorage.createCoordinator()
         let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
 
         switch object {
@@ -139,7 +138,7 @@ final class SyncBatchProcessor {
             // Cache JSONs locally for later use (in CR)
             self.storeIndividualObjects(from: objects, type: .collection, libraryId: libraryId)
 
-            try coordinator.perform(request: StoreCollectionsDbRequest(response: collections))
+            try self.dbStorage.perform(request: StoreCollectionsDbRequest(response: collections))
 
             let failedKeys = self.failedKeys(from: expectedKeys, parsedKeys: collections.map({ $0.key }), errors: errors)
             return (failedKeys, errors, [])
@@ -150,7 +149,7 @@ final class SyncBatchProcessor {
             // Cache JSONs locally for later use (in CR)
             self.storeIndividualObjects(from: objects, type: .search, libraryId: libraryId)
 
-            try coordinator.perform(request: StoreSearchesDbRequest(response: searches))
+            try self.dbStorage.perform(request: StoreSearchesDbRequest(response: searches))
 
             let failedKeys = self.failedKeys(from: expectedKeys, parsedKeys: searches.map({ $0.key }), errors: errors)
             return (failedKeys, errors, [])
@@ -162,7 +161,7 @@ final class SyncBatchProcessor {
             self.storeIndividualObjects(from: objects, type: .item, libraryId: libraryId)
 
             // BETA: - forcing preferResponseData to true for beta, it should be false here so that we report conflicts
-            let response = try coordinator.perform(request: StoreItemsDbResponseRequest(responses: items, schemaController: self.schemaController, dateParser: self.dateParser, preferResponseData: true))
+            let response = try self.dbStorage.perform(request: StoreItemsDbResponseRequest(responses: items, schemaController: self.schemaController, dateParser: self.dateParser, preferResponseData: true))
             let failedKeys = self.failedKeys(from: expectedKeys, parsedKeys: items.map({ $0.key }), errors: errors)
 
             self.renameExistingFiles(changes: response.changedFilenames, libraryId: libraryId)

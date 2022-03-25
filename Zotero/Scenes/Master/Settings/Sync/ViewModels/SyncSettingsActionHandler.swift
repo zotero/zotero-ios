@@ -109,7 +109,7 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
                 requests.append(DeleteAllWebDavDeletionsDbRequest())
             }
 
-            try self.dbStorage.createCoordinator().perform(requests: requests)
+            try self.dbStorage.perform(requests: requests)
 
             self.update(viewModel: viewModel) { state in
                 state.fileSyncType = type

@@ -61,7 +61,7 @@ struct SubmitUpdateSyncAction: SyncAction {
                                      if self.updateLibraryVersion {
                                          requests.append(UpdateVersionsDbRequest(version: newVersion, libraryId: self.libraryId, type: .object(self.object)))
                                      }
-                                     try self.dbStorage.createCoordinator().perform(requests: requests)
+                                     try self.dbStorage.perform(writeRequests: requests)
 
                                      return Single.just((newVersion, nil))
                                  } catch let error {
@@ -106,7 +106,7 @@ struct SubmitUpdateSyncAction: SyncAction {
 
             if !requests.isEmpty {
                 do {
-                    try self.dbStorage.createCoordinator().perform(requests: requests)
+                    try self.dbStorage.perform(writeRequests: requests)
                 } catch let error {
                     DDLogError("SubmitUpdateSyncAction: can't store local changes - \(error)")
                     subscriber(.success((newVersion, error)))
@@ -144,7 +144,7 @@ struct SubmitUpdateSyncAction: SyncAction {
             DDLogWarn("SubmitUpdateSyncAction: annotations too long: \(splitKeys) in \(libraryId)")
 
             do {
-                try self.dbStorage.createCoordinator().perform(request: SplitAnnotationsDbRequest(keys: splitKeys, libraryId: libraryId))
+                try self.dbStorage.perform(request: SplitAnnotationsDbRequest(keys: splitKeys, libraryId: libraryId))
                 return SyncActionError.annotationNeededSplitting(message: self.splitMessage, libraryId: libraryId)
             } catch let error {
                 DDLogError("SubmitUpdateSyncAction: could not split annotations - \(error)")

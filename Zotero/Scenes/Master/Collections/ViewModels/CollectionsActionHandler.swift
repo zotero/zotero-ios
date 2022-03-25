@@ -72,7 +72,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
     private func downloadAttachments(in collectionId: CollectionIdentifier, viewModel: ViewModel<CollectionsActionHandler>) {
         do {
-            let items = try self.dbStorage.createCoordinator().perform(request: ReadAllAttachmentsFromCollectionDbRequest(collectionId: collectionId, libraryId: viewModel.state.libraryId))
+            let items = try self.dbStorage.perform(request: ReadAllAttachmentsFromCollectionDbRequest(collectionId: collectionId, libraryId: viewModel.state.libraryId))
             let attachments = items.compactMap({ item -> (Attachment, String?)? in
                 guard let attachment = AttachmentCreator.attachment(for: item, fileStorage: self.fileStorage, urlDetector: nil) else { return nil }
                 return (attachment, item.parent?.key)
@@ -91,7 +91,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
         self.queue.async {
             do {
-                try self.dbStorage.createCoordinator().perform(request: EmptyTrashDbRequest(libraryId: libraryId))
+                try self.dbStorage.perform(request: EmptyTrashDbRequest(libraryId: libraryId))
             } catch let error {
                 DDLogError("CollectionsActionHandler: can't empty trash - \(error)")
             }
@@ -100,7 +100,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
     private func loadItemKeysForBibliography(collection: Collection, in viewModel: ViewModel<CollectionsActionHandler>) {
         do {
-            let items = try self.dbStorage.createCoordinator().perform(request: ReadItemsDbRequest(collectionId: collection.identifier, libraryId: viewModel.state.libraryId))
+            let items = try self.dbStorage.perform(request: ReadItemsDbRequest(collectionId: collection.identifier, libraryId: viewModel.state.libraryId))
             let keys = Set(items.map({ $0.key }))
             self.update(viewModel: viewModel) { state in
                 state.itemKeysForBibliography = .success(keys)
@@ -131,7 +131,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
         self.queue.async {
             do {
                 let request = SetCollectionsCollapsedDbRequest(identifiers: changedCollections, collapsed: allCollapsed, libraryId: libraryId)
-                try self.dbStorage.createCoordinator().perform(request: request)
+                try self.dbStorage.perform(request: request)
             } catch let error {
                 DDLogError("CollectionsActionHandler: can't change collapsed all - \(error)")
             }
@@ -161,7 +161,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
         self.queue.async {
             do {
                 let request = SetCollectionCollapsedDbRequest(collapsed: !collapsed, identifier: collection.identifier, libraryId: libraryId)
-                try self.dbStorage.createCoordinator().perform(request: request)
+                try self.dbStorage.perform(request: request)
             } catch let error {
                 DDLogError("CollectionsActionHandler: can't change collapsed - \(error)")
             }
@@ -188,39 +188,40 @@ struct CollectionsActionHandler: ViewModelActionHandler {
         let libraryId = viewModel.state.libraryId
 
         do {
-            let coordinator = try self.dbStorage.createCoordinator()
-            let library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
-            let collections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: libraryId))
-            let allItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.all), libraryId: libraryId))
-            let unfiledItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.unfiled), libraryId: libraryId))
-            let trashItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.trash), libraryId: libraryId))
+            try self.dbStorage.perform(with: { coordinator in
+                let library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
+                let collections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: libraryId))
+                let allItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.all), libraryId: libraryId))
+                let unfiledItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.unfiled), libraryId: libraryId))
+                let trashItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.trash), libraryId: libraryId))
 
-            let collectionTree = CollectionTreeBuilder.collections(from: collections, libraryId: libraryId)
-            collectionTree.insert(collection: Collection(custom: .all, itemCount: allItems.count), at: 0)
-            collectionTree.append(collection: Collection(custom: .unfiled, itemCount: unfiledItems.count))
-            collectionTree.append(collection: Collection(custom: .trash, itemCount: trashItems.count))
+                let collectionTree = CollectionTreeBuilder.collections(from: collections, libraryId: libraryId)
+                collectionTree.insert(collection: Collection(custom: .all, itemCount: allItems.count), at: 0)
+                collectionTree.append(collection: Collection(custom: .unfiled, itemCount: unfiledItems.count))
+                collectionTree.append(collection: Collection(custom: .trash, itemCount: trashItems.count))
 
-            let collectionsToken = collections.observe(keyPaths: RCollection.observableKeypathsForList, { [weak viewModel] changes in
-                guard let viewModel = viewModel else { return }
-                switch changes {
-                case .update(let objects, _, _, _): self.update(collections: objects, viewModel: viewModel)
-                case .initial: break
-                case .error: break
+                let collectionsToken = collections.observe(keyPaths: RCollection.observableKeypathsForList, { [weak viewModel] changes in
+                    guard let viewModel = viewModel else { return }
+                    switch changes {
+                    case .update(let objects, _, _, _): self.update(collections: objects, viewModel: viewModel)
+                    case .initial: break
+                    case .error: break
+                    }
+                })
+
+                let itemsToken = self.observeItemCount(in: allItems, for: .all, in: viewModel)
+                let unfiledToken = self.observeItemCount(in: unfiledItems, for: .unfiled, in: viewModel)
+                let trashToken = self.observeItemCount(in: trashItems, for: .trash, in: viewModel)
+
+                self.update(viewModel: viewModel) { state in
+                    state.collectionTree = collectionTree
+                    state.library = library
+                    state.collectionsToken = collectionsToken
+                    state.itemsToken = itemsToken
+                    state.unfiledToken = unfiledToken
+                    state.trashToken = trashToken
                 }
             })
-
-            let itemsToken = self.observeItemCount(in: allItems, for: .all, in: viewModel)
-            let unfiledToken = self.observeItemCount(in: unfiledItems, for: .unfiled, in: viewModel)
-            let trashToken = self.observeItemCount(in: trashItems, for: .trash, in: viewModel)
-
-            self.update(viewModel: viewModel) { state in
-                state.collectionTree = collectionTree
-                state.library = library
-                state.collectionsToken = collectionsToken
-                state.itemsToken = itemsToken
-                state.unfiledToken = unfiledToken
-                state.trashToken = trashToken
-            }
         } catch let error {
             DDLogError("CollectionsActionHandlers: can't load data - \(error)")
             self.update(viewModel: viewModel) { state in
@@ -235,7 +236,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
         self.queue.async { [weak viewModel] in
             do {
                 let request = AssignItemsToCollectionsDbRequest(collectionKeys: Set([collectionKey]), itemKeys: Set(keys), libraryId: libraryId)
-                try self.dbStorage.createCoordinator().perform(request: request)
+                try self.dbStorage.perform(request: request)
             } catch let error {
                 DDLogError("CollectionsStore: can't assign collections to items - \(error)")
 
@@ -256,7 +257,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
         self.queue.async { [weak viewModel] in
             do {
                 let request = MarkObjectsAsDeletedDbRequest<Obj>(keys: keys, libraryId: libraryId)
-                try self.dbStorage.createCoordinator().perform(request: request)
+                try self.dbStorage.perform(request: request)
             } catch let error {
                 DDLogError("CollectionsStore: can't delete object - \(error)")
 
@@ -291,9 +292,9 @@ struct CollectionsActionHandler: ViewModelActionHandler {
             key = collection.identifier.key
             name = collection.name
 
-            if let parentKey = viewModel.state.collectionTree.parent(of: collection.identifier)?.key, let coordinator = try? self.dbStorage.createCoordinator() {
+            if let parentKey = viewModel.state.collectionTree.parent(of: collection.identifier)?.key {
                 let request = ReadCollectionDbRequest(libraryId: viewModel.state.library.identifier, key: parentKey)
-                let rCollection = try? coordinator.perform(request: request)
+                let rCollection = try? self.dbStorage.perform(request: request)
                 parent = rCollection.flatMap { Collection(object: $0, itemCount: 0) }
             }
         }

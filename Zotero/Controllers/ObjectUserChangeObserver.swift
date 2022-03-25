@@ -33,11 +33,12 @@ final class RealmObjectUserChangeObserver: ObjectUserChangeObserver {
 
     private func setupObserving() {
         do {
-            let coordinator = try self.dbStorage.createCoordinator()
-            self.collectionsToken = try self.registerObserver(for: RCollection.self, coordinator: coordinator)
-            self.itemsToken = try self.registerObserver(for: RItem.self, coordinator: coordinator)
-            self.searchesToken = try self.registerObserver(for: RSearch.self, coordinator: coordinator)
-            self.pagesToken = try self.registerSettingsObserver(coordinator: coordinator)
+            try self.dbStorage.perform(with: { coordinator in
+                self.collectionsToken = try self.registerObserver(for: RCollection.self, coordinator: coordinator)
+                self.itemsToken = try self.registerObserver(for: RItem.self, coordinator: coordinator)
+                self.searchesToken = try self.registerObserver(for: RSearch.self, coordinator: coordinator)
+                self.pagesToken = try self.registerSettingsObserver(coordinator: coordinator)
+            })
         } catch let error {
             DDLogError("RealmObjectChangeObserver: can't load objects to observe - \(error)")
         }

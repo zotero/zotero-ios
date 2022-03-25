@@ -172,7 +172,7 @@ final class AttachmentDownloader {
             self.errors[download] = nil
             self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .ready)))
             // Mark file as downloaded in DB
-            try? self.dbStorage.createCoordinator().perform(request: MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true))
+            try? self.dbStorage.perform(request: MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true))
 
         case .failure(let error):
             DDLogError("AttachmentDownloader: failed to download attachment \(download.key), \(download.libraryId) - \(error)")

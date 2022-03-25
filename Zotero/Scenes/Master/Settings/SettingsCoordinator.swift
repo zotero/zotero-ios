@@ -94,7 +94,7 @@ final class SettingsCoordinator: NSObject, Coordinator {
     }
 
     private func createExportController() -> UIViewController {
-        let style = try? self.controllers.bundledDataStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: Defaults.shared.quickCopyStyleId))
+        let style = try? self.controllers.bundledDataStorage.perform(request: ReadStyleDbRequest(identifier: Defaults.shared.quickCopyStyleId))
 
         let language: String
         if let defaultLocale = style?.defaultLocale, !defaultLocale.isEmpty {

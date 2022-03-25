@@ -31,7 +31,7 @@ struct LoadUploadDataSyncAction: SyncAction {
         return Single.create { subscriber -> Disposable in
             do {
                 let request = ReadAttachmentUploadsDbRequest(libraryId: libraryId, fileStorage: self.fileStorage)
-                let uploads = try self.dbStorage.createCoordinator().perform(request: request)
+                let uploads = try self.dbStorage.perform(request: request)
                 subscriber(.success(uploads))
             } catch let error {
                 subscriber(.failure(error))

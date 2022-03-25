@@ -93,20 +93,27 @@ final class AttachmentFileCleanupController {
 
     private func deleteAll() -> Bool {
         do {
-            let coordinator = try self.dbStorage.createCoordinator()
-            let groups = try coordinator.perform(request: ReadAllGroupsDbRequest())
-            let libraryIds: [LibraryIdentifier] = [.custom(.myLibrary)] + groups.map({ .group($0.identifier) })
+            let libraryIds: [LibraryIdentifier]
             var forUpload: [LibraryIdentifier: [String]] = [:]
-            for item in try coordinator.perform(request: ReadAllItemsForUploadDbRequest()) {
-                guard let libraryId = item.libraryId else { continue }
 
-                if var keys = forUpload[libraryId] {
-                    keys.append(item.key)
-                    forUpload[libraryId] = keys
-                } else {
-                    forUpload[libraryId] = [item.key]
+            try self.dbStorage.perform(with: { coordinator in
+                let groups = try coordinator.perform(request: ReadAllGroupsDbRequest())
+                libraryIds = [.custom(.myLibrary)] + groups.map({ .group($0.identifier) })
+
+                for item in try coordinator.perform(request: ReadAllItemsForUploadDbRequest()) {
+                    guard let libraryId = item.libraryId else { continue }
+
+                    if var keys = forUpload[libraryId] {
+                        keys.append(item.key)
+                        forUpload[libraryId] = keys
+                    } else {
+                        forUpload[libraryId] = [item.key]
+                    }
                 }
-            }
+
+                // TODO: - exclude those for upload
+                try? coordinator.perform(request: MarkAllFilesAsNotDownloadedDbRequest())
+            }, invalidateRealm: true)
 
             self.delete(downloadsIn: libraryIds, forUpload: forUpload)
             // Annotations are not guaranteed to exist and they can be removed even if the parent PDF was not deleted due to upload state.
@@ -114,9 +121,6 @@ final class AttachmentFileCleanupController {
             try? self.fileStorage.remove(Files.annotationPreviews)
             // When removing all local files clear cache as well.
             try? self.fileStorage.remove(Files.cache)
-
-            // TODO: - exclude those for upload
-            try? self.dbStorage.createCoordinator().perform(request: MarkAllFilesAsNotDownloadedDbRequest())
 
             return true
         } catch let error {
@@ -127,16 +131,20 @@ final class AttachmentFileCleanupController {
 
     private func delete(in libraryId: LibraryIdentifier) -> Bool {
         do {
-            let coordinator = try self.dbStorage.createCoordinator()
-            let forUpload = try coordinator.perform(request: ReadItemsForUploadDbRequest(libraryId: libraryId)).map({ $0.key })
+            let forUpload: [String]
 
-            self.delete(downloadsIn: [libraryId], forUpload: [libraryId: Array(forUpload)])
+            self.dbStorage.perform(with: { coordinator in
+                let items = self.dbStorage.perform(request: ReadItemsForUploadDbRequest(libraryId: libraryId))
+                forUpload = Array(items.map({ $0.key }))
+
+                // TODO: - exclude those for upload
+                try? coordinator.perform(request: MarkLibraryFilesAsNotDownloadedDbRequest(libraryId: libraryId))
+            }, invalidateRealm: true)
+
+            self.delete(downloadsIn: [libraryId], forUpload: [libraryId: forUpload])
             // Annotations are not guaranteed to exist and they can be removed even if the parent PDF was not deleted due to upload state.
             // These are generated on device, so they'll just be recreated.
             try? self.fileStorage.remove(Files.annotationPreviews(for: libraryId))
-
-            // TODO: - exclude those for upload
-            try? self.dbStorage.createCoordinator().perform(request: MarkLibraryFilesAsNotDownloadedDbRequest(libraryId: libraryId))
 
             return true
         } catch let error {
@@ -180,16 +188,27 @@ final class AttachmentFileCleanupController {
             // Don't delete linked files
             guard case .file(_, _, _, let linkType) = attachment.type, linkType != .linkedFile else { return false }
 
-            let coordinator = try self.dbStorage.createCoordinator()
-            let item = try coordinator.perform(request: ReadItemDbRequest(libraryId: attachment.libraryId, key: attachment.key))
+            let didDelete: Bool
 
-            // Don't delete attachments that need to sync
-            guard !item.attachmentNeedsSync else { return false }
+            try self.dbStorage.perform(with: { coordinator in
+                let item = try coordinator.perform(request: ReadItemDbRequest(libraryId: attachment.libraryId, key: attachment.key))
+                let attachmentNeedsSync = item.attachmentNeedsSync
+                coordinator.invalidate()
 
-            try self.removeFiles(for: attachment.key, libraryId: attachment.libraryId)
-            try? self.dbStorage.createCoordinator().perform(request: MarkFileAsDownloadedDbRequest(key: attachment.key, libraryId: attachment.libraryId, downloaded: false))
+                // Don't delete attachments that need to sync
+                guard !attachmentNeedsSync else {
+                    didDelete = false
+                    return
+                }
 
-            return true
+                try self.removeFiles(for: attachment.key, libraryId: attachment.libraryId)
+
+                try? coordinator.perform(request: MarkFileAsDownloadedDbRequest(key: attachment.key, libraryId: attachment.libraryId, downloaded: false))
+
+                didDelete = true
+            })
+
+            return didDelete
         } catch let error {
             DDLogError("AttachmentFileCleanupController: can't remove attachment file - \(error)")
             return false
@@ -200,37 +219,43 @@ final class AttachmentFileCleanupController {
         guard !keys.isEmpty else { return false }
 
         do {
-            let coordinator = try self.dbStorage.createCoordinator()
-            let items = try coordinator.perform(request: ReadItemsWithKeysDbRequest(keys: keys, libraryId: libraryId))
-            var deletedKeys: Set<String> = []
+            self.dbStorage.perform(with: { coordinator in
+                let items = try coordinator.perform(request: ReadItemsWithKeysDbRequest(keys: keys, libraryId: libraryId))
 
-            for item in items {
-                // Either the selected item was attachment
-                if item.rawType == ItemTypes.attachment {
-                    // Don't delete attachments that need to sync
-                    guard !item.attachmentNeedsSync else { continue }
-                    // Some selected files might not exist, just continue deleting
-                    do {
-                        try self.removeFiles(for: item.key, libraryId: libraryId)
-                        deletedKeys.insert(item.key)
-                    } catch {}
+                var toDelete: Set<String> = []
+                for item in items {
+                    // Either the selected item was attachment
+                    if item.rawType == ItemTypes.attachment {
+                        // Don't delete attachments that need to sync
+                        guard !item.attachmentNeedsSync else { continue }
+                        toDelete.insert(item.key)
+                        continue
+                    }
 
-                    continue
+                    // Or the item was a parent item and it may have multiple attachments
+                    for child in item.children.filter(.item(type: ItemTypes.attachment)) {
+                        // Don't delete attachments that need to sync
+                        guard !child.attachmentNeedsSync else { continue }
+                        toDelete.insert(child.key)
+                    }
                 }
 
-                // Or the item was a parent item and it may have multiple attachments
-                for child in item.children.filter(.item(type: ItemTypes.attachment)) {
-                    // Don't delete attachments that need to sync
-                    guard !child.attachmentNeedsSync else { continue }
-                    // Some children files might not exist, just continue deleting
+                coordinator.invalidate()
+
+                var deleted: Set<String> = []
+
+                for key in toDelete {
+                    // Some files might not exist, just continue deleting
                     do {
-                        try self.removeFiles(for: child.key, libraryId: libraryId)
-                        deletedKeys.insert(child.key)
+                        try self.removeFiles(for: key, libraryId: libraryId)
+                        deleted.insert(key)
                     } catch {}
                 }
-            }
 
-            try? self.dbStorage.createCoordinator().perform(request: MarkItemsFilesAsNotDownloadedDbRequest(keys: deletedKeys, libraryId: libraryId))
+                guard !deleted.isEmpty else { return }
+
+                try? coordinator.perform(request: MarkItemsFilesAsNotDownloadedDbRequest(keys: deleted, libraryId: libraryId))
+            })
 
             return true
         } catch let error {

@@ -38,28 +38,29 @@ final class AllCollectionPickerActionHandler: ViewModelActionHandler {
 
     private func load(in viewModel: ViewModel<AllCollectionPickerActionHandler>) {
         do {
-            let coordinator = try self.dbStorage.createCoordinator()
-            let customLibraries = try coordinator.perform(request: ReadAllCustomLibrariesDbRequest())
-            let groups = try coordinator.perform(request: ReadAllWritableGroupsDbRequest())
-            let libraries = Array(customLibraries.map(Library.init)) + Array(groups.map(Library.init))
+            try self.dbStorage.perform(with: { coordinator in
+                let customLibraries = try coordinator.perform(request: ReadAllCustomLibrariesDbRequest())
+                let groups = try coordinator.perform(request: ReadAllWritableGroupsDbRequest())
+                let libraries = Array(customLibraries.map(Library.init)) + Array(groups.map(Library.init))
 
-            var librariesCollapsed: [LibraryIdentifier: Bool] = [:]
-            var trees: [LibraryIdentifier: CollectionTree] = [:]
+                var librariesCollapsed: [LibraryIdentifier: Bool] = [:]
+                var trees: [LibraryIdentifier: CollectionTree] = [:]
 
-            for library in libraries {
-                let collections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: library.identifier))
-                let tree = CollectionTreeBuilder.collections(from: collections, libraryId: library.identifier)
+                for library in libraries {
+                    let collections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: library.identifier))
+                    let tree = CollectionTreeBuilder.collections(from: collections, libraryId: library.identifier)
 
-                trees[library.identifier] = tree
-                librariesCollapsed[library.identifier] = viewModel.state.selectedLibraryId != library.identifier
-            }
+                    trees[library.identifier] = tree
+                    librariesCollapsed[library.identifier] = viewModel.state.selectedLibraryId != library.identifier
+                }
 
-            self.update(viewModel: viewModel) { state in
-                state.libraries = libraries
-                state.librariesCollapsed = librariesCollapsed
-                state.trees = trees
-                state.changes = .results
-            }
+                self.update(viewModel: viewModel) { state in
+                    state.libraries = libraries
+                    state.librariesCollapsed = librariesCollapsed
+                    state.trees = trees
+                    state.changes = .results
+                }
+            })
         } catch let error {
             DDLogError("AllCollectionPickerStore: can't load collections - \(error)")
         }

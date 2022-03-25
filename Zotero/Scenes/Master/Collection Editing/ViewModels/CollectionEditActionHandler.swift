@@ -81,7 +81,7 @@ struct CollectionEditActionHandler: ViewModelActionHandler {
         }
 
         do {
-            try self.dbStorage.createCoordinator().perform(request: request)
+            try self.dbStorage.perform(request: request)
             self.update(viewModel: viewModel) { state in
                 state.loading = false
                 if shouldDismiss {

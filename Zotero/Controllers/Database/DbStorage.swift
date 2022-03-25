@@ -39,15 +39,21 @@ protocol DbResponseRequest {
     func process(in database: Realm) throws -> Response
 }
 
-protocol DbCoordinator {
-    func perform<Request: DbResponseRequest>(request: Request) throws -> Request.Response
-    func perform(request: DbRequest) throws
-    func perform(requests: [DbRequest]) throws
-}
-
 protocol DbStorage: AnyObject {
-    func createCoordinator() throws -> DbCoordinator
+    func perform(with coordinatorAction: (DbCoordinator) throws -> Void) throws
+    func perform(with coordinatorAction: (DbCoordinator) throws -> Void, invalidateRealm: Bool) throws
+    func perform<Request: DbResponseRequest>(request: Request) throws -> Request.Response
+    func perform<Request: DbResponseRequest>(request: Request, invalidateRealm: Bool) throws -> Request.Response
+    func perform(request: DbRequest) throws
+    func perform(writeRequests requests: [DbRequest]) throws
     func clear()
 
     var willPerformBetaWipe: Bool { get }
+}
+
+protocol DbCoordinator {
+    func perform<Request: DbResponseRequest>(request: Request) throws -> Request.Response
+    func perform(request: DbRequest) throws
+    func perform(writeRequests requests: [DbRequest]) throws
+    func invalidate()
 }

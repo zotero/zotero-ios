@@ -261,7 +261,7 @@ final class WebDavControllerSpec: QuickSpec {
 
                 waitUntil(timeout: .seconds(100000000)) { doneAction in
                     self.testSync {
-                        let item = try! self.dbStorage.createCoordinator().perform(request: ReadItemDbRequest(libraryId: libraryId, key: itemKey))
+                        let item = try! self.dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: itemKey))
 
                         expect(item.attachmentNeedsSync).to(beFalse())
                         expect(item.version).to(equal(newVersion + 1))
@@ -342,7 +342,7 @@ final class WebDavControllerSpec: QuickSpec {
 
                 waitUntil(timeout: .seconds(10000000)) { doneAction in
                     self.testSync {
-                        let item = try! self.dbStorage.createCoordinator().perform(request: ReadItemDbRequest(libraryId: libraryId, key: itemKey))
+                        let item = try! self.dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: itemKey))
 
                         expect(item.attachmentNeedsSync).to(beFalse())
 
@@ -427,7 +427,7 @@ final class WebDavControllerSpec: QuickSpec {
 
                 waitUntil(timeout: .seconds(10)) { doneAction in
                     self.testSync {
-                        let item = try! self.dbStorage.createCoordinator().perform(request: ReadItemDbRequest(libraryId: libraryId, key: itemKey))
+                        let item = try! self.dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: itemKey))
 
                         expect(item.attachmentNeedsSync).to(beFalse())
                         expect(item.version).to(equal(newVersion))
@@ -506,7 +506,7 @@ final class WebDavControllerSpec: QuickSpec {
                     self.testSync {
                         expect(deletionCount).to(equal(4))
 
-                        let count = (try? self.dbStorage.createCoordinator().perform(request: ReadWebDavDeletionsDbRequest(libraryId: .custom(.myLibrary))))?.count ?? -1
+                        let count = (try? self.dbStorage.perform(request: ReadWebDavDeletionsDbRequest(libraryId: .custom(.myLibrary))))?.count ?? -1
                         expect(count).to(equal(0))
 
                         doneAction()

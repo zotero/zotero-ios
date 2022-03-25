@@ -23,7 +23,7 @@ struct RestoreDeletionsSyncAction: SyncAction {
         return Single.create { subscriber -> Disposable in
             do {
                 let request = MarkObjectsAsChangedByUser(libraryId: self.libraryId, collections: self.collections, items: self.items)
-                try self.dbStorage.createCoordinator().perform(request: request)
+                try self.dbStorage.perform(request: request)
                 subscriber(.success(()))
             } catch let error {
                 subscriber(.failure(error))

@@ -75,17 +75,21 @@ struct SyncVersionsSyncAction: SyncAction {
 
     private func loadChangedObjects(for object: SyncObject, from response: [String: Int], in libraryId: LibraryIdentifier, syncType: SyncController.SyncType, newVersion: Int, delayIntervals: [Double])
                                                                                                                                                                             -> Single<(Int, [String])> {
-        let request = SyncVersionsDbRequest(versions: response, libraryId: libraryId, syncObject: object, syncType: syncType, delayIntervals: delayIntervals)
-
         return Single.create { subscriber -> Disposable in
             do {
-                let coordinator = try self.dbStorage.createCoordinator()
-                switch syncType {
-                case .full:
-                    try coordinator.perform(request: MarkOtherObjectsAsChangedByUser(syncObject: object, versions: response, libraryId: libraryId))
-                case .collectionsOnly, .ignoreIndividualDelays, .normal: break
-                }
-                let identifiers = try coordinator.perform(request: request)
+                let identifiers: [String]
+
+                try self.dbStorage.perform(with: { coordinator in
+                    switch syncType {
+                    case .full:
+                        try coordinator.perform(request: MarkOtherObjectsAsChangedByUser(syncObject: object, versions: response, libraryId: libraryId))
+                    case .collectionsOnly, .ignoreIndividualDelays, .normal: break
+                    }
+
+                    let request = SyncVersionsDbRequest(versions: response, libraryId: libraryId, syncObject: object, syncType: syncType, delayIntervals: delayIntervals)
+                    identifiers = try coordinator.perform(request: request)
+                }, invalidateRealm: true)
+
                 subscriber(.success((newVersion, identifiers)))
             } catch let error {
                 subscriber(.failure(error))

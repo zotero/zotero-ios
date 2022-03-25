@@ -16,7 +16,7 @@ enum RealmDbError: Error {
 }
 
 final class RealmDbStorage {
-    private let config: Realm.Configuration
+    fileprivate let config: Realm.Configuration
 
     init(config: Realm.Configuration) {
         self.config = config
@@ -42,88 +42,134 @@ final class RealmDbStorage {
             }
         }
     }
-}
 
-extension RealmDbStorage: DbStorage {
-    func createCoordinator() throws -> DbCoordinator {
-        return try RealmDbCoordinator(config: self.config)
-    }
-}
-
-struct RealmDbCoordinator {
-    private let realm: Realm
-
-    init(config: Realm.Configuration) throws {
-        self.realm = try Realm(configuration: config)
-    }
-}
-
-extension RealmDbCoordinator: DbCoordinator {
-    func perform(request: DbRequest) throws  {
-        try self.performInAutoreleasepoolIfNeeded {
-            if !request.needsWrite {
-                try request.process(in: self.realm)
-                return
-            }
-
-            if self.realm.isInWriteTransaction {
-                DDLogError("RealmDbCoordinator: realm already writing \(type(of: request))")
-                try request.process(in: self.realm)
-                return
-            }
-
-            try self.realm.write(withoutNotifying: request.ignoreNotificationTokens ?? []) {
-                try request.process(in: self.realm)
-            }
-        }
-    }
-
-    func perform<Request>(request: Request) throws -> Request.Response where Request : DbResponseRequest {
-        return try self.performInAutoreleasepoolIfNeeded {
-            if !request.needsWrite {
-                return try request.process(in: self.realm)
-            }
-
-            if self.realm.isInWriteTransaction {
-                DDLogError("RealmDbCoordinator: realm already writing \(type(of: request))")
-                return try request.process(in: self.realm)
-            }
-
-            return try self.realm.write(withoutNotifying: request.ignoreNotificationTokens ?? []) {
-                return try request.process(in: self.realm)
-            }
-        }
-    }
-
-    /// Writes multiple requests in single write transaction.
-    func perform(requests: [DbRequest]) throws {
-        try self.performInAutoreleasepoolIfNeeded {
-
-            if self.realm.isInWriteTransaction {
-                DDLogError("RealmDbCoordinator: realm already writing")
-                for request in requests {
-                    guard request.needsWrite else { continue }
-                    DDLogError("\(type(of: request))")
-                    try request.process(in: self.realm)
-                }
-                return
-            }
-
-            try self.realm.write {
-                for request in requests {
-                    guard request.needsWrite else { continue }
-                    try request.process(in: self.realm)
-                }
-            }
-        }
-    }
-
-    private func performInAutoreleasepoolIfNeeded<Result>(invoking body: () throws -> Result) rethrows -> Result {
+    fileprivate func performInAutoreleasepoolIfNeeded<Result>(invoking body: () throws -> Result) rethrows -> Result {
         if Thread.isMainThread {
             return try body()
         }
         return try autoreleasepool {
             return try body()
         }
+    }
+}
+
+extension RealmDbStorage: DbStorage {
+    func perform(with coordinatorAction: (DbCoordinator) throws -> Void) throws {
+        try self.perform(with: coordinatorAction, invalidateRealm: false)
+    }
+
+    func perform(with coordinatorAction: (DbCoordinator) throws -> Void, invalidateRealm: Bool) throws {
+        try self.performInAutoreleasepoolIfNeeded {
+            let realm = try Realm(configuration: self.config)
+            let coordinator = RealmDbCoordinator(realm: realm)
+
+            try coordinatorAction(coordinator)
+
+            guard invalidateRealm else { return }
+
+            realm.invalidate()
+        }
+    }
+
+    func perform<Request>(request: Request) throws -> Request.Response where Request : DbResponseRequest {
+        return try self.perform(request: request, invalidateRealm: false)
+    }
+
+    func perform<Request>(request: Request, invalidateRealm: Bool) throws -> Request.Response where Request : DbResponseRequest {
+        return try self.performInAutoreleasepoolIfNeeded {
+            let realm = try Realm(configuration: self.config)
+
+            defer {
+                if invalidateRealm {
+                    realm.invalidate()
+                }
+            }
+
+            let coordinator = RealmDbCoordinator(realm: realm)
+            return try coordinator.perform(request: request)
+        }
+    }
+
+    func perform(request: DbRequest) throws {
+        try self.performInAutoreleasepoolIfNeeded {
+            let realm = try Realm(configuration: self.config)
+            let coordinator = RealmDbCoordinator(realm: realm)
+            try coordinator.perform(request: request)
+            realm.invalidate()
+        }
+    }
+
+    func perform(writeRequests requests: [DbRequest]) throws {
+        try self.performInAutoreleasepoolIfNeeded {
+            let realm = try Realm(configuration: self.config)
+            let coordinator = RealmDbCoordinator(realm: realm)
+            try coordinator.perform(writeRequests: requests)
+            realm.invalidate()
+        }
+    }
+}
+
+struct RealmDbCoordinator {
+    private let realm: Realm
+
+    init(realm: Realm) {
+        self.realm = realm
+    }
+}
+
+extension RealmDbCoordinator: DbCoordinator {
+    func perform(request: DbRequest) throws  {
+        if !request.needsWrite {
+            try request.process(in: self.realm)
+            return
+        }
+
+        if self.realm.isInWriteTransaction {
+            DDLogError("RealmDbCoordinator: realm already writing \(type(of: request))")
+            try request.process(in: self.realm)
+            return
+        }
+
+        try self.realm.write(withoutNotifying: request.ignoreNotificationTokens ?? []) {
+            try request.process(in: self.realm)
+        }
+    }
+
+    func perform<Request>(request: Request) throws -> Request.Response where Request : DbResponseRequest {
+        if !request.needsWrite {
+            return try request.process(in: self.realm)
+        }
+
+        if self.realm.isInWriteTransaction {
+            DDLogError("RealmDbCoordinator: realm already writing \(type(of: request))")
+            return try request.process(in: self.realm)
+        }
+
+        return try self.realm.write(withoutNotifying: request.ignoreNotificationTokens ?? []) {
+            return try request.process(in: self.realm)
+        }
+    }
+
+    func perform(writeRequests requests: [DbRequest]) throws {
+        if self.realm.isInWriteTransaction {
+            DDLogError("RealmDbCoordinator: realm already writing")
+            for request in requests {
+                guard request.needsWrite else { continue }
+                DDLogError("\(type(of: request))")
+                try request.process(in: self.realm)
+            }
+            return
+        }
+
+        try self.realm.write {
+            for request in requests {
+                guard request.needsWrite else { continue }
+                try request.process(in: self.realm)
+            }
+        }
+    }
+
+    func invalidate() {
+        self.realm.invalidate()
     }
 }

@@ -52,7 +52,7 @@ final class CitationBibliographyExportCoordinator: NSObject, Coordinator {
 
         let style: Style
 
-        if let rStyle = try? self.controllers.bundledDataStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: Defaults.shared.exportStyleId)),
+        if let rStyle = try? self.controllers.bundledDataStorage.perform(request: ReadStyleDbRequest(identifier: Defaults.shared.exportStyleId)),
            let _style = Style(rStyle: rStyle) {
             style = _style
         } else {

@@ -55,7 +55,7 @@ struct CollectionsPickerActionHandler: ViewModelActionHandler {
         do {
             let libraryId = viewModel.state.library.identifier
             let collectionsRequest = ReadCollectionsDbRequest(libraryId: libraryId, excludedKeys: viewModel.state.excludedKeys)
-            let results = try self.dbStorage.createCoordinator().perform(request: collectionsRequest)
+            let results = try self.dbStorage.perform(request: collectionsRequest)
             let collectionTree = CollectionTreeBuilder.collections(from: results, libraryId: libraryId)
 
             let token = results.observe({ [weak viewModel] changes in

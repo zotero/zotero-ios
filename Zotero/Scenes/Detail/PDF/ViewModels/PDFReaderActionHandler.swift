@@ -639,7 +639,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
         self.queue.async {
             do {
-                try self.dbStorage.createCoordinator().perform(request: request)
+                try self.dbStorage.perform(request: request)
             } catch let error {
                 // TODO: - handle error
                 DDLogError("PDFReaderActionHandler: can't store page - \(error)")
@@ -754,7 +754,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             do {
                 let request = StoreChangedAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId, annotations: allAnnotations, deletedKeys: deletedKeys,
                                                                schemaController: self.schemaController, boundingBoxConverter: boundingBoxConverter)
-                try self.dbStorage.createCoordinator().perform(request: request)
+                try self.dbStorage.perform(request: request)
             } catch let error {
                 // TODO: - Show error
             }
@@ -1802,10 +1802,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     /// - returns: Tuple of grouped annotations and comments.
     private func documentData(for key: String, library: Library, baseFont: UIFont, userId: Int, username: String, displayName: String, boundingBoxConverter: AnnotationBoundingBoxConverter) throws
                                                     -> (annotations: [Int: [Annotation]], positions: [AnnotationPosition], comments: [String: NSAttributedString], page: Int, items: Results<RItem>) {
-        let coordinator = try self.dbStorage.createCoordinator()
+        let page: Int
+        let items: Results<RItem>
 
-        let page = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: library.identifier))
-        let items = try coordinator.perform(request: ReadAnnotationsDbRequest(attachmentKey: key, libraryId: library.identifier))
+        self.dbStorage.perform(with: { coordinator in
+            page = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: library.identifier))
+            items = try coordinator.perform(request: ReadAnnotationsDbRequest(attachmentKey: key, libraryId: library.identifier))
+        })
 
         var annotations: [Int: [Annotation]] = [:]
         var comments: [String: NSAttributedString] = [:]

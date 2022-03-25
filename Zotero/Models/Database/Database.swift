@@ -17,19 +17,24 @@ struct Database {
 
     static func mainConfiguration(url: URL, fileStorage: FileStorage) -> Realm.Configuration {
         let shouldDelete = shouldDeleteRealm(url: url)
-        return Realm.Configuration(fileURL: url,
-                                   schemaVersion: schemaVersion,
-                                   migrationBlock: shouldDelete ? nil : createMigrationBlock(fileStorage: fileStorage),
-                                   deleteRealmIfMigrationNeeded: shouldDelete)
+        var config = Realm.Configuration(fileURL: url,
+                                         schemaVersion: schemaVersion,
+                                         migrationBlock: shouldDelete ? nil : createMigrationBlock(fileStorage: fileStorage),
+                                         deleteRealmIfMigrationNeeded: shouldDelete)
+        config.objectTypes = [RCollection.self, RCreator.self, RCustomLibrary.self, RGroup.self, RItem.self, RItemField.self, RLink.self, RPageIndex.self, RPath.self, RPathCoordinate.self, RRect.self,
+                              RRelation.self, RSearch.self, RCondition.self, RTag.self, RTypedTag.self, RUser.self, RWebDavDeletion.self, RVersions.self]
+        return config
     }
 
     static func bundledDataConfiguration(fileStorage: FileStorage) -> Realm.Configuration {
         let url = Files.bundledDataDbFile.createUrl()
         let shouldDelete = shouldDeleteRealm(url: url)
-        return Realm.Configuration(fileURL: url,
-                                   schemaVersion: schemaVersion,
-                                   migrationBlock: shouldDelete ? nil : createMigrationBlock(fileStorage: fileStorage),
-                                   deleteRealmIfMigrationNeeded: shouldDelete)
+        var config = Realm.Configuration(fileURL: url,
+                                         schemaVersion: schemaVersion,
+                                         migrationBlock: shouldDelete ? nil : createMigrationBlock(fileStorage: fileStorage),
+                                         deleteRealmIfMigrationNeeded: shouldDelete)
+        config.objectTypes = [RTranslatorMetadata.self, RStyle.self]
+        return config
     }
 
     private static func shouldDeleteRealm(url: URL) -> Bool {

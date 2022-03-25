@@ -878,14 +878,20 @@ final class ExtensionViewModel {
 
             DDLogInfo("ExtensionViewModel: create db item")
 
-            let request = CreateBackendItemDbRequest(item: item, schemaController: schemaController, dateParser: dateParser)
             do {
-                let coordinator = try self.dbStorage.createCoordinator()
-                if let collectionKey = item.collectionKeys.first {
-                    try coordinator.perform(request: UpdateCollectionLastUsedDbRequest(key: collectionKey, libraryId: libraryId))
-                }
-                let item = try coordinator.perform(request: request)
-                subscriber(.success(item.updateParameters ?? [:]))
+                let parameters: [String: Any]
+
+                self.dbStorage.perform(with: { coordinator in
+                    if let collectionKey = item.collectionKeys.first {
+                        try coordinator.perform(request: UpdateCollectionLastUsedDbRequest(key: collectionKey, libraryId: libraryId))
+                    }
+
+                    let request = CreateBackendItemDbRequest(item: item, schemaController: schemaController, dateParser: dateParser)
+                    let item = try coordinator.perform(request: request)
+                    parameters = item.updateParameters ?? [:]
+                }, invalidateRealm: true)
+
+                subscriber(.success(parameters))
             } catch let error {
                 subscriber(.failure(error))
             }
@@ -926,7 +932,7 @@ final class ExtensionViewModel {
                        do {
                            let request = MarkAttachmentUploadedDbRequest(libraryId: data.libraryId, key: data.attachment.key, version: version)
                            let request2 = UpdateVersionsDbRequest(version: version, libraryId: data.libraryId, type: .object(.item))
-                           try dbStorage.createCoordinator().perform(requests: [request, request2])
+                           try dbStorage.perform(requests: [request, request2])
                            return Single.just(())
                        } catch let error {
                            return Single.error(error)
@@ -978,7 +984,7 @@ final class ExtensionViewModel {
 
                 do {
                     let request = MarkAttachmentUploadedDbRequest(libraryId: data.libraryId, key: data.attachment.key, version: nil)
-                    try dbStorage.createCoordinator().perform(request: request)
+                    try dbStorage.perform(request: request)
                     return Single.just(())
                 } catch let error {
                     return Single.error(error)
@@ -1154,16 +1160,21 @@ final class ExtensionViewModel {
         return Single.create { subscriber -> Disposable in
             DDLogInfo("ExtensionViewModel: create item and attachment db items")
 
-            let request = CreateItemWithAttachmentDbRequest(item: item, attachment: attachment, schemaController: self.schemaController, dateParser: self.dateParser)
-
             do {
-                let coordinator = try self.dbStorage.createCoordinator()
+                let item: RItem
+                let attachment: RItem
 
-                if let collectionKey = item.collectionKeys.first {
-                    try coordinator.perform(request: UpdateCollectionLastUsedDbRequest(key: collectionKey, libraryId: attachment.libraryId))
-                }
+                self.dbStorage.perform(with: { coordinator in
+                    if let collectionKey = item.collectionKeys.first {
+                        try coordinator.perform(request: UpdateCollectionLastUsedDbRequest(key: collectionKey, libraryId: attachment.libraryId))
+                    }
 
-                let (item, attachment) = try coordinator.perform(request: request)
+                    let request = CreateItemWithAttachmentDbRequest(item: item, attachment: attachment, schemaController: self.schemaController, dateParser: self.dateParser)
+                    let (_item, _attachment) = try coordinator.perform(request: request)
+
+                    item = _item
+                    attachment = _attachment
+                }, invalidateRealm: true)
 
                 guard let mtime = attachment.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first.flatMap({ Int($0.value) }) else {
                     throw State.AttachmentState.Error.mtimeMissing
@@ -1199,16 +1210,19 @@ final class ExtensionViewModel {
             DDLogInfo("ExtensionViewModel: create attachment db item")
 
             let localizedType = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
-            let request = CreateAttachmentDbRequest(attachment: attachment, localizedType: localizedType, collections: collections, tags: tags)
 
             do {
-                let coordinator = try self.dbStorage.createCoordinator()
+                let attachment: RItem
 
-                if let collectionKey = collections.first {
-                    try coordinator.perform(request: UpdateCollectionLastUsedDbRequest(key: collectionKey, libraryId: attachment.libraryId))
-                }
+                self.dbStorage.perform(with: { coordinator in
+                    if let collectionKey = collections.first {
+                        try coordinator.perform(request: UpdateCollectionLastUsedDbRequest(key: collectionKey, libraryId: attachment.libraryId))
+                    }
 
-                let attachment = try coordinator.perform(request: request)
+                    let request = CreateAttachmentDbRequest(attachment: attachment, localizedType: localizedType, collections: collections, tags: tags)
+                    attachment = try coordinator.perform(request: request)
+                }, invalidateRealm: true)
+
                 guard let mtime = attachment.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first.flatMap({ Int($0.value) }) else {
                     throw State.AttachmentState.Error.mtimeMissing
                 }
@@ -1281,28 +1295,36 @@ final class ExtensionViewModel {
     }
 
     private func finishSync(successful: Bool) {
-        if successful {
-            do {
-                let coordinator = try self.dbStorage.createCoordinator()
-                let request = ReadCollectionAndLibraryDbRequest(collectionId: self.state.selectedCollectionId, libraryId: self.state.selectedLibraryId)
-                let (collection, library) = try coordinator.perform(request: request)
-                let recentCollections = try coordinator.perform(request: ReadRecentCollections(excluding: nil))
-                var recents = recentCollections
-                if !recents.contains(where: { $0.collection?.identifier == collection?.identifier && $0.library.identifier == library.identifier }) {
-                    recents.insert(RecentData(collection: collection, library: library, isRecent: false), at: 0)
-                }
-
-                var state = self.state
-                state.collectionPickerState = .picked(library, collection)
-                state.recents = recents
-                self.state = state
-            } catch let error {
-                DDLogError("ExtensionViewModel: can't load collections - \(error)")
-                let library = Library(identifier: ExtensionViewModel.defaultLibraryId, name: RCustomLibraryType.myLibrary.libraryName, metadataEditable: true, filesEditable: true)
-                self.state.collectionPickerState = .picked(library, nil)
-            }
-        } else {
+        guard successful else {
             self.state.collectionPickerState = .failed
+            return
+        }
+
+        do {
+            let library: Library
+            let collection: Collection?
+            var recents: [RecentData]
+
+            try self.dbStorage.perform(with: { coordinator in
+                let request = ReadCollectionAndLibraryDbRequest(collectionId: self.state.selectedCollectionId, libraryId: self.state.selectedLibraryId)
+                let (_collection, _library) = try coordinator.perform(request: request)
+
+                let recentCollections = try coordinator.perform(request: ReadRecentCollections(excluding: nil))
+                recents = recentCollections
+            }, invalidateRealm: true)
+
+            if !recents.contains(where: { $0.collection?.identifier == collection?.identifier && $0.library.identifier == library.identifier }) {
+                recents.insert(RecentData(collection: collection, library: library, isRecent: false), at: 0)
+            }
+
+            var state = self.state
+            state.collectionPickerState = .picked(library, collection)
+            state.recents = recents
+            self.state = state
+        } catch let error {
+            DDLogError("ExtensionViewModel: can't load collections - \(error)")
+            let library = Library(identifier: ExtensionViewModel.defaultLibraryId, name: RCustomLibraryType.myLibrary.libraryName, metadataEditable: true, filesEditable: true)
+            self.state.collectionPickerState = .picked(library, nil)
         }
     }
 }

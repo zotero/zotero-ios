@@ -233,7 +233,7 @@ final class TranslatorsAndStylesController {
         guard type != .shareExtension else { return nil }
 
         do {
-            return try self.dbStorage.createCoordinator().perform(request: ReadStylesDbRequest()).compactMap(Style.init)
+            return try self.dbStorage.perform(request: ReadStylesDbRequest()).compactMap(Style.init)
         } catch let error {
             DDLogError("TranslatorsAndStylesController: can't read styles - \(error)")
             return nil
@@ -277,7 +277,7 @@ final class TranslatorsAndStylesController {
         let metadata = try self.loadIndex()
         // Sync translators
         let request = SyncTranslatorsDbRequest(updateMetadata: metadata, deleteIndices: deleteIndices, fileStorage: self.fileStorage)
-        let updated = try self.dbStorage.createCoordinator().perform(request: request)
+        let updated = try self.dbStorage.perform(request: request)
         DDLogInfo("TranslatorsAndStylesController: updated \(updated.count) translators")
         // Delete files of deleted translators
         deleteIndices.forEach { id in
@@ -302,7 +302,7 @@ final class TranslatorsAndStylesController {
         })
         // Sync styles
         let request = SyncStylesDbRequest(styles: styles)
-        let updated = try self.dbStorage.createCoordinator().perform(request: request)
+        let updated = try self.dbStorage.perform(request: request)
         DDLogInfo("TranslatorsAndStylesController: updated \(updated.count) styles")
         // Copy updated files
         for file in files.filter({ updated.contains($0.name) }) {
@@ -361,7 +361,7 @@ final class TranslatorsAndStylesController {
 
                 // Sync metadata to DB
                 let repoRequest = SyncRepoResponseDbRequest(styles: updateStyles, translators: updateTranslatorMetadata, deleteTranslators: deleteTranslatorMetadata, fileStorage: self.fileStorage)
-                try self.dbStorage.createCoordinator().perform(request: repoRequest)
+                try self.dbStorage.perform(request: repoRequest)
 
                 subscriber(.success(()))
             } catch let error {
@@ -413,7 +413,7 @@ final class TranslatorsAndStylesController {
             _ = try archive.extract(entry, to: Files.translator(filename: data.id).createUrl())
         }
         // Reset metadata in database
-        try self.dbStorage.createCoordinator().perform(request: ResetTranslatorsDbRequest(metadata: metadata))
+        try self.dbStorage.perform(request: ResetTranslatorsDbRequest(metadata: metadata))
     }
 
     // MARK: - Translator loading

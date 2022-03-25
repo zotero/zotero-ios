@@ -21,7 +21,7 @@ struct MarkGroupForResyncSyncAction: SyncAction {
     var result: Single<()> {
         return Single.create { subscriber -> Disposable in
             do {
-                try self.dbStorage.createCoordinator().perform(request: MarkGroupForResyncDbAction(identifier: self.identifier))
+                try self.dbStorage.perform(request: MarkGroupForResyncDbAction(identifier: self.identifier))
                 subscriber(.success(()))
             } catch let error {
                 subscriber(.failure(error))

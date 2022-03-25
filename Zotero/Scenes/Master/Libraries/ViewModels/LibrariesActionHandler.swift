@@ -49,8 +49,8 @@ struct LibrariesActionHandler: ViewModelActionHandler {
 
     private func loadData(in viewModel: ViewModel<LibrariesActionHandler>) {
         do {
-            let libraries = try self.dbStorage.createCoordinator().perform(request: ReadAllCustomLibrariesDbRequest())
-            let groups = try self.dbStorage.createCoordinator().perform(request: ReadAllGroupsDbRequest())
+            let libraries = try self.dbStorage.perform(request: ReadAllCustomLibrariesDbRequest())
+            let groups = try self.dbStorage.perform(request: ReadAllGroupsDbRequest())
 
             let groupsToken = groups.observe { [weak viewModel] changes in
                 guard let viewModel = viewModel else { return }
@@ -82,7 +82,7 @@ struct LibrariesActionHandler: ViewModelActionHandler {
 
     private func deleteGroup(id: Int, dbStorage: DbStorage) {
         do {
-            try dbStorage.createCoordinator().perform(request: DeleteGroupDbRequest(groupId: id))
+            try dbStorage.perform(request: DeleteGroupDbRequest(groupId: id))
         } catch let error {
             DDLogError("LibrariesActionHandler: can't delete group - \(error)")
         }

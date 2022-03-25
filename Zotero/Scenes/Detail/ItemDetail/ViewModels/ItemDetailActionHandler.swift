@@ -171,14 +171,14 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             case .creation(let itemType, let child, _):
                 type = .new(itemType: itemType, child: child)
             case .preview(let key):
-                let item = try self.dbStorage.createCoordinator().perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: key))
+                let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: key))
                 token = item.observe(keyPaths: RItem.observableKeypathsForItemDetail) { [weak viewModel] change in
                     guard let viewModel = viewModel else { return }
                     self.itemChanged(change, in: viewModel)
                 }
                 type = .existing(item)
             case .duplication(let itemKey, _):
-                let item = try self.dbStorage.createCoordinator().perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: itemKey))
+                let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: itemKey))
                 type = .existing(item)
             }
 
@@ -401,7 +401,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
     private func saveNoteChanges(_ note: Note, libraryId: LibraryIdentifier) throws {
         let request = EditNoteDbRequest(note: note, libraryId: libraryId)
-        try self.dbStorage.createCoordinator().perform(request: request)
+        try self.dbStorage.perform(request: request)
     }
 
     // MARK: - Tags
@@ -420,7 +420,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         guard let index = viewModel.state.data.attachments.firstIndex(of: attachment) else { return }
 
         do {
-            try self.dbStorage.createCoordinator().perform(request: MarkItemsAsTrashedDbRequest(keys: [attachment.key], libraryId: viewModel.state.library.identifier, trashed: true))
+            try self.dbStorage.perform(request: MarkItemsAsTrashedDbRequest(keys: [attachment.key], libraryId: viewModel.state.library.identifier, trashed: true))
 
             self.update(viewModel: viewModel) { state in
                 state.data.attachments.remove(at: index)
@@ -738,21 +738,12 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     }
 
     private func createItem(with libraryId: LibraryIdentifier, collectionKey: String?, data: ItemDetailState.Data) throws -> RItem {
-        let request = CreateItemDbRequest(libraryId: libraryId,
-                                          collectionKey: collectionKey,
-                                          data: data,
-                                          schemaController: self.schemaController,
-                                          dateParser: self.dateParser)
-        return try self.dbStorage.createCoordinator().perform(request: request)
+        let request = CreateItemDbRequest(libraryId: libraryId, collectionKey: collectionKey, data: data, schemaController: self.schemaController, dateParser: self.dateParser)
+        return try self.dbStorage.perform(request: request)
     }
 
     private func updateItem(key: String, libraryId: LibraryIdentifier, data: ItemDetailState.Data, snapshot: ItemDetailState.Data) throws {
-        let request = EditItemDetailDbRequest(libraryId: libraryId,
-                                              itemKey: key,
-                                              data: data,
-                                              snapshot: snapshot,
-                                              schemaController: self.schemaController,
-                                              dateParser: self.dateParser)
-        try self.dbStorage.createCoordinator().perform(request: request)
+        let request = EditItemDetailDbRequest(libraryId: libraryId, itemKey: key, data: data, snapshot: snapshot, schemaController: self.schemaController, dateParser: self.dateParser)
+        try self.dbStorage..perform(request: request)
     }
 }

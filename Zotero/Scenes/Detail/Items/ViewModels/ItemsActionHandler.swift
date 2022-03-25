@@ -175,7 +175,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
 
         self.backgroundQueue.async {
             do {
-                try self.dbStorage.createCoordinator().perform(request: EmptyTrashDbRequest(libraryId: libraryId))
+                try self.dbStorage.perform(request: EmptyTrashDbRequest(libraryId: libraryId))
             } catch let error {
                 DDLogError("ItemsActionHandler: can't empty trash - \(error)")
             }
@@ -229,7 +229,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
     private func loadInitialState(in viewModel: ViewModel<ItemsActionHandler>) {
         let sortType = Defaults.shared.itemsSortType
         let request = ReadItemsDbRequest(collectionId: viewModel.state.collection.identifier, libraryId: viewModel.state.library.identifier)
-        let results = try? self.dbStorage.createCoordinator().perform(request: request).sorted(by: sortType.descriptors)
+        let results = try? self.dbStorage.perform(request: request).sorted(by: sortType.descriptors)
 
         self.update(viewModel: viewModel) { state in
             state.results = results
@@ -421,7 +421,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
         let request = ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: key)
 
         do {
-            let item = try self.dbStorage.createCoordinator().perform(request: request)
+            let item = try self.dbStorage.perform(request: request)
             self.update(viewModel: viewModel) { state in
                 state.itemKeyToDuplicate = item.key
                 self.stopEditing(in: &state)
@@ -471,11 +471,11 @@ struct ItemsActionHandler: ViewModelActionHandler {
 
         self.backgroundQueue.async {
             do {
-                try self.dbStorage.createCoordinator().perform(request: EditNoteDbRequest(note: note, libraryId: libraryId))
+                try self.dbStorage.perform(request: EditNoteDbRequest(note: note, libraryId: libraryId))
             } catch let error as DbError where error.isObjectNotFound {
                 do {
                     let request = CreateNoteDbRequest(note: note, localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""), libraryId: libraryId, collectionKey: collectionKey)
-                    _ = try self.dbStorage.createCoordinator().perform(request: request)
+                    _ = try self.dbStorage.perform(request: request)
                 } catch let error {
                     handleError(error)
                 }
@@ -571,7 +571,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
 
     private func results(for searchText: String?, filters: [ItemsState.Filter], collectionId: CollectionIdentifier, sortType: ItemsSortType, libraryId: LibraryIdentifier) -> Results<RItem>? {
         let request = ReadItemsDbRequest(collectionId: collectionId, libraryId: libraryId)
-        guard var results = (try? self.dbStorage.createCoordinator().perform(request: request)) else { return nil }
+        guard var results = (try? self.dbStorage.perform(request: request)) else { return nil }
         if let text = searchText, !text.isEmpty {
             results = results.filter(.itemSearch(for: text))
         }
@@ -654,7 +654,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
     private func perform<Request: DbResponseRequest>(request: Request, responseAction: ((Request.Response) -> Void)? = nil, errorAction: @escaping (Swift.Error) -> Void) {
         self.backgroundQueue.async {
             do {
-                let response = try self.dbStorage.createCoordinator().perform(request: request)
+                let response = try self.dbStorage.perform(request: request)
                 DispatchQueue.main.async {
                     responseAction?(response)
                 }
@@ -669,7 +669,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
     private func perform<Request: DbRequest>(request: Request, errorAction: @escaping (Swift.Error) -> Void) {
         self.backgroundQueue.async {
             do {
-                try self.dbStorage.createCoordinator().perform(request: request)
+                try self.dbStorage.perform(request: request)
             } catch let error {
                 DispatchQueue.main.async {
                     errorAction(error)

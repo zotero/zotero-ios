@@ -42,25 +42,28 @@ struct SubmitDeletionSyncAction: SyncAction {
         return Single.create { subscriber -> Disposable in
             do {
                 var didCreateDeletions = false
-                let updateVersion = UpdateVersionsDbRequest(version: version, libraryId: self.libraryId, type: .object(self.object))
-                var requests: [DbRequest] = [updateVersion]
-                let coordinator = try self.dbStorage.createCoordinator()
 
-                switch self.object {
-                case .collection:
-                    requests.insert(DeleteObjectsDbRequest<RCollection>(keys: self.keys, libraryId: self.libraryId), at: 0)
-                case .item, .trash:
-                    requests.insert(DeleteObjectsDbRequest<RItem>(keys: self.keys, libraryId: self.libraryId), at: 0)
-                    if self.webDavEnabled {
-                        // This one needs to happen before `DeleteObjectsDbRequest`, because it reads item keys and checks whether they are actually attachment items
-                        didCreateDeletions = try coordinator.perform(request: CreateWebDavDeletionsDbRequest(keys: self.keys, libraryId: self.libraryId))
+                try self.dbStorage.perform(with: { coordinator in
+                    let updateVersion = UpdateVersionsDbRequest(version: version, libraryId: self.libraryId, type: .object(self.object))
+                    var requests: [DbRequest] = [updateVersion]
+
+                    switch self.object {
+                    case .collection:
+                        requests.insert(DeleteObjectsDbRequest<RCollection>(keys: self.keys, libraryId: self.libraryId), at: 0)
+                    case .item, .trash:
+                        requests.insert(DeleteObjectsDbRequest<RItem>(keys: self.keys, libraryId: self.libraryId), at: 0)
+                        if self.webDavEnabled {
+                            // This one needs to happen before `DeleteObjectsDbRequest`, because it reads item keys and checks whether they are actually attachment items
+                            didCreateDeletions = try coordinator.perform(request: CreateWebDavDeletionsDbRequest(keys: self.keys, libraryId: self.libraryId))
+                        }
+                    case .search:
+                        requests.insert(DeleteObjectsDbRequest<RSearch>(keys: self.keys, libraryId: self.libraryId), at: 0)
+                    case .settings: break
                     }
-                case .search:
-                    requests.insert(DeleteObjectsDbRequest<RSearch>(keys: self.keys, libraryId: self.libraryId), at: 0)
-                case .settings: break
-                }
 
-                try coordinator.perform(requests: requests)
+                    try coordinator.perform(writeRequests: requests)
+
+                }, invalidateRealm: true)
 
                 subscriber(.success(didCreateDeletions))
             } catch let error {

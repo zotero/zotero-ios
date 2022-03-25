@@ -24,28 +24,35 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
     var result: Single<[SyncObject : [String]]> {
         return Single.create { subscriber -> Disposable in
             do {
-                let coordinator = try self.dbStorage.createCoordinator()
+                let changes: [StoreItemsResponse.FilenameChange]
+                let failedCollections: [String]
+                let failedSearches: [String]
+                let failedItems: [String]
 
-                let collections = try self.loadCachedJsonForObject(of: RCollection.self, objectType: .collection, in: self.libraryId, coordinator: coordinator,
-                                                                   createResponse: { try CollectionResponse(response: $0) })
-                let searches = try self.loadCachedJsonForObject(of: RSearch.self, objectType: .search, in: self.libraryId, coordinator: coordinator,
-                                                                createResponse: { try SearchResponse(response: $0) })
-                let items = try self.loadCachedJsonForObject(of: RItem.self, objectType: .item, in: self.libraryId, coordinator: coordinator,
-                                                             createResponse: {
-                                                                try ItemResponse(response: $0, schemaController: self.schemaController)
-                                                             })
+                try self.dbStorage.perform(with: { coordinator in
+                    let collections = try self.loadCachedJsonForObject(of: RCollection.self, objectType: .collection, in: self.libraryId, coordinator: coordinator,
+                                                                       createResponse: { try CollectionResponse(response: $0) })
+                    let searches = try self.loadCachedJsonForObject(of: RSearch.self, objectType: .search, in: self.libraryId, coordinator: coordinator,
+                                                                    createResponse: { try SearchResponse(response: $0) })
+                    let items = try self.loadCachedJsonForObject(of: RItem.self, objectType: .item, in: self.libraryId, coordinator: coordinator,
+                                                                 createResponse: { try ItemResponse(response: $0, schemaController: self.schemaController) })
 
-                let storeCollectionsRequest = StoreCollectionsDbRequest(response: collections.responses)
-                let storeSearchesRequest = StoreSearchesDbRequest(response: searches.responses)
-                try coordinator.perform(requests: [storeCollectionsRequest, storeSearchesRequest])
+                    let storeCollectionsRequest = StoreCollectionsDbRequest(response: collections.responses)
+                    let storeSearchesRequest = StoreSearchesDbRequest(response: searches.responses)
+                    try coordinator.perform(writeRequests: [storeCollectionsRequest, storeSearchesRequest])
 
-                // Force response data here, since we're reverting
-                let storeItemsRequest = StoreItemsDbResponseRequest(responses: items.responses, schemaController: self.schemaController, dateParser: self.dateParser, preferResponseData: true)
-                let changes = try coordinator.perform(request: storeItemsRequest).changedFilenames
+                    // Force response data here, since we're reverting
+                    let storeItemsRequest = StoreItemsDbResponseRequest(responses: items.responses, schemaController: self.schemaController, dateParser: self.dateParser, preferResponseData: true)
+                    changes = try coordinator.perform(request: storeItemsRequest).changedFilenames
+
+                    failedCollections = collections.failed
+                    failedSearches = searches.failed
+                    failedItems = items.failed
+                }, invalidateRealm: true)
 
                 self.renameExistingFiles(changes: changes, libraryId: self.libraryId)
 
-                subscriber(.success([.collection: collections.failed, .search: searches.failed, .item: items.failed]))
+                subscriber(.success([.collection: failedCollections, .search: failedSearches, .item: failedItems]))
             } catch let error {
                 subscriber(.failure(error))
             }
@@ -80,7 +87,7 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
         var responses: [Response] = []
         var failed: [String] = []
 
-        objects.forEach { object in
+        for object in objects {
             do {
                 let file = Files.jsonCacheFile(for: objectType, libraryId: libraryId, key: object.key)
                 let data = try self.fileStorage.read(file)

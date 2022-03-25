@@ -69,25 +69,20 @@ final class AppDelegate: UIResponder {
             return
         }
 
-        guard let coordinator = try? dbStorage.createCoordinator() else {
-            // Can't load data, try again later
-            return
-        }
-
         // Migrate file structure
         if !didMigrateFileStructure && !didMigrateFileStructure2 {
-            if let items = try? coordinator.perform(request: ReadAllDownloadedAndForUploadItemsDbRequest()) {
+            if let items = try? self.readAttachmentTypes(for: ReadAllDownloadedAndForUploadItemsDbRequest(), dbStorage: dbStorage) {
                 self.migrateFileStructure(for: items)
             }
             UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure")
             UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure2")
         } else if !didMigrateFileStructure {
-            if let items = try? coordinator.perform(request: ReadAllDownloadedItemsDbRequest()) {
+            if let items = try? self.readAttachmentTypes(for: ReadAllDownloadedItemsDbRequest(), dbStorage: dbStorage) {
                 self.migrateFileStructure(for: items)
             }
             UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure")
         } else if !didMigrateFileStructure2 {
-            if let items = try? coordinator.perform(request: ReadAllItemsForUploadDbRequest()) {
+            if let items = try? self.readAttachmentTypes(for: ReadAllItemsForUploadDbRequest(), dbStorage: dbStorage) {
                 self.migrateFileStructure(for: items)
             }
             UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure2")
@@ -96,25 +91,37 @@ final class AppDelegate: UIResponder {
         NotificationCenter.default.post(name: .forceReloadItems, object: nil)
     }
 
-    private func migrateFileStructure(for items: Results<RItem>) {
-        for item in items {
-            guard let type = AttachmentCreator.attachmentType(for: item, options: .light, fileStorage: nil, urlDetector: nil) else { continue }
+    private func readAttachmentTypes<Request: DbResponseRequest>(for request: Request, dbStorage: DbStorage) throws -> [(String, LibraryIdentifier, Attachment.Kind)] where Request.Response == Results<RItem> {
+        let types: [(String, LibraryIdentifier, Attachment.Kind)]
 
+        try dbStorage.perform(with: { coordinator in
+            let items = try coordinator.perform(request: request)
+            types = items.compactMap({ item -> (String, LibraryIdentifier, Attachment.Kind)? in
+                guard let type = AttachmentCreator.attachmentType(for: item, options: .light, fileStorage: nil, urlDetector: nil), let libraryId = item.libraryId else { return nil }
+                return (item.key, libraryId, type)
+            })
+        }, invalidateRealm: true)
+
+        return types
+    }
+
+    private func migrateFileStructure(for items: [(String, LibraryIdentifier, Attachment.Kind)]) {
+        for (key, libraryId, type) in items {
             switch type {
             case .url: break
             case .file(_, _, _, let linkType) where (linkType == .embeddedImage || linkType == .linkedFile): break // Embedded images and linked files don't need to be checked.
             case .file(let filename, let contentType, _, let linkType):
                 // Snapshots were stored based on new structure, no need to do anything.
-                guard linkType != .importedUrl || contentType != "text/html", let libraryId = item.libraryId else { continue }
+                guard linkType != .importedUrl || contentType != "text/html" else { continue }
 
                 let filenameParts = filename.split(separator: ".")
                 let oldFile: File
                 if filenameParts.count > 1, let ext = filenameParts.last.flatMap(String.init) {
-                    oldFile = FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName], name: item.key, ext: ext)
+                    oldFile = FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName], name: key, ext: ext)
                 } else {
-                    oldFile = FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName], name: item.key, contentType: contentType)
+                    oldFile = FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName], name: key, contentType: contentType)
                 }
-                let newFile = Files.attachmentFile(in: libraryId, key: item.key, filename: filename, contentType: contentType)
+                let newFile = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
                 try? self.controllers.fileStorage.move(from: oldFile, to: newFile)
             }
         }
@@ -137,7 +144,7 @@ final class AppDelegate: UIResponder {
             var filesToDelete: [File] = []
 
             if webDavEnabled {
-                let forUploadResults = try userControllers.dbStorage.createCoordinator().perform(request: ReadAllItemsForUploadDbRequest())
+                let forUploadResults = try userControllers.dbStorage.perform(request: ReadAllItemsForUploadDbRequest())
                 keysForUpload = Set(forUploadResults.map({ $0.key }))
             }
 
@@ -182,7 +189,7 @@ final class AppDelegate: UIResponder {
         }
 
         do {
-            try dbStorage.createCoordinator().perform(request: UpdateCreatorSummaryFormatDbRequest())
+            try dbStorage.perform(request: UpdateCreatorSummaryFormatDbRequest())
             UserDefaults.standard.set(true, forKey: "DidUpdateCreatorSummaryFormat")
         } catch let error {
             DDLogError("AppDelegate: can't update creator summary format - \(error)")

@@ -305,8 +305,7 @@ final class UserControllers {
         self.lastBuildNumber = controllers.lastBuildNumber
         self.disposeBag = DisposeBag()
 
-        let coordinator = try dbStorage.createCoordinator()
-        self.isFirstLaunch = try coordinator.perform(request: InitializeCustomLibrariesDbRequest())
+        self.isFirstLaunch = try dbStorage.perform(request: InitializeCustomLibrariesDbRequest())
     }
 
     /// Connects to websocket to monitor changes and performs initial sync.

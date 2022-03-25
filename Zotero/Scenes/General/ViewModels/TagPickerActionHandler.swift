@@ -88,7 +88,7 @@ struct TagPickerActionHandler: ViewModelActionHandler {
     private func load(in viewModel: ViewModel<TagPickerActionHandler>) {
         do {
             let request = ReadTagsDbRequest(libraryId: viewModel.state.libraryId)
-            let tags = try self.dbStorage.createCoordinator().perform(request: request)
+            let tags = try self.dbStorage.perform(request: request)
             self.update(viewModel: viewModel) { state in
                 state.tags = tags
                 state.changes = .tags

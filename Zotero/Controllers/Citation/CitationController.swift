@@ -280,7 +280,7 @@ class CitationController: NSObject {
     private func loadStyleData(for styleId: String) -> Single<StyleData> {
         return Single.create { subscriber in
             do {
-                let style = try self.bundledDataStorage.createCoordinator().perform(request: ReadStyleDbRequest(identifier: styleId))
+                let style = try self.bundledDataStorage.perform(request: ReadStyleDbRequest(identifier: styleId))
                 subscriber(.success(StyleData(style: style)))
             } catch let error {
                 DDLogError("CitationController: can't load style - \(error)")
@@ -307,8 +307,8 @@ class CitationController: NSObject {
     private func loadItemJsons(for keys: Set<String>, libraryId: LibraryIdentifier) -> Single<String> {
         return Single.create { subscriber in
             do {
-                let items = try self.dbStorage.createCoordinator().perform(request: ReadItemsWithKeysDbRequest(keys: keys, libraryId: libraryId))
-                                                                  .filter(.item(notTypeIn: CitationController.invalidItemTypes))
+                let items = try self.dbStorage.perform(request: ReadItemsWithKeysDbRequest(keys: keys, libraryId: libraryId))
+                                              .filter(.item(notTypeIn: CitationController.invalidItemTypes))
 
                 if items.isEmpty {
                     subscriber(.failure(Error.invalidItemTypes))

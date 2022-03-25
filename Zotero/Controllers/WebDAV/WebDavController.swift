@@ -264,7 +264,7 @@ final class WebDavControllerImpl: WebDavController {
     private func update(mtime: Int, key: String) -> Single<()> {
         return Single.create { subscriber -> Disposable in
             do {
-                try self.dbStorage.createCoordinator().perform(request: StoreMtimeForAttachmentDbRequest(mtime: mtime, key: key, libraryId: .custom(.myLibrary)))
+                try self.dbStorage.perform(request: StoreMtimeForAttachmentDbRequest(mtime: mtime, key: key, libraryId: .custom(.myLibrary)))
                 subscriber(.success(()))
             } catch let error {
                 DDLogError("WebDavController: can't update mtime - \(error)")

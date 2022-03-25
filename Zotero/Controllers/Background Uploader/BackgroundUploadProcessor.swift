@@ -100,7 +100,7 @@ final class BackgroundUploadProcessor {
 
         let loadParameters: Single<[String: Any]> = Single.create { subscriber -> Disposable in
             do {
-                let item = try self.dbStorage.createCoordinator().perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
+                let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
                 subscriber(.success(item.mtimeAndHashParameters))
             } catch let error {
                 subscriber(.failure(error))
@@ -138,7 +138,7 @@ final class BackgroundUploadProcessor {
             do {
                 let requests: [DbRequest] = [MarkAttachmentUploadedDbRequest(libraryId: libraryId, key: key, version: version),
                                              UpdateVersionsDbRequest(version: version, libraryId: libraryId, type: .object(.item))]
-                try self.dbStorage.createCoordinator().perform(requests: requests)
+                try self.dbStorage.perform(writeRequests: requests)
                 subscriber(.success(()))
             } catch let error {
                 DDLogError("BackgroundUploadProcessor: can't mark attachment as uploaded - \(error)")
