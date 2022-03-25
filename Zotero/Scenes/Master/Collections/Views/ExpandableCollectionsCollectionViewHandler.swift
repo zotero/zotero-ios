@@ -142,13 +142,13 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
             guard let `self` = self else { return }
 
             let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
-            let hasChildren = snapshot.snapshot(of: collection, includingParent: false).items.count > 0
+            let hasChildren = snapshot.contains(collection) && snapshot.snapshot(of: collection, includingParent: false).items.count > 0
 
             var configuration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren, accessories: [.chevron, .badge])
             configuration.isCollapsedProvider = { [weak self] in
                 guard let `self` = self else { return false }
                 let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
-                return snapshot.items.contains(collection) ? !snapshot.isExpanded(collection) : false
+                return snapshot.contains(collection) ? !snapshot.isExpanded(collection) : false
             }
             configuration.toggleCollapsed = { [weak self, weak cell] in
                 guard let `self` = self, let cell = cell else { return }
