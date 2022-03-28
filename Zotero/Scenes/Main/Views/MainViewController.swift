@@ -129,14 +129,19 @@ extension MainViewController: MainCoordinatorSyncToolbarDelegate {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
 
         do {
-            let library: Library
-            let collectionType: CollectionIdentifier.CustomType
+            var library: Library?
+            var collectionType: CollectionIdentifier.CustomType?
 
             try dbStorage.perform(with: { coordinator in
                 library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
+
                 let isAnyInTrash = try coordinator.perform(request: CheckAnyItemIsInTrashDbRequest(libraryId: libraryId, keys: keys))
                 collectionType = isAnyInTrash ? .trash : .all
-            }, invalidateRealm: true)
+
+                coordinator.invalidate()
+            })
+
+            guard let library = library, let collectionType = collectionType else { return }
 
             self.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(collectionType))
             self.showItems(for: Collection(custom: collectionType), in: library, searchItemKeys: keys)

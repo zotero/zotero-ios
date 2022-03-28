@@ -45,7 +45,7 @@ final class ItemDetailTableViewHandler: NSObject {
         case dateAdded(Date)
         case dateModified(Date)
         case field(field: ItemDetailState.Field, multiline: Bool)
-        case note(Note)
+        case note(note: Note, isSaving: Bool)
         case tag(Tag)
         case title(String)
         case type(String)
@@ -99,8 +99,8 @@ final class ItemDetailTableViewHandler: NSObject {
                 return lDate == rDate
             case (.field(let lField, let lMultiline), .field(let rField, let rMultiline)):
                 return lField == rField && lMultiline == rMultiline
-            case (.note(let lNote), .note(let rNote)):
-                return lNote == rNote
+            case (.note(let lNote, let lIsSaving), .note(let rNote, let rIsSaving)):
+                return lNote == rNote && lIsSaving == rIsSaving
             case (.tag(let lTag), .tag(let rTag)):
                 return lTag == rTag
             case (.title(let lValue), .title(let rValue)):
@@ -139,9 +139,10 @@ final class ItemDetailTableViewHandler: NSObject {
                 hasher.combine(6)
                 hasher.combine(field)
                 hasher.combine(multiline)
-            case .note(let note):
+            case .note(let note, let isSaving):
                 hasher.combine(7)
                 hasher.combine(note)
+                hasher.combine(isSaving)
             case .tag(let tag):
                 hasher.combine(8)
                 hasher.combine(tag)
@@ -378,7 +379,8 @@ final class ItemDetailTableViewHandler: NSObject {
 
         case .notes:
             let notes: [Row] = state.data.notes.map({ note in
-                return .note(note)
+                let isSaving = state.savingNotes.contains(note.key)
+                return .note(note: note, isSaving: isSaving)
             })
 
             if state.isEditing {
@@ -547,9 +549,9 @@ final class ItemDetailTableViewHandler: NSObject {
                 }).disposed(by: cell.newDisposeBag)
             }
 
-        case .note(let note):
+        case .note(let note, let isSaving):
             if let cell = cell as? ItemDetailNoteCell {
-                cell.setup(with: note)
+                cell.setup(with: note, isSaving: isSaving)
             }
 
         case .tag(let tag):
@@ -844,6 +846,9 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
                 self.observer.on(.next(.openNoteEditor(nil)))
             } else {
                 let note = self.viewModel.state.data.notes[indexPath.row]
+
+                guard !self.viewModel.state.savingNotes.contains(note.key) else { return }
+
                 self.observer.on(.next(.openNoteEditor(note)))
             }
         case .tags:

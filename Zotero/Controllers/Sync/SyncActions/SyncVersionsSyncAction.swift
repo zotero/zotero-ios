@@ -77,7 +77,7 @@ struct SyncVersionsSyncAction: SyncAction {
                                                                                                                                                                             -> Single<(Int, [String])> {
         return Single.create { subscriber -> Disposable in
             do {
-                let identifiers: [String]
+                var identifiers: [String] = []
 
                 try self.dbStorage.perform(with: { coordinator in
                     switch syncType {
@@ -88,7 +88,9 @@ struct SyncVersionsSyncAction: SyncAction {
 
                     let request = SyncVersionsDbRequest(versions: response, libraryId: libraryId, syncObject: object, syncType: syncType, delayIntervals: delayIntervals)
                     identifiers = try coordinator.perform(request: request)
-                }, invalidateRealm: true)
+
+                    coordinator.invalidate()
+                })
 
                 subscriber(.success((newVersion, identifiers)))
             } catch let error {

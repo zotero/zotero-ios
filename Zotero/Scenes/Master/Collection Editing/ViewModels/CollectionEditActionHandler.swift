@@ -17,9 +17,11 @@ struct CollectionEditActionHandler: ViewModelActionHandler {
     typealias State = CollectionEditState
 
     private let dbStorage: DbStorage
+    private let backgroundQueue: DispatchQueue
 
     init(dbStorage: DbStorage) {
         self.dbStorage = dbStorage
+        self.backgroundQueue = DispatchQueue(label: "org.zotero.CollectionEditActionHandler.processing", qos: .userInteractive)
     }
 
     func process(action: CollectionEditAction, in viewModel: ViewModel<CollectionEditActionHandler>) {
@@ -73,26 +75,36 @@ struct CollectionEditActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func perform<Request: DbRequest>(request: Request,
-                                             dismissAfterSuccess shouldDismiss: Bool,
-                                             in viewModel: ViewModel<CollectionEditActionHandler>) {
+    private func perform<Request: DbRequest>(request: Request, dismissAfterSuccess shouldDismiss: Bool, in viewModel: ViewModel<CollectionEditActionHandler>) {
         self.update(viewModel: viewModel) { state in
             state.loading = true
         }
 
-        do {
-            try self.dbStorage.perform(request: request)
+        self.perform(request: request) { [weak viewModel] error in
+            guard let viewModel = viewModel else { return }
             self.update(viewModel: viewModel) { state in
                 state.loading = false
-                if shouldDismiss {
+                if error != nil {
+                    state.error = .saveFailed
+                } else if shouldDismiss {
                     state.shouldDismiss = true
                 }
             }
-        } catch let error {
-            DDLogError("CollectionEditStore: couldn't save changes - \(error)")
-            self.update(viewModel: viewModel) { state in
-                state.loading = false
-                state.error = .saveFailed
+        }
+    }
+
+    private func perform<Request: DbRequest>(request: Request, completion: @escaping (Error?) -> Void) {
+        self.backgroundQueue.async {
+            do {
+                try self.dbStorage.perform(request: request)
+                DispatchQueue.main.async {
+                    completion(nil)
+                }
+            } catch let error {
+                DDLogError("CollectionEditActionHandler: couldn't save changes - \(error)")
+                DispatchQueue.main.async {
+                    completion(error)
+                }
             }
         }
     }

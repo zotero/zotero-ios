@@ -22,7 +22,7 @@ struct PdfDocumentExporter {
     static func export(annotations: [PSPDFKit.Annotation], key: String, libraryId: LibraryIdentifier, url: URL,
                        fileStorage: FileStorage, dbStorage: DbStorage, completed: @escaping (Result<File, Error>) -> Void) {
         // Load proper filename for pdf
-        guard let filename = try? dbStorage.perform(request: ReadFilenameDbRequest(libraryId: libraryId, key: key)) else {
+        guard let filename = try? dbStorage.perform(request: ReadFilenameDbRequest(libraryId: libraryId, key: key), invalidateRealm: true) else {
             completed(.failure(.filenameMissing))
             return
         }

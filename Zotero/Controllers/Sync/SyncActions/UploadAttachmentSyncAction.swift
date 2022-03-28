@@ -186,7 +186,9 @@ class UploadAttachmentSyncAction: SyncAction {
         let loadParameters: Single<[String: Any]> = Single.create { subscriber -> Disposable in
             do {
                 let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: self.libraryId, key: self.key))
-                subscriber(.success(item.mtimeAndHashParameters))
+                let parameters = item.mtimeAndHashParameters
+                item.realm?.invalidate()
+                subscriber(.success(parameters))
             } catch let error {
                 subscriber(.failure(error))
                 DDLogError("UploadAttachmentSyncAction: can't load params - \(error)")
@@ -238,7 +240,7 @@ class UploadAttachmentSyncAction: SyncAction {
 
             do {
                 let request = CheckItemIsChangedDbRequest(libraryId: self.libraryId, key: self.key)
-                let isChanged = try self.dbStorage.perform(request: request)
+                let isChanged = try self.dbStorage.perform(request: request, invalidateRealm: true)
                 if !isChanged {
                     subscriber(.success(()))
                 } else {
@@ -266,6 +268,7 @@ class UploadAttachmentSyncAction: SyncAction {
                 DDLogError("UploadAttachmentSyncAction: missing attachment - \(self.file.createUrl().absoluteString)")
                 let item = try? self.dbStorage.perform(request: ReadItemDbRequest(libraryId: self.libraryId, key: self.key))
                 let title = item?.displayTitle ?? L10n.notFound
+                item?.realm?.invalidate()
                 subscriber(.failure(SyncActionError.attachmentMissing(key: self.key, libraryId: self.libraryId, title: title)))
             }
 

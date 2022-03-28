@@ -36,7 +36,7 @@ struct LoadLibraryDataSyncAction: SyncAction {
             }
 
             do {
-                let data = try self.dbStorage.perform(request: request)
+                let data = try self.dbStorage.perform(request: request, invalidateRealm: true)
                 subscriber(.success(data))
             } catch let error {
                 subscriber(.failure(error))

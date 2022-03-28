@@ -248,6 +248,8 @@ struct ItemDetailState: ViewModelState {
     var changes: Changes
     var isEditing: Bool
     var isSaving: Bool
+    // Note keys which are currently being stored to database in background
+    var savingNotes: Set<String>
     var type: DetailType
     var data: Data
     var snapshot: Data?
@@ -273,6 +275,7 @@ struct ItemDetailState: ViewModelState {
         self.metadataTitleMaxWidth = 0
         self.error = nil
         self.isSaving = false
+        self.savingNotes = []
         self.isLoadingData = true
         self.sectionNeedsReload = true
 

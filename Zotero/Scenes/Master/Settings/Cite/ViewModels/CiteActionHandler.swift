@@ -38,7 +38,12 @@ struct CiteActionHandler: ViewModelActionHandler {
             self.loadStyles(in: viewModel)
 
         case .add(let style):
-            self.add(style: style, in: viewModel)
+            self.installStyleIfExists(styleId: style.id) { [weak viewModel] exists in
+                guard !exists, let viewModel = viewModel else { return }
+
+                // If it doesn't exist, we need to download and process it.
+                self.add(style: style, in: viewModel)
+            }
 
         case .remove(let index):
             self.remove(at: index, in: viewModel)
@@ -46,10 +51,6 @@ struct CiteActionHandler: ViewModelActionHandler {
     }
 
     private func add(style remoteStyle: RemoteStyle, in viewModel: ViewModel<CiteActionHandler>) {
-        // Check whether style already exists locally and set `installed` flag if it does.
-        if (try? self.bundledDataStorage.perform(request: InstallStyleDbRequest(identifier: remoteStyle.id))) ?? false { return }
-
-        // If it doesn't, we need to download and process it.
         let file = Files.style(filename: remoteStyle.name)
         let request = FileRequest(url: remoteStyle.href, destination: file)
 
@@ -74,6 +75,17 @@ struct CiteActionHandler: ViewModelActionHandler {
                           }
                       })
                       .disposed(by: self.disposeBag)
+    }
+
+    private func installStyleIfExists(styleId: String, completion: @escaping (Bool) -> Void) {
+        self.queue.async {
+            do {
+                let exists = try self.bundledDataStorage.perform(request: InstallStyleDbRequest(identifier: styleId), invalidateRealm: true)
+                completion(exists)
+            } catch let error {
+                completion(false)
+            }
+        }
     }
 
     private func process(style: Style, in viewModel: ViewModel<CiteActionHandler>) {
@@ -137,12 +149,15 @@ struct CiteActionHandler: ViewModelActionHandler {
         let style = viewModel.state.styles[index]
 
         do {
-            let toRemove: [String]
+            var toRemove: [String] = []
 
             try self.bundledDataStorage.perform(with: { coordinator in
                 toRemove = try coordinator.perform(request: UninstallStyleDbRequest(identifier: style.identifier))
+
                 self.resetDefaultStylesIfNeeded(removedStyle: style, coordinator: coordinator)
-            }, invalidateRealm: true)
+
+                coordinator.invalidate()
+            })
 
             for identifier in toRemove {
                 try? self.fileStorage.remove(Files.style(filename: identifier))
@@ -186,10 +201,12 @@ struct CiteActionHandler: ViewModelActionHandler {
 
     private func loadStyles(in viewModel: ViewModel<CiteActionHandler>) {
         do {
-            let styles = try self.bundledDataStorage.perform(request: ReadInstalledStylesDbRequest()).compactMap(Style.init)
+            let rStyles = try self.bundledDataStorage.perform(request: ReadInstalledStylesDbRequest(), invalidateRealm: true)
+            let styles = Array(rStyles.compactMap(Style.init))
+            rStyles.first?.realm?.invalidate()
 
             self.update(viewModel: viewModel) { state in
-                state.styles = Array(styles)
+                state.styles = styles
             }
         } catch let error {
             self.update(viewModel: viewModel) { state in

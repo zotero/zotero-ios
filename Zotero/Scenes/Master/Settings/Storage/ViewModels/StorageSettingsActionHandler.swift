@@ -39,11 +39,12 @@ struct StorageSettingsActionHandler: ViewModelActionHandler {
 
     private func loadStorageData(in viewModel: ViewModel<StorageSettingsActionHandler>) {
         do {
-            let libraries: [Library]
+            var libraries: [Library] = []
 
             try self.dbStorage.perform(with: { coordinator in
                 libraries = Array((try coordinator.perform(request: ReadAllCustomLibrariesDbRequest())).map(Library.init)) + (try coordinator.perform(request: ReadAllGroupsDbRequest())).map(Library.init)
-            }, invalidateRealm: true)
+                coordinator.invalidate()
+            })
 
             let (storageData, totalData) = self.storageData(for: libraries)
 

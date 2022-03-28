@@ -289,6 +289,7 @@ final class UserControllers {
         let webSocketController = WebSocketController(dbStorage: dbStorage)
         let fileCleanupController = AttachmentFileCleanupController(fileStorage: controllers.fileStorage, dbStorage: dbStorage)
 
+        self.isFirstLaunch = try dbStorage.perform(request: InitializeCustomLibrariesDbRequest())
         self.dbStorage = dbStorage
         self.syncScheduler = SyncScheduler(controller: syncController)
         self.webDavController = webDavController
@@ -304,8 +305,6 @@ final class UserControllers {
         self.idleTimerController = controllers.idleTimerController
         self.lastBuildNumber = controllers.lastBuildNumber
         self.disposeBag = DisposeBag()
-
-        self.isFirstLaunch = try dbStorage.perform(request: InitializeCustomLibrariesDbRequest())
     }
 
     /// Connects to websocket to monitor changes and performs initial sync.

@@ -148,6 +148,13 @@ final class AttachmentDownloader {
         let operation = AttachmentDownloadOperation(file: file, download: download, progress: progress, userId: self.userId, apiClient: self.apiClient, webDavController: self.webDavController,
                                                     fileStorage: self.fileStorage, queue: self.queue)
         operation.finishedDownload = { [weak self] result in
+            switch result {
+            case .success:
+                // Mark file as downloaded in DB
+                try? self?.dbStorage.perform(request: MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true))
+            case .failure: break
+            }
+
             inMainThread {
                 self?.finish(download: download, parentKey: parentKey, result: result, hasLocalCopy: hasLocalCopy)
             }
@@ -171,8 +178,6 @@ final class AttachmentDownloader {
         case .success:
             self.errors[download] = nil
             self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .ready)))
-            // Mark file as downloaded in DB
-            try? self.dbStorage.perform(request: MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true))
 
         case .failure(let error):
             DDLogError("AttachmentDownloader: failed to download attachment \(download.key), \(download.libraryId) - \(error)")

@@ -475,7 +475,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
             } catch let error as DbError where error.isObjectNotFound {
                 do {
                     let request = CreateNoteDbRequest(note: note, localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""), libraryId: libraryId, collectionKey: collectionKey)
-                    _ = try self.dbStorage.perform(request: request)
+                    _ = try self.dbStorage.perform(request: request, invalidateRealm: true)
                 } catch let error {
                     handleError(error)
                 }
@@ -526,21 +526,20 @@ struct ItemsActionHandler: ViewModelActionHandler {
         let type = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
         let request = CreateAttachmentsDbRequest(attachments: attachments, localizedType: type, collections: collections)
 
-        self.perform(request: request,
-                     responseAction: { [weak viewModel] failedTitles in
-                         guard let viewModel = viewModel else { return }
-                         if !failedTitles.isEmpty {
-                             self.update(viewModel: viewModel) { state in
-                                 state.error = .attachmentAdding(.someFailed(failedTitles))
-                             }
-                         }
-                     }, errorAction: { [weak viewModel] error in
-                         guard let viewModel = viewModel else { return }
-                         DDLogError("ItemsStore: can't add attachment: \(error)")
-                         self.update(viewModel: viewModel) { state in
-                             state.error = .attachmentAdding(.couldNotSave)
-                         }
-                     })
+        self.perform(request: request, responseAction: { [weak viewModel] failedTitles in
+            guard let viewModel = viewModel else { return }
+            if !failedTitles.isEmpty {
+                self.update(viewModel: viewModel) { state in
+                    state.error = .attachmentAdding(.someFailed(failedTitles))
+                }
+            }
+        }, errorAction: { [weak viewModel] error in
+            guard let viewModel = viewModel else { return }
+            DDLogError("ItemsStore: can't add attachment: \(error)")
+            self.update(viewModel: viewModel) { state in
+                state.error = .attachmentAdding(.couldNotSave)
+            }
+        })
     }
 
     // MARK: - Searching & Filtering

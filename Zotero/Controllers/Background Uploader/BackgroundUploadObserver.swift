@@ -23,6 +23,8 @@ final class BackgroundUploadObserver: NSObject {
     private let backgroundTaskController: BackgroundTaskController
     private let processor: BackgroundUploadProcessor
     private let disposeBag: DisposeBag
+    private let processorQueue: DispatchQueue
+    private let processorScheduler: SerialDispatchQueueScheduler
 
     private var sessions: [String: URLSession]
     private var finishedTasks: [String: [FinishedTask]]
@@ -31,6 +33,8 @@ final class BackgroundUploadObserver: NSObject {
     private var backgroundProcessingDisposeBag: DisposeBag
 
     init(context: BackgroundUploaderContext, processor: BackgroundUploadProcessor, backgroundTaskController: BackgroundTaskController) {
+        let queue = DispatchQueue(label: "org.zotero.BackgroundUploadObserver.processorQueue", qos: .userInitiated)
+
         self.backgroundTaskController = backgroundTaskController
         self.processor = processor
         self.sessions = [:]
@@ -40,6 +44,8 @@ final class BackgroundUploadObserver: NSObject {
         self.disposeBag = DisposeBag()
         self.shareExtensionSessionIdDisposeBag = DisposeBag()
         self.backgroundProcessingDisposeBag = DisposeBag()
+        self.processorQueue = queue
+        self.processorScheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.BackgroundUploadObserver.processorScheduler")
 
         super.init()
     }
@@ -86,8 +92,8 @@ final class BackgroundUploadObserver: NSObject {
 
         // Remove temporary upload files
         if !timedOutUploads.isEmpty {
-            let deleteActions =  timedOutUploads.map({ self.processor.finish(upload: $0, successful: false) })
-            Observable.concat(deleteActions).subscribe().disposed(by: self.disposeBag)
+            let deleteActions =  timedOutUploads.map({ self.processor.finish(upload: $0, successful: false, queue: .main, scheduler: MainScheduler.instance) })
+            Observable.concat(deleteActions).subscribe(on: MainScheduler.instance).subscribe().disposed(by: self.disposeBag)
         }
     }
 
@@ -223,12 +229,13 @@ final class BackgroundUploadObserver: NSObject {
         }
 
         self.backgroundTaskController.start(task: { task in
-            let actions = tasks.map({ self.processor.finish(upload: $0.upload, successful: !$0.didFail) })
+            let actions = tasks.map({ self.processor.finish(upload: $0.upload, successful: !$0.didFail, queue: self.processorQueue, scheduler: self.processorScheduler) })
             self.backgroundProcessingDisposeBag = DisposeBag()
 
             DDLogError("BackgroundUploadObserver: process tasks for \(sessionId)")
 
             Observable.concat(actions)
+                      .subscribe(on: self.processorScheduler)
                       .observe(on: MainScheduler.instance)
                       .subscribe(onError: { error in
                           DDLogError("BackgroundUploadObserver: couldn't finish tasks for \(sessionId) - \(error)")

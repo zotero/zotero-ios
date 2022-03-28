@@ -334,7 +334,7 @@ final class WebSocketController {
             // If version was received in message, check whether it's higher than local one.
 
             do {
-                let localVersion = try self.dbStorage.perform(request: ReadVersionDbRequest(libraryId: libraryId))
+                let localVersion = try self.dbStorage.perform(request: ReadVersionDbRequest(libraryId: libraryId), invalidateRealm: true)
                 guard localVersion < version else { return }
                 self.observable.on(.next(response.type))
             } catch let error {

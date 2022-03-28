@@ -27,7 +27,7 @@ struct PerformDeletionsSyncAction: SyncAction {
             do {
                 let request = PerformDeletionsDbRequest(libraryId: self.libraryId, collections: self.collections, items: self.items, searches: self.searches, tags: self.tags,
                                                         conflictMode: self.conflictMode)
-                let conflicts = try self.dbStorage.perform(request: request)
+                let conflicts = try self.dbStorage.perform(request: request, invalidateRealm: true)
                 subscriber(.success(conflicts))
             } catch let error {
                 subscriber(.failure(error))

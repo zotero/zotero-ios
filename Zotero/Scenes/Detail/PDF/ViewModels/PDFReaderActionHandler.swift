@@ -1802,13 +1802,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     /// - returns: Tuple of grouped annotations and comments.
     private func documentData(for key: String, library: Library, baseFont: UIFont, userId: Int, username: String, displayName: String, boundingBoxConverter: AnnotationBoundingBoxConverter) throws
                                                     -> (annotations: [Int: [Annotation]], positions: [AnnotationPosition], comments: [String: NSAttributedString], page: Int, items: Results<RItem>) {
-        let page: Int
-        let items: Results<RItem>
+        var page: Int = 0
+        var items: Results<RItem>?
 
-        self.dbStorage.perform(with: { coordinator in
+        try self.dbStorage.perform(with: { coordinator in
             page = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: library.identifier))
             items = try coordinator.perform(request: ReadAnnotationsDbRequest(attachmentKey: key, libraryId: library.identifier))
         })
+
+        guard let items = items else { throw DbError.objectNotFound }
 
         var annotations: [Int: [Annotation]] = [:]
         var comments: [String: NSAttributedString] = [:]

@@ -41,7 +41,6 @@ protocol DbResponseRequest {
 
 protocol DbStorage: AnyObject {
     func perform(with coordinatorAction: (DbCoordinator) throws -> Void) throws
-    func perform(with coordinatorAction: (DbCoordinator) throws -> Void, invalidateRealm: Bool) throws
     func perform<Request: DbResponseRequest>(request: Request) throws -> Request.Response
     func perform<Request: DbResponseRequest>(request: Request, invalidateRealm: Bool) throws -> Request.Response
     func perform(request: DbRequest) throws

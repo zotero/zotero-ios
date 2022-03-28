@@ -26,11 +26,13 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     private unowned let urlDetector: UrlDetector
     private unowned let fileDownloader: AttachmentDownloader
     private unowned let fileCleanupController: AttachmentFileCleanupController
+    private let backgroundQueue: DispatchQueue
     private let backgroundScheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
 
     init(apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage, schemaController: SchemaController, dateParser: DateParser, urlDetector: UrlDetector, fileDownloader: AttachmentDownloader,
          fileCleanupController: AttachmentFileCleanupController) {
+        let queue = DispatchQueue(label: "org.zotero.ItemDetailActionHandler.background", qos: .userInitiated)
         self.apiClient = apiClient
         self.fileStorage = fileStorage
         self.dbStorage = dbStorage
@@ -39,7 +41,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         self.urlDetector = urlDetector
         self.fileDownloader = fileDownloader
         self.fileCleanupController = fileCleanupController
-        self.backgroundScheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "org.zotero.ItemDetailActionHandler.background")
+        self.backgroundQueue = queue
+        self.backgroundScheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.ItemDetailActionHandler.backgroundScheduler")
         self.disposeBag = DisposeBag()
     }
 
@@ -375,33 +378,78 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     // MARK: - Notes
 
     private func saveNote(key: String, text: String, tags: [Tag], in viewModel: ViewModel<ItemDetailActionHandler>) {
-        self.update(viewModel: viewModel) { state in
-            let note =  Note(key: key, text: text, tags: tags)
+        let note = Note(key: key, text: text, tags: tags)
 
-            if !state.isEditing {
-                // Note was edited outside of editing mode, so it needs to be saved immediately
-                do {
-                    try self.saveNoteChanges(note, libraryId: state.library.identifier)
-                } catch let error {
-                    DDLogError("ItemDetailStore: can't store note - \(error)")
-                    state.error = .cantStoreChanges
-                    return
+        let updateViewModel: () -> Void = { [weak viewModel] in
+            guard let viewModel = viewModel else { return }
+
+            self.update(viewModel: viewModel) { state in
+                if let index = state.data.notes.firstIndex(where: { $0.key == note.key }) {
+                    state.data.notes[index] = note
+                } else {
+                    state.data.notes.append(note)
                 }
+                state.savingNotes.remove(note.key)
+                state.updatedSection = .notes
+                state.sectionNeedsReload = true
+            }
+        }
+
+        if viewModel.state.isEditing {
+            updateViewModel()
+            return
+        }
+
+        var didSave = false
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) { [weak viewModel] in
+            guard !didSave, let viewModel = viewModel else { return }
+
+            // Show saving indicator only if storage takes too much time to avoid unnecessary reloads
+
+            self.update(viewModel: viewModel) { state in
+                state.savingNotes.insert(note.key)
+                state.updatedSection = .notes
+                state.sectionNeedsReload = true
+            }
+        }
+
+        let request = EditNoteDbRequest(note: note, libraryId: viewModel.state.library.identifier)
+        self.perform(request: request) { [weak viewModel] error in
+            didSave = true
+            guard let viewModel = viewModel else { return }
+
+            if let error = error {
+                DDLogError("ItemDetailActionHandler: can't store note - \(error)")
+
+                self.update(viewModel: viewModel) { state in
+                    state.error = .cantStoreChanges
+                    if state.savingNotes.remove(note.key) != nil {
+                        state.updatedSection = .notes
+                        state.sectionNeedsReload = true
+                    }
+                }
+                return
             }
 
-            if let index = state.data.notes.firstIndex(where: { $0.key == note.key }) {
-                state.data.notes[index] = note
-            } else {
-                state.data.notes.append(note)
-            }
-            state.updatedSection = .notes
-            state.sectionNeedsReload = true
+            updateViewModel()
         }
     }
 
-    private func saveNoteChanges(_ note: Note, libraryId: LibraryIdentifier) throws {
-        let request = EditNoteDbRequest(note: note, libraryId: libraryId)
-        try self.dbStorage.perform(request: request)
+    private func perform<Request: DbRequest>(request: Request, completion: @escaping (Error?) -> Void) {
+        self.backgroundQueue.async {
+            do {
+                try self.dbStorage.perform(request: request)
+
+                DispatchQueue.main.async {
+                    completion(nil)
+                }
+            } catch let error {
+                DispatchQueue.main.async {
+                    completion(error)
+                }
+            }
+        }
     }
 
     // MARK: - Tags
@@ -417,20 +465,24 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     // MARK: - Attachments
 
     private func trash(attachment: Attachment, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        guard let index = viewModel.state.data.attachments.firstIndex(of: attachment) else { return }
+        guard viewModel.state.data.attachments.contains(attachment) else { return }
 
-        do {
-            try self.dbStorage.perform(request: MarkItemsAsTrashedDbRequest(keys: [attachment.key], libraryId: viewModel.state.library.identifier, trashed: true))
+        let request = MarkItemsAsTrashedDbRequest(keys: [attachment.key], libraryId: viewModel.state.library.identifier, trashed: true)
+        self.perform(request: request) { [weak viewModel] error in
+            guard let viewModel = viewModel, let index = viewModel.state.data.attachments.firstIndex(of: attachment) else { return }
+
+            if let error = error {
+                DDLogError("ItemDetailActionHandler: can't trash attachment - \(error)")
+                self.update(viewModel: viewModel) { state in
+                    state.error = .cantTrashAttachment
+                }
+                return
+            }
 
             self.update(viewModel: viewModel) { state in
                 state.data.attachments.remove(at: index)
                 state.updatedSection = .attachments
                 state.sectionNeedsReload = true
-            }
-        } catch let error {
-            DDLogError("ItemDetailActionHandler: can't trash attachment - \(error)")
-            self.update(viewModel: viewModel) { state in
-                state.error = .cantTrashAttachment
             }
         }
     }
@@ -744,6 +796,6 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
     private func updateItem(key: String, libraryId: LibraryIdentifier, data: ItemDetailState.Data, snapshot: ItemDetailState.Data) throws {
         let request = EditItemDetailDbRequest(libraryId: libraryId, itemKey: key, data: data, snapshot: snapshot, schemaController: self.schemaController, dateParser: self.dateParser)
-        try self.dbStorage..perform(request: request)
+        try self.dbStorage.perform(request: request)
     }
 }

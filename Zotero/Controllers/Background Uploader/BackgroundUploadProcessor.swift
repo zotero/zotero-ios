@@ -29,7 +29,7 @@ final class BackgroundUploadProcessor {
         self.webDavController = webDavController
     }
 
-    func finish(upload: BackgroundUpload, successful: Bool) -> Observable<()> {
+    func finish(upload: BackgroundUpload, successful: Bool, queue: DispatchQueue, scheduler: SerialDispatchQueueScheduler) -> Observable<()> {
         if !successful {
             // If upload failed, remove temporary upload data (multipartform in case of ZFS, zip in case of WebDAV).
             return Observable.create { [weak self] subscriber in
@@ -44,15 +44,18 @@ final class BackgroundUploadProcessor {
 
         switch upload.type {
         case .zotero(let uploadKey):
-            return self.finishZoteroUpload(uploadKey: uploadKey, key: upload.key, libraryId: upload.libraryId, fileUrl: upload.fileUrl, userId: upload.userId)
+            return self.finishZoteroUpload(uploadKey: uploadKey, key: upload.key, libraryId: upload.libraryId, fileUrl: upload.fileUrl, userId: upload.userId, queue: queue, scheduler: scheduler)
         case .webdav(let mtime):
-            return self.finishWebdavUpload(key: upload.key, libraryId: upload.libraryId, mtime: mtime, md5: upload.md5, userId: upload.userId, fileUrl: upload.fileUrl, webDavUrl: upload.remoteUrl)
+            return self.finishWebdavUpload(key: upload.key, libraryId: upload.libraryId, mtime: mtime, md5: upload.md5, userId: upload.userId,
+                                           fileUrl: upload.fileUrl, webDavUrl: upload.remoteUrl, queue: queue, scheduler: scheduler)
         }
     }
 
-    private func finishZoteroUpload(uploadKey: String, key: String, libraryId: LibraryIdentifier, fileUrl: URL, userId: Int) -> Observable<()> {
+    private func finishZoteroUpload(uploadKey: String, key: String, libraryId: LibraryIdentifier, fileUrl: URL, userId: Int,
+                                    queue: DispatchQueue, scheduler: SerialDispatchQueueScheduler) -> Observable<()> {
         let request = RegisterUploadRequest(libraryId: libraryId, userId: userId, key: key, uploadKey: uploadKey, oldMd5: nil)
-        return self.apiClient.send(request: request)
+        return self.apiClient.send(request: request, queue: queue)
+                             .observe(on: scheduler)
                              .flatMap { [weak self] data, response -> Single<()> in
                                  guard let `self` = self else { return Single.error(Error.expired) }
                                  return self.markAttachmentAsUploaded(version: response.allHeaderFields.lastModifiedVersion, key: key, libraryId: libraryId)
@@ -76,11 +79,13 @@ final class BackgroundUploadProcessor {
         }
     }
 
-    private func finishWebdavUpload(key: String, libraryId: LibraryIdentifier, mtime: Int, md5: String, userId: Int, fileUrl: URL, webDavUrl: URL) -> Observable<()> {
+    private func finishWebdavUpload(key: String, libraryId: LibraryIdentifier, mtime: Int, md5: String, userId: Int, fileUrl: URL, webDavUrl: URL,
+                                    queue: DispatchQueue, scheduler: SerialDispatchQueueScheduler) -> Observable<()> {
         // Don't need to delete ZIP file here, because background upload creates temporary file for upload and the zip file is deleted after background upload is enqueued.
-        return self.webDavController.finishUpload(key: key, result: .success((mtime, md5, webDavUrl)), file: nil, queue: .main)
+        return self.webDavController.finishUpload(key: key, result: .success((mtime, md5, webDavUrl)), file: nil, queue: queue)
+                   .observe(on: scheduler)
                    .flatMap({
-                       return self.submitItemWithHashAndMtime(key: key, libraryId: libraryId, mtime: mtime, md5: md5, userId: userId)
+                       return self.submitItemWithHashAndMtime(key: key, libraryId: libraryId, mtime: mtime, md5: md5, userId: userId, queue: queue)
                    })
                    .flatMap({ version in
                        return self.markAttachmentAsUploaded(version: version, key: key, libraryId: libraryId)
@@ -95,13 +100,15 @@ final class BackgroundUploadProcessor {
                    .asObservable()
     }
 
-    private func submitItemWithHashAndMtime(key: String, libraryId: LibraryIdentifier, mtime: Int, md5: String, userId: Int) -> Single<Int> {
+    private func submitItemWithHashAndMtime(key: String, libraryId: LibraryIdentifier, mtime: Int, md5: String, userId: Int, queue: DispatchQueue) -> Single<Int> {
         DDLogInfo("BackgroundUploadProcessor: submit mtime and md5")
 
         let loadParameters: Single<[String: Any]> = Single.create { subscriber -> Disposable in
             do {
                 let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-                subscriber(.success(item.mtimeAndHashParameters))
+                let parameters = item.mtimeAndHashParameters
+                item.realm?.invalidate()
+                subscriber(.success(parameters))
             } catch let error {
                 subscriber(.failure(error))
                 DDLogError("BackgroundUploadProcessor: can't load params - \(error)")
@@ -112,7 +119,7 @@ final class BackgroundUploadProcessor {
 
         return loadParameters.flatMap { parameters -> Single<(Data, HTTPURLResponse)> in
             let request = UpdatesRequest(libraryId: libraryId, userId: userId, objectType: .item, params: [parameters], version: nil)
-            return self.apiClient.send(request: request).mapData(httpMethod: request.httpMethod.rawValue)
+            return self.apiClient.send(request: request, queue: queue).mapData(httpMethod: request.httpMethod.rawValue)
         }
         .flatMap({ data, response -> Single<(UpdatesResponse, Int)> in
             do {

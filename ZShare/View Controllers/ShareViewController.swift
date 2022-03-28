@@ -487,8 +487,9 @@ final class ShareViewController: UIViewController {
                 return L10n.Errors.Shareext.personalQuotaReached
 
             case .group(let groupId):
-                let groupName = (try? self.dbStorage.perform(request: ReadGroupDbRequest(identifier: groupId)))?.name
-                return L10n.Errors.Shareext.groupQuotaReached(groupName ?? "\(groupId)")
+                let group = try? self.dbStorage.perform(request: ReadGroupDbRequest(identifier: groupId))
+                let groupName = group?.name ?? "\(groupId)"
+                return L10n.Errors.Shareext.groupQuotaReached(groupName)
             }
         case .downloadedFileNotPdf, .md5Missing, .mtimeMissing:
             return nil

@@ -24,10 +24,10 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
     var result: Single<[SyncObject : [String]]> {
         return Single.create { subscriber -> Disposable in
             do {
-                let changes: [StoreItemsResponse.FilenameChange]
-                let failedCollections: [String]
-                let failedSearches: [String]
-                let failedItems: [String]
+                var changes: [StoreItemsResponse.FilenameChange] = []
+                var failedCollections: [String] = []
+                var failedSearches: [String] = []
+                var failedItems: [String] = []
 
                 try self.dbStorage.perform(with: { coordinator in
                     let collections = try self.loadCachedJsonForObject(of: RCollection.self, objectType: .collection, in: self.libraryId, coordinator: coordinator,
@@ -48,7 +48,9 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
                     failedCollections = collections.failed
                     failedSearches = searches.failed
                     failedItems = items.failed
-                }, invalidateRealm: true)
+
+                    coordinator.invalidate()
+                })
 
                 self.renameExistingFiles(changes: changes, libraryId: self.libraryId)
 

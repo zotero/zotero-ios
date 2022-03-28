@@ -52,6 +52,7 @@ struct FileSyncingSection: View {
             Text("Zotero").tag(SyncSettingsState.FileSyncType.zotero)
             Text("WebDAV").tag(SyncSettingsState.FileSyncType.webDav)
         }
+        .disabled(self.viewModel.state.updatingFileSyncType)
 
         if self.viewModel.state.fileSyncType == .webDav {
             self.webDavSettings

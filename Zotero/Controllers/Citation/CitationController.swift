@@ -281,7 +281,9 @@ class CitationController: NSObject {
         return Single.create { subscriber in
             do {
                 let style = try self.bundledDataStorage.perform(request: ReadStyleDbRequest(identifier: styleId))
-                subscriber(.success(StyleData(style: style)))
+                let data = StyleData(style: style)
+                style.realm?.invalidate()
+                subscriber(.success(data))
             } catch let error {
                 DDLogError("CitationController: can't load style - \(error)")
                 subscriber(.failure(Error.styleOrLocaleMissing))
@@ -316,6 +318,9 @@ class CitationController: NSObject {
                 }
 
                 let data = Array(items.map({ self.data(for: $0) }))
+
+                items.first?.realm?.invalidate()
+
                 subscriber(.success(WKWebView.encodeAsJSONForJavascript(data)))
             } catch let error {
                 DDLogError("CitationController: can't read items - \(error)")

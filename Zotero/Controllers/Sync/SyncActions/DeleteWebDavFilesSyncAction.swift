@@ -35,7 +35,9 @@ struct DeleteWebDavFilesSyncAction: SyncAction {
     private func loadDeletions() -> Single<[String]> {
         return Single.create { subscriber in
             do {
-                let keys: [String] = (try self.dbStorage.perform(request: ReadWebDavDeletionsDbRequest(libraryId: self.libraryId))).map({ $0.key })
+                let deletions = try self.dbStorage.perform(request: ReadWebDavDeletionsDbRequest(libraryId: self.libraryId))
+                let keys = Array(deletions.map({ $0.key }))
+                deletions.first?.realm?.invalidate()
                 subscriber(.success(keys))
             } catch let error {
                 DDLogError("DeleteWebDavFilesSyncAction: could not read webdav deletions - \(error)")

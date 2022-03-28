@@ -233,7 +233,10 @@ final class TranslatorsAndStylesController {
         guard type != .shareExtension else { return nil }
 
         do {
-            return try self.dbStorage.perform(request: ReadStylesDbRequest()).compactMap(Style.init)
+            let rStyles = try self.dbStorage.perform(request: ReadStylesDbRequest())
+            let styles = Array(rStyles.compactMap(Style.init))
+            rStyles.first?.realm?.invalidate()
+            return styles
         } catch let error {
             DDLogError("TranslatorsAndStylesController: can't read styles - \(error)")
             return nil
@@ -277,7 +280,7 @@ final class TranslatorsAndStylesController {
         let metadata = try self.loadIndex()
         // Sync translators
         let request = SyncTranslatorsDbRequest(updateMetadata: metadata, deleteIndices: deleteIndices, fileStorage: self.fileStorage)
-        let updated = try self.dbStorage.perform(request: request)
+        let updated = try self.dbStorage.perform(request: request, invalidateRealm: true)
         DDLogInfo("TranslatorsAndStylesController: updated \(updated.count) translators")
         // Delete files of deleted translators
         deleteIndices.forEach { id in
@@ -302,7 +305,7 @@ final class TranslatorsAndStylesController {
         })
         // Sync styles
         let request = SyncStylesDbRequest(styles: styles)
-        let updated = try self.dbStorage.perform(request: request)
+        let updated = try self.dbStorage.perform(request: request, invalidateRealm: true)
         DDLogInfo("TranslatorsAndStylesController: updated \(updated.count) styles")
         // Copy updated files
         for file in files.filter({ updated.contains($0.name) }) {

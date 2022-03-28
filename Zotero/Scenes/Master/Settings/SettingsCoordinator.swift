@@ -110,6 +110,8 @@ final class SettingsCoordinator: NSObject, Coordinator {
         var view = ExportSettingsView()
         view.coordinatorDelegate = self
 
+        style?.realm?.invalidate()
+
         let controller = UIHostingController(rootView: view.environmentObject(viewModel))
         controller.preferredContentSize = SettingsCoordinator.defaultSize
         return controller

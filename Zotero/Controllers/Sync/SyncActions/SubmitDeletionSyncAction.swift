@@ -63,7 +63,8 @@ struct SubmitDeletionSyncAction: SyncAction {
 
                     try coordinator.perform(writeRequests: requests)
 
-                }, invalidateRealm: true)
+                    coordinator.invalidate()
+                })
 
                 subscriber(.success(didCreateDeletions))
             } catch let error {

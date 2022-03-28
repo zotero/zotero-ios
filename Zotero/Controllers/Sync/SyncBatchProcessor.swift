@@ -161,7 +161,8 @@ final class SyncBatchProcessor {
             self.storeIndividualObjects(from: objects, type: .item, libraryId: libraryId)
 
             // BETA: - forcing preferResponseData to true for beta, it should be false here so that we report conflicts
-            let response = try self.dbStorage.perform(request: StoreItemsDbResponseRequest(responses: items, schemaController: self.schemaController, dateParser: self.dateParser, preferResponseData: true))
+            let request = StoreItemsDbResponseRequest(responses: items, schemaController: self.schemaController, dateParser: self.dateParser, preferResponseData: true)
+            let response = try self.dbStorage.perform(request: request, invalidateRealm: true)
             let failedKeys = self.failedKeys(from: expectedKeys, parsedKeys: items.map({ $0.key }), errors: errors)
 
             self.renameExistingFiles(changes: response.changedFilenames, libraryId: libraryId)

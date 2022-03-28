@@ -879,9 +879,9 @@ final class ExtensionViewModel {
             DDLogInfo("ExtensionViewModel: create db item")
 
             do {
-                let parameters: [String: Any]
+                var parameters: [String: Any] = [:]
 
-                self.dbStorage.perform(with: { coordinator in
+                try self.dbStorage.perform(with: { coordinator in
                     if let collectionKey = item.collectionKeys.first {
                         try coordinator.perform(request: UpdateCollectionLastUsedDbRequest(key: collectionKey, libraryId: libraryId))
                     }
@@ -889,7 +889,9 @@ final class ExtensionViewModel {
                     let request = CreateBackendItemDbRequest(item: item, schemaController: schemaController, dateParser: dateParser)
                     let item = try coordinator.perform(request: request)
                     parameters = item.updateParameters ?? [:]
-                }, invalidateRealm: true)
+
+                    coordinator.invalidate()
+                })
 
                 subscriber(.success(parameters))
             } catch let error {
@@ -932,7 +934,7 @@ final class ExtensionViewModel {
                        do {
                            let request = MarkAttachmentUploadedDbRequest(libraryId: data.libraryId, key: data.attachment.key, version: version)
                            let request2 = UpdateVersionsDbRequest(version: version, libraryId: data.libraryId, type: .object(.item))
-                           try dbStorage.perform(requests: [request, request2])
+                           try dbStorage.perform(writeRequests: [request, request2])
                            return Single.just(())
                        } catch let error {
                            return Single.error(error)
@@ -1161,35 +1163,33 @@ final class ExtensionViewModel {
             DDLogInfo("ExtensionViewModel: create item and attachment db items")
 
             do {
-                let item: RItem
-                let attachment: RItem
+                var parameters: [[String: Any]] = []
+                var mtime: Int?
+                var md5: String?
 
-                self.dbStorage.perform(with: { coordinator in
+                try self.dbStorage.perform(with: { coordinator in
                     if let collectionKey = item.collectionKeys.first {
                         try coordinator.perform(request: UpdateCollectionLastUsedDbRequest(key: collectionKey, libraryId: attachment.libraryId))
                     }
 
                     let request = CreateItemWithAttachmentDbRequest(item: item, attachment: attachment, schemaController: self.schemaController, dateParser: self.dateParser)
-                    let (_item, _attachment) = try coordinator.perform(request: request)
+                    let (item, attachment) = try coordinator.perform(request: request)
 
-                    item = _item
-                    attachment = _attachment
-                }, invalidateRealm: true)
+                    if let updateParameters = item.updateParameters {
+                        parameters.append(updateParameters)
+                    }
+                    if let updateParameters = attachment.updateParameters {
+                        parameters.append(updateParameters)
+                    }
 
-                guard let mtime = attachment.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first.flatMap({ Int($0.value) }) else {
-                    throw State.AttachmentState.Error.mtimeMissing
-                }
-                guard let md5 = attachment.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value else {
-                    throw State.AttachmentState.Error.md5Missing
-                }
+                    mtime = attachment.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first.flatMap({ Int($0.value) })
+                    md5 = attachment.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value
 
-                var parameters: [[String: Any]] = []
-                if let updateParameters = item.updateParameters {
-                    parameters.append(updateParameters)
-                }
-                if let updateParameters = attachment.updateParameters {
-                    parameters.append(updateParameters)
-                }
+                    coordinator.invalidate()
+                })
+
+                guard let mtime = mtime else { throw State.AttachmentState.Error.mtimeMissing }
+                guard let md5 = md5 else { throw State.AttachmentState.Error.md5Missing }
 
                 subscriber(.success((parameters, md5, mtime)))
             } catch let error {
@@ -1212,25 +1212,29 @@ final class ExtensionViewModel {
             let localizedType = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
 
             do {
-                let attachment: RItem
+                var updateParameters: [String : Any]?
+                var md5: String?
+                var mtime: Int?
 
-                self.dbStorage.perform(with: { coordinator in
+                try self.dbStorage.perform(with: { coordinator in
                     if let collectionKey = collections.first {
                         try coordinator.perform(request: UpdateCollectionLastUsedDbRequest(key: collectionKey, libraryId: attachment.libraryId))
                     }
 
                     let request = CreateAttachmentDbRequest(attachment: attachment, localizedType: localizedType, collections: collections, tags: tags)
-                    attachment = try coordinator.perform(request: request)
-                }, invalidateRealm: true)
+                    let attachment = try coordinator.perform(request: request)
 
-                guard let mtime = attachment.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first.flatMap({ Int($0.value) }) else {
-                    throw State.AttachmentState.Error.mtimeMissing
-                }
-                guard let md5 = attachment.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value else {
-                    throw State.AttachmentState.Error.md5Missing
-                }
+                    updateParameters = attachment.updateParameters
+                    mtime = attachment.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first.flatMap({ Int($0.value) })
+                    md5 = attachment.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value
 
-                subscriber(.success((attachment.updateParameters ?? [:], md5, mtime)))
+                    coordinator.invalidate()
+                })
+
+                guard let mtime = mtime else { throw State.AttachmentState.Error.mtimeMissing }
+                guard let md5 = md5 else { throw State.AttachmentState.Error.md5Missing }
+
+                subscriber(.success(((updateParameters ?? [:]), md5, mtime)))
             } catch let error {
                 subscriber(.failure(error))
             }
@@ -1301,17 +1305,24 @@ final class ExtensionViewModel {
         }
 
         do {
-            let library: Library
-            let collection: Collection?
-            var recents: [RecentData]
+            var library: Library?
+            var collection: Collection?
+            var recents: [RecentData] = []
 
             try self.dbStorage.perform(with: { coordinator in
                 let request = ReadCollectionAndLibraryDbRequest(collectionId: self.state.selectedCollectionId, libraryId: self.state.selectedLibraryId)
                 let (_collection, _library) = try coordinator.perform(request: request)
 
                 let recentCollections = try coordinator.perform(request: ReadRecentCollections(excluding: nil))
+
                 recents = recentCollections
-            }, invalidateRealm: true)
+                library = _library
+                collection = _collection
+
+                coordinator.invalidate()
+            })
+
+            guard let library = library else { return }
 
             if !recents.contains(where: { $0.collection?.identifier == collection?.identifier && $0.library.identifier == library.identifier }) {
                 recents.insert(RecentData(collection: collection, library: library, isRecent: false), at: 0)

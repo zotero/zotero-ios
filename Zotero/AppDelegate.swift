@@ -92,15 +92,18 @@ final class AppDelegate: UIResponder {
     }
 
     private func readAttachmentTypes<Request: DbResponseRequest>(for request: Request, dbStorage: DbStorage) throws -> [(String, LibraryIdentifier, Attachment.Kind)] where Request.Response == Results<RItem> {
-        let types: [(String, LibraryIdentifier, Attachment.Kind)]
+        var types: [(String, LibraryIdentifier, Attachment.Kind)] = []
 
         try dbStorage.perform(with: { coordinator in
             let items = try coordinator.perform(request: request)
+
             types = items.compactMap({ item -> (String, LibraryIdentifier, Attachment.Kind)? in
                 guard let type = AttachmentCreator.attachmentType(for: item, options: .light, fileStorage: nil, urlDetector: nil), let libraryId = item.libraryId else { return nil }
                 return (item.key, libraryId, type)
             })
-        }, invalidateRealm: true)
+
+            coordinator.invalidate()
+        })
 
         return types
     }
@@ -146,6 +149,7 @@ final class AppDelegate: UIResponder {
             if webDavEnabled {
                 let forUploadResults = try userControllers.dbStorage.perform(request: ReadAllItemsForUploadDbRequest())
                 keysForUpload = Set(forUploadResults.map({ $0.key }))
+                forUploadResults.first?.realm?.invalidate()
             }
 
             for file in contents {

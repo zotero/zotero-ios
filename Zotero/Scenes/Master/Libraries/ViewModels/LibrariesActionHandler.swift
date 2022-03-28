@@ -15,9 +15,11 @@ struct LibrariesActionHandler: ViewModelActionHandler {
     typealias Action = LibrariesAction
 
     private let dbStorage: DbStorage
+    private let backgroundQueue: DispatchQueue
 
     init(dbStorage: DbStorage) {
         self.dbStorage = dbStorage
+        self.backgroundQueue = DispatchQueue(label: "org.zotero.LibrariesActionHandler.backgroundQueue", qos: .userInteractive)
     }
 
     func process(action: LibrariesAction, in viewModel: ViewModel<LibrariesActionHandler>) {
@@ -41,7 +43,7 @@ struct LibrariesActionHandler: ViewModelActionHandler {
             }
 
         case .deleteGroup(let groupId):
-            DispatchQueue.global(qos: .userInitiated).async {
+            self.backgroundQueue.async {
                 self.deleteGroup(id: groupId, dbStorage: self.dbStorage)
             }
         }

@@ -20,6 +20,7 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
     private unowned let webDavController: WebDavController
     private unowned let sessionController: SessionController
     private unowned let syncScheduler: SynchronizationScheduler
+    private let backgroundQueue: DispatchQueue
     private weak var coordinatorDelegate: SettingsCoordinatorDelegate?
 
     init(dbStorage: DbStorage, fileStorage: FileStorage, sessionController: SessionController, webDavController: WebDavController, syncScheduler: SynchronizationScheduler,
@@ -30,6 +31,7 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
         self.webDavController = webDavController
         self.syncScheduler = syncScheduler
         self.coordinatorDelegate = coordinatorDelegate
+        self.backgroundQueue = DispatchQueue(label: "org.zotero.SyncSettingsActionHandler.background", qos: .userInteractive)
     }
 
     func process(action: SyncSettingsAction, in viewModel: ViewModel<SyncSettingsActionHandler>) {
@@ -49,17 +51,7 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
             self.webDavController.resetVerification()
 
         case .setUrl(let url):
-            self.update(viewModel: viewModel) { state in
-                state.url = url
-                state.webDavVerificationResult = nil
-            }
-
-            var decodedUrl = url
-            if url.contains("%") {
-                decodedUrl = url.removingPercentEncoding ?? url
-            }
-            self.webDavController.sessionStorage.url = decodedUrl
-            self.webDavController.resetVerification()
+            self.set(url: url, in: viewModel)
 
         case .setUsername(let username):
             self.update(viewModel: viewModel) { state in
@@ -89,6 +81,20 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
         }
     }
 
+    private func set(url: String, in viewModel: ViewModel<SyncSettingsActionHandler>) {
+        var decodedUrl = url
+        if url.contains("%") {
+            decodedUrl = url.removingPercentEncoding ?? url
+        }
+        self.webDavController.sessionStorage.url = decodedUrl
+        self.webDavController.resetVerification()
+
+        self.update(viewModel: viewModel) { state in
+            state.url = url
+            state.webDavVerificationResult = nil
+        }
+    }
+
     private func cancelVerification(viewModel: ViewModel<SyncSettingsActionHandler>) {
         self.update(viewModel: viewModel) { state in
             state.isVerifyingWebDav = false
@@ -101,6 +107,42 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
 
         self.syncScheduler.cancelSync()
 
+        let oldType = viewModel.state.fileSyncType
+
+        self.update(viewModel: viewModel) { state in
+            state.fileSyncType = type
+            state.updatingFileSyncType = true
+        }
+
+        self.resetDownloads(for: type) { error in
+            self.update(viewModel: viewModel) { state in
+                if let error = error {
+                    state.fileSyncType = oldType
+                    // TODO: show error
+                }
+                state.updatingFileSyncType = false
+            }
+
+            guard error == nil else { return }
+
+            self.webDavController.sessionStorage.isEnabled = type == .webDav
+
+            if type == .zotero {
+                self.syncScheduler.request(sync: .normal, libraries: .all)
+            }
+        }
+    }
+
+    private func resetDownloads(for type: SyncSettingsState.FileSyncType, completion: @escaping (Error?) -> Void) {
+        self.backgroundQueue.async {
+            let error = self._resetDownloads(for: type)
+            DispatchQueue.main.async {
+                completion(error)
+            }
+        }
+    }
+
+    private func _resetDownloads(for type: SyncSettingsState.FileSyncType) -> Error? {
         do {
             let keys = self.downloadedAttachmentKeys()
 
@@ -109,18 +151,12 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
                 requests.append(DeleteAllWebDavDeletionsDbRequest())
             }
 
-            try self.dbStorage.perform(requests: requests)
+            try self.dbStorage.perform(writeRequests: requests)
 
-            self.update(viewModel: viewModel) { state in
-                state.fileSyncType = type
-            }
-            self.webDavController.sessionStorage.isEnabled = type == .webDav
-
-            if type == .zotero {
-                self.syncScheduler.request(sync: .normal, libraries: .all)
-            }
+            return nil
         } catch let error {
             DDLogError("SyncSettingsActionHandler: can't mark all attachments not uploaded - \(error)")
+            return error
         }
     }
 
