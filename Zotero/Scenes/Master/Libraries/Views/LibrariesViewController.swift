@@ -47,7 +47,6 @@ final class LibrariesViewController: UIViewController {
                           self?.update(to: state)
                       })
                       .disposed(by: self.disposeBag)
-
     }
 
     // MARK: - UI State

@@ -152,7 +152,6 @@ final class SyncToolbarController {
                 case .group(let groupId):
                     let group = try? self.dbStorage.perform(request: ReadGroupDbRequest(identifier: groupId))
                     let groupName = group?.name ?? "\(groupId)"
-                    group?.realm?.invalidate()
                     return (L10n.Errors.SyncToolbar.groupQuotaReached(groupName), nil)
                 }
             case .insufficientSpace:

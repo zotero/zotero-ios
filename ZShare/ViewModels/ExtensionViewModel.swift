@@ -1318,8 +1318,6 @@ final class ExtensionViewModel {
                 recents = recentCollections
                 library = _library
                 collection = _collection
-
-                coordinator.invalidate()
             })
 
             guard let library = library else { return }

@@ -54,8 +54,6 @@ final class AllCollectionPickerActionHandler: ViewModelActionHandler {
                     librariesCollapsed[library.identifier] = viewModel.state.selectedLibraryId != library.identifier
                 }
 
-                coordinator.invalidate()
-
                 self.update(viewModel: viewModel) { state in
                     state.libraries = libraries
                     state.librariesCollapsed = librariesCollapsed

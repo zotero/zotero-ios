@@ -224,7 +224,6 @@ struct CiteActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionHa
         do {
             let rStyles = try self.dbStorage.perform(request: ReadInstalledStylesDbRequest())
             let styles = Array(rStyles.compactMap(Style.init))
-            rStyles.first?.realm?.invalidate()
 
             self.update(viewModel: viewModel) { state in
                 state.styles = styles

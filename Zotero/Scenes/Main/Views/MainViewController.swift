@@ -137,8 +137,6 @@ extension MainViewController: MainCoordinatorSyncToolbarDelegate {
 
                 let isAnyInTrash = try coordinator.perform(request: CheckAnyItemIsInTrashDbRequest(libraryId: libraryId, keys: keys))
                 collectionType = isAnyInTrash ? .trash : .all
-
-                coordinator.invalidate()
             })
 
             guard let library = library, let collectionType = collectionType else { return }

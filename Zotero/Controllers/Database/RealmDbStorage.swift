@@ -56,8 +56,8 @@ final class RealmDbStorage {
 extension RealmDbStorage: DbStorage {
     func perform(with coordinatorAction: (DbCoordinator) throws -> Void) throws {
         try self.performInAutoreleasepoolIfNeeded {
-            let realm = try Realm(configuration: self.config)
-            try coordinatorAction(RealmDbCoordinator(realm: realm))
+            let coordinator = try RealmDbCoordinator(configuration: self.config)
+            try coordinatorAction(coordinator)
         }
     }
 
@@ -67,11 +67,11 @@ extension RealmDbStorage: DbStorage {
 
     func perform<Request>(request: Request, invalidateRealm: Bool) throws -> Request.Response where Request : DbResponseRequest {
         return try self.performInAutoreleasepoolIfNeeded {
-            let realm = try Realm(configuration: self.config)
-            let result = try RealmDbCoordinator(realm: realm).perform(request: request)
+            let coordinator = try RealmDbCoordinator(configuration: self.config)
+            let result = try coordinator.perform(request: request)
 
             if invalidateRealm {
-                realm.invalidate()
+                coordinator.invalidate()
             }
 
             return result
@@ -80,19 +80,19 @@ extension RealmDbStorage: DbStorage {
 
     func perform(request: DbRequest) throws {
         try self.performInAutoreleasepoolIfNeeded {
-            let realm = try Realm(configuration: self.config)
-            try RealmDbCoordinator(realm: realm).perform(request: request)
+            let coordinator = try RealmDbCoordinator(configuration: self.config)
+            try coordinator.perform(request: request)
             // Since there is no result we can always invalidate realm to free memory
-            realm.invalidate()
+            coordinator.invalidate()
         }
     }
 
     func perform(writeRequests requests: [DbRequest]) throws {
         try self.performInAutoreleasepoolIfNeeded {
-            let realm = try Realm(configuration: self.config)
-            try RealmDbCoordinator(realm: realm).perform(writeRequests: requests)
+            let coordinator = try RealmDbCoordinator(configuration: self.config)
+            try coordinator.perform(writeRequests: requests)
             // Since there is no result we can always invalidate realm to free memory
-            realm.invalidate()
+            coordinator.invalidate()
         }
     }
 }
@@ -100,8 +100,8 @@ extension RealmDbStorage: DbStorage {
 struct RealmDbCoordinator {
     private let realm: Realm
 
-    init(realm: Realm) {
-        self.realm = realm
+    init(configuration: Realm.Configuration) throws {
+        self.realm = try Realm(configuration: configuration)
     }
 }
 
@@ -139,6 +139,10 @@ extension RealmDbCoordinator: DbCoordinator {
     }
 
     func perform(writeRequests requests: [DbRequest]) throws {
+        if Thread.isMainThread {
+            DDLogWarn("!!! RealmDbStorage: writing on main thread")
+        }
+
         if self.realm.isInWriteTransaction {
             DDLogError("RealmDbCoordinator: realm already writing")
             for request in requests {
@@ -158,6 +162,10 @@ extension RealmDbCoordinator: DbCoordinator {
     }
 
     func invalidate() {
+        guard !Thread.isMainThread else {
+            DDLogWarn("!!! RealmDbStorage: invalidating on main thread")
+            return
+        }
         self.realm.invalidate()
     }
 }
