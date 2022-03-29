@@ -11,17 +11,17 @@ import Foundation
 import CocoaLumberjackSwift
 import RealmSwift
 
-struct CollectionsActionHandler: ViewModelActionHandler {
+struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionHandler {
     typealias Action = CollectionsAction
     typealias State = CollectionsState
 
-    private let queue: DispatchQueue
+    let backgroundQueue: DispatchQueue
     private unowned let fileStorage: FileStorage
-    private unowned let dbStorage: DbStorage
+    unowned let dbStorage: DbStorage
     private unowned let attachmentDownloader: AttachmentDownloader
 
     init(dbStorage: DbStorage, fileStorage: FileStorage, attachmentDownloader: AttachmentDownloader) {
-        self.queue = DispatchQueue.global(qos: .userInitiated)
+        self.backgroundQueue = DispatchQueue.global(qos: .userInitiated)
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.attachmentDownloader = attachmentDownloader
@@ -87,14 +87,10 @@ struct CollectionsActionHandler: ViewModelActionHandler {
     }
 
     private func emptyTrash(in viewModel: ViewModel<CollectionsActionHandler>) {
-        let libraryId = viewModel.state.libraryId
-
-        self.queue.async {
-            do {
-                try self.dbStorage.perform(request: EmptyTrashDbRequest(libraryId: libraryId))
-            } catch let error {
-                DDLogError("CollectionsActionHandler: can't empty trash - \(error)")
-            }
+        self.perform(request: EmptyTrashDbRequest(libraryId: viewModel.state.libraryId)) { error in
+            guard let error = error else { return }
+            DDLogError("CollectionsActionHandler: can't empty trash - \(error)")
+            // TODO: - show error
         }
     }
 
@@ -126,15 +122,10 @@ struct CollectionsActionHandler: ViewModelActionHandler {
             }
         }
 
-        let libraryId = viewModel.state.libraryId
-
-        self.queue.async {
-            do {
-                let request = SetCollectionsCollapsedDbRequest(identifiers: changedCollections, collapsed: allCollapsed, libraryId: libraryId)
-                try self.dbStorage.perform(request: request)
-            } catch let error {
-                DDLogError("CollectionsActionHandler: can't change collapsed all - \(error)")
-            }
+        let request = SetCollectionsCollapsedDbRequest(identifiers: changedCollections, collapsed: allCollapsed, libraryId: viewModel.state.libraryId)
+        self.perform(request: request) { error in
+            guard let error = error else { return }
+            DDLogError("CollectionsActionHandler: can't change collapsed all - \(error)")
         }
     }
 
@@ -158,13 +149,11 @@ struct CollectionsActionHandler: ViewModelActionHandler {
         }
 
         // Store change to database
-        self.queue.async {
-            do {
-                let request = SetCollectionCollapsedDbRequest(collapsed: !collapsed, identifier: collection.identifier, libraryId: libraryId)
-                try self.dbStorage.perform(request: request)
-            } catch let error {
-                DDLogError("CollectionsActionHandler: can't change collapsed - \(error)")
-            }
+        let request = SetCollectionCollapsedDbRequest(collapsed: !collapsed, identifier: collection.identifier, libraryId: libraryId)
+        self.perform(request: request) { error in
+            guard let error = error else { return }
+            DDLogError("CollectionsActionHandler: can't change collapsed - \(error)")
+            // TODO: show error
         }
     }
 
@@ -231,43 +220,27 @@ struct CollectionsActionHandler: ViewModelActionHandler {
     }
 
     private func assignItems(keys: [String], to collectionKey: String, in viewModel: ViewModel<CollectionsActionHandler>) {
-        let libraryId = viewModel.state.library.identifier
+        let request = AssignItemsToCollectionsDbRequest(collectionKeys: Set([collectionKey]), itemKeys: Set(keys), libraryId: viewModel.state.library.identifier)
+        self.perform(request: request) { [weak viewModel] error in
+            guard let error = error, let viewModel = viewModel else { return }
 
-        self.queue.async { [weak viewModel] in
-            do {
-                let request = AssignItemsToCollectionsDbRequest(collectionKeys: Set([collectionKey]), itemKeys: Set(keys), libraryId: libraryId)
-                try self.dbStorage.perform(request: request)
-            } catch let error {
-                DDLogError("CollectionsStore: can't assign collections to items - \(error)")
+            DDLogError("CollectionsStore: can't assign collections to items - \(error)")
 
-                guard let viewModel = viewModel else { return }
-
-                inMainThread {
-                    self.update(viewModel: viewModel) { state in
-                        state.error = .collectionAssignment
-                    }
-                }
+            self.update(viewModel: viewModel) { state in
+                state.error = .collectionAssignment
             }
         }
     }
 
     private func delete<Obj: DeletableObject&Updatable>(object: Obj.Type, keys: [String], in viewModel: ViewModel<CollectionsActionHandler>) {
-        let libraryId = viewModel.state.library.identifier
+        let request = MarkObjectsAsDeletedDbRequest<Obj>(keys: keys, libraryId: viewModel.state.library.identifier)
+        self.perform(request: request) { [weak viewModel] error in
+            guard let error = error, let viewModel = viewModel else { return }
 
-        self.queue.async { [weak viewModel] in
-            do {
-                let request = MarkObjectsAsDeletedDbRequest<Obj>(keys: keys, libraryId: libraryId)
-                try self.dbStorage.perform(request: request)
-            } catch let error {
-                DDLogError("CollectionsStore: can't delete object - \(error)")
+            DDLogError("CollectionsStore: can't delete object - \(error)")
 
-                guard let viewModel = viewModel else { return }
-
-                inMainThread {
-                    self.update(viewModel: viewModel) { state in
-                        state.error = .deletion
-                    }
-                }
+            self.update(viewModel: viewModel) { state in
+                state.error = .deletion
             }
         }
     }

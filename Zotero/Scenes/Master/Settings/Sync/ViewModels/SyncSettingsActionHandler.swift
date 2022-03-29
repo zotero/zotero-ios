@@ -135,29 +135,29 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
 
     private func resetDownloads(for type: SyncSettingsState.FileSyncType, completion: @escaping (Error?) -> Void) {
         self.backgroundQueue.async {
-            let error = self._resetDownloads(for: type)
-            DispatchQueue.main.async {
-                completion(error)
+            do {
+                try self._resetDownloads(for: type)
+                DispatchQueue.main.async {
+                    completion(nil)
+                }
+            } catch let error {
+                DDLogError("SyncSettingsActionHandler: can't mark all attachments not uploaded - \(error)")
+                DispatchQueue.main.async {
+                    completion(error)
+                }
             }
         }
     }
 
-    private func _resetDownloads(for type: SyncSettingsState.FileSyncType) -> Error? {
-        do {
-            let keys = self.downloadedAttachmentKeys()
+    private func _resetDownloads(for type: SyncSettingsState.FileSyncType) throws {
+        let keys = self.downloadedAttachmentKeys()
 
-            var requests: [DbRequest] = [MarkAttachmentsNotUploadedDbRequest(keys: keys, libraryId: .custom(.myLibrary))]
-            if type == .zotero {
-                requests.append(DeleteAllWebDavDeletionsDbRequest())
-            }
-
-            try self.dbStorage.perform(writeRequests: requests)
-
-            return nil
-        } catch let error {
-            DDLogError("SyncSettingsActionHandler: can't mark all attachments not uploaded - \(error)")
-            return error
+        var requests: [DbRequest] = [MarkAttachmentsNotUploadedDbRequest(keys: keys, libraryId: .custom(.myLibrary))]
+        if type == .zotero {
+            requests.append(DeleteAllWebDavDeletionsDbRequest())
         }
+
+        try self.dbStorage.perform(writeRequests: requests)
     }
 
     private func downloadedAttachmentKeys() -> [String] {

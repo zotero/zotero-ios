@@ -34,7 +34,7 @@ extension DrawingPoint: SplittablePathPoint {
     }
 }
 
-final class PDFReaderActionHandler: ViewModelActionHandler {
+final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionHandler {
     typealias Action = PDFReaderAction
     typealias State = PDFReaderState
 
@@ -63,13 +63,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         }
     }
 
-    private unowned let dbStorage: DbStorage
+    unowned let dbStorage: DbStorage
     private unowned let annotationPreviewController: AnnotationPreviewController
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
     private unowned let schemaController: SchemaController
     private unowned let fileStorage: FileStorage
     private unowned let idleTimerController: IdleTimerController
-    private let queue: DispatchQueue
+    let backgroundQueue: DispatchQueue
     private let disposeBag: DisposeBag
 
     weak var boundingBoxConverter: AnnotationBoundingBoxConverter?
@@ -82,7 +82,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         self.schemaController = schemaController
         self.fileStorage = fileStorage
         self.idleTimerController = idleTimerController
-        self.queue = DispatchQueue(label: "org.zotero.Zotero.PDFReaderActionHandler.queue", qos: .userInteractive)
+        self.backgroundQueue = DispatchQueue(label: "org.zotero.Zotero.PDFReaderActionHandler.queue", qos: .userInteractive)
         self.disposeBag = DisposeBag()
     }
 
@@ -636,14 +636,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         }
 
         let request = StorePageForItemDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, page: page)
-
-        self.queue.async {
-            do {
-                try self.dbStorage.perform(request: request)
-            } catch let error {
-                // TODO: - handle error
-                DDLogError("PDFReaderActionHandler: can't store page - \(error)")
-            }
+        self.perform(request: request) { error in
+            guard let error = error else { return }
+            // TODO: - handle error
+            DDLogError("PDFReaderActionHandler: can't store page - \(error)")
         }
     }
 
@@ -750,14 +746,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             state.modifiedKeys = []
         }
 
-        self.queue.async {
-            do {
-                let request = StoreChangedAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId, annotations: allAnnotations, deletedKeys: deletedKeys,
-                                                               schemaController: self.schemaController, boundingBoxConverter: boundingBoxConverter)
-                try self.dbStorage.perform(request: request)
-            } catch let error {
-                // TODO: - Show error
-            }
+        let request = StoreChangedAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId, annotations: allAnnotations, deletedKeys: deletedKeys,
+                                                       schemaController: self.schemaController, boundingBoxConverter: boundingBoxConverter)
+        self.perform(request: request) { error in
+            guard let error = error else { return }
+            // TODO: - Show error
+            DDLogError("PDFReaderActionHandler: can't store changed annotations - \(error)")
         }
     }
 

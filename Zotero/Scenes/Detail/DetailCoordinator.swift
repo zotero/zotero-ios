@@ -160,7 +160,6 @@ final class DetailCoordinator: Coordinator {
                                          urlDetector: self.controllers.urlDetector,
                                          fileDownloader: fileDownloader,
                                          citationController: citationController,
-                                         bundledDataStorage: self.controllers.bundledDataStorage,
                                          fileCleanupController: fileCleanupController,
                                          syncScheduler: syncScheduler)
         return ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: self.controllers, coordinatorDelegate: self)

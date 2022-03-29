@@ -12,16 +12,16 @@ import Foundation
 import CocoaLumberjackSwift
 import RealmSwift
 
-struct CollectionEditActionHandler: ViewModelActionHandler {
+struct CollectionEditActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionHandler {
     typealias Action = CollectionEditAction
     typealias State = CollectionEditState
 
-    private let dbStorage: DbStorage
-    private let backgroundQueue: DispatchQueue
+    unowned let dbStorage: DbStorage
+    let backgroundQueue: DispatchQueue
 
     init(dbStorage: DbStorage) {
         self.dbStorage = dbStorage
-        self.backgroundQueue = DispatchQueue(label: "org.zotero.CollectionEditActionHandler.processing", qos: .userInteractive)
+        self.backgroundQueue = DispatchQueue(label: "org.zotero.CollectionEditActionHandler.backgroundProcessing", qos: .userInitiated)
     }
 
     func process(action: CollectionEditAction, in viewModel: ViewModel<CollectionEditActionHandler>) {
@@ -84,26 +84,11 @@ struct CollectionEditActionHandler: ViewModelActionHandler {
             guard let viewModel = viewModel else { return }
             self.update(viewModel: viewModel) { state in
                 state.loading = false
-                if error != nil {
+                if let error = error {
+                    DDLogError("CollectionEditActionHandler: couldn't perform request - \(error)")
                     state.error = .saveFailed
                 } else if shouldDismiss {
                     state.shouldDismiss = true
-                }
-            }
-        }
-    }
-
-    private func perform<Request: DbRequest>(request: Request, completion: @escaping (Error?) -> Void) {
-        self.backgroundQueue.async {
-            do {
-                try self.dbStorage.perform(request: request)
-                DispatchQueue.main.async {
-                    completion(nil)
-                }
-            } catch let error {
-                DDLogError("CollectionEditActionHandler: couldn't save changes - \(error)")
-                DispatchQueue.main.async {
-                    completion(error)
                 }
             }
         }

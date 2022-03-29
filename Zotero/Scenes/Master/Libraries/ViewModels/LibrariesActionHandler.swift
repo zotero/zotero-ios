@@ -10,12 +10,12 @@ import Foundation
 
 import CocoaLumberjackSwift
 
-struct LibrariesActionHandler: ViewModelActionHandler {
+struct LibrariesActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionHandler {
     typealias State = LibrariesState
     typealias Action = LibrariesAction
 
-    private let dbStorage: DbStorage
-    private let backgroundQueue: DispatchQueue
+    unowned let dbStorage: DbStorage
+    let backgroundQueue: DispatchQueue
 
     init(dbStorage: DbStorage) {
         self.dbStorage = dbStorage
@@ -43,8 +43,12 @@ struct LibrariesActionHandler: ViewModelActionHandler {
             }
 
         case .deleteGroup(let groupId):
-            self.backgroundQueue.async {
-                self.deleteGroup(id: groupId, dbStorage: self.dbStorage)
+            self.perform(request: DeleteGroupDbRequest(groupId: groupId)) { error in
+                guard let error = error else { return }
+
+                DDLogError("LibrariesActionHandler: can't delete group - \(error)")
+
+                // TODO: - show error
             }
         }
     }
@@ -79,14 +83,6 @@ struct LibrariesActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.error = .cantLoadData
             }
-        }
-    }
-
-    private func deleteGroup(id: Int, dbStorage: DbStorage) {
-        do {
-            try dbStorage.perform(request: DeleteGroupDbRequest(groupId: id))
-        } catch let error {
-            DDLogError("LibrariesActionHandler: can't delete group - \(error)")
         }
     }
 }

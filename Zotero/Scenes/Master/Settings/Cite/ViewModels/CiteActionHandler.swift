@@ -11,24 +11,24 @@ import Foundation
 import CocoaLumberjackSwift
 import RxSwift
 
-struct CiteActionHandler: ViewModelActionHandler {
+struct CiteActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionHandler {
     typealias Action = CiteAction
     typealias State = CiteState
 
     private unowned let apiClient: ApiClient
-    private unowned let bundledDataStorage: DbStorage
+    unowned let dbStorage: DbStorage
     private unowned let fileStorage: FileStorage
-    private let queue: DispatchQueue
+    let backgroundQueue: DispatchQueue
     private let scheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
 
     init(apiClient: ApiClient, bundledDataStorage: DbStorage, fileStorage: FileStorage) {
-        let queue = DispatchQueue(label: "org.zotero.CitationStylesActionHandler.Queue", qos: .userInitiated)
+        let queue = DispatchQueue(label: "org.zotero.CitationStylesActionHandler.backgroundProcessing", qos: .userInitiated)
         self.apiClient = apiClient
-        self.bundledDataStorage = bundledDataStorage
+        self.dbStorage = bundledDataStorage
         self.fileStorage = fileStorage
-        self.queue = queue
-        self.scheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.CitationStylesActionHandler.Scheduler")
+        self.backgroundQueue = queue
+        self.scheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.CitationStylesActionHandler.backgroundScheduler")
         self.disposeBag = DisposeBag()
     }
 
@@ -38,15 +38,24 @@ struct CiteActionHandler: ViewModelActionHandler {
             self.loadStyles(in: viewModel)
 
         case .add(let style):
-            self.installStyleIfExists(styleId: style.id) { [weak viewModel] exists in
-                guard !exists, let viewModel = viewModel else { return }
-
-                // If it doesn't exist, we need to download and process it.
-                self.add(style: style, in: viewModel)
-            }
+            self.installOrAdd(style: style, in: viewModel)
 
         case .remove(let index):
             self.remove(at: index, in: viewModel)
+        }
+    }
+
+    private func installOrAdd(style: RemoteStyle, in viewModel: ViewModel<CiteActionHandler>) {
+        self.perform(request: InstallStyleDbRequest(identifier: style.id), invalidateRealm: true) { [weak viewModel] result in
+            guard let viewModel = viewModel else { return }
+
+            switch result {
+            case .success(let exists) where exists: return
+            default: break
+            }
+
+            // If it doesn't exist, we need to download and process it.
+            self.add(style: style, in: viewModel)
         }
     }
 
@@ -54,7 +63,7 @@ struct CiteActionHandler: ViewModelActionHandler {
         let file = Files.style(filename: remoteStyle.name)
         let request = FileRequest(url: remoteStyle.href, destination: file)
 
-        self.apiClient.download(request: request, queue: self.queue)
+        self.apiClient.download(request: request, queue: self.backgroundQueue)
                       .subscribe(on: self.scheduler)
                       .observe(on: self.scheduler)
                       .subscribe(with: viewModel, onError: { viewModel, error in
@@ -77,17 +86,6 @@ struct CiteActionHandler: ViewModelActionHandler {
                       .disposed(by: self.disposeBag)
     }
 
-    private func installStyleIfExists(styleId: String, completion: @escaping (Bool) -> Void) {
-        self.queue.async {
-            do {
-                let exists = try self.bundledDataStorage.perform(request: InstallStyleDbRequest(identifier: styleId), invalidateRealm: true)
-                completion(exists)
-            } catch let error {
-                completion(false)
-            }
-        }
-    }
-
     private func process(style: Style, in viewModel: ViewModel<CiteActionHandler>) {
         guard let dependencyUrl = style.dependencyId.flatMap({ URL(string: $0) }) else {
             self._add(style: style, dependency: nil, in: viewModel)
@@ -97,7 +95,7 @@ struct CiteActionHandler: ViewModelActionHandler {
         let file = Files.style(filename: dependencyUrl.lastPathComponent)
         let request = FileRequest(url: dependencyUrl, destination: file)
 
-        self.apiClient.download(request: request, queue: self.queue)
+        self.apiClient.download(request: request, queue: self.backgroundQueue)
                       .subscribe(on: self.scheduler)
                       .observe(on: self.scheduler)
                       .subscribe(with: viewModel, onError: { viewModel, error in
@@ -129,7 +127,7 @@ struct CiteActionHandler: ViewModelActionHandler {
 
     private func _add(style: Style, dependency: Style?, in viewModel: ViewModel<CiteActionHandler>) {
         do {
-            try self.bundledDataStorage.perform(request: StoreStyleDbRequest(style: style, dependency: dependency))
+            try self.dbStorage.perform(request: StoreStyleDbRequest(style: style, dependency: dependency))
 
             self.update(viewModel: viewModel) { state in
                 let index = state.styles.index(of: style, sortedBy: { $0.title.compare($1.title, options: [.numeric], locale: Locale.autoupdatingCurrent) == .orderedAscending })
@@ -148,19 +146,14 @@ struct CiteActionHandler: ViewModelActionHandler {
 
         let style = viewModel.state.styles[index]
 
-        do {
-            var toRemove: [String] = []
+        self.remove(style: style) { error in
+            if let error = error {
+                DDLogError("CiteActionHandler: can't delete style \(style.id) - \(error)")
 
-            try self.bundledDataStorage.perform(with: { coordinator in
-                toRemove = try coordinator.perform(request: UninstallStyleDbRequest(identifier: style.identifier))
-
-                self.resetDefaultStylesIfNeeded(removedStyle: style, coordinator: coordinator)
-
-                coordinator.invalidate()
-            })
-
-            for identifier in toRemove {
-                try? self.fileStorage.remove(Files.style(filename: identifier))
+                self.update(viewModel: viewModel) { state in
+                    state.error = .deletion(name: style.title, error: error)
+                }
+                return
             }
 
             self.update(viewModel: viewModel) { state in
@@ -168,10 +161,38 @@ struct CiteActionHandler: ViewModelActionHandler {
                     state.styles.remove(at: index)
                 }
             }
-        } catch let error {
-            self.update(viewModel: viewModel) { state in
-                state.error = .deletion(name: style.title, error: error)
+        }
+    }
+
+    private func remove(style: Style, completion: @escaping (Error?) -> Void) {
+        self.backgroundQueue.async {
+            do {
+                try self._remove(style: style)
+
+                DispatchQueue.main.async {
+                    completion(nil)
+                }
+            } catch let error {
+                DispatchQueue.main.async {
+                    completion(error)
+                }
             }
+        }
+    }
+
+    private func _remove(style: Style) throws {
+        var toRemove: [String] = []
+
+        try self.dbStorage.perform(with: { coordinator in
+            toRemove = try coordinator.perform(request: UninstallStyleDbRequest(identifier: style.identifier))
+
+            self.resetDefaultStylesIfNeeded(removedStyle: style, coordinator: coordinator)
+
+            coordinator.invalidate()
+        })
+
+        for identifier in toRemove {
+            try? self.fileStorage.remove(Files.style(filename: identifier))
         }
     }
 
@@ -201,7 +222,7 @@ struct CiteActionHandler: ViewModelActionHandler {
 
     private func loadStyles(in viewModel: ViewModel<CiteActionHandler>) {
         do {
-            let rStyles = try self.bundledDataStorage.perform(request: ReadInstalledStylesDbRequest(), invalidateRealm: true)
+            let rStyles = try self.dbStorage.perform(request: ReadInstalledStylesDbRequest())
             let styles = Array(rStyles.compactMap(Style.init))
             rStyles.first?.realm?.invalidate()
 

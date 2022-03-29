@@ -14,19 +14,19 @@ import RealmSwift
 import RxSwift
 import ZIPFoundation
 
-struct ItemDetailActionHandler: ViewModelActionHandler {
+struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionHandler {
     typealias State = ItemDetailState
     typealias Action = ItemDetailAction
 
     private unowned let apiClient: ApiClient
     private unowned let fileStorage: FileStorage
-    private unowned let dbStorage: DbStorage
+    unowned let dbStorage: DbStorage
     private unowned let schemaController: SchemaController
     private unowned let dateParser: DateParser
     private unowned let urlDetector: UrlDetector
     private unowned let fileDownloader: AttachmentDownloader
     private unowned let fileCleanupController: AttachmentFileCleanupController
-    private let backgroundQueue: DispatchQueue
+    let backgroundQueue: DispatchQueue
     private let backgroundScheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
 
@@ -436,22 +436,6 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func perform<Request: DbRequest>(request: Request, completion: @escaping (Error?) -> Void) {
-        self.backgroundQueue.async {
-            do {
-                try self.dbStorage.perform(request: request)
-
-                DispatchQueue.main.async {
-                    completion(nil)
-                }
-            } catch let error {
-                DispatchQueue.main.async {
-                    completion(error)
-                }
-            }
-        }
-    }
-
     // MARK: - Tags
 
     private func set(tags: [Tag], in viewModel: ViewModel<ItemDetailActionHandler>) {
@@ -646,12 +630,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     }
 
     private func saveChanges(in viewModel: ViewModel<ItemDetailActionHandler>) {
-        if viewModel.state.snapshot != viewModel.state.data {
-            self._saveChanges(in: viewModel)
-        }
-    }
+        guard viewModel.state.snapshot != viewModel.state.data else { return }
 
-    private func _saveChanges(in viewModel: ViewModel<ItemDetailActionHandler>) {
         self.update(viewModel: viewModel) { state in
             state.isSaving = true
         }
@@ -692,11 +672,13 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 switch state.type {
                 case .preview:
                     if let snapshot = state.snapshot, let key = previewKey {
-                        try self.updateItem(key: key, libraryId: state.library.identifier, data: newState.data, snapshot: snapshot)
+                        let request = EditItemDetailDbRequest(libraryId: state.library.identifier, itemKey: key, data: newState.data, snapshot: snapshot, schemaController: self.schemaController, dateParser: self.dateParser)
+                        try self.dbStorage.perform(request: request)
                     }
 
                 case .creation(_, _, let collectionKey), .duplication(_, let collectionKey):
-                    let item = try self.createItem(with: state.library.identifier, collectionKey: collectionKey, data: newState.data)
+                    let request = CreateItemDbRequest(libraryId: state.library.identifier, collectionKey: collectionKey, data: newState.data, schemaController: self.schemaController, dateParser: self.dateParser)
+                    let item = try self.dbStorage.perform(request: request)
                     newType = .preview(key: item.key)
                 }
 
@@ -787,15 +769,5 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             state.updatedSection = .fields
             state.sectionNeedsReload = false
         }
-    }
-
-    private func createItem(with libraryId: LibraryIdentifier, collectionKey: String?, data: ItemDetailState.Data) throws -> RItem {
-        let request = CreateItemDbRequest(libraryId: libraryId, collectionKey: collectionKey, data: data, schemaController: self.schemaController, dateParser: self.dateParser)
-        return try self.dbStorage.perform(request: request)
-    }
-
-    private func updateItem(key: String, libraryId: LibraryIdentifier, data: ItemDetailState.Data, snapshot: ItemDetailState.Data) throws {
-        let request = EditItemDetailDbRequest(libraryId: libraryId, itemKey: key, data: data, snapshot: snapshot, schemaController: self.schemaController, dateParser: self.dateParser)
-        try self.dbStorage.perform(request: request)
     }
 }

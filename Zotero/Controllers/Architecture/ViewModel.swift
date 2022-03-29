@@ -30,6 +30,56 @@ extension ViewModelActionHandler {
     }
 }
 
+protocol BackgroundDbProcessingActionHandler {
+    var backgroundQueue: DispatchQueue { get }
+    var dbStorage: DbStorage { get }
+
+    /// Performs database request in background.
+    /// - parameter request: Database request to perform
+    /// - parameter completion: Handler called after db request is performed. Contains error if any occured. Always called on main thread.
+    func perform<Request: DbRequest>(request: Request, completion: @escaping (Error?) -> Void)
+
+    /// Performs database request in background.
+    /// - parameter request: Database request to perform.
+    /// - parameter invalidateRealm: Indicates whether realm should be invalidated after use.
+    /// - parameter completion: Handler called after db request is performed. Contains result with request response. Always called on main thread.
+    func perform<Request: DbResponseRequest>(request: Request, invalidateRealm: Bool, completion: @escaping (Result<Request.Response, Error>) -> Void)
+}
+
+extension BackgroundDbProcessingActionHandler {
+    func perform<Request: DbRequest>(request: Request, completion: @escaping (Error?) -> Void) {
+        self.backgroundQueue.async {
+            do {
+                try self.dbStorage.perform(request: request)
+
+                DispatchQueue.main.async {
+                    completion(nil)
+                }
+            } catch let error {
+                DispatchQueue.main.async {
+                    completion(error)
+                }
+            }
+        }
+    }
+
+    func perform<Request: DbResponseRequest>(request: Request, invalidateRealm: Bool, completion: @escaping (Result<Request.Response, Error>) -> Void) {
+        self.backgroundQueue.async {
+            do {
+                let result = try self.dbStorage.perform(request: request, invalidateRealm: invalidateRealm)
+
+                DispatchQueue.main.async {
+                    completion(.success(result))
+                }
+            } catch let error {
+                DispatchQueue.main.async {
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+}
+
 final class ViewModel<Handler: ViewModelActionHandler>: ObservableObject {
     private let handler: Handler
     private let disposeBag: DisposeBag

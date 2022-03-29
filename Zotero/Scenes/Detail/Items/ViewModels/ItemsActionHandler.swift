@@ -14,32 +14,30 @@ import CocoaLumberjackSwift
 import RealmSwift
 import RxSwift
 
-struct ItemsActionHandler: ViewModelActionHandler {
+struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionHandler {
     typealias State = ItemsState
     typealias Action = ItemsAction
 
-    private unowned let dbStorage: DbStorage
+    unowned let dbStorage: DbStorage
     private unowned let fileStorage: FileStorage
     private unowned let schemaController: SchemaController
     private unowned let urlDetector: UrlDetector
-    private unowned let backgroundQueue: DispatchQueue
     private unowned let fileDownloader: AttachmentDownloader
     private unowned let citationController: CitationController
-    private unowned let bundledDataStorage: DbStorage
     private unowned let fileCleanupController: AttachmentFileCleanupController
     private unowned let syncScheduler: SynchronizationScheduler
+    let backgroundQueue: DispatchQueue
     private let disposeBag: DisposeBag
 
     init(dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, urlDetector: UrlDetector, fileDownloader: AttachmentDownloader, citationController: CitationController,
-         bundledDataStorage: DbStorage, fileCleanupController: AttachmentFileCleanupController, syncScheduler: SynchronizationScheduler) {
-        self.backgroundQueue = DispatchQueue.global(qos: .userInitiated)
+         fileCleanupController: AttachmentFileCleanupController, syncScheduler: SynchronizationScheduler) {
+        self.backgroundQueue = DispatchQueue(label: "org.zotero.ItemsActionHandler.backgroundProcessing", qos: .userInitiated)
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
         self.urlDetector = urlDetector
         self.fileDownloader = fileDownloader
         self.citationController = citationController
-        self.bundledDataStorage = bundledDataStorage
         self.fileCleanupController = fileCleanupController
         self.syncScheduler = syncScheduler
         self.disposeBag = DisposeBag()
@@ -171,14 +169,10 @@ struct ItemsActionHandler: ViewModelActionHandler {
     }
 
     private func emptyTrash(in viewModel: ViewModel<ItemsActionHandler>) {
-        let libraryId = viewModel.state.library.identifier
-
-        self.backgroundQueue.async {
-            do {
-                try self.dbStorage.perform(request: EmptyTrashDbRequest(libraryId: libraryId))
-            } catch let error {
-                DDLogError("ItemsActionHandler: can't empty trash - \(error)")
-            }
+        self.perform(request: EmptyTrashDbRequest(libraryId: viewModel.state.library.identifier)) { error in
+            guard let error = error else { return }
+            // TODO: - show error
+            DDLogError("ItemsActionHandler: can't empty trash - \(error)")
         }
     }
 
@@ -452,6 +446,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
         let note = Note(key: key, text: text, tags: tags)
         let libraryId = viewModel.state.library.identifier
         let collectionKey: String?
+
         switch viewModel.state.collection.identifier {
         case .collection(let key):
             collectionKey = key
@@ -526,20 +521,22 @@ struct ItemsActionHandler: ViewModelActionHandler {
         let type = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
         let request = CreateAttachmentsDbRequest(attachments: attachments, localizedType: type, collections: collections)
 
-        self.perform(request: request, responseAction: { [weak viewModel] failedTitles in
+        self.perform(request: request, invalidateRealm: true) { [weak viewModel] result in
             guard let viewModel = viewModel else { return }
-            if !failedTitles.isEmpty {
+
+            switch result {
+            case .success(let failedTitles):
+                guard !failedTitles.isEmpty else { return }
                 self.update(viewModel: viewModel) { state in
                     state.error = .attachmentAdding(.someFailed(failedTitles))
                 }
+            case .failure(let error):
+                DDLogError("ItemsActionHandler: can't add attachment: \(error)")
+                self.update(viewModel: viewModel) { state in
+                    state.error = .attachmentAdding(.couldNotSave)
+                }
             }
-        }, errorAction: { [weak viewModel] error in
-            guard let viewModel = viewModel else { return }
-            DDLogError("ItemsStore: can't add attachment: \(error)")
-            self.update(viewModel: viewModel) { state in
-                state.error = .attachmentAdding(.couldNotSave)
-            }
-        })
+        }
     }
 
     // MARK: - Searching & Filtering
@@ -648,32 +645,5 @@ struct ItemsActionHandler: ViewModelActionHandler {
         state.keys.removeAll()
         state.selectedItems.removeAll()
         state.changes.insert(.editing)
-    }
-
-    private func perform<Request: DbResponseRequest>(request: Request, responseAction: ((Request.Response) -> Void)? = nil, errorAction: @escaping (Swift.Error) -> Void) {
-        self.backgroundQueue.async {
-            do {
-                let response = try self.dbStorage.perform(request: request)
-                DispatchQueue.main.async {
-                    responseAction?(response)
-                }
-            } catch let error {
-                DispatchQueue.main.async {
-                    errorAction(error)
-                }
-            }
-        }
-    }
-
-    private func perform<Request: DbRequest>(request: Request, errorAction: @escaping (Swift.Error) -> Void) {
-        self.backgroundQueue.async {
-            do {
-                try self.dbStorage.perform(request: request)
-            } catch let error {
-                DispatchQueue.main.async {
-                    errorAction(error)
-                }
-            }
-        }
     }
 }
