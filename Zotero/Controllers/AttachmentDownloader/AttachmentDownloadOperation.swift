@@ -62,6 +62,8 @@ class AttachmentDownloadOperation: AsynchronousOperation {
         let disposeBag = DisposeBag()
         var isCompressed = self.webDavController.sessionStorage.isEnabled && !self.download.libraryId.isGroupLibrary
 
+        DDLogInfo("AttachmentDownloadOperation: start downloading \(self.download.key)")
+
         self.state = .downloading
         self.disposeBag = disposeBag
 
@@ -89,7 +91,7 @@ class AttachmentDownloadOperation: AsynchronousOperation {
 
                 self.request = nil
                 self.state = .done
-                self.finishedDownload?(.failure(error))
+                self.finish(with: .failure(error))
             }, onCompleted: { [weak self] in
                 guard let `self` = self, !self.isCancelled else { return }
 
@@ -116,6 +118,7 @@ class AttachmentDownloadOperation: AsynchronousOperation {
     }
 
     private func finish(with result: Result<(), Swift.Error>) {
+        DDLogInfo("AttachmentDownloadOperation: finished downloading \(self.download.key)")
         self.finishedDownload?(result)
         self.finish()
     }
@@ -193,6 +196,8 @@ class AttachmentDownloadOperation: AsynchronousOperation {
 
     override func cancel() {
         super.cancel()
+
+        DDLogInfo("AttachmentDownloadOperation: cancelled \(self.download.key)")
 
         guard let state = self.state else {
             self.finishedDownload?(.failure(Error.cancelled))

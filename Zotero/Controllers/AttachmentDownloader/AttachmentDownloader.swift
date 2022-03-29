@@ -123,6 +123,7 @@ final class AttachmentDownloader {
         self.progressObservers[download] = nil
 
         if let operation = self.operations[download] {
+            DDLogInfo("AttachmentDownloader: cancelled \(download.key)")
             operation.cancel()
             return
         }
@@ -164,6 +165,8 @@ final class AttachmentDownloader {
         self.progressObservers[download] = observer
         self.operations[download] = operation
 
+        DDLogInfo("AttachmentDownloader: enqueue \(key)")
+
         // Send first update to immediately reflect new state
         self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .progress(0))))
         // Add operation to queue
@@ -176,6 +179,8 @@ final class AttachmentDownloader {
 
         switch result {
         case .success:
+            DDLogInfo("AttachmentDownloader: finished downloading \(download.key)")
+
             self.errors[download] = nil
             self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .ready)))
 

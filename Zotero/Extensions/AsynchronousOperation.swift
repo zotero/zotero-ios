@@ -52,7 +52,7 @@ class AsynchronousOperation : Operation {
 
     override func start() {
         guard !self.isCancelled else {
-            self.finish()
+            self.state = .finished
             return
         }
 
@@ -62,7 +62,7 @@ class AsynchronousOperation : Operation {
 
     override func main() {
         guard !self.isCancelled else {
-            self.finish()
+            self.state = .finished
             return
         }
         self.state = .executing
