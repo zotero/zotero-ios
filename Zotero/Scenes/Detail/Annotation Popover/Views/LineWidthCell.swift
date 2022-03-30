@@ -8,12 +8,12 @@
 
 import UIKit
 
-import RxCocoa
+import RxSwift
 
 class LineWidthCell: RxTableViewCell {
 
     private weak var lineView: LineWidthView!
-    var valueObservable: ControlProperty<Float> { return self.lineView.valueObservable }
+    var valueObservable: Observable<Float> { return self.lineView.valueObservable }
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)

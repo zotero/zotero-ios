@@ -49,7 +49,7 @@ final class LineWidthView: UIView {
             self.step(value: newValue)
         }
     }
-    var valueObservable: ControlProperty<Float> { return self.slider.rx.value }
+    var valueObservable: Observable<Float> { return self.slider.rx.value.skip(1) }
 
     init(settings: Settings) {
         self.stepFunction = settings.stepFunction

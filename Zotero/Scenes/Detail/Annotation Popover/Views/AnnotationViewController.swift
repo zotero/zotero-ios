@@ -176,9 +176,9 @@ final class AnnotationViewController: UIViewController {
               .disposed(by: self.disposeBag)
         if let tap = header.doneTap {
             tap.subscribe(with: self, onNext: { `self`, _ in
-                   self.presentingViewController?.dismiss(animated: true, completion: nil)
-               })
-               .disposed(by: self.disposeBag)
+                self.presentingViewController?.dismiss(animated: true, completion: nil)
+            })
+            .disposed(by: self.disposeBag)
         }
         self.header = header
 
