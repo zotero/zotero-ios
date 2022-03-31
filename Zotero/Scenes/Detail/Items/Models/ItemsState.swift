@@ -23,10 +23,24 @@ struct ItemsState: ViewModelState {
         static let attachmentsRemoved = Changes(rawValue: 1 << 4)
         static let filters = Changes(rawValue: 1 << 5)
         static let webViewCleanup = Changes(rawValue: 1 << 6)
+        static let batchData = Changes(rawValue: 1 << 7)
     }
 
     enum Filter {
         case downloadedFiles
+    }
+
+    struct DownloadBatchData: Equatable {
+        let fraction: Double
+        let downloaded: Int
+        let total: Int
+
+        init?(progress: Progress, remaining: Int, total: Int) {
+            guard total > 1 else { return nil }
+            self.fraction = progress.fractionCompleted
+            self.downloaded = total - remaining
+            self.total = total
+        }
     }
 
     let collection: Collection
@@ -50,6 +64,7 @@ struct ItemsState: ViewModelState {
     var processingBibliography: Bool
     var bibliographyError: Error?
     var attachmentToOpen: String?
+    var downloadBatchData: DownloadBatchData?
 
     init(collection: Collection, library: Library, sortType: ItemsSortType, searchTerm: String?, error: ItemsError?) {
         self.collection = collection

@@ -134,6 +134,7 @@
 "items.filters.downloads" = "Downloaded Files";
 "items.toolbar_filter_single" = "Filter: 1 item";
 "items.toolbar_filter_multiple" = "Filter: %d items";
+"items.toolbar_downloaded" = "Downloaded %d / %d";
 "items.generating_bib" = "Generating Bibliography";
 "items.creator_summary.and" = "%@ and %@";
 "items.creator_summary.etal" = "%@ et al.";

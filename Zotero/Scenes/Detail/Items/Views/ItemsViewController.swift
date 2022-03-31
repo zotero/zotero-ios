@@ -205,7 +205,7 @@ final class ItemsViewController: UIViewController {
             self.toolbarController.reloadToolbarItems(for: state)
         }
 
-        if state.changes.contains(.filters) {
+        if state.changes.contains(.filters) || state.changes.contains(.batchData) {
             self.toolbarController.reloadToolbarItems(for: state)
         }
 
@@ -504,20 +504,21 @@ final class ItemsViewController: UIViewController {
         guard let downloader = self.controllers.userControllers?.fileDownloader else { return }
 
         downloader.observable
-            .observe(on: MainScheduler.instance)
-            .subscribe(with: self, onNext: { `self`, update in
-                self.viewModel.process(action: .updateDownload(update))
+                  .observe(on: MainScheduler.instance)
+                  .subscribe(with: self, onNext: { `self`, update in
+                      let batchData = downloader.batchProgress.flatMap({ ItemsState.DownloadBatchData(progress: $0, remaining: downloader.remainingBatchCount, total: downloader.totalBatchCount) })
+                      self.viewModel.process(action: .updateDownload(update: update, batchData: batchData))
 
-                switch update.kind {
-                case .ready:
-                    if self.viewModel.state.attachmentToOpen == update.key {
-                        self.viewModel.process(action: .attachmentOpened(update.key))
-                        self.coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
-                    }
-                default: break
-                }
-            })
-            .disposed(by: self.disposeBag)
+                      switch update.kind {
+                      case .ready:
+                          if self.viewModel.state.attachmentToOpen == update.key {
+                              self.viewModel.process(action: .attachmentOpened(update.key))
+                              self.coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
+                          }
+                      default: break
+                      }
+                  })
+                  .disposed(by: self.disposeBag)
     }
 
     private func setupTitle() {

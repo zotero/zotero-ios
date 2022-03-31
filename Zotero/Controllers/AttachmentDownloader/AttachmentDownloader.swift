@@ -65,6 +65,11 @@ final class AttachmentDownloader {
     private var operations: [Download: AttachmentDownloadOperation]
     private var progressObservers: [Download: NSKeyValueObservation]
     private var errors: [Download: Swift.Error]
+    private(set) var batchProgress: Progress?
+    private(set) var totalBatchCount: Int = 0
+    var remainingBatchCount: Int {
+        return self.operations.count
+    }
 
     init(userId: Int, apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage, webDavController: WebDavController) {
         let queue = DispatchQueue(label: "org.zotero.AttachmentDownloader.ProcessingQueue", qos: .userInteractive, attributes: .concurrent)
@@ -122,17 +127,26 @@ final class AttachmentDownloader {
         let download = Download(key: key, libraryId: libraryId)
         self.progressObservers[download] = nil
 
-        if let operation = self.operations[download] {
-            DDLogInfo("AttachmentDownloader: cancelled \(download.key)")
-            operation.cancel()
-            return
-        }
+        guard let operation = self.operations[download] else { return }
+
+        self.operations[download] = nil
+        self.batchProgress?.totalUnitCount -= 100
+        self.resetBatchDataIfNeeded()
+
+        DDLogInfo("AttachmentDownloader: cancelled \(download.key)")
+        operation.cancel()
     }
 
     func data(for key: String, libraryId: LibraryIdentifier) -> (progress: CGFloat?, error: Swift.Error?) {
         let download = Download(key: key, libraryId: libraryId)
         let progress = (self.operations[download]?.progress.fractionCompleted).flatMap({ CGFloat($0) })
         return (progress, self.errors[download])
+    }
+
+    private func resetBatchDataIfNeeded() {
+        guard self.operations.isEmpty else { return }
+        self.totalBatchCount = 0
+        self.batchProgress = nil
     }
 
     // MARK: - Helpers
@@ -164,6 +178,16 @@ final class AttachmentDownloader {
         self.errors[download] = nil
         self.progressObservers[download] = observer
         self.operations[download] = operation
+        self.totalBatchCount += 1
+
+        if let batchProgress = self.batchProgress {
+            batchProgress.addChild(progress, withPendingUnitCount: 100)
+            batchProgress.totalUnitCount += 100
+        } else {
+            let batchProgress = Progress(totalUnitCount: 100)
+            batchProgress.addChild(progress, withPendingUnitCount: 100)
+            self.batchProgress = batchProgress
+        }
 
         DDLogInfo("AttachmentDownloader: enqueue \(key)")
 
@@ -176,6 +200,7 @@ final class AttachmentDownloader {
     private func finish(download: Download, parentKey: String?, result: Result<(), Swift.Error>, hasLocalCopy: Bool) {
         self.operations[download] = nil
         self.progressObservers[download] = nil
+        self.resetBatchDataIfNeeded()
 
         switch result {
         case .success:

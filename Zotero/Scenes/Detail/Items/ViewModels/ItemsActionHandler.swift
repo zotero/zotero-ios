@@ -132,8 +132,8 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         case .updateKeys(let items, let deletions, let insertions, let modifications):
             self.processUpdate(items: items, deletions: deletions, insertions: insertions, modifications: modifications, in: viewModel)
 
-        case .updateDownload(let update):
-            self.process(downloadUpdate: update, in: viewModel)
+        case .updateDownload(let update, let batchData):
+            self.process(downloadUpdate: update, batchData: batchData, in: viewModel)
 
         case .openAttachment(let attachment, let parentKey):
             self.open(attachment: attachment, parentKey: parentKey, in: viewModel)
@@ -313,7 +313,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         }
     }
 
-    private func process(downloadUpdate update: AttachmentDownloader.Update, in viewModel: ViewModel<ItemsActionHandler>) {
+    private func process(downloadUpdate update: AttachmentDownloader.Update, batchData: ItemsState.DownloadBatchData?, in viewModel: ViewModel<ItemsActionHandler>) {
         let updateKey = update.parentKey ?? update.key
         guard let accessory = viewModel.state.itemAccessories[updateKey], let attachment = accessory.attachment else { return }
 
@@ -323,6 +323,11 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
             self.update(viewModel: viewModel) { state in
                 state.itemAccessories[updateKey] = .attachment(updatedAttachment)
                 state.updateItemKey = updateKey
+
+                if state.downloadBatchData != batchData {
+                    state.downloadBatchData = batchData
+                    state.changes = .batchData
+                }
             }
 
         case .cancelled, .failed:
@@ -331,11 +336,21 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
                     state.attachmentToOpen = nil
                 }
                 state.updateItemKey = updateKey
+
+                if state.downloadBatchData != batchData {
+                    state.downloadBatchData = batchData
+                    state.changes = .batchData
+                }
             }
 
         case .progress:
             self.update(viewModel: viewModel) { state in
                 state.updateItemKey = updateKey
+
+                if state.downloadBatchData != batchData {
+                    state.downloadBatchData = batchData
+                    state.changes = .batchData
+                }
             }
         }
     }

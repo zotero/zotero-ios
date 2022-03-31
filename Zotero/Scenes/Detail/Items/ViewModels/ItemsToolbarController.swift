@@ -64,6 +64,7 @@ final class ItemsToolbarController {
             self.updateEditingToolbarItems(for: state.selectedItems)
         } else {
             self.viewController.toolbarItems = self.createNormalToolbarItems(for: state.filters)
+            self.updateNormalToolbarItems(for: state.filters, downloadBatchData: state.downloadBatchData, results: state.results)
         }
     }
 
@@ -71,7 +72,7 @@ final class ItemsToolbarController {
         if state.isEditing {
             self.updateEditingToolbarItems(for: state.selectedItems)
         } else {
-            self.updateFilteringToolbarItems(for: state.filters, results: state.results)
+            self.updateNormalToolbarItems(for: state.filters, downloadBatchData: state.downloadBatchData, results: state.results)
         }
     }
 
@@ -89,17 +90,35 @@ final class ItemsToolbarController {
         })
     }
 
-    private func updateFilteringToolbarItems(for filters: [ItemsState.Filter], results: Results<RItem>?) {
+    private func updateNormalToolbarItems(for filters: [ItemsState.Filter], downloadBatchData: ItemsState.DownloadBatchData?, results: Results<RItem>?) {
         if let item = self.viewController.toolbarItems?.first(where: { $0.tag == ItemsToolbarController.barButtonItemFilterTag }) {
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
             item.image = UIImage(systemName: filterImageName)
         }
 
         if let item = self.viewController.toolbarItems?.first(where: { $0.tag == ItemsToolbarController.barButtonItemTitleTag }),
-           let label = item.customView as? UILabel {
-            let itemCount = results?.count ?? 0
-            label.text = filters.isEmpty ? "" : (itemCount == 1 ? L10n.Items.toolbarFilterSingle : L10n.Items.toolbarFilterMultiple(itemCount))
-            label.sizeToFit()
+           let stackView = item.customView as? UIStackView {
+
+            if let filterLabel = stackView.subviews.first as? UILabel {
+                let itemCount = results?.count ?? 0
+                filterLabel.isHidden = filters.isEmpty
+
+                if !filterLabel.isHidden {
+                    filterLabel.text = itemCount == 1 ? L10n.Items.toolbarFilterSingle : L10n.Items.toolbarFilterMultiple(itemCount)
+                    filterLabel.sizeToFit()
+                }
+            }
+
+            if let progressView = stackView.subviews.last as? ItemsToolbarDownloadProgressView {
+                progressView.isHidden = !filters.isEmpty || downloadBatchData == nil
+
+                if let data = downloadBatchData {
+                    progressView.set(downloaded: data.downloaded, total: data.total, progress: Float(data.fraction))
+                    progressView.sizeToFit()
+                }
+            }
+
+            stackView.sizeToFit()
         }
     }
 
@@ -169,13 +188,20 @@ final class ItemsToolbarController {
         return [spacer] + (0..<(2 * items.count)).map({ idx -> UIBarButtonItem in idx % 2 == 0 ? items[idx/2] : spacer })
     }
 
-    private func createTitleView() -> UILabel {
-        let label = UILabel()
-        label.textColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
-            return traitCollection.userInterfaceStyle == .dark ? .white : .black
-        })
-        label.font = .preferredFont(forTextStyle: .footnote)
-        label.textAlignment = .center
-        return label
+    private func createTitleView() -> UIStackView {
+        // Filter title label
+        let filterLabel = UILabel()
+        filterLabel.textColor = .label
+        filterLabel.font = .preferredFont(forTextStyle: .footnote)
+        filterLabel.textAlignment = .center
+        filterLabel.isHidden = true
+
+        // Batch download view
+        let progressView = ItemsToolbarDownloadProgressView()
+        progressView.isHidden = true
+
+        let stackView = UIStackView(arrangedSubviews: [filterLabel, progressView])
+        stackView.axis = .horizontal
+        return stackView
     }
 }

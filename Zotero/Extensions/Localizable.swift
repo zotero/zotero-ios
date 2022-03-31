@@ -670,6 +670,10 @@ internal enum L10n {
     internal static let sortBy = L10n.tr("Localizable", "items.sort_by")
     /// Sort Order
     internal static let sortOrder = L10n.tr("Localizable", "items.sort_order")
+    /// Downloaded %d / %d
+    internal static func toolbarDownloaded(_ p1: Int, _ p2: Int) -> String {
+      return L10n.tr("Localizable", "items.toolbar_downloaded", p1, p2)
+    }
     /// Filter: %d items
     internal static func toolbarFilterMultiple(_ p1: Int) -> String {
       return L10n.tr("Localizable", "items.toolbar_filter_multiple", p1)

@@ -356,6 +356,7 @@
 		B319D6B8265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B319D6B7265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift */; };
 		B31D4A722767840800E22DCC /* BackgroundTaskController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31D4A712767840800E22DCC /* BackgroundTaskController.swift */; };
 		B31D4A732767841800E22DCC /* BackgroundTaskController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31D4A712767840800E22DCC /* BackgroundTaskController.swift */; };
+		B31D973C27F5E51100ED3DA2 /* ItemsToolbarDownloadProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31D973B27F5E51100ED3DA2 /* ItemsToolbarDownloadProgressView.swift */; };
 		B31DDA9E27299BD1002CFA05 /* StoreMtimeForAttachmentDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31DDA9D27299BD1002CFA05 /* StoreMtimeForAttachmentDbRequest.swift */; };
 		B31DDA9F27299DF9002CFA05 /* StoreMtimeForAttachmentDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31DDA9D27299BD1002CFA05 /* StoreMtimeForAttachmentDbRequest.swift */; };
 		B31DDAA12729A7DC002CFA05 /* WebDavCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31DDAA02729A7DC002CFA05 /* WebDavCredentials.swift */; };
@@ -1259,6 +1260,7 @@
 		B319D6B5265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllItemsForUploadDbRequest.swift; sourceTree = "<group>"; };
 		B319D6B7265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllDownloadedAndForUploadItemsDbRequest.swift; sourceTree = "<group>"; };
 		B31D4A712767840800E22DCC /* BackgroundTaskController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundTaskController.swift; sourceTree = "<group>"; };
+		B31D973B27F5E51100ED3DA2 /* ItemsToolbarDownloadProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsToolbarDownloadProgressView.swift; sourceTree = "<group>"; };
 		B31DDA9D27299BD1002CFA05 /* StoreMtimeForAttachmentDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreMtimeForAttachmentDbRequest.swift; sourceTree = "<group>"; };
 		B31DDAA02729A7DC002CFA05 /* WebDavCredentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavCredentials.swift; sourceTree = "<group>"; };
 		B31DFE7C2746917A005CD69B /* FileRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileRequest.swift; sourceTree = "<group>"; };
@@ -2737,6 +2739,7 @@
 				B31901932629C9CB00209E33 /* ItemsFilterViewController.xib */,
 				B3593EF7241A61C700760E20 /* ItemSortTypePickerView.swift */,
 				B3593EF0241A61C700760E20 /* ItemsTableViewHandler.swift */,
+				B31D973B27F5E51100ED3DA2 /* ItemsToolbarDownloadProgressView.swift */,
 				B3593EF6241A61C700760E20 /* ItemsViewController.swift */,
 				B3593EF4241A61C700760E20 /* ItemsViewController.xib */,
 				B3593EF9241A61C700760E20 /* TagCirclesView.swift */,
@@ -4451,6 +4454,7 @@
 				B31DDA9E27299BD1002CFA05 /* StoreMtimeForAttachmentDbRequest.swift in Sources */,
 				B3C9D60A24DA9D49003EA1EE /* CollectionsSearchAction.swift in Sources */,
 				B3ADBCBA27CFB66C00B7041F /* PDFSettingsActionHandler.swift in Sources */,
+				B31D973C27F5E51100ED3DA2 /* ItemsToolbarDownloadProgressView.swift in Sources */,
 				B3C9D60524DA921B003EA1EE /* CollectionsSearchViewController.swift in Sources */,
 				B3100921272C0960003FC743 /* ReadWebDavDeletionsDbRequest.swift in Sources */,
 				B3E8FE162714297200F51458 /* CiteActionHandler.swift in Sources */,

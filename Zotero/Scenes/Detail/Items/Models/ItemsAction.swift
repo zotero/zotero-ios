@@ -37,7 +37,7 @@ enum ItemsAction {
     case trashItems(Set<String>)
     case cacheItemAccessory(item: RItem)
     case updateAttachments(AttachmentFileDeletedNotification)
-    case updateDownload(AttachmentDownloader.Update)
+    case updateDownload(update: AttachmentDownloader.Update, batchData: ItemsState.DownloadBatchData?)
     case openAttachment(attachment: Attachment, parentKey: String?)
     case attachmentOpened(String)
     case updateKeys(items: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int])
