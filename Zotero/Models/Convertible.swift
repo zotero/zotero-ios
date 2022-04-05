@@ -37,6 +37,8 @@ struct Convertible {
         if let token = self.token {
             headers["Authorization"] = token
         }
+        let userAgent = HTTPHeader.defaultUserAgent
+        headers[userAgent.name] = userAgent.value
         return headers
     }
 }
@@ -50,6 +52,8 @@ extension Convertible: URLRequestConvertible {
         if let token = self.token {
             request.setValue(token, forHTTPHeaderField: "Authorization")
         }
+        let userAgent = HTTPHeader.defaultUserAgent
+        request.setValue(userAgent.value, forHTTPHeaderField: userAgent.name)
         return try self.encoding.encode(request as URLRequestConvertible, with: self.parameters)
     }
 }

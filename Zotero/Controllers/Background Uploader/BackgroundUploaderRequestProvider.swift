@@ -26,7 +26,7 @@ final class BackgroundUploaderRequestProvider {
     func createRequest(for upload: BackgroundUpload, filename: String, mimeType: String, parameters: [String: String]?, headers: [String: String]?, schemaVersion: Int) -> Single<(URLRequest, URL, UInt64)> {
         switch upload.type {
         case .webdav:
-            return self.createPutRequest(for: upload)
+            return self.createPutRequest(for: upload, schemaVersion: schemaVersion)
                        .flatMap({ request in
                            let size = self.fileStorage.size(of: Files.file(from: upload.fileUrl))
                            return Single.just((request, upload.fileUrl, size))
@@ -75,9 +75,7 @@ final class BackgroundUploaderRequestProvider {
                 try formData.writeEncodedData(to: newFileUrl)
                 // Create upload request and validate it.
                 var request = try URLRequest(url: upload.remoteUrl, method: .post, headers: headers.flatMap(HTTPHeaders.init))
-                request.setValue(formData.contentType, forHTTPHeaderField: "Content-Type")
-                request.setValue(ApiConstants.version.description, forHTTPHeaderField: "Zotero-API-Version")
-                request.setValue("\(schemaVersion)", forHTTPHeaderField: "Zotero-Schema-Version")
+                self.setupHeaders(for: &request, contentType: formData.contentType, schemaVersion: schemaVersion)
                 try request.validate()
 
                 subscriber(.success((request, newFileUrl)))
@@ -90,11 +88,12 @@ final class BackgroundUploaderRequestProvider {
         }
     }
 
-    func createPutRequest(for upload: BackgroundUpload) -> Single<URLRequest> {
+    func createPutRequest(for upload: BackgroundUpload, schemaVersion: Int) -> Single<URLRequest> {
         return Single.create { subscriber -> Disposable in
             do {
                 // Create upload request and validate it.
-                let request = try URLRequest(url: upload.remoteUrl.appendingPathComponent(upload.key + ".zip"), method: .put)
+                var request = try URLRequest(url: upload.remoteUrl.appendingPathComponent(upload.key + ".zip"), method: .put)
+                self.setupHeaders(for: &request, contentType: "application/zip", schemaVersion: schemaVersion)
                 try request.validate()
 
                 subscriber(.success(request))
@@ -105,5 +104,13 @@ final class BackgroundUploaderRequestProvider {
 
             return Disposables.create()
         }
+    }
+
+    private func setupHeaders(for request: inout URLRequest, contentType: String, schemaVersion: Int) {
+        request.setValue(contentType, forHTTPHeaderField: "Content-Type")
+        request.setValue(ApiConstants.version.description, forHTTPHeaderField: "Zotero-API-Version")
+        request.setValue("\(schemaVersion)", forHTTPHeaderField: "Zotero-Schema-Version")
+        let userAgent = HTTPHeader.defaultUserAgent
+        request.setValue(userAgent.value, forHTTPHeaderField: userAgent.name)
     }
 }
