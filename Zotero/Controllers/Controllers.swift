@@ -30,6 +30,7 @@ final class Controllers {
     let htmlAttributedStringConverter: HtmlAttributedStringConverter
     let idleTimerController: IdleTimerController
     let backgroundTaskController: BackgroundTaskController
+    let lowPowerModeController: LowPowerModeController
     let userInitialized: PassthroughSubject<Result<Bool, Error>, Never>
     fileprivate let lastBuildNumber: Int?
 
@@ -84,6 +85,7 @@ final class Controllers {
         self.lastBuildNumber = Defaults.shared.lastBuildNumber
         self.idleTimerController = IdleTimerController()
         self.backgroundTaskController = BackgroundTaskController()
+        self.lowPowerModeController = LowPowerModeController()
 
         Defaults.shared.lastBuildNumber = DeviceInfoProvider.buildNumber
 
@@ -286,7 +288,7 @@ final class UserControllers {
                                             dateParser: controllers.dateParser, backgroundUploaderContext: backgroundUploadContext, webDavController: webDavController, syncDelayIntervals: DelayIntervals.sync,
                                             conflictDelays: DelayIntervals.conflict)
         let fileDownloader = AttachmentDownloader(userId: userId, apiClient: controllers.apiClient, fileStorage: controllers.fileStorage, dbStorage: dbStorage, webDavController: webDavController)
-        let webSocketController = WebSocketController(dbStorage: dbStorage)
+        let webSocketController = WebSocketController(dbStorage: dbStorage, lowPowerModeController: controllers.lowPowerModeController)
         let fileCleanupController = AttachmentFileCleanupController(fileStorage: controllers.fileStorage, dbStorage: dbStorage)
 
         self.isFirstLaunch = try dbStorage.perform(request: InitializeCustomLibrariesDbRequest())

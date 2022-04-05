@@ -62,8 +62,11 @@ final class WebSocketController {
     private let jsonDecoder: JSONDecoder
     private let jsonEncoder: JSONEncoder
     private let queue: DispatchQueue
+    private let scheduler: SerialDispatchQueueScheduler
+    private unowned let lowPowerModeController: LowPowerModeController
     private unowned let dbStorage: DbStorage
     let observable: PublishSubject<ChangeWsResponse.Kind>
+    private let disposeBag: DisposeBag
 
     private var apiKey: String?
     private var webSocket: WebSocket?
@@ -74,16 +77,28 @@ final class WebSocketController {
     private var completionAction: (() -> Void)?
     private var completionTimer: BackgroundTimer?
 
-    init(dbStorage: DbStorage) {
+    init(dbStorage: DbStorage, lowPowerModeController: LowPowerModeController) {
+        let queue = DispatchQueue(label: "org.zotero.WebSocketQueue", qos: .userInteractive)
         self.dbStorage = dbStorage
+        self.lowPowerModeController = lowPowerModeController
         self.connectionState = BehaviorRelay(value: .disconnected)
         self.connectionRetryCount = 0
         self.responseListeners = [:]
         self.url = URL(string: "wss://stream.zotero.org")!
         self.jsonDecoder = JSONDecoder()
         self.jsonEncoder = JSONEncoder()
-        self.queue = DispatchQueue(label: "org.zotero.WebSocketQueue", qos: .userInteractive)
+        self.queue = queue
+        self.scheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.WebSocketScheduler")
         self.observable = PublishSubject()
+        self.disposeBag = DisposeBag()
+
+        lowPowerModeController.observable
+                              .observe(on: self.scheduler)
+                              .subscribe(onNext: { [weak self] isEnabled in
+                                  self?.lowPowerModeChanged(isEnabled: isEnabled)
+                              })
+                              .disposed(by: self.disposeBag)
+
     }
 
     // MARK: - Connection
@@ -106,6 +121,13 @@ final class WebSocketController {
         case .connecting, .disconnected: break
         }
 
+        self.apiKey = apiKey
+
+        guard !self.lowPowerModeController.lowPowerModeEnabled else {
+            completed?()
+            return
+        }
+
         DDLogInfo("WebSocketController: connect")
 
         // In case a reconnect was scheduled, suspend the timer
@@ -113,7 +135,6 @@ final class WebSocketController {
         self.connectionTimer = nil
         // Set internal state
         self.connectionState.accept(.connecting)
-        self.apiKey = apiKey
         // Start observing connected message
         self.createResponse(for: .connected) { [weak self] error in
             self?.processConnectionResponse(with: error, apiKey: apiKey)
@@ -405,5 +426,27 @@ final class WebSocketController {
     private func redact(logMessage: String) -> String {
         guard let apiKey = self.apiKey else { return logMessage }
         return logMessage.replacingOccurrences(of: apiKey, with: "<redacted>")
+    }
+
+    // MARK: - Low Power Mode
+
+    private func lowPowerModeChanged(isEnabled: Bool) {
+        if !isEnabled {
+            guard self.connectionState.value == .disconnected else { return }
+
+            if let apiKey = self.apiKey {
+                self._connect(apiKey: apiKey, completed: nil)
+            }
+
+            return
+        }
+
+        guard self.connectionState.value != .disconnected else { return }
+
+        if let key = self.apiKey {
+            self.unsubscribe(apiKey: key)
+        } else {
+            self.disconnect()
+        }
     }
 }

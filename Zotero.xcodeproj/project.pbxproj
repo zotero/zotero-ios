@@ -750,6 +750,7 @@
 		B3A081DD25D2D1420088EC24 /* ConflictViewControllerReceiver.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A081DC25D2D1420088EC24 /* ConflictViewControllerReceiver.swift */; };
 		B3A081E125D2D8050088EC24 /* CollectionEditHostingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A081E025D2D8050088EC24 /* CollectionEditHostingViewController.swift */; };
 		B3A14DF825A7666C00DF5334 /* StorePageForItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A14DF725A7666C00DF5334 /* StorePageForItemDbRequest.swift */; };
+		B3A17D1927FC33B800322CAD /* LowPowerModeController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A17D1827FC33B800322CAD /* LowPowerModeController.swift */; };
 		B3A27ACD25BEE91A00DE0BB2 /* TranslationWebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A27ACC25BEE91A00DE0BB2 /* TranslationWebViewHandler.swift */; };
 		B3A27AD125BEE93400DE0BB2 /* FilenameFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A27AD025BEE93400DE0BB2 /* FilenameFormatter.swift */; };
 		B3A2AECC26552248004BF3A4 /* SettingsCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A2AECB26552248004BF3A4 /* SettingsCoordinator.swift */; };
@@ -1552,6 +1553,7 @@
 		B3A081DC25D2D1420088EC24 /* ConflictViewControllerReceiver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictViewControllerReceiver.swift; sourceTree = "<group>"; };
 		B3A081E025D2D8050088EC24 /* CollectionEditHostingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionEditHostingViewController.swift; sourceTree = "<group>"; };
 		B3A14DF725A7666C00DF5334 /* StorePageForItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorePageForItemDbRequest.swift; sourceTree = "<group>"; };
+		B3A17D1827FC33B800322CAD /* LowPowerModeController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LowPowerModeController.swift; sourceTree = "<group>"; };
 		B3A27ACC25BEE91A00DE0BB2 /* TranslationWebViewHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TranslationWebViewHandler.swift; sourceTree = "<group>"; };
 		B3A27AD025BEE93400DE0BB2 /* FilenameFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilenameFormatter.swift; sourceTree = "<group>"; };
 		B3A2AECB26552248004BF3A4 /* SettingsCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsCoordinator.swift; sourceTree = "<group>"; };
@@ -1875,6 +1877,7 @@
 				B305648023FC051E003304F2 /* KeyGenerator.swift */,
 				B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */,
 				B305649E23FC051E003304F2 /* Licenses.swift */,
+				B3A17D1827FC33B800322CAD /* LowPowerModeController.swift */,
 				B305646C23FC051E003304F2 /* ObjectUserChangeObserver.swift */,
 				B34A9F6325BF1ABB007C9A4A /* PdfDocumentExporter.swift */,
 				B3C6D551261C9F2E0068B9FE /* PlaceholderTextViewDelegate.swift */,
@@ -4290,6 +4293,7 @@
 				B30565CA23FC051E003304F2 /* PerformDeletionsDbRequest.swift in Sources */,
 				B36181FE24C9A7C000B30D56 /* OnboardingLayout.swift in Sources */,
 				B398A915270C6A4300968EE8 /* WebDavController.swift in Sources */,
+				B3A17D1927FC33B800322CAD /* LowPowerModeController.swift in Sources */,
 				B3DDDAAC24CAD6810014DF99 /* InsetLabel.swift in Sources */,
 				B3E8FE8927143BDD00F51458 /* SyncSettingsView.swift in Sources */,
 				B3593F7A241A76E600760E20 /* CollectionEditState.swift in Sources */,

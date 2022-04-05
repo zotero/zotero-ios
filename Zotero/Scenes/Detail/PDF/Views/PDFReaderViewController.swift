@@ -709,6 +709,7 @@ final class PDFReaderViewController: UIViewController {
         controller.annotationStateManager.add(self)
         self.setup(scrubberBar: controller.userInterfaceView.scrubberBar)
         self.setup(interactions: controller.interactions)
+
         return controller
     }
 
