@@ -50,6 +50,7 @@ final class TranslationWebViewHandler: NSObject {
         case webViewMissing
     }
 
+    private let session: URLSession
     private let translatorsController: TranslatorsAndStylesController
     private let disposeBag: DisposeBag
     let observable: PublishSubject<TranslationWebViewHandler.Action>
@@ -63,6 +64,15 @@ final class TranslationWebViewHandler: NSObject {
     // MARK: - Lifecycle
 
     init(webView: WKWebView, translatorsController: TranslatorsAndStylesController) {
+        let storage = HTTPCookieStorage.sharedCookieStorage(forGroupContainerIdentifier: AppGroup.identifier)
+        storage.cookieAcceptPolicy = .always
+
+        let configuration = URLSessionConfiguration.default
+        configuration.httpCookieStorage = storage
+        configuration.httpShouldSetCookies = true
+        configuration.httpCookieAcceptPolicy = .always
+
+        self.session = URLSession(configuration: configuration)
         self.webView = webView
         self.disposeBag = DisposeBag()
         self.translatorsController = translatorsController
@@ -262,18 +272,35 @@ final class TranslationWebViewHandler: NSObject {
 
         DDLogInfo("WebViewHandler: send request to \(url.absoluteString)")
 
+        if let storage = self.session.configuration.httpCookieStorage, let cookies = storage.cookies {
+            for cookie in cookies {
+                storage.deleteCookie(cookie)
+            }
+        }
+
         var request = URLRequest(url: url)
         request.httpMethod = method
         headers.forEach { key, value in
             request.setValue(value, forHTTPHeaderField: key)
         }
-        if let cookies = self.cookies {
-            request.setValue(cookies, forHTTPHeaderField: "Cookie")
-        }
         request.httpBody = body?.data(using: .utf8)
         request.timeoutInterval = timeout
 
-        let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+        if let cookies = self.cookies, let storage = self.session.configuration.httpCookieStorage {
+            storage.cookieAcceptPolicy = .always
+
+            for wholeCookie in cookies.split(separator: ";") {
+                let split = wholeCookie.trimmingCharacters(in: .whitespaces).split(separator: "=")
+
+                guard split.count == 2 else { continue }
+
+                if let cookie = HTTPCookie(properties: [.name: split[0], .value: split[1], .domain: url.host ?? "", .originURL: url.host ?? "", .path: "/"]) {
+                    storage.setCookie(cookie)
+                }
+            }
+        }
+
+        let task = self.session.dataTask(with: request) { [weak self] data, response, error in
             guard let `self` = self else { return }
 
             let script: String
