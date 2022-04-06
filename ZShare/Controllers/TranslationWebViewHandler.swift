@@ -232,7 +232,7 @@ final class TranslationWebViewHandler: NSObject {
     /// - parameter options: Options for HTTP request.
     private func sendRequest(with options: [String: Any], for messageId: Int) {
         guard let urlString = options["url"] as? String,
-              let url = URL(string: urlString) ?? urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed).flatMap(URL.init),
+              let url = URL(string: urlString) ?? urlString.removingPercentEncoding.flatMap({ $0.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed).flatMap(URL.init) }),
               let method = options["method"] as? String else {
             DDLogInfo("Incorrect URL request from javascript")
             DDLogInfo("\(options)")
@@ -260,7 +260,7 @@ final class TranslationWebViewHandler: NSObject {
         let timeout = (options["timeout"] as? Double).flatMap({ $0 / 1000 }) ?? 60
         let successCodes = (options["successCodes"] as? [Int]) ?? []
 
-        DDLogInfo("WebViewHandler: send request to \(urlString)")
+        DDLogInfo("WebViewHandler: send request to \(url.absoluteString)")
 
         var request = URLRequest(url: url)
         request.httpMethod = method
