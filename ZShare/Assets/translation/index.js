@@ -51,7 +51,7 @@ async function translate(url, encodedHtml, encodedFrames) {
     const html = decodeBase64(encodedHtml);
     const frames = JSON.parse(decodeBase64(encodedFrames));
     Zotero.debug("Create document");
-    const doc = prepareDoc(parseDoc(html, frames), url);
+    const doc = Zotero.HTTP.wrapDocument(parseDoc(html, frames), url);
 
     // Set up a translate instance
     Zotero.debug("Init document");
@@ -126,45 +126,6 @@ function parseDoc(html, frames) {
 
     return parsedDoc;
 }
-
-function prepareDoc(doc, docURL) {
-    // Add <base> if it doesn't exist, so relative URLs resolve
-    if (!doc.getElementsByTagName('base').length) {
-        let head = doc.head;
-        let base = doc.createElement('base');
-        base.href = docURL;
-        head.appendChild(base);
-    }
-
-    // Add 'location' and 'evaluate'
-    docURL = new URL(docURL);
-    docURL.toString = () => this.href;
-    var wrappedDoc = new Proxy(doc, {
-        get: function (t, prop) {
-            if (prop === 'location') {
-                return docURL;
-            }
-            else if (prop == 'evaluate') {
-                // If you pass the document itself into doc.evaluate as the second argument
-                // it fails, because it receives a proxy, which isn't of type `Node` for some reason.
-                // Native code magic.
-                return function() {
-                    if (arguments[1] == wrappedDoc) {
-                        arguments[1] = t;
-                    }
-                    return t.evaluate.apply(t, arguments)
-                }
-            }
-            else {
-                if (typeof t[prop] == 'function') {
-                    return t[prop].bind(t);
-                }
-                return t[prop];
-            }
-        }
-    });
-    return wrappedDoc;
-};
 
 function decodeBase64(base64) {
     const text = atob(base64);

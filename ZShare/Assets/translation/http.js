@@ -236,33 +236,42 @@ Zotero.HTTP = new function() {
 	 * @param docUrl
 	 */
 	this.wrapDocument = function(doc, docURL) {
+        // Add <base> if it doesn't exist, so relative URLs resolve
+        if (!doc.getElementsByTagName('base').length) {
+            let head = doc.head;
+            let base = doc.createElement('base');
+            base.href = docURL;
+            head.appendChild(base);
+        }
+
+        // Add 'location' and 'evaluate'
         docURL = new URL(docURL);
         docURL.toString = () => this.href;
-		var wrappedDoc = new Proxy(doc, {
-			get: function (t, prop) {
-				if (prop === 'location') {
-					return docURL;
-				}
-				else if (prop == 'evaluate') {
-					// If you pass the document itself into doc.evaluate as the second argument
-					// it fails, because it receives a proxy, which isn't of type `Node` for some reason.
-					// Native code magic.
-					return function() {
-						if (arguments[1] == wrappedDoc) {
-							arguments[1] = t;
-						}
-						return t.evaluate.apply(t, arguments)
-					}
-				}
-				else {
-					if (typeof t[prop] == 'function') {
-						return t[prop].bind(t);
-					}
-					return t[prop];
-				}
-			}
-		});
-		return wrappedDoc;
+        var wrappedDoc = new Proxy(doc, {
+            get: function (t, prop) {
+                if (prop === 'location') {
+                    return docURL;
+                }
+                else if (prop == 'evaluate') {
+                    // If you pass the document itself into doc.evaluate as the second argument
+                    // it fails, because it receives a proxy, which isn't of type `Node` for some reason.
+                    // Native code magic.
+                    return function() {
+                        if (arguments[1] == wrappedDoc) {
+                            arguments[1] = t;
+                        }
+                        return t.evaluate.apply(t, arguments)
+                    }
+                }
+                else {
+                    if (typeof t[prop] == 'function') {
+                        return t[prop].bind(t);
+                    }
+                    return t[prop];
+                }
+            }
+        });
+        return wrappedDoc;
 	};
 	
 	
