@@ -302,23 +302,10 @@ final class DetailCoordinator: Coordinator {
 
     private func show(url: URL) {
         if let scheme = url.scheme, scheme != "http" && scheme != "https" {
-            if UIApplication.shared.canOpenURL(url) {
-                UIApplication.shared.open(url)
-                return
-            }
-
-            self.showIncompatibleUrlError(url: url.absoluteString)
-
-            return
+            UIApplication.shared.open(url)
+        } else {
+            self.showWeb(url: url)
         }
-
-        self.showWeb(url: url)
-    }
-
-    private func showIncompatibleUrlError(url: String) {
-        let controller = UIAlertController(title: L10n.error, message: L10n.Errors.Attachments.incompatibleUrl(url), preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
-        self.topViewController.present(controller, animated: true, completion: nil)
     }
 
     func showWeb(url: URL) {

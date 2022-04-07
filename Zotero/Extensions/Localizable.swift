@@ -347,10 +347,6 @@ internal enum L10n {
       internal static let cantUnzipSnapshot = L10n.tr("Localizable", "errors.attachments.cant_unzip_snapshot")
       /// Linked files are not supported on iOS. You can open them using the Zotero desktop app.
       internal static let incompatibleAttachment = L10n.tr("Localizable", "errors.attachments.incompatible_attachment")
-      /// Can't open url: "%@"
-      internal static func incompatibleUrl(_ p1: Any) -> String {
-        return L10n.tr("Localizable", "errors.attachments.incompatible_url", String(describing: p1))
-      }
     }
     internal enum Citation {
       /// Could not generate bibliography.
