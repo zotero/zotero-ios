@@ -39,6 +39,7 @@ struct MarkItemsFilesAsNotDownloadedDbRequest: DbRequest {
     func process(in database: Realm) throws {
         let items = database.objects(RItem.self).filter(.keys(self.keys, in: self.libraryId)).filter(.item(type: ItemTypes.attachment)).filter(.file(downloaded: true))
         for item in items {
+            guard !item.attachmentNeedsSync else { continue }
             item.fileDownloaded = false
         }
     }
@@ -53,6 +54,7 @@ struct MarkLibraryFilesAsNotDownloadedDbRequest: DbRequest {
     func process(in database: Realm) throws {
         let items = database.objects(RItem.self).filter(.library(with: self.libraryId)).filter(.item(type: ItemTypes.attachment)).filter(.file(downloaded: true))
         for item in items {
+            guard !item.attachmentNeedsSync else { continue }
             item.fileDownloaded = false
         }
     }
@@ -65,6 +67,7 @@ struct MarkAllFilesAsNotDownloadedDbRequest: DbRequest {
     func process(in database: Realm) throws {
         let items = database.objects(RItem.self).filter(.item(type: ItemTypes.attachment)).filter(.file(downloaded: true))
         for item in items {
+            guard !item.attachmentNeedsSync else { continue }
             item.fileDownloaded = false
         }
     }

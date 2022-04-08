@@ -277,12 +277,12 @@ final class ItemsTableViewHandler: NSObject {
                           .disposed(by: self.disposeBag)
 
         NotificationCenter.default
-                .rx.notification(.forceReloadItems)
-                .observe(on: MainScheduler.instance)
-                .subscribe(onNext: { [weak self] notification in
-                    self?.reloadAllAttachments()
-                })
-                .disposed(by: self.disposeBag)
+                          .rx.notification(.forceReloadItems)
+                          .observe(on: MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] notification in
+                              self?.reloadAllAttachments()
+                          })
+                          .disposed(by: self.disposeBag)
     }
 }
 

@@ -60,38 +60,49 @@ final class AttachmentFileCleanupController {
         try? self.fileStorage.remove(file)
     }
 
+    /// Delete attachments based on deletion type.
+    /// - parameter type: Indicates which attachments should be deleted.
+    /// - completed: Called on main queue when attachments are deleted. `true` if attachments were deleted, `false` in case of error.
     func delete(_ type: DeletionType, completed: ((Bool) -> Void)?) {
         self.queue.async {
-            let deleted = self.delete(type)
+            let newTypes = self.delete(type)
 
-            guard deleted || completed != nil else { return }
-            
+            guard let completed = completed else { return }
+
             DispatchQueue.main.async {
-                if deleted {
+                for type in newTypes {
                     NotificationCenter.default.post(name: .attachmentFileDeleted, object: type.notification)
                 }
-                completed?(deleted)
+                completed(!newTypes.isEmpty)
             }
         }
     }
 
-    private func delete(_ type: DeletionType) -> Bool {
+    /// Deletes attachments based on deletion type.
+    /// - parameter type: Indicates which attachments should be deleted.
+    /// - returns: An array of deletion types, if all items couldn't be deleted. For example: `.all` would be split into `.allForItems` for libraries, if some items were queued for upload.
+    private func delete(_ type: DeletionType) -> [DeletionType] {
         switch type {
         case .all:
             return self.deleteAll()
 
         case .allForItems(let keys, let libraryId):
-            return self.deleteAttachments(for: keys, libraryId: libraryId)
+            return self.deleteAttachments(for: keys, libraryId: libraryId).flatMap({ [$0] }) ?? []
 
         case .library(let libraryId):
-            return self.delete(in: libraryId)
+            return self.delete(in: libraryId).flatMap({ [$0] }) ?? []
 
         case .individual(let attachment, _):
-            return self.delete(attachment: attachment)
+            if self.delete(attachment: attachment) {
+                return [type]
+            }
+            return []
         }
     }
 
-    private func deleteAll() -> Bool {
+    /// Tries deleting all attachments.
+    /// - returns: Either `.all` deletion type if all attachments can be deleted. If only some can be deleted, it returns `.allForItems` for individual libraries. In case of error empty array is returned.
+    private func deleteAll() -> [DeletionType] {
         do {
             var libraryIds: [LibraryIdentifier] = []
             var forUpload: [LibraryIdentifier: [String]] = [:]
@@ -117,21 +128,29 @@ final class AttachmentFileCleanupController {
                 coordinator.invalidate()
             })
 
-            self.delete(downloadsIn: libraryIds, forUpload: forUpload)
+            let deletedIndividually = self.delete(downloadsIn: libraryIds, forUpload: forUpload)
             // Annotations are not guaranteed to exist and they can be removed even if the parent PDF was not deleted due to upload state.
             // These are generated on device, so they'll just be recreated.
             try? self.fileStorage.remove(Files.annotationPreviews)
             // When removing all local files clear cache as well.
             try? self.fileStorage.remove(Files.cache)
 
-            return true
+            if deletedIndividually.isEmpty {
+                return [.all]
+            }
+
+            return deletedIndividually.map { libraryId, keys in
+                return .allForItems(keys, libraryId)
+            }
         } catch let error {
             DDLogError("AttachmentFileCleanupController: can't remove download directory - \(error)")
-            return false
+            return []
         }
     }
 
-    private func delete(in libraryId: LibraryIdentifier) -> Bool {
+    /// Tries deleting all attachments in given library.
+    /// - returns: Either `.library` deletion type if all attachments can be deleted. If only some can be deleted, it returns `.allForItems` for given library. In case of error `nil` is returned.
+    private func delete(in libraryId: LibraryIdentifier) -> DeletionType? {
         do {
             var forUpload: [String] = []
 
@@ -145,19 +164,29 @@ final class AttachmentFileCleanupController {
                 coordinator.invalidate()
             })
 
-            self.delete(downloadsIn: [libraryId], forUpload: [libraryId: forUpload])
+            let deletedIndividually = self.delete(downloadsIn: [libraryId], forUpload: [libraryId: forUpload])
+
             // Annotations are not guaranteed to exist and they can be removed even if the parent PDF was not deleted due to upload state.
             // These are generated on device, so they'll just be recreated.
             try? self.fileStorage.remove(Files.annotationPreviews(for: libraryId))
 
-            return true
+            if let keys = deletedIndividually[libraryId], !keys.isEmpty {
+                return .allForItems(keys, libraryId)
+            }
+            return .library(libraryId)
         } catch let error {
             DDLogError("AttachmentFileCleanupController: can't remove library downloads - \(error)")
-            return false
+            return nil
         }
     }
 
-    private func delete(downloadsIn libraries: [LibraryIdentifier], forUpload: [LibraryIdentifier: [String]]) {
+    /// Deletes downloads in given libraries, but keeps files queued for upload intact.
+    /// - parameter libraries: Libraries to delete from.
+    /// - parameter forUpload: Keys of items which need upload for given libraries.
+    /// - returns: Returns individual keys for given libraries which were actually deleted. Some deletions are ignored if files are queued for upload.
+    private func delete(downloadsIn libraries: [LibraryIdentifier], forUpload: [LibraryIdentifier: [String]]) -> [LibraryIdentifier: Set<String>] {
+        var deletedIndividually: [LibraryIdentifier: Set<String>] = [:]
+
         for libraryId in libraries {
             guard let keysForUpload = forUpload[libraryId], !keysForUpload.isEmpty else {
                 // No items are queued for upload, just delete the whole directory. Ignore thrown error because some may not exist locally (user didn't download anything in given library yet).
@@ -177,6 +206,14 @@ final class AttachmentFileCleanupController {
                 return true
             })
 
+            var keys: Set<String> = []
+            for file in toDelete {
+                if file.relativeComponents.count == 3, let key = file.relativeComponents.last, key.count == KeyGenerator.length {
+                    keys.insert(key)
+                }
+            }
+            deletedIndividually[libraryId] = keys
+
             for file in toDelete {
                 do {
                     try self.fileStorage.remove(file)
@@ -185,8 +222,13 @@ final class AttachmentFileCleanupController {
                 }
             }
         }
+
+        return deletedIndividually
     }
 
+    /// Tries deleting given attachment.
+    /// - parameter attachment: Attachment to delete.
+    /// - returns: `true` if file could be deleted, `false` otherwise.
     private func delete(attachment: Attachment) -> Bool {
         do {
             // Don't delete linked files
@@ -222,8 +264,12 @@ final class AttachmentFileCleanupController {
         }
     }
 
-    private func deleteAttachments(for keys: Set<String>, libraryId: LibraryIdentifier) -> Bool {
-        guard !keys.isEmpty else { return false }
+    /// Tries deleting individual files from given library.
+    /// - parameter keys: Individual keys of files to delete.
+    /// - parameter libraryId: Library identifier from which files are deleted.
+    /// - returns: `nil` if no files could be deleted. `.allForItems` for actually deleted files.
+    private func deleteAttachments(for keys: Set<String>, libraryId: LibraryIdentifier) -> DeletionType? {
+        guard !keys.isEmpty else { return nil }
 
         do {
             var toDelete: Set<String> = []
@@ -258,10 +304,10 @@ final class AttachmentFileCleanupController {
                 try? self.removeFiles(for: key, libraryId: libraryId)
             }
 
-            return true
+            return toDelete.isEmpty ? nil : .allForItems(toDelete, libraryId)
         } catch let error {
             DDLogError("AttachmentFileCleanupController: can't remove attachments for item - \(error)")
-            return false
+            return nil
         }
     }
 
