@@ -159,7 +159,7 @@ Zotero.HTTP = new function() {
                 }
             )
             .then((req) => {
-                return processor(req.response, req.responseURL);
+                return processor(Zotero.HTTP.wrapDocument(req.response, url), req.responseURL);
             });
         });
 
@@ -251,7 +251,7 @@ Zotero.HTTP = new function() {
         var wrappedDoc = new Proxy(doc, {
             get: function (t, prop) {
                 if (prop === 'location') {
-                    return { toString: () => docURL, href: location };
+                    return location;
                 }
                 else if (prop == 'evaluate') {
                     // If you pass the document itself into doc.evaluate as the second argument
