@@ -245,12 +245,13 @@ Zotero.HTTP = new function() {
         }
 
         // Add 'location' and 'evaluate'
-        docURL = new URL(docURL);
-        docURL.toString = () => this.href;
+        var location = new URL(docURL);
+        location.toString = () => docURL;
+
         var wrappedDoc = new Proxy(doc, {
             get: function (t, prop) {
                 if (prop === 'location') {
-                    return docURL;
+                    return { toString: () => docURL, href: location };
                 }
                 else if (prop == 'evaluate') {
                     // If you pass the document itself into doc.evaluate as the second argument
