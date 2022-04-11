@@ -368,7 +368,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     private func moveItems(from keys: [String], to key: String, in viewModel: ViewModel<ItemsActionHandler>) {
         let request = MoveItemsToParentDbRequest(itemKeys: keys, parentKey: key, libraryId: viewModel.state.library.identifier)
         self.perform(request: request) { [weak viewModel] error in
-            guard let viewModel = viewModel else { return }
+            guard let viewModel = viewModel, let error = error else { return }
             DDLogError("ItemsStore: can't move items to parent: \(error)")
             self.update(viewModel: viewModel) { state in
                 state.error = .itemMove
@@ -379,7 +379,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     private func add(items itemKeys: Set<String>, to collectionKeys: Set<String>, in viewModel: ViewModel<ItemsActionHandler>) {
         let request = AssignItemsToCollectionsDbRequest(collectionKeys: collectionKeys, itemKeys: itemKeys, libraryId: viewModel.state.library.identifier)
         self.perform(request: request) { [weak viewModel] error in
-            guard let viewModel = viewModel else { return }
+            guard let viewModel = viewModel, let error = error else { return }
             DDLogError("ItemsStore: can't assign collections to items - \(error)")
             self.update(viewModel: viewModel) { state in
                 state.error = .collectionAssignment
@@ -394,7 +394,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
 
         let request = DeleteItemsFromCollectionDbRequest(collectionKey: key, itemKeys: keys, libraryId: viewModel.state.library.identifier)
         self.perform(request: request) { [weak viewModel] error in
-            guard let viewModel = viewModel else { return }
+            guard let viewModel = viewModel, let error = error else { return }
             DDLogError("ItemsStore: can't delete items - \(error)")
             self.update(viewModel: viewModel) { state in
                 state.error = .deletionFromCollection
@@ -405,7 +405,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     private func delete(items keys: Set<String>, in viewModel: ViewModel<ItemsActionHandler>) {
         let request = MarkObjectsAsDeletedDbRequest<RItem>(keys: Array(keys), libraryId: viewModel.state.library.identifier)
         self.perform(request: request) { [weak viewModel] error in
-            guard let viewModel = viewModel else { return }
+            guard let viewModel = viewModel, let error = error else { return }
             DDLogError("ItemsStore: can't delete items - \(error)")
             self.update(viewModel: viewModel) { state in
                 state.error = .deletion
@@ -416,7 +416,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     private func set(trashed: Bool, to keys: Set<String>, in viewModel: ViewModel<ItemsActionHandler>) {
         let request = MarkItemsAsTrashedDbRequest(keys: Array(keys), libraryId: viewModel.state.library.identifier, trashed: trashed)
         self.perform(request: request) { [weak viewModel] error in
-            guard let viewModel = viewModel else { return }
+            guard let viewModel = viewModel, let error = error else { return }
             DDLogError("ItemsStore: can't trash items - \(error)")
             self.update(viewModel: viewModel) { state in
                 state.error = .deletion
