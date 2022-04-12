@@ -117,7 +117,16 @@ final class AttachmentDownloader {
                     self.download(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, hasLocalCopy: false)
                 case .localAndChangedRemotely:
                     let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
-                    self.download(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, hasLocalCopy: true)
+
+                    var hasLocalCopy = true
+
+                    // Fixes a bug (#483) where attachment downloader downloaded an xml or other file even if the download request failed. This checks whether the file is actually a PDF. For other file types, users will just have to deal with it.
+                    if file.ext == "pdf" && self.fileStorage.has(file) && !self.fileStorage.isPdf(file: file) {
+                        try? self.fileStorage.remove(file)
+                        hasLocalCopy = false
+                    }
+
+                    self.download(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, hasLocalCopy: hasLocalCopy)
                 }
             }
         }

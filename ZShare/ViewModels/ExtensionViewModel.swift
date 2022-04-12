@@ -416,6 +416,7 @@ final class ExtensionViewModel {
                 }, onFailure: { [weak self] error in
                     DDLogError("ExtensionViewModel: could not download shared file - \(url.absoluteString) - \(error)")
                     self?.state.attachmentState = .failed(.downloadFailed)
+                    try? self?.fileStorage.remove(file)
                 })
                 .disposed(by: self.disposeBag)
         }

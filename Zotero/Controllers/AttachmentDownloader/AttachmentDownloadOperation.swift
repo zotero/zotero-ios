@@ -89,6 +89,10 @@ class AttachmentDownloadOperation: AsynchronousOperation {
             }, onError: { [weak self] error in
                 guard let `self` = self, !self.isCancelled else { return }
 
+                if self.fileStorage.has(self.file) {
+                    try? self.fileStorage.remove(self.file)
+                }
+
                 self.request = nil
                 self.state = .done
                 self.finish(with: .failure(error))
