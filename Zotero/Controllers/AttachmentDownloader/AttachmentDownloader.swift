@@ -103,16 +103,21 @@ final class AttachmentDownloader {
     private func _downloadIfNeeded(attachment: Attachment, parentKey: String?) {
         switch attachment.type {
         case .url:
+            DDLogInfo("AttachmentDownloader: open url \(attachment.key)")
             self.observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .ready)))
         case .file(let filename, let contentType, let location, let linkType):
             switch linkType {
             case .linkedFile, .embeddedImage:
+                DDLogWarn("AttachmentDownloader: tried opening linkedFile or embeddedImage \(attachment.key)")
                 self.finish(download: Download(key: attachment.key, libraryId: attachment.libraryId), parentKey: parentKey, result: .failure(Error.incompatibleAttachment), hasLocalCopy: false)
             case .importedFile, .importedUrl:
                 switch location {
                 case .local:
+                    DDLogInfo("AttachmentDownloader: open local file \(attachment.key)")
                     self.observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .ready)))
                 case .remote, .remoteMissing:
+                    DDLogInfo("AttachmentDownloader: download remote\(location == .remoteMissing ? "ly missing" : "") file \(attachment.key)")
+
                     let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
                     self.download(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, hasLocalCopy: false)
                 case .localAndChangedRemotely:
@@ -124,6 +129,12 @@ final class AttachmentDownloader {
                     if file.ext == "pdf" && self.fileStorage.has(file) && !self.fileStorage.isPdf(file: file) {
                         try? self.fileStorage.remove(file)
                         hasLocalCopy = false
+                    }
+
+                    if hasLocalCopy {
+                        DDLogInfo("AttachmentDownloader: download local file with remote change \(attachment.key)")
+                    } else {
+                        DDLogInfo("AttachmentDownloader: download remote file \(attachment.key). Fixed local PDF.")
                     }
 
                     self.download(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, hasLocalCopy: hasLocalCopy)
