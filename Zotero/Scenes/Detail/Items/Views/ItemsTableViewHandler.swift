@@ -84,8 +84,11 @@ final class ItemsTableViewHandler: NSObject {
             switch location {
             case .local:
                 actions.append(ItemAction(type: .removeDownload))
-            case .remote, .localAndChangedRemotely:
+            case .remote:
                 actions.append(ItemAction(type: .download))
+            case .localAndChangedRemotely:
+                actions.append(ItemAction(type: .download))
+                actions.append(ItemAction(type: .removeDownload))
             case .remoteMissing: break
             }
         }
