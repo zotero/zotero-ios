@@ -67,13 +67,13 @@ final class AttachmentFileCleanupController {
         self.queue.async {
             let newTypes = self.delete(type)
 
-            guard let completed = completed else { return }
+            guard !newTypes.isEmpty || completed != nil else { return }
 
             DispatchQueue.main.async {
                 for type in newTypes {
                     NotificationCenter.default.post(name: .attachmentFileDeleted, object: type.notification)
                 }
-                completed(!newTypes.isEmpty)
+                completed?(!newTypes.isEmpty)
             }
         }
     }
@@ -273,6 +273,7 @@ final class AttachmentFileCleanupController {
 
         do {
             var toDelete: Set<String> = []
+            var toReport: Set<String> = []
 
             try self.dbStorage.perform(with: { coordinator in
                 let items = try coordinator.perform(request: ReadItemsWithKeysDbRequest(keys: keys, libraryId: libraryId))
@@ -283,6 +284,7 @@ final class AttachmentFileCleanupController {
                         // Don't delete attachments that need to sync
                         guard !item.attachmentNeedsSync else { continue }
                         toDelete.insert(item.key)
+                        toReport.insert(item.key)
                         continue
                     }
 
@@ -290,6 +292,8 @@ final class AttachmentFileCleanupController {
                     for child in item.children.filter(.item(type: ItemTypes.attachment)) {
                         // Don't delete attachments that need to sync
                         guard !child.attachmentNeedsSync else { continue }
+                        // Always report parent key so that the originally requested key gets a report about deletion, even if a child was deleted.
+                        toReport.insert(item.key)
                         toDelete.insert(child.key)
                     }
                 }
@@ -304,7 +308,7 @@ final class AttachmentFileCleanupController {
                 try? self.removeFiles(for: key, libraryId: libraryId)
             }
 
-            return toDelete.isEmpty ? nil : .allForItems(toDelete, libraryId)
+            return toReport.isEmpty ? nil : .allForItems(toReport, libraryId)
         } catch let error {
             DDLogError("AttachmentFileCleanupController: can't remove attachments for item - \(error)")
             return nil
