@@ -71,16 +71,31 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     }
 
     private func downloadAttachments(in collectionId: CollectionIdentifier, viewModel: ViewModel<CollectionsActionHandler>) {
+        self.backgroundQueue.async { [weak viewModel] in
+            guard let viewModel = viewModel else { return }
+            self._downloadAttachments(in: collectionId, viewModel: viewModel)
+        }
+    }
+
+    private func _downloadAttachments(in collectionId: CollectionIdentifier, viewModel: ViewModel<CollectionsActionHandler>) {
         do {
             let items = try self.dbStorage.perform(request: ReadAllAttachmentsFromCollectionDbRequest(collectionId: collectionId, libraryId: viewModel.state.libraryId))
             let attachments = items.compactMap({ item -> (Attachment, String?)? in
                 guard let attachment = AttachmentCreator.attachment(for: item, fileStorage: self.fileStorage, urlDetector: nil) else { return nil }
-                return (attachment, item.parent?.key)
-            })
 
-            for (attachment, parentKey) in attachments {
-                self.attachmentDownloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey)
-            }
+                switch attachment.type {
+                case .file(_, _, _, let linkType):
+                    switch linkType {
+                    case .importedFile, .importedUrl:
+                        return (attachment, item.parent?.key)
+                    default: break
+                    }
+                default: break
+                }
+
+                return nil
+            })
+            self.attachmentDownloader.batchDownload(attachments: Array(attachments))
         } catch let error {
             DDLogError("CollectionsActionHandler: download attachments - \(error)")
         }
