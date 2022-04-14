@@ -598,30 +598,66 @@ extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
 
 extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
     func showAttachmentError(_ error: Error, retryAction: (() -> Void)?) {
-        var isLinkedFileError = false
-        let message: String
-        if let error = error as? ItemDetailError, error == .cantUnzipSnapshot {
-            message = L10n.Errors.Attachments.cantUnzipSnapshot
-        } else if let error = error as? AttachmentDownloader.Error {
-            switch error {
-            case .incompatibleAttachment:
-                message = L10n.Errors.Attachments.incompatibleAttachment
-                isLinkedFileError = true
-            case .zipDidntContainRequestedFile:
-                message = L10n.Errors.Attachments.cantOpenAttachment
-            }
-        } else {
-            message = L10n.Errors.Attachments.cantOpenAttachment
-        }
-
+        let (message, additionalActions) = self.attachmentMessageAndActions(for: error, retryAction: retryAction)
         let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
-        if let action = retryAction, !isLinkedFileError {
-            controller.addAction(UIAlertAction(title: L10n.retry, style: .default, handler: { _ in
-                action()
-            }))
+        for action in additionalActions {
+            controller.addAction(action)
         }
         self.topViewController.present(controller, animated: true, completion: nil)
+    }
+
+    private func attachmentMessageAndActions(for error: Error, retryAction: (() -> Void)?) -> (String, [UIAlertAction]) {
+        let createRetryAlertAction: () -> [UIAlertAction] = {
+            if let action = retryAction {
+                return [UIAlertAction(title: L10n.retry, style: .default, handler: { _ in
+                    action()
+                })]
+            }
+            return []
+        }
+
+        if let error = error as? ItemDetailError, error == .cantUnzipSnapshot {
+            return (L10n.Errors.Attachments.cantUnzipSnapshot, createRetryAlertAction())
+        }
+
+        if let error = error as? AttachmentDownloader.Error {
+            switch error {
+            case .incompatibleAttachment:
+                return (L10n.Errors.Attachments.incompatibleAttachment, [])
+            case .zipDidntContainRequestedFile:
+                return (L10n.Errors.Attachments.cantOpenAttachment, createRetryAlertAction())
+            }
+        }
+
+        if let responseError = error as? AFResponseError {
+            switch responseError.error {
+            case .responseValidationFailed(let reason):
+                switch reason {
+                case .unacceptableStatusCode(let code) where code == 404:
+                    let webDavEnabled = self.controllers.userControllers?.webDavController.sessionStorage.isEnabled ?? false
+
+                    let messageStart: String
+                    if webDavEnabled {
+                        messageStart = L10n.Errors.Attachments.missingWebdav
+                    } else {
+                        messageStart = L10n.Errors.Attachments.missingZotero
+                    }
+
+                    let message = "\(messageStart) \(L10n.Errors.Attachments.missingAdditional)"
+                    let action = UIAlertAction(title: L10n.moreInformation, style: .default) { [weak self] _ in
+                        self?.showWeb(url: URL(string: "https://www.zotero.org/support/kb/files_not_syncing")!)
+                    }
+                    return (message, [action])
+
+                default: break
+                }
+
+            default: break
+            }
+        }
+
+        return (L10n.Errors.Attachments.cantOpenAttachment, createRetryAlertAction())
     }
 
     func showCreatorCreation(for itemType: String, saved: @escaping CreatorEditSaveAction) {

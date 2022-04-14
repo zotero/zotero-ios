@@ -60,13 +60,15 @@ internal enum L10n {
   internal static func migrationDebug(_ p1: Any) -> String {
     return L10n.tr("Localizable", "migration_debug", String(describing: p1))
   }
+  /// More Information
+  internal static let moreInformation = L10n.tr("Localizable", "more_information")
   /// Name
   internal static let name = L10n.tr("Localizable", "name")
   /// No
   internal static let no = L10n.tr("Localizable", "no")
   /// Not Found
   internal static let notFound = L10n.tr("Localizable", "not_found")
-  /// Ok
+  /// OK
   internal static let ok = L10n.tr("Localizable", "ok")
   /// Page
   internal static let page = L10n.tr("Localizable", "page")
@@ -347,6 +349,12 @@ internal enum L10n {
       internal static let cantUnzipSnapshot = L10n.tr("Localizable", "errors.attachments.cant_unzip_snapshot")
       /// Linked files are not supported on iOS. You can open them using the Zotero desktop app.
       internal static let incompatibleAttachment = L10n.tr("Localizable", "errors.attachments.incompatible_attachment")
+      /// Please check that the file has synced on the device where it was added.
+      internal static let missingAdditional = L10n.tr("Localizable", "errors.attachments.missing_additional")
+      /// The attached file is not available on the WebDAV server.
+      internal static let missingWebdav = L10n.tr("Localizable", "errors.attachments.missing_webdav")
+      /// The attached file is not available in the online library.
+      internal static let missingZotero = L10n.tr("Localizable", "errors.attachments.missing_zotero")
     }
     internal enum Citation {
       /// Could not generate bibliography.
