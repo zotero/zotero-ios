@@ -42,14 +42,30 @@ final class PlaceholderTextViewDelegate: NSObject {
 
     func set(text: String, to textView: UITextView) {
         self.placeholderLayer.isHidden = !text.isEmpty
+
+        let oldRange = textView.selectedRange
+        let isSameLengthText = text.count == textView.text.count
+
         textView.text = text
         textView.isAccessibilityElement = true
+
+        if isSameLengthText {
+            textView.selectedRange = oldRange
+        }
     }
 
     func set(text: NSAttributedString, to textView: UITextView) {
         self.placeholderLayer.isHidden = !text.string.isEmpty
+
+        let oldRange = textView.selectedRange
+        let isSameLengthText = text.string.count == textView.attributedText.string.count
+
         textView.attributedText = text
         textView.isAccessibilityElement = true
+
+        if isSameLengthText {
+            textView.selectedRange = oldRange
+        }
     }
 
     func set(placeholderColor: UIColor) {

@@ -91,12 +91,6 @@ final class AnnotationViewController: UIViewController {
         // Update header
         self.header.setup(with: annotation, libraryId: state.library.identifier, isEditable: (annotation.editability == .editable), showsLock: (annotation.editability != .editable), showDoneButton: false, accessibilityType: .view)
 
-        // Update comment
-        if let commentView = self.comment {
-            let comment = self.attributedStringConverter.convert(text: annotation.comment, baseAttributes: [.font: AnnotationPopoverLayout.annotationLayout.font])
-            commentView.setup(text: comment)
-        }
-
         // Update selected color
         if let views = self.colorPickerContainer?.arrangedSubviews {
             for view in views {
