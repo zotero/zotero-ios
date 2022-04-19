@@ -648,7 +648,8 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
                     let action = UIAlertAction(title: L10n.moreInformation, style: .default) { [weak self] _ in
                         self?.showWeb(url: URL(string: "https://www.zotero.org/support/kb/files_not_syncing")!)
                     }
-                    return (message, [action])
+                    let retryAction = createRetryAlertAction()
+                    return (message, [action] + retryAction)
 
                 default: break
                 }
