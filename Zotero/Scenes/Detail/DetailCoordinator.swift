@@ -30,7 +30,7 @@ protocol DetailCoordinatorAttachmentProvider {
 protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showCollectionsPicker(in library: Library, completed: @escaping (Set<String>) -> Void)
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library)
-    func showAttachmentError(_ error: Error, retryAction: (() -> Void)?)
+    func showAttachmentError(_ error: Error)
     func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
@@ -55,7 +55,7 @@ protocol DetailItemDetailCoordinatorDelegate: AnyObject {
     func show(doi: String)
     func showCreatorCreation(for itemType: String, saved: @escaping CreatorEditSaveAction)
     func showCreatorEditor(for creator: ItemDetailState.Creator, itemType: String, saved: @escaping CreatorEditSaveAction, deleted: @escaping CreatorEditDeleteAction)
-    func showAttachmentError(_ error: Error, retryAction: (() -> Void)?)
+    func showAttachmentError(_ error: Error)
     func showDeletedAlertForItem(completion: @escaping (Bool) -> Void)
     func show(error: ItemDetailError, viewModel: ViewModel<ItemDetailActionHandler>)
     func showDataReloaded(completion: @escaping () -> Void)
@@ -597,8 +597,8 @@ extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
 }
 
 extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
-    func showAttachmentError(_ error: Error, retryAction: (() -> Void)?) {
-        let (message, additionalActions) = self.attachmentMessageAndActions(for: error, retryAction: retryAction)
+    func showAttachmentError(_ error: Error) {
+        let (message, additionalActions) = self.attachmentMessageAndActions(for: error)
         let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
         for action in additionalActions {
@@ -607,18 +607,9 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         self.topViewController.present(controller, animated: true, completion: nil)
     }
 
-    private func attachmentMessageAndActions(for error: Error, retryAction: (() -> Void)?) -> (String, [UIAlertAction]) {
-        let createRetryAlertAction: () -> [UIAlertAction] = {
-            if let action = retryAction {
-                return [UIAlertAction(title: L10n.retry, style: .default, handler: { _ in
-                    action()
-                })]
-            }
-            return []
-        }
-
+    private func attachmentMessageAndActions(for error: Error) -> (String, [UIAlertAction]) {
         if let error = error as? ItemDetailError, error == .cantUnzipSnapshot {
-            return (L10n.Errors.Attachments.cantUnzipSnapshot, createRetryAlertAction())
+            return (L10n.Errors.Attachments.cantUnzipSnapshot, [])
         }
 
         if let error = error as? AttachmentDownloader.Error {
@@ -626,7 +617,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
             case .incompatibleAttachment:
                 return (L10n.Errors.Attachments.incompatibleAttachment, [])
             case .zipDidntContainRequestedFile:
-                return (L10n.Errors.Attachments.cantOpenAttachment, createRetryAlertAction())
+                return (L10n.Errors.Attachments.cantOpenAttachment, [])
             }
         }
 
@@ -648,8 +639,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
                     let action = UIAlertAction(title: L10n.moreInformation, style: .default) { [weak self] _ in
                         self?.showWeb(url: URL(string: "https://www.zotero.org/support/kb/files_not_syncing")!)
                     }
-                    let retryAction = createRetryAlertAction()
-                    return (message, [action] + retryAction)
+                    return (message, [action])
 
                 default: break
                 }
@@ -658,7 +648,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
             }
         }
 
-        return (L10n.Errors.Attachments.cantOpenAttachment, createRetryAlertAction())
+        return (L10n.Errors.Attachments.cantOpenAttachment, [])
     }
 
     func showCreatorCreation(for itemType: String, saved: @escaping CreatorEditSaveAction) {

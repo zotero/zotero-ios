@@ -113,10 +113,6 @@ final class ItemsViewController: UIViewController {
                                     self.coordinatorDelegate?.show(doi: doi)
                                 case .url(let url):
                                     self.coordinatorDelegate?.showWeb(url: url)
-                                case .showAttachmentError(let error, let attachment, let parentKey):
-                                    self.coordinatorDelegate?.showAttachmentError(error, retryAction: { [weak self] in
-                                        self?.viewModel.process(action: .openAttachment(attachment: attachment, parentKey: parentKey))
-                                    })
                                 }
                              })
                              .disposed(by: self.disposeBag)
@@ -509,12 +505,19 @@ final class ItemsViewController: UIViewController {
                       let batchData = downloader.batchProgress.flatMap({ ItemsState.DownloadBatchData(progress: $0, remaining: downloader.remainingBatchCount, total: downloader.totalBatchCount) })
                       self.viewModel.process(action: .updateDownload(update: update, batchData: batchData))
 
+                      if case .progress = update.kind { return }
+
+                      guard self.viewModel.state.attachmentToOpen == update.key else { return }
+
+                      self.viewModel.process(action: .attachmentOpened(update.key))
+
                       switch update.kind {
                       case .ready:
-                          if self.viewModel.state.attachmentToOpen == update.key {
-                              self.viewModel.process(action: .attachmentOpened(update.key))
-                              self.coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
-                          }
+                          self.coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
+
+                      case .failed(let error):
+                          self.coordinatorDelegate?.showAttachmentError(error)
+
                       default: break
                       }
                   })

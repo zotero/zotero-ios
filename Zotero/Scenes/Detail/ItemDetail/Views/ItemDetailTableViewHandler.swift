@@ -28,7 +28,6 @@ final class ItemDetailTableViewHandler: NSObject {
         case openFilePicker
         case openUrl(String)
         case openDoi(String)
-        case showAttachmentError(Error, Int)
         case trashAttachment(Attachment)
     }
 
@@ -834,12 +833,7 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
                     self.observer.on(.next(.openFilePicker))
                 }
             } else {
-                let attachment = self.viewModel.state.data.attachments[indexPath.row]
-                if let error = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId).error {
-                    self.observer.on(.next(.showAttachmentError(error, indexPath.row)))
-                } else {
-                    self.viewModel.process(action: .openAttachment(indexPath.row))
-                }
+                self.viewModel.process(action: .openAttachment(indexPath.row))
             }
         case .notes:
             if self.dataSource.snapshot.isEditing && indexPath.row == self.viewModel.state.data.notes.count {

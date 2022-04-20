@@ -142,11 +142,6 @@ final class ItemDetailViewController: UIViewController {
             guard let encoded = FieldKeys.Item.clean(doi: doi).addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) else { return }
             self.coordinatorDelegate?.show(doi: encoded)
 
-        case .showAttachmentError(let error, let index):
-            self.coordinatorDelegate?.showAttachmentError(error, retryAction: { [weak self] in
-                self?.viewModel.process(action: .openAttachment(index))
-            })
-
         case .trashAttachment(let attachment):
             self.coordinatorDelegate?.showTrashAttachmentQuestion { [weak self] in
                 self?.viewModel.process(action: .trashAttachment(attachment))
@@ -278,20 +273,11 @@ final class ItemDetailViewController: UIViewController {
         var items: [UIBarButtonItem] = [spacer]
 
         switch state {
-        case .ready(let index):
+        case .ready(let index), .error(let index, _):
             let button = UIBarButtonItem(title: L10n.ItemDetail.viewPdf, style: .plain, target: nil, action: nil)
             button.rx.tap.subscribe(onNext: { [weak self] _ in
                 self?.downloadingViaNavigationBar = true
                 self?.viewModel.process(action: .openAttachment(index))
-            }).disposed(by: self.disposeBag)
-            items.append(button)
-
-        case .error(let index, let error):
-            let button = UIBarButtonItem(title: L10n.ItemDetail.viewPdf, style: .plain, target: nil, action: nil)
-            button.rx.tap.subscribe(onNext: { [weak self] _ in
-                self?.coordinatorDelegate?.showAttachmentError(error, retryAction: {
-                    self?.viewModel.process(action: .openAttachment(index))
-                })
             }).disposed(by: self.disposeBag)
             items.append(button)
 
@@ -387,18 +373,19 @@ final class ItemDetailViewController: UIViewController {
             .subscribe(with: self, onNext: { `self`, update in
                 self.viewModel.process(action: .updateDownload(update))
 
+                if case .progress = update.kind { return }
+
+                guard self.viewModel.state.attachmentToOpen == update.key else { return }
+
+                self.viewModel.process(action: .attachmentOpened(update.key))
+
                 switch update.kind {
                 case .ready:
-                    if self.viewModel.state.attachmentToOpen == update.key {
-                        self.viewModel.process(action: .attachmentOpened(update.key))
-                        self.coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
-                    }
+                    self.coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
 
                 case .failed(let error):
-                    if let error = error as? AttachmentDownloader.Error, error == .incompatibleAttachment {
-                        // Show error immediately for linked files
-                        self.coordinatorDelegate?.showAttachmentError(error, retryAction: nil)
-                    }
+                    self.coordinatorDelegate?.showAttachmentError(error)
+
                 default: break
                 }
             })

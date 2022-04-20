@@ -330,20 +330,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
                 }
             }
 
-        case .cancelled, .failed:
-            self.update(viewModel: viewModel) { state in
-                if update.key == state.attachmentToOpen {
-                    state.attachmentToOpen = nil
-                }
-                state.updateItemKey = updateKey
-
-                if state.downloadBatchData != batchData {
-                    state.downloadBatchData = batchData
-                    state.changes = .batchData
-                }
-            }
-
-        case .progress:
+        case .cancelled, .failed, .progress:
             self.update(viewModel: viewModel) { state in
                 state.updateItemKey = updateKey
 

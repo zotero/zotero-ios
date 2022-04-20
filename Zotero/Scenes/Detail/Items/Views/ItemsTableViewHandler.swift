@@ -24,7 +24,6 @@ final class ItemsTableViewHandler: NSObject {
         case metadata(RItem)
         case doi(String)
         case url(URL)
-        case showAttachmentError(Error, Attachment, String?)
     }
 
     private static let cellId = "ItemCell"
@@ -347,11 +346,7 @@ extension ItemsTableViewHandler: UITableViewDelegate {
         switch accessory {
         case .attachment(let attachment):
             let parentKey = item.key == attachment.key ? nil : item.key
-            if let error = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId).error {
-                self.tapObserver.on(.next(.showAttachmentError(error, attachment, parentKey)))
-            } else {
-                self.viewModel.process(action: .openAttachment(attachment: attachment, parentKey: parentKey))
-            }
+            self.viewModel.process(action: .openAttachment(attachment: attachment, parentKey: parentKey))
         case .doi(let doi):
             self.tapObserver.on(.next(.doi(doi)))
         case .url(let url):
