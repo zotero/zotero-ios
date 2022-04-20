@@ -242,13 +242,17 @@ final class WebDavControllerImpl: WebDavController {
             for key in keys {
                 let propRequest = WebDavDeleteRequest(url: url.appendingPathComponent(key + ".prop"))
                 let propOperation = self.apiClient.operation(from: propRequest, queue: queue) { result in
-                    processResult(key, result)
+                    queue.async(flags: .barrier) {
+                        processResult(key, result)
+                    }
                 }
                 operations.append(propOperation)
 
                 let zipRequest = WebDavDeleteRequest(url: url.appendingPathComponent(key + ".zip"))
                 let zipOperation = self.apiClient.operation(from: zipRequest, queue: queue) { result in
-                    processResult(key, result)
+                    queue.async(flags: .barrier) {
+                        processResult(key, result)
+                    }
                 }
                 operations.append(zipOperation)
             }
