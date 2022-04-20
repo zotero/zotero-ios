@@ -494,6 +494,11 @@ final class PDFReaderViewController: UIViewController {
 
         switch notification.name {
         case .PSPDFAnnotationChanged:
+            // Changing annotation color changes the `lastUsed` color in `annotationStateManager` (#487), so we have to re-set it.
+            if let changes = notification.userInfo?[PSPDFAnnotationChangedNotificationKeyPathKey] as? [String], changes.contains("color") {
+                self.set(toolColor: self.viewModel.state.activeColor, in: self.pdfController.annotationStateManager)
+            }
+
             guard let pdfAnnotation = notification.object as? PSPDFKit.Annotation, let key = pdfAnnotation.key else { return }
             if self.viewModel.state.ignoreNotifications[.PSPDFAnnotationChanged]?.contains(key) == true {
                 self.viewModel.process(action: .annotationChangeNotificationReceived(key))
