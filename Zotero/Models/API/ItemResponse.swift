@@ -186,8 +186,7 @@ struct ItemResponse {
         self.paths = nil
     }
 
-    func copy(libraryId: LibraryIdentifier, collectionKeys: Set<String>, addedTags: [TagResponse]) -> ItemResponse {
-        let tags = addedTags.isEmpty ? self.tags : (self.tags + addedTags)
+    func copy(libraryId: LibraryIdentifier, collectionKeys: Set<String>, tags: [TagResponse]) -> ItemResponse {
         return ItemResponse(rawType: self.rawType,
                             key: self.key,
                             library: LibraryResponse(libraryId: libraryId),
@@ -201,28 +200,6 @@ struct ItemResponse {
                             dateAdded: self.dateAdded,
                             fields: self.fields,
                             tags: tags,
-                            creators: self.creators,
-                            relations: self.relations,
-                            createdBy: self.createdBy,
-                            lastModifiedBy: self.lastModifiedBy,
-                            rects: self.rects,
-                            paths: self.paths)
-    }
-
-    var copyWithoutTags: ItemResponse {
-        return ItemResponse(rawType: self.rawType,
-                            key: self.key,
-                            library: self.library,
-                            parentKey: self.parentKey,
-                            collectionKeys: self.collectionKeys,
-                            links: self.links,
-                            parsedDate: self.parsedDate,
-                            isTrash: self.isTrash,
-                            version: self.version,
-                            dateModified: self.dateModified,
-                            dateAdded: self.dateAdded,
-                            fields: self.fields,
-                            tags: [],
                             creators: self.creators,
                             relations: self.relations,
                             createdBy: self.createdBy,

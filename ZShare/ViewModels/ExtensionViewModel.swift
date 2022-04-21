@@ -165,9 +165,7 @@ final class ExtensionViewModel {
             let libraryId: LibraryIdentifier
             let userId: Int
 
-            init(item: ItemResponse, attachmentKey: String, attachmentData: [String: Any], attachmentFile: File, defaultTitle: String,
-                 collections: Set<String>, tags: [TagResponse], libraryId: LibraryIdentifier, userId: Int, dateParser: DateParser) {
-                let newItem = item.copy(libraryId: libraryId, collectionKeys: collections, addedTags: tags)
+            init(item: ItemResponse, attachmentKey: String, attachmentData: [String: Any], attachmentFile: File, defaultTitle: String, libraryId: LibraryIdentifier, userId: Int, dateParser: DateParser) {
                 let filename = FilenameFormatter.filename(from: item, defaultTitle: defaultTitle, ext: attachmentFile.ext, dateParser: dateParser)
                 let file = Files.attachmentFile(in: libraryId, key: attachmentKey, filename: filename, contentType: attachmentFile.mimeType)
                 let attachment = Attachment(type: .file(filename: filename, contentType: attachmentFile.mimeType, location: .local, linkType: .importedFile),
@@ -175,7 +173,7 @@ final class ExtensionViewModel {
                                             key: attachmentKey,
                                             libraryId: libraryId)
 
-                self.type = .translated(item: newItem, location: attachmentFile)
+                self.type = .translated(item: item, location: attachmentFile)
                 self.attachment = attachment
                 self.file = file
                 self.filename = filename
@@ -755,18 +753,29 @@ final class ExtensionViewModel {
             collectionKeys = []
         }
 
-        if let attachment = self.state.processedAttachment {
+        if var attachment = self.state.processedAttachment {
+            // Update item based on settings
+            switch attachment {
+            case .item(let item):
+                attachment = .item(item.copy(libraryId: libraryId, collectionKeys: collectionKeys, tags: (Defaults.shared.shareExtensionIncludeTags ? item.tags + tags : tags)))
+
+            case .itemWithAttachment(let item, let attachmentData, let attachmentFile):
+                let newTags = (Defaults.shared.shareExtensionIncludeTags ? item.tags + tags : tags)
+                attachment = .itemWithAttachment(item: item.copy(libraryId: libraryId, collectionKeys: collectionKeys, tags: newTags), attachment: attachmentData, attachmentFile: attachmentFile)
+
+            case .localFile: break
+            }
+
             switch attachment {
             case .item(let item):
                 DDLogInfo("ExtensionViewModel: submit item")
-                self.submit(item: item.copy(libraryId: libraryId, collectionKeys: collectionKeys, addedTags: tags), libraryId: libraryId, userId: userId,
-                            apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, schemaController: self.schemaController, dateParser: self.dateParser)
+                self.submit(item: item, libraryId: libraryId, userId: userId, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage,
+                            schemaController: self.schemaController, dateParser: self.dateParser)
 
             case .itemWithAttachment(let item, let attachmentData, let attachmentFile):
                 DDLogInfo("ExtensionViewModel: submit item with attachment")
-                let data = State.UploadData(item: item, attachmentKey: self.state.attachmentKey, attachmentData: attachmentData,
-                                            attachmentFile: attachmentFile, defaultTitle: (self.state.title ?? "Unknown"),
-                                            collections: collectionKeys, tags: tags, libraryId: libraryId, userId: userId, dateParser: self.dateParser)
+                let data = State.UploadData(item: item, attachmentKey: self.state.attachmentKey, attachmentData: attachmentData, attachmentFile: attachmentFile,
+                                            defaultTitle: (self.state.title ?? "Unknown"), libraryId: libraryId, userId: userId, dateParser: self.dateParser)
                 self.upload(data: data, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, webDavController: self.webDavController)
 
             case .localFile(let file, let filename):
@@ -804,8 +813,7 @@ final class ExtensionViewModel {
     /// - parameter dateParser: Date parser for item creation
     private func submit(item: ItemResponse, libraryId: LibraryIdentifier, userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController,
                         dateParser: DateParser) {
-        let itemToSubmit = item.tags.isEmpty || Defaults.shared.shareExtensionIncludeTags ? item : item.copyWithoutTags
-        self.createItem(itemToSubmit, libraryId: libraryId, schemaController: schemaController, dateParser: dateParser)
+        self.createItem(item, libraryId: libraryId, schemaController: schemaController, dateParser: dateParser)
             .subscribe(on: self.backgroundScheduler)
             .flatMap { parameters in
                 return SubmitUpdateSyncAction(parameters: [parameters], sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId, updateLibraryVersion: false, apiClient: apiClient,
