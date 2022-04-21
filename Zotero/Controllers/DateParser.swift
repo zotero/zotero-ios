@@ -283,12 +283,12 @@ final class DateParser {
             self.update(&order, at: part, with: "d")
             // Update parts with new pre/post-part parts
             let location = match.range(at: 0).location
-            var newPart: Substring = ""
+            var newPart: String = ""
             if let postPart = match.substring(at: 2, in: part.value) {
-                newPart = postPart
+                newPart = String(postPart)
             }
-            if location > 0 {
-                newPart = part.value[part.value.startIndex..<part.value.index(part.value.startIndex, offsetBy: location)] + newPart
+            if location > 0 && location < part.value.count {
+                newPart = String(part.value[part.value.startIndex..<part.value.index(part.value.startIndex, offsetBy: location)]) + newPart
             }
             parts[index] = Part(value: newPart.trimmingCharacters(in: .whitespaces), position: .ending)
 
