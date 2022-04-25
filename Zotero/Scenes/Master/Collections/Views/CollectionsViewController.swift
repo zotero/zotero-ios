@@ -107,7 +107,7 @@ final class CollectionsViewController: UICollectionViewController {
         if state.changes.contains(.results) || state.changes.contains(.collapsedState) {
             return (true, true)
         }
-        if state.changes.contains(.allItemCount) || state.changes.contains(.trashItemCount) {
+        if state.changes.contains(.allItemCount) || state.changes.contains(.trashItemCount) || state.changes.contains(.unfiledItemCount) {
             return (true, false)
         }
         return (false, false)

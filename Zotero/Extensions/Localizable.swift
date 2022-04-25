@@ -953,6 +953,8 @@ internal enum L10n {
       internal static let title = L10n.tr("Localizable", "settings.export.title")
     }
     internal enum General {
+      /// Show collection sizes
+      internal static let showCollectionItemCounts = L10n.tr("Localizable", "settings.general.show_collection_item_counts")
       /// Show Items from Subcollections
       internal static let showSubcollectionsTitle = L10n.tr("Localizable", "settings.general.show_subcollections_title")
       /// General

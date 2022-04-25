@@ -19,5 +19,15 @@ struct GeneralSettingsState: ViewModelState {
         }
     }
 
+    var showCollectionItemCounts: Bool {
+        get {
+            return Defaults.shared.showCollectionItemCounts
+        }
+
+        set {
+            Defaults.shared.showCollectionItemCounts = newValue
+        }
+    }
+
     func cleanup() {}
 }

@@ -143,8 +143,13 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
 
             let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
             let hasChildren = snapshot.contains(collection) && snapshot.snapshot(of: collection, includingParent: false).items.count > 0
+            var accessories: CollectionCell.Accessories = .chevron
 
-            var configuration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren, accessories: [.chevron, .badge])
+            if !collection.isCollection || Defaults.shared.showCollectionItemCounts {
+                accessories.insert(.badge)
+            }
+
+            var configuration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren, accessories: accessories)
             configuration.isCollapsedProvider = { [weak self] in
                 guard let `self` = self else { return false }
                 let snapshot = self.dataSource.snapshot(for: self.collectionsSection)

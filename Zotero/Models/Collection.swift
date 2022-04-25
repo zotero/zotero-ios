@@ -83,6 +83,15 @@ struct Collection: Identifiable, Equatable, Hashable {
         }
     }
 
+    var isCollection: Bool {
+        switch self.identifier {
+        case .collection:
+            return true
+        case .custom, .search:
+            return false
+        }
+    }
+
     func copy(with itemCount: Int) -> Collection {
         return Collection(identifier: self.identifier, name: self.name, itemCount: itemCount)
     }

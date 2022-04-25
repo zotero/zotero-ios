@@ -22,7 +22,8 @@ struct CollectionsState: ViewModelState {
         static let selection = Changes(rawValue: 1 << 1)
         static let allItemCount = Changes(rawValue: 1 << 2)
         static let trashItemCount = Changes(rawValue: 1 << 3)
-        static let collapsedState = Changes(rawValue: 1 << 4)
+        static let unfiledItemCount = Changes(rawValue: 1 << 4)
+        static let collapsedState = Changes(rawValue: 1 << 5)
     }
 
     enum EditingType {

@@ -190,32 +190,48 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
     private func loadData(in viewModel: ViewModel<CollectionsActionHandler>) {
         let libraryId = viewModel.state.libraryId
+        let includeItemCounts = Defaults.shared.showCollectionItemCounts
 
         do {
             try self.dbStorage.perform(with: { coordinator in
                 let library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
                 let collections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: libraryId))
-                let allItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.all), libraryId: libraryId))
-                let unfiledItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.unfiled), libraryId: libraryId))
-                let trashItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.trash), libraryId: libraryId))
 
-                let collectionTree = CollectionTreeBuilder.collections(from: collections, libraryId: libraryId)
-                collectionTree.insert(collection: Collection(custom: .all, itemCount: allItems.count), at: 0)
-                collectionTree.append(collection: Collection(custom: .unfiled, itemCount: unfiledItems.count))
-                collectionTree.append(collection: Collection(custom: .trash, itemCount: trashItems.count))
+                var allItemCount = 0
+                var unfiledItemCount = 0
+                var trashItemCount = 0
+                var itemsToken: NotificationToken?
+                var unfiledToken: NotificationToken?
+                var trashToken: NotificationToken?
+
+                if includeItemCounts {
+                    let allItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.all), libraryId: libraryId))
+                    allItemCount = allItems.count
+
+                    let unfiledItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.unfiled), libraryId: libraryId))
+                    unfiledItemCount = unfiledItems.count
+
+                    let trashItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.trash), libraryId: libraryId))
+                    trashItemCount = trashItems.count
+
+                    itemsToken = self.observeItemCount(in: allItems, for: .all, in: viewModel)
+                    unfiledToken = self.observeItemCount(in: unfiledItems, for: .unfiled, in: viewModel)
+                    trashToken = self.observeItemCount(in: trashItems, for: .trash, in: viewModel)
+                }
+
+                let collectionTree = CollectionTreeBuilder.collections(from: collections, libraryId: libraryId, includeItemCounts: includeItemCounts)
+                collectionTree.insert(collection: Collection(custom: .all, itemCount: allItemCount), at: 0)
+                collectionTree.append(collection: Collection(custom: .unfiled, itemCount: unfiledItemCount))
+                collectionTree.append(collection: Collection(custom: .trash, itemCount: trashItemCount))
 
                 let collectionsToken = collections.observe(keyPaths: RCollection.observableKeypathsForList, { [weak viewModel] changes in
                     guard let viewModel = viewModel else { return }
                     switch changes {
-                    case .update(let objects, _, _, _): self.update(collections: objects, viewModel: viewModel)
+                    case .update(let objects, _, _, _): self.update(collections: objects, includeItemCounts: includeItemCounts, viewModel: viewModel)
                     case .initial: break
                     case .error: break
                     }
                 })
-
-                let itemsToken = self.observeItemCount(in: allItems, for: .all, in: viewModel)
-                let unfiledToken = self.observeItemCount(in: unfiledItems, for: .unfiled, in: viewModel)
-                let trashToken = self.observeItemCount(in: trashItems, for: .trash, in: viewModel)
 
                 self.update(viewModel: viewModel) { state in
                     state.collectionTree = collectionTree
@@ -312,7 +328,7 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
             case .all:
                 state.changes = .allItemCount
             case .unfiled:
-                state.changes = .trashItemCount
+                state.changes = .unfiledItemCount
             case .trash:
                 state.changes = .trashItemCount
             case .publications: break
@@ -320,8 +336,8 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
         }
     }
 
-    private func update(collections: Results<RCollection>, viewModel: ViewModel<CollectionsActionHandler>) {
-        let tree = CollectionTreeBuilder.collections(from: collections, libraryId: viewModel.state.libraryId)
+    private func update(collections: Results<RCollection>, includeItemCounts: Bool, viewModel: ViewModel<CollectionsActionHandler>) {
+        let tree = CollectionTreeBuilder.collections(from: collections, libraryId: viewModel.state.libraryId, includeItemCounts: includeItemCounts)
 
         self.update(viewModel: viewModel) { state in
             state.collectionTree.replace(identifiersMatching: { $0.isCollection }, with: tree)

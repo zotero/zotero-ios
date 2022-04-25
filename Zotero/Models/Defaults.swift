@@ -53,6 +53,9 @@ final class Defaults {
     @UserDefault(key: "ShowSubcollectionItems", defaultValue: false, defaults: .standard)
     var showSubcollectionItems: Bool
 
+    @UserDefault(key: "ShowCollectionItemCounts", defaultValue: true, defaults: .standard)
+    var showCollectionItemCounts: Bool
+
     @UserDefault(key: "QuickCopyStyleId", defaultValue: "http://www.zotero.org/styles/chicago-note-bibliography", defaults: .standard)
     var quickCopyStyleId: String
 

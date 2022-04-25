@@ -56,7 +56,7 @@ struct CollectionsPickerActionHandler: ViewModelActionHandler {
             let libraryId = viewModel.state.library.identifier
             let collectionsRequest = ReadCollectionsDbRequest(libraryId: libraryId, excludedKeys: viewModel.state.excludedKeys)
             let results = try self.dbStorage.perform(request: collectionsRequest)
-            let collectionTree = CollectionTreeBuilder.collections(from: results, libraryId: libraryId)
+            let collectionTree = CollectionTreeBuilder.collections(from: results, libraryId: libraryId, includeItemCounts: false)
 
             let token = results.observe({ [weak viewModel] changes in
                 guard let viewModel = viewModel else { return }
@@ -83,7 +83,7 @@ struct CollectionsPickerActionHandler: ViewModelActionHandler {
     }
 
     private func update(results: Results<RCollection>, in viewModel: ViewModel<CollectionsPickerActionHandler>) {
-        let tree = CollectionTreeBuilder.collections(from: results, libraryId: viewModel.state.library.identifier)
+        let tree = CollectionTreeBuilder.collections(from: results, libraryId: viewModel.state.library.identifier, includeItemCounts: false)
         self.update(viewModel: viewModel) { state in
             state.collectionTree = tree
             state.changes = .results

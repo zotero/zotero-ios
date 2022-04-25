@@ -22,22 +22,22 @@ struct CollectionTreeBuilder {
         return searches.map(Collection.init)
     }
 
-    static func collections(from rCollections: Results<RCollection>, libraryId: LibraryIdentifier) -> CollectionTree {
+    static func collections(from rCollections: Results<RCollection>, libraryId: LibraryIdentifier, includeItemCounts: Bool) -> CollectionTree {
         var collections: [CollectionIdentifier: Collection] = [:]
         var collapsed: [CollectionIdentifier: Bool] = [:]
-        let nodes: [CollectionTree.Node] = self.collections(for: nil, from: rCollections, libraryId: libraryId, allCollections: &collections, collapsedState: &collapsed)
+        let nodes: [CollectionTree.Node] = self.collections(for: nil, from: rCollections, libraryId: libraryId, includeItemCounts: includeItemCounts, allCollections: &collections, collapsedState: &collapsed)
         return CollectionTree(nodes: nodes, collections: collections, collapsed: collapsed)
     }
 
-    private static func collections(for parent: CollectionIdentifier?, from rCollections: Results<RCollection>, libraryId: LibraryIdentifier,
+    private static func collections(for parent: CollectionIdentifier?, from rCollections: Results<RCollection>, libraryId: LibraryIdentifier, includeItemCounts: Bool,
                                     allCollections: inout [CollectionIdentifier: Collection], collapsedState: inout [CollectionIdentifier: Bool]) -> [CollectionTree.Node] {
         var nodes: [CollectionTree.Node] = []
         for rCollection in rCollections.filter(parent?.key.flatMap({ .parentKey($0) }) ?? .parentKeyNil) {
-            let collection = self.collection(from: rCollection, libraryId: libraryId)
+            let collection = self.collection(from: rCollection, libraryId: libraryId, includeItemCounts: includeItemCounts)
             allCollections[collection.identifier] = collection
             collapsedState[collection.identifier] = rCollection.collapsed
 
-            let children = self.collections(for: collection.identifier, from: rCollections, libraryId: libraryId, allCollections: &allCollections, collapsedState: &collapsedState)
+            let children = self.collections(for: collection.identifier, from: rCollections, libraryId: libraryId, includeItemCounts: includeItemCounts, allCollections: &allCollections, collapsedState: &collapsedState)
             let node = CollectionTree.Node(identifier: collection.identifier, parent: parent, children: children)
             let insertionIndex = self.insertionIndex(for: node, in: nodes, collections: allCollections)
             nodes.insert(node, at: insertionIndex)
@@ -52,8 +52,11 @@ struct CollectionTreeBuilder {
         })
     }
 
-    private static func collection(from rCollection: RCollection, libraryId: LibraryIdentifier) -> Collection {
-        let itemCount = rCollection.items.count == 0 ? 0 : rCollection.items.filter(.items(for: .collection(rCollection.key), libraryId: libraryId)).count
+    private static func collection(from rCollection: RCollection, libraryId: LibraryIdentifier, includeItemCounts: Bool) -> Collection {
+        var itemCount: Int = 0
+        if includeItemCounts {
+            itemCount = rCollection.items.count == 0 ? 0 : rCollection.items.filter(.items(for: .collection(rCollection.key), libraryId: libraryId)).count
+        }
         return Collection(object: rCollection, itemCount: itemCount)
     }
 }

@@ -48,7 +48,7 @@ final class AllCollectionPickerActionHandler: ViewModelActionHandler {
 
                 for library in libraries {
                     let collections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: library.identifier))
-                    let tree = CollectionTreeBuilder.collections(from: collections, libraryId: library.identifier)
+                    let tree = CollectionTreeBuilder.collections(from: collections, libraryId: library.identifier, includeItemCounts: false)
 
                     trees[library.identifier] = tree
                     librariesCollapsed[library.identifier] = viewModel.state.selectedLibraryId != library.identifier

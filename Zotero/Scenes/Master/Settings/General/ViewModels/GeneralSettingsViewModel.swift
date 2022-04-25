@@ -19,6 +19,11 @@ struct GeneralSettingsActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.showSubcollectionItems = value
             }
+
+        case .setShowCollectionItemCounts(let value):
+            self.update(viewModel: viewModel) { state in
+                state.showCollectionItemCounts = value
+            }
         }
     }
 }
