@@ -71,6 +71,12 @@ final class AnnotationViewController: UIViewController {
         self.coordinatorDelegate?.didFinish()
     }
 
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+
+        self.updatePreferredContentSize()
+    }
+
     // MARK: - Actions
 
     private func updatePreferredContentSize() {
@@ -284,8 +290,7 @@ final class AnnotationViewController: UIViewController {
             self.containerStackView.addArrangedSubview(AnnotationViewSeparator())
         }
 
-        if annotation.editability == .deletable {
-            // MARK: - Setup delete button
+        if annotation.editability != .notEditable {
             let button = UIButton()
             button.addTarget(self, action: #selector(AnnotationViewController.deleteAnnotation), for: .touchUpInside)
             button.setTitle(L10n.Pdf.AnnotationPopover.delete, for: .normal)
