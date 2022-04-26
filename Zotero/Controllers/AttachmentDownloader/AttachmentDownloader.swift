@@ -97,7 +97,9 @@ final class AttachmentDownloader {
     // MARK: - Actions
 
     func batchDownload(attachments: [(Attachment, String?)]) {
-        self.accessQueue.async(flags: .barrier) {
+        self.accessQueue.async(flags: .barrier) { [weak self] in
+            guard let `self` = self else { return }
+
             for (attachment, parentKey) in attachments {
                 switch attachment.type {
                 case .url: break
@@ -201,6 +203,10 @@ final class AttachmentDownloader {
         guard self.operations.isEmpty else { return }
         self.totalBatchCount = 0
         self.batchProgress = nil
+    }
+
+    func stop() {
+        self.operationQueue.cancelAllOperations()
     }
 
     // MARK: - Helpers
