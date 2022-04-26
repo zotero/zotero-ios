@@ -866,6 +866,13 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
 
     func showSearch(pdfController: PDFViewController, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void) {
         if let existing = self.pdfSearchController {
+            if let controller = existing.presentingViewController {
+                controller.dismiss(animated: true) { [weak self] in
+                    self?.showSearch(pdfController: pdfController, sender: sender, result: result)
+                }
+                return
+            }
+
             existing.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
             existing.popoverPresentationController?.barButtonItem = sender
             self.topViewController.present(existing, animated: true, completion: nil)
