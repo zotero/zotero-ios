@@ -355,16 +355,8 @@ final class UserControllers {
             guard let `self` = self else { return }
             // Call this before sync so that background uploads are updated and taken care of by sync if needed.
             self.backgroundUploadObserver.updateSessions()
-            self.syncScheduler.request(sync: (self.requiresFullSync ? .full : .normal), libraries: .all)
+            self.syncScheduler.request(sync: .normal, libraries: .all)
         })
-    }
-
-    private var requiresFullSync: Bool {
-        // Check whether the app was not just launched for the first time.
-        guard !self.isFirstLaunch else { return false }
-        // Check last build number, if it's `nil`, it hasn't been stored previously, which means that it's older than the first build, which stores it and needs a full sync for previous bug fixes.
-        guard let buildNumber = self.lastBuildNumber else { return true }
-        return buildNumber < 102
     }
 
     /// Cancels ongoing sync and stops websocket connection.
