@@ -878,7 +878,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         let sortIndex = AnnotationConverter.sortIndex(from: pdfAnnotation, boundingBoxConverter: self.boundingBoxConverter)
         let rects = (pdfAnnotation.rects ?? [pdfAnnotation.boundingBox]).map({ $0.rounded(to: 3) })
-        let highlightText = (pdfAnnotation as? PSPDFKit.HighlightAnnotation)?.markedUpString.trimmingCharacters(in: .whitespacesAndNewlines)
+        let highlightText = ((pdfAnnotation as? PSPDFKit.HighlightAnnotation)?.markedUpString).flatMap({ AnnotationConverter.removeNewlines(from: $0) })
         var paths: [[CGPoint]] = []
         var lineWidth: CGFloat?
         if let inkAnnotation = pdfAnnotation as? PSPDFKit.InkAnnotation {
