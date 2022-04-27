@@ -174,7 +174,7 @@ final class ItemDetailTableViewHandler: NSObject {
     weak var delegate: ItemDetailTableViewHandlerDelegate?
 
     var attachmentSection: Int? {
-        return self.dataSource.snapshot.sectionIndex(for: .attachments)
+        return self.dataSource?.snapshot.sectionIndex(for: .attachments)
     }
 
     init(tableView: UITableView, containerWidth: CGFloat, viewModel: ViewModel<ItemDetailActionHandler>, fileDownloader: AttachmentDownloader?) {
