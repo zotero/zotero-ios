@@ -503,7 +503,8 @@ final class ItemsViewController: UIViewController {
                   .observe(on: MainScheduler.instance)
                   .subscribe(with: self, onNext: { [weak downloader] `self`, update in
                       if let downloader = downloader {
-                          let batchData = downloader.batchProgress.flatMap({ ItemsState.DownloadBatchData(progress: $0, remaining: downloader.remainingBatchCount, total: downloader.totalBatchCount) })
+                          let (progress, remainingCount, totalCount) = downloader.batchData
+                          let batchData = progress.flatMap({ ItemsState.DownloadBatchData(progress: $0, remaining: remainingCount, total: totalCount) })
                           self.viewModel.process(action: .updateDownload(update: update, batchData: batchData))
                       }
 

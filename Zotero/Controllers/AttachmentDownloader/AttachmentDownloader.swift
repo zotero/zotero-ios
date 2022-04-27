@@ -66,10 +66,22 @@ final class AttachmentDownloader {
     private var operations: [Download: AttachmentDownloadOperation]
     private var progressObservers: [Download: NSKeyValueObservation]
     private var errors: [Download: Swift.Error]
-    private(set) var batchProgress: Progress?
-    private(set) var totalBatchCount: Int = 0
-    var remainingBatchCount: Int {
-        return self.operations.count
+    private var batchProgress: Progress?
+    private var totalBatchCount: Int = 0
+
+    var batchData: (Progress?, Int, Int) {
+        var progress: Progress?
+        var totalBatchCount = 0
+        var remainingBatchCount = 0
+
+        self.accessQueue.sync { [weak self] in
+            guard let `self` = self else { return }
+            progress = self.batchProgress
+            remainingBatchCount = self.operations.count
+            totalBatchCount = self.totalBatchCount
+        }
+
+        return (progress, remainingBatchCount, totalBatchCount)
     }
 
     init(userId: Int, apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage, webDavController: WebDavController) {
