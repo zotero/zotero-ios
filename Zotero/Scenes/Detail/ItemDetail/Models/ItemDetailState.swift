@@ -199,15 +199,15 @@ struct ItemDetailState: ViewModelState {
         var maxFieldTitleWidth: CGFloat = 0
         var maxNonemptyFieldTitleWidth: CGFloat = 0
 
-        var mainAttachmentIndex: Int? {
-            return self.attachments.firstIndex(where: {
+        var mainAttachmentKey: String? {
+            return self.attachments.first(where: {
                 switch $0.type {
                 case .file(_, let contentType, let location, _):
                     return location != .remoteMissing && contentType == "application/pdf"
                 case .url:
                     return false
                 }
-            })
+            })?.key
         }
 
         func databaseFields(schemaController: SchemaController) -> [Field] {
@@ -255,10 +255,11 @@ struct ItemDetailState: ViewModelState {
     var snapshot: Data?
     var promptSnapshot: Data?
     var updatedSection: ItemDetailTableViewHandler.Section?
+    var updatedRow: ItemDetailTableViewHandler.Row?
     var sectionNeedsReload: Bool
     var error: ItemDetailError?
     var metadataTitleMaxWidth: CGFloat
-    var updateAttachmentIndex: Int?
+    var updateAttachmentKey: String?
     var isLoadingData: Bool
     var observationToken: NotificationToken?
     var attachmentToOpen: String?
@@ -290,7 +291,8 @@ struct ItemDetailState: ViewModelState {
     mutating func cleanup() {
         self.changes = []
         self.error = nil
-        self.updateAttachmentIndex = nil
+        self.updateAttachmentKey = nil
         self.updatedSection = nil
+        self.updatedRow = nil
     }
 }

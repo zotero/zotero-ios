@@ -16,7 +16,7 @@ import RealmSwift
 import RxSwift
 
 fileprivate enum MainAttachmentButtonState {
-    case ready(Int), downloading(Int, CGFloat), error(Int, Error)
+    case ready(String), downloading(String, CGFloat), error(String, Error)
 }
 
 final class ItemDetailViewController: UIViewController {
@@ -196,12 +196,11 @@ final class ItemDetailViewController: UIViewController {
             if state.sectionNeedsReload {
                 self.tableViewHandler.reload(section: section, state: state, animated: true)
             } else {
-                self.tableViewHandler.updateHeightAndScrollToUpdated(section: section, state: state)
+                self.tableViewHandler.updateHeightAndScrollToUpdated(row: state.updatedRow, section: section, state: state)
             }
-        } else if let index = state.updateAttachmentIndex {
-            if state.data.mainAttachmentIndex == index {
+        } else if let key = state.updateAttachmentKey {
+            if state.data.mainAttachmentKey == key {
                 // Update main-attachment related UI
-                let key = state.data.attachments[index].key
                 if self.controllers.userControllers?.fileDownloader.data(for: key, libraryId: state.library.identifier).progress == nil {
                     // Reset navbar download flag after download finishes
                     self.downloadingViaNavigationBar = false
@@ -210,8 +209,9 @@ final class ItemDetailViewController: UIViewController {
                 self.setNavigationBarButtons(to: state)
             }
 
-            // TODO: - use snapshot index
-            self.tableViewHandler.updateAttachment(with: state.data.attachments[index], at: index)
+            if let attachment = state.data.attachments.first(where: { $0.key == key }) {
+                self.tableViewHandler.updateAttachment(with: attachment)
+            }
         }
     }
 
@@ -230,19 +230,18 @@ final class ItemDetailViewController: UIViewController {
     }
 
     private func mainAttachmentButtonState(from state: ItemDetailState) -> MainAttachmentButtonState? {
-        guard let index = state.data.mainAttachmentIndex else { return nil }
-        guard let downloader = self.controllers.userControllers?.fileDownloader else { return .ready(index) }
+        guard let key = state.data.mainAttachmentKey else { return nil }
+        guard let downloader = self.controllers.userControllers?.fileDownloader else { return .ready(key) }
 
-        let key = state.data.attachments[index].key
         let (progress, error) = downloader.data(for: key, libraryId: state.library.identifier)
 
         if let error = error {
-            return .error(index, error)
+            return .error(key, error)
         }
         if let progress = progress {
-            return .downloading(index, progress)
+            return .downloading(key, progress)
         }
-        return .ready(index)
+        return .ready(key)
     }
 
     private func setPreviewNavigationBarButtons(attachmentButtonState: MainAttachmentButtonState?) {
@@ -273,11 +272,11 @@ final class ItemDetailViewController: UIViewController {
         var items: [UIBarButtonItem] = [spacer]
 
         switch state {
-        case .ready(let index), .error(let index, _):
+        case .ready(let key), .error(let key, _):
             let button = UIBarButtonItem(title: L10n.ItemDetail.viewPdf, style: .plain, target: nil, action: nil)
             button.rx.tap.subscribe(onNext: { [weak self] _ in
                 self?.downloadingViaNavigationBar = true
-                self?.viewModel.process(action: .openAttachment(index))
+                self?.viewModel.process(action: .openAttachment(key))
             }).disposed(by: self.disposeBag)
             items.append(button)
 
@@ -394,8 +393,8 @@ final class ItemDetailViewController: UIViewController {
 }
 
 extension ItemDetailViewController: ItemDetailTableViewHandlerDelegate {
-    func isDownloadingFromNavigationBar(for index: Int) -> Bool {
-        return self.downloadingViaNavigationBar && index == self.viewModel.state.data.mainAttachmentIndex
+    func isDownloadingFromNavigationBar(for key: String) -> Bool {
+        return self.downloadingViaNavigationBar && key == self.viewModel.state.data.mainAttachmentKey
     }
 }
 

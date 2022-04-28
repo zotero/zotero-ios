@@ -12,7 +12,30 @@ import CocoaLumberjackSwift
 import RxSwift
 
 protocol ItemDetailTableViewHandlerDelegate: AnyObject {
-    func isDownloadingFromNavigationBar(for index: Int) -> Bool
+    func isDownloadingFromNavigationBar(for key: String) -> Bool
+}
+
+fileprivate final class ItemDetailDataSource: UITableViewDiffableDataSource<ItemDetailTableViewHandler.Section, ItemDetailTableViewHandler.Row> {
+    var canMoveRow: ((IndexPath) -> Bool)?
+    var moveRow: ((IndexPath, IndexPath) -> Void)?
+    var canEditRow: ((IndexPath) -> Bool)?
+    var commitEditingStyle: ((UITableViewCell.EditingStyle, IndexPath) -> Void)?
+
+    override func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
+        return self.canMoveRow?(indexPath) ?? false
+    }
+
+    override func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
+        self.moveRow?(sourceIndexPath, destinationIndexPath)
+    }
+
+    override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        return self.canEditRow?(indexPath) ?? false
+    }
+
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        self.commitEditingStyle?(editingStyle, indexPath)
+    }
 }
 
 /// Class for handling the `UITableView` of `ItemDetailViewController`. It takes care of showing appropriate data in the `tableView`, keeping track
@@ -37,16 +60,19 @@ final class ItemDetailTableViewHandler: NSObject {
     }
 
     enum Row: Hashable, Equatable {
-        case add
-        case abstract(value: String, collapsed: Bool)
+        case addNote
+        case addAttachment
+        case addCreator
+        case addTag
+        case abstract
         case attachment(attachment: Attachment, progress: CGFloat?, error: Error?, enabled: Bool)
         case creator(ItemDetailState.Creator)
         case dateAdded(Date)
         case dateModified(Date)
-        case field(field: ItemDetailState.Field, multiline: Bool)
+        case field(key: String, multiline: Bool)
         case note(note: Note, isSaving: Bool)
         case tag(Tag)
-        case title(String)
+        case title
         case type(String)
 
         func cellId(isEditing: Bool) -> String {
@@ -77,17 +103,17 @@ final class ItemDetailTableViewHandler: NSObject {
                 return "ItemDetailFieldCell"
             case .title:
                 return "ItemDetailTitleCell"
-            case .add:
+            case .addNote, .addAttachment, .addCreator, .addTag:
                 return "ItemDetailAddCell"
             }
         }
 
         static func == (lhs: ItemDetailTableViewHandler.Row, rhs: ItemDetailTableViewHandler.Row) -> Bool {
             switch (lhs, rhs) {
-            case (.add, .add):
+            case (.addNote, .addNote), (.addCreator, .addCreator), (.addTag, .addTag), (.addAttachment, .addAttachment):
                 return true
-            case (.abstract(let lValue, let lCollapsed), .abstract(let rValue, let rCollapsed)):
-                return lValue == rValue && lCollapsed == rCollapsed
+            case (.abstract, .abstract):
+                return true
             case (.attachment(let lAttachment, let lProgress, let lError, let lEnabled), .attachment(let rAttachment, let rProgress, let rError, let rEnabled)):
                 return lAttachment == rAttachment && lProgress == rProgress && lError?.localizedDescription == rError?.localizedDescription && lEnabled == rEnabled
             case (.creator(let lCreator), .creator(let rCreator)):
@@ -96,14 +122,14 @@ final class ItemDetailTableViewHandler: NSObject {
                 return lDate == rDate
             case (.dateModified(let lDate), .dateModified(let rDate)):
                 return lDate == rDate
-            case (.field(let lField, let lMultiline), .field(let rField, let rMultiline)):
-                return lField == rField && lMultiline == rMultiline
+            case (.field(let lKey, let lMultiline), .field(let rKey, let rMultiline)):
+                return lKey == rKey && lMultiline == rMultiline
             case (.note(let lNote, let lIsSaving), .note(let rNote, let rIsSaving)):
                 return lNote == rNote && lIsSaving == rIsSaving
             case (.tag(let lTag), .tag(let rTag)):
                 return lTag == rTag
-            case (.title(let lValue), .title(let rValue)):
-                return lValue == rValue
+            case (.title, .title):
+                return true
             case (.type(let lValue), .type(let rValue)):
                 return lValue == rValue
             default:
@@ -113,12 +139,8 @@ final class ItemDetailTableViewHandler: NSObject {
 
         func hash(into hasher: inout Hasher) {
             switch self {
-            case .add:
-                hasher.combine(0)
-            case .abstract(let value, let collapsed):
+            case .abstract:
                 hasher.combine(1)
-                hasher.combine(value)
-                hasher.combine(collapsed)
             case .attachment(let attachment, let progress, let error, let enabled):
                 hasher.combine(2)
                 hasher.combine(attachment)
@@ -145,12 +167,28 @@ final class ItemDetailTableViewHandler: NSObject {
             case .tag(let tag):
                 hasher.combine(8)
                 hasher.combine(tag)
-            case .title(let value):
+            case .title:
                 hasher.combine(9)
-                hasher.combine(value)
             case .type(let value):
                 hasher.combine(10)
                 hasher.combine(value)
+            case .addTag:
+                hasher.combine(11)
+            case .addNote:
+                hasher.combine(12)
+            case .addCreator:
+                hasher.combine(13)
+            case .addAttachment:
+                hasher.combine(14)
+            }
+        }
+
+        func isAttachment(withKey key: String) -> Bool {
+            switch self {
+            case .attachment(let attachment, _, _, _):
+                return attachment.key == key
+            default:
+                return false
             }
         }
     }
@@ -169,12 +207,13 @@ final class ItemDetailTableViewHandler: NSObject {
     private var maxTitleWidth: CGFloat = 0
     // Width of title for field cells when editing is disabled (only non-empty fields are visible)
     private var maxNonemptyTitleWidth: CGFloat = 0
-    private var dataSource: DiffableDataSource<Section, Row>!
+//    private var dataSource: DiffableDataSource<Section, Row>!
+    private var newDataSource: ItemDetailDataSource!
     private weak var fileDownloader: AttachmentDownloader?
     weak var delegate: ItemDetailTableViewHandlerDelegate?
 
     var attachmentSection: Int? {
-        return self.dataSource?.snapshot.sectionIndex(for: .attachments)
+        return self.newDataSource?.snapshot().sectionIdentifiers.firstIndex(of: .attachments)
     }
 
     init(tableView: UITableView, containerWidth: CGFloat, viewModel: ViewModel<ItemDetailActionHandler>, fileDownloader: AttachmentDownloader?) {
@@ -212,65 +251,82 @@ final class ItemDetailTableViewHandler: NSObject {
     }
 
     func reload(state: ItemDetailState, animated: Bool) {
-        var snapshot = DiffableDataSourceSnapshot<Section, Row>(isEditing: state.isEditing)
-        for section in self.sections(for: state.data, isEditing: state.isEditing) {
-            snapshot.append(section: section)
-            snapshot.append(objects: self.rows(for: section, state: state), for: section)
+        let sections = self.sections(for: state.data, isEditing: state.isEditing)
+        var snapshot = NSDiffableDataSourceSnapshot<Section, Row>()
+        snapshot.appendSections(sections)
+        for section in sections {
+            snapshot.appendItems(self.rows(for: section, state: state), toSection: section)
         }
-        let animation: DiffableDataSourceAnimation = animated ? .sections : .none
-        self.dataSource.apply(snapshot: snapshot, animation: animation, completion: nil)
+        snapshot.reloadItems(self.rowsToReload(in: snapshot))
+        self.newDataSource.apply(snapshot, animatingDifferences: animated, completion: nil)
+    }
+
+    private func rowsToReload(in snapshot: NSDiffableDataSourceSnapshot<Section, Row>) -> [Row] {
+        var rows: [Row] = []
+        if snapshot.itemIdentifiers.contains(.title) {
+            rows.append(.title)
+        }
+        if snapshot.itemIdentifiers.contains(.abstract) {
+            rows.append(.abstract)
+        }
+        if snapshot.sectionIdentifiers.contains(.fields) {
+            rows.append(contentsOf: snapshot.itemIdentifiers(inSection: .fields))
+        }
+        return rows
     }
 
     func reload(section: Section, state: ItemDetailState, animated: Bool) {
-        let rows = self.rows(for: section, state: state)
-        self.dataSource.update(section: section, with: rows, animation: (animated ? .rows(reload: .automatic, insert: .automatic, delete: .automatic) : .none))
+        var snapshot = self.newDataSource.snapshot()
+
+        guard snapshot.sectionIdentifiers.contains(section) else { return }
+
+        switch section {
+        case .title:
+            snapshot.reloadItems([.title])
+        case .abstract:
+            snapshot.reloadItems([.abstract])
+        case .fields:
+            snapshot.reloadItems(snapshot.itemIdentifiers(inSection: section))
+        default:
+            snapshot.deleteItems(snapshot.itemIdentifiers(inSection: section))
+            snapshot.appendItems(self.rows(for: section, state: state), toSection: section)
+        }
+
+        self.newDataSource.apply(snapshot, animatingDifferences: animated, completion: nil)
     }
 
     /// Update height of updated cell and scroll to it. The cell itself doesn't need to be reloaded, since the change took place inside of it (text field or text view).
-    func updateHeightAndScrollToUpdated(section: Section, state: ItemDetailState) {
-        let rows = self.rows(for: section, state: state)
+    func updateHeightAndScrollToUpdated(row: Row?, section: Section, state: ItemDetailState) {
+        let indexPath: IndexPath
 
-        guard let oldRows = self.dataSource.snapshot.objects(for: section), rows.count == oldRows.count, let sectionIndex = self.dataSource.snapshot.sectionIndex(for: section) else {
-            // Something else changed and we need to reload. This shouldn't happen as this should be called only for textField/textView changes.
-            DDLogWarn("ItemDetailTableViewHandler: tried to update height and scroll to changed row while more rows/sections changed")
-            self.reload(section: section, state: state, animated: true)
-            return
+        if let row = row, let _indexPath = self.newDataSource.indexPath(for: row) {
+            indexPath = _indexPath
+        } else {
+            guard let sectionIndex = self.newDataSource.sectionIndex(for: section) else { return }
+            indexPath = IndexPath(row: 0, section: sectionIndex)
         }
 
-        // Find changed indexPath
-        var changedIndexPath: IndexPath?
-        for (idx, row) in rows.enumerated() {
-            if oldRows[idx] != row {
-                changedIndexPath = IndexPath(row: idx, section: sectionIndex)
-                break
-            }
-        }
-
-        guard let indexPath = changedIndexPath else { return }
-
-        // Update snapshot, change height and scroll to changed index
-        self.dataSource.updateWithoutReload(section: section, with: rows)
         self.updateCellHeightsAndScroll(to: indexPath)
     }
 
-    func updateAttachment(with attachment: Attachment, at index: Int) {
-        let enabled = self.delegate?.isDownloadingFromNavigationBar(for: index) == false
+    func updateAttachment(with attachment: Attachment) {
+        var snapshot = self.newDataSource.snapshot()
+
+        guard let oldRow = snapshot.itemIdentifiers(inSection: .attachments).first(where: { $0.isAttachment(withKey: attachment.key) }) else { return }
+
+        let enabled = self.delegate?.isDownloadingFromNavigationBar(for: attachment.key) == false
         var progress: CGFloat?
         var error: Error?
         if enabled {
             (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
         }
 
-        let indexPath = self.dataSource.snapshot.indexPath(where: { row in
-            switch row {
-            case .attachment(let _attachment, _, _, _):
-                return _attachment.key == attachment.key
-            default: return false
-            }
-        })
-        if let indexPath = indexPath {
-            self.dataSource.update(object: .attachment(attachment: attachment, progress: progress, error: error, enabled: enabled), at: indexPath)
-        }
+        let newRow = Row.attachment(attachment: attachment, progress: progress, error: error, enabled: enabled)
+
+        snapshot.insertItems([newRow], beforeItem: oldRow)
+        snapshot.deleteItems([oldRow])
+
+        self.newDataSource.apply(snapshot, animatingDifferences: false, completion: nil)
     }
 
     private func updateCellHeightsAndScroll(to indexPath: IndexPath) {
@@ -336,11 +392,11 @@ final class ItemDetailTableViewHandler: NSObject {
     private func rows(for section: Section, state: ItemDetailState) -> [Row] {
         switch section {
         case .abstract:
-            return [.abstract(value: (state.data.abstract ?? ""), collapsed: state.abstractCollapsed)]
+            return [.abstract]
 
         case .attachments:
-            let attachments: [Row] = state.data.attachments.enumerated().map({ idx, attachment in
-                let enabled = self.delegate?.isDownloadingFromNavigationBar(for: idx) == false
+            let attachments: [Row] = state.data.attachments.map({ attachment in
+                let enabled = self.delegate?.isDownloadingFromNavigationBar(for: attachment.key) == false
                 var progress: CGFloat?
                 var error: Error?
 
@@ -352,7 +408,7 @@ final class ItemDetailTableViewHandler: NSObject {
             })
 
             if state.isEditing {
-                return attachments + [.add]
+                return attachments + [.addAttachment]
             }
             return attachments
 
@@ -363,7 +419,7 @@ final class ItemDetailTableViewHandler: NSObject {
             })
 
             if state.isEditing {
-                return creators + [.add]
+                return creators + [.addCreator]
             }
             return creators
 
@@ -372,8 +428,7 @@ final class ItemDetailTableViewHandler: NSObject {
 
         case .fields:
             return state.data.fieldIds.compactMap({ fieldId in
-                guard let field = state.data.fields[fieldId] else { return nil }
-                return .field(field: field, multiline: (fieldId == FieldKeys.Item.extra))
+                return .field(key: fieldId, multiline: (fieldId == FieldKeys.Item.extra))
             })
 
         case .notes:
@@ -383,7 +438,7 @@ final class ItemDetailTableViewHandler: NSObject {
             })
 
             if state.isEditing {
-                return notes + [.add]
+                return notes + [.addNote]
             }
             return notes
 
@@ -393,12 +448,12 @@ final class ItemDetailTableViewHandler: NSObject {
             })
 
             if state.isEditing {
-                return tags + [.add]
+                return tags + [.addTag]
             }
             return tags
 
         case .title:
-            return [.title(state.data.title)]
+            return [.title]
 
         case .type:
             return [.type(state.data.localizedType)]
@@ -466,12 +521,11 @@ final class ItemDetailTableViewHandler: NSObject {
 
     // MARK: - DataSource Helpers
 
-    private func setup(cell: UITableViewCell, section: Section, row: Row, indexPath: IndexPath) {
-        let isEditing = self.dataSource.snapshot.isEditing
+    private func setup(cell: UITableViewCell, section: Section, row: Row, indexPath: IndexPath, isAddCell: Bool, isEditing: Bool) {
         let isFirst = indexPath.row == 0
-        let isLast = indexPath.row == (self.dataSource.tableView(self.tableView, numberOfRowsInSection: indexPath.section) - 1)
+        let isLast = indexPath.row == (self.newDataSource.tableView(self.tableView, numberOfRowsInSection: indexPath.section) - 1)
         let titleWidth = isEditing ? self.maxTitleWidth : self.maxNonemptyTitleWidth
-        let (separatorInsets, layoutMargins, accessoryType) = self.cellLayoutData(for: section, isFirstRow: isFirst, isLastRow: isLast, isAddCell: (row == .add), isEditing: isEditing)
+        let (separatorInsets, layoutMargins, accessoryType) = self.cellLayoutData(for: section, isFirstRow: isFirst, isLastRow: isLast, isAddCell: isAddCell, isEditing: isEditing)
 
         cell.separatorInset = separatorInsets
         cell.layoutMargins = layoutMargins
@@ -484,22 +538,28 @@ final class ItemDetailTableViewHandler: NSObject {
         cell.accessibilityTraits = []
 
         switch row {
-        case .add:
+        case .addNote:
             if let cell = cell as? ItemDetailAddCell {
-                switch section {
-                case .creators:
-                    cell.setup(with: L10n.ItemDetail.addCreator)
-                case .tags:
-                    cell.setup(with: L10n.ItemDetail.addTag)
-                case .notes:
-                    cell.setup(with: L10n.ItemDetail.addNote)
-                case .attachments:
-                    cell.setup(with: L10n.ItemDetail.addAttachment)
-                default: break
-                }
+                cell.setup(with: L10n.ItemDetail.addNote)
             }
 
-        case .abstract(let value, let collapsed):
+        case .addTag:
+            if let cell = cell as? ItemDetailAddCell {
+                cell.setup(with: L10n.ItemDetail.addTag)
+            }
+
+        case .addCreator:
+            if let cell = cell as? ItemDetailAddCell {
+                cell.setup(with: L10n.ItemDetail.addCreator)
+            }
+
+        case .addAttachment:
+            if let cell = cell as? ItemDetailAddCell {
+                cell.setup(with: L10n.ItemDetail.addAttachment)
+            }
+
+        case .abstract:
+            let value = self.viewModel.state.data.abstract ?? ""
             if let cell = cell as? ItemDetailAbstractEditCell {
                 cell.setup(with: value)
                 cell.textObservable.subscribe(onNext: { [weak self] abstract in
@@ -507,7 +567,7 @@ final class ItemDetailTableViewHandler: NSObject {
                     self?.viewModel.process(action: .setAbstract(abstract))
                 }).disposed(by: cell.newDisposeBag)
             } else if let cell = cell as? ItemDetailAbstractCell {
-                cell.setup(with: value, isCollapsed: collapsed)
+                cell.setup(with: value, isCollapsed: self.viewModel.state.abstractCollapsed)
             }
 
         case .attachment(let attachment, let progress, let error, let enabled):
@@ -533,7 +593,8 @@ final class ItemDetailTableViewHandler: NSObject {
                 cell.setup(with: date, title: L10n.dateModified, titleWidth: titleWidth)
             }
 
-        case .field(let field, _):
+        case .field(let key, _):
+            guard let field = self.viewModel.state.data.fields[key] else { return }
             if let cell = cell as? ItemDetailFieldCell {
                 cell.setup(with: field, titleWidth: titleWidth)
             } else if let cell = cell as? ItemDetailFieldEditCell {
@@ -558,9 +619,9 @@ final class ItemDetailTableViewHandler: NSObject {
                 cell.setup(tag: tag, isEditing: isEditing)
             }
 
-        case .title(let title):
+        case .title:
             if let cell = cell as? ItemDetailTitleCell {
-                cell.setup(with: title, isEditing: isEditing)
+                cell.setup(with: self.viewModel.state.data.title, isEditing: isEditing)
                 cell.textObservable.subscribe(onNext: { [weak self] title in
                     guard isEditing else { return }
                     self?.viewModel.process(action: .setTitle(title))
@@ -636,15 +697,58 @@ final class ItemDetailTableViewHandler: NSObject {
 
     /// Sets `tableView` dataSource, delegate and registers appropriate cells and sections.
     private func setupTableView() {
-        self.dataSource = DiffableDataSource(tableView: self.tableView,
-                                             dequeueAction: { [weak self] tableView, indexPath, section, row in
-                                                 guard let `self` = self else { return UITableViewCell() }
-                                                 return tableView.dequeueReusableCell(withIdentifier: row.cellId(isEditing: self.dataSource.snapshot.isEditing), for: indexPath)
-                                             }, setupAction: { [weak self] cell, indexPath, section, row in
-                                                 guard let `self` = self else { return }
-                                                 self.setup(cell: cell, section: section, row: row, indexPath: indexPath)
-                                             })
-        self.dataSource.dataSource = self
+        self.newDataSource = ItemDetailDataSource(tableView: self.tableView, cellProvider: { [weak self] tableView, indexPath, row in
+            let isEditing = self?.viewModel.state.isEditing ?? false
+            let cellId = row.cellId(isEditing: isEditing)
+            let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)
+
+            if let `self` = self, let section = self.newDataSource.section(for: indexPath.section) {
+                self.setup(cell: cell, section: section, row: row, indexPath: indexPath, isAddCell: (cellId == "ItemDetailAddCell"), isEditing: isEditing)
+            }
+
+            return cell
+        });
+
+        self.newDataSource.canEditRow = { [weak self] indexPath in
+            guard let `self` = self, let row = self.newDataSource.itemIdentifier(for: indexPath) else { return false }
+
+            switch row {
+            case .attachment:
+                return !self.viewModel.state.data.isAttachment
+            case .creator, .note, .tag:
+                return self.viewModel.state.isEditing
+            default:
+                return false
+            }
+        }
+
+        self.newDataSource.canMoveRow = { [weak self] indexPath in
+            guard let row = self?.newDataSource.itemIdentifier(for: indexPath), case .creator = row else { return false }
+            return true
+        }
+
+        self.newDataSource.moveRow = { [weak self] sourceIndexPath, destinationIndexPath in
+            guard let `self` = self, let sourceSection = self.newDataSource.section(for: sourceIndexPath.section),
+                  let destinationSection = self.newDataSource.section(for: destinationIndexPath.section),
+                  sourceSection == .creators && destinationSection == .creators else { return }
+            self.viewModel.process(action: .moveCreators(from: IndexSet([sourceIndexPath.row]), to: destinationIndexPath.row))
+        }
+
+        self.newDataSource.commitEditingStyle = { [weak self] editingStyle, indexPath in
+            guard editingStyle == .delete, let `self` = self, self.viewModel.state.isEditing, let section = self.newDataSource.section(for: indexPath.section) else { return }
+
+            switch section {
+            case .creators:
+                self.viewModel.process(action: .deleteCreators([indexPath.row]))
+            case .tags:
+                self.viewModel.process(action: .deleteTags([indexPath.row]))
+            case .attachments:
+                self.viewModel.process(action: .deleteAttachments([indexPath.row]))
+            case .notes:
+                self.viewModel.process(action: .deleteNotes([indexPath.row]))
+            case .title, .abstract, .fields, .type, .dates: break
+            }
+        }
 
         self.tableView.delegate = self
         self.tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
@@ -692,52 +796,9 @@ final class ItemDetailTableViewHandler: NSObject {
     }
 }
 
-extension ItemDetailTableViewHandler: AdditionalDiffableDataSource {
-    func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
-        guard let row = self.dataSource.snapshot.object(at: indexPath), case .creator = row else { return false }
-        return true
-    }
-
-    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
-        guard let row = self.dataSource.snapshot.object(at: indexPath) else { return false }
-
-        switch row {
-        case .attachment:
-            return !self.viewModel.state.data.isAttachment
-        case .creator, .note, .tag:
-            return self.dataSource.snapshot.isEditing
-        default:
-            return false
-        }
-    }
-
-    func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
-        guard let sourceSection = self.dataSource.snapshot.section(for: sourceIndexPath.section),
-              let destinationSection = self.dataSource.snapshot.section(for: destinationIndexPath.section),
-              sourceSection == .creators && destinationSection == .creators else { return }
-        self.viewModel.process(action: .moveCreators(from: IndexSet([sourceIndexPath.row]), to: destinationIndexPath.row))
-    }
-
-    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-        guard self.dataSource.snapshot.isEditing && editingStyle == .delete, let section = self.dataSource.snapshot.section(for: indexPath.section) else { return }
-
-        switch section {
-        case .creators:
-            self.viewModel.process(action: .deleteCreators([indexPath.row]))
-        case .tags:
-            self.viewModel.process(action: .deleteTags([indexPath.row]))
-        case .attachments:
-            self.viewModel.process(action: .deleteAttachments([indexPath.row]))
-        case .notes:
-            self.viewModel.process(action: .deleteNotes([indexPath.row]))
-        case .title, .abstract, .fields, .type, .dates: break
-        }
-    }
-}
-
 extension ItemDetailTableViewHandler: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        guard let section = self.dataSource.snapshot.section(for: section) else { return 0 }
+        guard let section = self.newDataSource.section(for: section) else { return 0 }
         
         switch section {
         case .notes, .attachments, .tags:
@@ -748,7 +809,7 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        guard let section = self.dataSource.snapshot.section(for: section) else { return nil }
+        guard let section = self.newDataSource.section(for: section) else { return nil }
 
         let title: String
         switch section {
@@ -768,24 +829,28 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        guard let section = self.dataSource.snapshot.section(for: indexPath.section) else { return }
-        let isLastRow = indexPath.row == (self.dataSource.tableView(tableView, numberOfRowsInSection: indexPath.section) - 1)
-        let layoutMargins = ItemDetailLayout.insets(for: section, isEditing: self.dataSource.snapshot.isEditing, isFirstRow: (indexPath.row == 0), isLastRow: isLastRow)
+        guard let section = self.newDataSource.section(for: indexPath.section) else { return }
+        let isLastRow = indexPath.row == (self.newDataSource.tableView(tableView, numberOfRowsInSection: indexPath.section) - 1)
+        let layoutMargins = ItemDetailLayout.insets(for: section, isEditing: self.viewModel.state.isEditing, isFirstRow: (indexPath.row == 0), isLastRow: isLastRow)
         cell.layoutMargins = layoutMargins
         cell.contentView.layoutMargins = layoutMargins
     }
 
     func tableView(_ tableView: UITableView, targetIndexPathForMoveFromRowAt sourceIndexPath: IndexPath, toProposedIndexPath proposedDestinationIndexPath: IndexPath) -> IndexPath {
-        let section = self.dataSource.snapshot.section(for: proposedDestinationIndexPath.section)
+        let section = self.newDataSource.section(for: proposedDestinationIndexPath.section)
         if section != .creators { return sourceIndexPath }
-        if let row = self.dataSource.snapshot.object(at: proposedDestinationIndexPath), case .add = row {
-            return sourceIndexPath
+        if let row = self.newDataSource.itemIdentifier(for: proposedDestinationIndexPath) {
+            switch row {
+            case .addTag, .addNote, .addCreator, .addAttachment:
+                return sourceIndexPath
+            default: break
+            }
         }
         return proposedDestinationIndexPath
     }
 
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        guard !self.dataSource.snapshot.isEditing, let section = self.dataSource.snapshot.section(for: indexPath.section) else { return nil }
+        guard !self.viewModel.state.isEditing, let section = self.newDataSource.section(for: indexPath.section) else { return nil }
 
         switch section {
         case .attachments:
@@ -802,7 +867,7 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        guard !self.dataSource.snapshot.isEditing, let section = self.dataSource.snapshot.section(for: indexPath.section) else { return nil }
+        guard !self.viewModel.state.isEditing, let section = self.newDataSource.section(for: indexPath.section) else { return nil }
 
         switch section {
         case .attachments:
@@ -824,19 +889,20 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
 
-        guard let section = self.dataSource.snapshot.section(for: indexPath.section) else { return }
+        guard let section = self.newDataSource.section(for: indexPath.section) else { return }
 
         switch section {
         case .attachments:
-            if self.dataSource.snapshot.isEditing {
+            if self.viewModel.state.isEditing {
                 if indexPath.row == self.viewModel.state.data.attachments.count {
                     self.observer.on(.next(.openFilePicker))
                 }
-            } else {
-                self.viewModel.process(action: .openAttachment(indexPath.row))
+            } else if indexPath.row < self.viewModel.state.data.attachments.count {
+                let key = self.viewModel.state.data.attachments[indexPath.row].key
+                self.viewModel.process(action: .openAttachment(key))
             }
         case .notes:
-            if self.dataSource.snapshot.isEditing && indexPath.row == self.viewModel.state.data.notes.count {
+            if self.viewModel.state.isEditing && indexPath.row == self.viewModel.state.data.notes.count {
                 self.observer.on(.next(.openNoteEditor(nil)))
             } else {
                 let note = self.viewModel.state.data.notes[indexPath.row]
@@ -846,11 +912,11 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
                 self.observer.on(.next(.openNoteEditor(note)))
             }
         case .tags:
-            if self.dataSource.snapshot.isEditing && indexPath.row == self.viewModel.state.data.tags.count {
+            if self.viewModel.state.isEditing && indexPath.row == self.viewModel.state.data.tags.count {
                 self.observer.on(.next(.openTagPicker))
             }
         case .creators:
-            guard self.dataSource.snapshot.isEditing else { return }
+            guard self.viewModel.state.isEditing else { return }
 
             if indexPath.row == self.viewModel.state.data.creators.count {
                 self.observer.on(.next(.openCreatorCreation))
@@ -861,7 +927,7 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
                 }
             }
         case .type:
-            if self.dataSource.snapshot.isEditing && !self.viewModel.state.data.isAttachment{
+            if self.viewModel.state.isEditing && !self.viewModel.state.data.isAttachment{
                 self.observer.on(.next(.openTypePicker))
             }
         case .fields:
@@ -877,7 +943,7 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
                 }
             }
         case .abstract:
-            if !self.dataSource.snapshot.isEditing {
+            if !self.viewModel.state.isEditing {
                 self.viewModel.process(action: .toggleAbstractDetailCollapsed)
             }
         case .title, .dates: break

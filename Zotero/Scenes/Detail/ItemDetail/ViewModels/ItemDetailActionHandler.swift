@@ -73,8 +73,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 state.sectionNeedsReload = true
             }
 
-        case .openAttachment(let index):
-            self.openAttachment(at: index, in: viewModel)
+        case .openAttachment(let key):
+            self.openAttachment(with: key, in: viewModel)
 
         case .attachmentOpened(let key):
             guard viewModel.state.attachmentToOpen == key else { return }
@@ -131,6 +131,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             self.update(viewModel: viewModel) { state in
                 state.data.title = title
                 state.updatedSection = .title
+                state.updatedRow = .title
                 state.sectionNeedsReload = false
             }
 
@@ -138,6 +139,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             self.update(viewModel: viewModel) { state in
                 state.data.abstract = abstract
                 state.updatedSection = .abstract
+                state.updatedRow = .abstract
                 state.sectionNeedsReload = false
             }
 
@@ -157,6 +159,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             self.update(viewModel: viewModel) { state in
                 state.abstractCollapsed = !state.abstractCollapsed
                 state.updatedSection = .abstract
+//                state.updatedRow = .abstract
                 state.sectionNeedsReload = true
             }
 
@@ -503,7 +506,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                   let new = viewModel.state.data.attachments[index].changed(location: .remote, condition: { $0 == .local }) else { return }
             self.update(viewModel: viewModel) { state in
                 state.data.attachments[index] = new
-                state.updateAttachmentIndex = index
+                state.updateAttachmentKey = new.key
             }
         }
     }
@@ -562,21 +565,32 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         }
     }
 
-    private func openAttachment(at index: Int, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        guard index < viewModel.state.data.attachments.count else { return }
-
-        let attachment = viewModel.state.data.attachments[index]
-        let (progress, _) = self.fileDownloader.data(for: attachment.key, libraryId: attachment.libraryId)
-
-        self.update(viewModel: viewModel) { state in
-            state.attachmentToOpen = attachment.key
-        }
+    private func openAttachment(with key: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        let (progress, _) = self.fileDownloader.data(for: key, libraryId: viewModel.state.library.identifier)
 
         if progress != nil {
-            self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
-        } else {
-            self.fileDownloader.downloadIfNeeded(attachment: attachment, parentKey: viewModel.state.type.previewKey)
+            // If download is in progress, cancel download
+
+            self.update(viewModel: viewModel) { state in
+                if state.attachmentToOpen == key {
+                    state.attachmentToOpen = nil
+                }
+            }
+
+            self.fileDownloader.cancel(key: key, libraryId: viewModel.state.library.identifier)
+
+            return
         }
+
+        guard let attachment = viewModel.state.data.attachments.first(where: { $0.key == key }) else { return }
+
+        // Otherwise start download
+
+        self.update(viewModel: viewModel) { state in
+            state.attachmentToOpen = key
+        }
+
+        self.fileDownloader.downloadIfNeeded(attachment: attachment, parentKey: viewModel.state.type.previewKey)
     }
 
     private func process(downloadUpdate update: AttachmentDownloader.Update, in viewModel: ViewModel<ItemDetailActionHandler>) {
@@ -588,14 +602,14 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         switch update.kind {
         case .cancelled, .failed, .progress:
             self.update(viewModel: viewModel) { state in
-                state.updateAttachmentIndex = index
+                state.updateAttachmentKey = attachment.key
             }
 
         case .ready:
             guard let new = attachment.changed(location: .local) else { return }
             self.update(viewModel: viewModel) { state in
                 state.data.attachments[index] = new
-                state.updateAttachmentIndex = index
+                state.updateAttachmentKey = new.key
             }
         }
     }
@@ -759,6 +773,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         self.update(viewModel: viewModel) { state in
             state.data.fields[id] = field
             state.updatedSection = .fields
+            state.updatedRow = .field(key: field.key, multiline: (field.id == FieldKeys.Item.extra))
             state.sectionNeedsReload = false
         }
     }
