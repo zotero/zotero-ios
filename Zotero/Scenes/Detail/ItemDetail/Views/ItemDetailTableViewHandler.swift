@@ -244,75 +244,127 @@ final class ItemDetailTableViewHandler: NSObject {
 
     /// Recalculates title width for current data.
     /// - parameter data: New data that change the title width.
-    func reloadTitleWidth(from data: ItemDetailState.Data) {
+    func recalculateTitleWidth(from data: ItemDetailState.Data) {
         let (titleWidth, nonEmptyTitleWidth) = self.calculateTitleWidths(for: data)
         self.maxTitleWidth = titleWidth
         self.maxNonemptyTitleWidth = nonEmptyTitleWidth
     }
 
-    func reload(state: ItemDetailState, animated: Bool) {
+    /// Reloads the whole `tableView`. Applies new snapshot based on `state` and reloads remaining items which were not changed between snapshots.
+    /// - parameter state: State to which we're reloading the table view.
+    /// - parameter animated: `true` if the change is animated, `false` otherwise.
+    func reloadAll(to state: ItemDetailState, animated: Bool) {
         let sections = self.sections(for: state.data, isEditing: state.isEditing)
         var snapshot = NSDiffableDataSourceSnapshot<Section, Row>()
         snapshot.appendSections(sections)
         for section in sections {
             snapshot.appendItems(self.rows(for: section, state: state), toSection: section)
         }
-        snapshot.reloadItems(self.rowsToReload(in: snapshot))
-        self.newDataSource.apply(snapshot, animatingDifferences: animated, completion: nil)
+
+        let toReload = self.rowsToReload(from: self.newDataSource.snapshot(), to: snapshot)
+        if !toReload.isEmpty {
+            snapshot.reloadItems(toReload)
+        }
+
+        if !animated {
+            self.tableView.setEditing(state.isEditing, animated: false)
+            if #available(iOS 15.0, *) {
+                self.newDataSource.applySnapshotUsingReloadData(snapshot)
+            } else {
+                self.newDataSource.apply(snapshot)
+            }
+            return
+        }
+
+
+        UIView.transition(with: self.tableView, duration: 0.2, options: .transitionCrossDissolve, animations: {
+            self.tableView.setEditing(state.isEditing, animated: false)
+            if #available(iOS 15.0, *) {
+                self.newDataSource.applySnapshotUsingReloadData(snapshot)
+            } else {
+                self.newDataSource.apply(snapshot)
+            }
+        }, completion: nil)
     }
 
-    private func rowsToReload(in snapshot: NSDiffableDataSourceSnapshot<Section, Row>) -> [Row] {
-        var rows: [Row] = []
-        if snapshot.itemIdentifiers.contains(.title) {
-            rows.append(.title)
+    /// Rows to reload when doing a full reload of table view.
+    /// - parameter oldSnapshot: Previous snapshot.
+    /// - parameter newSnapshot: New snapshot which will be applied.
+    /// - returns: Array of rows to reload.
+    private func rowsToReload(from oldSnapshot: NSDiffableDataSourceSnapshot<Section, Row>, to newSnapshot: NSDiffableDataSourceSnapshot<Section, Row>) -> [Row] {
+        var toReload: [Row] = []
+        for row in oldSnapshot.itemIdentifiers {
+            if newSnapshot.itemIdentifiers.contains(row) {
+                toReload.append(row)
+            }
         }
-        if snapshot.itemIdentifiers.contains(.abstract) {
-            rows.append(.abstract)
-        }
-        if snapshot.sectionIdentifiers.contains(.fields) {
-            rows.append(contentsOf: snapshot.itemIdentifiers(inSection: .fields))
-        }
-        return rows
+        return toReload
     }
 
+    /// Reloads specific section based on snapshot diff. In case of special sections (`title`, `abstract` and `fields`) which don't hold their respective values, their item(s) are always reloaded.
+    /// - parameter section: Section to reload.
+    /// - parameter state: Current item detail state.
+    /// - parameter animated: `true` if change is animated, `false` otherwise.
     func reload(section: Section, state: ItemDetailState, animated: Bool) {
         var snapshot = self.newDataSource.snapshot()
 
         guard snapshot.sectionIdentifiers.contains(section) else { return }
 
-        switch section {
-        case .title:
-            snapshot.reloadItems([.title])
-        case .abstract:
-            snapshot.reloadItems([.abstract])
-        case .fields:
-            snapshot.reloadItems(snapshot.itemIdentifiers(inSection: section))
-        default:
-            snapshot.deleteItems(snapshot.itemIdentifiers(inSection: section))
-            snapshot.appendItems(self.rows(for: section, state: state), toSection: section)
+        let oldRows = snapshot.itemIdentifiers(inSection: section)
+        snapshot.deleteItems(oldRows)
+        snapshot.appendItems(self.rows(for: section, state: state), toSection: section)
+
+        let toReload = self.rowsToReload(from: oldRows, to: snapshot.itemIdentifiers(inSection: section), in: section)
+        if !toReload.isEmpty {
+            snapshot.reloadItems(toReload)
         }
 
         self.newDataSource.apply(snapshot, animatingDifferences: animated, completion: nil)
     }
 
-    /// Update height of updated cell and scroll to it. The cell itself doesn't need to be reloaded, since the change took place inside of it (text field or text view).
-    func updateHeightAndScrollToUpdated(row: Row?, section: Section, state: ItemDetailState) {
-        let indexPath: IndexPath
+    /// Returns an array of rows which need to be reloaded manually. Some sections are "special" because their rows don't hold the values which they show in table view, they just hold their
+    /// identifiers which don't change. So if the value changes, we have to manually reload these rows.
+    /// - parameter oldRows: Rows from previous snapshot.
+    /// - parameter newRows: Rows from new snapshot.
+    /// - parameter section: Section of given rows.
+    /// - returns: Array of rows to reload.
+    private func rowsToReload(from oldRows: [Row], to newRows: [Row], in section: Section) -> [Row] {
+        switch section {
+        case .title:
+            // Always reload title, if reload is requested, the value changed.
+            return [.title]
 
-        if let row = row, let _indexPath = self.newDataSource.indexPath(for: row) {
-            indexPath = _indexPath
-        } else {
-            guard let sectionIndex = self.newDataSource.sectionIndex(for: section) else { return }
-            indexPath = IndexPath(row: 0, section: sectionIndex)
+        case .abstract:
+            // Always reload abstract, if reload is requested, the value changed.
+            return [.abstract]
+
+        case .fields:
+            // Reload fields which weren't removed.
+            var toReload: [Row] = []
+            for row in oldRows {
+                if newRows.contains(row) {
+                    toReload.append(row)
+                }
+            }
+            return toReload
+
+        default:
+            // Rows in other sections hold their respective values, so they will reload based on the diff.
+            return []
         }
+    }
 
+    /// Update height of updated cell and scroll to it. The cell itself doesn't need to be reloaded, since the change took place inside of it (text field or text view).
+    func updateHeightAndScrollToUpdated(row: Row, state: ItemDetailState) {
+        guard let indexPath = self.newDataSource.indexPath(for: row) else { return }
         self.updateCellHeightsAndScroll(to: indexPath)
     }
 
     func updateAttachment(with attachment: Attachment) {
         var snapshot = self.newDataSource.snapshot()
+        var rows = snapshot.itemIdentifiers(inSection: .attachments)
 
-        guard let oldRow = snapshot.itemIdentifiers(inSection: .attachments).first(where: { $0.isAttachment(withKey: attachment.key) }) else { return }
+        guard let index = rows.firstIndex(where: { $0.isAttachment(withKey: attachment.key) }) else { return }
 
         let enabled = self.delegate?.isDownloadingFromNavigationBar(for: attachment.key) == false
         var progress: CGFloat?
@@ -321,10 +373,9 @@ final class ItemDetailTableViewHandler: NSObject {
             (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
         }
 
-        let newRow = Row.attachment(attachment: attachment, progress: progress, error: error, enabled: enabled)
-
-        snapshot.insertItems([newRow], beforeItem: oldRow)
-        snapshot.deleteItems([oldRow])
+        snapshot.deleteItems(rows)
+        rows[index] = Row.attachment(attachment: attachment, progress: progress, error: error, enabled: enabled)
+        snapshot.appendItems(rows, toSection: .attachments)
 
         self.newDataSource.apply(snapshot, animatingDifferences: false, completion: nil)
     }
@@ -760,6 +811,7 @@ final class ItemDetailTableViewHandler: NSObject {
         if #available(iOS 15.0, *) {
             self.tableView.sectionHeaderTopPadding = 0
         }
+        self.tableView.estimatedRowHeight = 44
 
         ItemDetailTableViewHandler.cellIds.forEach { cellId in
             self.tableView.register(UINib(nibName: cellId, bundle: nil), forCellReuseIdentifier: cellId)

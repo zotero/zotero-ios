@@ -163,23 +163,27 @@ final class ItemDetailViewController: UIViewController {
     /// Update UI based on new state.
     /// - parameter state: New state.
     private func update(to state: ItemDetailState) {
+        if let error = state.error {
+            self.coordinatorDelegate?.show(error: error, viewModel: self.viewModel)
+        }
+
         if state.changes.contains(.item) {
             // Another viewModel state update is made inside `subscribe(onNext:)`, to avoid reentrancy process it later on main queue.
             DispatchQueue.main.async {
                 self.itemChanged(state: state)
             }
-        } else if state.changes.contains(.reloadedData) {
+            return
+        }
+
+        if state.changes.contains(.reloadedData) {
             let wasHidden = self.tableView.isHidden
             self.tableView.isHidden = state.isLoadingData
             self.activityIndicator.isHidden = !state.isLoadingData
 
             self.setNavigationBarButtons(to: state)
-            self.tableViewHandler.reloadTitleWidth(from: state.data)
-            self.tableViewHandler.reload(state: state, animated: !wasHidden)
-        }
-
-        if let error = state.error {
-            self.coordinatorDelegate?.show(error: error, viewModel: self.viewModel)
+            self.tableViewHandler.recalculateTitleWidth(from: state.data)
+            self.tableViewHandler.reloadAll(to: state, animated: !wasHidden)
+            return
         }
 
         guard !state.isLoadingData else { return }
@@ -189,16 +193,24 @@ final class ItemDetailViewController: UIViewController {
                 self.setNavigationBarButtons(to: state)
             }
             if state.changes.contains(.type) {
-                self.tableViewHandler.reloadTitleWidth(from: state.data)
+                self.tableViewHandler.recalculateTitleWidth(from: state.data)
             }
-            self.tableViewHandler.reload(state: state, animated: true)
-        } else if let section = state.updatedSection {
-            if state.sectionNeedsReload {
+            self.tableViewHandler.reloadAll(to: state, animated: true)
+            return
+        }
+
+        if let reload = state.reload {
+            switch reload {
+            case .row(let row):
+                self.tableViewHandler.updateHeightAndScrollToUpdated(row: row, state: state)
+
+            case .section(let section):
                 self.tableViewHandler.reload(section: section, state: state, animated: true)
-            } else {
-                self.tableViewHandler.updateHeightAndScrollToUpdated(row: state.updatedRow, section: section, state: state)
             }
-        } else if let key = state.updateAttachmentKey {
+            return
+        }
+
+        if let key = state.updateAttachmentKey {
             if state.data.mainAttachmentKey == key {
                 // Update main-attachment related UI
                 if self.controllers.userControllers?.fileDownloader.data(for: key, libraryId: state.library.identifier).progress == nil {

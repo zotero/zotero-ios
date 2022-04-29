@@ -242,6 +242,11 @@ struct ItemDetailState: ViewModelState {
         }
     }
 
+    enum TableViewReloadType {
+        case row(ItemDetailTableViewHandler.Row)
+        case section(ItemDetailTableViewHandler.Section)
+    }
+
     let library: Library
     let userId: Int
 
@@ -254,9 +259,7 @@ struct ItemDetailState: ViewModelState {
     var data: Data
     var snapshot: Data?
     var promptSnapshot: Data?
-    var updatedSection: ItemDetailTableViewHandler.Section?
-    var updatedRow: ItemDetailTableViewHandler.Row?
-    var sectionNeedsReload: Bool
+    var reload: TableViewReloadType?
     var error: ItemDetailError?
     var metadataTitleMaxWidth: CGFloat
     var updateAttachmentKey: String?
@@ -278,7 +281,6 @@ struct ItemDetailState: ViewModelState {
         self.isSaving = false
         self.savingNotes = []
         self.isLoadingData = true
-        self.sectionNeedsReload = true
 
         switch type {
         case .preview, .duplication:
@@ -292,7 +294,6 @@ struct ItemDetailState: ViewModelState {
         self.changes = []
         self.error = nil
         self.updateAttachmentKey = nil
-        self.updatedSection = nil
-        self.updatedRow = nil
+        self.reload = nil
     }
 }

@@ -63,11 +63,7 @@ final class ItemDetailFieldCell: RxTableViewCell {
     }
 
     private func setAdditionalInfo(value: String?) {
-        if let value = value {
-            self.additionalInfoLabel.text = value
-        } else {
-            self.additionalInfoLabel.text = nil
-        }
+        self.additionalInfoLabel.text = value
         self.additionalInfoOffset.constant = value == nil ? 0 : self.layoutMargins.right
     }
 
@@ -75,6 +71,6 @@ final class ItemDetailFieldCell: RxTableViewCell {
         // Workaround for weird iOS bug, when layout margins are too short, the baseline is misaligned
         let needsOffset = self.layoutMargins.bottom == 10 && self.layoutMargins.top == 10
         self.valueTop.constant = self.valueLabel.font.capHeight - self.valueLabel.font.ascender - (needsOffset ? 1 : ItemDetailLayout.separatorHeight)
-        self.valueBottom.constant = needsOffset ? -1 : -ItemDetailLayout.separatorHeight
+        self.valueBottom.constant = needsOffset ? -1 : 0//-ItemDetailLayout.separatorHeight
     }
 }

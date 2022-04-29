@@ -69,8 +69,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             self.update(viewModel: viewModel) { state in
                 state.data.deletedAttachments = state.data.deletedAttachments.union(offsets.map({ state.data.attachments[$0].key }))
                 state.data.attachments.remove(atOffsets: offsets)
-                state.updatedSection = .attachments
-                state.sectionNeedsReload = true
+                state.reload = .section(.attachments)
             }
 
         case .openAttachment(let key):
@@ -100,8 +99,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             self.update(viewModel: viewModel) { state in
                 state.data.deletedNotes = state.data.deletedNotes.union(offsets.map({ state.data.notes[$0].key }))
                 state.data.notes.remove(atOffsets: offsets)
-                state.updatedSection = .notes
-                state.sectionNeedsReload = true
+                state.reload = .none
             }
 
         case .saveNote(let key, let text, let tags):
@@ -114,8 +112,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             self.update(viewModel: viewModel) { state in
                 state.data.deletedTags = state.data.deletedTags.union(offsets.map({ state.data.tags[$0].name }))
                 state.data.tags.remove(atOffsets: offsets)
-                state.updatedSection = .tags
-                state.sectionNeedsReload = true
+                state.reload = .section(.tags)
             }
 
         case .startEditing:
@@ -130,17 +127,13 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         case .setTitle(let title):
             self.update(viewModel: viewModel) { state in
                 state.data.title = title
-                state.updatedSection = .title
-                state.updatedRow = .title
-                state.sectionNeedsReload = false
+                state.reload = .row(.title)
             }
 
         case .setAbstract(let abstract):
             self.update(viewModel: viewModel) { state in
                 state.data.abstract = abstract
-                state.updatedSection = .abstract
-                state.updatedRow = .abstract
-                state.sectionNeedsReload = false
+                state.reload = .row(.abstract)
             }
 
         case .setFieldValue(let id, let value):
@@ -158,9 +151,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         case .toggleAbstractDetailCollapsed:
             self.update(viewModel: viewModel) { state in
                 state.abstractCollapsed = !state.abstractCollapsed
-                state.updatedSection = .abstract
-//                state.updatedRow = .abstract
-                state.sectionNeedsReload = true
+                state.reload = .section(.abstract)
             }
 
         case .trashAttachment(let attachment):
@@ -352,8 +343,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         self.update(viewModel: viewModel) { state in
             state.data.creatorIds.remove(atOffsets: offsets)
             keys.forEach({ state.data.creators[$0] = nil })
-            state.updatedSection = .creators
-            state.sectionNeedsReload = true
+            state.reload = .section(.creators)
         }
     }
 
@@ -362,8 +352,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         self.update(viewModel: viewModel) { state in
             state.data.creatorIds.remove(at: index)
             state.data.creators[id] = nil
-            state.updatedSection = .creators
-            state.sectionNeedsReload = true
+            state.reload = .section(.creators)
         }
     }
 
@@ -373,8 +362,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 state.data.creatorIds.append(creator.id)
             }
             state.data.creators[creator.id] = creator
-            state.updatedSection = .creators
-            state.sectionNeedsReload = true
+            state.reload = .section(.creators)
         }
     }
 
@@ -393,8 +381,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                     state.data.notes.append(note)
                 }
                 state.savingNotes.remove(note.key)
-                state.updatedSection = .notes
-                state.sectionNeedsReload = true
+                state.reload = .section(.notes)
             }
         }
 
@@ -412,8 +399,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
             self.update(viewModel: viewModel) { state in
                 state.savingNotes.insert(note.key)
-                state.updatedSection = .notes
-                state.sectionNeedsReload = true
+                state.reload = .section(.notes)
             }
         }
 
@@ -428,8 +414,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 self.update(viewModel: viewModel) { state in
                     state.error = .cantStoreChanges
                     if state.savingNotes.remove(note.key) != nil {
-                        state.updatedSection = .notes
-                        state.sectionNeedsReload = true
+                        state.reload = .section(.notes)
                     }
                 }
                 return
@@ -444,8 +429,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     private func set(tags: [Tag], in viewModel: ViewModel<ItemDetailActionHandler>) {
         self.update(viewModel: viewModel) { state in
             state.data.tags = tags
-            state.updatedSection = .tags
-            state.sectionNeedsReload = true
+            state.reload = .section(.tags)
         }
     }
 
@@ -468,8 +452,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
             self.update(viewModel: viewModel) { state in
                 state.data.attachments.remove(at: index)
-                state.updatedSection = .attachments
-                state.sectionNeedsReload = true
+                state.reload = .section(.attachments)
             }
         }
     }
@@ -517,8 +500,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 guard let new = attachment.changed(location: .remote, condition: { $0 == .local }) else { continue }
                 state.data.attachments[index] = new
             }
-            state.updatedSection = .attachments
-            state.sectionNeedsReload = true
+            state.reload = .section(.attachments)
         }
     }
 
@@ -552,8 +534,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                     state.data.attachments.insert(attachment, at: index)
                     insertions.append(index)
                 }
-                state.updatedSection = .attachments
-                state.sectionNeedsReload = true
+                state.reload = .section(.attachments)
                 if errors > 0 {
                     state.error = .fileNotCopied(errors)
                 }
@@ -772,9 +753,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
         self.update(viewModel: viewModel) { state in
             state.data.fields[id] = field
-            state.updatedSection = .fields
-            state.updatedRow = .field(key: field.key, multiline: (field.id == FieldKeys.Item.extra))
-            state.sectionNeedsReload = false
+            state.reload = .row(.field(key: field.key, multiline: (field.id == FieldKeys.Item.extra)))
         }
     }
 }

@@ -16,7 +16,7 @@ final class ItemDetailFieldEditCell: RxTableViewCell {
     @IBOutlet private weak var valueTextField: UITextField!
     @IBOutlet private weak var topConstraint: NSLayoutConstraint!
     @IBOutlet private weak var bottomConstraint: NSLayoutConstraint!
-    private var heightConstraint: NSLayoutConstraint?
+    @IBOutlet private weak var heightConstraint: NSLayoutConstraint!
 
     var textObservable: Observable<String> {
         return self.valueTextField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.valueTextField.text ?? "") })
@@ -42,10 +42,8 @@ final class ItemDetailFieldEditCell: RxTableViewCell {
         self.titleWidth.constant = titleWidth
         self.valueTextField.text = value
 
-        if self.heightConstraint == nil {
-            let height = self.valueTextField.font!.capHeight + self.layoutMargins.top + self.layoutMargins.bottom
-            self.heightConstraint = self.contentView.heightAnchor.constraint(equalToConstant: height)
-            self.heightConstraint?.isActive = true
-        }
+        let height = self.valueTextField.font!.capHeight + self.layoutMargins.top + self.layoutMargins.bottom
+        self.heightConstraint = self.contentView.heightAnchor.constraint(equalToConstant: height)
+        self.heightConstraint.priority = UILayoutPriority(1000)
     }
 }
