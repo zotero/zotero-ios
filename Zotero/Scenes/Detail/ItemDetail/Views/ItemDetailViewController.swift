@@ -423,7 +423,7 @@ extension ItemDetailViewController: ConflictViewControllerReceiver {
 
 extension ItemDetailViewController: DetailCoordinatorAttachmentProvider {
     func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, Library, UIView, CGRect?)? {
-        guard let section = self.tableViewHandler.attachmentSection,
+        guard let section = self.tableViewHandler.attachmentSectionIndex,
               let index = self.viewModel.state.data.attachments.firstIndex(where: { $0.key == key && $0.libraryId == libraryId }) else { return nil }
         let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(at: IndexPath(row: index, section: section))
         return (self.viewModel.state.data.attachments[index], self.viewModel.state.library, sourceView, sourceRect)
