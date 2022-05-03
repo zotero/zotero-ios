@@ -18,59 +18,42 @@
                 <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="peF-cL-8ac">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
-                        <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="750" verticalHuggingPriority="999" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="999" text="Title" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="B2y-g7-5Bg">
-                                <rect key="frame" x="0.0" y="13.5" width="100" height="17"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="100" id="kzF-vA-RhD"/>
-                                </constraints>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
-                                <color key="textColor" systemColor="systemGrayColor"/>
-                                <nil key="highlightedColor"/>
-                            </label>
-                            <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="ebh-8y-Lcm">
-                                <rect key="frame" x="116" y="0.0" width="204" height="44"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
-                                <textInputTraits key="textInputTraits"/>
-                            </textField>
-                        </subviews>
-                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="750" verticalHuggingPriority="999" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="999" text="Title" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="B2y-g7-5Bg">
+                        <rect key="frame" x="16" y="13.5" width="100" height="17"/>
                         <constraints>
-                            <constraint firstAttribute="height" priority="900" constant="44" id="54G-eg-5e8"/>
-                            <constraint firstAttribute="trailing" secondItem="ebh-8y-Lcm" secondAttribute="trailing" id="AIU-wB-K9m"/>
-                            <constraint firstItem="ebh-8y-Lcm" firstAttribute="baseline" secondItem="B2y-g7-5Bg" secondAttribute="firstBaseline" id="BLA-DN-bXH"/>
-                            <constraint firstItem="B2y-g7-5Bg" firstAttribute="leading" secondItem="peF-cL-8ac" secondAttribute="leading" id="EnY-me-qGh"/>
-                            <constraint firstItem="ebh-8y-Lcm" firstAttribute="top" secondItem="peF-cL-8ac" secondAttribute="top" id="YTw-ge-qFS"/>
-                            <constraint firstAttribute="bottom" secondItem="ebh-8y-Lcm" secondAttribute="bottom" id="mFE-GB-OJD"/>
-                            <constraint firstItem="ebh-8y-Lcm" firstAttribute="leading" secondItem="B2y-g7-5Bg" secondAttribute="trailing" constant="16" id="w1P-Mb-25T"/>
+                            <constraint firstAttribute="width" constant="100" id="kzF-vA-RhD"/>
                         </constraints>
-                    </view>
+                        <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
+                        <color key="textColor" systemColor="systemGrayColor"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                    <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="ebh-8y-Lcm">
+                        <rect key="frame" x="132" y="0.0" width="188" height="44"/>
+                        <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
+                        <textInputTraits key="textInputTraits"/>
+                    </textField>
                 </subviews>
                 <constraints>
-                    <constraint firstItem="peF-cL-8ac" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" id="Pqd-Jz-UFH"/>
-                    <constraint firstItem="peF-cL-8ac" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" id="TPr-s7-OcQ"/>
-                    <constraint firstAttribute="bottom" secondItem="peF-cL-8ac" secondAttribute="bottom" id="dM2-Be-TFa"/>
-                    <constraint firstAttribute="trailing" secondItem="peF-cL-8ac" secondAttribute="trailing" id="tjb-3W-afM"/>
+                    <constraint firstItem="ebh-8y-Lcm" firstAttribute="baseline" secondItem="B2y-g7-5Bg" secondAttribute="baseline" id="1LW-Ei-P73"/>
+                    <constraint firstItem="ebh-8y-Lcm" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" id="1Xf-P9-cHk"/>
+                    <constraint firstItem="ebh-8y-Lcm" firstAttribute="leading" secondItem="B2y-g7-5Bg" secondAttribute="trailing" constant="16" id="5Ae-xr-BWD"/>
+                    <constraint firstAttribute="bottom" secondItem="ebh-8y-Lcm" secondAttribute="bottom" id="Fkv-KP-lXu"/>
+                    <constraint firstItem="B2y-g7-5Bg" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" id="d80-Sv-gty"/>
+                    <constraint firstAttribute="trailing" secondItem="ebh-8y-Lcm" secondAttribute="trailing" id="lpc-qa-IVW"/>
                 </constraints>
             </tableViewCellContentView>
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>
             <connections>
-                <outlet property="bottomConstraint" destination="dM2-Be-TFa" id="dDh-7S-yVn"/>
-                <outlet property="heightConstraint" destination="54G-eg-5e8" id="dqy-SO-RiU"/>
+                <outlet property="bottomConstraint" destination="Fkv-KP-lXu" id="tt1-Zn-Osp"/>
                 <outlet property="titleLabel" destination="B2y-g7-5Bg" id="VtG-R2-0M9"/>
                 <outlet property="titleWidth" destination="kzF-vA-RhD" id="zf2-5d-8dA"/>
-                <outlet property="topConstraint" destination="TPr-s7-OcQ" id="Sbi-Dp-6vU"/>
+                <outlet property="topConstraint" destination="1Xf-P9-cHk" id="GhV-Vt-2Oq"/>
                 <outlet property="valueTextField" destination="ebh-8y-Lcm" id="g8I-zt-S7J"/>
             </connections>
             <point key="canvasLocation" x="137.68115942028987" y="54.910714285714285"/>
         </tableViewCell>
     </objects>
     <resources>
-        <systemColor name="systemBackgroundColor">
-            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-        </systemColor>
         <systemColor name="systemGrayColor">
             <color red="0.55686274509803924" green="0.55686274509803924" blue="0.57647058823529407" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
