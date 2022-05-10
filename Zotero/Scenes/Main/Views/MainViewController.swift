@@ -27,6 +27,12 @@ protocol MainCoordinatorSyncToolbarDelegate: AnyObject {
 }
 
 final class MainViewController: UISplitViewController {
+
+    private struct InitialLoadData {
+        let collection: Collection
+        let library: Library
+    }
+
     // Constants
     private let controllers: Controllers
     private let defaultCollection: Collection
@@ -40,8 +46,8 @@ final class MainViewController: UISplitViewController {
     private var maxSize: CGFloat {
         return max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
     }
-    private var masterCoordinator: MasterCoordinator?
-    private var detailCoordinator: DetailCoordinator?
+    private(set) var masterCoordinator: MasterCoordinator?
+    private(set) var detailCoordinator: DetailCoordinator?
 
     // MARK: - Lifecycle
 
@@ -69,10 +75,15 @@ final class MainViewController: UISplitViewController {
         self.preferredPrimaryColumnWidthFraction = 1/3
         self.maximumPrimaryColumnWidth = .infinity
         self.minimumPrimaryColumnWidth = 320
+
+        if let data = self.loadInitialDetailData(collectionId: Defaults.shared.selectedCollectionId, libraryId: Defaults.shared.selectedLibrary) {
+            self.showItems(for: data.collection, in: data.library, searchItemKeys: nil)
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        self.set(userActivity: .mainActivity)
         self.didAppear = true
     }
 
@@ -84,6 +95,37 @@ final class MainViewController: UISplitViewController {
         self.detailCoordinator = coordinator
 
         self.showDetailViewController(navigationController, sender: nil)
+    }
+
+    private func loadInitialDetailData(collectionId: CollectionIdentifier, libraryId: LibraryIdentifier) -> InitialLoadData? {
+        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return nil }
+
+        var collection: Collection?
+        var library: Library?
+
+        do {
+            try dbStorage.perform { coordinator in
+                switch collectionId {
+                case .collection(let key):
+                    let rCollection = try coordinator.perform(request: ReadCollectionDbRequest(libraryId: libraryId, key: key))
+                    collection = Collection(object: rCollection, itemCount: 0)
+                case .search(let key):
+                    let rSearch = try coordinator.perform(request: ReadSearchDbRequest(libraryId: libraryId, key: key))
+                    collection = Collection(object: rSearch)
+                case .custom(let type):
+                    collection = Collection(custom: type)
+                }
+                library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
+            }
+        } catch let error {
+            DDLogError("MainViewController: can't load initial data - \(error)")
+            return nil
+        }
+
+        if let collection = collection, let library = library {
+            return InitialLoadData(collection: collection, library: library)
+        }
+        return nil
     }
 
     // MARK: - Setups

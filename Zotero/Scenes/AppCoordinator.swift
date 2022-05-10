@@ -11,6 +11,8 @@ import SafariServices
 import SwiftUI
 import UIKit
 
+import CocoaLumberjackSwift
+
 protocol AppDelegateCoordinatorDelegate: AnyObject {
     func showMainScreen(isLoggedIn: Bool)
     func didRotate(to size: CGSize)
@@ -52,11 +54,11 @@ final class AppCoordinator: NSObject {
         super.init()
     }
 
-    func start() {
+    func start(with restoredStateData: RestoredStateData?) {
         if !self.controllers.sessionController.isInitialized {
             self.showLaunchScreen()
         } else {
-            self.showMainScreen(isLogged: self.controllers.sessionController.isLoggedIn, animated: false)
+            self.showMainScreen(isLogged: self.controllers.sessionController.isLoggedIn, restoredStateData: restoredStateData, animated: false)
         }
 
         // If db needs to be wiped and this is the first start of the app, show beta alert
@@ -79,7 +81,7 @@ final class AppCoordinator: NSObject {
         self.window?.rootViewController = controller
     }
 
-    private func showMainScreen(isLogged: Bool, animated: Bool) {
+    private func showMainScreen(isLogged: Bool, restoredStateData: RestoredStateData?, animated: Bool) {
         guard let window = self.window else { return }
 
         let viewController: UIViewController
@@ -101,6 +103,69 @@ final class AppCoordinator: NSObject {
         }
 
         self.show(viewController: viewController, in: window, animated: animated)
+
+        if let data = restoredStateData {
+            self.showRestoredState(for: data)
+        }
+    }
+
+    private func showRestoredState(for data: RestoredStateData) {
+        #if PDFENABLED
+        let username = Defaults.shared.username
+        guard !username.isEmpty, let mainController = self.window?.rootViewController as? MainViewController,
+              let dbStorage = self.controllers.userControllers?.dbStorage, let userId = self.controllers.sessionController.sessionData?.userId,
+              let (url, library) = self.loadRestoredStateData(forKey: data.key, libraryId: data.libraryId) else { return }
+
+        let handler = PDFReaderActionHandler(dbStorage: dbStorage, annotationPreviewController: self.controllers.annotationPreviewController,
+                                             htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter, schemaController: self.controllers.schemaController,
+                                             fileStorage: self.controllers.fileStorage, idleTimerController: self.controllers.idleTimerController)
+        let state = PDFReaderState(url: url, key: data.key, library: library, settings: Defaults.shared.pdfSettings, userId: userId, username: username, displayName: Defaults.shared.displayName,
+                                   interfaceStyle: mainController.view.traitCollection.userInterfaceStyle)
+        let controller = PDFReaderViewController(viewModel: ViewModel(initialState: state, handler: handler), compactSize: UIDevice.current.isCompactWidth(size: mainController.view.frame.size))
+        controller.coordinatorDelegate = mainController.detailCoordinator
+        handler.boundingBoxConverter = controller
+        let navigationController = UINavigationController(rootViewController: controller)
+        navigationController.modalPresentationStyle = .fullScreen
+        self.window?.rootViewController?.present(navigationController, animated: false)
+        #endif
+    }
+
+    private func loadRestoredStateData(forKey key: String, libraryId: LibraryIdentifier) -> (URL, Library)? {
+        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return nil }
+
+        var url: URL?
+        var library: Library?
+
+        do {
+            try dbStorage.perform { coordinator in
+
+                let item = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
+
+                guard let attachment = AttachmentCreator.attachment(for: item, fileStorage: self.controllers.fileStorage, urlDetector: nil) else { return }
+
+                switch attachment.type {
+                case .file(let filename, let contentType, let location, _):
+                    switch location {
+                    case .local, .localAndChangedRemotely:
+                        let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
+                        url = file.createUrl()
+                        library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
+
+                    case .remote, .remoteMissing: break
+                    }
+
+                default: break
+                }
+            }
+        } catch let error {
+            DDLogError("AppCoordinator: can't load restored data - \(error)")
+            return nil
+        }
+
+        if let url = url, let library = library {
+            return (url, library)
+        }
+        return nil
     }
 
     private func showBetaAlert() {
@@ -146,7 +211,7 @@ final class AppCoordinator: NSObject {
 
 extension AppCoordinator: AppDelegateCoordinatorDelegate {
     func showMainScreen(isLoggedIn: Bool) {
-        self.showMainScreen(isLogged: isLoggedIn, animated: true)
+        self.showMainScreen(isLogged: isLoggedIn, restoredStateData: nil, animated: true)
     }
 
     func didRotate(to size: CGSize) {

@@ -248,12 +248,12 @@ final class DetailCoordinator: Coordinator {
         self.topViewController.present(controller, animated: true, completion: nil)
     }
 
-    private func showPdf(at url: URL, key: String, library: Library) {
+    func pdfViewController(at url: URL, key: String, library: Library) -> UINavigationController? {
         #if PDFENABLED
         let username = Defaults.shared.username
         guard let dbStorage = self.controllers.userControllers?.dbStorage,
               let userId = self.controllers.sessionController.sessionData?.userId,
-              !username.isEmpty else { return }
+              !username.isEmpty else { return nil }
 
         let handler = PDFReaderActionHandler(dbStorage: dbStorage, annotationPreviewController: self.controllers.annotationPreviewController,
                                              htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter, schemaController: self.controllers.schemaController,
@@ -266,6 +266,15 @@ final class DetailCoordinator: Coordinator {
         handler.boundingBoxConverter = controller
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .fullScreen
+        return navigationController
+        #else
+        return nil
+        #endif
+    }
+
+    private func showPdf(at url: URL, key: String, library: Library) {
+        #if PDFENABLED
+        guard let navigationController = self.pdfViewController(at: url, key: key, library: library) else { return }
         self.topViewController.present(navigationController, animated: true, completion: nil)
         #endif
     }

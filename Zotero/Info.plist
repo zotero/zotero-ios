@@ -90,5 +90,10 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>org.zotero.MainActivity</string>
+		<string>org.zotero.PDFActivity</string>
+	</array>
 </dict>
 </plist>

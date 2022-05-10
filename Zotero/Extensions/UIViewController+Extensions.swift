@@ -24,4 +24,16 @@ extension UIViewController {
         }
         return topController
     }
+
+    func set(userActivity: NSUserActivity) {
+        self.window?.windowScene?.userActivity = userActivity
+        userActivity.becomeCurrent()
+    }
+
+    private var window: UIWindow? {
+        if let viewController = self.presentingViewController {
+            return viewController.view.window
+        }
+        return self.view.window
+    }
 }

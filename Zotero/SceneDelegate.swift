@@ -27,20 +27,38 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Assign activity counter
         self.activityCounter = delegate
         // Create window for scene
-        self.window = UIWindow(frame: frame)
+        let window = UIWindow(frame: frame)
+        self.window = window
         self.window?.windowScene = windowScene
         self.window?.makeKeyAndVisible()
-        // Setup app coordinator and present initial screen
-        let coordinator = AppCoordinator(window: self.window, controllers: delegate.controllers)
-        coordinator.start()
-        self.coordinator = coordinator
+        // Load state if available, setup scene & window
+        let userActivity = connectionOptions.userActivities.first ?? session.stateRestorationActivity
+        self.setup(scene: scene, window: window, with: userActivity, delegate: delegate)
         // Start observing
         self.setupObservers(controllers: delegate.controllers)
+    }
+
+    private func setup(scene: UIScene, window: UIWindow, with userActivity: NSUserActivity?, delegate: AppDelegate) {
+        scene.userActivity = userActivity
+        scene.title = userActivity?.title
+
+        // Setup app coordinator and present initial screen
+        let coordinator = AppCoordinator(window: self.window, controllers: delegate.controllers)
+        coordinator.start(with: userActivity?.restoredStateData)
+        self.coordinator = coordinator
     }
 
     func windowScene(_ windowScene: UIWindowScene, didUpdate previousCoordinateSpace: UICoordinateSpace, interfaceOrientation previousInterfaceOrientation: UIInterfaceOrientation, traitCollection previousTraitCollection: UITraitCollection) {
         guard let newSize = windowScene.windows.first?.frame.size else { return }
         self.coordinator?.didRotate(to: newSize)
+    }
+
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        self.window?.windowScene?.userActivity?.becomeCurrent()
+    }
+
+    func sceneWillResignActive(_ scene: UIScene) {
+        self.window?.windowScene?.userActivity?.resignCurrent()
     }
 
     func sceneWillEnterForeground(_ scene: UIScene) {
@@ -49,6 +67,10 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func sceneDidEnterBackground(_ scene: UIScene) {
         self.activityCounter?.sceneDidEnterBackground()
+    }
+
+    func stateRestorationActivity(for scene: UIScene) -> NSUserActivity? {
+        return scene.userActivity
     }
 
     private func setupObservers(controllers: Controllers) {

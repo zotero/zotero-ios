@@ -136,6 +136,7 @@ final class PDFReaderViewController: UIViewController {
         super.viewDidLoad()
 
         self.view.backgroundColor = .systemGray6
+        self.set(userActivity: .pdfActivity(for: self.viewModel.state.key, libraryId: self.viewModel.state.library.identifier))
         self.setupViews()
         self.setupNavigationBar()
         self.setupAnnotationControls(forCompactSize: self.isCompactSize)
