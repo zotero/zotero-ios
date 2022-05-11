@@ -1021,9 +1021,6 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
         // Filter unwanted items
         let filtered = menuItems.filter({ item in
             guard let identifier = item.identifier else { return false }
-            if identifier == TextMenu.define.rawValue {
-                return UIReferenceLibraryViewController.dictionaryHasDefinition(forTerm: selectedText)
-            }
             return identifiers.contains(identifier)
         })
 
