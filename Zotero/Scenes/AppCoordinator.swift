@@ -41,6 +41,7 @@ final class AppCoordinator: NSObject {
     private var originalDebugWindowFrame: CGRect?
     private var conflictReceiverAlertController: ConflictReceiverAlertController?
     private var conflictAlertQueueController: ConflictAlertQueueController?
+    private var presentedRestoredControllerWindow: UIWindow?
 
     private var viewController: UIViewController? {
         guard let viewController = self.window?.rootViewController else { return nil }
@@ -111,23 +112,47 @@ final class AppCoordinator: NSObject {
 
     private func showRestoredState(for data: RestoredStateData) {
         #if PDFENABLED
-        let username = Defaults.shared.username
-        guard !username.isEmpty, let mainController = self.window?.rootViewController as? MainViewController,
-              let dbStorage = self.controllers.userControllers?.dbStorage, let userId = self.controllers.sessionController.sessionData?.userId,
-              let (url, library) = self.loadRestoredStateData(forKey: data.key, libraryId: data.libraryId) else { return }
-
-        let handler = PDFReaderActionHandler(dbStorage: dbStorage, annotationPreviewController: self.controllers.annotationPreviewController,
-                                             htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter, schemaController: self.controllers.schemaController,
-                                             fileStorage: self.controllers.fileStorage, idleTimerController: self.controllers.idleTimerController)
-        let state = PDFReaderState(url: url, key: data.key, library: library, settings: Defaults.shared.pdfSettings, userId: userId, username: username, displayName: Defaults.shared.displayName,
-                                   interfaceStyle: mainController.view.traitCollection.userInterfaceStyle)
-        let controller = PDFReaderViewController(viewModel: ViewModel(initialState: state, handler: handler), compactSize: UIDevice.current.isCompactWidth(size: mainController.view.frame.size))
-        controller.coordinatorDelegate = mainController.detailCoordinator
-        handler.boundingBoxConverter = controller
-        let navigationController = UINavigationController(rootViewController: controller)
-        navigationController.modalPresentationStyle = .fullScreen
-        self.window?.rootViewController?.present(navigationController, animated: false)
+        guard let window = self.window, let detailCoordinator = (window.rootViewController as? MainViewController)?.detailCoordinator,
+              let (url, library) = self.loadRestoredStateData(forKey: data.key, libraryId: data.libraryId),
+              let controller = detailCoordinator.pdfViewController(at: url, key: data.key, library: library) else { return }
+        self.showPresentedRestored(viewController: controller, in: window)
         #endif
+    }
+
+    /// If the app tries to present a `UIViewController` on a `UIWindow` that is being shown after app launches, there is a small delay where the underlying (presenting) `UIViewController` is visible.
+    /// So the launch animation looks bad, since you can see a snapshot of previous state (PDF reader), then split view controller with collections and items and then PDF reader again. Because of that
+    /// we fake it a little with this function.
+    private func showPresentedRestored(viewController: UIViewController, in window: UIWindow) {
+        // Store original `UIViewController`
+        let oldController = window.rootViewController
+        // Show new view controller in the window so that it's layed out properly
+        window.rootViewController = viewController
+
+        // Make a screenshot of the window
+        UIGraphicsBeginImageContext(window.frame.size)
+        window.layer.render(in: UIGraphicsGetCurrentContext()!)
+        let image = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+
+        // Create a temporary `UIImageView` with given screenshot
+        let imageView = UIImageView(image: image)
+        imageView.contentMode = .scaleAspectFill
+        imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        imageView.frame = window.bounds
+
+        // Create a temporary `UIWindow` which will be shown above current window until it successfully presents the new view controller.
+        let tmpWindow = UIWindow(frame: window.frame)
+        tmpWindow.windowScene = window.windowScene
+        tmpWindow.addSubview(imageView)
+        tmpWindow.makeKeyAndVisible()
+        self.presentedRestoredControllerWindow = tmpWindow
+
+        // New window is visible with a screenshot, return old view controller and present the new one
+        window.rootViewController = oldController
+        window.rootViewController?.present(viewController, animated: false, completion: {
+            // Hide the temporary screenshot window, everything is in place
+            self.presentedRestoredControllerWindow = nil
+        })
     }
 
     private func loadRestoredStateData(forKey key: String, libraryId: LibraryIdentifier) -> (URL, Library)? {
