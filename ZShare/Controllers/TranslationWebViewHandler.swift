@@ -12,7 +12,7 @@ import WebKit
 import CocoaLumberjackSwift
 import RxSwift
 
-final class TranslationWebViewHandler: NSObject {
+final class TranslationWebViewHandler {
     /// Actions that can be returned by this handler.
     /// - loadedItems: Items have been translated.
     /// - selectItem: Multiple items have been found on this website and the user needs to choose one.
@@ -47,15 +47,14 @@ final class TranslationWebViewHandler: NSObject {
         case noSuccessfulTranslators
         case webExtractionMissingJs
         case webExtractionMissingData
-        case webViewMissing
     }
 
+    private let webViewHandler: WebViewHandler
     private let session: URLSession
     private let translatorsController: TranslatorsAndStylesController
     private let disposeBag: DisposeBag
     let observable: PublishSubject<TranslationWebViewHandler.Action>
 
-    private weak var webView: WKWebView?
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
     private var itemSelectionMessageId: Int?
     // Cookies from original website are stored and added to requests in `sendRequest(with:)`.
@@ -72,28 +71,19 @@ final class TranslationWebViewHandler: NSObject {
         configuration.httpShouldSetCookies = true
         configuration.httpCookieAcceptPolicy = .always
 
+        self.webViewHandler = WebViewHandler(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }))
         self.session = URLSession(configuration: configuration)
-        self.webView = webView
         self.disposeBag = DisposeBag()
         self.translatorsController = translatorsController
         self.observable = PublishSubject()
-
-        super.init()
-
-        webView.navigationDelegate = self
-        JSHandlers.allCases.forEach { handler in
-            webView.configuration.userContentController.add(self, name: handler.rawValue)
-        }
     }
 
     // MARK: - Actions
 
     func loadWebData(from url: URL) -> Single<ExtensionViewModel.State.RawAttachment> {
-        guard let webView = self.webView else { return Single.error(Error.webViewMissing) }
-
         DDLogInfo("WebViewHandler: load web data")
 
-        return self.load(url: url)
+        return self.webViewHandler.load(webUrl: url)
                    .flatMap({ _ -> Single<Any> in
                        guard let url = Bundle.main.url(forResource: "webview_extraction", withExtension: "js"),
                              let script = try? String(contentsOf: url) else {
@@ -101,7 +91,7 @@ final class TranslationWebViewHandler: NSObject {
                            return Single.error(Error.webExtractionMissingJs)
                        }
                        DDLogInfo("WebViewHandler: call data extraction js")
-                       return webView.call(javascript: script)
+                       return self.webViewHandler.call(javascript: script)
                    })
                    .flatMap({ data -> Single<ExtensionViewModel.State.RawAttachment> in
                        guard let payload = data as? [String: Any],
@@ -135,12 +125,6 @@ final class TranslationWebViewHandler: NSObject {
     /// - parameter cookies: Cookies string from shared website. Equals to javacsript "document.cookie".
     /// - parameter frames: HTML content of frames contained in initial HTML document.
     func translate(url: URL, title: String, html: String, cookies: String, frames: [String]) {
-        guard let webView = self.webView else {
-            DDLogError("WebViewHandler: web view is nil")
-            self.observable.on(.error(Error.webViewMissing))
-            return
-        }
-
         DDLogInfo("WebViewHandler: translate")
 
         self.cookies = cookies
@@ -150,7 +134,7 @@ final class TranslationWebViewHandler: NSObject {
                        return self.loadBundledFiles()
                    }
                    .flatMap { encodedSchema, encodedDateFormats -> Single<Any> in
-                       return webView.call(javascript: "initSchemaAndDateFormats(\(encodedSchema), \(encodedDateFormats));")
+                       return self.webViewHandler.call(javascript: "initSchemaAndDateFormats(\(encodedSchema), \(encodedDateFormats));")
                    }
                    .flatMap { _ -> Single<[RawTranslator]> in
                        DDLogInfo("WebViewHandler: load translators")
@@ -159,14 +143,14 @@ final class TranslationWebViewHandler: NSObject {
                    .flatMap { translators -> Single<Any> in
                        DDLogInfo("WebViewHandler: encode translators")
                        let encodedTranslators = WKWebView.encodeAsJSONForJavascript(translators)
-                       return webView.call(javascript: "initTranslators(\(encodedTranslators));")
+                       return self.webViewHandler.call(javascript: "initTranslators(\(encodedTranslators));")
                    }
                    .flatMap({ _ -> Single<Any> in
                        DDLogInfo("WebViewHandler: call translate js")
                        let encodedHtml = WKWebView.encodeForJavascript(html.data(using: .utf8))
                        let jsonFramesData = try? JSONSerialization.data(withJSONObject: frames, options: .fragmentsAllowed)
                        let encodedFrames = jsonFramesData.flatMap({ WKWebView.encodeForJavascript($0) }) ?? "''"
-                       return webView.call(javascript: "translate('\(url.absoluteString)', \(encodedHtml), \(encodedFrames));")
+                       return self.webViewHandler.call(javascript: "translate('\(url.absoluteString)', \(encodedHtml), \(encodedFrames));")
                    })
                    .subscribe(onFailure: { [weak self] error in
                        DDLogError("WebViewHandler: translation failed - \(error)")
@@ -207,7 +191,7 @@ final class TranslationWebViewHandler: NSObject {
     func selectItem(_ item: (String, String)) {
         guard let messageId = self.itemSelectionMessageId else { return }
         let (key, value) = item
-        self.webView?.evaluateJavaScript("Zotero.Messaging.receiveResponse('\(messageId)', \(WKWebView.encodeAsJSONForJavascript([key: value])));", completionHandler: nil)
+        self.webViewHandler.sendMessaging(response: [key: value], for: messageId)
         self.itemSelectionMessageId = nil
     }
 
@@ -215,25 +199,7 @@ final class TranslationWebViewHandler: NSObject {
         guard let indexUrl = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "translation") else {
             return Single.error(Error.cantFindFile)
         }
-        self.webView?.loadFileURL(indexUrl, allowingReadAccessTo: indexUrl.deletingLastPathComponent())
-        return self.createWebLoadedSingle()
-    }
-
-    /// Load provided url.
-    private func load(url: URL) -> Single<()> {
-        let request = URLRequest(url: url)
-        self.webView?.load(request)
-        return self.createWebLoadedSingle()
-    }
-
-    /// Create single which is fired when webview loads a resource or fails.
-    private func createWebLoadedSingle() -> Single<()> {
-        return Single.create { [weak self] subscriber -> Disposable in
-            self?.webDidLoad = subscriber
-            return Disposables.create {
-                self?.webDidLoad = nil
-            }
-        }
+        return self.webViewHandler.load(fileUrl: indexUrl)
     }
 
     // MARK: - Communication with WKWebView
@@ -247,12 +213,8 @@ final class TranslationWebViewHandler: NSObject {
             DDLogInfo("Incorrect URL request from javascript")
             DDLogInfo("\(options)")
 
-            let error = "Incorrect URL request from javascript".data(using: .utf8)
-                  let script = self.javascript(for: messageId, statusCode: -1, successCodes: [200], data: error, headers: [:])
-
-            inMainThread { [weak self] in
-                self?.webView?.evaluateJavaScript(script, completionHandler: nil)
-            }
+            let data = "Incorrect URL request from javascript".data(using: .utf8)
+            self.webViewHandler.sendHttpResponse(data: data, statusCode: -1, successCodes: [200], headers: [:], for: messageId)
             return
         }
 
@@ -302,28 +264,15 @@ final class TranslationWebViewHandler: NSObject {
 
         let task = self.session.dataTask(with: request) { [weak self] data, response, error in
             guard let `self` = self else { return }
-
-            let script: String
-
             if let response = response as? HTTPURLResponse {
-                script = self.javascript(for: messageId, statusCode: response.statusCode, successCodes: successCodes, data: data, headers: response.allHeaderFields)
+                self.webViewHandler.sendHttpResponse(data: data, statusCode: response.statusCode, successCodes: successCodes, headers: response.allHeaderFields, for: messageId)
             } else if let error = error {
-                script = self.javascript(for: messageId, statusCode: -1, successCodes: successCodes, data: error.localizedDescription.data(using: .utf8), headers: [:])
+                self.webViewHandler.sendHttpResponse(data: error.localizedDescription.data(using: .utf8), statusCode: -1, successCodes: successCodes, headers: [:], for: messageId)
             } else {
-                script = self.javascript(for: messageId, statusCode: -1, successCodes: successCodes, data: "unknown error".data(using: .utf8), headers: [:])
-            }
-
-            DispatchQueue.main.async {
-                self.webView?.evaluateJavaScript(script, completionHandler: nil)
+                self.webViewHandler.sendHttpResponse(data: "unknown error".data(using: .utf8), statusCode: -1, successCodes: successCodes, headers: [:], for: messageId)
             }
         }
         task.resume()
-    }
-
-    private func sendError(_ error: String, for messageId: Int) {
-        let payload: [String: Any] = ["error": ["message": error]]
-        let script = "Zotero.Messaging.receiveResponse('\(messageId)', \(WKWebView.encodeAsJSONForJavascript(payload)));"
-        self.webView?.evaluateJavaScript(script, completionHandler: nil)
     }
 
     private func javascript(for messageId: Int, statusCode: Int, successCodes: [Int], data: Data?, headers: [AnyHashable: Any]) -> String {
@@ -339,46 +288,33 @@ final class TranslationWebViewHandler: NSObject {
 
         return "Zotero.Messaging.receiveResponse('\(messageId)', \(WKWebView.encodeAsJSONForJavascript(payload)));"
     }
-}
 
-extension TranslationWebViewHandler: WKNavigationDelegate {
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        // Wait for javascript to load
-        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
-            self.webDidLoad?(.success(()))
-        }
-    }
+    // MARK: - Messaging
 
-    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Swift.Error) {
-        DDLogError("WebViewHandler: did fail - \(error)")
-        self.webDidLoad?(.failure(error))
-    }
-}
-
-/// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.
-/// Each message contains a `messageId` in the body, which is used to identify the message in case a response is expected.
-extension TranslationWebViewHandler: WKScriptMessageHandler {
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard let handler = JSHandlers(rawValue: message.name) else { return }
+    /// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.
+    /// Each message contains a `messageId` in the body, which is used to identify the message in case a response is expected.
+    private func receiveMessage(name: String, body: Any) {
+        guard let handler = JSHandlers(rawValue: name) else { return }
 
         switch handler {
         case .request:
-            guard let body = message.body as? [String: Any],
+            guard let body = body as? [String: Any],
                   let messageId = body["messageId"] as? Int else {
-                DDLogError("WebViewHandler: request missing body - \(message.body)")
+                DDLogError("TranslationWebViewHandler: request missing body - \(body)")
                 return
             }
 
             if let options = body["payload"] as? [String: Any] {
                 self.sendRequest(with: options, for: messageId)
             } else {
-                DDLogError("WebViewHandler: request missing payload - \(body)")
-                self.sendError("HTTP request missing payload", for: messageId)
+                DDLogError("TranslationWebViewHandler: request missing payload - \(body)")
+                self.webViewHandler.sendMessaging(error: "HTTP request missing payload", for: messageId)
             }
+
         case .itemSelection:
-            guard let body = message.body as? [String: Any],
+            guard let body = body as? [String: Any],
                   let messageId = body["messageId"] as? Int else {
-                DDLogError("WebViewHandler: item selection missing body - \(message.body)")
+                DDLogError("TranslationWebViewHandler: item selection missing body - \(body)")
                 return
             }
 
@@ -393,18 +329,20 @@ extension TranslationWebViewHandler: WKScriptMessageHandler {
 
                 self.observable.on(.next(.selectItem(sortedDictionary)))
             } else {
-                DDLogError("WebViewHandler: item selection missing payload - \(body)")
-                self.sendError("Item selection missing payload", for: messageId)
+                DDLogError("TranslationWebViewHandler: item selection missing payload - \(body)")
+                self.webViewHandler.sendMessaging(error: "Item selection missing payload", for: messageId)
             }
+
         case .item:
-            if let info = message.body as? [[String: Any]] {
+            if let info = body as? [[String: Any]] {
                 self.observable.on(.next(.loadedItems(info)))
             } else {
-                DDLogError("WebViewHandler: got incompatible body - \(message.body)")
+                DDLogError("TranslationWebViewHandler: got incompatible body - \(body)")
                 self.observable.on(.error(Error.incompatibleItem))
             }
+
         case .progress:
-            if let progress = message.body as? String {
+            if let progress = body as? String {
                 if progress == "item_selection" {
                     self.observable.on(.next(.reportProgress(L10n.Shareext.Translation.itemSelection)))
                 } else if progress.starts(with: "translating_with_") {
@@ -414,10 +352,12 @@ extension TranslationWebViewHandler: WKScriptMessageHandler {
                     self.observable.on(.next(.reportProgress(progress)))
                 }
             }
+
         case .saveAsWeb:
             self.observable.on(.error(Error.noSuccessfulTranslators))
+
         case .log:
-            DDLogInfo("JSLOG: \(message.body)")
+            DDLogInfo("JSLOG: \(body)")
         }
     }
 }
