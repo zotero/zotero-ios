@@ -421,7 +421,7 @@ final class TranslatorsAndStylesController {
 
     // MARK: - Translator loading
 
-    func translators(matching url: String) -> Single<[RawTranslator]> {
+    func translators(matching url: String? = nil) -> Single<[RawTranslator]> {
         if !self.isLoading.value {
             return self.loadTranslators(matching: url)
         }
@@ -430,12 +430,12 @@ final class TranslatorsAndStylesController {
         return self.isLoading.filter({ !$0 }).first().flatMap { _ in return self.loadTranslators(matching: url) }
     }
 
-    private func loadTranslators(matching url: String) -> Single<[RawTranslator]> {
+    private func loadTranslators(matching url: String?) -> Single<[RawTranslator]> {
         return Single.create { subscriber -> Disposable in
             DDLogInfo("TranslatorsAndStylesController: load translators")
 
             do {
-                DDLogInfo("TranslatorsAndStylesController: load raw translators for \(url)")
+                DDLogInfo("TranslatorsAndStylesController: load raw translators for \(url ?? "all translators")")
 
                 var loadedUuids: Set<String> = []
                 let allUuids = try self.fileStorage.contentsOfDirectory(at: Files.translators).compactMap({ $0.relativeComponents.last })

@@ -341,6 +341,10 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         controller.popoverPresentationController?.barButtonItem = button
 
+        controller.addAction(UIAlertAction(title: L10n.Items.lookup, style: .default, handler: { [weak self, weak viewModel] _ in
+            self?.showLookup()
+        }))
+
         controller.addAction(UIAlertAction(title: L10n.Items.new, style: .default, handler: { [weak self, weak viewModel] _ in
             guard let `self` = self, let viewModel = viewModel else { return }
             let collectionKey: String?
@@ -567,6 +571,19 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
         self.topViewController.present(controller, animated: true, completion: nil)
+    }
+
+    func showLookup() {
+        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+
+        let handler = LookupActionHandler(dbStorage: dbStorage)
+        let viewModel = ViewModel(initialState: LookupState(), handler: handler)
+
+        let controller = LookupViewController(viewModel: viewModel)
+        let navigationController = UINavigationController(rootViewController: controller)
+        navigationController.isModalInPresentation = true
+        navigationController.modalPresentationStyle = .formSheet
+        self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 }
 

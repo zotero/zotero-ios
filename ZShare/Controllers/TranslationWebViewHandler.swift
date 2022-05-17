@@ -50,32 +50,24 @@ final class TranslationWebViewHandler {
     }
 
     private let webViewHandler: WebViewHandler
-    private let session: URLSession
     private let translatorsController: TranslatorsAndStylesController
     private let disposeBag: DisposeBag
-    let observable: PublishSubject<TranslationWebViewHandler.Action>
+    let observable: PublishSubject<Action>
 
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
     private var itemSelectionMessageId: Int?
-    // Cookies from original website are stored and added to requests in `sendRequest(with:)`.
-    private var cookies: String?
 
     // MARK: - Lifecycle
 
     init(webView: WKWebView, translatorsController: TranslatorsAndStylesController) {
-        let storage = HTTPCookieStorage.sharedCookieStorage(forGroupContainerIdentifier: AppGroup.identifier)
-        storage.cookieAcceptPolicy = .always
-
-        let configuration = URLSessionConfiguration.default
-        configuration.httpCookieStorage = storage
-        configuration.httpShouldSetCookies = true
-        configuration.httpCookieAcceptPolicy = .always
-
         self.webViewHandler = WebViewHandler(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }))
-        self.session = URLSession(configuration: configuration)
         self.disposeBag = DisposeBag()
         self.translatorsController = translatorsController
         self.observable = PublishSubject()
+
+        self.webViewHandler.receivedMessageHandler = { [weak self] name, body in
+            self?.receiveMessage(name: name, body: body)
+        }
     }
 
     // MARK: - Actions
@@ -127,7 +119,7 @@ final class TranslationWebViewHandler {
     func translate(url: URL, title: String, html: String, cookies: String, frames: [String]) {
         DDLogInfo("WebViewHandler: translate")
 
-        self.cookies = cookies
+        self.webViewHandler.set(cookies: cookies)
 
         return self.loadIndex()
                    .flatMap { _ -> Single<(String, String)> in
@@ -202,93 +194,6 @@ final class TranslationWebViewHandler {
         return self.webViewHandler.load(fileUrl: indexUrl)
     }
 
-    // MARK: - Communication with WKWebView
-
-    /// Sends HTTP request based on options. Sends back response with HTTP response to `webView`.
-    /// - parameter options: Options for HTTP request.
-    private func sendRequest(with options: [String: Any], for messageId: Int) {
-        guard let urlString = options["url"] as? String,
-              let url = URL(string: urlString) ?? urlString.removingPercentEncoding.flatMap({ $0.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed).flatMap(URL.init) }),
-              let method = options["method"] as? String else {
-            DDLogInfo("Incorrect URL request from javascript")
-            DDLogInfo("\(options)")
-
-            let data = "Incorrect URL request from javascript".data(using: .utf8)
-            self.webViewHandler.sendHttpResponse(data: data, statusCode: -1, successCodes: [200], headers: [:], for: messageId)
-            return
-        }
-
-        guard !urlString.contains("repo/code/undefined") else {
-            DDLogError("WebViewHandler: Undefined call, translator missing.")
-
-            // Received undefined translator repo call, which happens only when translation doesn't have proper translator available and just gets stuck, so we just force this error here.
-            self.observable.on(.error(Error.noSuccessfulTranslators))
-
-            return
-        }
-
-        let headers = (options["headers"] as? [String: String]) ?? [:]
-        let body = options["body"] as? String
-        let timeout = (options["timeout"] as? Double).flatMap({ $0 / 1000 }) ?? 60
-        let successCodes = (options["successCodes"] as? [Int]) ?? []
-
-        DDLogInfo("WebViewHandler: send request to \(url.absoluteString)")
-
-        if let storage = self.session.configuration.httpCookieStorage, let cookies = storage.cookies {
-            for cookie in cookies {
-                storage.deleteCookie(cookie)
-            }
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = method
-        headers.forEach { key, value in
-            request.setValue(value, forHTTPHeaderField: key)
-        }
-        request.httpBody = body?.data(using: .utf8)
-        request.timeoutInterval = timeout
-
-        if let cookies = self.cookies, let storage = self.session.configuration.httpCookieStorage {
-            storage.cookieAcceptPolicy = .always
-
-            for wholeCookie in cookies.split(separator: ";") {
-                let split = wholeCookie.trimmingCharacters(in: .whitespaces).split(separator: "=")
-
-                guard split.count == 2 else { continue }
-
-                if let cookie = HTTPCookie(properties: [.name: split[0], .value: split[1], .domain: url.host ?? "", .originURL: url.host ?? "", .path: "/"]) {
-                    storage.setCookie(cookie)
-                }
-            }
-        }
-
-        let task = self.session.dataTask(with: request) { [weak self] data, response, error in
-            guard let `self` = self else { return }
-            if let response = response as? HTTPURLResponse {
-                self.webViewHandler.sendHttpResponse(data: data, statusCode: response.statusCode, successCodes: successCodes, headers: response.allHeaderFields, for: messageId)
-            } else if let error = error {
-                self.webViewHandler.sendHttpResponse(data: error.localizedDescription.data(using: .utf8), statusCode: -1, successCodes: successCodes, headers: [:], for: messageId)
-            } else {
-                self.webViewHandler.sendHttpResponse(data: "unknown error".data(using: .utf8), statusCode: -1, successCodes: successCodes, headers: [:], for: messageId)
-            }
-        }
-        task.resume()
-    }
-
-    private func javascript(for messageId: Int, statusCode: Int, successCodes: [Int], data: Data?, headers: [AnyHashable: Any]) -> String {
-        let isSuccess = successCodes.isEmpty ? 200..<300 ~= statusCode : successCodes.contains(statusCode)
-        let responseText = data.flatMap({ String(data: $0, encoding: .utf8) }) ?? ""
-
-        var payload: [String: Any]
-        if isSuccess {
-            payload = ["status": statusCode, "responseText": responseText, "headers": headers]
-        } else {
-            payload = ["error": ["status": statusCode, "responseText": responseText]]
-        }
-
-        return "Zotero.Messaging.receiveResponse('\(messageId)', \(WKWebView.encodeAsJSONForJavascript(payload)));"
-    }
-
     // MARK: - Messaging
 
     /// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.
@@ -305,7 +210,12 @@ final class TranslationWebViewHandler {
             }
 
             if let options = body["payload"] as? [String: Any] {
-                self.sendRequest(with: options, for: messageId)
+                do {
+                    try self.webViewHandler.sendRequest(with: options, for: messageId)
+                } catch let error {
+                    DDLogError("TranslationWebViewHandler: send request error \(error)")
+                    self.observable.on(.error(Error.noSuccessfulTranslators))
+                }
             } else {
                 DDLogError("TranslationWebViewHandler: request missing payload - \(body)")
                 self.webViewHandler.sendMessaging(error: "HTTP request missing payload", for: messageId)

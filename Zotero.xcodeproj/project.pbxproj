@@ -781,6 +781,12 @@
 		B3AB38B9238ED023008A1ABB /* ExtensionScript.js in Resources */ = {isa = PBXBuildFile; fileRef = B3AB38B7238ED023008A1ABB /* ExtensionScript.js */; };
 		B3AB43A827E8A68D006F3E4E /* Dictionary+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB43A727E8A68D006F3E4E /* Dictionary+Extensions.swift */; };
 		B3AB43A927E8A81D006F3E4E /* Dictionary+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB43A727E8A68D006F3E4E /* Dictionary+Extensions.swift */; };
+		B3ADAE3F28339F2700D46271 /* translation in Resources */ = {isa = PBXBuildFile; fileRef = B355B8FE239951E800E837B9 /* translation */; };
+		B3ADAE4A2833B56F00D46271 /* LookupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ADAE462833B56F00D46271 /* LookupViewController.swift */; };
+		B3ADAE4B2833B56F00D46271 /* LookupViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3ADAE472833B56F00D46271 /* LookupViewController.xib */; };
+		B3ADAE4D2833BED300D46271 /* LookupActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ADAE4C2833BED300D46271 /* LookupActionHandler.swift */; };
+		B3ADAE4F2833BEDC00D46271 /* LookupState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ADAE4E2833BEDC00D46271 /* LookupState.swift */; };
+		B3ADAE512833BEE300D46271 /* LookupAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ADAE502833BEE300D46271 /* LookupAction.swift */; };
 		B3ADBCB827CFB64B00B7041F /* PDFSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ADBCB727CFB64B00B7041F /* PDFSettingsViewController.swift */; };
 		B3ADBCBA27CFB66C00B7041F /* PDFSettingsActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ADBCB927CFB66C00B7041F /* PDFSettingsActionHandler.swift */; };
 		B3ADBCBC27CFB67A00B7041F /* PDFSettingsAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ADBCBB27CFB67A00B7041F /* PDFSettingsAction.swift */; };
@@ -1586,6 +1592,11 @@
 		B3AB38B6238ED023008A1ABB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B3AB38B7238ED023008A1ABB /* ExtensionScript.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = ExtensionScript.js; sourceTree = "<group>"; };
 		B3AB43A727E8A68D006F3E4E /* Dictionary+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Dictionary+Extensions.swift"; sourceTree = "<group>"; };
+		B3ADAE462833B56F00D46271 /* LookupViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LookupViewController.swift; sourceTree = "<group>"; };
+		B3ADAE472833B56F00D46271 /* LookupViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = LookupViewController.xib; sourceTree = "<group>"; };
+		B3ADAE4C2833BED300D46271 /* LookupActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupActionHandler.swift; sourceTree = "<group>"; };
+		B3ADAE4E2833BEDC00D46271 /* LookupState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupState.swift; sourceTree = "<group>"; };
+		B3ADAE502833BEE300D46271 /* LookupAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupAction.swift; sourceTree = "<group>"; };
 		B3ADBCB727CFB64B00B7041F /* PDFSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSettingsViewController.swift; sourceTree = "<group>"; };
 		B3ADBCB927CFB66C00B7041F /* PDFSettingsActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSettingsActionHandler.swift; sourceTree = "<group>"; };
 		B3ADBCBB27CFB67A00B7041F /* PDFSettingsAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSettingsAction.swift; sourceTree = "<group>"; };
@@ -2638,6 +2649,7 @@
 				B3FE4B8F268DDE4900CE123F /* CitationBibliographyExport */,
 				B3593EC3241A61C700760E20 /* ItemDetail */,
 				B3593EE7241A61C700760E20 /* Items */,
+				B3ADAE402833AD6700D46271 /* Lookup */,
 				B31941D824531F6600BF6296 /* PDF */,
 				B3486B8026CFAFEA0036A267 /* SingleCitation */,
 				B3593F61241A62DD00760E20 /* DetailCoordinator.swift */,
@@ -3044,6 +3056,42 @@
 				B35F476924F8F55600FE328D /* webview_extraction.js */,
 			);
 			path = Assets;
+			sourceTree = "<group>";
+		};
+		B3ADAE402833AD6700D46271 /* Lookup */ = {
+			isa = PBXGroup;
+			children = (
+				B3ADAE482833B56F00D46271 /* Models */,
+				B3ADAE492833B56F00D46271 /* ViewModels */,
+				B3ADAE452833B56F00D46271 /* Views */,
+			);
+			path = Lookup;
+			sourceTree = "<group>";
+		};
+		B3ADAE452833B56F00D46271 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B3ADAE462833B56F00D46271 /* LookupViewController.swift */,
+				B3ADAE472833B56F00D46271 /* LookupViewController.xib */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		B3ADAE482833B56F00D46271 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				B3ADAE502833BEE300D46271 /* LookupAction.swift */,
+				B3ADAE4E2833BEDC00D46271 /* LookupState.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		B3ADAE492833B56F00D46271 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				B3ADAE4C2833BED300D46271 /* LookupActionHandler.swift */,
+			);
+			path = ViewModels;
 			sourceTree = "<group>";
 		};
 		B3B1C5872665258400883597 /* PDFs */ = {
@@ -3734,6 +3782,7 @@
 				B3604FF824769F0900669CB7 /* note.html in Resources */,
 				B3593F22241A61C700760E20 /* ItemDetailAddCell.xib in Resources */,
 				B3593F21241A61C700760E20 /* ItemDetailAttachmentCell.xib in Resources */,
+				B3ADAE3F28339F2700D46271 /* translation in Resources */,
 				B361820324C9A7C000B30D56 /* OnboardingViewController.xib in Resources */,
 				B361820424C9A7C000B30D56 /* OnboardingPageView.xib in Resources */,
 				B3F0C3FA250A1BD8002D557A /* LibrariesViewController.xib in Resources */,
@@ -3764,6 +3813,7 @@
 				B3E02C0D26848CA900FFB419 /* AnnotationViewController.xib in Resources */,
 				B34C40F625710B430057D5F5 /* AnnotationEditViewController.xib in Resources */,
 				B3F5B08127D1001B00AA81C0 /* PDFSettingsSegmentedCellContentView.xib in Resources */,
+				B3ADAE4B2833B56F00D46271 /* LookupViewController.xib in Resources */,
 				B3C8DD8827B54EE70084E1AD /* CollectionsPickerViewController.xib in Resources */,
 				B3593F2C241A61C700760E20 /* ItemDetailTagCell.xib in Resources */,
 				B3B78C44266FAF0800E91D02 /* citation in Resources */,
@@ -4054,6 +4104,7 @@
 				B3E8FE3B27142A9900F51458 /* StylePickerState.swift in Sources */,
 				B3E8FE2D271429C300F51458 /* ExportActionHandler.swift in Sources */,
 				B300B3352429222B00C1FE1E /* TranslatorMetadata.swift in Sources */,
+				B3ADAE4A2833B56F00D46271 /* LookupViewController.swift in Sources */,
 				B310091D272C0126003FC743 /* DeleteWebDavDeletionsDbRequest.swift in Sources */,
 				B3593F36241A61C700760E20 /* ItemDetailSectionView.swift in Sources */,
 				B305661423FC051E003304F2 /* Licenses.swift in Sources */,
@@ -4123,6 +4174,7 @@
 				B30566BE23FC051F003304F2 /* Versions.swift in Sources */,
 				B39B18E8223947050019F467 /* main.swift in Sources */,
 				B361820824C9B53600B30D56 /* KeyboardResponder.swift in Sources */,
+				B3ADAE512833BEE300D46271 /* LookupAction.swift in Sources */,
 				B3B1EE062502675E00D8BC1E /* Parsing.swift in Sources */,
 				B305669823FC051F003304F2 /* RCollection.swift in Sources */,
 				B3E44642248FBE9B007FE8AB /* LinkType.swift in Sources */,
@@ -4243,6 +4295,7 @@
 				B3593F40241A61C700760E20 /* ItemCell.swift in Sources */,
 				B305679023FC1D9B003304F2 /* CollectionDifference+Separated.swift in Sources */,
 				B34ACC7A2514EAAB00040C17 /* AnnotationColorGenerator.swift in Sources */,
+				B3ADAE4F2833BEDC00D46271 /* LookupState.swift in Sources */,
 				B3FC7431272181E500F55531 /* WebDavWriteRequest.swift in Sources */,
 				B32EE26124A092B700442974 /* RUser.swift in Sources */,
 				B305660A23FC051E003304F2 /* RegisterUploadRequest.swift in Sources */,
@@ -4526,6 +4579,7 @@
 				B36BEC7324485FC700A60552 /* TagColorGenerator.swift in Sources */,
 				B319D6B6265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift in Sources */,
 				B3593F2A241A61C700760E20 /* ItemDetailNoteCell.swift in Sources */,
+				B3ADAE4D2833BED300D46271 /* LookupActionHandler.swift in Sources */,
 				B30565CF23FC051E003304F2 /* MarkAllLibraryObjectChangesAsSyncedDbRequest.swift in Sources */,
 				B341C8CB25CBFAD3005562E5 /* LibraryIdentifier.swift in Sources */,
 				B3A351DB2715761D002E597A /* WebDavPropfindRequest.swift in Sources */,

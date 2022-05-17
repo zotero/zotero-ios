@@ -15,15 +15,29 @@ import RxSwift
 final class WebViewHandler: NSObject {
     enum Error: Swift.Error {
         case webViewMissing
+        case urlMissingTranslators
     }
+
+    private let session: URLSession
 
     private weak var webView: WKWebView?
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
     var receivedMessageHandler: ((String, Any) -> Void)?
+    // Cookies from original website are stored and added to requests in `sendRequest(with:)`.
+    private var cookies: String?
 
     // MARK: - Lifecycle
 
     init(webView: WKWebView, javascriptHandlers: [String]?) {
+        let storage = HTTPCookieStorage.sharedCookieStorage(forGroupContainerIdentifier: AppGroup.identifier)
+        storage.cookieAcceptPolicy = .always
+
+        let configuration = URLSessionConfiguration.default
+        configuration.httpCookieStorage = storage
+        configuration.httpShouldSetCookies = true
+        configuration.httpCookieAcceptPolicy = .always
+
+        self.session = URLSession(configuration: configuration)
         self.webView = webView
 
         super.init()
@@ -38,6 +52,10 @@ final class WebViewHandler: NSObject {
     }
 
     // MARK: - Actions
+
+    func set(cookies: String?) {
+        self.cookies = cookies
+    }
 
     func load(fileUrl: URL) -> Single<()> {
         guard let webView = self.webView else {
@@ -99,6 +117,77 @@ final class WebViewHandler: NSObject {
                 self?.webDidLoad = nil
             }
         }
+    }
+
+    // MARK: - HTTP Requests
+
+    /// Sends HTTP request based on options. Sends back response with HTTP response to `webView`.
+    /// - parameter options: Options for HTTP request.
+    func sendRequest(with options: [String: Any], for messageId: Int) throws {
+        guard let urlString = options["url"] as? String,
+              let url = URL(string: urlString) ?? urlString.removingPercentEncoding.flatMap({ $0.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed).flatMap(URL.init) }),
+              let method = options["method"] as? String else {
+            DDLogInfo("Incorrect URL request from javascript")
+            DDLogInfo("\(options)")
+
+            let data = "Incorrect URL request from javascript".data(using: .utf8)
+            self.sendHttpResponse(data: data, statusCode: -1, successCodes: [200], headers: [:], for: messageId)
+            return
+        }
+
+        guard !urlString.contains("repo/code/undefined") else {
+            DDLogError("WebViewHandler: Undefined call, translator missing.")
+
+            // Received undefined translator repo call, which happens only when translation doesn't have proper translator available and just gets stuck, so we just force this error here.
+            throw Error.urlMissingTranslators
+        }
+
+        let headers = (options["headers"] as? [String: String]) ?? [:]
+        let body = options["body"] as? String
+        let timeout = (options["timeout"] as? Double).flatMap({ $0 / 1000 }) ?? 60
+        let successCodes = (options["successCodes"] as? [Int]) ?? []
+
+        DDLogInfo("WebViewHandler: send request to \(url.absoluteString)")
+
+        if let storage = self.session.configuration.httpCookieStorage, let cookies = storage.cookies {
+            for cookie in cookies {
+                storage.deleteCookie(cookie)
+            }
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        headers.forEach { key, value in
+            request.setValue(value, forHTTPHeaderField: key)
+        }
+        request.httpBody = body?.data(using: .utf8)
+        request.timeoutInterval = timeout
+
+        if let cookies = self.cookies, let storage = self.session.configuration.httpCookieStorage {
+            storage.cookieAcceptPolicy = .always
+
+            for wholeCookie in cookies.split(separator: ";") {
+                let split = wholeCookie.trimmingCharacters(in: .whitespaces).split(separator: "=")
+
+                guard split.count == 2 else { continue }
+
+                if let cookie = HTTPCookie(properties: [.name: split[0], .value: split[1], .domain: url.host ?? "", .originURL: url.host ?? "", .path: "/"]) {
+                    storage.setCookie(cookie)
+                }
+            }
+        }
+
+        let task = self.session.dataTask(with: request) { [weak self] data, response, error in
+            guard let `self` = self else { return }
+            if let response = response as? HTTPURLResponse {
+                self.sendHttpResponse(data: data, statusCode: response.statusCode, successCodes: successCodes, headers: response.allHeaderFields, for: messageId)
+            } else if let error = error {
+                self.sendHttpResponse(data: error.localizedDescription.data(using: .utf8), statusCode: -1, successCodes: successCodes, headers: [:], for: messageId)
+            } else {
+                self.sendHttpResponse(data: "unknown error".data(using: .utf8), statusCode: -1, successCodes: successCodes, headers: [:], for: messageId)
+            }
+        }
+        task.resume()
     }
 }
 

@@ -1034,7 +1034,7 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
 
         // Overwrite define action, because the original one doesn't show anything.
         if let idx = filtered.firstIndex(where: { $0.identifier == TextMenu.define.rawValue }) {
-            filtered[idx].title = L10n.lookup
+            filtered[idx].title = L10n.lookUp
             filtered[idx].actionBlock = { [weak self] in
                 guard let view = self?.pdfController.view else { return }
                 self?.coordinatorDelegate?.lookup(text: selectedText, rect: rect, view: view)

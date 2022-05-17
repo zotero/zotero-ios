@@ -55,7 +55,7 @@ internal enum L10n {
     return L10n.tr("Localizable", "login_debug", String(describing: p1))
   }
   /// Look Up
-  internal static let lookup = L10n.tr("Localizable", "lookup")
+  internal static let lookUp = L10n.tr("Localizable", "look_up")
   /// App failed to initialize and can’t function properly. Please report Debug ID %@ in the Zotero Forums.
   internal static func migrationDebug(_ p1: Any) -> String {
     return L10n.tr("Localizable", "migration_debug", String(describing: p1))
@@ -648,11 +648,13 @@ internal enum L10n {
     internal static let deselectAll = L10n.tr("Localizable", "items.deselect_all")
     /// Generating Bibliography
     internal static let generatingBib = L10n.tr("Localizable", "items.generating_bib")
+    /// Add by Identifier
+    internal static let lookup = L10n.tr("Localizable", "items.lookup")
     /// %d Collections Selected
     internal static func manyCollectionsSelected(_ p1: Int) -> String {
       return L10n.tr("Localizable", "items.many_collections_selected", p1)
     }
-    /// New Item
+    /// Add Manually
     internal static let new = L10n.tr("Localizable", "items.new")
     /// Add File
     internal static let newFile = L10n.tr("Localizable", "items.new_file")
@@ -742,6 +744,11 @@ internal enum L10n {
     internal static let repeatPassword = L10n.tr("Localizable", "login.repeat_password")
     /// Username
     internal static let username = L10n.tr("Localizable", "login.username")
+  }
+
+  internal enum Lookup {
+    /// Enter ISBNs, DOls, PMIDs, arXiv IDs, or ADS Bibcodes to add to your library:
+    internal static let title = L10n.tr("Localizable", "lookup.title")
   }
 
   internal enum Onboarding {

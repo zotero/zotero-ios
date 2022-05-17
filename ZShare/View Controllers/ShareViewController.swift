@@ -468,7 +468,7 @@ final class ShareViewController: UIViewController {
                 return L10n.Errors.Shareext.javascriptFailed
             case .noSuccessfulTranslators:
                 return nil
-            case .cantFindFile, .webExtractionMissingJs, .webViewMissing: // should never happen
+            case .cantFindFile, .webExtractionMissingJs: // should never happen
                 return L10n.Errors.Shareext.missingBaseFiles
             case .webExtractionMissingData:
                 return L10n.Errors.Shareext.responseMissingData

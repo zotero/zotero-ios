@@ -41,7 +41,7 @@
 "support_feedback" = "Support and Feedback";
 "about_zotero" = "About Zotero";
 "recent" = "Recents";
-"lookup" = "Look Up";
+"look_up" = "Look Up";
 "not_found" = "Not Found";
 "share" = "Share";
 "select" = "Select";
@@ -113,7 +113,8 @@
 "items.sort_order" = "Sort Order";
 "items.ascending" = "Ascending";
 "items.descending" = "Descending";
-"items.new" = "New Item";
+"items.lookup" = "Add by Identifier";
+"items.new" = "Add Manually";
 "items.new_note" = "New Standalone Note";
 "items.new_file" = "Add File";
 "items.zero_collections_selected" = "Select a Collection";
@@ -139,6 +140,8 @@
 "items.generating_bib" = "Generating Bibliography";
 "items.creator_summary.and" = "%@ and %@";
 "items.creator_summary.etal" = "%@ et al.";
+
+"lookup.title" = "Enter ISBNs, DOls, PMIDs, arXiv IDs, or ADS Bibcodes to add to your library:";
 
 "citation.title" = "Citation Preview";
 "citation.copy_citation" = "Copy Citation";
