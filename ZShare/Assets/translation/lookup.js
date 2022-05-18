@@ -45,67 +45,44 @@ function initSchemaAndDateFormats(encodedSchema, encodedDateFormats) {
     }
 }
 
-async function translate(url, encodedHtml, encodedFrames) {
-    // Prepare a document
-    Zotero.debug("Parse HTML data");
-    const html = decodeBase64(encodedHtml);
-    const frames = JSON.parse(decodeBase64(encodedFrames));
-    Zotero.debug("Create document");
-    const doc = Zotero.HTTP.wrapDocument(parseDoc(html, frames), url);
+async function lookup(encodedIdentifiers) {
+    // Get identifiers
+    Zotero.debug("Parse identifiers");
 
-    // Set up a translate instance
-    Zotero.debug("Init document");
-    const translate = new Zotero.Translate.Web();
-    translate.setDocument(doc);
+    const identifiersInput = decodeBase64(encodedIdentifiers);
+    const identifiers = Zotero.Utilities.extractIdentifiers(identifiersInput);
 
-    // Get translators
-    var translators;
-    try {
-        Zotero.debug("Get translators");
-        translators = await translate.getTranslators();
-    } catch (e) {
-        Zotero.logError(e);
-        window.webkit.messageHandlers.saveAsWebHandler.postMessage(0);
-        return;
-    }
+    Zotero.debug("Extracted identifiers: " + JSON.stringify(identifiers));
 
-    if (!translators.length) {
-        Zotero.debug("No translators found!");
-        window.webkit.messageHandlers.saveAsWebHandler.postMessage(0);
-        return;
-    }
+    // Go through all identifiers
 
-    // Set handlers for translation
-    translate.setHandler("select", (translate, item, callback) => {
-        Zotero.Messaging.sendMessage(window.webkit.messageHandlers.itemSelectionHandler, Object.entries(item))
-                        .then(callback, function(e) { throw (e); });
-    });
+    var newItems = false;
 
-    translate.setHandler("error", function(obj, err) {
-        Zotero.debug(err);
-    });
+    await Zotero.Promise.all(identifiers.map(async (identifier) => {
+        Zotero.debug("Process identifier " + identifier);
 
-    // Try to get results from translator(s)
-    while (translators.length > 0) {
-        translator = translators.shift();
-
-        window.webkit.messageHandlers.translationProgressHandler.postMessage("translating_with_" + translator.label);
-
-        translate.setTranslator(translator);
+        // Set up a translate instance
+        var translate = new Zotero.Translate.Search();
+        translate.setIdentifier(identifier);
 
         try {
-            const items = await translate.translate();
-            if (Array.isArray(items)) {
-                window.webkit.messageHandlers.itemResponseHandler.postMessage(items);
-                return;
-            } else if (typeof items === 'object') {
-                window.webkit.messageHandlers.itemResponseHandler.postMessage([items]);
-                return;
-            }
-        } catch (e) {}
-    }
+            // Get translators
+            var translators = await translate.getTranslators();
+            translate.setTranslator(translators);
 
-    window.webkit.messageHandlers.saveAsWebHandler.postMessage(0);
+            // Get items
+            newItems = await translate.translate({ libraryID: false });
+        } catch (e) {
+            // Continue with other ids on failure
+            Zotero.logError(e);
+        }
+    }));
+
+    if (newItems) {
+        window.webkit.messageHandlers.itemsHandler.postMessage(newItems);
+    } else {
+        window.webkit.messageHandlers.failureHandler.postMessage(0);
+    }
 };
 
 function parseDoc(html, frames) {

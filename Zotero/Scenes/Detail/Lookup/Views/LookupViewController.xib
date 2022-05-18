@@ -30,39 +30,54 @@
                         <wkPreferences key="preferences"/>
                     </wkWebViewConfiguration>
                 </wkWebView>
-                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="rum-se-tOJ">
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="rum-se-tOJ">
                     <rect key="frame" x="20" y="64" width="374" height="17"/>
                     <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                     <nil key="textColor"/>
                     <nil key="highlightedColor"/>
                 </label>
-                <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="a2E-oe-MiL">
-                    <rect key="frame" x="20" y="89" width="374" height="38"/>
-                    <constraints>
-                        <constraint firstAttribute="height" constant="38" id="iYt-6X-bBD"/>
-                    </constraints>
-                    <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
-                    <textInputTraits key="textInputTraits"/>
-                </textField>
+                <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="JBf-fT-rdp">
+                    <rect key="frame" x="20" y="93" width="374" height="35"/>
+                    <subviews>
+                        <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="a2E-oe-MiL">
+                            <rect key="frame" x="0.0" y="0.0" width="374" height="34"/>
+                            <constraints>
+                                <constraint firstAttribute="height" constant="34" id="iYt-6X-bBD"/>
+                            </constraints>
+                            <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
+                            <textInputTraits key="textInputTraits"/>
+                        </textField>
+                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="lMk-Rb-8e4">
+                            <rect key="frame" x="0.0" y="34" width="374" height="1"/>
+                            <color key="backgroundColor" systemColor="opaqueSeparatorColor"/>
+                            <constraints>
+                                <constraint firstAttribute="height" constant="1" id="Qlb-WA-ecc"/>
+                            </constraints>
+                        </view>
+                    </subviews>
+                </stackView>
             </subviews>
             <viewLayoutGuide key="safeArea" id="fnl-2z-Ty3"/>
             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
             <constraints>
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="Hyv-nM-hA1" secondAttribute="trailing" id="4qG-Ro-Ve4"/>
+                <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="JBf-fT-rdp" secondAttribute="trailing" constant="20" id="8OF-c1-GWx"/>
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="bottom" secondItem="Hyv-nM-hA1" secondAttribute="bottom" id="8Ra-qr-cQJ"/>
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="rum-se-tOJ" secondAttribute="trailing" constant="20" id="Df7-9R-SrW"/>
-                <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="a2E-oe-MiL" secondAttribute="trailing" constant="20" id="ETc-wX-atw"/>
+                <constraint firstItem="JBf-fT-rdp" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" constant="20" id="ICx-6D-lJP"/>
                 <constraint firstItem="Hyv-nM-hA1" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" id="Ih3-xS-M7I"/>
                 <constraint firstItem="rum-se-tOJ" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" constant="20" id="SxB-fE-Y4Q"/>
-                <constraint firstItem="a2E-oe-MiL" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" constant="20" id="Uy5-P5-y9E"/>
+                <constraint firstItem="JBf-fT-rdp" firstAttribute="top" secondItem="rum-se-tOJ" secondAttribute="bottom" constant="12" id="Ypl-1K-73i"/>
                 <constraint firstItem="Hyv-nM-hA1" firstAttribute="top" secondItem="fnl-2z-Ty3" secondAttribute="top" id="cLX-aN-zeF"/>
                 <constraint firstItem="rum-se-tOJ" firstAttribute="top" secondItem="fnl-2z-Ty3" secondAttribute="top" constant="20" id="ihj-QI-Teb"/>
-                <constraint firstItem="a2E-oe-MiL" firstAttribute="top" secondItem="rum-se-tOJ" secondAttribute="bottom" constant="8" id="p2v-87-wKl"/>
             </constraints>
             <point key="canvasLocation" x="-72" y="146"/>
         </view>
     </objects>
     <resources>
+        <systemColor name="opaqueSeparatorColor">
+            <color red="0.77647058823529413" green="0.77647058823529413" blue="0.78431372549019607" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>

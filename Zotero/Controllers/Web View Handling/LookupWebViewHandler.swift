@@ -13,14 +13,17 @@ import CocoaLumberjackSwift
 import RxSwift
 
 final class LookupWebViewHandler {
-    /// Actions that can be returned by this handler.
-    /// - loadedItems: Items have been translated.
-    enum Action {
-        case loadedItems([[String: Any]])
+    struct LookupData {
+        let response: ItemResponse
+        let attachments: [[String: Any]]
     }
 
     /// Handlers for communication with JS in `webView`
     enum JSHandlers: String, CaseIterable {
+        /// Handler used for reporting new items.
+        case items = "itemsHandler"
+        /// Handler used for reporting failure - when no items were detected.
+        case lookupFailed = "failureHandler"
         /// Handler used for HTTP requests. Expects response (HTTP response).
         case request = "requestHandler"
         /// Handler used to log JS debug info.
@@ -29,21 +32,20 @@ final class LookupWebViewHandler {
 
     enum Error: Swift.Error {
         case cantFindFile
-        case incompatibleItem
-        case javascriptCallMissingResult
         case noSuccessfulTranslators
-        case webExtractionMissingJs
-        case webExtractionMissingData
+        case lookupFailed
     }
 
     private let webViewHandler: WebViewHandler
     private let translatorsController: TranslatorsAndStylesController
+    private let schemaController: SchemaController
     private let disposeBag: DisposeBag
-    let observable: PublishSubject<Action>
+    let observable: PublishSubject<[LookupData]>
 
-    init(webView: WKWebView, translatorsController: TranslatorsAndStylesController) {
+    init(webView: WKWebView, translatorsController: TranslatorsAndStylesController, schemaController: SchemaController) {
         self.translatorsController = translatorsController
-        self.webViewHandler = WebViewHandler(webView: webView, javascriptHandlers: nil)
+        self.schemaController = schemaController
+        self.webViewHandler = WebViewHandler(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }))
         self.observable = PublishSubject()
         self.disposeBag = DisposeBag()
 
@@ -117,12 +119,48 @@ final class LookupWebViewHandler {
         }
     }
 
+    private func process(body: Any) {
+        guard let rawData = body as? [[String: Any]] else {
+            self.observable.on(.error(Error.lookupFailed))
+            return
+        }
+
+        let data = self.parse(rawData, schemaController: self.schemaController)
+        self.observable.on(.next(data))
+    }
+
+    /// Tries to parse `ItemResponse` from data returned by translation server. It prioritizes items with attachments if there are multiple items.
+    /// - parameter data: Data to parse
+    /// - parameter schemaController: SchemaController which is used for validating item type and field types
+    /// - returns: `ItemResponse` of parsed item and optional attachment dictionary with title and url.
+    private func parse(_ data: [[String: Any]], schemaController: SchemaController) -> [LookupData] {
+        var items: [LookupData] = []
+
+        for itemData in data {
+            do {
+                let item = try ItemResponse(translatorResponse: itemData, schemaController: self.schemaController)
+                let attachments = itemData["attachments"] as? [[String: Any]]
+                items.append(LookupData(response: item, attachments: attachments ?? []))
+            } catch let error {
+                DDLogError("LookupWebViewHandler: can't parse data - \(error)")
+            }
+        }
+
+        return items
+    }
+
     /// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.
     /// Each message contains a `messageId` in the body, which is used to identify the message in case a response is expected.
     private func receiveMessage(name: String, body: Any) {
         guard let handler = JSHandlers(rawValue: name) else { return }
 
         switch handler {
+        case .lookupFailed:
+            self.observable.on(.error(Error.lookupFailed))
+
+        case .items:
+            self.process(body: body)
+
         case .log:
             DDLogInfo("JSLOG: \(body)")
 

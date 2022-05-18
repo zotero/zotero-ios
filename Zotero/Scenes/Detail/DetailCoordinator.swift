@@ -341,7 +341,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         controller.popoverPresentationController?.barButtonItem = button
 
-        controller.addAction(UIAlertAction(title: L10n.Items.lookup, style: .default, handler: { [weak self, weak viewModel] _ in
+        controller.addAction(UIAlertAction(title: L10n.Items.lookup, style: .default, handler: { [weak self] _ in
             self?.showLookup()
         }))
 
@@ -576,7 +576,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     func showLookup() {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
 
-        let handler = LookupActionHandler(dbStorage: dbStorage)
+        let handler = LookupActionHandler(dbStorage: dbStorage, translatorsController: self.controllers.translatorsAndStylesController, schemaController: self.controllers.schemaController)
         let viewModel = ViewModel(initialState: LookupState(), handler: handler)
 
         let controller = LookupViewController(viewModel: viewModel)

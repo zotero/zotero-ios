@@ -36,6 +36,11 @@ class LookupViewController: UIViewController {
         self.viewModel.process(action: .initialize(self.webView))
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.textField.becomeFirstResponder()
+    }
+
     // MARK: - Setups
 
     private func setup() {
