@@ -45,7 +45,7 @@ struct StoreItemsDbResponseRequest: DbResponseRequest {
 
         for response in self.responses {
             do {
-                let change = try StoreItemDbRequest(response: response, schemaController: self.schemaController, dateParser: self.dateParser, preferRemoteData: self.preferResponseData).process(in: database)
+                let (_, change) = try StoreItemDbRequest(response: response, schemaController: self.schemaController, dateParser: self.dateParser, preferRemoteData: self.preferResponseData).process(in: database)
                 if let change = change {
                     filenameChanges.append(change)
                 }
@@ -61,7 +61,7 @@ struct StoreItemsDbResponseRequest: DbResponseRequest {
 }
 
 struct StoreItemDbRequest: DbResponseRequest {
-    typealias Response = StoreItemsResponse.FilenameChange?
+    typealias Response = (RItem, StoreItemsResponse.FilenameChange?)
 
     let response: ItemResponse
     unowned let schemaController: SchemaController
@@ -71,7 +71,7 @@ struct StoreItemDbRequest: DbResponseRequest {
     var needsWrite: Bool { return true }
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
-    func process(in database: Realm) throws -> StoreItemsResponse.FilenameChange? {
+    func process(in database: Realm) throws -> (RItem, StoreItemsResponse.FilenameChange?) {
         guard let libraryId = self.response.library.libraryId else { throw DbError.primaryKeyUnavailable }
 
         let item: RItem
@@ -100,7 +100,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         return StoreItemDbRequest.update(item: item, libraryId: libraryId, with: self.response, schemaController: self.schemaController, dateParser: self.dateParser, database: database)
     }
 
-    static func update(item: RItem, libraryId: LibraryIdentifier, with response: ItemResponse, schemaController: SchemaController, dateParser: DateParser, database: Realm) -> StoreItemsResponse.FilenameChange? {
+    static func update(item: RItem, libraryId: LibraryIdentifier, with response: ItemResponse, schemaController: SchemaController, dateParser: DateParser, database: Realm) -> (RItem, StoreItemsResponse.FilenameChange?) {
         item.key = response.key
         item.rawType = response.rawType
         item.localizedType = schemaController.localized(itemType: response.rawType) ?? ""
@@ -129,7 +129,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         // Item title depends on item type, creators and fields, so we update derived titles (displayTitle and sortTitle) after everything else synced
         item.updateDerivedTitles()
 
-        return filenameChange
+        return (item, filenameChange)
     }
 
     private static func syncFields(data: ItemResponse, item: RItem, database: Realm, schemaController: SchemaController, dateParser: DateParser) -> StoreItemsResponse.FilenameChange? {

@@ -13,11 +13,6 @@ import CocoaLumberjackSwift
 import RxSwift
 
 final class LookupWebViewHandler {
-    struct LookupData {
-        let response: ItemResponse
-        let attachments: [[String: Any]]
-    }
-
     /// Handlers for communication with JS in `webView`
     enum JSHandlers: String, CaseIterable {
         /// Handler used for reporting new items.
@@ -38,13 +33,11 @@ final class LookupWebViewHandler {
 
     private let webViewHandler: WebViewHandler
     private let translatorsController: TranslatorsAndStylesController
-    private let schemaController: SchemaController
     private let disposeBag: DisposeBag
-    let observable: PublishSubject<[LookupData]>
+    let observable: PublishSubject<[[String: Any]]>
 
-    init(webView: WKWebView, translatorsController: TranslatorsAndStylesController, schemaController: SchemaController) {
+    init(webView: WKWebView, translatorsController: TranslatorsAndStylesController) {
         self.translatorsController = translatorsController
-        self.schemaController = schemaController
         self.webViewHandler = WebViewHandler(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }))
         self.observable = PublishSubject()
         self.disposeBag = DisposeBag()
@@ -124,32 +117,10 @@ final class LookupWebViewHandler {
             self.observable.on(.error(Error.lookupFailed))
             return
         }
-
-        let data = self.parse(rawData, schemaController: self.schemaController)
-        self.observable.on(.next(data))
+        self.observable.on(.next(rawData))
     }
 
-    /// Tries to parse `ItemResponse` from data returned by translation server. It prioritizes items with attachments if there are multiple items.
-    /// - parameter data: Data to parse
-    /// - parameter schemaController: SchemaController which is used for validating item type and field types
-    /// - returns: `ItemResponse` of parsed item and optional attachment dictionary with title and url.
-    private func parse(_ data: [[String: Any]], schemaController: SchemaController) -> [LookupData] {
-        var items: [LookupData] = []
-
-        for itemData in data {
-            do {
-                let item = try ItemResponse(translatorResponse: itemData, schemaController: self.schemaController)
-                let attachments = itemData["attachments"] as? [[String: Any]]
-                items.append(LookupData(response: item, attachments: attachments ?? []))
-            } catch let error {
-                DDLogError("LookupWebViewHandler: can't parse data - \(error)")
-            }
-        }
-
-        return items
-    }
-
-    /// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.
+        /// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.
     /// Each message contains a `messageId` in the body, which is used to identify the message in case a response is expected.
     private func receiveMessage(name: String, body: Any) {
         guard let handler = JSHandlers(rawValue: name) else { return }

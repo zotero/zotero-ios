@@ -332,6 +332,9 @@
 		B30B551024B8646E00F94B59 /* Assets+SwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B550F24B8646E00F94B59 /* Assets+SwiftUI.swift */; };
 		B30B551124B8689900F94B59 /* Assets+SwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B550F24B8646E00F94B59 /* Assets+SwiftUI.swift */; };
 		B30BA8C4255D415600361D25 /* Bundled in Resources */ = {isa = PBXBuildFile; fileRef = B30BA8C3255D415600361D25 /* Bundled */; };
+		B30BDDE42836642D007034E8 /* FilenameFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A27AD025BEE93400DE0BB2 /* FilenameFormatter.swift */; };
+		B30BDDE628366F1B007034E8 /* CreateTranslatedItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30BDDE528366F1B007034E8 /* CreateTranslatedItemsDbRequest.swift */; };
+		B30BDDE828367FC8007034E8 /* RemoteAttachmentDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30BDDE728367FC8007034E8 /* RemoteAttachmentDownloader.swift */; };
 		B30D59592206F60400884C4A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59582206F60400884C4A /* AppDelegate.swift */; };
 		B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B30D59632206F60500884C4A /* LaunchScreen.storyboard */; };
 		B30D597B2206F60500884C4A /* ZoteroUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D597A2206F60500884C4A /* ZoteroUITests.swift */; };
@@ -1247,6 +1250,8 @@
 		B30B550A24B85CC900F94B59 /* Assets.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Assets.swift; sourceTree = "<group>"; };
 		B30B550F24B8646E00F94B59 /* Assets+SwiftUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Assets+SwiftUI.swift"; sourceTree = "<group>"; };
 		B30BA8C3255D415600361D25 /* Bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Bundled; sourceTree = "<group>"; };
+		B30BDDE528366F1B007034E8 /* CreateTranslatedItemsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateTranslatedItemsDbRequest.swift; sourceTree = "<group>"; };
+		B30BDDE728367FC8007034E8 /* RemoteAttachmentDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteAttachmentDownloader.swift; sourceTree = "<group>"; };
 		B30D59552206F60400884C4A /* Zotero.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Zotero.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B30D59582206F60400884C4A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		B30D59642206F60500884C4A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -1864,7 +1869,7 @@
 			children = (
 				B305648523FC051E003304F2 /* API */,
 				B3866A562417C1BC006693C4 /* Architecture */,
-				B3300A4727C649E500427FA8 /* AttachmentDownloader */,
+				B3300A4727C649E500427FA8 /* Attachment Downloader */,
 				B32EBFB4276A89190003897E /* Background Uploader */,
 				B3B78C38266FAED500E91D02 /* Citation */,
 				B31FACC425DBC6F800DD5F14 /* Conflict Resolution */,
@@ -1937,6 +1942,7 @@
 				B305645523FC051E003304F2 /* CreateCollectionDbRequest.swift */,
 				B305644323FC051E003304F2 /* CreateItemDbRequest.swift */,
 				B305645D23FC051E003304F2 /* CreateNoteDbRequest.swift */,
+				B30BDDE528366F1B007034E8 /* CreateTranslatedItemsDbRequest.swift */,
 				B3100919272C00BA003FC743 /* CreateWebDavDeletionsDbRequest.swift */,
 				B37ACB922730338A002EF4E1 /* DeleteAllWebDavDeletionsDbRequest.swift */,
 				B305644223FC051E003304F2 /* DeleteGroupDbRequest.swift */,
@@ -2502,13 +2508,14 @@
 			path = "Background Uploader";
 			sourceTree = "<group>";
 		};
-		B3300A4727C649E500427FA8 /* AttachmentDownloader */ = {
+		B3300A4727C649E500427FA8 /* Attachment Downloader */ = {
 			isa = PBXGroup;
 			children = (
 				B3300A4827C649E500427FA8 /* AttachmentDownloader.swift */,
 				B3300A4A27C64A0700427FA8 /* AttachmentDownloadOperation.swift */,
+				B30BDDE728367FC8007034E8 /* RemoteAttachmentDownloader.swift */,
 			);
-			path = AttachmentDownloader;
+			path = "Attachment Downloader";
 			sourceTree = "<group>";
 		};
 		B33791D523BF7B2900919210 /* DbRequests */ = {
@@ -4339,6 +4346,7 @@
 				B30566C423FC051F003304F2 /* DeleteBatch.swift in Sources */,
 				B3BD86BC258CBCD600EF6674 /* SearchBar.swift in Sources */,
 				B305669523FC051F003304F2 /* DeletableObject.swift in Sources */,
+				B30BDDE828367FC8007034E8 /* RemoteAttachmentDownloader.swift in Sources */,
 				B305660823FC051E003304F2 /* KeyRequest.swift in Sources */,
 				B32A273C254841B80081E061 /* CreatorEditViewController.swift in Sources */,
 				B31D4A722767840800E22DCC /* BackgroundTaskController.swift in Sources */,
@@ -4417,6 +4425,7 @@
 				B3DCDF06240912060039ED0D /* DocumentPickerViewController.swift in Sources */,
 				B37BF0B125A6035D00AE0268 /* ReadDocumentDataDbRequest.swift in Sources */,
 				B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */,
+				B30BDDE628366F1B007034E8 /* CreateTranslatedItemsDbRequest.swift in Sources */,
 				B319D6B8265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift in Sources */,
 				B39E01352832883A0091CE4A /* LookupWebViewHandler.swift in Sources */,
 				B30566A723FC051F003304F2 /* DelayIntervals.swift in Sources */,
@@ -4500,6 +4509,7 @@
 				B3830CDA255451AB00910FE0 /* TagPickerError.swift in Sources */,
 				B3A351D92715759D002E597A /* WebDavCheckRequest.swift in Sources */,
 				B340868D25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift in Sources */,
+				B30BDDE42836642D007034E8 /* FilenameFormatter.swift in Sources */,
 				B3E381D325F2D78A00F046CE /* ApiLogger.swift in Sources */,
 				B3E8FE192714297200F51458 /* CiteAction.swift in Sources */,
 				B3A2AEDC2656511D004BF3A4 /* StylesRequest.swift in Sources */,

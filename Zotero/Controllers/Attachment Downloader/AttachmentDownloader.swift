@@ -8,7 +8,6 @@
 
 import UIKit
 
-import Alamofire
 import CocoaLumberjackSwift
 import RxSwift
 import ZIPFoundation

@@ -9,6 +9,8 @@
 import Foundation
 
 struct LookupState: ViewModelState {
+    let collectionKeys: Set<String>
+    let libraryId: LibraryIdentifier
 
     func cleanup() {}
 }

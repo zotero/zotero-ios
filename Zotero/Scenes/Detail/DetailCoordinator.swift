@@ -576,8 +576,11 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     func showLookup() {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
 
-        let handler = LookupActionHandler(dbStorage: dbStorage, translatorsController: self.controllers.translatorsAndStylesController, schemaController: self.controllers.schemaController)
-        let viewModel = ViewModel(initialState: LookupState(), handler: handler)
+        let collectionKeys = Defaults.shared.selectedCollectionId.key.flatMap({ Set([$0]) }) ?? []
+        let state = LookupState(collectionKeys: collectionKeys, libraryId: Defaults.shared.selectedLibrary)
+        let handler = LookupActionHandler(dbStorage: dbStorage, translatorsController: self.controllers.translatorsAndStylesController,
+                                          schemaController: self.controllers.schemaController, dateParser: self.controllers.dateParser)
+        let viewModel = ViewModel(initialState: state, handler: handler)
 
         let controller = LookupViewController(viewModel: viewModel)
         let navigationController = UINavigationController(rootViewController: controller)
