@@ -12,29 +12,26 @@ import CocoaLumberjackSwift
 import RxSwift
 
 final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionHandler {
-    struct LookupData {
-        let response: ItemResponse
-        let attachments: [(Attachment, URL)]
-    }
-
     typealias State = LookupState
     typealias Action = LookupAction
 
     unowned let dbStorage: DbStorage
-    private let translatorsController: TranslatorsAndStylesController
-    private let schemaController: SchemaController
-    private let dateParser: DateParser
     let backgroundQueue: DispatchQueue
+    private unowned let translatorsController: TranslatorsAndStylesController
+    private unowned let schemaController: SchemaController
+    private unowned let dateParser: DateParser
+    private unowned let remoteFileDownloader: RemoteAttachmentDownloader
     private let disposeBag: DisposeBag
 
     private var lookupWebViewHandler: LookupWebViewHandler?
 
-    init(dbStorage: DbStorage, translatorsController: TranslatorsAndStylesController, schemaController: SchemaController, dateParser: DateParser) {
+    init(dbStorage: DbStorage, translatorsController: TranslatorsAndStylesController, schemaController: SchemaController, dateParser: DateParser, remoteFileDownloader: RemoteAttachmentDownloader) {
         self.backgroundQueue = DispatchQueue(label: "org.zotero.ItemsActionHandler.backgroundProcessing", qos: .userInitiated)
         self.dbStorage = dbStorage
         self.translatorsController = translatorsController
         self.schemaController = schemaController
         self.dateParser = dateParser
+        self.remoteFileDownloader = remoteFileDownloader
         self.disposeBag = DisposeBag()
     }
 
@@ -51,6 +48,7 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                            self.process(data: data, in: viewModel)
                        }
                    }, onError: { [weak self, weak viewModel] error in
+                       DDLogError("LookupActionHandler: lookup failed - \(error)")
                        inMainThread {
                            guard let `self` = self, let viewModel = viewModel else { return }
                            self.showError(in: viewModel)
@@ -59,6 +57,9 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                    .disposed(by: self.disposeBag)
 
         case .lookUp(let identifier):
+            self.update(viewModel: viewModel) { state in
+                state.state = .loading
+            }
             self.lookupWebViewHandler?.lookUp(identifier: identifier)
         }
     }
@@ -67,10 +68,24 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
         let parsedData = self.parse(data, viewModel: viewModel, schemaController: self.schemaController)
 
         do {
-            let request = CreateTranslatedItemDbRequest(responses: parsedData.map({ $0.response }), schemaController: self.schemaController, dateParser: self.dateParser)
+            let request = CreateTranslatedItemsDbRequest(responses: parsedData.map({ $0.response }), schemaController: self.schemaController, dateParser: self.dateParser)
             try self.dbStorage.perform(request: request)
+
+            inMainThread {
+                self.update(viewModel: viewModel) { state in
+                    state.state = .done(parsedData)
+                }
+            }
+
+            let downloadData = parsedData.flatMap({ lookupData in
+                return lookupData.attachments.map({ ($0, $1, lookupData.response.key) })
+            })
+            self.remoteFileDownloader.download(data: downloadData)
         } catch let error {
             DDLogError("LookupActionHandler: can't create item(s) - \(error)")
+            inMainThread {
+                self.showError(in: viewModel)
+            }
         }
     }
 
@@ -78,16 +93,19 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     /// - parameter data: Data to parse
     /// - parameter schemaController: SchemaController which is used for validating item type and field types
     /// - returns: `ItemResponse` of parsed item and optional attachment dictionary with title and url.
-    private func parse(_ data: [[String: Any]], viewModel: ViewModel<LookupActionHandler>, schemaController: SchemaController) -> [LookupData] {
+    private func parse(_ data: [[String: Any]], viewModel: ViewModel<LookupActionHandler>, schemaController: SchemaController) -> [LookupState.LookupData] {
         let collectionKeys = viewModel.state.collectionKeys
         let libraryId = viewModel.state.libraryId
-        var items: [LookupData] = []
+        var items: [LookupState.LookupData] = []
 
         for itemData in data {
             do {
                 let item = try ItemResponse(translatorResponse: itemData, schemaController: self.schemaController).copy(libraryId: libraryId, collectionKeys: collectionKeys, tags: [])
+                
                 let attachments = ((itemData["attachments"] as? [[String: Any]]) ?? []).compactMap { data -> (Attachment, URL)? in
-                    guard let urlString = data["url"] as? String, let url = URL(string: urlString), let mimeType = data["mimeType"] as? String, let ext = mimeType.extensionFromMimeType else { return nil }
+                    // We can't process snapshots yet, so ignore all text/html attachments
+                    guard let mimeType = data["mimeType"] as? String, mimeType != "text/html", let ext = mimeType.extensionFromMimeType,
+                          let urlString = data["url"] as? String, let url = URL(string: urlString) else { return nil }
 
                     let key = KeyGenerator.newKey
                     let filename = FilenameFormatter.filename(from: item, defaultTitle: "Full Text", ext: ext, dateParser: self.dateParser)
@@ -96,7 +114,7 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                     return (attachment, url)
                 }
                 
-                items.append(LookupData(response: item, attachments: attachments))
+                items.append(LookupState.LookupData(response: item, attachments: attachments))
             } catch let error {
                 DDLogError("LookupActionHandler: can't parse data - \(error)")
             }
@@ -106,6 +124,8 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     }
 
     private func showError(in viewModel: ViewModel<LookupActionHandler>) {
-
+        self.update(viewModel: viewModel) { state in
+            state.state = .failed
+        }
     }
 }

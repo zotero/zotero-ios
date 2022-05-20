@@ -263,6 +263,7 @@ final class UserControllers {
     let itemLocaleController: RItemLocaleController
     let backgroundUploadObserver: BackgroundUploadObserver
     let fileDownloader: AttachmentDownloader
+    let remoteFileDownloader: RemoteAttachmentDownloader
     let webSocketController: WebSocketController
     let fileCleanupController: AttachmentFileCleanupController
     let citationController: CitationController
@@ -301,6 +302,7 @@ final class UserControllers {
         self.itemLocaleController = RItemLocaleController(schemaController: controllers.schemaController, dbStorage: dbStorage)
         self.backgroundUploadObserver = backgroundUploadObserver
         self.fileDownloader = fileDownloader
+        self.remoteFileDownloader = RemoteAttachmentDownloader(apiClient: controllers.apiClient, fileStorage: controllers.fileStorage, dbStorage: dbStorage, schemaController: controllers.schemaController)
         self.webSocketController = webSocketController
         self.fileCleanupController = fileCleanupController
         self.citationController = CitationController(stylesController: controllers.translatorsAndStylesController, fileStorage: controllers.fileStorage,

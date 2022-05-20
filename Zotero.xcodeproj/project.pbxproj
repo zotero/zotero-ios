@@ -853,6 +853,8 @@
 		B3CBB121248A439A00C4228F /* Notification+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CBB120248A439A00C4228F /* Notification+Extensions.swift */; };
 		B3CBB123248A44D100C4228F /* KeyboardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CBB122248A44D100C4228F /* KeyboardData.swift */; };
 		B3CBB125248A46D500C4228F /* NotificationCenter+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CBB124248A46D500C4228F /* NotificationCenter+Extensions.swift */; };
+		B3CD96B3283796F500B8ACCB /* RemoteAttachmentDownloadOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CD96B2283796F500B8ACCB /* RemoteAttachmentDownloadOperation.swift */; };
+		B3CD96B52837A82F00B8ACCB /* CreateAttachmentWithParentDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CD96B42837A82F00B8ACCB /* CreateAttachmentWithParentDbRequest.swift */; };
 		B3CE697624DD7D6A00D333AF /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B30B550224B85A3A00F94B59 /* Colors.xcassets */; };
 		B3CF8830266DFFAF009CFC20 /* ReadStylesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B331F9B4265400D70099F6A6 /* ReadStylesDbRequest.swift */; };
 		B3D037202604FCBA00BCFB05 /* FileAttachmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B40622490F09400FAAF6D /* FileAttachmentView.swift */; };
@@ -1657,6 +1659,8 @@
 		B3CBB120248A439A00C4228F /* Notification+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Notification+Extensions.swift"; sourceTree = "<group>"; };
 		B3CBB122248A44D100C4228F /* KeyboardData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardData.swift; sourceTree = "<group>"; };
 		B3CBB124248A46D500C4228F /* NotificationCenter+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationCenter+Extensions.swift"; sourceTree = "<group>"; };
+		B3CD96B2283796F500B8ACCB /* RemoteAttachmentDownloadOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteAttachmentDownloadOperation.swift; sourceTree = "<group>"; };
+		B3CD96B42837A82F00B8ACCB /* CreateAttachmentWithParentDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateAttachmentWithParentDbRequest.swift; sourceTree = "<group>"; };
 		B3D0793527CCF63800C454D6 /* AnnotationBoundingBoxCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationBoundingBoxCalculator.swift; sourceTree = "<group>"; };
 		B3D0994626DCCEF700B04FAA /* RPathCoordinate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPathCoordinate.swift; sourceTree = "<group>"; };
 		B3D0AC97255C14AB007648F5 /* PDFReaderLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReaderLayout.swift; sourceTree = "<group>"; };
@@ -1939,6 +1943,7 @@
 				B305644423FC051E003304F2 /* CheckItemIsChangedDbRequest.swift */,
 				B305645B23FC051E003304F2 /* CreateAttachmentDbRequest.swift */,
 				B39D33702400150B00EF2ACB /* CreateAttachmentsDbRequest.swift */,
+				B3CD96B42837A82F00B8ACCB /* CreateAttachmentWithParentDbRequest.swift */,
 				B305645523FC051E003304F2 /* CreateCollectionDbRequest.swift */,
 				B305644323FC051E003304F2 /* CreateItemDbRequest.swift */,
 				B305645D23FC051E003304F2 /* CreateNoteDbRequest.swift */,
@@ -2514,6 +2519,7 @@
 				B3300A4827C649E500427FA8 /* AttachmentDownloader.swift */,
 				B3300A4A27C64A0700427FA8 /* AttachmentDownloadOperation.swift */,
 				B30BDDE728367FC8007034E8 /* RemoteAttachmentDownloader.swift */,
+				B3CD96B2283796F500B8ACCB /* RemoteAttachmentDownloadOperation.swift */,
 			);
 			path = "Attachment Downloader";
 			sourceTree = "<group>";
@@ -4236,6 +4242,7 @@
 				B3EC44612718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift in Sources */,
 				B30565E123FC051E003304F2 /* MarkGroupAsLocalOnlyDbRequest.swift in Sources */,
 				B305667A23FC051F003304F2 /* PreferenceKeys.swift in Sources */,
+				B3CD96B3283796F500B8ACCB /* RemoteAttachmentDownloadOperation.swift in Sources */,
 				B31FACC625DBC6F800DD5F14 /* ConflictReceiverAlertController.swift in Sources */,
 				B3E8FE3827142A8B00F51458 /* StylePickerView.swift in Sources */,
 				B30565D123FC051E003304F2 /* MarkAttachmentUploadedDbRequest.swift in Sources */,
@@ -4492,6 +4499,7 @@
 				B30566A423FC051F003304F2 /* UpdatableObject.swift in Sources */,
 				B30566C723FC051F003304F2 /* AppGroup.swift in Sources */,
 				B36A988D2428E05A005D5790 /* TranslatorsAndStylesController.swift in Sources */,
+				B3CD96B52837A82F00B8ACCB /* CreateAttachmentWithParentDbRequest.swift in Sources */,
 				B378F4CD242CD45700B88A05 /* RepoParserDelegate.swift in Sources */,
 				B3F3D644255ECF3500F310C2 /* AnnotationViewSeparator.swift in Sources */,
 				B3E8B24F27DA3969001825F8 /* SplitAnnotationsDbRequest.swift in Sources */,

@@ -334,6 +334,8 @@ internal enum L10n {
     internal static let db = L10n.tr("Localizable", "errors.db")
     /// Error creating database. Please try logging in again.
     internal static let dbFailure = L10n.tr("Localizable", "errors.db_failure")
+    /// Zotero could not find any identifiers in your input. Please verify your input and try again.
+    internal static let lookup = L10n.tr("Localizable", "errors.lookup")
     /// Could not parse some data. Other data will continue to sync.
     internal static let parsing = L10n.tr("Localizable", "errors.parsing")
     /// Some data in My Library could not be downloaded. It may have been saved with a newer version of Zotero.\n\nOther data will continue to sync.

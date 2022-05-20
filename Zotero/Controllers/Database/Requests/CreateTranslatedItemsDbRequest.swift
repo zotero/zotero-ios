@@ -1,5 +1,5 @@
 //
-//  CreateTranslatedItemDbRequest.swift
+//  CreateTranslatedItemsDbRequest.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 19.05.2022.
@@ -11,7 +11,7 @@ import Foundation
 import CocoaLumberjackSwift
 import RealmSwift
 
-struct CreateTranslatedItemDbRequest: DbRequest {
+struct CreateTranslatedItemsDbRequest: DbRequest {
     let responses: [ItemResponse]
     unowned let schemaController: SchemaController
     unowned let dateParser: DateParser
@@ -28,7 +28,7 @@ struct CreateTranslatedItemDbRequest: DbRequest {
                 field.changed = true
             }
 
-            var changes: RItemChanges = [.type, .fields, .trash]
+            var changes: RItemChanges = [.type, .fields, .trash, .tags]
             if (!item.collections.isEmpty) {
                 changes.insert(.collections)
             }

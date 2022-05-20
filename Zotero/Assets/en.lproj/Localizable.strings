@@ -429,6 +429,7 @@
 "errors.citation.invalid_types" = "Invalid item types selected.";
 "errors.citation.missing_style" = "No citation style selected. Go to Settings → Quick Copy and select a new style.";
 "errors.citation.open_settings" = "Open Settings";
+"errors.lookup" = "Zotero could not find any identifiers in your input. Please verify your input and try again.";
 
 "accessibility.untitled" = "Untitled";
 "accessibility.locked" = "Locked";

@@ -59,7 +59,7 @@ async function lookup(encodedIdentifiers) {
     var newItems = false;
 
     await Zotero.Promise.all(identifiers.map(async (identifier) => {
-        Zotero.debug("Process identifier " + identifier);
+        Zotero.debug("Process identifier " + JSON.stringifyidentifier));
 
         // Set up a translate instance
         var translate = new Zotero.Translate.Search();
@@ -71,7 +71,7 @@ async function lookup(encodedIdentifiers) {
             translate.setTranslator(translators);
 
             // Get items
-            newItems = await translate.translate({ libraryID: false });
+            newItems = await translate.translate({ libraryID: false, collections: false, saveAttachments: true });
         } catch (e) {
             // Continue with other ids on failure
             Zotero.logError(e);

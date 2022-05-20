@@ -574,15 +574,15 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     }
 
     func showLookup() {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+        guard let userControllers = self.controllers.userControllers else { return }
 
         let collectionKeys = Defaults.shared.selectedCollectionId.key.flatMap({ Set([$0]) }) ?? []
         let state = LookupState(collectionKeys: collectionKeys, libraryId: Defaults.shared.selectedLibrary)
-        let handler = LookupActionHandler(dbStorage: dbStorage, translatorsController: self.controllers.translatorsAndStylesController,
-                                          schemaController: self.controllers.schemaController, dateParser: self.controllers.dateParser)
+        let handler = LookupActionHandler(dbStorage: userControllers.dbStorage, translatorsController: self.controllers.translatorsAndStylesController,
+                                          schemaController: self.controllers.schemaController, dateParser: self.controllers.dateParser, remoteFileDownloader: userControllers.remoteFileDownloader)
         let viewModel = ViewModel(initialState: state, handler: handler)
 
-        let controller = LookupViewController(viewModel: viewModel)
+        let controller = LookupViewController(viewModel: viewModel, remoteDownloadObserver: userControllers.remoteFileDownloader.observable)
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.isModalInPresentation = true
         navigationController.modalPresentationStyle = .formSheet
