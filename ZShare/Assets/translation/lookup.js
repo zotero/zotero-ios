@@ -59,7 +59,7 @@ async function lookup(encodedIdentifiers) {
     var newItems = false;
 
     await Zotero.Promise.all(identifiers.map(async (identifier) => {
-        Zotero.debug("Process identifier " + JSON.stringifyidentifier));
+        Zotero.debug("Process identifier " + JSON.stringify(identifier));
 
         // Set up a translate instance
         var translate = new Zotero.Translate.Search();

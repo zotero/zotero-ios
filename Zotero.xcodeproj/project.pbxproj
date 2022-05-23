@@ -776,6 +776,8 @@
 		B3A94B4A2462F5D300BC7910 /* PSPDFKit+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A94B492462F5D300BC7910 /* PSPDFKit+Extensions.swift */; };
 		B3AAABD72502A40900031065 /* searchresponse_unknownfields.json in Resources */ = {isa = PBXBuildFile; fileRef = B3AAABD52502A40600031065 /* searchresponse_unknownfields.json */; };
 		B3AAABD82502A40900031065 /* searchresponse_knownfields.json in Resources */ = {isa = PBXBuildFile; fileRef = B3AAABD62502A40900031065 /* searchresponse_knownfields.json */; };
+		B3AAB0F8283B9915008188D6 /* LookupItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AAB0F6283B9915008188D6 /* LookupItemCell.swift */; };
+		B3AAB0F9283B9915008188D6 /* LookupItemCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3AAB0F7283B9915008188D6 /* LookupItemCell.xib */; };
 		B3AAD70D23CE16010042C4AB /* CreateBackendItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AAD70C23CE16010042C4AB /* CreateBackendItemDbRequest.swift */; };
 		B3AB38A5238EC02D008A1ABB /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A0238EC02D008A1ABB /* ShareViewController.swift */; };
 		B3AB38A7238EC02D008A1ABB /* ExtensionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A4238EC02D008A1ABB /* ExtensionViewModel.swift */; };
@@ -1592,6 +1594,8 @@
 		B3A94B492462F5D300BC7910 /* PSPDFKit+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PSPDFKit+Extensions.swift"; sourceTree = "<group>"; };
 		B3AAABD52502A40600031065 /* searchresponse_unknownfields.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = searchresponse_unknownfields.json; sourceTree = "<group>"; };
 		B3AAABD62502A40900031065 /* searchresponse_knownfields.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = searchresponse_knownfields.json; sourceTree = "<group>"; };
+		B3AAB0F6283B9915008188D6 /* LookupItemCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupItemCell.swift; sourceTree = "<group>"; };
+		B3AAB0F7283B9915008188D6 /* LookupItemCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LookupItemCell.xib; sourceTree = "<group>"; };
 		B3AAD70C23CE16010042C4AB /* CreateBackendItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateBackendItemDbRequest.swift; sourceTree = "<group>"; };
 		B3AB38A0238EC02D008A1ABB /* ShareViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		B3AB38A4238EC02D008A1ABB /* ExtensionViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExtensionViewModel.swift; sourceTree = "<group>"; };
@@ -3086,6 +3090,8 @@
 			children = (
 				B3ADAE462833B56F00D46271 /* LookupViewController.swift */,
 				B3ADAE472833B56F00D46271 /* LookupViewController.xib */,
+				B3AAB0F6283B9915008188D6 /* LookupItemCell.swift */,
+				B3AAB0F7283B9915008188D6 /* LookupItemCell.xib */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -3793,6 +3799,7 @@
 				B32A273D254841B80081E061 /* CreatorEditViewController.xib in Resources */,
 				B3830CE9255451DC00910FE0 /* TagPickerViewController.xib in Resources */,
 				B3604FF824769F0900669CB7 /* note.html in Resources */,
+				B3AAB0F9283B9915008188D6 /* LookupItemCell.xib in Resources */,
 				B3593F22241A61C700760E20 /* ItemDetailAddCell.xib in Resources */,
 				B3593F21241A61C700760E20 /* ItemDetailAttachmentCell.xib in Resources */,
 				B3ADAE3F28339F2700D46271 /* translation in Resources */,
@@ -4328,6 +4335,7 @@
 				B305660F23FC051E003304F2 /* CrashUploadRequest.swift in Sources */,
 				B39E0132283276830091CE4A /* WebViewHandler.swift in Sources */,
 				B331F9B12653F59C0099F6A6 /* RStyle.swift in Sources */,
+				B3AAB0F8283B9915008188D6 /* LookupItemCell.swift in Sources */,
 				B34C4108257122BF0057D5F5 /* AnnotationViewLayout.swift in Sources */,
 				B361820524C9A7C000B30D56 /* OnboardingViewController.swift in Sources */,
 				B305660B23FC051E003304F2 /* SubmitDeletionsRequest.swift in Sources */,

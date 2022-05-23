@@ -582,7 +582,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
                                           schemaController: self.controllers.schemaController, dateParser: self.controllers.dateParser, remoteFileDownloader: userControllers.remoteFileDownloader)
         let viewModel = ViewModel(initialState: state, handler: handler)
 
-        let controller = LookupViewController(viewModel: viewModel, remoteDownloadObserver: userControllers.remoteFileDownloader.observable)
+        let controller = LookupViewController(viewModel: viewModel, remoteDownloadObserver: userControllers.remoteFileDownloader.observable, schemaController: self.controllers.schemaController)
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.isModalInPresentation = true
         navigationController.modalPresentationStyle = .formSheet

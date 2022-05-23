@@ -19,10 +19,10 @@ final class RemoteAttachmentDownloader {
     }
 
     struct Update {
-        enum Kind {
+        enum Kind: Hashable {
             case progress(CGFloat)
             case ready
-            case failed(Swift.Error)
+            case failed
             case cancelled
         }
 
@@ -48,6 +48,7 @@ final class RemoteAttachmentDownloader {
     let observable: PublishSubject<Update>
 
     private var operations: [Download: RemoteAttachmentDownloadOperation]
+    private var progressObservers: [Download: NSKeyValueObservation]
 
     init(apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage, schemaController: SchemaController) {
         let queue = DispatchQueue(label: "org.zotero.AttachmentDownloader.ProcessingQueue", qos: .userInteractive, attributes: .concurrent)
@@ -64,6 +65,7 @@ final class RemoteAttachmentDownloader {
         self.queue = queue
         self.observable = PublishSubject()
         self.operations = [:]
+        self.progressObservers = [:]
         self.disposeBag = DisposeBag()
     }
 
@@ -90,10 +92,23 @@ final class RemoteAttachmentDownloader {
                 self.finish(download: download, file: file, attachment: attachment, parentKey: parentKey, result: result)
             }
         }
+        operation.progressHandler = { [weak self] progress in
+            self?.queue.async(flags: .barrier) {
+                guard let `self` = self else { return }
+                self.observe(progress: progress, attachment: attachment, download: download)
+            }
+        }
 
         self.operations[download] = operation
 
         return operation
+    }
+
+    private func observe(progress: Progress, attachment: Attachment, download: Download) {
+        let observer = progress.observe(\.fractionCompleted) { [weak self] progress, _ in
+            self?.observable.on(.next(Update(download: download, kind: .progress(CGFloat(progress.fractionCompleted)))))
+        }
+        self.progressObservers[download] = observer
     }
 
     private func file(for attachment: Attachment) -> File? {
@@ -122,7 +137,7 @@ final class RemoteAttachmentDownloader {
                 DDLogError("RemoteAttachmentDownloader: can't store attachment after download - \(error)")
                 // Storing item failed, remove downloaded file
                 try? self.fileStorage.remove(file)
-                self.observable.on(.next(Update(download: download, kind: .failed(error))))
+                self.observable.on(.next(Update(download: download, kind: .failed)))
             }
 
         case .failure(let error):
@@ -132,7 +147,7 @@ final class RemoteAttachmentDownloader {
             if isCancelError {
                 self.observable.on(.next(Update(download: download, kind: .cancelled)))
             } else {
-                self.observable.on(.next(Update(download: download, kind: .failed(error))))
+                self.observable.on(.next(Update(download: download, kind: .failed)))
             }
         }
     }

@@ -12,8 +12,11 @@
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="LookupViewController" customModule="Zotero" customModuleProvider="target">
             <connections>
                 <outlet property="errorLabel" destination="5xO-hf-x9n" id="r3Q-u4-WV3"/>
+                <outlet property="inputContainer" destination="JBf-fT-rdp" id="heh-t3-ZhX"/>
+                <outlet property="tableView" destination="hh8-9u-I8Q" id="lPo-bQ-sas"/>
                 <outlet property="textField" destination="a2E-oe-MiL" id="lpt-N9-A14"/>
                 <outlet property="titleLabel" destination="rum-se-tOJ" id="5GP-Xe-HuE"/>
+                <outlet property="topConstraint" destination="1JG-ID-Tez" id="lZL-bg-kaW"/>
                 <outlet property="view" destination="i5M-Pr-FkT" id="sfx-zR-JGt"/>
                 <outlet property="webView" destination="Hyv-nM-hA1" id="gtv-W2-fQf"/>
             </connections>
@@ -34,14 +37,14 @@
                 <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="zzx-dE-uZT">
                     <rect key="frame" x="20" y="59" width="374" height="788"/>
                     <subviews>
-                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" verticalCompressionResistancePriority="1000" ambiguous="YES" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="rum-se-tOJ">
-                            <rect key="frame" x="0.0" y="0.0" width="374" height="712"/>
+                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="rum-se-tOJ">
+                            <rect key="frame" x="0.0" y="0.0" width="374" height="17"/>
                             <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                             <nil key="textColor"/>
                             <nil key="highlightedColor"/>
                         </label>
-                        <stackView opaque="NO" contentMode="scaleToFill" ambiguous="YES" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="JBf-fT-rdp">
-                            <rect key="frame" x="0.0" y="724" width="374" height="35"/>
+                        <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="JBf-fT-rdp">
+                            <rect key="frame" x="0.0" y="29" width="374" height="35"/>
                             <subviews>
                                 <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="a2E-oe-MiL">
                                     <rect key="frame" x="0.0" y="0.0" width="374" height="34"/>
@@ -60,8 +63,15 @@
                                 </view>
                             </subviews>
                         </stackView>
-                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" verticalCompressionResistancePriority="1000" ambiguous="YES" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5xO-hf-x9n">
-                            <rect key="frame" x="0.0" y="771" width="374" height="17"/>
+                        <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="hh8-9u-I8Q">
+                            <rect key="frame" x="0.0" y="76" width="374" height="500"/>
+                            <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                            <constraints>
+                                <constraint firstAttribute="height" constant="500" id="sbS-bZ-NlJ"/>
+                            </constraints>
+                        </tableView>
+                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" verticalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5xO-hf-x9n">
+                            <rect key="frame" x="0.0" y="588" width="374" height="200"/>
                             <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                             <color key="textColor" systemColor="systemRedColor"/>
                             <nil key="highlightedColor"/>
