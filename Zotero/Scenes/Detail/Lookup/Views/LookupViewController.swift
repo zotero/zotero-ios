@@ -53,6 +53,7 @@ class LookupViewController: UIViewController {
         self.schemaController = schemaController
         self.disposeBag = DisposeBag()
         super.init(nibName: "LookupViewController", bundle: nil)
+        self.setupAttachmentObserving(observer: remoteDownloadObserver)
     }
 
     required init?(coder: NSCoder) {
@@ -128,30 +129,29 @@ class LookupViewController: UIViewController {
             snapshot.appendItems(lookup.attachments.map({ .attachment($0.0, .progress(0)) }), toSection: 0)
         }
 
-        self.dataSource.apply(snapshot)
+        self.dataSource.apply(snapshot, animatingDifferences: false)
         self.tableView.isHidden = false
     }
 
     private func process(update: RemoteAttachmentDownloader.Update) {
-        guard update.libraryId == self.viewModel.state.libraryId else { return }
-
-        var snapshot = self.dataSource.snapshot()
+        guard update.libraryId == self.viewModel.state.libraryId, var snapshot = self.dataSource?.snapshot() else { return }
 
         var rows = snapshot.itemIdentifiers(inSection: 0)
+
+        guard let index = rows.firstIndex(where: { $0.isAttachment(withKey: update.key, libraryId: update.libraryId) }) else { return }
+
         snapshot.deleteItems(rows)
 
-        if let index = rows.firstIndex(where: { $0.isAttachment(withKey: update.key, libraryId: update.libraryId) }) {
-            let row = rows[index]
-            switch row {
-            case .attachment(let attachment, _):
-                rows[index] = .attachment(attachment, update.kind)
-            case .item: break
-            }
+        let row = rows[index]
+        switch row {
+        case .attachment(let attachment, _):
+            rows[index] = .attachment(attachment, update.kind)
+        case .item: break
         }
 
         snapshot.appendItems(rows, toSection: 0)
 
-        self.dataSource.apply(snapshot)
+        self.dataSource.apply(snapshot, animatingDifferences: false)
     }
 
     private func closeAfterUpdateIfNeeded() {
@@ -249,7 +249,7 @@ class LookupViewController: UIViewController {
     }
 
     private func setupAttachmentObserving(observer: PublishSubject<RemoteAttachmentDownloader.Update>) {
-        observer.subscribe(on: MainScheduler.instance)
+        observer.observe(on: MainScheduler.instance)
                 .subscribe(with: self, onNext: { `self`, update in
                     self.process(update: update)
                     self.closeAfterUpdateIfNeeded()
