@@ -908,6 +908,7 @@
 		B3E02C0D26848CA900FFB419 /* AnnotationViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3E02C0C26848CA900FFB419 /* AnnotationViewController.xib */; };
 		B3E1BEC9254B0B9500D9BB27 /* ItemDetailFieldEditCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E1BEC7254B0B9500D9BB27 /* ItemDetailFieldEditCell.swift */; };
 		B3E1BECA254B0B9500D9BB27 /* ItemDetailFieldEditCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3E1BEC8254B0B9500D9BB27 /* ItemDetailFieldEditCell.xib */; };
+		B3E34889283CFA92002A8A06 /* CleanupUnusedTags.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E34888283CFA92002A8A06 /* CleanupUnusedTags.swift */; };
 		B3E381D325F2D78A00F046CE /* ApiLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E381D225F2D78A00F046CE /* ApiLogger.swift */; };
 		B3E381D825F2D79000F046CE /* ApiLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E381D225F2D78A00F046CE /* ApiLogger.swift */; };
 		B3E4463C248FBBA3007FE8AB /* RLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E4463B248FBBA3007FE8AB /* RLink.swift */; };
@@ -1702,6 +1703,7 @@
 		B3E02C0C26848CA900FFB419 /* AnnotationViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AnnotationViewController.xib; sourceTree = "<group>"; };
 		B3E1BEC7254B0B9500D9BB27 /* ItemDetailFieldEditCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailFieldEditCell.swift; sourceTree = "<group>"; };
 		B3E1BEC8254B0B9500D9BB27 /* ItemDetailFieldEditCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemDetailFieldEditCell.xib; sourceTree = "<group>"; };
+		B3E34888283CFA92002A8A06 /* CleanupUnusedTags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupUnusedTags.swift; sourceTree = "<group>"; };
 		B3E381D225F2D78A00F046CE /* ApiLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiLogger.swift; sourceTree = "<group>"; };
 		B3E4463B248FBBA3007FE8AB /* RLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RLink.swift; sourceTree = "<group>"; };
 		B3E4463E248FBD2E007FE8AB /* RRelation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RRelation.swift; sourceTree = "<group>"; };
@@ -1945,6 +1947,7 @@
 				B305646123FC051E003304F2 /* AssignItemsToCollectionsDbRequest.swift */,
 				B358D3B3279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift */,
 				B305644423FC051E003304F2 /* CheckItemIsChangedDbRequest.swift */,
+				B3E34888283CFA92002A8A06 /* CleanupUnusedTags.swift */,
 				B305645B23FC051E003304F2 /* CreateAttachmentDbRequest.swift */,
 				B39D33702400150B00EF2ACB /* CreateAttachmentsDbRequest.swift */,
 				B3CD96B42837A82F00B8ACCB /* CreateAttachmentWithParentDbRequest.swift */,
@@ -4299,6 +4302,7 @@
 				B30565E323FC051E003304F2 /* DbStorage.swift in Sources */,
 				B3E8FE31271429C300F51458 /* ExportAction.swift in Sources */,
 				B30566B423FC051F003304F2 /* LinksResponse.swift in Sources */,
+				B3E34889283CFA92002A8A06 /* CleanupUnusedTags.swift in Sources */,
 				B3E8FE172714297200F51458 /* CiteSearchActionHandler.swift in Sources */,
 				B34A9F6825BF1D27007C9A4A /* AnnotationConverter.swift in Sources */,
 				B3A081C425D2ADCD0088EC24 /* PerformDeletionsSyncAction.swift in Sources */,

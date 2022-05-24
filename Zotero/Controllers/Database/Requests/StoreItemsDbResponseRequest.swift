@@ -341,7 +341,11 @@ struct StoreItemDbRequest: DbResponseRequest {
 
     private static func syncTags(_ tags: [TagResponse], libraryId: LibraryIdentifier, item: RItem, database: Realm) {
         // Remove item from tags, which are not in the `tags` array anymore
-        database.delete(item.tags.filter(.tagName(notIn: tags.map({ $0.tag }))))
+        let toRemove = item.tags.filter(.tagName(notIn: tags.map({ $0.tag })))
+        let baseTagsToRemove = Array(toRemove.filter("tag.tags.@count == 1").compactMap({ $0.tag?.name }))
+
+        database.delete(toRemove)
+        database.delete(database.objects(RTag.self).filter(.name(in: baseTagsToRemove)))
 
         guard !tags.isEmpty else { return }
 

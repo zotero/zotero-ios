@@ -294,7 +294,13 @@ final class UserControllers {
         let webSocketController = WebSocketController(dbStorage: dbStorage, lowPowerModeController: controllers.lowPowerModeController)
         let fileCleanupController = AttachmentFileCleanupController(fileStorage: controllers.fileStorage, dbStorage: dbStorage)
 
-        self.isFirstLaunch = try dbStorage.perform(request: InitializeCustomLibrariesDbRequest())
+        var isFirstLaunch = false
+        try dbStorage.perform { coordinator in
+            isFirstLaunch = try coordinator.perform(request: InitializeCustomLibrariesDbRequest())
+            try coordinator.perform(request: CleanupUnusedTags())
+        }
+
+        self.isFirstLaunch = isFirstLaunch
         self.dbStorage = dbStorage
         self.syncScheduler = SyncScheduler(controller: syncController)
         self.webDavController = webDavController

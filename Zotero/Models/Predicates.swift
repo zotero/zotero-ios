@@ -51,6 +51,10 @@ extension NSPredicate {
         return NSPredicate(format: "tag.name = %@", name)
     }
 
+    static func tagName(in names: [String]) -> NSPredicate {
+        return NSPredicate(format: "tag.name in %@", names)
+    }
+
     static func tagName(in names: Set<String>) -> NSPredicate {
         return NSPredicate(format: "tag.name in %@", names)
     }
