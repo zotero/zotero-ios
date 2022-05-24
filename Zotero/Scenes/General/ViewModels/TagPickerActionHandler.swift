@@ -88,7 +88,8 @@ struct TagPickerActionHandler: ViewModelActionHandler {
     private func load(in viewModel: ViewModel<TagPickerActionHandler>) {
         do {
             let request = ReadTagsDbRequest(libraryId: viewModel.state.libraryId)
-            let tags = try self.dbStorage.perform(request: request)
+            var tags = try self.dbStorage.perform(request: request)
+            self.sortByColors(tags: &tags)
             self.update(viewModel: viewModel) { state in
                 state.tags = tags
                 state.changes = .tags
@@ -99,5 +100,20 @@ struct TagPickerActionHandler: ViewModelActionHandler {
                 state.error = .loadingFailed
             }
         }
+    }
+
+    private func sortByColors(tags: inout [Tag]) {
+        var coloredIndices: [Int] = []
+        for (index, tag) in tags.enumerated() {
+            if !tag.color.isEmpty {
+                coloredIndices.append(index)
+            }
+        }
+
+        var coloredTags: [Tag] = []
+        for idx in coloredIndices.reversed() {
+            coloredTags.append(tags.remove(at: idx))
+        }
+        tags.insert(contentsOf: coloredTags, at: 0)
     }
 }
