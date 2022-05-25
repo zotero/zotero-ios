@@ -17,11 +17,12 @@ struct MarkGroupForResyncSyncAction: SyncAction {
     let identifier: Int
 
     unowned let dbStorage: DbStorage
+    let queue: DispatchQueue
 
     var result: Single<()> {
         return Single.create { subscriber -> Disposable in
             do {
-                try self.dbStorage.perform(request: MarkGroupForResyncDbAction(identifier: self.identifier))
+                try self.dbStorage.perform(request: MarkGroupForResyncDbAction(identifier: self.identifier), on: self.queue)
                 subscriber(.success(()))
             } catch let error {
                 subscriber(.failure(error))

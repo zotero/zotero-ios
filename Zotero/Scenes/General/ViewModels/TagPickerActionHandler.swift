@@ -88,7 +88,7 @@ struct TagPickerActionHandler: ViewModelActionHandler {
     private func load(in viewModel: ViewModel<TagPickerActionHandler>) {
         do {
             let request = ReadTagsDbRequest(libraryId: viewModel.state.libraryId)
-            var tags = try self.dbStorage.perform(request: request)
+            var tags = try self.dbStorage.perform(request: request, on: .main)
             self.sortByColors(tags: &tags)
             self.update(viewModel: viewModel) { state in
                 state.tags = tags

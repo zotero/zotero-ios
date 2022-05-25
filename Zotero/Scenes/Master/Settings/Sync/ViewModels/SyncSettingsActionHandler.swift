@@ -157,7 +157,7 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
             requests.append(DeleteAllWebDavDeletionsDbRequest())
         }
 
-        try self.dbStorage.perform(writeRequests: requests)
+        try self.dbStorage.perform(writeRequests: requests, on: self.backgroundQueue)
     }
 
     private func downloadedAttachmentKeys() -> [String] {

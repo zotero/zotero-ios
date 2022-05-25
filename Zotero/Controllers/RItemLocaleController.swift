@@ -42,7 +42,7 @@ final class RItemLocaleController {
             guard let `self` = self else { return }
 
             do {
-                try self.dbStorage.perform(request: UpdateItemLocaleDbRequest(locale: locale))
+                try self.dbStorage.perform(request: UpdateItemLocaleDbRequest(locale: locale), on: self.queue)
             } catch let error {
                 DDLogError("RItemLocaleController: could not update locale - \(error)")
             }

@@ -33,7 +33,7 @@ final class RealmObjectUserChangeObserver: ObjectUserChangeObserver {
 
     private func setupObserving() {
         do {
-            try self.dbStorage.perform(with: { coordinator in
+            try self.dbStorage.perform(on: .main, with: { coordinator in
                 self.collectionsToken = try self.registerObserver(for: RCollection.self, coordinator: coordinator)
                 self.itemsToken = try self.registerObserver(for: RItem.self, coordinator: coordinator)
                 self.searchesToken = try self.registerObserver(for: RSearch.self, coordinator: coordinator)

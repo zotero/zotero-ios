@@ -21,13 +21,14 @@ struct PerformDeletionsSyncAction: SyncAction {
     let conflictMode: PerformDeletionsDbRequest.ConflictResolutionMode
 
     unowned let dbStorage: DbStorage
+    let queue: DispatchQueue
 
     var result: Single<[(String, String)]> {
         return Single.create { subscriber -> Disposable in
             do {
                 let request = PerformDeletionsDbRequest(libraryId: self.libraryId, collections: self.collections, items: self.items, searches: self.searches, tags: self.tags,
                                                         conflictMode: self.conflictMode)
-                let conflicts = try self.dbStorage.perform(request: request, invalidateRealm: true)
+                let conflicts = try self.dbStorage.perform(request: request, on: self.queue, invalidateRealm: true)
                 subscriber(.success(conflicts))
             } catch let error {
                 subscriber(.failure(error))

@@ -25,7 +25,7 @@ struct SyncGroupVersionsSyncAction: SyncAction {
                              .observe(on: self.scheduler)
                              .flatMap { (response: [Int: Int], _) in
                                  do {
-                                     let (toUpdate, toRemove) = try self.dbStorage.perform(request: SyncGroupVersionsDbRequest(versions: response), invalidateRealm: true)
+                                     let (toUpdate, toRemove) = try self.dbStorage.perform(request: SyncGroupVersionsDbRequest(versions: response), on: self.queue, invalidateRealm: true)
                                      return Single.just((toUpdate, toRemove))
                                  } catch let error {
                                      return Single.error(error)

@@ -27,7 +27,7 @@ struct FetchAndStoreGroupSyncAction: SyncAction {
                              .observe(on: self.scheduler)
                              .flatMap({ (response: GroupResponse, headers) -> Single<()> in
                                  do {
-                                     try self.dbStorage.perform(request: StoreGroupDbRequest(response: response, userId: self.userId))
+                                     try self.dbStorage.perform(request: StoreGroupDbRequest(response: response, userId: self.userId), on: self.queue)
                                      return Single.just(())
                                  } catch let error {
                                      return Single.error(error)

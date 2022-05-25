@@ -50,7 +50,7 @@ extension BackgroundDbProcessingActionHandler {
     func perform<Request: DbRequest>(request: Request, completion: @escaping (Error?) -> Void) {
         self.backgroundQueue.async {
             do {
-                try self.dbStorage.perform(request: request)
+                try self.dbStorage.perform(request: request, on: self.backgroundQueue)
 
                 DispatchQueue.main.async {
                     completion(nil)
@@ -66,7 +66,7 @@ extension BackgroundDbProcessingActionHandler {
     func perform<Request: DbResponseRequest>(request: Request, invalidateRealm: Bool, completion: @escaping (Result<Request.Response, Error>) -> Void) {
         self.backgroundQueue.async {
             do {
-                let result = try self.dbStorage.perform(request: request, invalidateRealm: invalidateRealm)
+                let result = try self.dbStorage.perform(request: request, on: self.backgroundQueue, invalidateRealm: invalidateRealm)
 
                 DispatchQueue.main.async {
                     completion(.success(result))

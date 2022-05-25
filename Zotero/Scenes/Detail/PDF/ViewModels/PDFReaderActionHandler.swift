@@ -1799,7 +1799,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         var page: Int = 0
         var items: Results<RItem>?
 
-        try self.dbStorage.perform(with: { coordinator in
+        try self.dbStorage.perform(on: .main, with: { coordinator in
             page = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: library.identifier))
             items = try coordinator.perform(request: ReadAnnotationsDbRequest(attachmentKey: key, libraryId: library.identifier))
         })

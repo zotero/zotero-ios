@@ -266,9 +266,10 @@ final class AttachmentDownloader {
             switch result {
             case .success:
                 self.processingQueue.async(flags: .barrier) { [weak self] in
+                    guard let `self` = self else { return }
                     // Mark file as downloaded in DB
-                    try? self?.dbStorage.perform(request: MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true))
-                    self?.finish(download: download, parentKey: parentKey, result: result, hasLocalCopy: hasLocalCopy)
+                    try? self.dbStorage.perform(request: MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true), on: self.processingQueue)
+                    self.finish(download: download, parentKey: parentKey, result: result, hasLocalCopy: hasLocalCopy)
                 }
             case .failure:
                 self.finish(download: download, parentKey: parentKey, result: result, hasLocalCopy: hasLocalCopy)

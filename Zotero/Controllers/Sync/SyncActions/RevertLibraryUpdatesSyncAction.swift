@@ -20,6 +20,7 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
     unowned let fileStorage: FileStorage
     unowned let schemaController: SchemaController
     unowned let dateParser: DateParser
+    let queue: DispatchQueue
 
     var result: Single<[SyncObject : [String]]> {
         return Single.create { subscriber -> Disposable in
@@ -29,7 +30,7 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
                 var failedSearches: [String] = []
                 var failedItems: [String] = []
 
-                try self.dbStorage.perform(with: { coordinator in
+                try self.dbStorage.perform(on: queue, with: { coordinator in
                     let collections = try self.loadCachedJsonForObject(of: RCollection.self, objectType: .collection, in: self.libraryId, coordinator: coordinator,
                                                                        createResponse: { try CollectionResponse(response: $0) })
                     let searches = try self.loadCachedJsonForObject(of: RSearch.self, objectType: .search, in: self.libraryId, coordinator: coordinator,

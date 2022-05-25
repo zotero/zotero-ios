@@ -162,7 +162,7 @@ final class AppCoordinator: NSObject {
         var library: Library?
 
         do {
-            try dbStorage.perform { coordinator in
+            try dbStorage.perform(on: .main, with: { coordinator in
 
                 let item = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
 
@@ -181,7 +181,7 @@ final class AppCoordinator: NSObject {
 
                 default: break
                 }
-            }
+            })
         } catch let error {
             DDLogError("AppCoordinator: can't load restored data - \(error)")
             return nil

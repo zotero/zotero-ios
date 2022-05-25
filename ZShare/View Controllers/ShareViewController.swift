@@ -193,7 +193,7 @@ final class ShareViewController: UIViewController {
         guard let dbStorage = self.dbStorage else { return }
 
         let state = AllCollectionPickerState(selectedCollectionId: self.viewModel.state.selectedCollectionId, selectedLibraryId: self.viewModel.state.selectedLibraryId)
-        let handler = AllCollectionPickerActionHandler(dbStorage: dbStorage)
+        let handler = AllCollectionPickerActionHandler(dbStorage: dbStorage, queue: .main)
         let controller = AllCollectionPickerViewController(viewModel: ViewModel(initialState: state, handler: handler))
         controller.pickedAction = { [weak self] collection, library in
             self?.viewModel?.set(collection: collection, library: library)
@@ -487,7 +487,7 @@ final class ShareViewController: UIViewController {
                 return L10n.Errors.Shareext.personalQuotaReached
 
             case .group(let groupId):
-                let group = try? self.dbStorage.perform(request: ReadGroupDbRequest(identifier: groupId))
+                let group = try? self.dbStorage.perform(request: ReadGroupDbRequest(identifier: groupId), on: .main)
                 let groupName = group?.name ?? "\(groupId)"
                 return L10n.Errors.Shareext.groupQuotaReached(groupName)
             }

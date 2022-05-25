@@ -69,7 +69,7 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
         do {
             let request = CreateTranslatedItemsDbRequest(responses: parsedData.map({ $0.response }), schemaController: self.schemaController, dateParser: self.dateParser)
-            try self.dbStorage.perform(request: request)
+            try self.dbStorage.perform(request: request, on: self.backgroundQueue)
 
             inMainThread {
                 self.update(viewModel: viewModel) { state in

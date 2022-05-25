@@ -41,7 +41,7 @@ struct StorageSettingsActionHandler: ViewModelActionHandler {
         do {
             var libraries: [Library] = []
 
-            try self.dbStorage.perform(with: { coordinator in
+            try self.dbStorage.perform(on: .main, with: { coordinator in
                 libraries = Array((try coordinator.perform(request: ReadAllCustomLibrariesDbRequest())).map(Library.init)) + (try coordinator.perform(request: ReadAllGroupsDbRequest())).map(Library.init)
             })
 

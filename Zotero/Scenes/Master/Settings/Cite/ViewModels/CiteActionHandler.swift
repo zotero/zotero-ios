@@ -127,7 +127,7 @@ struct CiteActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionHa
 
     private func _add(style: Style, dependency: Style?, in viewModel: ViewModel<CiteActionHandler>) {
         do {
-            try self.dbStorage.perform(request: StoreStyleDbRequest(style: style, dependency: dependency))
+            try self.dbStorage.perform(request: StoreStyleDbRequest(style: style, dependency: dependency), on: self.backgroundQueue)
 
             self.update(viewModel: viewModel) { state in
                 let index = state.styles.index(of: style, sortedBy: { $0.title.compare($1.title, options: [.numeric], locale: Locale.autoupdatingCurrent) == .orderedAscending })
@@ -183,7 +183,7 @@ struct CiteActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionHa
     private func _remove(style: Style) throws {
         var toRemove: [String] = []
 
-        try self.dbStorage.perform(with: { coordinator in
+        try self.dbStorage.perform(on: self.backgroundQueue, with: { coordinator in
             toRemove = try coordinator.perform(request: UninstallStyleDbRequest(identifier: style.identifier))
 
             self.resetDefaultStylesIfNeeded(removedStyle: style, coordinator: coordinator)
@@ -222,7 +222,7 @@ struct CiteActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionHa
 
     private func loadStyles(in viewModel: ViewModel<CiteActionHandler>) {
         do {
-            let rStyles = try self.dbStorage.perform(request: ReadInstalledStylesDbRequest())
+            let rStyles = try self.dbStorage.perform(request: ReadInstalledStylesDbRequest(), on: .main)
             let styles = Array(rStyles.compactMap(Style.init))
 
             self.update(viewModel: viewModel) { state in

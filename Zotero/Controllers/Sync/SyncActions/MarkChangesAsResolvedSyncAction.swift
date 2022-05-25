@@ -16,12 +16,13 @@ struct MarkChangesAsResolvedSyncAction: SyncAction {
     let libraryId: LibraryIdentifier
 
     unowned let dbStorage: DbStorage
+    let queue: DispatchQueue
 
     var result: Single<()> {
         return Single.create { subscriber -> Disposable in
             do {
                 let request = MarkAllLibraryObjectChangesAsSyncedDbRequest(libraryId: self.libraryId)
-                try self.dbStorage.perform(request: request)
+                try self.dbStorage.perform(request: request, on: self.queue)
                 subscriber(.success(()))
             } catch let error {
                 subscriber(.failure(error))

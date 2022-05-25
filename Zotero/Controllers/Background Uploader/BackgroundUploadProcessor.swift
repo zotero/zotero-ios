@@ -58,7 +58,7 @@ final class BackgroundUploadProcessor {
                              .observe(on: scheduler)
                              .flatMap { [weak self] data, response -> Single<()> in
                                  guard let `self` = self else { return Single.error(Error.expired) }
-                                 return self.markAttachmentAsUploaded(version: response.allHeaderFields.lastModifiedVersion, key: key, libraryId: libraryId)
+                                 return self.markAttachmentAsUploaded(version: response.allHeaderFields.lastModifiedVersion, key: key, libraryId: libraryId, queue: queue)
                              }
                              .do(onSuccess: { [weak self] _ in
                                  // Remove temporary upload file created in `createMultipartformRequest`
@@ -88,7 +88,7 @@ final class BackgroundUploadProcessor {
                        return self.submitItemWithHashAndMtime(key: key, libraryId: libraryId, mtime: mtime, md5: md5, userId: userId, queue: queue)
                    })
                    .flatMap({ version in
-                       return self.markAttachmentAsUploaded(version: version, key: key, libraryId: libraryId)
+                       return self.markAttachmentAsUploaded(version: version, key: key, libraryId: libraryId, queue: queue)
                    })
                    .do(onSuccess: { [weak self] _ in
                        // Remove temporary upload zip file created by webdav controller
@@ -105,7 +105,7 @@ final class BackgroundUploadProcessor {
 
         let loadParameters: Single<[String: Any]> = Single.create { subscriber -> Disposable in
             do {
-                let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
+                let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key), on: queue)
                 let parameters = item.mtimeAndHashParameters
                 item.realm?.invalidate()
                 subscriber(.success(parameters))
@@ -138,14 +138,14 @@ final class BackgroundUploadProcessor {
         })
     }
 
-    private func markAttachmentAsUploaded(version: Int, key: String, libraryId: LibraryIdentifier) -> Single<()> {
+    private func markAttachmentAsUploaded(version: Int, key: String, libraryId: LibraryIdentifier, queue: DispatchQueue) -> Single<()> {
         return Single.create { subscriber -> Disposable in
             DDLogInfo("BackgroundUploadProcessor: mark as uploaded")
 
             do {
                 let requests: [DbRequest] = [MarkAttachmentUploadedDbRequest(libraryId: libraryId, key: key, version: version),
                                              UpdateVersionsDbRequest(version: version, libraryId: libraryId, type: .object(.item))]
-                try self.dbStorage.perform(writeRequests: requests)
+                try self.dbStorage.perform(writeRequests: requests, on: queue)
                 subscriber(.success(()))
             } catch let error {
                 DDLogError("BackgroundUploadProcessor: can't mark attachment as uploaded - \(error)")

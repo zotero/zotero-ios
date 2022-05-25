@@ -150,7 +150,7 @@ final class SyncToolbarController {
                     return (L10n.Errors.SyncToolbar.personalQuotaReached, nil)
 
                 case .group(let groupId):
-                    let group = try? self.dbStorage.perform(request: ReadGroupDbRequest(identifier: groupId))
+                    let group = try? self.dbStorage.perform(request: ReadGroupDbRequest(identifier: groupId), on: .main)
                     let groupName = group?.name ?? "\(groupId)"
                     return (L10n.Errors.SyncToolbar.groupQuotaReached(groupName), nil)
                 }

@@ -813,7 +813,7 @@ final class ExtensionViewModel {
     /// - parameter dateParser: Date parser for item creation
     private func submit(item: ItemResponse, libraryId: LibraryIdentifier, userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController,
                         dateParser: DateParser) {
-        self.createItem(item, libraryId: libraryId, schemaController: schemaController, dateParser: dateParser)
+        self.createItem(item, libraryId: libraryId, schemaController: schemaController, dateParser: dateParser, queue: self.backgroundQueue)
             .subscribe(on: self.backgroundScheduler)
             .flatMap { parameters in
                 return SubmitUpdateSyncAction(parameters: [parameters], sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId, updateLibraryVersion: false, apiClient: apiClient,
@@ -882,7 +882,7 @@ final class ExtensionViewModel {
     /// - parameter item: Parsed item to be created.
     /// - parameter schemaController: Schema controller for validating item type and field types.
     /// - returns: `Single` with `updateParameters` of created `RItem`.
-    private func createItem(_ item: ItemResponse, libraryId: LibraryIdentifier, schemaController: SchemaController, dateParser: DateParser) -> Single<[String: Any]> {
+    private func createItem(_ item: ItemResponse, libraryId: LibraryIdentifier, schemaController: SchemaController, dateParser: DateParser, queue: DispatchQueue) -> Single<[String: Any]> {
         return Single.create { subscriber -> Disposable in
 
             DDLogInfo("ExtensionViewModel: create db item")
@@ -890,7 +890,7 @@ final class ExtensionViewModel {
             do {
                 var parameters: [String: Any] = [:]
 
-                try self.dbStorage.perform(with: { coordinator in
+                try self.dbStorage.perform(on: queue, with: { coordinator in
                     if let collectionKey = item.collectionKeys.first {
                         try coordinator.perform(request: UpdateCollectionLastUsedDbRequest(key: collectionKey, libraryId: libraryId))
                     }
@@ -943,7 +943,7 @@ final class ExtensionViewModel {
                        do {
                            let request = MarkAttachmentUploadedDbRequest(libraryId: data.libraryId, key: data.attachment.key, version: version)
                            let request2 = UpdateVersionsDbRequest(version: version, libraryId: data.libraryId, type: .object(.item))
-                           try dbStorage.perform(writeRequests: [request, request2])
+                           try dbStorage.perform(writeRequests: [request, request2], on: self.backgroundQueue)
                            return Single.just(())
                        } catch let error {
                            return Single.error(error)
@@ -995,7 +995,7 @@ final class ExtensionViewModel {
 
                 do {
                     let request = MarkAttachmentUploadedDbRequest(libraryId: data.libraryId, key: data.attachment.key, version: nil)
-                    try dbStorage.perform(request: request)
+                    try dbStorage.perform(request: request, on: self.backgroundQueue)
                     return Single.just(())
                 } catch let error {
                     return Single.error(error)
@@ -1063,7 +1063,7 @@ final class ExtensionViewModel {
                    .subscribe(on: self.backgroundScheduler)
                    .flatMap { [weak self] filesize -> Single<([String: Any], SubmissionData)> in
                        guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
-                       return self.create(attachment: attachment, collections: collections, tags: tags)
+                       return self.create(attachment: attachment, collections: collections, tags: tags, queue: self.backgroundQueue)
                                   .flatMap({ Single.just(($0, SubmissionData(filesize: filesize, md5: $1, mtime: $2))) })
                                   .do(onError: { [weak self] _ in
                                       // If attachment item couldn't be created in DB, remove the moved file if possible, it won't be processed even from the main app
@@ -1096,7 +1096,7 @@ final class ExtensionViewModel {
                    .subscribe(on: self.backgroundScheduler)
                    .flatMap { [weak self] filesize -> Single<([[String: Any]], SubmissionData)> in
                        guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
-                       return self.createItems(item: item, attachment: attachment)
+                       return self.createItems(item: item, attachment: attachment, queue: self.backgroundQueue)
                                   .flatMap({ Single.just(($0, SubmissionData(filesize: filesize, md5: $1, mtime: $2))) })
                                   .do(onError: { [weak self] _ in
                                       // If attachment item couldn't be created in DB, remove the moved file if possible, it won't be processed even from the main app
@@ -1167,7 +1167,7 @@ final class ExtensionViewModel {
     /// - parameter item: Parsed item to be created.
     /// - parameter attachment: Parsed attachment to be created.
     /// - returns: `Single` with `updateParameters` of both new items, md5 and mtime of attachment.
-    private func createItems(item: ItemResponse, attachment: Attachment) -> Single<([[String: Any]], String, Int)> {
+    private func createItems(item: ItemResponse, attachment: Attachment, queue: DispatchQueue) -> Single<([[String: Any]], String, Int)> {
         return Single.create { subscriber -> Disposable in
             DDLogInfo("ExtensionViewModel: create item and attachment db items")
 
@@ -1176,7 +1176,7 @@ final class ExtensionViewModel {
                 var mtime: Int?
                 var md5: String?
 
-                try self.dbStorage.perform(with: { coordinator in
+                try self.dbStorage.perform(on: queue, with: { coordinator in
                     if let collectionKey = item.collectionKeys.first {
                         try coordinator.perform(request: UpdateCollectionLastUsedDbRequest(key: collectionKey, libraryId: attachment.libraryId))
                     }
@@ -1214,7 +1214,7 @@ final class ExtensionViewModel {
     /// - parameter collections: Set of collections to which the attachment is assigned.
     /// - parameter tags: Tags picked by user.
     /// - returns: `Single` with `updateParameters` of both new items, md5 and mtime of attachment.
-    private func create(attachment: Attachment, collections: Set<String>, tags: [TagResponse]) -> Single<([String: Any], String, Int)> {
+    private func create(attachment: Attachment, collections: Set<String>, tags: [TagResponse], queue: DispatchQueue) -> Single<([String: Any], String, Int)> {
         return Single.create { subscriber -> Disposable in
             DDLogInfo("ExtensionViewModel: create attachment db item")
 
@@ -1225,7 +1225,7 @@ final class ExtensionViewModel {
                 var md5: String?
                 var mtime: Int?
 
-                try self.dbStorage.perform(with: { coordinator in
+                try self.dbStorage.perform(on: queue, with: { coordinator in
                     if let collectionKey = collections.first {
                         try coordinator.perform(request: UpdateCollectionLastUsedDbRequest(key: collectionKey, libraryId: attachment.libraryId))
                     }
@@ -1318,7 +1318,7 @@ final class ExtensionViewModel {
             var collection: Collection?
             var recents: [RecentData] = []
 
-            try self.dbStorage.perform(with: { coordinator in
+            try self.dbStorage.perform(on: .main, with: { coordinator in
                 let request = ReadCollectionAndLibraryDbRequest(collectionId: self.state.selectedCollectionId, libraryId: self.state.selectedLibraryId)
                 let (_collection, _library) = try coordinator.perform(request: request)
 

@@ -56,7 +56,7 @@ final class AppDelegate: UIResponder {
     /// This migration was created to move from "old" file structure (before build 120) to "new" one, where items are stored with their proper filenames.
     /// In `DidMigrateFileStructure` all downloaded items were moved. Items which were up for upload were forgotten, so `DidMigrateFileStructure2` was added to migrate also these items.
     /// TODO: - Remove after beta
-    private func migrateFileStructure() {
+    private func migrateFileStructure(queue: DispatchQueue) {
         let didMigrateFileStructure = UserDefaults.standard.bool(forKey: "DidMigrateFileStructure")
         let didMigrateFileStructure2 = UserDefaults.standard.bool(forKey: "DidMigrateFileStructure2")
 
@@ -71,18 +71,18 @@ final class AppDelegate: UIResponder {
 
         // Migrate file structure
         if !didMigrateFileStructure && !didMigrateFileStructure2 {
-            if let items = try? self.readAttachmentTypes(for: ReadAllDownloadedAndForUploadItemsDbRequest(), dbStorage: dbStorage) {
+            if let items = try? self.readAttachmentTypes(for: ReadAllDownloadedAndForUploadItemsDbRequest(), dbStorage: dbStorage, queue: queue) {
                 self.migrateFileStructure(for: items)
             }
             UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure")
             UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure2")
         } else if !didMigrateFileStructure {
-            if let items = try? self.readAttachmentTypes(for: ReadAllDownloadedItemsDbRequest(), dbStorage: dbStorage) {
+            if let items = try? self.readAttachmentTypes(for: ReadAllDownloadedItemsDbRequest(), dbStorage: dbStorage, queue: queue) {
                 self.migrateFileStructure(for: items)
             }
             UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure")
         } else if !didMigrateFileStructure2 {
-            if let items = try? self.readAttachmentTypes(for: ReadAllItemsForUploadDbRequest(), dbStorage: dbStorage) {
+            if let items = try? self.readAttachmentTypes(for: ReadAllItemsForUploadDbRequest(), dbStorage: dbStorage, queue: queue) {
                 self.migrateFileStructure(for: items)
             }
             UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure2")
@@ -91,10 +91,10 @@ final class AppDelegate: UIResponder {
         NotificationCenter.default.post(name: .forceReloadItems, object: nil)
     }
 
-    private func readAttachmentTypes<Request: DbResponseRequest>(for request: Request, dbStorage: DbStorage) throws -> [(String, LibraryIdentifier, Attachment.Kind)] where Request.Response == Results<RItem> {
+    private func readAttachmentTypes<Request: DbResponseRequest>(for request: Request, dbStorage: DbStorage, queue: DispatchQueue) throws -> [(String, LibraryIdentifier, Attachment.Kind)] where Request.Response == Results<RItem> {
         var types: [(String, LibraryIdentifier, Attachment.Kind)] = []
 
-        try dbStorage.perform(with: { coordinator in
+        try dbStorage.perform(on: queue, with: { coordinator in
             let items = try coordinator.perform(request: request)
 
             types = items.compactMap({ item -> (String, LibraryIdentifier, Attachment.Kind)? in
@@ -130,7 +130,7 @@ final class AppDelegate: UIResponder {
         }
     }
 
-    private func removeFinishedUploadFiles() {
+    private func removeFinishedUploadFiles(queue: DispatchQueue) {
         let didDeleteFiles = UserDefaults.standard.bool(forKey: "DidDeleteFinishedUploadFiles")
 
         guard !didDeleteFiles && self.controllers.fileStorage.has(Files.uploads),
@@ -147,7 +147,7 @@ final class AppDelegate: UIResponder {
             var filesToDelete: [File] = []
 
             if webDavEnabled {
-                let forUploadResults = try userControllers.dbStorage.perform(request: ReadAllItemsForUploadDbRequest())
+                let forUploadResults = try userControllers.dbStorage.perform(request: ReadAllItemsForUploadDbRequest(), on: queue)
                 keysForUpload = Set(forUploadResults.map({ $0.key }))
                 forUploadResults.first?.realm?.invalidate()
             }
@@ -183,7 +183,7 @@ final class AppDelegate: UIResponder {
         }
     }
 
-    private func updateCreatorSummaryFormat() {
+    private func updateCreatorSummaryFormat(queue: DispatchQueue) {
         guard !UserDefaults.standard.bool(forKey: "DidUpdateCreatorSummaryFormat") else { return }
 
         guard let dbStorage = self.controllers.userControllers?.dbStorage else {
@@ -193,7 +193,7 @@ final class AppDelegate: UIResponder {
         }
 
         do {
-            try dbStorage.perform(request: UpdateCreatorSummaryFormatDbRequest())
+            try dbStorage.perform(request: UpdateCreatorSummaryFormatDbRequest(), on: queue)
             UserDefaults.standard.set(true, forKey: "DidUpdateCreatorSummaryFormat")
         } catch let error {
             DDLogError("AppDelegate: can't update creator summary format - \(error)")
@@ -283,10 +283,11 @@ extension AppDelegate: UIApplicationDelegate {
         #endif
         self.migrateItemsSortType()
 
-        DispatchQueue.global(qos: .userInteractive).async {
-            self.migrateFileStructure()
-            self.removeFinishedUploadFiles()
-            self.updateCreatorSummaryFormat()
+        let queue = DispatchQueue(label: "org.zotero.AppDelegateMigration", qos: .userInitiated)
+        queue.async {
+            self.migrateFileStructure(queue: queue)
+            self.removeFinishedUploadFiles(queue: queue)
+            self.updateCreatorSummaryFormat(queue: queue)
         }
 
         return true

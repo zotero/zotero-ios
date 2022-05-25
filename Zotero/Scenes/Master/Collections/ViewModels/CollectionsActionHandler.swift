@@ -79,7 +79,7 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
     private func _downloadAttachments(in collectionId: CollectionIdentifier, viewModel: ViewModel<CollectionsActionHandler>) {
         do {
-            let items = try self.dbStorage.perform(request: ReadAllAttachmentsFromCollectionDbRequest(collectionId: collectionId, libraryId: viewModel.state.libraryId))
+            let items = try self.dbStorage.perform(request: ReadAllAttachmentsFromCollectionDbRequest(collectionId: collectionId, libraryId: viewModel.state.libraryId), on: self.backgroundQueue)
             let attachments = items.compactMap({ item -> (Attachment, String?)? in
                 guard let attachment = AttachmentCreator.attachment(for: item, fileStorage: self.fileStorage, urlDetector: nil) else { return nil }
 
@@ -111,7 +111,7 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
     private func loadItemKeysForBibliography(collection: Collection, in viewModel: ViewModel<CollectionsActionHandler>) {
         do {
-            let items = try self.dbStorage.perform(request: ReadItemsDbRequest(collectionId: collection.identifier, libraryId: viewModel.state.libraryId))
+            let items = try self.dbStorage.perform(request: ReadItemsDbRequest(collectionId: collection.identifier, libraryId: viewModel.state.libraryId), on: .main)
             let keys = Set(items.map({ $0.key }))
             self.update(viewModel: viewModel) { state in
                 state.itemKeysForBibliography = .success(keys)
@@ -193,7 +193,7 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
         let includeItemCounts = Defaults.shared.showCollectionItemCounts
 
         do {
-            try self.dbStorage.perform(with: { coordinator in
+            try self.dbStorage.perform(on: .main, with: { coordinator in
                 let library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
                 let collections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: libraryId))
 
@@ -298,7 +298,7 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
             if let parentKey = viewModel.state.collectionTree.parent(of: collection.identifier)?.key {
                 let request = ReadCollectionDbRequest(libraryId: viewModel.state.library.identifier, key: parentKey)
-                let rCollection = try? self.dbStorage.perform(request: request)
+                let rCollection = try? self.dbStorage.perform(request: request, on: .main)
                 parent = rCollection.flatMap { Collection(object: $0, itemCount: 0) }
             }
         }

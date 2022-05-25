@@ -15,9 +15,11 @@ final class AllCollectionPickerActionHandler: ViewModelActionHandler {
     typealias State = AllCollectionPickerState
 
     private unowned let dbStorage: DbStorage
+    private let queue: DispatchQueue
 
-    init(dbStorage: DbStorage) {
+    init(dbStorage: DbStorage, queue: DispatchQueue) {
         self.dbStorage = dbStorage
+        self.queue = queue
     }
 
     func process(action: AllCollectionPickerAction, in viewModel: ViewModel<AllCollectionPickerActionHandler>) {
@@ -38,7 +40,7 @@ final class AllCollectionPickerActionHandler: ViewModelActionHandler {
 
     private func load(in viewModel: ViewModel<AllCollectionPickerActionHandler>) {
         do {
-            try self.dbStorage.perform(with: { coordinator in
+            try self.dbStorage.perform(on: self.queue, with: { coordinator in
                 let customLibraries = try coordinator.perform(request: ReadAllCustomLibrariesDbRequest())
                 let groups = try coordinator.perform(request: ReadAllWritableGroupsDbRequest())
                 let libraries = Array(customLibraries.map(Library.init)) + Array(groups.map(Library.init))

@@ -79,7 +79,7 @@ struct SyncVersionsSyncAction: SyncAction {
             do {
                 var identifiers: [String] = []
 
-                try self.dbStorage.perform(with: { coordinator in
+                try self.dbStorage.perform(on: self.queue, with: { coordinator in
                     switch syncType {
                     case .full:
                         try coordinator.perform(request: MarkOtherObjectsAsChangedByUser(syncObject: object, versions: response, libraryId: libraryId))

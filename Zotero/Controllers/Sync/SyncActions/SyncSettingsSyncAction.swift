@@ -46,7 +46,7 @@ struct SyncSettingsSyncAction: SyncAction {
 
                                 do {
                                     let request = StoreSettingsDbRequest(response: response, libraryId: self.libraryId)
-                                    try self.dbStorage.perform(request: request)
+                                    try self.dbStorage.perform(request: request, on: self.queue)
                                     let settingsChanged = newVersion != self.sinceVersion
                                     return Single.just((settingsChanged, newVersion))
                                 } catch let error {

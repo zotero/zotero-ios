@@ -223,7 +223,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     private func loadInitialState(in viewModel: ViewModel<ItemsActionHandler>) {
         let sortType = Defaults.shared.itemsSortType
         let request = ReadItemsDbRequest(collectionId: viewModel.state.collection.identifier, libraryId: viewModel.state.library.identifier)
-        let results = try? self.dbStorage.perform(request: request).sorted(by: sortType.descriptors)
+        let results = try? self.dbStorage.perform(request: request, on: .main).sorted(by: sortType.descriptors)
 
         self.update(viewModel: viewModel) { state in
             state.results = results
@@ -417,7 +417,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         let request = ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: key)
 
         do {
-            let item = try self.dbStorage.perform(request: request)
+            let item = try self.dbStorage.perform(request: request, on: .main)
             self.update(viewModel: viewModel) { state in
                 state.itemKeyToDuplicate = item.key
                 self.stopEditing(in: &state)
@@ -468,11 +468,11 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
 
         self.backgroundQueue.async {
             do {
-                try self.dbStorage.perform(request: EditNoteDbRequest(note: note, libraryId: libraryId))
+                try self.dbStorage.perform(request: EditNoteDbRequest(note: note, libraryId: libraryId), on: self.backgroundQueue)
             } catch let error as DbError where error.isObjectNotFound {
                 do {
                     let request = CreateNoteDbRequest(note: note, localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""), libraryId: libraryId, collectionKey: collectionKey)
-                    _ = try self.dbStorage.perform(request: request, invalidateRealm: true)
+                    _ = try self.dbStorage.perform(request: request, on: self.backgroundQueue, invalidateRealm: true)
                 } catch let error {
                     handleError(error)
                 }
@@ -569,7 +569,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
 
     private func results(for searchText: String?, filters: [ItemsState.Filter], collectionId: CollectionIdentifier, sortType: ItemsSortType, libraryId: LibraryIdentifier) -> Results<RItem>? {
         let request = ReadItemsDbRequest(collectionId: collectionId, libraryId: libraryId)
-        guard var results = (try? self.dbStorage.perform(request: request)) else { return nil }
+        guard var results = (try? self.dbStorage.perform(request: request, on: .main)) else { return nil }
         if let text = searchText, !text.isEmpty {
             results = results.filter(.itemSearch(for: text))
         }

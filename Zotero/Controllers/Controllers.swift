@@ -295,10 +295,10 @@ final class UserControllers {
         let fileCleanupController = AttachmentFileCleanupController(fileStorage: controllers.fileStorage, dbStorage: dbStorage)
 
         var isFirstLaunch = false
-        try dbStorage.perform { coordinator in
+        try dbStorage.perform(on: .main, with: { coordinator in
             isFirstLaunch = try coordinator.perform(request: InitializeCustomLibrariesDbRequest())
             try coordinator.perform(request: CleanupUnusedTags())
-        }
+        })
 
         self.isFirstLaunch = isFirstLaunch
         self.dbStorage = dbStorage

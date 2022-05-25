@@ -131,7 +131,7 @@ final class RemoteAttachmentDownloader {
             let request = CreateAttachmentWithParentDbRequest(attachment: attachment, parentKey: parentKey, localizedType: localizedType)
 
             do {
-                try self.dbStorage.perform(request: request)
+                try self.dbStorage.perform(request: request, on: self.queue)
                 self.observable.on(.next(Update(download: download, kind: .ready)))
             } catch let error {
                 DDLogError("RemoteAttachmentDownloader: can't store attachment after download - \(error)")

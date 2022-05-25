@@ -19,6 +19,7 @@ struct LoadLibraryDataSyncAction: SyncAction {
     let webDavEnabled: Bool
 
     unowned let dbStorage: DbStorage
+    let queue: DispatchQueue
 
     var result: Single<[LibraryData]> {
         return Single.create { subscriber -> Disposable in
@@ -36,7 +37,7 @@ struct LoadLibraryDataSyncAction: SyncAction {
             }
 
             do {
-                let data = try self.dbStorage.perform(request: request, invalidateRealm: true)
+                let data = try self.dbStorage.perform(request: request, on: self.queue, invalidateRealm: true)
                 subscriber(.success(data))
             } catch let error {
                 subscriber(.failure(error))

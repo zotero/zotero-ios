@@ -107,7 +107,7 @@ final class AttachmentFileCleanupController {
             var libraryIds: [LibraryIdentifier] = []
             var forUpload: [LibraryIdentifier: [String]] = [:]
 
-            try self.dbStorage.perform(with: { coordinator in
+            try self.dbStorage.perform(on: self.queue, with: { coordinator in
                 let groups = try coordinator.perform(request: ReadAllGroupsDbRequest())
                 libraryIds = [.custom(.myLibrary)] + groups.map({ .group($0.identifier) })
 
@@ -154,7 +154,7 @@ final class AttachmentFileCleanupController {
         do {
             var forUpload: [String] = []
 
-            try self.dbStorage.perform(with: { coordinator in
+            try self.dbStorage.perform(on: self.queue, with: { coordinator in
                 let items = try coordinator.perform(request: ReadItemsForUploadDbRequest(libraryId: libraryId))
                 forUpload = Array(items.map({ $0.key }))
 
@@ -236,7 +236,7 @@ final class AttachmentFileCleanupController {
 
             var canDelete: Bool = false
 
-            try self.dbStorage.perform(with: { coordinator in
+            try self.dbStorage.perform(on: self.queue, with: { coordinator in
                 let item = try coordinator.perform(request: ReadItemDbRequest(libraryId: attachment.libraryId, key: attachment.key))
                 let attachmentNeedsSync = item.attachmentNeedsSync
 
@@ -275,7 +275,7 @@ final class AttachmentFileCleanupController {
             var toDelete: Set<String> = []
             var toReport: Set<String> = []
 
-            try self.dbStorage.perform(with: { coordinator in
+            try self.dbStorage.perform(on: self.queue, with: { coordinator in
                 let items = try coordinator.perform(request: ReadItemsWithKeysDbRequest(keys: keys, libraryId: libraryId))
 
                 for item in items {

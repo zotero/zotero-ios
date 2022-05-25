@@ -104,7 +104,7 @@ final class MainViewController: UISplitViewController {
         var library: Library?
 
         do {
-            try dbStorage.perform { coordinator in
+            try dbStorage.perform(on: .main, with: { coordinator in
                 switch collectionId {
                 case .collection(let key):
                     let rCollection = try coordinator.perform(request: ReadCollectionDbRequest(libraryId: libraryId, key: key))
@@ -116,7 +116,7 @@ final class MainViewController: UISplitViewController {
                     collection = Collection(custom: type)
                 }
                 library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
-            }
+            })
         } catch let error {
             DDLogError("MainViewController: can't load initial data - \(error)")
             return nil
@@ -174,7 +174,7 @@ extension MainViewController: MainCoordinatorSyncToolbarDelegate {
             var library: Library?
             var collectionType: CollectionIdentifier.CustomType?
 
-            try dbStorage.perform(with: { coordinator in
+            try dbStorage.perform(on: .main, with: { coordinator in
                 library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
 
                 let isAnyInTrash = try coordinator.perform(request: CheckAnyItemIsInTrashDbRequest(libraryId: libraryId, keys: keys))

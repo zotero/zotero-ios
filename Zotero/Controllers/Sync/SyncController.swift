@@ -687,7 +687,7 @@ final class SyncController: SynchronizationController {
 
     private func processCreateLibraryActions(for libraries: LibrarySyncType, options: CreateLibraryActionsOptions) {
         let result = LoadLibraryDataSyncAction(type: libraries, fetchUpdates: (options != .forceDownloads), loadVersions: (self.type != .full),
-                                               webDavEnabled: self.webDavController.sessionStorage.isEnabled, dbStorage: self.dbStorage).result
+                                               webDavEnabled: self.webDavController.sessionStorage.isEnabled, dbStorage: self.dbStorage, queue: self.workQueue).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] data in
                   self?.finishCreateLibraryActions(with: .success((data, options)))
@@ -816,7 +816,8 @@ final class SyncController: SynchronizationController {
     }
 
     private func processCreateUploadActions(for libraryId: LibraryIdentifier, hadOtherWriteActions: Bool) {
-        let result = LoadUploadDataSyncAction(libraryId: libraryId, backgroundUploaderContext: self.backgroundUploaderContext, dbStorage: self.dbStorage, fileStorage: self.fileStorage).result
+        let result = LoadUploadDataSyncAction(libraryId: libraryId, backgroundUploaderContext: self.backgroundUploaderContext, dbStorage: self.dbStorage,
+                                              fileStorage: self.fileStorage, queue: self.workQueue).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] uploads in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1084,7 +1085,7 @@ final class SyncController: SynchronizationController {
     }
 
     private func processStoreVersion(libraryId: LibraryIdentifier, type: UpdateVersionType, version: Int) {
-        let result = StoreVersionSyncAction(version: version, type: type, libraryId: libraryId, dbStorage: self.dbStorage).result
+        let result = StoreVersionSyncAction(version: version, type: type, libraryId: libraryId, dbStorage: self.dbStorage, queue: self.workQueue).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1099,7 +1100,7 @@ final class SyncController: SynchronizationController {
     }
 
     private func markGroupForResync(identifier: Int) {
-        let result = MarkGroupForResyncSyncAction(identifier: identifier, dbStorage: self.dbStorage).result
+        let result = MarkGroupForResyncSyncAction(identifier: identifier, dbStorage: self.dbStorage, queue: self.workQueue).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1114,7 +1115,7 @@ final class SyncController: SynchronizationController {
     }
 
     private func markForResync(keys: [String], libraryId: LibraryIdentifier, object: SyncObject) {
-        let result = MarkForResyncSyncAction(keys: keys, object: object, libraryId: libraryId, dbStorage: self.dbStorage).result
+        let result = MarkForResyncSyncAction(keys: keys, object: object, libraryId: libraryId, dbStorage: self.dbStorage, queue: self.workQueue).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1161,7 +1162,7 @@ final class SyncController: SynchronizationController {
 
     private func performDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String],
                                   conflictMode: PerformDeletionsDbRequest.ConflictResolutionMode) {
-        let action = PerformDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, conflictMode: conflictMode, dbStorage: self.dbStorage)
+        let action = PerformDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, conflictMode: conflictMode, dbStorage: self.dbStorage, queue: self.workQueue)
         action.result.subscribe(on: self.workScheduler)
                      .subscribe(onSuccess: { [weak self] conflicts in
                          self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1195,7 +1196,7 @@ final class SyncController: SynchronizationController {
     }
 
     private func restoreDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String]) {
-        let result = RestoreDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, dbStorage: self.dbStorage).result
+        let result = RestoreDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, dbStorage: self.dbStorage, queue: self.workQueue).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] data in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1374,7 +1375,7 @@ final class SyncController: SynchronizationController {
     }
 
     private func deleteGroup(with groupId: Int) {
-        let result = DeleteGroupSyncAction(groupId: groupId, dbStorage: self.dbStorage).result
+        let result = DeleteGroupSyncAction(groupId: groupId, dbStorage: self.dbStorage, queue: self.workQueue).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1389,7 +1390,7 @@ final class SyncController: SynchronizationController {
     }
 
     private func markGroupAsLocalOnly(with groupId: Int) {
-        let result = MarkGroupAsLocalOnlySyncAction(groupId: groupId, dbStorage: self.dbStorage).result
+        let result = MarkGroupAsLocalOnlySyncAction(groupId: groupId, dbStorage: self.dbStorage, queue: self.workQueue).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1404,7 +1405,7 @@ final class SyncController: SynchronizationController {
     }
 
     private func markChangesAsResolved(in libraryId: LibraryIdentifier) {
-        let result = MarkChangesAsResolvedSyncAction(libraryId: libraryId, dbStorage: self.dbStorage).result
+        let result = MarkChangesAsResolvedSyncAction(libraryId: libraryId, dbStorage: self.dbStorage, queue: self.workQueue).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1419,9 +1420,8 @@ final class SyncController: SynchronizationController {
     }
 
     private func revertGroupData(in libraryId: LibraryIdentifier) {
-        let result = RevertLibraryUpdatesSyncAction(libraryId: libraryId, dbStorage: self.dbStorage,
-                                                    fileStorage: self.fileStorage, schemaController: self.schemaController,
-                                                    dateParser: self.dateParser).result
+        let result = RevertLibraryUpdatesSyncAction(libraryId: libraryId, dbStorage: self.dbStorage, fileStorage: self.fileStorage,
+                                                    schemaController: self.schemaController, dateParser: self.dateParser, queue: self.workQueue).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] failures in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in

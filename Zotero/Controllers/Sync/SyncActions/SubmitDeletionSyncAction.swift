@@ -43,7 +43,7 @@ struct SubmitDeletionSyncAction: SyncAction {
             do {
                 var didCreateDeletions = false
 
-                try self.dbStorage.perform(with: { coordinator in
+                try self.dbStorage.perform(on: self.queue, with: { coordinator in
                     let updateVersion = UpdateVersionsDbRequest(version: version, libraryId: self.libraryId, type: .object(self.object))
                     var requests: [DbRequest] = [updateVersion]
 

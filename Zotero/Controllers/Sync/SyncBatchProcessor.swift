@@ -138,7 +138,7 @@ final class SyncBatchProcessor {
             // Cache JSONs locally for later use (in CR)
             self.storeIndividualObjects(from: objects, type: .collection, libraryId: libraryId)
 
-            try self.dbStorage.perform(request: StoreCollectionsDbRequest(response: collections))
+            try self.dbStorage.perform(request: StoreCollectionsDbRequest(response: collections), on: self.storageQueue)
 
             let failedKeys = self.failedKeys(from: expectedKeys, parsedKeys: collections.map({ $0.key }), errors: errors)
             return (failedKeys, errors, [])
@@ -149,7 +149,7 @@ final class SyncBatchProcessor {
             // Cache JSONs locally for later use (in CR)
             self.storeIndividualObjects(from: objects, type: .search, libraryId: libraryId)
 
-            try self.dbStorage.perform(request: StoreSearchesDbRequest(response: searches))
+            try self.dbStorage.perform(request: StoreSearchesDbRequest(response: searches), on: self.storageQueue)
 
             let failedKeys = self.failedKeys(from: expectedKeys, parsedKeys: searches.map({ $0.key }), errors: errors)
             return (failedKeys, errors, [])
@@ -162,7 +162,7 @@ final class SyncBatchProcessor {
 
             // BETA: - forcing preferResponseData to true for beta, it should be false here so that we report conflicts
             let request = StoreItemsDbResponseRequest(responses: items, schemaController: self.schemaController, dateParser: self.dateParser, preferResponseData: true)
-            let response = try self.dbStorage.perform(request: request, invalidateRealm: true)
+            let response = try self.dbStorage.perform(request: request, on: self.storageQueue, invalidateRealm: true)
             let failedKeys = self.failedKeys(from: expectedKeys, parsedKeys: items.map({ $0.key }), errors: errors)
 
             self.renameExistingFiles(changes: response.changedFilenames, libraryId: libraryId)

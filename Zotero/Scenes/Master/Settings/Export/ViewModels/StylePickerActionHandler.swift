@@ -29,7 +29,7 @@ struct StylePickerActionHandler: ViewModelActionHandler {
 
     private func load(in viewModel: ViewModel<StylePickerActionHandler>) {
         do {
-            let styles = try self.dbStorage.perform(request: ReadInstalledStylesDbRequest())
+            let styles = try self.dbStorage.perform(request: ReadInstalledStylesDbRequest(), on: .main)
             self.update(viewModel: viewModel) { state in
                 state.results = styles
             }

@@ -55,29 +55,31 @@ struct LibrariesActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
 
     private func loadData(in viewModel: ViewModel<LibrariesActionHandler>) {
         do {
-            let libraries = try self.dbStorage.perform(request: ReadAllCustomLibrariesDbRequest())
-            let groups = try self.dbStorage.perform(request: ReadAllGroupsDbRequest())
+            try self.dbStorage.perform(on: .main, with: { coordinator in
+                let libraries = try coordinator.perform(request: ReadAllCustomLibrariesDbRequest())
+                let groups = try coordinator.perform(request: ReadAllGroupsDbRequest())
 
-            let groupsToken = groups.observe { [weak viewModel] changes in
-                guard let viewModel = viewModel else { return }
-                switch changes {
-                case .update(_, let deletions, _, _):
-                    self.update(viewModel: viewModel) { state in
-                        state.changes = .groups
-                        if !deletions.isEmpty {
-                            state.changes.insert(.groupDeletion)
+                let groupsToken = groups.observe { [weak viewModel] changes in
+                    guard let viewModel = viewModel else { return }
+                    switch changes {
+                    case .update(_, let deletions, _, _):
+                        self.update(viewModel: viewModel) { state in
+                            state.changes = .groups
+                            if !deletions.isEmpty {
+                                state.changes.insert(.groupDeletion)
+                            }
                         }
+                    case .initial: break
+                    case .error: break
                     }
-                case .initial: break
-                case .error: break
                 }
-            }
 
-            self.update(viewModel: viewModel) { state in
-                state.groupLibraries = groups
-                state.customLibraries = libraries
-                state.groupsToken = groupsToken
-            }
+                self.update(viewModel: viewModel) { state in
+                    state.groupLibraries = groups
+                    state.customLibraries = libraries
+                    state.groupsToken = groupsToken
+                }
+            })
         } catch let error {
             DDLogError("LibrariesStore: can't load libraries - \(error)")
             self.update(viewModel: viewModel) { state in

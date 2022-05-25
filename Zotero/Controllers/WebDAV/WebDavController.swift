@@ -155,7 +155,7 @@ final class WebDavControllerImpl: WebDavController {
                            return self.zip(file: file, key: key).flatMap({ return Single.just(.new(url, $0)) })
 
                        case .mtimeChanged(let mtime):
-                           return self.update(mtime: mtime, key: key).flatMap({ Single.just(.exists) })
+                           return self.update(mtime: mtime, key: key, queue: queue).flatMap({ Single.just(.exists) })
 
                        case .changed(let url):
                            // If metadata were available on WebDAV, but they changed, remove original .prop file.
@@ -265,10 +265,10 @@ final class WebDavControllerImpl: WebDavController {
         }
     }
 
-    private func update(mtime: Int, key: String) -> Single<()> {
+    private func update(mtime: Int, key: String, queue: DispatchQueue) -> Single<()> {
         return Single.create { subscriber -> Disposable in
             do {
-                try self.dbStorage.perform(request: StoreMtimeForAttachmentDbRequest(mtime: mtime, key: key, libraryId: .custom(.myLibrary)))
+                try self.dbStorage.perform(request: StoreMtimeForAttachmentDbRequest(mtime: mtime, key: key, libraryId: .custom(.myLibrary)), on: queue)
                 subscriber(.success(()))
             } catch let error {
                 DDLogError("WebDavController: can't update mtime - \(error)")

@@ -58,6 +58,7 @@ class CitationController: NSObject {
     private unowned let fileStorage: FileStorage
     private unowned let dbStorage: DbStorage
     private unowned let bundledDataStorage: DbStorage
+    private let backgroundQueue: DispatchQueue
     private let backgroundScheduler: SerialDispatchQueueScheduler
 
     // Store temporary data for citation preview so that they don't need to be reloaded for each preview generation.
@@ -71,11 +72,13 @@ class CitationController: NSObject {
     private var responseHandlers: [String: WebViewResponseHandler]
 
     init(stylesController: TranslatorsAndStylesController, fileStorage: FileStorage, dbStorage: DbStorage, bundledDataStorage: DbStorage) {
+        let queue = DispatchQueue(label: "org.zotero.CitationController.queue", qos: .userInitiated)
         self.stylesController = stylesController
         self.fileStorage = fileStorage
         self.dbStorage = dbStorage
         self.bundledDataStorage = bundledDataStorage
-        self.backgroundScheduler = SerialDispatchQueueScheduler(internalSerialQueueName: "org.zotero.CitationController")
+        self.backgroundQueue = queue
+        self.backgroundScheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.CitationController.scheduler")
         self.responseHandlers = [:]
         super.init()
     }
@@ -280,7 +283,7 @@ class CitationController: NSObject {
     private func loadStyleData(for styleId: String) -> Single<StyleData> {
         return Single.create { subscriber in
             do {
-                let style = try self.bundledDataStorage.perform(request: ReadStyleDbRequest(identifier: styleId))
+                let style = try self.bundledDataStorage.perform(request: ReadStyleDbRequest(identifier: styleId), on: self.backgroundQueue)
                 let data = StyleData(style: style)
                 style.realm?.invalidate()
                 subscriber(.success(data))
@@ -309,7 +312,7 @@ class CitationController: NSObject {
     private func loadItemJsons(for keys: Set<String>, libraryId: LibraryIdentifier) -> Single<String> {
         return Single.create { subscriber in
             do {
-                let items = try self.dbStorage.perform(request: ReadItemsWithKeysDbRequest(keys: keys, libraryId: libraryId))
+                let items = try self.dbStorage.perform(request: ReadItemsWithKeysDbRequest(keys: keys, libraryId: libraryId), on: self.backgroundQueue)
                                               .filter(.item(notTypeIn: CitationController.invalidItemTypes))
 
                 if items.isEmpty {

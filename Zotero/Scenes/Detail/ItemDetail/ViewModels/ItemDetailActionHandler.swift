@@ -168,14 +168,14 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             case .creation(let itemType, let child, _):
                 type = .new(itemType: itemType, child: child)
             case .preview(let key):
-                let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: key))
+                let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: key), on: .main)
                 token = item.observe(keyPaths: RItem.observableKeypathsForItemDetail) { [weak viewModel] change in
                     guard let viewModel = viewModel else { return }
                     self.itemChanged(change, in: viewModel)
                 }
                 type = .existing(item)
             case .duplication(let itemKey, _):
-                let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: itemKey))
+                let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: itemKey), on: .main)
                 type = .existing(item)
             }
 
@@ -623,7 +623,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             state.isSaving = true
         }
 
-        self.save(state: viewModel.state)
+        self.save(state: viewModel.state, queue: self.backgroundQueue)
             .subscribe(on: self.backgroundScheduler)
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak viewModel] newState in
@@ -643,7 +643,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             .disposed(by: self.disposeBag)
     }
 
-    private func save(state: ItemDetailState) -> Single<ItemDetailState> {
+    private func save(state: ItemDetailState, queue: DispatchQueue) -> Single<ItemDetailState> {
         // Preview key has to be assigned here, because the `Single` below can be subscribed on background thread (and currently is),
         // in which case the app will crash, because RItem in preview has been loaded on main thread.
         let previewKey = state.type.previewKey
@@ -660,12 +660,12 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 case .preview:
                     if let snapshot = state.snapshot, let key = previewKey {
                         let request = EditItemDetailDbRequest(libraryId: state.library.identifier, itemKey: key, data: newState.data, snapshot: snapshot, schemaController: self.schemaController, dateParser: self.dateParser)
-                        try self.dbStorage.perform(request: request)
+                        try self.dbStorage.perform(request: request, on: queue)
                     }
 
                 case .creation(_, _, let collectionKey), .duplication(_, let collectionKey):
                     let request = CreateItemDbRequest(libraryId: state.library.identifier, collectionKey: collectionKey, data: newState.data, schemaController: self.schemaController, dateParser: self.dateParser)
-                    let item = try self.dbStorage.perform(request: request)
+                    let item = try self.dbStorage.perform(request: request, on: queue)
                     newType = .preview(key: item.key)
                 }
 
