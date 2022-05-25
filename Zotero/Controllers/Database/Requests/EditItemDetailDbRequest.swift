@@ -209,10 +209,12 @@ struct EditItemDetailDbRequest: DbRequest {
         if !tagsToRemove.isEmpty {
             tagsDidChange = true
         }
-        let baseTagsToRemove = Array(tagsToRemove.filter("tag.tags.@count == 1").compactMap({ $0.tag?.name }))
+        let baseTagsToRemove = (try? ReadBaseTagsToDeleteDbRequest(fromTags: tagsToRemove).process(in: database)) ?? []
 
         database.delete(tagsToRemove)
-        database.delete(database.objects(RTag.self).filter(.name(in: baseTagsToRemove)))
+        if !baseTagsToRemove.isEmpty {
+            database.delete(database.objects(RTag.self).filter(.name(in: baseTagsToRemove)))
+        }
 
         let allTags = database.objects(RTag.self)
 

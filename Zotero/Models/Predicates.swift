@@ -337,4 +337,10 @@ extension NSPredicate {
     static func file(downloaded: Bool) -> NSPredicate {
         return NSPredicate(format: "fileDownloaded = %@", NSNumber(booleanLiteral: downloaded))
     }
+
+    static var baseTagsToDelete: NSPredicate {
+        let count = NSPredicate(format: "tag.tags.@count == 1")
+        let color = NSPredicate(format: "tag.color == %@", "")
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [color, count])
+    }
 }

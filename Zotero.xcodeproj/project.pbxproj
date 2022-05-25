@@ -974,6 +974,8 @@
 		B3E8FE8827143BDD00F51458 /* SyncSettingsAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E8FE8327143BDD00F51458 /* SyncSettingsAction.swift */; };
 		B3E8FE8927143BDD00F51458 /* SyncSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E8FE8527143BDD00F51458 /* SyncSettingsView.swift */; };
 		B3E9180C25ECE30A002B77AF /* CoreGraphics+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E9180B25ECE30A002B77AF /* CoreGraphics+Extensions.swift */; };
+		B3EBC9B1283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EBC9B0283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift */; };
+		B3EBC9B2283E39AD00286A9E /* ReadBaseTagsToDeleteDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EBC9B0283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift */; };
 		B3EC44612718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EC44602718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift */; };
 		B3ED688D255AE46D00D4DE78 /* Differ in Frameworks */ = {isa = PBXBuildFile; productRef = B3ED688C255AE46D00D4DE78 /* Differ */; };
 		B3F0C3F9250A1BD8002D557A /* LibrariesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F0C3F7250A1BD8002D557A /* LibrariesViewController.swift */; };
@@ -1762,6 +1764,7 @@
 		B3E8FE8327143BDD00F51458 /* SyncSettingsAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncSettingsAction.swift; sourceTree = "<group>"; };
 		B3E8FE8527143BDD00F51458 /* SyncSettingsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncSettingsView.swift; sourceTree = "<group>"; };
 		B3E9180B25ECE30A002B77AF /* CoreGraphics+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CoreGraphics+Extensions.swift"; sourceTree = "<group>"; };
+		B3EBC9B0283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadBaseTagsToDeleteDbRequest.swift; sourceTree = "<group>"; };
 		B3EC44602718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPreviewBoundingBoxCalculator.swift; sourceTree = "<group>"; };
 		B3F0C3F7250A1BD8002D557A /* LibrariesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrariesViewController.swift; sourceTree = "<group>"; };
 		B3F0C3F8250A1BD8002D557A /* LibrariesViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LibrariesViewController.xib; sourceTree = "<group>"; };
@@ -1991,6 +1994,7 @@
 				B31EEE5924EBD18200E3B3AD /* ReadAnnotationsDbRequest.swift */,
 				B305646523FC051E003304F2 /* ReadAnyChangedObjectsInLibraryDbRequest.swift */,
 				B305644523FC051E003304F2 /* ReadAttachmentUploadsDbRequest.swift */,
+				B3EBC9B0283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift */,
 				B34341B3260A496200093E63 /* ReadCollectionAndLibraryDbRequest.swift */,
 				B305645E23FC051E003304F2 /* ReadCollectionDbRequest.swift */,
 				B305645723FC051E003304F2 /* ReadCollectionsDbRequest.swift */,
@@ -4485,6 +4489,7 @@
 				B361820F24C9B9E800B30D56 /* SelectableTextField.swift in Sources */,
 				B39EE32B223A5E3500302E29 /* TestAppDelegate.swift in Sources */,
 				B30565C423FC051E003304F2 /* EditItemDetailDbRequest.swift in Sources */,
+				B3EBC9B1283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift in Sources */,
 				B305662023FC051F003304F2 /* SyncSettingsSyncAction.swift in Sources */,
 				B35EDECB263ADD0C003574AC /* TextPreviewViewController.swift in Sources */,
 				B30566A623FC051F003304F2 /* Files.swift in Sources */,
@@ -4690,6 +4695,7 @@
 				B305677723FC0BEE003304F2 /* UserDefault+Extensions.swift in Sources */,
 				B305673E23FC09AF003304F2 /* AuthorizeUploadResponse.swift in Sources */,
 				B305673F23FC09AF003304F2 /* KeyResponse.swift in Sources */,
+				B3EBC9B2283E39AD00286A9E /* ReadBaseTagsToDeleteDbRequest.swift in Sources */,
 				B305674023FC09AF003304F2 /* UpdatesResponse.swift in Sources */,
 				B3E44643248FBF12007FE8AB /* LinkType.swift in Sources */,
 				B305674123FC09AF003304F2 /* CollectionResponse.swift in Sources */,

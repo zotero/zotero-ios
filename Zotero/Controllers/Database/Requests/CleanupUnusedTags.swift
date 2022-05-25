@@ -15,7 +15,7 @@ struct CleanupUnusedTags: DbRequest {
     var ignoreNotificationTokens: [NotificationToken]?
 
     func process(in database: Realm) throws {
-        let toRemove = database.objects(RTag.self).filter("tags.@count == 0")
-        database.delete(toRemove)
+        let toRemoveBase = database.objects(RTag.self).filter("tags.@count == 0 AND color == %@", "")
+        database.delete(toRemoveBase)
     }
 }

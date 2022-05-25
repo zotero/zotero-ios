@@ -20,7 +20,7 @@ struct ReadTagsDbRequest: DbResponseRequest {
 
     func process(in database: Realm) throws -> [Tag] {
         return database.objects(RTag.self).filter(.library(with: self.libraryId))
-                                          .filter("tags.@count > 0")
+                                          .filter("tags.@count > 0 OR color != %@", "")
                                           .sorted(byKeyPath: "name")
                                           .map(Tag.init)
     }

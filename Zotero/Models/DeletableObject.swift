@@ -51,9 +51,11 @@ extension RItem: Deletable {
             database.delete(self.children)
         }
         if !self.tags.isInvalidated {
-            let baseTagsToRemove = Array(self.tags.filter("tag.tags.@count == 1").compactMap({ $0.tag?.name }))
+            let baseTagsToRemove = (try? ReadBaseTagsToDeleteDbRequest(fromTags: self.tags).process(in: database)) ?? []
             database.delete(self.tags)
-            database.delete(database.objects(RTag.self).filter(.name(in: baseTagsToRemove)))
+            if !baseTagsToRemove.isEmpty {
+                database.delete(database.objects(RTag.self).filter(.name(in: baseTagsToRemove)))
+            }
         }
 
         if let createdByUser = self.createdBy, !createdByUser.isInvalidated, let lastModifiedByUser = self.lastModifiedBy, !lastModifiedByUser.isInvalidated,
