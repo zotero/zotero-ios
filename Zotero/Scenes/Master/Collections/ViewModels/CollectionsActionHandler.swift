@@ -21,7 +21,7 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     private unowned let attachmentDownloader: AttachmentDownloader
 
     init(dbStorage: DbStorage, fileStorage: FileStorage, attachmentDownloader: AttachmentDownloader) {
-        self.backgroundQueue = DispatchQueue.global(qos: .userInitiated)
+        self.backgroundQueue = DispatchQueue(label: "org.zotero.CollectionsActionHandler.backgroundQueue", qos: .userInitiated)
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.attachmentDownloader = attachmentDownloader
@@ -255,7 +255,7 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
         self.perform(request: request) { [weak viewModel] error in
             guard let error = error, let viewModel = viewModel else { return }
 
-            DDLogError("CollectionsStore: can't assign collections to items - \(error)")
+            DDLogError("CollectionsActionHandler: can't assign collections to items - \(error)")
 
             self.update(viewModel: viewModel) { state in
                 state.error = .collectionAssignment
@@ -268,7 +268,7 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
         self.perform(request: request) { [weak viewModel] error in
             guard let error = error, let viewModel = viewModel else { return }
 
-            DDLogError("CollectionsStore: can't delete object - \(error)")
+            DDLogError("CollectionsActionHandler: can't delete object - \(error)")
 
             self.update(viewModel: viewModel) { state in
                 state.error = .deletion

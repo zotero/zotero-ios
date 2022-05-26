@@ -87,7 +87,7 @@ final class TranslatorsAndStylesController {
             fatalError("TranslatorsAndStylesController: could not create db directories - \(error)")
         }
 
-        let queue = DispatchQueue(label: "org.zotero.TranslatorsController.queue", qos: .utility, attributes: .concurrent)
+        let queue = DispatchQueue(label: "org.zotero.TranslatorsController.queue", qos: .utility)
 
         self.bundle = bundle
         self.apiClient = apiClient

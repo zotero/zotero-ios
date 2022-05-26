@@ -58,6 +58,8 @@ final class AttachmentDownloader {
     private unowned let webDavController: WebDavController
     private let accessQueue: DispatchQueue
     private let processingQueue: DispatchQueue
+    // Database requests have to be performed on serial queue, since `processingQueue` is concurrent to allow multiple downloads, db requests need their separate queue.
+    private let dbQueue: DispatchQueue
     private let operationQueue: OperationQueue
     private let disposeBag: DisposeBag
     let observable: PublishSubject<Update>
@@ -98,6 +100,7 @@ final class AttachmentDownloader {
         self.operations = [:]
         self.progressObservers = [:]
         self.accessQueue = DispatchQueue(label: "org.zotero.AttachmentDownloader.AccessQueue", qos: .userInteractive, attributes: .concurrent)
+        self.dbQueue = DispatchQueue(label: "org.zotero.AttachmentDownloader.DbQueue", qos: .userInteractive)
         self.processingQueue = processingQueue
         self.operationQueue = operationQueue
         self.errors = [:]
@@ -265,12 +268,13 @@ final class AttachmentDownloader {
 
             switch result {
             case .success:
-                self.processingQueue.async(flags: .barrier) { [weak self] in
+                self.dbQueue.sync { [weak self] in
                     guard let `self` = self else { return }
                     // Mark file as downloaded in DB
-                    try? self.dbStorage.perform(request: MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true), on: self.processingQueue)
-                    self.finish(download: download, parentKey: parentKey, result: result, hasLocalCopy: hasLocalCopy)
+                    try? self.dbStorage.perform(request: MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true), on: self.dbQueue)
                 }
+                self.finish(download: download, parentKey: parentKey, result: result, hasLocalCopy: hasLocalCopy)
+                
             case .failure:
                 self.finish(download: download, parentKey: parentKey, result: result, hasLocalCopy: hasLocalCopy)
             }

@@ -151,7 +151,7 @@ final class SyncController: SynchronizationController {
     // All processing of actions is performed on this queue.
     private let workQueue: DispatchQueue
     // All processing of actions is scheduled on this scheduler.
-    private let workScheduler: ConcurrentDispatchQueueScheduler
+    private let workScheduler: SerialDispatchQueueScheduler
     // Controllers
     private let apiClient: ApiClient
     private let dbStorage: DbStorage
@@ -220,11 +220,11 @@ final class SyncController: SynchronizationController {
     init(userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, dateParser: DateParser, backgroundUploaderContext: BackgroundUploaderContext,
          webDavController: WebDavController, syncDelayIntervals: [Double], conflictDelays: [Int]) {
         let accessQueue = DispatchQueue(label: "org.zotero.SyncController.accessQueue", qos: .userInteractive, attributes: .concurrent)
-        let workQueue = DispatchQueue(label: "org.zotero.SyncController.workQueue", qos: .userInteractive, attributes: .concurrent)
+        let workQueue = DispatchQueue(label: "org.zotero.SyncController.workQueue", qos: .userInteractive)
         self.userId = userId
         self.accessQueue = accessQueue
         self.workQueue = workQueue
-        self.workScheduler = ConcurrentDispatchQueueScheduler(queue: workQueue)
+        self.workScheduler = SerialDispatchQueueScheduler(queue: workQueue, internalSerialQueueName: "org.zotero.SyncController.workScheduler")
         self.observable = PublishSubject()
         self.progressHandler = SyncProgressHandler()
         self.disposeBag = DisposeBag()

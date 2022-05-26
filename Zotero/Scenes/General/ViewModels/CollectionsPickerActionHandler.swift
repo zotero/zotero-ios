@@ -75,7 +75,7 @@ struct CollectionsPickerActionHandler: ViewModelActionHandler {
                 state.token = token
             }
         } catch let error {
-            DDLogError("CollectionsStore: can't load collections: \(error)")
+            DDLogError("CollectionsPickerActionHandler: can't load collections: \(error)")
             self.update(viewModel: viewModel) { state in
                 state.error = .dataLoading
             }

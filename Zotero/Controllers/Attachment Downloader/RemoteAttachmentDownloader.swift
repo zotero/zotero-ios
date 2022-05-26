@@ -38,6 +38,8 @@ final class RemoteAttachmentDownloader {
     }
 
     private let queue: DispatchQueue
+    // Database requests have to be performed on serial queue, since `queue` is concurrent to allow multiple downloads, db requests need their separate queue.
+    private let dbQueue: DispatchQueue
     private let operationQueue: OperationQueue
     private let disposeBag: DisposeBag
     private unowned let apiClient: ApiClient
@@ -63,6 +65,7 @@ final class RemoteAttachmentDownloader {
         self.dbStorage = dbStorage
         self.operationQueue = operationQueue
         self.queue = queue
+        self.dbQueue = DispatchQueue(label: "org.zotero.AttachmentDownloader.DbQueue", qos: .userInteractive)
         self.observable = PublishSubject()
         self.operations = [:]
         self.progressObservers = [:]
@@ -131,7 +134,9 @@ final class RemoteAttachmentDownloader {
             let request = CreateAttachmentWithParentDbRequest(attachment: attachment, parentKey: parentKey, localizedType: localizedType)
 
             do {
-                try self.dbStorage.perform(request: request, on: self.queue)
+                try self.dbQueue.sync {
+                    try self.dbStorage.perform(request: request, on: self.queue)
+                }
                 self.observable.on(.next(Update(download: download, kind: .ready)))
             } catch let error {
                 DDLogError("RemoteAttachmentDownloader: can't store attachment after download - \(error)")
