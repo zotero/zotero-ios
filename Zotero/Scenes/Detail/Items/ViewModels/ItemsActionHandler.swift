@@ -28,6 +28,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     private unowned let syncScheduler: SynchronizationScheduler
     let backgroundQueue: DispatchQueue
     private let disposeBag: DisposeBag
+    private let quotationExpression: NSRegularExpression?
 
     init(dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, urlDetector: UrlDetector, fileDownloader: AttachmentDownloader, citationController: CitationController,
          fileCleanupController: AttachmentFileCleanupController, syncScheduler: SynchronizationScheduler) {
@@ -41,6 +42,13 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         self.fileCleanupController = fileCleanupController
         self.syncScheduler = syncScheduler
         self.disposeBag = DisposeBag()
+
+        do {
+            self.quotationExpression = try NSRegularExpression(pattern: #"("[^"]+"?)"#)
+        } catch let error {
+            DDLogError("ItemsActionHandler: can't create quotation expression - \(error)")
+            self.quotationExpression = nil
+        }
     }
 
     func process(action: ItemsAction, in viewModel: ViewModel<ItemsActionHandler>) {
@@ -571,7 +579,8 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         let request = ReadItemsDbRequest(collectionId: collectionId, libraryId: libraryId)
         guard var results = (try? self.dbStorage.perform(request: request, on: .main)) else { return nil }
         if let text = searchText, !text.isEmpty {
-            results = results.filter(.itemSearch(for: text))
+            let components = self.createComponents(from: text)
+            results = results.filter(.itemSearch(for: components))
         }
         if !filters.isEmpty {
             for filter in filters {
@@ -582,6 +591,45 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
             }
         }
         return results.sorted(by: sortType.descriptors)
+    }
+
+    private func createComponents(from searchTerm: String) -> [String] {
+        guard let expression = self.quotationExpression else { return [searchTerm] }
+
+        let normalizedSearchTerm = searchTerm.replacingOccurrences(of: #"“"#, with: "\"")
+                                             .replacingOccurrences(of: #"”"#, with: "\"")
+
+        let matches = expression.matches(in: normalizedSearchTerm, options: [], range: NSRange(normalizedSearchTerm.startIndex..., in: normalizedSearchTerm))
+
+        guard !matches.isEmpty else {
+            return self.separateComponents(from: normalizedSearchTerm)
+        }
+
+        var components: [String] = []
+        for (idx, match) in matches.enumerated() {
+            if match.range.lowerBound > 0 {
+                let lowerBound = idx == 0 ? 0 : matches[idx - 1].range.upperBound
+                let precedingRange = normalizedSearchTerm.index(normalizedSearchTerm.startIndex, offsetBy: lowerBound)..<normalizedSearchTerm.index(normalizedSearchTerm.startIndex, offsetBy: match.range.lowerBound)
+                let precedingComponents = self.separateComponents(from: String(normalizedSearchTerm[precedingRange]))
+                components.append(contentsOf: precedingComponents)
+            }
+
+            let upperBound = normalizedSearchTerm[normalizedSearchTerm.index(normalizedSearchTerm.startIndex, offsetBy: (match.range.upperBound - 1))] == "\"" ? match.range.upperBound - 1 : match.range.upperBound
+            let range = normalizedSearchTerm.index(normalizedSearchTerm.startIndex, offsetBy: (match.range.lowerBound + 1))..<normalizedSearchTerm.index(normalizedSearchTerm.startIndex, offsetBy: upperBound)
+            components.append(String(normalizedSearchTerm[range]))
+        }
+
+        if let match = matches.last, match.range.upperBound != (normalizedSearchTerm.count - 1) {
+            let lastRange = normalizedSearchTerm.index(normalizedSearchTerm.startIndex, offsetBy: match.range.upperBound)..<normalizedSearchTerm.endIndex
+            let lastComponents = self.separateComponents(from: String(normalizedSearchTerm[lastRange]))
+            components.append(contentsOf: lastComponents)
+        }
+
+        return components
+    }
+
+    private func separateComponents(from string: String) -> [String] {
+        return string.components(separatedBy: " ").filter({ !$0.isEmpty })
     }
 
     // MARK: - Helpers

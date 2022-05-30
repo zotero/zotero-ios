@@ -280,14 +280,9 @@ extension NSPredicate {
                                                                    .library(with: libraryId)])
     }
 
-    static func itemSearch(for text: String) -> NSPredicate {
-        var allPredicates = itemSearchSubpredicates(for: text)
-        let components = text.components(separatedBy: ",")
-        for component in components {
-            let trimmed = component.trimmingCharacters(in: .whitespacesAndNewlines)
-            allPredicates.append(contentsOf: itemSearchSubpredicates(for: trimmed))
-        }
-        return NSCompoundPredicate(orPredicateWithSubpredicates: allPredicates)
+    static func itemSearch(for components: [String]) -> NSPredicate {
+        let predicates = components.flatMap({ itemSearchSubpredicates(for: $0) })
+        return NSCompoundPredicate(orPredicateWithSubpredicates: predicates)
     }
 
     private static func itemSearchSubpredicates(for text: String) -> [NSPredicate] {
