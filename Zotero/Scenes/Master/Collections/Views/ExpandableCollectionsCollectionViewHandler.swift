@@ -84,7 +84,20 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
     // MARK: - Data Source
 
     func update(with tree: CollectionTree, selectedId: CollectionIdentifier, animated: Bool, completion: (() -> Void)? = nil) {
-        self.dataSource.apply(tree.createSnapshot(selectedId: selectedId), to: 0, animatingDifferences: animated, completion: completion)
+        let newSnapshot = tree.createSnapshot(selectedId: selectedId)
+
+        if self.dataSource.snapshot(for: self.collectionsSection).items.count == newSnapshot.items.count {
+            self.dataSource.apply(newSnapshot, to: self.collectionsSection, animatingDifferences: animated, completion: completion)
+            return
+        }
+
+        // TODO: - iOS bug, applying a section snapshot to section where a new child row is added, parent row doesn't show a collapse button
+        // It works fine if a completely new snapshot is applied, which breaks animations though.
+
+        var snapshot = NSDiffableDataSourceSnapshot<Int, Collection>()
+        snapshot.appendSections([self.collectionsSection])
+        self.dataSource.apply(snapshot, animatingDifferences: animated)
+        self.dataSource.apply(newSnapshot, to: self.collectionsSection, animatingDifferences: animated, completion: completion)
     }
 
     private func createContextMenu(for collection: Collection) -> UIMenu? {
