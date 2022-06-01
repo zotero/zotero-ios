@@ -34,6 +34,7 @@ struct PDFReaderState: ViewModelState {
         static let activeLineWidth = Changes(rawValue: 1 << 9)
         static let sidebarEditing = Changes(rawValue: 1 << 10)
         static let sidebarEditingSelection = Changes(rawValue: 1 << 11)
+        static let filter = Changes(rawValue: 1 << 12)
     }
 
     enum AppearanceMode: UInt {
@@ -98,6 +99,7 @@ struct PDFReaderState: ViewModelState {
     /// to/from document. So when a remote change comes in, the document is edited and emits notifications which would try to do the same work again.
     var ignoreNotifications: [Notification.Name: Set<String>]
     var settings: PDFSettings
+    var filter: AnnotationsFilter?
 
     init(url: URL, key: String, library: Library, settings: PDFSettings, userId: Int, username: String, displayName: String, interfaceStyle: UIUserInterfaceStyle) {
         self.key = key

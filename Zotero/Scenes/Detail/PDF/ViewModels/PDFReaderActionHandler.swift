@@ -247,6 +247,16 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         case .setSidebarEditingEnabled(let enabled):
             self.setSidebar(editing: enabled, in: viewModel)
+
+        case .changeFilter(let filter):
+            self.change(filter: filter, viewModel: viewModel)
+        }
+    }
+
+    private func change(filter: AnnotationsFilter?, viewModel: ViewModel<PDFReaderActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            state.filter = filter
+            state.changes = .filter
         }
     }
 

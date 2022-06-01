@@ -53,6 +53,7 @@ enum PDFReaderAction {
     case setSidebarEditingEnabled(Bool)
     case setSettings(PDFSettings)
     case changeIdleTimerDisabled(Bool)
+    case changeFilter(AnnotationsFilter?)
 }
 
 #endif

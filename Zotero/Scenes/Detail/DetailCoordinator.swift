@@ -92,6 +92,7 @@ protocol DetailPdfCoordinatorDelegate: AnyObject {
 protocol DetailAnnotationsCoordinatorDelegate: AnyObject {
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func showCellOptions(for annotation: Annotation, sender: UIButton, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
+    func showFilterPopup(from barButton: UIBarButtonItem, filter: AnnotationsFilter?, completed: @escaping (AnnotationsFilter?) -> Void)
 }
 
 #endif
@@ -1006,6 +1007,21 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
 }
 
 extension DetailCoordinator: DetailAnnotationsCoordinatorDelegate {
+    func showFilterPopup(from barButton: UIBarButtonItem, filter: AnnotationsFilter?, completed: @escaping (AnnotationsFilter?) -> Void) {
+        let state = AnnotationsFilterState(filter: filter)
+        let handler = AnnotationsFilterActionHandler()
+        let viewModel = ViewModel(initialState: state, handler: handler)
+        let controller = AnnotationsFilterViewController(completion: completed)
+
+        let navigationController = UINavigationController(rootViewController: controller)
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            navigationController.modalPresentationStyle = .popover
+            navigationController.popoverPresentationController?.barButtonItem = barButton
+            navigationController.popoverPresentationController?.permittedArrowDirections = .down
+        }
+        self.topViewController.present(navigationController, animated: true, completion: nil)
+    }
+
     func showCellOptions(for annotation: Annotation, sender: UIButton, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
         let state = AnnotationEditState(annotation: annotation)
         let handler = AnnotationEditActionHandler()

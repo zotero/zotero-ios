@@ -58,7 +58,8 @@ final class AnnotationsViewController: UIViewController {
 
         self.definesPresentationContext = true
         self.setupViews()
-        self.setupToolbar(editingEnabled: self.viewModel.state.sidebarEditingEnabled, deletionEnabled: self.viewModel.state.deletionEnabled, mergingEnabled: self.viewModel.state.mergingEnabled)
+        self.setupToolbar(filterEnabled: (self.viewModel.state.filter != nil), editingEnabled: self.viewModel.state.sidebarEditingEnabled,
+                          deletionEnabled: self.viewModel.state.deletionEnabled, mergingEnabled: self.viewModel.state.mergingEnabled)
         self.setupDataSource()
         self.setupSearchController()
         self.setupKeyboardObserving()
@@ -145,12 +146,16 @@ final class AnnotationsViewController: UIViewController {
                 self.tableView.beginUpdates()
                 self.tableView.endUpdates()
 
-                self.setupToolbar(editingEnabled: state.sidebarEditingEnabled, deletionEnabled: state.deletionEnabled, mergingEnabled: state.mergingEnabled)
+                self.setupToolbar(filterEnabled: (state.filter != nil), editingEnabled: state.sidebarEditingEnabled, deletionEnabled: state.deletionEnabled, mergingEnabled: state.mergingEnabled)
             }
 
             if state.changes.contains(.sidebarEditingSelection) {
                 self.deleteBarButton?.isEnabled = state.deletionEnabled
                 self.mergeBarButton?.isEnabled = state.mergingEnabled
+            }
+
+            if state.changes.contains(.filter) {
+                self.setupToolbar(filterEnabled: (state.filter != nil), editingEnabled: state.sidebarEditingEnabled, deletionEnabled: state.deletionEnabled, mergingEnabled: state.mergingEnabled)
             }
         }
     }
@@ -399,7 +404,7 @@ final class AnnotationsViewController: UIViewController {
                           .disposed(by: self.disposeBag)
     }
 
-    private func setupToolbar(editingEnabled: Bool, deletionEnabled: Bool, mergingEnabled: Bool) {
+    private func setupToolbar(filterEnabled: Bool, editingEnabled: Bool, deletionEnabled: Bool, mergingEnabled: Bool) {
         guard !self.toolbarContainer.isHidden else { return }
 
         var items: [UIBarButtonItem] = []
@@ -435,6 +440,19 @@ final class AnnotationsViewController: UIViewController {
         } else {
             self.deleteBarButton = nil
             self.mergeBarButton = nil
+
+            let filterImageName = filterEnabled ? "line.horizontal.3.decrease.circle.fill" : "line.horizontal.3.decrease.circle"
+            let filter = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
+            filter.rx.tap
+                  .subscribe(onNext: { [weak self] _ in
+                      guard let `self` = self else { return }
+                      self.coordinatorDelegate?.showFilterPopup(from: filter, filter: self.viewModel.state.filter, completed: { [weak self] filter in
+                          guard let `self` = self else { return }
+                          self.viewModel.process(action: .changeFilter(filter))
+                      })
+                  })
+                  .disposed(by: self.disposeBag)
+            items.insert(filter, at: 0)
         }
 
         let select = UIBarButtonItem(title: (editingEnabled ? L10n.done : L10n.select), style: .plain, target: nil, action: nil)

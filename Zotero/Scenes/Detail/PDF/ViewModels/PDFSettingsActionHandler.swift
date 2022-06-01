@@ -12,7 +12,7 @@ import Foundation
 
 import PSPDFKit
 
-final class PDFSettingsActionHandler: ViewModelActionHandler {
+struct PDFSettingsActionHandler: ViewModelActionHandler {
     typealias Action = PDFSettingsAction
     typealias State = PDFSettingsState
 
