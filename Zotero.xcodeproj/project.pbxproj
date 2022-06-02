@@ -661,12 +661,6 @@
 		B36E4F682751242C001FB99D /* WebDavCreateZoteroDirectoryRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36E4F65275123F4001FB99D /* WebDavCreateZoteroDirectoryRequest.swift */; };
 		B36E9D4925E51B0E00CD1109 /* AnnotationPosition.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36E9D4825E51B0E00CD1109 /* AnnotationPosition.swift */; };
 		B36EBFF5273162DD00CD788D /* bitcoin.zip in Resources */ = {isa = PBXBuildFile; fileRef = B36EBFF4273162DD00CD788D /* bitcoin.zip */; };
-		B3705B0328477B30002F5627 /* AnnotationsFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3705B0228477B30002F5627 /* AnnotationsFilter.swift */; };
-		B3705B06284780C4002F5627 /* AnnotationsFilterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3705B04284780C4002F5627 /* AnnotationsFilterViewController.swift */; };
-		B3705B07284780C4002F5627 /* AnnotationsFilterViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3705B05284780C4002F5627 /* AnnotationsFilterViewController.xib */; };
-		B3705B09284785D2002F5627 /* AnnotationsFilterActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3705B08284785D2002F5627 /* AnnotationsFilterActionHandler.swift */; };
-		B3705B0B284785F3002F5627 /* AnnotationsFilterState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3705B0A284785F3002F5627 /* AnnotationsFilterState.swift */; };
-		B3705B0D28478600002F5627 /* AnnotationsFilterAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3705B0C28478600002F5627 /* AnnotationsFilterAction.swift */; };
 		B371494C25D585EA00D6391E /* RestoreDeletionsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340868825D574D6000F4446 /* RestoreDeletionsSyncAction.swift */; };
 		B371494F25D585EF00D6391E /* MarkObjectsAsChangedByUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340868C25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift */; };
 		B372CEE02486504600B423AE /* GroupVersionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372CEDF2486504600B423AE /* GroupVersionsRequest.swift */; };
@@ -816,6 +810,13 @@
 		B3B1EE072502680000D8BC1E /* Parsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EE052502675E00D8BC1E /* Parsing.swift */; };
 		B3B3FF7B266A1FAB0061E3B2 /* StoreStyleDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B3FF7A266A1FAB0061E3B2 /* StoreStyleDbRequest.swift */; };
 		B3B3FF83266A380D0061E3B2 /* UninstallStyleDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B3FF82266A380D0061E3B2 /* UninstallStyleDbRequest.swift */; };
+		B3B41F122848E59D0017CA4B /* AnnotationsFilterViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3B41F102848E59D0017CA4B /* AnnotationsFilterViewController.xib */; };
+		B3B41F132848E59D0017CA4B /* AnnotationsFilterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B41F112848E59D0017CA4B /* AnnotationsFilterViewController.swift */; };
+		B3B41F152848E5A30017CA4B /* AnnotationsFilterActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B41F142848E5A20017CA4B /* AnnotationsFilterActionHandler.swift */; };
+		B3B41F192848E5A90017CA4B /* AnnotationsFilterState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B41F162848E5A80017CA4B /* AnnotationsFilterState.swift */; };
+		B3B41F1A2848E5A90017CA4B /* AnnotationsFilterAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B41F172848E5A80017CA4B /* AnnotationsFilterAction.swift */; };
+		B3B41F1B2848E5A90017CA4B /* AnnotationsFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B41F182848E5A80017CA4B /* AnnotationsFilter.swift */; };
+		B3B41F1D2848E6B80017CA4B /* AnnotationsFilterPopoverCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B41F1C2848E6B80017CA4B /* AnnotationsFilterPopoverCoordinator.swift */; };
 		B3B613F7260B844B00B92017 /* EmptyTrashDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B613F6260B844B00B92017 /* EmptyTrashDbRequest.swift */; };
 		B3B6759526205A3C003231A5 /* CollectionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B6759426205A3C003231A5 /* CollectionRowView.swift */; };
 		B3B6759B26205A48003231A5 /* CollectionRowView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3B6759A26205A48003231A5 /* CollectionRowView.xib */; };
@@ -1515,12 +1516,6 @@
 		B36E4F65275123F4001FB99D /* WebDavCreateZoteroDirectoryRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavCreateZoteroDirectoryRequest.swift; sourceTree = "<group>"; };
 		B36E9D4825E51B0E00CD1109 /* AnnotationPosition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPosition.swift; sourceTree = "<group>"; };
 		B36EBFF4273162DD00CD788D /* bitcoin.zip */ = {isa = PBXFileReference; lastKnownFileType = archive.zip; path = bitcoin.zip; sourceTree = "<group>"; };
-		B3705B0228477B30002F5627 /* AnnotationsFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationsFilter.swift; sourceTree = "<group>"; };
-		B3705B04284780C4002F5627 /* AnnotationsFilterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationsFilterViewController.swift; sourceTree = "<group>"; };
-		B3705B05284780C4002F5627 /* AnnotationsFilterViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AnnotationsFilterViewController.xib; sourceTree = "<group>"; };
-		B3705B08284785D2002F5627 /* AnnotationsFilterActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationsFilterActionHandler.swift; sourceTree = "<group>"; };
-		B3705B0A284785F3002F5627 /* AnnotationsFilterState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationsFilterState.swift; sourceTree = "<group>"; };
-		B3705B0C28478600002F5627 /* AnnotationsFilterAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationsFilterAction.swift; sourceTree = "<group>"; };
 		B372CEDF2486504600B423AE /* GroupVersionsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupVersionsRequest.swift; sourceTree = "<group>"; };
 		B372CEE22486512500B423AE /* GroupRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupRequest.swift; sourceTree = "<group>"; };
 		B372CEE4248670AF00B423AE /* FetchAndStoreGroupSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchAndStoreGroupSyncAction.swift; sourceTree = "<group>"; };
@@ -1639,6 +1634,13 @@
 		B3B1EE052502675E00D8BC1E /* Parsing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Parsing.swift; sourceTree = "<group>"; };
 		B3B3FF7A266A1FAB0061E3B2 /* StoreStyleDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreStyleDbRequest.swift; sourceTree = "<group>"; };
 		B3B3FF82266A380D0061E3B2 /* UninstallStyleDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UninstallStyleDbRequest.swift; sourceTree = "<group>"; };
+		B3B41F102848E59D0017CA4B /* AnnotationsFilterViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = AnnotationsFilterViewController.xib; sourceTree = "<group>"; };
+		B3B41F112848E59D0017CA4B /* AnnotationsFilterViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationsFilterViewController.swift; sourceTree = "<group>"; };
+		B3B41F142848E5A20017CA4B /* AnnotationsFilterActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationsFilterActionHandler.swift; sourceTree = "<group>"; };
+		B3B41F162848E5A80017CA4B /* AnnotationsFilterState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationsFilterState.swift; sourceTree = "<group>"; };
+		B3B41F172848E5A80017CA4B /* AnnotationsFilterAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationsFilterAction.swift; sourceTree = "<group>"; };
+		B3B41F182848E5A80017CA4B /* AnnotationsFilter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationsFilter.swift; sourceTree = "<group>"; };
+		B3B41F1C2848E6B80017CA4B /* AnnotationsFilterPopoverCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationsFilterPopoverCoordinator.swift; sourceTree = "<group>"; };
 		B3B613F6260B844B00B92017 /* EmptyTrashDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyTrashDbRequest.swift; sourceTree = "<group>"; };
 		B3B6759426205A3C003231A5 /* CollectionRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionRowView.swift; sourceTree = "<group>"; };
 		B3B6759A26205A48003231A5 /* CollectionRowView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CollectionRowView.xib; sourceTree = "<group>"; };
@@ -2445,8 +2447,6 @@
 			children = (
 				B3482E57257E3ED1008E817A /* Annotation View */,
 				B3B953D32459B62D00FC96DB /* AnnotationCell.swift */,
-				B3705B04284780C4002F5627 /* AnnotationsFilterViewController.swift */,
-				B3705B05284780C4002F5627 /* AnnotationsFilterViewController.xib */,
 				B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */,
 				B33AB487246D315F00490DDE /* CheckboxButton.swift */,
 				B39A402F24BC902600205172 /* ColorPickerView.swift */,
@@ -2684,6 +2684,7 @@
 			isa = PBXGroup;
 			children = (
 				B3401D4E2567D8CF00BB8D6E /* Annotation Popover */,
+				B3B41F0C2848E4E90017CA4B /* Annotation Filter Popover */,
 				B3FE4B8F268DDE4900CE123F /* CitationBibliographyExport */,
 				B3593EC3241A61C700760E20 /* ItemDetail */,
 				B3593EE7241A61C700760E20 /* Items */,
@@ -3143,6 +3144,44 @@
 			path = PDFs;
 			sourceTree = "<group>";
 		};
+		B3B41F0C2848E4E90017CA4B /* Annotation Filter Popover */ = {
+			isa = PBXGroup;
+			children = (
+				B3B41F0F2848E5550017CA4B /* Models */,
+				B3B41F0D2848E5550017CA4B /* ViewModels */,
+				B3B41F0E2848E5550017CA4B /* Views */,
+				B3B41F1C2848E6B80017CA4B /* AnnotationsFilterPopoverCoordinator.swift */,
+			);
+			path = "Annotation Filter Popover";
+			sourceTree = "<group>";
+		};
+		B3B41F0D2848E5550017CA4B /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				B3B41F142848E5A20017CA4B /* AnnotationsFilterActionHandler.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		B3B41F0E2848E5550017CA4B /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B3B41F112848E59D0017CA4B /* AnnotationsFilterViewController.swift */,
+				B3B41F102848E59D0017CA4B /* AnnotationsFilterViewController.xib */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		B3B41F0F2848E5550017CA4B /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				B3B41F182848E5A80017CA4B /* AnnotationsFilter.swift */,
+				B3B41F172848E5A80017CA4B /* AnnotationsFilterAction.swift */,
+				B3B41F162848E5A80017CA4B /* AnnotationsFilterState.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
 		B3B78C38266FAED500E91D02 /* Citation */ = {
 			isa = PBXGroup;
 			children = (
@@ -3157,9 +3196,6 @@
 			children = (
 				B3B953C22459780600FC96DB /* Annotation.swift */,
 				B36E9D4825E51B0E00CD1109 /* AnnotationPosition.swift */,
-				B3705B0228477B30002F5627 /* AnnotationsFilter.swift */,
-				B3705B0C28478600002F5627 /* AnnotationsFilterAction.swift */,
-				B3705B0A284785F3002F5627 /* AnnotationsFilterState.swift */,
 				B34C4107257122BF0057D5F5 /* AnnotationViewLayout.swift */,
 				B30A8C662582690900EC56FB /* HighlightAnnotation.swift */,
 				B3981B75258399AA00F8D15A /* NoteAnnotation.swift */,
@@ -3178,7 +3214,6 @@
 		B3B953C42459818200FC96DB /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
-				B3705B08284785D2002F5627 /* AnnotationsFilterActionHandler.swift */,
 				B3B953CB245981C100FC96DB /* PDFReaderActionHandler.swift */,
 				B3ADBCB927CFB66C00B7041F /* PDFSettingsActionHandler.swift */,
 			);
@@ -3858,7 +3893,7 @@
 				B3E02C0D26848CA900FFB419 /* AnnotationViewController.xib in Resources */,
 				B34C40F625710B430057D5F5 /* AnnotationEditViewController.xib in Resources */,
 				B3F5B08127D1001B00AA81C0 /* PDFSettingsSegmentedCellContentView.xib in Resources */,
-				B3705B07284780C4002F5627 /* AnnotationsFilterViewController.xib in Resources */,
+				B3B41F122848E59D0017CA4B /* AnnotationsFilterViewController.xib in Resources */,
 				B3ADAE4B2833B56F00D46271 /* LookupViewController.xib in Resources */,
 				B3C8DD8827B54EE70084E1AD /* CollectionsPickerViewController.xib in Resources */,
 				B3593F2C241A61C700760E20 /* ItemDetailTagCell.xib in Resources */,
@@ -4076,7 +4111,6 @@
 				B378F4C9242CC8EF00B88A05 /* Translator.swift in Sources */,
 				B30565BA23FC051E003304F2 /* EditCollectionDbRequest.swift in Sources */,
 				B36E4F66275123F4001FB99D /* WebDavCreateZoteroDirectoryRequest.swift in Sources */,
-				B3705B06284780C4002F5627 /* AnnotationsFilterViewController.swift in Sources */,
 				B3E8FE062714292E00F51458 /* StorageSettingsRow.swift in Sources */,
 				B34C40F525710B430057D5F5 /* AnnotationEditViewController.swift in Sources */,
 				B305662823FC051F003304F2 /* SyncScheduler.swift in Sources */,
@@ -4139,6 +4173,7 @@
 				B31941DD24531F6600BF6296 /* AnnotationsViewController.swift in Sources */,
 				B3BC6B20250FA437006A8B9C /* SchemaError.swift in Sources */,
 				B31901942629C9CB00209E33 /* ItemsFilterViewController.swift in Sources */,
+				B3B41F152848E5A30017CA4B /* AnnotationsFilterActionHandler.swift in Sources */,
 				B32AB57B25ADB891003CF0C6 /* CommentIconDrawingController.swift in Sources */,
 				B3AB43A827E8A68D006F3E4E /* Dictionary+Extensions.swift in Sources */,
 				B30565E523FC051E003304F2 /* RItemLocaleController.swift in Sources */,
@@ -4167,7 +4202,6 @@
 				B30566C323FC051F003304F2 /* SyncObject.swift in Sources */,
 				B325DBAF24375D8D00EFF0F5 /* Conflict.swift in Sources */,
 				B3D84BEA27917BE1005DDD7C /* CreatorTypes.swift in Sources */,
-				B3705B09284785D2002F5627 /* AnnotationsFilterActionHandler.swift in Sources */,
 				B3A94B4A2462F5D300BC7910 /* PSPDFKit+Extensions.swift in Sources */,
 				B305661323FC051E003304F2 /* ArrayEncoding.swift in Sources */,
 				B305667723FC051F003304F2 /* UIFont+Extensions.swift in Sources */,
@@ -4306,6 +4340,7 @@
 				B3451B55264ECBA9000EDF16 /* ReadGroupDbRequest.swift in Sources */,
 				B3593F30241A61C700760E20 /* ItemDetailAddCell.swift in Sources */,
 				B3B8800525FB546300904235 /* DeviceInfoProvider.swift in Sources */,
+				B3B41F192848E5A90017CA4B /* AnnotationsFilterState.swift in Sources */,
 				B36E9D4925E51B0E00CD1109 /* AnnotationPosition.swift in Sources */,
 				B3C9D60824DA9D40003EA1EE /* CollectionsSearchState.swift in Sources */,
 				B34DF1B525768BB70019CCD1 /* TextFieldCell.swift in Sources */,
@@ -4326,6 +4361,7 @@
 				B30566B023FC051F003304F2 /* AuthorizeUploadResponse.swift in Sources */,
 				B30565E323FC051E003304F2 /* DbStorage.swift in Sources */,
 				B3E8FE31271429C300F51458 /* ExportAction.swift in Sources */,
+				B3B41F1D2848E6B80017CA4B /* AnnotationsFilterPopoverCoordinator.swift in Sources */,
 				B30566B423FC051F003304F2 /* LinksResponse.swift in Sources */,
 				B3E34889283CFA92002A8A06 /* CleanupUnusedTags.swift in Sources */,
 				B3E8FE172714297200F51458 /* CiteSearchActionHandler.swift in Sources */,
@@ -4354,6 +4390,7 @@
 				B3ADBCB827CFB64B00B7041F /* PDFSettingsViewController.swift in Sources */,
 				B305662B23FC051F003304F2 /* SyncProgressHandler.swift in Sources */,
 				B30566B523FC051F003304F2 /* LoginResponse.swift in Sources */,
+				B3B41F1B2848E5A90017CA4B /* AnnotationsFilter.swift in Sources */,
 				B30565CB23FC051E003304F2 /* ReadSearchDbRequest.swift in Sources */,
 				B305669A23FC051F003304F2 /* RItem.swift in Sources */,
 				B3FE4B9C268DDE6100CE123F /* CitationBibliographyExportCoordinator.swift in Sources */,
@@ -4424,7 +4461,6 @@
 				B398A915270C6A4300968EE8 /* WebDavController.swift in Sources */,
 				B3A17D1927FC33B800322CAD /* LowPowerModeController.swift in Sources */,
 				B3DDDAAC24CAD6810014DF99 /* InsetLabel.swift in Sources */,
-				B3705B0D28478600002F5627 /* AnnotationsFilterAction.swift in Sources */,
 				B3E8FE8927143BDD00F51458 /* SyncSettingsView.swift in Sources */,
 				B3593F7A241A76E600760E20 /* CollectionEditState.swift in Sources */,
 				B3C6AB28248E1B720009AC96 /* SyncBatchProcessor.swift in Sources */,
@@ -4456,13 +4492,13 @@
 				B3B3FF7B266A1FAB0061E3B2 /* StoreStyleDbRequest.swift in Sources */,
 				B3593F3A241A61C700760E20 /* ItemsAction.swift in Sources */,
 				B305667823FC051F003304F2 /* Observable+Completable.swift in Sources */,
-				B3705B0B284785F3002F5627 /* AnnotationsFilterState.swift in Sources */,
 				B3DCDF08240912060039ED0D /* ActivityIndicatorView.swift in Sources */,
 				B30565D323FC051E003304F2 /* MoveItemsToParentDbRequest.swift in Sources */,
 				B305669723FC051F003304F2 /* RTag.swift in Sources */,
 				B3FBAC1924570BDE00AA00C0 /* AnnotationPreviewController.swift in Sources */,
 				B305660323FC051E003304F2 /* ZoteroApiClient.swift in Sources */,
 				B3B78C42266FAED500E91D02 /* CitationController.swift in Sources */,
+				B3B41F1A2848E5A90017CA4B /* AnnotationsFilterAction.swift in Sources */,
 				B305667623FC051F003304F2 /* UIColor+Custom.swift in Sources */,
 				B30565B823FC051E003304F2 /* ReadUserChangedObjectsDbRequest.swift in Sources */,
 				B3593F54241A61C700760E20 /* CollectionsError.swift in Sources */,
@@ -4487,7 +4523,6 @@
 				B36C07DE26FB264800C855A9 /* UITableView+Extensions.swift in Sources */,
 				B3972689247D403200A8B469 /* UrlDetector.swift in Sources */,
 				B305660923FC051E003304F2 /* SettingsRequest.swift in Sources */,
-				B3705B0328477B30002F5627 /* AnnotationsFilter.swift in Sources */,
 				B305662423FC051F003304F2 /* LoadLibraryDataSyncAction.swift in Sources */,
 				B324276D25C81F2000567504 /* WebSocketController.swift in Sources */,
 				B30566BC23FC051F003304F2 /* WriteBatch.swift in Sources */,
@@ -4554,6 +4589,7 @@
 				B3F3D636255EC8F300F310C2 /* AnnotationViewImageContent.swift in Sources */,
 				B3D1ED1F2527282400C31465 /* CollapsibleLabel.swift in Sources */,
 				B372CEE32486512500B423AE /* GroupRequest.swift in Sources */,
+				B3B41F132848E59D0017CA4B /* AnnotationsFilterViewController.swift in Sources */,
 				B3748D2226566F6900ED05F8 /* ContainerViewController.swift in Sources */,
 				B3830CDA255451AB00910FE0 /* TagPickerError.swift in Sources */,
 				B3A351D92715759D002E597A /* WebDavCheckRequest.swift in Sources */,

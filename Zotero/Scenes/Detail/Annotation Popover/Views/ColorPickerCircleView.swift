@@ -102,6 +102,7 @@ final class ColorPickerCircleView: UIView {
                                  right: self.selectionInset.right + lineWidthInset)
         let selectionFrame = frame.inset(by: inset)
         self.selectionLayer.frame = selectionFrame
+        self.selectionLayer.lineWidth = self.selectionLineWidth
         self.selectionLayer.path = UIBezierPath(ovalIn: CGRect(origin: CGPoint(), size: selectionFrame.size)).cgPath
     }
 

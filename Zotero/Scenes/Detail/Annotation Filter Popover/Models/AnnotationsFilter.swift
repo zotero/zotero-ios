@@ -9,6 +9,6 @@
 import Foundation
 
 struct AnnotationsFilter {
-    let colors: [String]
-    let tags: [Tag]
+    let colors: Set<String>
+    let tags: Set<String>
 }

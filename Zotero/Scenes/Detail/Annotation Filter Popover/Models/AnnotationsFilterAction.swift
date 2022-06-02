@@ -9,5 +9,7 @@
 import Foundation
 
 enum AnnotationsFilterAction {
-    
+    case toggleColor(String)
+    case setTags(Set<String>)
+    case clear
 }

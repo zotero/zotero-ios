@@ -22,6 +22,8 @@ internal enum L10n {
   internal static let betaWipeTitle = L10n.tr("Localizable", "beta_wipe_title")
   /// Cancel
   internal static let cancel = L10n.tr("Localizable", "cancel")
+  /// Clear
+  internal static let clear = L10n.tr("Localizable", "clear")
   /// Close
   internal static let close = L10n.tr("Localizable", "close")
   /// Copy

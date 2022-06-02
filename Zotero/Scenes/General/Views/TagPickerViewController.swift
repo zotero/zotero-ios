@@ -48,7 +48,9 @@ final class TagPickerViewController: UIViewController {
                       })
                       .disposed(by: self.disposeBag)
 
-        self.viewModel.process(action: .load)
+        if self.viewModel.state.tags.isEmpty {
+            self.viewModel.process(action: .load)
+        }
     }
 
     // MARK: - Actions

@@ -47,6 +47,7 @@
 "select" = "Select";
 "create" = "Create";
 "more_information" = "More Information";
+"clear" = "Clear";
 
 "beta_wipe_title" = "Resync Required";
 "beta_wipe_message" = "Due to a beta update, your data must be redownloaded from zotero.org.";

@@ -287,6 +287,41 @@ final class AnnotationsViewController: UIViewController {
         .disposed(by: cell.disposeBag)
     }
 
+    private func showFilterPopup(from barButton: UIBarButtonItem) {
+        let annotations = (self.viewModel.state.annotationsSnapshot ?? self.viewModel.state.annotations).values.flatMap({ $0 })
+
+        var colors: Set<String> = []
+        var tags: Set<Tag> = []
+        for annotation in annotations {
+            colors.insert(annotation.color)
+
+            for tag in annotation.tags {
+                tags.insert(tag)
+            }
+        }
+
+        let sortedTags = tags.sorted(by: { lTag, rTag -> Bool in
+            if lTag.color.isEmpty == rTag.color.isEmpty {
+                return lTag.name.localizedCaseInsensitiveCompare(rTag.name) == .orderedAscending
+            }
+            if !lTag.color.isEmpty && rTag.color.isEmpty {
+                return true
+            }
+            return false
+        })
+        var sortedColors: [String] = []
+        AnnotationsConfig.colors.forEach { color in
+            if colors.contains(color) {
+                sortedColors.append(color)
+            }
+        }
+
+        self.coordinatorDelegate?.showFilterPopup(from: barButton, filter: self.viewModel.state.filter, availableColors: sortedColors, availableTags: sortedTags, completed: { [weak self] filter in
+            guard let `self` = self else { return }
+            self.viewModel.process(action: .changeFilter(filter))
+        })
+    }
+
     // MARK: - Setups
 
     private func setupViews() {
@@ -446,10 +481,7 @@ final class AnnotationsViewController: UIViewController {
             filter.rx.tap
                   .subscribe(onNext: { [weak self] _ in
                       guard let `self` = self else { return }
-                      self.coordinatorDelegate?.showFilterPopup(from: filter, filter: self.viewModel.state.filter, completed: { [weak self] filter in
-                          guard let `self` = self else { return }
-                          self.viewModel.process(action: .changeFilter(filter))
-                      })
+                      self.showFilterPopup(from: filter)
                   })
                   .disposed(by: self.disposeBag)
             items.insert(filter, at: 0)

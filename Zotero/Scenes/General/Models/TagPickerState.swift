@@ -27,9 +27,9 @@ struct TagPickerState: ViewModelState {
     var error: TagPickerError?
     var changes: Changes
 
-    init(libraryId: LibraryIdentifier, selectedTags: Set<String>) {
+    init(libraryId: LibraryIdentifier, selectedTags: Set<String>, tags: [Tag] = []) {
         self.libraryId = libraryId
-        self.tags = []
+        self.tags = tags
         self.searchTerm = ""
         self.selectedTags = selectedTags
         self.showAddTagButton = false

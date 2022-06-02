@@ -92,7 +92,7 @@ protocol DetailPdfCoordinatorDelegate: AnyObject {
 protocol DetailAnnotationsCoordinatorDelegate: AnyObject {
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func showCellOptions(for annotation: Annotation, sender: UIButton, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
-    func showFilterPopup(from barButton: UIBarButtonItem, filter: AnnotationsFilter?, completed: @escaping (AnnotationsFilter?) -> Void)
+    func showFilterPopup(from barButton: UIBarButtonItem, filter: AnnotationsFilter?, availableColors: [String], availableTags: [Tag], completed: @escaping (AnnotationsFilter?) -> Void)
 }
 
 #endif
@@ -1007,18 +1007,21 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
 }
 
 extension DetailCoordinator: DetailAnnotationsCoordinatorDelegate {
-    func showFilterPopup(from barButton: UIBarButtonItem, filter: AnnotationsFilter?, completed: @escaping (AnnotationsFilter?) -> Void) {
-        let state = AnnotationsFilterState(filter: filter)
-        let handler = AnnotationsFilterActionHandler()
-        let viewModel = ViewModel(initialState: state, handler: handler)
-        let controller = AnnotationsFilterViewController(completion: completed)
+    func showFilterPopup(from barButton: UIBarButtonItem, filter: AnnotationsFilter?, availableColors: [String], availableTags: [Tag], completed: @escaping (AnnotationsFilter?) -> Void) {
+        let navigationController = NavigationViewController()
 
-        let navigationController = UINavigationController(rootViewController: controller)
+        let coordinator = AnnotationsFilterPopoverCoordinator(initialFilter: filter, availableColors: availableColors, availableTags: availableTags, navigationController: navigationController,
+                                                             controllers: self.controllers, completionHandler: completed)
+        coordinator.parentCoordinator = self
+        self.childCoordinators.append(coordinator)
+        coordinator.start(animated: false)
+
         if UIDevice.current.userInterfaceIdiom == .pad {
             navigationController.modalPresentationStyle = .popover
             navigationController.popoverPresentationController?.barButtonItem = barButton
             navigationController.popoverPresentationController?.permittedArrowDirections = .down
         }
+        
         self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
