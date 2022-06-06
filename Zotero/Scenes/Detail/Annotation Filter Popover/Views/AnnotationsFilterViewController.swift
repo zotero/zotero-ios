@@ -66,6 +66,10 @@ class AnnotationsFilterViewController: UIViewController {
             self.set(tags: state.tags)
         }
 
+        if state.changes.contains(.tags) || state.changes.contains(.colors) {
+            self.setupClearButton(visible: (!state.colors.isEmpty || !state.tags.isEmpty))
+        }
+
         if UIDevice.current.userInterfaceIdiom == .pad {
             self.updateFilter()
             self.updatePreferredContentSize()
@@ -146,6 +150,19 @@ class AnnotationsFilterViewController: UIViewController {
             .disposed(by: self.disposeBag)
             self.navigationItem.leftBarButtonItem = close
         }
+
+        self.setupClearButton(visible: (!self.viewModel.state.colors.isEmpty || !self.viewModel.state.tags.isEmpty))
+    }
+
+    private func setupClearButton(visible: Bool) {
+        if !visible {
+            if self.navigationItem.rightBarButtonItem != nil {
+                self.navigationItem.rightBarButtonItem = nil
+            }
+            return
+        }
+
+        guard self.navigationItem.rightBarButtonItem == nil else { return }
 
         let clear = UIBarButtonItem(title: L10n.clear, style: .plain, target: nil, action: nil)
         clear.rx.tap.subscribe(onNext: { [weak self] _ in
