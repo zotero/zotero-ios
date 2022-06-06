@@ -95,7 +95,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             self.observePreviews(in: viewModel)
 
         case .searchAnnotations(let term):
-            self.searchAnnotations(with: term, in: viewModel)
+            self.search(for: term, in: viewModel)
 
         case .selectAnnotation(let annotation):
             guard !viewModel.state.sidebarEditingEnabled && annotation.key != viewModel.state.selectedAnnotation?.key else { return }
@@ -249,14 +249,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             self.setSidebar(editing: enabled, in: viewModel)
 
         case .changeFilter(let filter):
-            self.change(filter: filter, viewModel: viewModel)
-        }
-    }
-
-    private func change(filter: AnnotationsFilter?, viewModel: ViewModel<PDFReaderActionHandler>) {
-        self.update(viewModel: viewModel) { state in
-            state.filter = filter
-            state.changes = .filter
+            self.set(filter: filter, in: viewModel)
         }
     }
 
@@ -1207,25 +1200,43 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         })
     }
 
-    /// Searches through annotations and updates view with results.
-    /// - parameter term: If empty, search filter is removed. Otherwise applies search filter based on value.
-    /// - parameter viewModel: ViewModel.
-    private func searchAnnotations(with term: String, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        if term.isEmpty {
-            self.removeAnnotationFilter(in: viewModel)
-        } else {
-            self.filterAnnotations(with: term, in: viewModel)
-        }
+    private func set(filter: AnnotationsFilter?, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard filter != viewModel.state.filter else { return }
+        self.filterAnnotations(with: viewModel.state.searchTerm, filter: filter, in: viewModel)
     }
 
-    /// Filters annotations based on given term.
+    private func search(for term: String, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        let trimmedTerm = term.trimmingCharacters(in: .whitespacesAndNewlines)
+        let newTerm = trimmedTerm.isEmpty ? nil : trimmedTerm
+        guard newTerm != viewModel.state.searchTerm else { return }
+        self.filterAnnotations(with: newTerm, filter: viewModel.state.filter, in: viewModel)
+    }
+
+    /// Filters annotations based on given term and filer parameters.
     /// - parameter term: Term to filter annotations.
     /// - parameter viewModel: ViewModel.
-    private func filterAnnotations(with term: String, in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func filterAnnotations(with term: String?, filter: AnnotationsFilter?, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        if term == nil && filter == nil {
+            guard let snapshot = viewModel.state.annotationsSnapshot else { return }
+            self.update(viewModel: viewModel) { state in
+                state.annotationsSnapshot = nil
+                state.annotations = snapshot
+                state.changes = .annotations
+
+                if state.filter != nil {
+                    state.changes.insert(.filter)
+                }
+
+                state.searchTerm = nil
+                state.filter = nil
+            }
+            return
+        }
+
         let snapshot = viewModel.state.annotationsSnapshot ?? viewModel.state.annotations
         var annotations = snapshot
         for (page, pageAnnotations) in snapshot {
-            annotations[page] = pageAnnotations.filter({ self.filter(annotation: $0, with: term) })
+            annotations[page] = pageAnnotations.filter({ self.filter(annotation: $0, with: term) && self.filter(annotation: $0, with: filter) })
         }
 
         self.update(viewModel: viewModel) { state in
@@ -1233,12 +1244,19 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 state.annotationsSnapshot = state.annotations
             }
             state.annotations = annotations
-            state.currentFilter = term
             state.changes = .annotations
+
+            if filter != state.filter {
+                state.changes.insert(.filter)
+            }
+
+            state.searchTerm = term
+            state.filter = filter
         }
     }
 
-    private func filter(annotation: Annotation, with term: String) -> Bool {
+    private func filter(annotation: Annotation, with term: String?) -> Bool {
+        guard let term = term else { return true }
         return annotation.key.lowercased() == term.lowercased() ||
                annotation.author.localizedCaseInsensitiveContains(term) ||
                annotation.comment.localizedCaseInsensitiveContains(term) ||
@@ -1246,15 +1264,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                annotation.tags.contains(where: { $0.name.localizedCaseInsensitiveContains(term) })
     }
 
-    /// Removes search filter.
-    /// - parameter viewModel: ViewModel.
-    private func removeAnnotationFilter(in viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard let snapshot = viewModel.state.annotationsSnapshot else { return }
-        self.update(viewModel: viewModel) { state in
-            state.annotationsSnapshot = nil
-            state.annotations = snapshot
-            state.changes = .annotations
-        }
+    private func filter(annotation: Annotation, with filter: AnnotationsFilter?) -> Bool {
+        guard let filter = filter else { return true }
+        let hasTag = filter.tags.isEmpty ? true : annotation.tags.first(where: { filter.tags.contains($0.name) }) != nil
+        let hasColor = filter.colors.isEmpty ? true : filter.colors.contains(annotation.color)
+        return hasTag && hasColor
     }
 
     /// Set selected annotation. Also sets `focusSidebarIndexPath` or `focusDocumentLocation` if needed.
@@ -1625,8 +1639,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 self.add(annotation: annotation, to: &snapshot)
                 state.annotationsSnapshot = snapshot
 
-                // If new annotation passes filter, add it to current filtered list as well
-                if let filter = state.currentFilter, self.filter(annotation: annotation, with: filter) {
+                // If new annotation passes filters, add it to current filtered list as well
+                if self.filter(annotation: annotation, with: state.searchTerm) && self.filter(annotation: annotation, with: state.filter) {
                     let index = self.add(annotation: annotation, to: &state.annotations)
                     selectAnnotation(annotation, index)
                 }

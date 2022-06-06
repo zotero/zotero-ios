@@ -802,6 +802,10 @@ internal enum L10n {
       internal static let merge = L10n.tr("Localizable", "pdf.annotations_sidebar.merge")
       /// Search
       internal static let searchTitle = L10n.tr("Localizable", "pdf.annotations_sidebar.search_title")
+      internal enum Filter {
+        /// Filter Annotations
+        internal static let title = L10n.tr("Localizable", "pdf.annotations_sidebar.filter.title")
+      }
     }
     internal enum Search {
       /// Search failed

@@ -50,6 +50,9 @@ final class TagPickerViewController: UIViewController {
 
         if self.viewModel.state.tags.isEmpty {
             self.viewModel.process(action: .load)
+        } else {
+            self.tableView.reloadData()
+            self.select(selected: self.viewModel.state.selectedTags, tags: self.viewModel.state.tags, focusTagName: self.viewModel.state.addedTagName)
         }
     }
 

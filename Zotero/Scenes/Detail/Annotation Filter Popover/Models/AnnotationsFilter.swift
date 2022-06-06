@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct AnnotationsFilter {
+struct AnnotationsFilter: Equatable {
     let colors: Set<String>
     let tags: Set<String>
 }

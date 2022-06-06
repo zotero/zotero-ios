@@ -68,7 +68,6 @@ struct PDFReaderState: ViewModelState {
     var comments: [String: NSAttributedString]
     var activeColor: UIColor
     var activeLineWidth: CGFloat
-    var currentFilter: String?
     var changes: Changes
     var sidebarEditingEnabled: Bool
     /// Annotation selected when annotations are not being edited in sidebar
@@ -99,6 +98,7 @@ struct PDFReaderState: ViewModelState {
     /// to/from document. So when a remote change comes in, the document is edited and emits notifications which would try to do the same work again.
     var ignoreNotifications: [Notification.Name: Set<String>]
     var settings: PDFSettings
+    var searchTerm: String?
     var filter: AnnotationsFilter?
 
     init(url: URL, key: String, library: Library, settings: PDFSettings, userId: Int, username: String, displayName: String, interfaceStyle: UIUserInterfaceStyle) {

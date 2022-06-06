@@ -210,6 +210,7 @@
 "pdf.annotations_sidebar.add_comment" = "Add comment";
 "pdf.annotations_sidebar.add_tags" = "Add tags";
 "pdf.annotations_sidebar.merge" = "Merge";
+"pdf.annotations_sidebar.filter.title" = "Filter Annotations";
 "pdf.search.title" = "Search in Document";
 "pdf.search.failed" = "Search failed";
 "pdf.search.one_match" = "Found 1 match";

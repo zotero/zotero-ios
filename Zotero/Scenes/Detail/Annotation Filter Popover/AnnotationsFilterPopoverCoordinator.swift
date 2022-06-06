@@ -65,6 +65,7 @@ extension AnnotationsFilterPopoverCoordinator: AnnotationsFilterPopoverToAnnotat
             }
             completed(tagNames)
         })
+        controller.preferredContentSize = CGSize(width: 300, height: 500)
         self.navigationController.pushViewController(controller, animated: true)
     }
 }

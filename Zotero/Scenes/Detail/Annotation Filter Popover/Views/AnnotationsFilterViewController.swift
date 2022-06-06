@@ -14,6 +14,7 @@ class AnnotationsFilterViewController: UIViewController {
     @IBOutlet private weak var colorContainer: UIStackView!
     @IBOutlet private weak var tagsLabel: UILabel!
 
+    private static let width: CGFloat = 300
     private let viewModel: ViewModel<AnnotationsFilterActionHandler>
     private let completionAction: (AnnotationsFilter?) -> Void
     private let disposeBag: DisposeBag
@@ -34,6 +35,8 @@ class AnnotationsFilterViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        self.navigationItem.title = L10n.Pdf.AnnotationsSidebar.Filter.title
+
         self.setupNavigationBar()
         self.setupColorPicker()
         self.setSelected(colors: self.viewModel.state.colors)
@@ -45,6 +48,11 @@ class AnnotationsFilterViewController: UIViewController {
                           self?.update(state: state)
                       })
                       .disposed(by: self.disposeBag)
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.updatePreferredContentSize()
     }
 
     // MARK: - Actions
@@ -60,7 +68,15 @@ class AnnotationsFilterViewController: UIViewController {
 
         if UIDevice.current.userInterfaceIdiom == .pad {
             self.updateFilter()
+            self.updatePreferredContentSize()
         }
+    }
+
+    private func updatePreferredContentSize() {
+        let labelSize = self.tagsLabel.systemLayoutSizeFitting(CGSize(width: AnnotationsFilterViewController.width - 40, height: .greatestFiniteMagnitude))
+        let size = CGSize(width: AnnotationsFilterViewController.width, height: labelSize.height + 88) // 68 for circles, 20 bottom inset
+        self.preferredContentSize = size
+        self.navigationController?.preferredContentSize = size
     }
 
     private func setSelected(colors: Set<String>) {
@@ -105,7 +121,7 @@ class AnnotationsFilterViewController: UIViewController {
             let circleView = ColorPickerCircleView(hexColor: hexColor)
             circleView.circleSize = CGSize(width: 32, height: 32)
             circleView.selectionLineWidth = 2.5
-            circleView.contentInsets = UIEdgeInsets(top: 16, left: 0, bottom: 16, right: 16)
+            circleView.contentInsets = UIEdgeInsets(top: 16, left: 0, bottom: 20, right: 16)
             circleView.backgroundColor = .clear
             circleView.backgroundColor = .white
             circleView.isAccessibilityElement = true
