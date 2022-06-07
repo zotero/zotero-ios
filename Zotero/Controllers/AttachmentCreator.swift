@@ -41,7 +41,9 @@ struct AttachmentCreator {
 
         guard !attachmentData.isEmpty else { return nil }
 
-        self.sortForMainAttachment(data: &attachmentData)
+        attachmentData.sort { lData, rData in
+            self.mainAttachmentsAreInIncreasingOrder(lData: (lData.1, lData.3, lData.4), rData: (rData.1, rData.3, rData.4))
+        }
 
         guard let (idx, contentType, linkMode, _, _) = attachmentData.first else { return nil }
         let rAttachment = item.children[idx]
@@ -49,6 +51,21 @@ struct AttachmentCreator {
         guard let libraryId = rAttachment.libraryId,
               let type = self.importedType(for: rAttachment, contentType: contentType, libraryId: libraryId, fileStorage: fileStorage, linkType: linkType) else { return nil }
         return Attachment(item: rAttachment, type: type)
+    }
+
+    static func mainPdfAttachment(from attachments: [Attachment], parentUrl: String?) -> Attachment? {
+        guard !attachments.isEmpty else { return nil }
+        return attachments.filter({ attachment in
+            switch attachment.type {
+            case .file(_, let contentType, _, _):
+                return contentType == "application/pdf"
+            default:
+                return false
+            }
+        }).sorted { lAttachment, rAttachment in
+            return self.mainAttachmentsAreInIncreasingOrder(lData: ("application/pdf", (lAttachment.url == parentUrl), lAttachment.dateAdded),
+                                                            rData: ("application/pdf", (rAttachment.url == parentUrl), rAttachment.dateAdded))
+        }.first
     }
 
     private static func attachmentData(for item: RItem) -> [(Int, String, LinkMode, Bool, Date)] {
@@ -72,23 +89,26 @@ struct AttachmentCreator {
         return data
     }
 
-    private static func sortForMainAttachment(data: inout [(Int, String, LinkMode, Bool, Date)]) {
-        data.sort { lData, rData in
-            let lPriority = self.priority(for: lData.1)
-            let rPriority = self.priority(for: rData.1)
-            guard lPriority == rPriority else {
-                // Sort based on content type priority
-                return lPriority < rPriority
-            }
+    /// Used for sorting of attachments to get a "Main" attachment which should be opened as a first when multiple attachments are available on one item.
+    /// - parameter lData: Content type, indicator whether attachment and parent item has matching URLs, date added of attachment.
+    /// - parameter rData: Content type, indicator whether attachment and parent item has matching URLs, date added of attachment.
+    /// returns: `true` if lData and rData are in increasing order (lData < rData)
+    private static func mainAttachmentsAreInIncreasingOrder(lData: (String, Bool, Date), rData: (String, Bool, Date)) -> Bool {
+        let lPriority = self.priority(for: lData.0)
+        let rPriority = self.priority(for: rData.0)
 
-            guard lData.3 == rData.3 else {
-                // Sort based on whether attachment and parent item have matching urls
-                return lData.3 && !rData.3
-            }
-
-            // Sort based on `dateAdded`.
-            return lData.4.compare(rData.4) == .orderedAscending
+        guard lPriority == rPriority else {
+            // Sort based on content type priority
+            return lPriority < rPriority
         }
+
+        guard lData.1 == rData.1 else {
+            // Sort based on whether attachment and parent item have matching urls
+            return lData.1 && !rData.1
+        }
+
+        // Sort based on `dateAdded`.
+        return lData.2.compare(rData.2) == .orderedAscending
     }
 
     private static func priority(for contentType: String) -> Int {
@@ -107,7 +127,7 @@ struct AttachmentCreator {
     /// - parameter urlDetector: Url detector to validate url attachment.
     /// - returns: Attachment if recognized. Nil otherwise.
     static func attachment(for item: RItem, options: Options = .light, fileStorage: FileStorage?, urlDetector: UrlDetector?) -> Attachment? {
-        return attachmentType(for: item, options: options, fileStorage: fileStorage, urlDetector: urlDetector).flatMap({ Attachment(item: item, type: $0) })
+        return self.attachmentType(for: item, options: options, fileStorage: fileStorage, urlDetector: urlDetector).flatMap({ Attachment(item: item, type: $0) })
     }
 
     /// Returns attachment content type type based on attachment item.

@@ -26,12 +26,21 @@ struct ItemDetailState: ViewModelState {
     enum DetailType {
         case creation(type: String, child: Attachment?, collectionKey: String?)
         case duplication(itemKey: String, collectionKey: String?)
-        case preview(key: String)
+        case preview(key: String, url: String?)
 
         var previewKey: String? {
             switch self {
-            case .preview(let key): return key
+            case .preview(let key, _): return key
             case .duplication, .creation: return nil
+            }
+        }
+
+        var url: String? {
+            switch self {
+            case .preview(_, let url):
+                return url
+            default:
+                return nil
             }
         }
 
@@ -199,17 +208,6 @@ struct ItemDetailState: ViewModelState {
         var maxFieldTitleWidth: CGFloat = 0
         var maxNonemptyFieldTitleWidth: CGFloat = 0
 
-        var mainAttachmentKey: String? {
-            return self.attachments.first(where: {
-                switch $0.type {
-                case .file(_, let contentType, let location, _):
-                    return location != .remoteMissing && contentType == "application/pdf"
-                case .url:
-                    return false
-                }
-            })?.key
-        }
-
         func databaseFields(schemaController: SchemaController) -> [Field] {
             var allFields = Array(self.fields.values)
 
@@ -269,6 +267,10 @@ struct ItemDetailState: ViewModelState {
 
     @UserDefault(key: "ItemDetailAbstractCollapsedKey", defaultValue: false)
     var abstractCollapsed: Bool
+
+    var mainAttachmentKey: String? {
+        return AttachmentCreator.mainPdfAttachment(from: self.data.attachments, parentUrl: self.type.url)?.key
+    }
 
     init(type: DetailType, library: Library, userId: Int) {
         self.changes = []

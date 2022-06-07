@@ -167,7 +167,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             switch viewModel.state.type {
             case .creation(let itemType, let child, _):
                 type = .new(itemType: itemType, child: child)
-            case .preview(let key):
+            case .preview(let key, _):
                 let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: key), on: .main)
                 token = item.observe(keyPaths: RItem.observableKeypathsForItemDetail) { [weak viewModel] change in
                     guard let viewModel = viewModel else { return }
@@ -460,7 +460,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     private func deleteFile(of attachment: Attachment, in viewModel: ViewModel<ItemDetailActionHandler>) {
         let key: String
         switch viewModel.state.type {
-        case .preview(let _key):
+        case .preview(let _key, _):
             key = _key
         case .duplication, .creation: return
         }
@@ -668,7 +668,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 case .creation(_, _, let collectionKey), .duplication(_, let collectionKey):
                     let request = CreateItemDbRequest(libraryId: state.library.identifier, collectionKey: collectionKey, data: newState.data, schemaController: self.schemaController, dateParser: self.dateParser)
                     let item = try self.dbStorage.perform(request: request, on: queue)
-                    newType = .preview(key: item.key)
+                    let url = newState.data.fields[FieldKeys.Item.url]?.value
+                    newType = .preview(key: item.key, url: url)
                 }
 
                 newState.snapshot = nil

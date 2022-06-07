@@ -41,8 +41,8 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
         item.changeType = .user
         item.attachmentNeedsSync = true
         item.fileDownloaded = true
-        item.dateAdded = Date()
-        item.dateModified = Date()
+        item.dateAdded = self.attachment.dateAdded
+        item.dateModified = self.attachment.dateAdded
         item.libraryId = self.attachment.libraryId
 
         database.add(item)
@@ -111,7 +111,9 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
                 switch self.attachment.type {
                 case .url(let url):
                     value = url.absoluteString
-                default: continue
+                default:
+                    guard let url = self.attachment.url else { continue }
+                    value = url
                 }
             case FieldKeys.Item.Attachment.path:
                 switch self.attachment.type {

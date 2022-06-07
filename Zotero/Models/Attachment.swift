@@ -28,6 +28,8 @@ struct Attachment: Identifiable, Equatable {
     let title: String
     let key: String
     let libraryId: LibraryIdentifier
+    let url: String?
+    let dateAdded: Date
 
     var id: String { return self.key }
 
@@ -38,11 +40,13 @@ struct Attachment: Identifiable, Equatable {
         }
     }
 
-    init(type: Kind, title: String, key: String, libraryId: LibraryIdentifier) {
+    init(type: Kind, title: String, url: String? = nil, dateAdded: Date = Date(), key: String, libraryId: LibraryIdentifier) {
         self.key = key
         self.title = title
         self.libraryId = libraryId
         self.type = type
+        self.dateAdded = dateAdded
+        self.url = url
     }
 
     init?(item: RItem, type: Kind) {
@@ -55,6 +59,8 @@ struct Attachment: Identifiable, Equatable {
         self.key = item.key
         self.title = item.displayTitle
         self.type = type
+        self.dateAdded = item.dateAdded
+        self.url = item.fields.first(where: { $0.key == FieldKeys.Item.url })?.value
     }
 
     func changed(location: FileLocation, condition: (FileLocation) -> Bool) -> Attachment? {
@@ -62,6 +68,8 @@ struct Attachment: Identifiable, Equatable {
         case .file(let filename, let contentType, let oldLocation, let linkType) where condition(oldLocation):
             return Attachment(type: .file(filename: filename, contentType: contentType, location: location, linkType: linkType),
                               title: self.title,
+                              url: self.url,
+                              dateAdded: self.dateAdded,
                               key: self.key,
                               libraryId: self.libraryId)
         case .url, .file:
@@ -74,6 +82,8 @@ struct Attachment: Identifiable, Equatable {
         case .file(let filename, let contentType, let oldLocation, let linkType) where oldLocation != location:
             return Attachment(type: .file(filename: filename, contentType: contentType, location: location, linkType: linkType),
                               title: self.title,
+                              url: self.url,
+                              dateAdded: self.dateAdded,
                               key: self.key,
                               libraryId: self.libraryId)
         case .url, .file:

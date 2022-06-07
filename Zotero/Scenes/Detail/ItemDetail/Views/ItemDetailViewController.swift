@@ -211,7 +211,7 @@ final class ItemDetailViewController: UIViewController {
         }
 
         if let key = state.updateAttachmentKey {
-            if state.data.mainAttachmentKey == key {
+            if state.mainAttachmentKey == key {
                 // Update main-attachment related UI
                 if self.controllers.userControllers?.fileDownloader.data(for: key, libraryId: state.library.identifier).progress == nil {
                     // Reset navbar download flag after download finishes
@@ -242,7 +242,7 @@ final class ItemDetailViewController: UIViewController {
     }
 
     private func mainAttachmentButtonState(from state: ItemDetailState) -> MainAttachmentButtonState? {
-        guard let key = state.data.mainAttachmentKey else { return nil }
+        guard let key = state.mainAttachmentKey else { return nil }
         guard let downloader = self.controllers.userControllers?.fileDownloader else { return .ready(key) }
 
         let (progress, error) = downloader.data(for: key, libraryId: state.library.identifier)
@@ -406,7 +406,7 @@ final class ItemDetailViewController: UIViewController {
 
 extension ItemDetailViewController: ItemDetailTableViewHandlerDelegate {
     func isDownloadingFromNavigationBar(for key: String) -> Bool {
-        return self.downloadingViaNavigationBar && key == self.viewModel.state.data.mainAttachmentKey
+        return self.downloadingViaNavigationBar && key == self.viewModel.state.mainAttachmentKey
     }
 }
 
