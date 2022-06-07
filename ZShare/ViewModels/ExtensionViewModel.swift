@@ -166,10 +166,12 @@ final class ExtensionViewModel {
             let userId: Int
 
             init(item: ItemResponse, attachmentKey: String, attachmentData: [String: Any], attachmentFile: File, defaultTitle: String, libraryId: LibraryIdentifier, userId: Int, dateParser: DateParser) {
+                let url = attachmentData[FieldKeys.Item.url] as? String
                 let filename = FilenameFormatter.filename(from: item, defaultTitle: defaultTitle, ext: attachmentFile.ext, dateParser: dateParser)
                 let file = Files.attachmentFile(in: libraryId, key: attachmentKey, filename: filename, contentType: attachmentFile.mimeType)
                 let attachment = Attachment(type: .file(filename: filename, contentType: attachmentFile.mimeType, location: .local, linkType: .importedFile),
                                             title: filename,
+                                            url: url,
                                             key: attachmentKey,
                                             libraryId: libraryId)
 
