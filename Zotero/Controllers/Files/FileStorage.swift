@@ -20,6 +20,7 @@ protocol FileStorage: AnyObject {
     func remove(_ file: File) throws
     func copy(from path: String, to toFile: File) throws
     func copy(from fromFile: File, to toFile: File) throws
+    func move(from path: String, to toFile: File) throws
     func move(from fromFile: File, to toFile: File) throws
     func has(_ file: File) -> Bool
     func size(of file: File) -> UInt64
@@ -75,8 +76,12 @@ final class FileStorageController: FileStorage {
     }
 
     func move(from fromFile: File, to toFile: File) throws {
+        try self.move(from: fromFile.createUrl().path, to: toFile)
+    }
+
+    func move(from path: String, to toFile: File) throws {
         try self.createDirectories(for: toFile)
-        try self.fileManager.moveItem(atPath: fromFile.createUrl().path, toPath: toFile.createUrl().path)
+        try self.fileManager.moveItem(atPath: path, toPath: toFile.createUrl().path)
     }
 
     func has(_ file: File) -> Bool {

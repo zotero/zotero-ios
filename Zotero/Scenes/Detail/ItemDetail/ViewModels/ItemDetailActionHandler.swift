@@ -509,19 +509,21 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         var errors = 0
 
         for url in urls {
+            var name = url.deletingPathExtension().lastPathComponent
+            name = name.removingPercentEncoding ?? name
+            let mimeType = url.pathExtension.mimeTypeFromExtension ?? "application/octet-stream"
             let key = KeyGenerator.newKey
-            let originalFile = Files.file(from: url)
-            let nameWithExtension = originalFile.name + "." + originalFile.ext
-            let file = Files.attachmentFile(in: viewModel.state.library.identifier, key: key, filename: nameWithExtension, contentType: originalFile.mimeType)
+            let nameWithExtension = name + "." + url.pathExtension
+            let file = Files.attachmentFile(in: viewModel.state.library.identifier, key: key, filename: nameWithExtension, contentType: mimeType)
 
             do {
-                try self.fileStorage.move(from: originalFile, to: file)
-                attachments.append(Attachment(type: .file(filename: nameWithExtension, contentType: originalFile.mimeType, location: .local, linkType: .importedFile),
+                try self.fileStorage.move(from: url.path, to: file)
+                attachments.append(Attachment(type: .file(filename: nameWithExtension, contentType: mimeType, location: .local, linkType: .importedFile),
                                               title: nameWithExtension,
                                               key: key,
                                               libraryId: viewModel.state.library.identifier))
             } catch let error {
-                DDLogError("ItemDertailStore: can't copy attachment - \(error)")
+                DDLogError("ItemDetailActionHandler: can't copy attachment - \(error)")
                 errors += 1
             }
         }
