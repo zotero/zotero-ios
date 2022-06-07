@@ -41,6 +41,11 @@
 	<string>We need permission to save images to your device ...</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>We need to access your library ...</string>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>org.zotero.MainActivity</string>
+		<string>org.zotero.PDFActivity</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -89,11 +94,6 @@
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>NSUserActivityTypes</key>
-	<array>
-		<string>org.zotero.MainActivity</string>
-		<string>org.zotero.PDFActivity</string>
 	</array>
 </dict>
 </plist>
