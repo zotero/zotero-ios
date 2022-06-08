@@ -285,8 +285,8 @@ struct AnnotationConverter {
     /// Converts Zotero annotations to actual document (PSPDFKit) annotations with custom flags.
     /// - parameter zoteroAnnotations: Annotations to convert.
     /// - returns: Array of PSPDFKit annotations that can be added to document.
-    static func annotations(from zoteroAnnotations: [Int: [Annotation]], type: Kind = .zotero, interfaceStyle: UIUserInterfaceStyle) -> [PSPDFKit.Annotation] {
-        return zoteroAnnotations.values.flatMap({ $0 }).compactMap({ annotation in
+    static func annotations(from zoteroAnnotations: [String: Annotation], type: Kind = .zotero, interfaceStyle: UIUserInterfaceStyle) -> [PSPDFKit.Annotation] {
+        return zoteroAnnotations.values.compactMap({ annotation in
             guard annotation.isSyncable else { return nil }
             return self.annotation(from: annotation, type: type, interfaceStyle: interfaceStyle)
         })

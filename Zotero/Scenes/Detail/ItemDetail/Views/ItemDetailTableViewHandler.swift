@@ -15,29 +15,6 @@ protocol ItemDetailTableViewHandlerDelegate: AnyObject {
     func isDownloadingFromNavigationBar(for key: String) -> Bool
 }
 
-fileprivate final class ItemDetailDataSource: UITableViewDiffableDataSource<ItemDetailTableViewHandler.SectionType, ItemDetailTableViewHandler.Row> {
-    var canMoveRow: ((IndexPath) -> Bool)?
-    var moveRow: ((IndexPath, IndexPath) -> Void)?
-    var canEditRow: ((IndexPath) -> Bool)?
-    var commitEditingStyle: ((UITableViewCell.EditingStyle, IndexPath) -> Void)?
-
-    override func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
-        return self.canMoveRow?(indexPath) ?? false
-    }
-
-    override func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
-        self.moveRow?(sourceIndexPath, destinationIndexPath)
-    }
-
-    override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
-        return self.canEditRow?(indexPath) ?? false
-    }
-
-    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-        self.commitEditingStyle?(editingStyle, indexPath)
-    }
-}
-
 /// Class for handling the `UITableView` of `ItemDetailViewController`. It takes care of showing appropriate data in the `tableView`, keeping track
 /// of visible sections and reports actions that need to take place after user interaction with the `tableView`.
 final class ItemDetailTableViewHandler: NSObject {
@@ -222,7 +199,7 @@ final class ItemDetailTableViewHandler: NSObject {
     private var maxTitleWidth: CGFloat = 0
     // Width of title for field cells when editing is disabled (only non-empty fields are visible)
     private var maxNonemptyTitleWidth: CGFloat = 0
-    private var dataSource: ItemDetailDataSource!
+    private var dataSource: TableViewDiffableDataSource<SectionType, Row>!
     private weak var fileDownloader: AttachmentDownloader?
     weak var delegate: ItemDetailTableViewHandlerDelegate?
 
@@ -747,7 +724,7 @@ final class ItemDetailTableViewHandler: NSObject {
 
     /// Sets `tableView` dataSource, delegate and registers appropriate cells and sections.
     private func setupTableView() {
-        self.dataSource = ItemDetailDataSource(tableView: self.tableView, cellProvider: { [weak self] tableView, indexPath, row in
+        self.dataSource = TableViewDiffableDataSource(tableView: self.tableView, cellProvider: { [weak self] tableView, indexPath, row in
             let isEditing = self?.viewModel.state.isEditing ?? false
             let cellId = row.cellId(isEditing: isEditing)
             let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)

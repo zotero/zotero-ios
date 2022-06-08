@@ -18,23 +18,23 @@ enum PDFReaderAction {
     case startObservingAnnotationChanges
     case loadDocumentData
     case searchAnnotations(String)
-    case selectAnnotation(Annotation)
+    case selectAnnotation(AnnotationId)
     case deselectSelectedAnnotation
-    case selectAnnotationDuringEditing(Annotation)
-    case deselectAnnotationDuringEditing(Annotation)
-    case selectAnnotationFromDocument(key: String, page: Int)
-    case removeAnnotation(Annotation)
+    case selectAnnotationDuringEditing(AnnotationId)
+    case deselectAnnotationDuringEditing(AnnotationId)
+    case selectAnnotationFromDocument(AnnotationId)
+    case removeAnnotation(AnnotationId)
     case removeSelectedAnnotations
     case mergeSelectedAnnotations
     case annotationsAdded(annotations: [PSPDFKit.Annotation], selectFirst: Bool)
     case annotationsRemoved([PSPDFKit.Annotation])
     case annotationChanged(PSPDFKit.Annotation)
     case requestPreviews(keys: [String], notify: Bool)
-    case setComment(key: String, comment: NSAttributedString)
-    case setTags([Tag], String)
-    case setColor(key: String, color: String)
-    case setLineWidth(key: String, width: CGFloat)
-    case setHighlight(text: String, key: String)
+    case setComment(annotationId: AnnotationId, comment: NSAttributedString)
+    case setTags([Tag], AnnotationId)
+    case setColor(annotationId: AnnotationId, color: String)
+    case setLineWidth(annotationId: AnnotationId, width: CGFloat)
+    case setHighlight(annotationId: AnnotationId, text: String)
     case updateAnnotationProperties(Annotation)
     case userInterfaceStyleChanged(UIUserInterfaceStyle)
     case updateAnnotationPreviews

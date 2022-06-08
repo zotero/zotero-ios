@@ -97,25 +97,22 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .searchAnnotations(let term):
             self.search(for: term, in: viewModel)
 
-        case .selectAnnotation(let annotation):
-            guard !viewModel.state.sidebarEditingEnabled && annotation.key != viewModel.state.selectedAnnotation?.key else { return }
-            let index = viewModel.state.annotations[annotation.page]?.firstIndex(where: { annotation.key == $0.key })
-            self.select(annotation: annotation, index: index, didSelectInDocument: false, in: viewModel)
+        case .selectAnnotation(let annotationId):
+            guard !viewModel.state.sidebarEditingEnabled && annotationId.key != viewModel.state.selectedAnnotation?.key else { return }
+            self.select(annotationId: annotationId, didSelectInDocument: false, in: viewModel)
 
-        case .selectAnnotationFromDocument(let key, let page):
-            guard !viewModel.state.sidebarEditingEnabled && key != viewModel.state.selectedAnnotation?.key,
-                  let index = viewModel.state.annotations[page]?.firstIndex(where: { $0.key == key }) else { return }
-            let annotation = viewModel.state.annotations[page]?[index]
-            self.select(annotation: annotation, index: index, didSelectInDocument: true, in: viewModel)
+        case .selectAnnotationFromDocument(let annotationId):
+            guard !viewModel.state.sidebarEditingEnabled && annotationId.key != viewModel.state.selectedAnnotation?.key else { return }
+            self.select(annotationId: annotationId, didSelectInDocument: true, in: viewModel)
 
         case .deselectSelectedAnnotation:
-            self.select(annotation: nil, index: nil, didSelectInDocument: false, in: viewModel)
+            self.select(annotationId: nil, didSelectInDocument: false, in: viewModel)
 
-        case .selectAnnotationDuringEditing(let annotation):
-            self.selectDuringEditing(annotation: annotation, in: viewModel)
+        case .selectAnnotationDuringEditing(let annotationId):
+            self.selectDuringEditing(annotationId: annotationId, in: viewModel)
 
-        case .deselectAnnotationDuringEditing(let annotation):
-            self.deselectDuringEditing(annotation: annotation, in: viewModel)
+        case .deselectAnnotationDuringEditing(let annotationId):
+            self.deselectDuringEditing(annotationId: annotationId, in: viewModel)
             
         case .annotationsAdded(let annotations, let selectFirst):
             self.add(annotations: annotations, selectFirst: selectFirst, in: viewModel)
@@ -126,8 +123,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .annotationChanged(let pdfAnnotation):
             self.update(annotation: pdfAnnotation, in: viewModel)
 
-        case .removeAnnotation(let annotation):
-            self.remove(annotation: annotation, in: viewModel)
+        case .removeAnnotation(let annotationId):
+            self.remove(annotationId: annotationId, in: viewModel)
 
         case .removeSelectedAnnotations:
             guard viewModel.state.sidebarEditingEnabled else { return }
@@ -140,27 +137,27 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .requestPreviews(let keys, let notify):
             self.loadPreviews(for: keys, notify: notify, in: viewModel)
 
-        case .setHighlight(let highlight, let key):
-            self.updateAnnotation(with: key, transformAnnotation: { ($0.copy(text: highlight), []) }, in: viewModel)
+        case .setHighlight(let annotationId, let highlight):
+            self.updateAnnotation(with: annotationId, transformAnnotation: { ($0.copy(text: highlight), []) }, in: viewModel)
 
-        case .setComment(let key, let comment):
+        case .setComment(let annotationId, let comment):
             let convertedComment = self.htmlAttributedStringConverter.convert(attributedString: comment)
-            self.updateAnnotation(with: key,
+            self.updateAnnotation(with: annotationId,
                                   transformAnnotation: { ($0.copy(comment: convertedComment), .comment) },
                                   shouldReload: { _, _ in false }, // doesn't need reload, text is already written in textView in cell
-                                  additionalStateChange: { $0.comments[key] = comment },
+                                  additionalStateChange: { $0.comments[annotationId.key] = comment },
                                   in: viewModel)
 
-        case .setColor(let key, let color):
-            self.updateAnnotation(with: key,
+        case .setColor(let annotationId, let color):
+            self.updateAnnotation(with: annotationId,
                                   transformAnnotation: { originalAnnotation in
                                       let changes: PdfAnnotationChanges = originalAnnotation.color != color ? .color : []
                                       return (originalAnnotation.copy(color: color), changes)
                                   },
                                   in: viewModel)
 
-        case .setLineWidth(let key, let width):
-            self.updateAnnotation(with: key,
+        case .setLineWidth(let annotationId, let width):
+            self.updateAnnotation(with: annotationId,
                                   transformAnnotation: { originalAnnotation in
                                       let changes: PdfAnnotationChanges = originalAnnotation.lineWidth != width ? .lineWidth : []
                                       return (originalAnnotation.copy(lineWidth: width), changes)
@@ -174,11 +171,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 state.changes = .activeComment
             }
 
-        case .setTags(let tags, let key):
-            self.updateAnnotation(with: key, transformAnnotation: { ($0.copy(tags: tags), []) }, in: viewModel)
+        case .setTags(let tags, let annotationId):
+            self.updateAnnotation(with: annotationId, transformAnnotation: { ($0.copy(tags: tags), []) }, in: viewModel)
 
         case .updateAnnotationProperties(let annotation):
-            self.updateAnnotation(with: annotation.key,
+            self.updateAnnotation(with: (annotation.key, annotation.page),
                                   transformAnnotation: { originalAnnotation in
                                     var changes: PdfAnnotationChanges = []
                                     if originalAnnotation.color != annotation.color {
@@ -253,7 +250,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func selectDuringEditing(annotation: Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func selectDuringEditing(annotationId: AnnotationId, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard let annotation = viewModel.state.annotations[annotationId.page]?.first(where: { $0.key == annotationId.key }) else { return }
+
         self.update(viewModel: viewModel) { state in
             if state.selectedAnnotationsDuringEditing.isEmpty {
                 state.deletionEnabled = annotation.isSyncable
@@ -278,7 +277,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func deselectDuringEditing(annotation: Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func deselectDuringEditing(annotationId: AnnotationId, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard let annotation = viewModel.state.annotations[annotationId.page]?.first(where: { $0.key == annotationId.key }) else { return }
+
         self.update(viewModel: viewModel) { state in
             if var keys = state.selectedAnnotationsDuringEditing[annotation.page] {
                 keys.remove(annotation.key)
@@ -407,7 +408,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             if enabled {
                 // Deselect selected annotation before editing
-                self._select(annotation: nil, index: nil, didSelectInDocument: false, state: &state)
+                self._select(annotationId: nil, didSelectInDocument: false, state: &state)
             } else {
                 // Deselect selected annotations during editing
                 state.selectedAnnotationsDuringEditing = [:]
@@ -776,19 +777,19 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func updateAnnotation(with key: String,
+    private func updateAnnotation(with annotationId: AnnotationId,
                                   transformAnnotation: (Annotation) -> (Annotation, PdfAnnotationChanges),
                                   shouldReload: ((Annotation, Annotation) -> Bool)? = nil,
                                   additionalStateChange: ((inout PDFReaderState) -> Void)? = nil,
                                   in viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard let indexPath = self.indexPath(for: key, in: viewModel.state.annotations),
-              let annotation = viewModel.state.annotations[indexPath.section]?[indexPath.row] else { return }
+        guard let index = viewModel.state.annotations[annotationId.page]?.firstIndex(where: { $0.key == annotationId.key }),
+              let annotation = viewModel.state.annotations[annotationId.page]?[index] else { return }
 
         let (newAnnotation, changes) = transformAnnotation(annotation)
         let shouldReload = shouldReload?(annotation, newAnnotation) ?? true
 
         self.update(viewModel: viewModel) { state in
-            self.update(state: &state, with: newAnnotation, from: annotation, at: indexPath, shouldReload: shouldReload)
+            self.update(state: &state, with: newAnnotation, from: annotation, at: index, shouldReload: shouldReload)
             additionalStateChange?(&state)
         }
 
@@ -799,7 +800,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func update(state: inout PDFReaderState, with annotation: Annotation, from oldAnnotation: Annotation, at indexPath: IndexPath, shouldReload: Bool) {
+    private func update(state: inout PDFReaderState, with annotation: Annotation, from oldAnnotation: Annotation, at index: Int, shouldReload: Bool) {
         // Update selected annotation if needed
         if annotation.key == state.selectedAnnotation?.key {
             state.selectedAnnotation = annotation
@@ -812,21 +813,25 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         // If sort index didn't change, reload in place
         if annotation.sortIndex == oldAnnotation.sortIndex {
-            state.annotations[indexPath.section]?[indexPath.row] = annotation
+            state.annotations[oldAnnotation.page]?[index] = annotation
+
             if shouldReload {
+                var updated = state.updatedAnnotationKeys ?? []
+                updated.append(annotation.key)
+                state.updatedAnnotationKeys = updated
                 state.changes.insert(.annotations)
             }
             return
         }
 
         // Otherwise move the annotation to appropriate position
-        var annotations = state.annotations[indexPath.section] ?? []
-        annotations.remove(at: indexPath.row)
+        var annotations = state.annotations[oldAnnotation.page] ?? []
+        annotations.remove(at: index)
         let newIndex = annotations.index(of: annotation, sortedBy: { $0.sortIndex < $1.sortIndex })
         annotations.insert(annotation, at: newIndex)
+        state.annotations[oldAnnotation.page] = annotations
 
-        state.annotations[indexPath.section] = annotations
-        state.focusSidebarIndexPath = IndexPath(row: newIndex, section: indexPath.section)
+        state.focusSidebarAnnotationId = (annotation.key, annotation.page)
         state.changes.insert(.annotations)
     }
 
@@ -889,7 +894,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             lineWidth = inkAnnotation.lineWidth
         }
 
-        self.updateAnnotation(with: key,
+        self.updateAnnotation(with: (key, Int(pdfAnnotation.pageIndex)),
                               transformAnnotation: { original in
                                 var new = original
                                 if rects != original.rects {
@@ -921,10 +926,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     }
 
     /// Removes Zotero annotation from document.
-    /// - parameter annotation: Annotation to remove.
+    /// - parameter annotationId: Annotation identifier to remove.
     /// - parameter viewModel: ViewModel.
-    private func remove(annotation: Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard let documentAnnotation = viewModel.state.document.annotations(at: UInt(annotation.page)).first(where: { $0.syncable && $0.key == annotation.key }) else { return }
+    private func remove(annotationId: AnnotationId, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard let documentAnnotation = viewModel.state.document.annotations(at: UInt(annotationId.page)).first(where: { $0.syncable && $0.key == annotationId.key }) else { return }
 
         viewModel.state.document.undoController.recordCommand(named: nil, removing: [documentAnnotation]) {
             if documentAnnotation.flags.contains(.readOnly) {
@@ -979,10 +984,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    typealias InkAnnotatationsData = (oldestAnnotation: Annotation, oldestDocumentAnnotation: PSPDFKit.InkAnnotation, indexPath: IndexPath, lines: [[DrawingPoint]], lineWidth: CGFloat, tags: [Tag])
+    typealias InkAnnotatationsData = (oldestAnnotation: Annotation, oldestDocumentAnnotation: PSPDFKit.InkAnnotation, index: Int, lines: [[DrawingPoint]], lineWidth: CGFloat, tags: [Tag])
 
     private func merge(inkAnnotations annotations: [(Annotation, PSPDFKit.Annotation)], in viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard let (oldestAnnotation, oldestInkAnnotation, indexPath, lines, lineWidth, tags) = self.collectInkAnnotationData(from: annotations, in: viewModel) else { return }
+        guard let (oldestAnnotation, oldestInkAnnotation, index, lines, lineWidth, tags) = self.collectInkAnnotationData(from: annotations, in: viewModel) else { return }
 
         let toDeleteDocumentAnnotations = annotations.dropFirst().map({ $0.1 })
         let toDeleteKeys = toDeleteDocumentAnnotations.compactMap({ $0.key })
@@ -1008,7 +1013,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 //        let attributedComment = self.htmlAttributedStringConverter.convert(text: comment, baseAttributes: [.font: viewModel.state.commentFont])
 
         self.update(viewModel: viewModel) { state in
-            self.update(state: &state, with: updatedAnnotation, from: oldestAnnotation, at: indexPath, shouldReload: true)
+            self.update(state: &state, with: updatedAnnotation, from: oldestAnnotation, at: index, shouldReload: true)
 //            state.comments[updatedAnnotation.key] = attributedComment
             self.remove(annotations: toDeleteDocumentAnnotations, from: &state)
             state.previewCache.removeObject(forKey: (updatedAnnotation.key as NSString))
@@ -1023,7 +1028,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func collectInkAnnotationData(from annotations: [(Annotation, PSPDFKit.Annotation)], in viewModel: ViewModel<PDFReaderActionHandler>) -> InkAnnotatationsData? {
         guard let (oldestAnnotation, oldestDocumentAnnotation) = annotations.first, let oldestInkAnnotation = oldestDocumentAnnotation as? PSPDFKit.InkAnnotation,
-              let indexPath = self.indexPath(for: oldestAnnotation.key, in: viewModel.state.annotations) else { return nil }
+              let index = viewModel.state.annotations[oldestAnnotation.page]?.firstIndex(where: { $0.key == oldestAnnotation.key }) else { return nil }
 
         var lines: [[DrawingPoint]] = oldestInkAnnotation.lines ?? []
         var lineWidthData: [CGFloat: (Int, Date)] = [oldestInkAnnotation.lineWidth: (1, (oldestInkAnnotation.creationDate ?? Date(timeIntervalSince1970: 0)))]
@@ -1057,7 +1062,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
         }
 
-        return (oldestAnnotation, oldestInkAnnotation, indexPath, lines, self.chooseMergedLineWidth(from: lineWidthData), tags)
+        return (oldestAnnotation, oldestInkAnnotation, index, lines, self.chooseMergedLineWidth(from: lineWidthData), tags)
     }
 
     /// Choose line width based on 2 properties. 1. Choose line width which was used the most times. If multiple line widths were used the same amount of time, pick line width with oldest annotation.
@@ -1272,38 +1277,38 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     }
 
     /// Set selected annotation. Also sets `focusSidebarIndexPath` or `focusDocumentLocation` if needed.
-    /// - parameter annotation: Annotation to be selected. Deselects current annotation if `nil`.
-    /// - parameter index: Index of annotation in annotations array on given page.
+    /// - parameter annotationId: Annotation id to be selected. Deselects current annotation if `nil`.
     /// - parameter didSelectInDocument: `true` if annotation was selected in document, false if it was selected in sidebar.
     /// - parameter viewModel: ViewModel.
-    private func select(annotation: Annotation?, index: Int?, didSelectInDocument: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func select(annotationId: AnnotationId?, didSelectInDocument: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            self._select(annotation: annotation, index: index, didSelectInDocument: didSelectInDocument, state: &state)
+            self._select(annotationId: annotationId, didSelectInDocument: didSelectInDocument, state: &state)
         }
     }
 
-    private func _select(annotation: Annotation?, index: Int?, didSelectInDocument: Bool, state: inout PDFReaderState) {
-        if let existing = state.selectedAnnotation,
-           let index = state.annotations[existing.page]?.firstIndex(where: { $0.key == existing.key }) {
-            state.updatedAnnotationIndexPaths = [IndexPath(row: index, section: existing.page)]
+    private func _select(annotationId: AnnotationId?, didSelectInDocument: Bool, state: inout PDFReaderState) {
+        if let existing = state.selectedAnnotation {
+            state.updatedAnnotationKeys = [existing.key]
             state.selectedAnnotationCommentActive = false
             state.changes.insert(.activeComment)
         }
 
-        if let annotation = annotation, let index = index {
-            if !didSelectInDocument {
-                state.focusDocumentLocation = (annotation.page, annotation.boundingBox)
-            } else {
-                state.focusSidebarIndexPath = IndexPath(row: index, section: annotation.page)
-            }
+        state.changes.insert(.selection)
 
-            var indexPaths = state.updatedAnnotationIndexPaths ?? []
-            indexPaths.append(IndexPath(row: index, section: annotation.page))
-            state.updatedAnnotationIndexPaths = indexPaths
+        guard let annotationId = annotationId, let annotation = state.annotations[annotationId.page]?.first(where: { $0.key == annotationId.key }) else {
+            state.selectedAnnotation = nil
+            return
         }
 
-        state.selectedAnnotation = annotation
-        state.changes.insert(.selection)
+        if !didSelectInDocument {
+            state.focusDocumentLocation = (annotation.page, annotation.boundingBox)
+        } else {
+            state.focusSidebarAnnotationId = annotationId
+        }
+
+        var updatedAnnotationKeys = state.updatedAnnotationKeys ?? []
+        updatedAnnotationKeys.append(annotationId.key)
+        state.updatedAnnotationKeys = updatedAnnotationKeys
     }
 
     /// Annotations which originate from document and are not synced generate their previews based on annotation UUID, which is in-memory and is not stored in PDF. So these previews are only
@@ -1624,12 +1629,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private func add(annotations: [Annotation], to state: inout PDFReaderState, selectFirst: Bool) {
         guard !annotations.isEmpty else { return }
 
-        var focus: IndexPath?
+        var focus: AnnotationId?
         var selectedAnnotation: Annotation?
 
-        let selectAnnotation: (Annotation, Int) -> Void = { annotation, index in
+        let selectAnnotation: (Annotation) -> Void = { annotation in
             guard selectFirst && focus == nil else { return }
-            focus = IndexPath(row: index, section: annotation.page)
+            focus = (annotation.key, annotation.page)
             selectedAnnotation = annotation
         }
 
@@ -1641,23 +1646,22 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
                 // If new annotation passes filters, add it to current filtered list as well
                 if self.filter(annotation: annotation, with: state.searchTerm) && self.filter(annotation: annotation, with: state.filter) {
-                    let index = self.add(annotation: annotation, to: &state.annotations)
-                    selectAnnotation(annotation, index)
+                    self.add(annotation: annotation, to: &state.annotations)
+                    selectAnnotation(annotation)
                 }
             } else {
                 // Search not active, just insert it to the list and focus
-                let index = self.add(annotation: annotation, to: &state.annotations)
-                selectAnnotation(annotation, index)
+                self.add(annotation: annotation, to: &state.annotations)
+                selectAnnotation(annotation)
             }
         }
 
-        state.focusSidebarIndexPath = focus
+        state.focusSidebarAnnotationId = focus
         state.changes.insert(.annotations)
 
         if let annotation = selectedAnnotation {
-            if let existing = state.selectedAnnotation,
-               let index = state.annotations[existing.page]?.firstIndex(where: { $0.key == existing.key }) {
-                state.updatedAnnotationIndexPaths = [IndexPath(row: index, section: existing.page)]
+            if let existing = state.selectedAnnotation {
+                state.updatedAnnotationKeys = [existing.key]
             }
             state.selectedAnnotation = annotation
             state.changes.insert(.selection)
@@ -1695,15 +1699,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private func remove(annotations: [PSPDFKit.Annotation], from state: inout PDFReaderState) {
         let keys: Set<String>
 
-        if var snapshot = state.annotationsSnapshot {
+        if var snapshot = state.annotationKeysSnapshot {
             // Search is active, delete annotation from snapshot so that it doesn't re-appear when search is cancelled
-            keys = self.remove(annotations: annotations, from: &snapshot)
-            state.annotationsSnapshot = snapshot
+            keys = self.remove(annotations: annotations, from: &snapshot, zoteroAnnotations: &state.annotations)
+            state.annotationKeysSnapshot = snapshot
             // Remove annotations from search result as well
-            self.remove(annotations: annotations, from: &state.annotations)
+            self.remove(annotations: annotations, from: &state.annotationKeys, zoteroAnnotations: &state.annotations)
         } else {
             // Search not active, remove from all annotations
-            keys = self.remove(annotations: annotations, from: &state.annotations)
+            keys = self.remove(annotations: annotations, from: &state.annotationKeys, zoteroAnnotations: &state.annotations)
         }
 
         if let selectedKey = state.selectedAnnotation?.key, keys.contains(selectedKey) {
@@ -1725,26 +1729,20 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     }
 
     @discardableResult
-    private func remove(annotations: [PSPDFKit.Annotation], from zoteroAnnotations: inout [Int: [Annotation]]) -> Set<String> {
+    private func remove(annotations: [PSPDFKit.Annotation], from annotationKeys: inout [Int: [String]], zoteroAnnotations: inout [String: Annotation]) -> Set<String> {
         var keys: Set<String> = []
         for annotation in annotations {
             guard annotation.syncable, let key = annotation.key else { continue }
+
+            zoteroAnnotations[key] = nil
+
             let page = Int(annotation.pageIndex)
-            if let index = zoteroAnnotations[page]?.firstIndex(where: { $0.key == key }) {
-                zoteroAnnotations[page]?.remove(at: index)
+            if let index = annotationKeys[page]?.firstIndex(where: { $0 == key }) {
+                annotationKeys[page]?.remove(at: index)
                 keys.insert(key)
             }
         }
         return keys
-    }
-
-    private func indexPath(for key: String, in annotations: [Int: [Annotation]]) -> IndexPath? {
-        for (page, annotations) in annotations {
-            if let index = annotations.firstIndex(where: { $0.key == key }) {
-                return IndexPath(row: index, section: page)
-            }
-        }
-        return nil
     }
 
     /// Loads annotations from DB, converts them to Zotero annotations and adds matching PSPDFKit annotations to document.
@@ -1754,16 +1752,18 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         do {
             let isDark = viewModel.state.interfaceStyle == .dark
             // Load Zotero annotations from DB
-            var (zoteroAnnotations, positions, comments, page, items) = try self.documentData(for: viewModel.state.key, library: viewModel.state.library, baseFont: viewModel.state.commentFont,
-                                                                                              userId: viewModel.state.userId, username: viewModel.state.username, displayName: viewModel.state.displayName,
-                                                                                              boundingBoxConverter: boundingBoxConverter)
+            var (zoteroAnnotations, annotationKeys, positions, comments, page, items) = try self.documentData(for: viewModel.state.key, library: viewModel.state.library, baseFont: viewModel.state.commentFont,
+                                                                                                              userId: viewModel.state.userId, username: viewModel.state.username, displayName: viewModel.state.displayName,
+                                                                                                              boundingBoxConverter: boundingBoxConverter)
             // Create PSPDFKit annotations from Zotero annotations
             let pspdfkitAnnotations = AnnotationConverter.annotations(from: zoteroAnnotations, interfaceStyle: viewModel.state.interfaceStyle)
             // Create Zotero non-editable annotations from supported document annotations
-            self.loadAnnotations(from: viewModel.state.document, library: viewModel.state.library, username: viewModel.state.username, displayName: viewModel.state.displayName, font: viewModel.state.commentFont, addTo: &zoteroAnnotations, comments: &comments)
+            self.loadAnnotations(from: viewModel.state.document, library: viewModel.state.library, username: viewModel.state.username, displayName: viewModel.state.displayName,
+                                 font: viewModel.state.commentFont, addTo: &annotationKeys, allAnnotations: &zoteroAnnotations, comments: &comments)
 
             self.update(viewModel: viewModel) { state in
                 state.annotations = zoteroAnnotations
+                state.annotationKeys = annotationKeys
                 DDLogInfo("PDFReaderActionHandler: loaded dbPositions (\(positions.count))")
                 state.dbPositions = positions
                 state.comments = comments
@@ -1791,7 +1791,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func loadAnnotations(from document: PSPDFKit.Document, library: Library, username: String, displayName: String, font: UIFont, addTo allAnnotations: inout [Int: [Annotation]], comments: inout [String: NSAttributedString]) {
+    private func loadAnnotations(from document: PSPDFKit.Document, library: Library, username: String, displayName: String, font: UIFont, addTo annotationKeys: inout [Int: [String]],
+                                 allAnnotations: inout [String: Annotation], comments: inout [String: NSAttributedString]) {
         for (_, pdfAnnotations) in document.allAnnotations(of: AnnotationsConfig.supported) {
             for pdfAnnotation in pdfAnnotations {
                 // Check whether square annotation was previously created by Zotero. If it's just "normal" square (instead of our image) annotation, don't convert it to Zotero annotation.
@@ -1803,10 +1804,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 guard let annotation = AnnotationConverter.annotation(from: pdfAnnotation, color: color, library: library, isNew: false, isSyncable: false, username: username, displayName: displayName,
                                                                       boundingBoxConverter: self.boundingBoxConverter) else { continue }
 
-                var annotations = allAnnotations[annotation.page] ?? []
-                let index = annotations.index(of: annotation, sortedBy: { $0.sortIndex < $1.sortIndex })
-                annotations.insert(annotation, at: index)
-                allAnnotations[annotation.page] = annotations
+                allAnnotations[annotation.key] = annotation
+
+                var keys = annotationKeys[annotation.page] ?? []
+                let index = keys.index(of: annotation.key, sortedBy: { lKey, rKey in
+                    guard let lAnnotation = allAnnotations[lKey], let rAnnotation = allAnnotations[rKey] else { return false }
+                    return lAnnotation.sortIndex < rAnnotation.sortIndex
+                })
+                keys.insert(annotation.key, at: index)
+                annotationKeys[annotation.page] = keys
 
                 comments[annotation.key] = self.htmlAttributedStringConverter.convert(text: annotation.comment, baseAttributes: [.font: font])
             }
@@ -1819,7 +1825,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     /// - parameter baseFont: Font to be used as base for `NSAttributedString`.
     /// - returns: Tuple of grouped annotations and comments.
     private func documentData(for key: String, library: Library, baseFont: UIFont, userId: Int, username: String, displayName: String, boundingBoxConverter: AnnotationBoundingBoxConverter) throws
-                                                    -> (annotations: [Int: [Annotation]], positions: [AnnotationPosition], comments: [String: NSAttributedString], page: Int, items: Results<RItem>) {
+                                            -> (annotations: [String: Annotation], annotationKeys: [Int: [String]], positions: [AnnotationPosition], comments: [String: NSAttributedString], page: Int, items: Results<RItem>) {
         var page: Int = 0
         var items: Results<RItem>?
 
@@ -1830,7 +1836,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         guard let items = items else { throw DbError.objectNotFound }
 
-        var annotations: [Int: [Annotation]] = [:]
+        var annotations: [String: Annotation] = [:]
+        var annotationKeys: [Int: [String]] = [:]
         var comments: [String: NSAttributedString] = [:]
         var positions: [AnnotationPosition] = []
 
@@ -1839,17 +1846,19 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             positions.append(AnnotationPosition(page: annotation.page, key: annotation.key))
 
-            if var array = annotations[annotation.page] {
-                array.append(annotation)
-                annotations[annotation.page] = array
+            annotations[annotation.key] = annotation
+
+            if var array = annotationKeys[annotation.page] {
+                array.append(annotation.key)
+                annotationKeys[annotation.page] = array
             } else {
-                annotations[annotation.page] = [annotation]
+                annotationKeys[annotation.page] = [annotation.key]
             }
 
             comments[annotation.key] = self.htmlAttributedStringConverter.convert(text: annotation.comment, baseAttributes: [.font: baseFont])
         }
 
-        return (annotations, positions, comments, page, items)
+        return (annotations, annotationKeys, positions, comments, page, items)
     }
 }
 

@@ -15,6 +15,13 @@ import PSPDFKitUI
 import RealmSwift
 
 typealias AnnotationDocumentLocation = (page: Int, boundingBox: CGRect)
+typealias AnnotationId = (key: String, page: Int)
+
+extension Annotation {
+    var annotationId: AnnotationId {
+        return (self.key, self.page)
+    }
+}
 
 struct PDFReaderState: ViewModelState {
     struct Changes: OptionSet {
@@ -53,8 +60,9 @@ struct PDFReaderState: ViewModelState {
     let displayName: String
 
     var interfaceStyle: UIUserInterfaceStyle
-    var annotations: [Int: [Annotation]]
-    var annotationsSnapshot: [Int: [Annotation]]?
+    var annotationKeys: [Int: [String]]
+    var annotations: [String: Annotation]
+    var annotationKeysSnapshot: [Int: [String]]?
     /// These 3 sets of keys are stored for 2 purposes:
     /// 1. deletedKeys are used to remove only those annotations which were actually deleted in UI
     /// 2. If user edits the document, each save results in `Results<RItem>` observing notification, which leads to `.syncItems` action, which then tries to perform the same action again unnecessarily.
@@ -84,9 +92,9 @@ struct PDFReaderState: ViewModelState {
     /// Location to focus in document
     var focusDocumentLocation: AnnotationDocumentLocation?
     /// Annotation key to focus in annotation sidebar
-    var focusSidebarIndexPath: IndexPath?
-    /// Index paths of annotations in sidebar that need to reload cell height
-    var updatedAnnotationIndexPaths: [IndexPath]?
+    var focusSidebarAnnotationId: AnnotationId?
+    /// Annotation keys in sidebar that need to reload cell height
+    var updatedAnnotationKeys: [String]?
     /// Annotations that loaded their preview images and need to show them
     var loadedPreviewImageAnnotationKeys: Set<String>?
     /// Used when user interface style (dark mode) changes. Indicates that annotation previews need to be stored for new appearance
@@ -115,6 +123,7 @@ struct PDFReaderState: ViewModelState {
         self.dbPositions = []
         self.previewCache = NSCache()
         self.document = Document(url: url)
+        self.annotationKeys = [:]
         self.annotations = [:]
         self.comments = [:]
         self.ignoreNotifications = [:]
@@ -136,8 +145,8 @@ struct PDFReaderState: ViewModelState {
         self.changes = []
         self.exportState = nil
         self.focusDocumentLocation = nil
-        self.focusSidebarIndexPath = nil
-        self.updatedAnnotationIndexPaths = nil
+        self.focusSidebarAnnotationId = nil
+        self.updatedAnnotationKeys = nil
         self.loadedPreviewImageAnnotationKeys = nil
     }
 }

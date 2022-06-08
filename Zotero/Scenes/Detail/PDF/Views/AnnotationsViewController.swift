@@ -33,7 +33,7 @@ final class AnnotationsViewController: UIViewController {
     private var tableViewToBottom: NSLayoutConstraint!
     private weak var deleteBarButton: UIBarButtonItem?
     private weak var mergeBarButton: UIBarButtonItem?
-    private var dataSource: DiffableDataSource<Int, Annotation>!
+    private var dataSource: TableViewDiffableDataSource<Int, String>!
     private var searchController: UISearchController!
     private var isVisible: Bool
 
@@ -99,7 +99,7 @@ final class AnnotationsViewController: UIViewController {
             guard annotation.isAuthor else { return }
             let selected = Set(annotation.tags.map({ $0.name }))
             self.coordinatorDelegate?.showTagPicker(libraryId: state.library.identifier, selected: selected, picked: { [weak self] tags in
-                self?.viewModel.process(action: .setTags(tags, annotation.key))
+                self?.viewModel.process(action: .setTags(tags, annotation.annotationId))
             })
 
         case .options(let sender):
@@ -108,19 +108,14 @@ final class AnnotationsViewController: UIViewController {
                                                           self?.viewModel.process(action: .updateAnnotationProperties(annotation))
                                                       },
                                                       deleteAction: { [weak self] annotation in
-                                                          self?.viewModel.process(action: .removeAnnotation(annotation))
+                                                          self?.viewModel.process(action: .removeAnnotation(annotation.annotationId))
                                                       })
 
         case .setComment(let comment):
-            self.viewModel.process(action: .setComment(key: annotation.key, comment: comment))
-            // Since comment is already written in the UITextView, we don't want to reload the cell and therefore the diffable data source is not updated on update of view model. So data source
-            // needs to be updated manually so that we keep data consistency.
-            if let indexPath = self.dataSource.snapshot.indexPath(where: { $0.key == annotation.key }), let updatedAnnotation = self.viewModel.state.annotations[indexPath.section]?[indexPath.row] {
-                self.dataSource.update(object: updatedAnnotation, at: indexPath, withReload: false)
-            }
+            self.viewModel.process(action: .setComment(annotationId: annotation.annotationId, comment: comment))
 
         case .reloadHeight:
-            self.updateCellHeight()
+            self.updateCellHeightAndEditing(isEditing: nil)
             self.focusSelectedCell()
 
         case .setCommentActive(let isActive):
@@ -136,15 +131,11 @@ final class AnnotationsViewController: UIViewController {
                 self.updatePreviewsIfVisible(for: keys)
             }
 
-            if let indexPath = state.focusSidebarIndexPath {
+            if let annotationId = state.focusSidebarAnnotationId, let indexPath = self.dataSource.indexPath(for: annotationId.key) {
                 self.tableView.selectRow(at: indexPath, animated: true, scrollPosition: .middle)
             }
 
             if state.changes.contains(.sidebarEditing) {
-                self.tableView.setEditing(state.sidebarEditingEnabled, animated: true)
-                self.tableView.beginUpdates()
-                self.tableView.endUpdates()
-
                 self.setupToolbar(to: state)
             }
 
@@ -180,57 +171,55 @@ final class AnnotationsViewController: UIViewController {
             return
         }
 
-        let reloadVisibleCells: ([IndexPath]) -> Void = { [weak self] indexPaths in
-            self?.tableView.reloadRows(at: indexPaths, with: .none)
-        }
-
-        if !state.changes.contains(.annotations) && (state.changes.contains(.selection) || state.changes.contains(.activeComment)) {
-            // Reload updated cells which are visible
-            if let indexPaths = state.updatedAnnotationIndexPaths {
-                reloadVisibleCells(indexPaths)
+        if state.changes.contains(.annotations) || state.changes.contains(.interfaceStyle) {
+            var snapshot = NSDiffableDataSourceSnapshot<Int, String>()
+            snapshot.appendSections(Array(0..<Int(state.document.pageCount)))
+            for (page, annotations) in state.annotations {
+                guard page < state.document.pageCount else {
+                    DDLogWarn("AnnotationsViewController: annotations page (\(page)) outside of document bounds (\(state.document.pageCount))")
+                    continue
+                }
+                snapshot.appendItems(annotations.map({ $0.key }), toSection: page)
             }
 
-            self.updateCellHeight()
+            if let keys = state.updatedAnnotationKeys {
+                snapshot.reloadItems(keys)
+            }
+
+            let isVisible = self.sidebarParent?.isSidebarVisible ?? false
+
+            if state.changes.contains(.sidebarEditing) {
+                self.tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
+            }
+            self.dataSource.apply(snapshot, animatingDifferences: isVisible, completion: completion)
+
+            return
+        }
+
+        if state.changes.contains(.selection) || state.changes.contains(.activeComment) {
+            if let keys = state.updatedAnnotationKeys {
+                var snapshot = self.dataSource.snapshot()
+                snapshot.reloadItems(keys)
+                self.dataSource.apply(snapshot, animatingDifferences: false)
+            }
+
+            self.updateCellHeightAndEditing(isEditing: (state.changes.contains(.sidebarEditing) ? state.sidebarEditingEnabled : nil))
             self.focusSelectedCell()
 
             completion()
+
             return
-        }
-
-        guard state.changes.contains(.annotations) || state.changes.contains(.interfaceStyle) else {
-            completion()
-            return
-        }
-
-        let isVisible = self.sidebarParent?.isSidebarVisible ?? false
-
-        var snapshot = DiffableDataSourceSnapshot<Int, Annotation>(isEditing: false)
-        for section in (0..<Int(state.document.pageCount)) {
-            snapshot.append(section: section)
-        }
-        for (page, annotations) in state.annotations {
-            guard page < state.document.pageCount else {
-                DDLogWarn("AnnotationsViewController: annotations page (\(page)) outside of document bounds (\(state.document.pageCount))")
-                continue
-            }
-            snapshot.append(objects: annotations, for: page)
-        }
-        let animation: DiffableDataSourceAnimation = !isVisible ? .none : .rows(reload: .fade, insert: .bottom, delete: .bottom)
-
-        self.dataSource.apply(snapshot: snapshot, animation: animation) { finished in
-            guard finished else { return }
-            if let indexPaths = state.updatedAnnotationIndexPaths {
-                reloadVisibleCells(indexPaths)
-            }
-            completion()
         }
     }
 
-    /// Updates tableView layout in case any cell changed height.
-    private func updateCellHeight() {
+    /// Updates tableView layout in case any cell changed height. Sets `isEditing` state if needed.
+    private func updateCellHeightAndEditing(isEditing: Bool?) {
         UIView.setAnimationsEnabled(false)
         self.tableView.beginUpdates()
         self.tableView.endUpdates()
+        if let isEditing = isEditing {
+            self.tableView.setEditing(isEditing, animated: true)
+        }
         UIView.setAnimationsEnabled(true)
     }
 
@@ -321,6 +310,16 @@ final class AnnotationsViewController: UIViewController {
         })
     }
 
+    private func annotation(for key: String? = nil, at indexPath: IndexPath) -> Annotation? {
+        guard let _key = key ?? self.dataSource.itemIdentifier(for: indexPath), let page = self.dataSource.section(for: indexPath.section) else { return nil }
+        return self.viewModel.state.annotations[page]?.first(where: { $0.key == _key })
+    }
+
+    private func annotationId(for indexPath: IndexPath) -> AnnotationId? {
+        guard let key = self.dataSource.itemIdentifier(for: indexPath), let page = self.dataSource.section(for: indexPath.section) else { return nil }
+        return (key, page)
+    }
+
     // MARK: - Setups
 
     private func setupViews() {
@@ -379,16 +378,27 @@ final class AnnotationsViewController: UIViewController {
     }
 
     private func setupDataSource() {
-        self.dataSource = DiffableDataSource(tableView: tableView,
-                                             dequeueAction: { tableView, indexPath, _, _ in
-                                                 return tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
-                                             },
-                                             setupAction: { [weak self] cell, _, _, annotation in
-                                                 guard let `self` = self, let cell = cell as? AnnotationCell else { return }
-                                                 cell.contentView.backgroundColor = self.view.backgroundColor
-                                                 self.setup(cell: cell, with: annotation, state: self.viewModel.state)
-                                             })
-        self.dataSource.dataSource = self
+        self.dataSource = TableViewDiffableDataSource(tableView: self.tableView, cellProvider: { [weak self] tableView, indexPath, key in
+            let cell = tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
+
+            if let `self` = self, let cell = cell as? AnnotationCell, let annotation = self.annotation(for: key, at: indexPath) {
+                cell.contentView.backgroundColor = self.view.backgroundColor
+                self.setup(cell: cell, with: annotation, state: self.viewModel.state)
+            }
+
+            return cell
+        })
+
+
+        self.dataSource.canEditRow = { _ in
+            return true
+        }
+
+        self.dataSource.commitEditingStyle = { [weak self] editingStyle, indexPath in
+            guard let `self` = self, !self.viewModel.state.sidebarEditingEnabled && editingStyle == .delete, let page = self.dataSource.section(for: indexPath.section),
+                  let key = self.dataSource.itemIdentifier(for: indexPath) else { return }
+            self.viewModel.process(action: .removeAnnotation((key, page)))
+        }
     }
 
     private func setupSearchController() {
@@ -512,9 +522,10 @@ final class AnnotationsViewController: UIViewController {
 
 extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSourcePrefetching {
     func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
-        let keys = indexPaths.compactMap({ self.dataSource.snapshot.object(at: $0) })
-                             .filter({
-                                 switch $0.type {
+        let keys = indexPaths.compactMap({ self.annotationId(for: $0) })
+                             .filter({ annotationId in
+                                 guard let annotation = self.viewModel.state.annotations[annotationId.page]?.first(where: { $0.key == annotationId.key }) else { return false }
+                                 switch annotation.type {
                                  case .image, .ink: return true
                                  case .note, .highlight: return false
                                  }
@@ -524,34 +535,22 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSourceP
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        guard let annotation = self.dataSource.snapshot.object(at: indexPath) else { return }
+        guard let annotationId = self.annotationId(for: indexPath) else { return }
 
         if self.viewModel.state.sidebarEditingEnabled {
-            self.viewModel.process(action: .selectAnnotationDuringEditing(annotation))
+            self.viewModel.process(action: .selectAnnotationDuringEditing(annotationId))
         } else {
-            self.viewModel.process(action: .selectAnnotation(annotation))
+            self.viewModel.process(action: .selectAnnotation(annotationId))
         }
     }
 
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
-        guard self.viewModel.state.sidebarEditingEnabled, let annotation = self.dataSource.snapshot.object(at: indexPath) else { return }
-        self.viewModel.process(action: .deselectAnnotationDuringEditing(annotation))
+        guard self.viewModel.state.sidebarEditingEnabled, let annotationId = self.annotationId(for: indexPath) else { return }
+        self.viewModel.process(action: .deselectAnnotationDuringEditing(annotationId))
     }
 
     func tableView(_ tableView: UITableView, shouldBeginMultipleSelectionInteractionAt indexPath: IndexPath) -> Bool {
         return tableView.isEditing
-    }
-}
-
-extension AnnotationsViewController: AdditionalDiffableDataSource {
-    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
-        return true
-    }
-
-    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-        guard !self.viewModel.state.sidebarEditingEnabled && editingStyle == .delete else { return }
-        guard let annotation = self.dataSource.snapshot.object(at: indexPath) else { return }
-        self.viewModel.process(action: .removeAnnotation(annotation))
     }
 }
 
