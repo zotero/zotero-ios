@@ -15,13 +15,6 @@ import PSPDFKitUI
 import RealmSwift
 
 typealias AnnotationDocumentLocation = (page: Int, boundingBox: CGRect)
-typealias AnnotationId = (key: String, page: Int)
-
-extension Annotation {
-    var annotationId: AnnotationId {
-        return (self.key, self.page)
-    }
-}
 
 struct PDFReaderState: ViewModelState {
     struct Changes: OptionSet {
@@ -82,17 +75,16 @@ struct PDFReaderState: ViewModelState {
     var selectedAnnotation: Annotation?
     var selectedAnnotationCommentActive: Bool
     /// Annotations selected when annotations are being edited in sidebar
-    var selectedAnnotationsDuringEditing: [Int: Set<String>]
+    var selectedAnnotationsDuringEditing: Set<String>
     var hasOneSelectedAnnotationDuringEditing: Bool {
-        guard self.selectedAnnotationsDuringEditing.values.count == 1, let set = self.selectedAnnotationsDuringEditing.values.first else { return false }
-        return set.count == 1
+        return self.selectedAnnotationsDuringEditing.count == 1
     }
     var deletionEnabled: Bool
     var mergingEnabled: Bool
     /// Location to focus in document
     var focusDocumentLocation: AnnotationDocumentLocation?
     /// Annotation key to focus in annotation sidebar
-    var focusSidebarAnnotationId: AnnotationId?
+    var focusSidebarKey: String?
     /// Annotation keys in sidebar that need to reload cell height
     var updatedAnnotationKeys: [String]?
     /// Annotations that loaded their preview images and need to show them
@@ -128,7 +120,7 @@ struct PDFReaderState: ViewModelState {
         self.comments = [:]
         self.ignoreNotifications = [:]
         self.selectedAnnotationCommentActive = false
-        self.selectedAnnotationsDuringEditing = [:]
+        self.selectedAnnotationsDuringEditing = []
         self.deletionEnabled = false
         self.mergingEnabled = false
         self.shouldStoreAnnotationPreviewsIfNeeded = false
@@ -145,7 +137,7 @@ struct PDFReaderState: ViewModelState {
         self.changes = []
         self.exportState = nil
         self.focusDocumentLocation = nil
-        self.focusSidebarAnnotationId = nil
+        self.focusSidebarKey = nil
         self.updatedAnnotationKeys = nil
         self.loadedPreviewImageAnnotationKeys = nil
     }

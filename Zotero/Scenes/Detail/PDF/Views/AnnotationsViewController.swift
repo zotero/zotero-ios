@@ -99,7 +99,7 @@ final class AnnotationsViewController: UIViewController {
             guard annotation.isAuthor else { return }
             let selected = Set(annotation.tags.map({ $0.name }))
             self.coordinatorDelegate?.showTagPicker(libraryId: state.library.identifier, selected: selected, picked: { [weak self] tags in
-                self?.viewModel.process(action: .setTags(tags, annotation.annotationId))
+                self?.viewModel.process(action: .setTags(key: annotation.key, tags: tags))
             })
 
         case .options(let sender):
@@ -108,11 +108,11 @@ final class AnnotationsViewController: UIViewController {
                                                           self?.viewModel.process(action: .updateAnnotationProperties(annotation))
                                                       },
                                                       deleteAction: { [weak self] annotation in
-                                                          self?.viewModel.process(action: .removeAnnotation(annotation.annotationId))
+                                                          self?.viewModel.process(action: .removeAnnotation(annotation.position))
                                                       })
 
         case .setComment(let comment):
-            self.viewModel.process(action: .setComment(annotationId: annotation.annotationId, comment: comment))
+            self.viewModel.process(action: .setComment(key: annotation.key, comment: comment))
 
         case .reloadHeight:
             self.updateCellHeightAndEditing(isEditing: nil)
@@ -131,7 +131,7 @@ final class AnnotationsViewController: UIViewController {
                 self.updatePreviewsIfVisible(for: keys)
             }
 
-            if let annotationId = state.focusSidebarAnnotationId, let indexPath = self.dataSource.indexPath(for: annotationId.key) {
+            if let key = state.focusSidebarKey, let indexPath = self.dataSource.indexPath(for: key) {
                 self.tableView.selectRow(at: indexPath, animated: true, scrollPosition: .middle)
             }
 
@@ -174,12 +174,12 @@ final class AnnotationsViewController: UIViewController {
         if state.changes.contains(.annotations) || state.changes.contains(.interfaceStyle) {
             var snapshot = NSDiffableDataSourceSnapshot<Int, String>()
             snapshot.appendSections(Array(0..<Int(state.document.pageCount)))
-            for (page, annotations) in state.annotations {
+            for (page, keys) in state.annotationKeys {
                 guard page < state.document.pageCount else {
                     DDLogWarn("AnnotationsViewController: annotations page (\(page)) outside of document bounds (\(state.document.pageCount))")
                     continue
                 }
-                snapshot.appendItems(annotations.map({ $0.key }), toSection: page)
+                snapshot.appendItems(keys, toSection: page)
             }
 
             if let keys = state.updatedAnnotationKeys {
@@ -276,7 +276,7 @@ final class AnnotationsViewController: UIViewController {
     }
 
     private func showFilterPopup(from barButton: UIBarButtonItem) {
-        let annotations = (self.viewModel.state.annotationsSnapshot ?? self.viewModel.state.annotations).values.flatMap({ $0 })
+        let annotations = self.viewModel.state.annotations.values
 
         var colors: Set<String> = []
         var tags: Set<Tag> = []
@@ -310,14 +310,9 @@ final class AnnotationsViewController: UIViewController {
         })
     }
 
-    private func annotation(for key: String? = nil, at indexPath: IndexPath) -> Annotation? {
-        guard let _key = key ?? self.dataSource.itemIdentifier(for: indexPath), let page = self.dataSource.section(for: indexPath.section) else { return nil }
-        return self.viewModel.state.annotations[page]?.first(where: { $0.key == _key })
-    }
-
-    private func annotationId(for indexPath: IndexPath) -> AnnotationId? {
+    private func annotationPosition(for indexPath: IndexPath) -> AnnotationPosition? {
         guard let key = self.dataSource.itemIdentifier(for: indexPath), let page = self.dataSource.section(for: indexPath.section) else { return nil }
-        return (key, page)
+        return AnnotationPosition(page: page, key: key)
     }
 
     // MARK: - Setups
@@ -381,7 +376,7 @@ final class AnnotationsViewController: UIViewController {
         self.dataSource = TableViewDiffableDataSource(tableView: self.tableView, cellProvider: { [weak self] tableView, indexPath, key in
             let cell = tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
 
-            if let `self` = self, let cell = cell as? AnnotationCell, let annotation = self.annotation(for: key, at: indexPath) {
+            if let `self` = self, let cell = cell as? AnnotationCell, let annotation = self.viewModel.state.annotations[key] {
                 cell.contentView.backgroundColor = self.view.backgroundColor
                 self.setup(cell: cell, with: annotation, state: self.viewModel.state)
             }
@@ -395,9 +390,9 @@ final class AnnotationsViewController: UIViewController {
         }
 
         self.dataSource.commitEditingStyle = { [weak self] editingStyle, indexPath in
-            guard let `self` = self, !self.viewModel.state.sidebarEditingEnabled && editingStyle == .delete, let page = self.dataSource.section(for: indexPath.section),
-                  let key = self.dataSource.itemIdentifier(for: indexPath) else { return }
-            self.viewModel.process(action: .removeAnnotation((key, page)))
+            guard let `self` = self, !self.viewModel.state.sidebarEditingEnabled && editingStyle == .delete,
+                  let position = self.annotationPosition(for: indexPath)  else { return }
+            self.viewModel.process(action: .removeAnnotation(position))
         }
     }
 
@@ -522,31 +517,30 @@ final class AnnotationsViewController: UIViewController {
 
 extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSourcePrefetching {
     func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
-        let keys = indexPaths.compactMap({ self.annotationId(for: $0) })
-                             .filter({ annotationId in
-                                 guard let annotation = self.viewModel.state.annotations[annotationId.page]?.first(where: { $0.key == annotationId.key }) else { return false }
+        let keys = indexPaths.compactMap({ self.dataSource.itemIdentifier(for: $0) })
+                             .filter({ key in
+                                 guard let annotation = self.viewModel.state.annotations[key] else { return false }
                                  switch annotation.type {
                                  case .image, .ink: return true
                                  case .note, .highlight: return false
                                  }
                              })
-                             .map({ $0.key })
         self.viewModel.process(action: .requestPreviews(keys: keys, notify: false))
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        guard let annotationId = self.annotationId(for: indexPath) else { return }
+        guard let key = self.dataSource.itemIdentifier(for: indexPath) else { return }
 
         if self.viewModel.state.sidebarEditingEnabled {
-            self.viewModel.process(action: .selectAnnotationDuringEditing(annotationId))
+            self.viewModel.process(action: .selectAnnotationDuringEditing(key))
         } else {
-            self.viewModel.process(action: .selectAnnotation(annotationId))
+            self.viewModel.process(action: .selectAnnotation(key))
         }
     }
 
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
-        guard self.viewModel.state.sidebarEditingEnabled, let annotationId = self.annotationId(for: indexPath) else { return }
-        self.viewModel.process(action: .deselectAnnotationDuringEditing(annotationId))
+        guard self.viewModel.state.sidebarEditingEnabled, let key = self.dataSource.itemIdentifier(for: indexPath) else { return }
+        self.viewModel.process(action: .deselectAnnotationDuringEditing(key))
     }
 
     func tableView(_ tableView: UITableView, shouldBeginMultipleSelectionInteractionAt indexPath: IndexPath) -> Bool {

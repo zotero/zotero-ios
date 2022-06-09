@@ -12,3 +12,9 @@ struct AnnotationPosition {
     let page: Int
     let key: String
 }
+
+extension Annotation {
+    var position: AnnotationPosition {
+        return AnnotationPosition(page: self.page, key: self.key)
+    }
+}

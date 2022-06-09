@@ -121,7 +121,7 @@ final class AnnotationViewController: UIViewController {
 
     @objc private func deleteAnnotation() {
         guard let annotation = self.viewModel.state.selectedAnnotation else { return }
-        self.viewModel.process(action: .removeAnnotation(annotation.annotationId))
+        self.viewModel.process(action: .removeAnnotation(annotation.position))
     }
 
     private func showSettings() {
@@ -131,13 +131,13 @@ final class AnnotationViewController: UIViewController {
                                                self?.viewModel.process(action: .updateAnnotationProperties(annotation))
                                            },
                                            deleteAction: { [weak self] annotation in
-                                               self?.viewModel.process(action: .removeAnnotation(annotation.annotationId))
+                                               self?.viewModel.process(action: .removeAnnotation(annotation.position))
                                            })
     }
 
     private func set(color: String) {
         guard let annotation = self.viewModel.state.selectedAnnotation else { return }
-        self.viewModel.process(action: .setColor(annotationId: annotation.annotationId, color: color))
+        self.viewModel.process(action: .setColor(key: annotation.key, color: color))
     }
 
     private func showTagPicker() {
@@ -145,7 +145,7 @@ final class AnnotationViewController: UIViewController {
 
         let selected = Set(annotation.tags.map({ $0.name }))
         self.coordinatorDelegate?.showTagPicker(libraryId: self.viewModel.state.library.identifier, selected: selected, picked: { [weak self] tags in
-            self?.viewModel.process(action: .setTags(tags, annotation.annotationId))
+            self?.viewModel.process(action: .setTags(key: annotation.key, tags: tags))
         })
     }
 
@@ -193,7 +193,7 @@ final class AnnotationViewController: UIViewController {
             commentView.isUserInteractionEnabled = annotation.editability == .editable
             commentView.textObservable
                        .subscribe(with: self, onNext: { `self`, data in
-                           self.viewModel.process(action: .setComment(annotationId: annotation.annotationId, comment: data.0))
+                           self.viewModel.process(action: .setComment(key: annotation.key, comment: data.0))
                            if data.1 {
                                self.updatePreferredContentSize()
                                self.scrollToCursorIfNeeded()
@@ -248,7 +248,7 @@ final class AnnotationViewController: UIViewController {
                 lineView.value = Float(annotation.lineWidth ?? 0)
                 lineView.valueObservable
                         .subscribe(with: self, onNext: { `self`, value in
-                            self.viewModel.process(action: .setLineWidth(annotationId: annotation.annotationId, width: CGFloat(value)))
+                            self.viewModel.process(action: .setLineWidth(key: annotation.key , width: CGFloat(value)))
                         })
                         .disposed(by: self.disposeBag)
                 self.containerStackView.addArrangedSubview(lineView)
