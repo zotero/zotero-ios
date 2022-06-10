@@ -72,7 +72,10 @@ struct PDFReaderState: ViewModelState {
     var changes: Changes
     var sidebarEditingEnabled: Bool
     /// Annotation selected when annotations are not being edited in sidebar
-    var selectedAnnotation: Annotation?
+    var selectedAnnotationKey: String?
+    var selectedAnnotation: Annotation? {
+        return self.selectedAnnotationKey.flatMap({ self.annotations[$0] })
+    }
     var selectedAnnotationCommentActive: Bool
     /// Annotations selected when annotations are being edited in sidebar
     var selectedAnnotationsDuringEditing: Set<String>

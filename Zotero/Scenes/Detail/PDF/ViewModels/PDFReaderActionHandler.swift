@@ -98,11 +98,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             self.search(for: term, in: viewModel)
 
         case .selectAnnotation(let key):
-            guard !viewModel.state.sidebarEditingEnabled && key != viewModel.state.selectedAnnotation?.key else { return }
+            guard !viewModel.state.sidebarEditingEnabled && key != viewModel.state.selectedAnnotationKey else { return }
             self.select(key: key, didSelectInDocument: false, in: viewModel)
 
         case .selectAnnotationFromDocument(let key):
-            guard !viewModel.state.sidebarEditingEnabled && key != viewModel.state.selectedAnnotation?.key else { return }
+            guard !viewModel.state.sidebarEditingEnabled && key != viewModel.state.selectedAnnotationKey else { return }
             self.select(key: key, didSelectInDocument: true, in: viewModel)
 
         case .deselectSelectedAnnotation:
@@ -488,8 +488,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 state.comments[position.key] = nil
                 state.deletedKeys.remove(position.key)
 
-                if state.selectedAnnotation?.key == position.key {
-                    state.selectedAnnotation = nil
+                if state.selectedAnnotationKey == position.key {
+                    state.selectedAnnotationKey = nil
                     state.changes.insert(.selection)
 
                     if state.selectedAnnotationCommentActive {
@@ -775,11 +775,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     }
 
     private func update(state: inout PDFReaderState, with annotation: Annotation, from oldAnnotation: Annotation, shouldReload: Bool) {
-        // Update selected annotation if needed
-        if annotation.key == state.selectedAnnotation?.key {
-            state.selectedAnnotation = annotation
-        }
-
         if !state.insertedKeys.contains(annotation.key) {
             state.modifiedKeys.insert(annotation.key)
         }
@@ -1283,6 +1278,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     }
 
     private func _select(key: String?, didSelectInDocument: Bool, state: inout PDFReaderState) {
+        guard key != state.selectedAnnotationKey else { return }
+
         if let existing = state.selectedAnnotation {
             state.updatedAnnotationKeys = [existing.key]
             state.selectedAnnotationCommentActive = false
@@ -1291,13 +1288,17 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         state.changes.insert(.selection)
 
-        guard let key = key, let annotation = state.annotations[key] else {
-            state.selectedAnnotation = nil
+        guard let key = key else {
+            state.selectedAnnotationKey = nil
             return
         }
 
+        state.selectedAnnotationKey = key
+
         if !didSelectInDocument {
-            state.focusDocumentLocation = (annotation.page, annotation.boundingBox)
+            if let annotation = state.annotations[key] {
+                state.focusDocumentLocation = (annotation.page, annotation.boundingBox)
+            }
         } else {
             state.focusSidebarKey = key
         }
@@ -1625,13 +1626,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private func add(annotations: [Annotation], to state: inout PDFReaderState, selectFirst: Bool) {
         guard !annotations.isEmpty else { return }
 
-        var focus: String?
-        var selectedAnnotation: Annotation?
+        var selectedAnnotationKey: String?
 
         let selectAnnotation: (Annotation) -> Void = { annotation in
-            guard selectFirst && focus == nil else { return }
-            focus = annotation.key
-            selectedAnnotation = annotation
+            guard selectFirst && selectedAnnotationKey == nil else { return }
+            selectedAnnotationKey = annotation.key
         }
 
         for annotation in annotations {
@@ -1652,14 +1651,14 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
         }
 
-        state.focusSidebarKey = focus
+        state.focusSidebarKey = selectedAnnotationKey
         state.changes.insert(.annotations)
 
-        if let annotation = selectedAnnotation {
-            if let existing = state.selectedAnnotation {
-                state.updatedAnnotationKeys = [existing.key]
+        if let key = selectedAnnotationKey {
+            if let existing = state.selectedAnnotationKey {
+                state.updatedAnnotationKeys = [existing]
             }
-            state.selectedAnnotation = annotation
+            state.selectedAnnotationKey = key
             state.changes.insert(.selection)
         }
     }
@@ -1711,8 +1710,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             keys = self.remove(annotations: annotations, from: &state.annotationKeys, zoteroAnnotations: &state.annotations)
         }
 
-        if let selectedKey = state.selectedAnnotation?.key, keys.contains(selectedKey) {
-            state.selectedAnnotation = nil
+        if let selectedKey = state.selectedAnnotationKey, keys.contains(selectedKey) {
+            state.selectedAnnotationKey = nil
             state.changes.insert(.selection)
 
             if state.selectedAnnotationCommentActive {

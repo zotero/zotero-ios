@@ -305,7 +305,7 @@ final class AnnotationViewController: UIViewController {
 
 extension AnnotationViewController: AnnotationPopover {
     var annotationKey: String {
-        return self.viewModel.state.selectedAnnotation?.key ?? ""
+        return self.viewModel.state.selectedAnnotationKey ?? ""
     }
 }
 

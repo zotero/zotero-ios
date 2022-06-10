@@ -115,7 +115,7 @@ final class AnnotationsViewController: UIViewController {
             self.viewModel.process(action: .setComment(key: annotation.key, comment: comment))
 
         case .reloadHeight:
-            self.updateCellHeightAndEditing(isEditing: nil)
+            self.updateCellHeight()
             self.focusSelectedCell()
 
         case .setCommentActive(let isActive):
@@ -135,16 +135,12 @@ final class AnnotationsViewController: UIViewController {
                 self.tableView.selectRow(at: indexPath, animated: true, scrollPosition: .middle)
             }
 
-            if state.changes.contains(.sidebarEditing) {
-                self.setupToolbar(to: state)
-            }
-
             if state.changes.contains(.sidebarEditingSelection) {
                 self.deleteBarButton?.isEnabled = state.deletionEnabled
                 self.mergeBarButton?.isEnabled = state.mergingEnabled
             }
 
-            if state.changes.contains(.filter) || state.changes.contains(.annotations) {
+            if state.changes.contains(.filter) || state.changes.contains(.annotations) || state.changes.contains(.sidebarEditing) {
                 self.setupToolbar(to: state)
             }
         }
@@ -203,23 +199,30 @@ final class AnnotationsViewController: UIViewController {
                 self.dataSource.apply(snapshot, animatingDifferences: false)
             }
 
-            self.updateCellHeightAndEditing(isEditing: (state.changes.contains(.sidebarEditing) ? state.sidebarEditingEnabled : nil))
+            self.updateCellHeight()
             self.focusSelectedCell()
+
+            if state.changes.contains(.sidebarEditing) {
+                self.tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
+            }
 
             completion()
 
             return
         }
+
+        if state.changes.contains(.sidebarEditing) {
+            self.tableView.setEditing(state.sidebarEditingEnabled, animated: true)
+        }
+
+        completion()
     }
 
-    /// Updates tableView layout in case any cell changed height. Sets `isEditing` state if needed.
-    private func updateCellHeightAndEditing(isEditing: Bool?) {
+    /// Updates tableView layout in case any cell changed height.
+    private func updateCellHeight() {
         UIView.setAnimationsEnabled(false)
         self.tableView.beginUpdates()
         self.tableView.endUpdates()
-        if let isEditing = isEditing {
-            self.tableView.setEditing(isEditing, animated: true)
-        }
         UIView.setAnimationsEnabled(true)
     }
 
@@ -241,7 +244,7 @@ final class AnnotationsViewController: UIViewController {
     }
 
     private func setup(cell: AnnotationCell, with annotation: Annotation, state: PDFReaderState) {
-        let selected = annotation.key == state.selectedAnnotation?.key
+        let selected = annotation.key == state.selectedAnnotationKey
 
         let loadPreview: () -> UIImage? = {
             let preview = state.previewCache.object(forKey: (annotation.key as NSString))
@@ -444,14 +447,7 @@ final class AnnotationsViewController: UIViewController {
     }
 
     private func setupToolbar(to state: PDFReaderState) {
-        var count = 0
-        for (_, annotations) in state.annotations {
-            count += annotations.count
-            if count > 1 {
-                break
-            }
-        }
-        self.setupToolbar(filterEnabled: count > 1, filterOn: (state.filter != nil), editingEnabled: state.sidebarEditingEnabled,
+        self.setupToolbar(filterEnabled: state.annotations.count > 1, filterOn: (state.filter != nil), editingEnabled: state.sidebarEditingEnabled,
                           deletionEnabled: state.deletionEnabled, mergingEnabled: state.mergingEnabled)
     }
 
