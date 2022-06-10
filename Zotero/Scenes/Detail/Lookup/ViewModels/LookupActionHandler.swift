@@ -57,6 +57,7 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                    .disposed(by: self.disposeBag)
 
         case .lookUp(let identifier):
+            guard !identifier.isEmpty else { return }
             self.update(viewModel: viewModel) { state in
                 state.state = .loading
             }

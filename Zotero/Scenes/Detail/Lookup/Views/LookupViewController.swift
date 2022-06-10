@@ -81,12 +81,24 @@ class LookupViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+
+        self.tableViewHeight.constant = self.tableView.contentSize.height
         self.updatePreferredContentSize()
     }
 
     // MARK: - Actions
 
     private func update(state: LookupState) {
+        switch state.state {
+        case .input:
+            self.textField.isEnabled = true
+        default:
+            if self.textField.isFirstResponder {
+                self.textField.resignFirstResponder()
+            }
+            self.textField.isEnabled = false
+        }
+
         switch state.state {
         case .loading, .input:
             self.tableView.isHidden = true
@@ -224,6 +236,7 @@ class LookupViewController: UIViewController {
         self.titleLabel.text = L10n.Lookup.title
         self.errorLabel.text = L10n.Errors.lookup
         self.setupBarButtons(to: self.viewModel.state.state)
+        self.textField.delegate = self
 
         self.tableView.register(UINib(nibName: "LookupItemCell", bundle: nil), forCellReuseIdentifier: "Cell")
 
@@ -255,5 +268,12 @@ class LookupViewController: UIViewController {
                     self.closeAfterUpdateIfNeeded()
                 })
                 .disposed(by: self.disposeBag)
+    }
+}
+
+extension LookupViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        self.viewModel.process(action: .lookUp(textField.text ?? ""))
+        return true
     }
 }

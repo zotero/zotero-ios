@@ -16,6 +16,7 @@ final class FileAttachmentView: UIView {
         case list
         case detail
         case shareExtension
+        case lookup
     }
 
     enum State {
@@ -162,24 +163,28 @@ final class FileAttachmentView: UIView {
 
         switch contentType {
         case .progress(let progress):
-            self.set(progress: progress)
+            self.set(progress: progress, showsStop: (style != .lookup))
             self.setMainImage(asset: nil)
             self.setBadge(asset: nil, style: style)
 
         case .image(let asset):
-            self.set(progress: nil)
+            self.set(progress: nil, showsStop: false)
             self.setMainImage(asset: asset)
             self.setBadge(asset: nil, style: style)
 
         case .imageWithBadge(let mainAsset, let badgeAsset):
-            self.set(progress: nil)
+            self.set(progress: nil, showsStop: false)
             self.setMainImage(asset: mainAsset)
             self.setBadge(asset: badgeAsset, style: style)
         }
     }
 
-    private func set(progress: CGFloat?) {
-        self.stopLayer.isHidden = progress == nil
+    private func set(progress: CGFloat?, showsStop: Bool) {
+        if showsStop {
+            self.stopLayer.isHidden = progress == nil
+        } else {
+            self.stopLayer.isHidden = true
+        }
         self.progressLayer.isHidden = progress == nil
         self.circleLayer.isHidden = progress == nil
         if let progress = progress {
@@ -221,7 +226,7 @@ final class FileAttachmentView: UIView {
 
     private func badgeBorderWidth(for style: Style) -> CGFloat {
         switch style {
-        case .detail, .shareExtension: return FileAttachmentView.badgeDetailBorderWidth
+        case .detail, .shareExtension, .lookup: return FileAttachmentView.badgeDetailBorderWidth
         case .list: return FileAttachmentView.badgeListBorderWidth
         }
     }
@@ -251,20 +256,20 @@ final class FileAttachmentView: UIView {
         switch type {
         case .download:
             switch style {
-            case .detail, .shareExtension: return Asset.Images.Attachments.badgeDetailDownload
+            case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.badgeDetailDownload
             case .list: return Asset.Images.Attachments.badgeListDownload
             }
 
         case .failed:
             switch style {
-            case .detail: return Asset.Images.Attachments.badgeDetailFailed
+            case .detail, .lookup: return Asset.Images.Attachments.badgeDetailFailed
             case .shareExtension: return Asset.Images.Attachments.badgeShareextFailed
             case .list: return Asset.Images.Attachments.badgeListFailed
             }
 
         case .missing:
             switch style {
-            case .detail, .shareExtension: return Asset.Images.Attachments.badgeDetailMissing
+            case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.badgeDetailMissing
             case .list: return Asset.Images.Attachments.badgeListMissing
             }
         }
@@ -274,19 +279,19 @@ final class FileAttachmentView: UIView {
         switch attachmentType {
         case .url:
             switch style {
-            case .detail, .shareExtension: return Asset.Images.Attachments.detailLinkedUrl
+            case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.detailLinkedUrl
             case .list: return Asset.Images.Attachments.listLink
             }
         case .file(_, let contentType, _, let linkType):
             switch linkType {
             case .embeddedImage:
                 switch style {
-                case .detail, .shareExtension: return Asset.Images.Attachments.detailImage
+                case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.detailImage
                 case .list: return Asset.Images.Attachments.listImage
                 }
             case .linkedFile:
                 switch style {
-                case .detail, .shareExtension:
+                case .detail, .shareExtension, .lookup:
                     switch contentType {
                     case "application/pdf": return Asset.Images.Attachments.detailLinkedPdf
                     default: return Asset.Images.Attachments.detailLinkedDocument
@@ -297,23 +302,23 @@ final class FileAttachmentView: UIView {
             case .importedUrl where contentType == "text/html":
                 switch style {
                 case .list: return Asset.Images.Attachments.listWebPageSnapshot
-                case .detail, .shareExtension: return Asset.Images.Attachments.detailWebpageSnapshot
+                case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.detailWebpageSnapshot
                 }
             case .importedFile, .importedUrl:
                 switch contentType {
                 case "image/png", "image/jpeg", "image/gif":
                     switch style {
-                    case .detail, .shareExtension: return Asset.Images.Attachments.detailImage
+                    case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.detailImage
                     case .list: return Asset.Images.Attachments.listImage
                     }
                 case "application/pdf":
                     switch style {
-                    case .detail, .shareExtension: return Asset.Images.Attachments.detailPdf
+                    case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.detailPdf
                     case .list: return Asset.Images.Attachments.listPdf
                     }
                 default:
                     switch style {
-                    case .detail, .shareExtension: return Asset.Images.Attachments.detailDocument
+                    case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.detailDocument
                     case .list: return Asset.Images.Attachments.listDocument
                     }
                 }
