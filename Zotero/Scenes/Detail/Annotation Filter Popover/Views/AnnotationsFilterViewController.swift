@@ -12,6 +12,7 @@ import RxSwift
 
 class AnnotationsFilterViewController: UIViewController {
     @IBOutlet private weak var colorContainer: UIStackView!
+    @IBOutlet private weak var tagsContainer: UIView!
     @IBOutlet private weak var tagsLabel: UILabel!
 
     private static let width: CGFloat = 300
@@ -40,7 +41,7 @@ class AnnotationsFilterViewController: UIViewController {
         self.setupNavigationBar()
         self.setupColorPicker()
         self.setSelected(colors: self.viewModel.state.colors)
-        self.set(tags: self.viewModel.state.tags)
+        self.set(tags: self.viewModel.state.tags, availableTags: self.viewModel.state.availableTags)
 
         self.viewModel.stateObservable
                       .observe(on: MainScheduler.instance)
@@ -63,7 +64,7 @@ class AnnotationsFilterViewController: UIViewController {
         }
 
         if state.changes.contains(.tags) {
-            self.set(tags: state.tags)
+            self.set(tags: state.tags, availableTags: state.availableTags)
         }
 
         if state.changes.contains(.tags) || state.changes.contains(.colors) {
@@ -90,9 +91,15 @@ class AnnotationsFilterViewController: UIViewController {
         }
     }
 
-    private func set(tags: Set<String>) {
-        let sorted = self.viewModel.state.availableTags.compactMap({ tags.contains($0.name) ? $0 : nil })
-        let title = sorted.isEmpty ? "Pick Tags" : sorted.map({ $0.name }).joined(separator: ", ")
+    private func set(tags: Set<String>, availableTags: [Tag]) {
+        if availableTags.isEmpty {
+            self.tagsContainer.isHidden = true
+            return
+        }
+
+        self.tagsContainer.isHidden = false
+        let sorted = availableTags.compactMap({ tags.contains($0.name) ? $0 : nil })
+        let title = sorted.isEmpty ? L10n.Pdf.AnnotationsSidebar.Filter.tagsPlaceholder : sorted.map({ $0.name }).joined(separator: ", ")
         self.tagsLabel.text = title
     }
 

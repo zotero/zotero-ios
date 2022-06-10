@@ -803,6 +803,8 @@ internal enum L10n {
       /// Search
       internal static let searchTitle = L10n.tr("Localizable", "pdf.annotations_sidebar.search_title")
       internal enum Filter {
+        /// Select Tags…
+        internal static let tagsPlaceholder = L10n.tr("Localizable", "pdf.annotations_sidebar.filter.tags_placeholder")
         /// Filter Annotations
         internal static let title = L10n.tr("Localizable", "pdf.annotations_sidebar.filter.title")
       }

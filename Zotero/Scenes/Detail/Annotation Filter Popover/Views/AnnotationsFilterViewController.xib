@@ -12,6 +12,7 @@
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="AnnotationsFilterViewController" customModule="Zotero" customModuleProvider="target">
             <connections>
                 <outlet property="colorContainer" destination="zLi-L8-WsK" id="AlC-BI-FX5"/>
+                <outlet property="tagsContainer" destination="cmv-Gs-MNR" id="PNt-l1-Mrn"/>
                 <outlet property="tagsLabel" destination="kvd-Mz-pfW" id="AKs-Zc-PC5"/>
                 <outlet property="view" destination="i5M-Pr-FkT" id="sfx-zR-JGt"/>
             </connections>

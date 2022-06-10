@@ -58,8 +58,7 @@ final class AnnotationsViewController: UIViewController {
 
         self.definesPresentationContext = true
         self.setupViews()
-        self.setupToolbar(filterEnabled: (self.viewModel.state.filter != nil), editingEnabled: self.viewModel.state.sidebarEditingEnabled,
-                          deletionEnabled: self.viewModel.state.deletionEnabled, mergingEnabled: self.viewModel.state.mergingEnabled)
+        self.setupToolbar(to: self.viewModel.state)
         self.setupDataSource()
         self.setupSearchController()
         self.setupKeyboardObserving()
@@ -146,7 +145,7 @@ final class AnnotationsViewController: UIViewController {
                 self.tableView.beginUpdates()
                 self.tableView.endUpdates()
 
-                self.setupToolbar(filterEnabled: (state.filter != nil), editingEnabled: state.sidebarEditingEnabled, deletionEnabled: state.deletionEnabled, mergingEnabled: state.mergingEnabled)
+                self.setupToolbar(to: state)
             }
 
             if state.changes.contains(.sidebarEditingSelection) {
@@ -154,8 +153,8 @@ final class AnnotationsViewController: UIViewController {
                 self.mergeBarButton?.isEnabled = state.mergingEnabled
             }
 
-            if state.changes.contains(.filter) {
-                self.setupToolbar(filterEnabled: (state.filter != nil), editingEnabled: state.sidebarEditingEnabled, deletionEnabled: state.deletionEnabled, mergingEnabled: state.mergingEnabled)
+            if state.changes.contains(.filter) || state.changes.contains(.annotations) {
+                self.setupToolbar(to: state)
             }
         }
     }
@@ -439,7 +438,19 @@ final class AnnotationsViewController: UIViewController {
                           .disposed(by: self.disposeBag)
     }
 
-    private func setupToolbar(filterEnabled: Bool, editingEnabled: Bool, deletionEnabled: Bool, mergingEnabled: Bool) {
+    private func setupToolbar(to state: PDFReaderState) {
+        var count = 0
+        for (_, annotations) in state.annotations {
+            count += annotations.count
+            if count > 1 {
+                break
+            }
+        }
+        self.setupToolbar(filterEnabled: count > 1, filterOn: (state.filter != nil), editingEnabled: state.sidebarEditingEnabled,
+                          deletionEnabled: state.deletionEnabled, mergingEnabled: state.mergingEnabled)
+    }
+
+    private func setupToolbar(filterEnabled: Bool, filterOn: Bool, editingEnabled: Bool, deletionEnabled: Bool, mergingEnabled: Bool) {
         guard !self.toolbarContainer.isHidden else { return }
 
         var items: [UIBarButtonItem] = []
@@ -472,11 +483,11 @@ final class AnnotationsViewController: UIViewController {
                   .disposed(by: self.disposeBag)
             items.append(delete)
             self.deleteBarButton = delete
-        } else {
+        } else if filterEnabled {
             self.deleteBarButton = nil
             self.mergeBarButton = nil
 
-            let filterImageName = filterEnabled ? "line.horizontal.3.decrease.circle.fill" : "line.horizontal.3.decrease.circle"
+            let filterImageName = filterOn ? "line.horizontal.3.decrease.circle.fill" : "line.horizontal.3.decrease.circle"
             let filter = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
             filter.rx.tap
                   .subscribe(onNext: { [weak self] _ in
