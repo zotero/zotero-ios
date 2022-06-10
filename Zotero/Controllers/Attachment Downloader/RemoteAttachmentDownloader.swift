@@ -53,7 +53,7 @@ final class RemoteAttachmentDownloader {
     private var progressObservers: [Download: NSKeyValueObservation]
 
     init(apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage, schemaController: SchemaController) {
-        let queue = DispatchQueue(label: "org.zotero.AttachmentDownloader.ProcessingQueue", qos: .userInteractive, attributes: .concurrent)
+        let queue = DispatchQueue(label: "org.zotero.RemoteAttachmentDownloader.ProcessingQueue", qos: .userInteractive, attributes: .concurrent)
         let operationQueue = OperationQueue()
         operationQueue.maxConcurrentOperationCount = 2
         operationQueue.qualityOfService = .userInitiated
@@ -65,7 +65,7 @@ final class RemoteAttachmentDownloader {
         self.dbStorage = dbStorage
         self.operationQueue = operationQueue
         self.queue = queue
-        self.dbQueue = DispatchQueue(label: "org.zotero.AttachmentDownloader.DbQueue", qos: .userInteractive)
+        self.dbQueue = DispatchQueue(label: "org.zotero.RemoteAttachmentDownloader.DbQueue", qos: .userInteractive)
         self.observable = PublishSubject()
         self.operations = [:]
         self.progressObservers = [:]
@@ -135,7 +135,7 @@ final class RemoteAttachmentDownloader {
 
             do {
                 try self.dbQueue.sync {
-                    try self.dbStorage.perform(request: request, on: self.queue)
+                    try self.dbStorage.perform(request: request, on: self.dbQueue)
                 }
                 self.observable.on(.next(Update(download: download, kind: .ready)))
             } catch let error {
