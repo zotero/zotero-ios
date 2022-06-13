@@ -39,8 +39,11 @@ class LookupViewController: UIViewController {
     @IBOutlet private weak var tableViewHeight: NSLayoutConstraint!
     @IBOutlet private weak var errorLabel: UILabel!
     @IBOutlet private weak var topConstraint: NSLayoutConstraint!
+    @IBOutlet private var padBottomConstraint: NSLayoutConstraint!
+    @IBOutlet private var phoneBottomConstraint: NSLayoutConstraint!
 
     private var dataSource: UITableViewDiffableDataSource<Int, Row>!
+    private var contentSizeObserver: NSKeyValueObservation?
 
     private static let width: CGFloat = 500
     private static let iconWidth: CGFloat = 28
@@ -81,8 +84,6 @@ class LookupViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-
-        self.tableViewHeight.constant = self.tableView.contentSize.height
         self.updatePreferredContentSize()
     }
 
@@ -103,8 +104,12 @@ class LookupViewController: UIViewController {
         case .loading, .input:
             self.tableView.isHidden = true
             self.errorLabel.isHidden = true
+            self.setupBarButtons(to: state.state)
+
         case .failed:
             self.errorLabel.isHidden =  false
+            self.setupBarButtons(to: state.state)
+
         case .done(let data):
             let hasAttachment = data.first(where: { !$0.attachments.isEmpty }) != nil
 
@@ -113,17 +118,19 @@ class LookupViewController: UIViewController {
                 return
             }
 
-            self.errorLabel.isHidden = true
-            self.titleLabel.isHidden = true
-            self.inputContainer.isHidden = true
-            self.topConstraint.constant = 0
-            self.show(data: data)
+            self.show(data: data) {
+                // It takes a little while for the `contentSize` observer notification to come, so all the content is hidden after the notification arrives, so that there is not an empty screen while
+                // waiting for it.
+                self.errorLabel.isHidden = true
+                self.titleLabel.isHidden = true
+                self.inputContainer.isHidden = true
+                self.topConstraint.constant = 0
+                self.setupBarButtons(to: state.state)
+            }
         }
-
-        self.setupBarButtons(to: state.state)
     }
 
-    private func show(data: [LookupState.LookupData]) {
+    private func show(data: [LookupState.LookupData], completion: @escaping () -> Void) {
         var snapshot = NSDiffableDataSourceSnapshot<Int, Row>()
         snapshot.appendSections([0])
 
@@ -141,8 +148,29 @@ class LookupViewController: UIViewController {
             snapshot.appendItems(lookup.attachments.map({ .attachment($0.0, .progress(0)) }), toSection: 0)
         }
 
-        self.dataSource.apply(snapshot, animatingDifferences: false)
         self.tableView.isHidden = false
+        self.dataSource.apply(snapshot, animatingDifferences: false)
+
+        var isFirstCall = true
+        // For some reason, the observer subscription has to be here, doesn't work if it's in `viewDidLoad`.
+        self.contentSizeObserver = self.tableView.observe(\.contentSize, options: [.new]) { [weak self] tableView, change in
+            guard let `self` = self, let value = change.newValue, value.height != self.tableViewHeight.constant else { return }
+
+            self.tableViewHeight.constant = value.height
+
+            if value.height == self.tableView.frame.height {
+                self.tableView.isScrollEnabled = true
+                self.contentSizeObserver = nil
+            }
+
+            if isFirstCall {
+                completion()
+            } else {
+                isFirstCall = false
+            }
+
+            self.updatePreferredContentSize()
+        }
     }
 
     private func process(update: RemoteAttachmentDownloader.Update) {
@@ -225,9 +253,15 @@ class LookupViewController: UIViewController {
     }
 
     private func updatePreferredContentSize() {
+        guard UIDevice.current.userInterfaceIdiom == .pad else { return }
         let size = self.view.systemLayoutSizeFitting(CGSize(width: LookupViewController.width, height: .greatestFiniteMagnitude))
         self.preferredContentSize = CGSize(width: LookupViewController.width, height: size.height - self.view.safeAreaInsets.top)
         self.navigationController?.preferredContentSize = self.preferredContentSize
+    }
+
+    private func updateKeyboardSize(_ data: KeyboardData) {
+        guard UIDevice.current.userInterfaceIdiom == .phone else { return }
+        self.additionalSafeAreaInsets = UIEdgeInsets(top: 0, left: 0, bottom: data.endFrame.height, right: 0)
     }
 
     // MARK: - Setups
@@ -238,7 +272,18 @@ class LookupViewController: UIViewController {
         self.setupBarButtons(to: self.viewModel.state.state)
         self.textField.delegate = self
 
+        let isPhone = UIDevice.current.userInterfaceIdiom == .phone
+        self.phoneBottomConstraint.isActive = isPhone
+        self.padBottomConstraint.isActive = !isPhone
+
+        self.setupTableView()
+        self.setupKeyboardObserving()
+    }
+
+    private func setupTableView() {
+        self.tableViewHeight.constant = 0
         self.tableView.register(UINib(nibName: "LookupItemCell", bundle: nil), forCellReuseIdentifier: "Cell")
+        self.tableView.isScrollEnabled = false
 
         self.dataSource = UITableViewDiffableDataSource(tableView: self.tableView, cellProvider: { tableView, indexPath, row in
             let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
@@ -268,6 +313,30 @@ class LookupViewController: UIViewController {
                     self.closeAfterUpdateIfNeeded()
                 })
                 .disposed(by: self.disposeBag)
+    }
+
+    private func setupKeyboardObserving() {
+        guard UIDevice.current.userInterfaceIdiom == .phone else { return }
+
+        NotificationCenter.default
+                          .keyboardWillShow
+                          .observe(on: MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] notification in
+                              if let data = notification.keyboardData {
+                                  self?.updateKeyboardSize(data)
+                              }
+                          })
+                          .disposed(by: self.disposeBag)
+
+        NotificationCenter.default
+                          .keyboardWillHide
+                          .observe(on: MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] notification in
+                              if let data = notification.keyboardData {
+                                  self?.updateKeyboardSize(data)
+                              }
+                          })
+                          .disposed(by: self.disposeBag)
     }
 }
 

@@ -13,6 +13,8 @@
             <connections>
                 <outlet property="errorLabel" destination="5xO-hf-x9n" id="r3Q-u4-WV3"/>
                 <outlet property="inputContainer" destination="JBf-fT-rdp" id="heh-t3-ZhX"/>
+                <outlet property="padBottomConstraint" destination="Pke-Yx-S2s" id="RZC-o0-zbZ"/>
+                <outlet property="phoneBottomConstraint" destination="qwZ-KV-kbg" id="vWO-sy-pDs"/>
                 <outlet property="tableView" destination="hh8-9u-I8Q" id="lPo-bQ-sas"/>
                 <outlet property="tableViewHeight" destination="sbS-bZ-NlJ" id="4kY-uL-C3x"/>
                 <outlet property="textField" destination="a2E-oe-MiL" id="lpt-N9-A14"/>
@@ -65,14 +67,14 @@
                             </subviews>
                         </stackView>
                         <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="hh8-9u-I8Q">
-                            <rect key="frame" x="0.0" y="76" width="374" height="500"/>
+                            <rect key="frame" x="0.0" y="76" width="374" height="0.0"/>
                             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                             <constraints>
-                                <constraint firstAttribute="height" priority="999" constant="500" id="sbS-bZ-NlJ"/>
+                                <constraint firstAttribute="height" priority="999" id="sbS-bZ-NlJ"/>
                             </constraints>
                         </tableView>
                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" verticalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5xO-hf-x9n">
-                            <rect key="frame" x="0.0" y="588" width="374" height="200"/>
+                            <rect key="frame" x="0.0" y="88" width="374" height="700"/>
                             <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                             <color key="textColor" systemColor="systemRedColor"/>
                             <nil key="highlightedColor"/>
@@ -93,6 +95,7 @@
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="bottom" secondItem="zzx-dE-uZT" secondAttribute="bottom" constant="15" id="Pke-Yx-S2s"/>
                 <constraint firstAttribute="trailing" secondItem="zzx-dE-uZT" secondAttribute="trailing" constant="20" id="PtX-AY-J46"/>
                 <constraint firstItem="Hyv-nM-hA1" firstAttribute="top" secondItem="fnl-2z-Ty3" secondAttribute="top" id="cLX-aN-zeF"/>
+                <constraint firstItem="fnl-2z-Ty3" firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="zzx-dE-uZT" secondAttribute="bottom" constant="15" id="qwZ-KV-kbg"/>
                 <constraint firstItem="zzx-dE-uZT" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" constant="20" id="vKC-c6-RBh"/>
             </constraints>
             <point key="canvasLocation" x="-72" y="146"/>
