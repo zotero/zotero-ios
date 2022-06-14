@@ -31,7 +31,10 @@ struct NotePreviewGenerator {
     }
 
     private static func stripHtml(from string: String) -> String? {
-        guard let expression = self.htmlExpression else { return nil }
+        guard let expression = self.htmlExpression else {
+            DDLogWarn("NotePreviewGenerator: wrong regular expression!")
+            return nil
+        }
 
         var stripped = string
         let matches = expression.matches(in: string, options: [], range: NSRange(string.startIndex..., in: string))
