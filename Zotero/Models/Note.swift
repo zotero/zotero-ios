@@ -20,7 +20,7 @@ struct Note: Identifiable, Equatable, Hashable {
 
     init(key: String, text: String, tags: [Tag]) {
         self.key = key
-        self.title = text.notePreview ?? text
+        self.title = NotePreviewGenerator.preview(from: text) ?? text
         self.text = text
         self.tags = tags
     }

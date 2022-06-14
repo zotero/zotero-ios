@@ -174,7 +174,7 @@ struct StoreItemDbRequest: DbResponseRequest {
             case (FieldKeys.Item.title, _), (_, FieldKeys.Item.title):
                 item.baseTitle = value
             case (FieldKeys.Item.note, _) where item.rawType == ItemTypes.note:
-                item.baseTitle = value.notePreview ?? value
+                item.baseTitle = NotePreviewGenerator.preview(from: value) ?? value
             case (FieldKeys.Item.date, _):
                 date = value
             case (FieldKeys.Item.publisher, _), (_, FieldKeys.Item.publisher):
