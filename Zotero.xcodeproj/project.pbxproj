@@ -875,7 +875,6 @@
 		B3D16BF224E161C70002663B /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D16BF024E161C70002663B /* LoginViewController.swift */; };
 		B3D16BF324E161C70002663B /* LoginViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3D16BF124E161C70002663B /* LoginViewController.xib */; };
 		B3D1ED1F2527282400C31465 /* CollapsibleLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D1ED1E2527282300C31465 /* CollapsibleLabel.swift */; };
-		B3D3E714264BD0F200A521DE /* DiffableDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3E713264BD0F200A521DE /* DiffableDataSource.swift */; };
 		B3D3FCA9267762EC008E243A /* ExportLocaleReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3FCA8267762EC008E243A /* ExportLocaleReader.swift */; };
 		B3D58D5625ED856F00D8FA31 /* DebugLogUploadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D58D5525ED856F00D8FA31 /* DebugLogUploadRequest.swift */; };
 		B3D58D5B25ED861500D8FA31 /* DebugLogUploadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D58D5525ED856F00D8FA31 /* DebugLogUploadRequest.swift */; };
@@ -985,7 +984,6 @@
 		B3EBC9B1283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EBC9B0283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift */; };
 		B3EBC9B2283E39AD00286A9E /* ReadBaseTagsToDeleteDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EBC9B0283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift */; };
 		B3EC44612718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EC44602718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift */; };
-		B3ED688D255AE46D00D4DE78 /* Differ in Frameworks */ = {isa = PBXBuildFile; productRef = B3ED688C255AE46D00D4DE78 /* Differ */; };
 		B3F0C3F9250A1BD8002D557A /* LibrariesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F0C3F7250A1BD8002D557A /* LibrariesViewController.swift */; };
 		B3F0C3FA250A1BD8002D557A /* LibrariesViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3F0C3F8250A1BD8002D557A /* LibrariesViewController.xib */; };
 		B3F0C3FD250A1DB8002D557A /* LibraryCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F0C3FB250A1DB8002D557A /* LibraryCell.swift */; };
@@ -1690,7 +1688,6 @@
 		B3D16BF024E161C70002663B /* LoginViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewController.swift; sourceTree = "<group>"; };
 		B3D16BF124E161C70002663B /* LoginViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LoginViewController.xib; sourceTree = "<group>"; };
 		B3D1ED1E2527282300C31465 /* CollapsibleLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollapsibleLabel.swift; sourceTree = "<group>"; };
-		B3D3E713264BD0F200A521DE /* DiffableDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiffableDataSource.swift; sourceTree = "<group>"; };
 		B3D3FCA8267762EC008E243A /* ExportLocaleReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportLocaleReader.swift; sourceTree = "<group>"; };
 		B3D58D5525ED856F00D8FA31 /* DebugLogUploadRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogUploadRequest.swift; sourceTree = "<group>"; };
 		B3D58D6125EE26A600D8FA31 /* DebugResponseParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugResponseParserDelegate.swift; sourceTree = "<group>"; };
@@ -1818,7 +1815,6 @@
 			files = (
 				B356A3752524A601003F1943 /* RxSwiftExt in Frameworks */,
 				B35E4B8F25248B3C000EA134 /* RxCocoa in Frameworks */,
-				B3ED688D255AE46D00D4DE78 /* Differ in Frameworks */,
 				B35E4B8D25248B3C000EA134 /* RxSwift in Frameworks */,
 				B356A39E2524A703003F1943 /* CocoaLumberjackSwift in Frameworks */,
 				B356A363252490B3003F1943 /* Alamofire in Frameworks */,
@@ -3261,7 +3257,6 @@
 				B3C8DD8627B54EE70084E1AD /* CollectionsPickerViewController.xib */,
 				B37D8E6824DC2BEE00F526C5 /* CollectionRow.swift */,
 				B3748D2126566F6900ED05F8 /* ContainerViewController.swift */,
-				B3D3E713264BD0F200A521DE /* DiffableDataSource.swift */,
 				B338E81F273AA9B20003DECD /* DisappearActionHostingController.swift */,
 				B3DCDF01240912060039ED0D /* DocumentPickerViewController.swift */,
 				B30B40622490F09400FAAF6D /* FileAttachmentView.swift */,
@@ -3694,7 +3689,6 @@
 				B356A39D2524A703003F1943 /* CocoaLumberjackSwift */,
 				B356A39F2524A703003F1943 /* CocoaLumberjack */,
 				B3A6C59E252CA08300F24CBE /* PSPDFKit */,
-				B3ED688C255AE46D00D4DE78 /* Differ */,
 				B35C9C072642A0BC0004C47E /* RealmSwift */,
 				B3445F4526EF5EE9007D4009 /* CrashReporter */,
 				B3D84BEF27919FDE005DDD7C /* Starscream */,
@@ -3835,7 +3829,6 @@
 				B356A3942524A6D5003F1943 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */,
 				B356A39C2524A703003F1943 /* XCRemoteSwiftPackageReference "CocoaLumberjack" */,
 				B3A6C59D252CA08200F24CBE /* XCRemoteSwiftPackageReference "PSPDFKit-SP" */,
-				B3ED688B255AE46D00D4DE78 /* XCRemoteSwiftPackageReference "Differ" */,
 				B35C9C042642A0BC0004C47E /* XCRemoteSwiftPackageReference "realm-cocoa" */,
 				B3445F4426EF5EE9007D4009 /* XCRemoteSwiftPackageReference "plcrashreporter" */,
 				B3D84BEE27919FDE005DDD7C /* XCRemoteSwiftPackageReference "Starscream" */,
@@ -4105,7 +4098,6 @@
 				B305660223FC051E003304F2 /* ApiClient.swift in Sources */,
 				B312BB4125519DD30023300A /* ItemDetailLayout.swift in Sources */,
 				B331F9B5265400D70099F6A6 /* ReadStylesDbRequest.swift in Sources */,
-				B3D3E714264BD0F200A521DE /* DiffableDataSource.swift in Sources */,
 				B39D33712400150B00EF2ACB /* CreateAttachmentsDbRequest.swift in Sources */,
 				B3A081E125D2D8050088EC24 /* CollectionEditHostingViewController.swift in Sources */,
 				B3486B8B26CFAFEA0036A267 /* SingleCitationAction.swift in Sources */,
@@ -5971,7 +5963,7 @@
 			repositoryURL = "https://github.com/realm/realm-cocoa";
 			requirement = {
 				kind = exactVersion;
-				version = 10.25.2;
+				version = 10.28.1;
 			};
 		};
 		B35E4B8B25248B3C000EA134 /* XCRemoteSwiftPackageReference "RxSwift" */ = {
@@ -5987,7 +5979,7 @@
 			repositoryURL = "https://github.com/PSPDFKit/PSPDFKit-SP";
 			requirement = {
 				kind = exactVersion;
-				version = 11.3.2;
+				version = 11.4.0;
 			};
 		};
 		B3D84BEE27919FDE005DDD7C /* XCRemoteSwiftPackageReference "Starscream" */ = {
@@ -5996,14 +5988,6 @@
 			requirement = {
 				kind = exactVersion;
 				version = 4.0.4;
-			};
-		};
-		B3ED688B255AE46D00D4DE78 /* XCRemoteSwiftPackageReference "Differ" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/tonyarnold/Differ";
-			requirement = {
-				kind = exactVersion;
-				version = 1.4.5;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -6128,11 +6112,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B3D84BEE27919FDE005DDD7C /* XCRemoteSwiftPackageReference "Starscream" */;
 			productName = Starscream;
-		};
-		B3ED688C255AE46D00D4DE78 /* Differ */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B3ED688B255AE46D00D4DE78 /* XCRemoteSwiftPackageReference "Differ" */;
-			productName = Differ;
 		};
 		B3F7B0672524A78F00E51377 /* CocoaLumberjack */ = {
 			isa = XCSwiftPackageProductDependency;

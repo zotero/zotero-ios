@@ -37,15 +37,6 @@
       }
     },
     {
-      "identity" : "differ",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tonyarnold/Differ",
-      "state" : {
-        "revision" : "4c3eb4d76ad5c14075829397a5741b0badb08dce",
-        "version" : "1.4.5"
-      }
-    },
-    {
       "identity" : "keychain-swift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/evgenyneu/keychain-swift",
@@ -86,8 +77,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/PSPDFKit/PSPDFKit-SP",
       "state" : {
-        "revision" : "0e18629c443e3f39ecfee0f600d9ef5551ecf488",
-        "version" : "11.3.2"
+        "revision" : "ed36ac73690337b08944ed5e6ae004f97909dcc3",
+        "version" : "11.4.0"
       }
     },
     {
@@ -104,8 +95,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/realm/realm-cocoa",
       "state" : {
-        "revision" : "41fe221e2209ad31bee35593513d957dc3e6e458",
-        "version" : "10.25.2"
+        "revision" : "d3aaab84885e0de9a7a49955874cee160adee164",
+        "version" : "10.28.1"
       }
     },
     {
@@ -113,8 +104,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/realm/realm-core",
       "state" : {
-        "revision" : "472d325a2e844fcb48c400db74e6b9646f92ca93",
-        "version" : "11.15.0"
+        "revision" : "fd48276f88f3d55dbdcdc9e8cbf32541811d5865",
+        "version" : "12.1.0"
       }
     },
     {
