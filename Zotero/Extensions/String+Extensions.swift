@@ -20,6 +20,22 @@ extension String {
     }
 
     var extensionFromMimeType: String? {
+        // The `UTTypeCopyPreferredTagWithClass` sometimes crashes in background. For that reason here are some hardoced mostly used values in our app to avoid using code below.
+
+        switch self {
+        case "application/pdf":
+            return "pdf"
+        case "application/zip":
+            return "zip"
+        case "text/html":
+            return "html"
+        case "image/jpeg":
+            return "jpg"
+        case "text/plain":
+            return "txt"
+        default: break
+        }
+
         guard let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, self as CFString, nil),
               let ext = UTTypeCopyPreferredTagWithClass(uti.takeRetainedValue(), kUTTagClassFilenameExtension) else{
             return nil
