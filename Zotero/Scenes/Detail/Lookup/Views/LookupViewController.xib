@@ -4,6 +4,7 @@
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="20020"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -15,6 +16,7 @@
                 <outlet property="inputContainer" destination="JBf-fT-rdp" id="heh-t3-ZhX"/>
                 <outlet property="padBottomConstraint" destination="Pke-Yx-S2s" id="RZC-o0-zbZ"/>
                 <outlet property="phoneBottomConstraint" destination="qwZ-KV-kbg" id="vWO-sy-pDs"/>
+                <outlet property="scanButton" destination="EWy-7p-vXE" id="2mv-FZ-mXT"/>
                 <outlet property="tableView" destination="hh8-9u-I8Q" id="lPo-bQ-sas"/>
                 <outlet property="tableViewHeight" destination="sbS-bZ-NlJ" id="4kY-uL-C3x"/>
                 <outlet property="textField" destination="a2E-oe-MiL" id="lpt-N9-A14"/>
@@ -46,35 +48,50 @@
                             <nil key="textColor"/>
                             <nil key="highlightedColor"/>
                         </label>
-                        <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="JBf-fT-rdp">
-                            <rect key="frame" x="0.0" y="29" width="374" height="35"/>
+                        <stackView opaque="NO" contentMode="scaleToFill" spacing="16" id="wav-zV-VE2">
+                            <rect key="frame" x="0.0" y="29" width="374" height="31"/>
+                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                             <subviews>
-                                <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="a2E-oe-MiL">
-                                    <rect key="frame" x="0.0" y="0.0" width="374" height="34"/>
-                                    <constraints>
-                                        <constraint firstAttribute="height" constant="34" id="iYt-6X-bBD"/>
-                                    </constraints>
-                                    <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
-                                    <textInputTraits key="textInputTraits"/>
-                                </textField>
-                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="lMk-Rb-8e4">
-                                    <rect key="frame" x="0.0" y="34" width="374" height="1"/>
-                                    <color key="backgroundColor" systemColor="opaqueSeparatorColor"/>
-                                    <constraints>
-                                        <constraint firstAttribute="height" constant="1" id="Qlb-WA-ecc"/>
-                                    </constraints>
-                                </view>
+                                <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="JBf-fT-rdp">
+                                    <rect key="frame" x="0.0" y="0.0" width="271" height="718"/>
+                                    <subviews>
+                                        <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="a2E-oe-MiL">
+                                            <rect key="frame" x="0.0" y="0.0" width="271" height="717"/>
+                                            <constraints>
+                                                <constraint firstAttribute="height" constant="34" id="iYt-6X-bBD"/>
+                                            </constraints>
+                                            <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
+                                            <textInputTraits key="textInputTraits"/>
+                                        </textField>
+                                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="lMk-Rb-8e4">
+                                            <rect key="frame" x="0.0" y="717" width="271" height="1"/>
+                                            <color key="backgroundColor" systemColor="opaqueSeparatorColor"/>
+                                            <constraints>
+                                                <constraint firstAttribute="height" constant="1" id="Qlb-WA-ecc"/>
+                                            </constraints>
+                                        </view>
+                                    </subviews>
+                                </stackView>
+                                <button opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="999" horizontalCompressionResistancePriority="1000" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="EWy-7p-vXE">
+                                    <rect key="frame" x="287" y="0.0" width="87" height="718"/>
+                                    <color key="tintColor" name="zoteroBlueWithDarkMode"/>
+                                    <state key="normal" title="Button"/>
+                                    <buttonConfiguration key="configuration" style="plain" image="text.viewfinder" catalog="system" title="Scan Text">
+                                        <fontDescription key="titleFontDescription" style="UICTFontTextStyleBody"/>
+                                    </buttonConfiguration>
+                                </button>
                             </subviews>
+                            <viewLayoutGuide key="safeArea" id="8Mg-3o-fYh"/>
                         </stackView>
                         <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="hh8-9u-I8Q">
-                            <rect key="frame" x="0.0" y="76" width="374" height="0.0"/>
+                            <rect key="frame" x="0.0" y="759" width="374" height="0.0"/>
                             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                             <constraints>
                                 <constraint firstAttribute="height" priority="999" id="sbS-bZ-NlJ"/>
                             </constraints>
                         </tableView>
                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" verticalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5xO-hf-x9n">
-                            <rect key="frame" x="0.0" y="88" width="374" height="700"/>
+                            <rect key="frame" x="0.0" y="771" width="374" height="17"/>
                             <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                             <color key="textColor" systemColor="systemRedColor"/>
                             <nil key="highlightedColor"/>
@@ -102,6 +119,10 @@
         </view>
     </objects>
     <resources>
+        <image name="text.viewfinder" catalog="system" width="32" height="32"/>
+        <namedColor name="zoteroBlueWithDarkMode">
+            <color red="0.25098039215686274" green="0.44313725490196076" blue="0.90196078431372551" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
         <systemColor name="opaqueSeparatorColor">
             <color red="0.77647058823529413" green="0.77647058823529413" blue="0.78431372549019607" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>

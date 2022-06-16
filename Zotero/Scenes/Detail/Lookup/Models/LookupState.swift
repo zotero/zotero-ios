@@ -25,6 +25,7 @@ struct LookupState: ViewModelState {
     let libraryId: LibraryIdentifier
 
     var state: State
+    var scannedText: String?
 
     init(collectionKeys: Set<String>, libraryId: LibraryIdentifier) {
         self.collectionKeys = collectionKeys
@@ -32,5 +33,7 @@ struct LookupState: ViewModelState {
         self.state = .input
     }
 
-    func cleanup() {}
+    mutating func cleanup() {
+        self.scannedText = nil
+    }
 }

@@ -35,6 +35,7 @@ class LookupViewController: UIViewController {
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var inputContainer: UIStackView!
     @IBOutlet private weak var textField: UITextField!
+    @IBOutlet private weak var scanButton: UIButton!
     @IBOutlet private weak var tableView: UITableView!
     @IBOutlet private weak var tableViewHeight: NSLayoutConstraint!
     @IBOutlet private weak var errorLabel: UILabel!
@@ -127,6 +128,17 @@ class LookupViewController: UIViewController {
                 self.topConstraint.constant = 0
                 self.setupBarButtons(to: state.state)
             }
+        }
+
+        if let text = state.scannedText {
+            var newText = self.textField.text ?? ""
+            if newText.isEmpty {
+                newText = text
+            } else {
+                newText += ", " + text
+            }
+            self.textField.text = newText
+            self.textField.resignFirstResponder()
         }
     }
 
@@ -272,6 +284,18 @@ class LookupViewController: UIViewController {
         self.setupBarButtons(to: self.viewModel.state.state)
         self.textField.delegate = self
 
+        if #available(iOS 15.0, *) {
+            var configuration = self.scanButton.configuration ?? UIButton.Configuration.plain()
+            configuration.title = L10n.scanText
+            configuration.image = UIImage(systemName: "text.viewfinder")
+            configuration.imagePadding = 8
+            configuration.baseForegroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
+            self.scanButton.configuration = configuration
+            self.scanButton.addAction(.captureTextFromCamera(responder: self, identifier: nil), for: .touchUpInside)
+        } else {
+            self.scanButton.isHidden = true
+        }
+
         let isPhone = UIDevice.current.userInterfaceIdiom == .phone
         self.phoneBottomConstraint.isActive = isPhone
         self.padBottomConstraint.isActive = !isPhone
@@ -345,4 +369,16 @@ extension LookupViewController: UITextFieldDelegate {
         self.viewModel.process(action: .lookUp(textField.text ?? ""))
         return true
     }
+}
+
+extension LookupViewController: UIKeyInput {
+    func insertText(_ text: String) {
+        self.viewModel.process(action: .processScannedText(text))
+    }
+
+    var hasText: Bool {
+        return false
+    }
+
+    func deleteBackward() {}
 }

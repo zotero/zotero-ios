@@ -90,6 +90,8 @@ internal enum L10n {
   internal static let retry = L10n.tr("Localizable", "retry")
   /// Save
   internal static let save = L10n.tr("Localizable", "save")
+  /// Scan Text
+  internal static let scanText = L10n.tr("Localizable", "scan_text")
   /// Select
   internal static let select = L10n.tr("Localizable", "select")
   /// Share
