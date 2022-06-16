@@ -35,7 +35,7 @@ final class AnnotationPopoverCoordinator: NSObject, Coordinator {
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
-    init(navigationController: UINavigationController, controllers: Controllers, viewModel: ViewModel<PDFReaderActionHandler>) {
+    init(navigationController: NavigationViewController, controllers: Controllers, viewModel: ViewModel<PDFReaderActionHandler>) {
         self.navigationController = navigationController
         self.controllers = controllers
         self.viewModel = viewModel
@@ -43,6 +43,12 @@ final class AnnotationPopoverCoordinator: NSObject, Coordinator {
         self.disposeBag = DisposeBag()
 
         super.init()
+
+        navigationController.delegate = self
+        navigationController.dismissHandler = { [weak self] in
+            guard let `self` = self else { return }
+            self.parentCoordinator?.childDidFinish(self)
+        }
     }
 
     func start(animated: Bool) {
@@ -50,7 +56,6 @@ final class AnnotationPopoverCoordinator: NSObject, Coordinator {
         controller.coordinatorDelegate = self
         self.navigationController.isNavigationBarHidden = true
         self.navigationController.setViewControllers([controller], animated: animated)
-        self.navigationController.delegate = self
     }
 }
 

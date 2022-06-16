@@ -644,6 +644,8 @@ internal enum L10n {
   internal enum Items {
     /// Ascending
     internal static let ascending = L10n.tr("Localizable", "items.ascending")
+    /// Scan Barcode
+    internal static let barcode = L10n.tr("Localizable", "items.barcode")
     /// Are you sure you want to delete selected items?
     internal static let deleteMultipleQuestion = L10n.tr("Localizable", "items.delete_multiple_question")
     /// Are you sure you want to delete the selected item?

@@ -527,6 +527,12 @@
 		B356A3982524A6D5003F1943 /* OHHTTPStubs in Frameworks */ = {isa = PBXBuildFile; productRef = B356A3972524A6D5003F1943 /* OHHTTPStubs */; };
 		B356A39E2524A703003F1943 /* CocoaLumberjackSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B356A39D2524A703003F1943 /* CocoaLumberjackSwift */; };
 		B356A3A02524A703003F1943 /* CocoaLumberjack in Frameworks */ = {isa = PBXBuildFile; productRef = B356A39F2524A703003F1943 /* CocoaLumberjack */; };
+		B357A289285B706B00E73CA1 /* ScannerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357A287285B706B00E73CA1 /* ScannerViewController.swift */; };
+		B357A28A285B706B00E73CA1 /* ScannerViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B357A288285B706B00E73CA1 /* ScannerViewController.xib */; };
+		B357A28C285B73BD00E73CA1 /* ScannerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357A28B285B73BD00E73CA1 /* ScannerState.swift */; };
+		B357A28E285B73E800E73CA1 /* ScannerAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357A28D285B73E800E73CA1 /* ScannerAction.swift */; };
+		B357A290285B74DF00E73CA1 /* ScannerActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357A28F285B74DF00E73CA1 /* ScannerActionHandler.swift */; };
+		B357A292285B786E00E73CA1 /* LookupCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357A291285B786E00E73CA1 /* LookupCoordinator.swift */; };
 		B357DEE324165DEE00E06153 /* DebugLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357DEE124165DEE00E06153 /* DebugLogging.swift */; };
 		B357DEE424165DEE00E06153 /* CrashReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357DEE224165DEE00E06153 /* CrashReporter.swift */; };
 		B357DEE624165E0B00E06153 /* DebugLogFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357DEE524165E0B00E06153 /* DebugLogFormatter.swift */; };
@@ -1412,6 +1418,12 @@
 		B353F202242E52610062EE24 /* Database.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Database.swift; sourceTree = "<group>"; };
 		B355B12B2850B6C400BAE2C5 /* TableViewDiffableDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableViewDiffableDataSource.swift; sourceTree = "<group>"; };
 		B355B8FE239951E800E837B9 /* translation */ = {isa = PBXFileReference; lastKnownFileType = folder; path = translation; sourceTree = "<group>"; };
+		B357A287285B706B00E73CA1 /* ScannerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerViewController.swift; sourceTree = "<group>"; };
+		B357A288285B706B00E73CA1 /* ScannerViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ScannerViewController.xib; sourceTree = "<group>"; };
+		B357A28B285B73BD00E73CA1 /* ScannerState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerState.swift; sourceTree = "<group>"; };
+		B357A28D285B73E800E73CA1 /* ScannerAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerAction.swift; sourceTree = "<group>"; };
+		B357A28F285B74DF00E73CA1 /* ScannerActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerActionHandler.swift; sourceTree = "<group>"; };
+		B357A291285B786E00E73CA1 /* LookupCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupCoordinator.swift; sourceTree = "<group>"; };
 		B357DEE124165DEE00E06153 /* DebugLogging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DebugLogging.swift; sourceTree = "<group>"; };
 		B357DEE224165DEE00E06153 /* CrashReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CrashReporter.swift; sourceTree = "<group>"; };
 		B357DEE524165E0B00E06153 /* DebugLogFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogFormatter.swift; sourceTree = "<group>"; };
@@ -3106,6 +3118,7 @@
 				B3ADAE482833B56F00D46271 /* Models */,
 				B3ADAE492833B56F00D46271 /* ViewModels */,
 				B3ADAE452833B56F00D46271 /* Views */,
+				B357A291285B786E00E73CA1 /* LookupCoordinator.swift */,
 			);
 			path = Lookup;
 			sourceTree = "<group>";
@@ -3113,10 +3126,12 @@
 		B3ADAE452833B56F00D46271 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				B3ADAE462833B56F00D46271 /* LookupViewController.swift */,
-				B3ADAE472833B56F00D46271 /* LookupViewController.xib */,
 				B3AAB0F6283B9915008188D6 /* LookupItemCell.swift */,
 				B3AAB0F7283B9915008188D6 /* LookupItemCell.xib */,
+				B3ADAE462833B56F00D46271 /* LookupViewController.swift */,
+				B3ADAE472833B56F00D46271 /* LookupViewController.xib */,
+				B357A287285B706B00E73CA1 /* ScannerViewController.swift */,
+				B357A288285B706B00E73CA1 /* ScannerViewController.xib */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -3126,6 +3141,8 @@
 			children = (
 				B3ADAE502833BEE300D46271 /* LookupAction.swift */,
 				B3ADAE4E2833BEDC00D46271 /* LookupState.swift */,
+				B357A28D285B73E800E73CA1 /* ScannerAction.swift */,
+				B357A28B285B73BD00E73CA1 /* ScannerState.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -3134,6 +3151,7 @@
 			isa = PBXGroup;
 			children = (
 				B3ADAE4C2833BED300D46271 /* LookupActionHandler.swift */,
+				B357A28F285B74DF00E73CA1 /* ScannerActionHandler.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -3858,6 +3876,7 @@
 				B398143F257A8EB2002C755C /* HighlightEditCell.xib in Resources */,
 				B32A273D254841B80081E061 /* CreatorEditViewController.xib in Resources */,
 				B3830CE9255451DC00910FE0 /* TagPickerViewController.xib in Resources */,
+				B357A28A285B706B00E73CA1 /* ScannerViewController.xib in Resources */,
 				B3604FF824769F0900669CB7 /* note.html in Resources */,
 				B3AAB0F9283B9915008188D6 /* LookupItemCell.xib in Resources */,
 				B3593F22241A61C700760E20 /* ItemDetailAddCell.xib in Resources */,
@@ -4197,6 +4216,7 @@
 				B30565C823FC051E003304F2 /* EditNoteDbRequest.swift in Sources */,
 				B30565D823FC051E003304F2 /* CreateNoteDbRequest.swift in Sources */,
 				B3C6D552261C9F2E0068B9FE /* PlaceholderTextViewDelegate.swift in Sources */,
+				B357A290285B74DF00E73CA1 /* ScannerActionHandler.swift in Sources */,
 				B3E8FE76271434F200F51458 /* GeneralSettingsView.swift in Sources */,
 				B30566C323FC051F003304F2 /* SyncObject.swift in Sources */,
 				B325DBAF24375D8D00EFF0F5 /* Conflict.swift in Sources */,
@@ -4422,6 +4442,7 @@
 				B3830CDC255451AB00910FE0 /* TagPickerState.swift in Sources */,
 				B39D336823FFD96C00EF2ACB /* Note.swift in Sources */,
 				B32DE61F26320271000287EC /* PopoverNavigationViewController.swift in Sources */,
+				B357A28C285B73BD00E73CA1 /* ScannerState.swift in Sources */,
 				B3E8FE5A2714325200F51458 /* SavingSettingsActionHandler.swift in Sources */,
 				B30566B623FC051F003304F2 /* DeletionsResponse.swift in Sources */,
 				B30566C423FC051F003304F2 /* DeleteBatch.swift in Sources */,
@@ -4557,6 +4578,7 @@
 				B305661F23FC051E003304F2 /* SubmitUpdateSyncAction.swift in Sources */,
 				B3593F53241A61C700760E20 /* CollectionsAction.swift in Sources */,
 				B3593F1C241A61C700760E20 /* ItemDetailState.swift in Sources */,
+				B357A289285B706B00E73CA1 /* ScannerViewController.swift in Sources */,
 				B377F2A2249373A400022943 /* Notifications.swift in Sources */,
 				B36C508A2575221400A370D3 /* AnnotationEditAction.swift in Sources */,
 				B305661723FC051E003304F2 /* AuthorizeUploadSyncAction.swift in Sources */,
@@ -4607,6 +4629,7 @@
 				B3E8FE562714320900F51458 /* SavingSettingsState.swift in Sources */,
 				B30565B423FC051E003304F2 /* MarkForResyncDbAction.swift in Sources */,
 				B30D59592206F60400884C4A /* AppDelegate.swift in Sources */,
+				B357A292285B786E00E73CA1 /* LookupCoordinator.swift in Sources */,
 				B34A9F6425BF1ABB007C9A4A /* PdfDocumentExporter.swift in Sources */,
 				B377F2A5249373F300022943 /* AttachmentFileCleanupController.swift in Sources */,
 				B3E8FE3E27142AA300F51458 /* StylePickerActionHandler.swift in Sources */,
@@ -4668,6 +4691,7 @@
 				B30565FA23FC051E003304F2 /* KeyGenerator.swift in Sources */,
 				B30566B923FC051F003304F2 /* SchemaResponse.swift in Sources */,
 				B3593F4F241A61C700760E20 /* CollectionsActionHandler.swift in Sources */,
+				B357A28E285B73E800E73CA1 /* ScannerAction.swift in Sources */,
 				B30566BD23FC051F003304F2 /* AccessPermissions.swift in Sources */,
 				B341C8CF25CBFCE4005562E5 /* ChangeWsResponse.swift in Sources */,
 				B32EBFBE276A89190003897E /* BackgroundUploaderContext.swift in Sources */,

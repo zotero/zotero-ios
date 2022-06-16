@@ -21,16 +21,18 @@ struct LookupState: ViewModelState {
         case failed
     }
 
+    let initialText: String?
     let collectionKeys: Set<String>
     let libraryId: LibraryIdentifier
 
     var state: State
     var scannedText: String?
 
-    init(collectionKeys: Set<String>, libraryId: LibraryIdentifier) {
+    init(initialText: String?, collectionKeys: Set<String>, libraryId: LibraryIdentifier) {
+        self.initialText = initialText
         self.collectionKeys = collectionKeys
         self.libraryId = libraryId
-        self.state = .input
+        self.state = initialText == nil ? .input : .loading
     }
 
     mutating func cleanup() {

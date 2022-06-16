@@ -54,6 +54,8 @@
 	<string>We need permission to save images to your device ...</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>We need to access your library ...</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera is used for barcode scanning.</string>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>org.zotero.MainActivity</string>

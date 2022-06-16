@@ -343,7 +343,11 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         controller.popoverPresentationController?.barButtonItem = button
 
         controller.addAction(UIAlertAction(title: L10n.Items.lookup, style: .default, handler: { [weak self] _ in
-            self?.showLookup()
+            self?.showLookup(startWith: .lookup)
+        }))
+
+        controller.addAction(UIAlertAction(title: L10n.Items.barcode, style: .default, handler: { [weak self] _ in
+            self?.showLookup(startWith: .scanner)
         }))
 
         controller.addAction(UIAlertAction(title: L10n.Items.new, style: .default, handler: { [weak self, weak viewModel] _ in
@@ -574,19 +578,16 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.topViewController.present(controller, animated: true, completion: nil)
     }
 
-    func showLookup() {
-        guard let userControllers = self.controllers.userControllers else { return }
-
-        let collectionKeys = Defaults.shared.selectedCollectionId.key.flatMap({ Set([$0]) }) ?? []
-        let state = LookupState(collectionKeys: collectionKeys, libraryId: Defaults.shared.selectedLibrary)
-        let handler = LookupActionHandler(dbStorage: userControllers.dbStorage, translatorsController: self.controllers.translatorsAndStylesController,
-                                          schemaController: self.controllers.schemaController, dateParser: self.controllers.dateParser, remoteFileDownloader: userControllers.remoteFileDownloader)
-        let viewModel = ViewModel(initialState: state, handler: handler)
-
-        let controller = LookupViewController(viewModel: viewModel, remoteDownloadObserver: userControllers.remoteFileDownloader.observable, schemaController: self.controllers.schemaController)
-        let navigationController = UINavigationController(rootViewController: controller)
+    private func showLookup(startWith: LookupStartingView) {
+        let navigationController = NavigationViewController()
         navigationController.isModalInPresentation = true
         navigationController.modalPresentationStyle = .formSheet
+
+        let coordinator = LookupCoordinator(startWith: startWith, navigationController: navigationController, controllers: self.controllers)
+        coordinator.parentCoordinator = self
+        self.childCoordinators.append(coordinator)
+        coordinator.start(animated: false)
+
         self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 }
@@ -877,7 +878,7 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
             return
         }
 
-        let navigationController = UINavigationController()
+        let navigationController = NavigationViewController()
 
         let coordinator = AnnotationPopoverCoordinator(navigationController: navigationController, controllers: self.controllers, viewModel: viewModel)
         coordinator.parentCoordinator = self

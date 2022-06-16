@@ -116,6 +116,7 @@
 "items.ascending" = "Ascending";
 "items.descending" = "Descending";
 "items.lookup" = "Add by Identifier";
+"items.barcode" = "Scan Barcode";
 "items.new" = "Add Manually";
 "items.new_note" = "New Standalone Note";
 "items.new_file" = "Add File";
