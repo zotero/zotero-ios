@@ -75,6 +75,7 @@ final class CreatorEditViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.update(preferredContentSize: self.calculateSize(for: self.viewModel.state.creator.namePresentation))
+        self.input1TextField.becomeFirstResponder()
     }
 
     // MARK: - Actions
