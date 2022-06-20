@@ -281,24 +281,20 @@ extension NSPredicate {
     }
 
     static func itemSearch(for components: [String]) -> NSPredicate {
-        let predicates = components.flatMap({ itemSearchSubpredicates(for: $0) })
-        return NSCompoundPredicate(orPredicateWithSubpredicates: predicates)
+        let predicates = components.map({ self.itemSearchSubpredicates(for: $0) })
+        return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
     }
 
-    private static func itemSearchSubpredicates(for text: String) -> [NSPredicate] {
+    private static func itemSearchSubpredicates(for text: String) -> NSPredicate {
         let keyPredicate = NSPredicate(format: "key == %@", text)
         let childrenPredicate = NSPredicate(format: "any children.key == %@", text)
         let titlePredicate = NSPredicate(format: "displayTitle contains[c] %@", text)
         let tagPredicate = NSPredicate(format: "any tags.tag.name contains[c] %@", text)
-
         let creatorFullNamePredicate = NSPredicate(format: "any creators.name contains[c] %@", text)
         let creatorFirstNamePredicate = NSPredicate(format: "any creators.firstName contains[c] %@", text)
         let creatorLastNamePredicate = NSPredicate(format: "any creators.lastName contains[c] %@", text)
-        let creatorPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [creatorFullNamePredicate,
-                                                                                  creatorFirstNamePredicate,
-                                                                                  creatorLastNamePredicate])
 
-        return [keyPredicate, childrenPredicate, titlePredicate, creatorPredicate, tagPredicate]
+        return NSCompoundPredicate(orPredicateWithSubpredicates: [keyPredicate, childrenPredicate, titlePredicate, creatorFullNamePredicate, creatorFirstNamePredicate, creatorLastNamePredicate, tagPredicate])
     }
 
     static func linkType(_ type: LinkType) -> NSPredicate {
