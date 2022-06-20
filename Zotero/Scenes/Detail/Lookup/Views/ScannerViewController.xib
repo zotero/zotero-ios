@@ -11,6 +11,7 @@
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="ScannerViewController" customModule="Zotero" customModuleProvider="target">
             <connections>
+                <outlet property="barcodeContainer" destination="ju0-oz-eDG" id="0o7-WZ-li8"/>
                 <outlet property="codeLabel" destination="CLK-8r-yoH" id="4dj-1D-reD"/>
                 <outlet property="view" destination="i5M-Pr-FkT" id="sfx-zR-JGt"/>
             </connections>
@@ -21,10 +22,10 @@
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ju0-oz-eDG">
-                    <rect key="frame" x="0.0" y="587" width="414" height="128"/>
+                    <rect key="frame" x="0.0" y="813" width="414" height="49"/>
                     <subviews>
                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="CLK-8r-yoH">
-                            <rect key="frame" x="72" y="77" width="0.0" height="0.0"/>
+                            <rect key="frame" x="16" y="16" width="382" height="17"/>
                             <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                             <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             <nil key="highlightedColor"/>
@@ -45,7 +46,7 @@
             <constraints>
                 <constraint firstAttribute="trailing" secondItem="ju0-oz-eDG" secondAttribute="trailing" id="067-pn-qWP"/>
                 <constraint firstItem="ju0-oz-eDG" firstAttribute="leading" secondItem="i5M-Pr-FkT" secondAttribute="leading" id="DjQ-Fj-hbJ"/>
-                <constraint firstAttribute="bottom" secondItem="ju0-oz-eDG" secondAttribute="bottom" id="Tpn-MT-gyG"/>
+                <constraint firstItem="fnl-2z-Ty3" firstAttribute="bottom" secondItem="ju0-oz-eDG" secondAttribute="bottom" id="Tpn-MT-gyG"/>
             </constraints>
             <point key="canvasLocation" x="131.8840579710145" y="122.54464285714285"/>
         </view>

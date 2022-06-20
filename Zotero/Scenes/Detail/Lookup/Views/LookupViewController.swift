@@ -68,6 +68,7 @@ class LookupViewController: UIViewController {
         super.viewDidLoad()
 
         self.setup()
+        self.update(state: self.viewModel.state)
 
         self.viewModel.stateObservable
                       .subscribe(with: self, onNext: { `self`, state in
@@ -76,6 +77,11 @@ class LookupViewController: UIViewController {
                       .disposed(by: self.disposeBag)
 
         self.viewModel.process(action: .initialize(self.webView))
+
+        if let text = self.viewModel.state.initialText {
+            self.textField.text = text
+            self.viewModel.process(action: .lookUp(text))
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -94,11 +100,13 @@ class LookupViewController: UIViewController {
         switch state.state {
         case .input:
             self.textField.isEnabled = true
+            self.scanButton.isEnabled = true
         default:
             if self.textField.isFirstResponder {
                 self.textField.resignFirstResponder()
             }
             self.textField.isEnabled = false
+            self.scanButton.isEnabled = true
         }
 
         switch state.state {

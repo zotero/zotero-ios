@@ -17,6 +17,7 @@ final class ScannerViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     @IBOutlet private weak var codeLabel: UILabel!
+    @IBOutlet private weak var barcodeContainer: UIView!
 
     private var captureSession: AVCaptureSession?
     private var previewLayer: AVCaptureVideoPreviewLayer?
@@ -39,6 +40,7 @@ final class ScannerViewController: UIViewController {
         self.navigationController?.preferredContentSize = self.preferredContentSize
         self.view.backgroundColor = UIColor.black
         self.setupSession()
+        self.barcodeContainer.layer.zPosition = 2
         self.setupNavigationItems()
 
         self.viewModel.stateObservable
@@ -72,7 +74,7 @@ final class ScannerViewController: UIViewController {
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
-        self.setPreview(orientation: UIDevice.current.orientation)
+        self.updatePreviewOrientation()
     }
 
     // MARK: - Actions
@@ -81,19 +83,25 @@ final class ScannerViewController: UIViewController {
         let codes = state.codes.joined(separator: ", ")
         self.codeLabel.text = codes
         self.navigationItem.rightBarButtonItem?.isEnabled = !codes.isEmpty
+        self.barcodeContainer.isHidden = codes.isEmpty
     }
 
-    private func setPreview(orientation: UIDeviceOrientation) {
+    private func updatePreviewOrientation() {
+        guard let scene = UIApplication.shared.connectedScenes.first, let windowScene = scene as? UIWindowScene else { return }
+        self.setPreview(orientation: windowScene.interfaceOrientation)
+    }
+
+    private func setPreview(orientation: UIInterfaceOrientation) {
         switch orientation {
         case .portrait:
             self.previewLayer?.connection?.videoOrientation = .portrait
         case .portraitUpsideDown:
             self.previewLayer?.connection?.videoOrientation = .portraitUpsideDown
         case .landscapeLeft:
-            self.previewLayer?.connection?.videoOrientation = .landscapeRight
-        case .landscapeRight:
             self.previewLayer?.connection?.videoOrientation = .landscapeLeft
-        case .faceUp, .faceDown, .unknown: break
+        case .landscapeRight:
+            self.previewLayer?.connection?.videoOrientation = .landscapeRight
+        case .unknown: break
         @unknown default: break
         }
     }
@@ -151,12 +159,13 @@ final class ScannerViewController: UIViewController {
         previewLayer.frame = self.view.layer.bounds
         previewLayer.videoGravity = .resizeAspectFill
         previewLayer.connection?.videoOrientation = .landscapeLeft
+        previewLayer.zPosition = 1
         self.view.layer.addSublayer(previewLayer)
 
         self.captureSession = captureSession
         self.previewLayer = previewLayer
 
-        self.setPreview(orientation: UIDevice.current.orientation)
+        self.updatePreviewOrientation()
     }
 }
 
