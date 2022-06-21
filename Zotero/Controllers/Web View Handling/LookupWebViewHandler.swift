@@ -17,6 +17,8 @@ final class LookupWebViewHandler {
     enum JSHandlers: String, CaseIterable {
         /// Handler used for reporting new items.
         case items = "itemsHandler"
+        /// Handler used for reporting extracted identifiers.
+        case identifiers = "identifiersHandler"
         /// Handler used for reporting failure - when no items were detected.
         case lookupFailed = "failureHandler"
         /// Handler used for HTTP requests. Expects response (HTTP response).
@@ -27,14 +29,20 @@ final class LookupWebViewHandler {
 
     enum Error: Swift.Error {
         case cantFindFile
+        case invalidIdentifiers
         case noSuccessfulTranslators
         case lookupFailed
+    }
+
+    enum Data {
+        case identifiers([[String: String]])
+        case item([String: Any])
     }
 
     private let webViewHandler: WebViewHandler
     private let translatorsController: TranslatorsAndStylesController
     private let disposeBag: DisposeBag
-    let observable: PublishSubject<Result<[[String: Any]], Swift.Error>>
+    let observable: PublishSubject<Result<Data, Swift.Error>>
 
     init(webView: WKWebView, translatorsController: TranslatorsAndStylesController) {
         self.translatorsController = translatorsController
@@ -112,14 +120,6 @@ final class LookupWebViewHandler {
         }
     }
 
-    private func process(body: Any) {
-        guard let rawData = body as? [[String: Any]] else {
-            self.observable.on(.next(.failure(Error.lookupFailed)))
-            return
-        }
-        self.observable.on(.next(.success(rawData)))
-    }
-
     /// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.
     /// Each message contains a `messageId` in the body, which is used to identify the message in case a response is expected.
     private func receiveMessage(name: String, body: Any) {
@@ -127,10 +127,23 @@ final class LookupWebViewHandler {
 
         switch handler {
         case .lookupFailed:
-            self.observable.on(.next(.failure(Error.lookupFailed)))
+            guard let errorNumber = body as? Int else { return }
+            switch errorNumber {
+            case 0:
+                self.observable.on(.next(.failure(Error.invalidIdentifiers)))
+            case 1:
+                self.observable.on(.next(.failure(Error.noSuccessfulTranslators)))
+            default:
+                self.observable.on(.next(.failure(Error.lookupFailed)))
+            }
 
         case .items:
-            self.process(body: body)
+            guard let rawData = body as? [String: Any] else { return }
+            self.observable.on(.next(.success(.item(rawData))))
+
+        case .identifiers:
+            guard let rawData = body as? [[String: String]] else { return }
+            self.observable.on(.next(.success(.identifiers(rawData))))
 
         case .log:
             DDLogInfo("JSLOG: \(body)")
@@ -147,7 +160,7 @@ final class LookupWebViewHandler {
                     try self.webViewHandler.sendRequest(with: options, for: messageId)
                 } catch let error {
                     DDLogError("TranslationWebViewHandler: send request error \(error)")
-                    self.observable.on(.next(.failure(Error.noSuccessfulTranslators)))
+                    self.webViewHandler.sendMessaging(error: "Could not create request", for: messageId)
                 }
             } else {
                 DDLogError("TranslationWebViewHandler: request missing payload - \(body)")

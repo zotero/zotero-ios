@@ -10,15 +10,26 @@ import Foundation
 
 struct LookupState: ViewModelState {
     struct LookupData {
+        enum State {
+            case enqueued
+            case inProgress
+            case failed
+            case translated(TranslatedLookupData)
+        }
+
+        let identifier: String
+        let state: State
+    }
+
+    struct TranslatedLookupData {
         let response: ItemResponse
         let attachments: [(Attachment, URL)]
     }
 
     enum State {
         case input
-        case loading
-        case done([LookupData])
-        case failed
+        case failed(Error?)
+        case lookup([LookupData])
     }
 
     let initialText: String?
@@ -32,7 +43,7 @@ struct LookupState: ViewModelState {
         self.initialText = initialText
         self.collectionKeys = collectionKeys
         self.libraryId = libraryId
-        self.state = initialText == nil ? .input : .loading
+        self.state = initialText == nil ? .input : .lookup([])
     }
 
     mutating func cleanup() {

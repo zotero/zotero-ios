@@ -52,36 +52,45 @@ async function lookup(encodedIdentifiers) {
     const identifiersInput = decodeBase64(encodedIdentifiers);
     const identifiers = Zotero.Utilities.extractIdentifiers(identifiersInput);
 
+    if (identifiers.count == 0) {
+        window.webkit.messageHandlers.failureHandler.postMessage(0);
+        return;
+    }
+
     Zotero.debug("Extracted identifiers: " + JSON.stringify(identifiers));
+    window.webkit.messageHandlers.identifiersHandler.postMessage(identifiers);
+
+    // Set up a translate instance
+    var translate = new Zotero.Translate.Search();
+
+    try {
+        Zotero.debug("Get translators");
+        // Get translators
+        var translators = await translate.getTranslators();
+        translate.setTranslator(translators);
+    } catch (e) {
+        // Continue with other ids on failure
+        Zotero.logError(e);
+        window.webkit.messageHandlers.failureHandler.postMessage(1);
+        return;
+    }
 
     // Go through all identifiers
 
-    var newItems = false;
-
-    await Zotero.Promise.all(identifiers.map(async (identifier) => {
+    for (let identifier of identifiers) {
         Zotero.debug("Process identifier " + JSON.stringify(identifier));
 
-        // Set up a translate instance
-        var translate = new Zotero.Translate.Search();
-        translate.setIdentifier(identifier);
+        window.webkit.messageHandlers.itemsHandler.postMessage({"identifier": identifier});
 
         try {
-            // Get translators
-            var translators = await translate.getTranslators();
-            translate.setTranslator(translators);
-
-            // Get items
-            newItems = await translate.translate({ libraryID: false, collections: false, saveAttachments: true });
+            translate.setIdentifier(identifier);
+            let items = await translate.translate({ libraryID: false, collections: false, saveAttachments: true });
+            window.webkit.messageHandlers.itemsHandler.postMessage({"identifier": identifier, "data": items});
         } catch (e) {
             // Continue with other ids on failure
             Zotero.logError(e);
+            window.webkit.messageHandlers.itemsHandler.postMessage({"identifier": identifier, "error": e});
         }
-    }));
-
-    if (newItems) {
-        window.webkit.messageHandlers.itemsHandler.postMessage(newItems);
-    } else {
-        window.webkit.messageHandlers.failureHandler.postMessage(0);
     }
 };
 

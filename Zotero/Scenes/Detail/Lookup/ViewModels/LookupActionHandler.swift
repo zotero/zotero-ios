@@ -111,7 +111,58 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
         }
     }
 
-    private func process(data: [[String: Any]], in viewModel: ViewModel<LookupActionHandler>) {
+    private func process(data: LookupWebViewHandler.Data, in viewModel: ViewModel<LookupActionHandler>) {
+        switch data {
+        case .identifiers(let identifiers):
+            let lookupData = identifiers.map({ LookupState.LookupData(identifier: self.identifier(from: $0), state: .enqueued) })
+            self.update(viewModel: viewModel) { state in
+                state.state = .lookup(lookupData)
+            }
+
+        case .item(let data):
+            guard let lookupId = data["identifier"] as? [String: String] else { return }
+            let identifier = self.identifier(from: lookupId)
+
+            if data.keys.count == 1 {
+                self.update(identifier: identifier, with: LookupState.LookupData(identifier: identifier, state: .inProgress), in: viewModel)
+                return
+            }
+
+            if let error = data["error"] {
+                DDLogError("LookupActionHandler: \(identifier) lookup failed - \(error)")
+                self.update(identifier: identifier, with: LookupState.LookupData(identifier: identifier, state: .failed), in: viewModel)
+                return
+            }
+
+            // TODO: Process and show
+
+            break
+        }
+    }
+
+    private func update(identifier: String, with lookupData: LookupState.LookupData, in viewModel: ViewModel<LookupActionHandler>) {
+        switch viewModel.state.state {
+        case .lookup(let oldData):
+            var newData = oldData
+            guard let index = oldData.firstIndex(where: { $0.identifier == identifier }) else { return }
+            newData[index] = lookupData
+            self.update(viewModel: viewModel) { state in
+                state.state = .lookup(newData)
+            }
+
+        default: break
+        }
+    }
+
+    private func identifier(from data: [String: String]) -> String {
+        var result = ""
+        for (key, value) in data {
+            result += key + ":" + value
+        }
+        return result
+    }
+
+    private func storeDataAndDownloadAttachmentIfNecessary(_ data: [[String: Any]], in viewModel: ViewModel<LookupActionHandler>) {
         let parsedData = self.parse(data, viewModel: viewModel, schemaController: self.schemaController)
 
         do {
@@ -140,10 +191,10 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     /// - parameter data: Data to parse
     /// - parameter schemaController: SchemaController which is used for validating item type and field types
     /// - returns: `ItemResponse` of parsed item and optional attachment dictionary with title and url.
-    private func parse(_ data: [[String: Any]], viewModel: ViewModel<LookupActionHandler>, schemaController: SchemaController) -> [LookupState.LookupData] {
+    private func parse(_ data: [[String: Any]], viewModel: ViewModel<LookupActionHandler>, schemaController: SchemaController) -> [LookupState.TranslatedLookupData] {
         let collectionKeys = viewModel.state.collectionKeys
         let libraryId = viewModel.state.libraryId
-        var items: [LookupState.LookupData] = []
+        var items: [LookupState.TranslatedLookupData] = []
 
         for itemData in data {
             do {
@@ -161,7 +212,7 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                     return (attachment, url)
                 }
                 
-                items.append(LookupState.LookupData(response: item, attachments: attachments))
+                items.append(LookupState.TranslatedLookupData(response: item, attachments: attachments))
             } catch let error {
                 DDLogError("LookupActionHandler: can't parse data - \(error)")
             }

@@ -53,10 +53,10 @@
                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                             <subviews>
                                 <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="JBf-fT-rdp">
-                                    <rect key="frame" x="0.0" y="0.0" width="271" height="718"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="248.5" height="686"/>
                                     <subviews>
                                         <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="a2E-oe-MiL">
-                                            <rect key="frame" x="0.0" y="0.0" width="271" height="717"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="248.5" height="685"/>
                                             <constraints>
                                                 <constraint firstAttribute="height" constant="34" id="iYt-6X-bBD"/>
                                             </constraints>
@@ -64,7 +64,7 @@
                                             <textInputTraits key="textInputTraits"/>
                                         </textField>
                                         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="lMk-Rb-8e4">
-                                            <rect key="frame" x="0.0" y="717" width="271" height="1"/>
+                                            <rect key="frame" x="0.0" y="685" width="248.5" height="1"/>
                                             <color key="backgroundColor" systemColor="opaqueSeparatorColor"/>
                                             <constraints>
                                                 <constraint firstAttribute="height" constant="1" id="Qlb-WA-ecc"/>
@@ -73,7 +73,7 @@
                                     </subviews>
                                 </stackView>
                                 <button opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="999" horizontalCompressionResistancePriority="1000" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="EWy-7p-vXE">
-                                    <rect key="frame" x="287" y="0.0" width="87" height="718"/>
+                                    <rect key="frame" x="264.5" y="0.0" width="109.5" height="686"/>
                                     <color key="tintColor" name="zoteroBlueWithDarkMode"/>
                                     <state key="normal" title="Button"/>
                                     <buttonConfiguration key="configuration" style="plain" image="text.viewfinder" catalog="system" title="Scan Text">
@@ -83,6 +83,9 @@
                             </subviews>
                             <viewLayoutGuide key="safeArea" id="8Mg-3o-fYh"/>
                         </stackView>
+                        <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="u28-BM-Asu">
+                            <rect key="frame" x="0.0" y="727" width="374" height="20"/>
+                        </activityIndicatorView>
                         <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="hh8-9u-I8Q">
                             <rect key="frame" x="0.0" y="759" width="374" height="0.0"/>
                             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
@@ -119,7 +122,7 @@
         </view>
     </objects>
     <resources>
-        <image name="text.viewfinder" catalog="system" width="32" height="32"/>
+        <image name="text.viewfinder" catalog="system" width="128" height="115"/>
         <namedColor name="zoteroBlueWithDarkMode">
             <color red="0.25098039215686274" green="0.44313725490196076" blue="0.90196078431372551" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>

@@ -18,6 +18,13 @@ class LookupViewController: UIViewController {
     }
 
     private enum Row: Hashable {
+        enum IdentifierState {
+            case enqueued
+            case inProgress
+            case failed
+        }
+
+        case identifier(identifier: String, state: IdentifierState)
         case item(ItemData)
         case attachment(Attachment, RemoteAttachmentDownloader.Update.Kind)
 
@@ -25,7 +32,7 @@ class LookupViewController: UIViewController {
             switch self {
             case .attachment(let attachment, _):
                 return attachment.key == key && attachment.libraryId == libraryId
-            case .item:
+            case .item, .identifier:
                 return false
             }
         }
@@ -36,6 +43,7 @@ class LookupViewController: UIViewController {
     @IBOutlet private weak var inputContainer: UIStackView!
     @IBOutlet private weak var textField: UITextField!
     @IBOutlet private weak var scanButton: UIButton!
+    @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
     @IBOutlet private weak var tableView: UITableView!
     @IBOutlet private weak var tableViewHeight: NSLayoutConstraint!
     @IBOutlet private weak var errorLabel: UILabel!
@@ -110,31 +118,53 @@ class LookupViewController: UIViewController {
         }
 
         switch state.state {
-        case .loading, .input:
+        case .input, .failed:
+            self.setupCancelDoneBarButtons()
+
             self.tableView.isHidden = true
             self.errorLabel.isHidden = true
-            self.setupBarButtons(to: state.state)
+            self.activityIndicator.stopAnimating()
+            self.activityIndicator.isHidden = true
+            self.titleLabel.isHidden = false
+            self.inputContainer.isHidden = false
 
-        case .failed:
-            self.errorLabel.isHidden =  false
-            self.setupBarButtons(to: state.state)
-
-        case .done(let data):
-            let hasAttachment = data.first(where: { !$0.attachments.isEmpty }) != nil
-
-            if !hasAttachment {
-                self.navigationController?.presentingViewController?.dismiss(animated: true)
-                return
+            if case .failed = state.state {
+                self.errorLabel.isHidden =  false
+            } else {
+                self.errorLabel.isHidden =  true
             }
 
-            self.show(data: data) {
-                // It takes a little while for the `contentSize` observer notification to come, so all the content is hidden after the notification arrives, so that there is not an empty screen while
-                // waiting for it.
+        case .lookup(let data):
+            let setupUI: () -> Void = {
+                self.tableView.isHidden = data.isEmpty
+                self.activityIndicator.isHidden = !data.isEmpty
                 self.errorLabel.isHidden = true
                 self.titleLabel.isHidden = true
                 self.inputContainer.isHidden = true
-                self.topConstraint.constant = 0
-                self.setupBarButtons(to: state.state)
+            }
+
+            if data.isEmpty {
+                setupUI()
+                self.activityIndicator.startAnimating()
+                self.setupCloseBarButton(title: L10n.cancel)
+            } else {
+                let didTranslateAll = data.first(where: { data in
+                    switch data.state {
+                    case .enqueued, .inProgress: return true
+                    case .failed, .translated: return false
+                    }
+                }) == nil
+
+                self.setupCloseBarButton(title: didTranslateAll ? L10n.close : L10n.cancel)
+
+                self.show(data: data) {
+                    // It takes a little while for the `contentSize` observer notification to come, so all the content is hidden after the notification arrives, so that there is not an empty screen while
+                    // waiting for it.
+                    setupUI()
+                    self.topConstraint.constant = 0
+
+                    self.closeAfterUpdateIfNeeded()
+                }
             }
         }
 
@@ -155,17 +185,29 @@ class LookupViewController: UIViewController {
         snapshot.appendSections([0])
 
         for lookup in data {
-            let title: String
-            if let _title = lookup.response.fields[FieldKeys.Item.title] {
-                title = _title
-            } else {
-                let _title = lookup.response.fields.first(where: { self.schemaController.baseKey(for: lookup.response.rawType, field: $0.key) == FieldKeys.Item.title })?.value
-                title = _title ?? ""
-            }
-            let itemData = ItemData(type: lookup.response.rawType, title: title)
+            switch lookup.state {
+            case .translated(let translationData):
+                let title: String
+                if let _title = translationData.response.fields[FieldKeys.Item.title] {
+                    title = _title
+                } else {
+                    let _title = translationData.response.fields.first(where: { self.schemaController.baseKey(for: translationData.response.rawType, field: $0.key) == FieldKeys.Item.title })?.value
+                    title = _title ?? ""
+                }
+                let itemData = ItemData(type: translationData.response.rawType, title: title)
 
-            snapshot.appendItems([.item(itemData)], toSection: 0)
-            snapshot.appendItems(lookup.attachments.map({ .attachment($0.0, .progress(0)) }), toSection: 0)
+                snapshot.appendItems([.item(itemData)], toSection: 0)
+                snapshot.appendItems(translationData.attachments.map({ .attachment($0.0, .progress(0)) }), toSection: 0)
+
+            case .failed:
+                snapshot.appendItems([.identifier(identifier: lookup.identifier, state: .failed)])
+
+            case .inProgress:
+                snapshot.appendItems([.identifier(identifier: lookup.identifier, state: .inProgress)])
+
+            case .enqueued:
+                snapshot.appendItems([.identifier(identifier: lookup.identifier, state: .enqueued)])
+            }
         }
 
         self.tableView.isHidden = false
@@ -206,7 +248,7 @@ class LookupViewController: UIViewController {
         switch row {
         case .attachment(let attachment, _):
             rows[index] = .attachment(attachment, update.kind)
-        case .item: break
+        case .item, .identifier: break
         }
 
         snapshot.appendItems(rows, toSection: 0)
@@ -219,11 +261,13 @@ class LookupViewController: UIViewController {
             switch row {
             case .attachment(_, let update):
                 switch update {
-                case .progress:
+                case .progress, .failed:
                     return true
                 default:
                     return false
                 }
+            case .identifier:
+                return true
             case .item:
                 return false
             }
@@ -234,42 +278,29 @@ class LookupViewController: UIViewController {
         }
     }
 
-    private func setupBarButtons(to state: LookupState.State) {
-        switch state {
-        case .failed, .input:
-            let doneItem = UIBarButtonItem(title: L10n.lookUp, style: .done, target: nil, action: nil)
-            doneItem.rx.tap.subscribe(onNext: { [weak self] in
-                guard let string = self?.textField.text else { return }
-                self?.viewModel.process(action: .lookUp(string))
-            }).disposed(by: self.disposeBag)
-            self.navigationItem.rightBarButtonItem = doneItem
+    private func setupCloseBarButton(title: String) {
+        self.navigationItem.rightBarButtonItem = nil
 
-            let cancelItem = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
-            cancelItem.rx.tap.subscribe(onNext: { [weak self] in
-                self?.navigationController?.presentingViewController?.dismiss(animated: true)
-            }).disposed(by: self.disposeBag)
-            self.navigationItem.leftBarButtonItem = cancelItem
+        let cancelItem = UIBarButtonItem(title: title, style: .plain, target: nil, action: nil)
+        cancelItem.rx.tap.subscribe(onNext: { [weak self] in
+            self?.navigationController?.presentingViewController?.dismiss(animated: true)
+        }).disposed(by: self.disposeBag)
+        self.navigationItem.leftBarButtonItem = cancelItem
+    }
 
-        case .done:
-            self.navigationItem.rightBarButtonItem = nil
+    private func setupCancelDoneBarButtons() {
+        let doneItem = UIBarButtonItem(title: L10n.lookUp, style: .done, target: nil, action: nil)
+        doneItem.rx.tap.subscribe(onNext: { [weak self] in
+            guard let string = self?.textField.text else { return }
+            self?.viewModel.process(action: .lookUp(string))
+        }).disposed(by: self.disposeBag)
+        self.navigationItem.rightBarButtonItem = doneItem
 
-            let cancelItem = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
-            cancelItem.rx.tap.subscribe(onNext: { [weak self] in
-                self?.navigationController?.presentingViewController?.dismiss(animated: true)
-            }).disposed(by: self.disposeBag)
-            self.navigationItem.leftBarButtonItem = cancelItem
-
-        case .loading:
-            let indicator = UIActivityIndicatorView(style: .medium)
-            indicator.startAnimating()
-            self.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: indicator)
-
-            let cancelItem = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
-            cancelItem.rx.tap.subscribe(onNext: { [weak self] in
-                self?.navigationController?.presentingViewController?.dismiss(animated: true)
-            }).disposed(by: self.disposeBag)
-            self.navigationItem.leftBarButtonItem = cancelItem
-        }
+        let cancelItem = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
+        cancelItem.rx.tap.subscribe(onNext: { [weak self] in
+            self?.navigationController?.presentingViewController?.dismiss(animated: true)
+        }).disposed(by: self.disposeBag)
+        self.navigationItem.leftBarButtonItem = cancelItem
     }
 
     private func updatePreferredContentSize() {
@@ -289,7 +320,6 @@ class LookupViewController: UIViewController {
     private func setup() {
         self.titleLabel.text = L10n.Lookup.title
         self.errorLabel.text = L10n.Errors.lookup
-        self.setupBarButtons(to: self.viewModel.state.state)
         self.textField.delegate = self
 
         if #available(iOS 15.0, *) {
@@ -328,6 +358,7 @@ class LookupViewController: UIViewController {
                 case .attachment(let attachment, let update):
                     cell.set(title: attachment.title, attachmentType: attachment.type, update: update)
                     separatorInset += LookupItemCell.attachmentOffset
+                case .identifier(let identifier, let state): break
                 }
             }
 
