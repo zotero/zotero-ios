@@ -58,16 +58,19 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
             self.lookupWebViewHandler = handler
 
             handler.observable
-                   .subscribe(onNext: { [weak self, weak viewModel] data in
-                       self?.backgroundQueue.async {
-                           guard let `self` = self, let viewModel = viewModel else { return }
-                           self.process(data: data, in: viewModel)
-                       }
-                   }, onError: { [weak self, weak viewModel] error in
-                       DDLogError("LookupActionHandler: lookup failed - \(error)")
-                       inMainThread {
-                           guard let `self` = self, let viewModel = viewModel else { return }
-                           self.showError(in: viewModel)
+                   .subscribe(onNext: { [weak self, weak viewModel] result in
+                       switch result {
+                       case .success(let data):
+                           self?.backgroundQueue.async {
+                               guard let `self` = self, let viewModel = viewModel else { return }
+                               self.process(data: data, in: viewModel)
+                           }
+                       case .failure(let error):
+                           DDLogError("LookupActionHandler: lookup failed - \(error)")
+                           inMainThread {
+                               guard let `self` = self, let viewModel = viewModel else { return }
+                               self.showError(in: viewModel)
+                           }
                        }
                    })
                    .disposed(by: self.disposeBag)

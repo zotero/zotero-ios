@@ -98,7 +98,7 @@ class LookupViewController: UIViewController {
 
     private func update(state: LookupState) {
         switch state.state {
-        case .input:
+        case .input, .failed:
             self.textField.isEnabled = true
             self.scanButton.isEnabled = true
         default:

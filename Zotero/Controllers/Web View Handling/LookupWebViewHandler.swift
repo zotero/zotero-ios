@@ -34,7 +34,7 @@ final class LookupWebViewHandler {
     private let webViewHandler: WebViewHandler
     private let translatorsController: TranslatorsAndStylesController
     private let disposeBag: DisposeBag
-    let observable: PublishSubject<[[String: Any]]>
+    let observable: PublishSubject<Result<[[String: Any]], Swift.Error>>
 
     init(webView: WKWebView, translatorsController: TranslatorsAndStylesController) {
         self.translatorsController = translatorsController
@@ -73,7 +73,7 @@ final class LookupWebViewHandler {
                    })
                    .subscribe(onFailure: { [weak self] error in
                        DDLogError("WebViewHandler: translation failed - \(error)")
-                       self?.observable.on(.error(error))
+                       self?.observable.on(.next(.failure(error)))
                    })
                    .disposed(by: self.disposeBag)
     }
@@ -114,20 +114,20 @@ final class LookupWebViewHandler {
 
     private func process(body: Any) {
         guard let rawData = body as? [[String: Any]] else {
-            self.observable.on(.error(Error.lookupFailed))
+            self.observable.on(.next(.failure(Error.lookupFailed)))
             return
         }
-        self.observable.on(.next(rawData))
+        self.observable.on(.next(.success(rawData)))
     }
 
-        /// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.
+    /// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.
     /// Each message contains a `messageId` in the body, which is used to identify the message in case a response is expected.
     private func receiveMessage(name: String, body: Any) {
         guard let handler = JSHandlers(rawValue: name) else { return }
 
         switch handler {
         case .lookupFailed:
-            self.observable.on(.error(Error.lookupFailed))
+            self.observable.on(.next(.failure(Error.lookupFailed)))
 
         case .items:
             self.process(body: body)
@@ -147,7 +147,7 @@ final class LookupWebViewHandler {
                     try self.webViewHandler.sendRequest(with: options, for: messageId)
                 } catch let error {
                     DDLogError("TranslationWebViewHandler: send request error \(error)")
-                    self.observable.on(.error(Error.noSuccessfulTranslators))
+                    self.observable.on(.next(.failure(Error.noSuccessfulTranslators)))
                 }
             } else {
                 DDLogError("TranslationWebViewHandler: request missing payload - \(body)")
