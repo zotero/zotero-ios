@@ -50,7 +50,12 @@ async function lookup(encodedIdentifiers) {
     Zotero.debug("Parse identifiers");
 
     const identifiersInput = decodeBase64(encodedIdentifiers);
-    const identifiers = Zotero.Utilities.extractIdentifiers(identifiersInput);
+    var identifiers = [];
+
+    for (identifier of identifiersInput.split(", ")) {
+        const _identifiers = Zotero.Utilities.extractIdentifiers(identifier);
+        identifiers.push(..._identifiers);
+    }
 
     if (identifiers.count == 0) {
         window.webkit.messageHandlers.failureHandler.postMessage(0);

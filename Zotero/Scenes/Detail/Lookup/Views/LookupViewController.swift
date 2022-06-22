@@ -12,12 +12,12 @@ import WebKit
 import RxSwift
 
 class LookupViewController: UIViewController {
-    private struct ItemData: Hashable, Equatable {
-        let type: String
-        let title: String
-    }
+    enum Row: Hashable {
+        struct Item: Hashable, Equatable {
+            let type: String
+            let title: String
+        }
 
-    private enum Row: Hashable {
         enum IdentifierState {
             case enqueued
             case inProgress
@@ -25,7 +25,7 @@ class LookupViewController: UIViewController {
         }
 
         case identifier(identifier: String, state: IdentifierState)
-        case item(ItemData)
+        case item(Item)
         case attachment(Attachment, RemoteAttachmentDownloader.Update.Kind)
 
         func isAttachment(withKey key: String, libraryId: LibraryIdentifier) -> Bool {
@@ -114,7 +114,7 @@ class LookupViewController: UIViewController {
                 self.textField.resignFirstResponder()
             }
             self.textField.isEnabled = false
-            self.scanButton.isEnabled = true
+            self.scanButton.isEnabled = false
         }
 
         switch state.state {
@@ -134,37 +134,40 @@ class LookupViewController: UIViewController {
                 self.errorLabel.isHidden =  true
             }
 
+        case .loadingIdentifiers:
+            self.setupCloseBarButton(title: L10n.cancel)
+
+            self.tableView.isHidden = true
+            self.errorLabel.isHidden = true
+            self.titleLabel.isHidden = true
+            self.inputContainer.isHidden = true
+            self.activityIndicator.isHidden = false
+            self.activityIndicator.startAnimating()
+
         case .lookup(let data):
-            let setupUI: () -> Void = {
-                self.tableView.isHidden = data.isEmpty
-                self.activityIndicator.isHidden = !data.isEmpty
+            let didTranslateAll = data.first(where: { data in
+                switch data.state {
+                case .enqueued, .inProgress: return true
+                case .failed, .translated: return false
+                }
+            }) == nil
+
+            self.setupCloseBarButton(title: didTranslateAll ? L10n.close : L10n.cancel)
+
+            self.show(data: data) { [weak self] in
+                guard let `self` = self else { return }
+
+                // It takes a little while for the `contentSize` observer notification to come, so all the content is hidden after the notification arrives, so that there is not an empty screen while
+                // waiting for it.
+                self.activityIndicator.stopAnimating()
+                self.activityIndicator.isHidden = true
                 self.errorLabel.isHidden = true
                 self.titleLabel.isHidden = true
                 self.inputContainer.isHidden = true
-            }
+                self.tableView.isHidden = false
+                self.topConstraint.constant = 0
 
-            if data.isEmpty {
-                setupUI()
-                self.activityIndicator.startAnimating()
-                self.setupCloseBarButton(title: L10n.cancel)
-            } else {
-                let didTranslateAll = data.first(where: { data in
-                    switch data.state {
-                    case .enqueued, .inProgress: return true
-                    case .failed, .translated: return false
-                    }
-                }) == nil
-
-                self.setupCloseBarButton(title: didTranslateAll ? L10n.close : L10n.cancel)
-
-                self.show(data: data) {
-                    // It takes a little while for the `contentSize` observer notification to come, so all the content is hidden after the notification arrives, so that there is not an empty screen while
-                    // waiting for it.
-                    setupUI()
-                    self.topConstraint.constant = 0
-
-                    self.closeAfterUpdateIfNeeded()
-                }
+                self.closeAfterUpdateIfNeeded()
             }
         }
 
@@ -194,7 +197,7 @@ class LookupViewController: UIViewController {
                     let _title = translationData.response.fields.first(where: { self.schemaController.baseKey(for: translationData.response.rawType, field: $0.key) == FieldKeys.Item.title })?.value
                     title = _title ?? ""
                 }
-                let itemData = ItemData(type: translationData.response.rawType, title: title)
+                let itemData = Row.Item(type: translationData.response.rawType, title: title)
 
                 snapshot.appendItems([.item(itemData)], toSection: 0)
                 snapshot.appendItems(translationData.attachments.map({ .attachment($0.0, .progress(0)) }), toSection: 0)
@@ -344,21 +347,36 @@ class LookupViewController: UIViewController {
 
     private func setupTableView() {
         self.tableViewHeight.constant = 0
-        self.tableView.register(UINib(nibName: "LookupItemCell", bundle: nil), forCellReuseIdentifier: "Cell")
+        self.tableView.register(UINib(nibName: "LookupItemCell", bundle: nil), forCellReuseIdentifier: "LookupCell")
+        self.tableView.register(UINib(nibName: "LookupIdentifierCell", bundle: nil), forCellReuseIdentifier: "IdentifierCell")
         self.tableView.isScrollEnabled = false
 
         self.dataSource = UITableViewDiffableDataSource(tableView: self.tableView, cellProvider: { tableView, indexPath, row in
-            let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
-            var separatorInset = LookupViewController.iconWidth + LookupItemCell.attachmentToLabelOffset
+            let cellId: String
+            switch row {
+            case .identifier:
+                cellId = "IdentifierCell"
+            case .item, .attachment:
+                cellId = "LookupCell"
+            }
 
-            if let cell = cell as? LookupItemCell {
-                switch row {
-                case .item(let data):
+            let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)
+            var separatorInset: CGFloat = 0
+
+            switch row {
+            case .item(let data):
+                if let cell = cell as? LookupItemCell {
+                    separatorInset = LookupViewController.iconWidth + LookupItemCell.attachmentToLabelOffset
                     cell.set(title: data.title, type: data.type)
-                case .attachment(let attachment, let update):
+                }
+            case .attachment(let attachment, let update):
+                if let cell = cell as? LookupItemCell {
                     cell.set(title: attachment.title, attachmentType: attachment.type, update: update)
-                    separatorInset += LookupItemCell.attachmentOffset
-                case .identifier(let identifier, let state): break
+                    separatorInset = LookupViewController.iconWidth + LookupItemCell.attachmentToLabelOffset + LookupItemCell.attachmentOffset
+                }
+            case .identifier(let identifier, let state):
+                if let cell = cell as? LookupIdentifierCell {
+                    cell.set(title: identifier, state: state)
                 }
             }
 

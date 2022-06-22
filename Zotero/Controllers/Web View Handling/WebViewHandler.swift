@@ -209,7 +209,9 @@ extension WebViewHandler: WKNavigationDelegate {
 /// Each message contains a `messageId` in the body, which is used to identify the message in case a response is expected.
 extension WebViewHandler: WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        self.receivedMessageHandler?(message.name, message.body)
+        inMainThread {
+            self.receivedMessageHandler?(message.name, message.body)
+        }
     }
 }
 

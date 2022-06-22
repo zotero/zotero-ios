@@ -34,7 +34,7 @@ final class LookupWebViewHandler {
         case lookupFailed
     }
 
-    enum Data {
+    enum LookupData {
         case identifiers([[String: String]])
         case item([String: Any])
     }
@@ -42,7 +42,7 @@ final class LookupWebViewHandler {
     private let webViewHandler: WebViewHandler
     private let translatorsController: TranslatorsAndStylesController
     private let disposeBag: DisposeBag
-    let observable: PublishSubject<Result<Data, Swift.Error>>
+    let observable: PublishSubject<Result<LookupData, Swift.Error>>
 
     init(webView: WKWebView, translatorsController: TranslatorsAndStylesController) {
         self.translatorsController = translatorsController

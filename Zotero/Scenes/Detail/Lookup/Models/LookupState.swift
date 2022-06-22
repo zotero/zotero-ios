@@ -28,7 +28,8 @@ struct LookupState: ViewModelState {
 
     enum State {
         case input
-        case failed(Error?)
+        case failed(Error)
+        case loadingIdentifiers
         case lookup([LookupData])
     }
 
@@ -43,7 +44,7 @@ struct LookupState: ViewModelState {
         self.initialText = initialText
         self.collectionKeys = collectionKeys
         self.libraryId = libraryId
-        self.state = initialText == nil ? .input : .lookup([])
+        self.state = initialText == nil ? .input : .loadingIdentifiers
     }
 
     mutating func cleanup() {

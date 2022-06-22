@@ -12,8 +12,9 @@
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="LookupViewController" customModule="Zotero" customModuleProvider="target">
             <connections>
+                <outlet property="activityIndicator" destination="u28-BM-Asu" id="jxa-cz-oWE"/>
                 <outlet property="errorLabel" destination="5xO-hf-x9n" id="r3Q-u4-WV3"/>
-                <outlet property="inputContainer" destination="JBf-fT-rdp" id="heh-t3-ZhX"/>
+                <outlet property="inputContainer" destination="wav-zV-VE2" id="akE-9m-6Db"/>
                 <outlet property="padBottomConstraint" destination="Pke-Yx-S2s" id="RZC-o0-zbZ"/>
                 <outlet property="phoneBottomConstraint" destination="qwZ-KV-kbg" id="vWO-sy-pDs"/>
                 <outlet property="scanButton" destination="EWy-7p-vXE" id="2mv-FZ-mXT"/>

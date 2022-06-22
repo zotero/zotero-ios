@@ -357,6 +357,8 @@
 		B31941DD24531F6600BF6296 /* AnnotationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */; };
 		B319D6B6265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B319D6B5265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift */; };
 		B319D6B8265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B319D6B7265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift */; };
+		B31A5E51286308960026589F /* LookupIdentifierCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31A5E4F286308960026589F /* LookupIdentifierCell.swift */; };
+		B31A5E52286308960026589F /* LookupIdentifierCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B31A5E50286308960026589F /* LookupIdentifierCell.xib */; };
 		B31D4A722767840800E22DCC /* BackgroundTaskController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31D4A712767840800E22DCC /* BackgroundTaskController.swift */; };
 		B31D4A732767841800E22DCC /* BackgroundTaskController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31D4A712767840800E22DCC /* BackgroundTaskController.swift */; };
 		B31D973C27F5E51100ED3DA2 /* ItemsToolbarDownloadProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31D973B27F5E51100ED3DA2 /* ItemsToolbarDownloadProgressView.swift */; };
@@ -1297,6 +1299,8 @@
 		B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationsViewController.swift; sourceTree = "<group>"; };
 		B319D6B5265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllItemsForUploadDbRequest.swift; sourceTree = "<group>"; };
 		B319D6B7265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllDownloadedAndForUploadItemsDbRequest.swift; sourceTree = "<group>"; };
+		B31A5E4F286308960026589F /* LookupIdentifierCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupIdentifierCell.swift; sourceTree = "<group>"; };
+		B31A5E50286308960026589F /* LookupIdentifierCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LookupIdentifierCell.xib; sourceTree = "<group>"; };
 		B31D4A712767840800E22DCC /* BackgroundTaskController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundTaskController.swift; sourceTree = "<group>"; };
 		B31D973B27F5E51100ED3DA2 /* ItemsToolbarDownloadProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsToolbarDownloadProgressView.swift; sourceTree = "<group>"; };
 		B31DDA9D27299BD1002CFA05 /* StoreMtimeForAttachmentDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreMtimeForAttachmentDbRequest.swift; sourceTree = "<group>"; };
@@ -3126,6 +3130,8 @@
 		B3ADAE452833B56F00D46271 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				B31A5E4F286308960026589F /* LookupIdentifierCell.swift */,
+				B31A5E50286308960026589F /* LookupIdentifierCell.xib */,
 				B3AAB0F6283B9915008188D6 /* LookupItemCell.swift */,
 				B3AAB0F7283B9915008188D6 /* LookupItemCell.xib */,
 				B3ADAE462833B56F00D46271 /* LookupViewController.swift */,
@@ -3910,6 +3916,7 @@
 				B35DC8E6261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.xib in Resources */,
 				B30B405F2490CAFC00FAAF6D /* ItemCell.xib in Resources */,
 				B3E02C0D26848CA900FFB419 /* AnnotationViewController.xib in Resources */,
+				B31A5E52286308960026589F /* LookupIdentifierCell.xib in Resources */,
 				B34C40F625710B430057D5F5 /* AnnotationEditViewController.xib in Resources */,
 				B3F5B08127D1001B00AA81C0 /* PDFSettingsSegmentedCellContentView.xib in Resources */,
 				B3B41F122848E59D0017CA4B /* AnnotationsFilterViewController.xib in Resources */,
@@ -4529,6 +4536,7 @@
 				B37BF0B125A6035D00AE0268 /* ReadDocumentDataDbRequest.swift in Sources */,
 				B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */,
 				B30BDDE628366F1B007034E8 /* CreateTranslatedItemsDbRequest.swift in Sources */,
+				B31A5E51286308960026589F /* LookupIdentifierCell.swift in Sources */,
 				B319D6B8265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift in Sources */,
 				B39E01352832883A0091CE4A /* LookupWebViewHandler.swift in Sources */,
 				B30566A723FC051F003304F2 /* DelayIntervals.swift in Sources */,
