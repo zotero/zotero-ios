@@ -24,22 +24,6 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     private let disposeBag: DisposeBag
 
     private var lookupWebViewHandler: LookupWebViewHandler?
-    private var doiRegex: NSRegularExpression? = {
-        do {
-            return try NSRegularExpression(pattern: #"10.\d{4,9}\/[-._;()\/:A-Z0-9]+"#)
-        } catch let error {
-            DDLogError("LookupActionHandler: can't create doi expression - \(error)")
-            return nil
-        }
-    }()
-    private var isbnRegex: NSRegularExpression? = {
-        do {
-            return try NSRegularExpression(pattern: #"[0-9]+[- ][0-9]+[- ][0-9]+[- ][0-9]*[- ]*[xX0-9]"#)
-        } catch let error {
-            DDLogError("LookupActionHandler: can't create isbn expression - \(error)")
-            return nil
-        }
-    }()
 
     init(dbStorage: DbStorage, translatorsController: TranslatorsAndStylesController, schemaController: SchemaController, dateParser: DateParser, remoteFileDownloader: RemoteAttachmentDownloader) {
         self.backgroundQueue = DispatchQueue(label: "org.zotero.ItemsActionHandler.backgroundProcessing", qos: .userInitiated)
@@ -75,36 +59,9 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
         case .lookUp(let identifier):
             guard !identifier.isEmpty else { return }
             self.update(viewModel: viewModel) { state in
-                state.state = .loadingIdentifiers
+                state.lookupState = .loadingIdentifiers
             }
             self.lookupWebViewHandler?.lookUp(identifier: identifier)
-
-        case .processScannedText(let text):
-            self.process(scannedText: text, in: viewModel)
-        }
-    }
-
-    private func process(scannedText: String, in viewModel: ViewModel<LookupActionHandler>) {
-        var identifiers: [String] = []
-        if let expression = self.doiRegex {
-            identifiers = self.getResults(withExpression: expression, from: scannedText)
-        }
-        if let expression = self.isbnRegex {
-            identifiers += self.getResults(withExpression: expression, from: scannedText)
-        }
-
-        guard !identifiers.isEmpty else { return }
-
-        self.update(viewModel: viewModel) { state in
-            state.scannedText = identifiers.joined(separator: ", ")
-        }
-    }
-
-    private func getResults(withExpression expression: NSRegularExpression, from text: String) -> [String] {
-        return expression.matches(in: text, range: NSRange(text.startIndex..., in: text)).map { result in
-            let startIndex = text.index(text.startIndex, offsetBy: result.range.lowerBound)
-            let endIndex = text.index(text.startIndex, offsetBy: result.range.upperBound)
-            return String(text[startIndex..<endIndex])
         }
     }
 
@@ -113,7 +70,7 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
         case .identifiers(let identifiers):
             let lookupData = identifiers.map({ LookupState.LookupData(identifier: self.identifier(from: $0), state: .enqueued) })
             self.update(viewModel: viewModel) { state in
-                state.state = .lookup(lookupData)
+                state.lookupState = .lookup(lookupData)
             }
 
         case .item(let data):
@@ -161,13 +118,13 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     }
 
     private func update(lookupData: LookupState.LookupData, in viewModel: ViewModel<LookupActionHandler>) {
-        switch viewModel.state.state {
+        switch viewModel.state.lookupState {
         case .lookup(let oldData):
             var newData = oldData
             guard let index = oldData.firstIndex(where: { $0.identifier == lookupData.identifier }) else { return }
             newData[index] = lookupData
             self.update(viewModel: viewModel) { state in
-                state.state = .lookup(newData)
+                state.lookupState = .lookup(newData)
             }
 
         default: break
@@ -222,7 +179,7 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
     private func show(error: Error, in viewModel: ViewModel<LookupActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            state.state = .failed(error)
+            state.lookupState = .failed(error)
         }
     }
 }

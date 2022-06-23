@@ -38,25 +38,19 @@ class LookupViewController: UIViewController {
         }
     }
 
-    @IBOutlet private weak var webView: WKWebView!
-    @IBOutlet private weak var titleLabel: UILabel!
-    @IBOutlet private weak var inputContainer: UIStackView!
-    @IBOutlet private weak var textField: UITextField!
-    @IBOutlet private weak var scanButton: UIButton!
     @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
     @IBOutlet private weak var tableView: UITableView!
     @IBOutlet private weak var tableViewHeight: NSLayoutConstraint!
     @IBOutlet private weak var errorLabel: UILabel!
-    @IBOutlet private weak var topConstraint: NSLayoutConstraint!
-    @IBOutlet private var padBottomConstraint: NSLayoutConstraint!
-    @IBOutlet private var phoneBottomConstraint: NSLayoutConstraint!
 
+    weak var webView: WKWebView?
     private var dataSource: UITableViewDiffableDataSource<Int, Row>!
     private var contentSizeObserver: NSKeyValueObservation?
+    var dataReloaded: (() -> Void)?
+    var activeLookupsFinished: (() -> Void)?
 
-    private static let width: CGFloat = 500
     private static let iconWidth: CGFloat = 28
-    private let viewModel: ViewModel<LookupActionHandler>
+    let viewModel: ViewModel<LookupActionHandler>
     private unowned let schemaController: SchemaController
     private let disposeBag: DisposeBag
 
@@ -75,7 +69,7 @@ class LookupViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.setup()
+        self.setupTableView()
         self.update(state: self.viewModel.state)
 
         self.viewModel.stateObservable
@@ -84,102 +78,37 @@ class LookupViewController: UIViewController {
                       })
                       .disposed(by: self.disposeBag)
 
-        self.viewModel.process(action: .initialize(self.webView))
-
-        if let text = self.viewModel.state.initialText {
-            self.textField.text = text
-            self.viewModel.process(action: .lookUp(text))
-        }
-    }
-
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        self.textField.becomeFirstResponder()
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        self.updatePreferredContentSize()
+//        self.viewModel.process(action: .initialize(self.webView))
     }
 
     // MARK: - Actions
 
     private func update(state: LookupState) {
-        switch state.state {
-        case .input, .failed:
-            self.textField.isEnabled = true
-            self.scanButton.isEnabled = true
-        default:
-            if self.textField.isFirstResponder {
-                self.textField.resignFirstResponder()
-            }
-            self.textField.isEnabled = false
-            self.scanButton.isEnabled = false
-        }
-
-        switch state.state {
-        case .input, .failed:
-            self.setupCancelDoneBarButtons()
-
+        switch state.lookupState {
+        case .failed:
             self.tableView.isHidden = true
-            self.errorLabel.isHidden = true
             self.activityIndicator.stopAnimating()
             self.activityIndicator.isHidden = true
-            self.titleLabel.isHidden = false
-            self.inputContainer.isHidden = false
-
-            if case .failed = state.state {
-                self.errorLabel.isHidden =  false
-            } else {
-                self.errorLabel.isHidden =  true
-            }
+            self.errorLabel.isHidden = false
 
         case .loadingIdentifiers:
-            self.setupCloseBarButton(title: L10n.cancel)
-
             self.tableView.isHidden = true
             self.errorLabel.isHidden = true
-            self.titleLabel.isHidden = true
-            self.inputContainer.isHidden = true
             self.activityIndicator.isHidden = false
             self.activityIndicator.startAnimating()
 
         case .lookup(let data):
-            let didTranslateAll = data.first(where: { data in
-                switch data.state {
-                case .enqueued, .inProgress: return true
-                case .failed, .translated: return false
-                }
-            }) == nil
-
-            self.setupCloseBarButton(title: didTranslateAll ? L10n.close : L10n.cancel)
-
+            // It takes a little while for the `contentSize` observer notification to come, so all the content is hidden after the notification arrives, so that there is not an empty screen while
+            // waiting for it.
             self.show(data: data) { [weak self] in
                 guard let `self` = self else { return }
-
-                // It takes a little while for the `contentSize` observer notification to come, so all the content is hidden after the notification arrives, so that there is not an empty screen while
-                // waiting for it.
                 self.activityIndicator.stopAnimating()
                 self.activityIndicator.isHidden = true
                 self.errorLabel.isHidden = true
-                self.titleLabel.isHidden = true
-                self.inputContainer.isHidden = true
                 self.tableView.isHidden = false
-                self.topConstraint.constant = 0
 
                 self.closeAfterUpdateIfNeeded()
             }
-        }
-
-        if let text = state.scannedText {
-            var newText = self.textField.text ?? ""
-            if newText.isEmpty {
-                newText = text
-            } else {
-                newText += ", " + text
-            }
-            self.textField.text = newText
-            self.textField.resignFirstResponder()
         }
     }
 
@@ -234,7 +163,7 @@ class LookupViewController: UIViewController {
                 isFirstCall = false
             }
 
-            self.updatePreferredContentSize()
+            self.dataReloaded?()
         }
     }
 
@@ -277,73 +206,11 @@ class LookupViewController: UIViewController {
         })
 
         if activeDownload == nil {
-            self.navigationController?.presentingViewController?.dismiss(animated: true)
+            self.activeLookupsFinished?()
         }
-    }
-
-    private func setupCloseBarButton(title: String) {
-        self.navigationItem.rightBarButtonItem = nil
-
-        let cancelItem = UIBarButtonItem(title: title, style: .plain, target: nil, action: nil)
-        cancelItem.rx.tap.subscribe(onNext: { [weak self] in
-            self?.navigationController?.presentingViewController?.dismiss(animated: true)
-        }).disposed(by: self.disposeBag)
-        self.navigationItem.leftBarButtonItem = cancelItem
-    }
-
-    private func setupCancelDoneBarButtons() {
-        let doneItem = UIBarButtonItem(title: L10n.lookUp, style: .done, target: nil, action: nil)
-        doneItem.rx.tap.subscribe(onNext: { [weak self] in
-            guard let string = self?.textField.text else { return }
-            self?.viewModel.process(action: .lookUp(string))
-        }).disposed(by: self.disposeBag)
-        self.navigationItem.rightBarButtonItem = doneItem
-
-        let cancelItem = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
-        cancelItem.rx.tap.subscribe(onNext: { [weak self] in
-            self?.navigationController?.presentingViewController?.dismiss(animated: true)
-        }).disposed(by: self.disposeBag)
-        self.navigationItem.leftBarButtonItem = cancelItem
-    }
-
-    private func updatePreferredContentSize() {
-        guard UIDevice.current.userInterfaceIdiom == .pad else { return }
-        let size = self.view.systemLayoutSizeFitting(CGSize(width: LookupViewController.width, height: .greatestFiniteMagnitude))
-        self.preferredContentSize = CGSize(width: LookupViewController.width, height: size.height - self.view.safeAreaInsets.top)
-        self.navigationController?.preferredContentSize = self.preferredContentSize
-    }
-
-    private func updateKeyboardSize(_ data: KeyboardData) {
-        guard UIDevice.current.userInterfaceIdiom == .phone else { return }
-        self.additionalSafeAreaInsets = UIEdgeInsets(top: 0, left: 0, bottom: data.endFrame.height, right: 0)
     }
 
     // MARK: - Setups
-
-    private func setup() {
-        self.titleLabel.text = L10n.Lookup.title
-        self.errorLabel.text = L10n.Errors.lookup
-        self.textField.delegate = self
-
-        if #available(iOS 15.0, *) {
-            var configuration = self.scanButton.configuration ?? UIButton.Configuration.plain()
-            configuration.title = L10n.scanText
-            configuration.image = UIImage(systemName: "text.viewfinder")
-            configuration.imagePadding = 8
-            configuration.baseForegroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
-            self.scanButton.configuration = configuration
-            self.scanButton.addAction(.captureTextFromCamera(responder: self, identifier: nil), for: .touchUpInside)
-        } else {
-            self.scanButton.isHidden = true
-        }
-
-        let isPhone = UIDevice.current.userInterfaceIdiom == .phone
-        self.phoneBottomConstraint.isActive = isPhone
-        self.padBottomConstraint.isActive = !isPhone
-
-        self.setupTableView()
-        self.setupKeyboardObserving()
-    }
 
     private func setupTableView() {
         self.tableViewHeight.constant = 0
@@ -395,47 +262,4 @@ class LookupViewController: UIViewController {
                 })
                 .disposed(by: self.disposeBag)
     }
-
-    private func setupKeyboardObserving() {
-        guard UIDevice.current.userInterfaceIdiom == .phone else { return }
-
-        NotificationCenter.default
-                          .keyboardWillShow
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
-                              if let data = notification.keyboardData {
-                                  self?.updateKeyboardSize(data)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
-
-        NotificationCenter.default
-                          .keyboardWillHide
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
-                              if let data = notification.keyboardData {
-                                  self?.updateKeyboardSize(data)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
-    }
-}
-
-extension LookupViewController: UITextFieldDelegate {
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        self.viewModel.process(action: .lookUp(textField.text ?? ""))
-        return true
-    }
-}
-
-extension LookupViewController: UIKeyInput {
-    func insertText(_ text: String) {
-        self.viewModel.process(action: .processScannedText(text))
-    }
-
-    var hasText: Bool {
-        return false
-    }
-
-    func deleteBackward() {}
 }

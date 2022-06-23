@@ -343,7 +343,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         controller.popoverPresentationController?.barButtonItem = button
 
         controller.addAction(UIAlertAction(title: L10n.Items.lookup, style: .default, handler: { [weak self] _ in
-            self?.showLookup(startWith: .lookup)
+            self?.showLookup(startWith: .manual)
         }))
 
         controller.addAction(UIAlertAction(title: L10n.Items.barcode, style: .default, handler: { [weak self] _ in

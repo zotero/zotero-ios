@@ -359,6 +359,11 @@
 		B319D6B8265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B319D6B7265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift */; };
 		B31A5E51286308960026589F /* LookupIdentifierCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31A5E4F286308960026589F /* LookupIdentifierCell.swift */; };
 		B31A5E52286308960026589F /* LookupIdentifierCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B31A5E50286308960026589F /* LookupIdentifierCell.xib */; };
+		B31CC57B286468780055C114 /* ManualLookupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31CC57A286468780055C114 /* ManualLookupViewController.swift */; };
+		B31CC57D286468C80055C114 /* ManualLookupViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B31CC57C286468C80055C114 /* ManualLookupViewController.xib */; };
+		B31CC57F28646D8E0055C114 /* ManualLookupAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31CC57E28646D8E0055C114 /* ManualLookupAction.swift */; };
+		B31CC58128646D990055C114 /* ManualLookupState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31CC58028646D990055C114 /* ManualLookupState.swift */; };
+		B31CC58328646DD20055C114 /* ManualLookupActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31CC58228646DD20055C114 /* ManualLookupActionHandler.swift */; };
 		B31D4A722767840800E22DCC /* BackgroundTaskController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31D4A712767840800E22DCC /* BackgroundTaskController.swift */; };
 		B31D4A732767841800E22DCC /* BackgroundTaskController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31D4A712767840800E22DCC /* BackgroundTaskController.swift */; };
 		B31D973C27F5E51100ED3DA2 /* ItemsToolbarDownloadProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31D973B27F5E51100ED3DA2 /* ItemsToolbarDownloadProgressView.swift */; };
@@ -1301,6 +1306,11 @@
 		B319D6B7265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllDownloadedAndForUploadItemsDbRequest.swift; sourceTree = "<group>"; };
 		B31A5E4F286308960026589F /* LookupIdentifierCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupIdentifierCell.swift; sourceTree = "<group>"; };
 		B31A5E50286308960026589F /* LookupIdentifierCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LookupIdentifierCell.xib; sourceTree = "<group>"; };
+		B31CC57A286468780055C114 /* ManualLookupViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualLookupViewController.swift; sourceTree = "<group>"; };
+		B31CC57C286468C80055C114 /* ManualLookupViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ManualLookupViewController.xib; sourceTree = "<group>"; };
+		B31CC57E28646D8E0055C114 /* ManualLookupAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualLookupAction.swift; sourceTree = "<group>"; };
+		B31CC58028646D990055C114 /* ManualLookupState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualLookupState.swift; sourceTree = "<group>"; };
+		B31CC58228646DD20055C114 /* ManualLookupActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualLookupActionHandler.swift; sourceTree = "<group>"; };
 		B31D4A712767840800E22DCC /* BackgroundTaskController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundTaskController.swift; sourceTree = "<group>"; };
 		B31D973B27F5E51100ED3DA2 /* ItemsToolbarDownloadProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsToolbarDownloadProgressView.swift; sourceTree = "<group>"; };
 		B31DDA9D27299BD1002CFA05 /* StoreMtimeForAttachmentDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreMtimeForAttachmentDbRequest.swift; sourceTree = "<group>"; };
@@ -3136,6 +3146,8 @@
 				B3AAB0F7283B9915008188D6 /* LookupItemCell.xib */,
 				B3ADAE462833B56F00D46271 /* LookupViewController.swift */,
 				B3ADAE472833B56F00D46271 /* LookupViewController.xib */,
+				B31CC57A286468780055C114 /* ManualLookupViewController.swift */,
+				B31CC57C286468C80055C114 /* ManualLookupViewController.xib */,
 				B357A287285B706B00E73CA1 /* ScannerViewController.swift */,
 				B357A288285B706B00E73CA1 /* ScannerViewController.xib */,
 			);
@@ -3147,6 +3159,8 @@
 			children = (
 				B3ADAE502833BEE300D46271 /* LookupAction.swift */,
 				B3ADAE4E2833BEDC00D46271 /* LookupState.swift */,
+				B31CC57E28646D8E0055C114 /* ManualLookupAction.swift */,
+				B31CC58028646D990055C114 /* ManualLookupState.swift */,
 				B357A28D285B73E800E73CA1 /* ScannerAction.swift */,
 				B357A28B285B73BD00E73CA1 /* ScannerState.swift */,
 			);
@@ -3157,6 +3171,7 @@
 			isa = PBXGroup;
 			children = (
 				B3ADAE4C2833BED300D46271 /* LookupActionHandler.swift */,
+				B31CC58228646DD20055C114 /* ManualLookupActionHandler.swift */,
 				B357A28F285B74DF00E73CA1 /* ScannerActionHandler.swift */,
 			);
 			path = ViewModels;
@@ -3913,6 +3928,7 @@
 				B3593F27241A61C700760E20 /* ItemDetailFieldCell.xib in Resources */,
 				B34DF1BE2576956F0019CCD1 /* SwitchCell.xib in Resources */,
 				B30B550324B85A3A00F94B59 /* Colors.xcassets in Resources */,
+				B31CC57D286468C80055C114 /* ManualLookupViewController.xib in Resources */,
 				B35DC8E6261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.xib in Resources */,
 				B30B405F2490CAFC00FAAF6D /* ItemCell.xib in Resources */,
 				B3E02C0D26848CA900FFB419 /* AnnotationViewController.xib in Resources */,
@@ -4411,6 +4427,7 @@
 				B3FC7431272181E500F55531 /* WebDavWriteRequest.swift in Sources */,
 				B32EE26124A092B700442974 /* RUser.swift in Sources */,
 				B305660A23FC051E003304F2 /* RegisterUploadRequest.swift in Sources */,
+				B31CC57F28646D8E0055C114 /* ManualLookupAction.swift in Sources */,
 				B3E8FE582714323200F51458 /* SavingSettingsAction.swift in Sources */,
 				B3841080281AC752006751B0 /* UITableViewDiffableDataSource+Extensions.swift in Sources */,
 				B3ADBCB827CFB64B00B7041F /* PDFSettingsViewController.swift in Sources */,
@@ -4418,6 +4435,7 @@
 				B30566B523FC051F003304F2 /* LoginResponse.swift in Sources */,
 				B3B41F1B2848E5A90017CA4B /* AnnotationsFilter.swift in Sources */,
 				B30565CB23FC051E003304F2 /* ReadSearchDbRequest.swift in Sources */,
+				B31CC58128646D990055C114 /* ManualLookupState.swift in Sources */,
 				B305669A23FC051F003304F2 /* RItem.swift in Sources */,
 				B3FE4B9C268DDE6100CE123F /* CitationBibliographyExportCoordinator.swift in Sources */,
 				B34A4B7026E63C9900B3E993 /* LineWidthView.swift in Sources */,
@@ -4439,6 +4457,7 @@
 				B3E8FE32271429C300F51458 /* ExportState.swift in Sources */,
 				B3C8DD8727B54EE70084E1AD /* CollectionsPickerViewController.swift in Sources */,
 				B30565C723FC051E003304F2 /* ReadUpdatedObjectUpdateParametersDbRequest.swift in Sources */,
+				B31CC58328646DD20055C114 /* ManualLookupActionHandler.swift in Sources */,
 				B305661623FC051E003304F2 /* MarkGroupAsLocalOnlySyncAction.swift in Sources */,
 				B3E8FE4C27142B5700F51458 /* DebuggingState.swift in Sources */,
 				B372CEE02486504600B423AE /* GroupVersionsRequest.swift in Sources */,
@@ -4488,6 +4507,7 @@
 				B36181FE24C9A7C000B30D56 /* OnboardingLayout.swift in Sources */,
 				B398A915270C6A4300968EE8 /* WebDavController.swift in Sources */,
 				B3A17D1927FC33B800322CAD /* LowPowerModeController.swift in Sources */,
+				B31CC57B286468780055C114 /* ManualLookupViewController.swift in Sources */,
 				B3DDDAAC24CAD6810014DF99 /* InsetLabel.swift in Sources */,
 				B3E8FE8927143BDD00F51458 /* SyncSettingsView.swift in Sources */,
 				B3593F7A241A76E600760E20 /* CollectionEditState.swift in Sources */,

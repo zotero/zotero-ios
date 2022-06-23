@@ -27,27 +27,21 @@ struct LookupState: ViewModelState {
     }
 
     enum State {
-        case input
         case failed(Error)
         case loadingIdentifiers
         case lookup([LookupData])
     }
 
-    let initialText: String?
     let collectionKeys: Set<String>
     let libraryId: LibraryIdentifier
 
-    var state: State
-    var scannedText: String?
+    var lookupState: State
 
-    init(initialText: String?, collectionKeys: Set<String>, libraryId: LibraryIdentifier) {
-        self.initialText = initialText
+    init(collectionKeys: Set<String>, libraryId: LibraryIdentifier) {
         self.collectionKeys = collectionKeys
         self.libraryId = libraryId
-        self.state = initialText == nil ? .input : .loadingIdentifiers
+        self.lookupState = .loadingIdentifiers
     }
 
-    mutating func cleanup() {
-        self.scannedText = nil
-    }
+    func cleanup() {}
 }

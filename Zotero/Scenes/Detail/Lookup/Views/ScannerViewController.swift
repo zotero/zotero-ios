@@ -21,7 +21,7 @@ final class ScannerViewController: UIViewController {
 
     private var captureSession: AVCaptureSession?
     private var previewLayer: AVCaptureVideoPreviewLayer?
-    weak var coordinatorDelegate: ScannerToLookupCoordinatorDelegate?
+    weak var coordinatorDelegate: LookupCoordinatorDelegate?
 
     init(viewModel: ViewModel<ScannerActionHandler>) {
         self.viewModel = viewModel
@@ -111,7 +111,7 @@ final class ScannerViewController: UIViewController {
     private func setupNavigationItems() {
         let doneItem = UIBarButtonItem(title: L10n.lookUp, style: .done, target: nil, action: nil)
         doneItem.rx.tap.subscribe(with: self, onNext: { `self`, _ in
-            self.coordinatorDelegate?.showLookup(with: self.viewModel.state.codes)
+//            self.coordinatorDelegate?.showLookup(with: self.viewModel.state.codes)
         }).disposed(by: self.disposeBag)
         self.navigationItem.rightBarButtonItem = doneItem
 

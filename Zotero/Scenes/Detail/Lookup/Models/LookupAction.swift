@@ -12,5 +12,4 @@ import WebKit
 enum LookupAction {
     case initialize(WKWebView)
     case lookUp(String)
-    case processScannedText(String)
 }

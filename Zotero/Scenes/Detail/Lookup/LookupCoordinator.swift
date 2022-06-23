@@ -12,11 +12,11 @@ import RxSwift
 
 enum LookupStartingView {
     case scanner
-    case lookup
+    case manual
 }
 
-protocol ScannerToLookupCoordinatorDelegate: AnyObject {
-    func showLookup(with codes: [String])
+protocol LookupCoordinatorDelegate: AnyObject {
+    func lookupController() -> LookupViewController?
 }
 
 final class LookupCoordinator: NSObject, Coordinator {
@@ -44,14 +44,13 @@ final class LookupCoordinator: NSObject, Coordinator {
     }
 
     func start(animated: Bool) {
-        guard let userControllers = self.controllers.userControllers else { return }
-        let controller = self.startingView == .lookup ? self.lookupController(initial: nil, userControllers: userControllers) : self.scannerController
+        let controller = self.startingView == .manual ? self.manualController : self.scannerController
         self.navigationController.setViewControllers([controller], animated: animated)
     }
 
-    private func lookupController(initial: String?, userControllers: UserControllers) -> UIViewController {
+    private func lookupController(userControllers: UserControllers) -> LookupViewController {
         let collectionKeys = Defaults.shared.selectedCollectionId.key.flatMap({ Set([$0]) }) ?? []
-        let state = LookupState(initialText: initial, collectionKeys: collectionKeys, libraryId: Defaults.shared.selectedLibrary)
+        let state = LookupState(collectionKeys: collectionKeys, libraryId: Defaults.shared.selectedLibrary)
         let handler = LookupActionHandler(dbStorage: userControllers.dbStorage, translatorsController: self.controllers.translatorsAndStylesController,
                                           schemaController: self.controllers.schemaController, dateParser: self.controllers.dateParser, remoteFileDownloader: userControllers.remoteFileDownloader)
         let viewModel = ViewModel(initialState: state, handler: handler)
@@ -66,12 +65,19 @@ final class LookupCoordinator: NSObject, Coordinator {
         controller.coordinatorDelegate = self
         return controller
     }
+
+    private var manualController: UIViewController {
+        let state = ManualLookupState()
+        let handler = ManualLookupActionHandler()
+        let controller = ManualLookupViewController(viewModel: ViewModel(initialState: state, handler: handler))
+        controller.coordinatorDelegate = self
+        return controller
+    }
 }
 
-extension LookupCoordinator: ScannerToLookupCoordinatorDelegate {
-    func showLookup(with codes: [String]) {
-        guard let userControllers = self.controllers.userControllers else { return }
-        let controller = self.lookupController(initial: codes.joined(separator: ", "), userControllers: userControllers)
-        self.navigationController.pushViewController(controller, animated: true)
+extension LookupCoordinator: LookupCoordinatorDelegate {
+    func lookupController() -> LookupViewController? {
+        guard let userControllers = self.controllers.userControllers else { return nil }
+        return self.lookupController(userControllers: userControllers)
     }
 }
