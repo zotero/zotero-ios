@@ -24,20 +24,21 @@
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
                 <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="zzx-dE-uZT">
-                    <rect key="frame" x="20" y="59" width="374" height="788"/>
+                    <rect key="frame" x="0.0" y="44" width="414" height="818"/>
                     <subviews>
                         <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="u28-BM-Asu">
-                            <rect key="frame" x="0.0" y="0.0" width="374" height="20"/>
+                            <rect key="frame" x="0.0" y="0.0" width="414" height="20"/>
                         </activityIndicatorView>
                         <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="hh8-9u-I8Q">
-                            <rect key="frame" x="0.0" y="32" width="374" height="0.0"/>
-                            <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                            <rect key="frame" x="0.0" y="32" width="414" height="0.0"/>
+                            <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             <constraints>
                                 <constraint firstAttribute="height" priority="999" id="sbS-bZ-NlJ"/>
                             </constraints>
+                            <color key="sectionIndexBackgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         </tableView>
                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" verticalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5xO-hf-x9n">
-                            <rect key="frame" x="0.0" y="44" width="374" height="744"/>
+                            <rect key="frame" x="0.0" y="44" width="414" height="774"/>
                             <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                             <color key="textColor" systemColor="systemRedColor"/>
                             <nil key="highlightedColor"/>
@@ -49,21 +50,17 @@
                 </stackView>
             </subviews>
             <viewLayoutGuide key="safeArea" id="fnl-2z-Ty3"/>
-            <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+            <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
             <constraints>
-                <constraint firstItem="zzx-dE-uZT" firstAttribute="top" secondItem="fnl-2z-Ty3" secondAttribute="top" constant="15" id="1JG-ID-Tez"/>
-                <constraint firstItem="fnl-2z-Ty3" firstAttribute="bottom" secondItem="zzx-dE-uZT" secondAttribute="bottom" constant="15" id="Pke-Yx-S2s"/>
-                <constraint firstAttribute="trailing" secondItem="zzx-dE-uZT" secondAttribute="trailing" constant="20" id="PtX-AY-J46"/>
-                <constraint firstItem="fnl-2z-Ty3" firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="zzx-dE-uZT" secondAttribute="bottom" constant="15" id="qwZ-KV-kbg"/>
-                <constraint firstItem="zzx-dE-uZT" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" constant="20" id="vKC-c6-RBh"/>
+                <constraint firstItem="zzx-dE-uZT" firstAttribute="top" secondItem="fnl-2z-Ty3" secondAttribute="top" id="1JG-ID-Tez"/>
+                <constraint firstAttribute="trailing" secondItem="zzx-dE-uZT" secondAttribute="trailing" id="PtX-AY-J46"/>
+                <constraint firstItem="fnl-2z-Ty3" firstAttribute="bottom" secondItem="zzx-dE-uZT" secondAttribute="bottom" id="qwZ-KV-kbg"/>
+                <constraint firstItem="zzx-dE-uZT" firstAttribute="leading" secondItem="i5M-Pr-FkT" secondAttribute="leading" id="vKC-c6-RBh"/>
             </constraints>
             <point key="canvasLocation" x="-72" y="146"/>
         </view>
     </objects>
     <resources>
-        <systemColor name="systemBackgroundColor">
-            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-        </systemColor>
         <systemColor name="systemRedColor">
             <color red="1" green="0.23137254901960785" blue="0.18823529411764706" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>

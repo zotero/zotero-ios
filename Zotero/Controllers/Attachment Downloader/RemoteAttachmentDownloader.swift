@@ -50,6 +50,7 @@ final class RemoteAttachmentDownloader {
     let observable: PublishSubject<Update>
 
     private var operations: [Download: RemoteAttachmentDownloadOperation]
+    private var errors: [Download: Swift.Error]
     private var progressObservers: [Download: NSKeyValueObservation]
 
     init(apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage, schemaController: SchemaController) {
@@ -69,7 +70,21 @@ final class RemoteAttachmentDownloader {
         self.observable = PublishSubject()
         self.operations = [:]
         self.progressObservers = [:]
+        self.errors = [:]
         self.disposeBag = DisposeBag()
+    }
+
+    func data(for key: String, parentKey: String, libraryId: LibraryIdentifier) -> (progress: CGFloat?, error: Swift.Error?) {
+        let download = Download(key: key, parentKey: parentKey, libraryId: libraryId)
+        var progress: CGFloat?
+        var error: Swift.Error?
+
+        self.queue.sync { [weak self] in
+            progress = (self?.operations[download]?.progress?.fractionCompleted).flatMap({ CGFloat($0) })
+            error = self?.errors[download]
+        }
+
+        return (progress, error)
     }
 
     func download(data: [(Attachment, URL, String)]) {
@@ -138,17 +153,21 @@ final class RemoteAttachmentDownloader {
                     try self.dbStorage.perform(request: request, on: self.dbQueue)
                 }
                 self.observable.on(.next(Update(download: download, kind: .ready)))
+                self.errors[download] = nil
             } catch let error {
                 DDLogError("RemoteAttachmentDownloader: can't store attachment after download - \(error)")
                 // Storing item failed, remove downloaded file
                 try? self.fileStorage.remove(file)
                 self.observable.on(.next(Update(download: download, kind: .failed)))
+                self.errors[download] = error
             }
 
         case .failure(let error):
             DDLogError("RemoteAttachmentDownloader: failed to download attachment \(download.key), \(download.libraryId) - \(error)")
 
             let isCancelError = (error as? AttachmentDownloadOperation.Error) == .cancelled
+            self.errors[download] = isCancelError ? nil : error
+
             if isCancelError {
                 self.observable.on(.next(Update(download: download, kind: .cancelled)))
             } else {

@@ -16,7 +16,7 @@ enum LookupStartingView {
 }
 
 protocol LookupCoordinatorDelegate: AnyObject {
-    func lookupController() -> LookupViewController?
+    func lookupController(multiLookupEnabled: Bool, hasDarkBackground: Bool) -> LookupViewController?
 }
 
 final class LookupCoordinator: NSObject, Coordinator {
@@ -48,14 +48,15 @@ final class LookupCoordinator: NSObject, Coordinator {
         self.navigationController.setViewControllers([controller], animated: animated)
     }
 
-    private func lookupController(userControllers: UserControllers) -> LookupViewController {
+    private func lookupController(multiLookupEnabled: Bool, hasDarkBackground: Bool, userControllers: UserControllers) -> LookupViewController {
         let collectionKeys = Defaults.shared.selectedCollectionId.key.flatMap({ Set([$0]) }) ?? []
-        let state = LookupState(collectionKeys: collectionKeys, libraryId: Defaults.shared.selectedLibrary)
+        let state = LookupState(multiLookupEnabled: multiLookupEnabled, hasDarkBackground: hasDarkBackground, collectionKeys: collectionKeys, libraryId: Defaults.shared.selectedLibrary)
         let handler = LookupActionHandler(dbStorage: userControllers.dbStorage, translatorsController: self.controllers.translatorsAndStylesController,
                                           schemaController: self.controllers.schemaController, dateParser: self.controllers.dateParser, remoteFileDownloader: userControllers.remoteFileDownloader)
         let viewModel = ViewModel(initialState: state, handler: handler)
 
-        return LookupViewController(viewModel: viewModel, remoteDownloadObserver: userControllers.remoteFileDownloader.observable, schemaController: self.controllers.schemaController)
+        return LookupViewController(viewModel: viewModel, remoteDownloadObserver: userControllers.remoteFileDownloader.observable, remoteFileDownloader: userControllers.remoteFileDownloader,
+                                    schemaController: self.controllers.schemaController)
     }
 
     private var scannerController: UIViewController {
@@ -76,8 +77,8 @@ final class LookupCoordinator: NSObject, Coordinator {
 }
 
 extension LookupCoordinator: LookupCoordinatorDelegate {
-    func lookupController() -> LookupViewController? {
+    func lookupController(multiLookupEnabled: Bool, hasDarkBackground: Bool) -> LookupViewController? {
         guard let userControllers = self.controllers.userControllers else { return nil }
-        return self.lookupController(userControllers: userControllers)
+        return self.lookupController(multiLookupEnabled: multiLookupEnabled, hasDarkBackground: hasDarkBackground, userControllers: userControllers)
     }
 }

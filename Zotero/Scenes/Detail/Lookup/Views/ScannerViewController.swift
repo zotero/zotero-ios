@@ -8,6 +8,7 @@
 
 import AVFoundation
 import UIKit
+import WebKit
 
 import CocoaLumberjackSwift
 import RxSwift
@@ -16,9 +17,12 @@ final class ScannerViewController: UIViewController {
     private let viewModel: ViewModel<ScannerActionHandler>
     private let disposeBag: DisposeBag
 
-    @IBOutlet private weak var codeLabel: UILabel!
+    @IBOutlet private weak var webView: WKWebView!
     @IBOutlet private weak var barcodeContainer: UIView!
+    @IBOutlet private weak var barcodeStackContainer: UIStackView!
+    @IBOutlet private weak var barcodeTitleLabel: UILabel!
 
+    private weak var lookupController: LookupViewController?
     private var captureSession: AVCaptureSession?
     private var previewLayer: AVCaptureVideoPreviewLayer?
     weak var coordinatorDelegate: LookupCoordinatorDelegate?
@@ -36,18 +40,20 @@ final class ScannerViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.preferredContentSize = CGSize(width: 500, height: 300)
+        self.preferredContentSize = CGSize(width: 500, height: 500)
         self.navigationController?.preferredContentSize = self.preferredContentSize
         self.view.backgroundColor = UIColor.black
+
+        self.setupLookupController()
         self.setupSession()
         self.barcodeContainer.layer.zPosition = 2
         self.setupNavigationItems()
 
-        self.viewModel.stateObservable
-                      .subscribe(with: self, onNext: { `self`, state in
-                          self.update(state: state)
-                      })
-                      .disposed(by: self.disposeBag)
+//        self.viewModel.stateObservable
+//                      .subscribe(with: self, onNext: { `self`, state in
+//                          self.update(state: state)
+//                      })
+//                      .disposed(by: self.disposeBag)
     }
 
     override func viewDidLayoutSubviews() {
@@ -79,12 +85,8 @@ final class ScannerViewController: UIViewController {
 
     // MARK: - Actions
 
-    private func update(state: ScannerState) {
-        let codes = state.codes.joined(separator: ", ")
-        self.codeLabel.text = codes
-        self.navigationItem.rightBarButtonItem?.isEnabled = !codes.isEmpty
-        self.barcodeContainer.isHidden = codes.isEmpty
-    }
+//    private func update(state: ScannerState) {
+//    }
 
     private func updatePreviewOrientation() {
         guard let scene = UIApplication.shared.connectedScenes.first, let windowScene = scene as? UIWindowScene else { return }
@@ -108,14 +110,21 @@ final class ScannerViewController: UIViewController {
 
     // MARK: - Setups
 
-    private func setupNavigationItems() {
-        let doneItem = UIBarButtonItem(title: L10n.lookUp, style: .done, target: nil, action: nil)
-        doneItem.rx.tap.subscribe(with: self, onNext: { `self`, _ in
-//            self.coordinatorDelegate?.showLookup(with: self.viewModel.state.codes)
-        }).disposed(by: self.disposeBag)
-        self.navigationItem.rightBarButtonItem = doneItem
+    private func setupLookupController() {
+        guard let controller = self.coordinatorDelegate?.lookupController(multiLookupEnabled: true, hasDarkBackground: true) else { return }
+        controller.webView = self.webView
+        controller.view.backgroundColor = .clear
+        controller.view.isHidden = true
+        self.lookupController = controller
 
-        let cancelItem = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
+        controller.willMove(toParent: self)
+        self.addChild(controller)
+        self.barcodeStackContainer.addArrangedSubview(controller.view)
+        controller.didMove(toParent: self)
+    }
+
+    private func setupNavigationItems() {
+        let cancelItem = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
         cancelItem.rx.tap.subscribe(onNext: { [weak self] in
             self?.navigationController?.presentingViewController?.dismiss(animated: true)
         }).disposed(by: self.disposeBag)
@@ -171,10 +180,13 @@ final class ScannerViewController: UIViewController {
 
 extension ScannerViewController: AVCaptureMetadataOutputObjectsDelegate {
     func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
-        let scanned = metadataObjects.compactMap { object -> String? in
-            guard let readableObject = object as? AVMetadataMachineReadableCodeObject, let string = readableObject.stringValue else { return nil }
-            return string
-        }
-        self.viewModel.process(action: .save(scanned))
+        let scanned = metadataObjects.compactMap { ($0 as? AVMetadataMachineReadableCodeObject)?.stringValue }
+        let filtered = scanned.filter({ !self.viewModel.state.barcodes.contains($0) })
+
+        guard !filtered.isEmpty else { return }
+
+        self.viewModel.process(action: .setBarcodes(filtered))
+        self.lookupController?.viewModel.process(action: .lookUp(scanned.joined(separator: ", ")))
+        self.lookupController?.view.isHidden = false
     }
 }

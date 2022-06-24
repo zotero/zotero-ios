@@ -58,8 +58,10 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
         case .lookUp(let identifier):
             guard !identifier.isEmpty else { return }
-            self.update(viewModel: viewModel) { state in
-                state.lookupState = .loadingIdentifiers
+            if !viewModel.state.multiLookupEnabled {
+                self.update(viewModel: viewModel) { state in
+                    state.lookupState = .loadingIdentifiers
+                }
             }
             self.lookupWebViewHandler?.lookUp(identifier: identifier)
         }
@@ -68,9 +70,20 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     private func process(data: LookupWebViewHandler.LookupData, in viewModel: ViewModel<LookupActionHandler>) {
         switch data {
         case .identifiers(let identifiers):
-            let lookupData = identifiers.map({ LookupState.LookupData(identifier: self.identifier(from: $0), state: .enqueued) })
+            var lookupData = identifiers.map({ LookupState.LookupData(identifier: self.identifier(from: $0), state: .enqueued) })
+
             self.update(viewModel: viewModel) { state in
-                state.lookupState = .lookup(lookupData)
+                if !state.multiLookupEnabled {
+                    state.lookupState = .lookup(lookupData)
+                } else {
+                    switch state.lookupState {
+                    case .lookup(let data):
+                        lookupData.append(contentsOf: data)
+                    default: break
+                    }
+
+                    state.lookupState = .lookup(lookupData)
+                }
             }
 
         case .item(let data):

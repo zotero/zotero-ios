@@ -9,10 +9,10 @@
 import Foundation
 
 struct ScannerState: ViewModelState {
-    var codes: [String]
+    var barcodes: Set<String>
 
     init() {
-        self.codes = []
+        self.barcodes = []
     }
 
     func cleanup() {}

@@ -69,7 +69,6 @@ class ManualLookupViewController: UIViewController {
 
     private func lookup(text: String) {
         guard !text.isEmpty, let controller = self.lookupController else { return }
-        controller.view.isHidden = false
         controller.viewModel.process(action: .lookUp(text))
     }
 
@@ -87,6 +86,8 @@ class ManualLookupViewController: UIViewController {
     }
 
     private func update(state: LookupState) {
+        self.lookupController?.view.isHidden = false
+
         switch state.lookupState {
         case .failed:
             self.titleLabel.isHidden = false
@@ -186,26 +187,29 @@ class ManualLookupViewController: UIViewController {
 
         self.setupKeyboardObserving()
         self.setupCancelDoneBarButtons()
-//        self.setupLookupController()
+        self.setupLookupController()
     }
 
     private func setupLookupController() {
-        guard let controller = self.coordinatorDelegate?.lookupController() else { return }
+        guard let controller = self.coordinatorDelegate?.lookupController(multiLookupEnabled: false, hasDarkBackground: false) else { return }
         controller.webView = self.webView
+        controller.view.isHidden = true
+        self.lookupController = controller
 
         controller.willMove(toParent: self)
         self.addChild(controller)
         self.container.addArrangedSubview(controller.view)
         controller.didMove(toParent: self)
 
-        controller.view.isHidden = true
         controller.activeLookupsFinished = { [weak self] in
             self?.navigationController?.presentingViewController?.dismiss(animated: true)
         }
         controller.dataReloaded = { [weak self] in
+            self?.topConstraint.constant = 0
             self?.updatePreferredContentSize()
         }
         controller.viewModel.stateObservable
+                  .skip(1)
                   .subscribe(with: self, onNext: { `self`, state in
                       self.update(state: state)
                   })

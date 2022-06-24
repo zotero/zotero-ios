@@ -10,6 +10,7 @@ import Foundation
 import WebKit
 
 import CocoaLumberjackSwift
+import RxCocoa
 import RxSwift
 
 final class LookupWebViewHandler {
@@ -39,30 +40,97 @@ final class LookupWebViewHandler {
         case item([String: Any])
     }
 
+    private enum InitializationResult {
+        case initialized
+        case inProgress
+        case failed(Swift.Error)
+    }
+
     private let webViewHandler: WebViewHandler
     private let translatorsController: TranslatorsAndStylesController
     private let disposeBag: DisposeBag
     let observable: PublishSubject<Result<LookupData, Swift.Error>>
+
+    private var isLoading: BehaviorRelay<InitializationResult>
 
     init(webView: WKWebView, translatorsController: TranslatorsAndStylesController) {
         self.translatorsController = translatorsController
         self.webViewHandler = WebViewHandler(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }))
         self.observable = PublishSubject()
         self.disposeBag = DisposeBag()
+        self.isLoading = BehaviorRelay(value: .inProgress)
 
         self.webViewHandler.receivedMessageHandler = { [weak self] name, body in
             self?.receiveMessage(name: name, body: body)
         }
+
+        self.initialize()
+            .subscribe(on: MainScheduler.instance)
+            .observe(on: MainScheduler.instance)
+            .subscribe(with: self, onSuccess: { `self`, _ in
+                DDLogInfo("LookupWebViewHandler: initialization succeeded")
+                self.isLoading.accept(.initialized)
+            }, onFailure: { `self`, error in
+                DDLogInfo("LookupWebViewHandler: initialization failed - \(error)")
+                self.isLoading.accept(.failed(error))
+            })
+            .disposed(by: self.disposeBag)
     }
 
     func lookUp(identifier: String) {
-        DDLogInfo("LookupWebViewHandler: translate")
+        switch self.isLoading.value {
+        case .failed(let error):
+            self.observable.on(.next(.failure(error)))
 
+        case .initialized:
+            self._lookUp(identifier: identifier)
+
+        case .inProgress:
+            self.isLoading.filter { result in
+                switch result {
+                case .inProgress: return false
+                case .initialized, .failed: return true
+                }
+            }
+            .first()
+            .subscribe(with: self, onSuccess: { `self`, result in
+                guard let result = result else { return }
+                switch result {
+                case .failed(let error):
+                    self.observable.on(.next(.failure(error)))
+
+                case .initialized:
+                    self._lookUp(identifier: identifier)
+
+                case .inProgress: break
+                }
+            })
+            .disposed(by: self.disposeBag)
+        }
+    }
+
+    private func _lookUp(identifier: String) {
+        DDLogInfo("LookupWebViewHandler: call translate js")
+        let encodedIdentifiers = WKWebView.encodeForJavascript(identifier.data(using: .utf8))
+        return self.webViewHandler.call(javascript: "lookup(\(encodedIdentifiers));")
+                   .subscribe(on: MainScheduler.instance)
+                   .observe(on: MainScheduler.instance)
+                   .subscribe(onFailure: { [weak self] error in
+                       DDLogError("WebViewHandler: translation failed - \(error)")
+                       self?.observable.on(.next(.failure(error)))
+                   })
+                   .disposed(by: self.disposeBag)
+    }
+
+    private func initialize() -> Single<Any> {
+        DDLogInfo("LookupWebViewHandler: initialize web view")
         return self.loadIndex()
                    .flatMap { _ -> Single<(String, String)> in
+                       DDLogInfo("LookupWebViewHandler: load bundled files")
                        return self.loadBundledFiles()
                    }
                    .flatMap { encodedSchema, encodedDateFormats -> Single<Any> in
+                       DDLogInfo("LookupWebViewHandler: init schema and date formats")
                        return self.webViewHandler.call(javascript: "initSchemaAndDateFormats(\(encodedSchema), \(encodedDateFormats));")
                    }
                    .flatMap { _ -> Single<[RawTranslator]> in
@@ -74,16 +142,6 @@ final class LookupWebViewHandler {
                        let encodedTranslators = WKWebView.encodeAsJSONForJavascript(translators)
                        return self.webViewHandler.call(javascript: "initTranslators(\(encodedTranslators));")
                    }
-                   .flatMap({ _ -> Single<Any> in
-                       DDLogInfo("LookupWebViewHandler: call translate js")
-                       let encodedIdentifiers = WKWebView.encodeForJavascript(identifier.data(using: .utf8))
-                       return self.webViewHandler.call(javascript: "lookup(\(encodedIdentifiers));")
-                   })
-                   .subscribe(onFailure: { [weak self] error in
-                       DDLogError("WebViewHandler: translation failed - \(error)")
-                       self?.observable.on(.next(.failure(error)))
-                   })
-                   .disposed(by: self.disposeBag)
     }
 
     private func loadIndex() -> Single<()> {

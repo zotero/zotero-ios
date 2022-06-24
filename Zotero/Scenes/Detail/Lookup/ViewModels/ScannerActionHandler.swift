@@ -17,11 +17,10 @@ final class ScannerActionHandler: ViewModelActionHandler {
 
     func process(action: ScannerAction, in viewModel: ViewModel<ScannerActionHandler>) {
         switch action {
-        case .save(let codes):
+        case .setBarcodes(let barcodes):
             self.update(viewModel: viewModel) { state in
-                for code in codes {
-                    guard !state.codes.contains(code) else { continue }
-                    state.codes.append(code)
+                for barcode in barcodes {
+                    state.barcodes.insert(barcode)
                 }
             }
         }

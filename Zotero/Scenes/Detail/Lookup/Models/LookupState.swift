@@ -34,13 +34,18 @@ struct LookupState: ViewModelState {
 
     let collectionKeys: Set<String>
     let libraryId: LibraryIdentifier
+    // If enabled, when `lookup(identifier:)` is called, previous identifiers won't be removed.
+    let multiLookupEnabled: Bool
+    let hasDarkBackground: Bool
 
     var lookupState: State
 
-    init(collectionKeys: Set<String>, libraryId: LibraryIdentifier) {
+    init(multiLookupEnabled: Bool, hasDarkBackground: Bool, collectionKeys: Set<String>, libraryId: LibraryIdentifier) {
+        self.multiLookupEnabled = multiLookupEnabled
         self.collectionKeys = collectionKeys
         self.libraryId = libraryId
         self.lookupState = .loadingIdentifiers
+        self.hasDarkBackground = hasDarkBackground
     }
 
     func cleanup() {}

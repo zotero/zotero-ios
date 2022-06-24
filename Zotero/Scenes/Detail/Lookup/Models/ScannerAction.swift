@@ -9,5 +9,5 @@
 import Foundation
 
 enum ScannerAction {
-    case save([String])
+    case setBarcodes([String])
 }

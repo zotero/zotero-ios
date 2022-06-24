@@ -33,6 +33,7 @@
                         <rect key="frame" x="300" y="12" width="20" height="20"/>
                     </activityIndicatorView>
                 </subviews>
+                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                 <constraints>
                     <constraint firstAttribute="bottom" secondItem="V2t-NN-eaG" secondAttribute="bottom" constant="8" id="Ddb-zA-gu7"/>
                     <constraint firstItem="ciS-YN-073" firstAttribute="firstBaseline" secondItem="V2t-NN-eaG" secondAttribute="firstBaseline" id="FtH-HN-OKn"/>

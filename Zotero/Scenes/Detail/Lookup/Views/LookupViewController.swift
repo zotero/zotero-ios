@@ -51,11 +51,13 @@ class LookupViewController: UIViewController {
 
     private static let iconWidth: CGFloat = 28
     let viewModel: ViewModel<LookupActionHandler>
+    private unowned let remoteFileDownloader: RemoteAttachmentDownloader
     private unowned let schemaController: SchemaController
     private let disposeBag: DisposeBag
 
-    init(viewModel: ViewModel<LookupActionHandler>, remoteDownloadObserver: PublishSubject<RemoteAttachmentDownloader.Update>, schemaController: SchemaController) {
+    init(viewModel: ViewModel<LookupActionHandler>, remoteDownloadObserver: PublishSubject<RemoteAttachmentDownloader.Update>, remoteFileDownloader: RemoteAttachmentDownloader, schemaController: SchemaController) {
         self.viewModel = viewModel
+        self.remoteFileDownloader = remoteFileDownloader
         self.schemaController = schemaController
         self.disposeBag = DisposeBag()
         super.init(nibName: "LookupViewController", bundle: nil)
@@ -70,6 +72,9 @@ class LookupViewController: UIViewController {
         super.viewDidLoad()
 
         self.setupTableView()
+        if self.viewModel.state.hasDarkBackground {
+            self.activityIndicator.color = .white
+        }
         self.update(state: self.viewModel.state)
 
         self.viewModel.stateObservable
@@ -78,7 +83,9 @@ class LookupViewController: UIViewController {
                       })
                       .disposed(by: self.disposeBag)
 
-//        self.viewModel.process(action: .initialize(self.webView))
+        if let webView = self.webView {
+            self.viewModel.process(action: .initialize(webView))
+        }
     }
 
     // MARK: - Actions
@@ -107,6 +114,8 @@ class LookupViewController: UIViewController {
                 self.errorLabel.isHidden = true
                 self.tableView.isHidden = false
 
+                self.dataReloaded?()
+
                 self.closeAfterUpdateIfNeeded()
             }
         }
@@ -129,7 +138,20 @@ class LookupViewController: UIViewController {
                 let itemData = Row.Item(type: translationData.response.rawType, title: title)
 
                 snapshot.appendItems([.item(itemData)], toSection: 0)
-                snapshot.appendItems(translationData.attachments.map({ .attachment($0.0, .progress(0)) }), toSection: 0)
+
+                let attachments = translationData.attachments.map({ attachment -> Row in
+                    let (progress, error) = self.remoteFileDownloader.data(for: attachment.0.key, parentKey: translationData.response.key, libraryId: attachment.0.libraryId)
+                    let updateKind: RemoteAttachmentDownloader.Update.Kind
+                    if error != nil {
+                        updateKind = .failed
+                    } else if let progress = progress {
+                        updateKind = .progress(progress)
+                    } else {
+                        updateKind = .ready
+                    }
+                    return .attachment(attachment.0, updateKind)
+                })
+                snapshot.appendItems(attachments, toSection: 0)
 
             case .failed:
                 snapshot.appendItems([.identifier(identifier: lookup.identifier, state: .failed)])
@@ -152,7 +174,7 @@ class LookupViewController: UIViewController {
 
             self.tableViewHeight.constant = value.height
 
-            if value.height == self.tableView.frame.height {
+            if value.height >= self.tableView.frame.height {
                 self.tableView.isScrollEnabled = true
                 self.contentSizeObserver = nil
             }
@@ -162,13 +184,11 @@ class LookupViewController: UIViewController {
             } else {
                 isFirstCall = false
             }
-
-            self.dataReloaded?()
         }
     }
 
     private func process(update: RemoteAttachmentDownloader.Update) {
-        guard update.libraryId == self.viewModel.state.libraryId, var snapshot = self.dataSource?.snapshot() else { return }
+        guard update.libraryId == self.viewModel.state.libraryId, var snapshot = self.dataSource?.snapshot(), snapshot.sectionIdentifiers.count > 0 else { return }
 
         var rows = snapshot.itemIdentifiers(inSection: 0)
 
@@ -217,6 +237,8 @@ class LookupViewController: UIViewController {
         self.tableView.register(UINib(nibName: "LookupItemCell", bundle: nil), forCellReuseIdentifier: "LookupCell")
         self.tableView.register(UINib(nibName: "LookupIdentifierCell", bundle: nil), forCellReuseIdentifier: "IdentifierCell")
         self.tableView.isScrollEnabled = false
+        self.tableView.backgroundColor = .clear
+        self.tableView.backgroundView = UIView()
 
         self.dataSource = UITableViewDiffableDataSource(tableView: self.tableView, cellProvider: { tableView, indexPath, row in
             let cellId: String
@@ -234,16 +256,16 @@ class LookupViewController: UIViewController {
             case .item(let data):
                 if let cell = cell as? LookupItemCell {
                     separatorInset = LookupViewController.iconWidth + LookupItemCell.attachmentToLabelOffset
-                    cell.set(title: data.title, type: data.type)
+                    cell.set(title: data.title, type: data.type, hasDarkBackground: self.viewModel.state.hasDarkBackground)
                 }
             case .attachment(let attachment, let update):
                 if let cell = cell as? LookupItemCell {
-                    cell.set(title: attachment.title, attachmentType: attachment.type, update: update)
+                    cell.set(title: attachment.title, attachmentType: attachment.type, update: update, hasDarkBackground: self.viewModel.state.hasDarkBackground)
                     separatorInset = LookupViewController.iconWidth + LookupItemCell.attachmentToLabelOffset + LookupItemCell.attachmentOffset
                 }
             case .identifier(let identifier, let state):
                 if let cell = cell as? LookupIdentifierCell {
-                    cell.set(title: identifier, state: state)
+                    cell.set(title: identifier, state: state, hasDarkBackground: self.viewModel.state.hasDarkBackground)
                 }
             }
 

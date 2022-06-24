@@ -13,8 +13,18 @@ class LookupIdentifierCell: UITableViewCell {
     @IBOutlet private weak var detailLabel: UILabel!
     @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
 
-    func set(title: String, state: LookupViewController.Row.IdentifierState) {
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        self.backgroundColor = .clear
+        self.contentView.backgroundColor = .clear
+    }
+
+    func set(title: String, state: LookupViewController.Row.IdentifierState, hasDarkBackground: Bool) {
         self.titleLabel.text = title
+        self.titleLabel.textColor = hasDarkBackground ? .white : .label
+        if hasDarkBackground {
+            self.activityIndicator.color = .white
+        }
 
         switch state {
         case .inProgress:
