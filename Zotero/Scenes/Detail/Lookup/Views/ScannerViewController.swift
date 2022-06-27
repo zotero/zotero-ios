@@ -48,12 +48,6 @@ final class ScannerViewController: UIViewController {
         self.setupSession()
         self.barcodeContainer.layer.zPosition = 2
         self.setupNavigationItems()
-
-//        self.viewModel.stateObservable
-//                      .subscribe(with: self, onNext: { `self`, state in
-//                          self.update(state: state)
-//                      })
-//                      .disposed(by: self.disposeBag)
     }
 
     override func viewDidLayoutSubviews() {
@@ -84,9 +78,6 @@ final class ScannerViewController: UIViewController {
     }
 
     // MARK: - Actions
-
-//    private func update(state: ScannerState) {
-//    }
 
     private func updatePreviewOrientation() {
         guard let scene = UIApplication.shared.connectedScenes.first, let windowScene = scene as? UIWindowScene else { return }
@@ -186,7 +177,11 @@ extension ScannerViewController: AVCaptureMetadataOutputObjectsDelegate {
         guard !filtered.isEmpty else { return }
 
         self.viewModel.process(action: .setBarcodes(filtered))
-        self.lookupController?.viewModel.process(action: .lookUp(scanned.joined(separator: ", ")))
+
+        let isbns = filtered.compactMap({ ISBNParser.isbn(from: $0) })
+        guard !isbns.isEmpty else { return }
+
+        self.lookupController?.viewModel.process(action: .lookUp(isbns.joined(separator: ", ")))
         self.lookupController?.view.isHidden = false
     }
 }
