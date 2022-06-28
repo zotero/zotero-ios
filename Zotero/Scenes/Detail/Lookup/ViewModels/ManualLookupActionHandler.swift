@@ -17,7 +17,7 @@ final class ManualLookupActionHandler: ViewModelActionHandler {
 
     private var doiRegex: NSRegularExpression? = {
         do {
-            return try NSRegularExpression(pattern: #"10.\d{4,9}\/[-._;()\/:A-Z0-9]+"#)
+            return try NSRegularExpression(pattern: #"10.\d{4,9}\/[-._;()\/:a-zA-Z0-9]+"#)
         } catch let error {
             DDLogError("LookupActionHandler: can't create doi expression - \(error)")
             return nil
