@@ -371,7 +371,39 @@ final class WebDavControllerImpl: WebDavController {
         if self.sessionStorage.isVerified {
             return self.createUrl()
         }
-        return self.checkServer(queue: queue)
+
+        var disposeBag: DisposeBag?
+
+        return Single.create { [weak self] subscriber in
+            guard let `self` = self else { return Disposables.create() }
+
+            let _disposeBag = DisposeBag()
+            disposeBag = _disposeBag
+
+            self.checkServer(queue: queue).subscribe(with: self, onSuccess: { `self`, url in
+                subscriber(.success(url))
+            }, onFailure: { `self`, error in
+                /// .fileMissingAfterUpload is not a critical/fatal error. The sync can continue working.
+                guard let error = error as? WebDavError.Verification, case .fileMissingAfterUpload = error else {
+                    subscriber(.failure(error))
+                    return
+                }
+
+                do {
+                    let url = try self._createUrl(sessionStorage: self.sessionStorage)
+                    subscriber(.success(url))
+                } catch let error {
+                    subscriber(.failure(error))
+                }
+            })
+            .disposed(by: _disposeBag)
+
+            return Disposables.create {
+                // Get rid of warning
+                _ = disposeBag
+                disposeBag = nil
+            }
+        }
     }
 
     /// Checks whether WebDAV server is available and compatible.
@@ -388,8 +420,14 @@ final class WebDavControllerImpl: WebDavController {
                        self?.sessionStorage.isVerified = true
                        DDLogInfo("WebDavController: file sync is successfully set up")
                    }, onError: { [weak self] error in
-                       self?.apiClient.set(credentials: nil, for: .webDav)
                        DDLogError("WebDavController: checkServer failed - \(error)")
+
+                       /// .fileMissingAfterUpload is not a critical/fatal error. We can still mark webdav as verified.
+                       guard let error = error as? WebDavError.Verification, case .fileMissingAfterUpload = error else {
+                           self?.apiClient.set(credentials: nil, for: .webDav)
+                           return
+                       }
+                       self?.sessionStorage.isVerified = true
                    })
     }
 
@@ -480,51 +518,65 @@ final class WebDavControllerImpl: WebDavController {
 
     /// Creates and validates WebDAV server URL based on stored session.
     private func createUrl() -> Single<URL> {
-        return Single.create { [weak sessionStorage] subscriber in
+        return Single.create { [weak self, weak sessionStorage] subscriber in
+            guard let `self` = self else {
+                DDLogError("WebDavController: self doesn't exist")
+                subscriber(.failure(WebDavError.Verification.noUsername))
+                return Disposables.create()
+            }
+
             guard let sessionStorage = sessionStorage else {
                 DDLogError("WebDavController: session storage not found")
                 subscriber(.failure(WebDavError.Verification.noUsername))
                 return Disposables.create()
             }
-            let url = sessionStorage.url
-            guard !url.isEmpty else {
-                DDLogError("WebDavController: url not found")
-                subscriber(.failure(WebDavError.Verification.noUrl))
-                return Disposables.create()
-            }
 
-            let urlComponents = url.components(separatedBy: "/")
-            guard !urlComponents.isEmpty else {
-                DDLogError("WebDavController: url components empty - \(url)")
-                subscriber(.failure(WebDavError.Verification.invalidUrl))
-                return Disposables.create()
-            }
-
-            let hostComponents = (urlComponents.first ?? "").components(separatedBy: ":")
-            let host = hostComponents.first
-            let port = hostComponents.last.flatMap(Int.init)
-
-            let path: String
-            if urlComponents.count == 1 {
-                path = "/zotero/"
-            } else {
-                path = "/" + urlComponents.dropFirst().filter({ !$0.isEmpty }).joined(separator: "/") + "/zotero/"
-            }
-
-            var components = URLComponents()
-            components.scheme = sessionStorage.scheme.rawValue
-            components.host = host
-            components.path = path
-            components.port = port
-
-            if let url = components.url {
+            do {
+                let url = try self._createUrl(sessionStorage: sessionStorage)
                 subscriber(.success(url))
-            } else {
-                DDLogError("WebDavController: could not create url from components. url=\(url); host=\(host ?? "missing"); path=\(path); port=\(port.flatMap(String.init) ?? "missing")")
-                subscriber(.failure(WebDavError.Verification.invalidUrl))
+            } catch let error {
+                subscriber(.failure(error))
             }
 
             return Disposables.create()
+        }
+    }
+
+    private func _createUrl(sessionStorage: WebDavSessionStorage) throws -> URL {
+        let url = sessionStorage.url
+        guard !url.isEmpty else {
+            DDLogError("WebDavController: url not found")
+            throw WebDavError.Verification.noUrl
+        }
+
+        let urlComponents = url.components(separatedBy: "/")
+        guard !urlComponents.isEmpty else {
+            DDLogError("WebDavController: url components empty - \(url)")
+            throw WebDavError.Verification.invalidUrl
+        }
+
+        let hostComponents = (urlComponents.first ?? "").components(separatedBy: ":")
+        let host = hostComponents.first
+        let port = hostComponents.last.flatMap(Int.init)
+
+        let path: String
+        if urlComponents.count == 1 {
+            path = "/zotero/"
+        } else {
+            path = "/" + urlComponents.dropFirst().filter({ !$0.isEmpty }).joined(separator: "/") + "/zotero/"
+        }
+
+        var components = URLComponents()
+        components.scheme = sessionStorage.scheme.rawValue
+        components.host = host
+        components.path = path
+        components.port = port
+
+        if let url = components.url {
+            return url
+        } else {
+            DDLogError("WebDavController: could not create url from components. url=\(url); host=\(host ?? "missing"); path=\(path); port=\(port.flatMap(String.init) ?? "missing")")
+            throw WebDavError.Verification.invalidUrl
         }
     }
 
