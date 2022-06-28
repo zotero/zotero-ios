@@ -23,14 +23,6 @@ final class ManualLookupActionHandler: ViewModelActionHandler {
             return nil
         }
     }()
-    private var isbnRegex: NSRegularExpression? = {
-        do {
-            return try NSRegularExpression(pattern: #"[0-9]+[- ][0-9]+[- ][0-9]+[- ][0-9]*[- ]*[xX0-9]"#)
-        } catch let error {
-            DDLogError("LookupActionHandler: can't create isbn expression - \(error)")
-            return nil
-        }
-    }()
 
     init() {
     }
@@ -47,8 +39,9 @@ final class ManualLookupActionHandler: ViewModelActionHandler {
         if let expression = self.doiRegex {
             identifiers = self.getResults(withExpression: expression, from: scannedText)
         }
-        if let expression = self.isbnRegex {
-            identifiers += self.getResults(withExpression: expression, from: scannedText)
+        let isbns = ISBNParser.isbns(from: scannedText)
+        if !isbns.isEmpty {
+            identifiers.append(contentsOf: isbns)
         }
 
         guard !identifiers.isEmpty else { return }

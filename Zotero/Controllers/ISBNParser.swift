@@ -10,55 +10,15 @@ import Foundation
 
 final class ISBNParser {
     private static let isbnRegex = try! NSRegularExpression(pattern: #"\b(?:97[89]\s*(?:\d\s*){9}\d|(?:\d\s*){9}[\dX])\b"#)
-    /**
-         * Clean and validate ISBN.
-         * Return isbn if valid, otherwise return false
-         * @param {String} isbn
-         * @param {Boolean} [dontValidate=false] Do not validate check digit
-         * @return {String|Boolean} Valid ISBN or false
 
-        cleanISBN: function(isbnStr, dontValidate) {
-            isbnStr = isbnStr.toUpperCase()
-                .replace(/[\x2D\xAD\u2010-\u2015\u2043\u2212]+/g, ''); // Ignore dashes
-            var isbnRE = /\b(?:97[89]\s*(?:\d\s*){9}\d|(?:\d\s*){9}[\dX])\b/g,
-                isbnMatch;
-            while(isbnMatch = isbnRE.exec(isbnStr)) {
-                var isbn = isbnMatch[0].replace(/\s+/g, '');
-
-                if (dontValidate) {
-                    return isbn;
-                }
-
-                if(isbn.length == 10) {
-                    // Verify ISBN-10 checksum
-                    var sum = 0;
-                    for (var i = 0; i < 9; i++) {
-                        sum += isbn[i] * (10-i);
-                    }
-                    //check digit might be 'X'
-                    sum += (isbn[9] == 'X')? 10 : isbn[9]*1;
-
-                    if (sum % 11 == 0) return isbn;
-                } else {
-                    // Verify ISBN 13 checksum
-                    var sum = 0;
-                    for (var i = 0; i < 12; i+=2) sum += isbn[i]*1;    //to make sure it's int
-                    for (var i = 1; i < 12; i+=2) sum += isbn[i]*3;
-                    sum += isbn[12]*1; //add the check digit
-
-                    if (sum % 10 == 0 ) return isbn;
-                }
-
-                isbnRE.lastIndex = isbnMatch.index + 1; // Retry the same spot + 1
-            }
-
-            return false;
-        }
-    */
-
-    static func isbn(from string: String) -> String? {
+    /// Clean and return validated ISBNs.
+    /// - param string: String to validate.
+    /// - returns: Array of valid ISBNs
+    static func isbns(from string: String) -> [String] {
         let cleanedString = string.replacingOccurrences(of: #"[\x2D\xAD\u2010-\u2015\u2043\u2212]+"#, with: "", options: .regularExpression, range: nil)
         let matches = self.isbnRegex.matches(in: cleanedString, range: NSRange(cleanedString.startIndex..., in: cleanedString))
+
+        var isbns: [String] = []
 
         for match in matches {
             let startIndex = cleanedString.index(cleanedString.startIndex, offsetBy: match.range.lowerBound)
@@ -66,11 +26,11 @@ final class ISBNParser {
             let isbn = cleanedString[startIndex..<endIndex].replacingOccurrences(of: #"\s+"#, with: "", options: .regularExpression, range: nil)
 
             if isbn.count == 10 ? self.validate(isbn10: isbn) : self.validate(isbn13: isbn) {
-                return isbn
+                isbns.append(isbn)
             }
         }
 
-        return nil
+        return isbns
     }
 
     private static func validate(isbn10 isbn: String) -> Bool {

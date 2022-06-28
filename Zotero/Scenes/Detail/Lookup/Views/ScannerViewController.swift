@@ -178,7 +178,7 @@ extension ScannerViewController: AVCaptureMetadataOutputObjectsDelegate {
 
         self.viewModel.process(action: .setBarcodes(filtered))
 
-        let isbns = filtered.compactMap({ ISBNParser.isbn(from: $0) })
+        let isbns = filtered.flatMap({ ISBNParser.isbns(from: $0) })
         guard !isbns.isEmpty else { return }
 
         self.lookupController?.viewModel.process(action: .lookUp(isbns.joined(separator: ", ")))
