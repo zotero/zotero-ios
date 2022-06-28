@@ -70,6 +70,11 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     private func process(data: LookupWebViewHandler.LookupData, in viewModel: ViewModel<LookupActionHandler>) {
         switch data {
         case .identifiers(let identifiers):
+            guard !identifiers.isEmpty else {
+                self.show(error: LookupState.Error.noIdentifiersDetected, in: viewModel)
+                return
+            }
+
             var lookupData = identifiers.map({ LookupState.LookupData(identifier: self.identifier(from: $0), state: .enqueued) })
 
             self.update(viewModel: viewModel) { state in

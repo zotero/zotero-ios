@@ -96,6 +96,7 @@ class LookupViewController: UIViewController {
             self.tableView.isHidden = true
             self.activityIndicator.stopAnimating()
             self.activityIndicator.isHidden = true
+            self.errorLabel.text = L10n.Errors.lookup
             self.errorLabel.isHidden = false
 
         case .loadingIdentifiers:

@@ -27,9 +27,13 @@ struct LookupState: ViewModelState {
     }
 
     enum State {
-        case failed(Error)
+        case failed(Swift.Error)
         case loadingIdentifiers
         case lookup([LookupData])
+    }
+
+    enum Error: Swift.Error {
+        case noIdentifiersDetected
     }
 
     let collectionKeys: Set<String>
