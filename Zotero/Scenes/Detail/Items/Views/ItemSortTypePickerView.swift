@@ -27,12 +27,8 @@ struct ItemSortTypePickerView: View {
             }
         }
         .navigationBarTitle(Text(L10n.Items.sortBy), displayMode: .inline)
-        .navigationBarItems(leading: Button(action: self.closeAction,
-                                            label: {
-                                                Text(L10n.cancel)
-                                                    .padding(.vertical, 10)
-                                                    .padding(.trailing, 10)
-                                            }))
+        .padding(EdgeInsets(top: 1, leading: 0, bottom: 0, trailing: 0))
+        .background(Color(UIColor.systemGroupedBackground))
     }
 }
 

@@ -98,7 +98,6 @@ protocol DetailAnnotationsCoordinatorDelegate: AnyObject {
 #endif
 
 protocol DetailItemActionSheetCoordinatorDelegate: AnyObject {
-    func showSortTypePicker(sortBy: Binding<ItemsSortType.Field>)
     func showNoteCreation(title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, save: @escaping (String, [Tag]) -> Void)
     func showAttachmentPicker(save: @escaping ([URL]) -> Void)
     func showItemCreation(library: Library, collectionKey: String?)
@@ -382,23 +381,42 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     }
 
     func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem) {
-        let (fieldTitle, orderTitle) = self.sortButtonTitles(for: viewModel.state.sortType)
-        let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-        controller.popoverPresentationController?.barButtonItem = button
+        let navigationController = UINavigationController()
+        navigationController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
+        navigationController.popoverPresentationController?.barButtonItem = button
 
-        controller.addAction(UIAlertAction(title: fieldTitle, style: .default, handler: { [weak self, weak viewModel] _ in
-            guard let `self` = self, let viewModel = viewModel else { return }
-            let binding = viewModel.binding(keyPath: \.sortType.field, action: { .setSortField($0) })
-            self.showSortTypePicker(sortBy: binding)
-        }))
+        let sortByBinding = viewModel.binding(keyPath: \.sortType.field, action: { .setSortField($0) })
 
-        controller.addAction(UIAlertAction(title: orderTitle, style: .default, handler: { [weak viewModel] _ in
-            viewModel?.process(action: .toggleSortOrder)
-        }))
+        let view = ItemSortingView(viewModel: viewModel, showPickerAction: { [weak self, weak navigationController] in
+            guard let `self` = self, let navigationController = navigationController else { return }
+            self.showSortTypePicker(sortBy: sortByBinding, in: navigationController)
+        })
 
-        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
+        let controller = DisappearActionHostingController(rootView: view)
 
-        self.topViewController.present(controller, animated: true, completion: nil)
+        var size: CGSize?
+        controller.willAppear = { [weak controller, weak navigationController] in
+            guard let `controller` = controller else { return }
+            let _size = size ?? controller.view.systemLayoutSizeFitting(CGSize(width: 400.0, height: .greatestFiniteMagnitude))
+            size = _size
+            controller.preferredContentSize = _size
+            navigationController?.preferredContentSize = _size
+        }
+
+        navigationController.setViewControllers([controller], animated: false)
+
+        self.topViewController.present(navigationController, animated: true, completion: nil)
+    }
+
+    func showSortTypePicker(sortBy: Binding<ItemsSortType.Field>, in navigationController: UINavigationController) {
+        let view = ItemSortTypePickerView(sortBy: sortBy,
+                                          closeAction: { [weak navigationController] in
+                                              navigationController?.popViewController(animated: true)
+                                          })
+        let controller = UIHostingController(rootView: view)
+        controller.preferredContentSize = CGSize(width: 400, height: 600)
+        navigationController.preferredContentSize = controller.preferredContentSize
+        navigationController.pushViewController(controller, animated: true)
     }
 
     private func sortButtonTitles(for sortType: ItemsSortType) -> (field: String, order: String) {
@@ -593,17 +611,6 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 }
 
 extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
-    func showSortTypePicker(sortBy: Binding<ItemsSortType.Field>) {
-        let view = ItemSortTypePickerView(sortBy: sortBy,
-                                          closeAction: { [weak self] in
-                                              self?.topViewController.dismiss(animated: true, completion: nil)
-                                          })
-        let navigationController = UINavigationController(rootViewController: UIHostingController(rootView: view))
-        navigationController.isModalInPresentation = true
-        navigationController.modalPresentationStyle = .formSheet
-        self.topViewController.present(navigationController, animated: true, completion: nil)
-    }
-
     func showNoteCreation(title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, save: @escaping (String, [Tag]) -> Void) {
         self.showNote(with: "", tags: [], title: title, libraryId: libraryId, readOnly: false, save: save)
     }

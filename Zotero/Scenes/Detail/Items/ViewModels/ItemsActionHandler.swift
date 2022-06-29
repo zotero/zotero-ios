@@ -107,9 +107,9 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
                 self.stopEditing(in: &state)
             }
 
-        case .toggleSortOrder:
+        case .setSortOrder(let ascending):
             var sortType = viewModel.state.sortType
-            sortType.ascending.toggle()
+            sortType.ascending = ascending
             self.changeSortType(to: sortType, in: viewModel)
 
         case .trashItems(let keys):

@@ -30,10 +30,10 @@ enum ItemsAction {
     case initialSearch(String)
     case selectItem(String)
     case setSortField(ItemsSortType.Field)
+    case setSortOrder(Bool)
     case startEditing
     case stopEditing
     case toggleSelectionState
-    case toggleSortOrder
     case trashItems(Set<String>)
     case cacheItemAccessory(item: RItem)
     case updateAttachments(AttachmentFileDeletedNotification)
