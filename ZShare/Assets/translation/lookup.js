@@ -52,7 +52,7 @@ async function lookup(encodedIdentifiers) {
     const identifiersInput = decodeBase64(encodedIdentifiers);
     var identifiers = [];
 
-    for (identifier of identifiersInput.split(", ")) {
+    for (identifier of identifiersInput.split(",")) {
         const _identifiers = Zotero.Utilities.extractIdentifiers(identifier);
         identifiers.push(..._identifiers);
     }

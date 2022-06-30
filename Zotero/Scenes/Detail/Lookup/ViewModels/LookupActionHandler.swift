@@ -57,14 +57,24 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                    .disposed(by: self.disposeBag)
 
         case .lookUp(let identifier):
-            guard !identifier.isEmpty else { return }
-            if !viewModel.state.multiLookupEnabled {
-                self.update(viewModel: viewModel) { state in
-                    state.lookupState = .loadingIdentifiers
-                }
-            }
-            self.lookupWebViewHandler?.lookUp(identifier: identifier)
+            self.lookUp(identifier: identifier, in: viewModel)
         }
+    }
+
+    private func lookUp(identifier: String, in viewModel: ViewModel<LookupActionHandler>) {
+        var splitChars = CharacterSet.newlines
+        splitChars.formUnion(CharacterSet(charactersIn: ","))
+        let newIdentifier = identifier.components(separatedBy: splitChars).map({ $0.trimmingCharacters(in: .whitespaces) }).filter({ !$0.isEmpty }).joined(separator: ",")
+
+        guard !newIdentifier.isEmpty else { return }
+
+        if !viewModel.state.multiLookupEnabled {
+            self.update(viewModel: viewModel) { state in
+                state.lookupState = .loadingIdentifiers
+            }
+        }
+
+        self.lookupWebViewHandler?.lookUp(identifier: newIdentifier)
     }
 
     private func process(data: LookupWebViewHandler.LookupData, in viewModel: ViewModel<LookupActionHandler>) {

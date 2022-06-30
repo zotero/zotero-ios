@@ -16,7 +16,7 @@ class ManualLookupViewController: UIViewController {
     @IBOutlet private weak var container: UIStackView!
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var inputContainer: UIStackView!
-    @IBOutlet private weak var textField: UITextField!
+    @IBOutlet private weak var textView: UITextView!
     @IBOutlet private weak var scanButton: UIButton!
     @IBOutlet private weak var topConstraint: NSLayoutConstraint!
     @IBOutlet private var padBottomConstraint: NSLayoutConstraint!
@@ -43,7 +43,7 @@ class ManualLookupViewController: UIViewController {
         super.viewDidLoad()
 
         self.setup()
-        self.textField.becomeFirstResponder()
+        self.textView.becomeFirstResponder()
 
         self.viewModel.stateObservable
                       .subscribe(with: self, onNext: { `self`, state in
@@ -56,7 +56,7 @@ class ManualLookupViewController: UIViewController {
         super.viewWillAppear(animated)
 
         if (!self.inputContainer.isHidden) {
-            self.textField.becomeFirstResponder()
+            self.textView.becomeFirstResponder()
         }
     }
 
@@ -74,14 +74,14 @@ class ManualLookupViewController: UIViewController {
 
     private func update(state: ManualLookupState) {
         if let text = state.scannedText {
-            var newText = self.textField.text ?? ""
+            var newText = self.textView.text ?? ""
             if newText.isEmpty {
                 newText = text
             } else {
                 newText += ", " + text
             }
-            self.textField.text = newText
-            self.textField.resignFirstResponder()
+            self.textView.text = newText
+            self.textView.resignFirstResponder()
         }
     }
 
@@ -93,19 +93,19 @@ class ManualLookupViewController: UIViewController {
             self.titleLabel.isHidden = false
             self.inputContainer.isHidden = false
 
-            self.textField.isEnabled = true
+            self.textView.isUserInteractionEnabled = true
             self.scanButton.isEnabled = true
-            self.textField.becomeFirstResponder()
+            self.textView.becomeFirstResponder()
 
         case .loadingIdentifiers, .lookup:
             self.titleLabel.isHidden = true
             self.inputContainer.isHidden = true
 
-            self.textField.isEnabled = false
+            self.textView.isUserInteractionEnabled = false
             self.scanButton.isEnabled = false
 
-            if self.textField.isFirstResponder {
-                self.textField.resignFirstResponder()
+            if self.textView.isFirstResponder {
+                self.textView.resignFirstResponder()
             }
         }
 
@@ -140,7 +140,7 @@ class ManualLookupViewController: UIViewController {
     private func setupCancelDoneBarButtons() {
         let doneItem = UIBarButtonItem(title: L10n.lookUp, style: .done, target: nil, action: nil)
         doneItem.rx.tap.subscribe(onNext: { [weak self] in
-            self?.lookup(text: self?.textField.text ?? "")
+            self?.lookup(text: self?.textView.text ?? "")
         }).disposed(by: self.disposeBag)
         self.navigationItem.rightBarButtonItem = doneItem
 
@@ -167,7 +167,6 @@ class ManualLookupViewController: UIViewController {
 
     private func setup() {
         self.titleLabel.text = L10n.Lookup.title
-        self.textField.delegate = self
 
         if #available(iOS 15.0, *), self.canPerformAction(#selector(UIResponder.captureTextFromCamera), withSender: self) {
             var configuration = self.scanButton.configuration ?? UIButton.Configuration.plain()
@@ -184,6 +183,7 @@ class ManualLookupViewController: UIViewController {
         let isPhone = UIDevice.current.userInterfaceIdiom == .phone
         self.phoneBottomConstraint.isActive = isPhone
         self.padBottomConstraint.isActive = !isPhone
+        self.textView.heightAnchor.constraint(equalToConstant: 80).isActive = true
 
         self.setupKeyboardObserving()
         self.setupCancelDoneBarButtons()
@@ -238,13 +238,6 @@ class ManualLookupViewController: UIViewController {
                               }
                           })
                           .disposed(by: self.disposeBag)
-    }
-}
-
-extension ManualLookupViewController: UITextFieldDelegate {
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        self.lookup(text: textField.text ?? "")
-        return true
     }
 }
 
