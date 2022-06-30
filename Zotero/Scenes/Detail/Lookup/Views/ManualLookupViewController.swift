@@ -169,7 +169,7 @@ class ManualLookupViewController: UIViewController {
         self.titleLabel.text = L10n.Lookup.title
         self.textField.delegate = self
 
-        if #available(iOS 15.0, *) {
+        if #available(iOS 15.0, *), self.canPerformAction(#selector(UIResponder.captureTextFromCamera), withSender: self) {
             var configuration = self.scanButton.configuration ?? UIButton.Configuration.plain()
             configuration.title = L10n.scanText
             configuration.image = UIImage(systemName: "text.viewfinder")
