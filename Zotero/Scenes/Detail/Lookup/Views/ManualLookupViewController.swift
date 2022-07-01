@@ -14,6 +14,7 @@ import RxSwift
 class ManualLookupViewController: UIViewController {
     @IBOutlet private weak var webView: WKWebView!
     @IBOutlet private weak var container: UIStackView!
+    @IBOutlet private weak var roundedContainer: UIView!
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var inputContainer: UIStackView!
     @IBOutlet private weak var textView: UITextView!
@@ -166,10 +167,13 @@ class ManualLookupViewController: UIViewController {
     // MARK: - Setups
 
     private func setup() {
+        self.view.backgroundColor = .systemGroupedBackground
         self.titleLabel.text = L10n.Lookup.title
+        self.roundedContainer.layer.cornerRadius = 10
+        self.roundedContainer.layer.masksToBounds = true
 
         if #available(iOS 15.0, *), self.canPerformAction(#selector(UIResponder.captureTextFromCamera), withSender: self) {
-            var configuration = self.scanButton.configuration ?? UIButton.Configuration.plain()
+            var configuration = self.scanButton.configuration ?? UIButton.Configuration.bordered()
             configuration.title = L10n.scanText
             configuration.image = UIImage(systemName: "text.viewfinder")
             configuration.imagePadding = 8

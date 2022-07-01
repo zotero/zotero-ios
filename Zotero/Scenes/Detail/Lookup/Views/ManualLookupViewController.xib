@@ -16,6 +16,7 @@
                 <outlet property="inputContainer" destination="iP0-0A-WQx" id="dVM-0e-kt0"/>
                 <outlet property="padBottomConstraint" destination="jdv-MM-MlB" id="VN0-ep-vqW"/>
                 <outlet property="phoneBottomConstraint" destination="JTA-yk-KBy" id="pQm-XA-MMa"/>
+                <outlet property="roundedContainer" destination="0HI-7k-AHa" id="jSc-vG-DJ7"/>
                 <outlet property="scanButton" destination="91w-UZ-Jww" id="2CJ-hH-ASe"/>
                 <outlet property="textView" destination="hcG-UE-5Wz" id="bJy-oB-qg3"/>
                 <outlet property="titleLabel" destination="4ev-98-hhW" id="Kf6-ey-mRe"/>
@@ -25,12 +26,12 @@
             </connections>
         </placeholder>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
-        <view clearsContextBeforeDrawing="NO" contentMode="scaleToFill" ambiguous="YES" id="5Zg-jR-lrP">
+        <view clearsContextBeforeDrawing="NO" contentMode="scaleToFill" id="5Zg-jR-lrP">
             <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
-                <wkWebView hidden="YES" contentMode="scaleToFill" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ehk-5k-KTu">
-                    <rect key="frame" x="0.0" y="44" width="414" height="93"/>
+                <wkWebView hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ehk-5k-KTu">
+                    <rect key="frame" x="0.0" y="44" width="414" height="818"/>
                     <color key="backgroundColor" red="0.36078431370000003" green="0.38823529410000002" blue="0.4039215686" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                     <wkWebViewConfiguration key="configuration">
                         <audiovisualMediaTypes key="mediaTypesRequiringUserActionForPlayback" none="YES"/>
@@ -38,39 +39,38 @@
                     </wkWebViewConfiguration>
                 </wkWebView>
                 <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="CBC-9R-ZFy">
-                    <rect key="frame" x="20" y="59" width="374" height="63"/>
+                    <rect key="frame" x="15" y="59" width="384" height="788"/>
                     <subviews>
-                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4ev-98-hhW">
-                            <rect key="frame" x="0.0" y="0.0" width="374" height="17"/>
-                            <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
-                            <nil key="textColor"/>
+                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4ev-98-hhW">
+                            <rect key="frame" x="0.0" y="0.0" width="384" height="14.5"/>
+                            <fontDescription key="fontDescription" style="UICTFontTextStyleSubhead"/>
+                            <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             <nil key="highlightedColor"/>
                         </label>
-                        <stackView opaque="NO" contentMode="scaleToFill" alignment="bottom" spacing="16" id="iP0-0A-WQx">
-                            <rect key="frame" x="0.0" y="29" width="374" height="34"/>
-                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="14" translatesAutoresizingMaskIntoConstraints="NO" id="iP0-0A-WQx">
+                            <rect key="frame" x="0.0" y="26.5" width="384" height="761.5"/>
                             <subviews>
-                                <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="35G-BI-QfO">
-                                    <rect key="frame" x="0.0" y="0.0" width="248.5" height="34"/>
+                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="0HI-7k-AHa">
+                                    <rect key="frame" x="0.0" y="0.0" width="384" height="699.5"/>
                                     <subviews>
                                         <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" verticalHuggingPriority="1" verticalCompressionResistancePriority="1000" textAlignment="natural" translatesAutoresizingMaskIntoConstraints="NO" id="hcG-UE-5Wz">
-                                            <rect key="frame" x="0.0" y="0.0" width="248.5" height="33"/>
+                                            <rect key="frame" x="10" y="4" width="364" height="691.5"/>
                                             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                             <color key="textColor" systemColor="labelColor"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                            <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                             <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
                                         </textView>
-                                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="iIX-Ri-85F">
-                                            <rect key="frame" x="0.0" y="33" width="248.5" height="1"/>
-                                            <color key="backgroundColor" systemColor="opaqueSeparatorColor"/>
-                                            <constraints>
-                                                <constraint firstAttribute="height" constant="1" id="ALy-RQ-kjN"/>
-                                            </constraints>
-                                        </view>
                                     </subviews>
-                                </stackView>
+                                    <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                    <constraints>
+                                        <constraint firstAttribute="trailing" secondItem="hcG-UE-5Wz" secondAttribute="trailing" constant="10" id="MP6-oA-RUD"/>
+                                        <constraint firstItem="hcG-UE-5Wz" firstAttribute="top" secondItem="0HI-7k-AHa" secondAttribute="top" constant="4" id="XLC-kB-fRj"/>
+                                        <constraint firstAttribute="bottom" secondItem="hcG-UE-5Wz" secondAttribute="bottom" constant="4" id="cwp-jm-Ia0"/>
+                                        <constraint firstItem="hcG-UE-5Wz" firstAttribute="leading" secondItem="0HI-7k-AHa" secondAttribute="leading" constant="10" id="flU-iY-57H"/>
+                                    </constraints>
+                                </view>
                                 <button opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="999" horizontalCompressionResistancePriority="1000" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="91w-UZ-Jww">
-                                    <rect key="frame" x="264.5" y="3" width="109.5" height="31"/>
+                                    <rect key="frame" x="0.0" y="713.5" width="384" height="48"/>
                                     <color key="tintColor" name="zoteroBlueWithDarkMode"/>
                                     <state key="normal" title="Button"/>
                                     <buttonConfiguration key="configuration" style="plain" image="text.viewfinder" catalog="system" title="Scan Text">
@@ -91,10 +91,10 @@
                 <constraint firstItem="c30-ta-gNc" firstAttribute="bottom" secondItem="ehk-5k-KTu" secondAttribute="bottom" id="EsW-Pp-MuX"/>
                 <constraint firstItem="ehk-5k-KTu" firstAttribute="top" secondItem="c30-ta-gNc" secondAttribute="top" id="IFs-ev-qY1"/>
                 <constraint firstItem="c30-ta-gNc" firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="CBC-9R-ZFy" secondAttribute="bottom" constant="15" id="JTA-yk-KBy"/>
-                <constraint firstItem="CBC-9R-ZFy" firstAttribute="leading" secondItem="c30-ta-gNc" secondAttribute="leading" constant="20" id="Vbv-dG-rKZ"/>
+                <constraint firstItem="CBC-9R-ZFy" firstAttribute="leading" secondItem="c30-ta-gNc" secondAttribute="leading" constant="15" id="Vbv-dG-rKZ"/>
                 <constraint firstItem="CBC-9R-ZFy" firstAttribute="top" secondItem="c30-ta-gNc" secondAttribute="top" constant="15" id="dMJ-41-9SJ"/>
                 <constraint firstItem="c30-ta-gNc" firstAttribute="bottom" secondItem="CBC-9R-ZFy" secondAttribute="bottom" constant="15" id="jdv-MM-MlB"/>
-                <constraint firstAttribute="trailing" secondItem="CBC-9R-ZFy" secondAttribute="trailing" constant="20" id="y0w-M5-0Pm"/>
+                <constraint firstAttribute="trailing" secondItem="CBC-9R-ZFy" secondAttribute="trailing" constant="15" id="y0w-M5-0Pm"/>
             </constraints>
             <point key="canvasLocation" x="-97" y="150"/>
         </view>
@@ -106,9 +106,6 @@
         </namedColor>
         <systemColor name="labelColor">
             <color white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-        </systemColor>
-        <systemColor name="opaqueSeparatorColor">
-            <color red="0.77647058823529413" green="0.77647058823529413" blue="0.78431372549019607" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
