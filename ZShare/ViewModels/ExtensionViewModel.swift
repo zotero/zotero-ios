@@ -327,21 +327,40 @@ final class ExtensionViewModel {
     // MARK: - Processing attachments
 
     private func loadAttachment(from extensionItem: NSExtensionItem) -> Single<State.RawAttachment> {
-        if let itemProvider = extensionItem.attachments?.first(where: { $0.hasItemConformingToTypeIdentifier(kUTTypePropertyList as String) }) {
+        let observables = (extensionItem.attachments ?? []).map({ self.loadProviderData(from: $0) })
+        return Observable.concat(observables)
+                         .filter({ value in
+                             switch value {
+                             case .success: return true
+                             case .failure: return false
+                             }
+                         })
+                        .first()
+                        .flatMap { value in
+                            guard let value = value else {
+                                return Single.error(State.AttachmentState.Error.cantLoadWebData)
+                            }
+
+                            switch value {
+                            case .success(let attachment): return Single.just(attachment)
+                            case .failure(let error): return Single.error(error)
+                            }
+                        }
+    }
+
+    private func loadProviderData(from itemProvider: NSItemProvider) -> Observable<Result<State.RawAttachment, State.AttachmentState.Error>> {
+        if itemProvider.hasItemConformingToTypeIdentifier(kUTTypePropertyList as String) {
             DDLogInfo("ExtensionViewModel: item provider for property list")
             return self.loadWebData(from: itemProvider)
-        } else if let itemProvider = extensionItem.attachments?.first(where: { $0.hasItemConformingToTypeIdentifier(kUTTypeURL as String) }) {
+        } else if itemProvider.hasItemConformingToTypeIdentifier(kUTTypeURL as String) {
             DDLogInfo("ExtensionViewModel: item provider for URL")
             return self.loadUrl(from: itemProvider)
-                       .flatMap({ $0.isFileURL ? Single.just(.fileUrl($0)) : Single.just(.remoteUrl($0)) })
-        } else if let itemProvider = extensionItem.attachments?.first(where: { $0.hasItemConformingToTypeIdentifier(kUTTypePlainText as String) }) {
+        } else if itemProvider.hasItemConformingToTypeIdentifier(kUTTypePlainText as String) {
             DDLogInfo("ExtensionViewModel: item provider for plain text")
             return self.loadPlainText(from: itemProvider)
         }
 
-        DDLogError("ExtensionViewModel: attachments=\(extensionItem.attachments?.count ?? -1)")
-
-        return Single.error(State.AttachmentState.Error.cantLoadWebData)
+        return Observable.just(.failure(.cantLoadWebData))
     }
 
     private func process(attachment: State.RawAttachment) {
@@ -422,10 +441,11 @@ final class ExtensionViewModel {
         }
     }
 
-    private func loadUrl(from itemProvider: NSItemProvider) -> Single<URL> {
-        return Single.create { [weak itemProvider] subscriber in
+    private func loadUrl(from itemProvider: NSItemProvider) -> Observable<Result<State.RawAttachment, State.AttachmentState.Error>> {
+        return Observable.create { [weak itemProvider] subscriber in
             guard let itemProvider = itemProvider else {
-                subscriber(.failure(State.AttachmentState.Error.cantLoadWebData))
+                subscriber.on(.next(.failure(.cantLoadWebData)))
+                subscriber.on(.completed)
                 return Disposables.create()
             }
 
@@ -439,11 +459,14 @@ final class ExtensionViewModel {
 
                 if let url = item as? URL {
                     DDLogInfo("ExtensionViewModel: loaded url")
-                    subscriber(.success(url))
+                    let attachment = url.isFileURL ? State.RawAttachment.fileUrl(url) : State.RawAttachment.remoteUrl(url)
+                    subscriber.on(.next(.success(attachment)))
                 } else {
                     DDLogError("ExtensionViewModel: can't load URL")
-                    subscriber(.failure(State.AttachmentState.Error.cantLoadWebData))
+                    subscriber.on(.next(.failure(.cantLoadWebData)))
                 }
+
+                subscriber.on(.completed)
             })
 
             return Disposables.create()
@@ -453,10 +476,11 @@ final class ExtensionViewModel {
     /// Creates an Observable for NSExtensionItem to load web data.
     /// - parameter extensionItem: `NSExtensionItem` passed from `NSExtensionContext` from share extension view controller.
     /// - returns: Observable for loading: title, url, full HTML, cookies, iframes content.
-    private func loadWebData(from itemProvider: NSItemProvider) -> Single<State.RawAttachment> {
-        return Single.create { [weak itemProvider] subscriber in
+    private func loadWebData(from itemProvider: NSItemProvider) -> Observable<Result<State.RawAttachment, State.AttachmentState.Error>> {
+        return Observable.create { [weak itemProvider] subscriber in
             guard let itemProvider = itemProvider else {
-                subscriber(.failure(State.AttachmentState.Error.cantLoadWebData))
+                subscriber.on(.next(.failure(.cantLoadWebData)))
+                subscriber.on(.completed)
                 return Disposables.create()
             }
 
@@ -473,34 +497,38 @@ final class ExtensionViewModel {
                       let isFile = data["isFile"] as? Bool,
                       let url = (data["url"] as? String).flatMap(URL.init) else {
                     DDLogError("ExtensionViewModel: can't read script data")
-                    subscriber(.failure(State.AttachmentState.Error.cantLoadWebData))
+                    subscriber.on(.next(.failure(.cantLoadWebData)))
+                    subscriber.on(.completed)
                     return
                 }
 
                 if isFile, let contentType = data["contentType"] as? String {
                     DDLogInfo("ExtensionViewModel: loaded remote file")
-                    subscriber(.success(.remoteFileUrl(url: url, contentType: contentType)))
+                    subscriber.on(.next(.success(.remoteFileUrl(url: url, contentType: contentType))))
                 } else if let title = data["title"] as? String,
                           let html = data["html"] as? String,
                           let cookies = data["cookies"] as? String,
                           let frames = data["frames"] as? [String] {
                     DDLogInfo("ExtensionViewModel: loaded web")
-                    subscriber(.success(.web(title: title, url: url, html: html, cookies: cookies, frames: frames)))
+                    subscriber.on(.next(.success(.web(title: title, url: url, html: html, cookies: cookies, frames: frames))))
                 } else {
                     DDLogError("ExtensionViewModel: script data don't contain required info")
                     DDLogError("\(data)")
-                    subscriber(.failure(State.AttachmentState.Error.cantLoadWebData))
+                    subscriber.on(.next(.failure(.cantLoadWebData)))
                 }
+
+                subscriber.on(.completed)
             })
 
             return Disposables.create()
         }
     }
 
-    private func loadPlainText(from itemProvider: NSItemProvider) -> Single<State.RawAttachment> {
-        return Single.create { [weak itemProvider] subscriber in
+    private func loadPlainText(from itemProvider: NSItemProvider) -> Observable<Result<State.RawAttachment, State.AttachmentState.Error>> {
+        return Observable.create { [weak itemProvider] subscriber in
             guard let itemProvider = itemProvider else {
-                subscriber(.failure(State.AttachmentState.Error.cantLoadWebData))
+                subscriber.on(.next(.failure(.cantLoadWebData)))
+                subscriber.on(.completed)
                 return Disposables.create()
             }
 
@@ -517,16 +545,18 @@ final class ExtensionViewModel {
 
                     if let url = URL(string: string), !url.isFileURL {
                         DDLogInfo("ExtensionViewModel: plaintext was url - \(string)")
-                        subscriber(.success(.remoteUrl(url)))
+                        subscriber.on(.next(.success(.remoteUrl(url))))
                     } else {
                         DDLogInfo("ExtensionViewModel: plaintext not url - \(string)")
-                        subscriber(.failure(State.AttachmentState.Error.cantLoadWebData))
+                        subscriber.on(.next(.failure(.cantLoadWebData)))
                     }
 
                 } else {
                     DDLogError("ExtensionViewModel: can't load plaintext")
-                    subscriber(.failure(State.AttachmentState.Error.cantLoadWebData))
+                    subscriber.on(.next(.failure(.cantLoadWebData)))
                 }
+
+                subscriber.on(.completed)
             })
 
             return Disposables.create()
