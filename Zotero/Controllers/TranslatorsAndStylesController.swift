@@ -309,7 +309,11 @@ final class TranslatorsAndStylesController {
         DDLogInfo("TranslatorsAndStylesController: updated \(updated.count) styles")
         // Copy updated files
         for file in files.filter({ updated.contains($0.name) }) {
-            try self.fileStorage.copy(from: file, to: Files.style(filename: file.name))
+            let toFile = Files.style(filename: file.name)
+            if self.fileStorage.has(toFile) {
+                try self.fileStorage.remove(toFile)
+            }
+            try self.fileStorage.copy(from: file, to: toFile)
         }
     }
 
