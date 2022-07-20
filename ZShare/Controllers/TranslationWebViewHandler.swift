@@ -50,7 +50,7 @@ final class TranslationWebViewHandler {
     }
 
     private let webViewHandler: WebViewHandler
-    private let translatorsController: TranslatorsAndStylesController
+    let translatorsController: TranslatorsAndStylesController
     private let disposeBag: DisposeBag
     let observable: PublishSubject<Action>
 

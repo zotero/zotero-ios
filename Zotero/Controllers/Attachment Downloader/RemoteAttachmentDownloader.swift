@@ -21,31 +21,20 @@ final class RemoteAttachmentDownloader {
     struct Update {
         enum Kind: Hashable {
             case progress(CGFloat)
-            case ready
+            case ready(Attachment)
             case failed
             case cancelled
         }
 
-        let key: String
-        let libraryId: LibraryIdentifier
+        let download: Download
         let kind: Kind
-
-        fileprivate init(download: Download, kind: Kind) {
-            self.key = download.key
-            self.libraryId = download.libraryId
-            self.kind = kind
-        }
     }
 
     private let queue: DispatchQueue
-    // Database requests have to be performed on serial queue, since `queue` is concurrent to allow multiple downloads, db requests need their separate queue.
-    private let dbQueue: DispatchQueue
     private let operationQueue: OperationQueue
     private let disposeBag: DisposeBag
     private unowned let apiClient: ApiClient
     private unowned let fileStorage: FileStorage
-    private unowned let dbStorage: DbStorage
-    private unowned let schemaController: SchemaController
 
     let observable: PublishSubject<Update>
 
@@ -53,7 +42,7 @@ final class RemoteAttachmentDownloader {
     private var errors: [Download: Swift.Error]
     private var progressObservers: [Download: NSKeyValueObservation]
 
-    init(apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage, schemaController: SchemaController) {
+    init(apiClient: ApiClient, fileStorage: FileStorage) {
         let queue = DispatchQueue(label: "org.zotero.RemoteAttachmentDownloader.ProcessingQueue", qos: .userInteractive, attributes: .concurrent)
         let operationQueue = OperationQueue()
         operationQueue.maxConcurrentOperationCount = 2
@@ -62,11 +51,8 @@ final class RemoteAttachmentDownloader {
 
         self.apiClient = apiClient
         self.fileStorage = fileStorage
-        self.schemaController = schemaController
-        self.dbStorage = dbStorage
         self.operationQueue = operationQueue
         self.queue = queue
-        self.dbQueue = DispatchQueue(label: "org.zotero.RemoteAttachmentDownloader.DbQueue", qos: .userInteractive)
         self.observable = PublishSubject()
         self.operations = [:]
         self.progressObservers = [:]
@@ -144,23 +130,8 @@ final class RemoteAttachmentDownloader {
         switch result {
         case .success:
             DDLogInfo("RemoteAttachmentDownloader: finished downloading \(download.key)")
-
-            let localizedType = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ItemTypes.attachment
-            let request = CreateAttachmentWithParentDbRequest(attachment: attachment, parentKey: parentKey, localizedType: localizedType)
-
-            do {
-                try self.dbQueue.sync {
-                    try self.dbStorage.perform(request: request, on: self.dbQueue)
-                }
-                self.observable.on(.next(Update(download: download, kind: .ready)))
-                self.errors[download] = nil
-            } catch let error {
-                DDLogError("RemoteAttachmentDownloader: can't store attachment after download - \(error)")
-                // Storing item failed, remove downloaded file
-                try? self.fileStorage.remove(file)
-                self.observable.on(.next(Update(download: download, kind: .failed)))
-                self.errors[download] = error
-            }
+            self.observable.on(.next(Update(download: download, kind: .ready(attachment))))
+            self.errors[download] = nil
 
         case .failure(let error):
             DDLogError("RemoteAttachmentDownloader: failed to download attachment \(download.key), \(download.libraryId) - \(error)")

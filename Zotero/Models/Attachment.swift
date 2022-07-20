@@ -95,6 +95,7 @@ struct Attachment: Identifiable, Equatable {
 extension Attachment: Hashable {
     func hash(into hasher: inout Hasher) {
         hasher.combine(self.key)
+        hasher.combine(self.libraryId)
         hasher.combine(self.title)
     }
 }

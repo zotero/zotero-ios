@@ -148,7 +148,7 @@ class LookupViewController: UIViewController {
                     } else if let progress = progress {
                         updateKind = .progress(progress)
                     } else {
-                        updateKind = .ready
+                        updateKind = .ready(attachment.0)
                     }
                     return .attachment(attachment.0, updateKind)
                 })
@@ -189,11 +189,11 @@ class LookupViewController: UIViewController {
     }
 
     private func process(update: RemoteAttachmentDownloader.Update) {
-        guard update.libraryId == self.viewModel.state.libraryId, var snapshot = self.dataSource?.snapshot(), snapshot.sectionIdentifiers.count > 0 else { return }
+        guard update.download.libraryId == self.viewModel.state.libraryId, var snapshot = self.dataSource?.snapshot(), snapshot.sectionIdentifiers.count > 0 else { return }
 
         var rows = snapshot.itemIdentifiers(inSection: 0)
 
-        guard let index = rows.firstIndex(where: { $0.isAttachment(withKey: update.key, libraryId: update.libraryId) }) else { return }
+        guard let index = rows.firstIndex(where: { $0.isAttachment(withKey: update.download.key, libraryId: update.download.libraryId) }) else { return }
 
         snapshot.deleteItems(rows)
 

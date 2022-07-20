@@ -134,11 +134,13 @@ final class ExtensionViewModel {
         /// - remoteUrl: `URL` instance which is not a local file. This `URL` should be opened in a browser and transformed to `.web(...)` or `.fileUrl(...)`.
         /// - fileUrl: `URL` pointing to a local file.
         /// - remoteFileUrl: `URL` pointing to a remote file.
+        /// - string: `String` on which we'll try to run lookup and see if it contains usable identifiers
         enum RawAttachment {
             case web(title: String, url: URL, html: String, cookies: String, frames: [String])
             case remoteUrl(URL)
             case fileUrl(URL)
             case remoteFileUrl(url: URL, contentType: String)
+            case string(String)
         }
 
         /// Attachment which has been loaded and translated processed/translated.
@@ -265,6 +267,7 @@ final class ExtensionViewModel {
     private let backgroundUploadObserver: BackgroundUploadObserver
     private let backgroundQueue: DispatchQueue
     private let backgroundScheduler: SerialDispatchQueueScheduler
+    private let remoteFileDownloader: RemoteAttachmentDownloader
     private let disposeBag: DisposeBag
 
     private struct SubmissionData {
@@ -274,7 +277,8 @@ final class ExtensionViewModel {
     }
 
     init(webView: WKWebView, apiClient: ApiClient, backgroundUploader: BackgroundUploader, backgroundUploadObserver: BackgroundUploadObserver, dbStorage: DbStorage, schemaController: SchemaController,
-         webDavController: WebDavController, dateParser: DateParser, fileStorage: FileStorage, syncController: SyncController, translatorsController: TranslatorsAndStylesController) {
+         webDavController: WebDavController, dateParser: DateParser, fileStorage: FileStorage, syncController: SyncController, translatorsController: TranslatorsAndStylesController,
+         remoteFileDownloader: RemoteAttachmentDownloader) {
         let queue = DispatchQueue(label: "org.zotero.ZShare.BackgroundQueue", qos: .userInteractive)
         self.webView = webView
         self.syncController = syncController
@@ -286,6 +290,7 @@ final class ExtensionViewModel {
         self.schemaController = schemaController
         self.webDavController = webDavController
         self.dateParser = dateParser
+        self.remoteFileDownloader = remoteFileDownloader
         self.translationHandler = TranslationWebViewHandler(webView: webView, translatorsController: translatorsController)
         self.backgroundQueue = queue
         self.backgroundScheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.ZShare.BackgroundScheduler")
@@ -366,79 +371,110 @@ final class ExtensionViewModel {
     private func process(attachment: State.RawAttachment) {
         switch attachment {
         case .web(let title, let url, let html, let cookies, let frames):
-            var state = self.state
-            state.title = title
-            state.url = url.absoluteString
-            self.state = state
-            DDLogInfo("ExtensionViewModel: start translation")
-            self.translationHandler.translate(url: url, title: title, html: html, cookies: cookies, frames: frames)
+            self.processWeb(title: title, url: url, html: html, cookies: cookies, frames: frames)
 
         case .remoteUrl(let url):
-            DDLogInfo("ExtensionViewModel: load web")
-            self.translationHandler.loadWebData(from: url)
-                                   .subscribe(onSuccess: { [weak self] attachment in
-                                       self?.process(attachment: attachment)
-                                   }, onFailure: { [weak self] error in
-                                       guard let `self` = self else { return }
-                                       DDLogError("ExtensionViewModel: webview could not load data - \(error)")
-                                       self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: nil))
-                                   })
-                                   .disposed(by: self.disposeBag)
+            self.process(remoteUrl: url)
 
         case .fileUrl(let url):
-            let filename = url.lastPathComponent
-            let tmpFile = Files.temporaryFile(ext: url.pathExtension)
-
-            self.copyFile(from: url.path, to: tmpFile)
-                .subscribe(with: self, onSuccess: { `self`, _ in
-                    var state = self.state
-                    state.processedAttachment = .localFile(file: tmpFile, filename: filename)
-                    state.expectedAttachment = (filename, tmpFile)
-                    state.attachmentState = .processed
-                    self.state = state
-                }, onFailure: { `self`, error in
-                    self.state.attachmentState = .failed(.fileMissing)
-                })
-                .disposed(by: self.disposeBag)
+            self.process(fileUrl: url)
 
         case .remoteFileUrl(let url, let contentType):
-            let filename = url.lastPathComponent
-            let file = Files.shareExtensionDownload(key: self.state.attachmentKey, contentType: contentType)
+            self.process(remoteFileUrl: url, contentType: contentType)
 
-            var state = self.state
-            state.url = url.absoluteString
-            state.title = url.absoluteString
-            state.attachmentState = .downloading(0)
-            state.expectedAttachment = (filename, file)
-            self.state = state
-
-            DDLogInfo("ExtensionViewModel: download file")
-            self.download(url: url, to: file)
-                .observe(on: MainScheduler.instance)
-                .subscribe(onSuccess: { [weak self] _ in
-                    guard let `self` = self else { return }
-
-                    var state = self.state
-                    if self.fileStorage.isPdf(file: file) {
-                        DDLogInfo("ExtensionViewModel: downloaded pdf")
-                        state.processedAttachment = .localFile(file: file, filename: filename)
-                        state.attachmentState = .processed
-                    } else {
-                        DDLogInfo("ExtensionViewModel: downloaded unsupported file")
-                        state.processedAttachment = nil
-                        state.attachmentState = .failed(.downloadedFileNotPdf)
-                        state.expectedAttachment = nil
-                        // Remove downloaded file, it won't be used anymore
-                        try? self.fileStorage.remove(file)
-                    }
-                    self.state = state
-                }, onFailure: { [weak self] error in
-                    DDLogError("ExtensionViewModel: could not download shared file - \(url.absoluteString) - \(error)")
-                    self?.state.attachmentState = .failed(.downloadFailed)
-                    try? self?.fileStorage.remove(file)
-                })
-                .disposed(by: self.disposeBag)
+        case .string(let string):
+            self.process(string: string)
         }
+    }
+
+    private func processWeb(title: String, url: URL, html: String, cookies: String, frames: [String]) {
+        var state = self.state
+        state.title = title
+        state.url = url.absoluteString
+        self.state = state
+
+        DDLogInfo("ExtensionViewModel: start translation")
+
+        self.translationHandler.translate(url: url, title: title, html: html, cookies: cookies, frames: frames)
+    }
+
+    private func process(remoteUrl url: URL) {
+        DDLogInfo("ExtensionViewModel: load web")
+
+        self.translationHandler.loadWebData(from: url)
+                               .subscribe(onSuccess: { [weak self] attachment in
+                                   self?.process(attachment: attachment)
+                               }, onFailure: { [weak self] error in
+                                   guard let `self` = self else { return }
+                                   DDLogError("ExtensionViewModel: webview could not load data - \(error)")
+                                   self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: nil))
+                               })
+                               .disposed(by: self.disposeBag)
+    }
+
+    private func process(fileUrl url: URL) {
+        let filename = url.lastPathComponent
+        let tmpFile = Files.temporaryFile(ext: url.pathExtension)
+
+        self.copyFile(from: url.path, to: tmpFile)
+            .subscribe(with: self, onSuccess: { `self`, _ in
+                var state = self.state
+                state.processedAttachment = .localFile(file: tmpFile, filename: filename)
+                state.expectedAttachment = (filename, tmpFile)
+                state.attachmentState = .processed
+                self.state = state
+            }, onFailure: { `self`, error in
+                self.state.attachmentState = .failed(.fileMissing)
+            })
+            .disposed(by: self.disposeBag)
+    }
+
+    private func process(remoteFileUrl url: URL, contentType: String) {
+        let filename = url.lastPathComponent
+        let file = Files.shareExtensionDownload(key: self.state.attachmentKey, contentType: contentType)
+
+        var state = self.state
+        state.url = url.absoluteString
+        state.title = url.absoluteString
+        state.attachmentState = .downloading(0)
+        state.expectedAttachment = (filename, file)
+        self.state = state
+
+        DDLogInfo("ExtensionViewModel: download file")
+        self.download(url: url, to: file)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onSuccess: { [weak self] _ in
+                guard let `self` = self else { return }
+
+                var state = self.state
+                if self.fileStorage.isPdf(file: file) {
+                    DDLogInfo("ExtensionViewModel: downloaded pdf")
+                    state.processedAttachment = .localFile(file: file, filename: filename)
+                    state.attachmentState = .processed
+                } else {
+                    DDLogInfo("ExtensionViewModel: downloaded unsupported file")
+                    state.processedAttachment = nil
+                    state.attachmentState = .failed(.downloadedFileNotPdf)
+                    state.expectedAttachment = nil
+                    // Remove downloaded file, it won't be used anymore
+                    try? self.fileStorage.remove(file)
+                }
+                self.state = state
+            }, onFailure: { [weak self] error in
+                DDLogError("ExtensionViewModel: could not download shared file - \(url.absoluteString) - \(error)")
+                self?.state.attachmentState = .failed(.downloadFailed)
+                try? self?.fileStorage.remove(file)
+            })
+            .disposed(by: self.disposeBag)
+    }
+
+    private func process(string: String) {
+        let collectionKeys = Defaults.shared.selectedCollectionId.key.flatMap({ Set([$0]) }) ?? []
+        let state = LookupState(multiLookupEnabled: false, hasDarkBackground: false, collectionKeys: collectionKeys, libraryId: Defaults.shared.selectedLibrary)
+        let handler = LookupActionHandler(dbStorage: self.dbStorage, fileStorage: self.fileStorage, translatorsController: self.translationHandler.translatorsController,
+                                          schemaController: self.schemaController, dateParser: self.dateParser, remoteFileDownloader: self.remoteFileDownloader)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+        let controller = LookupViewController(viewModel: viewModel, remoteDownloadObserver: self.remoteFileDownloader.observable, remoteFileDownloader: self.remoteFileDownloader, schemaController: self.schemaController)
     }
 
     private func loadUrl(from itemProvider: NSItemProvider) -> Observable<Result<State.RawAttachment, State.AttachmentState.Error>> {
@@ -547,8 +583,8 @@ final class ExtensionViewModel {
                         DDLogInfo("ExtensionViewModel: plaintext was url - \(string)")
                         subscriber.on(.next(.success(.remoteUrl(url))))
                     } else {
-                        DDLogInfo("ExtensionViewModel: plaintext not url - \(string)")
-                        subscriber.on(.next(.failure(.cantLoadWebData)))
+                        DDLogInfo("ExtensionViewModel: plaintext - \(string)")
+                        subscriber.on(.next(.success(.string(string))))
                     }
 
                 } else {

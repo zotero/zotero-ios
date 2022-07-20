@@ -308,7 +308,7 @@ final class UserControllers {
         self.itemLocaleController = RItemLocaleController(schemaController: controllers.schemaController, dbStorage: dbStorage)
         self.backgroundUploadObserver = backgroundUploadObserver
         self.fileDownloader = fileDownloader
-        self.remoteFileDownloader = RemoteAttachmentDownloader(apiClient: controllers.apiClient, fileStorage: controllers.fileStorage, dbStorage: dbStorage, schemaController: controllers.schemaController)
+        self.remoteFileDownloader = RemoteAttachmentDownloader(apiClient: controllers.apiClient, fileStorage: controllers.fileStorage)
         self.webSocketController = webSocketController
         self.fileCleanupController = fileCleanupController
         self.citationController = CitationController(stylesController: controllers.translatorsAndStylesController, fileStorage: controllers.fileStorage,

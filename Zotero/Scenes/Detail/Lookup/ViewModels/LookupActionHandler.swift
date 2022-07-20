@@ -17,6 +17,7 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
     unowned let dbStorage: DbStorage
     let backgroundQueue: DispatchQueue
+    private unowned let fileStorage: FileStorage
     private unowned let translatorsController: TranslatorsAndStylesController
     private unowned let schemaController: SchemaController
     private unowned let dateParser: DateParser
@@ -25,8 +26,9 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
     private var lookupWebViewHandler: LookupWebViewHandler?
 
-    init(dbStorage: DbStorage, translatorsController: TranslatorsAndStylesController, schemaController: SchemaController, dateParser: DateParser, remoteFileDownloader: RemoteAttachmentDownloader) {
+    init(dbStorage: DbStorage, fileStorage: FileStorage, translatorsController: TranslatorsAndStylesController, schemaController: SchemaController, dateParser: DateParser, remoteFileDownloader: RemoteAttachmentDownloader) {
         self.backgroundQueue = DispatchQueue(label: "org.zotero.ItemsActionHandler.backgroundProcessing", qos: .userInitiated)
+        self.fileStorage = fileStorage
         self.dbStorage = dbStorage
         self.translatorsController = translatorsController
         self.schemaController = schemaController
@@ -43,21 +45,57 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
             handler.observable
                    .observe(on: MainScheduler.instance)
-                   .subscribe(onNext: { [weak self, weak viewModel] result in
-                       switch result {
-                       case .success(let data):
-                           guard let `self` = self, let viewModel = viewModel else { return }
-                           self.process(data: data, in: viewModel)
-                       case .failure(let error):
-                           DDLogError("LookupActionHandler: lookup failed - \(error)")
-                           guard let `self` = self, let viewModel = viewModel else { return }
-                           self.show(error: error, in: viewModel)
-                       }
+                   .subscribe(with: viewModel, onNext: { [weak self] viewModel, result in
+                       self?.process(result: result, in: viewModel)
                    })
                    .disposed(by: self.disposeBag)
 
+            self.remoteFileDownloader.observable
+                .observe(on: MainScheduler.instance)
+                .subscribe(with: viewModel, onNext: { [weak self] viewModel, update in
+                    switch update.kind {
+                    case .ready(let attachment):
+                        self?.finish(download: update.download, attachment: attachment, in: viewModel)
+                    case .cancelled, .failed, .progress: break
+                    }
+                })
+                .disposed(by: self.disposeBag)
+
         case .lookUp(let identifier):
             self.lookUp(identifier: identifier, in: viewModel)
+        }
+    }
+
+    private func finish(download: RemoteAttachmentDownloader.Download, attachment: Attachment, in viewModel: ViewModel<LookupActionHandler>) {
+        let localizedType = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ItemTypes.attachment
+
+        self.backgroundQueue.async { [weak self] in
+            guard let `self` = self else { return }
+
+            do {
+                let request = CreateAttachmentWithParentDbRequest(attachment: attachment, parentKey: download.parentKey, localizedType: localizedType)
+                try self.dbStorage.perform(request: request, on: self.backgroundQueue)
+            } catch let error {
+                DDLogError("RemoteAttachmentDownloader: can't store attachment after download - \(error)")
+
+                // Storing item failed, remove downloaded file
+                guard case .file(let filename, let contentType, _, _) = attachment.type else { return }
+                let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
+                try? self.fileStorage.remove(file)
+            }
+        }
+    }
+
+    private func process(result: Result<LookupWebViewHandler.LookupData, Error>, in viewModel: ViewModel<LookupActionHandler>) {
+        switch result {
+        case .success(let data):
+            self.process(data: data, in: viewModel)
+
+        case .failure(let error):
+            DDLogError("LookupActionHandler: lookup failed - \(error)")
+            self.update(viewModel: viewModel) { state in
+                state.lookupState = .failed(error)
+            }
         }
     }
 
@@ -81,7 +119,9 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
         switch data {
         case .identifiers(let identifiers):
             guard !identifiers.isEmpty else {
-                self.show(error: LookupState.Error.noIdentifiersDetected, in: viewModel)
+                self.update(viewModel: viewModel) { state in
+                    state.lookupState = .failed(LookupState.Error.noIdentifiersDetected)
+                }
                 return
             }
 
@@ -202,12 +242,6 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
         } catch let error {
             DDLogError("LookupActionHandler: can't parse data - \(error)")
             return nil
-        }
-    }
-
-    private func show(error: Error, in viewModel: ViewModel<LookupActionHandler>) {
-        self.update(viewModel: viewModel) { state in
-            state.lookupState = .failed(error)
         }
     }
 }

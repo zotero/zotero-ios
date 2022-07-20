@@ -699,9 +699,10 @@ final class ShareViewController: UIViewController {
         let syncController = SyncController(userId: userId, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, schemaController: schemaController, dateParser: dateParser,
                                             backgroundUploaderContext: backgroundUploadContext, webDavController: webDavController, syncDelayIntervals: DelayIntervals.sync,
                                             conflictDelays: DelayIntervals.conflict)
+        let remoteFileDownloader = RemoteAttachmentDownloader(apiClient: apiClient, fileStorage: fileStorage)
 
         return ExtensionViewModel(webView: self.webView, apiClient: apiClient, backgroundUploader: backgroundUploader, backgroundUploadObserver: backgroundUploadObserver, dbStorage: dbStorage,
                                   schemaController: schemaController, webDavController: webDavController, dateParser: dateParser, fileStorage: fileStorage, syncController: syncController,
-                                  translatorsController: translatorsController)
+                                  translatorsController: translatorsController, remoteFileDownloader: remoteFileDownloader)
     }
 }
