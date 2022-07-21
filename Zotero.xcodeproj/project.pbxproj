@@ -1007,17 +1007,6 @@
 		B3F0C3FE250A1DB8002D557A /* LibraryCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3F0C3FC250A1DB8002D557A /* LibraryCell.xib */; };
 		B3F0C400250A1DD7002D557A /* LibraryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F0C3FF250A1DD7002D557A /* LibraryRow.swift */; };
 		B3F0C401250A2450002D557A /* LibraryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F0C3FF250A1DD7002D557A /* LibraryRow.swift */; };
-		B3F0FDBB288803BB00949BC9 /* LookupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ADAE462833B56F00D46271 /* LookupViewController.swift */; };
-		B3F0FDBC288803C300949BC9 /* LookupViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3ADAE472833B56F00D46271 /* LookupViewController.xib */; };
-		B3F0FDBD2888147900949BC9 /* LookupActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ADAE4C2833BED300D46271 /* LookupActionHandler.swift */; };
-		B3F0FDBE2888147E00949BC9 /* LookupAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ADAE502833BEE300D46271 /* LookupAction.swift */; };
-		B3F0FDBF2888148100949BC9 /* LookupState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ADAE4E2833BEDC00D46271 /* LookupState.swift */; };
-		B3F0FDC0288816C000949BC9 /* RemoteAttachmentDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30BDDE728367FC8007034E8 /* RemoteAttachmentDownloader.swift */; };
-		B3F0FDC1288816D000949BC9 /* LookupItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AAB0F6283B9915008188D6 /* LookupItemCell.swift */; };
-		B3F0FDC2288816D700949BC9 /* LookupItemCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3AAB0F7283B9915008188D6 /* LookupItemCell.xib */; };
-		B3F0FDC3288816DB00949BC9 /* LookupIdentifierCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31A5E4F286308960026589F /* LookupIdentifierCell.swift */; };
-		B3F0FDC4288816DE00949BC9 /* LookupIdentifierCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B31A5E50286308960026589F /* LookupIdentifierCell.xib */; };
-		B3F0FDC52888174E00949BC9 /* RemoteAttachmentDownloadOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CD96B2283796F500B8ACCB /* RemoteAttachmentDownloadOperation.swift */; };
 		B3F0FDC62888175F00949BC9 /* LookupWebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39E01342832883A0091CE4A /* LookupWebViewHandler.swift */; };
 		B3F0FDC72888177600949BC9 /* CreateAttachmentWithParentDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CD96B42837A82F00B8ACCB /* CreateAttachmentWithParentDbRequest.swift */; };
 		B3F0FDC82888177D00949BC9 /* AttachmentDownloadOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3300A4A27C64A0700427FA8 /* AttachmentDownloadOperation.swift */; };
@@ -4011,7 +4000,6 @@
 			files = (
 				B3F47E0025B5F550006FA96F /* Images.xcassets in Resources */,
 				B36459DD2644118800A0C2C0 /* TagPickerCell.xib in Resources */,
-				B3F0FDC4288816DE00949BC9 /* LookupIdentifierCell.xib in Resources */,
 				B337A5AE244F35A900AFD13D /* Localizable.strings in Resources */,
 				B35F476A24F8F55600FE328D /* webview_extraction.js in Resources */,
 				B3AB38B8238ED023008A1ABB /* Assets.xcassets in Resources */,
@@ -4022,8 +4010,6 @@
 				B355B8FF239951E800E837B9 /* translation in Resources */,
 				B32AB57E25ADCEED003CF0C6 /* Bundled in Resources */,
 				B3AB38B9238ED023008A1ABB /* ExtensionScript.js in Resources */,
-				B3F0FDC2288816D700949BC9 /* LookupItemCell.xib in Resources */,
-				B3F0FDBC288803C300949BC9 /* LookupViewController.xib in Resources */,
 				B3CE697624DD7D6A00D333AF /* Colors.xcassets in Resources */,
 				B3B6759B26205A48003231A5 /* CollectionRowView.xib in Resources */,
 			);
@@ -4819,7 +4805,6 @@
 				B3597D0327DA69220069F019 /* AnnotationSplitter.swift in Sources */,
 				B305676323FC0A0B003304F2 /* DeletableObject.swift in Sources */,
 				B3E4463D248FBD00007FE8AB /* RLink.swift in Sources */,
-				B3F0FDBD2888147900949BC9 /* LookupActionHandler.swift in Sources */,
 				B3FC7438272195E400F55531 /* WebDavCheckRequest.swift in Sources */,
 				B372CEE7248673DF00B423AE /* GroupRequest.swift in Sources */,
 				B305676623FC0A0B003304F2 /* ItemTypes.swift in Sources */,
@@ -4866,7 +4851,6 @@
 				B36459E1264411D800A0C2C0 /* TagPickerError.swift in Sources */,
 				B3F0FDCA2888179E00949BC9 /* AttachmentDownloader.swift in Sources */,
 				B3A081CE25D2B73B0088EC24 /* PerformDeletionsSyncAction.swift in Sources */,
-				B3F0FDBE2888147E00949BC9 /* LookupAction.swift in Sources */,
 				B3F0FDC92888179100949BC9 /* CreateTranslatedItemsDbRequest.swift in Sources */,
 				B3BC6B21250FA50F006A8B9C /* SchemaError.swift in Sources */,
 				B305674C23FC09AF003304F2 /* RItem.swift in Sources */,
@@ -4875,7 +4859,6 @@
 				B391480826D909E40016B7B2 /* UIPasteboard+Extensions.swift in Sources */,
 				B305674E23FC09AF003304F2 /* RVersions.swift in Sources */,
 				B325DBAD24375C7B00EFF0F5 /* UIViewController+Extensions.swift in Sources */,
-				B3F0FDC0288816C000949BC9 /* RemoteAttachmentDownloader.swift in Sources */,
 				B305674F23FC09AF003304F2 /* RGroup.swift in Sources */,
 				B305675123FC09AF003304F2 /* RCustomLibrary.swift in Sources */,
 				B305675223FC09AF003304F2 /* WriteBatch.swift in Sources */,
@@ -4901,7 +4884,6 @@
 				B30566FE23FC0867003304F2 /* MarkGroupAsLocalOnlyDbRequest.swift in Sources */,
 				B3AB38A9238EC060008A1ABB /* AllCollectionPickerActionHandler.swift in Sources */,
 				B305673923FC0936003304F2 /* SyncProgressHandler.swift in Sources */,
-				B3F0FDBB288803BB00949BC9 /* LookupViewController.swift in Sources */,
 				B33E8A4427B6769A00CBC7DE /* CollectionTree.swift in Sources */,
 				B305672323FC08F6003304F2 /* FileStorage.swift in Sources */,
 				B305670B23FC08B8003304F2 /* ReadDeletedObjectsDbRequest.swift in Sources */,
@@ -4914,7 +4896,6 @@
 				B305677B23FC0C72003304F2 /* Formatter.swift in Sources */,
 				B31DDA9F27299DF9002CFA05 /* StoreMtimeForAttachmentDbRequest.swift in Sources */,
 				B300B33924292A7F00C1FE1E /* SyncTranslatorsDbRequest.swift in Sources */,
-				B3F0FDC3288816DB00949BC9 /* LookupIdentifierCell.swift in Sources */,
 				B3E44640248FBD4A007FE8AB /* RRelation.swift in Sources */,
 				B30566E723FC0821003304F2 /* RegisterUploadRequest.swift in Sources */,
 				B3F0FDC62888175F00949BC9 /* LookupWebViewHandler.swift in Sources */,
@@ -5035,7 +5016,6 @@
 				B30566F223FC084A003304F2 /* CreateAttachmentDbRequest.swift in Sources */,
 				B300B33A24292B7300C1FE1E /* RTranslatorMetadata.swift in Sources */,
 				B305672B23FC0916003304F2 /* MarkChangesAsResolvedSyncAction.swift in Sources */,
-				B3F0FDC1288816D000949BC9 /* LookupItemCell.swift in Sources */,
 				B305673323FC0927003304F2 /* SyncGroupVersionsSyncAction.swift in Sources */,
 				B33E8A4827B6A07100CBC7DE /* AllCollectionPickerAction.swift in Sources */,
 				B310091B272C0110003FC743 /* CreateWebDavDeletionsDbRequest.swift in Sources */,
@@ -5058,7 +5038,6 @@
 				B305670D23FC08BC003304F2 /* ReadItemsDbRequest.swift in Sources */,
 				B30566F723FC0855003304F2 /* DeleteItemsFromCollectionDbRequest.swift in Sources */,
 				B30566F323FC084C003304F2 /* CreateCollectionDbRequest.swift in Sources */,
-				B3F0FDBF2888148100949BC9 /* LookupState.swift in Sources */,
 				B31DFE7E274692C7005CD69B /* FileRequest.swift in Sources */,
 				B371494C25D585EA00D6391E /* RestoreDeletionsSyncAction.swift in Sources */,
 				B36459DB2644117D00A0C2C0 /* TagPickerActionHandler.swift in Sources */,
@@ -5093,7 +5072,6 @@
 				B3AAD70D23CE16010042C4AB /* CreateBackendItemDbRequest.swift in Sources */,
 				B305671123FC08C5003304F2 /* ReadTagsDbRequest.swift in Sources */,
 				B30B551124B8689900F94B59 /* Assets+SwiftUI.swift in Sources */,
-				B3F0FDC52888174E00949BC9 /* RemoteAttachmentDownloadOperation.swift in Sources */,
 				B3B1EE072502680000D8BC1E /* Parsing.swift in Sources */,
 				B34341AE260A48C200093E63 /* ReadAllWritableGroupsDbRequest.swift in Sources */,
 				B32EBFC4276A89330003897E /* BackgroundUploaderContext.swift in Sources */,

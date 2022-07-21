@@ -140,7 +140,6 @@ final class ExtensionViewModel {
             case remoteUrl(URL)
             case fileUrl(URL)
             case remoteFileUrl(url: URL, contentType: String)
-            case string(String)
         }
 
         /// Attachment which has been loaded and translated processed/translated.
@@ -267,7 +266,6 @@ final class ExtensionViewModel {
     private let backgroundUploadObserver: BackgroundUploadObserver
     private let backgroundQueue: DispatchQueue
     private let backgroundScheduler: SerialDispatchQueueScheduler
-    private let remoteFileDownloader: RemoteAttachmentDownloader
     private let disposeBag: DisposeBag
 
     private struct SubmissionData {
@@ -277,8 +275,7 @@ final class ExtensionViewModel {
     }
 
     init(webView: WKWebView, apiClient: ApiClient, backgroundUploader: BackgroundUploader, backgroundUploadObserver: BackgroundUploadObserver, dbStorage: DbStorage, schemaController: SchemaController,
-         webDavController: WebDavController, dateParser: DateParser, fileStorage: FileStorage, syncController: SyncController, translatorsController: TranslatorsAndStylesController,
-         remoteFileDownloader: RemoteAttachmentDownloader) {
+         webDavController: WebDavController, dateParser: DateParser, fileStorage: FileStorage, syncController: SyncController, translatorsController: TranslatorsAndStylesController) {
         let queue = DispatchQueue(label: "org.zotero.ZShare.BackgroundQueue", qos: .userInteractive)
         self.webView = webView
         self.syncController = syncController
@@ -290,7 +287,6 @@ final class ExtensionViewModel {
         self.schemaController = schemaController
         self.webDavController = webDavController
         self.dateParser = dateParser
-        self.remoteFileDownloader = remoteFileDownloader
         self.translationHandler = TranslationWebViewHandler(webView: webView, translatorsController: translatorsController)
         self.backgroundQueue = queue
         self.backgroundScheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.ZShare.BackgroundScheduler")
@@ -381,9 +377,6 @@ final class ExtensionViewModel {
 
         case .remoteFileUrl(let url, let contentType):
             self.process(remoteFileUrl: url, contentType: contentType)
-
-        case .string(let string):
-            self.process(string: string)
         }
     }
 
@@ -466,15 +459,6 @@ final class ExtensionViewModel {
                 try? self?.fileStorage.remove(file)
             })
             .disposed(by: self.disposeBag)
-    }
-
-    private func process(string: String) {
-        let collectionKeys = Defaults.shared.selectedCollectionId.key.flatMap({ Set([$0]) }) ?? []
-        let state = LookupState(multiLookupEnabled: false, hasDarkBackground: false, collectionKeys: collectionKeys, libraryId: Defaults.shared.selectedLibrary)
-        let handler = LookupActionHandler(dbStorage: self.dbStorage, fileStorage: self.fileStorage, translatorsController: self.translationHandler.translatorsController,
-                                          schemaController: self.schemaController, dateParser: self.dateParser, remoteFileDownloader: self.remoteFileDownloader)
-        let viewModel = ViewModel(initialState: state, handler: handler)
-        let controller = LookupViewController(viewModel: viewModel, remoteDownloadObserver: self.remoteFileDownloader.observable, remoteFileDownloader: self.remoteFileDownloader, schemaController: self.schemaController)
     }
 
     private func loadUrl(from itemProvider: NSItemProvider) -> Observable<Result<State.RawAttachment, State.AttachmentState.Error>> {
@@ -583,8 +567,8 @@ final class ExtensionViewModel {
                         DDLogInfo("ExtensionViewModel: plaintext was url - \(string)")
                         subscriber.on(.next(.success(.remoteUrl(url))))
                     } else {
-                        DDLogInfo("ExtensionViewModel: plaintext - \(string)")
-                        subscriber.on(.next(.success(.string(string))))
+                        DDLogInfo("ExtensionViewModel: plaintext not url - \(string)")
+                        subscriber.on(.next(.failure(.cantLoadWebData)))
                     }
 
                 } else {

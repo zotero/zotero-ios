@@ -683,12 +683,13 @@ final class ShareViewController: UIViewController {
         self.bundledDataStorage = bundledDataStorage
         self.translatorsController = translatorsController
         self.secureStorage = secureStorage
+
         self.viewModel = self.createViewModel(for: session.userId, dbStorage: dbStorage, apiClient: apiClient, schemaController: schemaController, fileStorage: fileStorage,
                                               webDavController: webDavController, translatorsController: translatorsController)
     }
 
     private func createViewModel(for userId: Int, dbStorage: DbStorage, apiClient: ApiClient, schemaController: SchemaController, fileStorage: FileStorage, webDavController: WebDavController,
-                             translatorsController: TranslatorsAndStylesController) -> ExtensionViewModel {
+                                 translatorsController: TranslatorsAndStylesController) -> ExtensionViewModel {
         let dateParser = DateParser()
         let requestProvider = BackgroundUploaderRequestProvider(fileStorage: fileStorage)
         let backgroundUploadContext = BackgroundUploaderContext()
@@ -699,10 +700,9 @@ final class ShareViewController: UIViewController {
         let syncController = SyncController(userId: userId, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, schemaController: schemaController, dateParser: dateParser,
                                             backgroundUploaderContext: backgroundUploadContext, webDavController: webDavController, syncDelayIntervals: DelayIntervals.sync,
                                             conflictDelays: DelayIntervals.conflict)
-        let remoteFileDownloader = RemoteAttachmentDownloader(apiClient: apiClient, fileStorage: fileStorage)
 
         return ExtensionViewModel(webView: self.webView, apiClient: apiClient, backgroundUploader: backgroundUploader, backgroundUploadObserver: backgroundUploadObserver, dbStorage: dbStorage,
                                   schemaController: schemaController, webDavController: webDavController, dateParser: dateParser, fileStorage: fileStorage, syncController: syncController,
-                                  translatorsController: translatorsController, remoteFileDownloader: remoteFileDownloader)
+                                  translatorsController: translatorsController)
     }
 }
