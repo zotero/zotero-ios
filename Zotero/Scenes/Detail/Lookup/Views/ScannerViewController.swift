@@ -77,6 +77,10 @@ final class ScannerViewController: UIViewController {
         self.updatePreviewOrientation()
     }
 
+    deinit {
+        DDLogInfo("ScannerViewController: deinitialized")
+    }
+
     // MARK: - Actions
 
     private func updatePreviewOrientation() {

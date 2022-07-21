@@ -9,6 +9,7 @@
 import UIKit
 import WebKit
 
+import CocoaLumberjackSwift
 import RxSwift
 
 class LookupViewController: UIViewController {
@@ -86,6 +87,10 @@ class LookupViewController: UIViewController {
         if let webView = self.webView {
             self.viewModel.process(action: .initialize(webView))
         }
+    }
+
+    deinit {
+        DDLogInfo("LookupViewController: deinitialized")
     }
 
     // MARK: - Actions
@@ -241,7 +246,7 @@ class LookupViewController: UIViewController {
         self.tableView.backgroundColor = .clear
         self.tableView.backgroundView = UIView()
 
-        self.dataSource = UITableViewDiffableDataSource(tableView: self.tableView, cellProvider: { tableView, indexPath, row in
+        self.dataSource = UITableViewDiffableDataSource(tableView: self.tableView, cellProvider: { [weak self] tableView, indexPath, row in
             let cellId: String
             switch row {
             case .identifier:
@@ -251,6 +256,9 @@ class LookupViewController: UIViewController {
             }
 
             let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)
+
+            guard let `self` = self else { return cell }
+
             var separatorInset: CGFloat = 0
 
             switch row {

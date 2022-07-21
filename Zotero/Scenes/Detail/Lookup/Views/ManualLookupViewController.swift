@@ -9,6 +9,7 @@
 import UIKit
 import WebKit
 
+import CocoaLumberjackSwift
 import RxSwift
 
 class ManualLookupViewController: UIViewController {
@@ -29,6 +30,7 @@ class ManualLookupViewController: UIViewController {
 
     private weak var lookupController: LookupViewController?
     weak var coordinatorDelegate: LookupCoordinatorDelegate?
+    private var liveTextResponder: LiveTextResponder?
 
     init(viewModel: ViewModel<ManualLookupActionHandler>) {
         self.viewModel = viewModel
@@ -66,7 +68,16 @@ class ManualLookupViewController: UIViewController {
         self.updatePreferredContentSize()
     }
 
+    deinit {
+        DDLogInfo("ManualLookupViewController: deinitialized")
+    }
+
     // MARK: - Actions
+
+    private func close() {
+        self.liveTextResponder = nil
+        self.navigationController?.presentingViewController?.dismiss(animated: true)
+    }
 
     private func lookup(text: String) {
         guard !text.isEmpty, let controller = self.lookupController else { return }
@@ -133,7 +144,7 @@ class ManualLookupViewController: UIViewController {
 
         let cancelItem = UIBarButtonItem(title: title, style: .plain, target: nil, action: nil)
         cancelItem.rx.tap.subscribe(onNext: { [weak self] in
-            self?.navigationController?.presentingViewController?.dismiss(animated: true)
+            self?.close()
         }).disposed(by: self.disposeBag)
         self.navigationItem.leftBarButtonItem = cancelItem
     }
@@ -147,7 +158,7 @@ class ManualLookupViewController: UIViewController {
 
         let cancelItem = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
         cancelItem.rx.tap.subscribe(onNext: { [weak self] in
-            self?.navigationController?.presentingViewController?.dismiss(animated: true)
+            self?.close()
         }).disposed(by: self.disposeBag)
         self.navigationItem.leftBarButtonItem = cancelItem
     }
@@ -172,14 +183,18 @@ class ManualLookupViewController: UIViewController {
         self.roundedContainer.layer.cornerRadius = 10
         self.roundedContainer.layer.masksToBounds = true
 
-        if #available(iOS 15.0, *), self.canPerformAction(#selector(UIResponder.captureTextFromCamera), withSender: self) {
+        let responder = LiveTextResponder(viewModel: self.viewModel)
+
+        if #available(iOS 15.0, *), responder.canPerformAction(#selector(UIResponder.captureTextFromCamera), withSender: self.scanButton) {
             var configuration = self.scanButton.configuration ?? UIButton.Configuration.bordered()
             configuration.title = L10n.scanText
             configuration.image = UIImage(systemName: "text.viewfinder")
             configuration.imagePadding = 8
             configuration.baseForegroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
             self.scanButton.configuration = configuration
-            self.scanButton.addAction(.captureTextFromCamera(responder: self, identifier: nil), for: .touchUpInside)
+
+            self.scanButton.addAction(.captureTextFromCamera(responder: responder, identifier: nil), for: .touchUpInside)
+            self.liveTextResponder = responder
         } else {
             self.scanButton.isHidden = true
         }
@@ -206,7 +221,7 @@ class ManualLookupViewController: UIViewController {
         controller.didMove(toParent: self)
 
         controller.activeLookupsFinished = { [weak self] in
-            self?.navigationController?.presentingViewController?.dismiss(animated: true)
+            self?.close()
         }
         controller.dataReloaded = { [weak self] in
             self?.topConstraint.constant = 0
@@ -245,9 +260,15 @@ class ManualLookupViewController: UIViewController {
     }
 }
 
-extension ManualLookupViewController: UIKeyInput {
+fileprivate final class LiveTextResponder: UIResponder, UIKeyInput {
+    private weak var viewModel: ViewModel<ManualLookupActionHandler>?
+
+    init(viewModel: ViewModel<ManualLookupActionHandler>) {
+        self.viewModel = viewModel
+    }
+
     func insertText(_ text: String) {
-        self.viewModel.process(action: .processScannedText(text))
+        self.viewModel?.process(action: .processScannedText(text))
     }
 
     var hasText: Bool {
@@ -255,4 +276,8 @@ extension ManualLookupViewController: UIKeyInput {
     }
 
     func deleteBackward() {}
+
+    deinit {
+        DDLogInfo("LiveTextResponder: deinitialized")
+    }
 }

@@ -66,8 +66,18 @@ final class RemoteAttachmentDownloader {
         var error: Swift.Error?
 
         self.queue.sync { [weak self] in
-            progress = (self?.operations[download]?.progress?.fractionCompleted).flatMap({ CGFloat($0) })
+            DDLogInfo("Fetch data for download")
+            if let operation = self?.operations[download] {
+                if let _progress = operation.progress {
+                    DDLogInfo("Operation progress exists - \(_progress.fractionCompleted)")
+                    progress = CGFloat(_progress.fractionCompleted)
+                } else if operation.isExecuting || (operation.isReady && !operation.isCancelled) {
+                    DDLogInfo("Operation executing")
+                    progress = 0
+                }
+            }
             error = self?.errors[download]
+            DDLogInfo("Error: \(error)")
         }
 
         return (progress, error)
