@@ -127,15 +127,16 @@ final class FileStorageController: FileStorage {
     }
 
     func directoryData(for files: [File]) -> DirectoryData {
-        var all = DirectoryData(fileCount: 0, mbSize: 0)
+        var fileCount: Int = 0
+        var mbSize: Double = 0
 
         for file in files {
-            if let fileData = self.directoryData(for: file) {
-                all = DirectoryData(fileCount: fileData.fileCount + all.fileCount, mbSize: fileData.mbSize + all.mbSize)
-            }
+            guard let fileData = self.directoryData(for: file) else { continue }
+            fileCount += fileData.fileCount
+            mbSize += fileData.mbSize
         }
 
-        return all
+        return DirectoryData(fileCount: fileCount, mbSize: mbSize)
     }
 
     func isZip(file: File) -> Bool {
