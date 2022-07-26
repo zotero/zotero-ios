@@ -177,6 +177,8 @@ internal enum L10n {
       internal static let comment = L10n.tr("Localizable", "accessibility.pdf.comment")
       /// Edit annotation
       internal static let editAnnotation = L10n.tr("Localizable", "accessibility.pdf.edit_annotation")
+      /// Eraser
+      internal static let eraserAnnotationTool = L10n.tr("Localizable", "accessibility.pdf.eraser_annotation_tool")
       /// Export pdf
       internal static let export = L10n.tr("Localizable", "accessibility.pdf.export")
       /// Highlight annotation
@@ -792,6 +794,8 @@ internal enum L10n {
       internal static let noComment = L10n.tr("Localizable", "pdf.annotation_popover.no_comment")
       /// Edit Page Number
       internal static let pageLabelTitle = L10n.tr("Localizable", "pdf.annotation_popover.page_label_title")
+      /// Size
+      internal static let size = L10n.tr("Localizable", "pdf.annotation_popover.size")
       /// Edit Annotation
       internal static let title = L10n.tr("Localizable", "pdf.annotation_popover.title")
       /// Update subsequent pages

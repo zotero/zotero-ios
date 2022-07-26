@@ -37,6 +37,12 @@ final class LineWidthView: UIView {
     private let stepFunction: (Float) -> Float
     private let disposeBag: DisposeBag
 
+    var title: String = "" {
+        didSet {
+            self.valueLabel.text = self.title
+        }
+    }
+    private weak var titleLabel: UILabel!
     private weak var valueLabel: UILabel!
     private weak var slider: UISlider!
 
@@ -51,7 +57,8 @@ final class LineWidthView: UIView {
     }
     var valueObservable: Observable<Float> { return self.slider.rx.value.skip(1) }
 
-    init(settings: Settings) {
+    init(title: String, settings: Settings) {
+        self.title = title
         self.stepFunction = settings.stepFunction
         self.disposeBag = DisposeBag()
         super.init(frame: CGRect())
@@ -88,7 +95,8 @@ final class LineWidthView: UIView {
         let title = UILabel()
         title.font = .preferredFont(forTextStyle: .body)
         title.textColor = .black
-        title.text = L10n.Pdf.AnnotationPopover.lineWidth
+        title.text = self.title
+        self.titleLabel = title
 
         let value = UILabel()
         value.font = .preferredFont(forTextStyle: .body)

@@ -85,7 +85,7 @@ protocol DetailPdfCoordinatorDelegate: AnyObject {
     func showDeletedAlertForPdf(completion: @escaping (Bool) -> Void)
     func pdfDidDeinitialize()
     func showSettings(with settings: PDFSettings, sender: UIBarButtonItem, completion: @escaping (PDFSettings) -> Void)
-    func showInkSettings(sender: UIView, viewModel: ViewModel<PDFReaderActionHandler>)
+    func showSliderSettings(sender: UIView, title: String, initialValue: CGFloat, valueChanged: @escaping (CGFloat) -> Void)
     func showReader(document: Document)
 }
 
@@ -999,8 +999,8 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         #endif
     }
 
-    func showInkSettings(sender: UIView, viewModel: ViewModel<PDFReaderActionHandler>) {
-        let controller = InkSettingsViewController(viewModel: viewModel)
+    func showSliderSettings(sender: UIView, title: String, initialValue: CGFloat, valueChanged: @escaping (CGFloat) -> Void) {
+        let controller = AnnotationSliderViewController(title: title, initialValue: initialValue, valueChanged: valueChanged)
         controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         controller.popoverPresentationController?.sourceView = sender
         self.topViewController.present(controller, animated: true, completion: nil)

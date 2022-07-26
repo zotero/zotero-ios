@@ -1,5 +1,5 @@
 //
-//  InkSettingsViewController.swift
+//  AnnotationSliderViewController.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 07.09.2021.
@@ -13,13 +13,16 @@ import RxSwift
 
 #if PDFENABLED
 
-class InkSettingsViewController: UIViewController {
-    private unowned let viewModel: ViewModel<PDFReaderActionHandler>
-
+class AnnotationSliderViewController: UIViewController {
+    private let titleString: String
+    private let initialValue: Float
+    private let valueChanged: (CGFloat) -> Void
     private let disposeBag: DisposeBag
 
-    init(viewModel: ViewModel<PDFReaderActionHandler>) {
-        self.viewModel = viewModel
+    init(title: String, initialValue: CGFloat, valueChanged: @escaping (CGFloat) -> Void) {
+        self.titleString = title
+        self.initialValue = Float(initialValue)
+        self.valueChanged = valueChanged
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -46,12 +49,12 @@ class InkSettingsViewController: UIViewController {
     }
 
     private func setupView() {
-        let view = LineWidthView(settings: .lineWidth)
+        let view = LineWidthView(title: self.titleString, settings: .lineWidth)
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.value = Float(self.viewModel.state.activeLineWidth)
+        view.value = self.initialValue
         view.valueObservable
             .subscribe(with: self, onNext: { `self`, value in
-                self.viewModel.process(action: .setActiveLineWidth(CGFloat(value)))
+                self.valueChanged(CGFloat(value))
             })
             .disposed(by: self.disposeBag)
         self.view.addSubview(view)

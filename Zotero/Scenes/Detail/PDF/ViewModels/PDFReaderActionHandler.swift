@@ -200,6 +200,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .setActiveLineWidth(let lineWidth):
             self.setActive(lineWidth: lineWidth, in: viewModel)
 
+        case .setActiveEraserSize(let size):
+            self.setActive(eraserSize: size, in: viewModel)
+
         case .saveChanges:
             self.saveChanges(in: viewModel)
 
@@ -749,6 +752,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         self.update(viewModel: viewModel) { state in
             state.activeLineWidth = lineWidth
             state.changes = .activeLineWidth
+        }
+    }
+
+    private func setActive(eraserSize: CGFloat, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        Defaults.shared.activeEraserSize = Float(eraserSize)
+
+        self.update(viewModel: viewModel) { state in
+            state.activeEraserSize = eraserSize
+            state.changes = .activeEraserSize
         }
     }
 

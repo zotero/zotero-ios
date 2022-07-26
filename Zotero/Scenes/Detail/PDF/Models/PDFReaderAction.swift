@@ -40,6 +40,7 @@ enum PDFReaderAction {
     case updateAnnotationPreviews
     case setActiveColor(String)
     case setActiveLineWidth(CGFloat)
+    case setActiveEraserSize(CGFloat)
     case saveChanges
     case create(annotation: AnnotationType, pageIndex: PageIndex, origin: CGPoint)
     case setCommentActive(Bool)

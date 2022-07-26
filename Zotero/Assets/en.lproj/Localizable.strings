@@ -224,6 +224,7 @@
 "pdf.annotation_popover.page_label_title" = "Edit Page Number";
 "pdf.annotation_popover.no_comment" = "No comment";
 "pdf.annotation_popover.line_width" = "Width";
+"pdf.annotation_popover.size" = "Size";
 "pdf.deleted_title" = "Deleted";
 "pdf.deleted_message" = "This document has been deleted. Do you want to restore it?";
 "pdf.line_width_point" = "%0.1f pt";
@@ -468,6 +469,7 @@
 "accessibility.pdf.note_annotation_tool" = "Create note annotation";
 "accessibility.pdf.image_annotation_tool" = "Create image annotation";
 "accessibility.pdf.ink_annotation_tool" = "Create ink annotation";
+"accessibility.pdf.eraser_annotation_tool" = "Eraser";
 "accessibility.pdf.highlight_annotation" = "Highlight annotation";
 "accessibility.pdf.note_annotation" = "Note annotation";
 "accessibility.pdf.image_annotation" = "Image annotation";

@@ -32,6 +32,7 @@ final class PDFReaderViewController: UIViewController {
     private weak var createHighlightButton: CheckboxButton!
     private weak var createAreaButton: CheckboxButton!
     private weak var createInkButton: CheckboxButton!
+    private weak var createEraserButton: CheckboxButton!
     private weak var colorPickerbutton: UIButton!
 
     private static let saveDelay: Int = 3
@@ -141,7 +142,6 @@ final class PDFReaderViewController: UIViewController {
         self.setupNavigationBar()
         self.setupAnnotationControls(forCompactSize: self.isCompactSize)
         self.set(toolColor: self.viewModel.state.activeColor, in: self.pdfController.annotationStateManager)
-        self.set(lineWidth: self.viewModel.state.activeLineWidth, in: self.pdfController.annotationStateManager)
         self.setupObserving()
         self.updateInterface(to: self.viewModel.state.settings)
 
@@ -244,6 +244,10 @@ final class PDFReaderViewController: UIViewController {
 
         if state.changes.contains(.activeLineWidth) {
             self.set(lineWidth: state.activeLineWidth, in: self.pdfController.annotationStateManager)
+        }
+
+        if state.changes.contains(.activeEraserSize) {
+            self.set(lineWidth: state.activeEraserSize, in: self.pdfController.annotationStateManager)
         }
 
         if state.changes.contains(.save) {
@@ -361,12 +365,17 @@ final class PDFReaderViewController: UIViewController {
         stateManager.drawColor = AnnotationColorGenerator.color(from: self.viewModel.state.activeColor, isHighlight: (annotationTool == .highlight),
                                                                 userInterfaceStyle: self.traitCollection.userInterfaceStyle).color
 
-        if annotationTool == .ink {
+        switch annotationTool {
+        case .ink:
             stateManager.lineWidth = self.viewModel.state.activeLineWidth
-
             if UIPencilInteraction.prefersPencilOnlyDrawing {
                 stateManager.stylusMode = .stylus
             }
+
+        case .eraser:
+            stateManager.lineWidth = self.viewModel.state.activeEraserSize
+
+        default: break
         }
     }
 
@@ -589,6 +598,8 @@ final class PDFReaderViewController: UIViewController {
             tool = .square
         } else if sender == self.createHighlightButton {
             tool = .highlight
+        } else if sender == self.createEraserButton {
+            tool = .eraser
         } else {
             fatalError()
         }
@@ -823,7 +834,10 @@ final class PDFReaderViewController: UIViewController {
                     .event
                     .subscribe(with: self, onNext: { `self`, recognizer in
                         if recognizer.state == .began, let view = recognizer.view {
-                            self.coordinatorDelegate?.showInkSettings(sender: view, viewModel: self.viewModel)
+                            self.coordinatorDelegate?.showSliderSettings(sender: view, title: L10n.Pdf.AnnotationPopover.lineWidth, initialValue: self.viewModel.state.activeLineWidth,
+                                                                         valueChanged: { [weak self] newValue in
+                                self?.viewModel.process(action: .setActiveLineWidth(newValue))
+                            })
                             if self.pdfController.annotationStateManager.state != .ink {
                                 self.toggle(annotationTool: .ink, tappedWithStylus: (self.lastGestureRecognizerTouch?.type == .stylus))
                             }
@@ -835,7 +849,7 @@ final class PDFReaderViewController: UIViewController {
         inkTap.delegate = self
         inkTap.rx
               .event
-              .subscribe(with: self, onNext: { `self`, test in
+              .subscribe(with: self, onNext: { `self`, _ in
                   self.toggle(annotationTool: .ink, tappedWithStylus: (self.lastGestureRecognizerTouch?.type == .stylus))
               })
               .disposed(by: self.disposeBag)
@@ -849,7 +863,42 @@ final class PDFReaderViewController: UIViewController {
         ink.addGestureRecognizer(inkTap)
         self.createInkButton = ink
 
-        [highlight, note, area, ink].forEach { button in
+        let eraserLongPress = UILongPressGestureRecognizer()
+        eraserLongPress.delegate = self
+        eraserLongPress.rx
+                    .event
+                    .subscribe(with: self, onNext: { `self`, recognizer in
+                        if recognizer.state == .began, let view = recognizer.view {
+                            self.coordinatorDelegate?.showSliderSettings(sender: view, title: L10n.Pdf.AnnotationPopover.size, initialValue: self.viewModel.state.activeEraserSize,
+                                                                         valueChanged: { [weak self] newValue in
+                                self?.viewModel.process(action: .setActiveEraserSize(newValue))
+                            })
+                            if self.pdfController.annotationStateManager.state != .eraser {
+                                self.toggle(annotationTool: .eraser, tappedWithStylus: (self.lastGestureRecognizerTouch?.type == .stylus))
+                            }
+                        }
+                    })
+                    .disposed(by: self.disposeBag)
+
+        let eraserTap = UITapGestureRecognizer()
+        eraserTap.delegate = self
+        eraserTap.rx
+              .event
+              .subscribe(with: self, onNext: { `self`, _ in
+                  self.toggle(annotationTool: .eraser, tappedWithStylus: (self.lastGestureRecognizerTouch?.type == .stylus))
+              })
+              .disposed(by: self.disposeBag)
+        eraserTap.require(toFail: eraserLongPress)
+
+        let eraser = CheckboxButton(type: .custom)
+        eraser.accessibilityLabel = L10n.Accessibility.Pdf.eraserAnnotationTool
+        eraser.setImage(Asset.Images.Annotations.eraserLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
+        eraser.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
+        eraser.addGestureRecognizer(eraserLongPress)
+        eraser.addGestureRecognizer(eraserTap)
+        self.createEraserButton = eraser
+
+        [highlight, note, area, ink, eraser].forEach { button in
             button.adjustsImageWhenHighlighted = false
             button.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
             button.selectedTintColor = .white
@@ -881,9 +930,11 @@ final class PDFReaderViewController: UIViewController {
             ink.heightAnchor.constraint(equalToConstant: size),
             picker.widthAnchor.constraint(equalToConstant: size),
             picker.heightAnchor.constraint(equalToConstant: size),
+            eraser.widthAnchor.constraint(equalToConstant: size),
+            eraser.heightAnchor.constraint(equalToConstant: size),
         ])
 
-        return [highlight, note, area, ink, picker]
+        return [highlight, note, area, ink, eraser, picker]
     }
 
     private func setupNavigationBar() {
@@ -1065,6 +1116,8 @@ extension PDFReaderViewController: AnnotationStateManagerDelegate {
                 self.createAreaButton.isSelected = false
             case .ink:
                 self.createInkButton.isSelected = false
+            case .eraser:
+                self.createEraserButton.isSelected = false
             default: break
             }
         }
@@ -1079,6 +1132,8 @@ extension PDFReaderViewController: AnnotationStateManagerDelegate {
                 self.createAreaButton.isSelected = true
             case .ink:
                 self.createInkButton.isSelected = true
+            case .eraser:
+                self.createEraserButton.isSelected = true
             default: break
             }
         }

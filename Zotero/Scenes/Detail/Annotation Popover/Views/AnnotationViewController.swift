@@ -244,7 +244,7 @@ final class AnnotationViewController: UIViewController {
 
             if annotation.type == .ink {
                 // Setup line width slider
-                let lineView = LineWidthView(settings: .lineWidth)
+                let lineView = LineWidthView(title: L10n.Pdf.AnnotationPopover.lineWidth, settings: .lineWidth)
                 lineView.value = Float(annotation.lineWidth ?? 0)
                 lineView.valueObservable
                         .subscribe(with: self, onNext: { `self`, value in

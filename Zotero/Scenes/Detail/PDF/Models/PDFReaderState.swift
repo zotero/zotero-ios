@@ -35,6 +35,7 @@ struct PDFReaderState: ViewModelState {
         static let sidebarEditing = Changes(rawValue: 1 << 10)
         static let sidebarEditingSelection = Changes(rawValue: 1 << 11)
         static let filter = Changes(rawValue: 1 << 12)
+        static let activeEraserSize = Changes(rawValue: 1 << 13)
     }
 
     enum AppearanceMode: UInt {
@@ -69,6 +70,7 @@ struct PDFReaderState: ViewModelState {
     var comments: [String: NSAttributedString]
     var activeColor: UIColor
     var activeLineWidth: CGFloat
+    var activeEraserSize: CGFloat
     var changes: Changes
     var sidebarEditingEnabled: Bool
     /// Annotation selected when annotations are not being edited in sidebar
@@ -132,6 +134,7 @@ struct PDFReaderState: ViewModelState {
         self.commentFont = PDFReaderLayout.annotationLayout.font
         self.activeColor = UIColor(hex: Defaults.shared.activeColorHex)
         self.activeLineWidth = CGFloat(Defaults.shared.activeLineWidth)
+        self.activeEraserSize = CGFloat(Defaults.shared.activeEraserSize)
         self.changes = []
         self.previewCache.totalCostLimit = 1024 * 1024 * 10 // Cache object limit - 10 MB
     }

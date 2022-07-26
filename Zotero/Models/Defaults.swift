@@ -93,6 +93,9 @@ final class Defaults {
     @UserDefault(key: "PdfReaderLineWidth", defaultValue: 2)
     var activeLineWidth: Float
 
+    @UserDefault(key: "PdfReaderEraserSize", defaultValue: 10)
+    var activeEraserSize: Float
+
     #if PDFENABLED && MAINAPP
     @UserDefault(key: "PDFReaderState.activeColor", defaultValue: AnnotationsConfig.defaultActiveColor)
     var activeColorHex: String
