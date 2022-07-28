@@ -35,6 +35,17 @@ final class AllCollectionPickerActionHandler: ViewModelActionHandler {
                 state.librariesCollapsed[libraryId] = !(state.librariesCollapsed[libraryId] ?? true)
                 state.toggledLibraryId = libraryId
             }
+
+        case .toggleCollection(let collectionId, let libraryId):
+            self.toggleCollectionCollapsed(collectionId: collectionId, libraryId: libraryId, viewModel: viewModel)
+        }
+    }
+
+    private func toggleCollectionCollapsed(collectionId: CollectionIdentifier, libraryId: LibraryIdentifier, viewModel: ViewModel<AllCollectionPickerActionHandler>) {
+        guard let tree = viewModel.state.trees[libraryId], let isCollapsed = tree.isCollapsed(identifier: collectionId) else { return }
+        tree.set(collapsed: !isCollapsed, to: collectionId)
+        self.update(viewModel: viewModel) { state in
+            state.toggledCollectionInLibraryId = libraryId
         }
     }
 

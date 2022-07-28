@@ -10,6 +10,7 @@ import Foundation
 
 enum AllCollectionPickerAction {
     case toggleLibrary(LibraryIdentifier)
+    case toggleCollection(CollectionIdentifier, LibraryIdentifier)
     case loadData
     case search(String?)
 }

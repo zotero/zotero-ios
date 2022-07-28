@@ -170,6 +170,13 @@ extension CollectionTree {
 // MARK: - Diffable Data Source
 
 extension CollectionTree {
+    func createSnapshot(selectedId: CollectionIdentifier? = nil, collapseState: CollapseState = .basedOnDb) -> NSDiffableDataSourceSectionSnapshot<Collection> {
+        var snapshot = NSDiffableDataSourceSectionSnapshot<Collection>()
+        self.add(nodes: self.nodes, to: nil, in: &snapshot, allCollections: self.collections)
+        self.apply(selectedId: selectedId, collapseState: collapseState, to: &snapshot)
+        return snapshot
+    }
+
     private func add<T>(nodes: [Node], to parent: T?, in snapshot: inout NSDiffableDataSourceSectionSnapshot<T>, allCollections: [CollectionIdentifier: T]) {
         guard !nodes.isEmpty else { return }
 
@@ -181,35 +188,6 @@ extension CollectionTree {
             let node = nodes[idx]
             self.add(nodes: node.children, to: collection, in: &snapshot, allCollections: allCollections)
         }
-    }
-
-    private func addMapped<T, R>(mapping: (R) -> T, nodes: [Node], to parent: T?, in snapshot: inout NSDiffableDataSourceSectionSnapshot<T>, allCollections: [CollectionIdentifier: R]) {
-        guard !nodes.isEmpty else { return }
-
-        let collections = nodes.map({ allCollections[$0.identifier] })
-        snapshot.append(collections.compactMap({ $0 }).map(mapping), to: parent)
-
-        for (idx, collection) in collections.enumerated() {
-            guard let collection = collection else { continue }
-            let node = nodes[idx]
-            self.addMapped(mapping: mapping, nodes: node.children, to: mapping(collection), in: &snapshot, allCollections: allCollections)
-        }
-    }
-
-    func createSnapshot(selectedId: CollectionIdentifier? = nil, collapseState: CollapseState = .basedOnDb) -> NSDiffableDataSourceSectionSnapshot<Collection> {
-        var snapshot = NSDiffableDataSourceSectionSnapshot<Collection>()
-        self.add(nodes: self.nodes, to: nil, in: &snapshot, allCollections: self.collections)
-        self.apply(selectedId: selectedId, collapseState: collapseState, to: &snapshot)
-        return snapshot
-    }
-
-    func createMappedSnapshot<T>(mapping: (Collection) -> T, parent: T? = nil) -> NSDiffableDataSourceSectionSnapshot<T> {
-        var snapshot = NSDiffableDataSourceSectionSnapshot<T>()
-        if let parent = parent {
-            snapshot.append([parent], to: nil)
-        }
-        self.addMapped(mapping: mapping, nodes: self.nodes, to: parent, in: &snapshot, allCollections: self.collections)
-        return snapshot
     }
 
     private func apply(selectedId: CollectionIdentifier?, collapseState: CollapseState, to snapshot: inout NSDiffableDataSourceSectionSnapshot<Collection>) {
@@ -238,12 +216,53 @@ extension CollectionTree {
         }
     }
 
+    func createMappedSnapshot<T>(mapping: (Collection) -> T, selectedId: CollectionIdentifier?, parent: T? = nil) -> NSDiffableDataSourceSectionSnapshot<T> {
+        var snapshot = NSDiffableDataSourceSectionSnapshot<T>()
+        if let parent = parent {
+            snapshot.append([parent], to: nil)
+        }
+        self.addMapped(mapping: mapping, nodes: self.nodes, to: parent, in: &snapshot, allCollections: self.collections)
+        self.apply(selectedId: selectedId, to: &snapshot, mapping: mapping, allCollections: self.collections.values, collapsedState: self.collapsed)
+        return snapshot
+    }
+
+    private func addMapped<T, R>(mapping: (R) -> T, nodes: [Node], to parent: T?, in snapshot: inout NSDiffableDataSourceSectionSnapshot<T>, allCollections: [CollectionIdentifier: R]) {
+        guard !nodes.isEmpty else { return }
+
+        let collections = nodes.map({ allCollections[$0.identifier] })
+        snapshot.append(collections.compactMap({ $0 }).map(mapping), to: parent)
+
+        for (idx, collection) in collections.enumerated() {
+            guard let collection = collection else { continue }
+            let node = nodes[idx]
+            self.addMapped(mapping: mapping, nodes: node.children, to: mapping(collection), in: &snapshot, allCollections: allCollections)
+        }
+    }
+
+    private func apply<T, CollectionArray: Sequence>(selectedId: CollectionIdentifier?, to snapshot: inout NSDiffableDataSourceSectionSnapshot<T>, mapping: (Collection) -> T,
+                                                     allCollections: CollectionArray, collapsedState: [CollectionIdentifier: Bool]) where CollectionArray.Element == Collection {
+        let expandParents: (CollectionIdentifier , inout NSDiffableDataSourceSectionSnapshot<T>, (Collection) -> T) -> Void = { identifier, snapshot, mapping in
+            let parents = self.parentChain(for: identifier)
+            if !parents.isEmpty {
+                snapshot.expand(parents.map(mapping))
+            }
+        }
+
+        let (collapsed, expanded) = self.separateExpandedFromCollapsed(collections: allCollections, collapsedState: collapsedState)
+        snapshot.collapse(collapsed.map(mapping))
+        snapshot.expand(expanded.map(mapping))
+        if let identifier = selectedId {
+            expandParents(identifier, &snapshot, mapping)
+        }
+    }
+
     private func parentChain(for identifier: CollectionIdentifier, parents: [Collection] = []) -> [Collection] {
         guard let node = self.firstNode(with: identifier, in: self.nodes), let parentId = node.parent, let parentCollection = self.collections[parentId] else { return parents }
         return self.parentChain(for: parentId, parents: [parentCollection] + parents)
     }
 
-    private func separateExpandedFromCollapsed(collections: [Collection], collapsedState: [CollectionIdentifier: Bool]) -> (collapsed: [Collection], expanded: [Collection]) {
+    private func separateExpandedFromCollapsed<CollectionArray: Sequence>(collections: CollectionArray, collapsedState: [CollectionIdentifier: Bool])
+                                                                                                      -> (collapsed: [Collection], expanded: [Collection]) where CollectionArray.Element == Collection {
         var collapsed: [Collection] = []
         var expanded: [Collection] = []
 

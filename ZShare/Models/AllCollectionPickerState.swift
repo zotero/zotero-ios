@@ -31,9 +31,11 @@ struct AllCollectionPickerState: ViewModelState {
     var searchTerm: String?
     var changes: Changes = []
     var toggledLibraryId: LibraryIdentifier?
+    var toggledCollectionInLibraryId: LibraryIdentifier?
 
     mutating func cleanup() {
         self.changes = []
         self.toggledLibraryId = nil
+        self.toggledCollectionInLibraryId = nil
     }
 }

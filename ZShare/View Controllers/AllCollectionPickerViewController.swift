@@ -38,22 +38,23 @@ final class AllCollectionPickerViewController: UICollectionViewController {
         self.collectionView.collectionViewLayout = self.createCollectionViewLayout()
         self.dataSource = self.createDataSource(for: self.collectionView)
         self.setupSearchController()
+        self.viewModel.process(action: .loadData)
+        self.updateDataSource(with: self.viewModel.state, includeSelection: true)
 
         self.viewModel.stateObservable
+                      .skip(1)
                       .observe(on: MainScheduler.instance)
                       .subscribe(onNext: { [weak self] state in
                           self?.update(to: state)
                       })
                       .disposed(by: self.disposeBag)
-
-        self.viewModel.process(action: .loadData)
     }
 
     // MARK: - State
 
     private func update(to state: AllCollectionPickerState) {
         if state.changes.contains(.results) {
-            self.updateDataSource(with: state)
+            self.updateDataSource(with: state, includeSelection: false)
         }
 
         if state.changes.contains(.search), let controller = self.navigationItem.searchController?.searchResultsController as? SearchResultsController {
@@ -63,20 +64,24 @@ final class AllCollectionPickerViewController: UICollectionViewController {
         if let libraryId = state.toggledLibraryId, let collapsed = state.librariesCollapsed[libraryId] {
             self.update(collapsed: collapsed, for: libraryId)
         }
+
+        if let libraryId = state.toggledCollectionInLibraryId {
+            self.updateCollapsed(for: libraryId, state: state)
+        }
     }
 
-    private func updateDataSource(with state: AllCollectionPickerState) {
+    private func updateDataSource(with state: AllCollectionPickerState, includeSelection: Bool) {
         var snapshot = NSDiffableDataSourceSnapshot<LibraryIdentifier, Row>()
         snapshot.appendSections(state.libraries.map({ $0.identifier }))
         self.dataSource.apply(snapshot, animatingDifferences: false)
 
         for library in state.libraries {
             guard let tree = state.trees[library.identifier], let collapsed = state.librariesCollapsed[library.identifier] else { continue }
-            var snapshot = tree.createMappedSnapshot(mapping: { Row.collection($0) }, parent: .library(library))
+            var snapshot = tree.createMappedSnapshot(mapping: { Row.collection($0) }, selectedId: (includeSelection ? state.selectedCollectionId : nil), parent: .library(library))
             if collapsed {
-                snapshot.collapse(snapshot.items)
+                snapshot.collapse([.library(library)])
             } else {
-                snapshot.expand(snapshot.items)
+                snapshot.expand([.library(library)])
             }
             self.dataSource.apply(snapshot, to: library.identifier, animatingDifferences: false)
         }
@@ -97,12 +102,27 @@ final class AllCollectionPickerViewController: UICollectionViewController {
 
     private func update(collapsed: Bool, for libraryId: LibraryIdentifier) {
         var snapshot = self.dataSource.snapshot(for: libraryId)
+
+        guard let libraryRow = snapshot.items.first else { return }
+
         if collapsed {
-            snapshot.collapse(snapshot.items)
+            snapshot.collapse([libraryRow])
         } else {
-            snapshot.expand(snapshot.items)
+            snapshot.expand([libraryRow])
         }
+
         self.dataSource.apply(snapshot, to: libraryId, animatingDifferences: true)
+    }
+
+    private func updateCollapsed(for libraryId: LibraryIdentifier, state: AllCollectionPickerState) {
+        guard let tree = state.trees[libraryId], let libraryRow = self.dataSource.snapshot(for: libraryId).items.first else { return }
+
+        var snapshot = tree.createMappedSnapshot(mapping: { Row.collection($0) }, selectedId: nil, parent: libraryRow)
+        if let row = snapshot.items.first {
+            snapshot.expand([row])
+        }
+
+        self.dataSource.apply(snapshot, to: libraryId, animatingDifferences: false)
     }
 
     private func picked(collection: Collection?, library: Library) {
@@ -123,21 +143,28 @@ final class AllCollectionPickerViewController: UICollectionViewController {
 
             let cellConfiguration: UIContentConfiguration
 
+            let section = self.dataSource.snapshot().sectionIdentifiers[indexPath.section]
+            let isCollapsedProvider: () -> Bool = { [weak self] in
+                guard let `self` = self else { return false }
+                let snapshot = self.dataSource.snapshot(for: section)
+                return snapshot.items.contains(row) ? !snapshot.isExpanded(row) : false
+            }
+
             switch row {
             case .collection(let collection):
-                let section = self.dataSource.snapshot().sectionIdentifiers[indexPath.section]
                 let snapshot = self.dataSource.snapshot(for: section)
                 let hasChildren = snapshot.snapshot(of: row, includingParent: false).items.count > 0
-                cellConfiguration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren, accessories: .chevronSpace)
+                var configuration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren, accessories: .chevron)
+                configuration.isCollapsedProvider = isCollapsedProvider
+                configuration.toggleCollapsed = { [weak self, weak cell] in
+                    guard let `self` = self, let cell = cell else { return }
+                    self.viewModel.process(action: .toggleCollection(collection.identifier, section))
+                }
+                cellConfiguration = configuration
 
             case .library(let library):
-                let section = self.dataSource.snapshot().sectionIdentifiers[indexPath.section]
-                var configuration = CollectionCell.LibraryContentConfiguration(name: library.name, accessories: [.chevron])
-                configuration.isCollapsedProvider = { [weak self] in
-                    guard let `self` = self else { return false }
-                    let snapshot = self.dataSource.snapshot(for: section)
-                    return snapshot.items.contains(row) ? !snapshot.isExpanded(row) : false
-                }
+                var configuration = CollectionCell.LibraryContentConfiguration(name: library.name, accessories: .chevron)
+                configuration.isCollapsedProvider = isCollapsedProvider
                 configuration.toggleCollapsed = { [weak self, weak cell] in
                     guard let `self` = self, let cell = cell else { return }
                     self.viewModel.process(action: .toggleLibrary(section))
