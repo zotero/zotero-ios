@@ -194,13 +194,6 @@ struct ItemDetailState: ViewModelState {
         var fields: [String: Field]
         var fieldIds: [String]
         var abstract: String?
-        var notes: [Note]
-        var attachments: [Attachment]
-        var tags: [Tag]
-
-        var deletedAttachments: Set<String>
-        var deletedNotes: Set<String>
-        var deletedTags: Set<String>
 
         var dateModified: Date
         let dateAdded: Date
@@ -235,8 +228,8 @@ struct ItemDetailState: ViewModelState {
 
         static var empty: Data {
             let date = Date()
-            return Data(title: "", type: "", isAttachment: false, localizedType: "", creators: [:], creatorIds: [], fields: [:], fieldIds: [], abstract: nil, notes: [], attachments: [], tags: [],
-                        deletedAttachments: [], deletedNotes: [], deletedTags: [], dateModified: date, dateAdded: date, maxFieldTitleWidth: 0, maxNonemptyFieldTitleWidth: 0)
+            return Data(title: "", type: "", isAttachment: false, localizedType: "", creators: [:], creatorIds: [], fields: [:], fieldIds: [], abstract: nil, dateModified: date, dateAdded: date,
+                        maxFieldTitleWidth: 0, maxNonemptyFieldTitleWidth: 0)
         }
     }
 
@@ -257,6 +250,9 @@ struct ItemDetailState: ViewModelState {
     var data: Data
     var snapshot: Data?
     var promptSnapshot: Data?
+    var notes: [Note]
+    var attachments: [Attachment]
+    var tags: [Tag]
     var reload: TableViewReloadType?
     var error: ItemDetailError?
     var metadataTitleMaxWidth: CGFloat
@@ -269,7 +265,7 @@ struct ItemDetailState: ViewModelState {
     var abstractCollapsed: Bool
 
     var mainAttachmentKey: String? {
-        return AttachmentCreator.mainPdfAttachment(from: self.data.attachments, parentUrl: self.type.url)?.key
+        return AttachmentCreator.mainPdfAttachment(from: self.attachments, parentUrl: self.type.url)?.key
     }
 
     init(type: DetailType, library: Library, userId: Int) {
@@ -278,6 +274,9 @@ struct ItemDetailState: ViewModelState {
         self.library = library
         self.type = type
         self.data = .empty
+        self.attachments = []
+        self.notes = []
+        self.tags = []
         self.metadataTitleMaxWidth = 0
         self.error = nil
         self.isSaving = false

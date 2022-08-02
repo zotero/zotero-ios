@@ -8,65 +8,48 @@
 
 import UIKit
 
-import RxCocoa
-import RxSwift
+final class ItemDetailAbstractCell: UICollectionViewListCell {
+    struct ContentConfiguration: UIContentConfiguration {
+        let text: String
+        let isCollapsed: Bool
 
-final class ItemDetailAbstractCell: RxTableViewCell {
-    @IBOutlet private weak var separatorHeight: NSLayoutConstraint!
-    @IBOutlet private weak var titleTop: NSLayoutConstraint!
-    @IBOutlet private weak var titleLabel: UILabel!
-    @IBOutlet private weak var titleToContent: NSLayoutConstraint!
-    @IBOutlet private weak var contentLabel: CollapsibleLabel!
+        func makeContentView() -> UIView & UIContentView {
+            return ContentView(configuration: self)
+        }
 
-    private static let paragraphStyle: NSMutableParagraphStyle = {
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.hyphenationFactor = 1
-        paragraphStyle.alignment = .justified
-        paragraphStyle.minimumLineHeight = ItemDetailLayout.lineHeight
-        paragraphStyle.maximumLineHeight = ItemDetailLayout.lineHeight
-        return paragraphStyle
-    }()
-
-    private var titleFont: UIFont {
-        return UIFont.preferredFont(for: .headline, weight: .regular)
+        func updated(for state: UIConfigurationState) -> ContentConfiguration {
+            return self
+        }
     }
 
-    private var bodyFont: UIFont {
-        return UIFont.preferredFont(forTextStyle: .body)
-    }
+    final class ContentView: UIView, UIContentView {
+        var configuration: UIContentConfiguration {
+            didSet {
+                guard let configuration = self.configuration as? ContentConfiguration else { return }
+                self.apply(configuration: configuration)
+            }
+        }
 
-    private var showMoreLessFont: UIFont {
-        return UIFont.systemFont(ofSize: 13)
-    }
+        fileprivate weak var contentView: ItemDetailAbstractContentView!
 
-    override func awakeFromNib() {
-        super.awakeFromNib()
+        init(configuration: ContentConfiguration) {
+            self.configuration = configuration
 
-        self.separatorHeight.constant = ItemDetailLayout.separatorHeight
+            super.init(frame: .zero)
 
-        let titleFont = self.titleFont
-        self.titleLabel.font = titleFont
-        self.titleTop.constant = ItemDetailLayout.separatorHeight - (titleFont.ascender - titleFont.capHeight)
+            guard let view = UINib.init(nibName: "ItemDetailAbstractContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailAbstractContentView else { return }
 
-        let attributes: [NSAttributedString.Key: Any] = [.font: self.showMoreLessFont,
-                                                         .foregroundColor: Asset.Colors.zoteroBlue.color,
-                                                         .paragraphStyle: ItemDetailAbstractCell.paragraphStyle]
-        let showMore = NSMutableAttributedString(string: " ... ", attributes: [.font: self.bodyFont, .paragraphStyle: ItemDetailAbstractCell.paragraphStyle])
-        showMore.append(NSAttributedString(string: L10n.ItemDetail.showMore, attributes: attributes))
+            self.add(contentView: view)
+            self.contentView = view
+            self.apply(configuration: configuration)
+        }
 
-        self.contentLabel.collapsedNumberOfLines = 2
-        self.contentLabel.showLessString = NSAttributedString(string: " \(L10n.ItemDetail.showLess)", attributes: attributes)
-        self.contentLabel.showMoreString = showMore
-    }
+        required init?(coder: NSCoder) {
+            fatalError()
+        }
 
-    func setup(with abstract: String, isCollapsed: Bool) {
-        let font = self.bodyFont
-        let attributes: [NSAttributedString.Key: Any] = [.paragraphStyle: ItemDetailAbstractCell.paragraphStyle, .font: font]
-        let hyphenatedText = NSAttributedString(string: abstract, attributes: attributes)
-
-        self.contentLabel.set(text: hyphenatedText, isCollapsed: isCollapsed)
-
-        let lineHeightOffset = (ItemDetailLayout.lineHeight - font.lineHeight)
-        self.titleToContent.constant = self.layoutMargins.top - (font.ascender - font.capHeight) - lineHeightOffset
+        private func apply(configuration: ContentConfiguration) {
+            self.contentView.setup(with: configuration.text, isCollapsed: configuration.isCollapsed)
+        }
     }
 }

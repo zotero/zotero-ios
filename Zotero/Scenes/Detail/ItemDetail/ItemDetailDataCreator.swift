@@ -25,11 +25,10 @@ struct ItemDetailDataCreator {
     /// - parameter doiDetector: DOI detector.
     /// - returns: Populated data for given type.
     static func createData(from type: Kind, schemaController: SchemaController, dateParser: DateParser, fileStorage: FileStorage, urlDetector: UrlDetector, doiDetector: (String) -> Bool)
-                                                                                                                                                                        throws -> ItemDetailState.Data {
+                                                                                                                                        throws -> (ItemDetailState.Data, [Attachment], [Note], [Tag]) {
         switch type {
         case .new(let itemType, let child):
-            let data = try creationData(itemType: itemType, child: child, schemaController: schemaController, dateParser: dateParser, urlDetector: urlDetector, doiDetector: doiDetector)
-            return data
+            return try creationData(itemType: itemType, child: child, schemaController: schemaController, dateParser: dateParser, urlDetector: urlDetector, doiDetector: doiDetector)
         case .existing(let item):
             return try itemData(item: item, schemaController: schemaController, dateParser: dateParser, fileStorage: fileStorage, urlDetector: urlDetector, doiDetector: doiDetector)
         }
@@ -43,7 +42,7 @@ struct ItemDetailDataCreator {
     /// - parameter doiDetector: DOI detector.
     /// - returns: Data for item detail state.
     private static func creationData(itemType: String, child: Attachment?, schemaController: SchemaController, dateParser: DateParser, urlDetector: UrlDetector,
-                                     doiDetector: (String) -> Bool) throws -> ItemDetailState.Data {
+                                     doiDetector: (String) -> Bool) throws -> (ItemDetailState.Data, [Attachment], [Note], [Tag]) {
         guard let localizedType = schemaController.localized(itemType: itemType) else {
             throw ItemDetailError.schemaNotInitialized
         }
@@ -51,24 +50,19 @@ struct ItemDetailDataCreator {
         let (fieldIds, fields, hasAbstract) = try fieldData(for: itemType, schemaController: schemaController, dateParser: dateParser, urlDetector: urlDetector, doiDetector: doiDetector)
         let date = Date()
         let attachments: [Attachment] = child.flatMap({ [$0] }) ?? []
+        let data = ItemDetailState.Data(title: "",
+                                        type: itemType,
+                                        isAttachment: (itemType == ItemTypes.attachment),
+                                        localizedType: localizedType,
+                                        creators: [:],
+                                        creatorIds: [],
+                                        fields: fields,
+                                        fieldIds: fieldIds,
+                                        abstract: (hasAbstract ? "" : nil),
+                                        dateModified: date,
+                                        dateAdded: date)
 
-        return ItemDetailState.Data(title: "",
-                                    type: itemType,
-                                    isAttachment: (itemType == ItemTypes.attachment),
-                                    localizedType: localizedType,
-                                    creators: [:],
-                                    creatorIds: [],
-                                    fields: fields,
-                                    fieldIds: fieldIds,
-                                    abstract: (hasAbstract ? "" : nil),
-                                    notes: [],
-                                    attachments: attachments,
-                                    tags: [],
-                                    deletedAttachments: [],
-                                    deletedNotes: [],
-                                    deletedTags: [],
-                                    dateModified: date,
-                                    dateAdded: date)
+        return (data, attachments, [], [])
     }
 
     /// Creates data for `ItemDetailState.DetailType.preview`. When previewing an item, data needs to be fetched and formatted from given item.
@@ -80,7 +74,7 @@ struct ItemDetailDataCreator {
     /// - parameter doiDetector: DOI detector.
     /// - returns: Data for item detail state.
     private static func itemData(item: RItem, schemaController: SchemaController, dateParser: DateParser, fileStorage: FileStorage, urlDetector: UrlDetector, doiDetector: (String) -> Bool)
-                                                                                                                                                                        throws -> ItemDetailState.Data {
+                                                                                                                                        throws -> (ItemDetailState.Data, [Attachment], [Note], [Tag]) {
         guard let localizedType = schemaController.localized(itemType: item.rawType) else {
             throw ItemDetailError.typeNotSupported
         }
@@ -145,15 +139,9 @@ struct ItemDetailDataCreator {
                                          fields: fields,
                                          fieldIds: fieldIds,
                                          abstract: abstract,
-                                         notes: Array(notes),
-                                         attachments: attachments,
-                                         tags: Array(tags),
-                                         deletedAttachments: [],
-                                         deletedNotes: [],
-                                         deletedTags: [],
                                          dateModified: item.dateModified,
                                          dateAdded: item.dateAdded)
-        return data
+        return (data, attachments, Array(notes), Array(tags))
     }
 
     /// Creates field data for given item type with the option of setting values for given fields.

@@ -8,32 +8,48 @@
 
 import UIKit
 
-final class ItemDetailTagCell: UITableViewCell {
-    @IBOutlet private weak var tagView: UIView!
-    @IBOutlet private weak var labelTop: NSLayoutConstraint!
-    @IBOutlet private weak var label: UILabel!
+final class ItemDetailTagCell: UICollectionViewListCell {
+    struct ContentConfiguration: UIContentConfiguration {
+        let tag: Tag
+        let isEditing: Bool
 
-    override func awakeFromNib() {
-        super.awakeFromNib()
-
-        self.tagView.layer.cornerRadius = self.tagView.frame.width / 2
-        self.tagView.layer.masksToBounds = true
-        self.labelTop.constant = self.label.font.capHeight - self.label.font.ascender
-    }
-
-    func setup(tag: Tag, isEditing: Bool) {
-        let (color, style) = TagColorGenerator.uiColor(for: tag.color)
-
-        switch style {
-        case .border:
-            self.tagView.backgroundColor = .clear
-            self.tagView.layer.borderWidth = 1
-            self.tagView.layer.borderColor = color.cgColor
-        case .filled:
-            self.tagView.backgroundColor = color
-            self.tagView.layer.borderWidth = 0
+        func makeContentView() -> UIView & UIContentView {
+            return ContentView(configuration: self)
         }
 
-        self.label.text = tag.name
+        func updated(for state: UIConfigurationState) -> ContentConfiguration {
+            return self
+        }
+    }
+
+    final class ContentView: UIView, UIContentView {
+        var configuration: UIContentConfiguration {
+            didSet {
+                guard let configuration = self.configuration as? ContentConfiguration else { return }
+                self.apply(configuration: configuration)
+            }
+        }
+
+        fileprivate weak var contentView: ItemDetailTagContentView!
+
+        init(configuration: ContentConfiguration) {
+            self.configuration = configuration
+
+            super.init(frame: .zero)
+
+            guard let view = UINib.init(nibName: "ItemDetailTagContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailTagContentView else { return }
+
+            self.add(contentView: view)
+            self.contentView = view
+            self.apply(configuration: configuration)
+        }
+
+        required init?(coder: NSCoder) {
+            fatalError()
+        }
+
+        private func apply(configuration: ContentConfiguration) {
+            self.contentView.setup(tag: configuration.tag, isEditing: configuration.isEditing)
+        }
     }
 }

@@ -8,69 +8,61 @@
 
 import UIKit
 
-import RxCocoa
-import RxSwift
-
-final class ItemDetailFieldCell: RxTableViewCell {
-    @IBOutlet private weak var titleWidth: NSLayoutConstraint!
-    @IBOutlet private weak var titleLabel: UILabel!
-    @IBOutlet private weak var valueTop: NSLayoutConstraint!
-    @IBOutlet private weak var valueLabel: UILabel!
-    @IBOutlet private weak var valueBottom: NSLayoutConstraint!
-    @IBOutlet private weak var additionalInfoLabel: UILabel!
-    @IBOutlet private weak var additionalInfoOffset: NSLayoutConstraint!
-
-    override func awakeFromNib() {
-        super.awakeFromNib()
-
-        self.titleLabel.font = UIFont.preferredFont(for: .headline, weight: .regular)
+final class ItemDetailFieldCell: UICollectionViewListCell {
+    enum CellType {
+        case field(ItemDetailState.Field)
+        case creator(ItemDetailState.Creator)
+        case value(value: String, title: String)
     }
 
-    func setup(with field: ItemDetailState.Field, titleWidth: CGFloat) {
-        self.titleLabel.text = field.name
-        self.titleWidth.constant = titleWidth
-        self.setAdditionalInfo(value: field.additionalInfo?[.dateOrder])
+    struct ContentConfiguration: UIContentConfiguration {
+        let type: CellType
+        let titleWidth: CGFloat
 
-        let value = field.additionalInfo?[.formattedDate] ?? field.value
-        self.valueLabel.text = value.isEmpty ? " " : value
-        if field.isTappable {
-            self.valueLabel.textColor = Asset.Colors.zoteroBlue.color
-            self.accessibilityTraits = .button
-        } else {
-            self.valueLabel.textColor = UIColor(dynamicProvider: { $0.userInterfaceStyle == .dark ? .white : .black })
-            self.accessibilityTraits = []
+        func makeContentView() -> UIView & UIContentView {
+            return ContentView(configuration: self)
         }
 
-        self.setupInsets()
+        func updated(for state: UIConfigurationState) -> ContentConfiguration {
+            return self
+        }
     }
 
-    func setup(with creator: ItemDetailState.Creator, titleWidth: CGFloat) {
-        self.titleLabel.text = creator.localizedType
-        self.valueLabel.text = creator.name
-        self.valueLabel.textColor = UIColor(dynamicProvider: { $0.userInterfaceStyle == .dark ? .white : .black })
-        self.titleWidth.constant = titleWidth
-        self.setAdditionalInfo(value: nil)
-        self.setupInsets()
-    }
+    final class ContentView: UIView, UIContentView {
+        var configuration: UIContentConfiguration {
+            didSet {
+                guard let configuration = self.configuration as? ContentConfiguration else { return }
+                self.apply(configuration: configuration)
+            }
+        }
 
-    func setup(with date: String, title: String, titleWidth: CGFloat) {
-        self.titleLabel.text = title
-        self.valueLabel.text = date
-        self.valueLabel.textColor = UIColor(dynamicProvider: { $0.userInterfaceStyle == .dark ? .white : .black })
-        self.titleWidth.constant = titleWidth
-        self.setAdditionalInfo(value: nil)
-        self.setupInsets()
-    }
+        fileprivate weak var contentView: ItemDetailFieldContentView!
 
-    private func setAdditionalInfo(value: String?) {
-        self.additionalInfoLabel.text = value
-        self.additionalInfoOffset.constant = value == nil ? 0 : self.layoutMargins.right
-    }
+        init(configuration: ContentConfiguration) {
+            self.configuration = configuration
 
-    private func setupInsets() {
-        // Workaround for weird iOS bug, when layout margins are too short, the baseline is misaligned
-        let needsOffset = self.layoutMargins.bottom == 10 && self.layoutMargins.top == 10
-        self.valueTop.constant = self.valueLabel.font.capHeight - self.valueLabel.font.ascender - (needsOffset ? 1 : ItemDetailLayout.separatorHeight)
-        self.valueBottom.constant = needsOffset ? -1 : 0//-ItemDetailLayout.separatorHeight
+            super.init(frame: .zero)
+
+            guard let view = UINib.init(nibName: "ItemDetailFieldContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailFieldContentView else { return }
+
+            self.add(contentView: view)
+            self.contentView = view
+            self.apply(configuration: configuration)
+        }
+
+        required init?(coder: NSCoder) {
+            fatalError()
+        }
+
+        private func apply(configuration: ContentConfiguration) {
+            switch configuration.type {
+            case .creator(let creator):
+                self.contentView.setup(with: creator, titleWidth: configuration.titleWidth)
+            case .value(let value, let title):
+                self.contentView.setup(with: value, title: title, titleWidth: configuration.titleWidth)
+            case .field(let field):
+                self.contentView.setup(with: field, titleWidth: configuration.titleWidth)
+            }
+        }
     }
 }

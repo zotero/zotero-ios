@@ -11,44 +11,48 @@ import UIKit
 import RxCocoa
 import RxSwift
 
-final class ItemDetailTitleCell: RxTableViewCell {
-    @IBOutlet private weak var textView: UITextView!
-    @IBOutlet private weak var topConstraint: NSLayoutConstraint!
-    @IBOutlet private weak var bottomConstraint: NSLayoutConstraint!
-    @IBOutlet private weak var separatorHeight: NSLayoutConstraint!
+final class ItemDetailTitleCell: RxCollectionViewListCell {
+    struct ContentConfiguration: UIContentConfiguration {
+        let title: String
+        let isEditing: Bool
 
-    private lazy var delegate: PlaceholderTextViewDelegate = {
-        PlaceholderTextViewDelegate(placeholder: L10n.ItemDetail.untitled, menuItems: nil, textView: self.textView)
-    }()
-    var textObservable: Observable<String> {
-        return self.delegate.textObservable
+        func makeContentView() -> UIView & UIContentView {
+            return ContentView(configuration: self)
+        }
+
+        func updated(for state: UIConfigurationState) -> ContentConfiguration {
+            return self
+        }
     }
 
-    override func awakeFromNib() {
-        super.awakeFromNib()
+    final class ContentView: UIView, UIContentView {
+        var configuration: UIContentConfiguration {
+            didSet {
+                guard let configuration = self.configuration as? ContentConfiguration else { return }
+                self.contentView.setup(with: configuration.title, isEditing: configuration.isEditing)
+            }
+        }
 
-        self.isAccessibilityElement = false
+        fileprivate weak var contentView: ItemDetailTitleContentView!
 
-        self.separatorHeight.constant = ItemDetailLayout.separatorHeight
+        init(configuration: ContentConfiguration) {
+            self.configuration = configuration
 
-        self.textView.font = .preferredFont(forTextStyle: .title1)
-        self.textView.delegate = self.delegate
-        self.textView.isScrollEnabled = false
-        self.textView.textContainerInset = UIEdgeInsets()
-        self.textView.textContainer.lineFragmentPadding = 0
+            super.init(frame: .zero)
 
-        let font = self.textView.font!
-        self.topConstraint.constant = font.capHeight - font.ascender
-        self.bottomConstraint.constant = -font.descender
+            guard let view = UINib.init(nibName: "ItemDetailTitleContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailTitleContentView else { return }
+
+            self.add(contentView: view)
+            self.contentView = view
+            self.contentView.setup(with: configuration.title, isEditing: configuration.isEditing)
+        }
+
+        required init?(coder: NSCoder) {
+            fatalError()
+        }
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        self.delegate.layoutPlaceholder(in: self.textView)
-    }
-
-    func setup(with title: String, isEditing: Bool) {
-        self.textView.isEditable = isEditing
-        self.delegate.set(text: title, to: self.textView)
+    var textObservable: Observable<String>? {
+        return (self.contentView as? ItemDetailTitleContentView)?.delegate.textObservable
     }
 }

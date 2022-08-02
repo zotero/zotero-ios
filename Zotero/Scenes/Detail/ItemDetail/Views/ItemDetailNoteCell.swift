@@ -8,28 +8,48 @@
 
 import UIKit
 
-final class ItemDetailNoteCell: UITableViewCell {
-    @IBOutlet private weak var containerHeight: NSLayoutConstraint!
-    @IBOutlet private weak var labelTop: NSLayoutConstraint!
-    @IBOutlet private weak var labelLeft: NSLayoutConstraint!
-    @IBOutlet private weak var label: UILabel!
+final class ItemDetailNoteCell: UICollectionViewListCell {
+    struct ContentConfiguration: UIContentConfiguration {
+        let note: Note
+        let isSaving: Bool
 
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        self.containerHeight.constant = ItemDetailLayout.minCellHeight
-        self.accessibilityTraits = .button
+        func makeContentView() -> UIView & UIContentView {
+            return ContentView(configuration: self)
+        }
+
+        func updated(for state: UIConfigurationState) -> ContentConfiguration {
+            return self
+        }
     }
 
-    func setup(with note: Note, isSaving: Bool) {
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.minimumLineHeight = ItemDetailLayout.lineHeight
-        paragraphStyle.maximumLineHeight = ItemDetailLayout.lineHeight
-        let attributedString = NSAttributedString(string: note.title, attributes: [.font: UIFont.preferredFont(forTextStyle: .body), .paragraphStyle: paragraphStyle])
-        self.label.attributedText = attributedString
-        self.label.textColor = isSaving ? .systemGray2 : .label
+    final class ContentView: UIView, UIContentView {
+        var configuration: UIContentConfiguration {
+            didSet {
+                guard let configuration = self.configuration as? ContentConfiguration else { return }
+                self.apply(configuration: configuration)
+            }
+        }
 
-        let font = self.label.font!
-        self.labelTop.constant = -(font.ascender - font.capHeight) - (ItemDetailLayout.lineHeight - font.lineHeight)
-        self.labelLeft.constant = self.layoutMargins.left
+        fileprivate weak var contentView: ItemDetailNoteContentView!
+
+        init(configuration: ContentConfiguration) {
+            self.configuration = configuration
+
+            super.init(frame: .zero)
+
+            guard let view = UINib.init(nibName: "ItemDetailNoteContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailNoteContentView else { return }
+
+            self.add(contentView: view)
+            self.contentView = view
+            self.apply(configuration: configuration)
+        }
+
+        required init?(coder: NSCoder) {
+            fatalError()
+        }
+
+        private func apply(configuration: ContentConfiguration) {
+            self.contentView.setup(with: configuration.note, isSaving: configuration.isSaving)
+        }
     }
 }

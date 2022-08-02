@@ -16,7 +16,7 @@ struct ItemDetailLayout {
     static let horizontalInset: CGFloat = 16
     static let iconWidth: CGFloat = 28
 
-    static func insets(for section: ItemDetailTableViewHandler.Section, isEditing: Bool, isFirstRow: Bool, isLastRow: Bool) -> UIEdgeInsets {
+    static func insets(for section: ItemDetailCollectionViewHandler.Section, isEditing: Bool, isFirstRow: Bool, isLastRow: Bool) -> UIEdgeInsets {
         let top: CGFloat
         let bottom: CGFloat
 

@@ -20,14 +20,15 @@ fileprivate enum MainAttachmentButtonState {
 }
 
 final class ItemDetailViewController: UIViewController {
-    @IBOutlet private weak var tableView: UITableView!
+    @IBOutlet private weak var collectionView: UICollectionView!
     @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
 
     private let viewModel: ViewModel<ItemDetailActionHandler>
     private let controllers: Controllers
     private let disposeBag: DisposeBag
 
-    private var tableViewHandler: ItemDetailTableViewHandler!
+//    private var tableViewHandler: ItemDetailTableViewHandler!
+    private var collectionViewHandler: ItemDetailCollectionViewHandler!
     private var downloadingViaNavigationBar: Bool
     private var didAppear: Bool
 
@@ -50,7 +51,7 @@ final class ItemDetailViewController: UIViewController {
         super.viewDidLoad()
 
         self.navigationController?.setToolbarHidden(true, animated: false)
-        self.setupTableViewHandler()
+        self.setupCollectionViewHandler()
         self.setupFileObservers()
 
         self.viewModel.stateObservable
@@ -73,7 +74,7 @@ final class ItemDetailViewController: UIViewController {
 
         if !self.didAppear {
             // Collapsed abstract is sometimes rendered incorrectly initially. The height of cell has proper height, but only 1 line is shown instead of 2.
-            self.tableView.reloadData()
+            self.collectionView.reloadData()
         }
     }
 
@@ -85,7 +86,7 @@ final class ItemDetailViewController: UIViewController {
         super.viewWillTransition(to: size, with: coordinator)
 
         coordinator.animate(alongsideTransition: { _ in
-            self.tableView.reloadData()
+            self.collectionView.reloadData()
         }, completion: nil)
     }
 
@@ -122,7 +123,7 @@ final class ItemDetailViewController: UIViewController {
 
         case .openTagPicker:
             self.coordinatorDelegate?.showTagPicker(libraryId: self.viewModel.state.library.identifier,
-                                                    selected: Set(self.viewModel.state.data.tags.map({ $0.id })),
+                                                    selected: Set(self.viewModel.state.tags.map({ $0.id })),
                                                     picked: { [weak self] tags in
                                                         self?.viewModel.process(action: .setTags(tags))
                                                     })
@@ -176,13 +177,13 @@ final class ItemDetailViewController: UIViewController {
         }
 
         if state.changes.contains(.reloadedData) {
-            let wasHidden = self.tableView.isHidden
-            self.tableView.isHidden = state.isLoadingData
+            let wasHidden = self.collectionView.isHidden
+            self.collectionView.isHidden = state.isLoadingData
             self.activityIndicator.isHidden = !state.isLoadingData
 
             self.setNavigationBarButtons(to: state)
-            self.tableViewHandler.recalculateTitleWidth(from: state.data)
-            self.tableViewHandler.reloadAll(to: state, animated: !wasHidden)
+            self.collectionViewHandler.recalculateTitleWidth(from: state.data)
+            self.collectionViewHandler.reloadAll(to: state, animated: !wasHidden)
             return
         }
 
@@ -193,19 +194,19 @@ final class ItemDetailViewController: UIViewController {
                 self.setNavigationBarButtons(to: state)
             }
             if state.changes.contains(.type) {
-                self.tableViewHandler.recalculateTitleWidth(from: state.data)
+                self.collectionViewHandler.recalculateTitleWidth(from: state.data)
             }
-            self.tableViewHandler.reloadAll(to: state, animated: true)
+            self.collectionViewHandler.reloadAll(to: state, animated: true)
             return
         }
 
         if let reload = state.reload {
             switch reload {
-            case .row(let row):
-                self.tableViewHandler.updateHeightAndScrollToUpdated(row: row, state: state)
+            case .row(let row): break
+//                self.tableViewHandler.updateHeightAndScrollToUpdated(row: row, state: state)
 
-            case .section(let section):
-                self.tableViewHandler.reload(section: section, state: state, animated: true)
+            case .section(let section): break
+//                self.tableViewHandler.reload(section: section, state: state, animated: true)
             }
             return
         }
@@ -221,8 +222,8 @@ final class ItemDetailViewController: UIViewController {
                 self.setNavigationBarButtons(to: state)
             }
 
-            if let attachment = state.data.attachments.first(where: { $0.key == key }) {
-                self.tableViewHandler.updateAttachment(with: attachment)
+            if let attachment = state.attachments.first(where: { $0.key == key }) {
+//                self.tableViewHandler.updateAttachment(with: attachment)
             }
         }
     }
@@ -349,21 +350,27 @@ final class ItemDetailViewController: UIViewController {
 
     // MARK: - Setups
 
-    private func setupTableViewHandler() {
+    private func setupCollectionViewHandler() {
         let width = self.navigationController?.view.frame.width ?? self.view.frame.width
-        self.tableViewHandler = ItemDetailTableViewHandler(tableView: self.tableView,
-                                                           containerWidth: width,
-                                                           viewModel: self.viewModel,
-                                                           fileDownloader: self.controllers.userControllers?.fileDownloader)
-        self.tableViewHandler.delegate = self
-
-        self.tableViewHandler.observer
-                             .observe(on: MainScheduler.instance)
-                             .subscribe(onNext: { [weak self] action in
-                                 self?.perform(tableViewAction: action)
-                             })
-                             .disposed(by: self.disposeBag)
+        self.collectionViewHandler = ItemDetailCollectionViewHandler(collectionView: self.collectionView, containerWidth: width, viewModel: self.viewModel,
+                                                                     fileDownloader: self.controllers.userControllers?.fileDownloader)
     }
+
+//    private func setupTableViewHandler() {
+//        let width = self.navigationController?.view.frame.width ?? self.view.frame.width
+//        self.tableViewHandler = ItemDetailTableViewHandler(tableView: self.tableView,
+//                                                           containerWidth: width,
+//                                                           viewModel: self.viewModel,
+//                                                           fileDownloader: self.controllers.userControllers?.fileDownloader)
+//        self.tableViewHandler.delegate = self
+//
+//        self.tableViewHandler.observer
+//                             .observe(on: MainScheduler.instance)
+//                             .subscribe(onNext: { [weak self] action in
+//                                 self?.perform(tableViewAction: action)
+//                             })
+//                             .disposed(by: self.disposeBag)
+//    }
 
     private func setupFileObservers() {
         NotificationCenter.default
@@ -421,11 +428,11 @@ extension ItemDetailViewController: ConflictViewControllerReceiver {
     }
 }
 
-extension ItemDetailViewController: DetailCoordinatorAttachmentProvider {
-    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, Library, UIView, CGRect?)? {
-        guard let section = self.tableViewHandler.attachmentSectionIndex,
-              let index = self.viewModel.state.data.attachments.firstIndex(where: { $0.key == key && $0.libraryId == libraryId }) else { return nil }
-        let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(at: IndexPath(row: index, section: section))
-        return (self.viewModel.state.data.attachments[index], self.viewModel.state.library, sourceView, sourceRect)
-    }
-}
+//extension ItemDetailViewController: DetailCoordinatorAttachmentProvider {
+//    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, Library, UIView, CGRect?)? {
+//        guard let section = self.tableViewHandler.attachmentSectionIndex,
+//              let index = self.viewModel.state.attachments.firstIndex(where: { $0.key == key && $0.libraryId == libraryId }) else { return nil }
+//        let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(at: IndexPath(row: index, section: section))
+//        return (self.viewModel.state.attachments[index], self.viewModel.state.library, sourceView, sourceRect)
+//    }
+//}

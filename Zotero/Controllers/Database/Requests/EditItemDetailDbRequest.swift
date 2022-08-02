@@ -34,9 +34,9 @@ struct EditItemDetailDbRequest: DbRequest {
 
         self.updateCreators(with: self.data, snapshot: self.snapshot, item: item, database: database)
         self.updateFields(with: self.data, snapshot: self.snapshot, item: item, typeChanged: typeChanged, database: database)
-        try self.updateNotes(with: self.data, snapshot: self.snapshot, item: item, database: database)
-        try self.updateAttachments(with: self.data, snapshot: self.snapshot, item: item, database: database)
-        self.updateTags(with: self.data, item: item, database: database)
+//        try self.updateNotes(with: self.data, snapshot: self.snapshot, item: item, database: database)
+//        try self.updateAttachments(with: self.data, snapshot: self.snapshot, item: item, database: database)
+//        self.updateTags(with: self.data, item: item, database: database)
 
         // Item title depends on item type, creators and fields, so we update derived titles (displayTitle and sortTitle) after everything else synced
         item.updateDerivedTitles()
@@ -141,111 +141,111 @@ struct EditItemDetailDbRequest: DbRequest {
         }
     }
 
-    private func updateNotes(with data: ItemDetailState.Data, snapshot: ItemDetailState.Data, item: RItem, database: Realm) throws {
-        let notesToRemove = item.children.filter(.item(type: ItemTypes.note))
-                                         .filter(.key(in: data.deletedNotes))
-        notesToRemove.forEach {
-            $0.trash = true
-            $0.changedFields.insert(.trash)
-        }
-
-        for note in data.notes {
-            if let oldNote = snapshot.notes.first(where: { $0.key == note.key }), (note.text == oldNote.text && note.tags == oldNote.tags) {
-                // Skip if it didn't change
-                continue
-            }
-
-            do {
-                // Try editing an item.
-                try EditNoteDbRequest(note: note, libraryId: self.libraryId).process(in: database)
-            } catch {
-                // If error is thrown, item was not found, so create it.
-                let childItem = try CreateNoteDbRequest(note: note,
-                                                        localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""),
-                                                        libraryId: self.libraryId,
-                                                        collectionKey: nil).process(in: database)
-                childItem.parent = item
-                childItem.changedFields.insert(.parent)
-            }
-        }
-    }
-
-    private func updateAttachments(with data: ItemDetailState.Data, snapshot: ItemDetailState.Data, item: RItem, database: Realm) throws {
-        let attachmentsToRemove = item.children.filter(.item(type: ItemTypes.attachment))
-                                               .filter(.key(in: data.deletedAttachments))
-
-        attachmentsToRemove.forEach {
-            $0.trash = true
-            $0.changedFields.insert(.trash)
-        }
-
-        for attachment in data.attachments {
-            // Only title can change for attachment, if you want to change the file you have to delete the old
-            // and create a new attachment
-            guard attachment.title != snapshot.attachments.first(where: { $0.key == attachment.key })?.title else { continue }
-
-            if let childItem = item.children.filter(.key(attachment.key)).first,
-               let titleField = childItem.fields.filter(.key(FieldKeys.Item.title)).first {
-                guard titleField.value != attachment.title else { continue }
-                childItem.set(title: attachment.title)
-                childItem.changedFields.insert(.fields)
-                titleField.value = attachment.title
-                titleField.changed = true
-            } else {
-                let childItem = try CreateAttachmentDbRequest(attachment: attachment,
-                                                              localizedType: (self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""),
-                                                              collections: [], tags: []).process(in: database)
-                childItem.libraryId = self.libraryId
-                childItem.parent = item
-                childItem.changedFields.insert(.parent)
-            }
-        }
-    }
-
-    private func updateTags(with data: ItemDetailState.Data, item: RItem, database: Realm) {
-        var tagsDidChange = false
-
-        let tagsToRemove = item.tags.filter(.tagName(in: data.deletedTags))
-        if !tagsToRemove.isEmpty {
-            tagsDidChange = true
-        }
-        let baseTagsToRemove = (try? ReadBaseTagsToDeleteDbRequest(fromTags: tagsToRemove).process(in: database)) ?? []
-
-        database.delete(tagsToRemove)
-        if !baseTagsToRemove.isEmpty {
-            database.delete(database.objects(RTag.self).filter(.name(in: baseTagsToRemove)))
-        }
-
-        let allTags = database.objects(RTag.self)
-
-        for tag in data.tags {
-            guard item.tags.filter(.tagName(tag.name)).first == nil else { continue }
-
-            let rTag: RTag
-
-            if let existing = allTags.filter(.name(tag.name, in: self.libraryId)).first {
-                rTag = existing
-            } else {
-                rTag = RTag()
-                rTag.name = tag.name
-                rTag.color = tag.color
-                rTag.libraryId = self.libraryId
-                database.add(rTag)
-            }
-
-            let rTypedTag = RTypedTag()
-            rTypedTag.type = .manual
-            database.add(rTypedTag)
-
-            rTypedTag.item = item
-            rTypedTag.tag = rTag
-            tagsDidChange = true
-        }
-
-        if tagsDidChange {
-            // TMP: Temporary fix for Realm issue (https://github.com/realm/realm-core/issues/4994). Deletion of tag is not reported, so let's assign a value so that changes are visible in items list.
-            item.rawType = item.rawType
-            item.changedFields.insert(.tags)
-        }
-    }
+//    private func updateNotes(with data: ItemDetailState.Data, snapshot: ItemDetailState.Data, item: RItem, database: Realm) throws {
+//        let notesToRemove = item.children.filter(.item(type: ItemTypes.note))
+//                                         .filter(.key(in: data.deletedNotes))
+//        notesToRemove.forEach {
+//            $0.trash = true
+//            $0.changedFields.insert(.trash)
+//        }
+//
+//        for note in data.notes {
+//            if let oldNote = snapshot.notes.first(where: { $0.key == note.key }), (note.text == oldNote.text && note.tags == oldNote.tags) {
+//                // Skip if it didn't change
+//                continue
+//            }
+//
+//            do {
+//                // Try editing an item.
+//                try EditNoteDbRequest(note: note, libraryId: self.libraryId).process(in: database)
+//            } catch {
+//                // If error is thrown, item was not found, so create it.
+//                let childItem = try CreateNoteDbRequest(note: note,
+//                                                        localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""),
+//                                                        libraryId: self.libraryId,
+//                                                        collectionKey: nil).process(in: database)
+//                childItem.parent = item
+//                childItem.changedFields.insert(.parent)
+//            }
+//        }
+//    }
+//
+//    private func updateAttachments(with data: ItemDetailState.Data, snapshot: ItemDetailState.Data, item: RItem, database: Realm) throws {
+//        let attachmentsToRemove = item.children.filter(.item(type: ItemTypes.attachment))
+//                                               .filter(.key(in: data.deletedAttachments))
+//
+//        attachmentsToRemove.forEach {
+//            $0.trash = true
+//            $0.changedFields.insert(.trash)
+//        }
+//
+//        for attachment in data.attachments {
+//            // Only title can change for attachment, if you want to change the file you have to delete the old
+//            // and create a new attachment
+//            guard attachment.title != snapshot.attachments.first(where: { $0.key == attachment.key })?.title else { continue }
+//
+//            if let childItem = item.children.filter(.key(attachment.key)).first,
+//               let titleField = childItem.fields.filter(.key(FieldKeys.Item.title)).first {
+//                guard titleField.value != attachment.title else { continue }
+//                childItem.set(title: attachment.title)
+//                childItem.changedFields.insert(.fields)
+//                titleField.value = attachment.title
+//                titleField.changed = true
+//            } else {
+//                let childItem = try CreateAttachmentDbRequest(attachment: attachment,
+//                                                              localizedType: (self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""),
+//                                                              collections: [], tags: []).process(in: database)
+//                childItem.libraryId = self.libraryId
+//                childItem.parent = item
+//                childItem.changedFields.insert(.parent)
+//            }
+//        }
+//    }
+//
+//    private func updateTags(with data: ItemDetailState.Data, item: RItem, database: Realm) {
+//        var tagsDidChange = false
+//
+//        let tagsToRemove = item.tags.filter(.tagName(in: data.deletedTags))
+//        if !tagsToRemove.isEmpty {
+//            tagsDidChange = true
+//        }
+//        let baseTagsToRemove = (try? ReadBaseTagsToDeleteDbRequest(fromTags: tagsToRemove).process(in: database)) ?? []
+//
+//        database.delete(tagsToRemove)
+//        if !baseTagsToRemove.isEmpty {
+//            database.delete(database.objects(RTag.self).filter(.name(in: baseTagsToRemove)))
+//        }
+//
+//        let allTags = database.objects(RTag.self)
+//
+//        for tag in data.tags {
+//            guard item.tags.filter(.tagName(tag.name)).first == nil else { continue }
+//
+//            let rTag: RTag
+//
+//            if let existing = allTags.filter(.name(tag.name, in: self.libraryId)).first {
+//                rTag = existing
+//            } else {
+//                rTag = RTag()
+//                rTag.name = tag.name
+//                rTag.color = tag.color
+//                rTag.libraryId = self.libraryId
+//                database.add(rTag)
+//            }
+//
+//            let rTypedTag = RTypedTag()
+//            rTypedTag.type = .manual
+//            database.add(rTypedTag)
+//
+//            rTypedTag.item = item
+//            rTypedTag.tag = rTag
+//            tagsDidChange = true
+//        }
+//
+//        if tagsDidChange {
+//            // TMP: Temporary fix for Realm issue (https://github.com/realm/realm-core/issues/4994). Deletion of tag is not reported, so let's assign a value so that changes are visible in items list.
+//            item.rawType = item.rawType
+//            item.changedFields.insert(.tags)
+//        }
+//    }
 }

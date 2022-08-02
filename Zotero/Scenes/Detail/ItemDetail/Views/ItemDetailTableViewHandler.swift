@@ -403,15 +403,7 @@ final class ItemDetailTableViewHandler: NSObject {
         if let abstract = data.abstract, !abstract.isEmpty {
             sections.append(.abstract)
         }
-        if !data.notes.isEmpty {
-            sections.append(.notes)
-        }
-        if !data.tags.isEmpty {
-            sections.append(.tags)
-        }
-        if !data.attachments.isEmpty {
-            sections.append(.attachments)
-        }
+        sections.append(contentsOf: [.notes, .tags, .attachments])
 
         return sections
     }
@@ -422,7 +414,7 @@ final class ItemDetailTableViewHandler: NSObject {
             return [.abstract]
 
         case .attachments:
-            let attachments: [Row] = state.data.attachments.map({ attachment in
+            let attachments: [Row] = state.attachments.map({ attachment in
                 let enabled = self.delegate?.isDownloadingFromNavigationBar(for: attachment.key) == false
                 var progress: CGFloat?
                 var error: Error?
@@ -433,11 +425,7 @@ final class ItemDetailTableViewHandler: NSObject {
 
                 return .attachment(attachment: attachment, progress: progress, error: error, enabled: enabled)
             })
-
-            if state.isEditing {
-                return attachments + [.addAttachment]
-            }
-            return attachments
+            return attachments + [.addAttachment]
 
         case .creators:
             let creators: [Row] = state.data.creatorIds.compactMap({ creatorId in
@@ -459,25 +447,17 @@ final class ItemDetailTableViewHandler: NSObject {
             })
 
         case .notes:
-            let notes: [Row] = state.data.notes.map({ note in
+            let notes: [Row] = state.notes.map({ note in
                 let isSaving = state.savingNotes.contains(note.key)
                 return .note(note: note, isSaving: isSaving)
             })
-
-            if state.isEditing {
-                return notes + [.addNote]
-            }
-            return notes
+            return notes + [.addNote]
 
         case .tags:
-            let tags: [Row] = state.data.tags.map({ tag in
+            let tags: [Row] = state.tags.map({ tag in
                 return .tag(tag)
             })
-
-            if state.isEditing {
-                return tags + [.addTag]
-            }
-            return tags
+            return tags + [.addTag]
 
         case .title:
             return [.title]
@@ -549,120 +529,120 @@ final class ItemDetailTableViewHandler: NSObject {
     // MARK: - DataSource Helpers
 
     private func setup(cell: UITableViewCell, section: Section, row: Row, indexPath: IndexPath, isAddCell: Bool, isEditing: Bool) {
-        let isFirst = indexPath.row == 0
-        let isLast = indexPath.row == (self.dataSource.tableView(self.tableView, numberOfRowsInSection: indexPath.section) - 1)
-        let titleWidth = isEditing ? self.maxTitleWidth : self.maxNonemptyTitleWidth
-        let (separatorInsets, layoutMargins, accessoryType) = self.cellLayoutData(for: section, isFirstRow: isFirst, isLastRow: isLast, isAddCell: isAddCell, isEditing: isEditing)
+//        let isFirst = indexPath.row == 0
+//        let isLast = indexPath.row == (self.dataSource.tableView(self.tableView, numberOfRowsInSection: indexPath.section) - 1)
+//        let titleWidth = isEditing ? self.maxTitleWidth : self.maxNonemptyTitleWidth
+//        let (separatorInsets, layoutMargins, accessoryType) = self.cellLayoutData(for: section, isFirstRow: isFirst, isLastRow: isLast, isAddCell: isAddCell, isEditing: isEditing)
+//
+//        cell.separatorInset = separatorInsets
+//        cell.layoutMargins = layoutMargins
+//        cell.contentView.layoutMargins = layoutMargins
+//        if isEditing {
+//            cell.editingAccessoryType = accessoryType
+//        } else {
+//            cell.accessoryType = accessoryType
+//        }
+//        cell.accessibilityTraits = []
 
-        cell.separatorInset = separatorInsets
-        cell.layoutMargins = layoutMargins
-        cell.contentView.layoutMargins = layoutMargins
-        if isEditing {
-            cell.editingAccessoryType = accessoryType
-        } else {
-            cell.accessoryType = accessoryType
-        }
-        cell.accessibilityTraits = []
-
-        switch row {
-        case .addNote:
-            if let cell = cell as? ItemDetailAddCell {
-                cell.setup(with: L10n.ItemDetail.addNote)
-            }
-
-        case .addTag:
-            if let cell = cell as? ItemDetailAddCell {
-                cell.setup(with: L10n.ItemDetail.addTag)
-            }
-
-        case .addCreator:
-            if let cell = cell as? ItemDetailAddCell {
-                cell.setup(with: L10n.ItemDetail.addCreator)
-            }
-
-        case .addAttachment:
-            if let cell = cell as? ItemDetailAddCell {
-                cell.setup(with: L10n.ItemDetail.addAttachment)
-            }
-
-        case .abstract:
-            let value = self.viewModel.state.data.abstract ?? ""
-            if let cell = cell as? ItemDetailAbstractEditCell {
-                cell.setup(with: value)
-                cell.textObservable.subscribe(onNext: { [weak self] abstract in
-                    guard isEditing else { return }
-                    self?.viewModel.process(action: .setAbstract(abstract))
-                }).disposed(by: cell.newDisposeBag)
-            } else if let cell = cell as? ItemDetailAbstractCell {
-                cell.setup(with: value, isCollapsed: self.viewModel.state.abstractCollapsed)
-            }
-
-        case .attachment(let attachment, let progress, let error, let enabled):
-            if let cell = cell as? ItemDetailAttachmentCell {
-                cell.selectionStyle = self.canTap(attachmentType: attachment.type, isEditing: isEditing) ? .gray : .none
-                cell.setup(with: attachment, progress: progress, error: error, enabled: enabled)
-            }
-
-        case .creator(let creator):
-            if let cell = cell as? ItemDetailFieldCell {
-                cell.setup(with: creator, titleWidth: titleWidth)
-            }
-
-        case .dateAdded(let date):
-            if let cell = cell as? ItemDetailFieldCell {
-                let date = Formatter.dateAndTime.string(from: date)
-                cell.setup(with: date, title: L10n.dateAdded, titleWidth: titleWidth)
-            }
-
-        case .dateModified(let date):
-            if let cell = cell as? ItemDetailFieldCell {
-                let date = Formatter.dateAndTime.string(from: date)
-                cell.setup(with: date, title: L10n.dateModified, titleWidth: titleWidth)
-            }
-
-        case .field(let key, _):
-            guard let field = self.viewModel.state.data.fields[key] else { return }
-            if let cell = cell as? ItemDetailFieldCell {
-                cell.setup(with: field, titleWidth: titleWidth)
-            } else if let cell = cell as? ItemDetailFieldEditCell {
-                cell.setup(with: field, titleWidth: titleWidth)
-                cell.textObservable.subscribe(onNext: { [weak self] value in
-                    self?.viewModel.process(action: .setFieldValue(id: field.key, value: value))
-                }).disposed(by: cell.newDisposeBag)
-            } else if let cell = cell as? ItemDetailFieldMultilineEditCell {
-                cell.setup(with: field, titleWidth: titleWidth)
-                cell.textObservable.subscribe(onNext: { [weak self] value in
-                    self?.viewModel.process(action: .setFieldValue(id: field.key, value: value))
-                }).disposed(by: cell.newDisposeBag)
-            }
-
-        case .note(let note, let isSaving):
-            if let cell = cell as? ItemDetailNoteCell {
-                cell.setup(with: note, isSaving: isSaving)
-            }
-
-        case .tag(let tag):
-            if let cell = cell as? ItemDetailTagCell {
-                cell.setup(tag: tag, isEditing: isEditing)
-            }
-
-        case .title:
-            if let cell = cell as? ItemDetailTitleCell {
-                cell.setup(with: self.viewModel.state.data.title, isEditing: isEditing)
-                cell.textObservable.subscribe(onNext: { [weak self] title in
-                    guard isEditing else { return }
-                    self?.viewModel.process(action: .setTitle(title))
-                }).disposed(by: cell.newDisposeBag)
-            }
-
-        case .type(let type):
-            if let cell = cell as? ItemDetailFieldCell {
-                cell.setup(with: type, title: L10n.itemType, titleWidth: titleWidth)
-                if isEditing {
-                    cell.accessibilityTraits = .button
-                }
-            }
-        }
+//        switch row {
+//        case .addNote:
+//            if let cell = cell as? ItemDetailAddCell {
+//                cell.setup(with: L10n.ItemDetail.addNote)
+//            }
+//
+//        case .addTag:
+//            if let cell = cell as? ItemDetailAddCell {
+//                cell.setup(with: L10n.ItemDetail.addTag)
+//            }
+//
+//        case .addCreator:
+//            if let cell = cell as? ItemDetailAddCell {
+//                cell.setup(with: L10n.ItemDetail.addCreator)
+//            }
+//
+//        case .addAttachment:
+//            if let cell = cell as? ItemDetailAddCell {
+//                cell.setup(with: L10n.ItemDetail.addAttachment)
+//            }
+//
+//        case .abstract:
+//            let value = self.viewModel.state.data.abstract ?? ""
+//            if let cell = cell as? ItemDetailAbstractEditCell {
+//                cell.setup(with: value)
+//                cell.textObservable.subscribe(onNext: { [weak self] abstract in
+//                    guard isEditing else { return }
+//                    self?.viewModel.process(action: .setAbstract(abstract))
+//                }).disposed(by: cell.newDisposeBag)
+//            } else if let cell = cell as? ItemDetailAbstractCell {
+//                cell.setup(with: value, isCollapsed: self.viewModel.state.abstractCollapsed)
+//            }
+//
+//        case .attachment(let attachment, let progress, let error, let enabled):
+//            if let cell = cell as? ItemDetailAttachmentCell {
+//                cell.selectionStyle = self.canTap(attachmentType: attachment.type, isEditing: isEditing) ? .gray : .none
+//                cell.setup(with: attachment, progress: progress, error: error, enabled: enabled)
+//            }
+//
+//        case .creator(let creator):
+//            if let cell = cell as? ItemDetailFieldCell {
+//                cell.setup(with: creator, titleWidth: titleWidth)
+//            }
+//
+//        case .dateAdded(let date):
+//            if let cell = cell as? ItemDetailFieldCell {
+//                let date = Formatter.dateAndTime.string(from: date)
+//                cell.setup(with: date, title: L10n.dateAdded, titleWidth: titleWidth)
+//            }
+//
+//        case .dateModified(let date):
+//            if let cell = cell as? ItemDetailFieldCell {
+//                let date = Formatter.dateAndTime.string(from: date)
+//                cell.setup(with: date, title: L10n.dateModified, titleWidth: titleWidth)
+//            }
+//
+//        case .field(let key, _):
+//            guard let field = self.viewModel.state.data.fields[key] else { return }
+//            if let cell = cell as? ItemDetailFieldCell {
+//                cell.setup(with: field, titleWidth: titleWidth)
+//            } else if let cell = cell as? ItemDetailFieldEditCell {
+//                cell.setup(with: field, titleWidth: titleWidth)
+//                cell.textObservable.subscribe(onNext: { [weak self] value in
+//                    self?.viewModel.process(action: .setFieldValue(id: field.key, value: value))
+//                }).disposed(by: cell.newDisposeBag)
+//            } else if let cell = cell as? ItemDetailFieldMultilineEditCell {
+//                cell.setup(with: field, titleWidth: titleWidth)
+//                cell.textObservable.subscribe(onNext: { [weak self] value in
+//                    self?.viewModel.process(action: .setFieldValue(id: field.key, value: value))
+//                }).disposed(by: cell.newDisposeBag)
+//            }
+//
+//        case .note(let note, let isSaving):
+//            if let cell = cell as? ItemDetailNoteCell {
+//                cell.setup(with: note, isSaving: isSaving)
+//            }
+//
+//        case .tag(let tag):
+//            if let cell = cell as? ItemDetailTagCell {
+//                cell.setup(tag: tag, isEditing: isEditing)
+//            }
+//
+//        case .title:
+//            if let cell = cell as? ItemDetailTitleCell {
+//                cell.setup(with: self.viewModel.state.data.title, isEditing: isEditing)
+//                cell.textObservable.subscribe(onNext: { [weak self] title in
+//                    guard isEditing else { return }
+//                    self?.viewModel.process(action: .setTitle(title))
+//                }).disposed(by: cell.newDisposeBag)
+//            }
+//
+//        case .type(let type):
+//            if let cell = cell as? ItemDetailFieldCell {
+//                cell.setup(with: type, title: L10n.itemType, titleWidth: titleWidth)
+//                if isEditing {
+//                    cell.accessibilityTraits = .button
+//                }
+//            }
+//        }
     }
 
     private func canTap(attachmentType: Attachment.Kind, isEditing: Bool) -> Bool {
@@ -675,41 +655,41 @@ final class ItemDetailTableViewHandler: NSObject {
         }
     }
 
-    private func cellLayoutData(for section: Section, isFirstRow: Bool, isLastRow: Bool, isAddCell: Bool, isEditing: Bool)
-                                                                                        -> (separatorInsets: UIEdgeInsets, layoutMargins: UIEdgeInsets, accessoryType: UITableViewCell.AccessoryType) {
-        var hasSeparator = true
-        var accessoryType: UITableViewCell.AccessoryType = .none
-
-        switch section {
-        case .title, .notes: break
-        case .abstract:
-            hasSeparator = false
-        case .attachments: break
-            // TODO: implement attachment metadata screen
+//    private func cellLayoutData(for section: Section, isFirstRow: Bool, isLastRow: Bool, isAddCell: Bool, isEditing: Bool)
+//                                                                                        -> (separatorInsets: UIEdgeInsets, layoutMargins: UIEdgeInsets, accessoryType: UITableViewCell.AccessoryType) {
+//        var hasSeparator = true
+//        var accessoryType: UITableViewCell.AccessoryType = .none
+//
+//        switch section {
+//        case .title, .notes: break
+//        case .abstract:
+//            hasSeparator = false
+//        case .attachments: break
+//            // TODO: implement attachment metadata screen
+////            if !isAddCell {
+////                accessoryType = .detailButton
+////            }
+//        case .tags, .type, .fields:
 //            if !isAddCell {
-//                accessoryType = .detailButton
+//                hasSeparator = isEditing
 //            }
-        case .tags, .type, .fields:
-            if !isAddCell {
-                hasSeparator = isEditing
-            }
-        case .creators:
-            if !isAddCell {
-                if isEditing {
-                    accessoryType = .disclosureIndicator
-                }
-                hasSeparator = isEditing
-            }
-        case .dates:
-            hasSeparator = isEditing && !isLastRow
-        }
-
-        let layoutMargins = ItemDetailLayout.insets(for: section, isEditing: isEditing, isFirstRow: isFirstRow, isLastRow: isLastRow)
-        let leftSeparatorInset: CGFloat = hasSeparator ? self.separatorLeftInset(for: section, isEditing: isEditing, leftMargin: layoutMargins.left) :
-                                                         max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
-        let separatorInsets = UIEdgeInsets(top: 0, left: leftSeparatorInset, bottom: 0, right: 0)
-        return (separatorInsets, layoutMargins, accessoryType)
-    }
+//        case .creators:
+//            if !isAddCell {
+//                if isEditing {
+//                    accessoryType = .disclosureIndicator
+//                }
+//                hasSeparator = isEditing
+//            }
+//        case .dates:
+//            hasSeparator = isEditing && !isLastRow
+//        }
+//
+//        let layoutMargins = ItemDetailLayout.insets(for: section, isEditing: isEditing, isFirstRow: isFirstRow, isLastRow: isLastRow)
+//        let leftSeparatorInset: CGFloat = hasSeparator ? self.separatorLeftInset(for: section, isEditing: isEditing, leftMargin: layoutMargins.left) :
+//                                                         max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
+//        let separatorInsets = UIEdgeInsets(top: 0, left: leftSeparatorInset, bottom: 0, right: 0)
+//        return (separatorInsets, layoutMargins, accessoryType)
+//    }
 
     private func separatorLeftInset(for section: Section, isEditing: Bool, leftMargin: CGFloat) -> CGFloat {
         switch section {
@@ -742,7 +722,9 @@ final class ItemDetailTableViewHandler: NSObject {
             switch row {
             case .attachment:
                 return !self.viewModel.state.data.isAttachment
-            case .creator, .note, .tag:
+            case .note, .tag:
+                return true
+            case .creator:
                 return self.viewModel.state.isEditing
             default:
                 return false
@@ -857,11 +839,11 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        guard let section = self.dataSource.section(for: indexPath.section)?.section else { return }
-        let isLastRow = indexPath.row == (self.dataSource.tableView(tableView, numberOfRowsInSection: indexPath.section) - 1)
-        let layoutMargins = ItemDetailLayout.insets(for: section, isEditing: self.viewModel.state.isEditing, isFirstRow: (indexPath.row == 0), isLastRow: isLastRow)
-        cell.layoutMargins = layoutMargins
-        cell.contentView.layoutMargins = layoutMargins
+//        guard let section = self.dataSource.section(for: indexPath.section)?.section else { return }
+//        let isLastRow = indexPath.row == (self.dataSource.tableView(tableView, numberOfRowsInSection: indexPath.section) - 1)
+//        let layoutMargins = ItemDetailLayout.insets(for: section, isEditing: self.viewModel.state.isEditing, isFirstRow: (indexPath.row == 0), isLastRow: isLastRow)
+//        cell.layoutMargins = layoutMargins
+//        cell.contentView.layoutMargins = layoutMargins
     }
 
     func tableView(_ tableView: UITableView, targetIndexPathForMoveFromRowAt sourceIndexPath: IndexPath, toProposedIndexPath proposedDestinationIndexPath: IndexPath) -> IndexPath {
@@ -882,7 +864,7 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
 
         switch section {
         case .attachments:
-            let attachment = self.viewModel.state.data.attachments[indexPath.row]
+            let attachment = self.viewModel.state.attachments[indexPath.row]
             let trashAction = UIContextualAction(style: .destructive, title: nil) { [weak self] _, _, completed in
                 self?.observer.on(.next(.trashAttachment(attachment)))
                 completed(true)
@@ -899,8 +881,8 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
 
         switch section {
         case .attachments:
-            guard indexPath.row < self.viewModel.state.data.attachments.count else { return nil }
-            let attachment = self.viewModel.state.data.attachments[indexPath.row]
+            guard indexPath.row < self.viewModel.state.attachments.count else { return nil }
+            let attachment = self.viewModel.state.attachments[indexPath.row]
             return self.createContextMenu(for: attachment).flatMap({ menu in UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: { _ in menu }) })
 
         case .fields:
@@ -921,26 +903,24 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
 
         switch section {
         case .attachments:
-            if self.viewModel.state.isEditing {
-                if indexPath.row == self.viewModel.state.data.attachments.count {
-                    self.observer.on(.next(.openFilePicker))
-                }
-            } else if indexPath.row < self.viewModel.state.data.attachments.count {
-                let key = self.viewModel.state.data.attachments[indexPath.row].key
+            if indexPath.row == self.viewModel.state.attachments.count {
+                self.observer.on(.next(.openFilePicker))
+            } else if indexPath.row < self.viewModel.state.attachments.count {
+                let key = self.viewModel.state.attachments[indexPath.row].key
                 self.viewModel.process(action: .openAttachment(key))
             }
         case .notes:
-            if self.viewModel.state.isEditing && indexPath.row == self.viewModel.state.data.notes.count {
+            if indexPath.row == self.viewModel.state.notes.count {
                 self.observer.on(.next(.openNoteEditor(nil)))
             } else {
-                let note = self.viewModel.state.data.notes[indexPath.row]
+                let note = self.viewModel.state.notes[indexPath.row]
 
                 guard !self.viewModel.state.savingNotes.contains(note.key) else { return }
 
                 self.observer.on(.next(.openNoteEditor(note)))
             }
         case .tags:
-            if self.viewModel.state.isEditing && indexPath.row == self.viewModel.state.data.tags.count {
+            if indexPath.row == self.viewModel.state.tags.count {
                 self.observer.on(.next(.openTagPicker))
             }
         case .creators:

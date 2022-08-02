@@ -8,16 +8,43 @@
 
 import UIKit
 
-final class ItemDetailAddCell: UITableViewCell {
-    @IBOutlet private weak var titleTop: NSLayoutConstraint!
-    @IBOutlet private weak var titleLabel: UILabel!
-    @IBOutlet private weak var titleBottom: NSLayoutConstraint!
+final class ItemDetailAddCell: UICollectionViewListCell {
+    struct ContentConfiguration: UIContentConfiguration {
+        let title: String
 
-    private static let verticalInset: CGFloat = 11
+        func makeContentView() -> UIView & UIContentView {
+            return ContentView(configuration: self)
+        }
 
-    func setup(with title: String) {
-        self.titleLabel.text = title
-        self.titleTop.constant = ItemDetailAddCell.verticalInset - ItemDetailLayout.separatorHeight
-        self.titleBottom.constant = ItemDetailAddCell.verticalInset - ItemDetailLayout.separatorHeight
+        func updated(for state: UIConfigurationState) -> ContentConfiguration {
+            return self
+        }
+    }
+
+    final class ContentView: UIView, UIContentView {
+        var configuration: UIContentConfiguration {
+            didSet {
+                guard let configuration = self.configuration as? ContentConfiguration else { return }
+                self.contentView.setup(with: configuration.title)
+            }
+        }
+
+        fileprivate weak var contentView: ItemDetailAddContentView!
+
+        init(configuration: ContentConfiguration) {
+            self.configuration = configuration
+
+            super.init(frame: .zero)
+
+            guard let view = UINib.init(nibName: "ItemDetailAddContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailAddContentView else { return }
+
+            self.add(contentView: view)
+            self.contentView = view
+            self.contentView.setup(with: configuration.title)
+        }
+
+        required init?(coder: NSCoder) {
+            fatalError()
+        }
     }
 }

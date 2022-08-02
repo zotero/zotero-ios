@@ -65,12 +65,12 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         case .addAttachments(let urls):
             self.addAttachments(from: urls, in: viewModel)
 
-        case .deleteAttachments(let offsets):
-            self.update(viewModel: viewModel) { state in
-                state.data.deletedAttachments = state.data.deletedAttachments.union(offsets.map({ state.data.attachments[$0].key }))
-                state.data.attachments.remove(atOffsets: offsets)
-                state.reload = .section(.attachments)
-            }
+        case .deleteAttachments(let offsets): break
+//            self.update(viewModel: viewModel) { state in
+//                state.data.deletedAttachments = state.data.deletedAttachments.union(offsets.map({ state.data.attachments[$0].key }))
+//                state.data.attachments.remove(atOffsets: offsets)
+//                state.reload = .section(.attachments)
+//            }
 
         case .openAttachment(let key):
             self.openAttachment(with: key, in: viewModel)
@@ -95,12 +95,12 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 state.data.creatorIds.move(fromOffsets: from, toOffset: to)
             }
 
-        case .deleteNotes(let offsets):
-            self.update(viewModel: viewModel) { state in
-                state.data.deletedNotes = state.data.deletedNotes.union(offsets.map({ state.data.notes[$0].key }))
-                state.data.notes.remove(atOffsets: offsets)
-                state.reload = .none
-            }
+        case .deleteNotes(let offsets): break
+//            self.update(viewModel: viewModel) { state in
+//                state.data.deletedNotes = state.data.deletedNotes.union(offsets.map({ state.data.notes[$0].key }))
+//                state.data.notes.remove(atOffsets: offsets)
+//                state.reload = .none
+//            }
 
         case .saveNote(let key, let text, let tags):
             self.saveNote(key: key, text: text, tags: tags, in: viewModel)
@@ -108,12 +108,12 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         case .setTags(let tags):
             self.set(tags: tags, in: viewModel)
 
-        case .deleteTags(let offsets):
-            self.update(viewModel: viewModel) { state in
-                state.data.deletedTags = state.data.deletedTags.union(offsets.map({ state.data.tags[$0].name }))
-                state.data.tags.remove(atOffsets: offsets)
-                state.reload = .section(.tags)
-            }
+        case .deleteTags(let offsets): break
+//            self.update(viewModel: viewModel) { state in
+//                state.data.deletedTags = state.data.deletedTags.union(offsets.map({ state.data.tags[$0].name }))
+//                state.data.tags.remove(atOffsets: offsets)
+//                state.reload = .section(.tags)
+//            }
 
         case .startEditing:
             self.startEditing(in: viewModel)
@@ -179,8 +179,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 type = .existing(item)
             }
 
-            var data = try ItemDetailDataCreator.createData(from: type, schemaController: self.schemaController, dateParser: self.dateParser, fileStorage: self.fileStorage,
-                                                            urlDetector: self.urlDetector, doiDetector: FieldKeys.Item.isDoi)
+            var (data, attachments, notes, tags) = try ItemDetailDataCreator.createData(from: type, schemaController: self.schemaController, dateParser: self.dateParser, fileStorage: self.fileStorage,
+                                                                                        urlDetector: self.urlDetector, doiDetector: FieldKeys.Item.isDoi)
             if !viewModel.state.isEditing {
                 data.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: data.fieldIds, fields: data.fields)
             }
@@ -191,6 +191,9 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                     state.snapshot = data
                     state.snapshot?.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: data.fieldIds, fields: data.fields)
                 }
+                state.attachments = attachments
+                state.notes = notes
+                state.tags = tags
                 state.isLoadingData = false
                 state.observationToken = token
                 state.changes.insert(.reloadedData)
@@ -375,11 +378,11 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             guard let viewModel = viewModel else { return }
 
             self.update(viewModel: viewModel) { state in
-                if let index = state.data.notes.firstIndex(where: { $0.key == note.key }) {
-                    state.data.notes[index] = note
-                } else {
-                    state.data.notes.append(note)
-                }
+//                if let index = state.data.notes.firstIndex(where: { $0.key == note.key }) {
+//                    state.data.notes[index] = note
+//                } else {
+//                    state.data.notes.append(note)
+//                }
                 state.savingNotes.remove(note.key)
                 state.reload = .section(.notes)
             }
@@ -428,7 +431,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
     private func set(tags: [Tag], in viewModel: ViewModel<ItemDetailActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            state.data.tags = tags
+//            state.data.tags = tags
             state.reload = .section(.tags)
         }
     }
@@ -436,25 +439,25 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     // MARK: - Attachments
 
     private func trash(attachment: Attachment, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        guard viewModel.state.data.attachments.contains(attachment) else { return }
-
-        let request = MarkItemsAsTrashedDbRequest(keys: [attachment.key], libraryId: viewModel.state.library.identifier, trashed: true)
-        self.perform(request: request) { [weak viewModel] error in
-            guard let viewModel = viewModel, let index = viewModel.state.data.attachments.firstIndex(of: attachment) else { return }
-
-            if let error = error {
-                DDLogError("ItemDetailActionHandler: can't trash attachment - \(error)")
-                self.update(viewModel: viewModel) { state in
-                    state.error = .cantTrashAttachment
-                }
-                return
-            }
-
-            self.update(viewModel: viewModel) { state in
-                state.data.attachments.remove(at: index)
-                state.reload = .section(.attachments)
-            }
-        }
+//        guard viewModel.state.data.attachments.contains(attachment) else { return }
+//
+//        let request = MarkItemsAsTrashedDbRequest(keys: [attachment.key], libraryId: viewModel.state.library.identifier, trashed: true)
+//        self.perform(request: request) { [weak viewModel] error in
+//            guard let viewModel = viewModel, let index = viewModel.state.data.attachments.firstIndex(of: attachment) else { return }
+//
+//            if let error = error {
+//                DDLogError("ItemDetailActionHandler: can't trash attachment - \(error)")
+//                self.update(viewModel: viewModel) { state in
+//                    state.error = .cantTrashAttachment
+//                }
+//                return
+//            }
+//
+//            self.update(viewModel: viewModel) { state in
+//                state.data.attachments.remove(at: index)
+//                state.reload = .section(.attachments)
+//            }
+//        }
     }
 
     private func deleteFile(of attachment: Attachment, in viewModel: ViewModel<ItemDetailActionHandler>) {
@@ -469,132 +472,132 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     }
 
     private func updateDeletedAttachments(_ notification: AttachmentFileDeletedNotification, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        switch notification {
-        case .all:
-            guard viewModel.state.data.attachments.contains(where: { $0.location == .local }) else { return }
-            self.setAllAttachmentsAsDeleted(in: viewModel)
-
-        case .library(let libraryId):
-            guard libraryId == viewModel.state.library.identifier, viewModel.state.data.attachments.contains(where: { $0.location == .local }) else { return }
-            self.setAllAttachmentsAsDeleted(in: viewModel)
-
-        case .allForItems(let keys, let libraryId):
-            guard libraryId == viewModel.state.library.identifier,
-                  let key = viewModel.state.type.previewKey,
-                  keys.contains(key) && viewModel.state.data.attachments.contains(where: { $0.location == .local }) else { return }
-            self.setAllAttachmentsAsDeleted(in: viewModel)
-
-        case .individual(let key, _, let libraryId):
-            guard let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == key && $0.libraryId == libraryId }),
-                  let new = viewModel.state.data.attachments[index].changed(location: .remote, condition: { $0 == .local }) else { return }
-            self.update(viewModel: viewModel) { state in
-                state.data.attachments[index] = new
-                state.updateAttachmentKey = new.key
-            }
-        }
+//        switch notification {
+//        case .all:
+//            guard viewModel.state.data.attachments.contains(where: { $0.location == .local }) else { return }
+//            self.setAllAttachmentsAsDeleted(in: viewModel)
+//
+//        case .library(let libraryId):
+//            guard libraryId == viewModel.state.library.identifier, viewModel.state.data.attachments.contains(where: { $0.location == .local }) else { return }
+//            self.setAllAttachmentsAsDeleted(in: viewModel)
+//
+//        case .allForItems(let keys, let libraryId):
+//            guard libraryId == viewModel.state.library.identifier,
+//                  let key = viewModel.state.type.previewKey,
+//                  keys.contains(key) && viewModel.state.data.attachments.contains(where: { $0.location == .local }) else { return }
+//            self.setAllAttachmentsAsDeleted(in: viewModel)
+//
+//        case .individual(let key, _, let libraryId):
+//            guard let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == key && $0.libraryId == libraryId }),
+//                  let new = viewModel.state.data.attachments[index].changed(location: .remote, condition: { $0 == .local }) else { return }
+//            self.update(viewModel: viewModel) { state in
+//                state.data.attachments[index] = new
+//                state.updateAttachmentKey = new.key
+//            }
+//        }
     }
 
     private func setAllAttachmentsAsDeleted(in viewModel: ViewModel<ItemDetailActionHandler>) {
-        self.update(viewModel: viewModel) { state in
-            for (index, attachment) in state.data.attachments.enumerated() {
-                guard let new = attachment.changed(location: .remote, condition: { $0 == .local }) else { continue }
-                state.data.attachments[index] = new
-            }
-            state.reload = .section(.attachments)
-        }
+//        self.update(viewModel: viewModel) { state in
+//            for (index, attachment) in state.data.attachments.enumerated() {
+//                guard let new = attachment.changed(location: .remote, condition: { $0 == .local }) else { continue }
+//                state.data.attachments[index] = new
+//            }
+//            state.reload = .section(.attachments)
+//        }
     }
 
     private func addAttachments(from urls: [URL], in viewModel: ViewModel<ItemDetailActionHandler>) {
-        var attachments: [Attachment] = []
-        var errors = 0
-
-        for url in urls {
-            var name = url.deletingPathExtension().lastPathComponent
-            name = name.removingPercentEncoding ?? name
-            let mimeType = url.pathExtension.mimeTypeFromExtension ?? "application/octet-stream"
-            let key = KeyGenerator.newKey
-            let nameWithExtension = name + "." + url.pathExtension
-            let file = Files.attachmentFile(in: viewModel.state.library.identifier, key: key, filename: nameWithExtension, contentType: mimeType)
-
-            do {
-                try self.fileStorage.move(from: url.path, to: file)
-                attachments.append(Attachment(type: .file(filename: nameWithExtension, contentType: mimeType, location: .local, linkType: .importedFile),
-                                              title: nameWithExtension,
-                                              key: key,
-                                              libraryId: viewModel.state.library.identifier))
-            } catch let error {
-                DDLogError("ItemDetailActionHandler: can't copy attachment - \(error)")
-                errors += 1
-            }
-        }
-
-        if !attachments.isEmpty {
-            self.update(viewModel: viewModel) { state in
-                var insertions: [Int] = []
-                attachments.forEach { attachment in
-                    let index = state.data.attachments.index(of: attachment, sortedBy: { $0.title.caseInsensitiveCompare($1.title) == .orderedAscending })
-                    state.data.attachments.insert(attachment, at: index)
-                    insertions.append(index)
-                }
-                state.reload = .section(.attachments)
-                if errors > 0 {
-                    state.error = .fileNotCopied(errors)
-                }
-            }
-        } else if errors > 0 {
-            self.update(viewModel: viewModel) { state in
-                state.error = .fileNotCopied(errors)
-            }
-        }
+//        var attachments: [Attachment] = []
+//        var errors = 0
+//
+//        for url in urls {
+//            var name = url.deletingPathExtension().lastPathComponent
+//            name = name.removingPercentEncoding ?? name
+//            let mimeType = url.pathExtension.mimeTypeFromExtension ?? "application/octet-stream"
+//            let key = KeyGenerator.newKey
+//            let nameWithExtension = name + "." + url.pathExtension
+//            let file = Files.attachmentFile(in: viewModel.state.library.identifier, key: key, filename: nameWithExtension, contentType: mimeType)
+//
+//            do {
+//                try self.fileStorage.move(from: url.path, to: file)
+//                attachments.append(Attachment(type: .file(filename: nameWithExtension, contentType: mimeType, location: .local, linkType: .importedFile),
+//                                              title: nameWithExtension,
+//                                              key: key,
+//                                              libraryId: viewModel.state.library.identifier))
+//            } catch let error {
+//                DDLogError("ItemDetailActionHandler: can't copy attachment - \(error)")
+//                errors += 1
+//            }
+//        }
+//
+//        if !attachments.isEmpty {
+//            self.update(viewModel: viewModel) { state in
+//                var insertions: [Int] = []
+//                attachments.forEach { attachment in
+//                    let index = state.data.attachments.index(of: attachment, sortedBy: { $0.title.caseInsensitiveCompare($1.title) == .orderedAscending })
+//                    state.data.attachments.insert(attachment, at: index)
+//                    insertions.append(index)
+//                }
+//                state.reload = .section(.attachments)
+//                if errors > 0 {
+//                    state.error = .fileNotCopied(errors)
+//                }
+//            }
+//        } else if errors > 0 {
+//            self.update(viewModel: viewModel) { state in
+//                state.error = .fileNotCopied(errors)
+//            }
+//        }
     }
 
     private func openAttachment(with key: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        let (progress, _) = self.fileDownloader.data(for: key, libraryId: viewModel.state.library.identifier)
-
-        if progress != nil {
-            // If download is in progress, cancel download
-
-            self.update(viewModel: viewModel) { state in
-                if state.attachmentToOpen == key {
-                    state.attachmentToOpen = nil
-                }
-            }
-
-            self.fileDownloader.cancel(key: key, libraryId: viewModel.state.library.identifier)
-
-            return
-        }
-
-        guard let attachment = viewModel.state.data.attachments.first(where: { $0.key == key }) else { return }
-
-        // Otherwise start download
-
-        self.update(viewModel: viewModel) { state in
-            state.attachmentToOpen = key
-        }
-
-        self.fileDownloader.downloadIfNeeded(attachment: attachment, parentKey: viewModel.state.type.previewKey)
+//        let (progress, _) = self.fileDownloader.data(for: key, libraryId: viewModel.state.library.identifier)
+//
+//        if progress != nil {
+//            // If download is in progress, cancel download
+//
+//            self.update(viewModel: viewModel) { state in
+//                if state.attachmentToOpen == key {
+//                    state.attachmentToOpen = nil
+//                }
+//            }
+//
+//            self.fileDownloader.cancel(key: key, libraryId: viewModel.state.library.identifier)
+//
+//            return
+//        }
+//
+//        guard let attachment = viewModel.state.data.attachments.first(where: { $0.key == key }) else { return }
+//
+//        // Otherwise start download
+//
+//        self.update(viewModel: viewModel) { state in
+//            state.attachmentToOpen = key
+//        }
+//
+//        self.fileDownloader.downloadIfNeeded(attachment: attachment, parentKey: viewModel.state.type.previewKey)
     }
 
     private func process(downloadUpdate update: AttachmentDownloader.Update, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        guard viewModel.state.library.identifier == update.libraryId,
-              let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
-
-        let attachment = viewModel.state.data.attachments[index]
-
-        switch update.kind {
-        case .cancelled, .failed, .progress:
-            self.update(viewModel: viewModel) { state in
-                state.updateAttachmentKey = attachment.key
-            }
-
-        case .ready:
-            guard let new = attachment.changed(location: .local) else { return }
-            self.update(viewModel: viewModel) { state in
-                state.data.attachments[index] = new
-                state.updateAttachmentKey = new.key
-            }
-        }
+//        guard viewModel.state.library.identifier == update.libraryId,
+//              let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
+//
+//        let attachment = viewModel.state.data.attachments[index]
+//
+//        switch update.kind {
+//        case .cancelled, .failed, .progress:
+//            self.update(viewModel: viewModel) { state in
+//                state.updateAttachmentKey = attachment.key
+//            }
+//
+//        case .ready:
+//            guard let new = attachment.changed(location: .local) else { return }
+//            self.update(viewModel: viewModel) { state in
+//                state.data.attachments[index] = new
+//                state.updateAttachmentKey = new.key
+//            }
+//        }
     }
 
     // MARK: - Editing
@@ -675,9 +678,9 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 newState.snapshot = nil
                 newState.type = newType
                 newState.data.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: newState.data.fieldIds, fields: newState.data.fields)
-                newState.data.deletedNotes = []
-                newState.data.deletedTags = []
-                newState.data.deletedAttachments = []
+//                newState.data.deletedNotes = []
+//                newState.data.deletedTags = []
+//                newState.data.deletedAttachments = []
                 newState.isEditing = false
                 newState.changes.insert(.editing)
 
