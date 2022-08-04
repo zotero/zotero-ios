@@ -10,59 +10,47 @@ import UIKit
 
 import RxSwift
 
-final class ItemDetailAbstractEditCell: RxTableViewCell {
-    @IBOutlet private weak var separatorHeight: NSLayoutConstraint!
-    @IBOutlet private weak var titleLabel: UILabel!
-    @IBOutlet private weak var contentTextView: UITextView!
-    @IBOutlet private weak var titleTop: NSLayoutConstraint!
-    @IBOutlet private weak var titleToContent: NSLayoutConstraint!
-    @IBOutlet private weak var contentBottom: NSLayoutConstraint!
+final class ItemDetailAbstractEditCell: RxCollectionViewListCell {
+    struct ContentConfiguration: UIContentConfiguration {
+        let text: String
 
-    private static let textViewTapAreaOffset: CGFloat = 8
+        func makeContentView() -> UIView & UIContentView {
+            return ContentView(configuration: self)
+        }
 
-    private var observer: AnyObserver<String>?
-    var textObservable: Observable<String> {
-        return Observable.create { observer -> Disposable in
-            self.observer = observer
-            return Disposables.create()
+        func updated(for state: UIConfigurationState) -> ContentConfiguration {
+            return self
         }
     }
 
-    override func awakeFromNib() {
-        super.awakeFromNib()
+    final class ContentView: UIView, UIContentView {
+        var configuration: UIContentConfiguration {
+            didSet {
+                guard let configuration = self.configuration as? ContentConfiguration else { return }
+                self.contentView.setup(with: configuration.text)
+            }
+        }
 
-        self.separatorHeight.constant = ItemDetailLayout.separatorHeight
+        fileprivate weak var contentView: ItemDetailAbstractEditContentView!
 
-        let titleFont = UIFont.preferredFont(for: .headline, weight: .regular)
-        self.titleLabel.font = titleFont
-        self.titleTop.constant = -(titleFont.ascender - titleFont.capHeight)
-        let contentFont = UIFont.preferredFont(forTextStyle: .body)
-        self.titleToContent.constant = contentFont.ascender - (ItemDetailLayout.lineHeight - contentFont.capHeight) - ItemDetailAbstractEditCell.textViewTapAreaOffset
-        self.contentBottom.constant = contentFont.descender - ItemDetailLayout.separatorHeight - 1 - ItemDetailAbstractEditCell.textViewTapAreaOffset
+        init(configuration: ContentConfiguration) {
+            self.configuration = configuration
 
-        self.contentTextView.delegate = self
-        self.contentTextView.isScrollEnabled = false
-        self.contentTextView.textContainerInset = UIEdgeInsets(top: ItemDetailAbstractEditCell.textViewTapAreaOffset, left: 0, bottom: ItemDetailAbstractEditCell.textViewTapAreaOffset, right: 0)
-        self.contentTextView.textContainer.lineFragmentPadding = 0
+            super.init(frame: .zero)
+
+            guard let view = UINib.init(nibName: "ItemDetailAbstractEditContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailAbstractEditContentView else { return }
+
+            self.add(contentView: view)
+            self.contentView = view
+            self.contentView.setup(with: configuration.text)
+        }
+
+        required init?(coder: NSCoder) {
+            fatalError()
+        }
     }
 
-    func setup(with abstract: String) {
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.alignment = .justified
-        paragraphStyle.minimumLineHeight = ItemDetailLayout.lineHeight
-        paragraphStyle.maximumLineHeight = ItemDetailLayout.lineHeight
-
-        let attributes: [NSAttributedString.Key: Any] = [.paragraphStyle: paragraphStyle,
-                                                         .font: UIFont.preferredFont(forTextStyle: .body),
-                                                         .foregroundColor: UIColor.label]
-        let attributedText = NSAttributedString(string: abstract, attributes: attributes)
-
-        self.contentTextView.attributedText = attributedText
-    }
-}
-
-extension ItemDetailAbstractEditCell: UITextViewDelegate {
-    func textViewDidChange(_ textView: UITextView) {
-        self.observer?.on(.next(textView.text))
+    var textObservable: Observable<String>? {
+        return (self.contentView as? ItemDetailFieldMultilineEditContentView)?.textObservable
     }
 }

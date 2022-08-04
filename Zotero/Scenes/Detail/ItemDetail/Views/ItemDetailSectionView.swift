@@ -8,7 +8,7 @@
 
 import UIKit
 
-final class ItemDetailSectionView: UITableViewHeaderFooterView {
+final class ItemDetailSectionView: UICollectionReusableView {
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var topSeparator: UIView!
     @IBOutlet private weak var topSeparatorHeight: NSLayoutConstraint!

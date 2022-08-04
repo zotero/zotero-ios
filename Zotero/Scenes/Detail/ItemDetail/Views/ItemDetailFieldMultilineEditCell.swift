@@ -10,55 +10,48 @@ import UIKit
 
 import RxSwift
 
-class ItemDetailFieldMultilineEditCell: RxTableViewCell {
-    @IBOutlet private weak var titleWidth: NSLayoutConstraint!
-    @IBOutlet private weak var titleLabel: UILabel!
-    @IBOutlet private weak var valueTextView: UITextView!
-    @IBOutlet private weak var titleTopConstraint: NSLayoutConstraint!
-    @IBOutlet private weak var textViewTopConstraint: NSLayoutConstraint!
-    @IBOutlet private weak var bottomConstraint: NSLayoutConstraint!
-    private var heightConstraint: NSLayoutConstraint?
+class ItemDetailFieldMultilineEditCell: RxCollectionViewListCell {
+    struct ContentConfiguration: UIContentConfiguration {
+        let field: ItemDetailState.Field
+        let titleWidth: CGFloat
 
-    private static let textViewTapAreaOffset: CGFloat = 8
+        func makeContentView() -> UIView & UIContentView {
+            return ContentView(configuration: self)
+        }
 
-    private var observer: AnyObserver<String>?
-    var textObservable: Observable<String> {
-        return Observable.create { observer -> Disposable in
-            self.observer = observer
-            return Disposables.create()
+        func updated(for state: UIConfigurationState) -> ContentConfiguration {
+            return self
         }
     }
 
-    override func awakeFromNib() {
-        super.awakeFromNib()
+    final class ContentView: UIView, UIContentView {
+        var configuration: UIContentConfiguration {
+            didSet {
+                guard let configuration = self.configuration as? ContentConfiguration else { return }
+                self.contentView.setup(with: configuration.field, titleWidth: configuration.titleWidth)
+            }
+        }
 
-        let valueFont = UIFont.preferredFont(forTextStyle: .body)
+        fileprivate weak var contentView: ItemDetailFieldMultilineEditContentView!
 
-        self.titleLabel.font = UIFont.preferredFont(for: .headline, weight: .regular)
-        self.valueTextView.font = valueFont
+        init(configuration: ContentConfiguration) {
+            self.configuration = configuration
 
-        self.titleTopConstraint.constant = valueFont.capHeight - valueFont.ascender
-        self.textViewTopConstraint.constant = valueFont.capHeight - valueFont.ascender - ItemDetailFieldMultilineEditCell.textViewTapAreaOffset
-        self.bottomConstraint.constant = valueFont.descender - ItemDetailLayout.separatorHeight - ItemDetailFieldMultilineEditCell.textViewTapAreaOffset
+            super.init(frame: .zero)
 
-        self.valueTextView.delegate = self
-        self.valueTextView.isScrollEnabled = false
-        self.valueTextView.textContainerInset = UIEdgeInsets(top: ItemDetailFieldMultilineEditCell.textViewTapAreaOffset, left: 0,
-                                                             bottom: ItemDetailFieldMultilineEditCell.textViewTapAreaOffset, right: 0)
-        self.valueTextView.textContainer.lineFragmentPadding = 0
+            guard let view = UINib.init(nibName: "ItemDetailFieldMultilineEditContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailFieldMultilineEditContentView else { return }
 
-        self.contentView.clipsToBounds = true
+            self.add(contentView: view)
+            self.contentView = view
+            self.contentView.setup(with: configuration.field, titleWidth: configuration.titleWidth)
+        }
+
+        required init?(coder: NSCoder) {
+            fatalError()
+        }
     }
 
-    func setup(with field: ItemDetailState.Field, titleWidth: CGFloat) {
-        self.titleLabel.text = field.name
-        self.titleWidth.constant = titleWidth
-        self.valueTextView.text = field.value
-    }
-}
-
-extension ItemDetailFieldMultilineEditCell: UITextViewDelegate {
-    func textViewDidChange(_ textView: UITextView) {
-        self.observer?.on(.next(textView.text))
+    var textObservable: Observable<String>? {
+        return (self.contentView as? ItemDetailFieldMultilineEditContentView)?.textObservable
     }
 }

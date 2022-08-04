@@ -8,94 +8,96 @@
 
 import UIKit
 
-final class ItemDetailAttachmentCell: UITableViewCell {
-    @IBOutlet private weak var containerHeight: NSLayoutConstraint!
-    @IBOutlet private weak var fileView: FileAttachmentView!
-    @IBOutlet private weak var attachmentIcon: UIImageView!
-    @IBOutlet private weak var labelTop: NSLayoutConstraint!
-    @IBOutlet private weak var labelLeft: NSLayoutConstraint!
-    @IBOutlet private weak var label: UILabel!
+final class ItemDetailAttachmentCell: UICollectionViewListCell {
+    enum Kind: Equatable, Hashable {
+        case `default`
+        case inProgress(CGFloat)
+        case failed(Error)
+        case disabled
 
-    override func awakeFromNib() {
-        super.awakeFromNib()
-
-        let highlightView = UIView()
-        highlightView.backgroundColor = Asset.Colors.cellHighlighted.color
-        self.selectedBackgroundView = highlightView
-
-        self.containerHeight.constant = ItemDetailLayout.minCellHeight
-    }
-    
-    override func setHighlighted(_ highlighted: Bool, animated: Bool) {
-        super.setHighlighted(highlighted, animated: animated)
-
-        self.fileView.set(backgroundColor: (highlighted ? self.selectedBackgroundView?.backgroundColor : self.backgroundColor))
-    }
-
-    func setup(with attachment: Attachment, progress: CGFloat?, error: Error?, enabled: Bool) {
-        switch attachment.type {
-        case .file:
-            self.fileView.set(state: .stateFrom(type: attachment.type, progress: progress, error: error), style: .detail)
-            self.fileView.isHidden = false
-            self.attachmentIcon.isHidden = true
-        case .url:
-            self.attachmentIcon.image = Asset.Images.ItemTypes.webPage.image
-            self.fileView.isHidden = true
-            self.attachmentIcon.isHidden = false
-        }
-
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.minimumLineHeight = ItemDetailLayout.lineHeight
-        paragraphStyle.maximumLineHeight = ItemDetailLayout.lineHeight
-        let attributedString = NSAttributedString(string: attachment.title,
-                                                  attributes: [.font: UIFont.preferredFont(forTextStyle: .body),
-                                                               .paragraphStyle: paragraphStyle])
-        self.label.attributedText = attributedString
-
-        let font = self.label.font!
-        self.labelTop.constant = -(font.ascender - font.capHeight) - (ItemDetailLayout.lineHeight - font.lineHeight)
-        self.labelLeft.constant = self.layoutMargins.left
-
-        let textColor: UIColor
-        if !enabled {
-            textColor = .placeholderText
-        } else {
-            textColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
-                return traitCollection.userInterfaceStyle == .dark ? .white : .darkText
-            })
-        }
-
-        self.label.textColor = textColor
-        self.isUserInteractionEnabled = enabled
-        self.setupAccessibility(for: attachment, enabled: enabled)
-    }
-
-    private func setupAccessibility(for attachment: Attachment, enabled: Bool) {
-        guard enabled && self.selectionStyle != .none else {
-            self.accessibilityTraits = []
-            self.accessibilityHint = nil
-            return
-        }
-
-        switch attachment.type {
-        case .file(_, _, let location, _):
-            switch location {
-            case .remoteMissing:
-                self.accessibilityTraits = []
-                self.accessibilityHint = nil
-
-            case .remote, .localAndChangedRemotely:
-                self.accessibilityHint = L10n.Accessibility.ItemDetail.downloadAndOpen
-                self.accessibilityTraits = .button
-
-            case .local:
-                self.accessibilityHint = L10n.Accessibility.ItemDetail.open
-                self.accessibilityTraits = .button
+        static func == (lhs: Kind, rhs: Kind) -> Bool {
+            switch (lhs, rhs) {
+            case (.default, .default), (.disabled, .disabled):
+                return true
+            case (.inProgress(let lProgress), .inProgress(let rProgress)) where lProgress == rProgress:
+                return true
+            case (.failed(let lError), .failed(let rError)) where lError.localizedDescription == rError.localizedDescription:
+                return true
+            default:
+                return false
             }
+        }
 
-        case .url:
-            self.accessibilityHint = L10n.Accessibility.ItemDetail.open
-            self.accessibilityTraits = .button
+        func hash(into hasher: inout Hasher) {
+            switch self {
+            case .default:
+                hasher.combine(1)
+            case .disabled:
+                hasher.combine(2)
+            case .inProgress(let progress):
+                hasher.combine(3)
+                hasher.combine(progress)
+            case .failed(let error):
+                hasher.combine(4)
+                hasher.combine(error.localizedDescription.hash)
+            }
         }
     }
+
+    struct ContentConfiguration: UIContentConfiguration {
+        let attachment: Attachment
+        let type: Kind
+
+        func makeContentView() -> UIView & UIContentView {
+            return ContentView(configuration: self)
+        }
+
+        func updated(for state: UIConfigurationState) -> ContentConfiguration {
+            return self
+        }
+    }
+
+    final class ContentView: UIView, UIContentView {
+        var configuration: UIContentConfiguration {
+            didSet {
+                guard let configuration = self.configuration as? ContentConfiguration else { return }
+                self.apply(configuration: configuration)
+            }
+        }
+
+        fileprivate weak var contentView: ItemDetailAttachmentContentView!
+
+        init(configuration: ContentConfiguration) {
+            self.configuration = configuration
+
+            super.init(frame: .zero)
+
+            guard let view = UINib.init(nibName: "ItemDetailAttachmentContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailAttachmentContentView else { return }
+
+            self.add(contentView: view)
+            self.contentView = view
+            self.apply(configuration: configuration)
+        }
+
+        required init?(coder: NSCoder) {
+            fatalError()
+        }
+
+        private func apply(configuration: ContentConfiguration) {
+            self.contentView.setup(with: configuration.attachment, type: configuration.type)
+        }
+    }
+
+//    override func awakeFromNib() {
+//        super.awakeFromNib()
+//
+//        let highlightView = UIView()
+//        highlightView.backgroundColor = Asset.Colors.cellHighlighted.color
+//        self.selectedBackgroundView = highlightView
+//    }
+//
+//    override func setHighlighted(_ highlighted: Bool, animated: Bool) {
+//        super.setHighlighted(highlighted, animated: animated)
+//        (self.contentView as? ItemDetailAttachmentContentView)?.fileView.set(backgroundColor: (highlighted ? self.selectedBackgroundView?.backgroundColor : self.backgroundColor))
+//    }
 }

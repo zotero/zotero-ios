@@ -72,6 +72,6 @@ struct ItemDetailLayout {
             bottom = 20 + separatorHeight
         }
 
-        return UIEdgeInsets(top: top, left: horizontalInset, bottom: bottom, right: horizontalInset)
+        return UIEdgeInsets(top: top/2, left: horizontalInset, bottom: bottom/2, right: horizontalInset)
     }
 }
