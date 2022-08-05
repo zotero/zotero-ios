@@ -13,6 +13,7 @@ import RxSwift
 final class ItemDetailAbstractEditCell: RxCollectionViewListCell {
     struct ContentConfiguration: UIContentConfiguration {
         let text: String
+        let layoutMargins: UIEdgeInsets
 
         func makeContentView() -> UIView & UIContentView {
             return ContentView(configuration: self)
@@ -41,6 +42,7 @@ final class ItemDetailAbstractEditCell: RxCollectionViewListCell {
             guard let view = UINib.init(nibName: "ItemDetailAbstractEditContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailAbstractEditContentView else { return }
 
             self.add(contentView: view)
+            view.layoutMargins = configuration.layoutMargins
             self.contentView = view
             self.contentView.setup(with: configuration.text)
         }

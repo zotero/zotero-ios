@@ -12,6 +12,7 @@ final class ItemDetailNoteCell: UICollectionViewListCell {
     struct ContentConfiguration: UIContentConfiguration {
         let note: Note
         let isSaving: Bool
+        let layoutMargins: UIEdgeInsets
 
         func makeContentView() -> UIView & UIContentView {
             return ContentView(configuration: self)
@@ -40,6 +41,7 @@ final class ItemDetailNoteCell: UICollectionViewListCell {
             guard let view = UINib.init(nibName: "ItemDetailNoteContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailNoteContentView else { return }
 
             self.add(contentView: view)
+            view.layoutMargins = configuration.layoutMargins
             self.contentView = view
             self.apply(configuration: configuration)
         }

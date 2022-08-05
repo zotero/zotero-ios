@@ -16,7 +16,7 @@
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
             <subviews>
                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="5R5-Ct-VKH">
-                    <rect key="frame" x="20" y="0.0" width="374" height="1"/>
+                    <rect key="frame" x="20" y="0.0" width="394" height="1"/>
                     <color key="backgroundColor" systemColor="separatorColor"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="NgW-y7-Boe"/>
@@ -44,7 +44,7 @@
                 <constraint firstAttribute="trailingMargin" secondItem="e8C-KX-K49" secondAttribute="trailing" id="S1Z-ll-Sto"/>
                 <constraint firstItem="5R5-Ct-VKH" firstAttribute="top" secondItem="IfK-Tg-e6T" secondAttribute="top" id="SDE-gm-z7n"/>
                 <constraint firstItem="e8C-KX-K49" firstAttribute="leading" secondItem="IfK-Tg-e6T" secondAttribute="leadingMargin" id="Sl4-HZ-lQj"/>
-                <constraint firstAttribute="trailingMargin" secondItem="5R5-Ct-VKH" secondAttribute="trailing" id="pZQ-Lk-Xhc"/>
+                <constraint firstAttribute="trailing" secondItem="5R5-Ct-VKH" secondAttribute="trailing" id="pZQ-Lk-Xhc"/>
                 <constraint firstItem="qM5-H4-Q0E" firstAttribute="top" secondItem="e8C-KX-K49" secondAttribute="baseline" constant="15" id="phs-r3-gI4"/>
                 <constraint firstItem="e8C-KX-K49" firstAttribute="top" secondItem="IfK-Tg-e6T" secondAttribute="topMargin" id="qen-2B-QYG"/>
             </constraints>

@@ -11,6 +11,7 @@ import UIKit
 final class ItemDetailAddCell: UICollectionViewListCell {
     struct ContentConfiguration: UIContentConfiguration {
         let title: String
+        let layoutMargins: UIEdgeInsets
 
         func makeContentView() -> UIView & UIContentView {
             return ContentView(configuration: self)
@@ -39,6 +40,7 @@ final class ItemDetailAddCell: UICollectionViewListCell {
             guard let view = UINib.init(nibName: "ItemDetailAddContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailAddContentView else { return }
 
             self.add(contentView: view)
+            view.layoutMargins = configuration.layoutMargins
             self.contentView = view
             self.contentView.setup(with: configuration.title)
         }

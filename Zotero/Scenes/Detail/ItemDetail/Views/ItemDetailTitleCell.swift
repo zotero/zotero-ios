@@ -15,6 +15,7 @@ final class ItemDetailTitleCell: RxCollectionViewListCell {
     struct ContentConfiguration: UIContentConfiguration {
         let title: String
         let isEditing: Bool
+        let layoutMargins: UIEdgeInsets
 
         func makeContentView() -> UIView & UIContentView {
             return ContentView(configuration: self)
@@ -43,6 +44,7 @@ final class ItemDetailTitleCell: RxCollectionViewListCell {
             guard let view = UINib.init(nibName: "ItemDetailTitleContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailTitleContentView else { return }
 
             self.add(contentView: view)
+            view.layoutMargins = configuration.layoutMargins
             self.contentView = view
             self.contentView.setup(with: configuration.title, isEditing: configuration.isEditing)
         }

@@ -12,6 +12,7 @@ final class ItemDetailAbstractCell: UICollectionViewListCell {
     struct ContentConfiguration: UIContentConfiguration {
         let text: String
         let isCollapsed: Bool
+        let layoutMargins: UIEdgeInsets
 
         func makeContentView() -> UIView & UIContentView {
             return ContentView(configuration: self)
@@ -40,6 +41,7 @@ final class ItemDetailAbstractCell: UICollectionViewListCell {
             guard let view = UINib.init(nibName: "ItemDetailAbstractContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailAbstractContentView else { return }
 
             self.add(contentView: view)
+            view.layoutMargins = configuration.layoutMargins
             self.contentView = view
             self.apply(configuration: configuration)
         }

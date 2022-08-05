@@ -24,10 +24,10 @@ extension UIView {
         self.addSubview(view)
 
         NSLayoutConstraint.activate([
-            NSLayoutConstraint(item: view, attribute: .leading, relatedBy: .equal, toItem: self, attribute: .leadingMargin, multiplier: 1.0, constant: 0),
-            NSLayoutConstraint(item: self, attribute: .trailingMargin, relatedBy: .equal, toItem: view, attribute: .trailing, multiplier: 1.0, constant: 0),
-            NSLayoutConstraint(item: self, attribute: .topMargin, relatedBy: .equal, toItem: view, attribute: .top, multiplier: 1.0, constant: 0),
-            NSLayoutConstraint(item: self, attribute: .bottomMargin, relatedBy: .equal, toItem: view, attribute: .bottom, multiplier: 1.0, constant: 0)
+            view.leadingAnchor.constraint(equalTo: self.leadingAnchor),
+            self.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            self.topAnchor.constraint(equalTo: view.topAnchor),
+            self.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
 }

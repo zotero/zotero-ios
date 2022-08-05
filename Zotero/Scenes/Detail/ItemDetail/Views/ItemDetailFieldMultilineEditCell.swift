@@ -14,6 +14,7 @@ class ItemDetailFieldMultilineEditCell: RxCollectionViewListCell {
     struct ContentConfiguration: UIContentConfiguration {
         let field: ItemDetailState.Field
         let titleWidth: CGFloat
+        let layoutMargins: UIEdgeInsets
 
         func makeContentView() -> UIView & UIContentView {
             return ContentView(configuration: self)
@@ -42,6 +43,7 @@ class ItemDetailFieldMultilineEditCell: RxCollectionViewListCell {
             guard let view = UINib.init(nibName: "ItemDetailFieldMultilineEditContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailFieldMultilineEditContentView else { return }
 
             self.add(contentView: view)
+            view.layoutMargins = configuration.layoutMargins
             self.contentView = view
             self.contentView.setup(with: configuration.field, titleWidth: configuration.titleWidth)
         }

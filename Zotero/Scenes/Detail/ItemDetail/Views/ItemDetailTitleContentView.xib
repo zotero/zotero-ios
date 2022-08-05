@@ -22,7 +22,7 @@
                     <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
                 </textView>
                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="78g-xD-Jxo">
-                    <rect key="frame" x="20" y="188" width="374" height="1"/>
+                    <rect key="frame" x="20" y="188" width="394" height="1"/>
                     <color key="backgroundColor" systemColor="separatorColor"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="9Mi-Cp-NSW"/>
@@ -33,12 +33,12 @@
             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
             <constraints>
                 <constraint firstItem="78g-xD-Jxo" firstAttribute="leading" secondItem="Vd2-Fe-n3M" secondAttribute="leadingMargin" id="3Ew-PW-uEj"/>
-                <constraint firstAttribute="bottomMargin" secondItem="78g-xD-Jxo" secondAttribute="bottom" id="Ffj-HJ-8TD"/>
+                <constraint firstAttribute="bottom" secondItem="78g-xD-Jxo" secondAttribute="bottom" id="Ffj-HJ-8TD"/>
                 <constraint firstAttribute="trailingMargin" secondItem="3CA-Cu-u1H" secondAttribute="trailing" id="I9q-gr-rpe"/>
                 <constraint firstAttribute="bottomMargin" secondItem="3CA-Cu-u1H" secondAttribute="bottom" id="Nb1-rI-bGX"/>
                 <constraint firstItem="3CA-Cu-u1H" firstAttribute="top" secondItem="Vd2-Fe-n3M" secondAttribute="topMargin" id="lTw-P6-Scd"/>
                 <constraint firstItem="3CA-Cu-u1H" firstAttribute="leading" secondItem="Vd2-Fe-n3M" secondAttribute="leadingMargin" id="yOK-fr-PlL"/>
-                <constraint firstAttribute="trailingMargin" secondItem="78g-xD-Jxo" secondAttribute="trailing" id="yo4-tb-fyP"/>
+                <constraint firstAttribute="trailing" secondItem="78g-xD-Jxo" secondAttribute="trailing" id="yo4-tb-fyP"/>
             </constraints>
             <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
             <connections>

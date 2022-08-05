@@ -47,6 +47,7 @@ final class ItemDetailAttachmentCell: UICollectionViewListCell {
     struct ContentConfiguration: UIContentConfiguration {
         let attachment: Attachment
         let type: Kind
+        let layoutMargins: UIEdgeInsets
 
         func makeContentView() -> UIView & UIContentView {
             return ContentView(configuration: self)
@@ -75,6 +76,7 @@ final class ItemDetailAttachmentCell: UICollectionViewListCell {
             guard let view = UINib.init(nibName: "ItemDetailAttachmentContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailAttachmentContentView else { return }
 
             self.add(contentView: view)
+            view.layoutMargins = configuration.layoutMargins
             self.contentView = view
             self.apply(configuration: configuration)
         }

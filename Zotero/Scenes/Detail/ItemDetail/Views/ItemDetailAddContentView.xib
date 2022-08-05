@@ -18,16 +18,16 @@
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
             <subviews>
                 <stackView opaque="NO" contentMode="scaleToFill" alignment="center" spacing="14" translatesAutoresizingMaskIntoConstraints="NO" id="Ela-EX-k3g">
-                    <rect key="frame" x="20" y="11" width="374" height="254"/>
+                    <rect key="frame" x="20" y="44" width="374" height="232"/>
                     <subviews>
                         <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="1000" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" adjustsImageSizeForAccessibilityContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="gFc-G3-uHA">
-                            <rect key="frame" x="0.0" y="114" width="26" height="26"/>
+                            <rect key="frame" x="0.0" y="103" width="26" height="26"/>
                             <color key="tintColor" name="zoteroBlue"/>
                             <imageReference key="image" image="plus.circle.fill" catalog="system" symbolScale="large"/>
                             <preferredSymbolConfiguration key="preferredSymbolConfiguration" scale="large"/>
                         </imageView>
                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="lrT-uw-dgr">
-                            <rect key="frame" x="40" y="118.5" width="334" height="17"/>
+                            <rect key="frame" x="40" y="107.5" width="334" height="17"/>
                             <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                             <color key="textColor" name="zoteroBlue"/>
                             <nil key="highlightedColor"/>
@@ -39,9 +39,9 @@
             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
             <constraints>
                 <constraint firstItem="Ela-EX-k3g" firstAttribute="leading" secondItem="VhR-94-ikV" secondAttribute="leadingMargin" id="3zI-2q-Nlx"/>
-                <constraint firstAttribute="bottom" secondItem="Ela-EX-k3g" secondAttribute="bottom" constant="11" id="7Xw-Nn-fKF"/>
+                <constraint firstAttribute="bottomMargin" secondItem="Ela-EX-k3g" secondAttribute="bottom" id="7Xw-Nn-fKF"/>
                 <constraint firstAttribute="trailingMargin" secondItem="Ela-EX-k3g" secondAttribute="trailing" id="8V3-yW-s2c"/>
-                <constraint firstItem="Ela-EX-k3g" firstAttribute="top" secondItem="VhR-94-ikV" secondAttribute="top" constant="11" id="jzn-ps-1R9"/>
+                <constraint firstItem="Ela-EX-k3g" firstAttribute="top" secondItem="VhR-94-ikV" secondAttribute="topMargin" id="jzn-ps-1R9"/>
             </constraints>
             <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
             <connections>

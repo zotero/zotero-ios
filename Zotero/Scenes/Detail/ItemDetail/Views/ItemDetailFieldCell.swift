@@ -18,6 +18,7 @@ final class ItemDetailFieldCell: UICollectionViewListCell {
     struct ContentConfiguration: UIContentConfiguration {
         let type: CellType
         let titleWidth: CGFloat
+        let layoutMargins: UIEdgeInsets
 
         func makeContentView() -> UIView & UIContentView {
             return ContentView(configuration: self)
@@ -46,6 +47,7 @@ final class ItemDetailFieldCell: UICollectionViewListCell {
             guard let view = UINib.init(nibName: "ItemDetailFieldContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailFieldContentView else { return }
 
             self.add(contentView: view)
+            view.layoutMargins = configuration.layoutMargins
             self.contentView = view
             self.apply(configuration: configuration)
         }

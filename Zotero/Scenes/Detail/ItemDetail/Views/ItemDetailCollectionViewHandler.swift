@@ -348,71 +348,34 @@ final class ItemDetailCollectionViewHandler: NSObject {
         return (maxTitleWidth, maxNonemptyTitleWidth)
     }
 
-    private func cellLayoutData(for section: Section, isFirstRow: Bool, isLastRow: Bool, isAddCell: Bool, isEditing: Bool)
-                                                                                                       -> (separatorInsets: UIEdgeInsets, layoutMargins: UIEdgeInsets, accessories: [UICellAccessory]) {
-        var hasSeparator = true
-        var accessories: [UICellAccessory] = []
-
-        switch section {
-        case .title, .notes: break
-        case .abstract:
-            hasSeparator = false
-        case .attachments: break
-            // TODO: implement attachment metadata screen
-//            if !isAddCell {
-//                accessoryType = .detailButton
-//            }
-        case .tags, .type, .fields:
-            if !isAddCell {
-                hasSeparator = isEditing
-            }
-        case .creators:
-            if !isAddCell {
-                if isEditing {
-                    accessories = [.disclosureIndicator()]
-                }
-                hasSeparator = isEditing
-            }
-        case .dates:
-            hasSeparator = isEditing && !isLastRow
-        }
-
-        let layoutMargins = ItemDetailLayout.insets(for: section, isEditing: isEditing, isFirstRow: isFirstRow, isLastRow: isLastRow)
-        let leftSeparatorInset: CGFloat = hasSeparator ? self.separatorLeftInset(for: section, isEditing: isEditing, leftMargin: layoutMargins.left) :
-                                                         max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
-        let separatorInsets = UIEdgeInsets(top: 0, left: leftSeparatorInset, bottom: 0, right: 0)
-        return (separatorInsets, layoutMargins, accessories)
-    }
-
-    private func separatorLeftInset(for section: Section, isEditing: Bool, leftMargin: CGFloat) -> CGFloat {
-        switch section {
-        case .notes, .attachments, .tags:
-            return ItemDetailLayout.iconWidth + (isEditing ? 40 : 0) + leftMargin
-        case .abstract, .creators, .dates, .fields, .title, .type:
-            return 0
-        }
-    }
-
     // MARK: - Cells
 
     private lazy var titleRegistration: UICollectionView.CellRegistration<ItemDetailTitleCell, (String, Bool)> = {
-        return UICollectionView.CellRegistration { cell, indexPath, data in
-            cell.contentConfiguration = ItemDetailTitleCell.ContentConfiguration(title: data.0, isEditing: data.1)
-            self.setup(cell: cell, at: indexPath, isAdd: false)
+        return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
+            guard let `self` = self else { return }
+            cell.contentConfiguration = ItemDetailTitleCell.ContentConfiguration(title: data.0, isEditing: data.1, layoutMargins: self.layoutMargins(for: indexPath))
         }
     }()
 
     private lazy var fieldRegistration: UICollectionView.CellRegistration<ItemDetailFieldCell, (ItemDetailFieldCell.CellType, CGFloat)> = {
-        return UICollectionView.CellRegistration { cell, indexPath, data in
-            cell.contentConfiguration = ItemDetailFieldCell.ContentConfiguration(type: data.0, titleWidth: data.1)
-            self.setup(cell: cell, at: indexPath, isAdd: false)
+        return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
+            guard let `self` = self else { return }
+
+            cell.contentConfiguration = ItemDetailFieldCell.ContentConfiguration(type: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath))
+
+            switch data.0 {
+            case .creator:
+                cell.accessories = self.viewModel.state.isEditing ? [.disclosureIndicator()] : []
+            default: break
+            }
         }
     }()
 
     private lazy var fieldEditRegistration: UICollectionView.CellRegistration<ItemDetailFieldEditCell, (ItemDetailState.Field, CGFloat)> = {
-        return UICollectionView.CellRegistration { cell, indexPath, data in
-            cell.contentConfiguration = ItemDetailFieldEditCell.ContentConfiguration(field: data.0, titleWidth: data.1)
-            self.setup(cell: cell, at: indexPath, isAdd: false)
+        return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
+            guard let `self` = self else { return }
+
+            cell.contentConfiguration = ItemDetailFieldEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath))
 
             guard let observable = cell.textObservable else { return }
 
@@ -423,9 +386,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
     }()
 
     private lazy var fieldMultilineEditRegistration: UICollectionView.CellRegistration<ItemDetailFieldMultilineEditCell, (ItemDetailState.Field, CGFloat)> = {
-        return UICollectionView.CellRegistration { cell, indexPath, data in
-            cell.contentConfiguration = ItemDetailFieldMultilineEditCell.ContentConfiguration(field: data.0, titleWidth: data.1)
-            self.setup(cell: cell, at: indexPath, isAdd: false)
+        return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
+            guard let `self` = self else { return }
+
+            cell.contentConfiguration = ItemDetailFieldMultilineEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath))
 
             guard let observable = cell.textObservable else { return }
 
@@ -436,23 +400,24 @@ final class ItemDetailCollectionViewHandler: NSObject {
     }()
 
     private lazy var addRegistration: UICollectionView.CellRegistration<ItemDetailAddCell, String> = {
-        return UICollectionView.CellRegistration { cell, indexPath, title in
-            cell.contentConfiguration = ItemDetailAddCell.ContentConfiguration(title: title)
-            self.setup(cell: cell, at: indexPath, isAdd: true)
+        return UICollectionView.CellRegistration { [weak self] cell, indexPath, title in
+            guard let `self` = self else { return }
+            cell.contentConfiguration = ItemDetailAddCell.ContentConfiguration(title: title, layoutMargins: self.layoutMargins(for: indexPath))
         }
     }()
 
     private lazy var abstractRegistration: UICollectionView.CellRegistration<ItemDetailAbstractCell, (String, Bool)> = {
-        return UICollectionView.CellRegistration { cell, indexPath, data in
-            cell.contentConfiguration = ItemDetailAbstractCell.ContentConfiguration(text: data.0, isCollapsed: data.1)
-            self.setup(cell: cell, at: indexPath, isAdd: false)
+        return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
+            guard let `self` = self else { return }
+            cell.contentConfiguration = ItemDetailAbstractCell.ContentConfiguration(text: data.0, isCollapsed: data.1, layoutMargins: self.layoutMargins(for: indexPath))
         }
     }()
 
     private lazy var abstractEditRegistration: UICollectionView.CellRegistration<ItemDetailAbstractEditCell, String> = {
-        return UICollectionView.CellRegistration { cell, indexPath, text in
-            cell.contentConfiguration = ItemDetailAbstractEditCell.ContentConfiguration(text: text)
-            self.setup(cell: cell, at: indexPath, isAdd: false)
+        return UICollectionView.CellRegistration { [weak self] cell, indexPath, text in
+            guard let `self` = self else { return }
+
+            cell.contentConfiguration = ItemDetailAbstractEditCell.ContentConfiguration(text: text, layoutMargins: self.layoutMargins(for: indexPath))
 
             guard let observable = cell.textObservable else { return }
 
@@ -463,23 +428,23 @@ final class ItemDetailCollectionViewHandler: NSObject {
     }()
 
     private lazy var noteRegistration: UICollectionView.CellRegistration<ItemDetailNoteCell, (Note, Bool)> = {
-        return UICollectionView.CellRegistration { cell, indexPath, data in
-            cell.contentConfiguration = ItemDetailNoteCell.ContentConfiguration(note: data.0, isSaving: data.1)
-            self.setup(cell: cell, at: indexPath, isAdd: false)
+        return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
+            guard let `self` = self else { return }
+            cell.contentConfiguration = ItemDetailNoteCell.ContentConfiguration(note: data.0, isSaving: data.1, layoutMargins: self.layoutMargins(for: indexPath))
         }
     }()
 
     private lazy var tagRegistration: UICollectionView.CellRegistration<ItemDetailTagCell, (Tag, Bool)> = {
-        return UICollectionView.CellRegistration { cell, indexPath, data in
-            cell.contentConfiguration = ItemDetailTagCell.ContentConfiguration(tag: data.0, isEditing: data.1)
-            self.setup(cell: cell, at: indexPath, isAdd: false)
+        return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
+            guard let `self` = self else { return }
+            cell.contentConfiguration = ItemDetailTagCell.ContentConfiguration(tag: data.0, isEditing: data.1, layoutMargins: self.layoutMargins(for: indexPath))
         }
     }()
 
     private lazy var attachmentRegistration: UICollectionView.CellRegistration<ItemDetailAttachmentCell, (Attachment, ItemDetailAttachmentCell.Kind)> = {
-        return UICollectionView.CellRegistration { cell, indexPath, data in
-            cell.contentConfiguration = ItemDetailAttachmentCell.ContentConfiguration(attachment: data.0, type: data.1)
-            self.setup(cell: cell, at: indexPath, isAdd: false)
+        return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
+            guard let `self` = self else { return }
+            cell.contentConfiguration = ItemDetailAttachmentCell.ContentConfiguration(attachment: data.0, type: data.1, layoutMargins: self.layoutMargins(for: indexPath))
         }
     }()
 
@@ -489,22 +454,32 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     // MARK: - Layout
 
+    private func layoutMargins(for indexPath: IndexPath) -> UIEdgeInsets {
+        guard let section = self.dataSource.section(for: indexPath.section)?.section else { return UIEdgeInsets() }
+
+        let isEditing = self.viewModel.state.isEditing
+        let isFirstRow = indexPath.row == 0
+        let isLastRow = indexPath.row == (self.dataSource.collectionView(self.collectionView, numberOfItemsInSection: indexPath.section) - 1)
+
+        return ItemDetailLayout.insets(for: section, isEditing: isEditing, isFirstRow: isFirstRow, isLastRow: isLastRow)
+    }
+
     private func createCollectionViewLayout() -> UICollectionViewLayout {
         return UICollectionViewCompositionalLayout { [unowned self] index, environment in
             var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
             configuration.showsSeparators = false
 
-            let section = self.dataSource.snapshot().sectionIdentifiers[index].section
             var supplementaryItems: [NSCollectionLayoutBoundarySupplementaryItem] = []
 
-            switch section {
-            case .attachments, .tags, .notes:
-                configuration.headerMode = .supplementary
-                let header = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(44)),
-                                                                         elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
-                supplementaryItems.append(header)
+            if let section = self.dataSource.section(for: index)?.section {
+                switch section {
+                case .attachments, .tags, .notes:
+                    let header = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(44)),
+                                                                             elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
+                    supplementaryItems.append(header)
 
-            default: break
+                default: break
+                }
             }
 
             let layoutSection = NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
@@ -644,25 +619,6 @@ final class ItemDetailCollectionViewHandler: NSObject {
         }
     }
 
-    private func setup(cell: UICollectionViewListCell, at indexPath: IndexPath, isAdd: Bool) {
-        let snapshot = self.dataSource.snapshot()
-
-        guard indexPath.section < snapshot.numberOfSections else { return }
-
-        let section = snapshot.sectionIdentifiers[indexPath.section].section
-        let isEditing = self.viewModel.state.isEditing
-        let isFirst = indexPath.row == 0
-        let isLast = indexPath.row == (self.dataSource.collectionView(self.collectionView, numberOfItemsInSection: indexPath.section) - 1)
-        let (separatorInsets, layoutMargins, accessories) = self.cellLayoutData(for: section, isFirstRow: isFirst, isLastRow: isLast, isAddCell: isAdd, isEditing: isEditing)
-
-        // TODO: - Add separator insets
-//        cell.separatorInset = separatorInsets
-        cell.layoutMargins = layoutMargins
-        cell.contentView.layoutMargins = layoutMargins
-        cell.accessories = accessories
-        cell.accessibilityTraits = []
-    }
-
     private func setupCollectionView(with keyboardData: KeyboardData) {
         var insets = self.collectionView.contentInset
         insets.bottom = keyboardData.endFrame.height
@@ -693,5 +649,65 @@ final class ItemDetailCollectionViewHandler: NSObject {
 }
 
 extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        collectionView.deselectItem(at: indexPath, animated: true)
 
+        guard let section = self.dataSource.section(for: indexPath.section)?.section else { return }
+
+        switch section {
+        case .attachments:
+            if indexPath.row == self.viewModel.state.attachments.count {
+                self.observer.on(.next(.openFilePicker))
+            } else if indexPath.row < self.viewModel.state.attachments.count {
+                let key = self.viewModel.state.attachments[indexPath.row].key
+                self.viewModel.process(action: .openAttachment(key))
+            }
+        case .notes:
+            if indexPath.row == self.viewModel.state.notes.count {
+                self.observer.on(.next(.openNoteEditor(nil)))
+            } else {
+                let note = self.viewModel.state.notes[indexPath.row]
+
+                guard !self.viewModel.state.savingNotes.contains(note.key) else { return }
+
+                self.observer.on(.next(.openNoteEditor(note)))
+            }
+        case .tags:
+            if indexPath.row == self.viewModel.state.tags.count {
+                self.observer.on(.next(.openTagPicker))
+            }
+        case .creators:
+            guard self.viewModel.state.isEditing else { return }
+
+            if indexPath.row == self.viewModel.state.data.creators.count {
+                self.observer.on(.next(.openCreatorCreation))
+            } else {
+                let id = self.viewModel.state.data.creatorIds[indexPath.row]
+                if let creator = self.viewModel.state.data.creators[id] {
+                    self.observer.on(.next(.openCreatorEditor(creator)))
+                }
+            }
+        case .type:
+            if self.viewModel.state.isEditing && !self.viewModel.state.data.isAttachment{
+                self.observer.on(.next(.openTypePicker))
+            }
+        case .fields:
+            let fieldId = self.viewModel.state.data.fieldIds[indexPath.row]
+            if let field = self.viewModel.state.data.fields[fieldId] {
+                guard field.isTappable else { return }
+                switch field.key {
+                case FieldKeys.Item.Attachment.url:
+                    self.observer.on(.next(.openUrl(field.value)))
+                case FieldKeys.Item.doi:
+                    self.observer.on(.next(.openDoi(field.value)))
+                default: break
+                }
+            }
+        case .abstract:
+            if !self.viewModel.state.isEditing {
+                self.viewModel.process(action: .toggleAbstractDetailCollapsed)
+            }
+        case .title, .dates: break
+        }
+    }
 }

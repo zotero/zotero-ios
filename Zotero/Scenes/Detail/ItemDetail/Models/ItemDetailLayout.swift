@@ -27,7 +27,7 @@ struct ItemDetailLayout {
                 bottom = 15
             } else {
                 top = 20
-                bottom = 10
+                bottom = 11
             }
         case .dates:
             if isEditing {
@@ -38,40 +38,35 @@ struct ItemDetailLayout {
                 bottom = isLastRow ? 20 : 10
             }
         case .tags:
-            if isEditing {
-                top = isLastRow ? 0 : 15
-                bottom = isLastRow ? 0 : 15
-            } else {
-                top = isFirstRow ? 20 : 10
-                bottom = isLastRow ? 20 : 10
-            }
+            top = isFirstRow ? 20 : (isLastRow ? 5 : 10)
+            bottom = isLastRow ? 5 : 10
         case .creators:
             if isEditing {
-                top = isLastRow ? 0 : 15
-                bottom = isLastRow ? 0 : 15
+                top = isLastRow ? 10 : 15
+                bottom = isLastRow ? 10 : 15
             } else {
                 top = 10
-                bottom = 10
+                bottom = 11
             }
         case .fields:
             top = isEditing ? 15 : 10
-            bottom = isEditing ? 15 : 10
+            bottom = isEditing ? 15 : 11
         case .abstract:
             top = 15
             bottom = 15
         case .attachments, .notes:
-            if isEditing && isLastRow {
-                top = 0
-                bottom = 0
+            if isLastRow {
+                top = 5
+                bottom = 5
             } else {
                 top = 15
                 bottom = 15
             }
         case .title:
             top = 43 + separatorHeight
-            bottom = 20 + separatorHeight
+            bottom = 7 + separatorHeight
         }
 
-        return UIEdgeInsets(top: top/2, left: horizontalInset, bottom: bottom/2, right: horizontalInset)
+        return UIEdgeInsets(top: top, left: horizontalInset, bottom: bottom, right: horizontalInset)
     }
 }
