@@ -22,6 +22,7 @@ final class PlaceholderTextViewDelegate: NSObject {
             return Disposables.create()
         }
     }
+    var textChanged: ((String) -> Void)?
     private var didBecomeActiveObserver: AnyObserver<()>?
     var didBecomeActive: Observable<()> {
         return Observable.create { observer -> Disposable in
@@ -114,5 +115,6 @@ extension PlaceholderTextViewDelegate: UITextViewDelegate {
 
     func textViewDidChange(_ textView: UITextView) {
         self.textObserver?.on(.next(textView.text))
+        self.textChanged?(textView.text)
     }
 }

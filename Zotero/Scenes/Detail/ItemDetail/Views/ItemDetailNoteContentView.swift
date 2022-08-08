@@ -9,15 +9,14 @@
 import UIKit
 
 class ItemDetailNoteContentView: UIView {
-    @IBOutlet private weak var containerHeight: NSLayoutConstraint!
     @IBOutlet private weak var labelTop: NSLayoutConstraint!
     @IBOutlet private weak var labelLeft: NSLayoutConstraint!
     @IBOutlet private weak var label: UILabel!
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        self.containerHeight.constant = ItemDetailLayout.minCellHeight
         self.accessibilityTraits = .button
+        self.heightAnchor.constraint(greaterThanOrEqualToConstant: ItemDetailLayout.minCellHeight).isActive = true
     }
 
     func setup(with note: Note, isSaving: Bool) {

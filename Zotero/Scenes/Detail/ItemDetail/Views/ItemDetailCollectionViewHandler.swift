@@ -10,6 +10,10 @@ import UIKit
 
 import RxSwift
 
+protocol ItemDetailCollectionViewHandlerDelegate: AnyObject {
+    func isDownloadingFromNavigationBar(for key: String) -> Bool
+}
+
 /// Class for handling the `UITableView` of `ItemDetailViewController`. It takes care of showing appropriate data in the `tableView`, keeping track
 /// of visible sections and reports actions that need to take place after user interaction with the `tableView`.
 final class ItemDetailCollectionViewHandler: NSObject {
@@ -163,7 +167,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
     private var maxNonemptyTitleWidth: CGFloat = 0
     private var dataSource: UICollectionViewDiffableDataSource<SectionType, Row>!
     private weak var fileDownloader: AttachmentDownloader?
-    weak var delegate: ItemDetailTableViewHandlerDelegate?
+    weak var delegate: ItemDetailCollectionViewHandlerDelegate?
 
     var attachmentSectionIndex: Int? {
         return self.dataSource?.snapshot().sectionIdentifiers.firstIndex(where: { $0.section == .attachments })
@@ -189,7 +193,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     // MARK: - Actions
 
-    /// Reloads the whole `tableView`. Applies new snapshot based on `state` and reloads remaining items which were not changed between snapshots.
+    /// Reloads the whole `collectionView`. Applies new snapshot based on `state` and reloads remaining items which were not changed between snapshots.
     /// - parameter state: State to which we're reloading the table view.
     /// - parameter animated: `true` if the change is animated, `false` otherwise.
     func reloadAll(to state: ItemDetailState, animated: Bool) {
@@ -212,6 +216,95 @@ final class ItemDetailCollectionViewHandler: NSObject {
         let (titleWidth, nonEmptyTitleWidth) = self.calculateTitleWidths(for: data)
         self.maxTitleWidth = titleWidth
         self.maxNonemptyTitleWidth = nonEmptyTitleWidth
+    }
+
+    /// Reloads specific section based on snapshot diff. In case of special sections (`title`, `abstract` and `fields`) which don't hold their respective values, their item(s) are always reloaded.
+    /// - parameter section: Section to reload.
+    /// - parameter state: Current item detail state.
+    /// - parameter animated: `true` if change is animated, `false` otherwise.
+    func reload(section: Section, state: ItemDetailState, animated: Bool) {
+        var snapshot = self.dataSource.snapshot()
+
+        guard let sectionType = snapshot.sectionIdentifiers.first(where: { $0.section == section }) else { return }
+
+        let oldRows = snapshot.itemIdentifiers(inSection: sectionType)
+        let newRows = self.rows(for: section, state: state)
+        snapshot.deleteItems(oldRows)
+        snapshot.appendItems(newRows, toSection: sectionType)
+
+        let toReload = self.rowsToReload(from: oldRows, to: newRows, in: section)
+        if !toReload.isEmpty {
+            snapshot.reloadItems(toReload)
+        }
+
+        self.dataSource.apply(snapshot, animatingDifferences: animated, completion: nil)
+    }
+
+    /// Returns an array of rows which need to be reloaded manually. Some sections are "special" because their rows don't hold the values which they show in collection view, they just hold their
+    /// identifiers which don't change. So if the value changes, we have to manually reload these rows.
+    /// - parameter oldRows: Rows from previous snapshot.
+    /// - parameter newRows: Rows from new snapshot.
+    /// - parameter section: Section of given rows.
+    /// - returns: Array of rows to reload.
+    private func rowsToReload(from oldRows: [Row], to newRows: [Row], in section: Section) -> [Row] {
+        switch section {
+        case .title:
+            // Always reload title, if reload is requested, the value changed.
+            return [.title]
+
+        case .abstract:
+            // Always reload abstract, if reload is requested, the value changed.
+            return [.abstract]
+
+        case .fields:
+            // Reload fields which weren't removed.
+            var toReload: [Row] = []
+            for row in oldRows {
+                if newRows.contains(row) {
+                    toReload.append(row)
+                }
+            }
+            return toReload
+
+        default:
+            // Rows in other sections hold their respective values, so they will reload based on the diff.
+            return []
+        }
+    }
+
+    /// Update height of updated cell and scroll to it. The cell itself doesn't need to be reloaded, since the change took place inside of it (text field or text view).
+    func updateHeightAndScrollToUpdated(row: Row, state: ItemDetailState) {
+        guard let indexPath = self.dataSource.indexPath(for: row), let cellFrame =  self.collectionView.cellForItem(at: indexPath)?.frame else { return }
+
+        let snapshot = self.dataSource.snapshot()
+        self.dataSource.apply(snapshot, animatingDifferences: false)
+
+        let cellBottom = cellFrame.maxY - self.collectionView.contentOffset.y
+        let tableViewBottom = self.collectionView.superview!.bounds.maxY - self.collectionView.contentInset.bottom
+        let safeAreaTop = self.collectionView.superview!.safeAreaInsets.top
+
+        // Scroll either when cell bottom is below keyboard or cell top is not visible on screen
+        if cellBottom > tableViewBottom || cellFrame.minY < (safeAreaTop + self.collectionView.contentOffset.y) {
+            // Scroll to top if cell is smaller than visible screen, so that it's fully visible, otherwise scroll to bottom.
+            let position: UICollectionView.ScrollPosition = cellFrame.height + safeAreaTop < tableViewBottom ? .top : .bottom
+            self.collectionView.scrollToItem(at: indexPath, at: position, animated: false)
+        }
+    }
+
+    func updateAttachment(with attachment: Attachment) {
+        var snapshot = self.dataSource.snapshot()
+
+        guard let section = snapshot.sectionIdentifiers.first(where: { $0.section == .attachments }) else { return }
+
+        var rows = snapshot.itemIdentifiers(inSection: section)
+
+        guard let index = rows.firstIndex(where: { $0.isAttachment(withKey: attachment.key) }) else { return }
+
+        snapshot.deleteItems(rows)
+        rows[index] = self.attachmentRow(for: attachment)
+        snapshot.appendItems(rows, toSection: section)
+
+        self.dataSource.apply(snapshot, animatingDifferences: false, completion: nil)
     }
 
     // MARK: - Helpers
@@ -257,24 +350,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             return [.abstract]
 
         case .attachments:
-            let attachments: [Row] = state.attachments.map({ attachment in
-                if self.delegate?.isDownloadingFromNavigationBar(for: attachment.key) == true {
-                    return .attachment(attachment: attachment, type: .disabled)
-                }
-
-                let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
-
-                if let error = error {
-                    return .attachment(attachment: attachment, type: .failed(error))
-                }
-
-                if let progress = progress {
-                    return .attachment(attachment: attachment, type: .inProgress(progress))
-                }
-
-                return .attachment(attachment: attachment, type: .default)
-            })
-            return attachments + [.addAttachment]
+            return state.attachments.map({ self.attachmentRow(for: $0) }) + [.addAttachment]
 
         case .creators:
             let creators: [Row] = state.data.creatorIds.compactMap({ creatorId in
@@ -316,6 +392,24 @@ final class ItemDetailCollectionViewHandler: NSObject {
         }
     }
 
+    private func attachmentRow(for attachment: Attachment) -> Row {
+        if self.delegate?.isDownloadingFromNavigationBar(for: attachment.key) == true {
+            return .attachment(attachment: attachment, type: .disabled)
+        }
+
+        let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
+
+        if let error = error {
+            return .attachment(attachment: attachment, type: .failed(error))
+        }
+
+        if let progress = progress {
+            return .attachment(attachment: attachment, type: .inProgress(progress))
+        }
+
+        return .attachment(attachment: attachment, type: .default)
+    }
+
     /// Returns width of title for field cells for both editing and non-editing states.
     /// - parameter data: New data.
     /// - returns: Max field title width for editing and non-editing state.
@@ -353,7 +447,9 @@ final class ItemDetailCollectionViewHandler: NSObject {
     private lazy var titleRegistration: UICollectionView.CellRegistration<ItemDetailTitleCell, (String, Bool)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
             guard let `self` = self else { return }
-            cell.contentConfiguration = ItemDetailTitleCell.ContentConfiguration(title: data.0, isEditing: data.1, layoutMargins: self.layoutMargins(for: indexPath))
+            cell.contentConfiguration = ItemDetailTitleCell.ContentConfiguration(title: data.0, isEditing: data.1, layoutMargins: self.layoutMargins(for: indexPath), textChanged: { [weak self] text in
+                self?.viewModel.process(action: .setTitle(text))
+            })
         }
     }()
 
@@ -375,13 +471,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
             guard let `self` = self else { return }
 
-            cell.contentConfiguration = ItemDetailFieldEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath))
-
-            guard let observable = cell.textObservable else { return }
-
-            observable.subscribe(onNext: { [weak self] value in
-                self?.viewModel.process(action: .setFieldValue(id: data.0.key, value: value))
-            }).disposed(by: cell.newDisposeBag)
+            cell.contentConfiguration = ItemDetailFieldEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath),
+                                                                                     textChanged: { [weak self] text in
+                                                                                         self?.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
+                                                                                     })
         }
     }()
 
@@ -389,13 +482,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
             guard let `self` = self else { return }
 
-            cell.contentConfiguration = ItemDetailFieldMultilineEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath))
-
-            guard let observable = cell.textObservable else { return }
-
-            observable.subscribe(onNext: { [weak self] value in
-                self?.viewModel.process(action: .setFieldValue(id: data.0.key, value: value))
-            }).disposed(by: cell.newDisposeBag)
+            cell.contentConfiguration = ItemDetailFieldMultilineEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath),
+                                                                                              textChanged: { [weak self] text in
+                                                                                                  self?.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
+                                                                                              })
         }
     }()
 
@@ -417,13 +507,9 @@ final class ItemDetailCollectionViewHandler: NSObject {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, text in
             guard let `self` = self else { return }
 
-            cell.contentConfiguration = ItemDetailAbstractEditCell.ContentConfiguration(text: text, layoutMargins: self.layoutMargins(for: indexPath))
-
-            guard let observable = cell.textObservable else { return }
-
-            observable.subscribe(onNext: { [weak self] abstract in
-                self?.viewModel.process(action: .setAbstract(abstract))
-            }).disposed(by: cell.newDisposeBag)
+            cell.contentConfiguration = ItemDetailAbstractEditCell.ContentConfiguration(text: text, layoutMargins: self.layoutMargins(for: indexPath), textChanged: { [weak self] text in
+                self?.viewModel.process(action: .setAbstract(text))
+            })
         }
     }()
 
@@ -467,14 +553,24 @@ final class ItemDetailCollectionViewHandler: NSObject {
     private func createCollectionViewLayout() -> UICollectionViewLayout {
         return UICollectionViewCompositionalLayout { [unowned self] index, environment in
             var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
-            configuration.showsSeparators = false
 
             var supplementaryItems: [NSCollectionLayoutBoundarySupplementaryItem] = []
 
-            if let section = self.dataSource.section(for: index)?.section {
-                switch section {
+            if let section = self.dataSource.section(for: index) {
+                configuration.itemSeparatorHandler = { [unowned self] indexPath, _configuration in
+                    var configuration = _configuration
+                    let isLastRow = indexPath.row == self.dataSource.snapshot(for: section).items.count - 1
+                    configuration.bottomSeparatorVisibility = self.sectionHasSeparator(section.section, isEditing: self.viewModel.state.isEditing, isLastRow: isLastRow) ? .visible : .hidden
+                    if configuration.bottomSeparatorVisibility == .visible {
+                        configuration.bottomSeparatorInsets = NSDirectionalEdgeInsets(top: 0, leading: self.separatorLeftInset(for: section.section), bottom: 0, trailing: 0)
+                    }
+                    return configuration
+                }
+
+                switch section.section {
                 case .attachments, .tags, .notes:
-                    let header = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(44)),
+                    let height = ItemDetailLayout.sectionHeaderHeight - ItemDetailLayout.separatorHeight
+                    let header = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(height)),
                                                                              elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
                     supplementaryItems.append(header)
 
@@ -486,6 +582,32 @@ final class ItemDetailCollectionViewHandler: NSObject {
             layoutSection.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
             layoutSection.boundarySupplementaryItems = supplementaryItems
             return layoutSection
+        }
+    }
+
+    private func sectionHasSeparator(_ section: Section, isEditing: Bool, isLastRow: Bool) -> Bool {
+        switch section {
+        case .title:
+            return true
+        case .abstract:
+            return false
+        case .type, .fields, .creators:
+            return isEditing
+        case .attachments, .notes:
+            return !isLastRow
+        case .tags:
+            return !isLastRow && isEditing
+        case .dates:
+            return isEditing || isLastRow
+        }
+    }
+
+    private func separatorLeftInset(for section: Section) -> CGFloat {
+        switch section {
+        case .notes, .attachments, .tags:
+            return ItemDetailLayout.iconWidth + ItemDetailLayout.horizontalInset + 17
+        case .abstract, .creators, .dates, .fields, .title, .type:
+            return ItemDetailLayout.horizontalInset
         }
     }
 

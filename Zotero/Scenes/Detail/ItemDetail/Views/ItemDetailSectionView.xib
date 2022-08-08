@@ -40,7 +40,6 @@
                             <constraints>
                                 <constraint firstItem="tmh-CA-LEO" firstAttribute="top" secondItem="cY0-EH-PZA" secondAttribute="top" id="AX5-Tk-O3M"/>
                                 <constraint firstItem="tmh-CA-LEO" firstAttribute="leading" secondItem="cY0-EH-PZA" secondAttribute="leading" constant="16" id="H8M-0A-B5c"/>
-                                <constraint firstAttribute="height" constant="45" id="KJA-HE-FR0"/>
                                 <constraint firstAttribute="trailing" secondItem="tmh-CA-LEO" secondAttribute="trailing" constant="16" id="rKj-Qt-czU"/>
                                 <constraint firstAttribute="bottom" secondItem="tmh-CA-LEO" secondAttribute="bottom" id="rgt-eR-eZj"/>
                             </constraints>
@@ -80,7 +79,6 @@
             <connections>
                 <outlet property="bottomSeparator" destination="mm0-Ic-7rz" id="F9t-DL-mCd"/>
                 <outlet property="bottomSeparatorHeight" destination="hkI-qk-jdu" id="4jO-yN-f4g"/>
-                <outlet property="headerHeight" destination="KJA-HE-FR0" id="BGF-gE-OAo"/>
                 <outlet property="titleLabel" destination="tmh-CA-LEO" id="iY2-IL-zj2"/>
                 <outlet property="topSeparator" destination="HxX-4G-xYN" id="yES-se-zH9"/>
                 <outlet property="topSeparatorHeight" destination="E1d-ZY-cX2" id="Ewy-tB-jPm"/>

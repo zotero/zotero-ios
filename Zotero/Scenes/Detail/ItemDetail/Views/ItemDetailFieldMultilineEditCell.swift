@@ -8,13 +8,12 @@
 
 import UIKit
 
-import RxSwift
-
-class ItemDetailFieldMultilineEditCell: RxCollectionViewListCell {
+class ItemDetailFieldMultilineEditCell: UICollectionViewListCell {
     struct ContentConfiguration: UIContentConfiguration {
         let field: ItemDetailState.Field
         let titleWidth: CGFloat
         let layoutMargins: UIEdgeInsets
+        let textChanged: (String) -> Void
 
         func makeContentView() -> UIView & UIContentView {
             return ContentView(configuration: self)
@@ -44,6 +43,7 @@ class ItemDetailFieldMultilineEditCell: RxCollectionViewListCell {
 
             self.add(contentView: view)
             view.layoutMargins = configuration.layoutMargins
+            view.textChanged = configuration.textChanged
             self.contentView = view
             self.contentView.setup(with: configuration.field, titleWidth: configuration.titleWidth)
         }
@@ -51,9 +51,5 @@ class ItemDetailFieldMultilineEditCell: RxCollectionViewListCell {
         required init?(coder: NSCoder) {
             fatalError()
         }
-    }
-
-    var textObservable: Observable<String>? {
-        return (self.contentView as? ItemDetailFieldMultilineEditContentView)?.textObservable
     }
 }

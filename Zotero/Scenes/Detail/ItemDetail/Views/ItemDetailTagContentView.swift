@@ -19,6 +19,7 @@ class ItemDetailTagContentView: UIView {
         self.tagView.layer.cornerRadius = self.tagView.frame.width / 2
         self.tagView.layer.masksToBounds = true
         self.labelTop.constant = self.label.font.capHeight - self.label.font.ascender
+        self.heightAnchor.constraint(greaterThanOrEqualToConstant: ItemDetailLayout.minCellHeight).isActive = true
     }
 
     func setup(tag: Tag, isEditing: Bool) {

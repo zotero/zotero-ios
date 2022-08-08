@@ -8,16 +8,6 @@
 
 import UIKit
 
-import RxSwift
-
-class RxCollectionViewListCell: UICollectionViewListCell {
-    var disposeBag: DisposeBag = DisposeBag()
-    var newDisposeBag: DisposeBag {
-        self.disposeBag = DisposeBag()
-        return self.disposeBag
-    }
-}
-
 extension UIView {
     func add(contentView view: UIView) {
         view.translatesAutoresizingMaskIntoConstraints = false

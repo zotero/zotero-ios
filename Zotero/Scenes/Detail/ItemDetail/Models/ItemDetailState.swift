@@ -234,8 +234,8 @@ struct ItemDetailState: ViewModelState {
     }
 
     enum TableViewReloadType {
-        case row(ItemDetailTableViewHandler.Row)
-        case section(ItemDetailTableViewHandler.Section)
+        case row(ItemDetailCollectionViewHandler.Row)
+        case section(ItemDetailCollectionViewHandler.Section)
     }
 
     let library: Library

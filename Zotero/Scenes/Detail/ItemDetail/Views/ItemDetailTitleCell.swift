@@ -8,14 +8,12 @@
 
 import UIKit
 
-import RxCocoa
-import RxSwift
-
-final class ItemDetailTitleCell: RxCollectionViewListCell {
+final class ItemDetailTitleCell: UICollectionViewListCell {
     struct ContentConfiguration: UIContentConfiguration {
         let title: String
         let isEditing: Bool
         let layoutMargins: UIEdgeInsets
+        let textChanged: (String) -> Void
 
         func makeContentView() -> UIView & UIContentView {
             return ContentView(configuration: self)
@@ -45,6 +43,7 @@ final class ItemDetailTitleCell: RxCollectionViewListCell {
 
             self.add(contentView: view)
             view.layoutMargins = configuration.layoutMargins
+            view.delegate.textChanged = configuration.textChanged
             self.contentView = view
             self.contentView.setup(with: configuration.title, isEditing: configuration.isEditing)
         }
@@ -52,9 +51,5 @@ final class ItemDetailTitleCell: RxCollectionViewListCell {
         required init?(coder: NSCoder) {
             fatalError()
         }
-    }
-
-    var textObservable: Observable<String>? {
-        return (self.contentView as? ItemDetailTitleContentView)?.delegate.textObservable
     }
 }

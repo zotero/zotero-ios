@@ -9,7 +9,6 @@
 import UIKit
 
 class ItemDetailAttachmentContentView: UIView {
-    @IBOutlet private weak var containerHeight: NSLayoutConstraint!
     @IBOutlet private(set) weak var fileView: FileAttachmentView!
     @IBOutlet private weak var attachmentIcon: UIImageView!
     @IBOutlet private weak var labelTop: NSLayoutConstraint!
@@ -18,7 +17,8 @@ class ItemDetailAttachmentContentView: UIView {
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        self.containerHeight.constant = ItemDetailLayout.minCellHeight
+
+        self.heightAnchor.constraint(greaterThanOrEqualToConstant: ItemDetailLayout.minCellHeight).isActive = true
     }
 
     func setup(with attachment: Attachment, type: ItemDetailAttachmentCell.Kind) {

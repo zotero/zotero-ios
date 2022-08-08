@@ -14,14 +14,12 @@ final class ItemDetailSectionView: UICollectionReusableView {
     @IBOutlet private weak var topSeparatorHeight: NSLayoutConstraint!
     @IBOutlet private weak var bottomSeparator: UIView!
     @IBOutlet private weak var bottomSeparatorHeight: NSLayoutConstraint!
-    @IBOutlet private weak var headerHeight: NSLayoutConstraint!
 
     override func awakeFromNib() {
         super.awakeFromNib()
 
         self.topSeparatorHeight.constant = ItemDetailLayout.separatorHeight
         self.bottomSeparatorHeight.constant = ItemDetailLayout.separatorHeight
-        self.headerHeight.constant = ItemDetailLayout.sectionHeaderHeight - ItemDetailLayout.separatorHeight
         
         let separatorColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
             traitCollection.userInterfaceStyle == .light ? .opaqueSeparator : Asset.Colors.itemDetailDarkSeparator.color

@@ -8,8 +8,6 @@
 
 import UIKit
 
-import RxSwift
-
 class ItemDetailAbstractEditContentView: UIView {
     @IBOutlet private weak var separatorHeight: NSLayoutConstraint!
     @IBOutlet private weak var titleLabel: UILabel!
@@ -20,13 +18,7 @@ class ItemDetailAbstractEditContentView: UIView {
 
     private static let textViewTapAreaOffset: CGFloat = 8
 
-    private var observer: AnyObserver<String>?
-    var textObservable: Observable<String> {
-        return Observable.create { observer -> Disposable in
-            self.observer = observer
-            return Disposables.create()
-        }
-    }
+    var textChanged: ((String) -> Void)?
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -63,6 +55,6 @@ class ItemDetailAbstractEditContentView: UIView {
 
 extension ItemDetailAbstractEditContentView: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
-        self.observer?.on(.next(textView.text))
+        self.textChanged?(textView.text)
     }
 }

@@ -27,7 +27,6 @@ final class ItemDetailViewController: UIViewController {
     private let controllers: Controllers
     private let disposeBag: DisposeBag
 
-//    private var tableViewHandler: ItemDetailTableViewHandler!
     private var collectionViewHandler: ItemDetailCollectionViewHandler!
     private var downloadingViaNavigationBar: Bool
     private var didAppear: Bool
@@ -92,8 +91,8 @@ final class ItemDetailViewController: UIViewController {
 
     // MARK: - Navigation
 
-    private func perform(tableViewAction: ItemDetailTableViewHandler.Action) {
-        switch tableViewAction {
+    private func perform(collectionViewAction: ItemDetailCollectionViewHandler.Action) {
+        switch collectionViewAction {
         case .openCreatorEditor(let creator):
             self.coordinatorDelegate?.showCreatorEditor(for: creator, itemType: self.viewModel.state.data.type,
                                                         saved: { [weak self] creator in
@@ -202,11 +201,11 @@ final class ItemDetailViewController: UIViewController {
 
         if let reload = state.reload {
             switch reload {
-            case .row(let row): break
-//                self.tableViewHandler.updateHeightAndScrollToUpdated(row: row, state: state)
+            case .row(let row):
+                self.collectionViewHandler.updateHeightAndScrollToUpdated(row: row, state: state)
 
-            case .section(let section): break
-//                self.tableViewHandler.reload(section: section, state: state, animated: true)
+            case .section(let section):
+                self.collectionViewHandler.reload(section: section, state: state, animated: true)
             }
             return
         }
@@ -223,7 +222,7 @@ final class ItemDetailViewController: UIViewController {
             }
 
             if let attachment = state.attachments.first(where: { $0.key == key }) {
-//                self.tableViewHandler.updateAttachment(with: attachment)
+                self.collectionViewHandler.updateAttachment(with: attachment)
             }
         }
     }
@@ -354,23 +353,15 @@ final class ItemDetailViewController: UIViewController {
         let width = self.navigationController?.view.frame.width ?? self.view.frame.width
         self.collectionViewHandler = ItemDetailCollectionViewHandler(collectionView: self.collectionView, containerWidth: width, viewModel: self.viewModel,
                                                                      fileDownloader: self.controllers.userControllers?.fileDownloader)
-    }
+        self.collectionViewHandler.delegate = self
 
-//    private func setupTableViewHandler() {
-//        let width = self.navigationController?.view.frame.width ?? self.view.frame.width
-//        self.tableViewHandler = ItemDetailTableViewHandler(tableView: self.tableView,
-//                                                           containerWidth: width,
-//                                                           viewModel: self.viewModel,
-//                                                           fileDownloader: self.controllers.userControllers?.fileDownloader)
-//        self.tableViewHandler.delegate = self
-//
-//        self.tableViewHandler.observer
-//                             .observe(on: MainScheduler.instance)
-//                             .subscribe(onNext: { [weak self] action in
-//                                 self?.perform(tableViewAction: action)
-//                             })
-//                             .disposed(by: self.disposeBag)
-//    }
+        self.collectionViewHandler.observer
+                                  .observe(on: MainScheduler.instance)
+                                  .subscribe(onNext: { [weak self] action in
+                                      self?.perform(collectionViewAction: action)
+                                  })
+                                  .disposed(by: self.disposeBag)
+    }
 
     private func setupFileObservers() {
         NotificationCenter.default
@@ -411,7 +402,7 @@ final class ItemDetailViewController: UIViewController {
     }
 }
 
-extension ItemDetailViewController: ItemDetailTableViewHandlerDelegate {
+extension ItemDetailViewController: ItemDetailCollectionViewHandlerDelegate {
     func isDownloadingFromNavigationBar(for key: String) -> Bool {
         return self.downloadingViaNavigationBar && key == self.viewModel.state.mainAttachmentKey
     }
