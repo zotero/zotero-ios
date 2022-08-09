@@ -37,13 +37,10 @@ struct ItemDetailLayout {
                 top = 10
                 bottom = isLastRow ? 20 : 10
             }
-        case .tags:
-            top = isFirstRow ? 20 : (isLastRow ? 5 : 10)
-            bottom = isLastRow ? 5 : 10
         case .creators:
             if isEditing {
-                top = isLastRow ? 10 : 15
-                bottom = isLastRow ? 10 : 15
+                top = isLastRow ? 2 : 15
+                bottom = isLastRow ? 2 : 15
             } else {
                 top = 10
                 bottom = 11
@@ -54,14 +51,9 @@ struct ItemDetailLayout {
         case .abstract:
             top = 15
             bottom = 15
-        case .attachments, .notes:
-            if isLastRow {
-                top = 5
-                bottom = 5
-            } else {
-                top = 15
-                bottom = 15
-            }
+        case .attachments, .notes, .tags:
+            top = isLastRow ? 2 : 15
+            bottom = isLastRow ? 2 : 15
         case .title:
             top = 43 + separatorHeight
             bottom = 7 + separatorHeight

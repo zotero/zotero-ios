@@ -18,30 +18,21 @@ final class CollapsibleLabel: UILabel {
     private var expandedString: NSAttributedString?
     private var originalString: NSAttributedString?
 
-    func set(text: NSAttributedString, isCollapsed: Bool) {
+    func set(text: NSAttributedString, isCollapsed: Bool, maxWidth: CGFloat) {
         if self.originalString != text {
-            self.createStrings(from: text)
+            self.createStrings(from: text, maxWidth: maxWidth)
             self.originalString = text
         }
         self.attributedText = isCollapsed ? self.collapsedString : self.expandedString
         self.isCollapsed = isCollapsed
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-
-        guard let original = self.originalString else { return }
-
-        self.createStrings(from: original)
-        self.attributedText = self.isCollapsed ? self.collapsedString : self.expandedString
-    }
-
     /// Creates `collapsedString` and `expandedString` from given text.
     /// - parameter text: Text to adjust.
-    private func createStrings(from text: NSAttributedString) {
-        if let string = self.collapsedString(from: text) {
+    private func createStrings(from text: NSAttributedString, maxWidth: CGFloat) {
+        if let string = self.collapsedString(from: text, maxWidth: maxWidth) {
             self.collapsedString = string
-            self.expandedString = self.expandedString(from: text) ?? text
+            self.expandedString = self.expandedString(from: text, maxWidth: maxWidth) ?? text
         } else {
             self.collapsedString = text
             self.expandedString = text
@@ -50,22 +41,22 @@ final class CollapsibleLabel: UILabel {
 
     /// Creates an "expanded" version of given string. Expanded string appends a `showLessString` at a new line.
     /// - returns: An `NSAttributedString` with appended `showLessString` if `showLessString` is available, `nil` otherwise.
-    private func expandedString(from string: NSAttributedString) -> NSAttributedString? {
+    private func expandedString(from string: NSAttributedString, maxWidth: CGFloat) -> NSAttributedString? {
         guard let showLessString = self.showLessString else { return nil }
-        return self.fit(attributedString: showLessString, toLastLineOf: string, lineLimit: nil)
+        return self.fit(attributedString: showLessString, toLastLineOf: string, lineLimit: nil, maxWidth: maxWidth)
     }
 
     /// Creates a "collapsed" version of given string. Collapsed string appends a `showMoreString` at the last line, limited by `collapsedNumberOfLines`, if needed.
     /// - parameter string: String to collapse.
     /// - returns: An `NSAttributedString` with appended `showMoreString` if there are more than `collapsedNumberOfLines`, `nil` otherwise.
-    private func collapsedString(from string: NSAttributedString) -> NSAttributedString? {
+    private func collapsedString(from string: NSAttributedString, maxWidth: CGFloat) -> NSAttributedString? {
         guard let showMoreString = self.showMoreString,
               !string.string.isEmpty && self.collapsedNumberOfLines > 0 else { return nil }
-        return self.fit(attributedString: showMoreString, toLastLineOf: string, lineLimit: self.collapsedNumberOfLines)
+        return self.fit(attributedString: showMoreString, toLastLineOf: string, lineLimit: self.collapsedNumberOfLines, maxWidth: maxWidth)
     }
 
-    private func fit(attributedString stringToFit: NSAttributedString, toLastLineOf string: NSAttributedString, lineLimit: Int?) -> NSAttributedString? {
-        guard let lines = string.lines(for: self.frame.width) else { return nil }
+    private func fit(attributedString stringToFit: NSAttributedString, toLastLineOf string: NSAttributedString, lineLimit: Int?, maxWidth: CGFloat) -> NSAttributedString? {
+        guard let lines = string.lines(for: maxWidth) else { return nil }
 
         if let limit = lineLimit, lines.count <= limit {
             return nil
@@ -73,7 +64,7 @@ final class CollapsibleLabel: UILabel {
 
         let limit = lineLimit ?? lines.count
         let lastLine = lines[limit - 1]
-        let lastLineWithFittedString = self.line(string.attributedString(for: lastLine), withFittedString: stringToFit)
+        let lastLineWithFittedString = self.line(string.attributedString(for: lastLine), withFittedString: stringToFit, maxWidth: maxWidth)
         let result = NSMutableAttributedString()
         for index in 0..<(limit - 1) {
             result.append(string.attributedString(for: lines[index]))
@@ -90,7 +81,7 @@ final class CollapsibleLabel: UILabel {
     /// - parameter line: Original line.
     /// - parameter string: String which is appended to the end of the line.
     /// - returns: A new string, derived from `line`, which fits one line and has `string` appended at the end.
-    private func line(_ line: NSAttributedString, withFittedString string: NSAttributedString) -> NSAttributedString {
+    private func line(_ line: NSAttributedString, withFittedString string: NSAttributedString, maxWidth: CGFloat) -> NSAttributedString {
         // Check whether the `fittedString` fits into the line as a whole
         var newLine: NSAttributedString
 
@@ -102,7 +93,7 @@ final class CollapsibleLabel: UILabel {
             newLine = line.appendingString(string)
         }
 
-        if self.textFitsWidth(text: newLine) {
+        if self.text(newLine, fitsWidth: maxWidth) {
             return newLine
         }
 
@@ -122,7 +113,7 @@ final class CollapsibleLabel: UILabel {
             newLine = line.attributedSubstring(from: NSRange(location: 0, length: length))
                           .appendingString(string)
 
-            if self.textFitsWidth(text: newLine) {
+            if self.text(newLine, fitsWidth: maxWidth) {
                 stop.pointee = true
             }
         }
@@ -133,7 +124,7 @@ final class CollapsibleLabel: UILabel {
     /// Check whether given text fits current width of label
     /// - parameter text: Text to check whether it fits
     /// - returns: `true` if it fits, `false` otherwise
-    private func textFitsWidth(text: NSAttributedString) -> Bool {
+    private func text(_ text: NSAttributedString, fitsWidth maxWidth: CGFloat) -> Bool {
         let lineHeight: CGFloat
 
         if let paragraphStyle = text.attributes(at: 0, effectiveRange: nil)[.paragraphStyle] as? NSParagraphStyle,
@@ -144,7 +135,7 @@ final class CollapsibleLabel: UILabel {
             lineHeight = font?.lineHeight ?? 0
         }
 
-        let size = CGSize(width: self.frame.width, height: .greatestFiniteMagnitude)
+        let size = CGSize(width: maxWidth, height: .greatestFiniteMagnitude)
         let height = text.boundingRect(with: size, options: [.usesLineFragmentOrigin], context: nil).size.height
         return height <= lineHeight
     }

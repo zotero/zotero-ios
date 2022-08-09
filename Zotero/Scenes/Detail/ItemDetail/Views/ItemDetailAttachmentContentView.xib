@@ -38,7 +38,7 @@
                 </label>
             </subviews>
             <viewLayoutGuide key="safeArea" id="K8t-rg-FiT"/>
-            <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+            <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
             <constraints>
                 <constraint firstAttribute="bottomMargin" secondItem="Yy5-No-Wsg" secondAttribute="baseline" id="COC-sU-w83"/>
                 <constraint firstAttribute="trailingMargin" secondItem="Yy5-No-Wsg" secondAttribute="trailing" id="ENV-zo-lrr"/>

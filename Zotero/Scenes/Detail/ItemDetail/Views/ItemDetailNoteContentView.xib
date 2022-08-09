@@ -5,7 +5,6 @@
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="20020"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
-        <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -29,7 +28,7 @@
                 </label>
             </subviews>
             <viewLayoutGuide key="safeArea" id="uQh-tn-06C"/>
-            <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+            <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
             <constraints>
                 <constraint firstItem="P06-z6-G6H" firstAttribute="leading" secondItem="JPg-HG-fD2" secondAttribute="leadingMargin" id="8f3-Xa-bit"/>
                 <constraint firstAttribute="bottomMargin" secondItem="Zwi-h0-eqo" secondAttribute="baseline" id="HS3-4q-pwe"/>
@@ -49,8 +48,5 @@
     </objects>
     <resources>
         <image name="Item types/note" width="23" height="28"/>
-        <systemColor name="systemBackgroundColor">
-            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-        </systemColor>
     </resources>
 </document>

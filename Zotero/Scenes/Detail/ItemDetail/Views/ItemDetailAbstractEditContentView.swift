@@ -9,7 +9,6 @@
 import UIKit
 
 class ItemDetailAbstractEditContentView: UIView {
-    @IBOutlet private weak var separatorHeight: NSLayoutConstraint!
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var contentTextView: UITextView!
     @IBOutlet private weak var titleTop: NSLayoutConstraint!
@@ -22,8 +21,6 @@ class ItemDetailAbstractEditContentView: UIView {
 
     override func awakeFromNib() {
         super.awakeFromNib()
-
-        self.separatorHeight.constant = ItemDetailLayout.separatorHeight
 
         let titleFont = UIFont.preferredFont(for: .headline, weight: .regular)
         self.titleLabel.font = titleFont

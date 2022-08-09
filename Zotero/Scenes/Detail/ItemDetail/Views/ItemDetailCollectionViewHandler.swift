@@ -206,7 +206,6 @@ final class ItemDetailCollectionViewHandler: NSObject {
             snapshot.appendItems(self.rows(for: section.section, state: state), toSection: section)
         }
 
-        self.collectionView.isEditing = state.isEditing
         self.dataSource.apply(snapshot, animatingDifferences: animated, completion: nil)
     }
 
@@ -305,6 +304,20 @@ final class ItemDetailCollectionViewHandler: NSObject {
         snapshot.appendItems(rows, toSection: section)
 
         self.dataSource.apply(snapshot, animatingDifferences: false, completion: nil)
+    }
+
+    private func delete(at index: Int, section: Section) {
+        switch section {
+        case .creators:
+            self.viewModel.process(action: .deleteCreators([index]))
+        case .tags:
+            self.viewModel.process(action: .deleteTags([index]))
+        case .attachments:
+            self.viewModel.process(action: .deleteAttachments([index]))
+        case .notes:
+            self.viewModel.process(action: .deleteNotes([index]))
+        case .title, .abstract, .fields, .type, .dates: break
+        }
     }
 
     // MARK: - Helpers
@@ -461,8 +474,9 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
             switch data.0 {
             case .creator:
-                cell.accessories = self.viewModel.state.isEditing ? [.disclosureIndicator()] : []
-            default: break
+                cell.accessories = self.viewModel.state.isEditing ? [.disclosureIndicator(), .delete(), .reorder()] : []
+            default:
+                cell.accessories = []
             }
         }
     }()
@@ -499,7 +513,8 @@ final class ItemDetailCollectionViewHandler: NSObject {
     private lazy var abstractRegistration: UICollectionView.CellRegistration<ItemDetailAbstractCell, (String, Bool)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
             guard let `self` = self else { return }
-            cell.contentConfiguration = ItemDetailAbstractCell.ContentConfiguration(text: data.0, isCollapsed: data.1, layoutMargins: self.layoutMargins(for: indexPath))
+            let width = floor(self.collectionView.frame.width) - (ItemDetailLayout.horizontalInset * 2)
+            cell.contentConfiguration = ItemDetailAbstractCell.ContentConfiguration(text: data.0, isCollapsed: data.1, layoutMargins: self.layoutMargins(for: indexPath), maxWidth: width)
         }
     }()
 
@@ -557,24 +572,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
             var supplementaryItems: [NSCollectionLayoutBoundarySupplementaryItem] = []
 
             if let section = self.dataSource.section(for: index) {
-                configuration.itemSeparatorHandler = { [unowned self] indexPath, _configuration in
-                    var configuration = _configuration
-                    let isLastRow = indexPath.row == self.dataSource.snapshot(for: section).items.count - 1
-                    configuration.bottomSeparatorVisibility = self.sectionHasSeparator(section.section, isEditing: self.viewModel.state.isEditing, isLastRow: isLastRow) ? .visible : .hidden
-                    if configuration.bottomSeparatorVisibility == .visible {
-                        configuration.bottomSeparatorInsets = NSDirectionalEdgeInsets(top: 0, leading: self.separatorLeftInset(for: section.section), bottom: 0, trailing: 0)
-                    }
-                    return configuration
-                }
-
-                switch section.section {
-                case .attachments, .tags, .notes:
-                    let height = ItemDetailLayout.sectionHeaderHeight - ItemDetailLayout.separatorHeight
-                    let header = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(height)),
-                                                                             elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
+                self.setupSeparators(in: &configuration, section: section)
+                self.setupSwipeActions(in: &configuration, section: section)
+                if let header = self.createHeader(for: section.section) {
                     supplementaryItems.append(header)
-
-                default: break
                 }
             }
 
@@ -582,6 +583,47 @@ final class ItemDetailCollectionViewHandler: NSObject {
             layoutSection.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
             layoutSection.boundarySupplementaryItems = supplementaryItems
             return layoutSection
+        }
+    }
+
+    private func createHeader(for section: Section) -> NSCollectionLayoutBoundarySupplementaryItem? {
+        switch section {
+        case .attachments, .tags, .notes:
+            let height = ItemDetailLayout.sectionHeaderHeight - ItemDetailLayout.separatorHeight
+            return NSCollectionLayoutBoundarySupplementaryItem(layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(height)),
+                                                               elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
+        default:
+            return nil
+        }
+    }
+
+    private func setupSwipeActions(in configuration: inout UICollectionLayoutListConfiguration, section: SectionType) {
+        switch section.section {
+        case .attachments, .notes, .tags: break
+        case .creators where self.viewModel.state.isEditing: break
+        default:
+            configuration.trailingSwipeActionsConfigurationProvider = nil
+            return
+        }
+
+        configuration.trailingSwipeActionsConfigurationProvider = { [unowned self] indexPath in
+            let delete = UIContextualAction(style: .destructive, title: L10n.delete) { _, _, completion in
+                self.delete(at: indexPath.row, section: section.section)
+                completion(true)
+            }
+            return UISwipeActionsConfiguration(actions: [delete])
+        }
+    }
+
+    private func setupSeparators(in configuration: inout UICollectionLayoutListConfiguration, section: SectionType) {
+        configuration.itemSeparatorHandler = { [unowned self] indexPath, _configuration in
+            var configuration = _configuration
+            let isLastRow = indexPath.row == self.dataSource.snapshot(for: section).items.count - 1
+            configuration.bottomSeparatorVisibility = self.sectionHasSeparator(section.section, isEditing: self.viewModel.state.isEditing, isLastRow: isLastRow) ? .visible : .hidden
+            if configuration.bottomSeparatorVisibility == .visible {
+                configuration.bottomSeparatorInsets = NSDirectionalEdgeInsets(top: 0, leading: self.separatorLeftInset(for: section.section), bottom: 0, trailing: 0)
+            }
+            return configuration
         }
     }
 
@@ -593,10 +635,8 @@ final class ItemDetailCollectionViewHandler: NSObject {
             return false
         case .type, .fields, .creators:
             return isEditing
-        case .attachments, .notes:
+        case .attachments, .notes, .tags:
             return !isLastRow
-        case .tags:
-            return !isLastRow && isEditing
         case .dates:
             return isEditing || isLastRow
         }
@@ -635,6 +675,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         self.collectionView.delegate = self
         self.collectionView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
         self.collectionView.register(UINib(nibName: "ItemDetailSectionView", bundle: nil), forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: "Header")
+        self.collectionView.isEditing = true
 
         let titleRegistration = self.titleRegistration
         let fieldRegistration = self.fieldRegistration
@@ -730,7 +771,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             }
         }
 
-        self.dataSource.reorderingHandlers.canReorderItem = { [weak self] row -> Bool in
+        self.dataSource.reorderingHandlers.canReorderItem = { row -> Bool in
             switch row {
             case .creator: return true
             default: return false
@@ -738,6 +779,28 @@ final class ItemDetailCollectionViewHandler: NSObject {
         }
 
         self.dataSource.reorderingHandlers.didReorder = { [weak self] transaction in
+            guard let `self` = self else { return }
+
+            let changes = transaction.difference.compactMap({ change -> CollectionDifference<UUID>.Change? in
+                switch change {
+                case .insert(let offset, let element, let associatedWith):
+                    switch element {
+                    case .creator(let creator):
+                        return .insert(offset: offset, element: creator.id, associatedWith: associatedWith)
+                    default: return nil
+                    }
+                case .remove(let offset, let element, let associatedWith):
+                    switch element {
+                    case .creator(let creator):
+                        return .remove(offset: offset, element: creator.id, associatedWith: associatedWith)
+                    default: return nil
+                    }
+                }
+            })
+
+            guard let difference = CollectionDifference(changes) else { return }
+
+            self.viewModel.process(action: .moveCreators(difference))
         }
     }
 
@@ -831,5 +894,19 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             }
         case .title, .dates: break
         }
+    }
+
+    func collectionView(_ collectionView: UICollectionView, targetIndexPathForMoveOfItemFromOriginalIndexPath originalIndexPath: IndexPath, atCurrentIndexPath currentIndexPath: IndexPath,
+                        toProposedIndexPath proposedIndexPath: IndexPath) -> IndexPath {
+        let section = self.dataSource.section(for: proposedIndexPath.section)?.section
+        if section != .creators { return originalIndexPath }
+        if let row = self.dataSource.itemIdentifier(for: proposedIndexPath) {
+            switch row {
+            case .addCreator:
+                return originalIndexPath
+            default: break
+            }
+        }
+        return proposedIndexPath
     }
 }

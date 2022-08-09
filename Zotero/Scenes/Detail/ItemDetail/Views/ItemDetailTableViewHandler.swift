@@ -737,10 +737,10 @@ final class ItemDetailTableViewHandler: NSObject {
         }
 
         self.dataSource.moveRow = { [weak self] sourceIndexPath, destinationIndexPath in
-            guard let `self` = self, let sourceSection = self.dataSource.section(for: sourceIndexPath.section),
-                  let destinationSection = self.dataSource.section(for: destinationIndexPath.section),
-                  sourceSection.section == .creators && destinationSection.section == .creators else { return }
-            self.viewModel.process(action: .moveCreators(from: IndexSet([sourceIndexPath.row]), to: destinationIndexPath.row))
+//            guard let `self` = self, let sourceSection = self.dataSource.section(for: sourceIndexPath.section),
+//                  let destinationSection = self.dataSource.section(for: destinationIndexPath.section),
+//                  sourceSection.section == .creators && destinationSection.section == .creators else { return }
+//            self.viewModel.process(action: .moveCreators(from: IndexSet([sourceIndexPath.row]), to: destinationIndexPath.row))
         }
 
         self.dataSource.commitEditingStyle = { [weak self] editingStyle, indexPath in

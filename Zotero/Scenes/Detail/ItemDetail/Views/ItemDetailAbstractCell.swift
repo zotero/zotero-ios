@@ -13,6 +13,7 @@ final class ItemDetailAbstractCell: UICollectionViewListCell {
         let text: String
         let isCollapsed: Bool
         let layoutMargins: UIEdgeInsets
+        let maxWidth: CGFloat
 
         func makeContentView() -> UIView & UIContentView {
             return ContentView(configuration: self)
@@ -51,7 +52,7 @@ final class ItemDetailAbstractCell: UICollectionViewListCell {
         }
 
         private func apply(configuration: ContentConfiguration) {
-            self.contentView.setup(with: configuration.text, isCollapsed: configuration.isCollapsed)
+            self.contentView.setup(with: configuration.text, isCollapsed: configuration.isCollapsed, maxWidth: configuration.maxWidth)
         }
     }
 }

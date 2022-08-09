@@ -15,13 +15,6 @@
             <rect key="frame" x="0.0" y="0.0" width="414" height="277"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
             <subviews>
-                <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="5R5-Ct-VKH">
-                    <rect key="frame" x="20" y="0.0" width="394" height="1"/>
-                    <color key="backgroundColor" systemColor="separatorColor"/>
-                    <constraints>
-                        <constraint firstAttribute="height" constant="1" id="NgW-y7-Boe"/>
-                    </constraints>
-                </view>
                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text="Abstract" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="e8C-KX-K49">
                     <rect key="frame" x="20" y="44" width="374" height="17"/>
                     <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
@@ -40,18 +33,14 @@
                 <constraint firstAttribute="bottomMargin" secondItem="qM5-H4-Q0E" secondAttribute="baseline" id="GcX-AP-kbF"/>
                 <constraint firstItem="qM5-H4-Q0E" firstAttribute="leading" secondItem="IfK-Tg-e6T" secondAttribute="leadingMargin" id="M2N-MS-XBY"/>
                 <constraint firstAttribute="trailingMargin" secondItem="qM5-H4-Q0E" secondAttribute="trailing" id="MOx-Kw-qCz"/>
-                <constraint firstItem="5R5-Ct-VKH" firstAttribute="leading" secondItem="IfK-Tg-e6T" secondAttribute="leadingMargin" id="RyM-FN-YX8"/>
                 <constraint firstAttribute="trailingMargin" secondItem="e8C-KX-K49" secondAttribute="trailing" id="S1Z-ll-Sto"/>
-                <constraint firstItem="5R5-Ct-VKH" firstAttribute="top" secondItem="IfK-Tg-e6T" secondAttribute="top" id="SDE-gm-z7n"/>
                 <constraint firstItem="e8C-KX-K49" firstAttribute="leading" secondItem="IfK-Tg-e6T" secondAttribute="leadingMargin" id="Sl4-HZ-lQj"/>
-                <constraint firstAttribute="trailing" secondItem="5R5-Ct-VKH" secondAttribute="trailing" id="pZQ-Lk-Xhc"/>
                 <constraint firstItem="qM5-H4-Q0E" firstAttribute="top" secondItem="e8C-KX-K49" secondAttribute="baseline" constant="15" id="phs-r3-gI4"/>
                 <constraint firstItem="e8C-KX-K49" firstAttribute="top" secondItem="IfK-Tg-e6T" secondAttribute="topMargin" id="qen-2B-QYG"/>
             </constraints>
             <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
             <connections>
                 <outlet property="contentLabel" destination="qM5-H4-Q0E" id="YCf-E6-Zw9"/>
-                <outlet property="separatorHeight" destination="NgW-y7-Boe" id="dp2-E6-a5v"/>
                 <outlet property="titleLabel" destination="e8C-KX-K49" id="NIj-SQ-Qu7"/>
                 <outlet property="titleToContent" destination="phs-r3-gI4" id="RBb-mC-NAX"/>
                 <outlet property="titleTop" destination="qen-2B-QYG" id="loJ-0G-R05"/>
@@ -60,9 +49,6 @@
         </view>
     </objects>
     <resources>
-        <systemColor name="separatorColor">
-            <color red="0.23529411764705882" green="0.23529411764705882" blue="0.2627450980392157" alpha="0.28999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
-        </systemColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>

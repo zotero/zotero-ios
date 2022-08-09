@@ -9,7 +9,6 @@
 import UIKit
 
 class ItemDetailAbstractContentView: UIView {
-    @IBOutlet private weak var separatorHeight: NSLayoutConstraint!
     @IBOutlet private weak var titleTop: NSLayoutConstraint!
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var titleToContent: NSLayoutConstraint!
@@ -39,8 +38,6 @@ class ItemDetailAbstractContentView: UIView {
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        self.separatorHeight.constant = ItemDetailLayout.separatorHeight
-
         let titleFont = self.titleFont
         self.titleLabel.font = titleFont
         self.titleTop.constant = ItemDetailLayout.separatorHeight - (titleFont.ascender - titleFont.capHeight)
@@ -56,14 +53,14 @@ class ItemDetailAbstractContentView: UIView {
         self.contentLabel.showMoreString = showMore
     }
 
-    func setup(with abstract: String, isCollapsed: Bool) {
+    func setup(with abstract: String, isCollapsed: Bool, maxWidth: CGFloat) {
         let font = self.bodyFont
         let attributes: [NSAttributedString.Key: Any] = [.paragraphStyle: ItemDetailAbstractContentView.paragraphStyle, .font: font]
         let hyphenatedText = NSAttributedString(string: abstract, attributes: attributes)
 
-        self.contentLabel.set(text: hyphenatedText, isCollapsed: isCollapsed)
+        self.contentLabel.set(text: hyphenatedText, isCollapsed: isCollapsed, maxWidth: maxWidth)
 
         let lineHeightOffset = (ItemDetailLayout.lineHeight - font.lineHeight)
-        self.titleToContent.constant = self.layoutMargins.top - (font.ascender - font.capHeight) - lineHeightOffset
+        self.titleToContent.constant = ceil(self.layoutMargins.top - (font.ascender - font.capHeight) - lineHeightOffset)
     }
 }

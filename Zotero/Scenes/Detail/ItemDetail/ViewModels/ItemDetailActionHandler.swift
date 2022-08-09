@@ -90,9 +90,9 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         case .deleteCreator(let id):
             self.deleteCreator(with: id, in: viewModel)
 
-        case .moveCreators(let from, let to):
+        case .moveCreators(let difference):
             self.update(viewModel: viewModel) { state in
-                state.data.creatorIds.move(fromOffsets: from, toOffset: to)
+                state.data.creatorIds.applying(difference)
             }
 
         case .deleteNotes(let offsets): break

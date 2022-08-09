@@ -20,7 +20,7 @@ enum ItemDetailAction {
     case deleteCreators(IndexSet)
     case deleteNotes(IndexSet)
     case deleteTags(IndexSet)
-    case moveCreators(from: IndexSet, to: Int)
+    case moveCreators(CollectionDifference<UUID>)
     case openAttachment(String)
     case attachmentOpened(String)
     case reloadData
