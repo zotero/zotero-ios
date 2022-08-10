@@ -443,14 +443,6 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
               let fileDownloader = self.controllers.userControllers?.fileDownloader,
               let fileCleanupController = self.controllers.userControllers?.fileCleanupController else { return }
 
-        let hidesBackButton: Bool
-        switch type {
-        case .preview:
-            hidesBackButton = false
-        case .creation, .duplication:
-            hidesBackButton = true
-        }
-
         let state = ItemDetailState(type: type, library: library, userId: Defaults.shared.userId)
         let handler = ItemDetailActionHandler(apiClient: self.controllers.apiClient,
                                               fileStorage: self.controllers.fileStorage,
@@ -464,7 +456,6 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
         let controller = ItemDetailViewController(viewModel: viewModel, controllers: self.controllers)
         controller.coordinatorDelegate = self
-        controller.navigationItem.setHidesBackButton(hidesBackButton, animated: false)
         self.navigationController.pushViewController(controller, animated: true)
     }
 

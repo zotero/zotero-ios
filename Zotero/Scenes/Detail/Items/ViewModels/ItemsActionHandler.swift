@@ -479,7 +479,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
                 try self.dbStorage.perform(request: EditNoteDbRequest(note: note, libraryId: libraryId), on: self.backgroundQueue)
             } catch let error as DbError where error.isObjectNotFound {
                 do {
-                    let request = CreateNoteDbRequest(note: note, localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""), libraryId: libraryId, collectionKey: collectionKey)
+                    let request = CreateNoteDbRequest(note: note, localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""), libraryId: libraryId, collectionKey: collectionKey, parentKey: nil)
                     _ = try self.dbStorage.perform(request: request, on: self.backgroundQueue, invalidateRealm: true)
                 } catch let error {
                     handleError(error)

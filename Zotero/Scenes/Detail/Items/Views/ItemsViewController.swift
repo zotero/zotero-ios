@@ -406,8 +406,7 @@ final class ItemsViewController: UIViewController {
             })
 
         default:
-            let url = item.fields.first(where: { $0.key == FieldKeys.Item.url })?.value
-            self.coordinatorDelegate?.showItemDetail(for: .preview(key: item.key, url: url), library: self.viewModel.state.library)
+            self.coordinatorDelegate?.showItemDetail(for: .preview(key: item.key), library: self.viewModel.state.library)
         }
     }
 

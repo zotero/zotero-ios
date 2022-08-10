@@ -48,8 +48,11 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
     func process(action: ItemDetailAction, in viewModel: ViewModel<ItemDetailActionHandler>) {
         switch action {
+        case .loadInitialData:
+            self.loadInitialData(in: viewModel)
+
         case .reloadData:
-            self.reloadData(in: viewModel)
+            self.reloadData(isEditing: viewModel.state.isEditing, in: viewModel)
 
         case .changeType(let type):
             self.changeType(to: type, in: viewModel)
@@ -65,13 +68,6 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         case .addAttachments(let urls):
             self.addAttachments(from: urls, in: viewModel)
 
-        case .deleteAttachments(let offsets): break
-//            self.update(viewModel: viewModel) { state in
-//                state.data.deletedAttachments = state.data.deletedAttachments.union(offsets.map({ state.data.attachments[$0].key }))
-//                state.data.attachments.remove(atOffsets: offsets)
-//                state.reload = .section(.attachments)
-//            }
-
         case .openAttachment(let key):
             self.openAttachment(with: key, in: viewModel)
 
@@ -84,36 +80,19 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         case .saveCreator(let creator):
             self.save(creator: creator, in: viewModel)
 
-        case .deleteCreators(let offsets):
-            self.deleteCreators(at: offsets, in: viewModel)
-
         case .deleteCreator(let id):
             self.deleteCreator(with: id, in: viewModel)
 
         case .moveCreators(let difference):
             self.update(viewModel: viewModel) { state in
-                state.data.creatorIds.applying(difference)
+                state.data.creatorIds = state.data.creatorIds.applying(difference) ?? []
             }
-
-        case .deleteNotes(let offsets): break
-//            self.update(viewModel: viewModel) { state in
-//                state.data.deletedNotes = state.data.deletedNotes.union(offsets.map({ state.data.notes[$0].key }))
-//                state.data.notes.remove(atOffsets: offsets)
-//                state.reload = .none
-//            }
 
         case .saveNote(let key, let text, let tags):
             self.saveNote(key: key, text: text, tags: tags, in: viewModel)
 
         case .setTags(let tags):
             self.set(tags: tags, in: viewModel)
-
-        case .deleteTags(let offsets): break
-//            self.update(viewModel: viewModel) { state in
-//                state.data.deletedTags = state.data.deletedTags.union(offsets.map({ state.data.tags[$0].name }))
-//                state.data.tags.remove(atOffsets: offsets)
-//                state.reload = .section(.tags)
-//            }
 
         case .startEditing:
             self.startEditing(in: viewModel)
@@ -143,7 +122,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             self.process(downloadUpdate: update, in: viewModel)
 
         case .updateAttachments(let notification):
-            self.updateDeletedAttachments(notification, in: viewModel)
+            self.updateDeletedAttachmentFiles(notification, in: viewModel)
 
         case .deleteAttachmentFile(let attachment):
             self.deleteFile(of: attachment, in: viewModel)
@@ -154,55 +133,109 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 state.reload = .section(.abstract)
             }
 
-        case .trashAttachment(let attachment):
-            self.trash(attachment: attachment, in: viewModel)
+        case .deleteTag(let tag):
+            self.delete(tag: tag, in: viewModel)
+
+        case .deleteNote(let note):
+            self.delete(note: note, in: viewModel)
+
+        case .deleteAttachment(let attachment):
+            self.delete(attachment: attachment, in: viewModel)
         }
     }
 
-    private func reloadData(in viewModel: ViewModel<ItemDetailActionHandler>) {
-        do {
-            let type: ItemDetailDataCreator.Kind
-            var token: NotificationToken?
+    private func loadInitialData(in viewModel: ViewModel<ItemDetailActionHandler>) {
+        let key = viewModel.state.key
+        let libraryId = viewModel.state.library.identifier
+        var collectionKey: String?
+        var data: (data: ItemDetailState.Data, attachments: [Attachment], notes: [Note], tags: [Tag])
 
-            switch viewModel.state.type {
-            case .creation(let itemType, let child, _):
-                type = .new(itemType: itemType, child: child)
-            case .preview(let key, _):
-                let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: key), on: .main)
-                token = item.observe(keyPaths: RItem.observableKeypathsForItemDetail) { [weak viewModel] change in
-                    guard let viewModel = viewModel else { return }
-                    self.itemChanged(change, in: viewModel)
-                }
-                type = .existing(item)
-            case .duplication(let itemKey, _):
+        do {
+            switch viewModel.state.initialType {
+            case .creation(let itemType, let child, let _collectionKey):
+                collectionKey = _collectionKey
+                data = try ItemDetailDataCreator.createData(from: .new(itemType: itemType, child: child), schemaController: self.schemaController, dateParser: self.dateParser,
+                                                            fileStorage: self.fileStorage, urlDetector: self.urlDetector, doiDetector: FieldKeys.Item.isDoi)
+
+            case .duplication(let itemKey, let _collectionKey):
+                collectionKey = _collectionKey
                 let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: itemKey), on: .main)
-                type = .existing(item)
+                data = try ItemDetailDataCreator.createData(from: .existing(item), schemaController: self.schemaController, dateParser: self.dateParser,
+                                                            fileStorage: self.fileStorage, urlDetector: self.urlDetector, doiDetector: FieldKeys.Item.isDoi)
+
+            case .preview:
+                self.reloadData(isEditing: viewModel.state.isEditing, in: viewModel)
+                return
+            }
+        } catch let error {
+            DDLogError("ItemDetailActionHandler: can't load initial data - \(error)")
+            self.update(viewModel: viewModel) { state in
+                state.error = .cantCreateData
+            }
+            return
+        }
+
+        self.backgroundQueue.async { [weak viewModel] in
+            do {
+                let request = CreateItemDbRequest(key: key, libraryId: libraryId, collectionKey: collectionKey, data: data.data, attachments: data.attachments, notes: data.notes, tags: data.tags,
+                                                  schemaController: self.schemaController, dateParser: self.dateParser)
+                _ = try self.dbStorage.perform(request: request, on: self.backgroundQueue)
+
+                inMainThread {
+                    guard let viewModel = viewModel else { return }
+                    self.reloadData(isEditing: true, in: viewModel)
+                }
+            } catch let error {
+                DDLogError("ItemDetailActionHandler: can't create initial item - \(error)")
+
+                inMainThread {
+                    guard let viewModel = viewModel else { return }
+                    self.update(viewModel: viewModel) { state in
+                        state.error = .cantCreateData
+                    }
+                }
+            }
+        }
+    }
+
+    private func reloadData(isEditing: Bool, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        do {
+            let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: viewModel.state.key), on: .main, refreshRealm: true)
+            let token = item.observe(keyPaths: RItem.observableKeypathsForItemDetail) { [weak viewModel] change in
+                guard let viewModel = viewModel else { return }
+                self.itemChanged(change, in: viewModel)
             }
 
-            var (data, attachments, notes, tags) = try ItemDetailDataCreator.createData(from: type, schemaController: self.schemaController, dateParser: self.dateParser, fileStorage: self.fileStorage,
-                                                                                        urlDetector: self.urlDetector, doiDetector: FieldKeys.Item.isDoi)
-            if !viewModel.state.isEditing {
+            var (data, attachments, notes, tags) = try ItemDetailDataCreator.createData(from: .existing(item), schemaController: self.schemaController, dateParser: self.dateParser,
+                                                                                        fileStorage: self.fileStorage, urlDetector: self.urlDetector, doiDetector: FieldKeys.Item.isDoi)
+
+            if !isEditing {
                 data.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: data.fieldIds, fields: data.fields)
             }
 
-            self.update(viewModel: viewModel) { state in
-                state.data = data
-                if state.snapshot != nil {
-                    state.snapshot = data
-                    state.snapshot?.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: data.fieldIds, fields: data.fields)
-                }
-                state.attachments = attachments
-                state.notes = notes
-                state.tags = tags
-                state.isLoadingData = false
-                state.observationToken = token
-                state.changes.insert(.reloadedData)
-            }
+            self.saveReloaded(data: data, attachments: attachments, notes: notes, tags: tags, isEditing: isEditing, token: token, in: viewModel)
         } catch let error {
             DDLogError("ItemDetailActionHandler: can't load data - \(error)")
             self.update(viewModel: viewModel) { state in
                 state.error = .cantCreateData
             }
+        }
+    }
+
+    private func saveReloaded(data: ItemDetailState.Data, attachments: [Attachment], notes: [Note], tags: [Tag], isEditing: Bool, token: NotificationToken, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            state.data = data
+            if state.snapshot != nil || isEditing {
+                state.snapshot = data
+                state.snapshot?.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: data.fieldIds, fields: data.fields)
+            }
+            state.attachments = attachments
+            state.notes = notes
+            state.tags = tags
+            state.isLoadingData = false
+            state.isEditing = isEditing
+            state.observationToken = token
+            state.changes.insert(.reloadedData)
         }
     }
 
@@ -236,6 +269,30 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             // If this change was made as a response to data submission to API then `rawChangedFields` was set back to 0 (synced) from some previous non-zero value. Otherwise it's a change from backend
             // and it should reload UI.
             return oldChangedFieldsValue == 0 || newChangedFieldsValue > 0
+        }
+    }
+
+    private func trashItem(key: String, reloadType: ItemDetailState.TableViewReloadType, in viewModel: ViewModel<ItemDetailActionHandler>, updateState: @escaping (inout ItemDetailState) -> Void) {
+        self.update(viewModel: viewModel) { state in
+            state.backgroundProcessedItems.insert(key)
+            state.reload = reloadType
+        }
+
+        let request = MarkItemsAsTrashedDbRequest(keys: [key], libraryId: viewModel.state.library.identifier, trashed: true)
+        self.perform(request: request) { [weak viewModel] error in
+            guard let viewModel = viewModel else { return }
+
+            self.update(viewModel: viewModel) { state in
+                state.backgroundProcessedItems.remove(key)
+                state.reload = reloadType
+
+                if let error = error {
+                    DDLogError("ItemDetailActionHandler: can't trash item \(key) - \(error)")
+                    state.error = .cantTrashItem
+                } else {
+                    updateState(&state)
+                }
+            }
         }
     }
 
@@ -341,15 +398,6 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
     // MARK: - Creators
 
-    private func deleteCreators(at offsets: IndexSet, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        let keys = offsets.map({ viewModel.state.data.creatorIds[$0] })
-        self.update(viewModel: viewModel) { state in
-            state.data.creatorIds.remove(atOffsets: offsets)
-            keys.forEach({ state.data.creators[$0] = nil })
-            state.reload = .section(.creators)
-        }
-    }
-
     private func deleteCreator(with id: UUID, in viewModel: ViewModel<ItemDetailActionHandler>) {
         guard let index = viewModel.state.data.creatorIds.firstIndex(of: id) else { return }
         self.update(viewModel: viewModel) { state in
@@ -372,58 +420,84 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     // MARK: - Notes
 
     private func saveNote(key: String, text: String, tags: [Tag], in viewModel: ViewModel<ItemDetailActionHandler>) {
-        let note = Note(key: key, text: text, tags: tags)
-
-        let updateViewModel: () -> Void = { [weak viewModel] in
-            guard let viewModel = viewModel else { return }
-
-            self.update(viewModel: viewModel) { state in
-//                if let index = state.data.notes.firstIndex(where: { $0.key == note.key }) {
-//                    state.data.notes[index] = note
-//                } else {
-//                    state.data.notes.append(note)
+//        let oldNote = viewModel.state.notes.first(where: { $0.key == key })
+//        let note = Note(key: key, text: text, tags: tags)
+//
+//        self.update(viewModel: viewModel) { state in
+//            if let index = state.notes.firstIndex(where: { $0.key == key }) {
+//                state.notes[index] = note
+//            } else {
+//                state.notes.append(note)
+//            }
+//
+//            state.backgroundProcessedItems.insert(key)
+//            state.reload = .section(.notes)
+//        }
+//
+//        let request: DbRequest
+//        if oldNote == nil {
+//            request = CreateNoteDbRequest(note: note, localizedType: self.schemaController.localized(itemType: ItemTypes.note), libraryId: viewModel.state.library.identifier, collectionKey: nil, parentKey: <#T##String?#>)
+//        }
+//        let request = EditNoteDbRequest(note: note, libraryId: viewModel.state.library.identifier)
+//        self.perform(request: request) { [weak viewModel] error in
+//            didSave = true
+//            guard let viewModel = viewModel else { return }
+//
+//            if let error = error {
+//                DDLogError("ItemDetailActionHandler: can't store note - \(error)")
+//
+//                self.update(viewModel: viewModel) { state in
+//                    state.error = .cantStoreChanges
+//                    if state.savingNotes.remove(note.key) != nil {
+//                        state.reload = .section(.notes)
+//                    }
 //                }
-                state.savingNotes.remove(note.key)
-                state.reload = .section(.notes)
-            }
-        }
+//                return
+//            }
+//
+//            updateViewModel()
+//        }
+//
+//        let updateViewModel: () -> Void = { [weak viewModel] in
+//            guard let viewModel = viewModel else { return }
+//
+//            self.update(viewModel: viewModel) { state in
+////                if let index = state.data.notes.firstIndex(where: { $0.key == note.key }) {
+////                    state.data.notes[index] = note
+////                } else {
+////                    state.data.notes.append(note)
+////                }
+//                state.savingNotes.remove(note.key)
+//                state.reload = .section(.notes)
+//            }
+//        }
+//
+//        if viewModel.state.isEditing {
+//            updateViewModel()
+//            return
+//        }
+//
+//        var didSave = false
+//
+//        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) { [weak viewModel] in
+//            guard !didSave, let viewModel = viewModel else { return }
+//
+//            // Show saving indicator only if storage takes too much time to avoid unnecessary reloads
+//
+//            self.update(viewModel: viewModel) { state in
+//                state.savingNotes.insert(note.key)
+//                state.reload = .section(.notes)
+//            }
+//        }
+//
 
-        if viewModel.state.isEditing {
-            updateViewModel()
-            return
-        }
+    }
 
-        var didSave = false
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) { [weak viewModel] in
-            guard !didSave, let viewModel = viewModel else { return }
-
-            // Show saving indicator only if storage takes too much time to avoid unnecessary reloads
-
-            self.update(viewModel: viewModel) { state in
-                state.savingNotes.insert(note.key)
-                state.reload = .section(.notes)
-            }
-        }
-
-        let request = EditNoteDbRequest(note: note, libraryId: viewModel.state.library.identifier)
-        self.perform(request: request) { [weak viewModel] error in
-            didSave = true
-            guard let viewModel = viewModel else { return }
-
-            if let error = error {
-                DDLogError("ItemDetailActionHandler: can't store note - \(error)")
-
-                self.update(viewModel: viewModel) { state in
-                    state.error = .cantStoreChanges
-                    if state.savingNotes.remove(note.key) != nil {
-                        state.reload = .section(.notes)
-                    }
-                }
-                return
-            }
-
-            updateViewModel()
+    private func delete(note: Note, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        guard viewModel.state.notes.contains(note) else { return }
+        self.trashItem(key: note.key, reloadType: .section(.notes), in: viewModel) { state in
+            guard let index = viewModel.state.notes.firstIndex(of: note) else { return }
+            state.notes.remove(at: index)
         }
     }
 
@@ -436,75 +510,57 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         }
     }
 
+    private func delete(tag: Tag, in viewModel: ViewModel<ItemDetailActionHandler>) {
+
+    }
+
     // MARK: - Attachments
 
-    private func trash(attachment: Attachment, in viewModel: ViewModel<ItemDetailActionHandler>) {
-//        guard viewModel.state.data.attachments.contains(attachment) else { return }
-//
-//        let request = MarkItemsAsTrashedDbRequest(keys: [attachment.key], libraryId: viewModel.state.library.identifier, trashed: true)
-//        self.perform(request: request) { [weak viewModel] error in
-//            guard let viewModel = viewModel, let index = viewModel.state.data.attachments.firstIndex(of: attachment) else { return }
-//
-//            if let error = error {
-//                DDLogError("ItemDetailActionHandler: can't trash attachment - \(error)")
-//                self.update(viewModel: viewModel) { state in
-//                    state.error = .cantTrashAttachment
-//                }
-//                return
-//            }
-//
-//            self.update(viewModel: viewModel) { state in
-//                state.data.attachments.remove(at: index)
-//                state.reload = .section(.attachments)
-//            }
-//        }
+    private func delete(attachment: Attachment, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        guard viewModel.state.attachments.contains(attachment) else { return }
+        self.trashItem(key: attachment.key, reloadType: .section(.attachments), in: viewModel) { state in
+            guard let index = viewModel.state.attachments.firstIndex(of: attachment) else { return }
+            state.attachments.remove(at: index)
+        }
     }
 
     private func deleteFile(of attachment: Attachment, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        let key: String
-        switch viewModel.state.type {
-        case .preview(let _key, _):
-            key = _key
-        case .duplication, .creation: return
+        self.fileCleanupController.delete(.individual(attachment: attachment, parentKey: viewModel.state.key), completed: nil)
+    }
+
+    private func updateDeletedAttachmentFiles(_ notification: AttachmentFileDeletedNotification, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        switch notification {
+        case .all:
+            guard viewModel.state.attachments.contains(where: { $0.location == .local }) else { return }
+            self.setAllAttachmentFilesAsDeleted(in: viewModel)
+
+        case .library(let libraryId):
+            guard libraryId == viewModel.state.library.identifier, viewModel.state.attachments.contains(where: { $0.location == .local }) else { return }
+            self.setAllAttachmentFilesAsDeleted(in: viewModel)
+
+        case .allForItems(let keys, let libraryId):
+            guard libraryId == viewModel.state.library.identifier,
+                  keys.contains(viewModel.state.key) && viewModel.state.attachments.contains(where: { $0.location == .local }) else { return }
+            self.setAllAttachmentFilesAsDeleted(in: viewModel)
+
+        case .individual(let key, _, let libraryId):
+            guard let index = viewModel.state.attachments.firstIndex(where: { $0.key == key && $0.libraryId == libraryId }),
+                  let new = viewModel.state.attachments[index].changed(location: .remote, condition: { $0 == .local }) else { return }
+            self.update(viewModel: viewModel) { state in
+                state.attachments[index] = new
+                state.updateAttachmentKey = new.key
+            }
         }
-
-        self.fileCleanupController.delete(.individual(attachment: attachment, parentKey: key), completed: nil)
     }
 
-    private func updateDeletedAttachments(_ notification: AttachmentFileDeletedNotification, in viewModel: ViewModel<ItemDetailActionHandler>) {
-//        switch notification {
-//        case .all:
-//            guard viewModel.state.data.attachments.contains(where: { $0.location == .local }) else { return }
-//            self.setAllAttachmentsAsDeleted(in: viewModel)
-//
-//        case .library(let libraryId):
-//            guard libraryId == viewModel.state.library.identifier, viewModel.state.data.attachments.contains(where: { $0.location == .local }) else { return }
-//            self.setAllAttachmentsAsDeleted(in: viewModel)
-//
-//        case .allForItems(let keys, let libraryId):
-//            guard libraryId == viewModel.state.library.identifier,
-//                  let key = viewModel.state.type.previewKey,
-//                  keys.contains(key) && viewModel.state.data.attachments.contains(where: { $0.location == .local }) else { return }
-//            self.setAllAttachmentsAsDeleted(in: viewModel)
-//
-//        case .individual(let key, _, let libraryId):
-//            guard let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == key && $0.libraryId == libraryId }),
-//                  let new = viewModel.state.data.attachments[index].changed(location: .remote, condition: { $0 == .local }) else { return }
-//            self.update(viewModel: viewModel) { state in
-//                state.data.attachments[index] = new
-//                state.updateAttachmentKey = new.key
-//            }
-//        }
-    }
-
-    private func setAllAttachmentsAsDeleted(in viewModel: ViewModel<ItemDetailActionHandler>) {
-//        self.update(viewModel: viewModel) { state in
-//            for (index, attachment) in state.data.attachments.enumerated() {
-//                guard let new = attachment.changed(location: .remote, condition: { $0 == .local }) else { continue }
-//                state.data.attachments[index] = new
-//            }
-//            state.reload = .section(.attachments)
-//        }
+    private func setAllAttachmentFilesAsDeleted(in viewModel: ViewModel<ItemDetailActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            for (index, attachment) in state.attachments.enumerated() {
+                guard let new = attachment.changed(location: .remote, condition: { $0 == .local }) else { continue }
+                state.attachments[index] = new
+            }
+            state.reload = .section(.attachments)
+        }
     }
 
     private func addAttachments(from urls: [URL], in viewModel: ViewModel<ItemDetailActionHandler>) {
@@ -552,52 +608,50 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     }
 
     private func openAttachment(with key: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
-//        let (progress, _) = self.fileDownloader.data(for: key, libraryId: viewModel.state.library.identifier)
-//
-//        if progress != nil {
-//            // If download is in progress, cancel download
-//
-//            self.update(viewModel: viewModel) { state in
-//                if state.attachmentToOpen == key {
-//                    state.attachmentToOpen = nil
-//                }
-//            }
-//
-//            self.fileDownloader.cancel(key: key, libraryId: viewModel.state.library.identifier)
-//
-//            return
-//        }
-//
-//        guard let attachment = viewModel.state.data.attachments.first(where: { $0.key == key }) else { return }
-//
-//        // Otherwise start download
-//
-//        self.update(viewModel: viewModel) { state in
-//            state.attachmentToOpen = key
-//        }
-//
-//        self.fileDownloader.downloadIfNeeded(attachment: attachment, parentKey: viewModel.state.type.previewKey)
+        let (progress, _) = self.fileDownloader.data(for: key, libraryId: viewModel.state.library.identifier)
+
+        if progress != nil {
+            // If download is in progress, cancel download
+            self.update(viewModel: viewModel) { state in
+                if state.attachmentToOpen == key {
+                    state.attachmentToOpen = nil
+                }
+            }
+
+            self.fileDownloader.cancel(key: key, libraryId: viewModel.state.library.identifier)
+            return
+        }
+
+        guard let attachment = viewModel.state.attachments.first(where: { $0.key == key }) else { return }
+
+        // Otherwise start download
+
+        self.update(viewModel: viewModel) { state in
+            state.attachmentToOpen = key
+        }
+
+        self.fileDownloader.downloadIfNeeded(attachment: attachment, parentKey: viewModel.state.key)
     }
 
     private func process(downloadUpdate update: AttachmentDownloader.Update, in viewModel: ViewModel<ItemDetailActionHandler>) {
-//        guard viewModel.state.library.identifier == update.libraryId,
-//              let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
-//
-//        let attachment = viewModel.state.data.attachments[index]
-//
-//        switch update.kind {
-//        case .cancelled, .failed, .progress:
-//            self.update(viewModel: viewModel) { state in
-//                state.updateAttachmentKey = attachment.key
-//            }
-//
-//        case .ready:
-//            guard let new = attachment.changed(location: .local) else { return }
-//            self.update(viewModel: viewModel) { state in
-//                state.data.attachments[index] = new
-//                state.updateAttachmentKey = new.key
-//            }
-//        }
+        guard viewModel.state.library.identifier == update.libraryId,
+              let index = viewModel.state.attachments.firstIndex(where: { $0.key == update.key }) else { return }
+
+        let attachment = viewModel.state.attachments[index]
+
+        switch update.kind {
+        case .cancelled, .failed, .progress:
+            self.update(viewModel: viewModel) { state in
+                state.updateAttachmentKey = attachment.key
+            }
+
+        case .ready:
+            guard let new = attachment.changed(location: .local) else { return }
+            self.update(viewModel: viewModel) { state in
+                state.attachments[index] = new
+                state.updateAttachmentKey = new.key
+            }
+        }
     }
 
     // MARK: - Editing
@@ -649,38 +703,21 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     }
 
     private func save(state: ItemDetailState, queue: DispatchQueue) -> Single<ItemDetailState> {
-        // Preview key has to be assigned here, because the `Single` below can be subscribed on background thread (and currently is),
-        // in which case the app will crash, because RItem in preview has been loaded on main thread.
-        let previewKey = state.type.previewKey
         return Single.create { subscriber -> Disposable in
             do {
                 var newState = state
-                var newType = state.type
 
                 self.updateDateFieldIfNeeded(in: &newState)
                 self.updateAccessedFieldIfNeeded(in: &newState)
                 newState.data.dateModified = Date()
 
-                switch state.type {
-                case .preview:
-                    if let snapshot = state.snapshot, let key = previewKey {
-                        let request = EditItemDetailDbRequest(libraryId: state.library.identifier, itemKey: key, data: newState.data, snapshot: snapshot, schemaController: self.schemaController, dateParser: self.dateParser)
-                        try self.dbStorage.perform(request: request, on: queue)
-                    }
-
-                case .creation(_, _, let collectionKey), .duplication(_, let collectionKey):
-                    let request = CreateItemDbRequest(libraryId: state.library.identifier, collectionKey: collectionKey, data: newState.data, schemaController: self.schemaController, dateParser: self.dateParser)
-                    let item = try self.dbStorage.perform(request: request, on: queue)
-                    let url = newState.data.fields[FieldKeys.Item.url]?.value
-                    newType = .preview(key: item.key, url: url)
+                if let snapshot = state.snapshot {
+                    let request = EditItemDetailDbRequest(libraryId: state.library.identifier, itemKey: newState.key, data: newState.data, snapshot: snapshot, schemaController: self.schemaController, dateParser: self.dateParser)
+                    try self.dbStorage.perform(request: request, on: queue)
                 }
 
                 newState.snapshot = nil
-                newState.type = newType
                 newState.data.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: newState.data.fieldIds, fields: newState.data.fields)
-//                newState.data.deletedNotes = []
-//                newState.data.deletedTags = []
-//                newState.data.deletedAttachments = []
                 newState.isEditing = false
                 newState.changes.insert(.editing)
 

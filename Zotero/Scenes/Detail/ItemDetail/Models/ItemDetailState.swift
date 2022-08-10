@@ -26,30 +26,12 @@ struct ItemDetailState: ViewModelState {
     enum DetailType {
         case creation(type: String, child: Attachment?, collectionKey: String?)
         case duplication(itemKey: String, collectionKey: String?)
-        case preview(key: String, url: String?)
+        case preview(key: String)
 
         var previewKey: String? {
             switch self {
-            case .preview(let key, _): return key
+            case .preview(let key): return key
             case .duplication, .creation: return nil
-            }
-        }
-
-        var url: String? {
-            switch self {
-            case .preview(_, let url):
-                return url
-            default:
-                return nil
-            }
-        }
-
-        var isCreation: Bool {
-            switch self {
-            case .preview:
-                return false
-            case .creation, .duplication:
-                return true
             }
         }
     }
@@ -238,15 +220,14 @@ struct ItemDetailState: ViewModelState {
         case section(ItemDetailCollectionViewHandler.Section)
     }
 
+    let initialType: DetailType
+    let key: String
     let library: Library
     let userId: Int
 
     var changes: Changes
     var isEditing: Bool
     var isSaving: Bool
-    // Note keys which are currently being stored to database in background
-    var savingNotes: Set<String>
-    var type: DetailType
     var data: Data
     var snapshot: Data?
     var promptSnapshot: Data?
@@ -260,19 +241,31 @@ struct ItemDetailState: ViewModelState {
     var isLoadingData: Bool
     var observationToken: NotificationToken?
     var attachmentToOpen: String?
+    // Identifiers of items which are currently being processed in background and should be disabled in UI
+    var backgroundProcessedItems: Set<String>
 
     @UserDefault(key: "ItemDetailAbstractCollapsedKey", defaultValue: false)
     var abstractCollapsed: Bool
 
     var mainAttachmentKey: String? {
-        return AttachmentCreator.mainPdfAttachment(from: self.attachments, parentUrl: self.type.url)?.key
+        let url = self.data.fields[FieldKeys.Item.url]?.value
+        return AttachmentCreator.mainPdfAttachment(from: self.attachments, parentUrl: url)?.key
     }
 
     init(type: DetailType, library: Library, userId: Int) {
-        self.changes = []
+        switch type {
+        case .preview(let key):
+            self.key = key
+            self.isEditing = false
+        case .creation, .duplication:
+            self.key = KeyGenerator.newKey
+            self.isEditing = true
+        }
+
+        self.initialType = type
         self.userId = userId
         self.library = library
-        self.type = type
+        self.changes = []
         self.data = .empty
         self.attachments = []
         self.notes = []
@@ -280,15 +273,8 @@ struct ItemDetailState: ViewModelState {
         self.metadataTitleMaxWidth = 0
         self.error = nil
         self.isSaving = false
-        self.savingNotes = []
+        self.backgroundProcessedItems = []
         self.isLoadingData = true
-
-        switch type {
-        case .preview, .duplication:
-            self.isEditing = type.isCreation
-        case .creation:
-            self.isEditing = true
-        }
     }
 
     mutating func cleanup() {

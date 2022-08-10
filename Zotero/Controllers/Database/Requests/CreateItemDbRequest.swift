@@ -13,9 +13,13 @@ import RealmSwift
 struct CreateItemDbRequest: DbResponseRequest {
     typealias Response = RItem
 
+    let key: String
     let libraryId: LibraryIdentifier
     let collectionKey: String?
     let data: ItemDetailState.Data
+    let attachments: [Attachment]
+    let notes: [Note]
+    let tags: [Tag]
     let schemaController: SchemaController
     let dateParser: DateParser
 
@@ -25,7 +29,7 @@ struct CreateItemDbRequest: DbResponseRequest {
     func process(in database: Realm) throws -> RItem {
         // Create main item
         let item = RItem()
-        item.key = KeyGenerator.newKey
+        item.key = self.key
         item.rawType = self.data.type
         item.localizedType = self.schemaController.localized(itemType: self.data.type) ?? ""
         item.syncState = .synced
@@ -85,50 +89,51 @@ struct CreateItemDbRequest: DbResponseRequest {
 
         // Create notes
 
-//        for note in self.data.notes {
-//            let rNote = try CreateNoteDbRequest(note: note,
-//                                                localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""),
-//                                                libraryId: self.libraryId,
-//                                                collectionKey: nil).process(in: database)
-//            rNote.parent = item
-//            rNote.changedFields.insert(.parent)
-//        }
+        for note in self.notes {
+            let rNote = try CreateNoteDbRequest(note: note,
+                                                localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""),
+                                                libraryId: self.libraryId,
+                                                collectionKey: nil,
+                                                parentKey: nil).process(in: database)
+            rNote.parent = item
+            rNote.changedFields.insert(.parent)
+        }
 
         // Create attachments
 
-//        for attachment in self.data.attachments {
-//            // Existing standalone attachment can be assigend as a child for new item, check whether attachment exists and update/create accordingly.
-//            if let rAttachment = database.objects(RItem.self).filter(.key(attachment.key, in: self.libraryId)).first {
-//                // In this case the attachment doesn't change anyhow, just assign this new item as a parent.
-//                rAttachment.parent = item
-//                rAttachment.changedFields.insert(.parent)
-//                rAttachment.changeType = .user
-//            } else {
-//                let rAttachment = try CreateAttachmentDbRequest(attachment: attachment,
-//                                                                localizedType: (self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""),
-//                                                                collections: [], tags: []).process(in: database)
-//                rAttachment.libraryId = self.libraryId
-//                rAttachment.parent = item
-//                rAttachment.changedFields.insert(.parent)
-//            }
-//        }
+        for attachment in self.attachments {
+            // Existing standalone attachment can be assigend as a child for new item, check whether attachment exists and update/create accordingly.
+            if let rAttachment = database.objects(RItem.self).filter(.key(attachment.key, in: self.libraryId)).first {
+                // In this case the attachment doesn't change anyhow, just assign this new item as a parent.
+                rAttachment.parent = item
+                rAttachment.changedFields.insert(.parent)
+                rAttachment.changeType = .user
+            } else {
+                let rAttachment = try CreateAttachmentDbRequest(attachment: attachment,
+                                                                localizedType: (self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""),
+                                                                collections: [], tags: []).process(in: database)
+                rAttachment.libraryId = self.libraryId
+                rAttachment.parent = item
+                rAttachment.changedFields.insert(.parent)
+            }
+        }
 
         // Create tags
 
-//        let allTags = database.objects(RTag.self)
-//        for tag in self.data.tags {
-//            guard let rTag = allTags.filter(.name(tag.name, in: self.libraryId)).first else { continue }
-//
-//            let rTypedTag = RTypedTag()
-//            rTypedTag.type = .manual
-//            database.add(rTypedTag)
-//
-//            rTypedTag.item = item
-//            rTypedTag.tag = rTag
-//        }
-//        if !self.data.tags.isEmpty {
-//            changes.insert(.tags)
-//        }
+        let allTags = database.objects(RTag.self)
+        for tag in self.tags {
+            guard let rTag = allTags.filter(.name(tag.name, in: self.libraryId)).first else { continue }
+
+            let rTypedTag = RTypedTag()
+            rTypedTag.type = .manual
+            database.add(rTypedTag)
+
+            rTypedTag.item = item
+            rTypedTag.tag = rTag
+        }
+        if !self.tags.isEmpty {
+            changes.insert(.tags)
+        }
 
         // Item title depends on item type, creators and fields, so derived titles (displayTitle and sortTitle) are updated after everything else synced
         item.updateDerivedTitles()

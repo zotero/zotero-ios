@@ -448,7 +448,7 @@ final class ItemDetailTableViewHandler: NSObject {
 
         case .notes:
             let notes: [Row] = state.notes.map({ note in
-                let isSaving = state.savingNotes.contains(note.key)
+                let isSaving = state.backgroundProcessedItems.contains(note.key)
                 return .note(note: note, isSaving: isSaving)
             })
             return notes + [.addNote]
@@ -513,7 +513,7 @@ final class ItemDetailTableViewHandler: NSObject {
         }
 
         actions.append(UIAction(title: L10n.ItemDetail.trashAttachment, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
-            self?.viewModel.process(action: .trashAttachment(attachment))
+//            self?.viewModel.process(action: .trashAttachment(attachment))
         })
 
         return UIMenu(title: "", children: actions)
@@ -744,19 +744,19 @@ final class ItemDetailTableViewHandler: NSObject {
         }
 
         self.dataSource.commitEditingStyle = { [weak self] editingStyle, indexPath in
-            guard editingStyle == .delete, let `self` = self, self.viewModel.state.isEditing, let section = self.dataSource.section(for: indexPath.section) else { return }
-
-            switch section.section {
-            case .creators:
-                self.viewModel.process(action: .deleteCreators([indexPath.row]))
-            case .tags:
-                self.viewModel.process(action: .deleteTags([indexPath.row]))
-            case .attachments:
-                self.viewModel.process(action: .deleteAttachments([indexPath.row]))
-            case .notes:
-                self.viewModel.process(action: .deleteNotes([indexPath.row]))
-            case .title, .abstract, .fields, .type, .dates: break
-            }
+//            guard editingStyle == .delete, let `self` = self, self.viewModel.state.isEditing, let section = self.dataSource.section(for: indexPath.section) else { return }
+//
+//            switch section.section {
+//            case .creators:
+//                self.viewModel.process(action: .deleteCreators([indexPath.row]))
+//            case .tags:
+//                self.viewModel.process(action: .deleteTags([indexPath.row]))
+//            case .attachments:
+//                self.viewModel.process(action: .deleteAttachments([indexPath.row]))
+//            case .notes:
+//                self.viewModel.process(action: .deleteNotes([indexPath.row]))
+//            case .title, .abstract, .fields, .type, .dates: break
+//            }
         }
 
         self.tableView.delegate = self
@@ -915,7 +915,7 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
             } else {
                 let note = self.viewModel.state.notes[indexPath.row]
 
-                guard !self.viewModel.state.savingNotes.contains(note.key) else { return }
+//                guard !self.viewModel.state.savingNotes.contains(note.key) else { return }
 
                 self.observer.on(.next(.openNoteEditor(note)))
             }

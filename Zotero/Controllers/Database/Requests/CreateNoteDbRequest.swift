@@ -17,6 +17,7 @@ struct CreateNoteDbRequest: DbResponseRequest {
     let localizedType: String
     let libraryId: LibraryIdentifier
     let collectionKey: String?
+    let parentKey: String?
 
     var needsWrite: Bool { return true }
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
@@ -35,6 +36,13 @@ struct CreateNoteDbRequest: DbResponseRequest {
         item.dateModified = Date()
         item.libraryId = libraryId
         database.add(item)
+
+        // Assign parent
+        if let key = self.parentKey,
+           let item = database.objects(RItem.self).filter(.key(key, in: self.libraryId)).first {
+            item.parent = item
+            item.changedFields.insert(.parent)
+        }
 
         // Assign collection
         if let key = self.collectionKey,

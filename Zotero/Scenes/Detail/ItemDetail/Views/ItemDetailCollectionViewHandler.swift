@@ -61,7 +61,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         case dateAdded(Date)
         case dateModified(Date)
         case field(key: String, multiline: Bool)
-        case note(note: Note, isSaving: Bool)
+        case note(note: Note, isProcessing: Bool)
         case tag(Tag)
         case title
         case type(String)
@@ -193,6 +193,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     // MARK: - Actions
 
+    func sourceDataForCell(at indexPath: IndexPath) -> (UIView, CGRect?) {
+        return (self.collectionView, self.collectionView.cellForItem(at: indexPath)?.frame)
+    }
+
     /// Reloads the whole `collectionView`. Applies new snapshot based on `state` and reloads remaining items which were not changed between snapshots.
     /// - parameter state: State to which we're reloading the table view.
     /// - parameter animated: `true` if the change is animated, `false` otherwise.
@@ -290,7 +294,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         }
     }
 
-    func updateAttachment(with attachment: Attachment) {
+    func updateAttachment(with attachment: Attachment, isProcessing: Bool) {
         var snapshot = self.dataSource.snapshot()
 
         guard let section = snapshot.sectionIdentifiers.first(where: { $0.section == .attachments }) else { return }
@@ -300,7 +304,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         guard let index = rows.firstIndex(where: { $0.isAttachment(withKey: attachment.key) }) else { return }
 
         snapshot.deleteItems(rows)
-        rows[index] = self.attachmentRow(for: attachment)
+        rows[index] = self.attachmentRow(for: attachment, isProcessing: isProcessing)
         snapshot.appendItems(rows, toSection: section)
 
         self.dataSource.apply(snapshot, animatingDifferences: false, completion: nil)
@@ -309,13 +313,25 @@ final class ItemDetailCollectionViewHandler: NSObject {
     private func delete(at index: Int, section: Section) {
         switch section {
         case .creators:
-            self.viewModel.process(action: .deleteCreators([index]))
+            guard index < self.viewModel.state.data.creatorIds.count else { return }
+            let creatorId = self.viewModel.state.data.creatorIds[index]
+            self.viewModel.process(action: .deleteCreator(creatorId))
+
         case .tags:
-            self.viewModel.process(action: .deleteTags([index]))
+            guard index < self.viewModel.state.tags.count else { return }
+            let tag = self.viewModel.state.tags[index]
+            self.viewModel.process(action: .deleteTag(tag))
+
         case .attachments:
-            self.viewModel.process(action: .deleteAttachments([index]))
+            guard index < self.viewModel.state.attachments.count else { return }
+            let attachment = self.viewModel.state.attachments[index]
+            self.viewModel.process(action: .deleteAttachment(attachment))
+
         case .notes:
-            self.viewModel.process(action: .deleteNotes([index]))
+            guard index < self.viewModel.state.notes.count else { return }
+            let note = self.viewModel.state.notes[index]
+            self.viewModel.process(action: .deleteNote(note))
+
         case .title, .abstract, .fields, .type, .dates: break
         }
     }
@@ -363,7 +379,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
             return [.abstract]
 
         case .attachments:
-            return state.attachments.map({ self.attachmentRow(for: $0) }) + [.addAttachment]
+            return state.attachments.map({ attachment in
+                let isProcessing = state.backgroundProcessedItems.contains(attachment.key)
+                return self.attachmentRow(for: attachment, isProcessing: isProcessing)
+            }) + [.addAttachment]
 
         case .creators:
             let creators: [Row] = state.data.creatorIds.compactMap({ creatorId in
@@ -386,8 +405,8 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
         case .notes:
             let notes: [Row] = state.notes.map({ note in
-                let isSaving = state.savingNotes.contains(note.key)
-                return .note(note: note, isSaving: isSaving)
+                let isProcessing = state.backgroundProcessedItems.contains(note.key)
+                return .note(note: note, isProcessing: isProcessing)
             })
             return notes + [.addNote]
 
@@ -405,8 +424,8 @@ final class ItemDetailCollectionViewHandler: NSObject {
         }
     }
 
-    private func attachmentRow(for attachment: Attachment) -> Row {
-        if self.delegate?.isDownloadingFromNavigationBar(for: attachment.key) == true {
+    private func attachmentRow(for attachment: Attachment, isProcessing: Bool) -> Row {
+        if isProcessing || self.delegate?.isDownloadingFromNavigationBar(for: attachment.key) == true {
             return .attachment(attachment: attachment, type: .disabled)
         }
 
@@ -531,7 +550,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
     private lazy var noteRegistration: UICollectionView.CellRegistration<ItemDetailNoteCell, (Note, Bool)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
             guard let `self` = self else { return }
-            cell.contentConfiguration = ItemDetailNoteCell.ContentConfiguration(note: data.0, isSaving: data.1, layoutMargins: self.layoutMargins(for: indexPath))
+            cell.contentConfiguration = ItemDetailNoteCell.ContentConfiguration(note: data.0, isProcessing: data.1, layoutMargins: self.layoutMargins(for: indexPath))
         }
     }()
 
@@ -749,8 +768,8 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
                 return collectionView.dequeueConfiguredReusableCell(using: fieldEditRegistration, for: indexPath, item: (field, titleWidth))
 
-            case .note(let note, let isSaving):
-                return collectionView.dequeueConfiguredReusableCell(using: noteRegistration, for: indexPath, item: (note, isSaving))
+            case .note(let note, let isProcessing):
+                return collectionView.dequeueConfiguredReusableCell(using: noteRegistration, for: indexPath, item: (note, isProcessing))
 
             case .tag(let tag):
                 return collectionView.dequeueConfiguredReusableCell(using: tagRegistration, for: indexPath, item: (tag, isEditing))
@@ -779,9 +798,9 @@ final class ItemDetailCollectionViewHandler: NSObject {
         }
 
         self.dataSource.reorderingHandlers.didReorder = { [weak self] transaction in
-            guard let `self` = self else { return }
+            guard let `self` = self, let difference = transaction.sectionTransactions.first?.difference else { return }
 
-            let changes = transaction.difference.compactMap({ change -> CollectionDifference<UUID>.Change? in
+            let changes = difference.compactMap({ change -> CollectionDifference<UUID>.Change? in
                 switch change {
                 case .insert(let offset, let element, let associatedWith):
                     switch element {
@@ -837,62 +856,38 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         collectionView.deselectItem(at: indexPath, animated: true)
 
-        guard let section = self.dataSource.section(for: indexPath.section)?.section else { return }
+        guard let row = self.dataSource.itemIdentifier(for: indexPath) else { return }
 
-        switch section {
-        case .attachments:
-            if indexPath.row == self.viewModel.state.attachments.count {
-                self.observer.on(.next(.openFilePicker))
-            } else if indexPath.row < self.viewModel.state.attachments.count {
-                let key = self.viewModel.state.attachments[indexPath.row].key
-                self.viewModel.process(action: .openAttachment(key))
-            }
-        case .notes:
-            if indexPath.row == self.viewModel.state.notes.count {
-                self.observer.on(.next(.openNoteEditor(nil)))
-            } else {
-                let note = self.viewModel.state.notes[indexPath.row]
+        switch row {
 
-                guard !self.viewModel.state.savingNotes.contains(note.key) else { return }
+        case .addNote:
+            self.observer.on(.next(.openNoteEditor(nil)))
 
-                self.observer.on(.next(.openNoteEditor(note)))
-            }
-        case .tags:
-            if indexPath.row == self.viewModel.state.tags.count {
-                self.observer.on(.next(.openTagPicker))
-            }
-        case .creators:
-            guard self.viewModel.state.isEditing else { return }
+        case .addAttachment:
+            self.observer.on(.next(.openFilePicker))
 
-            if indexPath.row == self.viewModel.state.data.creators.count {
-                self.observer.on(.next(.openCreatorCreation))
-            } else {
-                let id = self.viewModel.state.data.creatorIds[indexPath.row]
-                if let creator = self.viewModel.state.data.creators[id] {
-                    self.observer.on(.next(.openCreatorEditor(creator)))
-                }
-            }
-        case .type:
-            if self.viewModel.state.isEditing && !self.viewModel.state.data.isAttachment{
-                self.observer.on(.next(.openTypePicker))
-            }
-        case .fields:
-            let fieldId = self.viewModel.state.data.fieldIds[indexPath.row]
-            if let field = self.viewModel.state.data.fields[fieldId] {
-                guard field.isTappable else { return }
-                switch field.key {
-                case FieldKeys.Item.Attachment.url:
-                    self.observer.on(.next(.openUrl(field.value)))
-                case FieldKeys.Item.doi:
-                    self.observer.on(.next(.openDoi(field.value)))
-                default: break
-                }
-            }
+        case .addCreator:
+            self.observer.on(.next(.openCreatorCreation))
+
+        case .addTag:
+            self.observer.on(.next(.openTagPicker))
+
         case .abstract:
-            if !self.viewModel.state.isEditing {
-                self.viewModel.process(action: .toggleAbstractDetailCollapsed)
-            }
-        case .title, .dates: break
+            guard !self.viewModel.state.isEditing else { return }
+            self.viewModel.process(action: .toggleAbstractDetailCollapsed)
+
+        case .attachment(let attachment, let type):
+            guard type != .disabled else { return }
+            self.viewModel.process(action: .openAttachment(attachment.key))
+
+        case .creator(let creator):
+            self.observer.on(.next(.openCreatorEditor(creator)))
+
+        case .note(let note, let isProcessing):
+            guard !isProcessing else { return }
+            self.observer.on(.next(.openNoteEditor(note)))
+
+        case .title, .type, .dateAdded, .dateModified, .tag, .field: break
         }
     }
 

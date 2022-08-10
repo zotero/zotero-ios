@@ -60,7 +60,7 @@ final class ItemDetailViewController: UIViewController {
                       })
                       .disposed(by: self.disposeBag)
 
-        self.viewModel.process(action: .reloadData)
+        self.viewModel.process(action: .loadInitialData)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -144,18 +144,13 @@ final class ItemDetailViewController: UIViewController {
 
         case .trashAttachment(let attachment):
             self.coordinatorDelegate?.showTrashAttachmentQuestion { [weak self] in
-                self?.viewModel.process(action: .trashAttachment(attachment))
+                self?.viewModel.process(action: .deleteAttachment(attachment))
             }
         }
     }
 
     private func cancelEditing() {
-        switch self.viewModel.state.type {
-        case .preview:
-            self.viewModel.process(action: .cancelEditing)
-        case .creation, .duplication:
-            self.navigationController?.popViewController(animated: true)
-        }
+        self.viewModel.process(action: .cancelEditing)
     }
 
     // MARK: - UI state
@@ -222,7 +217,7 @@ final class ItemDetailViewController: UIViewController {
             }
 
             if let attachment = state.attachments.first(where: { $0.key == key }) {
-                self.collectionViewHandler.updateAttachment(with: attachment)
+                self.collectionViewHandler.updateAttachment(with: attachment, isProcessing: state.backgroundProcessedItems.contains(key))
             }
         }
     }
@@ -411,7 +406,7 @@ extension ItemDetailViewController: ItemDetailCollectionViewHandlerDelegate {
 extension ItemDetailViewController: ConflictViewControllerReceiver {
     func shows(object: SyncObject, libraryId: LibraryIdentifier) -> String? {
         guard object == .item && libraryId == self.viewModel.state.library.identifier else { return nil }
-        return self.viewModel.state.type.previewKey
+        return self.viewModel.state.key
     }
 
     func canDeleteObject(completion: @escaping (Bool) -> Void) {
@@ -419,11 +414,11 @@ extension ItemDetailViewController: ConflictViewControllerReceiver {
     }
 }
 
-//extension ItemDetailViewController: DetailCoordinatorAttachmentProvider {
-//    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, Library, UIView, CGRect?)? {
-//        guard let section = self.tableViewHandler.attachmentSectionIndex,
-//              let index = self.viewModel.state.attachments.firstIndex(where: { $0.key == key && $0.libraryId == libraryId }) else { return nil }
-//        let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(at: IndexPath(row: index, section: section))
-//        return (self.viewModel.state.attachments[index], self.viewModel.state.library, sourceView, sourceRect)
-//    }
-//}
+extension ItemDetailViewController: DetailCoordinatorAttachmentProvider {
+    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, Library, UIView, CGRect?)? {
+        guard let section = self.collectionViewHandler.attachmentSectionIndex,
+              let index = self.viewModel.state.attachments.firstIndex(where: { $0.key == key && $0.libraryId == libraryId }) else { return nil }
+        let (sourceView, sourceRect) = self.collectionViewHandler.sourceDataForCell(at: IndexPath(row: index, section: section))
+        return (self.viewModel.state.attachments[index], self.viewModel.state.library, sourceView, sourceRect)
+    }
+}
