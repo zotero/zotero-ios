@@ -1,5 +1,5 @@
 //
-//  CreateItemDbRequest.swift
+//  CreateItemFromDetailDbRequest.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 26/04/2019.
@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-struct CreateItemDbRequest: DbResponseRequest {
+struct CreateItemFromDetailDbRequest: DbResponseRequest {
     typealias Response = RItem
 
     let key: String
@@ -110,6 +110,7 @@ struct CreateItemDbRequest: DbResponseRequest {
                 rAttachment.changeType = .user
             } else {
                 let rAttachment = try CreateAttachmentDbRequest(attachment: attachment,
+                                                                parentKey: nil,
                                                                 localizedType: (self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""),
                                                                 collections: [], tags: []).process(in: database)
                 rAttachment.libraryId = self.libraryId

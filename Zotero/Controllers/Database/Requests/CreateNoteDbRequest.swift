@@ -39,8 +39,8 @@ struct CreateNoteDbRequest: DbResponseRequest {
 
         // Assign parent
         if let key = self.parentKey,
-           let item = database.objects(RItem.self).filter(.key(key, in: self.libraryId)).first {
-            item.parent = item
+           let parent = database.objects(RItem.self).filter(.key(key, in: self.libraryId)).first {
+            item.parent = parent
             item.changedFields.insert(.parent)
         }
 

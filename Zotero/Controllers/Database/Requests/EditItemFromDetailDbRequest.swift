@@ -11,7 +11,7 @@ import Foundation
 import CocoaLumberjackSwift
 import RealmSwift
 
-struct EditItemDetailDbRequest: DbRequest {
+struct EditItemFromDetailDbRequest: DbRequest {
     var needsWrite: Bool { return true }
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 

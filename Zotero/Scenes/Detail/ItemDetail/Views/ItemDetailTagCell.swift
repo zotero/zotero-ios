@@ -11,7 +11,7 @@ import UIKit
 final class ItemDetailTagCell: UICollectionViewListCell {
     struct ContentConfiguration: UIContentConfiguration {
         let tag: Tag
-        let isEditing: Bool
+        let isProcessing: Bool
         let layoutMargins: UIEdgeInsets
 
         func makeContentView() -> UIView & UIContentView {
@@ -51,7 +51,7 @@ final class ItemDetailTagCell: UICollectionViewListCell {
         }
 
         private func apply(configuration: ContentConfiguration) {
-            self.contentView.setup(tag: configuration.tag, isEditing: configuration.isEditing)
+            self.contentView.setup(tag: configuration.tag, isProcessing: configuration.isProcessing)
         }
     }
 }

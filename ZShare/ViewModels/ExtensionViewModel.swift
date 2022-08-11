@@ -1282,7 +1282,7 @@ final class ExtensionViewModel {
                         try coordinator.perform(request: UpdateCollectionLastUsedDbRequest(key: collectionKey, libraryId: attachment.libraryId))
                     }
 
-                    let request = CreateAttachmentDbRequest(attachment: attachment, localizedType: localizedType, collections: collections, tags: tags)
+                    let request = CreateAttachmentDbRequest(attachment: attachment, parentKey: nil, localizedType: localizedType, collections: collections, tags: tags)
                     let attachment = try coordinator.perform(request: request)
 
                     updateParameters = attachment.updateParameters

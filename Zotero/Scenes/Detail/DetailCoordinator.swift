@@ -637,16 +637,14 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
     }
 
     private func attachmentMessageAndActions(for error: Error) -> (String, [UIAlertAction]) {
-        if let error = error as? ItemDetailError, error == .cantUnzipSnapshot {
-            return (L10n.Errors.Attachments.cantUnzipSnapshot, [])
-        }
-
         if let error = error as? AttachmentDownloader.Error {
             switch error {
             case .incompatibleAttachment:
                 return (L10n.Errors.Attachments.incompatibleAttachment, [])
             case .zipDidntContainRequestedFile:
                 return (L10n.Errors.Attachments.cantOpenAttachment, [])
+            case .cantUnzipSnapshot:
+                return (L10n.Errors.Attachments.cantUnzipSnapshot, [])
             }
         }
 
@@ -768,9 +766,36 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
                 self?.navigationController.popViewController(animated: true)
             }))
 
-        default:
-            // TODO: - handle other errors
-            return
+        case .cantAddAttachments(let error):
+            switch error {
+            case .someFailedCreation(let names), .couldNotMoveFromSource(let names):
+                title = L10n.error
+                message = L10n.Errors.ItemDetail.cantCreateAttachmentsWithNames(names.joined(separator: ", "))
+
+            case .allFailedCreation:
+                title = L10n.error
+                message = L10n.Errors.ItemDetail.cantCreateAttachments
+            }
+
+        case .cantSaveNote:
+            title = L10n.error
+            message = L10n.Errors.ItemDetail.cantSaveNote
+
+        case .cantStoreChanges:
+            title = L10n.error
+            message = L10n.Errors.ItemDetail.cantSaveChanges
+
+        case .cantTrashItem:
+            title = L10n.error
+            message = L10n.Errors.ItemDetail.cantTrashItem
+
+        case .typeNotSupported(let type):
+            title = L10n.error
+            message = L10n.Errors.ItemDetail.unsupportedType(type)
+
+        case .cantSaveTags:
+            title = L10n.error
+            message = L10n.Errors.ItemDetail.cantSaveTags
         }
 
         let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)

@@ -175,24 +175,20 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             return
         }
 
-        self.backgroundQueue.async { [weak viewModel] in
-            do {
-                let request = CreateItemDbRequest(key: key, libraryId: libraryId, collectionKey: collectionKey, data: data.data, attachments: data.attachments, notes: data.notes, tags: data.tags,
-                                                  schemaController: self.schemaController, dateParser: self.dateParser)
-                _ = try self.dbStorage.perform(request: request, on: self.backgroundQueue)
+        let request = CreateItemFromDetailDbRequest(key: key, libraryId: libraryId, collectionKey: collectionKey, data: data.data, attachments: data.attachments, notes: data.notes, tags: data.tags,
+                                          schemaController: self.schemaController, dateParser: self.dateParser)
 
-                inMainThread {
-                    guard let viewModel = viewModel else { return }
-                    self.reloadData(isEditing: true, in: viewModel)
-                }
-            } catch let error {
+        self.perform(request: request, invalidateRealm: true) { [weak viewModel] result in
+            guard let viewModel = viewModel else { return }
+
+            switch result {
+            case .success:
+                self.reloadData(isEditing: true, in: viewModel)
+
+            case .failure(let error):
                 DDLogError("ItemDetailActionHandler: can't create initial item - \(error)")
-
-                inMainThread {
-                    guard let viewModel = viewModel else { return }
-                    self.update(viewModel: viewModel) { state in
-                        state.error = .cantCreateData
-                    }
+                self.update(viewModel: viewModel) { state in
+                    state.error = .cantCreateData
                 }
             }
         }
@@ -304,7 +300,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             data = try self.data(for: newType, from: viewModel.state.data)
         } catch let error {
             self.update(viewModel: viewModel) { state in
-                state.error = (error as? ItemDetailError) ?? .typeNotSupported
+                state.error = (error as? ItemDetailError) ?? .typeNotSupported(newType)
             }
             return
         }
@@ -334,7 +330,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
     private func data(for type: String, from originalData: ItemDetailState.Data) throws -> ItemDetailState.Data {
         guard let localizedType = self.schemaController.localized(itemType: type) else {
-            throw ItemDetailError.typeNotSupported
+            throw ItemDetailError.typeNotSupported(type)
         }
 
         let (fieldIds, fields, hasAbstract) = try ItemDetailDataCreator.fieldData(for: type,
@@ -366,7 +362,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
     private func creators(for type: String, from originalData: [UUID: ItemDetailState.Creator]) throws -> [UUID: ItemDetailState.Creator] {
         guard let schemas = self.schemaController.creators(for: type),
-              let primary = schemas.first(where: { $0.primary }) else { throw ItemDetailError.typeNotSupported }
+              let primary = schemas.first(where: { $0.primary }) else { throw ItemDetailError.typeNotSupported(type) }
 
         var creators = originalData
         for (key, originalCreator) in originalData {
@@ -420,77 +416,60 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     // MARK: - Notes
 
     private func saveNote(key: String, text: String, tags: [Tag], in viewModel: ViewModel<ItemDetailActionHandler>) {
-//        let oldNote = viewModel.state.notes.first(where: { $0.key == key })
-//        let note = Note(key: key, text: text, tags: tags)
-//
-//        self.update(viewModel: viewModel) { state in
-//            if let index = state.notes.firstIndex(where: { $0.key == key }) {
-//                state.notes[index] = note
-//            } else {
-//                state.notes.append(note)
-//            }
-//
-//            state.backgroundProcessedItems.insert(key)
-//            state.reload = .section(.notes)
-//        }
-//
-//        let request: DbRequest
-//        if oldNote == nil {
-//            request = CreateNoteDbRequest(note: note, localizedType: self.schemaController.localized(itemType: ItemTypes.note), libraryId: viewModel.state.library.identifier, collectionKey: nil, parentKey: <#T##String?#>)
-//        }
-//        let request = EditNoteDbRequest(note: note, libraryId: viewModel.state.library.identifier)
-//        self.perform(request: request) { [weak viewModel] error in
-//            didSave = true
-//            guard let viewModel = viewModel else { return }
-//
-//            if let error = error {
-//                DDLogError("ItemDetailActionHandler: can't store note - \(error)")
-//
-//                self.update(viewModel: viewModel) { state in
-//                    state.error = .cantStoreChanges
-//                    if state.savingNotes.remove(note.key) != nil {
-//                        state.reload = .section(.notes)
-//                    }
-//                }
-//                return
-//            }
-//
-//            updateViewModel()
-//        }
-//
-//        let updateViewModel: () -> Void = { [weak viewModel] in
-//            guard let viewModel = viewModel else { return }
-//
-//            self.update(viewModel: viewModel) { state in
-////                if let index = state.data.notes.firstIndex(where: { $0.key == note.key }) {
-////                    state.data.notes[index] = note
-////                } else {
-////                    state.data.notes.append(note)
-////                }
-//                state.savingNotes.remove(note.key)
-//                state.reload = .section(.notes)
-//            }
-//        }
-//
-//        if viewModel.state.isEditing {
-//            updateViewModel()
-//            return
-//        }
-//
-//        var didSave = false
-//
-//        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) { [weak viewModel] in
-//            guard !didSave, let viewModel = viewModel else { return }
-//
-//            // Show saving indicator only if storage takes too much time to avoid unnecessary reloads
-//
-//            self.update(viewModel: viewModel) { state in
-//                state.savingNotes.insert(note.key)
-//                state.reload = .section(.notes)
-//            }
-//        }
-//
+        let oldNote = viewModel.state.notes.first(where: { $0.key == key })
+        let note = Note(key: key, text: text, tags: tags)
 
+        self.update(viewModel: viewModel) { state in
+            if let index = state.notes.firstIndex(where: { $0.key == key }) {
+                state.notes[index] = note
+            } else {
+                state.notes.append(note)
+            }
+
+            state.backgroundProcessedItems.insert(key)
+            state.reload = .section(.notes)
+        }
+
+        let finishSave: (Error?) -> Void = { [weak viewModel] error in
+            guard let viewModel = viewModel else { return }
+
+            self.update(viewModel: viewModel) { state in
+                state.backgroundProcessedItems.remove(key)
+                state.reload = .section(.notes)
+
+                guard let error = error else { return }
+
+                DDLogError("Can't edit/save note \(key) - \(error)")
+                state.error = .cantSaveNote
+
+                guard let index = state.notes.firstIndex(where: { $0.key == key }) else { return }
+
+                if let oldNote = oldNote {
+                    state.notes[index] = oldNote
+                } else {
+                    state.notes.remove(at: index)
+                }
+            }
+        }
+
+        if oldNote != nil {
+            let request = EditNoteDbRequest(note: note, libraryId: viewModel.state.library.identifier)
+            self.perform(request: request) { error in
+                finishSave(error)
+            }
+            return
+        }
+
+        let type = self.schemaController.localized(itemType: ItemTypes.note) ?? ItemTypes.note
+        let request = CreateNoteDbRequest(note: note, localizedType: type, libraryId: viewModel.state.library.identifier, collectionKey: nil, parentKey: viewModel.state.key)
+        self.perform(request: request, invalidateRealm: true) { result in
+            switch result {
+            case .success:
+                finishSave(nil)
+            case .failure(let error):
+                finishSave(error)
+            }
+        }
     }
 
     private func delete(note: Note, in viewModel: ViewModel<ItemDetailActionHandler>) {
@@ -504,14 +483,58 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     // MARK: - Tags
 
     private func set(tags: [Tag], in viewModel: ViewModel<ItemDetailActionHandler>) {
+        let oldTags = viewModel.state.tags
+
         self.update(viewModel: viewModel) { state in
-//            state.data.tags = tags
+            state.tags = tags
             state.reload = .section(.tags)
+
+            for tag in tags {
+                state.backgroundProcessedItems.insert(tag.name)
+            }
+        }
+
+        let request = EditTagsForItemDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, tags: tags)
+        self.perform(request: request) { [weak viewModel] error in
+            guard let viewModel = viewModel else { return }
+
+            self.update(viewModel: viewModel) { state in
+                state.reload = .section(.tags)
+
+                for tag in tags {
+                    state.backgroundProcessedItems.remove(tag.name)
+                }
+
+                if let error = error {
+                    DDLogError("ItemDetailActionHandler: can't set tags to item - \(error)")
+                    state.tags = oldTags
+                }
+            }
         }
     }
 
     private func delete(tag: Tag, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            state.backgroundProcessedItems.insert(tag.name)
+            state.reload = .section(.tags)
+        }
 
+        let request = DeleteTagFromItemDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, tagName: tag.name)
+        self.perform(request: request) { [weak viewModel] error in
+            guard let viewModel = viewModel else { return }
+
+            self.update(viewModel: viewModel) { state in
+                state.backgroundProcessedItems.remove(tag.name)
+                state.reload = .section(.tags)
+
+                if let error = error {
+                    DDLogError("ItemDetailActionHandler: can't delete tag \(tag.name) - \(error)")
+                    state.error = .cantSaveTags
+                } else if let index = state.tags.firstIndex(of: tag) {
+                    state.tags.remove(at: index)
+                }
+            }
+        }
     }
 
     // MARK: - Attachments
@@ -564,47 +587,85 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     }
 
     private func addAttachments(from urls: [URL], in viewModel: ViewModel<ItemDetailActionHandler>) {
-//        var attachments: [Attachment] = []
-//        var errors = 0
-//
-//        for url in urls {
-//            var name = url.deletingPathExtension().lastPathComponent
-//            name = name.removingPercentEncoding ?? name
-//            let mimeType = url.pathExtension.mimeTypeFromExtension ?? "application/octet-stream"
-//            let key = KeyGenerator.newKey
-//            let nameWithExtension = name + "." + url.pathExtension
-//            let file = Files.attachmentFile(in: viewModel.state.library.identifier, key: key, filename: nameWithExtension, contentType: mimeType)
-//
-//            do {
-//                try self.fileStorage.move(from: url.path, to: file)
-//                attachments.append(Attachment(type: .file(filename: nameWithExtension, contentType: mimeType, location: .local, linkType: .importedFile),
-//                                              title: nameWithExtension,
-//                                              key: key,
-//                                              libraryId: viewModel.state.library.identifier))
-//            } catch let error {
-//                DDLogError("ItemDetailActionHandler: can't copy attachment - \(error)")
-//                errors += 1
-//            }
-//        }
-//
-//        if !attachments.isEmpty {
-//            self.update(viewModel: viewModel) { state in
-//                var insertions: [Int] = []
-//                attachments.forEach { attachment in
-//                    let index = state.data.attachments.index(of: attachment, sortedBy: { $0.title.caseInsensitiveCompare($1.title) == .orderedAscending })
-//                    state.data.attachments.insert(attachment, at: index)
-//                    insertions.append(index)
-//                }
-//                state.reload = .section(.attachments)
-//                if errors > 0 {
-//                    state.error = .fileNotCopied(errors)
-//                }
-//            }
-//        } else if errors > 0 {
-//            self.update(viewModel: viewModel) { state in
-//                state.error = .fileNotCopied(errors)
-//            }
-//        }
+        self.createAttachments(from: urls, libraryId: viewModel.state.library.identifier) { [weak viewModel] attachments, failedCopyNames in
+            guard let viewModel = viewModel else { return }
+
+            if attachments.isEmpty {
+                self.update(viewModel: viewModel) { state in
+                    state.error = .cantAddAttachments(.couldNotMoveFromSource(failedCopyNames))
+                }
+                return
+            }
+
+            self.update(viewModel: viewModel) { state in
+                for attachment in attachments {
+                    let index = state.attachments.index(of: attachment, sortedBy: { $0.title.caseInsensitiveCompare($1.title) == .orderedAscending })
+                    state.attachments.insert(attachment, at: index)
+                    state.backgroundProcessedItems.insert(attachment.key)
+                }
+
+                state.reload = .section(.attachments)
+
+                if !failedCopyNames.isEmpty {
+                    state.error = .cantAddAttachments(.couldNotMoveFromSource(failedCopyNames))
+                }
+            }
+
+            let type = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ItemTypes.attachment
+            let request = CreateAttachmentsDbRequest(attachments: attachments, parentKey: viewModel.state.key, localizedType: type, collections: [])
+
+            self.perform(request: request, invalidateRealm: true) { [weak viewModel] result in
+                guard let viewModel = viewModel else { return }
+
+                self.update(viewModel: viewModel) { state in
+                    for attachment in attachments {
+                        state.backgroundProcessedItems.remove(attachment.key)
+                    }
+                    state.reload = .section(.attachments)
+
+                    switch result {
+                    case .failure(let error):
+                        DDLogError("ItemDetailActionHandler: could not create attachments - \(error)")
+                        state.error = .cantAddAttachments(.allFailedCreation)
+                        state.attachments.removeAll(where: { attachment in return attachments.contains(where: { $0.key == attachment.key }) })
+
+                    case .success(let failed):
+                        guard !failed.isEmpty else { return }
+                        state.error = .cantAddAttachments(.someFailedCreation(failed.map({ $0.1 })))
+                        state.attachments.removeAll(where: { attachment in return failed.contains(where: { $0.0 == attachment.key }) })
+                    }
+                }
+            }
+        }
+    }
+
+    private func createAttachments(from urls: [URL], libraryId: LibraryIdentifier, completion: @escaping (([Attachment], [String])) -> Void) {
+        self.backgroundQueue.async {
+            var attachments: [Attachment] = []
+            var failedNames: [String] = []
+
+            for url in urls {
+                var name = url.deletingPathExtension().lastPathComponent
+                name = name.removingPercentEncoding ?? name
+                let mimeType = url.pathExtension.mimeTypeFromExtension ?? "application/octet-stream"
+                let key = KeyGenerator.newKey
+                let nameWithExtension = name + "." + url.pathExtension
+                let file = Files.attachmentFile(in: libraryId, key: key, filename: nameWithExtension, contentType: mimeType)
+
+                do {
+                    try self.fileStorage.move(from: url.path, to: file)
+                    attachments.append(Attachment(type: .file(filename: nameWithExtension, contentType: mimeType, location: .local, linkType: .importedFile),
+                                                  title: nameWithExtension, key: key, libraryId: libraryId))
+                } catch let error {
+                    DDLogError("ItemDetailActionHandler: can't move attachment from source url \(url.relativePath) - \(error)")
+                    failedNames.append(nameWithExtension)
+                }
+            }
+
+            inMainThread {
+                completion((attachments, failedNames))
+            }
+        }
     }
 
     private func openAttachment(with key: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
@@ -712,7 +773,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 newState.data.dateModified = Date()
 
                 if let snapshot = state.snapshot {
-                    let request = EditItemDetailDbRequest(libraryId: state.library.identifier, itemKey: newState.key, data: newState.data, snapshot: snapshot, schemaController: self.schemaController, dateParser: self.dateParser)
+                    let request = EditItemFromDetailDbRequest(libraryId: state.library.identifier, itemKey: newState.key, data: newState.data, snapshot: snapshot, schemaController: self.schemaController, dateParser: self.dateParser)
                     try self.dbStorage.perform(request: request, on: queue)
                 }
 

@@ -62,7 +62,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         case dateModified(Date)
         case field(key: String, multiline: Bool)
         case note(note: Note, isProcessing: Bool)
-        case tag(Tag)
+        case tag(tag: Tag, isProcessing: Bool)
         case title
         case type(String)
 
@@ -120,9 +120,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
                 hasher.combine(7)
                 hasher.combine(note)
                 hasher.combine(isSaving)
-            case .tag(let tag):
+            case .tag(let tag, let isSaving):
                 hasher.combine(8)
                 hasher.combine(tag)
+                hasher.combine(isSaving)
             case .title:
                 hasher.combine(9)
             case .type(let value):
@@ -310,29 +311,21 @@ final class ItemDetailCollectionViewHandler: NSObject {
         self.dataSource.apply(snapshot, animatingDifferences: false, completion: nil)
     }
 
-    private func delete(at index: Int, section: Section) {
-        switch section {
-        case .creators:
-            guard index < self.viewModel.state.data.creatorIds.count else { return }
-            let creatorId = self.viewModel.state.data.creatorIds[index]
-            self.viewModel.process(action: .deleteCreator(creatorId))
+    private func delete(row: Row) {
+        switch row {
+        case .creator(let creator):
+            self.viewModel.process(action: .deleteCreator(creator.id))
 
-        case .tags:
-            guard index < self.viewModel.state.tags.count else { return }
-            let tag = self.viewModel.state.tags[index]
+        case .tag(let tag, _):
             self.viewModel.process(action: .deleteTag(tag))
 
-        case .attachments:
-            guard index < self.viewModel.state.attachments.count else { return }
-            let attachment = self.viewModel.state.attachments[index]
+        case .attachment(let attachment, _):
             self.viewModel.process(action: .deleteAttachment(attachment))
 
-        case .notes:
-            guard index < self.viewModel.state.notes.count else { return }
-            let note = self.viewModel.state.notes[index]
+        case .note(let note, _):
             self.viewModel.process(action: .deleteNote(note))
 
-        case .title, .abstract, .fields, .type, .dates: break
+        case .title, .abstract, .addAttachment, .addCreator, .addNote, .addTag, .dateAdded, .dateModified, .type, .field: break
         }
     }
 
@@ -412,7 +405,8 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
         case .tags:
             let tags: [Row] = state.tags.map({ tag in
-                return .tag(tag)
+                let isProcessing = state.backgroundProcessedItems.contains(tag.name)
+                return .tag(tag: tag, isProcessing: isProcessing)
             })
             return tags + [.addTag]
 
@@ -557,7 +551,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
     private lazy var tagRegistration: UICollectionView.CellRegistration<ItemDetailTagCell, (Tag, Bool)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
             guard let `self` = self else { return }
-            cell.contentConfiguration = ItemDetailTagCell.ContentConfiguration(tag: data.0, isEditing: data.1, layoutMargins: self.layoutMargins(for: indexPath))
+            cell.contentConfiguration = ItemDetailTagCell.ContentConfiguration(tag: data.0, isProcessing: data.1, layoutMargins: self.layoutMargins(for: indexPath))
         }
     }()
 
@@ -592,7 +586,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
             if let section = self.dataSource.section(for: index) {
                 self.setupSeparators(in: &configuration, section: section)
-                self.setupSwipeActions(in: &configuration, section: section)
+                self.setupSwipeActions(in: &configuration)
                 if let header = self.createHeader(for: section.section) {
                     supplementaryItems.append(header)
                 }
@@ -616,18 +610,20 @@ final class ItemDetailCollectionViewHandler: NSObject {
         }
     }
 
-    private func setupSwipeActions(in configuration: inout UICollectionLayoutListConfiguration, section: SectionType) {
-        switch section.section {
-        case .attachments, .notes, .tags: break
-        case .creators where self.viewModel.state.isEditing: break
-        default:
-            configuration.trailingSwipeActionsConfigurationProvider = nil
-            return
-        }
-
+    private func setupSwipeActions(in configuration: inout UICollectionLayoutListConfiguration) {
         configuration.trailingSwipeActionsConfigurationProvider = { [unowned self] indexPath in
+            guard let row = self.dataSource.itemIdentifier(for: indexPath) else { return nil }
+
+            switch row {
+            case .attachment(_, let type) where type != .disabled: break
+            case .note(_, let isProcessing) where !isProcessing: break
+            case .tag(_, let isProcessing) where !isProcessing: break
+            case .creator where self.viewModel.state.isEditing: break
+            default: return nil
+            }
+
             let delete = UIContextualAction(style: .destructive, title: L10n.delete) { _, _, completion in
-                self.delete(at: indexPath.row, section: section.section)
+                self.delete(row: row)
                 completion(true)
             }
             return UISwipeActionsConfiguration(actions: [delete])
@@ -771,8 +767,8 @@ final class ItemDetailCollectionViewHandler: NSObject {
             case .note(let note, let isProcessing):
                 return collectionView.dequeueConfiguredReusableCell(using: noteRegistration, for: indexPath, item: (note, isProcessing))
 
-            case .tag(let tag):
-                return collectionView.dequeueConfiguredReusableCell(using: tagRegistration, for: indexPath, item: (tag, isEditing))
+            case .tag(let tag, let isProcessing):
+                return collectionView.dequeueConfiguredReusableCell(using: tagRegistration, for: indexPath, item: (tag, isProcessing))
 
             case .type(let type):
                 return collectionView.dequeueConfiguredReusableCell(using: fieldRegistration, for: indexPath, item: (.value(value: type, title: L10n.itemType), titleWidth))

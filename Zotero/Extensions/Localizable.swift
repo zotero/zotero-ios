@@ -385,14 +385,32 @@ internal enum L10n {
       internal static let saveFailed = L10n.tr("Localizable", "errors.collections.save_failed")
     }
     internal enum ItemDetail {
+      /// Could not create attachments.
+      internal static let cantCreateAttachments = L10n.tr("Localizable", "errors.item_detail.cant_create_attachments")
+      /// Could not create attachments: %@
+      internal static func cantCreateAttachmentsWithNames(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "errors.item_detail.cant_create_attachments_with_names", String(describing: p1))
+      }
       /// Could not load data. Please try again.
       internal static let cantLoadData = L10n.tr("Localizable", "errors.item_detail.cant_load_data")
+      /// Could not save changes.
+      internal static let cantSaveChanges = L10n.tr("Localizable", "errors.item_detail.cant_save_changes")
+      /// Could not save note.
+      internal static let cantSaveNote = L10n.tr("Localizable", "errors.item_detail.cant_save_note")
+      /// Could not save tags.
+      internal static let cantSaveTags = L10n.tr("Localizable", "errors.item_detail.cant_save_tags")
+      /// Could not move item to trash.
+      internal static let cantTrashItem = L10n.tr("Localizable", "errors.item_detail.cant_trash_item")
       /// Are you sure you want to change the item type?\n\nThe following fields will be lost:\n\n%@
       internal static func droppedFieldsMessage(_ p1: Any) -> String {
         return L10n.tr("Localizable", "errors.item_detail.dropped_fields_message", String(describing: p1))
       }
       /// Change Item Type
       internal static let droppedFieldsTitle = L10n.tr("Localizable", "errors.item_detail.dropped_fields_title")
+      /// Type "%@" not supported.
+      internal static func unsupportedType(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "errors.item_detail.unsupported_type", String(describing: p1))
+      }
     }
     internal enum Items {
       /// Could not add attachment.

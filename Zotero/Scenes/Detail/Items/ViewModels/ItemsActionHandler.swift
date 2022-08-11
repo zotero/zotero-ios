@@ -529,17 +529,18 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         }
 
         let type = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
-        let request = CreateAttachmentsDbRequest(attachments: attachments, localizedType: type, collections: collections)
+        let request = CreateAttachmentsDbRequest(attachments: attachments, parentKey: nil, localizedType: type, collections: collections)
 
         self.perform(request: request, invalidateRealm: true) { [weak viewModel] result in
             guard let viewModel = viewModel else { return }
 
             switch result {
-            case .success(let failedTitles):
-                guard !failedTitles.isEmpty else { return }
+            case .success(let failed):
+                guard !failed.isEmpty else { return }
                 self.update(viewModel: viewModel) { state in
-                    state.error = .attachmentAdding(.someFailed(failedTitles))
+                    state.error = .attachmentAdding(.someFailed(failed.map({ $0.1 })))
                 }
+
             case .failure(let error):
                 DDLogError("ItemsActionHandler: can't add attachment: \(error)")
                 self.update(viewModel: viewModel) { state in

@@ -16,6 +16,7 @@ final class AttachmentDownloader {
     enum Error: Swift.Error {
         case incompatibleAttachment
         case zipDidntContainRequestedFile
+        case cantUnzipSnapshot
     }
 
     struct Update {

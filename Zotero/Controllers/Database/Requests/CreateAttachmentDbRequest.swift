@@ -20,6 +20,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
     typealias Response = RItem
 
     let attachment: Attachment
+    let parentKey: String?
     let localizedType: String
     let collections: Set<String>
     let tags: [TagResponse]
@@ -157,7 +158,12 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
 
         // MARK: - Tags
 
-        
+        // MARK: - Parent
+
+        if let key = self.parentKey, let parent = database.objects(RItem.self).filter(.key(key, in: self.attachment.libraryId)).first {
+            item.parent = parent
+            item.changedFields.insert(.parent)
+        }
 
         return item
     }

@@ -21,7 +21,7 @@ class ItemDetailTagContentView: UIView {
         self.labelTop.constant = self.label.font.capHeight - self.label.font.ascender
     }
 
-    func setup(tag: Tag, isEditing: Bool) {
+    func setup(tag: Tag, isProcessing: Bool) {
         let (color, style) = TagColorGenerator.uiColor(for: tag.color)
 
         switch style {
@@ -35,5 +35,6 @@ class ItemDetailTagContentView: UIView {
         }
 
         self.label.text = tag.name
+        self.label.textColor = isProcessing ? .systemGray2 : .label
     }
 }

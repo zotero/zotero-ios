@@ -44,7 +44,8 @@ struct ItemDetailDataCreator {
     private static func creationData(itemType: String, child: Attachment?, schemaController: SchemaController, dateParser: DateParser, urlDetector: UrlDetector,
                                      doiDetector: (String) -> Bool) throws -> (ItemDetailState.Data, [Attachment], [Note], [Tag]) {
         guard let localizedType = schemaController.localized(itemType: itemType) else {
-            throw ItemDetailError.schemaNotInitialized
+            DDLogError("ItemDetailDataCreator: schema not initialized - can't create localized type")
+            throw ItemDetailError.cantCreateData
         }
 
         let (fieldIds, fields, hasAbstract) = try fieldData(for: itemType, schemaController: schemaController, dateParser: dateParser, urlDetector: urlDetector, doiDetector: doiDetector)
@@ -76,7 +77,7 @@ struct ItemDetailDataCreator {
     private static func itemData(item: RItem, schemaController: SchemaController, dateParser: DateParser, fileStorage: FileStorage, urlDetector: UrlDetector, doiDetector: (String) -> Bool)
                                                                                                                                         throws -> (ItemDetailState.Data, [Attachment], [Note], [Tag]) {
         guard let localizedType = schemaController.localized(itemType: item.rawType) else {
-            throw ItemDetailError.typeNotSupported
+            throw ItemDetailError.typeNotSupported(item.rawType)
         }
 
         var abstract: String?
@@ -156,7 +157,7 @@ struct ItemDetailDataCreator {
     static func fieldData(for itemType: String, schemaController: SchemaController, dateParser: DateParser, urlDetector: UrlDetector, doiDetector: (String) -> Bool,
                           getExistingData: ((String, String?) -> (String?, String?))? = nil) throws -> ([String], [String: ItemDetailState.Field], Bool) {
         guard var fieldSchemas = schemaController.fields(for: itemType) else {
-            throw ItemDetailError.typeNotSupported
+            throw ItemDetailError.typeNotSupported(itemType)
         }
 
         var fieldKeys = fieldSchemas.map({ $0.field })

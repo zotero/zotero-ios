@@ -9,17 +9,18 @@
 import Foundation
 
 enum ItemDetailError: Error, Equatable, Hashable {
-    case schemaNotInitialized
-    case typeNotSupported
-    case libraryNotAssigned
-    case contentTypeUnknown
-    case userMissing
-    case downloadError
-    case unknown
+    enum AttachmentAddError: Error, Equatable, Hashable {
+        case couldNotMoveFromSource([String])
+        case someFailedCreation([String])
+        case allFailedCreation
+    }
+
+    case typeNotSupported(String)
     case cantStoreChanges
-    case fileNotCopied(Int)
     case droppedFields([String])
-    case cantUnzipSnapshot
     case cantCreateData
     case cantTrashItem
+    case cantSaveNote
+    case cantAddAttachments(AttachmentAddError)
+    case cantSaveTags
 }

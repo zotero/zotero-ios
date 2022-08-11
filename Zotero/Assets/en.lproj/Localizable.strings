@@ -380,6 +380,13 @@
 "errors.item_detail.dropped_fields_title" = "Change Item Type";
 "errors.item_detail.dropped_fields_message" = "Are you sure you want to change the item type?\n\nThe following fields will be lost:\n\n%@";
 "errors.item_detail.cant_load_data" = "Could not load data. Please try again.";
+"errors.item_detail.cant_create_attachments_with_names" = "Could not create attachments: %@";
+"errors.item_detail.cant_create_attachments" = "Could not create attachments.";
+"errors.item_detail.cant_save_note" = "Could not save note.";
+"errors.item_detail.cant_save_changes" = "Could not save changes.";
+"errors.item_detail.cant_trash_item" = "Could not move item to trash.";
+"errors.item_detail.cant_save_tags" = "Could not save tags.";
+"errors.item_detail.unsupported_type" = "Type \"%@\" not supported.";
 "errors.settings.storage" = "Could not collect storage data";
 "errors.settings.webdav.file_missing_after_upload" = "A potential problem was found with your WebDAV server.\n\nAn uploaded file was not immediately available for download. There may be a short delay between when you upload files and when they become available, particularly if you are using a cloud storage service.\n\nIf Zotero file syncing appears to work normally, you can ignore this message. If you have trouble, please post to the Zotero Forums.";
 "errors.settings.webdav.invalid_url" = "WebDAV verification error";

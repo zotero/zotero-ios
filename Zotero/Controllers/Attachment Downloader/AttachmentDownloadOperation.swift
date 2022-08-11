@@ -177,7 +177,8 @@ class AttachmentDownloadOperation: AsynchronousOperation {
             }
             return .failure(AttachmentDownloader.Error.zipDidntContainRequestedFile)
         } catch let error {
-            return .failure(error)
+            DDLogError("AttachmentDownloadOperation: unzip error - \(error)")
+            return .failure(AttachmentDownloader.Error.cantUnzipSnapshot)
         }
     }
 
