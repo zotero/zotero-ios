@@ -64,6 +64,7 @@ struct EditTagsForItemDbRequest: DbRequest {
         if tagsDidChange {
             // TMP: Temporary fix for Realm issue (https://github.com/realm/realm-core/issues/4994). Deletion of tag is not reported, so let's assign a value so that changes are visible in items list.
             item.rawType = item.rawType
+            item.changeType = .user
             item.changedFields.insert(.tags)
         }
     }

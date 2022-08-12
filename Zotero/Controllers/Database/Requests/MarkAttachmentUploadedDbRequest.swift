@@ -19,8 +19,7 @@ struct MarkAttachmentUploadedDbRequest: DbRequest {
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
-        guard let attachment = database.objects(RItem.self)
-                                       .filter(.key(self.key, in: self.libraryId)).first else { return }
+        guard let attachment = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first else { return }
         attachment.attachmentNeedsSync = false
         attachment.changeType = .sync
         if let md5 = attachment.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value {
@@ -28,6 +27,10 @@ struct MarkAttachmentUploadedDbRequest: DbRequest {
         }
         if let version = self.version {
             attachment.version = version
+        }
+        if let parent = attachment.parent {
+            // This is to mitigate the issue in item detail screen (ItemDetailActionHandler.shouldReloadData) where observing of `children` doesn't report changes between `oldValue` and `newValue`.
+            parent.version = parent.version
         }
     }
 }

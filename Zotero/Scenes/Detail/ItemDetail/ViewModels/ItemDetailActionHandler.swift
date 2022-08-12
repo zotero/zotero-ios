@@ -249,23 +249,23 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     }
 
     private func shouldReloadData(for changes: [PropertyChange]) -> Bool {
-        guard let changeTypeChange = changes.first(where: { $0.name == "changeType" }), let newValue = changeTypeChange.newValue as? Int, let type = UpdatableChangeType(rawValue: newValue),
-              let changedFieldsChange = changes.first(where: { $0.name == "rawChangedFields" }) else { return true }
-
-        switch type {
-        case .user:
-            // This change was made by user, ignore
+        if let versionChange = changes.first(where: { $0.name == "version" }), let oldValue = versionChange.oldValue as? Int, let newValue = versionChange.newValue as? Int {
+            // If `version` has been changed, the item has been updated. Check whether it was sync change.
+            if oldValue != newValue, let changeType = changes.first(where: { $0.name == "changeType" })?.oldValue as? Int, changeType != UpdatableChangeType.user.rawValue {
+                return true
+            }
+            // Otherwise this was user change and backend only updated version based on user change.
             return false
-        case .sync:
-            // This change was made by sync. Check whether it was just marking the object as synced or an actual change.
-
-            guard let oldChangedFieldsValue = changedFieldsChange.oldValue as? RItemChanges.RawValue,
-                  let newChangedFieldsValue = changedFieldsChange.newValue as? RItemChanges.RawValue else { return true }
-
-            // If this change was made as a response to data submission to API then `rawChangedFields` was set back to 0 (synced) from some previous non-zero value. Otherwise it's a change from backend
-            // and it should reload UI.
-            return oldChangedFieldsValue == 0 || newChangedFieldsValue > 0
         }
+
+        if changes.first(where: { $0.name == "children" }) != nil {
+            // Realm has an issue when reporting changes in children for `LinkingObjects`. The `oldValue` and `newValue` point to the same `LinkingObjects`, so we can't distinguish whether this was
+            // user or sync change. To mitigate this, when updating child items version after successful backend submission, the `parent.version` is also updated. So this change is ignored by above
+            // condition and other `children` changes are always made by backend.
+            return true
+        }
+
+        return false
     }
 
     private func trashItem(key: String, reloadType: ItemDetailState.TableViewReloadType, in viewModel: ViewModel<ItemDetailActionHandler>, updateState: @escaping (inout ItemDetailState) -> Void) {

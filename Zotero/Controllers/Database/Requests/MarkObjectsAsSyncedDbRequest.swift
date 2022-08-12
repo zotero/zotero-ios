@@ -63,6 +63,11 @@ struct MarkItemAsSyncedAndUpdateDbRequest: DbRequest {
         _ = StoreItemDbRequest.update(item: item, libraryId: self.libraryId, with: self.response, schemaController: self.schemaController, dateParser: self.dateParser, database: database)
         item.resetChanges()
         item.version = self.version
+
+        if let parent = item.parent {
+            // This is to mitigate the issue in item detail screen (ItemDetailActionHandler.shouldReloadData) where observing of `children` doesn't report changes between `oldValue` and `newValue`.
+            parent.version = parent.version
+        }
     }
 }
 

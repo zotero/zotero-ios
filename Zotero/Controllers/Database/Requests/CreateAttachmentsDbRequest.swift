@@ -26,6 +26,11 @@ struct CreateAttachmentsDbRequest: DbResponseRequest {
         guard let libraryId = self.attachments.first?.libraryId else { return [] }
 
         let parent = self.parentKey.flatMap({ database.objects(RItem.self).filter(.key($0, in: libraryId)).first })
+        if let parent = parent {
+            // This is to mitigate the issue in item detail screen (ItemDetailActionHandler.shouldReloadData) where observing of `children` doesn't report changes between `oldValue` and `newValue`.
+            parent.version = parent.version
+        }
+
         var failed: [(String, String)] = []
 
         for attachment in attachments {

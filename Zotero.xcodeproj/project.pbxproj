@@ -582,7 +582,6 @@
 		B3593F31241A61C700760E20 /* ItemDetailViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3593EDF241A61C700760E20 /* ItemDetailViewController.xib */; };
 		B3593F32241A61C700760E20 /* ItemDetailAbstractContentView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3593EE0241A61C700760E20 /* ItemDetailAbstractContentView.xib */; };
 		B3593F33241A61C700760E20 /* ItemDetailNoteContentView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3593EE1241A61C700760E20 /* ItemDetailNoteContentView.xib */; };
-		B3593F35241A61C700760E20 /* ItemDetailTableViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EE3241A61C700760E20 /* ItemDetailTableViewHandler.swift */; };
 		B3593F36241A61C700760E20 /* ItemDetailSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EE4241A61C700760E20 /* ItemDetailSectionView.swift */; };
 		B3593F37241A61C700760E20 /* ItemDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EE5241A61C700760E20 /* ItemDetailViewController.swift */; };
 		B3593F38241A61C700760E20 /* ItemDetailDataCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EE6241A61C700760E20 /* ItemDetailDataCreator.swift */; };
@@ -861,6 +860,7 @@
 		B3B953CE245981DA00FC96DB /* PDFReaderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953CD245981DA00FC96DB /* PDFReaderViewController.swift */; };
 		B3B953D22459B4D800FC96DB /* UITableViewCell+SwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953D12459B4D800FC96DB /* UITableViewCell+SwiftUI.swift */; };
 		B3B953D42459B62D00FC96DB /* AnnotationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953D32459B62D00FC96DB /* AnnotationCell.swift */; };
+		B3BA9DAF28A649C200B51F1D /* ItemDetailActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EC5241A61C700760E20 /* ItemDetailActionHandler.swift */; };
 		B3BC1F60254322D200BA3388 /* ItemDetailAbstractEditCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC1F5E254322D200BA3388 /* ItemDetailAbstractEditCell.swift */; };
 		B3BC1F61254322D200BA3388 /* ItemDetailAbstractEditContentView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3BC1F5F254322D200BA3388 /* ItemDetailAbstractEditContentView.xib */; };
 		B3BC25CD247E6BA000AC27B5 /* DateParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC25CC247E6BA000AC27B5 /* DateParser.swift */; };
@@ -1491,7 +1491,6 @@
 		B3593EDF241A61C700760E20 /* ItemDetailViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ItemDetailViewController.xib; sourceTree = "<group>"; };
 		B3593EE0241A61C700760E20 /* ItemDetailAbstractContentView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ItemDetailAbstractContentView.xib; sourceTree = "<group>"; };
 		B3593EE1241A61C700760E20 /* ItemDetailNoteContentView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ItemDetailNoteContentView.xib; sourceTree = "<group>"; };
-		B3593EE3241A61C700760E20 /* ItemDetailTableViewHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailTableViewHandler.swift; sourceTree = "<group>"; };
 		B3593EE4241A61C700760E20 /* ItemDetailSectionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailSectionView.swift; sourceTree = "<group>"; };
 		B3593EE5241A61C700760E20 /* ItemDetailViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailViewController.swift; sourceTree = "<group>"; };
 		B3593EE6241A61C700760E20 /* ItemDetailDataCreator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailDataCreator.swift; sourceTree = "<group>"; };
@@ -2829,7 +2828,6 @@
 				B3593EE1241A61C700760E20 /* ItemDetailNoteContentView.xib */,
 				B3593EE4241A61C700760E20 /* ItemDetailSectionView.swift */,
 				B3593ED1241A61C700760E20 /* ItemDetailSectionView.xib */,
-				B3593EE3241A61C700760E20 /* ItemDetailTableViewHandler.swift */,
 				B3593ED3241A61C700760E20 /* ItemDetailTagCell.swift */,
 				B37AA28D289968F200A1C643 /* ItemDetailTagContentView.swift */,
 				B3593EDA241A61C700760E20 /* ItemDetailTagContentView.xib */,
@@ -4219,7 +4217,6 @@
 				B305662123FC051F003304F2 /* SubmitDeletionSyncAction.swift in Sources */,
 				B305661B23FC051E003304F2 /* SyncVersionsSyncAction.swift in Sources */,
 				B3593F49241A61C700760E20 /* LibrariesAction.swift in Sources */,
-				B3593F35241A61C700760E20 /* ItemDetailTableViewHandler.swift in Sources */,
 				B3E8FE032714292E00F51458 /* StorageSettingsState.swift in Sources */,
 				B3DCDF0C240912370039ED0D /* SinglePickerState.swift in Sources */,
 				B30B40652491222000FAAF6D /* AttachmentCreator.swift in Sources */,
@@ -4830,6 +4827,7 @@
 				B3202C692710488200485BE4 /* OHHTTPStubs+Helpers.swift in Sources */,
 				B307E55E22D4A87B00592B3C /* SyncActionsSpec.swift in Sources */,
 				B3B1EDEF250242E700D8BC1E /* CollectionResponseSpec.swift in Sources */,
+				B3BA9DAF28A649C200B51F1D /* ItemDetailActionHandler.swift in Sources */,
 				B3F47C01243B339F004F8B1E /* TranslatorsControllerSpec.swift in Sources */,
 				B3B1EDF1250242F700D8BC1E /* SearchResponseSpec.swift in Sources */,
 				B34F274F220E20370038B3B1 /* SyncControllerSpec.swift in Sources */,

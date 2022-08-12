@@ -42,6 +42,9 @@ struct CreateNoteDbRequest: DbResponseRequest {
            let parent = database.objects(RItem.self).filter(.key(key, in: self.libraryId)).first {
             item.parent = parent
             item.changedFields.insert(.parent)
+
+            // This is to mitigate the issue in item detail screen (ItemDetailActionHandler.shouldReloadData) where observing of `children` doesn't report changes between `oldValue` and `newValue`.
+            parent.version = parent.version
         }
 
         // Assign collection
