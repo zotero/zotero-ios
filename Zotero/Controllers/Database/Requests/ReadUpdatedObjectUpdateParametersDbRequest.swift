@@ -16,7 +16,6 @@ struct ReadUpdatedSettingsUpdateParametersDbRequest: DbResponseRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> [[String : Any]] {
         // Page indices are sent only for user library, even though they are assigned to groups also.
@@ -35,7 +34,6 @@ struct ReadUpdatedSearchUpdateParametersDbRequest: DbResponseRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> [[String : Any]] {
         return database.objects(RSearch.self)
@@ -50,7 +48,6 @@ struct ReadUpdatedItemUpdateParametersDbRequest: DbResponseRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> ([[String: Any]], Bool) {
         let items =  database.objects(RItem.self).filter(.itemChangesWithoutDeletions(in: self.libraryId))
@@ -115,7 +112,6 @@ struct ReadUpdatedCollectionUpdateParametersDbRequest: DbResponseRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> [[String : Any]] {
         let objects = database.objects(RCollection.self).filter(.changesWithoutDeletions(in: self.libraryId))

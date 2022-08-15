@@ -13,7 +13,6 @@ import RealmSwift
 
 struct DeleteTagFromItemDbRequest: DbRequest {
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     let key: String
     let libraryId: LibraryIdentifier

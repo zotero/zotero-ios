@@ -16,7 +16,6 @@ struct UninstallStyleDbRequest: DbResponseRequest {
     let identifier: String
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> [String] {
         guard let style = database.object(ofType: RStyle.self, forPrimaryKey: self.identifier) else { return [] }

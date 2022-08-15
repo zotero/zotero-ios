@@ -17,7 +17,6 @@ struct MarkFileAsDownloadedDbRequest: DbRequest {
     let downloaded: Bool
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first else {
@@ -34,7 +33,6 @@ struct MarkItemsFilesAsNotDownloadedDbRequest: DbRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         let items = database.objects(RItem.self).filter(.keys(self.keys, in: self.libraryId)).filter(.item(type: ItemTypes.attachment)).filter(.file(downloaded: true))
@@ -49,7 +47,6 @@ struct MarkLibraryFilesAsNotDownloadedDbRequest: DbRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         let items = database.objects(RItem.self).filter(.library(with: self.libraryId)).filter(.item(type: ItemTypes.attachment)).filter(.file(downloaded: true))
@@ -62,7 +59,6 @@ struct MarkLibraryFilesAsNotDownloadedDbRequest: DbRequest {
 
 struct MarkAllFilesAsNotDownloadedDbRequest: DbRequest {
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         let items = database.objects(RItem.self).filter(.item(type: ItemTypes.attachment)).filter(.file(downloaded: true))

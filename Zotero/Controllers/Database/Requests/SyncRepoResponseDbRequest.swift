@@ -17,7 +17,6 @@ struct SyncRepoResponseDbRequest: DbRequest {
     unowned let fileStorage: FileStorage
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         if !self.translators.isEmpty || !self.deleteTranslators.isEmpty {

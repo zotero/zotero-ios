@@ -16,7 +16,6 @@ struct ReadLibraryDbRequest: DbResponseRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Library {
         switch self.libraryId {

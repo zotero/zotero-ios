@@ -17,7 +17,6 @@ struct CheckAnyItemIsInTrashDbRequest: DbResponseRequest {
     let keys: [String]
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]?
 
     func process(in database: Realm) throws -> Bool {
         return !database.objects(RItem.self).filter(.keys(self.keys, in: self.libraryId)).filter(.isTrash(true)).isEmpty

@@ -19,7 +19,6 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
     let webDavEnabled: Bool
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> [LibraryData] {
         var allLibraryData: [LibraryData] = []

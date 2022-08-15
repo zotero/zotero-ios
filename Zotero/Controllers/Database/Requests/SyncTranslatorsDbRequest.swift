@@ -18,7 +18,6 @@ struct SyncTranslatorsDbRequest: DbResponseRequest {
     unowned let fileStorage: FileStorage
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> [(String, String)] {
         if !self.deleteIndices.isEmpty {

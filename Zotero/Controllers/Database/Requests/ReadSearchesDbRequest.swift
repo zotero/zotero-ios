@@ -16,7 +16,6 @@ struct ReadSearchesDbRequest: DbResponseRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Results<RSearch> {
         let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [.notSyncState(.dirty, in: self.libraryId),

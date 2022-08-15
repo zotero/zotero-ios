@@ -16,7 +16,6 @@ struct ReadAnyChangedObjectsInLibraryDbRequest<Obj: UpdatableObject>: DbResponse
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Results<Obj> {
         return database.objects(Obj.self).filter(.changesOrDeletions(in: self.libraryId))

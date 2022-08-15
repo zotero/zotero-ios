@@ -16,7 +16,6 @@ struct ReadItemsForUploadDbRequest: DbResponseRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Results<RItem> {
         let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [.attachmentNeedsUpload, .library(with: self.libraryId)])

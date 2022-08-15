@@ -130,7 +130,7 @@ extension RealmDbCoordinator: DbCoordinator {
             return
         }
 
-        try self.realm.write(withoutNotifying: request.ignoreNotificationTokens ?? []) {
+        try self.realm.write {
             try request.process(in: self.realm)
         }
     }
@@ -145,7 +145,7 @@ extension RealmDbCoordinator: DbCoordinator {
             return try request.process(in: self.realm)
         }
 
-        return try self.realm.write(withoutNotifying: request.ignoreNotificationTokens ?? []) {
+        return try self.realm.write {
             return try request.process(in: self.realm)
         }
     }

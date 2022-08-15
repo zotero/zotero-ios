@@ -21,7 +21,6 @@ struct ReadAllAttachmentsFromCollectionDbRequest: DbResponseRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Results<RItem> {
         guard !self.collectionId.isTrash else { throw Error.collectionIsTrash }

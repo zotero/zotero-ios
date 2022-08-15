@@ -16,7 +16,6 @@ struct ReadWebDavDeletionsDbRequest: DbResponseRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Results<RWebDavDeletion> {
         return database.objects(RWebDavDeletion.self)

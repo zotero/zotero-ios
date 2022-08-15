@@ -14,7 +14,6 @@ struct ReadAllItemsForUploadDbRequest: DbResponseRequest {
     typealias Response = Results<RItem>
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Results<RItem> {
         return database.objects(RItem.self).filter(.item(type: ItemTypes.attachment)).filter(.attachmentNeedsUpload)

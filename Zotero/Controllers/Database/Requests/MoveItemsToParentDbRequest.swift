@@ -16,7 +16,6 @@ struct MoveItemsToParentDbRequest: DbRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool {  return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         guard let parent = database.objects(RItem.self).filter(.key(self.parentKey, in: self.libraryId)).first else {

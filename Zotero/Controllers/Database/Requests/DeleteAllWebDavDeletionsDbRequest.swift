@@ -12,7 +12,6 @@ import RealmSwift
 
 struct DeleteAllWebDavDeletionsDbRequest: DbRequest {
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         database.delete(database.objects(RWebDavDeletion.self))

@@ -17,7 +17,6 @@ struct MarkObjectsAsChangedByUser: DbRequest {
     let items: [String]
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         self.markCollections(with: self.collections, database: database)
@@ -48,7 +47,6 @@ struct MarkOtherObjectsAsChangedByUser: DbRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         switch self.syncObject {

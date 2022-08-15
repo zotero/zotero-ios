@@ -12,7 +12,6 @@ import RealmSwift
 
 struct CleanupUnusedTags: DbRequest {
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]?
 
     func process(in database: Realm) throws {
         let toRemoveBase = database.objects(RTag.self).filter("tags.@count == 0 AND color == %@", "")

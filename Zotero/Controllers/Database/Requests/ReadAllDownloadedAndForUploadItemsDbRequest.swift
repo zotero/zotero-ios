@@ -14,7 +14,6 @@ struct ReadAllDownloadedAndForUploadItemsDbRequest: DbResponseRequest {
     typealias Response = Results<RItem>
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Results<RItem> {
         let predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [.file(downloaded: true), .attachmentNeedsUpload])

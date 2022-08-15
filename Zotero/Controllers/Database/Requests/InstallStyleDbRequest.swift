@@ -16,7 +16,6 @@ struct InstallStyleDbRequest: DbResponseRequest {
     let identifier: String
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Bool {
         guard let existing = database.object(ofType: RStyle.self, forPrimaryKey: self.identifier) else { return false }

@@ -16,7 +16,6 @@ struct ReadStyleDbRequest: DbResponseRequest {
     let identifier: String
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> RStyle {
         guard let style = database.object(ofType: RStyle.self, forPrimaryKey: self.identifier) else {

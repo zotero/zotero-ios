@@ -14,7 +14,6 @@ struct InitializeCustomLibrariesDbRequest: DbResponseRequest {
     typealias Response = Bool
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Bool {
         guard database.object(ofType: RCustomLibrary.self, forPrimaryKey: RCustomLibraryType.myLibrary.rawValue) == nil else { return false }

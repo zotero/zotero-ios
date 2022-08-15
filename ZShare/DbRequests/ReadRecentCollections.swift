@@ -17,7 +17,6 @@ struct ReadRecentCollections: DbResponseRequest {
     let excluding: (String, LibraryIdentifier)?
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> [RecentData] {
         let collections = database.objects(RCollection.self).sorted(byKeyPath: "lastUsed", ascending: false)

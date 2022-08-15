@@ -15,7 +15,6 @@ struct StoreStyleDbRequest: DbRequest {
     let dependency: Style?
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         let (rStyle, _) = self.style(for: self.style.identifier, database: database)

@@ -20,7 +20,6 @@ struct CreateNoteDbRequest: DbResponseRequest {
     let parentKey: String?
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> RItem {
         // Create item

@@ -20,7 +20,6 @@ struct SplitAnnotationsDbRequest: DbRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         let items = database.objects(RItem.self).filter(.keys(self.keys, in: self.libraryId))

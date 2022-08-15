@@ -16,7 +16,6 @@ struct StoreMtimeForAttachmentDbRequest: DbRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]?
 
     func process(in database: Realm) throws {
         guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first,

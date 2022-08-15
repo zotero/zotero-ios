@@ -14,7 +14,6 @@ struct ReadAllWritableGroupsDbRequest: DbResponseRequest {
     typealias Response = Results<RGroup>
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Results<RGroup> {
         return database.objects(RGroup.self).filter(.notSyncState(.dirty))

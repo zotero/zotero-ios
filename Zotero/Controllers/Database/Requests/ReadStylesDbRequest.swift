@@ -14,7 +14,6 @@ struct ReadStylesDbRequest: DbResponseRequest {
     typealias Response = Results<RStyle>
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Results<RStyle> {
         return database.objects(RStyle.self).sorted(byKeyPath: "title")
@@ -25,7 +24,6 @@ struct ReadInstalledStylesDbRequest: DbResponseRequest {
     typealias Response = Results<RStyle>
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Results<RStyle> {
         return database.objects(RStyle.self).filter("installed = true").sorted(byKeyPath: "title")

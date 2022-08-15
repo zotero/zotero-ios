@@ -17,7 +17,6 @@ struct ReadSearchDbRequest: DbResponseRequest {
     let key: String
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> RSearch {
         guard let search = database.objects(RSearch.self).filter(.key(self.key, in: self.libraryId)).first else {

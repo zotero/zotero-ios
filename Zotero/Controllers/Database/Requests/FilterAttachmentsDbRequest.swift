@@ -17,7 +17,6 @@ struct FilterAttachmentsDbRequest: DbResponseRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> [String] {
         return database.objects(RItem.self).filter(.keys(self.keys, in: self.libraryId)).filter(.item(type: ItemTypes.attachment)).map({ $0.key })

@@ -12,7 +12,6 @@ import RealmSwift
 
 struct UpdateCreatorSummaryFormatDbRequest: DbRequest {
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]?
 
     func process(in database: Realm) throws {
         let itemsWithCreators = database.objects(RItem.self).filter("creators.@count > 0")

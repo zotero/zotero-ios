@@ -16,7 +16,6 @@ struct ReadDeletedObjectsDbRequest<Obj: DeletableObject>: DbResponseRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Results<Obj> {
         return database.objects(Obj.self).filter(.deleted(true, in: self.libraryId))

@@ -16,7 +16,6 @@ struct ReadGroupDbRequest: DbResponseRequest {
     let identifier: Int
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> RGroup {
         guard let group = database.object(ofType: RGroup.self, forPrimaryKey: self.identifier) else {

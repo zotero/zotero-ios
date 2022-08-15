@@ -17,7 +17,6 @@ struct ReadCollectionAndLibraryDbRequest: DbResponseRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> (Collection?, Library) {
         let library = try ReadLibraryDbRequest(libraryId: self.libraryId).process(in: database)

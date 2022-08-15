@@ -26,7 +26,6 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
     let tags: [TagResponse]
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> RItem {
         // Basic info

@@ -16,7 +16,6 @@ struct MarkObjectsAsSyncedDbRequest<Obj: UpdatableObject&Syncable>: DbRequest {
     let version: Int
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         let objects = database.objects(Obj.self).filter(.keys(self.keys, in: self.libraryId))
@@ -35,7 +34,6 @@ struct MarkCollectionAsSyncedAndUpdateDbRequest: DbRequest {
     let version: Int
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         guard let collection = database.objects(RCollection.self).filter(.key(self.response.key, in: self.libraryId)).first else { return }
@@ -55,7 +53,6 @@ struct MarkItemAsSyncedAndUpdateDbRequest: DbRequest {
     unowned let dateParser: DateParser
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         guard let item = database.objects(RItem.self).filter(.key(self.response.key, in: self.libraryId)).first else { return }
@@ -77,7 +74,6 @@ struct MarkSearchAsSyncedAndUpdateDbRequest: DbRequest {
     let version: Int
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         guard let search = database.objects(RSearch.self).filter(.key(self.response.key, in: self.libraryId)).first else { return }
@@ -93,7 +89,6 @@ struct MarkSettingsAsSyncedDbRequest: DbRequest {
     let version: Int
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         for setting in self.settings {

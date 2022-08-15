@@ -16,7 +16,6 @@ struct SetCollectionCollapsedDbRequest: DbRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         switch self.identifier {
@@ -35,7 +34,6 @@ struct SetCollectionsCollapsedDbRequest: DbRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         let keys = identifiers.compactMap({ $0.key })

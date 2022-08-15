@@ -13,7 +13,6 @@ import RealmSwift
 
 struct EditItemFromDetailDbRequest: DbRequest {
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     let libraryId: LibraryIdentifier
     let itemKey: String

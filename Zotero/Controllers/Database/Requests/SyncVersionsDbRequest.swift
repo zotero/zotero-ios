@@ -20,7 +20,6 @@ struct SyncVersionsDbRequest: DbResponseRequest {
     let delayIntervals: [Double]
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> [String] {
         switch self.syncObject {
@@ -88,7 +87,6 @@ struct SyncGroupVersionsDbRequest: DbResponseRequest {
     let versions: [Int: Int]
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> ([Int], [(Int, String)]) {
         let allKeys = Array(self.versions.keys)

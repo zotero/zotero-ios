@@ -30,7 +30,6 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
     let conflictMode: ConflictResolutionMode
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> [(String, String)] {
         self.deleteCollections(with: self.collections, database: database)

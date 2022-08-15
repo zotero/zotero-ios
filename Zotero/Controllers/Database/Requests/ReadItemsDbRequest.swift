@@ -17,7 +17,6 @@ struct ReadItemsDbRequest: DbResponseRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Results<RItem> {
         if Defaults.shared.showSubcollectionItems,
@@ -45,7 +44,6 @@ struct ReadItemsWithKeysDbRequest: DbResponseRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Results<RItem> {
         return database.objects(RItem.self).filter(.keys(self.keys, in: self.libraryId))

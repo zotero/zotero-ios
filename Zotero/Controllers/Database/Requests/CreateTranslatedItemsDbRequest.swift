@@ -17,7 +17,6 @@ struct CreateTranslatedItemsDbRequest: DbRequest {
     unowned let dateParser: DateParser
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         for response in self.responses {

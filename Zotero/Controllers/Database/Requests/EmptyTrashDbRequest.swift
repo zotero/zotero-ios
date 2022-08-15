@@ -14,7 +14,6 @@ struct EmptyTrashDbRequest: DbRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         database.objects(RItem.self).filter(.items(for: .custom(.trash), libraryId: self.libraryId)).forEach {

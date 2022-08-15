@@ -14,7 +14,6 @@ struct MarkGroupAsLocalOnlyDbRequest: DbRequest {
     let groupId: Int
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         guard let group = database.object(ofType: RGroup.self, forPrimaryKey: self.groupId) else { return }

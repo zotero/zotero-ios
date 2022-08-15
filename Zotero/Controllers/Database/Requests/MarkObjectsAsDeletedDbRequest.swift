@@ -15,7 +15,6 @@ struct MarkObjectsAsDeletedDbRequest<Obj: DeletableObject&Updatable>: DbRequest 
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         database.objects(Obj.self).filter(.keys(self.keys, in: self.libraryId)).forEach {

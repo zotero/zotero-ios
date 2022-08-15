@@ -18,7 +18,6 @@ struct ReadAttachmentUploadsDbRequest: DbResponseRequest {
     unowned let fileStorage: FileStorage
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> [AttachmentUpload] {
         let items = database.objects(RItem.self).filter(.itemsNotChangedAndNeedUpload(in: self.libraryId))

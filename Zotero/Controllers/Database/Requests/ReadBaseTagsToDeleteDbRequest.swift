@@ -14,7 +14,6 @@ struct ReadBaseTagsToDeleteDbRequest<Collection: RealmCollection>: DbResponseReq
     typealias Response = [String]
 
     var needsWrite: Bool { return false }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     let fromTags: Collection
 

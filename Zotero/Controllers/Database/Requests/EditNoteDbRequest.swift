@@ -15,7 +15,6 @@ struct EditNoteDbRequest: DbRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     init(note: Note, libraryId: LibraryIdentifier) {
         self.note = note

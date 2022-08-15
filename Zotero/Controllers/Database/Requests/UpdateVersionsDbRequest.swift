@@ -21,7 +21,6 @@ struct UpdateVersionsDbRequest: DbRequest {
     let type: UpdateVersionType
 
     var needsWrite: Bool { return true }
-    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         switch self.libraryId {
