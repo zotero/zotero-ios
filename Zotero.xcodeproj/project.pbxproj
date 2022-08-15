@@ -4069,7 +4069,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# translators file destination\nZOTERO_DIR=\"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.appex/translation/modules/zotero\"\n\nif [ ! -d \"$ZOTERO_DIR\" ]; then\nexit\nfi\n\n# Remove translators so that they are not bundled twice\nrm -r \"$ZOTERO_DIR/translators\"\n# Remove scripts to avoid code-signing issues\nrm -r \"$ZOTERO_DIR/resource/redirect.sh\"\nrm -r \"$ZOTERO_DIR/resource/schema/global/scripts\"\nrm -r \"$ZOTERO_DIR/styles/update\"\nrm -r \"$ZOTERO_DIR/test\"\n# Remove unused symlinks\nfind \"$ZOTERO_DIR\" -follow -type l -exec rm -f {} \\;\n";
+			shellScript = "# translators file destination\nZOTERO_DIR=\"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.appex/translation/translate\"\n#translation/translate/modules/utilities/test/runtests.sh\nif [ ! -d \"$ZOTERO_DIR\" ]; then\nexit\nfi\n\n# Remove scripts to avoid code-signing issues\nrm -r \"$ZOTERO_DIR/example\"\nrm -r \"$ZOTERO_DIR/modules/utilities/test\"\nrm -r \"$ZOTERO_DIR/testTranslators\"\n# Remove unused symlinks\nfind \"$ZOTERO_DIR\" -follow -type l -exec rm -f {} \\;\n";
 		};
 		B337A5AD244F229400AFD13D /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
