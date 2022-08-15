@@ -42,7 +42,7 @@
                             || ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.file-url"
                             || ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.text"
                         ).@count == $extensionItem.attachments.@count
-                ).@count >= 1
+                ).@count &gt;= 1
             </string>
 			<key>NSExtensionJavaScriptPreprocessingFile</key>
 			<string>ExtensionScript</string>
