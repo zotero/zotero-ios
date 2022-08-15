@@ -26,7 +26,7 @@ final class ItemDetailAddCell: UICollectionViewListCell {
         var configuration: UIContentConfiguration {
             didSet {
                 guard let configuration = self.configuration as? ContentConfiguration else { return }
-                self.contentView.setup(with: configuration.title)
+                self.apply(configuration: configuration)
             }
         }
 
@@ -40,13 +40,17 @@ final class ItemDetailAddCell: UICollectionViewListCell {
             guard let view = UINib.init(nibName: "ItemDetailAddContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailAddContentView else { return }
 
             self.add(contentView: view)
-            view.layoutMargins = configuration.layoutMargins
             self.contentView = view
-            self.contentView.setup(with: configuration.title)
+            self.apply(configuration: configuration)
         }
 
         required init?(coder: NSCoder) {
             fatalError()
+        }
+
+        private func apply(configuration: ContentConfiguration) {
+            self.contentView.layoutMargins = configuration.layoutMargins
+            self.contentView.setup(with: configuration.title)
         }
     }
 }

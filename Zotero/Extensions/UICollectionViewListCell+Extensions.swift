@@ -13,11 +13,14 @@ extension UIView {
         view.translatesAutoresizingMaskIntoConstraints = false
         self.addSubview(view)
 
+        let constraint = self.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        constraint.priority = UILayoutPriority(999)
+
         NSLayoutConstraint.activate([
             view.leadingAnchor.constraint(equalTo: self.leadingAnchor),
             self.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             self.topAnchor.constraint(equalTo: view.topAnchor),
-            self.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            constraint
         ])
     }
 }

@@ -803,6 +803,7 @@ fileprivate final class SearchBarContainer: UIView {
     }
 
     func unfreezeWidth() {
-        self.widthConstraint.constant = .greatestFiniteMagnitude
+        let size = max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
+        self.widthConstraint.constant = size
     }
 }

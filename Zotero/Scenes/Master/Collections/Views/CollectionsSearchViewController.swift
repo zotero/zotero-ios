@@ -119,7 +119,7 @@ final class CollectionsSearchViewController: UIViewController {
 
     private func setupCollectionView(with keyboardData: KeyboardData) {
         var insets = self.collectionView.contentInset
-        insets.bottom = keyboardData.endFrame.height
+        insets.bottom = keyboardData.visibleHeight
         self.collectionView.contentInset = insets
     }
 

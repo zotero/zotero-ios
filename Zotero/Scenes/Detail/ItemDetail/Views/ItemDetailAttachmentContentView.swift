@@ -25,6 +25,7 @@ class ItemDetailAttachmentContentView: UIView {
         switch attachment.type {
         case .file:
             self.fileView.isHidden = false
+            self.fileView.set(backgroundColor: .systemBackground)
             self.attachmentIcon.isHidden = true
 
             switch type {
@@ -51,7 +52,7 @@ class ItemDetailAttachmentContentView: UIView {
         self.label.attributedText = attributedString
 
         let font = self.label.font!
-        self.labelTop.constant = -(font.ascender - font.capHeight) - (ItemDetailLayout.lineHeight - font.lineHeight)
+        self.labelTop.constant = ceil(-(font.ascender - font.capHeight) - (ItemDetailLayout.lineHeight - font.lineHeight))
         self.labelLeft.constant = self.layoutMargins.left
 
         switch type {
@@ -60,9 +61,7 @@ class ItemDetailAttachmentContentView: UIView {
             self.isUserInteractionEnabled = false
 
         default:
-            self.label.textColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
-                return traitCollection.userInterfaceStyle == .dark ? .white : .darkText
-            })
+            self.label.textColor = .label
             self.isUserInteractionEnabled = true
         }
 

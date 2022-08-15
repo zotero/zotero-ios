@@ -821,7 +821,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     private func setupCollectionView(with keyboardData: KeyboardData) {
         var insets = self.collectionView.contentInset
-        insets.bottom = keyboardData.endFrame.height
+        insets.bottom = keyboardData.visibleHeight
         self.collectionView.contentInset = insets
     }
 
@@ -855,7 +855,6 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
         guard let row = self.dataSource.itemIdentifier(for: indexPath) else { return }
 
         switch row {
-
         case .addNote:
             self.observer.on(.next(.openNoteEditor(nil)))
 
@@ -883,7 +882,11 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             guard !isProcessing else { return }
             self.observer.on(.next(.openNoteEditor(note)))
 
-        case .title, .type, .dateAdded, .dateModified, .tag, .field: break
+        case .type:
+            guard self.viewModel.state.isEditing else { return }
+            self.observer.on(.next(.openTypePicker))
+
+        case .title, .dateAdded, .dateModified, .tag, .field: break
         }
     }
 

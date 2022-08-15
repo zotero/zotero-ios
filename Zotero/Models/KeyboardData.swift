@@ -14,6 +14,10 @@ struct KeyboardData {
     let animationDuration: Double
     let animationOptions: UIView.AnimationOptions
 
+    var visibleHeight: CGFloat {
+        return UIScreen.main.bounds.height - self.endFrame.minY
+    }
+
     init?(userInfo: [AnyHashable: Any]) {
         guard let startFrame = userInfo[UIResponder.keyboardFrameBeginUserInfoKey] as? NSValue,
               let endFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue,

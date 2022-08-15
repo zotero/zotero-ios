@@ -86,8 +86,22 @@ final class ItemDetailAttachmentCell: UICollectionViewListCell {
         }
 
         private func apply(configuration: ContentConfiguration) {
+            self.contentView.layoutMargins = configuration.layoutMargins
             self.contentView.setup(with: configuration.attachment, type: configuration.type)
         }
+
+        fileprivate func set(backgroundColor: UIColor) {
+            self.contentView.fileView.set(backgroundColor: backgroundColor)
+        }
+    }
+
+    override func updateConfiguration(using state: UICellConfigurationState) {
+        let color = state.isHighlighted || state.isSelected ? Asset.Colors.cellHighlighted.color : .systemBackground
+
+        self.contentView.backgroundColor = color
+        (self.contentView as? ContentView)?.set(backgroundColor: color)
+
+        super.updateConfiguration(using: state)
     }
 
 //    override func awakeFromNib() {

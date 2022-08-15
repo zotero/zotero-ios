@@ -57,6 +57,8 @@ final class ItemDetailFieldCell: UICollectionViewListCell {
         }
 
         private func apply(configuration: ContentConfiguration) {
+            self.contentView.layoutMargins = configuration.layoutMargins
+
             switch configuration.type {
             case .creator(let creator):
                 self.contentView.setup(with: creator, titleWidth: configuration.titleWidth)

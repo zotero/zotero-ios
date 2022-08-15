@@ -28,7 +28,7 @@ class ItemDetailFieldMultilineEditCell: UICollectionViewListCell {
         var configuration: UIContentConfiguration {
             didSet {
                 guard let configuration = self.configuration as? ContentConfiguration else { return }
-                self.contentView.setup(with: configuration.field, titleWidth: configuration.titleWidth)
+                self.apply(configuration: configuration)
             }
         }
 
@@ -42,14 +42,18 @@ class ItemDetailFieldMultilineEditCell: UICollectionViewListCell {
             guard let view = UINib.init(nibName: "ItemDetailFieldMultilineEditContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailFieldMultilineEditContentView else { return }
 
             self.add(contentView: view)
-            view.layoutMargins = configuration.layoutMargins
             view.textChanged = configuration.textChanged
             self.contentView = view
-            self.contentView.setup(with: configuration.field, titleWidth: configuration.titleWidth)
+            self.apply(configuration: configuration)
         }
 
         required init?(coder: NSCoder) {
             fatalError()
+        }
+
+        private func apply(configuration: ContentConfiguration) {
+            self.contentView.layoutMargins = configuration.layoutMargins
+            self.contentView.setup(with: configuration.field, titleWidth: configuration.titleWidth)
         }
     }
 }

@@ -253,7 +253,7 @@ final class ItemsTableViewHandler: NSObject {
 
     private func setupTableView(with keyboardData: KeyboardData) {
         var insets = self.tableView.contentInset
-        insets.bottom = keyboardData.endFrame.height
+        insets.bottom = keyboardData.visibleHeight
         self.tableView.contentInset = insets
     }
 

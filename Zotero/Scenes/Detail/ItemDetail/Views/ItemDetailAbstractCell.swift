@@ -42,7 +42,6 @@ final class ItemDetailAbstractCell: UICollectionViewListCell {
             guard let view = UINib.init(nibName: "ItemDetailAbstractContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailAbstractContentView else { return }
 
             self.add(contentView: view)
-            view.layoutMargins = configuration.layoutMargins
             self.contentView = view
             self.apply(configuration: configuration)
         }
@@ -52,6 +51,7 @@ final class ItemDetailAbstractCell: UICollectionViewListCell {
         }
 
         private func apply(configuration: ContentConfiguration) {
+            self.contentView.layoutMargins = configuration.layoutMargins
             self.contentView.setup(with: configuration.text, isCollapsed: configuration.isCollapsed, maxWidth: configuration.maxWidth)
         }
     }

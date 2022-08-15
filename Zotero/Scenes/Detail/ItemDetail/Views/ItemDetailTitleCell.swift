@@ -28,7 +28,7 @@ final class ItemDetailTitleCell: UICollectionViewListCell {
         var configuration: UIContentConfiguration {
             didSet {
                 guard let configuration = self.configuration as? ContentConfiguration else { return }
-                self.contentView.setup(with: configuration.title, isEditing: configuration.isEditing)
+                self.apply(configuration: configuration)
             }
         }
 
@@ -42,14 +42,18 @@ final class ItemDetailTitleCell: UICollectionViewListCell {
             guard let view = UINib.init(nibName: "ItemDetailTitleContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailTitleContentView else { return }
 
             self.add(contentView: view)
-            view.layoutMargins = configuration.layoutMargins
             view.delegate.textChanged = configuration.textChanged
             self.contentView = view
-            self.contentView.setup(with: configuration.title, isEditing: configuration.isEditing)
+            self.apply(configuration: configuration)
         }
 
         required init?(coder: NSCoder) {
             fatalError()
+        }
+
+        private func apply(configuration: ContentConfiguration) {
+            self.contentView.layoutMargins = configuration.layoutMargins
+            self.contentView.setup(with: configuration.title, isEditing: configuration.isEditing)
         }
     }
 }

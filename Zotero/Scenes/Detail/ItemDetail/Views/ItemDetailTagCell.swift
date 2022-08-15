@@ -41,7 +41,6 @@ final class ItemDetailTagCell: UICollectionViewListCell {
             guard let view = UINib.init(nibName: "ItemDetailTagContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailTagContentView else { return }
 
             self.add(contentView: view)
-            view.layoutMargins = configuration.layoutMargins
             self.contentView = view
             self.apply(configuration: configuration)
         }
@@ -51,6 +50,7 @@ final class ItemDetailTagCell: UICollectionViewListCell {
         }
 
         private func apply(configuration: ContentConfiguration) {
+            self.contentView.layoutMargins = configuration.layoutMargins
             self.contentView.setup(tag: configuration.tag, isProcessing: configuration.isProcessing)
         }
     }
