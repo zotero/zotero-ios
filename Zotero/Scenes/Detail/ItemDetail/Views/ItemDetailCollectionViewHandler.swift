@@ -886,7 +886,18 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             guard self.viewModel.state.isEditing else { return }
             self.observer.on(.next(.openTypePicker))
 
-        case .title, .dateAdded, .dateModified, .tag, .field: break
+        case .field(let fieldId, _):
+            guard let field = self.viewModel.state.data.fields[fieldId] else { return }
+            guard field.isTappable else { return }
+            switch field.key {
+            case FieldKeys.Item.Attachment.url:
+                self.observer.on(.next(.openUrl(field.value)))
+            case FieldKeys.Item.doi:
+                self.observer.on(.next(.openDoi(field.value)))
+            default: break
+            }
+
+        case .title, .dateAdded, .dateModified, .tag: break
         }
     }
 
