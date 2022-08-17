@@ -138,7 +138,7 @@ final class AnnotationViewTextView: UIView {
 }
 
 fileprivate final class AnnotationTextView: UITextView {
-    private static let allowedActions: [String] = ["cut:", "copy:", "paste:", "toggleBoldface:", "toggleItalics:", "toggleSuperscript", "toggleSubscript"]
+    private static let allowedActions: [String] = ["cut:", "copy:", "paste:", "toggleBoldface:", "toggleItalics:", "toggleSuperscript", "toggleSubscript", "replace:"]
 
     private let defaultFont: UIFont
 
