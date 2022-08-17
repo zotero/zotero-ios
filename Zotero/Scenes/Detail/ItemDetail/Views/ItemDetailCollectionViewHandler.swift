@@ -84,8 +84,8 @@ final class ItemDetailCollectionViewHandler: NSObject {
                 return lKey == rKey && lMultiline == rMultiline
             case (.note(let lNote, let lIsSaving), .note(let rNote, let rIsSaving)):
                 return lNote == rNote && lIsSaving == rIsSaving
-            case (.tag(let lTag), .tag(let rTag)):
-                return lTag == rTag
+            case (.tag(let lTag, let lIsProcessing), .tag(let rTag, let rIsProcessing)):
+                return lTag == rTag && lIsProcessing == rIsProcessing
             case (.title, .title):
                 return true
             case (.type(let lValue), .type(let rValue)):
