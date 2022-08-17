@@ -24,7 +24,7 @@ final class WebViewHandler: NSObject {
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
     var receivedMessageHandler: ((String, Any) -> Void)?
     // Cookies from original website are stored and added to requests in `sendRequest(with:)`.
-    private var cookies: String?
+    private(set) var cookies: String?
 
     // MARK: - Lifecycle
 
@@ -149,11 +149,7 @@ final class WebViewHandler: NSObject {
 
         DDLogInfo("WebViewHandler: send request to \(url.absoluteString)")
 
-        if let storage = self.session.configuration.httpCookieStorage, let cookies = storage.cookies {
-            for cookie in cookies {
-                storage.deleteCookie(cookie)
-            }
-        }
+        self.session.set(cookies: self.cookies, domain: url.host ?? "")
 
         var request = URLRequest(url: url)
         request.httpMethod = method
@@ -162,20 +158,6 @@ final class WebViewHandler: NSObject {
         }
         request.httpBody = body?.data(using: .utf8)
         request.timeoutInterval = timeout
-
-        if let cookies = self.cookies, let storage = self.session.configuration.httpCookieStorage {
-            storage.cookieAcceptPolicy = .always
-
-            for wholeCookie in cookies.split(separator: ";") {
-                let split = wholeCookie.trimmingCharacters(in: .whitespaces).split(separator: "=")
-
-                guard split.count == 2 else { continue }
-
-                if let cookie = HTTPCookie(properties: [.name: split[0], .value: split[1], .domain: url.host ?? "", .originURL: url.host ?? "", .path: "/"]) {
-                    storage.setCookie(cookie)
-                }
-            }
-        }
 
         let task = self.session.dataTask(with: request) { [weak self] data, response, error in
             guard let `self` = self else { return }

@@ -267,6 +267,8 @@ final class ExtensionViewModel {
     private let backgroundQueue: DispatchQueue
     private let backgroundScheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
+    // Custom `URLSession` has to be used for downloading, instead of existing `apiClient`, so that we can include original cookies in download requests.
+    private let downloadUrlSession: URLSession
 
     private struct SubmissionData {
         let filesize: UInt64
@@ -277,6 +279,19 @@ final class ExtensionViewModel {
     init(webView: WKWebView, apiClient: ApiClient, backgroundUploader: BackgroundUploader, backgroundUploadObserver: BackgroundUploadObserver, dbStorage: DbStorage, schemaController: SchemaController,
          webDavController: WebDavController, dateParser: DateParser, fileStorage: FileStorage, syncController: SyncController, translatorsController: TranslatorsAndStylesController) {
         let queue = DispatchQueue(label: "org.zotero.ZShare.BackgroundQueue", qos: .userInteractive)
+
+        let storage = HTTPCookieStorage.sharedCookieStorage(forGroupContainerIdentifier: AppGroup.identifier)
+        storage.cookieAcceptPolicy = .always
+
+        let configuration = URLSessionConfiguration.default
+        configuration.httpCookieStorage = storage
+        configuration.httpShouldSetCookies = true
+        configuration.httpCookieAcceptPolicy = .always
+
+        let sessionOperationQueue = OperationQueue()
+        sessionOperationQueue.underlyingQueue = queue
+
+        self.downloadUrlSession = URLSession(configuration: configuration, delegate: nil, delegateQueue: sessionOperationQueue)
         self.webView = webView
         self.syncController = syncController
         self.apiClient = apiClient
@@ -434,7 +449,7 @@ final class ExtensionViewModel {
         self.state = state
 
         DDLogInfo("ExtensionViewModel: download file")
-        self.download(url: url, to: file)
+        self.download(url: url, to: file, cookies: nil)
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] _ in
                 guard let `self` = self else { return }
@@ -591,9 +606,9 @@ final class ExtensionViewModel {
                                .observe(on: MainScheduler.instance)
                                .subscribe(onNext: { [weak self] action in
                                    switch action {
-                                   case .loadedItems(let data):
+                                   case .loadedItems(let data, let cookies):
                                        DDLogInfo("ExtensionViewModel: webview action - loaded \(data.count) zotero items")
-                                       self?.processItems(data)
+                                       self?.processItems(data, cookies: cookies)
                                    case .selectItem(let data):
                                        DDLogInfo("ExtensionViewModel: webview action - loaded \(data.count) list items")
                                        self?.state.itemPickerState = State.ItemPickerState(items: data, picked: nil)
@@ -611,7 +626,7 @@ final class ExtensionViewModel {
     }
 
     /// Parses item from translation response, starts attachment download if available.
-    private func processItems(_ data: [[String: Any]]) {
+    private func processItems(_ data: [[String: Any]], cookies: String?) {
         let item: ItemResponse
         let attachment: [String: Any]?
 
@@ -639,10 +654,10 @@ final class ExtensionViewModel {
         DDLogInfo("ExtensionViewModel: parsed item with attachment, download attachment")
 
         let file = Files.shareExtensionDownload(key: self.state.attachmentKey, ext: ExtensionViewModel.defaultExtension)
-        self.download(item: item, attachment: attachment, attachmentUrl: url, to: file)
+        self.download(item: item, attachment: attachment, attachmentUrl: url, to: file, cookies: cookies)
     }
 
-    private func download(item: ItemResponse, attachment: [String: Any], attachmentUrl url: URL, to file: File) {
+    private func download(item: ItemResponse, attachment: [String: Any], attachmentUrl url: URL, to file: File, cookies: String?) {
         let attachmentTitle = ((attachment["title"] as? String) ?? self.state.title) ?? ""
 
         var state = self.state
@@ -652,10 +667,10 @@ final class ExtensionViewModel {
         state.processedAttachment = .item(item)
         self.state = state
 
-        self.download(url: url, to: file)
+        self.download(url: url, to: file, cookies: cookies)
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] _ in
-                self?.processDownload(of: attachment, url: url, file: file, item: item)
+                self?.processDownload(of: attachment, url: url, file: file, item: item, cookies: cookies)
             }, onFailure: { [weak self] error in
                 DDLogError("ExtensionViewModel: could not download translated file - \(url.absoluteString) - \(error)")
                 self?.state.attachmentState = .failed(.downloadFailed)
@@ -663,7 +678,7 @@ final class ExtensionViewModel {
             .disposed(by: self.disposeBag)
     }
 
-    private func processDownload(of attachment: [String: Any], url: URL, file: File, item: ItemResponse) {
+    private func processDownload(of attachment: [String: Any], url: URL, file: File, item: ItemResponse, cookies: String?) {
         if self.fileStorage.isPdf(file: file) {
             DDLogInfo("ExtensionViewModel: downloaded pdf")
             var state = self.state
@@ -693,7 +708,7 @@ final class ExtensionViewModel {
             guard let `self` = self else { return }
 
             if let url = newUrl {
-                self.download(item: item, attachment: attachment, attachmentUrl: url, to: file)
+                self.download(item: item, attachment: attachment, attachmentUrl: url, to: file, cookies: cookies)
                 return
             }
 
@@ -752,18 +767,47 @@ final class ExtensionViewModel {
     // MARK: - Attachment Download
 
     /// Starts download of PDF attachment. Downloads it to temporary folder.
-    /// - parameter url: URL of file to download
-    private func download(url: URL, to file: File) -> Single<DownloadRequest> {
-        let request = FileRequest(url: url, destination: file)
-        return self.apiClient.download(request: request, queue: .main)
-                             .subscribe(on: self.backgroundScheduler)
-                             .do(onNext: { [weak self] request in
-                                 if let `self` = self {
-                                     self.observe(downloadProgress: request.downloadProgress)
-                                 }
-                                 request.resume()
-                             })
-                             .asSingle()
+    /// - parameter url: URL of file to download.
+    /// - parameter file: File path where the file should be stored.
+    /// - parameter cookies: Cookies to include in the request.
+    private func download(url: URL, to file: File, cookies: String?) -> Single<()> {
+        return Single.create { [weak self] subscriber in
+            guard let `self` = self else {
+                subscriber(.failure(State.AttachmentState.Error.expired))
+                return Disposables.create()
+            }
+
+            self.downloadUrlSession.set(cookies: cookies, domain: url.host ?? "")
+
+            let task = self.downloadUrlSession.downloadTask(with: url) { [weak self] location, response, error in
+                guard let `self` = self else {
+                    subscriber(.failure(State.AttachmentState.Error.expired))
+                    return
+                }
+
+                guard let location = location else {
+                    DDLogError("ExtensionViewModel: could not download \(url.absoluteString) - \(String(describing: error))")
+                    subscriber(.failure(error ?? State.AttachmentState.Error.unknown))
+                    return
+                }
+
+                do {
+                    try self.fileStorage.move(from: location.path, to: file)
+                } catch let error {
+                    DDLogError("ExtensionViewModel: can't move downloaded file - \(error)")
+                    subscriber(.failure(error))
+                    return
+                }
+
+                subscriber(.success(()))
+            }
+
+            self.observe(downloadProgress: task.progress)
+
+            task.resume()
+
+            return Disposables.create()
+        }
     }
 
     private func observe(downloadProgress: Progress) {

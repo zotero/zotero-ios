@@ -936,6 +936,8 @@
 		B3DDC0CB2667824D00B2DFD1 /* RegularExpression+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DDC0CA2667824D00B2DFD1 /* RegularExpression+Extensions.swift */; };
 		B3DDC0CC2667825E00B2DFD1 /* RegularExpression+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DDC0CA2667824D00B2DFD1 /* RegularExpression+Extensions.swift */; };
 		B3DDDAAC24CAD6810014DF99 /* InsetLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DDDAAB24CAD6810014DF99 /* InsetLabel.swift */; };
+		B3DEAAA728AD01CA00F72D90 /* URLSession+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DEAAA628AD01CA00F72D90 /* URLSession+Extensions.swift */; };
+		B3DEAAA828AD106F00F72D90 /* URLSession+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DEAAA628AD01CA00F72D90 /* URLSession+Extensions.swift */; };
 		B3DF9AD22747AAD2007933CB /* ApiRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DF9AD12747AAD2007933CB /* ApiRequest.swift */; };
 		B3DF9AD32747AAD9007933CB /* ApiRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DF9AD12747AAD2007933CB /* ApiRequest.swift */; };
 		B3DF9AD52747AB4F007933CB /* ApiEndpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DF9AD42747AB4F007933CB /* ApiEndpoint.swift */; };
@@ -1775,6 +1777,7 @@
 		B3DD9CE92256340400DE6BAA /* licenses.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = licenses.plist; path = "pdf-keys/licenses.plist"; sourceTree = SOURCE_ROOT; };
 		B3DDC0CA2667824D00B2DFD1 /* RegularExpression+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RegularExpression+Extensions.swift"; sourceTree = "<group>"; };
 		B3DDDAAB24CAD6810014DF99 /* InsetLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsetLabel.swift; sourceTree = "<group>"; };
+		B3DEAAA628AD01CA00F72D90 /* URLSession+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URLSession+Extensions.swift"; sourceTree = "<group>"; };
 		B3DF9AD12747AAD2007933CB /* ApiRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiRequest.swift; sourceTree = "<group>"; };
 		B3DF9AD42747AB4F007933CB /* ApiEndpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiEndpoint.swift; sourceTree = "<group>"; };
 		B3DF9AD72747AB63007933CB /* ApiLogParameters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiLogParameters.swift; sourceTree = "<group>"; };
@@ -2259,6 +2262,7 @@
 				B305650E23FC051E003304F2 /* UIViewController+Extensions.swift */,
 				B305650C23FC051E003304F2 /* UserDefault+Extensions.swift */,
 				B3B78C45266FAF8500E91D02 /* WKWebView+Extensions.swift */,
+				B3DEAAA628AD01CA00F72D90 /* URLSession+Extensions.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -4528,6 +4532,7 @@
 				B3830CDC255451AB00910FE0 /* TagPickerState.swift in Sources */,
 				B39D336823FFD96C00EF2ACB /* Note.swift in Sources */,
 				B32DE61F26320271000287EC /* PopoverNavigationViewController.swift in Sources */,
+				B3DEAAA728AD01CA00F72D90 /* URLSession+Extensions.swift in Sources */,
 				B357A28C285B73BD00E73CA1 /* ScannerState.swift in Sources */,
 				B3E8FE5A2714325200F51458 /* SavingSettingsActionHandler.swift in Sources */,
 				B30566B623FC051F003304F2 /* DeletionsResponse.swift in Sources */,
@@ -5130,6 +5135,7 @@
 				B3B6759526205A3C003231A5 /* CollectionRowView.swift in Sources */,
 				B3B675A126208BAF003231A5 /* RightButton.swift in Sources */,
 				B30566E923FC0826003304F2 /* VersionsRequest.swift in Sources */,
+				B3DEAAA828AD106F00F72D90 /* URLSession+Extensions.swift in Sources */,
 				B305670223FC08A2003304F2 /* MoveItemsToParentDbRequest.swift in Sources */,
 				B378F4D0242D0D5500B88A05 /* RepoRequest.swift in Sources */,
 				B30B550C24B8623900F94B59 /* Assets.swift in Sources */,

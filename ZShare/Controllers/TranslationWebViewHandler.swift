@@ -19,7 +19,7 @@ final class TranslationWebViewHandler {
     /// - reportProgress: Reports progress of translation.
     /// - saveAsWeb: Translation failed. Save as webpage item.
     enum Action {
-        case loadedItems([[String: Any]])
+        case loadedItems(data: [[String: Any]], cookies: String?)
         case selectItem([(key: String, value: String)])
         case reportProgress(String)
     }
@@ -245,7 +245,7 @@ final class TranslationWebViewHandler {
 
         case .item:
             if let info = body as? [[String: Any]] {
-                self.observable.on(.next(.loadedItems(info)))
+                self.observable.on(.next(.loadedItems(data: info, cookies: self.webViewHandler.cookies)))
             } else {
                 DDLogError("TranslationWebViewHandler: got incompatible body - \(body)")
                 self.observable.on(.error(Error.incompatibleItem))
