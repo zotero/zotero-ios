@@ -27,11 +27,20 @@ final class PDFSearchViewController: UIViewController {
 
     private var currentSearch: TextSearch?
     private var results: [SearchResult]
+    var text: String? {
+        didSet {
+            self.searchBar.text = self.text
+            if let text = self.text {
+                self.search(for: text)
+            }
+        }
+    }
 
-    init(controller: PDFViewController, searchSelected: @escaping (SearchResult) -> Void) {
+    init(controller: PDFViewController, text: String?, searchSelected: @escaping (SearchResult) -> Void) {
         self.pdfController = controller
         self.results = []
         self.searchSelected = searchSelected
+        self.text = text
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -45,6 +54,11 @@ final class PDFSearchViewController: UIViewController {
 
         self.setupViews()
         self.searchBar.becomeFirstResponder()
+
+        if let text = self.text {
+            self.searchBar.text = text
+            self.search(for: text)
+        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {

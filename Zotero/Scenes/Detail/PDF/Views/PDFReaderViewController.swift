@@ -76,7 +76,7 @@ final class PDFReaderViewController: UIViewController {
         let search = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"), style: .plain, target: nil, action: nil)
         search.rx.tap
               .subscribe(onNext: { [weak self] _ in
-                  self?.showSearch(sender: search)
+                  self?.showSearch(sender: search, text: nil)
               })
               .disposed(by: self.disposeBag)
         return search
@@ -424,8 +424,8 @@ final class PDFReaderViewController: UIViewController {
                        })
     }
 
-    private func showSearch(sender: UIBarButtonItem) {
-        self.coordinatorDelegate?.showSearch(pdfController: self.pdfController, sender: sender, result: { [weak self] result in
+    private func showSearch(sender: UIBarButtonItem, text: String?) {
+        self.coordinatorDelegate?.showSearch(pdfController: self.pdfController, text: text, sender: sender, result: { [weak self] result in
             self?.highlight(result: result)
         })
     }
@@ -1089,6 +1089,13 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
             filtered[idx].actionBlock = { [weak self] in
                 guard let view = self?.pdfController.view else { return }
                 self?.coordinatorDelegate?.lookup(text: selectedText, rect: rect, view: view)
+            }
+        }
+
+        if let idx = filtered.firstIndex(where: { $0.identifier == TextMenu.search.rawValue }) {
+            filtered[idx].actionBlock = { [weak self] in
+                guard let `self` = self else { return }
+                self.showSearch(sender: self.searchButton, text: selectedText)
             }
         }
 

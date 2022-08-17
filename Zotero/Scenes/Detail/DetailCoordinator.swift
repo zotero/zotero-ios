@@ -76,7 +76,7 @@ protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
 
 protocol DetailPdfCoordinatorDelegate: AnyObject {
     func showColorPicker(selected: String?, sender: UIButton, save: @escaping (String) -> Void)
-    func showSearch(pdfController: PDFViewController, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void)
+    func showSearch(pdfController: PDFViewController, text: String?, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void)
     func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate)
     func show(error: PdfDocumentExporter.Error)
     func share(url: URL, barButton: UIBarButtonItem)
@@ -918,22 +918,23 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
-    func showSearch(pdfController: PDFViewController, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void) {
+    func showSearch(pdfController: PDFViewController, text: String?, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void) {
         if let existing = self.pdfSearchController {
             if let controller = existing.presentingViewController {
                 controller.dismiss(animated: true) { [weak self] in
-                    self?.showSearch(pdfController: pdfController, sender: sender, result: result)
+                    self?.showSearch(pdfController: pdfController, text: text, sender: sender, result: result)
                 }
                 return
             }
 
             existing.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
             existing.popoverPresentationController?.barButtonItem = sender
+            existing.text = text
             self.topViewController.present(existing, animated: true, completion: nil)
             return
         }
 
-        let viewController = PDFSearchViewController(controller: pdfController, searchSelected: result)
+        let viewController = PDFSearchViewController(controller: pdfController, text: text, searchSelected: result)
         viewController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         viewController.popoverPresentationController?.barButtonItem = sender
         self.topViewController.present(viewController, animated: true, completion: nil)
