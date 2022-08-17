@@ -4,6 +4,7 @@
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="20020"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -50,14 +51,14 @@
                             <rect key="frame" x="0.0" y="26.5" width="384" height="761.5"/>
                             <subviews>
                                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="0HI-7k-AHa">
-                                    <rect key="frame" x="0.0" y="0.0" width="384" height="699.5"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="384" height="618.5"/>
                                     <subviews>
                                         <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" verticalHuggingPriority="1" verticalCompressionResistancePriority="1000" textAlignment="natural" translatesAutoresizingMaskIntoConstraints="NO" id="hcG-UE-5Wz">
-                                            <rect key="frame" x="10" y="4" width="364" height="691.5"/>
+                                            <rect key="frame" x="10" y="4" width="364" height="610.5"/>
                                             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                             <color key="textColor" systemColor="labelColor"/>
                                             <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
-                                            <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
+                                            <textInputTraits key="textInputTraits" autocorrectionType="no" smartDashesType="no" smartInsertDeleteType="no" smartQuotesType="no"/>
                                         </textView>
                                     </subviews>
                                     <color key="backgroundColor" systemColor="systemBackgroundColor"/>
@@ -69,10 +70,10 @@
                                     </constraints>
                                 </view>
                                 <button opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="999" horizontalCompressionResistancePriority="1000" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="91w-UZ-Jww">
-                                    <rect key="frame" x="0.0" y="713.5" width="384" height="48"/>
+                                    <rect key="frame" x="0.0" y="632.5" width="384" height="129"/>
                                     <color key="tintColor" name="zoteroBlueWithDarkMode"/>
                                     <state key="normal" title="Button"/>
-                                    <buttonConfiguration key="configuration" style="plain" image="button:91w-UZ-Jww:image" catalog="system" title="Scan Text">
+                                    <buttonConfiguration key="configuration" style="plain" image="button:91w-UZ-Jww:image" title="Scan Text">
                                         <fontDescription key="titleFontDescription" style="UICTFontTextStyleBody"/>
                                     </buttonConfiguration>
                                 </button>
@@ -99,7 +100,7 @@
         </view>
     </objects>
     <resources>
-        <image name="button:91w-UZ-Jww:image" catalog="system" width="128" height="115">
+        <image name="button:91w-UZ-Jww:image" width="128" height="115">
             <mutableData key="keyedArchiveRepresentation">
 YnBsaXN0MDDUAQIDBAUGBwpYJHZlcnNpb25ZJGFyY2hpdmVyVCR0b3BYJG9iamVjdHMSAAGGoF8QD05T
 S2V5ZWRBcmNoaXZlctEICVRyb290gAGvEBELDBscIRkmKywzNjlDS0xQU1UkbnVsbNcNDg8QERITFBUW
