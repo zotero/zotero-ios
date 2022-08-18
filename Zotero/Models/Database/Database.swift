@@ -16,11 +16,10 @@ struct Database {
     private static let schemaVersion: UInt64 = 34
 
     static func mainConfiguration(url: URL, fileStorage: FileStorage) -> Realm.Configuration {
-        let shouldDelete = shouldDeleteRealm(url: url)
         var config = Realm.Configuration(fileURL: url,
                                          schemaVersion: schemaVersion,
-                                         migrationBlock: shouldDelete ? nil : createMigrationBlock(fileStorage: fileStorage),
-                                         deleteRealmIfMigrationNeeded: shouldDelete)
+                                         migrationBlock: createMigrationBlock(fileStorage: fileStorage),
+                                         deleteRealmIfMigrationNeeded: false)
         config.objectTypes = [RCollection.self, RCreator.self, RCustomLibrary.self, RGroup.self, RItem.self, RItemField.self, RLink.self, RPageIndex.self, RPath.self, RPathCoordinate.self, RRect.self,
                               RRelation.self, RSearch.self, RCondition.self, RTag.self, RTypedTag.self, RUser.self, RWebDavDeletion.self, RVersions.self]
         return config
@@ -28,19 +27,12 @@ struct Database {
 
     static func bundledDataConfiguration(fileStorage: FileStorage) -> Realm.Configuration {
         let url = Files.bundledDataDbFile.createUrl()
-        let shouldDelete = shouldDeleteRealm(url: url)
         var config = Realm.Configuration(fileURL: url,
                                          schemaVersion: schemaVersion,
-                                         migrationBlock: shouldDelete ? nil : createMigrationBlock(fileStorage: fileStorage),
-                                         deleteRealmIfMigrationNeeded: shouldDelete)
+                                         migrationBlock: createMigrationBlock(fileStorage: fileStorage),
+                                         deleteRealmIfMigrationNeeded: false)
         config.objectTypes = [RTranslatorMetadata.self, RStyle.self]
         return config
-    }
-
-    private static func shouldDeleteRealm(url: URL) -> Bool {
-        let existingSchemaVersion = (try? schemaVersionAtURL(url)) ?? 0
-        // 20 is the first beta preview build, we'll wipe DB for pre-beta users to get away without DB migration
-        return existingSchemaVersion < 20
     }
 
     private static func createMigrationBlock(fileStorage: FileStorage) -> MigrationBlock {
