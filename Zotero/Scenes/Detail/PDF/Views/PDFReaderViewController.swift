@@ -50,6 +50,8 @@ final class PDFReaderViewController: UIViewController {
     private var deletedKeys: Set<String>
     private var modifiedKeys: Set<String>
     private var lastGestureRecognizerTouch: UITouch?
+    private var pendingSaveChanges: Bool
+    private var pendingSavePage: Int?
 
     private lazy var shareButton: UIBarButtonItem = {
         let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
@@ -122,6 +124,7 @@ final class PDFReaderViewController: UIViewController {
         self.insertedKeys = []
         self.deletedKeys = []
         self.modifiedKeys = []
+        self.pendingSaveChanges = false
         self.isSidebarTransitioning = false
         self.disposeBag = DisposeBag()
         self.annotationTimerDisposeBag = DisposeBag()
@@ -318,19 +321,26 @@ final class PDFReaderViewController: UIViewController {
 
     private func enqueueAnnotationSave() {
         self.annotationTimerDisposeBag = DisposeBag()
+        self.pendingSaveChanges = true
+
         Single<Int>.timer(.seconds(PDFReaderViewController.saveDelay), scheduler: MainScheduler.instance)
                    .subscribe(onSuccess: { [weak self] _ in
                        self?.viewModel.process(action: .saveChanges)
+                       self?.pendingSaveChanges = false
                    })
                    .disposed(by: self.annotationTimerDisposeBag)
     }
 
     private func enqueueSave(for page: Int) {
         guard page != self.viewModel.state.visiblePage else { return }
+
         self.pageTimerDisposeBag = DisposeBag()
+        self.pendingSavePage = page
+
         Single<Int>.timer(.seconds(PDFReaderViewController.saveDelay), scheduler: MainScheduler.instance)
                    .subscribe(onSuccess: { [weak self] _ in
                        self?.viewModel.process(action: .setVisiblePage(page))
+                       self?.pendingSavePage = nil
                    })
                    .disposed(by: self.pageTimerDisposeBag)
     }
@@ -468,7 +478,12 @@ final class PDFReaderViewController: UIViewController {
     }
 
     private func close() {
-        self.viewModel.process(action: .saveChanges)
+        if self.pendingSaveChanges {
+            self.viewModel.process(action: .saveChanges)
+        }
+        if let page = self.pendingSavePage {
+            self.viewModel.process(action: .setVisiblePage(page))
+        }
         self.viewModel.process(action: .clearTmpAnnotationPreviews)
         self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
