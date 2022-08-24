@@ -883,9 +883,9 @@ final class ExtensionViewModel {
             DDLogInfo("ExtensionViewModel: submit webpage")
 
             let date = Date()
-            let fields: [String: String] = [FieldKeys.Item.Attachment.url: url,
-                                            FieldKeys.Item.title: (self.state.title ?? "Unknown"),
-                                            FieldKeys.Item.accessDate: Formatter.iso8601.string(from: date)]
+            let fields: [KeyBaseKeyPair: String] = [KeyBaseKeyPair(key: FieldKeys.Item.Attachment.url, baseKey: nil): url,
+                                                    KeyBaseKeyPair(key: FieldKeys.Item.title, baseKey: nil): (self.state.title ?? "Unknown"),
+                                                    KeyBaseKeyPair(key: FieldKeys.Item.accessDate, baseKey: nil): Formatter.iso8601.string(from: date)]
 
             let webItem = ItemResponse(rawType: ItemTypes.webpage, key: KeyGenerator.newKey, library: LibraryResponse(libraryId: libraryId),
                                        parentKey: nil, collectionKeys: collectionKeys, links: nil, parsedDate: nil, isTrash: false, version: 0,

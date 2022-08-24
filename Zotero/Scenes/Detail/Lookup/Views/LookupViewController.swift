@@ -135,10 +135,10 @@ class LookupViewController: UIViewController {
             switch lookup.state {
             case .translated(let translationData):
                 let title: String
-                if let _title = translationData.response.fields[FieldKeys.Item.title] {
+                if let _title = translationData.response.fields[KeyBaseKeyPair(key: FieldKeys.Item.title, baseKey: nil)] {
                     title = _title
                 } else {
-                    let _title = translationData.response.fields.first(where: { self.schemaController.baseKey(for: translationData.response.rawType, field: $0.key) == FieldKeys.Item.title })?.value
+                    let _title = translationData.response.fields.first(where: { self.schemaController.baseKey(for: translationData.response.rawType, field: $0.key.key) == FieldKeys.Item.title })?.value
                     title = _title ?? ""
                 }
                 let itemData = Row.Item(type: translationData.response.rawType, title: title)

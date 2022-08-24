@@ -137,8 +137,7 @@ extension RItem: Updatable {
     var updateParameters: [String : Any]? {
         guard self.isChanged else { return nil }
 
-        var changedPageIndex: Int?
-        var changedLineWidth: Double?
+        var positionFieldChanged = false
         var parameters: [String: Any] = ["key": self.key,
                                          "version": self.version,
                                          "dateModified": Formatter.iso8601.string(from: self.dateModified),
@@ -171,24 +170,25 @@ extension RItem: Updatable {
             parameters["creators"] = Array(self.creators.map({ $0.updateParameters }))
         }
         if changes.contains(.fields) {
-            self.fields.filter("changed = true").forEach { field in
+            for field in self.fields.filter("changed = true") {
+                if field.baseKey == FieldKeys.Item.Annotation.position {
+                    positionFieldChanged = true
+                    continue
+                }
+
                 switch field.key {
                 case FieldKeys.Item.Attachment.md5, FieldKeys.Item.Attachment.mtime:
                     // Even though these field keys are set for the RItem object, we ignore them when submitting the attachment item itself,
                     // but they are used in file upload
                     parameters[field.key] = ""
-                case FieldKeys.Item.Annotation.pageIndex:
-                    changedPageIndex = Int(field.value) ?? 0
-                case FieldKeys.Item.Annotation.lineWidth:
-                    changedLineWidth = Double(field.value) ?? 0
                 default:
                     parameters[field.key] = field.value
                 }
             }
         }
-        if self.rawType == ItemTypes.annotation && (changes.contains(.rects) || changes.contains(.paths) || changedPageIndex != nil || changedLineWidth != nil),
+        if self.rawType == ItemTypes.annotation && (changes.contains(.rects) || changes.contains(.paths) || positionFieldChanged),
            let annotationType = self.fields.filter(.key(FieldKeys.Item.Annotation.type)).first.flatMap({ AnnotationType(rawValue: $0.value) }) {
-            parameters[FieldKeys.Item.Annotation.position] = self.createAnnotationPosition(for: annotationType, changedPageIndex: changedPageIndex, changedLineWidth: changedLineWidth)
+            parameters[FieldKeys.Item.Annotation.position] = self.createAnnotationPosition(for: annotationType, positionFields: self.fields.filter(.baseKey(FieldKeys.Item.Annotation.position)))
         }
         
         return parameters
@@ -208,26 +208,33 @@ extension RItem: Updatable {
         return parameters
     }
 
-    private func createAnnotationPosition(for type: AnnotationType, changedPageIndex: Int?, changedLineWidth: Double?) -> String {
-        let pageIndex = changedPageIndex ?? (self.fields.filter(.key(FieldKeys.Item.Annotation.pageIndex)).first.flatMap({ Int($0.value) }) ?? 0)
-        var jsonData: [String: Any] = [FieldKeys.Item.Annotation.pageIndex: pageIndex]
+    private func createAnnotationPosition(for type: AnnotationType, positionFields: Results<RItemField>) -> String {
+        var jsonData: [String: Any] = [:]
+
+        for field in positionFields {
+            if let value = Int(field.value) {
+                jsonData[field.key] = value
+            } else if let value = Double(field.value) {
+                jsonData[field.key] = value
+            } else {
+                jsonData[field.key] = field.value
+            }
+        }
 
         switch type {
         case .ink:
-            let lineWidth = changedLineWidth ?? (self.fields.filter(.key(FieldKeys.Item.Annotation.lineWidth)).first.flatMap({ Double($0.value) }) ?? 0)
             var apiPaths: [[Decimal]] = []
             for path in self.paths.sorted(byKeyPath: "sortIndex") {
                 apiPaths.append(path.coordinates.sorted(byKeyPath: "sortIndex").map({ Decimal($0.value).rounded(to: 3) }))
             }
-            jsonData[FieldKeys.Item.Annotation.paths] = apiPaths
-            jsonData[FieldKeys.Item.Annotation.lineWidth] = Decimal(lineWidth).rounded(to: 3)
+            jsonData[FieldKeys.Item.Annotation.Position.paths] = apiPaths
             
         case .highlight, .image, .note:
             var rectArray: [[Decimal]] = []
             self.rects.forEach { rRect in
                 rectArray.append([Decimal(rRect.minX).rounded(to: 3), Decimal(rRect.minY).rounded(to: 3), Decimal(rRect.maxX).rounded(to: 3), Decimal(rRect.maxY).rounded(to: 3)])
             }
-            jsonData[FieldKeys.Item.Annotation.rects] = rectArray
+            jsonData[FieldKeys.Item.Annotation.Position.rects] = rectArray
         }
 
         return (try? JSONSerialization.data(withJSONObject: jsonData, options: [])).flatMap({ String(data: $0, encoding: .utf8) }) ?? ""

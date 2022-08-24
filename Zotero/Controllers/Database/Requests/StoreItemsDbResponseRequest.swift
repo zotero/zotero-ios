@@ -136,7 +136,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         var contentType: String?
         let allFieldKeys = Array(data.fields.keys)
 
-        let toRemove = item.fields.filter("NOT key IN %@", allFieldKeys)
+        let toRemove = item.fields.filter("NOT key IN %@", allFieldKeys.map({ $0.key }))
         database.delete(toRemove)
 
         var date: String?
@@ -145,14 +145,30 @@ struct StoreItemDbRequest: DbResponseRequest {
         var sortIndex: String?
         var md5: String?
 
-        for key in allFieldKeys {
-            let value = data.fields[key] ?? ""
+        for keyPair in allFieldKeys {
+            let value = data.fields[keyPair] ?? ""
             var field: RItemField
 
-            if let existing = item.fields.filter(.key(key)).first {
+            // Backwards compatibility for fields that didn't store `annotationPosition` as `baseKey`. This is a precaution in case there is a field with the same key as a sub-field
+            // of `annotationPosition`. If there is just one key with the same name, we can look up by just key and update the `baseKey` value appropriately. Otherwise we have to look up both `key`
+            // and `baseKey`.
+            let keyCount: Int
+            let existingFieldFilter: NSPredicate
+            if let baseKey = keyPair.baseKey {
+                keyCount = allFieldKeys.filter({ $0.key == keyPair.key }).count
+                existingFieldFilter = keyCount == 1 ? .key(keyPair.key) : .key(keyPair.key, andBaseKey: baseKey)
+            } else {
+                keyCount = 0
+                existingFieldFilter = .key(keyPair.key)
+            }
+
+            if let existing = item.fields.filter(existingFieldFilter).first {
                 if (existing.key == FieldKeys.Item.Attachment.filename || existing.baseKey == FieldKeys.Item.Attachment.filename) && existing.value != value {
                     oldName = existing.value
                     newName = value
+                }
+                if keyCount == 1 && existing.baseKey == nil {
+                    existing.baseKey = keyPair.baseKey
                 }
                 // Backend returns "<null>" for md5 and mtime for item which was submitted, but attachment has not yet been uploaded. Just ignore these values, we have correct values stored locally
                 // and they'll be submitted on upload of attachment.
@@ -162,8 +178,8 @@ struct StoreItemDbRequest: DbResponseRequest {
                 field = existing
             } else {
                 field = RItemField()
-                field.key = key
-                field.baseKey = schemaController.baseKey(for: data.rawType, field: key)
+                field.key = keyPair.key
+                field.baseKey = keyPair.baseKey ?? schemaController.baseKey(for: data.rawType, field: keyPair.key)
                 field.value = value
                 item.fields.append(field)
             }

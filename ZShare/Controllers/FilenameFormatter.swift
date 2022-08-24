@@ -20,7 +20,7 @@ struct FilenameFormatter {
             filename += " - " + year
         }
 
-        let title = item.fields[FieldKeys.Item.Attachment.title] ?? defaultTitle
+        let title = item.fields[KeyBaseKeyPair(key: FieldKeys.Item.Attachment.title, baseKey: nil)] ?? defaultTitle
 
         if filename.isEmpty {
             return title + "." + ext
@@ -64,8 +64,8 @@ struct FilenameFormatter {
     }
 
     private static func year(for item: ItemResponse, dateParser: DateParser) -> String? {
-        return item.fields[FieldKeys.Item.date].flatMap({ dateParser.parse(string: $0) })
-                                               .flatMap({ "\($0.year)" })
+        return item.fields[KeyBaseKeyPair(key: FieldKeys.Item.date, baseKey: nil)].flatMap({ dateParser.parse(string: $0) })
+                                                                                  .flatMap({ "\($0.year)" })
     }
 }
 

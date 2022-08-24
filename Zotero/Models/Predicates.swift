@@ -47,6 +47,14 @@ extension NSPredicate {
         return NSCompoundPredicate(andPredicateWithSubpredicates: [.library(with: libraryId), .key(notIn: keys)])
     }
 
+    static func key(_ key: String, andBaseKey baseKey: String) -> NSPredicate {
+        return NSPredicate(format: "key = %@ AND baseKey = %@", key, baseKey)
+    }
+
+    static func baseKey(_ baseKey: String) -> NSPredicate {
+        return NSPredicate(format: "baseKey = %@", baseKey)
+    }
+
     static func tagName(_ name: String) -> NSPredicate {
         return NSPredicate(format: "tag.name = %@", name)
     }

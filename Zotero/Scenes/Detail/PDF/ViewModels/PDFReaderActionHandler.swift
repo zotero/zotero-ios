@@ -440,7 +440,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
             for idx in insertions {
                 let item = objects[idx]
-                guard let page = item.fields.filter(.key(FieldKeys.Item.Annotation.pageIndex)).first.flatMap({ Int($0.value) }) else { continue }
+                guard let page = item.fields.filter(.key(FieldKeys.Item.Annotation.Position.pageIndex)).first.flatMap({ Int($0.value) }) else { continue }
                 state.dbPositions.insert(AnnotationPosition(page: page, key: item.key), at: idx)
             }
             if !insertions.isEmpty {

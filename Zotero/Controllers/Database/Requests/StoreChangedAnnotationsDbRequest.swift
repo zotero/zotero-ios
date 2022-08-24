@@ -66,15 +66,27 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
         var fieldsDidChange = false
 
         for field in item.fields {
+            // Fix existing items to be compatible with `annotationPosition` stored in `baseKey`.
+            switch field.key {
+            case FieldKeys.Item.Annotation.Position.pageIndex where field.baseKey == nil,
+                 FieldKeys.Item.Annotation.Position.lineWidth where field.baseKey == nil:
+                // If there is just one key which is missing the `baseKey`, assign `annotationPosition` to it. If there are duplicates, it must be a new item and `baseKey` should be assigned properly.
+                if item.fields.filter(.key(field.key)).count == 1 {
+                    field.baseKey = FieldKeys.Item.Annotation.position
+                }
+
+            default: break
+            }
+
             let newValue: String
             switch field.key {
             case FieldKeys.Item.Annotation.color:
                 newValue = annotation.color
             case FieldKeys.Item.Annotation.comment:
                 newValue = annotation.comment
-            case FieldKeys.Item.Annotation.pageIndex:
+            case FieldKeys.Item.Annotation.Position.pageIndex where field.baseKey == FieldKeys.Item.Annotation.position:
                 newValue = "\(annotation.page)"
-            case FieldKeys.Item.Annotation.lineWidth:
+            case FieldKeys.Item.Annotation.Position.lineWidth where field.baseKey == FieldKeys.Item.Annotation.position:
                 newValue = annotation.lineWidth.flatMap({ "\(Decimal($0).rounded(to: 3))" }) ?? ""
             case FieldKeys.Item.Annotation.pageLabel:
                 newValue = annotation.pageLabel
@@ -252,8 +264,9 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
     private func createMandatoryFields(for item: RItem, annotationType: AnnotationType, database: Realm) {
         for field in FieldKeys.Item.Annotation.fields(for: annotationType) {
             let rField = RItemField()
-            rField.key = field
-            if field == FieldKeys.Item.Annotation.type {
+            rField.key = field.key
+            rField.baseKey = field.baseKey
+            if field.key == FieldKeys.Item.Annotation.type {
                 rField.value = annotationType.rawValue
             }
             rField.changed = true

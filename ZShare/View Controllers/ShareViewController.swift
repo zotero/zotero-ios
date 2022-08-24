@@ -311,7 +311,7 @@ final class ShareViewController: UIViewController {
     }
 
     private func itemTitle(for item: ItemResponse, schemaController: SchemaController, defaultValue: String) -> String {
-        return schemaController.titleKey(for: item.rawType).flatMap({ item.fields[$0] }) ?? defaultValue
+        return schemaController.titleKey(for: item.rawType).flatMap({ item.fields[KeyBaseKeyPair(key: $0, baseKey: nil)] }) ?? defaultValue
     }
 
     private func setItem(title: String, type: String) {

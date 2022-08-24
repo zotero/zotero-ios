@@ -63,7 +63,7 @@ struct AnnotationConverter {
     /// - returns: Matching Zotero annotation.
     static func annotation(from item: RItem, library: Library, currentUserId: Int, username: String, displayName: String, boundingBoxConverter: AnnotationBoundingBoxConverter) -> Annotation? {
         guard let rawType = item.fieldValue(for: FieldKeys.Item.Annotation.type),
-              let pageIndex = item.fieldValue(for: FieldKeys.Item.Annotation.pageIndex).flatMap(Int.init),
+              let pageIndex = item.fieldValue(for: FieldKeys.Item.Annotation.Position.pageIndex).flatMap(Int.init),
               let pageLabel = item.fieldValue(for: FieldKeys.Item.Annotation.pageLabel),
               let color = item.fieldValue(for: FieldKeys.Item.Annotation.color) else {
             return nil
@@ -87,7 +87,7 @@ struct AnnotationConverter {
         let rects: [CGRect] = item.rects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX).rounded(to: 3), height: ($0.maxY - $0.minY).rounded(to: 3)) })
                                         .compactMap({ boundingBoxConverter.convertFromDb(rect: $0, page: _pageIndex) })
         let paths = self.paths(for: item, pageIndex: _pageIndex, boundingBoxConverter: boundingBoxConverter)
-        let lineWidth = (item.fields.filter(.key(FieldKeys.Item.Annotation.lineWidth)).first?.value).flatMap(Double.init).flatMap(CGFloat.init)
+        let lineWidth = (item.fields.filter(.key(FieldKeys.Item.Annotation.Position.lineWidth)).first?.value).flatMap(Double.init).flatMap(CGFloat.init)
 
         return Annotation(key: item.key,
                           type: type,

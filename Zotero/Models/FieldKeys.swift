@@ -54,6 +54,13 @@ struct FieldKeys {
         }
 
         struct Annotation {
+            struct Position {
+                static let pageIndex = "pageIndex"
+                static let rects = "rects"
+                static let paths = "paths"
+                static let lineWidth = "width"
+            }
+
             static let type = "annotationType"
             static let text = "annotationText"
             static let comment = "annotationComment"
@@ -61,24 +68,26 @@ struct FieldKeys {
             static let pageLabel = "annotationPageLabel"
             static let sortIndex = "annotationSortIndex"
             static let position = "annotationPosition"
-            static let pageIndex = "pageIndex"
-            static let rects = "rects"
-            static let paths = "paths"
-            static let lineWidth = "width"
             static let authorName = "annotationAuthorName"
 
             static var knownKeys: Set<String> {
                 return [Annotation.color, Annotation.comment, Annotation.pageLabel, Annotation.position, Annotation.text, Annotation.type, Annotation.sortIndex, Annotation.authorName]
             }
 
-            static func fields(for type: AnnotationType) -> [String] {
+            static func fields(for type: AnnotationType) -> [KeyBaseKeyPair] {
                 switch type {
                 case .highlight:
-                    return [Annotation.type, Annotation.comment, Annotation.color, Annotation.pageLabel, Annotation.sortIndex, Annotation.pageIndex, Annotation.text]
+                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil), KeyBaseKeyPair(key: Annotation.comment, baseKey: nil), KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil), KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil), KeyBaseKeyPair(key: Annotation.text, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.Position.pageIndex, baseKey: Annotation.position)]
                 case .ink:
-                    return [Annotation.type, Annotation.comment, Annotation.color, Annotation.pageLabel, Annotation.sortIndex, Annotation.pageIndex, Annotation.lineWidth]
+                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil), KeyBaseKeyPair(key: Annotation.comment, baseKey: nil), KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil), KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.Position.pageIndex, baseKey: Annotation.position), KeyBaseKeyPair(key: Annotation.Position.lineWidth, baseKey: Annotation.position)]
                 case .note, .image:
-                    return [Annotation.type, Annotation.comment, Annotation.color, Annotation.pageLabel, Annotation.sortIndex, Annotation.pageIndex]
+                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil), KeyBaseKeyPair(key: Annotation.comment, baseKey: nil), KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil), KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.Position.pageIndex, baseKey: Annotation.position)]
                 }
             }
         }
