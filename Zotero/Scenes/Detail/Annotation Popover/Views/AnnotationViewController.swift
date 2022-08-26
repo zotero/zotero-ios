@@ -29,7 +29,7 @@ final class AnnotationViewController: UIViewController {
     weak var coordinatorDelegate: AnnotationPopoverAnnotationCoordinatorDelegate?
 
     private var commentPlaceholder: String {
-        let canEdit = self.viewModel.state.selectedAnnotation?.editability == .editable
+        let canEdit = self.viewModel.state.selectedAnnotation?.editability(currentUserId: self.viewModel.state.userId, library: self.viewModel.state.library) == .editable
         return canEdit ? L10n.Pdf.AnnotationsSidebar.addComment : L10n.Pdf.AnnotationPopover.noComment
     }
 
@@ -95,7 +95,9 @@ final class AnnotationViewController: UIViewController {
         guard state.changes.contains(.annotations) else { return }
 
         // Update header
-        self.header.setup(with: annotation, libraryId: state.library.identifier, isEditable: (annotation.editability == .editable), showsLock: (annotation.editability != .editable), showDoneButton: false, accessibilityType: .view)
+        let editability = annotation.editability(currentUserId: state.userId, library: state.library)
+        self.header.setup(with: annotation, libraryId: state.library.identifier, isEditable: (editability == .editable), showsLock: (editability != .editable), showDoneButton: false,
+                          accessibilityType: .view, displayName: state.displayName, username: state.username)
 
         // Update selected color
         if let views = self.colorPickerContainer?.arrangedSubviews {
@@ -120,8 +122,8 @@ final class AnnotationViewController: UIViewController {
     }
 
     @objc private func deleteAnnotation() {
-        guard let annotation = self.viewModel.state.selectedAnnotation else { return }
-        self.viewModel.process(action: .removeAnnotation(annotation.position))
+//        guard let annotation = self.viewModel.state.selectedAnnotation else { return }
+//        self.viewModel.process(action: .removeAnnotation(annotation.position))
     }
 
     private func showSettings() {
@@ -131,7 +133,7 @@ final class AnnotationViewController: UIViewController {
                                                self?.viewModel.process(action: .updateAnnotationProperties(annotation))
                                            },
                                            deleteAction: { [weak self] annotation in
-                                               self?.viewModel.process(action: .removeAnnotation(annotation.position))
+//                                               self?.viewModel.process(action: .removeAnnotation(annotation.position))
                                            })
     }
 
@@ -141,7 +143,7 @@ final class AnnotationViewController: UIViewController {
     }
 
     private func showTagPicker() {
-        guard let annotation = self.viewModel.state.selectedAnnotation, annotation.isAuthor else { return }
+        guard let annotation = self.viewModel.state.selectedAnnotation, annotation.isAuthor(currentUserId: self.viewModel.state.userId) else { return }
 
         let selected = Set(annotation.tags.map({ $0.name }))
         self.coordinatorDelegate?.showTagPicker(libraryId: self.viewModel.state.library.identifier, selected: selected, picked: { [weak self] tags in
@@ -167,8 +169,9 @@ final class AnnotationViewController: UIViewController {
 
         // Setup header
         let header = AnnotationViewHeader(layout: layout)
-        header.setup(with: annotation, libraryId: self.viewModel.state.library.identifier, isEditable: (annotation.editability == .editable), showsLock: (annotation.editability != .editable),
-                     showDoneButton: false, accessibilityType: .view)
+        let editability = annotation.editability(currentUserId: self.viewModel.state.userId, library: self.viewModel.state.library)
+        header.setup(with: annotation, libraryId: self.viewModel.state.library.identifier, isEditable: (editability == .editable), showsLock: (editability != .editable), showDoneButton: false,
+                     accessibilityType: .view, displayName: self.viewModel.state.displayName, username: self.viewModel.state.username)
         header.menuTap
               .subscribe(with: self, onNext: { `self`, _ in
                   self.showSettings()
@@ -190,7 +193,7 @@ final class AnnotationViewController: UIViewController {
             let commentView = AnnotationViewTextView(layout: layout, placeholder: self.commentPlaceholder)
             let comment = AnnotationView.attributedString(from: self.attributedStringConverter.convert(text: annotation.comment, baseAttributes: [.font: layout.font]), layout: layout)
             commentView.setup(text: comment)
-            commentView.isUserInteractionEnabled = annotation.editability == .editable
+            commentView.isUserInteractionEnabled = editability == .editable
             commentView.textObservable
                        .subscribe(with: self, onNext: { `self`, data in
                            self.viewModel.process(action: .setComment(key: annotation.key, comment: data.0))
@@ -207,7 +210,7 @@ final class AnnotationViewController: UIViewController {
         }
 
         // Setup color picker
-        if annotation.editability == .editable {
+        if editability == .editable {
             let colorPickerContainer = UIView()
             colorPickerContainer.backgroundColor = Asset.Colors.defaultCellBackground.color
             colorPickerContainer.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
@@ -262,7 +265,7 @@ final class AnnotationViewController: UIViewController {
             tags.setup(with: AnnotationView.attributedString(from: annotation.tags, layout: layout))
         }
         tags.isHidden = annotation.tags.isEmpty
-        tags.isEnabled = annotation.editability == .editable
+        tags.isEnabled = editability == .editable
         tags.tap
             .subscribe(with: self, onNext: { `self`, _ in
                 self.showTagPicker()
@@ -274,7 +277,7 @@ final class AnnotationViewController: UIViewController {
 
         self.containerStackView.addArrangedSubview(tags)
 
-        if annotation.editability == .editable {
+        if editability == .editable {
             let tagButton = AnnotationViewButton(layout: layout)
             tagButton.setTitle(L10n.Pdf.AnnotationsSidebar.addTags, for: .normal)
             tagButton.isHidden = !annotation.tags.isEmpty
@@ -290,7 +293,7 @@ final class AnnotationViewController: UIViewController {
             self.containerStackView.addArrangedSubview(AnnotationViewSeparator())
         }
 
-        if annotation.editability != .notEditable {
+        if editability != .notEditable {
             let button = UIButton()
             button.addTarget(self, action: #selector(AnnotationViewController.deleteAnnotation), for: .touchUpInside)
             button.setTitle(L10n.Pdf.AnnotationPopover.delete, for: .normal)
@@ -305,7 +308,7 @@ final class AnnotationViewController: UIViewController {
 
 extension AnnotationViewController: AnnotationPopover {
     var annotationKey: String {
-        return self.viewModel.state.selectedAnnotationKey ?? ""
+        return self.viewModel.state.selectedAnnotationKey?.key ?? ""
     }
 }
 

@@ -82,7 +82,8 @@ final class AnnotationCell: UITableViewCell {
         ])
     }
 
-    func setup(with annotation: Annotation, comment: AnnotationView.Comment?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, library: Library, isEditing: Bool) {
+    func setup(with annotation: Annotation, comment: AnnotationView.Comment?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, library: Library, isEditing: Bool, currentUserId: Int,
+               displayName: String, username: String, boundingBoxConverter: AnnotationBoundingBoxConverter) {
         if !selected {
             self.annotationView.resignFirstResponder()
         }
@@ -90,13 +91,14 @@ final class AnnotationCell: UITableViewCell {
         self.key = annotation.key
         self.selectionView.layer.borderWidth = selected ? PDFReaderLayout.cellSelectionLineWidth : 0
         let availableWidth = availableWidth - (PDFReaderLayout.annotationLayout.horizontalInset * 2)
-        self.annotationView.setup(with: annotation, comment: comment, preview: preview, selected: selected, availableWidth: availableWidth, library: library)
+        self.annotationView.setup(with: annotation, comment: comment, preview: preview, selected: selected, availableWidth: availableWidth, library: library, currentUserId: currentUserId,
+                                  displayName: displayName, username: username, boundingBoxConverter: boundingBoxConverter)
 
-        self.setupAccessibility(for: annotation, selected: selected)
+        self.setupAccessibility(for: annotation, selected: selected, currentUserId: currentUserId, displayName: displayName, username: username)
     }
 
-    private func setupAccessibility(for annotation: Annotation, selected: Bool) {
-        let author = annotation.isAuthor || annotation.author.isEmpty ? nil : annotation.author
+    private func setupAccessibility(for annotation: Annotation, selected: Bool, currentUserId: Int, displayName: String, username: String) {
+        let author = annotation.isAuthor(currentUserId: currentUserId) ? nil : annotation.author(displayName: displayName, username: username)
 
         var label = self.accessibilityLabel(for: annotation.type, pageLabel: annotation.pageLabel, author: author)
 

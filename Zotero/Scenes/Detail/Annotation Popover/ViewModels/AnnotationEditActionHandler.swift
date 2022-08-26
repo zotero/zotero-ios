@@ -14,28 +14,28 @@ struct AnnotationEditActionHandler: ViewModelActionHandler {
 
     func process(action: AnnotationEditAction, in viewModel: ViewModel<AnnotationEditActionHandler>) {
         switch action {
-        case .setColor(let hexString):
-            self.update(viewModel: viewModel) { state in
-                state.annotation = state.annotation.copy(color: hexString)
-                state.changes = .color
-            }
+        case .setColor(let hexString): break
+//            self.update(viewModel: viewModel) { state in
+//                state.annotation = state.annotation.copy(color: hexString)
+//                state.changes = .color
+//            }
 
-        case .setLineWidth(let width):
-            self.update(viewModel: viewModel) { state in
-                state.annotation = state.annotation.copy(lineWidth: width)
-            }
+        case .setLineWidth(let width): break
+//            self.update(viewModel: viewModel) { state in
+//                state.annotation = state.annotation.copy(lineWidth: width)
+//            }
             
-        case .setPageLabel(let label, let updateSubsequentPages):
-            self.update(viewModel: viewModel) { state in
-                state.annotation = state.annotation.copy(pageLabel: label)
-                state.updateSubsequentLabels = updateSubsequentPages
-                state.changes = .pageLabel
-            }
+        case .setPageLabel(let label, let updateSubsequentPages): break
+//            self.update(viewModel: viewModel) { state in
+//                state.annotation = state.annotation.copy(pageLabel: label)
+//                state.updateSubsequentLabels = updateSubsequentPages
+//                state.changes = .pageLabel
+//            }
 
-        case .setHighlight(let text):
-            self.update(viewModel: viewModel) { state in
-                state.annotation = state.annotation.copy(text: text)
-            }
+        case .setHighlight(let text): break
+//            self.update(viewModel: viewModel) { state in
+//                state.annotation = state.annotation.copy(text: text)
+//            }
         }
     }
 }

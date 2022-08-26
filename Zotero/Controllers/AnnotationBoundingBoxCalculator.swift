@@ -10,6 +10,8 @@ import UIKit
 
 struct AnnotationBoundingBoxCalculator {
     static func boundingBox(from paths: [[CGPoint]], lineWidth: CGFloat) -> CGRect {
+        guard !paths.isEmpty else { return CGRect() }
+
         var minX: CGFloat = .infinity
         var minY: CGFloat = .infinity
         var maxX: CGFloat = 0.0
@@ -41,6 +43,8 @@ struct AnnotationBoundingBoxCalculator {
     }
 
     static func boundingBox(from rects: [CGRect]) -> CGRect {
+        guard !rects.isEmpty else { return CGRect() }
+
         var minX: CGFloat = .infinity
         var minY: CGFloat = .infinity
         var maxX: CGFloat = 0.0

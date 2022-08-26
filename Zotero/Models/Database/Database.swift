@@ -396,6 +396,8 @@ struct Database {
     /// Realm results observer returns modifications from old array, so if there is a need to retrieve updated objects from updated `Results`
     /// we need to correct modifications array to include proper index after deletions/insertions are performed.
     static func correctedModifications(from modifications: [Int], insertions: [Int], deletions: [Int]) -> [Int] {
+        guard !modifications.isEmpty && (!insertions.isEmpty || !deletions.isEmpty) else { return modifications }
+
         var correctedModifications = modifications
 
         /// `modifications` array contains indices from previous results state. So if there is a deletion and modifications at the same time,

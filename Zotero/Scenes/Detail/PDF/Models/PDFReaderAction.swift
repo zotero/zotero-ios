@@ -16,14 +16,14 @@ import RealmSwift
 
 enum PDFReaderAction {
     case startObservingAnnotationChanges
-    case loadDocumentData
+    case loadDocumentData(boundingBoxConverter: AnnotationBoundingBoxConverter)
     case searchAnnotations(String)
     case selectAnnotation(String)
     case selectAnnotationFromDocument(String)
     case deselectSelectedAnnotation
     case selectAnnotationDuringEditing(String)
     case deselectAnnotationDuringEditing(String)
-    case removeAnnotation(AnnotationPosition)
+    case removeAnnotation(String)
     case removeSelectedAnnotations
     case mergeSelectedAnnotations
     case annotationsAdded(annotations: [PSPDFKit.Annotation], selectFirst: Bool)
@@ -47,7 +47,7 @@ enum PDFReaderAction {
     case setVisiblePage(Int)
     case export
     case clearTmpAnnotationPreviews
-    case itemsChange(objects: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int])
+    case dbChanged(objects: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int])
     case updateDbPositions(objects: Results<RItem>, deletions: [Int], insertions: [Int])
     case notificationReceived(Notification.Name)
     case annotationChangeNotificationReceived(String)

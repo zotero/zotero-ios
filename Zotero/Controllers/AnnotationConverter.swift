@@ -12,6 +12,7 @@ import UIKit
 
 import CocoaLumberjackSwift
 import PSPDFKit
+import RealmSwift
 
 struct AnnotationConverter {
     enum Kind {
@@ -51,140 +52,29 @@ struct AnnotationConverter {
         return String(format: "%05d|%06d|%05d", pageIndex, textOffset, minY)
     }
 
-    // MARK: - DB -> Memory
-
-    /// Create Zotero annotation from existing database item.
-    /// - parameter item: RItem object.
-    /// - parameter library: Library where annotation is stored.
-    /// - parameter currentUserId: Id of currently logged in user.
-    /// - parameter username: Username of current user.
-    /// - parameter displayName: Display name of current user.
-    /// - parameter boundingBoxConverter: Converter for bounding boxes.
-    /// - returns: Matching Zotero annotation.
-    static func annotation(from item: RItem, library: Library, currentUserId: Int, username: String, displayName: String, boundingBoxConverter: AnnotationBoundingBoxConverter) -> Annotation? {
-        guard let rawType = item.fieldValue(for: FieldKeys.Item.Annotation.type),
-              let pageIndex = item.fieldValue(for: FieldKeys.Item.Annotation.Position.pageIndex).flatMap(Int.init),
-              let pageLabel = item.fieldValue(for: FieldKeys.Item.Annotation.pageLabel),
-              let color = item.fieldValue(for: FieldKeys.Item.Annotation.color) else {
-            return nil
-        }
-        guard let type = AnnotationType(rawValue: rawType) else {
-            DDLogError("AnnotationConverter: unknown annotation type '\(rawType)'")
-            return nil
-        }
-
-        let text = item.fields.filter(.key(FieldKeys.Item.Annotation.text)).first?.value
-
-        if type == .highlight && text == nil {
-            DDLogError("AnnotationConverter: highlight annotation is missing text property")
-            return nil
-        }
-
-        let (isAuthor, authorName) = self.authorData(for: item, library: library, currentUserId: currentUserId, username: username, displayName: displayName)
-        let editability = self.editability(for: library, isAuthor: isAuthor)
-        let comment = item.fieldValue(for: FieldKeys.Item.Annotation.comment) ?? ""
-        let _pageIndex = PageIndex(pageIndex)
-        let rects: [CGRect] = item.rects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX).rounded(to: 3), height: ($0.maxY - $0.minY).rounded(to: 3)) })
-                                        .compactMap({ boundingBoxConverter.convertFromDb(rect: $0, page: _pageIndex) })
-        let paths = self.paths(for: item, pageIndex: _pageIndex, boundingBoxConverter: boundingBoxConverter)
-        let lineWidth = (item.fields.filter(.key(FieldKeys.Item.Annotation.Position.lineWidth)).first?.value).flatMap(Double.init).flatMap(CGFloat.init)
-
-        return Annotation(key: item.key,
-                          type: type,
-                          page: pageIndex,
-                          pageLabel: pageLabel,
-                          rects: rects,
-                          paths: paths,
-                          lineWidth: lineWidth,
-                          author: authorName,
-                          isAuthor: isAuthor,
-                          color: color,
-                          comment: comment,
-                          text: text,
-                          sortIndex: item.annotationSortIndex,
-                          dateModified: item.dateModified,
-                          tags: item.tags.map({ Tag(tag: $0) }),
-                          didChange: false,
-                          editability: editability,
-                          isSyncable: true)
-    }
-
-    private static func authorData(for item: RItem, library: Library, currentUserId: Int, username: String, displayName: String) -> (isAuthor: Bool, name: String) {
-        if let authorName = item.fields.filter(.key(FieldKeys.Item.Annotation.authorName)).first?.value {
-            let isAuthor = library.identifier == .custom(.myLibrary) ? true : item.createdBy?.identifier == currentUserId
-            return (isAuthor, authorName)
-        }
-
-        if let createdBy = item.createdBy {
-            let isAuthor = createdBy.identifier == currentUserId
-
-            if !createdBy.name.isEmpty {
-                return (isAuthor, createdBy.name)
-            }
-
-            if !createdBy.username.isEmpty {
-                return (isAuthor, createdBy.username)
-            }
-
-            let name = isAuthor ? self.createName(from: displayName, username: username) : L10n.unknown
-            return (isAuthor, name)
-        }
-
-        let isAuthor = library.identifier == .custom(.myLibrary)
-        let name = isAuthor ? self.createName(from: displayName, username: username) : L10n.unknown
-        return (isAuthor, name)
-    }
-
-    private static func editability(for library: Library, isAuthor: Bool) -> Annotation.Editability {
-        switch library.identifier {
-        case .custom:
-            return library.metadataEditable ? .editable : .notEditable
-
-        case .group:
-            if !library.metadataEditable {
-                return .notEditable
-            }
-            return isAuthor ? .editable : .deletable
-        }
-    }
-
-    private static func paths(for item: RItem, pageIndex: PageIndex, boundingBoxConverter: AnnotationBoundingBoxConverter) -> [[CGPoint]] {
-        var paths: [[CGPoint]] = []
-        for path in item.paths.sorted(byKeyPath: "sortIndex") {
-            guard path.coordinates.count % 2 == 0 else { continue }
-            let sortedCoordinates = path.coordinates.sorted(byKeyPath: "sortIndex")
-            let lines = (0..<(path.coordinates.count / 2)).compactMap({ idx -> CGPoint? in
-                let point = CGPoint(x: sortedCoordinates[idx * 2].value, y: sortedCoordinates[(idx * 2) + 1].value)
-                return boundingBoxConverter.convertFromDb(point: point, page: pageIndex)
-            })
-            paths.append(lines)
-        }
-        return paths
-    }
-
     // MARK: - PSPDFKit -> Zotero
 
     /// Create Zotero annotation from existing PSPDFKit annotation.
     /// - parameter annotation: PSPDFKit annotation.
     /// - parameter color: Base color of annotation (can differ from current `PSPDPFKit.Annotation.color`)
     /// - parameter library: Library where annotation is stored.
-    /// - parameter isNew: Indicating, whether the annotation has just been created.
     /// - parameter username: Username of current user.
     /// - parameter displayName: Display name of current user.
+    /// - parameter boundingBoxConverter: Converts rects from pdf coordinate space.
     /// - returns: Matching Zotero annotation.
-    static func annotation(from annotation: PSPDFKit.Annotation, color: String, library: Library, isNew: Bool, isSyncable: Bool, username: String, displayName: String, boundingBoxConverter: AnnotationBoundingBoxConverter?) -> Annotation? {
+    static func annotation(from annotation: PSPDFKit.Annotation, color: String, library: Library, username: String, displayName: String, boundingBoxConverter: AnnotationBoundingBoxConverter?) -> DocumentAnnotation? {
         guard let document = annotation.document, AnnotationsConfig.supported.contains(annotation.type) else { return nil }
 
-        let key = isSyncable ? (annotation.key ?? KeyGenerator.newKey) : annotation.uuid
+        let key = annotation.key ?? annotation.uuid
         let page = Int(annotation.pageIndex)
         let pageLabel = document.pageLabelForPage(at: annotation.pageIndex, substituteWithPlainLabel: false) ?? "\(annotation.pageIndex + 1)"
-        let isAuthor = isNew ? true : (annotation.user == displayName || annotation.user == username)
+        let isAuthor = annotation.user == displayName || annotation.user == username
         let comment = annotation.contents.flatMap({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }) ?? ""
         let sortIndex = self.sortIndex(from: annotation, boundingBoxConverter: boundingBoxConverter)
         let date = Date()
 
         let author: String
-        if isNew || isAuthor {
+        if isAuthor {
             author = self.createName(from: displayName, username: username)
         } else {
             author = annotation.user ?? L10n.unknown
@@ -228,33 +118,8 @@ struct AnnotationConverter {
             return nil
         }
 
-        let editability: Annotation.Editability
-        if !isNew {
-            editability = .notEditable
-        } else if library.identifier == .custom(.myLibrary) {
-            editability = .editable
-        } else {
-            editability = isAuthor ? .editable : .deletable
-        }
-
-        return Annotation(key: key,
-                          type: type,
-                          page: page,
-                          pageLabel: pageLabel,
-                          rects: rects,
-                          paths: paths,
-                          lineWidth: lineWidth,
-                          author: author,
-                          isAuthor: isAuthor,
-                          color: color,
-                          comment: comment,
-                          text: text,
-                          sortIndex: sortIndex,
-                          dateModified: date,
-                          tags: [],
-                          didChange: isNew,
-                          editability: editability,
-                          isSyncable: isSyncable)
+        return DocumentAnnotation(key: key, type: type, page: page, pageLabel: pageLabel, rects: rects, paths: paths, lineWidth: lineWidth, author: author, isAuthor: isAuthor, color: color,
+                                  comment: comment, text: text, sortIndex: sortIndex, dateModified: date)
     }
 
     static func removeNewlines(from string: String) -> String {
@@ -285,26 +150,28 @@ struct AnnotationConverter {
     /// Converts Zotero annotations to actual document (PSPDFKit) annotations with custom flags.
     /// - parameter zoteroAnnotations: Annotations to convert.
     /// - returns: Array of PSPDFKit annotations that can be added to document.
-    static func annotations(from zoteroAnnotations: [String: Annotation], type: Kind = .zotero, interfaceStyle: UIUserInterfaceStyle) -> [PSPDFKit.Annotation] {
-        return zoteroAnnotations.values.compactMap({ annotation in
-            guard annotation.isSyncable else { return nil }
-            return self.annotation(from: annotation, type: type, interfaceStyle: interfaceStyle)
+    static func annotations(from items: Results<RItem>, type: Kind = .zotero, interfaceStyle: UIUserInterfaceStyle, currentUserId: Int, library: Library, displayName: String, username: String,
+                            boundingBoxConverter: AnnotationBoundingBoxConverter) -> [PSPDFKit.Annotation] {
+        return items.compactMap({ item in
+            return self.annotation(from: DatabaseAnnotation(item: item), type: type, interfaceStyle: interfaceStyle, currentUserId: currentUserId, library: library, displayName: displayName,
+                                   username: username, boundingBoxConverter: boundingBoxConverter)
         })
     }
 
-    static func annotation(from zoteroAnnotation: Annotation, type: Kind, interfaceStyle: UIUserInterfaceStyle) -> PSPDFKit.Annotation {
+    static func annotation(from zoteroAnnotation: DatabaseAnnotation, type: Kind, interfaceStyle: UIUserInterfaceStyle, currentUserId: Int, library: Library, displayName: String, username: String,
+                           boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.Annotation {
         let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: zoteroAnnotation.color), isHighlight: (zoteroAnnotation.type == .highlight), userInterfaceStyle: interfaceStyle)
         let annotation: PSPDFKit.Annotation
 
         switch zoteroAnnotation.type {
         case .image:
-            annotation = self.areaAnnotation(from: zoteroAnnotation, type: type, color: color)
+            annotation = self.areaAnnotation(from: zoteroAnnotation, type: type, color: color, boundingBoxConverter: boundingBoxConverter)
         case .highlight:
-            annotation = self.highlightAnnotation(from: zoteroAnnotation, type: type, color: color, alpha: alpha)
+            annotation = self.highlightAnnotation(from: zoteroAnnotation, type: type, color: color, alpha: alpha, boundingBoxConverter: boundingBoxConverter)
         case .note:
-            annotation = self.noteAnnotation(from: zoteroAnnotation, type: type, color: color)
+            annotation = self.noteAnnotation(from: zoteroAnnotation, type: type, color: color, boundingBoxConverter: boundingBoxConverter)
         case .ink:
-            annotation = self.inkAnnotation(from: zoteroAnnotation, type: type, color: color)
+            annotation = self.inkAnnotation(from: zoteroAnnotation, type: type, color: color, boundingBoxConverter: boundingBoxConverter)
         }
 
         switch type {
@@ -316,7 +183,7 @@ struct AnnotationConverter {
                                      AnnotationsConfig.keyKey: zoteroAnnotation.key,
                                      AnnotationsConfig.syncableKey: true]
 
-            if zoteroAnnotation.editability != .editable {
+            if zoteroAnnotation.editability(currentUserId: currentUserId, library: library) != .editable {
                 annotation.flags.update(with: .readOnly)
             }
         }
@@ -327,7 +194,7 @@ struct AnnotationConverter {
 
         annotation.pageIndex = UInt(zoteroAnnotation.page)
         annotation.contents = zoteroAnnotation.comment
-        annotation.user = zoteroAnnotation.author
+        annotation.user = zoteroAnnotation.author(displayName: displayName, username: username)
         annotation.name = "Zotero-\(zoteroAnnotation.key)"
 
         return annotation
@@ -335,7 +202,7 @@ struct AnnotationConverter {
 
     /// Creates corresponding `SquareAnnotation`.
     /// - parameter annotation: Zotero annotation.
-    private static func areaAnnotation(from annotation: Annotation, type: Kind, color: UIColor) -> PSPDFKit.SquareAnnotation {
+    private static func areaAnnotation(from annotation: Annotation, type: Kind, color: UIColor, boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.SquareAnnotation {
         let square: PSPDFKit.SquareAnnotation
         switch type {
         case .export:
@@ -344,7 +211,7 @@ struct AnnotationConverter {
             square = SquareAnnotation()
         }
 
-        square.boundingBox = annotation.boundingBox.rounded(to: 3)
+        square.boundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter).rounded(to: 3)
         square.borderColor = color
         square.lineWidth = AnnotationsConfig.imageAnnotationLineWidth
 
@@ -353,7 +220,7 @@ struct AnnotationConverter {
 
     /// Creates corresponding `HighlightAnnotation`.
     /// - parameter annotation: Zotero annotation.
-    private static func highlightAnnotation(from annotation: Annotation, type: Kind, color: UIColor, alpha: CGFloat) -> PSPDFKit.HighlightAnnotation {
+    private static func highlightAnnotation(from annotation: Annotation, type: Kind, color: UIColor, alpha: CGFloat, boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.HighlightAnnotation {
         let highlight: PSPDFKit.HighlightAnnotation
         switch type {
         case .export:
@@ -362,8 +229,8 @@ struct AnnotationConverter {
             highlight = HighlightAnnotation()
         }
 
-        highlight.boundingBox = annotation.boundingBox.rounded(to: 3)
-        highlight.rects = annotation.rects.map({ $0.rounded(to: 3) })
+        highlight.boundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter).rounded(to: 3)
+        highlight.rects = annotation.rects(boundingBoxConverter: boundingBoxConverter).map({ $0.rounded(to: 3) })
         highlight.color = color
         highlight.alpha = alpha
 
@@ -372,7 +239,7 @@ struct AnnotationConverter {
 
     /// Creates corresponding `NoteAnnotation`.
     /// - parameter annotation: Zotero annotation.
-    private static func noteAnnotation(from annotation: Annotation, type: Kind, color: UIColor) -> PSPDFKit.NoteAnnotation {
+    private static func noteAnnotation(from annotation: Annotation, type: Kind, color: UIColor, boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.NoteAnnotation {
         let note: PSPDFKit.NoteAnnotation
         switch type {
         case .export:
@@ -381,7 +248,7 @@ struct AnnotationConverter {
             note = NoteAnnotation(contents: annotation.comment)
         }
 
-        let boundingBox = annotation.boundingBox.rounded(to: 3)
+        let boundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter).rounded(to: 3)
         note.boundingBox = CGRect(origin: boundingBox.origin, size: AnnotationsConfig.noteAnnotationSize)
         note.borderStyle = .dashed
         note.color = color
@@ -389,8 +256,8 @@ struct AnnotationConverter {
         return note
     }
 
-    private static func inkAnnotation(from annotation: Annotation, type: Kind, color: UIColor) -> PSPDFKit.InkAnnotation {
-        let lines = annotation.paths.map({ group in
+    private static func inkAnnotation(from annotation: Annotation, type: Kind, color: UIColor, boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.InkAnnotation {
+        let lines = annotation.paths(boundingBoxConverter: boundingBoxConverter).map({ group in
             return group.map({ DrawingPoint(cgPoint: $0) })
         })
         let ink = PSPDFKit.InkAnnotation(lines: lines)

@@ -43,12 +43,7 @@ final class PDFReaderViewController: UIViewController {
     private var isSidebarTransitioning: Bool
     private var annotationTimerDisposeBag: DisposeBag
     private var pageTimerDisposeBag: DisposeBag
-    private var itemToken: NotificationToken?
     private var selectionView: SelectionView?
-    /// These 3 keys sets are used to skip unnecessary realm notifications, which are created by user actions and would result in duplicate actions.
-    private var insertedKeys: Set<String>
-    private var deletedKeys: Set<String>
-    private var modifiedKeys: Set<String>
     private var lastGestureRecognizerTouch: UITouch?
     private var pendingSaveChanges: Bool
     private var pendingSavePage: Int?
@@ -121,9 +116,6 @@ final class PDFReaderViewController: UIViewController {
     init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
         self.viewModel = viewModel
         self.isCompactSize = compactSize
-        self.insertedKeys = []
-        self.deletedKeys = []
-        self.modifiedKeys = []
         self.pendingSaveChanges = false
         self.isSidebarTransitioning = false
         self.disposeBag = DisposeBag()
@@ -148,7 +140,7 @@ final class PDFReaderViewController: UIViewController {
         self.setupObserving()
         self.updateInterface(to: self.viewModel.state.settings)
 
-        self.viewModel.process(action: .loadDocumentData)
+        self.viewModel.process(action: .loadDocumentData(boundingBoxConverter: self))
         self.pdfController.setPageIndex(PageIndex(self.viewModel.state.visiblePage), animated: false)
     }
 
@@ -198,9 +190,6 @@ final class PDFReaderViewController: UIViewController {
     // MARK: - Actions
 
     private func update(state: PDFReaderState) {
-        if state.changes.contains(.itemObserving) {
-            self.setupItemObserving(items: state.dbItems)
-        }
 
         if state.changes.contains(.interfaceStyle) {
             self.updateInterface(to: state.settings)
@@ -255,13 +244,10 @@ final class PDFReaderViewController: UIViewController {
 
         if state.changes.contains(.save) {
             // If popover with deleted key is presented, dismiss it
-            if let controller = (self.presentedViewController as? UINavigationController)?.viewControllers.first as? AnnotationPopover, state.deletedKeys.contains(controller.annotationKey) {
-                self.dismiss(animated: true, completion: nil)
-            }
+//            if let controller = (self.presentedViewController as? UINavigationController)?.viewControllers.first as? AnnotationPopover {
+//                self.dismiss(animated: true, completion: nil)
+//            }
             // Store changed keys and enqueue a save
-            self.insertedKeys = self.insertedKeys.union(state.insertedKeys)
-            self.deletedKeys = self.deletedKeys.union(state.deletedKeys)
-            self.modifiedKeys = self.modifiedKeys.union(state.modifiedKeys)
             self.enqueueAnnotationSave()
         }
 
@@ -350,7 +336,7 @@ final class PDFReaderViewController: UIViewController {
               let annotation = state.selectedAnnotation,
               let pageView = self.pdfController.pageViewForPage(at: UInt(annotation.page)) else { return }
 
-        let frame = self.view.convert(annotation.boundingBox, from: pageView.pdfCoordinateSpace)
+        let frame = self.view.convert(annotation.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
 
         self.coordinatorDelegate?.showAnnotationPopover(viewModel: self.viewModel, sourceRect: frame, popoverDelegate: self)
     }
@@ -575,36 +561,6 @@ final class PDFReaderViewController: UIViewController {
         return annotations
     }
 
-    private func performObservingUpdateIfNeeded(objects: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int]) {
-        let (filteredDeletions, filteredInsertions, filteredModifications) = self.filterObservingUpdateIndices(objects: objects, deletions: deletions,
-                                                                                                               insertions: insertions, modifications: modifications)
-        if !filteredDeletions.isEmpty || !filteredInsertions.isEmpty || !filteredModifications.isEmpty {
-            // If there are any changes which need sync between database and memory, process them
-            self.viewModel.process(action: .itemsChange(objects: objects, deletions: filteredDeletions, insertions: filteredInsertions, modifications: filteredModifications))
-        }
-        // Keep `dbPositions` in sync with database
-        self.viewModel.process(action: .updateDbPositions(objects: objects, deletions: deletions, insertions: insertions))
-    }
-
-    private func filterObservingUpdateIndices(objects: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int]) -> (deletions: [Int], insertions: [Int], modifications: [Int]) {
-        let filteredModifications = modifications.compactMap { index -> Int? in
-            let key = self.viewModel.state.dbPositions[index].key
-            // If this key was modified by user action, ignore it. Otherwise add it to filtered array, so that the action can be processed.
-            return self.modifiedKeys.remove(key) == nil ? index : nil
-        }
-        let filteredDeletions = deletions.compactMap { index -> Int? in
-            let key = self.viewModel.state.dbPositions[index].key
-            // If this key was deleted by user action, ignore it. Otherwise add it to filtered array, so that the action can be processed.
-            return self.deletedKeys.remove(key) == nil ? index : nil
-        }
-        let filteredInsertions = insertions.compactMap { index -> Int? in
-            let key = objects[index].key
-            // If this key was inserted by user action, ignore it. Otherwise add it to filtered array, so that the action can be processed.
-            return self.insertedKeys.remove(key) == nil ? index : nil
-        }
-        return (filteredDeletions, filteredInsertions, filteredModifications)
-    }
-
     @objc private func annotationControlTapped(sender: UIButton, event: UIEvent) {
         let tool: PSPDFKit.Annotation.Tool
         if sender == self.createNoteButton {
@@ -665,7 +621,7 @@ final class PDFReaderViewController: UIViewController {
 
         guard let selection = annotation, selection.type == .highlight && selection.page == Int(pageView.pageIndex) else { return }
         // Add custom highlight selection view if needed
-        let frame = pageView.convert(selection.boundingBox, from: pageView.pdfCoordinateSpace).insetBy(dx: -SelectionView.inset, dy: -SelectionView.inset)
+        let frame = pageView.convert(selection.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace).insetBy(dx: -SelectionView.inset, dy: -SelectionView.inset)
         let selectionView = SelectionView()
         selectionView.frame = frame
         pageView.annotationContainerView.addSubview(selectionView)
@@ -682,6 +638,7 @@ final class PDFReaderViewController: UIViewController {
         sidebarController.sidebarParent = self
         sidebarController.view.translatesAutoresizingMaskIntoConstraints = false
         sidebarController.coordinatorDelegate = self.coordinatorDelegate
+        sidebarController.boundingBoxConverter = self
 
         let separator = UIView()
         separator.translatesAutoresizingMaskIntoConstraints = false
@@ -1030,21 +987,6 @@ final class PDFReaderViewController: UIViewController {
                                       self.viewModel.process(action: .clearTmpAnnotationPreviews)
                                   })
                                   .disposed(by: self.disposeBag)
-    }
-
-    private func setupItemObserving(items: Results<RItem>?) {
-        guard let items = items else {
-            self.itemToken = nil
-            return
-        }
-
-        self.itemToken = items.observe({ [weak self] changes in
-            switch changes {
-            case .update(let objects, let deletions, let insertions, let modifications):
-                self?.performObservingUpdateIfNeeded(objects: objects, deletions: deletions, insertions: insertions, modifications: modifications)
-            case .initial, .error: break
-            }
-        })
     }
 }
 

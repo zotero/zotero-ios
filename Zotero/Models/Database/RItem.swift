@@ -99,7 +99,7 @@ final class RItem: Object {
     /// first and sort them in any order we want (asd/desc) and all other items later
     @Persisted var hasPublicationTitle: Bool
     /// Sort index for annotations
-    @Persisted var annotationSortIndex: String
+    @Persisted(indexed: true) var annotationSortIndex: String
     // MARK: - Sync data
     /// Indicates whether the object is trashed locally and needs to be synced with backend
     @Persisted var trash: Bool

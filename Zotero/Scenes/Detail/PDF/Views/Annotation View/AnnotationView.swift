@@ -97,12 +97,15 @@ final class AnnotationView: UIView {
     /// - parameter selected: If true, selected state style is applied.
     /// - parameter availableWidth: Available width for view.
     /// - parameter library: Library of given annotation
-    func setup(with annotation: Annotation, comment: Comment?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, library: Library) {
+    func setup(with annotation: Annotation, comment: Comment?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, library: Library, currentUserId: Int, displayName: String, username: String,
+               boundingBoxConverter: AnnotationBoundingBoxConverter) {
+        let editability = annotation.editability(currentUserId: currentUserId, library: library)
         let color = UIColor(hex: annotation.color)
-        let canEdit = annotation.editability == .editable && selected
+        let canEdit = editability == .editable && selected
 
-        self.header.setup(with: annotation, libraryId: library.identifier, isEditable: (annotation.editability != .notEditable && selected), showsLock: annotation.editability != .editable, showDoneButton: self.layout.showDoneButton, accessibilityType: .cell)
-        self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth, accessibilityType: .cell)
+        self.header.setup(with: annotation, libraryId: library.identifier, isEditable: (editability != .notEditable && selected), showsLock: editability != .editable,
+                          showDoneButton: self.layout.showDoneButton, accessibilityType: .cell, displayName: displayName, username: username)
+        self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth, accessibilityType: .cell, boundingBoxConverter: boundingBoxConverter)
         self.setup(comment: comment, canEdit: canEdit)
         self.setupTags(for: annotation, canEdit: canEdit, accessibilityEnabled: selected)
         self.setupObserving()
@@ -117,7 +120,8 @@ final class AnnotationView: UIView {
         self.bottomSeparator.isHidden = (self.tags.isHidden && self.tagsButton.isHidden) || (self.commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden)
     }
 
-    private func setupContent(for annotation: Annotation, preview: UIImage?, color: UIColor, canEdit: Bool, selected: Bool, availableWidth: CGFloat, accessibilityType: AccessibilityType) {
+    private func setupContent(for annotation: Annotation, preview: UIImage?, color: UIColor, canEdit: Bool, selected: Bool, availableWidth: CGFloat, accessibilityType: AccessibilityType,
+                              boundingBoxConverter: AnnotationBoundingBoxConverter) {
         guard let highlightContent = self.highlightContent, let imageContent = self.imageContent else { return }
 
         highlightContent.isUserInteractionEnabled = false
@@ -132,7 +136,7 @@ final class AnnotationView: UIView {
             highlightContent.setup(with: color, text: (annotation.text ?? ""), bottomInset: bottomInset, accessibilityType: accessibilityType)
 
         case .image, .ink:
-            let size = annotation.previewBoundingBox.size
+            let size = annotation.previewBoundingBox(boundingBoxConverter: boundingBoxConverter).size
             let maxWidth = availableWidth - (self.layout.horizontalInset * 2)
             var maxHeight = ceil((size.height / size.width) * maxWidth)
             if maxHeight.isNaN || maxHeight.isInfinite {
