@@ -18,11 +18,11 @@ enum PDFReaderAction {
     case startObservingAnnotationChanges
     case loadDocumentData(boundingBoxConverter: AnnotationBoundingBoxConverter)
     case searchAnnotations(String)
-    case selectAnnotation(String)
-    case selectAnnotationFromDocument(String)
+    case selectAnnotation(PDFReaderState.AnnotationKey)
+    case selectAnnotationFromDocument(PDFReaderState.AnnotationKey)
     case deselectSelectedAnnotation
-    case selectAnnotationDuringEditing(String)
-    case deselectAnnotationDuringEditing(String)
+    case selectAnnotationDuringEditing(PDFReaderState.AnnotationKey)
+    case deselectAnnotationDuringEditing(PDFReaderState.AnnotationKey)
     case removeAnnotation(String)
     case removeSelectedAnnotations
     case mergeSelectedAnnotations

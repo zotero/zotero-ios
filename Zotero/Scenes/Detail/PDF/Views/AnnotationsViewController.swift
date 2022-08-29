@@ -132,9 +132,9 @@ final class AnnotationsViewController: UIViewController {
                 self.updatePreviewsIfVisible(for: keys)
             }
 
-//            if let key = state.focusSidebarKey, let indexPath = self.dataSource.indexPath(for: key) {
-//                self.tableView.selectRow(at: indexPath, animated: true, scrollPosition: .middle)
-//            }
+            if let key = state.focusSidebarKey, let indexPath = self.dataSource.indexPath(for: key) {
+                self.tableView.selectRow(at: indexPath, animated: true, scrollPosition: .middle)
+            }
 
             if state.changes.contains(.sidebarEditingSelection) {
                 self.deleteBarButton?.isEnabled = state.deletionEnabled
@@ -172,9 +172,9 @@ final class AnnotationsViewController: UIViewController {
             var snapshot = NSDiffableDataSourceSnapshot<Int, PDFReaderState.AnnotationKey>()
             snapshot.appendSections([0])
             snapshot.appendItems(state.sortedKeys)
-//            if let keys = state.updatedAnnotationKeys {
-//                snapshot.reloadItems(keys)
-//            }
+            if let keys = state.updatedAnnotationKeys {
+                snapshot.reloadItems(keys)
+            }
 
             let isVisible = self.sidebarParent?.isSidebarVisible ?? false
 
@@ -187,11 +187,11 @@ final class AnnotationsViewController: UIViewController {
         }
 
         if state.changes.contains(.selection) || state.changes.contains(.activeComment) {
-//            if let keys = state.updatedAnnotationKeys {
-//                var snapshot = self.dataSource.snapshot()
-//                snapshot.reloadItems(keys)
-//                self.dataSource.apply(snapshot, animatingDifferences: false)
-//            }
+            if let keys = state.updatedAnnotationKeys {
+                var snapshot = self.dataSource.snapshot()
+                snapshot.reloadItems(keys)
+                self.dataSource.apply(snapshot, animatingDifferences: false)
+            }
 
             self.updateCellHeight()
             self.focusSelectedCell()
@@ -316,15 +316,6 @@ final class AnnotationsViewController: UIViewController {
         })
     }
 
-    private func annotation(for key: PDFReaderState.AnnotationKey) -> Annotation? {
-        switch key.type {
-        case .database:
-            return self.viewModel.state.databaseAnnotations.filter(.key(key.key)).first.flatMap({ DatabaseAnnotation(item: $0) })
-        case .document:
-            return self.viewModel.state.documentAnnotations[key.key]
-        }
-    }
-
     // MARK: - Setups
 
     private func setupViews() {
@@ -386,7 +377,7 @@ final class AnnotationsViewController: UIViewController {
         self.dataSource = TableViewDiffableDataSource(tableView: self.tableView, cellProvider: { [weak self] tableView, indexPath, key in
             let cell = tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
 
-            if let `self` = self, let cell = cell as? AnnotationCell, let annotation = self.annotation(for: key) {
+            if let `self` = self, let cell = cell as? AnnotationCell, let annotation = self.viewModel.state.annotation(for: key) {
                 cell.contentView.backgroundColor = self.view.backgroundColor
                 self.setup(cell: cell, with: annotation, state: self.viewModel.state)
             }
@@ -454,8 +445,8 @@ final class AnnotationsViewController: UIViewController {
     }
 
     private func setupToolbar(to state: PDFReaderState) {
-//        self.setupToolbar(filterEnabled: state.annotations.count > 1, filterOn: (state.filter != nil), editingEnabled: state.sidebarEditingEnabled,
-//                          deletionEnabled: state.deletionEnabled, mergingEnabled: state.mergingEnabled)
+        self.setupToolbar(filterEnabled: (state.databaseAnnotations?.count ?? 0) > 1, filterOn: (state.filter != nil), editingEnabled: state.sidebarEditingEnabled,
+                          deletionEnabled: state.deletionEnabled, mergingEnabled: state.mergingEnabled)
     }
 
     private func setupToolbar(filterEnabled: Bool, filterOn: Bool, editingEnabled: Bool, deletionEnabled: Bool, mergingEnabled: Bool) {
@@ -520,30 +511,31 @@ final class AnnotationsViewController: UIViewController {
 
 extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSourcePrefetching {
     func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
-//        let keys = indexPaths.compactMap({ self.dataSource.itemIdentifier(for: $0) })
-//                             .filter({ key in
-//                                 guard let annotation = self.viewModel.state.annotations[key] else { return false }
-//                                 switch annotation.type {
-//                                 case .image, .ink: return true
-//                                 case .note, .highlight: return false
-//                                 }
-//                             })
-//        self.viewModel.process(action: .requestPreviews(keys: keys, notify: false))
+        let keys = indexPaths.compactMap({ self.dataSource.itemIdentifier(for: $0) })
+                             .filter({ key in
+                                 guard let annotation = self.viewModel.state.annotation(for: key) else { return false }
+                                 switch annotation.type {
+                                 case .image, .ink: return true
+                                 case .note, .highlight: return false
+                                 }
+                             })
+                             .map({ $0.key })
+        self.viewModel.process(action: .requestPreviews(keys: keys, notify: false))
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         guard let key = self.dataSource.itemIdentifier(for: indexPath) else { return }
 
         if self.viewModel.state.sidebarEditingEnabled {
-//            self.viewModel.process(action: .selectAnnotationDuringEditing(key))
+            self.viewModel.process(action: .selectAnnotationDuringEditing(key))
         } else {
-//            self.viewModel.process(action: .selectAnnotation(key))
+            self.viewModel.process(action: .selectAnnotation(key))
         }
     }
 
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
         guard self.viewModel.state.sidebarEditingEnabled, let key = self.dataSource.itemIdentifier(for: indexPath) else { return }
-//        self.viewModel.process(action: .deselectAnnotationDuringEditing(key))
+        self.viewModel.process(action: .deselectAnnotationDuringEditing(key))
     }
 
     func tableView(_ tableView: UITableView, shouldBeginMultipleSelectionInteractionAt indexPath: IndexPath) -> Bool {

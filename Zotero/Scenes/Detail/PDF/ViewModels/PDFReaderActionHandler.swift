@@ -94,25 +94,25 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .startObservingAnnotationChanges: break
 //            self.observePreviews(in: viewModel)
 
-        case .searchAnnotations(let term): break
-//            self.search(for: term, in: viewModel)
+        case .searchAnnotations(let term):
+            self.search(for: term, in: viewModel)
 
-        case .selectAnnotation(let key): break
-//            guard !viewModel.state.sidebarEditingEnabled && key != viewModel.state.selectedAnnotationKey else { return }
-//            self.select(key: key, didSelectInDocument: false, in: viewModel)
+        case .selectAnnotation(let key):
+            guard !viewModel.state.sidebarEditingEnabled && key != viewModel.state.selectedAnnotationKey else { return }
+            self.select(key: key, didSelectInDocument: false, in: viewModel)
 
-        case .selectAnnotationFromDocument(let key): break
-//            guard !viewModel.state.sidebarEditingEnabled && key != viewModel.state.selectedAnnotationKey else { return }
-//            self.select(key: key, didSelectInDocument: true, in: viewModel)
+        case .selectAnnotationFromDocument(let key):
+            guard !viewModel.state.sidebarEditingEnabled && key != viewModel.state.selectedAnnotationKey else { return }
+            self.select(key: key, didSelectInDocument: true, in: viewModel)
 
-        case .deselectSelectedAnnotation: break
-//            self.select(key: nil, didSelectInDocument: false, in: viewModel)
+        case .deselectSelectedAnnotation:
+            self.select(key: nil, didSelectInDocument: false, in: viewModel)
 
-        case .selectAnnotationDuringEditing(let key): break
-//            self.selectDuringEditing(key: key, in: viewModel)
+        case .selectAnnotationDuringEditing(let key):
+            self.selectDuringEditing(key: key, in: viewModel)
 
-        case .deselectAnnotationDuringEditing(let key): break
-//            self.deselectDuringEditing(key: key, in: viewModel)
+        case .deselectAnnotationDuringEditing(let key):
+            self.deselectDuringEditing(key: key, in: viewModel)
             
         case .annotationsAdded(let annotations, let selectFirst): break
 //            self.add(annotations: annotations, selectFirst: selectFirst, in: viewModel)
@@ -134,8 +134,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 //            guard viewModel.state.sidebarEditingEnabled else { return }
 //            self.mergeSelectedAnnotations(in: viewModel)
 
-        case .requestPreviews(let keys, let notify): break
-//            self.loadPreviews(for: keys, notify: notify, in: viewModel)
+        case .requestPreviews(let keys, let notify):
+            self.loadPreviews(for: keys, notify: notify, in: viewModel)
 
         case .setHighlight(let key, let highlight): break
 //            self.updateAnnotation(with: key, transformAnnotation: { ($0.copy(text: highlight), []) }, in: viewModel)
@@ -188,20 +188,20 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 //                                  },
 //                                  in: viewModel)
 
-        case .userInterfaceStyleChanged(let interfaceStyle): break
-//            self.userInterfaceChanged(interfaceStyle: interfaceStyle, in: viewModel)
+        case .userInterfaceStyleChanged(let interfaceStyle):
+            self.userInterfaceChanged(interfaceStyle: interfaceStyle, in: viewModel)
 
-        case .updateAnnotationPreviews: break
-//            self.storeAnnotationPreviewsIfNeeded(in: viewModel)
+        case .updateAnnotationPreviews:
+            self.storeAnnotationPreviewsIfNeeded(in: viewModel)
 
-        case .setActiveColor(let hex): break
-//            self.setActiveColor(hex: hex, in: viewModel)
+        case .setActiveColor(let hex):
+            self.setActiveColor(hex: hex, in: viewModel)
 
-        case .setActiveLineWidth(let lineWidth): break
-//            self.setActive(lineWidth: lineWidth, in: viewModel)
+        case .setActiveLineWidth(let lineWidth):
+            self.setActive(lineWidth: lineWidth, in: viewModel)
 
-        case .setActiveEraserSize(let size): break
-//            self.setActive(eraserSize: size, in: viewModel)
+        case .setActiveEraserSize(let size):
+            self.setActive(eraserSize: size, in: viewModel)
 
         case .saveChanges: break
 //            self.saveChanges(in: viewModel)
@@ -209,14 +209,14 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .create(let annotation, let pageIndex, let origin): break
 //            self.add(annotationType: annotation, pageIndex: pageIndex, origin: origin, in: viewModel)
 
-        case .setVisiblePage(let page): break
-//            self.set(page: page, in: viewModel)
+        case .setVisiblePage(let page):
+            self.set(page: page, in: viewModel)
 
-        case .export: break
-//            self.export(viewModel: viewModel)
+        case .export:
+            self.export(viewModel: viewModel)
 
-        case .clearTmpAnnotationPreviews: break
-//            self.clearTmpAnnotationPreviews(in: viewModel)
+        case .clearTmpAnnotationPreviews:
+            self.clearTmpAnnotationPreviews(in: viewModel)
 
         case .dbChanged(let objects, let deletions, let insertions, let modifications): break
 //            self.syncItems(from: objects, to: viewModel, modifications: modifications, insertions: insertions, deletions: deletions)
@@ -237,148 +237,148 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 //                }
 //            }
 
-        case .setSettings(let settings): break
-//            self.update(settings: settings, in: viewModel)
+        case .setSettings(let settings):
+            self.update(settings: settings, in: viewModel)
 
-        case .changeIdleTimerDisabled(let disabled): break
-//            var settings = viewModel.state.settings
-//            settings.idleTimerDisabled = disabled
-//            self.update(settings: settings, in: viewModel)
+        case .changeIdleTimerDisabled(let disabled):
+            var settings = viewModel.state.settings
+            settings.idleTimerDisabled = disabled
+            self.update(settings: settings, in: viewModel)
 
-        case .setSidebarEditingEnabled(let enabled): break
-//            self.setSidebar(editing: enabled, in: viewModel)
+        case .setSidebarEditingEnabled(let enabled):
+            self.setSidebar(editing: enabled, in: viewModel)
 
-        case .changeFilter(let filter): break
-//            self.set(filter: filter, in: viewModel)
+        case .changeFilter(let filter):
+            self.set(filter: filter, in: viewModel)
         }
     }
 
-//    private func selectDuringEditing(key: String, in viewModel: ViewModel<PDFReaderActionHandler>) {
-//        guard let annotation = viewModel.state.annotations[key] else { return }
-//
-//        let annotationDeletable = annotation.isSyncable && annotation.editability != .notEditable
-//
-//        self.update(viewModel: viewModel) { state in
-//            if state.selectedAnnotationsDuringEditing.isEmpty {
-//                state.deletionEnabled = annotationDeletable
-//            } else {
-//                state.deletionEnabled = state.deletionEnabled && annotationDeletable
-//            }
-//
-//            state.selectedAnnotationsDuringEditing.insert(key)
-//
-//            if state.hasOneSelectedAnnotationDuringEditing {
-//                state.mergingEnabled = false
-//            } else {
-//                state.mergingEnabled = self.selectedAnnotationsMergeable(selected: state.selectedAnnotationsDuringEditing, all: state.annotations)
-//            }
-//
-//            state.changes = .sidebarEditingSelection
-//        }
-//    }
-//
-//    private func deselectDuringEditing(key: String, in viewModel: ViewModel<PDFReaderActionHandler>) {
-//        self.update(viewModel: viewModel) { state in
-//            state.selectedAnnotationsDuringEditing.remove(key)
-//
-//            if state.selectedAnnotationsDuringEditing.isEmpty {
-//                if state.deletionEnabled {
-//                    state.deletionEnabled = false
-//                    state.changes = .sidebarEditingSelection
-//                }
-//
-//                if state.mergingEnabled {
-//                    state.mergingEnabled = false
-//                    state.changes = .sidebarEditingSelection
-//                }
-//            } else {
-//                // Check whether deletion state changed after removing this annotation
-//                let deletionEnabled = self.selectedAnnotationsDeletable(selected: state.selectedAnnotationsDuringEditing, all: state.annotations)
-//
-//                if state.deletionEnabled != deletionEnabled {
-//                    state.deletionEnabled = deletionEnabled
-//                    state.changes = .sidebarEditingSelection
-//                }
-//
-//                if state.hasOneSelectedAnnotationDuringEditing {
-//                    if state.mergingEnabled {
-//                        state.mergingEnabled = false
-//                        state.changes = .sidebarEditingSelection
-//                    }
-//                } else {
-//                    state.mergingEnabled = self.selectedAnnotationsMergeable(selected: state.selectedAnnotationsDuringEditing, all: state.annotations)
-//                    state.changes = .sidebarEditingSelection
-//                }
-//            }
-//        }
-//    }
-//
-//    private func selectedAnnotationsMergeable(selected: Set<String>, all: [String: Annotation]) -> Bool {
-//        var page: Int? = nil
-//        var type: AnnotationType?
-//        var color: String?
-////        var rects: [CGRect]?
-//
-//        let hasSameProperties: (Annotation) -> Bool = { annotation in
-//            // Check whether annotations of one type are selected
-//            if let type = type {
-//                if type != annotation.type {
-//                    return false
-//                }
-//            } else {
-//                type = annotation.type
-//            }
-//            // Check whether annotations of one color are selected
-//            if let color = color {
-//                if color != annotation.color {
-//                    return false
-//                }
-//            } else {
-//                color = annotation.color
-//            }
-//            return true
-//        }
-//
-//        for key in selected {
-//            guard let annotation = all[key] else { continue }
-//            guard annotation.isSyncable else { return false }
-//
-//            if let page = page {
-//                // Only 1 page can be selected
-//                if page != annotation.page {
-//                    return false
-//                }
-//            } else {
-//                page = annotation.page
-//            }
-//
-//            switch annotation.type {
-//            case .ink:
+    private func selectDuringEditing(key: PDFReaderState.AnnotationKey, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard let annotation = viewModel.state.annotation(for: key) else { return }
+
+        let annotationDeletable = annotation.isSyncable && annotation.editability(currentUserId: viewModel.state.userId, library: viewModel.state.library) != .notEditable
+
+        self.update(viewModel: viewModel) { state in
+            if state.selectedAnnotationsDuringEditing.isEmpty {
+                state.deletionEnabled = annotationDeletable
+            } else {
+                state.deletionEnabled = state.deletionEnabled && annotationDeletable
+            }
+
+            state.selectedAnnotationsDuringEditing.insert(key)
+
+            if state.selectedAnnotationsDuringEditing.count == 1 {
+                state.mergingEnabled = false
+            } else {
+                state.mergingEnabled = self.selectedAnnotationsMergeable(selected: state.selectedAnnotationsDuringEditing, in: viewModel)
+            }
+
+            state.changes = .sidebarEditingSelection
+        }
+    }
+
+    private func deselectDuringEditing(key: PDFReaderState.AnnotationKey, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            state.selectedAnnotationsDuringEditing.remove(key)
+
+            if state.selectedAnnotationsDuringEditing.isEmpty {
+                if state.deletionEnabled {
+                    state.deletionEnabled = false
+                    state.changes = .sidebarEditingSelection
+                }
+
+                if state.mergingEnabled {
+                    state.mergingEnabled = false
+                    state.changes = .sidebarEditingSelection
+                }
+            } else {
+                // Check whether deletion state changed after removing this annotation
+                let deletionEnabled = self.selectedAnnotationsDeletable(selected: state.selectedAnnotationsDuringEditing, in: viewModel)
+
+                if state.deletionEnabled != deletionEnabled {
+                    state.deletionEnabled = deletionEnabled
+                    state.changes = .sidebarEditingSelection
+                }
+
+                if state.selectedAnnotationsDuringEditing.count == 1 {
+                    if state.mergingEnabled {
+                        state.mergingEnabled = false
+                        state.changes = .sidebarEditingSelection
+                    }
+                } else {
+                    state.mergingEnabled = self.selectedAnnotationsMergeable(selected: state.selectedAnnotationsDuringEditing, in: viewModel)
+                    state.changes = .sidebarEditingSelection
+                }
+            }
+        }
+    }
+
+    private func selectedAnnotationsMergeable(selected: Set<PDFReaderState.AnnotationKey>, in viewModel: ViewModel<PDFReaderActionHandler>) -> Bool {
+        var page: Int? = nil
+        var type: AnnotationType?
+        var color: String?
+//        var rects: [CGRect]?
+
+        let hasSameProperties: (Annotation) -> Bool = { annotation in
+            // Check whether annotations of one type are selected
+            if let type = type {
+                if type != annotation.type {
+                    return false
+                }
+            } else {
+                type = annotation.type
+            }
+            // Check whether annotations of one color are selected
+            if let color = color {
+                if color != annotation.color {
+                    return false
+                }
+            } else {
+                color = annotation.color
+            }
+            return true
+        }
+
+        for key in selected {
+            guard let annotation = viewModel.state.annotation(for: key) else { continue }
+            guard annotation.isSyncable else { return false }
+
+            if let page = page {
+                // Only 1 page can be selected
+                if page != annotation.page {
+                    return false
+                }
+            } else {
+                page = annotation.page
+            }
+
+            switch annotation.type {
+            case .ink:
+                if !hasSameProperties(annotation) {
+                    return false
+                }
+
+            case .highlight:
+                return false
 //                if !hasSameProperties(annotation) {
 //                    return false
 //                }
-//
-//            case .highlight:
-//                return false
-////                if !hasSameProperties(annotation) {
-////                    return false
-////                }
-////                // Check whether rects are overlapping
-////                if let rects = rects {
-////                    if !self.rects(rects: rects, hasIntersectionWith: annotation.rects) {
-////                        return false
-////                    }
-////                } else {
-////                    rects = annotation.rects
-////                }
-//
-//            case .note, .image:
-//                return false
-//            }
-//        }
-//
-//        return true
-//    }
+//                // Check whether rects are overlapping
+//                if let rects = rects {
+//                    if !self.rects(rects: rects, hasIntersectionWith: annotation.rects) {
+//                        return false
+//                    }
+//                } else {
+//                    rects = annotation.rects
+//                }
+
+            case .note, .image:
+                return false
+            }
+        }
+
+        return true
+    }
 //
 //    private func rects(rects lRects: [CGRect], hasIntersectionWith rRects: [CGRect]) -> Bool {
 //        for rect in lRects {
@@ -389,47 +389,47 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 //        return false
 //    }
 //
-//    private func selectedAnnotationsDeletable(selected: Set<String>, all: [String: Annotation]) -> Bool {
-//        return selected.first(where: { key in
-//            guard let annotation = all[key] else { return false }
-//            return !annotation.isSyncable || annotation.editability == .notEditable
-//        }) == nil
-//    }
-//
-//    private func setSidebar(editing enabled: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
-//        self.update(viewModel: viewModel) { state in
-//            state.sidebarEditingEnabled = enabled
-//            state.changes = .sidebarEditing
-//
-//            if enabled {
-//                // Deselect selected annotation before editing
-//                self._select(key: nil, didSelectInDocument: false, state: &state)
-//            } else {
-//                // Deselect selected annotations during editing
-//                state.selectedAnnotationsDuringEditing = []
-//                state.deletionEnabled = false
-//            }
-//        }
-//    }
-//
-//    private func update(settings: PDFSettings, in viewModel: ViewModel<PDFReaderActionHandler>) {
-//        if viewModel.state.settings.idleTimerDisabled != settings.idleTimerDisabled {
-//            if settings.idleTimerDisabled {
-//                self.idleTimerController.disable()
-//            } else {
-//                self.idleTimerController.enable()
-//            }
-//        }
-//
-//        // Update local state
-//        self.update(viewModel: viewModel) { state in
-//            state.settings = settings
-//            state.changes = .settings
-//        }
-//        // Store new settings to defaults
-//        Defaults.shared.pdfSettings = settings
-//    }
-//
+    private func selectedAnnotationsDeletable(selected: Set<PDFReaderState.AnnotationKey>, in viewModel: ViewModel<PDFReaderActionHandler>) -> Bool {
+        return selected.first(where: { key in
+            guard let annotation = viewModel.state.annotation(for: key) else { return false }
+            return !annotation.isSyncable || annotation.editability(currentUserId: viewModel.state.userId, library: viewModel.state.library) == .notEditable
+        }) == nil
+    }
+
+    private func setSidebar(editing enabled: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            state.sidebarEditingEnabled = enabled
+            state.changes = .sidebarEditing
+
+            if enabled {
+                // Deselect selected annotation before editing
+                self._select(key: nil, didSelectInDocument: false, state: &state)
+            } else {
+                // Deselect selected annotations during editing
+                state.selectedAnnotationsDuringEditing = []
+                state.deletionEnabled = false
+            }
+        }
+    }
+
+    private func update(settings: PDFSettings, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        if viewModel.state.settings.idleTimerDisabled != settings.idleTimerDisabled {
+            if settings.idleTimerDisabled {
+                self.idleTimerController.disable()
+            } else {
+                self.idleTimerController.enable()
+            }
+        }
+
+        // Update local state
+        self.update(viewModel: viewModel) { state in
+            state.settings = settings
+            state.changes = .settings
+        }
+        // Store new settings to defaults
+        Defaults.shared.pdfSettings = settings
+    }
+
 //    private func updateDbPositions(objects: Results<RItem>, deletions: [Int], insertions: [Int], in viewModel: ViewModel<PDFReaderActionHandler>) {
 //        guard !deletions.isEmpty || !insertions.isEmpty else { return }
 //
@@ -706,94 +706,92 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 //        annotations[position.key] = nil
 //        return true
 //    }
-//
-//    private func set(page: Int, in viewModel: ViewModel<PDFReaderActionHandler>) {
-//        guard viewModel.state.visiblePage != page else { return }
-//
-//        self.update(viewModel: viewModel) { state in
-//            state.visiblePage = page
-//        }
-//
-//        let request = StorePageForItemDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, page: page)
-//        self.perform(request: request) { error in
-//            guard let error = error else { return }
-//            // TODO: - handle error
-//            DDLogError("PDFReaderActionHandler: can't store page - \(error)")
-//        }
-//    }
-//
-//    private func export(viewModel: ViewModel<PDFReaderActionHandler>) {
-//        guard let url = viewModel.state.document.fileURL else { return }
-//
-//        self.update(viewModel: viewModel) { state in
-//            state.exportState = .preparing
-//            state.changes.insert(.export)
-//        }
-//
-//        let annotations = AnnotationConverter.annotations(from: viewModel.state.annotations, type: .export, interfaceStyle: .light)
-//        PdfDocumentExporter.export(annotations: annotations, key: viewModel.state.key, libraryId: viewModel.state.library.identifier, url: url, fileStorage: self.fileStorage, dbStorage: self.dbStorage,
-//                                   completed: { [weak viewModel] result in
-//                                       guard let viewModel = viewModel else { return }
-//                                       self.finishExport(result: result, viewModel: viewModel)
-//                                   })
-//    }
-//
-//    private func finishExport(result: Result<File, PdfDocumentExporter.Error>, viewModel: ViewModel<PDFReaderActionHandler>) {
-//        self.update(viewModel: viewModel) { state in
-//            switch result {
-//            case .success(let file):
-//                state.exportState = .exported(file)
-//                state.changes.insert(.export)
-//            case .failure(let error):
-//                state.exportState = .failed(error)
-//                state.changes.insert(.export)
-//            }
-//        }
-//    }
-//
-//    // MARK: - Dark mode changes
-//
-//    private func userInterfaceChanged(interfaceStyle: UIUserInterfaceStyle, in viewModel: ViewModel<PDFReaderActionHandler>) {
-//        self.update(viewModel: viewModel) { state in
-//            state.changes = .interfaceStyle
-//            state.interfaceStyle = interfaceStyle
-//            state.previewCache.removeAllObjects()
-//            state.shouldStoreAnnotationPreviewsIfNeeded = true
-//
-//            state.annotationKeys.forEach { page, _ in
-//                let annotations = state.document.annotations(at: PageIndex(page))
-//                annotations.forEach { annotation in
-//                    let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: annotation.baseColor),
-//                                                                                   isHighlight: (annotation is PSPDFKit.HighlightAnnotation),
-//                                                                                   userInterfaceStyle: interfaceStyle)
-//                    annotation.color = color
-//                    annotation.alpha = alpha
-//                    if let blendMode = blendMode {
-//                        annotation.blendMode = blendMode
-//                    }
-//                }
-//            }
-//        }
-//    }
-//
-//    private func storeAnnotationPreviewsIfNeeded(in viewModel: ViewModel<PDFReaderActionHandler>) {
-//        let isDark = viewModel.state.interfaceStyle == .dark
-//        let libraryId = viewModel.state.library.identifier
-//
-//        // Load area annotations if needed.
-//        for (_, annotations) in viewModel.state.document.allAnnotations(of: .square) {
-//            for annotation in annotations {
-//                guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation &&
-//                      !self.annotationPreviewController.hasPreview(for: annotation.previewId, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark) else { continue }
-//                self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark)
-//            }
-//        }
-//
-//        self.update(viewModel: viewModel) { state in
-//            state.shouldStoreAnnotationPreviewsIfNeeded = false
-//        }
-//    }
-//
+
+    private func set(page: Int, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard viewModel.state.visiblePage != page else { return }
+
+        self.update(viewModel: viewModel) { state in
+            state.visiblePage = page
+        }
+
+        let request = StorePageForItemDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, page: page)
+        self.perform(request: request) { error in
+            guard let error = error else { return }
+            // TODO: - handle error
+            DDLogError("PDFReaderActionHandler: can't store page - \(error)")
+        }
+    }
+
+    private func export(viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard let boundingBoxConverter = self.boundingBoxConverter, let url = viewModel.state.document.fileURL else { return }
+
+        self.update(viewModel: viewModel) { state in
+            state.exportState = .preparing
+            state.changes.insert(.export)
+        }
+
+        let annotations = AnnotationConverter.annotations(from: viewModel.state.databaseAnnotations, type: .export, interfaceStyle: .light, currentUserId: viewModel.state.userId,
+                                                          library: viewModel.state.library, displayName: viewModel.state.displayName, username: viewModel.state.username, boundingBoxConverter: boundingBoxConverter)
+        PdfDocumentExporter.export(annotations: annotations, key: viewModel.state.key, libraryId: viewModel.state.library.identifier, url: url, fileStorage: self.fileStorage, dbStorage: self.dbStorage,
+                                   completed: { [weak viewModel] result in
+                                       guard let viewModel = viewModel else { return }
+                                       self.finishExport(result: result, viewModel: viewModel)
+                                   })
+    }
+
+    private func finishExport(result: Result<File, PdfDocumentExporter.Error>, viewModel: ViewModel<PDFReaderActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            switch result {
+            case .success(let file):
+                state.exportState = .exported(file)
+                state.changes.insert(.export)
+            case .failure(let error):
+                state.exportState = .failed(error)
+                state.changes.insert(.export)
+            }
+        }
+    }
+
+    // MARK: - Dark mode changes
+
+    private func userInterfaceChanged(interfaceStyle: UIUserInterfaceStyle, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            state.changes = .interfaceStyle
+            state.interfaceStyle = interfaceStyle
+            state.previewCache.removeAllObjects()
+            state.shouldStoreAnnotationPreviewsIfNeeded = true
+
+            for (_, annotations) in state.document.allAnnotations(of: AnnotationsConfig.supported) {
+                for annotation in annotations {
+                    let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: annotation.baseColor), isHighlight: (annotation is PSPDFKit.HighlightAnnotation), userInterfaceStyle: interfaceStyle)
+                    annotation.color = color
+                    annotation.alpha = alpha
+                    if let blendMode = blendMode {
+                        annotation.blendMode = blendMode
+                    }
+                }
+            }
+        }
+    }
+
+    private func storeAnnotationPreviewsIfNeeded(in viewModel: ViewModel<PDFReaderActionHandler>) {
+        let isDark = viewModel.state.interfaceStyle == .dark
+        let libraryId = viewModel.state.library.identifier
+
+        // Load area annotations if needed.
+        for (_, annotations) in viewModel.state.document.allAnnotations(of: .square) {
+            for annotation in annotations {
+                guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation &&
+                      !self.annotationPreviewController.hasPreview(for: annotation.previewId, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark) else { continue }
+                self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark)
+            }
+        }
+
+        self.update(viewModel: viewModel) { state in
+            state.shouldStoreAnnotationPreviewsIfNeeded = false
+        }
+    }
+
 //    // MARK: - Annotation actions
 //
 //    private func saveChanges(in viewModel: ViewModel<PDFReaderActionHandler>) {
@@ -831,34 +829,34 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 //            DDLogError("PDFReaderActionHandler: can't store changed annotations - \(error)")
 //        }
 //    }
-//
-//    private func setActiveColor(hex: String, in viewModel: ViewModel<PDFReaderActionHandler>) {
-//        Defaults.shared.activeColorHex = hex
-//
-//        self.update(viewModel: viewModel) { state in
-//            state.activeColor = UIColor(hex: hex)
-//            state.changes = .activeColor
-//        }
-//    }
-//
-//    private func setActive(lineWidth: CGFloat, in viewModel: ViewModel<PDFReaderActionHandler>) {
-//        Defaults.shared.activeLineWidth = Float(lineWidth)
-//
-//        self.update(viewModel: viewModel) { state in
-//            state.activeLineWidth = lineWidth
-//            state.changes = .activeLineWidth
-//        }
-//    }
-//
-//    private func setActive(eraserSize: CGFloat, in viewModel: ViewModel<PDFReaderActionHandler>) {
-//        Defaults.shared.activeEraserSize = Float(eraserSize)
-//
-//        self.update(viewModel: viewModel) { state in
-//            state.activeEraserSize = eraserSize
-//            state.changes = .activeEraserSize
-//        }
-//    }
-//
+
+    private func setActiveColor(hex: String, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        Defaults.shared.activeColorHex = hex
+
+        self.update(viewModel: viewModel) { state in
+            state.activeColor = UIColor(hex: hex)
+            state.changes = .activeColor
+        }
+    }
+
+    private func setActive(lineWidth: CGFloat, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        Defaults.shared.activeLineWidth = Float(lineWidth)
+
+        self.update(viewModel: viewModel) { state in
+            state.activeLineWidth = lineWidth
+            state.changes = .activeLineWidth
+        }
+    }
+
+    private func setActive(eraserSize: CGFloat, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        Defaults.shared.activeEraserSize = Float(eraserSize)
+
+        self.update(viewModel: viewModel) { state in
+            state.activeEraserSize = eraserSize
+            state.changes = .activeEraserSize
+        }
+    }
+
 //    private func updateAnnotation(with key: String,
 //                                  transformAnnotation: (Annotation) -> (Annotation, PdfAnnotationChanges),
 //                                  shouldReload: ((Annotation, Annotation) -> Bool)? = nil,
@@ -1298,135 +1296,131 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 //            return (lTuple.1.creationDate ?? Date()).compare(rTuple.1.creationDate ?? Date()) == .orderedAscending
 //        })
 //    }
-//
-//    private func set(filter: AnnotationsFilter?, in viewModel: ViewModel<PDFReaderActionHandler>) {
-//        guard filter != viewModel.state.filter else { return }
-//        self.filterAnnotations(with: viewModel.state.searchTerm, filter: filter, in: viewModel)
-//    }
-//
-//    private func search(for term: String, in viewModel: ViewModel<PDFReaderActionHandler>) {
-//        let trimmedTerm = term.trimmingCharacters(in: .whitespacesAndNewlines)
-//        let newTerm = trimmedTerm.isEmpty ? nil : trimmedTerm
-//        guard newTerm != viewModel.state.searchTerm else { return }
-//        self.filterAnnotations(with: newTerm, filter: viewModel.state.filter, in: viewModel)
-//    }
-//
-//    /// Filters annotations based on given term and filer parameters.
-//    /// - parameter term: Term to filter annotations.
-//    /// - parameter viewModel: ViewModel.
-//    private func filterAnnotations(with term: String?, filter: AnnotationsFilter?, in viewModel: ViewModel<PDFReaderActionHandler>) {
-//        if term == nil && filter == nil {
-//            guard let snapshot = viewModel.state.annotationKeysSnapshot else { return }
-//
-//            self.update(viewModel: viewModel) { state in
-//                state.annotationKeysSnapshot = nil
-//                state.annotationKeys = snapshot
-//                state.changes = .annotations
-//
-//                if state.filter != nil {
-//                    state.changes.insert(.filter)
-//                }
-//
-//                state.searchTerm = nil
-//                state.filter = nil
-//            }
-//            return
-//        }
-//
-//        let snapshot = viewModel.state.annotationKeysSnapshot ?? viewModel.state.annotationKeys
-//        var annotationKeys = snapshot
-//        for (page, pageKeys) in snapshot {
-//            annotationKeys[page] = pageKeys.filter({ key in
-//                guard let annotation = viewModel.state.annotations[key] else { return false }
-//                return self.filter(annotation: annotation, with: term) && self.filter(annotation: annotation, with: filter)
-//            })
-//        }
-//
-//        self.update(viewModel: viewModel) { state in
-//            if state.annotationKeysSnapshot == nil {
-//                state.annotationKeysSnapshot = state.annotationKeys
-//            }
-//            state.annotationKeys = annotationKeys
-//            state.changes = .annotations
-//
-//            if filter != state.filter {
-//                state.changes.insert(.filter)
-//            }
-//
-//            state.searchTerm = term
-//            state.filter = filter
-//        }
-//    }
-//
-//    private func filter(annotation: Annotation, with term: String?) -> Bool {
-//        guard let term = term else { return true }
-//        return annotation.key.lowercased() == term.lowercased() ||
-//               annotation.author.localizedCaseInsensitiveContains(term) ||
-//               annotation.comment.localizedCaseInsensitiveContains(term) ||
-//               (annotation.text ?? "").localizedCaseInsensitiveContains(term) ||
-//               annotation.tags.contains(where: { $0.name.localizedCaseInsensitiveContains(term) })
-//    }
-//
-//    private func filter(annotation: Annotation, with filter: AnnotationsFilter?) -> Bool {
-//        guard let filter = filter else { return true }
-//        let hasTag = filter.tags.isEmpty ? true : annotation.tags.first(where: { filter.tags.contains($0.name) }) != nil
-//        let hasColor = filter.colors.isEmpty ? true : filter.colors.contains(annotation.color)
-//        return hasTag && hasColor
-//    }
-//
-//    /// Set selected annotation. Also sets `focusSidebarIndexPath` or `focusDocumentLocation` if needed.
-//    /// - parameter key: Annotation key to be selected. Deselects current annotation if `nil`.
-//    /// - parameter didSelectInDocument: `true` if annotation was selected in document, false if it was selected in sidebar.
-//    /// - parameter viewModel: ViewModel.
-//    private func select(key: String?, didSelectInDocument: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
-//        self.update(viewModel: viewModel) { state in
-//            self._select(key: key, didSelectInDocument: didSelectInDocument, state: &state)
-//        }
-//    }
-//
-//    private func _select(key: String?, didSelectInDocument: Bool, state: inout PDFReaderState) {
-//        guard key != state.selectedAnnotationKey else { return }
-//
-//        if let existing = state.selectedAnnotation {
-//            state.updatedAnnotationKeys = [existing.key]
-//            state.selectedAnnotationCommentActive = false
-//            state.changes.insert(.activeComment)
-//        }
-//
-//        state.changes.insert(.selection)
-//
-//        guard let key = key else {
-//            state.selectedAnnotationKey = nil
-//            return
-//        }
-//
-//        state.selectedAnnotationKey = key
-//
-//        if !didSelectInDocument {
-//            if let annotation = state.annotations[key] {
-//                state.focusDocumentLocation = (annotation.page, annotation.boundingBox)
-//            }
-//        } else {
-//            state.focusSidebarKey = key
-//        }
-//
-//        var updatedAnnotationKeys = state.updatedAnnotationKeys ?? []
-//        updatedAnnotationKeys.append(key)
-//        state.updatedAnnotationKeys = updatedAnnotationKeys
-//    }
-//
-//    /// Annotations which originate from document and are not synced generate their previews based on annotation UUID, which is in-memory and is not stored in PDF. So these previews are only
-//    /// temporary and should be cleared when user closes the document.
-//    private func clearTmpAnnotationPreviews(in viewModel: ViewModel<PDFReaderActionHandler>) {
-//        let libraryId = viewModel.state.library.identifier
-//        let unsyncableAnnotations = viewModel.state.annotations.values.filter({ !$0.isSyncable })
-//
-//        for annotation in unsyncableAnnotations {
-//            try? self.fileStorage.remove(Files.annotationPreview(annotationKey: annotation.key, pdfKey: viewModel.state.key, libraryId: libraryId, isDark: false))
-//            try? self.fileStorage.remove(Files.annotationPreview(annotationKey: annotation.key, pdfKey: viewModel.state.key, libraryId: libraryId, isDark: true))
-//        }
-//    }
-//
+
+    private func set(filter: AnnotationsFilter?, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard filter != viewModel.state.filter else { return }
+        self.filterAnnotations(with: viewModel.state.searchTerm, filter: filter, in: viewModel)
+    }
+
+    private func search(for term: String, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        let trimmedTerm = term.trimmingCharacters(in: .whitespacesAndNewlines)
+        let newTerm = trimmedTerm.isEmpty ? nil : trimmedTerm
+        guard newTerm != viewModel.state.searchTerm else { return }
+        self.filterAnnotations(with: newTerm, filter: viewModel.state.filter, in: viewModel)
+    }
+
+    /// Filters annotations based on given term and filer parameters.
+    /// - parameter term: Term to filter annotations.
+    /// - parameter viewModel: ViewModel.
+    private func filterAnnotations(with term: String?, filter: AnnotationsFilter?, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        if term == nil && filter == nil {
+            guard let snapshot = viewModel.state.snapshotKeys else { return }
+
+            self.update(viewModel: viewModel) { state in
+                state.snapshotKeys = nil
+                state.sortedKeys = snapshot
+                state.changes = .annotations
+
+                if state.filter != nil {
+                    state.changes.insert(.filter)
+                }
+
+                state.searchTerm = nil
+                state.filter = nil
+            }
+            return
+        }
+
+        let snapshot = viewModel.state.snapshotKeys ?? viewModel.state.sortedKeys
+        let filteredKeys = snapshot.filter({ key in
+            guard let annotation = viewModel.state.annotation(for: key) else { return false }
+            return self.filter(annotation: annotation, with: term, viewModel: viewModel) && self.filter(annotation: annotation, with: filter)
+        })
+
+        self.update(viewModel: viewModel) { state in
+            if state.snapshotKeys == nil {
+                state.snapshotKeys = state.sortedKeys
+            }
+            state.sortedKeys = filteredKeys
+            state.changes = .annotations
+
+            if filter != state.filter {
+                state.changes.insert(.filter)
+            }
+
+            state.searchTerm = term
+            state.filter = filter
+        }
+    }
+
+    private func filter(annotation: Annotation, with term: String?, viewModel: ViewModel<PDFReaderActionHandler>) -> Bool {
+        guard let term = term else { return true }
+        return annotation.key.lowercased() == term.lowercased() ||
+               annotation.author(displayName: viewModel.state.displayName, username: viewModel.state.username).localizedCaseInsensitiveContains(term) ||
+               annotation.comment.localizedCaseInsensitiveContains(term) ||
+               (annotation.text ?? "").localizedCaseInsensitiveContains(term) ||
+               annotation.tags.contains(where: { $0.name.localizedCaseInsensitiveContains(term) })
+    }
+
+    private func filter(annotation: Annotation, with filter: AnnotationsFilter?) -> Bool {
+        guard let filter = filter else { return true }
+        let hasTag = filter.tags.isEmpty ? true : annotation.tags.first(where: { filter.tags.contains($0.name) }) != nil
+        let hasColor = filter.colors.isEmpty ? true : filter.colors.contains(annotation.color)
+        return hasTag && hasColor
+    }
+
+    /// Set selected annotation. Also sets `focusSidebarIndexPath` or `focusDocumentLocation` if needed.
+    /// - parameter key: Annotation key to be selected. Deselects current annotation if `nil`.
+    /// - parameter didSelectInDocument: `true` if annotation was selected in document, false if it was selected in sidebar.
+    /// - parameter viewModel: ViewModel.
+    private func select(key: PDFReaderState.AnnotationKey?, didSelectInDocument: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            self._select(key: key, didSelectInDocument: didSelectInDocument, state: &state)
+        }
+    }
+
+    private func _select(key: PDFReaderState.AnnotationKey?, didSelectInDocument: Bool, state: inout PDFReaderState) {
+        guard key != state.selectedAnnotationKey else { return }
+
+        if let existing = state.selectedAnnotationKey {
+            state.updatedAnnotationKeys = [existing]
+            state.selectedAnnotationCommentActive = false
+            state.changes.insert(.activeComment)
+        }
+
+        state.changes.insert(.selection)
+
+        guard let key = key else {
+            state.selectedAnnotationKey = nil
+            return
+        }
+
+        state.selectedAnnotationKey = key
+
+        if !didSelectInDocument {
+            if let boundingBoxConverter = self.boundingBoxConverter, let annotation = state.annotation(for: key) {
+                state.focusDocumentLocation = (annotation.page, annotation.boundingBox(boundingBoxConverter: boundingBoxConverter))
+            }
+        } else {
+            state.focusSidebarKey = key
+        }
+
+        var updatedAnnotationKeys = state.updatedAnnotationKeys ?? []
+        updatedAnnotationKeys.append(key)
+        state.updatedAnnotationKeys = updatedAnnotationKeys
+    }
+
+    /// Annotations which originate from document and are not synced generate their previews based on annotation UUID, which is in-memory and is not stored in PDF. So these previews are only
+    /// temporary and should be cleared when user closes the document.
+    private func clearTmpAnnotationPreviews(in viewModel: ViewModel<PDFReaderActionHandler>) {
+        let libraryId = viewModel.state.library.identifier
+
+        for annotation in viewModel.state.documentAnnotations {
+            try? self.fileStorage.remove(Files.annotationPreview(annotationKey: annotation.key, pdfKey: viewModel.state.key, libraryId: libraryId, isDark: false))
+            try? self.fileStorage.remove(Files.annotationPreview(annotationKey: annotation.key, pdfKey: viewModel.state.key, libraryId: libraryId, isDark: true))
+        }
+    }
+
 //    // MARK: - Annotation previews
 //
 //    /// Starts observing preview controller. If new preview is stored, it will be cached immediately.
@@ -1443,45 +1437,45 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 //                                        })
 //                                        .disposed(by: self.disposeBag)
 //    }
-//
-//    /// Loads previews for given keys and notifies view about them if needed.
-//    /// - parameter keys: Keys that should load previews.
-//    /// - parameter notify: If `true`, index paths for loaded images will be found and view will be notified about changes.
-//    ///                     If `false`, images are loaded and no notification is sent.
-//    /// - parameter viewModel: ViewModel.
-//    private func loadPreviews(for keys: [String], notify: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
-//        guard !keys.isEmpty else { return }
-//
-//        let group = DispatchGroup()
-//        let isDark = viewModel.state.interfaceStyle == .dark
-//        let libraryId = viewModel.state.library.identifier
-//
-//        var loadedKeys: Set<String> = []
-//
-//        for key in keys {
-//            let nsKey = key as NSString
-//            guard viewModel.state.previewCache.object(forKey: nsKey) == nil else { continue }
-//
-//            group.enter()
-//            self.annotationPreviewController.preview(for: key, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark) { [weak viewModel] image in
-//                if let image = image {
-//                    viewModel?.state.previewCache.setObject(image, forKey: nsKey)
-//                    loadedKeys.insert(key)
-//                }
-//                group.leave()
-//            }
-//        }
-//
-//        guard notify else { return }
-//
-//        group.notify(queue: .main) { [weak viewModel] in
-//            guard !loadedKeys.isEmpty, let viewModel = viewModel else { return }
-//            self.update(viewModel: viewModel) { state in
-//                state.loadedPreviewImageAnnotationKeys = loadedKeys
-//            }
-//        }
-//    }
-//
+
+    /// Loads previews for given keys and notifies view about them if needed.
+    /// - parameter keys: Keys that should load previews.
+    /// - parameter notify: If `true`, index paths for loaded images will be found and view will be notified about changes.
+    ///                     If `false`, images are loaded and no notification is sent.
+    /// - parameter viewModel: ViewModel.
+    private func loadPreviews(for keys: [String], notify: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard !keys.isEmpty else { return }
+
+        let group = DispatchGroup()
+        let isDark = viewModel.state.interfaceStyle == .dark
+        let libraryId = viewModel.state.library.identifier
+
+        var loadedKeys: Set<String> = []
+
+        for key in keys {
+            let nsKey = key as NSString
+            guard viewModel.state.previewCache.object(forKey: nsKey) == nil else { continue }
+
+            group.enter()
+            self.annotationPreviewController.preview(for: key, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark) { [weak viewModel] image in
+                if let image = image {
+                    viewModel?.state.previewCache.setObject(image, forKey: nsKey)
+                    loadedKeys.insert(key)
+                }
+                group.leave()
+            }
+        }
+
+        guard notify else { return }
+
+        group.notify(queue: .main) { [weak viewModel] in
+            guard !loadedKeys.isEmpty, let viewModel = viewModel else { return }
+            self.update(viewModel: viewModel) { state in
+                state.loadedPreviewImageAnnotationKeys = loadedKeys
+            }
+        }
+    }
+
 //    // MARK: - Annotation management
 //
 //    private func add(annotationType: AnnotationType, pageIndex: PageIndex, origin: CGPoint, in viewModel: ViewModel<PDFReaderActionHandler>) {

@@ -727,7 +727,8 @@ final class PDFReaderViewController: UIViewController {
 
         interactions.selectAnnotation.addActivationCallback { [weak self] context, _, _ in
             let key = context.annotation.key ?? context.annotation.uuid
-            self?.viewModel.process(action: .selectAnnotationFromDocument(key))
+            let type: PDFReaderState.AnnotationKey.Kind = context.annotation.isZoteroAnnotation ? .database : .document
+            self?.viewModel.process(action: .selectAnnotationFromDocument(PDFReaderState.AnnotationKey(key: key, type: type)))
         }
 
         interactions.deselectAnnotation.addActivationCondition { [weak self] _, _, _ -> Bool in

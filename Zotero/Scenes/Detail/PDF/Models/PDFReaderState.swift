@@ -83,20 +83,11 @@ struct PDFReaderState: ViewModelState {
     /// Selected annotation when annotations are not being edited in sidebar
     var selectedAnnotationKey: AnnotationKey?
     var selectedAnnotation: Annotation? {
-        guard let key = self.selectedAnnotationKey else { return nil }
-        switch key.type {
-        case .database:
-            return self.databaseAnnotations.filter(.key(key.key)).first.flatMap({ DatabaseAnnotation(item: $0) })
-        case .document:
-            return self.documentAnnotations[key.key]
-        }
+        return self.selectedAnnotationKey.flatMap({ self.annotation(for: $0) })
     }
     var selectedAnnotationCommentActive: Bool
     /// Selected annotations when annotations are being edited in sidebar
-    var selectedAnnotationsDuringEditing: Set<String>
-    var hasOneSelectedAnnotationDuringEditing: Bool {
-        return self.selectedAnnotationsDuringEditing.count == 1
-    }
+    var selectedAnnotationsDuringEditing: Set<PDFReaderState.AnnotationKey>
 
     var interfaceStyle: UIUserInterfaceStyle
     var sidebarEditingEnabled: Bool
@@ -110,9 +101,9 @@ struct PDFReaderState: ViewModelState {
     /// Location to focus in document
     var focusDocumentLocation: AnnotationDocumentLocation?
     /// Annotation key to focus in annotation sidebar
-    var focusSidebarKey: String?
-    /// Annotation keys in sidebar that need to reload cell height
-    var updatedAnnotationKeys: [String]?
+    var focusSidebarKey: AnnotationKey?
+    /// Annotation keys in sidebar that need to reload (for example cell height)
+    var updatedAnnotationKeys: [AnnotationKey]?
     /// Annotations that loaded their preview images and need to show them
     var loadedPreviewImageAnnotationKeys: Set<String>?
     /// Used when user interface style (dark mode) changes. Indicates that annotation previews need to be stored for new appearance
@@ -150,6 +141,15 @@ struct PDFReaderState: ViewModelState {
         self.ignoreNotifications = [:]
 
         self.previewCache.totalCostLimit = 1024 * 1024 * 10 // Cache object limit - 10 MB
+    }
+
+    func annotation(for key: AnnotationKey) -> Annotation? {
+        switch key.type {
+        case .database:
+            return self.databaseAnnotations.filter(.key(key.key)).first.flatMap({ DatabaseAnnotation(item: $0) })
+        case .document:
+            return self.documentAnnotations[key.key]
+        }
     }
 
     mutating func cleanup() {
