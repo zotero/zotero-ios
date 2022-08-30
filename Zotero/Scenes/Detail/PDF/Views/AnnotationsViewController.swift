@@ -71,7 +71,7 @@ final class AnnotationsViewController: UIViewController {
                       })
                       .disposed(by: self.disposeBag)
 
-        self.viewModel.process(action: .startObservingAnnotationChanges)
+        self.viewModel.process(action: .startObservingAnnotationPreviewChanges)
     }
 
     override func viewDidAppear(_ animated: Bool) {

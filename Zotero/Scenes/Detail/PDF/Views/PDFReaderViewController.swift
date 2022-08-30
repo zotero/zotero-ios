@@ -45,8 +45,6 @@ final class PDFReaderViewController: UIViewController {
     private var pageTimerDisposeBag: DisposeBag
     private var selectionView: SelectionView?
     private var lastGestureRecognizerTouch: UITouch?
-    private var pendingSaveChanges: Bool
-    private var pendingSavePage: Int?
 
     private lazy var shareButton: UIBarButtonItem = {
         let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
@@ -116,7 +114,6 @@ final class PDFReaderViewController: UIViewController {
     init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
         self.viewModel = viewModel
         self.isCompactSize = compactSize
-        self.pendingSaveChanges = false
         self.isSidebarTransitioning = false
         self.disposeBag = DisposeBag()
         self.annotationTimerDisposeBag = DisposeBag()
@@ -190,7 +187,6 @@ final class PDFReaderViewController: UIViewController {
     // MARK: - Actions
 
     private func update(state: PDFReaderState) {
-
         if state.changes.contains(.interfaceStyle) {
             self.updateInterface(to: state.settings)
         }
@@ -240,15 +236,6 @@ final class PDFReaderViewController: UIViewController {
 
         if state.changes.contains(.activeEraserSize) {
             self.set(lineWidth: state.activeEraserSize, in: self.pdfController.annotationStateManager)
-        }
-
-        if state.changes.contains(.save) {
-            // If popover with deleted key is presented, dismiss it
-//            if let controller = (self.presentedViewController as? UINavigationController)?.viewControllers.first as? AnnotationPopover {
-//                self.dismiss(animated: true, completion: nil)
-//            }
-            // Store changed keys and enqueue a save
-            self.enqueueAnnotationSave()
         }
 
         if state.changes.contains(.export) {
@@ -303,32 +290,6 @@ final class PDFReaderViewController: UIViewController {
             self.pdfController.appearanceModeManager.appearanceMode = .night
             self.navigationController?.overrideUserInterfaceStyle = .dark
         }
-    }
-
-    private func enqueueAnnotationSave() {
-        self.annotationTimerDisposeBag = DisposeBag()
-        self.pendingSaveChanges = true
-
-        Single<Int>.timer(.seconds(PDFReaderViewController.saveDelay), scheduler: MainScheduler.instance)
-                   .subscribe(onSuccess: { [weak self] _ in
-                       self?.viewModel.process(action: .saveChanges)
-                       self?.pendingSaveChanges = false
-                   })
-                   .disposed(by: self.annotationTimerDisposeBag)
-    }
-
-    private func enqueueSave(for page: Int) {
-        guard page != self.viewModel.state.visiblePage else { return }
-
-        self.pageTimerDisposeBag = DisposeBag()
-        self.pendingSavePage = page
-
-        Single<Int>.timer(.seconds(PDFReaderViewController.saveDelay), scheduler: MainScheduler.instance)
-                   .subscribe(onSuccess: { [weak self] _ in
-                       self?.viewModel.process(action: .setVisiblePage(page))
-                       self?.pendingSavePage = nil
-                   })
-                   .disposed(by: self.pageTimerDisposeBag)
     }
 
     private func showPopupAnnotationIfNeeded(state: PDFReaderState) {
@@ -464,12 +425,6 @@ final class PDFReaderViewController: UIViewController {
     }
 
     private func close() {
-        if self.pendingSaveChanges {
-            self.viewModel.process(action: .saveChanges)
-        }
-        if let page = self.pendingSavePage {
-            self.viewModel.process(action: .setVisiblePage(page))
-        }
         self.viewModel.process(action: .clearTmpAnnotationPreviews)
         self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
@@ -510,33 +465,16 @@ final class PDFReaderViewController: UIViewController {
                 self.set(toolColor: self.viewModel.state.activeColor, in: self.pdfController.annotationStateManager)
             }
 
-            guard let pdfAnnotation = notification.object as? PSPDFKit.Annotation, let key = pdfAnnotation.key else { return }
-            if self.viewModel.state.ignoreNotifications[.PSPDFAnnotationChanged]?.contains(key) == true {
-                self.viewModel.process(action: .annotationChangeNotificationReceived(key))
-            } else {
-                self.viewModel.process(action: .annotationChanged(pdfAnnotation))
-            }
-
         case .PSPDFAnnotationsAdded:
-            if let annotations = self.annotations(for: notification) {
-                // Open annotation popup for note annotation
-                let shouldSelect = (self.isSidebarVisible || annotations.first is PSPDFKit.NoteAnnotation) && !self.viewModel.state.sidebarEditingEnabled
-                // If Image annotation is active after adding the annotation, deactivate it
-                if annotations.first is PSPDFKit.SquareAnnotation && self.pdfController.annotationStateManager.state == .square {
-                    // Don't reset apple pencil detection here, this is automatic action, not performed by user.
-                    self.toggle(annotationTool: .square, tappedWithStylus: false, resetPencilManager: false)
-                }
-                self.viewModel.process(action: .annotationsAdded(annotations: annotations, selectFirst: shouldSelect))
-            } else {
-                self.viewModel.process(action: .notificationReceived(notification.name))
+            guard let annotations = notification.object as? [PSPDFKit.Annotation] else { return }
+            // Open annotation popup for note annotation
+            let shouldSelect = (self.isSidebarVisible || annotations.first is PSPDFKit.NoteAnnotation) && !self.viewModel.state.sidebarEditingEnabled
+            // If Image annotation is active after adding the annotation, deactivate it
+            if annotations.first is PSPDFKit.SquareAnnotation && self.pdfController.annotationStateManager.state == .square {
+                // Don't reset apple pencil detection here, this is automatic action, not performed by user.
+                self.toggle(annotationTool: .square, tappedWithStylus: false, resetPencilManager: false)
             }
-
-        case .PSPDFAnnotationsRemoved:
-            if let annotations = self.annotations(for: notification) {
-                self.viewModel.process(action: .annotationsRemoved(annotations))
-            } else {
-                self.viewModel.process(action: .notificationReceived(notification.name))
-            }
+            self.viewModel.process(action: .annotationsAdded(annotations: annotations, selectFirst: shouldSelect))
 
         default: break
         }
@@ -550,15 +488,6 @@ final class PDFReaderViewController: UIViewController {
             return annotation.document == self.viewModel.state.document
         }
         return false
-    }
-
-    private func annotations(for notification: Notification) -> [PSPDFKit.Annotation]? {
-        guard let annotations = notification.object as? [PSPDFKit.Annotation] else { return nil }
-        guard let keys = self.viewModel.state.ignoreNotifications[notification.name], !keys.isEmpty else { return annotations }
-        if Set(annotations.compactMap({ $0.key })) == keys {
-            return nil
-        }
-        return annotations
     }
 
     @objc private func annotationControlTapped(sender: UIButton, event: UIEvent) {
@@ -962,30 +891,12 @@ final class PDFReaderViewController: UIViewController {
                                   .disposed(by: self.disposeBag)
 
         NotificationCenter.default.rx
-                                  .notification(.PSPDFAnnotationsRemoved)
-                                  .observe(on: MainScheduler.instance)
-                                  .subscribe(onNext: { [weak self] notification in
-                                      self?.processAnnotationObserving(notification: notification)
-                                  })
-                                  .disposed(by: self.disposeBag)
-
-        NotificationCenter.default.rx
                                   .notification(UIApplication.didBecomeActiveNotification)
                                   .observe(on: MainScheduler.instance)
                                   .subscribe(onNext: { [weak self] notification in
                                       guard let `self` = self else { return }
                                       self.viewModel.process(action: .updateAnnotationPreviews)
                                       self.updatePencilSettingsIfNeeded()
-                                  })
-                                  .disposed(by: self.disposeBag)
-
-        NotificationCenter.default.rx
-                                  .notification(UIApplication.willResignActiveNotification)
-                                  .observe(on: MainScheduler.instance)
-                                  .subscribe(onNext: { [weak self] notification in
-                                      guard let `self` = self else { return }
-                                      self.viewModel.process(action: .saveChanges)
-                                      self.viewModel.process(action: .clearTmpAnnotationPreviews)
                                   })
                                   .disposed(by: self.disposeBag)
     }
@@ -997,7 +908,7 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
         // is stored in `pageController` and if the user closes the pdf reader without further scrolling, incorrect page is shown on next opening.
         guard !self.isSidebarTransitioning else { return }
         // Save current page
-        self.enqueueSave(for: pageIndex)
+        self.viewModel.process(action: .setVisiblePage(pageIndex))
     }
 
     func pdfViewController(_ pdfController: PDFViewController, shouldShow controller: UIViewController, options: [String : Any]? = nil, animated: Bool) -> Bool {

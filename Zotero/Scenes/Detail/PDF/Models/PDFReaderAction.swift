@@ -15,7 +15,7 @@ import PSPDFKitUI
 import RealmSwift
 
 enum PDFReaderAction {
-    case startObservingAnnotationChanges
+    case startObservingAnnotationPreviewChanges
     case loadDocumentData(boundingBoxConverter: AnnotationBoundingBoxConverter)
     case searchAnnotations(String)
     case selectAnnotation(PDFReaderState.AnnotationKey)
@@ -27,8 +27,6 @@ enum PDFReaderAction {
     case removeSelectedAnnotations
     case mergeSelectedAnnotations
     case annotationsAdded(annotations: [PSPDFKit.Annotation], selectFirst: Bool)
-    case annotationsRemoved([PSPDFKit.Annotation])
-    case annotationChanged(PSPDFKit.Annotation)
     case requestPreviews(keys: [String], notify: Bool)
     case setComment(key: String, comment: NSAttributedString)
     case setTags(key: String, tags: [Tag])
@@ -41,16 +39,11 @@ enum PDFReaderAction {
     case setActiveColor(String)
     case setActiveLineWidth(CGFloat)
     case setActiveEraserSize(CGFloat)
-    case saveChanges
     case create(annotation: AnnotationType, pageIndex: PageIndex, origin: CGPoint)
     case setCommentActive(Bool)
     case setVisiblePage(Int)
     case export
     case clearTmpAnnotationPreviews
-    case dbChanged(objects: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int])
-    case updateDbPositions(objects: Results<RItem>, deletions: [Int], insertions: [Int])
-    case notificationReceived(Notification.Name)
-    case annotationChangeNotificationReceived(String)
     case setSidebarEditingEnabled(Bool)
     case setSettings(PDFSettings)
     case changeIdleTimerDisabled(Bool)

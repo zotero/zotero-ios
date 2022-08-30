@@ -47,14 +47,14 @@ extension Annotation {
         case .ink:
             let paths = self.paths(boundingBoxConverter: boundingBoxConverter)
             let lineWidth = self.lineWidth ?? 1
-            return AnnotationBoundingBoxCalculator.boundingBox(from: paths, lineWidth: lineWidth)
+            return AnnotationBoundingBoxCalculator.boundingBox(from: paths, lineWidth: lineWidth).rounded(to: 3)
 
         case .note, .image, .highlight:
             let rects = self.rects(boundingBoxConverter: boundingBoxConverter)
             if rects.count == 1 {
                 return rects[0].rounded(to: 3)
             }
-            return AnnotationBoundingBoxCalculator.boundingBox(from: rects)
+            return AnnotationBoundingBoxCalculator.boundingBox(from: rects).rounded(to: 3)
         }
     }
 }

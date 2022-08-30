@@ -152,7 +152,7 @@ struct AnnotationConverter {
     /// - returns: Array of PSPDFKit annotations that can be added to document.
     static func annotations(from items: Results<RItem>, type: Kind = .zotero, interfaceStyle: UIUserInterfaceStyle, currentUserId: Int, library: Library, displayName: String, username: String,
                             boundingBoxConverter: AnnotationBoundingBoxConverter) -> [PSPDFKit.Annotation] {
-        return items.compactMap({ item in
+        return items.map({ item in
             return self.annotation(from: DatabaseAnnotation(item: item), type: type, interfaceStyle: interfaceStyle, currentUserId: currentUserId, library: library, displayName: displayName,
                                    username: username, boundingBoxConverter: boundingBoxConverter)
         })

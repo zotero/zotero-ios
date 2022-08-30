@@ -42,13 +42,12 @@ struct PDFReaderState: ViewModelState {
         static let settings = Changes(rawValue: 1 << 3)
         static let activeColor = Changes(rawValue: 1 << 4)
         static let activeComment = Changes(rawValue: 1 << 5)
-        static let save = Changes(rawValue: 1 << 6)
-        static let export = Changes(rawValue: 1 << 7)
-        static let activeLineWidth = Changes(rawValue: 1 << 8)
-        static let sidebarEditing = Changes(rawValue: 1 << 9)
-        static let sidebarEditingSelection = Changes(rawValue: 1 << 10)
-        static let filter = Changes(rawValue: 1 << 11)
-        static let activeEraserSize = Changes(rawValue: 1 << 12)
+        static let export = Changes(rawValue: 1 << 6)
+        static let activeLineWidth = Changes(rawValue: 1 << 7)
+        static let sidebarEditing = Changes(rawValue: 1 << 8)
+        static let sidebarEditingSelection = Changes(rawValue: 1 << 9)
+        static let filter = Changes(rawValue: 1 << 10)
+        static let activeEraserSize = Changes(rawValue: 1 << 11)
     }
 
     enum AppearanceMode: UInt {
@@ -109,9 +108,6 @@ struct PDFReaderState: ViewModelState {
     /// Used when user interface style (dark mode) changes. Indicates that annotation previews need to be stored for new appearance
     /// if they are not available.
     var shouldStoreAnnotationPreviewsIfNeeded: Bool
-    /// Used to ignore next insertion/deletion notification of annotations. Used when there is a remote change of annotations. PSPDFKit can't suppress notifications when adding/deleting annotations
-    /// to/from document. So when a remote change comes in, the document is edited and emits notifications which would try to do the same work again.
-    var ignoreNotifications: [Notification.Name: Set<String>]
 
     init(url: URL, key: String, library: Library, settings: PDFSettings, userId: Int, username: String, displayName: String, interfaceStyle: UIUserInterfaceStyle) {
         self.key = key
@@ -138,7 +134,6 @@ struct PDFReaderState: ViewModelState {
         self.deletionEnabled = false
         self.mergingEnabled = false
         self.shouldStoreAnnotationPreviewsIfNeeded = false
-        self.ignoreNotifications = [:]
 
         self.previewCache.totalCostLimit = 1024 * 1024 * 10 // Cache object limit - 10 MB
     }

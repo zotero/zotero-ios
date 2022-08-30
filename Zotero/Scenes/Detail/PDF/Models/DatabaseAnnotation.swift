@@ -131,8 +131,8 @@ struct DatabaseAnnotation {
 
     func rects(boundingBoxConverter: AnnotationBoundingBoxConverter) -> [CGRect] {
         guard let page = self._page else { return [] }
-        return self.item.rects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX).rounded(to: 3), height: ($0.maxY - $0.minY).rounded(to: 3)) })
-                              .compactMap({ boundingBoxConverter.convertFromDb(rect: $0, page: PageIndex(page)) })
+        return self.item.rects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX), height: ($0.maxY - $0.minY)) })
+                              .compactMap({ boundingBoxConverter.convertFromDb(rect: $0, page: PageIndex(page))?.rounded(to: 3) })
     }
 
     func paths(boundingBoxConverter: AnnotationBoundingBoxConverter) -> [[CGPoint]] {
@@ -144,7 +144,7 @@ struct DatabaseAnnotation {
             let sortedCoordinates = path.coordinates.sorted(byKeyPath: "sortIndex")
             let lines = (0..<(path.coordinates.count / 2)).compactMap({ idx -> CGPoint? in
                 let point = CGPoint(x: sortedCoordinates[idx * 2].value, y: sortedCoordinates[(idx * 2) + 1].value)
-                return boundingBoxConverter.convertFromDb(point: point, page: pageIndex)
+                return boundingBoxConverter.convertFromDb(point: point, page: pageIndex)?.rounded(to: 3)
             })
             paths.append(lines)
         }
