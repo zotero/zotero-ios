@@ -6,6 +6,8 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
+#if PDFENABLED
+
 import Foundation
 
 struct AnnotationEditActionHandler: ViewModelActionHandler {
@@ -14,28 +16,30 @@ struct AnnotationEditActionHandler: ViewModelActionHandler {
 
     func process(action: AnnotationEditAction, in viewModel: ViewModel<AnnotationEditActionHandler>) {
         switch action {
-        case .setColor(let hexString): break
-//            self.update(viewModel: viewModel) { state in
-//                state.annotation = state.annotation.copy(color: hexString)
-//                state.changes = .color
-//            }
+        case .setColor(let hexString):
+            self.update(viewModel: viewModel) { state in
+                state.color = hexString
+                state.changes = .color
+            }
 
         case .setLineWidth(let width): break
-//            self.update(viewModel: viewModel) { state in
-//                state.annotation = state.annotation.copy(lineWidth: width)
-//            }
+            self.update(viewModel: viewModel) { state in
+                state.lineWidth = width
+            }
             
         case .setPageLabel(let label, let updateSubsequentPages): break
-//            self.update(viewModel: viewModel) { state in
-//                state.annotation = state.annotation.copy(pageLabel: label)
-//                state.updateSubsequentLabels = updateSubsequentPages
-//                state.changes = .pageLabel
-//            }
+            self.update(viewModel: viewModel) { state in
+                state.pageLabel = label
+                state.updateSubsequentLabels = updateSubsequentPages
+                state.changes = .pageLabel
+            }
 
         case .setHighlight(let text): break
-//            self.update(viewModel: viewModel) { state in
-//                state.annotation = state.annotation.copy(text: text)
-//            }
+            self.update(viewModel: viewModel) { state in
+                state.highlightText = text
+            }
         }
     }
 }
+
+#endif

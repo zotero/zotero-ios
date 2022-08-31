@@ -28,6 +28,10 @@ struct DocumentAnnotation {
 }
 
 extension DocumentAnnotation: Annotation {
+    var readerKey: PDFReaderState.AnnotationKey {
+        return .init(key: self.key, type: .document)
+    }
+
     func isAuthor(currentUserId: Int) -> Bool {
         return self.isAuthor
     }

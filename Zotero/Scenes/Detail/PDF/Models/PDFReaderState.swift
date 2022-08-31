@@ -56,6 +56,12 @@ struct PDFReaderState: ViewModelState {
         case automatic
     }
 
+    enum Error: Swift.Error {
+        case cantDeleteAnnotation
+        case cantAddAnnotations
+        case cantUpdateAnnotation
+    }
+
     let key: String
     let library: Library
     let document: PSPDFKit.Document
@@ -78,6 +84,7 @@ struct PDFReaderState: ViewModelState {
     var exportState: PDFExportState?
     var settings: PDFSettings
     var changes: Changes
+    var error: Error?
 
     /// Selected annotation when annotations are not being edited in sidebar
     var selectedAnnotationKey: AnnotationKey?
@@ -147,6 +154,16 @@ struct PDFReaderState: ViewModelState {
         }
     }
 
+    func hasAnnotation(with key: String) -> Bool {
+        if self.documentAnnotations[key] != nil {
+            return true
+        }
+        if self.databaseAnnotations.filter(.key(key)).first != nil {
+            return true
+        }
+        return false
+    }
+
     mutating func cleanup() {
         self.changes = []
         self.exportState = nil
@@ -154,6 +171,7 @@ struct PDFReaderState: ViewModelState {
         self.focusSidebarKey = nil
         self.updatedAnnotationKeys = nil
         self.loadedPreviewImageAnnotationKeys = nil
+        self.error = nil
     }
 }
 

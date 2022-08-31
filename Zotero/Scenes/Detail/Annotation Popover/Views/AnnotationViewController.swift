@@ -87,12 +87,7 @@ final class AnnotationViewController: UIViewController {
     }
 
     private func update(state: PDFReaderState) {
-        guard let annotation = state.selectedAnnotation else {
-            self.presentingViewController?.dismiss(animated: true, completion: nil)
-            return
-        }
-
-        guard state.changes.contains(.annotations) else { return }
+        guard state.changes.contains(.annotations), let annotation = state.selectedAnnotation else { return }
 
         // Update header
         let editability = annotation.editability(currentUserId: state.userId, library: state.library)
@@ -122,18 +117,19 @@ final class AnnotationViewController: UIViewController {
     }
 
     @objc private func deleteAnnotation() {
-//        guard let annotation = self.viewModel.state.selectedAnnotation else { return }
-//        self.viewModel.process(action: .removeAnnotation(annotation.position))
+        guard let key = self.viewModel.state.selectedAnnotationKey else { return }
+        self.viewModel.process(action: .removeAnnotation(key.key))
     }
 
     private func showSettings() {
         guard let annotation = self.viewModel.state.selectedAnnotation else { return }
-        self.coordinatorDelegate?.showEdit(annotation: annotation,
-                                           saveAction: { [weak self] annotation in
-                                               self?.viewModel.process(action: .updateAnnotationProperties(annotation))
+        self.coordinatorDelegate?.showEdit(annotation: annotation, userId: self.viewModel.state.userId, library: self.viewModel.state.library,
+                                           saveAction: { [weak self] key, color, lineWidth, pageLabel, updateSubsequentLabels, highlightText in
+                                               self?.viewModel.process(action: .updateAnnotationProperties(key: key.key, color: color, lineWidth: lineWidth, pageLabel: pageLabel,
+                                                                                                           updateSubsequentLabels: updateSubsequentLabels, highlightText: highlightText))
                                            },
-                                           deleteAction: { [weak self] annotation in
-//                                               self?.viewModel.process(action: .removeAnnotation(annotation.position))
+                                           deleteAction: { [weak self] key in
+                                               self?.viewModel.process(action: .removeAnnotation(key.key))
                                            })
     }
 
@@ -307,8 +303,8 @@ final class AnnotationViewController: UIViewController {
 }
 
 extension AnnotationViewController: AnnotationPopover {
-    var annotationKey: String {
-        return self.viewModel.state.selectedAnnotationKey?.key ?? ""
+    var annotationKey: PDFReaderState.AnnotationKey {
+        return self.viewModel.state.selectedAnnotationKey ?? PDFReaderState.AnnotationKey(key: "", type: .document)
     }
 }
 

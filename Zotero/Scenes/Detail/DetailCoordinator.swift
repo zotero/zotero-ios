@@ -91,7 +91,7 @@ protocol DetailPdfCoordinatorDelegate: AnyObject {
 
 protocol DetailAnnotationsCoordinatorDelegate: AnyObject {
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
-    func showCellOptions(for annotation: Annotation, sender: UIButton, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
+    func showCellOptions(for annotation: Annotation, userId: Int, library: Library, sender: UIButton, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
     func showFilterPopup(from barButton: UIBarButtonItem, filter: AnnotationsFilter?, availableColors: [String], availableTags: [Tag], completed: @escaping (AnnotationsFilter?) -> Void)
 }
 
@@ -1050,8 +1050,8 @@ extension DetailCoordinator: DetailAnnotationsCoordinatorDelegate {
         self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
-    func showCellOptions(for annotation: Annotation, sender: UIButton, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
-        let state = AnnotationEditState(annotation: annotation)
+    func showCellOptions(for annotation: Annotation, userId: Int, library: Library, sender: UIButton, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
+        let state = AnnotationEditState(annotation: annotation, userId: userId, library: library)
         let handler = AnnotationEditActionHandler()
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = AnnotationEditViewController(viewModel: viewModel, includeColorPicker: true, saveAction: saveAction, deleteAction: deleteAction)

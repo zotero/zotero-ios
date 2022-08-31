@@ -401,6 +401,8 @@
 		B325DBB524375DD200EFF0F5 /* DebugPermissionResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B325DBB424375DD200EFF0F5 /* DebugPermissionResponse.swift */; };
 		B325DBB624375DD500EFF0F5 /* DebugPermissionResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B325DBB424375DD200EFF0F5 /* DebugPermissionResponse.swift */; };
 		B325EE4D27B28AC7002143AA /* ExpandableCollectionsCollectionViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B325EE4C27B28AC7002143AA /* ExpandableCollectionsCollectionViewHandler.swift */; };
+		B32861E428BF89CE007B5A5C /* CreateAnnotationsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32861E328BF89CE007B5A5C /* CreateAnnotationsDbRequest.swift */; };
+		B32861E628BFACD4007B5A5C /* EditItemFieldsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32861E528BFACD4007B5A5C /* EditItemFieldsDbRequest.swift */; };
 		B32A273C254841B80081E061 /* CreatorEditViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32A273A254841B80081E061 /* CreatorEditViewController.swift */; };
 		B32A273D254841B80081E061 /* CreatorEditViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B32A273B254841B80081E061 /* CreatorEditViewController.xib */; };
 		B32A3C78247FB62B009E2C5D /* ComponentDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32A3C77247FB62B009E2C5D /* ComponentDate.swift */; };
@@ -1365,6 +1367,8 @@
 		B325DBB124375DAC00EFF0F5 /* ConflictResolution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictResolution.swift; sourceTree = "<group>"; };
 		B325DBB424375DD200EFF0F5 /* DebugPermissionResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugPermissionResponse.swift; sourceTree = "<group>"; };
 		B325EE4C27B28AC7002143AA /* ExpandableCollectionsCollectionViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpandableCollectionsCollectionViewHandler.swift; sourceTree = "<group>"; };
+		B32861E328BF89CE007B5A5C /* CreateAnnotationsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateAnnotationsDbRequest.swift; sourceTree = "<group>"; };
+		B32861E528BFACD4007B5A5C /* EditItemFieldsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditItemFieldsDbRequest.swift; sourceTree = "<group>"; };
 		B32A273A254841B80081E061 /* CreatorEditViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorEditViewController.swift; sourceTree = "<group>"; };
 		B32A273B254841B80081E061 /* CreatorEditViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CreatorEditViewController.xib; sourceTree = "<group>"; };
 		B32A3C77247FB62B009E2C5D /* ComponentDate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComponentDate.swift; sourceTree = "<group>"; };
@@ -2038,6 +2042,7 @@
 				B358D3B3279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift */,
 				B305644423FC051E003304F2 /* CheckItemIsChangedDbRequest.swift */,
 				B3E34888283CFA92002A8A06 /* CleanupUnusedTags.swift */,
+				B32861E328BF89CE007B5A5C /* CreateAnnotationsDbRequest.swift */,
 				B305645B23FC051E003304F2 /* CreateAttachmentDbRequest.swift */,
 				B39D33702400150B00EF2ACB /* CreateAttachmentsDbRequest.swift */,
 				B305645523FC051E003304F2 /* CreateCollectionDbRequest.swift */,
@@ -2052,6 +2057,7 @@
 				B3BF7EE628A51BDC00A5A659 /* DeleteTagFromItemDbRequest.swift */,
 				B310091C272C0126003FC743 /* DeleteWebDavDeletionsDbRequest.swift */,
 				B305643F23FC051E003304F2 /* EditCollectionDbRequest.swift */,
+				B32861E528BFACD4007B5A5C /* EditItemFieldsDbRequest.swift */,
 				B305644923FC051E003304F2 /* EditItemFromDetailDbRequest.swift */,
 				B305644D23FC051E003304F2 /* EditNoteDbRequest.swift */,
 				B3BF7EE828A51EDA00A5A659 /* EditTagsForItemDbRequest.swift */,
@@ -4647,8 +4653,10 @@
 				B395EFE325494B1B00CEBD9F /* CreatorEditAction.swift in Sources */,
 				B3C8DD8227B502960084E1AD /* CollectionTreeBuilder.swift in Sources */,
 				B30565FB23FC051E003304F2 /* Formatter.swift in Sources */,
+				B32861E628BFACD4007B5A5C /* EditItemFieldsDbRequest.swift in Sources */,
 				B36C07DE26FB264800C855A9 /* UITableView+Extensions.swift in Sources */,
 				B3972689247D403200A8B469 /* UrlDetector.swift in Sources */,
+				B32861E428BF89CE007B5A5C /* CreateAnnotationsDbRequest.swift in Sources */,
 				B305660923FC051E003304F2 /* SettingsRequest.swift in Sources */,
 				B305662423FC051F003304F2 /* LoadLibraryDataSyncAction.swift in Sources */,
 				B324276D25C81F2000567504 /* WebSocketController.swift in Sources */,

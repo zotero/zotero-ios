@@ -187,6 +187,13 @@ final class PDFReaderViewController: UIViewController {
     // MARK: - Actions
 
     private func update(state: PDFReaderState) {
+        if state.changes.contains(.annotations) {
+            // Hide popover if annotation has been deleted
+            if let controller = (self.presentedViewController as? UINavigationController)?.viewControllers.first as? AnnotationPopover, !state.sortedKeys.contains(controller.annotationKey) {
+                self.dismiss(animated: true, completion: nil)
+            }
+        }
+
         if state.changes.contains(.interfaceStyle) {
             self.updateInterface(to: state.settings)
         }
@@ -240,6 +247,10 @@ final class PDFReaderViewController: UIViewController {
 
         if state.changes.contains(.export) {
             self.update(state: state.exportState)
+        }
+
+        if let error = state.error {
+            // TODO: - show error
         }
     }
 
@@ -668,7 +679,7 @@ final class PDFReaderViewController: UIViewController {
 
         // Only Zotero-synced annotations can be edited
         interactions.editAnnotation.addActivationCondition { context, _, _ -> Bool in
-            return context.annotation.syncable && context.annotation.isEditable
+            return context.annotation.key != nil && context.annotation.isEditable
         }
     }
 

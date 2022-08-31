@@ -12,8 +12,8 @@ import RxSwift
 
 #if PDFENABLED
 
-typealias AnnotationEditSaveAction = (Annotation) -> Void
-typealias AnnotationEditDeleteAction = (Annotation) -> Void
+typealias AnnotationEditSaveAction = (PDFReaderState.AnnotationKey, String, CGFloat, String, Bool, String) -> Void // key, color, lineWidth, pageLabel, updateSubsequentLabels, highlightText
+typealias AnnotationEditDeleteAction = (PDFReaderState.AnnotationKey) -> Void
 
 final class AnnotationEditViewController: UIViewController {
     private enum Section {
@@ -41,12 +41,12 @@ final class AnnotationEditViewController: UIViewController {
 
     init(viewModel: ViewModel<AnnotationEditActionHandler>, includeColorPicker: Bool, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
         var sections: [Section] = [.pageLabel, .actions]
-//        if includeColorPicker && viewModel.state.annotation.editability == .editable {
-//            sections.insert(.properties, at: 0)
-//        }
-//        if viewModel.state.annotation.type == .highlight && viewModel.state.annotation.editability == .editable {
-//            sections.insert(.highlight, at: 0)
-//        }
+        if includeColorPicker && viewModel.state.isEditable {
+            sections.insert(.properties, at: 0)
+        }
+        if viewModel.state.type == .highlight && viewModel.state.isEditable {
+            sections.insert(.highlight, at: 0)
+        }
 
         self.viewModel = viewModel
         self.sections = sections
@@ -121,19 +121,19 @@ final class AnnotationEditViewController: UIViewController {
         let sectionCount = self.sections.count - (self.sections.contains(.highlight) ? 1 : 0)
         var height: CGFloat = (CGFloat(sectionCount) * 80) + 36 // 80 for 36 spacer and 44 cell height
 
-        if let text = self.viewModel.state.annotation.text {
+        if self.viewModel.state.type == .highlight {
             let width = AnnotationPopoverLayout.width - ((AnnotationPopoverLayout.annotationLayout.horizontalInset * 2) +
                                                           AnnotationPopoverLayout.annotationLayout.highlightContentLeadingOffset +
                                                           AnnotationPopoverLayout.annotationLayout.highlightLineWidth)
             let paragraphStyle = NSMutableParagraphStyle()
             paragraphStyle.minimumLineHeight = AnnotationPopoverLayout.annotationLayout.lineHeight
             paragraphStyle.maximumLineHeight = AnnotationPopoverLayout.annotationLayout.lineHeight
-            let attributedText = NSAttributedString(string: text, attributes: [.font: AnnotationPopoverLayout.annotationLayout.font, .paragraphStyle: paragraphStyle])
+            let attributedText = NSAttributedString(string: self.viewModel.state.highlightText, attributes: [.font: AnnotationPopoverLayout.annotationLayout.font, .paragraphStyle: paragraphStyle])
             let boundingRect = attributedText.boundingRect(with: CGSize(width: width, height: .greatestFiniteMagnitude), options: .usesLineFragmentOrigin, context: nil)
             height += ceil(boundingRect.height) + 58 // 58 for 22 insets and 36 spacer
         }
 
-        if self.viewModel.state.annotation.type == .ink {
+        if self.viewModel.state.type == .ink {
             height += 49 // for line width slider
         }
 
@@ -162,13 +162,14 @@ final class AnnotationEditViewController: UIViewController {
         }).disposed(by: self.disposeBag)
         self.navigationItem.leftBarButtonItem = cancel
 
-//        guard self.viewModel.state.annotation.editability == .editable else { return }
+        guard self.viewModel.state.isEditable else { return }
 
         let save = UIBarButtonItem(title: L10n.save, style: .done, target: nil, action: nil)
         save.rx.tap
                .subscribe(onNext: { [weak self] in
                    guard let `self` = self else { return }
-                   self.saveAction(self.viewModel.state.annotation)
+                   let state = self.viewModel.state
+                   self.saveAction(state.key, state.color, state.lineWidth, state.pageLabel, state.updateSubsequentLabels, state.highlightText)
                    self.cancel()
                })
                .disposed(by: self.disposeBag)
@@ -197,7 +198,7 @@ extension AnnotationEditViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch self.sections[section] {
         case .properties:
-            return self.viewModel.state.annotation.type == .ink ? 2 : 1
+            return self.viewModel.state.type == .ink ? 2 : 1
         default:
             return 1
         }
@@ -210,16 +211,16 @@ extension AnnotationEditViewController: UITableViewDataSource {
         switch section {
         case .properties:
             if let cell = cell as? ColorPickerCell {
-                cell.setup(selectedColor: self.viewModel.state.annotation.color)
+                cell.setup(selectedColor: self.viewModel.state.color)
                 cell.colorChange.subscribe(onNext: { hex in self.viewModel.process(action: .setColor(hex)) }).disposed(by: cell.disposeBag)
             } else if let cell = cell as? LineWidthCell {
-                cell.set(value: Float(self.viewModel.state.annotation.lineWidth ?? 1))
+                cell.set(value: Float(self.viewModel.state.lineWidth))
                 cell.valueObservable.subscribe(onNext: { value in self.viewModel.process(action: .setLineWidth(CGFloat(value))) }).disposed(by: cell.newDisposeBag)
             }
 
         case .highlight:
             if let cell = cell as? HighlightEditCell {
-                cell.setup(with: (self.viewModel.state.annotation.text ?? ""), color: self.viewModel.state.annotation.color)
+                cell.setup(with: self.viewModel.state.highlightText, color: self.viewModel.state.color)
                 cell.textObservable
                     .subscribe(onNext: { [weak self] text, needsHeightReload in
                         self?.viewModel.process(action: .setHighlight(text))
@@ -234,12 +235,12 @@ extension AnnotationEditViewController: UITableViewDataSource {
             }
 
         case .pageLabel:
-            cell.textLabel?.text = L10n.page + " " + self.viewModel.state.annotation.pageLabel
-//            if self.viewModel.state.annotation.editability == .editable {
-//                cell.accessoryType = .disclosureIndicator
-//            } else {
-//                cell.accessoryType = .none
-//            }
+            cell.textLabel?.text = L10n.page + " " + self.viewModel.state.pageLabel
+            if self.isEditing {
+                cell.accessoryType = .disclosureIndicator
+            } else {
+                cell.accessoryType = .none
+            }
 
         case .actions:
             cell.textLabel?.text = L10n.Pdf.AnnotationPopover.delete
@@ -258,11 +259,11 @@ extension AnnotationEditViewController: UITableViewDelegate {
         switch self.sections[indexPath.section] {
         case .properties, .highlight: break
         case .actions:
-            self.deleteAction(self.viewModel.state.annotation)
+            self.deleteAction(self.viewModel.state.key)
         case .pageLabel:
-//            guard self.viewModel.state.annotation.editability == .editable else { return }
+            guard self.viewModel.state.isEditable else { return }
 
-            self.coordinatorDelegate?.showPageLabelEditor(label: self.viewModel.state.annotation.pageLabel, updateSubsequentPages: self.viewModel.state.updateSubsequentLabels,
+            self.coordinatorDelegate?.showPageLabelEditor(label: self.viewModel.state.pageLabel, updateSubsequentPages: self.viewModel.state.updateSubsequentLabels,
                                                           saveAction: { [weak self] newLabel, shouldUpdateSubsequentPages in
                 self?.viewModel.process(action: .setPageLabel(newLabel, shouldUpdateSubsequentPages))
             })
@@ -272,8 +273,8 @@ extension AnnotationEditViewController: UITableViewDelegate {
 }
 
 extension AnnotationEditViewController: AnnotationPopover {
-    var annotationKey: String {
-        return self.viewModel.state.annotation.key
+    var annotationKey: PDFReaderState.AnnotationKey {
+        return self.viewModel.state.key
     }
 }
 

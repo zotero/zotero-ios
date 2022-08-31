@@ -157,6 +157,10 @@ struct DatabaseAnnotation {
 }
 
 extension DatabaseAnnotation: Annotation {
+    var readerKey: PDFReaderState.AnnotationKey {
+        return .init(key: self.key, type: .database)
+    }
+
     var type: AnnotationType {
         return self._type ?? .note
     }

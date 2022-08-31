@@ -28,18 +28,19 @@ enum PDFReaderAction {
     case mergeSelectedAnnotations
     case annotationsAdded(annotations: [PSPDFKit.Annotation], selectFirst: Bool)
     case requestPreviews(keys: [String], notify: Bool)
-    case setComment(key: String, comment: NSAttributedString)
     case setTags(key: String, tags: [Tag])
     case setColor(key: String, color: String)
     case setLineWidth(key: String, width: CGFloat)
     case setHighlight(key: String, text: String)
-    case updateAnnotationProperties(Annotation)
+    case updateAnnotationProperties(key: String, color: String, lineWidth: CGFloat, pageLabel: String, updateSubsequentLabels: Bool, highlightText: String)
     case userInterfaceStyleChanged(UIUserInterfaceStyle)
     case updateAnnotationPreviews
     case setActiveColor(String)
     case setActiveLineWidth(CGFloat)
     case setActiveEraserSize(CGFloat)
     case create(annotation: AnnotationType, pageIndex: PageIndex, origin: CGPoint)
+    case parseAndCacheComment(key: String, comment: String)
+    case setComment(key: String, comment: NSAttributedString)
     case setCommentActive(Bool)
     case setVisiblePage(Int)
     case export

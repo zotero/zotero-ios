@@ -6,6 +6,8 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
+#if PDFENABLED
+
 import UIKit
 
 enum AnnotationEditAction {
@@ -14,3 +16,5 @@ enum AnnotationEditAction {
     case setPageLabel(String, Bool)
     case setHighlight(String)
 }
+
+#endif

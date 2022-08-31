@@ -104,12 +104,13 @@ final class AnnotationsViewController: UIViewController {
             })
 
         case .options(let sender):
-            self.coordinatorDelegate?.showCellOptions(for: annotation, sender: sender,
-                                                      saveAction: { [weak self] annotation in
-                                                          self?.viewModel.process(action: .updateAnnotationProperties(annotation))
+            self.coordinatorDelegate?.showCellOptions(for: annotation, userId: self.viewModel.state.userId, library: self.viewModel.state.library, sender: sender,
+                                                      saveAction: { [weak self] key, color, lineWidth, pageLabel, updateSubsequentLabels, highlightText in
+                                                          self?.viewModel.process(action: .updateAnnotationProperties(key: key.key, color: color, lineWidth: lineWidth, pageLabel: pageLabel,
+                                                                                                                      updateSubsequentLabels: updateSubsequentLabels, highlightText: highlightText))
                                                       },
-                                                      deleteAction: { [weak self] annotation in
-//                                                          self?.viewModel.process(action: .removeAnnotation(annotation.position))
+                                                      deleteAction: { [weak self] key in
+                                                          self?.viewModel.process(action: .removeAnnotation(key.key))
                                                       })
 
         case .setComment(let comment):
@@ -253,7 +254,7 @@ final class AnnotationsViewController: UIViewController {
 
         switch annotation.type {
         case .image:
-            comment = .init(attributedString: state.comments[annotation.key], isActive: state.selectedAnnotationCommentActive)
+            comment = .init(attributedString: self.loadAttributedComment(for: annotation), isActive: state.selectedAnnotationCommentActive)
             preview = loadPreview()
 
         case .ink:
@@ -262,7 +263,7 @@ final class AnnotationsViewController: UIViewController {
 
         case .note, .highlight:
             preview = nil
-            comment = .init(attributedString: state.comments[annotation.key], isActive: state.selectedAnnotationCommentActive)
+            comment = .init(attributedString: self.loadAttributedComment(for: annotation), isActive: state.selectedAnnotationCommentActive)
         }
 
         if let boundingBoxConverter = self.boundingBoxConverter {
@@ -274,6 +275,19 @@ final class AnnotationsViewController: UIViewController {
             self?.perform(action: action, annotation: annotation)
         })
         .disposed(by: cell.disposeBag)
+    }
+
+    private func loadAttributedComment(for annotation: Annotation) -> NSAttributedString? {
+        let comment = annotation.comment
+
+        guard !comment.isEmpty else { return nil }
+
+        if let attributedComment = self.viewModel.state.comments[annotation.key] {
+            return attributedComment
+        }
+
+        self.viewModel.process(action: .parseAndCacheComment(key: annotation.key, comment: comment))
+        return self.viewModel.state.comments[annotation.key]
     }
 
     private func showFilterPopup(from barButton: UIBarButtonItem) {
@@ -386,14 +400,18 @@ final class AnnotationsViewController: UIViewController {
         })
 
 
-        self.dataSource.canEditRow = { _ in
-            return true
+        self.dataSource.canEditRow = { indexPath in
+            guard let key = self.dataSource.itemIdentifier(for: indexPath) else { return false }
+            switch key.type {
+            case .database: return true
+            case .document: return false
+            }
         }
 
         self.dataSource.commitEditingStyle = { [weak self] editingStyle, indexPath in
-//            guard let `self` = self, !self.viewModel.state.sidebarEditingEnabled && editingStyle == .delete,
-//                  let position = self.annotationPosition(for: indexPath)  else { return }
-//            self.viewModel.process(action: .removeAnnotation(position))
+            guard let `self` = self, !self.viewModel.state.sidebarEditingEnabled && editingStyle == .delete,
+                  let key = self.dataSource.itemIdentifier(for: indexPath), key.type == .database else { return }
+            self.viewModel.process(action: .removeAnnotation(key.key))
         }
     }
 

@@ -19,21 +19,6 @@ extension Document {
 }
 
 extension PSPDFKit.Annotation {
-    /// Defines annotations which are synced with internal DB and Zotero server
-    var syncable: Bool {
-        get {
-            return (self.customData?[AnnotationsConfig.syncableKey] as? Bool) ?? false
-        }
-
-        set {
-            if self.customData == nil {
-                self.customData = [AnnotationsConfig.syncableKey: newValue]
-            } else {
-                self.customData?[AnnotationsConfig.syncableKey] = newValue
-            }
-        }
-    }
-
     /// Defines internal Zotero key. PDFs which were previously exported by Zotero may include this flag.
     var key: String? {
         get {
@@ -52,9 +37,9 @@ extension PSPDFKit.Annotation {
     }
 
     /// Defines base color for given annotation. Current color is derived from base color and may differ in light/dark mode.
-    var baseColor: String {
+    var baseColor: String? {
         get {
-            return (self.customData?[AnnotationsConfig.baseColorKey] as? String) ?? AnnotationsConfig.defaultActiveColor
+            return self.customData?[AnnotationsConfig.baseColorKey] as? String
         }
 
         set {

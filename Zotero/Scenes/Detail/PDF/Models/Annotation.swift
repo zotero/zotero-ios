@@ -10,6 +10,7 @@ import UIKit
 
 protocol Annotation {
     var key: String { get }
+    var readerKey: PDFReaderState.AnnotationKey { get }
     var type: AnnotationType { get }
     var page: Int { get }
     var pageLabel: String { get }

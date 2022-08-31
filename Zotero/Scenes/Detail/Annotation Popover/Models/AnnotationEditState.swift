@@ -6,7 +6,9 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
-import Foundation
+#if PDFENABLED
+
+import UIKit
 
 struct AnnotationEditState: ViewModelState {
     struct Changes: OptionSet {
@@ -18,12 +20,25 @@ struct AnnotationEditState: ViewModelState {
         static let pageLabel = Changes(rawValue: 1 << 1)
     }
 
-    var annotation: Annotation
+    let key: PDFReaderState.AnnotationKey
+    let type: AnnotationType
+    let isEditable: Bool
+
+    var color: String
+    var lineWidth: CGFloat
+    var pageLabel: String
+    var highlightText: String
     var updateSubsequentLabels: Bool
     var changes: Changes
 
-    init(annotation: Annotation) {
-        self.annotation = annotation
+    init(annotation: Annotation, userId: Int, library: Library) {
+        self.key = annotation.readerKey
+        self.type = annotation.type
+        self.isEditable = annotation.editability(currentUserId: userId, library: library) == .editable
+        self.color = annotation.color
+        self.lineWidth = annotation.lineWidth ?? 0
+        self.pageLabel = annotation.pageLabel
+        self.highlightText = annotation.text ?? ""
         self.updateSubsequentLabels = false
         self.changes = []
     }
@@ -32,3 +47,5 @@ struct AnnotationEditState: ViewModelState {
         self.changes = []
     }
 }
+
+#endif
