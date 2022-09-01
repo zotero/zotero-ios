@@ -22,19 +22,19 @@ struct AnnotationEditActionHandler: ViewModelActionHandler {
                 state.changes = .color
             }
 
-        case .setLineWidth(let width): break
+        case .setLineWidth(let width):
             self.update(viewModel: viewModel) { state in
                 state.lineWidth = width
             }
             
-        case .setPageLabel(let label, let updateSubsequentPages): break
+        case .setPageLabel(let label, let updateSubsequentPages):
             self.update(viewModel: viewModel) { state in
                 state.pageLabel = label
                 state.updateSubsequentLabels = updateSubsequentPages
                 state.changes = .pageLabel
             }
 
-        case .setHighlight(let text): break
+        case .setHighlight(let text):
             self.update(viewModel: viewModel) { state in
                 state.highlightText = text
             }

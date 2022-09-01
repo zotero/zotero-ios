@@ -85,6 +85,7 @@ struct PDFReaderState: ViewModelState {
     var settings: PDFSettings
     var changes: Changes
     var error: Error?
+    var pdfNotification: Notification?
 
     /// Selected annotation when annotations are not being edited in sidebar
     var selectedAnnotationKey: AnnotationKey?
@@ -172,6 +173,7 @@ struct PDFReaderState: ViewModelState {
         self.updatedAnnotationKeys = nil
         self.loadedPreviewImageAnnotationKeys = nil
         self.error = nil
+        self.pdfNotification = nil
     }
 }
 

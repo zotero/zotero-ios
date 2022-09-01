@@ -63,6 +63,22 @@ extension BackgroundDbProcessingActionHandler {
         }
     }
 
+    func perform(writeRequests: [DbRequest], completion: @escaping (Error?) -> Void) {
+        self.backgroundQueue.async {
+            do {
+                try self.dbStorage.perform(writeRequests: writeRequests, on: self.backgroundQueue)
+
+                DispatchQueue.main.async {
+                    completion(nil)
+                }
+            } catch let error {
+                DispatchQueue.main.async {
+                    completion(error)
+                }
+            }
+        }
+    }
+
     func perform<Request: DbResponseRequest>(request: Request, invalidateRealm: Bool, completion: @escaping (Result<Request.Response, Error>) -> Void) {
         self.backgroundQueue.async {
             do {

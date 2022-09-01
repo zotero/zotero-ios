@@ -263,7 +263,7 @@ final class DetailCoordinator: Coordinator {
         let controller = PDFReaderViewController(viewModel: ViewModel(initialState: state, handler: handler),
                                                  compactSize: UIDevice.current.isCompactWidth(size: self.navigationController.view.frame.size))
         controller.coordinatorDelegate = self
-        handler.boundingBoxConverter = controller
+        handler.delegate = controller
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .fullScreen
         return navigationController

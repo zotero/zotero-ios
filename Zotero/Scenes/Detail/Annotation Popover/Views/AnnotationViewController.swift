@@ -118,7 +118,7 @@ final class AnnotationViewController: UIViewController {
 
     @objc private func deleteAnnotation() {
         guard let key = self.viewModel.state.selectedAnnotationKey else { return }
-        self.viewModel.process(action: .removeAnnotation(key.key))
+        self.viewModel.process(action: .removeAnnotation(key))
     }
 
     private func showSettings() {
@@ -129,7 +129,7 @@ final class AnnotationViewController: UIViewController {
                                                                                                            updateSubsequentLabels: updateSubsequentLabels, highlightText: highlightText))
                                            },
                                            deleteAction: { [weak self] key in
-                                               self?.viewModel.process(action: .removeAnnotation(key.key))
+                                               self?.viewModel.process(action: .removeAnnotation(key))
                                            })
     }
 

@@ -23,10 +23,9 @@ enum PDFReaderAction {
     case deselectSelectedAnnotation
     case selectAnnotationDuringEditing(PDFReaderState.AnnotationKey)
     case deselectAnnotationDuringEditing(PDFReaderState.AnnotationKey)
-    case removeAnnotation(String)
+    case removeAnnotation(PDFReaderState.AnnotationKey)
     case removeSelectedAnnotations
     case mergeSelectedAnnotations
-    case annotationsAdded(annotations: [PSPDFKit.Annotation], selectFirst: Bool)
     case requestPreviews(keys: [String], notify: Bool)
     case setTags(key: String, tags: [Tag])
     case setColor(key: String, color: String)

@@ -110,7 +110,7 @@ final class AnnotationsViewController: UIViewController {
                                                                                                                       updateSubsequentLabels: updateSubsequentLabels, highlightText: highlightText))
                                                       },
                                                       deleteAction: { [weak self] key in
-                                                          self?.viewModel.process(action: .removeAnnotation(key.key))
+                                                          self?.viewModel.process(action: .removeAnnotation(key))
                                                       })
 
         case .setComment(let comment):
@@ -411,7 +411,7 @@ final class AnnotationsViewController: UIViewController {
         self.dataSource.commitEditingStyle = { [weak self] editingStyle, indexPath in
             guard let `self` = self, !self.viewModel.state.sidebarEditingEnabled && editingStyle == .delete,
                   let key = self.dataSource.itemIdentifier(for: indexPath), key.type == .database else { return }
-            self.viewModel.process(action: .removeAnnotation(key.key))
+            self.viewModel.process(action: .removeAnnotation(key))
         }
     }
 

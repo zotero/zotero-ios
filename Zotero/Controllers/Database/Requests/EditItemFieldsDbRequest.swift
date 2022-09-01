@@ -18,29 +18,26 @@ struct EditItemFieldsDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first else { return }
+        guard !self.fieldValues.isEmpty, let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first else { return }
 
         var didChange = false
 
-        for field in item.fields {
+        for data in self.fieldValues {
             // Fix existing items to be compatible with `annotationPosition` stored in `baseKey`.
-            switch field.key {
-            case FieldKeys.Item.Annotation.Position.pageIndex where field.baseKey == nil,
-                 FieldKeys.Item.Annotation.Position.lineWidth where field.baseKey == nil:
-                // If there is just one key which is missing the `baseKey`, assign `annotationPosition` to it. If there are duplicates, it must be a new item and `baseKey` should be assigned properly.
-                if item.fields.filter(.key(field.key)).count == 1 {
-                    field.baseKey = FieldKeys.Item.Annotation.position
+            if let baseKey = data.key.baseKey, baseKey == FieldKeys.Item.Annotation.position, item.fields.filter(.key(data.key.key, andBaseKey: baseKey)).first == nil {
+                let fields = item.fields.filter(.key(data.key.key))
+                if fields.count == 1 {
+                    fields.first?.baseKey = FieldKeys.Item.Annotation.position
                 }
-
-            default: break
             }
 
-            let keyPair = KeyBaseKeyPair(key: field.key, baseKey: field.baseKey)
-            if let value = self.fieldValues[keyPair], field.value != value {
-                field.value = value
-                field.changed = true
-                didChange = true
-            }
+            let filter: NSPredicate = data.key.baseKey.flatMap({ .key(data.key.key, andBaseKey: $0) }) ?? .key(data.key.key)
+
+            guard let field = item.fields.filter(filter).first, data.value != field.value else { continue }
+
+            field.value = data.value
+            field.changed = true
+            didChange = true
         }
 
         if didChange {

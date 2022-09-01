@@ -88,19 +88,19 @@ struct AnnotationConverter {
 
         if let annotation = annotation as? PSPDFKit.NoteAnnotation {
             type = .note
-            rects = [CGRect(origin: annotation.boundingBox.origin.rounded(to: 3), size: AnnotationsConfig.noteAnnotationSize)]
+            rects = self.rects(fromNoteAnnotation: annotation)
             text = nil
             paths = []
             lineWidth = nil
         } else if let annotation = annotation as? PSPDFKit.HighlightAnnotation {
             type = .highlight
-            rects = (annotation.rects ?? [annotation.boundingBox]).map({ $0.rounded(to: 3) })
+            rects = self.rects(fromHighlightAnnotation: annotation)
             text = self.removeNewlines(from: annotation.markedUpString)
             paths = []
             lineWidth = nil
         } else if let annotation = annotation as? PSPDFKit.SquareAnnotation {
             type = .image
-            rects = [annotation.boundingBox.rounded(to: 3)]
+            rects = self.rects(fromSquareAnnotation: annotation)
             text = nil
             paths = []
             lineWidth = nil
@@ -108,11 +108,7 @@ struct AnnotationConverter {
             type = .ink
             rects = []
             text = nil
-            paths = annotation.lines.flatMap({ lines -> [[CGPoint]] in
-                return lines.map({ group in
-                    return group.map({ $0.location.rounded(to: 3) })
-                })
-            }) ?? []
+            paths = self.paths(from: annotation)
             lineWidth = annotation.lineWidth
         } else {
             return nil
@@ -133,6 +129,39 @@ struct AnnotationConverter {
             newString = newString.replacingCharacters(in: range, with: " ")
         }
         return newString.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    static func paths(from annotation: PSPDFKit.InkAnnotation) -> [[CGPoint]] {
+        return annotation.lines.flatMap({ lines -> [[CGPoint]] in
+            return lines.map({ group in
+                return group.map({ $0.location.rounded(to: 3) })
+            })
+        }) ?? []
+    }
+
+    static func rects(from annotation: PSPDFKit.Annotation) -> [CGRect]? {
+        if let annotation = annotation as? PSPDFKit.NoteAnnotation {
+            return self.rects(fromNoteAnnotation: annotation)
+        }
+        if let annotation = annotation as? PSPDFKit.HighlightAnnotation {
+            return self.rects(fromHighlightAnnotation: annotation)
+        }
+        if let annotation = annotation as? PSPDFKit.SquareAnnotation {
+            return self.rects(fromSquareAnnotation: annotation)
+        }
+        return nil
+    }
+
+    private static func rects(fromNoteAnnotation annotation: PSPDFKit.NoteAnnotation) -> [CGRect] {
+        return [CGRect(origin: annotation.boundingBox.origin.rounded(to: 3), size: AnnotationsConfig.noteAnnotationSize)]
+    }
+
+    private static func rects(fromHighlightAnnotation annotation: PSPDFKit.HighlightAnnotation) -> [CGRect] {
+        return (annotation.rects ?? [annotation.boundingBox]).map({ $0.rounded(to: 3) })
+    }
+
+    private static func rects(fromSquareAnnotation annotation: PSPDFKit.SquareAnnotation) -> [CGRect] {
+        return [annotation.boundingBox.rounded(to: 3)]
     }
 
     private static func createName(from displayName: String, username: String) -> String {

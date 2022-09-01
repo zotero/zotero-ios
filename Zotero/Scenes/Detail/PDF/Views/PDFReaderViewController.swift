@@ -252,6 +252,31 @@ final class PDFReaderViewController: UIViewController {
         if let error = state.error {
             // TODO: - show error
         }
+
+        if let notification = state.pdfNotification {
+            self.updatePdf(notification: notification)
+        }
+    }
+
+    private func updatePdf(notification: Notification) {
+        switch notification.name {
+        case .PSPDFAnnotationChanged:
+            guard let changes = notification.userInfo?[PSPDFAnnotationChangedNotificationKeyPathKey] as? [String] else { return }
+            // Changing annotation color changes the `lastUsed` color in `annotationStateManager` (#487), so we have to re-set it.
+            if changes.contains("color") {
+                self.set(toolColor: self.viewModel.state.activeColor, in: self.pdfController.annotationStateManager)
+            }
+
+        case .PSPDFAnnotationsAdded:
+            guard let annotations = notification.object as? [PSPDFKit.Annotation] else { return }
+            // If Image annotation is active after adding the annotation, deactivate it
+            if annotations.first is PSPDFKit.SquareAnnotation && self.pdfController.annotationStateManager.state == .square {
+                // Don't reset apple pencil detection here, this is automatic action, not performed by user.
+                self.toggle(annotationTool: .square, tappedWithStylus: false, resetPencilManager: false)
+            }
+
+        default: break
+        }
     }
 
     private func update(state: PDFExportState?) {
@@ -464,41 +489,6 @@ final class PDFReaderViewController: UIViewController {
         self.addChild(controller)
         self.view.addSubview(controller.view)
         controller.didMove(toParent: self)
-    }
-
-    private func processAnnotationObserving(notification: Notification) {
-        guard self.isNotificationFromDocument(notification) else { return }
-
-        switch notification.name {
-        case .PSPDFAnnotationChanged:
-            // Changing annotation color changes the `lastUsed` color in `annotationStateManager` (#487), so we have to re-set it.
-            if let changes = notification.userInfo?[PSPDFAnnotationChangedNotificationKeyPathKey] as? [String], changes.contains("color") {
-                self.set(toolColor: self.viewModel.state.activeColor, in: self.pdfController.annotationStateManager)
-            }
-
-        case .PSPDFAnnotationsAdded:
-            guard let annotations = notification.object as? [PSPDFKit.Annotation] else { return }
-            // Open annotation popup for note annotation
-            let shouldSelect = (self.isSidebarVisible || annotations.first is PSPDFKit.NoteAnnotation) && !self.viewModel.state.sidebarEditingEnabled
-            // If Image annotation is active after adding the annotation, deactivate it
-            if annotations.first is PSPDFKit.SquareAnnotation && self.pdfController.annotationStateManager.state == .square {
-                // Don't reset apple pencil detection here, this is automatic action, not performed by user.
-                self.toggle(annotationTool: .square, tappedWithStylus: false, resetPencilManager: false)
-            }
-            self.viewModel.process(action: .annotationsAdded(annotations: annotations, selectFirst: shouldSelect))
-
-        default: break
-        }
-    }
-
-    private func isNotificationFromDocument(_ notification: Notification) -> Bool {
-        if let annotation = notification.object as? PSPDFKit.Annotation {
-            return annotation.document == self.viewModel.state.document
-        }
-        if let annotations = notification.object as? [PSPDFKit.Annotation], let annotation = annotations.first {
-            return annotation.document == self.viewModel.state.document
-        }
-        return false
     }
 
     @objc private func annotationControlTapped(sender: UIButton, event: UIEvent) {
@@ -885,21 +875,29 @@ final class PDFReaderViewController: UIViewController {
                       })
                       .disposed(by: self.disposeBag)
 
-        NotificationCenter.default.rx
-                                  .notification(.PSPDFAnnotationChanged)
-                                  .observe(on: MainScheduler.instance)
-                                  .subscribe(onNext: { [weak self] notification in
-                                      self?.processAnnotationObserving(notification: notification)
-                                  })
-                                  .disposed(by: self.disposeBag)
-
-        NotificationCenter.default.rx
-                                  .notification(.PSPDFAnnotationsAdded)
-                                  .observe(on: MainScheduler.instance)
-                                  .subscribe(onNext: { [weak self] notification in
-                                      self?.processAnnotationObserving(notification: notification)
-                                  })
-                                  .disposed(by: self.disposeBag)
+//        NotificationCenter.default.rx
+//                                  .notification(.PSPDFAnnotationChanged)
+//                                  .observe(on: MainScheduler.instance)
+//                                  .subscribe(onNext: { [weak self] notification in
+//                                      self?.processAnnotationObserving(notification: notification)
+//                                  })
+//                                  .disposed(by: self.disposeBag)
+//
+//        NotificationCenter.default.rx
+//                                  .notification(.PSPDFAnnotationsAdded)
+//                                  .observe(on: MainScheduler.instance)
+//                                  .subscribe(onNext: { [weak self] notification in
+//                                      self?.processAnnotationObserving(notification: notification)
+//                                  })
+//                                  .disposed(by: self.disposeBag)
+//
+//        NotificationCenter.default.rx
+//                                  .notification(.PSPDFAnnotationsRemoved)
+//                                  .observe(on: MainScheduler.instance)
+//                                  .subscribe(onNext: { [weak self] notification in
+//                                      self?.processAnnotationObserving(notification: notification)
+//                                  })
+//                                  .disposed(by: self.disposeBag)
 
         NotificationCenter.default.rx
                                   .notification(UIApplication.didBecomeActiveNotification)
@@ -1146,5 +1144,7 @@ extension PDFReaderViewController: UIGestureRecognizerDelegate {
         return true
     }
 }
+
+extension PDFReaderViewController: SidebarDelegate {}
 
 #endif

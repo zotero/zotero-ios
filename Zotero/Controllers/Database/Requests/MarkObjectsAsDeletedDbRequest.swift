@@ -17,9 +17,10 @@ struct MarkObjectsAsDeletedDbRequest<Obj: DeletableObject&Updatable>: DbRequest 
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        database.objects(Obj.self).filter(.keys(self.keys, in: self.libraryId)).forEach {
-            $0.deleted = true
-            $0.changeType = .user
+        for object in database.objects(Obj.self).filter(.keys(self.keys, in: self.libraryId)) {
+            guard !object.deleted else { continue }
+            object.deleted = true
+            object.changeType = .user
         }
     }
 }
