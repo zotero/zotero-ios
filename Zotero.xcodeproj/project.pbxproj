@@ -375,7 +375,6 @@
 		B31EEE5724EBCAF100E3B3AD /* RRect.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5624EBCAF100E3B3AD /* RRect.swift */; };
 		B31EEE5824EBCB2C00E3B3AD /* RRect.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5624EBCAF100E3B3AD /* RRect.swift */; };
 		B31EEE5A24EBD18200E3B3AD /* ReadAnnotationsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5924EBD18200E3B3AD /* ReadAnnotationsDbRequest.swift */; };
-		B31EEE5C24EBF24300E3B3AD /* StoreChangedAnnotationsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5B24EBF24300E3B3AD /* StoreChangedAnnotationsDbRequest.swift */; };
 		B31FACC625DBC6F800DD5F14 /* ConflictReceiverAlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31FACC525DBC6F800DD5F14 /* ConflictReceiverAlertController.swift */; };
 		B31FACCA25DBC71200DD5F14 /* ConflictReceiverAlertHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31FACC925DBC71200DD5F14 /* ConflictReceiverAlertHandler.swift */; };
 		B31FACD225DBC7E900DD5F14 /* ActiveObjectDeletedConflictReceiverHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31FACD125DBC7E900DD5F14 /* ActiveObjectDeletedConflictReceiverHandler.swift */; };
@@ -1347,7 +1346,6 @@
 		B31DFE7C2746917A005CD69B /* FileRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileRequest.swift; sourceTree = "<group>"; };
 		B31EEE5624EBCAF100E3B3AD /* RRect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RRect.swift; sourceTree = "<group>"; };
 		B31EEE5924EBD18200E3B3AD /* ReadAnnotationsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAnnotationsDbRequest.swift; sourceTree = "<group>"; };
-		B31EEE5B24EBF24300E3B3AD /* StoreChangedAnnotationsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreChangedAnnotationsDbRequest.swift; sourceTree = "<group>"; };
 		B31FACC525DBC6F800DD5F14 /* ConflictReceiverAlertController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConflictReceiverAlertController.swift; sourceTree = "<group>"; };
 		B31FACC925DBC71200DD5F14 /* ConflictReceiverAlertHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictReceiverAlertHandler.swift; sourceTree = "<group>"; };
 		B31FACD125DBC7E900DD5F14 /* ActiveObjectDeletedConflictReceiverHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveObjectDeletedConflictReceiverHandler.swift; sourceTree = "<group>"; };
@@ -2119,7 +2117,6 @@
 				B353F1FA242E21880062EE24 /* ResetTranslatorsDbRequest.swift */,
 				B3588C6825FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift */,
 				B3E8B24E27DA3969001825F8 /* SplitAnnotationsDbRequest.swift */,
-				B31EEE5B24EBF24300E3B3AD /* StoreChangedAnnotationsDbRequest.swift */,
 				B305646723FC051E003304F2 /* StoreCollectionsDbRequest.swift */,
 				B305645323FC051E003304F2 /* StoreGroupDbRequest.swift */,
 				B305643B23FC051E003304F2 /* StoreItemsDbResponseRequest.swift */,
@@ -4503,7 +4500,6 @@
 				B30565EB23FC051E003304F2 /* Controllers.swift in Sources */,
 				B3A351E12715784A002E597A /* WebDavDownloadRequest.swift in Sources */,
 				B3593F78241A76E600760E20 /* CollectionEditError.swift in Sources */,
-				B31EEE5C24EBF24300E3B3AD /* StoreChangedAnnotationsDbRequest.swift in Sources */,
 				B36181EC24C96B0500B30D56 /* SearchableCollection.swift in Sources */,
 				B3830CDB255451AB00910FE0 /* TagPickerAction.swift in Sources */,
 				B3593F40241A61C700760E20 /* ItemCell.swift in Sources */,

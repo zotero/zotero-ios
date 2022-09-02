@@ -36,21 +36,6 @@ extension PSPDFKit.Annotation {
         }
     }
 
-    /// Defines base color for given annotation. Current color is derived from base color and may differ in light/dark mode.
-    var baseColor: String? {
-        get {
-            return self.customData?[AnnotationsConfig.baseColorKey] as? String
-        }
-
-        set {
-            if self.customData == nil {
-                self.customData = [AnnotationsConfig.baseColorKey: newValue]
-            } else {
-                self.customData?[AnnotationsConfig.baseColorKey] = newValue
-            }
-        }
-    }
-
     @objc var previewBoundingBox: CGRect {
         return self.boundingBox
     }

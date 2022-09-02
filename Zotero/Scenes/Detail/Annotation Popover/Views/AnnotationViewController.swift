@@ -191,7 +191,8 @@ final class AnnotationViewController: UIViewController {
             commentView.setup(text: comment)
             commentView.isUserInteractionEnabled = editability == .editable
             commentView.textObservable
-                       .subscribe(with: self, onNext: { `self`, data in
+                       .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
+                       .subscribe(onNext: { data in
                            self.viewModel.process(action: .setComment(key: annotation.key, comment: data.0))
                            if data.1 {
                                self.updatePreferredContentSize()

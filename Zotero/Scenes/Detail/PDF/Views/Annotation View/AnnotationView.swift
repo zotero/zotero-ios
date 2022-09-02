@@ -167,6 +167,7 @@ final class AnnotationView: UIView {
         }
 
         self.commentTextView.isHidden = false
+        self.commentTextView.isUserInteractionEnabled = canEdit
 
         // If comment is empty and not active, the input acts as a button.
         if isEmptyComment && !comment.isActive {
@@ -179,7 +180,6 @@ final class AnnotationView: UIView {
         let attributedString = comment.attributedString.flatMap({ AnnotationView.attributedString(from: $0, layout: self.layout) })
         self.commentTextView.set(placeholderColor: .placeholderText)
         self.commentTextView.setup(text: attributedString)
-        self.commentTextView.isUserInteractionEnabled = canEdit
 
         if canEdit && comment.isActive {
             self.commentTextView.becomeFirstResponder()
@@ -221,14 +221,16 @@ final class AnnotationView: UIView {
         })
         .disposed(by: self.disposeBag)
 
-        self.commentTextView.textObservable.subscribe(onNext: { [weak self] text, needsHeightReload in
-            self?.actionPublisher.on(.next(.setComment(text)))
-            if needsHeightReload {
-                self?.actionPublisher.on(.next(.reloadHeight))
-                self?.scrollToBottomIfNeeded()
-            }
-        })
-        .disposed(by: self.disposeBag)
+        self.commentTextView.textObservable
+                            .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
+                            .subscribe(onNext: { text, needsHeightReload in
+                                self.actionPublisher.on(.next(.setComment(text)))
+                                if needsHeightReload {
+                                    self.actionPublisher.on(.next(.reloadHeight))
+                                    self.scrollToBottomIfNeeded()
+                                }
+                            })
+                            .disposed(by: self.disposeBag)
 
         self.tags.tap.flatMap({ _ in Observable.just(Action.tags) }).bind(to: self.actionPublisher).disposed(by: self.disposeBag)
         self.tagsButton.rx.tap.flatMap({ Observable.just(Action.tags) }).bind(to: self.actionPublisher).disposed(by: self.disposeBag)

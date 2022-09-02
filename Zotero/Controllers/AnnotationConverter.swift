@@ -208,8 +208,7 @@ struct AnnotationConverter {
             annotation.customData = nil
 
         case .zotero:
-            annotation.customData = [AnnotationsConfig.baseColorKey: zoteroAnnotation.color,
-                                     AnnotationsConfig.keyKey: zoteroAnnotation.key]
+            annotation.customData = [AnnotationsConfig.keyKey: zoteroAnnotation.key]
 
             if zoteroAnnotation.editability(currentUserId: currentUserId, library: library) != .editable {
                 annotation.flags.update(with: .readOnly)
