@@ -37,6 +37,15 @@ struct DebuggingView: View {
                     }
                 }
             }
+
+            Section {
+                Button {
+                    self.viewModel.process(action: .exportDb)
+                } label: {
+                    Text(L10n.Settings.exportDb)
+                }
+
+            }
         }
         .navigationBarTitle(L10n.Settings.debug)
     }

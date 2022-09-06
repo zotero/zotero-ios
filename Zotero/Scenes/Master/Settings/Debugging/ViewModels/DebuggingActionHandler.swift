@@ -16,9 +16,11 @@ struct DebuggingActionHandler: ViewModelActionHandler {
     typealias State = DebuggingState
 
     private unowned let debugLogging: DebugLogging
+    private unowned let coordinatorDelegate: DebuggingSettingsSettingsCoordinatorDelegate
 
-    init(debugLogging: DebugLogging) {
+    init(debugLogging: DebugLogging, coordinatorDelegate: DebuggingSettingsSettingsCoordinatorDelegate) {
         self.debugLogging = debugLogging
+        self.coordinatorDelegate = coordinatorDelegate
     }
 
     func process(action: DebuggingAction, in viewModel: ViewModel<DebuggingActionHandler>) {
@@ -37,6 +39,9 @@ struct DebuggingActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.isLogging = false
             }
+
+        case .exportDb:
+            self.coordinatorDelegate.exportDb()
         }
     }
 }

@@ -310,6 +310,7 @@
 "settings.export.language" = "Language";
 "settings.export.copy_as_html" = "Copy as HTML";
 "settings.versionAndBuild" = "Version %@ Build %@";
+"settings.export_db" = "Export Database File";
 
 "shareext.save" = "Save to Zotero";
 "shareext.decoding_attachment" = "Searching for items";

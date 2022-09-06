@@ -907,6 +907,8 @@ internal enum L10n {
   internal enum Settings {
     /// Debug Output Logging
     internal static let debug = L10n.tr("Localizable", "settings.debug")
+    /// Export Database File
+    internal static let exportDb = L10n.tr("Localizable", "settings.export_db")
     /// Item count
     internal static let itemCount = L10n.tr("Localizable", "settings.item_count")
     /// Show item count for all collections.

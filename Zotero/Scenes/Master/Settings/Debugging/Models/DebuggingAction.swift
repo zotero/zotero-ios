@@ -12,4 +12,5 @@ enum DebuggingAction {
     case startImmediateLogging
     case startLoggingOnNextLaunch
     case stopLogging
+    case exportDb
 }

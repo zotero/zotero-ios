@@ -44,6 +44,10 @@ protocol StorageSettingsSettingsCoordinatorDelegate: AnyObject {
     func showDeleteLibraryStorageAlert(for library: Library, viewModel: ViewModel<StorageSettingsActionHandler>)
 }
 
+protocol DebuggingSettingsSettingsCoordinatorDelegate: AnyObject {
+    func exportDb()
+}
+
 final class SettingsCoordinator: NSObject, Coordinator {
     var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
@@ -255,7 +259,7 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
     }
 
     func showDebugging() {
-        let handler = DebuggingActionHandler(debugLogging: self.controllers.debugLogging)
+        let handler = DebuggingActionHandler(debugLogging: self.controllers.debugLogging, coordinatorDelegate: self)
         let viewModel = ViewModel(initialState: DebuggingState(isLogging: self.controllers.debugLogging.isEnabled), handler: handler)
         let view = DebuggingView().environmentObject(viewModel)
         self.pushDefaultSize(view: view)
@@ -352,6 +356,20 @@ extension SettingsCoordinator: ExportSettingsCoordinatorDelegate {
         let controller = UIHostingController(rootView: view.environmentObject(viewModel))
         controller.preferredContentSize = SettingsCoordinator.defaultSize
         self.navigationController.pushViewController(controller, animated: true)
+    }
+}
+
+extension SettingsCoordinator: DebuggingSettingsSettingsCoordinatorDelegate {
+    func exportDb() {
+        guard let userId = self.controllers.sessionController.sessionData?.userId else { return }
+
+        let mainUrl = Files.dbFile(for: userId).createUrl()
+        let bundledUrl = Files.bundledDataDbFile.createUrl()
+
+        let controller = UIActivityViewController(activityItems: [mainUrl, bundledUrl], applicationActivities: nil)
+        controller.modalPresentationStyle = .pageSheet
+        controller.popoverPresentationController?.sourceView = self.navigationController.view
+        self.navigationController.present(controller, animated: true, completion: nil)
     }
 }
 
