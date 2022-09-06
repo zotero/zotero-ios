@@ -15,15 +15,6 @@ struct ItemSortingView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Picker(L10n.Items.sortOrder, selection: self.viewModel.binding(get: \.sortType.ascending, action: { .setSortOrder($0) })) {
-                Text("Ascending").tag(true)
-                Text("Descending").tag(false)
-            }
-            .pickerStyle(.segmented)
-            .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
-
-            Divider()
-
             Button {
                 self.showPickerAction()
             } label: {
@@ -39,6 +30,15 @@ struct ItemSortingView: View {
                         .imageScale(.small)
                 }
             }
+            .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+
+            Divider()
+
+            Picker(L10n.Items.sortOrder, selection: self.viewModel.binding(get: \.sortType.ascending, action: { .setSortOrder($0) })) {
+                Text("Ascending").tag(true)
+                Text("Descending").tag(false)
+            }
+            .pickerStyle(.segmented)
             .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
         }
         .padding(EdgeInsets(top: 20, leading: 0, bottom: 20, trailing: 0))
