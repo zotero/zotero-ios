@@ -27,7 +27,6 @@ final class ItemDetailCollectionViewHandler: NSObject {
         case openFilePicker
         case openUrl(String)
         case openDoi(String)
-        case trashAttachment(Attachment)
     }
 
     /// Sections that are shown in `tableView`.
@@ -468,6 +467,61 @@ final class ItemDetailCollectionViewHandler: NSObject {
         return (maxTitleWidth, maxNonemptyTitleWidth)
     }
 
+    private func createContextMenu(for attachment: Attachment) -> UIMenu? {
+        guard !self.viewModel.state.data.isAttachment else { return nil }
+
+        var actions: [UIAction] = []
+
+        if case .file(_, _, let location, _) = attachment.type, location == .local {
+            actions.append(UIAction(title: L10n.ItemDetail.deleteAttachmentFile, image: UIImage(systemName: "trash"), attributes: []) { [weak self] action in
+                self?.viewModel.process(action: .deleteAttachmentFile(attachment))
+            })
+        }
+
+        actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+            self?.viewModel.process(action: .deleteAttachment(attachment))
+        })
+
+        return UIMenu(title: "", children: actions)
+    }
+
+    private func createContextMenu(for note: Note) -> UIMenu? {
+        var actions: [UIAction] = []
+
+        actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+            self?.viewModel.process(action: .deleteNote(note))
+        })
+
+        return UIMenu(title: "", children: actions)
+    }
+
+    private func createContextMenu(for tag: Tag) -> UIMenu? {
+        var actions: [UIAction] = []
+
+        actions.append(UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+            self?.viewModel.process(action: .deleteTag(tag))
+        })
+
+        return UIMenu(title: "", children: actions)
+    }
+
+    private func createContextMenu(for creator: ItemDetailState.Creator) -> UIMenu? {
+        var actions: [UIAction] = []
+
+        actions.append(UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+            self?.viewModel.process(action: .deleteCreator(creator.id))
+        })
+
+        return UIMenu(title: "", children: actions)
+    }
+
+    private func createContextMenu(for field: ItemDetailState.Field) -> UIMenu? {
+        guard ((field.key == FieldKeys.Item.doi || field.baseField == FieldKeys.Item.doi) || (field.key == FieldKeys.Item.url || field.baseField == FieldKeys.Item.url)) else { return nil }
+        return UIMenu(title: "", children: [UIAction(title: L10n.copy, handler: { _ in
+            UIPasteboard.general.string = field.value
+        })])
+    }
+
     // MARK: - Cells
 
     private lazy var titleRegistration: UICollectionView.CellRegistration<ItemDetailTitleCell, (String, Bool)> = {
@@ -887,8 +941,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             self.observer.on(.next(.openTypePicker))
 
         case .field(let fieldId, _):
-            guard let field = self.viewModel.state.data.fields[fieldId] else { return }
-            guard field.isTappable else { return }
+            guard let field = self.viewModel.state.data.fields[fieldId], field.isTappable else { return }
             switch field.key {
             case FieldKeys.Item.Attachment.url:
                 self.observer.on(.next(.openUrl(field.value)))
@@ -913,5 +966,34 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             }
         }
         return proposedIndexPath
+    }
+
+    func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        guard !self.viewModel.state.isEditing, let row = self.dataSource.itemIdentifier(for: indexPath) else { return nil }
+
+        let menu: UIMenu?
+
+        switch row {
+        case .field(let fieldId, _):
+            guard let field = self.viewModel.state.data.fields[fieldId] else { return nil }
+            menu = self.createContextMenu(for: field)
+
+        case .attachment(let attachment, _):
+            menu = self.createContextMenu(for: attachment)
+
+        case .tag(let tag, _):
+            menu = self.createContextMenu(for: tag)
+
+        case .note(let note, _):
+            menu = self.createContextMenu(for: note)
+
+        case .creator(let creator):
+            menu = self.createContextMenu(for: creator)
+
+        default:
+            return nil
+        }
+
+        return menu.flatMap({ menu in UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: { _ in menu }) })
     }
 }

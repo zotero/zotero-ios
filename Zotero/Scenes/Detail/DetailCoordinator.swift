@@ -59,7 +59,6 @@ protocol DetailItemDetailCoordinatorDelegate: AnyObject {
     func showDeletedAlertForItem(completion: @escaping (Bool) -> Void)
     func show(error: ItemDetailError, viewModel: ViewModel<ItemDetailActionHandler>)
     func showDataReloaded(completion: @escaping () -> Void)
-    func showTrashAttachmentQuestion(trashAction: @escaping () -> Void)
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
 }
 
@@ -815,15 +814,6 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         let controller = UIAlertController(title: L10n.warning, message: L10n.ItemDetail.dataReloaded, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in
             completion()
-        }))
-        self.topViewController.present(controller, animated: true, completion: nil)
-    }
-
-    func showTrashAttachmentQuestion(trashAction: @escaping () -> Void) {
-        let controller = UIAlertController(title: L10n.ItemDetail.trashAttachment, message: L10n.ItemDetail.trashAttachmentQuestion, preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: L10n.no, style: .default, handler: nil))
-        controller.addAction(UIAlertAction(title: L10n.yes, style: .destructive, handler: { _ in
-            trashAction()
         }))
         self.topViewController.present(controller, animated: true, completion: nil)
     }

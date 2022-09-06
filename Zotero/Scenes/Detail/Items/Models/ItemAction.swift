@@ -56,7 +56,7 @@ struct ItemAction {
             self.title = L10n.restore
             self._image = .asset(Asset.Images.restoreTrash.name)
         case .trash:
-            self.title = L10n.Items.Action.trash
+            self.title = L10n.moveToTrash
             self._image = .system("trash")
         case .createParent:
             self.title = L10n.Items.Action.createParent

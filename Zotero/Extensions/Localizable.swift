@@ -64,6 +64,8 @@ internal enum L10n {
   }
   /// More Information
   internal static let moreInformation = L10n.tr("Localizable", "more_information")
+  /// Move to Trash
+  internal static let moveToTrash = L10n.tr("Localizable", "move_to_trash")
   /// Name
   internal static let name = L10n.tr("Localizable", "name")
   /// No
@@ -651,10 +653,6 @@ internal enum L10n {
     internal static let splitName = L10n.tr("Localizable", "item_detail.split_name")
     /// Tags
     internal static let tags = L10n.tr("Localizable", "item_detail.tags")
-    /// Move to Trash
-    internal static let trashAttachment = L10n.tr("Localizable", "item_detail.trash_attachment")
-    /// Are you sure you want to move this attachment to the trash?
-    internal static let trashAttachmentQuestion = L10n.tr("Localizable", "item_detail.trash_attachment_question")
     /// Untitled
     internal static let untitled = L10n.tr("Localizable", "item_detail.untitled")
     /// View PDF
@@ -729,8 +727,6 @@ internal enum L10n {
       internal static let removeDownload = L10n.tr("Localizable", "items.action.remove_download")
       /// Remove from Collection
       internal static let removeFromCollection = L10n.tr("Localizable", "items.action.remove_from_collection")
-      /// Move to Trash
-      internal static let trash = L10n.tr("Localizable", "items.action.trash")
     }
     internal enum CreatorSummary {
       /// %@ and %@

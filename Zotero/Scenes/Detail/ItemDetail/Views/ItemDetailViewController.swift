@@ -141,11 +141,6 @@ final class ItemDetailViewController: UIViewController {
         case .openDoi(let doi):
             guard let encoded = FieldKeys.Item.clean(doi: doi).addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) else { return }
             self.coordinatorDelegate?.show(doi: encoded)
-
-        case .trashAttachment(let attachment):
-            self.coordinatorDelegate?.showTrashAttachmentQuestion { [weak self] in
-                self?.viewModel.process(action: .deleteAttachment(attachment))
-            }
         }
     }
 

@@ -49,6 +49,7 @@
 "more_information" = "More Information";
 "clear" = "Clear";
 "scan_text" = "Scan Text";
+"move_to_trash" = "Move to Trash";
 
 "beta_wipe_title" = "Resync Required";
 "beta_wipe_message" = "Due to a beta update, your data must be redownloaded from zotero.org.";
@@ -130,7 +131,6 @@
 "items.remove_from_collection_multiple_question" = "Are you sure you want to remove selected items from this collection?";
 "items.action.add_to_collection" = "Add to Collection";
 "items.action.remove_from_collection" = "Remove from Collection";
-"items.action.trash" = "Move to Trash";
 "items.action.duplicate" = "Duplicate";
 "items.action.create_parent" = "Create Parent Item";
 "items.action.download" = "Download";
@@ -192,9 +192,7 @@
 "item_detail.show_less" = "Show less";
 "item_detail.view_pdf" = "View PDF";
 "item_detail.data_reloaded" = "This item has been changed remotely. It will now reload.";
-"item_detail.trash_attachment" = "Move to Trash";
 "item_detail.delete_attachment_file" = "Remove Download";
-"item_detail.trash_attachment_question" = "Are you sure you want to move this attachment to the trash?";
 "item_detail.deleted_title" = "Deleted";
 "item_detail.deleted_message" = "This item has been deleted. Do you want to restore it?";
 
