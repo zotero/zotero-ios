@@ -14,7 +14,7 @@ import RxSwift
 import RxSwiftExt
 
 protocol CrashReporterCoordinator: AnyObject {
-    func report(id: String)
+    func report(id: String, completion: @escaping () -> Void)
 }
 
 final class CrashReporter {
@@ -57,14 +57,19 @@ final class CrashReporter {
         }
     }
 
-    func processPendingReports() {
+    func processPendingReports(completion: @escaping () -> Void) {
         self.queue.async {
-            guard self.reporter.hasPendingCrashReport() else { return }
-            self.handleCrashReport()
+            guard self.reporter.hasPendingCrashReport() else {
+                inMainThread {
+                    completion()
+                }
+                return
+            }
+            self.handleCrashReport(completion: completion)
         }
     }
 
-    private func handleCrashReport() {
+    private func handleCrashReport(completion: @escaping () -> Void) {
         do {
             let data = try self.reporter.loadPendingCrashReportDataAndReturnError()
             let report = try PLCrashReport(data: data)
@@ -72,6 +77,9 @@ final class CrashReporter {
             guard let text = PLCrashReportTextFormatter.stringValue(for: report, with: PLCrashReportTextFormatiOS) else {
                 DDLogError("CrashReporter: can't convert report to text")
                 self.cleanup()
+                inMainThread {
+                    completion()
+                }
                 return
             }
 
@@ -79,15 +87,19 @@ final class CrashReporter {
 
             self.submit(crashLog: text).observe(on: MainScheduler.instance)
                                        .subscribe(onNext: { [weak self] reportId in
-                                           self?.reportCrashIfNeeded(id: reportId, date: date)
+                                           self?.reportCrashIfNeeded(id: reportId, date: date, completion: completion)
                                            self?.cleanup()
                                         }, onError: { error in
                                            DDLogError("CrashReporter: can't upload crash log - \(error)")
+                                            completion()
                                         })
                                         .disposed(by: self.disposeBag)
         } catch let error {
             DDLogError("CrashReporter: can't load data - \(error)")
             self.cleanup()
+            inMainThread {
+                completion()
+            }
         }
     }
 
@@ -111,14 +123,17 @@ final class CrashReporter {
                              }
     }
 
-    private func reportCrashIfNeeded(id: String, date: Date?) {
+    private func reportCrashIfNeeded(id: String, date: Date?, completion: @escaping () -> Void) {
         guard let date = date else {
-            self.coordinator?.report(id: id)
+            self.coordinator?.report(id: id, completion: completion)
             return
         }
         // Don't report to user if crash happened more than 10 minutes ago
-        guard Date().timeIntervalSince(date) <= 600 else { return }
-        self.coordinator?.report(id: id)
+        guard Date().timeIntervalSince(date) <= 600 else {
+            completion()
+            return
+        }
+        self.coordinator?.report(id: id, completion: completion)
     }
 
     private func cleanup() {

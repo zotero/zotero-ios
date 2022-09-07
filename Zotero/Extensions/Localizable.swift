@@ -976,9 +976,15 @@ internal enum L10n {
       internal static let searchTitle = L10n.tr("Localizable", "settings.cite_search.search_title")
     }
     internal enum CrashAlert {
+      /// Export Database
+      internal static let exportDb = L10n.tr("Localizable", "settings.crash_alert.export_db")
       /// Your Report ID is %@
       internal static func message(_ p1: Any) -> String {
         return L10n.tr("Localizable", "settings.crash_alert.message", String(describing: p1))
+      }
+      /// Your Report ID is %@. If Zotero crashes repeatedly please tap "Export Database" and send exported files to support@zotero.org
+      internal static func messageWithDb(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "settings.crash_alert.message_with_db", String(describing: p1))
       }
       /// Crash Log Sent
       internal static let title = L10n.tr("Localizable", "settings.crash_alert.title")

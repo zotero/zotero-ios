@@ -461,22 +461,36 @@ extension AppCoordinator: AppLoginCoordinatorDelegate {
 }
 
 extension AppCoordinator: CrashReporterCoordinator {
-    func report(id: String) {
-        let actions = [UIAlertAction(title: L10n.ok, style: .cancel, handler: nil),
+    func report(id: String, completion: @escaping () -> Void) {
+        var actions = [UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in completion() }),
                        UIAlertAction(title: L10n.copy, style: .default, handler: { _ in
                           UIPasteboard.general.string = id
+                          completion()
                        })]
+
+        let userId = Defaults.shared.userId
+        if userId > 0 {
+            let action = UIAlertAction(title: L10n.Settings.CrashAlert.exportDb, style: .default) { [weak self] _ in
+                self?.exportDb(with: userId, completion: completion)
+            }
+            actions.append(action)
+        }
+
         self.showAlert(title: L10n.Settings.CrashAlert.title, message: L10n.Settings.CrashAlert.message(id), actions: actions)
     }
 
-    func report(crash: String, completed: @escaping () -> Void) {
-        let actions = [UIAlertAction(title: "No", style: .cancel, handler: { _ in completed() }),
-                       UIAlertAction(title: "Yes", style: .default, handler: { [weak self] action in
-                           self?.presentActivityViewController(with: [crash], completed: completed)
-                       })]
-        self.showAlert(title: "Crash report",
-                        message: "It seems you encountered a crash. Would you like to report it?",
-                        actions: actions)
+    private func exportDb(with userId: Int, completion: @escaping () -> Void) {
+        let mainUrl = Files.dbFile(for: userId).createUrl()
+        let bundledUrl = Files.bundledDataDbFile.createUrl()
+
+        let controller = UIActivityViewController(activityItems: [mainUrl, bundledUrl], applicationActivities: nil)
+        controller.modalPresentationStyle = .pageSheet
+        controller.popoverPresentationController?.sourceView = self.viewController?.view
+        controller.popoverPresentationController?.sourceRect = CGRect(x: 100, y: 100, width: 100, height: 100)
+        controller.completionWithItemsHandler = { _, _, _, _ in
+            completion()
+        }
+        self.viewController?.present(controller, animated: true, completion: nil)
     }
 }
 

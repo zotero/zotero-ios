@@ -37,6 +37,7 @@ final class Controllers {
     var userControllers: UserControllers?
     private var apiKey: String?
     private var sessionCancellable: AnyCancellable?
+    private var didInitialize: Bool
 
     private static func apiConfiguration(schemaVersion: Int) -> URLSessionConfiguration {
         let configuration = URLSessionConfiguration.default
@@ -86,20 +87,24 @@ final class Controllers {
         self.idleTimerController = IdleTimerController()
         self.backgroundTaskController = BackgroundTaskController()
         self.lowPowerModeController = LowPowerModeController()
+        self.didInitialize = false
 
         Defaults.shared.lastBuildNumber = DeviceInfoProvider.buildNumber
 
-        self.initializeSessionIfPossible()
+        crashReporter.processPendingReports { [weak self] in
+            self?.initializeSessionIfPossible()
+            self?.startApp()
+            self?.didInitialize = true
+        }
     }
 
     // MARK: - App lifecycle
 
     func willEnterForeground() {
-        self.crashReporter.processPendingReports()
-        self.translatorsAndStylesController.update()
-
-        guard let controllers = self.userControllers, let session = self.sessionController.sessionData else { return }
-        controllers.enableSync(apiKey: session.apiToken)
+        guard self.didInitialize else { return }
+        self.crashReporter.processPendingReports { [weak self] in
+            self?.startApp()
+        }
     }
 
     func didEnterBackground() {
@@ -113,6 +118,12 @@ final class Controllers {
     }
 
     // MARK: - Actions
+
+    private func startApp() {
+        self.translatorsAndStylesController.update()
+        guard let controllers = self.userControllers, let session = self.sessionController.sessionData else { return }
+        controllers.enableSync(apiKey: session.apiToken)
+    }
 
     private func initializeSessionIfPossible(failOnError: Bool = false) {
         do {
