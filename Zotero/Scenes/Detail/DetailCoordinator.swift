@@ -402,6 +402,17 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             navigationController?.preferredContentSize = _size
         }
 
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            controller.didLoad = { [weak self] viewController in
+                guard let `self` = self else { return }
+                let doneButton = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
+                doneButton.rx.tap.subscribe({ [weak self] _ in
+                    self?.topViewController.dismiss(animated: true)
+                }).disposed(by: self.disposeBag)
+                viewController.navigationItem.rightBarButtonItem = doneButton
+            }
+        }
+
         navigationController.setViewControllers([controller], animated: false)
 
         self.topViewController.present(navigationController, animated: true, completion: nil)

@@ -40,6 +40,10 @@ struct ItemSortingView: View {
             }
             .pickerStyle(.segmented)
             .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                Spacer()
+            }
         }
         .padding(EdgeInsets(top: 20, leading: 0, bottom: 20, trailing: 0))
     }

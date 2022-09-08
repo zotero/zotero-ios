@@ -10,8 +10,14 @@ import UIKit
 import SwiftUI
 
 final class DisappearActionHostingController<Content>: UIHostingController<Content> where Content : View {
+    var didLoad: ((UIViewController) -> Void)?
     var willAppear: (() -> Void)?
     var willDisappear: (() -> Void)?
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        self.didLoad?(self)
+    }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
