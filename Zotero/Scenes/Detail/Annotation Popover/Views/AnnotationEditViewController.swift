@@ -273,7 +273,7 @@ extension AnnotationEditViewController: UITableViewDelegate {
 }
 
 extension AnnotationEditViewController: AnnotationPopover {
-    var annotationKey: PDFReaderState.AnnotationKey {
+    var annotationKey: PDFReaderState.AnnotationKey? {
         return self.viewModel.state.key
     }
 }

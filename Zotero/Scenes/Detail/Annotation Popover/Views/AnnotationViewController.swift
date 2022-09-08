@@ -304,8 +304,8 @@ final class AnnotationViewController: UIViewController {
 }
 
 extension AnnotationViewController: AnnotationPopover {
-    var annotationKey: PDFReaderState.AnnotationKey {
-        return self.viewModel.state.selectedAnnotationKey ?? PDFReaderState.AnnotationKey(key: "", type: .document)
+    var annotationKey: PDFReaderState.AnnotationKey? {
+        return self.viewModel.state.selectedAnnotationKey
     }
 }
 

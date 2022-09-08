@@ -189,7 +189,7 @@ final class PDFReaderViewController: UIViewController {
     private func update(state: PDFReaderState) {
         if state.changes.contains(.annotations) {
             // Hide popover if annotation has been deleted
-            if let controller = (self.presentedViewController as? UINavigationController)?.viewControllers.first as? AnnotationPopover, !state.sortedKeys.contains(controller.annotationKey) {
+            if let controller = (self.presentedViewController as? UINavigationController)?.viewControllers.first as? AnnotationPopover, let key = controller.annotationKey, !state.sortedKeys.contains(key) {
                 self.dismiss(animated: true, completion: nil)
             }
         }
@@ -1031,11 +1031,10 @@ extension PDFReaderViewController: AnnotationStateManagerDelegate {
 }
 
 extension PDFReaderViewController: UIPopoverPresentationControllerDelegate {
-    func popoverPresentationControllerShouldDismissPopover(_ popoverPresentationController: UIPopoverPresentationController) -> Bool {
+    func popoverPresentationControllerDidDismissPopover(_ popoverPresentationController: UIPopoverPresentationController) {
         if self.viewModel.state.selectedAnnotation?.type == .highlight {
             self.viewModel.process(action: .deselectSelectedAnnotation)
         }
-        return true
     }
 }
 

@@ -13,7 +13,7 @@ import RxSwift
 #if PDFENABLED
 
 protocol AnnotationPopover: AnyObject {
-    var annotationKey: PDFReaderState.AnnotationKey { get }
+    var annotationKey: PDFReaderState.AnnotationKey? { get }
 }
 
 protocol AnnotationPopoverAnnotationCoordinatorDelegate: AnyObject {
