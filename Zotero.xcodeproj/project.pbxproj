@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 52;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -349,7 +349,7 @@
 		B3100927272C2441003FC743 /* DeleteWebDavFilesSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3100926272C2441003FC743 /* DeleteWebDavFilesSyncAction.swift */; };
 		B3100928272C32E9003FC743 /* DeleteWebDavFilesSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3100926272C2441003FC743 /* DeleteWebDavFilesSyncAction.swift */; };
 		B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B311B3202386A39800BCF592 /* MainInterface.storyboard */; };
-		B311B3262386A39800BCF592 /* ZShare.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B311B31C2386A39800BCF592 /* ZShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B311B3262386A39800BCF592 /* ZShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B311B31C2386A39800BCF592 /* ZShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B3129855270EE9DE002376F9 /* Error+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3129854270EE9DE002376F9 /* Error+Helpers.swift */; };
 		B312BB4125519DD30023300A /* ItemDetailLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B312BB4025519DD30023300A /* ItemDetailLayout.swift */; };
 		B31901942629C9CB00209E33 /* ItemsFilterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31901922629C9CB00209E33 /* ItemsFilterViewController.swift */; };
@@ -1096,15 +1096,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		B311B3272386A39800BCF592 /* Embed App Extensions */ = {
+		B311B3272386A39800BCF592 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				B311B3262386A39800BCF592 /* ZShare.appex in Embed App Extensions */,
+				B311B3262386A39800BCF592 /* ZShare.appex in Embed Foundation Extensions */,
 			);
-			name = "Embed App Extensions";
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		B3E196FA25308D9700DBBE5C /* CopyFiles */ = {
@@ -3779,7 +3779,7 @@
 				B30D59512206F60400884C4A /* Sources */,
 				B30D59522206F60400884C4A /* Frameworks */,
 				B30D59532206F60400884C4A /* Resources */,
-				B311B3272386A39800BCF592 /* Embed App Extensions */,
+				B311B3272386A39800BCF592 /* Embed Foundation Extensions */,
 				B3E196FA25308D9700DBBE5C /* CopyFiles */,
 				B3E196FB25308DA500DBBE5C /* ShellScript */,
 			);
@@ -3891,7 +3891,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 1120;
-				LastUpgradeCheck = 1200;
+				LastUpgradeCheck = 1400;
 				ORGANIZATIONNAME = "Corporation for Digital Scholarship";
 				TargetAttributes = {
 					B30D59542206F60400884C4A = {
@@ -4078,6 +4078,7 @@
 /* Begin PBXShellScriptBuildPhase section */
 		B3087B87245190F500FF05ED /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -4095,6 +4096,7 @@
 		};
 		B337A5AD244F229400AFD13D /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -4113,6 +4115,7 @@
 		};
 		B34A85AC243CB1E4003D5638 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -4131,6 +4134,7 @@
 		};
 		B3593F142668D37900FA4BB2 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -4149,6 +4153,7 @@
 		};
 		B3CF8840266E0FE6009CFC20 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -4167,6 +4172,7 @@
 		};
 		B3E196FB25308DA500DBBE5C /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -4184,6 +4190,7 @@
 		};
 		B3E1970625308DD100DBBE5C /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
