@@ -6,6 +6,8 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
+#if PDFENABLED
+
 import UIKit
 
 struct PDFReaderLayout {
@@ -26,3 +28,5 @@ struct PDFReaderLayout {
     // Annotation
     static let annotationLayout = AnnotationViewLayout(type: .cell)
 }
+
+#endif

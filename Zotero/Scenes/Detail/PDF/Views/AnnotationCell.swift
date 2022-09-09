@@ -6,6 +6,8 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
+#if PDFENABLED
+
 import UIKit
 
 import RxSwift
@@ -144,3 +146,5 @@ final class AnnotationCell: UITableViewCell {
         return label
     }
 }
+
+#endif

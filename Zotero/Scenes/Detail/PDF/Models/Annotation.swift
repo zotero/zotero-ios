@@ -6,6 +6,8 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
+#if PDFENABLED
+
 import UIKit
 
 protocol Annotation {
@@ -59,3 +61,5 @@ extension Annotation {
         }
     }
 }
+
+#endif

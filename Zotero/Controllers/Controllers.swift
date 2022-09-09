@@ -66,7 +66,13 @@ final class Controllers {
         let bundledDataConfiguration = Database.bundledDataConfiguration(fileStorage: fileStorage)
         let bundledDataStorage = RealmDbStorage(config: bundledDataConfiguration)
         let translatorsAndStylesController = TranslatorsAndStylesController(apiClient: apiClient, bundledDataStorage: bundledDataStorage, fileStorage: fileStorage)
-        let previewSize = CGSize(width: PDFReaderLayout.sidebarWidth, height: PDFReaderLayout.sidebarWidth)
+        let previewSize: CGSize
+
+        #if PDFENABLED
+        previewSize = CGSize(width: PDFReaderLayout.sidebarWidth, height: PDFReaderLayout.sidebarWidth)
+        #else
+        previewSize = CGSize()
+        #endif
 
         self.bundledDataStorage = bundledDataStorage
         self.sessionController = sessionController

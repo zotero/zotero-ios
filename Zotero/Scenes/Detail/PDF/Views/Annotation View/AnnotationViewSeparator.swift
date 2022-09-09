@@ -6,6 +6,8 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
+#if PDFENABLED
+
 import UIKit
 
 final class AnnotationViewSeparator: UIView {
@@ -20,3 +22,5 @@ final class AnnotationViewSeparator: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 }
+
+#endif

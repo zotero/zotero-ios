@@ -6,6 +6,8 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
+#if PDFENABLED
+
 import UIKit
 
 import RxSwift
@@ -56,3 +58,5 @@ extension HighlightEditCell: UITextViewDelegate {
         self.observer?.on(.next((textView.text, (height != textView.contentSize.height))))
     }
 }
+
+#endif

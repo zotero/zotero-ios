@@ -6,6 +6,8 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
+#if PDFENABLED
+
 import UIKit
 
 import RxSwift
@@ -175,3 +177,5 @@ fileprivate final class AnnotationTextView: UITextView {
         self.delegate?.textViewDidChange?(self)
     }
 }
+
+#endif
