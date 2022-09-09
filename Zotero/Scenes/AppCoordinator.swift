@@ -471,6 +471,7 @@ extension AppCoordinator: CrashReporterCoordinator {
         let userId = Defaults.shared.userId
         if userId > 0 {
             let action = UIAlertAction(title: L10n.Settings.CrashAlert.exportDb, style: .default) { [weak self] _ in
+                UIPasteboard.general.string = id
                 self?.exportDb(with: userId, completion: completion)
             }
             actions.append(action)
