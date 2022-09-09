@@ -59,7 +59,7 @@ final class SyncController: SynchronizationController {
         /// Create only "write" actions - item submission, uploads, etc.
         case onlyWrites
         /// Create only "download" actions - version check, item data, etc.
-        case forceDownloads
+        case onlyDownloads
     }
 
     /// Sync action represents a step that the synchronization controller needs to take.
@@ -631,8 +631,17 @@ final class SyncController: SynchronizationController {
                 }
             }
             // If only my library is being synced, skip group metadata sync
-            let options: CreateLibraryActionsOptions = syncType == .full ? .forceDownloads : .automatic
+            let options = self.libraryActionsOptions(from: syncType)
             return [.loadKeyPermissions, .createLibraryActions(libraries, options)]
+        }
+    }
+
+    private func libraryActionsOptions(from syncType: SyncType) -> CreateLibraryActionsOptions {
+        switch syncType {
+        case .full, .collectionsOnly:
+            return .onlyDownloads
+        case .ignoreIndividualDelays, .normal:
+            return .automatic
         }
     }
 
@@ -686,7 +695,7 @@ final class SyncController: SynchronizationController {
     }
 
     private func processCreateLibraryActions(for libraries: LibrarySyncType, options: CreateLibraryActionsOptions) {
-        let result = LoadLibraryDataSyncAction(type: libraries, fetchUpdates: (options != .forceDownloads), loadVersions: (self.type != .full),
+        let result = LoadLibraryDataSyncAction(type: libraries, fetchUpdates: (options != .onlyDownloads), loadVersions: (self.type != .full),
                                                webDavEnabled: self.webDavController.sessionStorage.isEnabled, dbStorage: self.dbStorage, queue: self.workQueue).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] data in
@@ -734,48 +743,79 @@ final class SyncController: SynchronizationController {
 
     private func createLibraryActions(for data: [LibraryData], creationOptions: CreateLibraryActionsOptions) -> ([Action], Int?, Int) {
         var writeCount = 0
-        var allActions: [Action] = []
+        var actions: [Action] = []
 
         for libraryData in data {
-            let libraryId = libraryData.identifier
-
-            switch creationOptions {
-            case .forceDownloads:
-                allActions.append(contentsOf: self.createDownloadActions(for: libraryId, versions: libraryData.versions))
-
-            case .onlyWrites, .automatic:
-                if !libraryData.updates.isEmpty || !libraryData.deletions.isEmpty || libraryData.hasUpload {
-                    switch libraryData.identifier {
-                    case .group(let groupId):
-                        // We need to check permissions for group
-                        if libraryData.canEditMetadata {
-                            let actions = self.createUpdateActions(updates: libraryData.updates, deletions: libraryData.deletions, libraryId: libraryId)
-                            writeCount += actions.count - 1
-                            allActions.append(contentsOf: actions)
-                        } else {
-                            allActions.append(.resolveGroupMetadataWritePermission(groupId, libraryData.name))
-                        }
-                    case .custom:
-                        let actions = self.createUpdateActions(updates: libraryData.updates, deletions: libraryData.deletions, libraryId: libraryId)
-                         writeCount += actions.count - 1
-                        // We can always write to custom libraries
-                        allActions.append(contentsOf: actions)
-                    }
-                } else if creationOptions == .automatic {
-                    allActions.append(contentsOf: self.createDownloadActions(for: libraryId, versions: libraryData.versions))
-                }
-
-                // If there are pending WebDAV deletions, always try to remove remaining files.
-                if libraryData.hasWebDavDeletions {
-                    allActions.append(.performWebDavDeletions(libraryId))
-                }
-            }
+            let (_actions, _writeCount) = self.createLibraryActions(for: libraryData, creationOptions: creationOptions)
+            writeCount += _writeCount
+            actions.append(contentsOf: _actions)
         }
 
         // Forced downloads or writes are pushed to the beginning of the queue, because only currently running action
         // can force downloads or writes
         let index: Int? = creationOptions == .automatic ? nil : 0
-        return (allActions, index, writeCount)
+        return (actions, index, writeCount)
+    }
+
+    private func createLibraryActions(for libraryData: LibraryData, creationOptions: CreateLibraryActionsOptions) -> ([Action], Int) {
+        switch creationOptions {
+        case .onlyDownloads:
+            let actions = self.createDownloadActions(for: libraryData.identifier, versions: libraryData.versions)
+            return (actions, 0)
+
+        case .onlyWrites:
+            var actions: [Action] = []
+            var writeCount = 0
+
+            if !libraryData.updates.isEmpty || !libraryData.deletions.isEmpty || libraryData.hasUpload {
+                let (_actions, _writeCount) = self.createLibraryWriteActions(for: libraryData)
+                actions = _actions
+                writeCount = _writeCount
+            }
+
+            // If there are pending WebDAV deletions, always try to remove remaining files.
+            if libraryData.hasWebDavDeletions {
+                actions.append(.performWebDavDeletions(libraryData.identifier))
+            }
+
+            return (actions, writeCount)
+
+        case .automatic:
+            var actions: [Action] = []
+            var writeCount = 0
+
+            if !libraryData.updates.isEmpty || !libraryData.deletions.isEmpty || libraryData.hasUpload {
+                let (_actions, _writeCount) = self.createLibraryWriteActions(for: libraryData)
+                actions = _actions
+                writeCount = _writeCount
+            } else {
+                actions = self.createDownloadActions(for: libraryData.identifier, versions: libraryData.versions)
+            }
+
+            // If there are pending WebDAV deletions, always try to remove remaining files.
+            if libraryData.hasWebDavDeletions {
+                actions.append(.performWebDavDeletions(libraryData.identifier))
+            }
+
+            return (actions, writeCount)
+        }
+    }
+
+    private func createLibraryWriteActions(for libraryData: LibraryData) -> ([Action], Int) {
+        switch libraryData.identifier {
+        case .custom:
+            // We can always write to custom libraries
+            let actions = self.createUpdateActions(updates: libraryData.updates, deletions: libraryData.deletions, libraryId: libraryData.identifier)
+            return (actions, actions.count - 1)
+
+        case .group(let groupId):
+            // We need to check permissions for group
+            if !libraryData.canEditMetadata {
+                return ([.resolveGroupMetadataWritePermission(groupId, libraryData.name)], 0)
+            }
+            let actions = self.createUpdateActions(updates: libraryData.updates, deletions: libraryData.deletions, libraryId: libraryData.identifier)
+            return (actions, actions.count - 1)
+        }
     }
 
     private func createUpdateActions(updates: [WriteBatch], deletions: [DeleteBatch], libraryId: LibraryIdentifier) -> [Action] {
@@ -842,7 +882,7 @@ final class SyncController: SynchronizationController {
             }
 
             // If there were no other actions performed, we need to check for remote changes for this library.
-            self.queue.insert(.createLibraryActions(.specific([libraryId]), .forceDownloads), at: 0)
+            self.queue.insert(.createLibraryActions(.specific([libraryId]), .onlyDownloads), at: 0)
             self.processNextAction()
             return
         }
@@ -896,7 +936,7 @@ final class SyncController: SynchronizationController {
 
         var actions: [Action] = deleteGroups.map({ .resolveDeletedGroup($0.0, $0.1) })
         actions.append(contentsOf: idsToSync.map({ .syncGroupToDb($0) }))
-        let options: CreateLibraryActionsOptions = syncType == .full ? .forceDownloads : .automatic
+        let options = self.libraryActionsOptions(from: syncType)
         actions.append(.createLibraryActions(self.libraryType, options))
         return actions
     }
@@ -1371,7 +1411,7 @@ final class SyncController: SynchronizationController {
         self.enqueuedUploads = 0
         self.uploadsFailedBeforeReachingZoteroBackend = 0
         // Enqueue download actions to check for remote changes
-        self.queue.insert(.createLibraryActions(.specific([libraryId]), .forceDownloads), at: 0)
+        self.queue.insert(.createLibraryActions(.specific([libraryId]), .onlyDownloads), at: 0)
     }
 
     private func deleteGroup(with groupId: Int) {
@@ -1688,7 +1728,7 @@ final class SyncController: SynchronizationController {
             }
 
             let delay = self.conflictDelays[min(self.conflictRetries, (self.conflictDelays.count - 1))]
-            let actions: [Action] = [.createLibraryActions(.specific([libraryId]), .forceDownloads),
+            let actions: [Action] = [.createLibraryActions(.specific([libraryId]), .onlyDownloads),
                                      .createLibraryActions(.specific([libraryId]), .onlyWrites)]
 
             self.conflictRetries += 1
