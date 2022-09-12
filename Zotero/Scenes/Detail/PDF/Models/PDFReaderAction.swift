@@ -42,7 +42,7 @@ enum PDFReaderAction {
     case setComment(key: String, comment: NSAttributedString)
     case setCommentActive(Bool)
     case setVisiblePage(Int)
-    case export
+    case export(PDFExportSettings)
     case clearTmpAnnotationPreviews
     case setSidebarEditingEnabled(Bool)
     case setSettings(PDFSettings)

@@ -191,8 +191,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .setVisiblePage(let page):
             self.set(page: page, in: viewModel)
 
-        case .export:
-            self.export(viewModel: viewModel)
+        case .export(let settings):
+            self.export(settings: settings, viewModel: viewModel)
 
         case .clearTmpAnnotationPreviews:
             self.clearTmpAnnotationPreviews(in: viewModel)
@@ -448,7 +448,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func export(viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func export(settings: PDFExportSettings, viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let boundingBoxConverter = self.delegate, let url = viewModel.state.document.fileURL else { return }
 
         self.update(viewModel: viewModel) { state in
@@ -456,8 +456,16 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             state.changes.insert(.export)
         }
 
-        let annotations = AnnotationConverter.annotations(from: viewModel.state.databaseAnnotations, type: .export, interfaceStyle: .light, currentUserId: viewModel.state.userId,
-                                                          library: viewModel.state.library, displayName: viewModel.state.displayName, username: viewModel.state.username, boundingBoxConverter: boundingBoxConverter)
+        let annotations: [PSPDFKit.Annotation]
+
+        if !settings.includeAnnotations {
+            annotations = []
+        } else {
+            annotations = AnnotationConverter.annotations(from: viewModel.state.databaseAnnotations, type: .export, interfaceStyle: .light, currentUserId: viewModel.state.userId,
+                                                          library: viewModel.state.library, displayName: viewModel.state.displayName, username: viewModel.state.username,
+                                                          boundingBoxConverter: boundingBoxConverter)
+        }
+
         PdfDocumentExporter.export(annotations: annotations, key: viewModel.state.key, libraryId: viewModel.state.library.identifier, url: url, fileStorage: self.fileStorage, dbStorage: self.dbStorage,
                                    completed: { [weak viewModel] result in
                                        guard let viewModel = viewModel else { return }

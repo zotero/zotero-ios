@@ -247,6 +247,9 @@
 "pdf.settings.page_fitting.fill" = "Fill";
 "pdf.settings.page_fitting.automatic" = "Automatic";
 
+"pdf.export.export" = "Export";
+"pdf.export.include_annotations" = "Include annotations";
+
 "settings.title" = "Settings";
 "settings.logout" = "Sign Out";
 "settings.logout_warning" = "Any local data that was not synced will be deleted. Do you really want to sign out?";

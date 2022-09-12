@@ -831,6 +831,12 @@ internal enum L10n {
         internal static let title = L10n.tr("Localizable", "pdf.annotations_sidebar.filter.title")
       }
     }
+    internal enum Export {
+      /// Export
+      internal static let export = L10n.tr("Localizable", "pdf.export.export")
+      /// Include annotations
+      internal static let includeAnnotations = L10n.tr("Localizable", "pdf.export.include_annotations")
+    }
     internal enum Search {
       /// Search failed
       internal static let failed = L10n.tr("Localizable", "pdf.search.failed")

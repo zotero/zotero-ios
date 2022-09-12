@@ -86,6 +86,7 @@ protocol DetailPdfCoordinatorDelegate: AnyObject {
     func showSettings(with settings: PDFSettings, sender: UIBarButtonItem, completion: @escaping (PDFSettings) -> Void)
     func showSliderSettings(sender: UIView, title: String, initialValue: CGFloat, valueChanged: @escaping (CGFloat) -> Void)
     func showReader(document: Document)
+    func showPdfExportSettings(sender: UIBarButtonItem, completed: @escaping (PDFExportSettings) -> Void)
 }
 
 protocol DetailAnnotationsCoordinatorDelegate: AnyObject {
@@ -1029,6 +1030,19 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .fullScreen
         self.topViewController.present(navigationController, animated: true, completion: nil)
+    }
+
+    func showPdfExportSettings(sender: UIBarButtonItem, completed: @escaping (PDFExportSettings) -> Void) {
+        let view = PDFExportSettingsView(settings: PDFExportSettings(includeAnnotations: true), exportHandler: { [weak self] settings in
+            self?.topViewController.dismiss(animated: true, completion: {
+                completed(settings)
+            })
+        })
+        let controller = UIHostingController(rootView: view)
+        controller.preferredContentSize = CGSize(width: 400, height: 140)
+        controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
+        controller.popoverPresentationController?.barButtonItem = sender
+        self.topViewController.present(controller, animated: true)
     }
 }
 

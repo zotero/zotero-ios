@@ -51,8 +51,11 @@ final class PDFReaderViewController: UIViewController {
         share.accessibilityLabel = L10n.Accessibility.Pdf.export
         share.tag = NavigationBarButton.share.rawValue
         share.rx.tap
-             .subscribe(onNext: { [weak self] _ in
-                 self?.viewModel.process(action: .export)
+             .subscribe(onNext: { [weak self, weak share] _ in
+                 guard let `self` = self, let share = share else { return }
+                 self.coordinatorDelegate?.showPdfExportSettings(sender: share) { [weak self] settings in
+                     self?.viewModel.process(action: .export(settings))
+                 }
              })
              .disposed(by: self.disposeBag)
         return share
