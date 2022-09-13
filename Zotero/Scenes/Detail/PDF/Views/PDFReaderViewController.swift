@@ -878,30 +878,6 @@ final class PDFReaderViewController: UIViewController {
                       })
                       .disposed(by: self.disposeBag)
 
-//        NotificationCenter.default.rx
-//                                  .notification(.PSPDFAnnotationChanged)
-//                                  .observe(on: MainScheduler.instance)
-//                                  .subscribe(onNext: { [weak self] notification in
-//                                      self?.processAnnotationObserving(notification: notification)
-//                                  })
-//                                  .disposed(by: self.disposeBag)
-//
-//        NotificationCenter.default.rx
-//                                  .notification(.PSPDFAnnotationsAdded)
-//                                  .observe(on: MainScheduler.instance)
-//                                  .subscribe(onNext: { [weak self] notification in
-//                                      self?.processAnnotationObserving(notification: notification)
-//                                  })
-//                                  .disposed(by: self.disposeBag)
-//
-//        NotificationCenter.default.rx
-//                                  .notification(.PSPDFAnnotationsRemoved)
-//                                  .observe(on: MainScheduler.instance)
-//                                  .subscribe(onNext: { [weak self] notification in
-//                                      self?.processAnnotationObserving(notification: notification)
-//                                  })
-//                                  .disposed(by: self.disposeBag)
-
         NotificationCenter.default.rx
                                   .notification(UIApplication.didBecomeActiveNotification)
                                   .observe(on: MainScheduler.instance)
