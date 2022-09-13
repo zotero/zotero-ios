@@ -13,6 +13,7 @@ import RxSwift
 #if PDFENABLED
 
 final class AnnotationViewController: UIViewController {
+    let annotationKey: PDFReaderState.AnnotationKey?
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private unowned let attributedStringConverter: HtmlAttributedStringConverter
     private let disposeBag: DisposeBag
@@ -37,6 +38,7 @@ final class AnnotationViewController: UIViewController {
 
     init(viewModel: ViewModel<PDFReaderActionHandler>, attributedStringConverter: HtmlAttributedStringConverter) {
         self.viewModel = viewModel
+        self.annotationKey = viewModel.state.selectedAnnotationKey
         self.attributedStringConverter = attributedStringConverter
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
@@ -303,10 +305,6 @@ final class AnnotationViewController: UIViewController {
     }
 }
 
-extension AnnotationViewController: AnnotationPopover {
-    var annotationKey: PDFReaderState.AnnotationKey? {
-        return self.viewModel.state.selectedAnnotationKey
-    }
-}
+extension AnnotationViewController: AnnotationPopover {}
 
 #endif
