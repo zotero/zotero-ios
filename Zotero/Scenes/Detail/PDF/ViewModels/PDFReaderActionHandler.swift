@@ -1122,7 +1122,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private func add(annotations: [PSPDFKit.Annotation], selectFirst: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let boundingBoxConverter = self.delegate else { return }
 
-        DDLogInfo("PDFReaderActionHandler: add annotations - \(annotations.map({ "\(type(of: $0));key=\($0.key ?? "nil");" }))")
+        DDLogInfo("PDFReaderActionHandler: annotations added - \(annotations.map({ "\(type(of: $0));key=\($0.key ?? "nil");" }))")
 
         let finalAnnotations = self.splitIfNeededAndProcess(annotations: annotations, state: viewModel.state)
 
@@ -1155,6 +1155,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
             return false
         }
+
+        DDLogInfo("PDFReaderActionHandler: annotation changed - \(key); \(changes)")
 
         var requests: [DbRequest] = []
 
@@ -1198,6 +1200,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         for annotation in annotations {
             self.annotationPreviewController.delete(for: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
         }
+
+        DDLogInfo("PDFReaderActionHandler: annotations deleted - \(annotations.map({ "\(type(of: $0));key=\($0.key ?? "nil");" }))")
 
         guard !keys.isEmpty else { return }
 
@@ -1349,8 +1353,14 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         switch notification.name {
         case .PSPDFAnnotationChanged:
-            guard let annotation = notification.object as? PSPDFKit.Annotation, let changes = notification.userInfo?[PSPDFAnnotationChangedNotificationKeyPathKey] as? [String] else { return }
-            self.change(annotation: annotation, with: changes, in: viewModel)
+            guard let annotation = notification.object as? PSPDFKit.Annotation else { return }
+
+            if let changes = notification.userInfo?[PSPDFAnnotationChangedNotificationKeyPathKey] as? [String] {
+                self.change(annotation: annotation, with: changes, in: viewModel)
+            } else if let inkAnnotation = annotation as? PSPDFKit.InkAnnotation, notification.userInfo?["com.pspdfkit.sourceDrawLayer"] != nil {
+                let changes = PdfAnnotationChanges.stringValues(from: [.boundingBox, .paths])
+                self.change(annotation: annotation, with: changes, in: viewModel)
+            }
 
         case .PSPDFAnnotationsAdded:
             guard let annotations = notification.object as? [PSPDFKit.Annotation] else { return }
@@ -1484,6 +1494,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func update(objects: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int], viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let boundingBoxConverter = self.delegate else { return }
+
+        DDLogInfo("PDFReaderActionHandler: database annotation changed")
 
         // Get sorted database keys
         var keys = (viewModel.state.snapshotKeys ?? viewModel.state.sortedKeys).filter({ $0.type == .database })
