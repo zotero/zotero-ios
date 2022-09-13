@@ -31,7 +31,6 @@ extension RItemChanges {
     static let relations = RItemChanges(rawValue: 1 << 7)
     static let rects = RItemChanges(rawValue: 1 << 8)
     static let paths = RItemChanges(rawValue: 1 << 9)
-    static let all: RItemChanges = [.type, .trash, .parent, .collections, .fields, .tags, .creators, .relations]
 }
 
 final class RItem: Object {

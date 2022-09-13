@@ -164,7 +164,6 @@ extension NSPredicate {
         let changePredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [.changed, .attachmentChanged])
         return NSCompoundPredicate(andPredicateWithSubpredicates: [changePredicate,
                                                                    .library(with: libraryId),
-                                                                   .syncState(.synced),
                                                                    .deleted(false)])
 
     }
