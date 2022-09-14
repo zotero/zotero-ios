@@ -42,7 +42,6 @@ final class ItemDetailTitleCell: UICollectionViewListCell {
             guard let view = UINib.init(nibName: "ItemDetailTitleContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailTitleContentView else { return }
 
             self.add(contentView: view)
-            view.delegate.textChanged = configuration.textChanged
             self.contentView = view
             self.apply(configuration: configuration)
         }
@@ -52,6 +51,7 @@ final class ItemDetailTitleCell: UICollectionViewListCell {
         }
 
         private func apply(configuration: ContentConfiguration) {
+            self.contentView.delegate.textChanged = configuration.textChanged
             self.contentView.layoutMargins = configuration.layoutMargins
             self.contentView.setup(with: configuration.title, isEditing: configuration.isEditing)
         }

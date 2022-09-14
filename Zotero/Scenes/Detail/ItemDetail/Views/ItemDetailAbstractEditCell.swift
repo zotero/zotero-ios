@@ -41,7 +41,6 @@ final class ItemDetailAbstractEditCell: UICollectionViewListCell {
             guard let view = UINib.init(nibName: "ItemDetailAbstractEditContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailAbstractEditContentView else { return }
 
             self.add(contentView: view)
-            view.textChanged = configuration.textChanged
             self.contentView = view
             self.apply(configuration: configuration)
         }
@@ -51,6 +50,7 @@ final class ItemDetailAbstractEditCell: UICollectionViewListCell {
         }
 
         private func apply(configuration: ContentConfiguration) {
+            self.contentView.textChanged = configuration.textChanged
             self.contentView.layoutMargins = configuration.layoutMargins
             self.contentView.setup(with: configuration.text)
         }

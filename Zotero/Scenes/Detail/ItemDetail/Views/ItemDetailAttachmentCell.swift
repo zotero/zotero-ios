@@ -76,7 +76,6 @@ final class ItemDetailAttachmentCell: UICollectionViewListCell {
             guard let view = UINib.init(nibName: "ItemDetailAttachmentContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailAttachmentContentView else { return }
 
             self.add(contentView: view)
-            view.layoutMargins = configuration.layoutMargins
             self.contentView = view
             self.apply(configuration: configuration)
         }
@@ -103,17 +102,4 @@ final class ItemDetailAttachmentCell: UICollectionViewListCell {
 
         super.updateConfiguration(using: state)
     }
-
-//    override func awakeFromNib() {
-//        super.awakeFromNib()
-//
-//        let highlightView = UIView()
-//        highlightView.backgroundColor = Asset.Colors.cellHighlighted.color
-//        self.selectedBackgroundView = highlightView
-//    }
-//
-//    override func setHighlighted(_ highlighted: Bool, animated: Bool) {
-//        super.setHighlighted(highlighted, animated: animated)
-//        (self.contentView as? ItemDetailAttachmentContentView)?.fileView.set(backgroundColor: (highlighted ? self.selectedBackgroundView?.backgroundColor : self.backgroundColor))
-//    }
 }
