@@ -404,6 +404,7 @@
 		B325EE4D27B28AC7002143AA /* ExpandableCollectionsCollectionViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B325EE4C27B28AC7002143AA /* ExpandableCollectionsCollectionViewHandler.swift */; };
 		B32861E428BF89CE007B5A5C /* CreateAnnotationsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32861E328BF89CE007B5A5C /* CreateAnnotationsDbRequest.swift */; };
 		B32861E628BFACD4007B5A5C /* EditItemFieldsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32861E528BFACD4007B5A5C /* EditItemFieldsDbRequest.swift */; };
+		B32989D628D1D94F009B61F3 /* RObjectChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32989D528D1D94F009B61F3 /* RObjectChange.swift */; };
 		B32A273C254841B80081E061 /* CreatorEditViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32A273A254841B80081E061 /* CreatorEditViewController.swift */; };
 		B32A273D254841B80081E061 /* CreatorEditViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B32A273B254841B80081E061 /* CreatorEditViewController.xib */; };
 		B32A3C78247FB62B009E2C5D /* ComponentDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32A3C77247FB62B009E2C5D /* ComponentDate.swift */; };
@@ -1373,6 +1374,7 @@
 		B325EE4C27B28AC7002143AA /* ExpandableCollectionsCollectionViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpandableCollectionsCollectionViewHandler.swift; sourceTree = "<group>"; };
 		B32861E328BF89CE007B5A5C /* CreateAnnotationsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateAnnotationsDbRequest.swift; sourceTree = "<group>"; };
 		B32861E528BFACD4007B5A5C /* EditItemFieldsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditItemFieldsDbRequest.swift; sourceTree = "<group>"; };
+		B32989D528D1D94F009B61F3 /* RObjectChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RObjectChange.swift; sourceTree = "<group>"; };
 		B32A273A254841B80081E061 /* CreatorEditViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorEditViewController.swift; sourceTree = "<group>"; };
 		B32A273B254841B80081E061 /* CreatorEditViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CreatorEditViewController.xib; sourceTree = "<group>"; };
 		B32A3C77247FB62B009E2C5D /* ComponentDate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComponentDate.swift; sourceTree = "<group>"; };
@@ -2363,6 +2365,7 @@
 				B305653523FC051E003304F2 /* RGroup.swift */,
 				B305653223FC051E003304F2 /* RItem.swift */,
 				B3E4463B248FBBA3007FE8AB /* RLink.swift */,
+				B32989D528D1D94F009B61F3 /* RObjectChange.swift */,
 				B330260C25DE9A1100742025 /* RPageIndex.swift */,
 				B3D0994626DCCEF700B04FAA /* RPathCoordinate.swift */,
 				B31EEE5624EBCAF100E3B3AD /* RRect.swift */,
@@ -4558,6 +4561,7 @@
 				B305661623FC051E003304F2 /* MarkGroupAsLocalOnlySyncAction.swift in Sources */,
 				B3E8FE4C27142B5700F51458 /* DebuggingState.swift in Sources */,
 				B372CEE02486504600B423AE /* GroupVersionsRequest.swift in Sources */,
+				B32989D628D1D94F009B61F3 /* RObjectChange.swift in Sources */,
 				B31DFE7D2746917A005CD69B /* FileRequest.swift in Sources */,
 				B325DBB224375DAC00EFF0F5 /* ConflictResolution.swift in Sources */,
 				B3422F4A289BBA8C00C53DD2 /* ItemDetailAbstractEditContentView.swift in Sources */,
