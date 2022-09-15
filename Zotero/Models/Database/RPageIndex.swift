@@ -30,6 +30,8 @@ final class RPageIndex: Object {
     @Persisted var changed: Bool
     @Persisted var customLibraryKey: RCustomLibraryType?
     @Persisted var groupKey: Int?
+    /// Indicates which local changes need to be synced to backend
+    @Persisted var changes: List<RObjectChange>
 
     // MARK: - Sync data
     /// Indicates local version of object
@@ -40,8 +42,6 @@ final class RPageIndex: Object {
     @Persisted var lastSyncDate: Date
     /// Number of retries for sync of this object
     @Persisted var syncRetries: Int
-    /// Raw value for OptionSet of changes for this object, indicates which local changes need to be synced to backend
-    @Persisted var rawChangedFields: Int16
     /// Raw value for `UpdatableChangeType`, indicates whether current update of item has been made by user or sync process.
     @Persisted var changeType: UpdatableChangeType
 
@@ -49,11 +49,11 @@ final class RPageIndex: Object {
 
     var changedFields: RPageIndexChanges {
         get {
-            return RPageIndexChanges(rawValue: self.rawChangedFields)
-        }
-
-        set {
-            self.rawChangedFields = newValue.rawValue
+            var changes: RPageIndexChanges = []
+            for change in self.changes {
+                changes.insert(RPageIndexChanges(rawValue: change.rawChanges))
+            }
+            return changes
         }
     }
 }

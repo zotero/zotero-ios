@@ -95,7 +95,7 @@ struct CreateItemFromDetailDbRequest: DbResponseRequest {
                                                 collectionKey: nil,
                                                 parentKey: nil).process(in: database)
             rNote.parent = item
-            rNote.changedFields.insert(.parent)
+            rNote.changes.append(RObjectChange.create(changes: RItemChanges.parent))
         }
 
         // Create attachments
@@ -105,7 +105,7 @@ struct CreateItemFromDetailDbRequest: DbResponseRequest {
             if let rAttachment = database.objects(RItem.self).filter(.key(attachment.key, in: self.libraryId)).first {
                 // In this case the attachment doesn't change anyhow, just assign this new item as a parent.
                 rAttachment.parent = item
-                rAttachment.changedFields.insert(.parent)
+                rAttachment.changes.append(RObjectChange.create(changes: RItemChanges.parent))
                 rAttachment.changeType = .user
             } else {
                 let rAttachment = try CreateAttachmentDbRequest(attachment: attachment,
@@ -114,7 +114,7 @@ struct CreateItemFromDetailDbRequest: DbResponseRequest {
                                                                 collections: [], tags: []).process(in: database)
                 rAttachment.libraryId = self.libraryId
                 rAttachment.parent = item
-                rAttachment.changedFields.insert(.parent)
+                rAttachment.changes.append(RObjectChange.create(changes: RItemChanges.parent))
             }
         }
 
@@ -138,7 +138,7 @@ struct CreateItemFromDetailDbRequest: DbResponseRequest {
         // Item title depends on item type, creators and fields, so derived titles (displayTitle and sortTitle) are updated after everything else synced
         item.updateDerivedTitles()
         // Update changed fields
-        item.changedFields = changes
+        item.changes.append(RObjectChange.create(changes: changes))
         item.changeType = .user
 
         return item

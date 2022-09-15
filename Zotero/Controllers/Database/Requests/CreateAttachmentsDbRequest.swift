@@ -32,12 +32,12 @@ struct CreateAttachmentsDbRequest: DbResponseRequest {
 
         var failed: [(String, String)] = []
 
-        for attachment in attachments {
+        for attachment in self.attachments {
             do {
                 let attachment = try CreateAttachmentDbRequest(attachment: attachment, parentKey: nil, localizedType: self.localizedType, collections: self.collections, tags: []).process(in: database)
                 if let parent = parent {
                     attachment.parent = parent
-                    attachment.changedFields.insert(.parent)
+                    attachment.changes.append(RObjectChange.create(changes: RItemChanges.parent))
                 }
             } catch let error {
                 DDLogError("CreateAttachmentsDbRequest: could not create attachment - \(error)")

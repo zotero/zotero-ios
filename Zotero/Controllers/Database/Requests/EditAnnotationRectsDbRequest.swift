@@ -34,7 +34,7 @@ struct EditAnnotationRectsDbRequest: DbRequest {
             item.rects.append(rRect)
         }
 
-        item.changedFields.insert(.rects)
+        item.changes.append(RObjectChange.create(changes: RItemChanges.rects))
         item.changeType = .user
     }
 

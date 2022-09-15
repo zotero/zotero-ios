@@ -24,9 +24,15 @@ struct MarkAllLibraryObjectChangesAsSyncedDbRequest: DbRequest {
 
         // Mark all local changes as synced
         let changedPredicate = NSPredicate.changesWithoutDeletions(in: self.libraryId)
-        database.objects(RCollection.self).filter(changedPredicate).forEach({ $0.resetChanges() })
-        database.objects(RItem.self).filter(changedPredicate).forEach({ $0.resetChanges() })
-        database.objects(RSearch.self).filter(changedPredicate).forEach({ $0.resetChanges() })
+        for object in database.objects(RCollection.self).filter(changedPredicate) {
+            object.deleteAllChanges(database: database)
+        }
+        for object in database.objects(RItem.self).filter(changedPredicate) {
+            object.deleteAllChanges(database: database)
+        }
+        for object in database.objects(RSearch.self).filter(changedPredicate) {
+            object.deleteAllChanges(database: database)
+        }
     }
 
     private func deleteObjects<Obj: DeletableObject>(of type: Obj.Type, with predicate: NSPredicate, database: Realm) {

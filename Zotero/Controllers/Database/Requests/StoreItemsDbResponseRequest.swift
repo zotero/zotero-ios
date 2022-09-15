@@ -92,7 +92,7 @@ struct StoreItemDbRequest: DbResponseRequest {
 
         if self.preferRemoteData {
             item.deleted = false
-            item.resetChanges()
+            item.deleteAllChanges(database: database)
         }
 
         return StoreItemDbRequest.update(item: item, libraryId: libraryId, with: self.response, schemaController: self.schemaController, dateParser: self.dateParser, database: database)

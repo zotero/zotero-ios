@@ -24,22 +24,27 @@ struct EditItemFromDetailDbRequest: DbRequest {
     func process(in database: Realm) throws {
         guard let item = database.objects(RItem.self).filter(.key(self.itemKey, in: self.libraryId)).first else { return }
 
+        var changes: RItemChanges = []
+
         let typeChanged = self.data.type != item.rawType
         if typeChanged {
             item.rawType = self.data.type
-            item.changedFields.insert(.type)
+            changes.insert(.type)
         }
         item.dateModified = self.data.dateModified
 
-        self.updateCreators(with: self.data, snapshot: self.snapshot, item: item, database: database)
-        self.updateFields(with: self.data, snapshot: self.snapshot, item: item, typeChanged: typeChanged, database: database)
+        self.updateCreators(with: self.data, snapshot: self.snapshot, item: item, changes: &changes, database: database)
+        self.updateFields(with: self.data, snapshot: self.snapshot, item: item, changes: &changes, typeChanged: typeChanged, database: database)
 
-        // Item title depends on item type, creators and fields, so we update derived titles (displayTitle and sortTitle) after everything else synced
-        item.updateDerivedTitles()
-        item.changeType = .user
+        if !changes.isEmpty {
+            // Item title depends on item type, creators and fields, so we update derived titles (displayTitle and sortTitle) after everything else synced
+            item.updateDerivedTitles()
+            item.changeType = .user
+            item.changes.append(RObjectChange.create(changes: changes))
+        }
     }
 
-    private func updateCreators(with data: ItemDetailState.Data, snapshot: ItemDetailState.Data, item: RItem, database: Realm) {
+    private func updateCreators(with data: ItemDetailState.Data, snapshot: ItemDetailState.Data, item: RItem, changes: inout RItemChanges, database: Realm) {
         guard data.creatorIds != snapshot.creatorIds else { return }
 
         database.delete(item.creators)
@@ -67,11 +72,10 @@ struct EditItemFromDetailDbRequest: DbRequest {
         }
 
         item.updateCreatorSummary()
-        item.changedFields.insert(.creators)
+        changes.insert(.creators)
     }
 
-    private func updateFields(with data: ItemDetailState.Data, snapshot: ItemDetailState.Data,
-                              item: RItem, typeChanged: Bool, database: Realm) {
+    private func updateFields(with data: ItemDetailState.Data, snapshot: ItemDetailState.Data, item: RItem, changes: inout RItemChanges, typeChanged: Bool, database: Realm) {
         let allFields = self.data.databaseFields(schemaController: self.schemaController)
         let snapshotFields = self.snapshot.databaseFields(schemaController: self.schemaController)
 
@@ -133,7 +137,7 @@ struct EditItemFromDetailDbRequest: DbRequest {
         }
 
         if fieldsDidChange {
-            item.changedFields.insert(.fields)
+            changes.insert(.fields)
         }
     }
 }

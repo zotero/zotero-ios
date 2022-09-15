@@ -22,7 +22,7 @@ struct MarkItemsAsTrashedDbRequest: DbRequest {
         items.forEach { item in
             item.trash = self.trashed
             item.changeType = .user
-            item.changedFields.insert(.trash)
+            item.changes.append(RObjectChange.create(changes: RItemChanges.trash))
         }
     }
 }

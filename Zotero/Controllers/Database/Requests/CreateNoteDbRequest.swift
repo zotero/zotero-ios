@@ -22,6 +22,8 @@ struct CreateNoteDbRequest: DbResponseRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws -> RItem {
+        var changes: RItemChanges = [.type, .fields]
+
         // Create item
         let item = RItem()
         item.key = self.note.key
@@ -29,7 +31,6 @@ struct CreateNoteDbRequest: DbResponseRequest {
         item.localizedType = self.localizedType
         item.syncState = .synced
         item.set(title: self.note.title)
-        item.changedFields = [.type, .fields]
         item.changeType = .user
         item.dateAdded = Date()
         item.dateModified = Date()
@@ -40,7 +41,7 @@ struct CreateNoteDbRequest: DbResponseRequest {
         if let key = self.parentKey,
            let parent = database.objects(RItem.self).filter(.key(key, in: self.libraryId)).first {
             item.parent = parent
-            item.changedFields.insert(.parent)
+            changes.insert(.parent)
 
             // This is to mitigate the issue in item detail screen (ItemDetailActionHandler.shouldReloadData) where observing of `children` doesn't report changes between `oldValue` and `newValue`.
             parent.version = parent.version
@@ -50,7 +51,7 @@ struct CreateNoteDbRequest: DbResponseRequest {
         if let key = self.collectionKey,
            let collection = database.objects(RCollection.self).filter(.key(key, in: self.libraryId)).first {
             collection.items.append(item)
-            item.changedFields.insert(.collections)
+            changes.insert(.collections)
         }
 
         // Create fields
@@ -83,6 +84,8 @@ struct CreateNoteDbRequest: DbResponseRequest {
             rTypedTag.item = item
             rTypedTag.tag = rTag
         }
+
+        item.changes.append(RObjectChange.create(changes: changes))
 
         return item
     }

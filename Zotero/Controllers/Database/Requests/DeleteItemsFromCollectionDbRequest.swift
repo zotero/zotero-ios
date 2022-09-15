@@ -27,7 +27,7 @@ struct DeleteItemsFromCollectionDbRequest: DbRequest {
         items.forEach { item in
             if let index = collection.items.index(of: item) {
                 collection.items.remove(at: index)
-                item.changedFields.insert(.collections)
+                item.changes.append(RObjectChange.create(changes: RItemChanges.collections))
                 item.changeType = .user
             }
         }

@@ -32,7 +32,9 @@ struct CreateCollectionDbRequest: DbRequest {
             changes.insert(.parent)
         }
 
-        collection.changedFields = changes
+        let change = RObjectChange.create(changes: changes)
+        collection.changes.append(change)
+
         collection.changeType = .user
         database.add(collection)
     }

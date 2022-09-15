@@ -26,27 +26,26 @@ struct EditNoteDbRequest: DbRequest {
             throw DbError.objectNotFound
         }
 
-        var fieldsDidChange = false
+        var changes: RItemChanges = []
 
         if let field = item.fields.filter(.key(FieldKeys.Item.note)).first, field.value != self.note.text {
             item.set(title: self.note.title)
-            item.changedFields.insert(.fields)
+            changes.insert(.fields)
 
             field.value = self.note.text
             field.changed = true
-
-            fieldsDidChange = true
         }
 
-        let tagsDidChange = self.updateTags(with: self.note.tags, item: item, database: database)
+        self.updateTags(with: self.note.tags, item: item, changes: &changes, database: database)
 
-        if tagsDidChange || fieldsDidChange {
+        if !changes.isEmpty {
+            item.changes.append(RObjectChange.create(changes: changes))
             item.changeType = .user
             item.dateModified = Date()
         }
     }
 
-    private func updateTags(with tags: [Tag], item: RItem, database: Realm) -> Bool {
+    private func updateTags(with tags: [Tag], item: RItem, changes: inout RItemChanges, database: Realm) {
         let tagsToRemove = item.tags.filter(.tagName(notIn: tags.map({ $0.name })))
         var tagsDidChange = !tagsToRemove.isEmpty
 
@@ -81,8 +80,7 @@ struct EditNoteDbRequest: DbRequest {
         if tagsDidChange {
             // TMP: Temporary fix for Realm issue (https://github.com/realm/realm-core/issues/4994). Deletion of tag is not reported, so let's assign a value so that changes are visible in items list.
             item.rawType = item.rawType
-            item.changedFields.insert(.tags)
+            changes.insert(.tags)
         }
-        return tagsDidChange
     }
 }

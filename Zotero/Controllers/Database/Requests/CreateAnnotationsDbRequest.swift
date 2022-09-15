@@ -32,14 +32,15 @@ struct CreateAnnotationsDbRequest: DbRequest {
     }
 
     private func create(annotation: DocumentAnnotation, parent: RItem, in database: Realm) {
+        // We need to submit tags on creation even if they are empty, so we need to mark them as changed
+        var changes: RItemChanges = [.parent, .fields, .type, .tags]
+
         let item = RItem()
         item.key = annotation.key
         item.rawType = ItemTypes.annotation
         item.localizedType = self.schemaController.localized(itemType: ItemTypes.annotation) ?? ""
         item.syncState = .synced
         item.changeType = .user
-        // We need to submit tags on creation even if they are empty, so we need to mark them as changed
-        item.changedFields = [.parent, .fields, .type, .tags]
         item.dateAdded = annotation.dateModified
         item.dateModified = annotation.dateModified
         item.libraryId = self.libraryId
@@ -48,8 +49,10 @@ struct CreateAnnotationsDbRequest: DbRequest {
         item.parent = parent
 
         self.addFields(for: annotation, to: item, database: database)
-        self.add(rects: annotation.rects, to: item, database: database)
-        self.add(paths: annotation.paths, to: item, database: database)
+        self.add(rects: annotation.rects, to: item, changes: &changes, database: database)
+        self.add(paths: annotation.paths, to: item, changes: &changes, database: database)
+
+        item.changes.append(RObjectChange.create(changes: changes))
     }
 
     private func addFields(for annotation: Annotation, to item: RItem, database: Realm) {
@@ -84,7 +87,7 @@ struct CreateAnnotationsDbRequest: DbRequest {
         }
     }
 
-    private func add(rects: [CGRect], to item: RItem, database: Realm) {
+    private func add(rects: [CGRect], to item: RItem, changes: inout RItemChanges, database: Realm) {
         guard !rects.isEmpty else { return }
         for rect in rects {
             let rRect = RRect()
@@ -94,10 +97,10 @@ struct CreateAnnotationsDbRequest: DbRequest {
             rRect.maxY = Double(rect.maxY)
             item.rects.append(rRect)
         }
-        item.changedFields.insert(.rects)
+        changes.insert(.rects)
     }
 
-    private func add(paths: [[CGPoint]], to item: RItem, database: Realm) {
+    private func add(paths: [[CGPoint]], to item: RItem, changes: inout RItemChanges, database: Realm) {
         guard !paths.isEmpty else { return }
 
         for (idx, path) in paths.enumerated() {
@@ -119,7 +122,7 @@ struct CreateAnnotationsDbRequest: DbRequest {
             item.paths.append(rPath)
         }
 
-        item.changedFields.insert(.paths)
+        changes.insert(.paths)
     }
 }
 

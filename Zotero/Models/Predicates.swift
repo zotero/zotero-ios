@@ -125,11 +125,11 @@ extension NSPredicate {
     }
 
     static var changed: NSPredicate {
-        return NSPredicate(format: "rawChangedFields > 0")
+        return NSPredicate(format: "changes.@count > 0")
     }
 
     static var notChanged: NSPredicate {
-        return NSPredicate(format: "rawChangedFields = 0")
+        return NSPredicate(format: "changes.@count = 0")
     }
 
     static var attachmentChanged: NSPredicate {

@@ -28,6 +28,9 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws -> RItem {
+        // We need to submit tags on creation even if they are empty, so we need to mark them as changed
+        var changes: RItemChanges = [.type, .fields, .tags]
+
         // Basic info
 
         let item = RItem()
@@ -36,8 +39,6 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
         item.localizedType = self.localizedType
         item.syncState = .synced
         item.set(title: self.attachment.title)
-        // We need to submit tags on creation even if they are empty, so we need to mark them as changed
-        item.changedFields = [.type, .fields, .tags]
         item.changeType = .user
         item.attachmentNeedsSync = true
         item.fileDownloaded = true
@@ -152,7 +153,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
         }
 
         if !self.collections.isEmpty {
-            item.changedFields.insert(.collections)
+            changes.insert(.collections)
         }
 
         // MARK: - Tags
@@ -161,8 +162,10 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
 
         if let key = self.parentKey, let parent = database.objects(RItem.self).filter(.key(key, in: self.attachment.libraryId)).first {
             item.parent = parent
-            item.changedFields.insert(.parent)
+            changes.insert(.parent)
         }
+
+        item.changes.append(RObjectChange.create(changes: changes))
 
         return item
     }

@@ -56,6 +56,8 @@ final class RItem: Object {
     @Persisted var creators: List<RCreator>
     @Persisted var links: List<RLink>
     @Persisted var relations: List<RRelation>
+    /// Indicates which local changes need to be synced to backend
+    @Persisted var changes: List<RObjectChange>
 
     // MARK: - Attachment data
     @Persisted var backendMd5: String
@@ -112,8 +114,6 @@ final class RItem: Object {
     @Persisted var lastSyncDate: Date
     /// Number of retries for sync of this object
     @Persisted var syncRetries: Int
-    /// Raw value for OptionSet of changes for this object, indicates which local changes need to be synced to backend
-    @Persisted var rawChangedFields: Int16
     /// Raw value for `UpdatableChangeType`, indicates whether current update of item has been made by user or sync process.
     @Persisted var changeType: UpdatableChangeType
     /// Indicates whether the object is deleted locally and needs to be synced with backend
@@ -134,11 +134,11 @@ final class RItem: Object {
 
     var changedFields: RItemChanges {
         get {
-            return RItemChanges(rawValue: self.rawChangedFields)
-        }
-
-        set {
-            self.rawChangedFields = newValue.rawValue
+            var changes: RItemChanges = []
+            for change in self.changes {
+                changes.insert(RItemChanges(rawValue: change.rawChanges))
+            }
+            return changes
         }
     }
 

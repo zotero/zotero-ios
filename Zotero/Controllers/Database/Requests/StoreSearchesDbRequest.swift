@@ -33,7 +33,7 @@ struct StoreSearchesDbRequest: DbRequest {
 
         // No CR for searches, if it was changed or deleted locally, just restore it
         search.deleted = false
-        search.resetChanges()
+        search.deleteAllChanges(database: database)
 
         StoreSearchesDbRequest.update(search: search, data: data, libraryId: libraryId, database: database)
     }

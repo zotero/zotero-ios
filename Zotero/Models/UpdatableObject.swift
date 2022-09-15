@@ -18,25 +18,30 @@ enum UpdatableChangeType: Int, PersistableEnum {
 }
 
 protocol Updatable: AnyObject {
-    var rawChangedFields: Int16 { get set }
+    var changes: List<RObjectChange> { get set }
     var changeType: UpdatableChangeType { get set }
     var updateParameters: [String: Any]? { get }
     var isChanged: Bool { get }
     var selfOrChildChanged: Bool { get }
 
-    func resetChanges()
+    func deleteChanges(uuids: [String], database: Realm)
+    func deleteAllChanges(database: Realm)
     func markAsChanged(in database: Realm)
 }
 
 extension Updatable {
-    func resetChanges() {
+    func deleteChanges(uuids: [String], database: Realm) {
         guard self.isChanged else { return }
-        self.rawChangedFields = 0
+        database.delete(self.changes.filter("uuid in %@", uuids))
         self.changeType = .sync
     }
 
+    func deleteAllChanges(database: Realm) {
+        database.delete(self.changes)
+    }
+
     var isChanged: Bool {
-        return self.rawChangedFields > 0
+        return self.changes.count > 0
     }
 }
 
@@ -67,17 +72,20 @@ extension RCollection: Updatable {
     }
 
     func markAsChanged(in database: Realm) {
-        self.changedFields = .name
+        var changes: RCollectionChanges = .name
+
         self.changeType = .user
         self.deleted = false
         self.version = 0
 
         if self.parentKey != nil {
-            self.changedFields.insert(.parent)
+            changes.insert(.parent)
         }
 
+        self.changes.append(RObjectChange.create(changes: changes))
+
         self.items.forEach { item in
-            item.changedFields = .collections
+            item.changes.append(RObjectChange.create(changes: RItemChanges.collections))
             item.changeType = .user
         }
 
@@ -118,7 +126,7 @@ extension RSearch: Updatable {
     }
 
     func markAsChanged(in database: Realm) {
-        self.changedFields = .all
+        self.changes.append(RObjectChange.create(changes: RSearchChanges.all))
         self.changeType = .user
         self.deleted = false
         self.version = 0
@@ -240,10 +248,18 @@ extension RItem: Updatable {
         return (try? JSONSerialization.data(withJSONObject: jsonData, options: [])).flatMap({ String(data: $0, encoding: .utf8) }) ?? ""
     }
 
-    func resetChanges() {
+    func deleteChanges(uuids: [String], database: Realm) {
+        database.delete(self.changes.filter("uuid in %@", uuids))
+        self.changeType = .sync
+        self.fields.filter("changed = true").forEach { field in
+            field.changed = false
+        }
+    }
+
+    func deleteAllChanges(database: Realm) {
         guard self.isChanged else { return }
 
-        self.rawChangedFields = 0
+        database.delete(self.changes)
         self.changeType = .sync
         self.fields.filter("changed = true").forEach { field in
             field.changed = false
@@ -265,7 +281,7 @@ extension RItem: Updatable {
     }
 
     func markAsChanged(in database: Realm) {
-        self.changedFields = self.currentChanges
+        self.changes.append(RObjectChange.create(changes: self.currentChanges))
         self.changeType = .user
         self.deleted = false
         self.version = 0

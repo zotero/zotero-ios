@@ -35,10 +35,11 @@ final class RCollection: Object {
     @Persisted var parentKey: String?
     @Persisted var collapsed: Bool = true
     @Persisted var lastUsed: Date
-
     @Persisted var items: List<RItem>
     @Persisted var customLibraryKey: RCustomLibraryType?
     @Persisted var groupKey: Int?
+    /// Indicates which local changes need to be synced to backend
+    @Persisted var changes: List<RObjectChange>
 
     // MARK: - Sync data
     /// Indicates local version of object
@@ -49,8 +50,6 @@ final class RCollection: Object {
     @Persisted var lastSyncDate: Date
     /// Number of retries for sync of this object
     @Persisted var syncRetries: Int
-    /// Raw value for OptionSet of changes for this object, indicates which local changes need to be synced to backend
-    @Persisted var rawChangedFields: Int16
     /// Raw value for `UpdatableChangeType`, indicates whether current update of item has been made by user or sync process.
     @Persisted var changeType: UpdatableChangeType
     /// Indicates whether the object is deleted locally and needs to be synced with backend
@@ -62,11 +61,11 @@ final class RCollection: Object {
 
     var changedFields: RCollectionChanges {
         get {
-            return RCollectionChanges(rawValue: self.rawChangedFields)
-        }
-
-        set {
-            self.rawChangedFields = newValue.rawValue
+            var changes: RCollectionChanges = []
+            for change in self.changes {
+                changes.insert(RCollectionChanges(rawValue: change.rawChanges))
+            }
+            return changes
         }
     }
 }

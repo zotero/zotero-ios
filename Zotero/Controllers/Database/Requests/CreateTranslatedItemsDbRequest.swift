@@ -40,7 +40,7 @@ struct CreateTranslatedItemsDbRequest: DbRequest {
             if (!item.tags.isEmpty) {
                 changes.insert(.tags)
             }
-            item.changedFields = changes
+            item.changes.append(RObjectChange.create(changes: changes))
         }
     }
 }

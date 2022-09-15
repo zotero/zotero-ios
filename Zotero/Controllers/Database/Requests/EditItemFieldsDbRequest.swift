@@ -41,7 +41,7 @@ struct EditItemFieldsDbRequest: DbRequest {
         }
 
         if didChange {
-            item.changedFields.insert(.fields)
+            item.changes.append(RObjectChange.create(changes: RItemChanges.fields))
             item.changeType = .user
         }
     }

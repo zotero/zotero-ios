@@ -55,7 +55,7 @@ struct SplitAnnotationsDbRequest: DbRequest {
                         rRect.maxY = rect.maxY
                         item.rects.append(rRect)
                     }
-                    item.changedFields.insert(.rects)
+                    item.changes.append(RObjectChange.create(changes: RItemChanges.rects))
                 })
             }
 
@@ -84,7 +84,7 @@ struct SplitAnnotationsDbRequest: DbRequest {
 
                         new.paths.append(rPath)
                     }
-                    item.changedFields.insert(.paths)
+                    item.changes.append(RObjectChange.create(changes: RItemChanges.paths))
                 }
             }
 
@@ -122,7 +122,8 @@ struct SplitAnnotationsDbRequest: DbRequest {
         new.deleted = item.deleted
         new.syncState = .synced
         new.changeType = .sync
-        new.changedFields = [.parent, .fields, .type, .tags]
+        let changes: RItemChanges = [.parent, .fields, .type, .tags]
+        new.changes.append(RObjectChange.create(changes: changes))
         database.add(new)
 
         new.parent = item.parent

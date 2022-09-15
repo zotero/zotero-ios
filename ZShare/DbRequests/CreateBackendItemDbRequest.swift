@@ -30,7 +30,8 @@ struct CreateBackendItemDbRequest: DbResponseRequest {
             throw DbError.objectNotFound
         }
 
-        item.changedFields = [.type, .trash, .collections, .fields, .tags, .creators]
+        let changes: RItemChanges = [.type, .trash, .collections, .fields, .tags, .creators]
+        item.changes.append(RObjectChange.create(changes: changes))
         item.fields.forEach({ $0.changed = true })
 
         return item

@@ -47,7 +47,7 @@ struct EditAnnotationPathsDbRequest: DbRequest {
             item.paths.append(rPath)
         }
 
-        item.changedFields.insert(.paths)
+        item.changes.append(RObjectChange.create(changes: RItemChanges.paths))
         item.changeType = .user
     }
 

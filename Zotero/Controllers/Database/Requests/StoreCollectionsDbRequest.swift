@@ -35,7 +35,7 @@ struct StoreCollectionsDbRequest: DbRequest {
 
         // No CR for collections, if it was changed or deleted locally, just restore it
         collection.deleted = false
-        collection.resetChanges()
+        collection.deleteAllChanges(database: database)
 
         StoreCollectionsDbRequest.update(collection: collection, data: data, libraryId: libraryId, database: database)
     }

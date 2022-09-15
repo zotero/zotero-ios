@@ -32,7 +32,7 @@ struct StoreSettingsDbRequest: DbRequest {
 
         let indices = database.objects(RPageIndex.self).filter(.library(with: self.libraryId))
 
-        pages.forEach { index in
+        for index in pages {
             let rIndex: RPageIndex
             if let existing = indices.filter(.key(index.key)).first {
                 rIndex = existing
@@ -44,7 +44,9 @@ struct StoreSettingsDbRequest: DbRequest {
             }
             rIndex.index = index.value
             rIndex.version = index.version
-            rIndex.resetChanges()
+
+            // No CR for settings, if it was changed locally, just reset it
+            rIndex.deleteAllChanges(database: database)
         }
     }
 

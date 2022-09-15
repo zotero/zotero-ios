@@ -33,7 +33,7 @@ struct EditCollectionDbRequest: DbRequest {
             changes.insert(.parent)
         }
 
-        collection.changedFields = changes
+        collection.changes.append(RObjectChange.create(changes: changes))
         collection.changeType = .user
     }
 }

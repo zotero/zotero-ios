@@ -21,7 +21,7 @@ struct Database {
                                          migrationBlock: createMigrationBlock(fileStorage: fileStorage),
                                          deleteRealmIfMigrationNeeded: false)
         config.objectTypes = [RCollection.self, RCreator.self, RCustomLibrary.self, RGroup.self, RItem.self, RItemField.self, RLink.self, RPageIndex.self, RPath.self, RPathCoordinate.self, RRect.self,
-                              RRelation.self, RSearch.self, RCondition.self, RTag.self, RTypedTag.self, RUser.self, RWebDavDeletion.self, RVersions.self]
+                              RRelation.self, RSearch.self, RCondition.self, RTag.self, RTypedTag.self, RUser.self, RWebDavDeletion.self, RVersions.self, RObjectChange.self]
         return config
     }
 
@@ -37,7 +37,27 @@ struct Database {
 
     private static func createMigrationBlock(fileStorage: FileStorage) -> MigrationBlock {
         return { migration, schemaVersion in
+            if schemaVersion < 35 {
+                // Migrate to new object change model.
+                self.migrateObjectChange(migration: migration)
+            }
         }
+    }
+
+    private static func migrateObjectChange(migration: Migration) {
+        let migrationBlock: MigrationObjectEnumerateBlock = { oldObject, newObject in
+            if let oldValue = oldObject?["rawChangedFields"] as? Int16, oldValue > 0 {
+                let object = migration.create(RObjectChange.className())
+                object["uuid"] = UUID().uuidString
+                object["rawChanges"] = oldValue
+                newObject?.dynamicList("changes").append(object)
+            }
+        }
+
+        migration.enumerateObjects(ofType: RItem.className(), migrationBlock)
+        migration.enumerateObjects(ofType: RCollection.className(), migrationBlock)
+        migration.enumerateObjects(ofType: RSearch.className(), migrationBlock)
+        migration.enumerateObjects(ofType: RPageIndex.className(), migrationBlock)
     }
 
     /// Realm results observer returns modifications from old array, so if there is a need to retrieve updated objects from updated `Results`

@@ -24,7 +24,7 @@ struct AssignItemsToCollectionsDbRequest: DbRequest {
             for item in items {
                 guard collection.items.filter(.key(item.key)).first == nil else { continue }
                 collection.items.append(item)
-                item.changedFields.insert(.collections)
+                item.changes.append(RObjectChange.create(changes: RItemChanges.collections))
                 item.changeType = .user
             }
         }

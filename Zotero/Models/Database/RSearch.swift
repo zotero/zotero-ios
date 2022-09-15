@@ -33,6 +33,8 @@ final class RSearch: Object {
     @Persisted var customLibraryKey: RCustomLibraryType?
     @Persisted var groupKey: Int?
     @Persisted var conditions: List<RCondition>
+    /// Indicates which local changes need to be synced to backend
+    @Persisted var changes: List<RObjectChange>
 
     // MARK: - Sync data
     /// Indicates local version of object
@@ -43,8 +45,6 @@ final class RSearch: Object {
     @Persisted var lastSyncDate: Date
     /// Number of retries for sync of this object
     @Persisted var syncRetries: Int
-    /// Raw value for OptionSet of changes for this object, indicates which local changes need to be synced to backend
-    @Persisted var rawChangedFields: Int16
     /// Raw value for `UpdatableChangeType`, indicates whether current update of item has been made by user or sync process.
     @Persisted var changeType: UpdatableChangeType
     /// Indicates whether the object is deleted locally and needs to be synced with backend
@@ -56,11 +56,11 @@ final class RSearch: Object {
 
     var changedFields: RSearchChanges {
         get {
-            return RSearchChanges(rawValue: self.rawChangedFields)
-        }
-
-        set {
-            self.rawChangedFields = newValue.rawValue
+            var changes: RSearchChanges = []
+            for change in self.changes {
+                changes.insert(RSearchChanges(rawValue: change.rawChanges))
+            }
+            return changes
         }
     }
 }

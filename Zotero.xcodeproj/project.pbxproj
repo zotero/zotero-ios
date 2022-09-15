@@ -896,6 +896,7 @@
 		B3C9D60824DA9D40003EA1EE /* CollectionsSearchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C9D60724DA9D40003EA1EE /* CollectionsSearchState.swift */; };
 		B3C9D60A24DA9D49003EA1EE /* CollectionsSearchAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C9D60924DA9D49003EA1EE /* CollectionsSearchAction.swift */; };
 		B3C9D60C24DA9DEA003EA1EE /* CollectionsSearchActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C9D60B24DA9DEA003EA1EE /* CollectionsSearchActionHandler.swift */; };
+		B3CAD66228D31EFB007E1905 /* RObjectChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32989D528D1D94F009B61F3 /* RObjectChange.swift */; };
 		B3CBB121248A439A00C4228F /* Notification+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CBB120248A439A00C4228F /* Notification+Extensions.swift */; };
 		B3CBB123248A44D100C4228F /* KeyboardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CBB122248A44D100C4228F /* KeyboardData.swift */; };
 		B3CBB125248A46D500C4228F /* NotificationCenter+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CBB124248A46D500C4228F /* NotificationCenter+Extensions.swift */; };
@@ -5141,6 +5142,7 @@
 				B305670723FC08AF003304F2 /* ReadAnyChangedObjectsInLibraryDbRequest.swift in Sources */,
 				B36459DA2644116000A0C2C0 /* TagPickerState.swift in Sources */,
 				B305673523FC092C003304F2 /* SyncVersionsSyncAction.swift in Sources */,
+				B3CAD66228D31EFB007E1905 /* RObjectChange.swift in Sources */,
 				B305671E23FC08E4003304F2 /* UpdateItemLocaleDbRequest.swift in Sources */,
 				B305670823FC08B1003304F2 /* ReadAttachmentUploadsDbRequest.swift in Sources */,
 				B305678323FC0D6B003304F2 /* SecureStorage.swift in Sources */,

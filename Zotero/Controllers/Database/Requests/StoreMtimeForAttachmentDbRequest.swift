@@ -24,7 +24,7 @@ struct StoreMtimeForAttachmentDbRequest: DbRequest {
         }
         field.value = "\(self.mtime)"
         field.changed = true
-        item.changedFields.insert(.fields)
+        item.changes.append(RObjectChange.create(changes: RItemChanges.fields))
         item.changeType = .user
     }
 }

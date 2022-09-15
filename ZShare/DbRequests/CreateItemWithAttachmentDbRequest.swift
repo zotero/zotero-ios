@@ -30,7 +30,8 @@ struct CreateItemWithAttachmentDbRequest: DbResponseRequest {
             throw DbError.objectNotFound
         }
 
-        item.changedFields = [.type, .trash, .collections, .fields, .tags, .creators]
+        let changes: RItemChanges = [.type, .trash, .collections, .fields, .tags, .creators]
+        item.changes.append(RObjectChange.create(changes: changes))
         item.fields.forEach({ $0.changed = true })
 
         let localizedType = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
@@ -41,7 +42,7 @@ struct CreateItemWithAttachmentDbRequest: DbResponseRequest {
                                                        tags: []).process(in: database)
 
         attachment.parent = item
-        attachment.changedFields.insert(.parent)
+        attachment.changes.append(RObjectChange.create(changes: RItemChanges.parent))
 
         return (item, attachment)
     }

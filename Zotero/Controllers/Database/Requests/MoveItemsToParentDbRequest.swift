@@ -26,7 +26,7 @@ struct MoveItemsToParentDbRequest: DbRequest {
                 .filter(.keys(self.itemKeys, in: self.libraryId))
                 .forEach { item in
                     item.parent = parent
-                    item.changedFields.insert(.parent)
+                    item.changes.append(RObjectChange.create(changes: RItemChanges.parent))
                     item.changeType = .user
                 }
 
