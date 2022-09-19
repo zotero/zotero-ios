@@ -16,6 +16,7 @@ struct SubmitUpdateSyncAction: SyncAction {
     typealias Result = (Int, Error?)
 
     let parameters: [[String : Any]]
+    let changeUuids: [String: [String]]
     let sinceVersion: Int?
     let object: SyncObject
     let libraryId: LibraryIdentifier
@@ -55,9 +56,9 @@ struct SubmitUpdateSyncAction: SyncAction {
                                  return Single.just((settings, newVersion))
                              })
                              .flatMap({ settings, newVersion -> Single<(Int, Error?)> in
-
                                  do {
-                                     var requests: [DbRequest] = [MarkSettingsAsSyncedDbRequest(settings: settings, version: newVersion)]
+                                     let changeUuids = self.changeUuids.values.flatMap({ $0 })
+                                     var requests: [DbRequest] = [MarkSettingsAsSyncedDbRequest(settings: settings, changeUuids: changeUuids, version: newVersion)]
                                      if self.updateLibraryVersion {
                                          requests.append(UpdateVersionsDbRequest(version: newVersion, libraryId: self.libraryId, type: .object(self.object)))
                                      }
@@ -201,11 +202,11 @@ struct SubmitUpdateSyncAction: SyncAction {
             // Mark unchanged objects as submitted.
             switch self.object {
             case .collection:
-                requests.append(MarkObjectsAsSyncedDbRequest<RCollection>(libraryId: self.libraryId, keys: unchangedKeys, version: version))
+                requests.append(MarkObjectsAsSyncedDbRequest<RCollection>(libraryId: self.libraryId, keys: unchangedKeys, changeUuids: self.changeUuids, version: version))
             case .item, .trash:
-                requests.append(MarkObjectsAsSyncedDbRequest<RItem>(libraryId: self.libraryId, keys: unchangedKeys, version: version))
+                requests.append(MarkObjectsAsSyncedDbRequest<RItem>(libraryId: self.libraryId, keys: unchangedKeys, changeUuids: self.changeUuids, version: version))
             case .search:
-                requests.append(MarkObjectsAsSyncedDbRequest<RSearch>(libraryId: self.libraryId, keys: unchangedKeys, version: version))
+                requests.append(MarkObjectsAsSyncedDbRequest<RSearch>(libraryId: self.libraryId, keys: unchangedKeys, changeUuids: self.changeUuids, version: version))
             case .settings: break
             }
         }
@@ -226,21 +227,25 @@ struct SubmitUpdateSyncAction: SyncAction {
         if !changedCollections.isEmpty {
             // Update collections locally based on response from backend and mark as submitted.
             for response in changedCollections {
-                requests.append(MarkCollectionAsSyncedAndUpdateDbRequest(libraryId: self.libraryId, response: response, version: version))
+                let changeUuids = self.changeUuids[response.key] ?? []
+                requests.append(MarkCollectionAsSyncedAndUpdateDbRequest(libraryId: self.libraryId, response: response, changeUuids: changeUuids, version: version))
             }
         }
 
         if !changedItems.isEmpty {
             // Update items locally based on response from backend and mark as submitted.
             for response in changedItems {
-                requests.append(MarkItemAsSyncedAndUpdateDbRequest(libraryId: self.libraryId, response: response, version: version, schemaController: self.schemaController, dateParser: self.dateParser))
+                let changeUuids = self.changeUuids[response.key] ?? []
+                requests.append(MarkItemAsSyncedAndUpdateDbRequest(libraryId: self.libraryId, response: response, changeUuids: changeUuids, version: version, schemaController: self.schemaController,
+                                                                   dateParser: self.dateParser))
             }
         }
 
         if !changedSearches.isEmpty {
             // Update searches locally based on response from backend and mark as submitted.
             for response in changedSearches {
-                requests.append(MarkSearchAsSyncedAndUpdateDbRequest(libraryId: self.libraryId, response: response, version: version))
+                let changeUuids = self.changeUuids[response.key] ?? []
+                requests.append(MarkSearchAsSyncedAndUpdateDbRequest(libraryId: self.libraryId, response: response, changeUuids: changeUuids, version: version))
             }
         }
 

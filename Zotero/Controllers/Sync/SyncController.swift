@@ -1289,9 +1289,9 @@ final class SyncController: SynchronizationController {
     }
 
     private func processSubmitUpdate(for batch: WriteBatch) {
-        let result = SubmitUpdateSyncAction(parameters: batch.parameters, sinceVersion: batch.version, object: batch.object, libraryId: batch.libraryId, userId: self.userId, updateLibraryVersion: true,
-                                            apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, schemaController: self.schemaController, dateParser: self.dateParser,
-                                            queue: self.workQueue, scheduler: self.workScheduler).result
+        let result = SubmitUpdateSyncAction(parameters: batch.parameters, changeUuids: batch.changeUuids, sinceVersion: batch.version, object: batch.object, libraryId: batch.libraryId,
+                                            userId: self.userId, updateLibraryVersion: true, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage,
+                                            schemaController: self.schemaController, dateParser: self.dateParser, queue: self.workQueue, scheduler: self.workScheduler).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] version, error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in

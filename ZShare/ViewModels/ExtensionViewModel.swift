@@ -911,10 +911,10 @@ final class ExtensionViewModel {
                         dateParser: DateParser) {
         self.createItem(item, libraryId: libraryId, schemaController: schemaController, dateParser: dateParser, queue: self.backgroundQueue)
             .subscribe(on: self.backgroundScheduler)
-            .flatMap { parameters in
-                return SubmitUpdateSyncAction(parameters: [parameters], sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId, updateLibraryVersion: false, apiClient: apiClient,
-                                              dbStorage: dbStorage, fileStorage: fileStorage, schemaController: self.schemaController, dateParser: self.dateParser, queue: self.backgroundQueue,
-                                              scheduler: self.backgroundScheduler).result
+            .flatMap { parameters, changeUuids in
+                return SubmitUpdateSyncAction(parameters: [parameters], changeUuids: changeUuids, sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId, updateLibraryVersion: false,
+                                              apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, schemaController: self.schemaController, dateParser: self.dateParser,
+                                              queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
             }
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] _ in
@@ -978,12 +978,13 @@ final class ExtensionViewModel {
     /// - parameter item: Parsed item to be created.
     /// - parameter schemaController: Schema controller for validating item type and field types.
     /// - returns: `Single` with `updateParameters` of created `RItem`.
-    private func createItem(_ item: ItemResponse, libraryId: LibraryIdentifier, schemaController: SchemaController, dateParser: DateParser, queue: DispatchQueue) -> Single<[String: Any]> {
+    private func createItem(_ item: ItemResponse, libraryId: LibraryIdentifier, schemaController: SchemaController, dateParser: DateParser, queue: DispatchQueue) -> Single<([String: Any], [String: [String]])> {
         return Single.create { subscriber -> Disposable in
 
             DDLogInfo("ExtensionViewModel: create db item")
 
             do {
+                var changeUuids: [String: [String]] = [:]
                 var parameters: [String: Any] = [:]
 
                 try self.dbStorage.perform(on: queue, with: { coordinator in
@@ -994,11 +995,12 @@ final class ExtensionViewModel {
                     let request = CreateBackendItemDbRequest(item: item, schemaController: schemaController, dateParser: dateParser)
                     let item = try coordinator.perform(request: request)
                     parameters = item.updateParameters ?? [:]
+                    changeUuids = [item.key: Array(item.changes.map({ $0.uuid }))]
 
                     coordinator.invalidate()
                 })
 
-                subscriber(.success(parameters))
+                subscriber(.success((parameters, changeUuids)))
             } catch let error {
                 subscriber(.failure(error))
             }
@@ -1157,19 +1159,19 @@ final class ExtensionViewModel {
                                   apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<SubmissionData> {
         return self.moveFile(from: tmpFile, to: file)
                    .subscribe(on: self.backgroundScheduler)
-                   .flatMap { [weak self] filesize -> Single<([String: Any], SubmissionData)> in
+                   .flatMap { [weak self] filesize -> Single<([String: Any], [String: [String]], SubmissionData)> in
                        guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
                        return self.create(attachment: attachment, collections: collections, tags: tags, queue: self.backgroundQueue)
-                                  .flatMap({ Single.just(($0, SubmissionData(filesize: filesize, md5: $1, mtime: $2))) })
+                                  .flatMap({ Single.just(($0, $1, SubmissionData(filesize: filesize, md5: $2, mtime: $3))) })
                                   .do(onError: { [weak self] _ in
                                       // If attachment item couldn't be created in DB, remove the moved file if possible, it won't be processed even from the main app
                                       try? self?.fileStorage.remove(file)
                                   })
                    }
-                   .flatMap { parameters, data -> Single<SubmissionData> in
-                       return SubmitUpdateSyncAction(parameters: [parameters], sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId, updateLibraryVersion: false, apiClient: apiClient,
-                                                     dbStorage: dbStorage, fileStorage: fileStorage, schemaController: self.schemaController, dateParser: self.dateParser, queue: self.backgroundQueue,
-                                                     scheduler: self.backgroundScheduler).result
+                   .flatMap { parameters, changeUuids, data -> Single<SubmissionData> in
+                       return SubmitUpdateSyncAction(parameters: [parameters], changeUuids: changeUuids, sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId,
+                                                     updateLibraryVersion: false, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, schemaController: self.schemaController,
+                                                     dateParser: self.dateParser, queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
                                     .flatMap({ _ in Single.just(data) })
                    }
     }
@@ -1190,19 +1192,19 @@ final class ExtensionViewModel {
                                   apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<SubmissionData> {
         return self.moveFile(from: tmpFile, to: file)
                    .subscribe(on: self.backgroundScheduler)
-                   .flatMap { [weak self] filesize -> Single<([[String: Any]], SubmissionData)> in
+                   .flatMap { [weak self] filesize -> Single<([[String: Any]], [String: [String]], SubmissionData)> in
                        guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
                        return self.createItems(item: item, attachment: attachment, queue: self.backgroundQueue)
-                                  .flatMap({ Single.just(($0, SubmissionData(filesize: filesize, md5: $1, mtime: $2))) })
+                                  .flatMap({ Single.just(($0, $1, SubmissionData(filesize: filesize, md5: $2, mtime: $3))) })
                                   .do(onError: { [weak self] _ in
                                       // If attachment item couldn't be created in DB, remove the moved file if possible, it won't be processed even from the main app
                                       try? self?.fileStorage.remove(file)
                                   })
                    }
-                   .flatMap { parameters, data -> Single<SubmissionData> in
-                       return SubmitUpdateSyncAction(parameters: parameters, sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId, updateLibraryVersion: false, apiClient: apiClient,
-                                                     dbStorage: dbStorage, fileStorage: fileStorage, schemaController: self.schemaController, dateParser: self.dateParser, queue: self.backgroundQueue,
-                                                     scheduler: self.backgroundScheduler).result
+                   .flatMap { parameters, changeUuids, data -> Single<SubmissionData> in
+                       return SubmitUpdateSyncAction(parameters: parameters, changeUuids: changeUuids, sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId,
+                                                     updateLibraryVersion: false, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, schemaController: self.schemaController,
+                                                     dateParser: self.dateParser, queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
                                     .flatMap({ _ in Single.just(data) })
                    }
     }
@@ -1263,12 +1265,13 @@ final class ExtensionViewModel {
     /// - parameter item: Parsed item to be created.
     /// - parameter attachment: Parsed attachment to be created.
     /// - returns: `Single` with `updateParameters` of both new items, md5 and mtime of attachment.
-    private func createItems(item: ItemResponse, attachment: Attachment, queue: DispatchQueue) -> Single<([[String: Any]], String, Int)> {
+    private func createItems(item: ItemResponse, attachment: Attachment, queue: DispatchQueue) -> Single<([[String: Any]], [String: [String]], String, Int)> {
         return Single.create { subscriber -> Disposable in
             DDLogInfo("ExtensionViewModel: create item and attachment db items")
 
             do {
                 var parameters: [[String: Any]] = []
+                var changeUuids: [String: [String]] = [:]
                 var mtime: Int?
                 var md5: String?
 
@@ -1286,6 +1289,7 @@ final class ExtensionViewModel {
                     if let updateParameters = attachment.updateParameters {
                         parameters.append(updateParameters)
                     }
+                    changeUuids = [item.key: Array(item.changes.map({ $0.uuid })), attachment.key: Array(attachment.changes.map({ $0.uuid }))]
 
                     mtime = attachment.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first.flatMap({ Int($0.value) })
                     md5 = attachment.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value
@@ -1296,7 +1300,7 @@ final class ExtensionViewModel {
                 guard let mtime = mtime else { throw State.AttachmentState.Error.mtimeMissing }
                 guard let md5 = md5 else { throw State.AttachmentState.Error.md5Missing }
 
-                subscriber(.success((parameters, md5, mtime)))
+                subscriber(.success((parameters, changeUuids, md5, mtime)))
             } catch let error {
                 subscriber(.failure(error))
             }
@@ -1310,7 +1314,7 @@ final class ExtensionViewModel {
     /// - parameter collections: Set of collections to which the attachment is assigned.
     /// - parameter tags: Tags picked by user.
     /// - returns: `Single` with `updateParameters` of both new items, md5 and mtime of attachment.
-    private func create(attachment: Attachment, collections: Set<String>, tags: [TagResponse], queue: DispatchQueue) -> Single<([String: Any], String, Int)> {
+    private func create(attachment: Attachment, collections: Set<String>, tags: [TagResponse], queue: DispatchQueue) -> Single<([String: Any], [String: [String]], String, Int)> {
         return Single.create { subscriber -> Disposable in
             DDLogInfo("ExtensionViewModel: create attachment db item")
 
@@ -1318,6 +1322,7 @@ final class ExtensionViewModel {
 
             do {
                 var updateParameters: [String : Any]?
+                var changeUuids: [String: [String]]?
                 var md5: String?
                 var mtime: Int?
 
@@ -1330,6 +1335,7 @@ final class ExtensionViewModel {
                     let attachment = try coordinator.perform(request: request)
 
                     updateParameters = attachment.updateParameters
+                    changeUuids = [attachment.key: Array(attachment.changes.map({ $0.uuid }))]
                     mtime = attachment.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first.flatMap({ Int($0.value) })
                     md5 = attachment.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value
 
@@ -1339,7 +1345,7 @@ final class ExtensionViewModel {
                 guard let mtime = mtime else { throw State.AttachmentState.Error.mtimeMissing }
                 guard let md5 = md5 else { throw State.AttachmentState.Error.md5Missing }
 
-                subscriber(.success(((updateParameters ?? [:]), md5, mtime)))
+                subscriber(.success(((updateParameters ?? [:]), (changeUuids ?? [:]), md5, mtime)))
             } catch let error {
                 subscriber(.failure(error))
             }

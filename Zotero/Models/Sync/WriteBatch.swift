@@ -14,9 +14,10 @@ struct WriteBatch: Equatable {
     let object: SyncObject
     let version: Int
     let parameters: [[String: Any]]
+    let changeUuids: [String: [String]]
 
     func copy(withVersion version: Int) -> WriteBatch {
-        return WriteBatch(libraryId: self.libraryId, object: self.object, version: version, parameters: self.parameters)
+        return WriteBatch(libraryId: self.libraryId, object: self.object, version: version, parameters: self.parameters, changeUuids: self.changeUuids)
     }
 
     // We don't really need equatability in this target, we need it for testing. Swift can't automatically

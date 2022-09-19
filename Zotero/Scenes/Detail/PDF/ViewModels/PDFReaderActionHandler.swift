@@ -1373,7 +1373,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         default: break
         }
 
-        self.update(viewModel: viewModel) { state in
+        self.update(viewModel: viewModel) { state in 
             state.pdfNotification = notification
         }
     }

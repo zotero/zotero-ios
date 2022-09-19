@@ -32,11 +32,13 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
         }
         let customData = try customLibraries.map({ library -> LibraryData in
             let libraryId = LibraryIdentifier.custom(library.type)
-            let (updates, hasUpload) = try self.updates(for: libraryId, database: database)
-            let deletions = try self.deletions(for: libraryId, database: database)
+            let versions = self.loadVersions ? Versions(versions: library.versions) : Versions.empty
+            let version = versions.max
+            let (updates, hasUpload) = try self.updates(for: libraryId, version: version, database: database)
+            let deletions = try self.deletions(for: libraryId, version: version, database: database)
             let hasWebDavDeletions = !self.webDavEnabled ? false : !database.objects(RWebDavDeletion.self).isEmpty
-            return LibraryData(object: library, loadVersions: self.loadVersions, userId: userId, chunkedUpdateParams: updates, chunkedDeletionKeys: deletions, hasUpload: hasUpload,
-                               hasWebDavDeletions: hasWebDavDeletions)
+            return LibraryData(identifier: libraryId, name: library.type.libraryName, versions: versions, canEditMetadata: true, canEditFiles: true, updates: updates, deletions: deletions,
+                               hasUpload: hasUpload, hasWebDavDeletions: hasWebDavDeletions)
         })
         allLibraryData.append(contentsOf: customData)
 
@@ -47,9 +49,12 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
         groups = groups.sorted(byKeyPath: "name")
         let groupData = try groups.map({ group -> LibraryData in
             let libraryId = LibraryIdentifier.group(group.identifier)
-            let (updates, hasUpload) = try self.updates(for: libraryId, database: database)
-            return LibraryData(object: group, loadVersions: self.loadVersions, chunkedUpdateParams: updates, chunkedDeletionKeys: try self.deletions(for: libraryId, database: database),
-                               hasUpload: hasUpload, hasWebDavDeletions: false)
+            let versions = self.loadVersions ? Versions(versions: group.versions) : Versions.empty
+            let version = versions.max
+            let (updates, hasUpload) = try self.updates(for: libraryId, version: version, database: database)
+            let deletions = try self.deletions(for: libraryId, version: versions.max, database: database)
+            return LibraryData(identifier: libraryId, name: group.name, versions: versions, canEditMetadata: group.canEditMetadata, canEditFiles: group.canEditFiles, updates: updates,
+                               deletions: deletions, hasUpload: hasUpload, hasWebDavDeletions: false)
         })
         allLibraryData.append(contentsOf: groupData)
 
@@ -70,23 +75,54 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
         return (custom, group)
     }
 
-    func deletions(for libraryId: LibraryIdentifier, database: Realm) throws -> [SyncObject: [[String]]] {
-        guard self.fetchUpdates else { return [:] }
-        let chunkSize = DeleteBatch.maxCount
-        return [.collection: try ReadDeletedObjectsDbRequest<RCollection>(libraryId: libraryId).process(in: database).map({ $0.key }).chunked(into: chunkSize),
-                .search: try ReadDeletedObjectsDbRequest<RSearch>(libraryId: libraryId).process(in: database).map({ $0.key }).chunked(into: chunkSize),
-                .item: try ReadDeletedObjectsDbRequest<RItem>(libraryId: libraryId).process(in: database).map({ $0.key }).chunked(into: chunkSize)]
+    func deletions(for libraryId: LibraryIdentifier, version: Int, database: Realm) throws -> [DeleteBatch] {
+        guard self.fetchUpdates else { return [] }
+
+        let collectionDeletions = (try ReadDeletedObjectsDbRequest<RCollection>(libraryId: libraryId).process(in: database))
+                                                                                                     .map({ $0.key })
+                                                                                                     .chunked(into: DeleteBatch.maxCount)
+                                                                                                     .map({ DeleteBatch(libraryId: libraryId, object: .collection, version: version, keys: $0) })
+        let searchDeletions = try ReadDeletedObjectsDbRequest<RSearch>(libraryId: libraryId).process(in: database)
+                                                                                            .map({ $0.key })
+                                                                                            .chunked(into: DeleteBatch.maxCount)
+                                                                                            .map({ DeleteBatch(libraryId: libraryId, object: .search, version: version, keys: $0) })
+        let itemDeletions = try ReadDeletedObjectsDbRequest<RItem>(libraryId: libraryId).process(in: database)
+                                                                                        .map({ $0.key })
+                                                                                        .chunked(into: DeleteBatch.maxCount)
+                                                                                        .map({ DeleteBatch(libraryId: libraryId, object: .item, version: version, keys: $0) })
+
+        return collectionDeletions + searchDeletions + itemDeletions
     }
 
-    private func updates(for libraryId: LibraryIdentifier, database: Realm) throws -> ([SyncObject: [[[String: Any]]]], Bool) {
-        guard self.fetchUpdates else { return ([:], false) }
-        let chunkSize = WriteBatch.maxCount
+    private func updates(for libraryId: LibraryIdentifier, version: Int, database: Realm) throws -> ([WriteBatch], Bool) {
+        guard self.fetchUpdates else { return ([], false) }
+
+        let collectionParams = try ReadUpdatedCollectionUpdateParametersDbRequest(libraryId: libraryId).process(in: database)
         let (itemParams, hasUpload) = try ReadUpdatedItemUpdateParametersDbRequest(libraryId: libraryId).process(in: database)
+        let searchParams = try ReadUpdatedSearchUpdateParametersDbRequest(libraryId: libraryId).process(in: database)
         let settings = try ReadUpdatedSettingsUpdateParametersDbRequest(libraryId: libraryId).process(in: database)
-        return ([.collection: try ReadUpdatedCollectionUpdateParametersDbRequest(libraryId: libraryId).process(in: database).chunked(into: chunkSize),
-                 .search: try ReadUpdatedSearchUpdateParametersDbRequest(libraryId: libraryId).process(in: database).chunked(into: chunkSize),
-                 .item: itemParams.chunked(into: chunkSize),
-                 .settings: (settings.isEmpty ? [] : [settings])],
-                hasUpload)
+
+        let batches = self.writeBatches(from: collectionParams, libraryId: libraryId, version: version, object: .collection) +
+                      self.writeBatches(from: itemParams, libraryId: libraryId, version: version, object: .item) +
+                      self.writeBatches(from: searchParams, libraryId: libraryId, version: version, object: .search) +
+                      self.writeBatches(from: settings, libraryId: libraryId, version: version, object: .settings)
+
+        return (batches, hasUpload)
+    }
+
+    private func writeBatches(from response: ReadUpdatedParametersResponse, libraryId: LibraryIdentifier, version: Int, object: SyncObject) -> [WriteBatch] {
+        let chunks = response.parameters.chunked(into: WriteBatch.maxCount)
+        var batches: [WriteBatch] = []
+
+        for chunk in chunks {
+            var uuids: [String: [String]] = [:]
+            for params in chunk {
+                guard let key = params["key"] as? String, let _uuids = response.changeUuids[key] else { continue }
+                uuids[key] = _uuids
+            }
+            batches.append(WriteBatch(libraryId: libraryId, object: object, version: version, parameters: chunk, changeUuids: uuids))
+        }
+
+        return batches
     }
 }

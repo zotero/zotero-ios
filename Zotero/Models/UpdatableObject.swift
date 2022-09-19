@@ -31,7 +31,7 @@ protocol Updatable: AnyObject {
 
 extension Updatable {
     func deleteChanges(uuids: [String], database: Realm) {
-        guard self.isChanged else { return }
+        guard self.isChanged && !uuids.isEmpty else { return }
         database.delete(self.changes.filter("uuid in %@", uuids))
         self.changeType = .sync
     }

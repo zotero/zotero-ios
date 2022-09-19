@@ -199,7 +199,7 @@ class UploadAttachmentSyncAction: SyncAction {
 
         return loadParameters.flatMap { params -> Single<(Int, Error?)> in
             self.failedBeforeZoteroApiRequest = false
-            return SubmitUpdateSyncAction(parameters: [params], sinceVersion: nil, object: .item, libraryId: self.libraryId, userId: self.userId, updateLibraryVersion: false,
+            return SubmitUpdateSyncAction(parameters: [params], changeUuids: [:], sinceVersion: nil, object: .item, libraryId: self.libraryId, userId: self.userId, updateLibraryVersion: false,
                                           apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, schemaController: self.schemaController, dateParser: self.dateParser,
                                           queue: self.queue, scheduler: self.scheduler).result
         }

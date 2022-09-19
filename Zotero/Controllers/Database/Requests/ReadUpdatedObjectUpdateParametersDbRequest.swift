@@ -10,58 +10,87 @@ import Foundation
 
 import RealmSwift
 
+struct ReadUpdatedParametersResponse {
+    let parameters: [[String: Any]]
+    let changeUuids: [String: [String]]
+}
+
 struct ReadUpdatedSettingsUpdateParametersDbRequest: DbResponseRequest {
-    typealias Response = [[String: Any]]
+    typealias Response = ReadUpdatedParametersResponse
 
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
 
-    func process(in database: Realm) throws -> [[String : Any]] {
-        // Page indices are sent only for user library, even though they are assigned to groups also.
+    func process(in database: Realm) throws -> ReadUpdatedParametersResponse {
         switch self.libraryId {
         case .group:
-            return []
+            return ReadUpdatedParametersResponse(parameters: [], changeUuids: [:])
+
         case .custom:
-            return database.objects(RPageIndex.self).filter(.changed).compactMap({ $0.updateParameters })
+            // Page indices are submitted only for user library, even though they are assigned to groups also.
+            var parameters: [[String: Any]] = []
+            var uuids: [String: [String]] = [:]
+            let changed = database.objects(RPageIndex.self).filter(.changed)
+
+            for object in changed {
+                guard let _parameters = object.updateParameters else { continue }
+                parameters.append(_parameters)
+                uuids[object.key] = object.changes.map({ $0.uuid })
+            }
+
+            return ReadUpdatedParametersResponse(parameters: parameters, changeUuids: uuids)
         }
     }
 }
 
 struct ReadUpdatedSearchUpdateParametersDbRequest: DbResponseRequest {
-    typealias Response = [[String: Any]]
+    typealias Response = ReadUpdatedParametersResponse
 
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
 
-    func process(in database: Realm) throws -> [[String : Any]] {
-        return database.objects(RSearch.self)
-                       .filter(.changesWithoutDeletions(in: self.libraryId))
-                       .compactMap({ $0.updateParameters })
+    func process(in database: Realm) throws -> ReadUpdatedParametersResponse {
+        var parameters: [[String: Any]] = []
+        var uuids: [String: [String]] = [:]
+        let changed = database.objects(RSearch.self).filter(.changesWithoutDeletions(in: self.libraryId))
+
+        for object in changed {
+            guard let _parameters = object.updateParameters else { continue }
+            parameters.append(_parameters)
+            uuids[object.key] = object.changes.map({ $0.uuid })
+        }
+
+        return ReadUpdatedParametersResponse(parameters: parameters, changeUuids: uuids)
     }
 }
 
 struct ReadUpdatedItemUpdateParametersDbRequest: DbResponseRequest {
-    typealias Response = ([[String: Any]], Bool)
+    typealias Response = (ReadUpdatedParametersResponse, Bool)
 
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
 
-    func process(in database: Realm) throws -> ([[String: Any]], Bool) {
-        let items =  database.objects(RItem.self).filter(.itemChangesWithoutDeletions(in: self.libraryId))
+    func process(in database: Realm) throws -> (ReadUpdatedParametersResponse, Bool) {
+        let objects =  database.objects(RItem.self).filter(.itemChangesWithoutDeletions(in: self.libraryId))
+
+        if objects.count == 1, let item = objects.first, let parameters = item.updateParameters {
+            let uuids = Array(item.changes.map({ $0.uuid }))
+            return (ReadUpdatedParametersResponse(parameters: [parameters], changeUuids: [item.key: uuids]), item.attachmentNeedsSync)
+        }
 
         // Sort an array of collections or items from top-level to deepest, grouped by level
         //
-        // This is used to sort higher-level objects first in upload JSON, since otherwise the API would reject lower-level objects for
-        // having missing parents.
+        // This is used to sort higher-level objects first in upload JSON, since otherwise the API would reject lower-level objects for having missing parents.
 
         var hasUpload = false
         var keyToLevel: [String: Int] = [:]
         var levels: [Int: [[String: Any]]] = [:]
+        var uuids: [String: [String]] = [:]
 
-        for item in items {
+        for item in objects {
             if item.attachmentNeedsSync {
                 hasUpload = true
             }
@@ -70,6 +99,7 @@ struct ReadUpdatedItemUpdateParametersDbRequest: DbResponseRequest {
 
             let level = self.level(for: item, levelCache: keyToLevel)
             keyToLevel[item.key] = level
+            uuids[item.key] = item.changes.map({ $0.uuid })
 
             if var array = levels[level] {
                 array.append(parameters)
@@ -80,12 +110,11 @@ struct ReadUpdatedItemUpdateParametersDbRequest: DbResponseRequest {
         }
 
         var results: [[String: Any]] = []
-        levels.keys.sorted().forEach { level in
-            if let parameters = levels[level] {
-                results.append(contentsOf: parameters)
-            }
+        for level in levels.keys.sorted() {
+            guard let parameters = levels[level] else { continue }
+            results.append(contentsOf: parameters)
         }
-        return (results, hasUpload)
+        return (ReadUpdatedParametersResponse(parameters: results, changeUuids: uuids), hasUpload)
     }
 
     private func level(for item: RItem, levelCache: [String: Int]) -> Int {
@@ -107,23 +136,28 @@ struct ReadUpdatedItemUpdateParametersDbRequest: DbResponseRequest {
 }
 
 struct ReadUpdatedCollectionUpdateParametersDbRequest: DbResponseRequest {
-    typealias Response = [[String: Any]]
+    typealias Response = ReadUpdatedParametersResponse
 
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
 
-    func process(in database: Realm) throws -> [[String : Any]] {
+    func process(in database: Realm) throws -> ReadUpdatedParametersResponse {
         let objects = database.objects(RCollection.self).filter(.changesWithoutDeletions(in: self.libraryId))
 
-        if objects.count == 1 {
-            return objects[0].updateParameters.flatMap({ [$0] }) ?? []
+        if objects.count == 1, let collection = objects.first, let parameters = collection.updateParameters {
+            let uuids = Array(collection.changes.map({ $0.uuid }))
+            return ReadUpdatedParametersResponse(parameters: [parameters], changeUuids: [collection.key: uuids])
         }
 
         var levels: [Int: [[String: Any]]] = [:]
+        var uuids: [String: [String]] = [:]
 
         for object in objects {
             guard let parameters = object.updateParameters else { continue }
+
+            uuids[object.key] = object.changes.map({ $0.uuid })
+
             let level = object.level(in: database)
             if var array = levels[level] {
                 array.append(parameters)
@@ -139,7 +173,7 @@ struct ReadUpdatedCollectionUpdateParametersDbRequest: DbResponseRequest {
                 results.append(contentsOf: parameters)
             }
         }
-        return results
+        return ReadUpdatedParametersResponse(parameters: results, changeUuids: uuids)
     }
 }
 

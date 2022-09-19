@@ -13,6 +13,7 @@ import RealmSwift
 struct MarkObjectsAsSyncedDbRequest<Obj: UpdatableObject&Syncable>: DbRequest {
     let libraryId: LibraryIdentifier
     let keys: [String]
+    let changeUuids: [String: [String]]
     let version: Int
 
     var needsWrite: Bool { return true }
@@ -23,7 +24,10 @@ struct MarkObjectsAsSyncedDbRequest<Obj: UpdatableObject&Syncable>: DbRequest {
             if object.version != self.version {
                 object.version = self.version
             }
-            object.resetChanges()
+
+            if let uuids = self.changeUuids[object.key] {
+                object.deleteChanges(uuids: uuids, database: database)
+            }
         }
     }
 }
@@ -31,6 +35,7 @@ struct MarkObjectsAsSyncedDbRequest<Obj: UpdatableObject&Syncable>: DbRequest {
 struct MarkCollectionAsSyncedAndUpdateDbRequest: DbRequest {
     let libraryId: LibraryIdentifier
     let response: CollectionResponse
+    let changeUuids: [String]
     let version: Int
 
     var needsWrite: Bool { return true }
@@ -39,7 +44,7 @@ struct MarkCollectionAsSyncedAndUpdateDbRequest: DbRequest {
         guard let collection = database.objects(RCollection.self).filter(.key(self.response.key, in: self.libraryId)).first else { return }
 
         StoreCollectionsDbRequest.update(collection: collection, data: self.response, libraryId: self.libraryId, database: database)
-        collection.resetChanges()
+        collection.deleteChanges(uuids: self.changeUuids, database: database)
         collection.version = self.version
     }
 }
@@ -47,6 +52,7 @@ struct MarkCollectionAsSyncedAndUpdateDbRequest: DbRequest {
 struct MarkItemAsSyncedAndUpdateDbRequest: DbRequest {
     let libraryId: LibraryIdentifier
     let response: ItemResponse
+    let changeUuids: [String]
     let version: Int
 
     unowned let schemaController: SchemaController
@@ -58,7 +64,7 @@ struct MarkItemAsSyncedAndUpdateDbRequest: DbRequest {
         guard let item = database.objects(RItem.self).filter(.key(self.response.key, in: self.libraryId)).first else { return }
 
         _ = StoreItemDbRequest.update(item: item, libraryId: self.libraryId, with: self.response, schemaController: self.schemaController, dateParser: self.dateParser, database: database)
-        item.resetChanges()
+        item.deleteChanges(uuids: self.changeUuids, database: database)
         item.version = self.version
 
         if let parent = item.parent {
@@ -71,6 +77,7 @@ struct MarkItemAsSyncedAndUpdateDbRequest: DbRequest {
 struct MarkSearchAsSyncedAndUpdateDbRequest: DbRequest {
     let libraryId: LibraryIdentifier
     let response: SearchResponse
+    let changeUuids: [String]
     let version: Int
 
     var needsWrite: Bool { return true }
@@ -79,13 +86,14 @@ struct MarkSearchAsSyncedAndUpdateDbRequest: DbRequest {
         guard let search = database.objects(RSearch.self).filter(.key(self.response.key, in: self.libraryId)).first else { return }
 
         StoreSearchesDbRequest.update(search: search, data: self.response, libraryId: self.libraryId, database: database)
-        search.resetChanges()
+        search.deleteChanges(uuids: self.changeUuids, database: database)
         search.version = self.version
     }
 }
 
 struct MarkSettingsAsSyncedDbRequest: DbRequest {
     let settings: [(String, LibraryIdentifier)]
+    let changeUuids: [String]
     let version: Int
 
     var needsWrite: Bool { return true }
@@ -96,7 +104,7 @@ struct MarkSettingsAsSyncedDbRequest: DbRequest {
             if object.version != self.version {
                 object.version = self.version
             }
-            object.resetChanges()
+            object.deleteChanges(uuids: self.changeUuids, database: database)
         }
     }
 }
