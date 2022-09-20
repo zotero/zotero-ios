@@ -35,27 +35,27 @@ struct StoreSearchesDbRequest: DbRequest {
         search.deleted = false
         search.deleteAllChanges(database: database)
 
-        StoreSearchesDbRequest.update(search: search, data: data, libraryId: libraryId, database: database)
+        StoreSearchesDbRequest.update(search: search, response: data, libraryId: libraryId, database: database)
     }
 
-    static func update(search: RSearch, data: SearchResponse, libraryId: LibraryIdentifier, database: Realm) {
-        search.key = data.key
-        search.name = data.data.name
-        search.version = data.version
+    static func update(search: RSearch, response: SearchResponse, libraryId: LibraryIdentifier, database: Realm) {
+        search.key = response.key
+        search.name = response.data.name
+        search.version = response.version
         search.syncState = .synced
         search.syncRetries = 0
         search.lastSyncDate = Date(timeIntervalSince1970: 0)
         search.changeType = .sync
         search.libraryId = libraryId
-        search.trash = data.data.isTrash
+        search.trash = response.data.isTrash
 
-        self.syncConditions(data: data, search: search, database: database)
+        self.sync(conditions: response.data.conditions, search: search, database: database)
     }
 
-    private static func syncConditions(data: SearchResponse, search: RSearch, database: Realm) {
+    static func sync(conditions: [ConditionResponse], search: RSearch, database: Realm) {
         database.delete(search.conditions)
 
-        for object in data.data.conditions.enumerated() {
+        for object in conditions.enumerated() {
             let condition = RCondition()
             condition.condition = object.element.condition
             condition.operator = object.element.operator

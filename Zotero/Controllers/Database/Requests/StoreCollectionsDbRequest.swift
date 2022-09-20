@@ -37,27 +37,27 @@ struct StoreCollectionsDbRequest: DbRequest {
         collection.deleted = false
         collection.deleteAllChanges(database: database)
 
-        StoreCollectionsDbRequest.update(collection: collection, data: data, libraryId: libraryId, database: database)
+        StoreCollectionsDbRequest.update(collection: collection, response: data, libraryId: libraryId, database: database)
     }
 
-    static func update(collection: RCollection, data: CollectionResponse, libraryId: LibraryIdentifier, database: Realm) {
-        collection.key = data.key
-        collection.name = data.data.name
-        collection.version = data.version
+    static func update(collection: RCollection, response: CollectionResponse, libraryId: LibraryIdentifier, database: Realm) {
+        collection.key = response.key
+        collection.name = response.data.name
+        collection.version = response.version
         collection.syncState = .synced
         collection.syncRetries = 0
         collection.lastSyncDate = Date(timeIntervalSince1970: 0)
         collection.changeType = .sync
         collection.libraryId = libraryId
-        collection.trash = data.data.isTrash
+        collection.trash = response.data.isTrash
 
-        self.syncParent(libraryId: libraryId, data: data.data, collection: collection, database: database)
+        self.sync(parentCollection: response.data.parentCollection, libraryId: libraryId, collection: collection, database: database)
     }
 
-    private static func syncParent(libraryId: LibraryIdentifier, data: CollectionResponse.Data, collection: RCollection, database: Realm) {
+    static func sync(parentCollection: String?, libraryId: LibraryIdentifier, collection: RCollection, database: Realm) {
         collection.parentKey = nil
 
-        guard let key = data.parentCollection else { return }
+        guard let key = parentCollection else { return }
 
         let parent: RCollection
         if let existing = database.objects(RCollection.self).filter(.key(key, in: libraryId)).first {

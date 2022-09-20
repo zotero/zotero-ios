@@ -228,7 +228,7 @@ struct SubmitUpdateSyncAction: SyncAction {
             // Update collections locally based on response from backend and mark as submitted.
             for response in changedCollections {
                 let changeUuids = self.changeUuids[response.key] ?? []
-                requests.append(MarkCollectionAsSyncedAndUpdateDbRequest(libraryId: self.libraryId, response: response, changeUuids: changeUuids, version: version))
+                requests.append(MarkCollectionAsSyncedAndUpdateDbRequest(libraryId: self.libraryId, response: response, changeUuids: changeUuids))
             }
         }
 
@@ -236,8 +236,7 @@ struct SubmitUpdateSyncAction: SyncAction {
             // Update items locally based on response from backend and mark as submitted.
             for response in changedItems {
                 let changeUuids = self.changeUuids[response.key] ?? []
-                requests.append(MarkItemAsSyncedAndUpdateDbRequest(libraryId: self.libraryId, response: response, changeUuids: changeUuids, version: version, schemaController: self.schemaController,
-                                                                   dateParser: self.dateParser))
+                requests.append(MarkItemAsSyncedAndUpdateDbRequest(libraryId: self.libraryId, response: response, changeUuids: changeUuids, schemaController: self.schemaController, dateParser: self.dateParser))
             }
         }
 
@@ -245,7 +244,7 @@ struct SubmitUpdateSyncAction: SyncAction {
             // Update searches locally based on response from backend and mark as submitted.
             for response in changedSearches {
                 let changeUuids = self.changeUuids[response.key] ?? []
-                requests.append(MarkSearchAsSyncedAndUpdateDbRequest(libraryId: self.libraryId, response: response, changeUuids: changeUuids, version: version))
+                requests.append(MarkSearchAsSyncedAndUpdateDbRequest(libraryId: self.libraryId, response: response, changeUuids: changeUuids))
             }
         }
 
