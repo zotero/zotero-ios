@@ -136,6 +136,19 @@ final class DateParser {
             month = datePart1.asInt
             year = self.year(from: datePart3)
             order = (month > 0 ? "m" : "") + (year > 0 ? "y" : "")
+        } else if datePart1?.isEmpty == false && datePart2.isJsNegative && datePart3.isJsNegative {
+            // Only 1 part found, assume day/month
+            let value = datePart1.asInt
+            if value <= 12 {
+                month = value
+                order = "m"
+            } else if value <= 31 {
+                day = value
+                order = "d"
+            } else {
+                year = value
+                order = "y"
+            }
         } else {
             // Local style date (middle or little endian)
             let localeParts = Locale.autoupdatingCurrent.identifier.split(separator: "_")

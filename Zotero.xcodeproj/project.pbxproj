@@ -866,7 +866,6 @@
 		B3B953CE245981DA00FC96DB /* PDFReaderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953CD245981DA00FC96DB /* PDFReaderViewController.swift */; };
 		B3B953D22459B4D800FC96DB /* UITableViewCell+SwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953D12459B4D800FC96DB /* UITableViewCell+SwiftUI.swift */; };
 		B3B953D42459B62D00FC96DB /* AnnotationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953D32459B62D00FC96DB /* AnnotationCell.swift */; };
-		B3BA9DAF28A649C200B51F1D /* ItemDetailActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EC5241A61C700760E20 /* ItemDetailActionHandler.swift */; };
 		B3BC1F60254322D200BA3388 /* ItemDetailAbstractEditCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC1F5E254322D200BA3388 /* ItemDetailAbstractEditCell.swift */; };
 		B3BC1F61254322D200BA3388 /* ItemDetailAbstractEditContentView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3BC1F5F254322D200BA3388 /* ItemDetailAbstractEditContentView.xib */; };
 		B3BC25CD247E6BA000AC27B5 /* DateParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC25CC247E6BA000AC27B5 /* DateParser.swift */; };
@@ -4876,7 +4875,6 @@
 				B3202C692710488200485BE4 /* OHHTTPStubs+Helpers.swift in Sources */,
 				B307E55E22D4A87B00592B3C /* SyncActionsSpec.swift in Sources */,
 				B3B1EDEF250242E700D8BC1E /* CollectionResponseSpec.swift in Sources */,
-				B3BA9DAF28A649C200B51F1D /* ItemDetailActionHandler.swift in Sources */,
 				B3F47C01243B339F004F8B1E /* TranslatorsControllerSpec.swift in Sources */,
 				B3B1EDF1250242F700D8BC1E /* SearchResponseSpec.swift in Sources */,
 				B34F274F220E20370038B3B1 /* SyncControllerSpec.swift in Sources */,
@@ -5460,6 +5458,7 @@
 					"TESTING=1",
 				);
 				INFOPLIST_FILE = ZoteroTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.7;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -5486,6 +5485,7 @@
 				COPY_PHASE_STRIP = YES;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.7;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -5511,6 +5511,7 @@
 				COPY_PHASE_STRIP = YES;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroUITests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.7;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -5536,6 +5537,7 @@
 				COPY_PHASE_STRIP = YES;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroUITests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.7;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -5772,6 +5774,7 @@
 					"TESTING=1",
 				);
 				INFOPLIST_FILE = ZoteroTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.7;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -5797,6 +5800,7 @@
 				COPY_PHASE_STRIP = YES;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroUITests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.7;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -5920,6 +5924,7 @@
 				COPY_PHASE_STRIP = YES;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.7;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -5945,6 +5950,7 @@
 				COPY_PHASE_STRIP = YES;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroUITests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.7;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

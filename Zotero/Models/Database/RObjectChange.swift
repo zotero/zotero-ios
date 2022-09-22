@@ -12,13 +12,13 @@ import RealmSwift
 
 final class RObjectChange: EmbeddedObject {
     /// Unique identifier for these changes
-    @Persisted var uuid: String
+    @Persisted var identifier: String
     /// Raw value for OptionSet of changes for parent object, indicates which local changes need to be synced to backend
     @Persisted var rawChanges: Int16
 
     static func create<Changes: OptionSet>(changes: Changes) -> RObjectChange where Changes.RawValue == Int16 {
         let objectChange = RObjectChange()
-        objectChange.uuid = UUID().uuidString
+        objectChange.identifier = UUID().uuidString
         objectChange.rawChanges = changes.rawValue
         return objectChange
     }

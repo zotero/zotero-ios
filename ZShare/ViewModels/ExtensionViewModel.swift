@@ -995,7 +995,7 @@ final class ExtensionViewModel {
                     let request = CreateBackendItemDbRequest(item: item, schemaController: schemaController, dateParser: dateParser)
                     let item = try coordinator.perform(request: request)
                     parameters = item.updateParameters ?? [:]
-                    changeUuids = [item.key: Array(item.changes.map({ $0.uuid }))]
+                    changeUuids = [item.key: Array(item.changes.map({ $0.identifier }))]
 
                     coordinator.invalidate()
                 })
@@ -1289,7 +1289,7 @@ final class ExtensionViewModel {
                     if let updateParameters = attachment.updateParameters {
                         parameters.append(updateParameters)
                     }
-                    changeUuids = [item.key: Array(item.changes.map({ $0.uuid })), attachment.key: Array(attachment.changes.map({ $0.uuid }))]
+                    changeUuids = [item.key: Array(item.changes.map({ $0.identifier })), attachment.key: Array(attachment.changes.map({ $0.identifier }))]
 
                     mtime = attachment.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first.flatMap({ Int($0.value) })
                     md5 = attachment.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value
@@ -1335,7 +1335,7 @@ final class ExtensionViewModel {
                     let attachment = try coordinator.perform(request: request)
 
                     updateParameters = attachment.updateParameters
-                    changeUuids = [attachment.key: Array(attachment.changes.map({ $0.uuid }))]
+                    changeUuids = [attachment.key: Array(attachment.changes.map({ $0.identifier }))]
                     mtime = attachment.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first.flatMap({ Int($0.value) })
                     md5 = attachment.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value
 

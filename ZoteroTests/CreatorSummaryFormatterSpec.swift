@@ -32,11 +32,12 @@ final class CreatorSummaryFormatterSpec: QuickSpec {
         }
 
         it("creates summary for no creators") {
+            
             try? self.realm.write {
                 self.realm.add(self.createCreators(type: "author", namePresentation: .separate, count: 0))
             }
 
-            let results = self.realm.objects(RItem.self).first!.creators.filter("primary = true")
+            let results = self.realm.objects(RItem.self).first!.creators
             let summary = CreatorSummaryFormatter.summary(for: results)
             expect(summary).to(beNil())
         }
@@ -46,7 +47,7 @@ final class CreatorSummaryFormatterSpec: QuickSpec {
                 self.realm.add(self.createCreators(type: "author", namePresentation: .separate, count: 1))
             }
 
-            let results = self.realm.objects(RItem.self).first!.creators.filter("primary = true")
+            let results = self.realm.objects(RItem.self).first!.creators
             let summary = CreatorSummaryFormatter.summary(for: results)
             expect(summary).to(equal("Surname0"))
 
@@ -55,7 +56,7 @@ final class CreatorSummaryFormatterSpec: QuickSpec {
                 self.realm.add(self.createCreators(type: "author", namePresentation: .full, count: 1))
             }
 
-            let results2 = self.realm.objects(RItem.self).first!.creators.filter("primary = true")
+            let results2 = self.realm.objects(RItem.self).first!.creators
             let summary2 = CreatorSummaryFormatter.summary(for: results2)
             expect(summary2).to(equal("Name0 Surname0"))
         }
@@ -65,7 +66,7 @@ final class CreatorSummaryFormatterSpec: QuickSpec {
                 self.realm.add(self.createCreators(type: "author", namePresentation: .separate, count: 2))
             }
 
-            let results = self.realm.objects(RItem.self).first!.creators.filter("primary = true")
+            let results = self.realm.objects(RItem.self).first!.creators
             let summary = CreatorSummaryFormatter.summary(for: results)
             expect(summary).to(equal("Surname1 and Surname0"))
         }
@@ -75,7 +76,7 @@ final class CreatorSummaryFormatterSpec: QuickSpec {
                 self.realm.add(self.createCreators(type: "author", namePresentation: .separate, count: 3))
             }
 
-            let results = self.realm.objects(RItem.self).first!.creators.filter("primary = true")
+            let results = self.realm.objects(RItem.self).first!.creators
             let summary = CreatorSummaryFormatter.summary(for: results)
             expect(summary).to(equal("Surname2 et al."))
 
@@ -84,7 +85,7 @@ final class CreatorSummaryFormatterSpec: QuickSpec {
                 self.realm.add(self.createCreators(type: "author", namePresentation: .separate, count: 15))
             }
 
-            let results2 = self.realm.objects(RItem.self).first!.creators.filter("primary = true")
+            let results2 = self.realm.objects(RItem.self).first!.creators
             let summary2 = CreatorSummaryFormatter.summary(for: results2)
             expect(summary2).to(equal("Surname14 et al."))
         }

@@ -94,18 +94,19 @@ final class SyncControllerSpec: QuickSpec {
                                                             .search: "AAAAAAAA",
                                                             .item: "AAAAAAAA",
                                                             .trash: "BBBBBBBB"]
-                    var objectResponses: [SyncObject: Any] = [:]
-                    objects.forEach { object in
+                    var objectResponses: [SyncObject: [[String: Any]]] = [:]
+                    let libraryJson: [String: Any] = ["id": 0, "type": "user", "name": "A"]
+                    for object in objects {
                         switch object {
                         case .collection:
                             objectResponses[object] = [["key": "AAAAAAAA",
                                                         "version": 1,
-                                                        "library": ["id": 0, "type": "user", "name": "A"],
+                                                        "library": libraryJson,
                                                         "data": ["name": "A"]]]
                         case .search:
                             objectResponses[object] = [["key": "AAAAAAAA",
                                                         "version": 2,
-                                                        "library": ["id": 0, "type": "user", "name": "A"],
+                                                        "library": libraryJson,
                                                         "data": ["name": "A",
                                                                  "conditions": [["condition": "itemType",
                                                                                  "operator": "is",
@@ -113,13 +114,13 @@ final class SyncControllerSpec: QuickSpec {
                         case .item:
                             objectResponses[object] = [["key": "AAAAAAAA",
                                                         "version": 3,
-                                                        "library": ["id": 0, "type": "user", "name": "A"],
+                                                        "library": libraryJson,
                                                         "data": ["title": "A", "itemType": "thesis",
                                                                  "tags": [["tag": "A"]]]]]
                         case .trash:
                             objectResponses[object] = [["key": "BBBBBBBB",
                                                         "version": 4,
-                                                        "library": ["id": 0, "type": "user", "name": "A"],
+                                                        "library": libraryJson,
                                                         "data": ["note": "<p>This is a note</p>",
                                                                  "parentItem": "AAAAAAAA",
                                                                  "itemType": "note",
@@ -637,7 +638,7 @@ final class SyncControllerSpec: QuickSpec {
 
                             switch result {
                             case .success(let data):
-                                let actions = data.0
+                                let actions: [SyncController.Action] = data.0
                                 let itemAction = actions.filter({ action -> Bool in
                                     switch action {
                                     case .syncBatchesToDb(let batches):
@@ -956,10 +957,8 @@ final class SyncControllerSpec: QuickSpec {
 
                     let versionResponses: [SyncObject: Any] = [.collection: [collectionKey: 1]]
                     let objectKeys: [SyncObject: String] = [.collection: collectionKey]
-                    let collectionData: [[String: Any]] = [["key": collectionKey,
-                                                            "version": 1,
-                                                            "library": ["id": 0, "type": "user", "name": "A"],
-                                                            "data": ["name": "A"]]]
+                    let libraryJson: [String: Any] = ["id": 0, "type": "user", "name": "A"]
+                    let collectionData: [[String: Any]] = [["key": collectionKey, "version": 1, "library": libraryJson, "data": ["name": "A"]]]
                     let objectResponses: [SyncObject: Any] = [.collection: collectionData]
 
                     createStub(for: SubmitDeletionsRequest(libraryId: libraryId, userId: self.userId, objectType: .collection, keys: [collectionKey], version: 0),
@@ -1012,121 +1011,117 @@ final class SyncControllerSpec: QuickSpec {
                     }
                 }
 
-//                it("should add locally deleted items that exist remotely in a locally deleted, remotely modified collection to sync queue and remove from delete log") {
-//                    let header = ["last-modified-version" : "1"]
-//                    let libraryId = self.userLibraryId
-//                    let objects = SyncObject.allCases
-//                    let collectionKey = "AAAAAAAA"
-//                    let deletedItemKey = "CCCCCCCC"
-//
-//                    self.createNewSyncController()
-//
-//                    let realm = self.realm!
-//                    try! realm.write {
-//                        let library = realm.object(ofType: RCustomLibrary.self, forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
-//
-//                        let versions = RVersions()
-//                        versions.collections = 1
-//                        versions.items = 1
-//                        versions.trash = 1
-//                        versions.searches = 1
-//                        versions.settings = 1
-//                        versions.deletions = 1
-//                        realm.add(versions)
-//                        library?.versions = versions
-//
-//                        let collection = RCollection()
-//                        collection.key = collectionKey
-//                        collection.name = "Locally deleted collection"
-//                        collection.version = 1
-//                        collection.deleted = true
-//                        collection.libraryId = .custom(.myLibrary)
-//                        realm.add(collection)
-//
-//                        let item1 = RItem()
-//                        item1.key = "BBBBBBBB"
-//                        item1.baseTitle = "B"
-//                        item1.libraryId = .custom(.myLibrary)
-//                        realm.add(item1)
-//
-//                        collection.items.append(item1)
-//
-//                        let item2 = RItem()
-//                        item2.key = deletedItemKey
-//                        item2.baseTitle = "C"
-//                        item2.deleted = true
-//                        item2.libraryId = .custom(.myLibrary)
-//                        realm.add(item2)
-//
-//                        collection.items.append(item2)
-//                    }
-//
-//                    let versionResponses: [SyncObject: Any] = [.collection: [collectionKey: 2]]
-//                    let objectKeys: [SyncObject: String] = [.collection: collectionKey]
-//                    let collectionData: [[String: Any]] = [["key": collectionKey,
-//                                                            "version": 2,
-//                                                            "library": ["id": 0, "type": "user", "name": "A"],
-//                                                            "data": ["name": "A"]]]
-//                    let objectResponses: [SyncObject: Any] = [.collection: collectionData]
-//
-//                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
-//                    createStub(for: SubmitDeletionsRequest(libraryId: libraryId, userId: self.userId, objectType: .collection, keys: [collectionKey], version: 1),
-//                               baseUrl: baseUrl, headers: header, statusCode: 412, jsonResponse: [:])
-//                    createStub(for: SubmitDeletionsRequest(libraryId: libraryId, userId: self.userId, objectType: .item, keys: [deletedItemKey], version: 1),
-//                               baseUrl: baseUrl, headers: header, statusCode: 412, jsonResponse: [:])
-//                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:])
-//                    objects.forEach { object in
-//                        createStub(for: VersionsRequest(libraryId: libraryId, userId: self.userId, objectType: object, version: 1),
-//                                   baseUrl: baseUrl, headers: header, jsonResponse: (versionResponses[object] ?? [:]))
-//                    }
-//                    objects.forEach { object in
-//                        createStub(for: ObjectsRequest(libraryId: libraryId, userId: self.userId, objectType: object, keys: (objectKeys[object] ?? "")),
-//                                   baseUrl: baseUrl, headers: header, jsonResponse: (objectResponses[object] ?? [:]))
-//                    }
-//                    createStub(for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 1),
-//                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 1]])
-//                    createStub(for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 1),
-//                               baseUrl: baseUrl, headers: header, jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []])
-//
-//                    waitUntil(timeout: 10) { doneAction in
-//                        self.syncController.reportFinish = { _ in
-//                            let realm = try! Realm(configuration: self.realmConfig)
-//                            realm.refresh()
-//
-//                            let library = realm.objects(RCustomLibrary.self).first
-//                            expect(libraryId).toNot(beNil())
-//                            expect(library?.type).to(equal(.myLibrary))
-//
-//                            let collections = realm.objects(RCollection.self).filter(.library(with: .custom(.myLibrary)))
-//                            let items = realm.objects(RItem.self).filter(.library(with: .custom(.myLibrary)))
-//
-//                            expect(collections.count).to(equal(1))
-//                            expect(items.count).to(equal(2))
-//                            expect(realm.objects(RCollection.self).count).to(equal(1))
-//                            expect(realm.objects(RItem.self).count).to(equal(2))
-//
-//                            let collection = realm.objects(RCollection.self).filter("key = %@", collectionKey).first
-//                            expect(collection).toNot(beNil())
-//                            expect(collection?.syncState).to(equal(.synced))
-//                            expect(collection?.version).to(equal(2))
-//                            expect(collection?.deleted).to(beFalse())
-//                            expect(collection?.customLibraryKey.value).to(equal(RCustomLibraryType.myLibrary.rawValue))
-//                            expect(collection?.parentKey).to(beNil())
-//                            expect(collection?.items.count).to(equal(2))
-//                            if let collection = collection {
-//                                expect(collection.items.map({ $0.key })).to(contain(["BBBBBBBB", "CCCCCCCC"]))
-//                            }
-//
-//                            let item = realm.objects(RItem.self).filter("key = %@", "CCCCCCCC").first
-//                            expect(item).toNot(beNil())
-//                            expect(item?.deleted).to(beFalse())
-//
-//                            doneAction()
-//                        }
-//
-//                        self.syncController.start(type: .normal, libraries: .all)
-//                    }
-//                }
+                it("should add locally deleted items that exist remotely in a locally deleted, remotely modified collection to sync queue and remove from delete log") {
+                    let header = ["last-modified-version" : "1"]
+                    let libraryId = self.userLibraryId
+                    let objects = SyncObject.allCases
+                    let collectionKey = "AAAAAAAA"
+                    let deletedItemKey = "CCCCCCCC"
+
+                    self.createNewSyncController()
+
+                    let realm = self.realm!
+                    try! realm.write {
+                        let library = realm.object(ofType: RCustomLibrary.self, forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
+
+                        let versions = RVersions()
+                        versions.collections = 1
+                        versions.items = 1
+                        versions.trash = 1
+                        versions.searches = 1
+                        versions.settings = 1
+                        versions.deletions = 1
+                        library?.versions = versions
+
+                        let collection = RCollection()
+                        collection.key = collectionKey
+                        collection.name = "Locally deleted collection"
+                        collection.version = 1
+                        collection.deleted = true
+                        collection.libraryId = .custom(.myLibrary)
+                        realm.add(collection)
+
+                        let item1 = RItem()
+                        item1.key = "BBBBBBBB"
+                        item1.baseTitle = "B"
+                        item1.libraryId = .custom(.myLibrary)
+                        realm.add(item1)
+
+                        collection.items.append(item1)
+
+                        let item2 = RItem()
+                        item2.key = deletedItemKey
+                        item2.baseTitle = "C"
+                        item2.deleted = true
+                        item2.libraryId = .custom(.myLibrary)
+                        realm.add(item2)
+
+                        collection.items.append(item2)
+                    }
+
+                    let versionResponses: [SyncObject: Any] = [.collection: [collectionKey: 2]]
+                    let objectKeys: [SyncObject: String] = [.collection: collectionKey]
+                    let libraryJson: [String: Any] = ["id": 0, "type": "user", "name": "A"]
+                    let collectionData: [[String: Any]] = [["key": collectionKey, "version": 2, "library": libraryJson, "data": ["name": "A"]]]
+                    let objectResponses: [SyncObject: Any] = [.collection: collectionData]
+
+                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
+                    createStub(for: SubmitDeletionsRequest(libraryId: libraryId, userId: self.userId, objectType: .collection, keys: [collectionKey], version: 1),
+                               baseUrl: baseUrl, headers: header, statusCode: 412, jsonResponse: [:])
+                    createStub(for: SubmitDeletionsRequest(libraryId: libraryId, userId: self.userId, objectType: .item, keys: [deletedItemKey], version: 1),
+                               baseUrl: baseUrl, headers: header, statusCode: 412, jsonResponse: [:])
+                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:])
+                    objects.forEach { object in
+                        createStub(for: VersionsRequest(libraryId: libraryId, userId: self.userId, objectType: object, version: 1),
+                                   baseUrl: baseUrl, headers: header, jsonResponse: (versionResponses[object] ?? [:]))
+                    }
+                    objects.forEach { object in
+                        createStub(for: ObjectsRequest(libraryId: libraryId, userId: self.userId, objectType: object, keys: (objectKeys[object] ?? "")),
+                                   baseUrl: baseUrl, headers: header, jsonResponse: (objectResponses[object] ?? [:]))
+                    }
+                    createStub(for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 1),
+                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 1]])
+                    createStub(for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 1),
+                               baseUrl: baseUrl, headers: header, jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []])
+
+                    waitUntil(timeout: .seconds(10000000)) { doneAction in
+                        self.syncController.reportFinish = { _ in
+                            let realm = try! Realm(configuration: self.realmConfig)
+                            realm.refresh()
+
+                            let library = realm.objects(RCustomLibrary.self).first
+                            expect(library?.type).to(equal(.myLibrary))
+
+                            let collections = realm.objects(RCollection.self).filter(.library(with: .custom(.myLibrary)))
+                            let items = realm.objects(RItem.self).filter(.library(with: .custom(.myLibrary)))
+
+                            expect(collections.count).to(equal(1))
+                            expect(items.count).to(equal(2))
+                            expect(realm.objects(RCollection.self).count).to(equal(1))
+                            expect(realm.objects(RItem.self).count).to(equal(2))
+
+                            let collection = realm.objects(RCollection.self).filter("key = %@", collectionKey).first
+                            expect(collection).toNot(beNil())
+                            expect(collection?.syncState).to(equal(.synced))
+                            expect(collection?.version).to(equal(2))
+                            expect(collection?.deleted).to(beFalse())
+                            expect(collection?.customLibraryKey?.rawValue).to(equal(RCustomLibraryType.myLibrary.rawValue))
+                            expect(collection?.parentKey).to(beNil())
+                            expect(collection?.items.count).to(equal(2))
+                            if let collection = collection {
+                                expect(collection.items.map({ $0.key })).to(contain(["BBBBBBBB", "CCCCCCCC"]))
+                            }
+
+                            let item = realm.objects(RItem.self).filter("key = %@", "CCCCCCCC").first
+                            expect(item).toNot(beNil())
+                            expect(item?.deleted).to(beFalse())
+
+                            doneAction()
+                        }
+
+                        self.syncController.start(type: .normal, libraries: .all)
+                    }
+                }
 
                 it("renames local file if remote filename changed") {
                     let header = ["last-modified-version" : "3"]
@@ -1138,9 +1133,8 @@ final class SyncControllerSpec: QuickSpec {
                     let objects = SyncObject.allCases
                     let objectKeys: [SyncObject: String] = [.item: itemKey]
                     let versionResponses: [SyncObject: Any] = [.item: [itemKey: 3]]
-                    let objectResponses: [SyncObject: Any] = [.item: [["key": itemKey,
-                                                                       "version": 3,
-                                                                       "library": ["id": 0, "type": "user", "name": "A"],
+                    let libraryJson: [String: Any] = ["id": 0, "type": "user", "name": "A"]
+                    let objectResponses: [SyncObject: Any] = [.item: [["key": itemKey, "version": 3, "library": libraryJson,
                                                                        "data": ["title": "New title", "filename": newFilename, "contentType": contentType, "itemType": "attachment", "linkMode": LinkMode.importedFile.rawValue]]]]
 
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
@@ -1235,7 +1229,7 @@ final class SyncControllerSpec: QuickSpec {
                         collection.key = collectionKey
                         collection.name = "New name"
                         collection.version = oldVersion
-                        collection.changedFields = .name
+                        collection.changes.append(RObjectChange.create(changes: RCollectionChanges.name))
                         collection.libraryId = .custom(.myLibrary)
                         self.realm.add(collection)
 
@@ -1243,7 +1237,7 @@ final class SyncControllerSpec: QuickSpec {
                         item.key = itemKey
                         item.syncState = .synced
                         item.version = oldVersion
-                        item.changedFields = .fields
+                        item.changes.append(RObjectChange.create(changes: RItemChanges.fields))
                         item.libraryId = .custom(.myLibrary)
                         self.realm.add(item)
 
@@ -1278,8 +1272,7 @@ final class SyncControllerSpec: QuickSpec {
                         expect(firstParams["key"] as? String).to(equal(collectionKey))
                         expect(firstParams["version"] as? Int).to(equal(oldVersion))
                         expect(firstParams["name"] as? String).to(equal("New name"))
-                        return HTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
-                                                 statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
+                        return HTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [:], "failed": [:]], statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
                     })
 
                     let itemUpdate = UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .item,
@@ -1295,12 +1288,11 @@ final class SyncControllerSpec: QuickSpec {
                         expect(firstParams["title"] as? String).to(equal("New item"))
                         expect(firstParams["numPages"] as? String).to(equal("1"))
                         expect(firstParams["callNumber"]).to(beNil())
-                        return HTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
-                                                 statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
+                        return HTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [:], "failed": [:]], statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
                     })
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
 
-                    waitUntil(timeout: .seconds(10)) { doneAction in
+                    waitUntil(timeout: .seconds(10000)) { doneAction in
                         self.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: self.realmConfig)
                             realm.refresh()
@@ -1313,11 +1305,11 @@ final class SyncControllerSpec: QuickSpec {
 
                             let collection = realm.objects(RCollection.self).filter(.key(collectionKey, in: .custom(.myLibrary))).first
                             expect(collection?.version).to(equal(newVersion))
-                            expect(collection?.rawChangedFields).to(equal(0))
+                            expect(collection?.changedFields.rawValue).to(equal(0))
 
                             let item = realm.objects(RItem.self).filter(.key(itemKey, in: .custom(.myLibrary))).first
                             expect(item?.version).to(equal(newVersion))
-                            expect(item?.rawChangedFields).to(equal(0))
+                            expect(item?.changedFields.rawValue).to(equal(0))
                             item?.fields.forEach({ field in
                                 expect(field.changed).to(beFalse())
                             })
@@ -1351,11 +1343,13 @@ final class SyncControllerSpec: QuickSpec {
                         // BBBBBBBB has been updated after child CCCCCCCC, but BBBBBBBB should appear in parameters
                         // before CCCCCCCC because it is a parent
 
+                        let allChanges: RItemChanges = [.fields, .creators, .parent, .trash, .relations, .tags, .collections, .type]
+
                         let item = RItem()
                         item.key = otherKey
                         item.syncState = .synced
                         item.version = oldVersion
-                        item.changedFields = .all
+                        item.changes.append(RObjectChange.create(changes: allChanges))
                         item.dateAdded = Date(timeIntervalSinceNow: -3600)
                         item.dateModified = Date(timeIntervalSinceNow: -1800)
                         item.libraryId = .custom(.myLibrary)
@@ -1365,7 +1359,7 @@ final class SyncControllerSpec: QuickSpec {
                         item2.key = parentKey
                         item2.syncState = .synced
                         item2.version = oldVersion
-                        item2.changedFields = .all
+                        item2.changes.append(RObjectChange.create(changes: allChanges))
                         item2.dateAdded = Date(timeIntervalSinceNow: -3599)
                         item2.dateModified = Date(timeIntervalSinceNow: -60)
                         item2.libraryId = .custom(.myLibrary)
@@ -1375,7 +1369,7 @@ final class SyncControllerSpec: QuickSpec {
                         item3.key = childKey
                         item3.syncState = .synced
                         item3.version = oldVersion
-                        item3.changedFields = .all
+                        item3.changes.append(RObjectChange.create(changes: allChanges))
                         item3.dateAdded = Date(timeIntervalSinceNow: -3598)
                         item3.dateModified = Date(timeIntervalSinceNow: -3540)
                         item3.libraryId = .custom(.myLibrary)
@@ -1445,14 +1439,14 @@ final class SyncControllerSpec: QuickSpec {
                         collection.key = firstKey
                         collection.syncState = .synced
                         collection.version = oldVersion
-                        collection.changedFields = .all
+                        collection.changes.append(RObjectChange.create(changes: RCollectionChanges.all))
                         collection.dateModified = Date(timeIntervalSinceNow: -1800)
                         collection.libraryId = .custom(.myLibrary)
 
                         collection2.key = secondKey
                         collection2.syncState = .synced
                         collection2.version = oldVersion
-                        collection2.changedFields = .all
+                        collection2.changes.append(RObjectChange.create(changes: RCollectionChanges.all))
                         collection2.dateModified = Date(timeIntervalSinceNow: -3540)
                         collection2.libraryId = .custom(.myLibrary)
                         collection2.parentKey = collection.key
@@ -1460,7 +1454,7 @@ final class SyncControllerSpec: QuickSpec {
                         collection3.key = thirdKey
                         collection3.syncState = .synced
                         collection3.version = oldVersion
-                        collection3.changedFields = .all
+                        collection3.changes.append(RObjectChange.create(changes: RCollectionChanges.all))
                         collection3.dateModified = Date(timeIntervalSinceNow: -60)
                         collection3.libraryId = .custom(.myLibrary)
                         collection3.parentKey = collection2.key
@@ -1515,7 +1509,7 @@ final class SyncControllerSpec: QuickSpec {
                         collection.key = "AAAAAAAA"
                         collection.syncState = .synced
                         collection.version = oldVersion
-                        collection.changedFields = .all
+                        collection.changes.append(RObjectChange.create(changes: RCollectionChanges.all))
                         collection.dateModified = Date()
                         collection.libraryId = .custom(.myLibrary)
                     }
@@ -1772,6 +1766,13 @@ final class SyncControllerSpec: QuickSpec {
                     let newColor = "#000000"
                     let header = ["last-modified-version" : "\(newVersion)"]
 
+
+                    let libraryJson: [String: Any] = ["id": 0, "type": "user", "name": "A"]
+                    let dataAJson: [String: Any] = ["title": "A", "itemType": "book", "collections": [], "tags": [["tag": tagName]]]
+                    let dataBJson: [String: Any] = ["title": "B", "itemType": "thesis", "collections": []]
+                    let objectResponse: [[String: Any]] = [["key": outdatedKey, "version": newVersion, "library": libraryJson, "data": dataAJson],
+                                                           ["key": locallyMissingKey, "version": newVersion, "library": libraryJson, "data": dataBJson]]
+
                     SyncObject.allCases.forEach { object in
                         if object == .item {
                             createStub(for: VersionsRequest(libraryId: libraryId, userId: self.userId, objectType: object, version: 0),
@@ -1784,14 +1785,7 @@ final class SyncControllerSpec: QuickSpec {
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: nil, statusCode: 200, jsonResponse: [:])
                     createStub(for: ObjectsRequest(libraryId: libraryId, userId: self.userId, objectType: .item, keys: "\(outdatedKey),\(locallyMissingKey)"),
-                               baseUrl: baseUrl, headers: header, jsonResponse: [["key": outdatedKey,
-                                                                                  "version": newVersion,
-                                                                                  "library": ["id": 0, "type": "user", "name": "A"],
-                                                                                  "data": ["title": "A", "itemType": "book", "collections": [], "tags": [["tag": tagName]]]],
-                                                                                 ["key": locallyMissingKey,
-                                                                                  "version": newVersion,
-                                                                                  "library": ["id": 0, "type": "user", "name": "A"],
-                                                                                  "data": ["title": "B", "itemType": "thesis", "collections": []]]])
+                               baseUrl: baseUrl, headers: header, jsonResponse: objectResponse)
                     createStub(for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                                baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors" : ["value": [["name": tagName, "color": newColor]], "version": newVersion]])
                     createStub(for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
@@ -1918,7 +1912,7 @@ final class SyncControllerSpec: QuickSpec {
                         changedItem.key = changedKey
                         changedItem.rawType = "thesis"
                         changedItem.syncState = .synced
-                        changedItem.changedFields = .type
+                        changedItem.changes.append(RObjectChange.create(changes: RItemChanges.type))
                         changedItem.version = newVersion
                         changedItem.dateAdded = Date(timeIntervalSinceNow: -3600)
                         changedItem.dateModified = Date(timeIntervalSinceNow: -1800)
@@ -1965,8 +1959,8 @@ final class SyncControllerSpec: QuickSpec {
                     let expected: [SyncController.Action] = [.loadKeyPermissions, .syncGroupVersions,
                                                              .createLibraryActions(.all, .automatic),
                                                              .createUploadActions(libraryId: libraryId, hadOtherWriteActions: false),
-                                                             .uploadAttachment(AttachmentUpload(libraryId: libraryId, key: key, filename: filename, contentType: "text/plain", md5: "", mtime: 0, file: file, oldMd5: nil)),
-                                                             .createLibraryActions(.specific([libraryId]), .forceDownloads),
+                                                             .uploadAttachment(AttachmentUpload(libraryId: libraryId, key: key, filename: filename, contentType: "text/plain", md5: "somemd5hash", mtime: 1000, file: file, oldMd5: nil)),
+                                                             .createLibraryActions(.specific([libraryId]), .onlyDownloads),
                                                              .syncSettings(libraryId, 0),
                                                              .syncVersions(libraryId: libraryId, object: .collection, version: 0, checkRemote: false),
                                                              .syncVersions(libraryId: libraryId, object: .search, version: 0, checkRemote: false),
@@ -1980,12 +1974,10 @@ final class SyncControllerSpec: QuickSpec {
                     self.createNewSyncController()
 
                     try! self.realm.write {
-
                         let item = RItem()
                         item.key = key
                         item.rawType = "attachment"
                         item.customLibraryKey = .myLibrary
-                        item.rawChangedFields = 0
                         item.attachmentNeedsSync = true
 
                         let contentField = RItemField()
@@ -2002,6 +1994,16 @@ final class SyncControllerSpec: QuickSpec {
                         linkModeField.key = FieldKeys.Item.Attachment.linkMode
                         linkModeField.value = LinkMode.importedFile.rawValue
                         item.fields.append(linkModeField)
+
+                        let mtimeField = RItemField()
+                        mtimeField.key = FieldKeys.Item.Attachment.mtime
+                        mtimeField.value = "1000"
+                        item.fields.append(mtimeField)
+
+                        let md5Field = RItemField()
+                        md5Field.key = FieldKeys.Item.Attachment.md5
+                        md5Field.value = "somemd5hash"
+                        item.fields.append(md5Field)
 
                         self.realm.add(item)
                     }
@@ -2031,7 +2033,7 @@ final class SyncControllerSpec: QuickSpec {
                     let expected: [SyncController.Action] = [.loadKeyPermissions, .syncGroupVersions,
                                                              .createLibraryActions(.all, .automatic),
                                                              .createUploadActions(libraryId: libraryId, hadOtherWriteActions: false),
-                                                             .createLibraryActions(.specific([libraryId]), .forceDownloads),
+                                                             .createLibraryActions(.specific([libraryId]), .onlyDownloads),
                                                              .syncSettings(libraryId, 0),
                                                              .syncVersions(libraryId: libraryId, object: .collection, version: 0, checkRemote: false),
                                                              .syncVersions(libraryId: libraryId, object: .search, version: 0, checkRemote: false),
@@ -2055,7 +2057,6 @@ final class SyncControllerSpec: QuickSpec {
                         item.key = key
                         item.rawType = "attachment"
                         item.customLibraryKey = .myLibrary
-                        item.rawChangedFields = 0
                         item.attachmentNeedsSync = true
 
                         let contentField = RItemField()
@@ -2116,8 +2117,8 @@ final class SyncControllerSpec: QuickSpec {
                     let expected: [SyncController.Action] = [.loadKeyPermissions, .syncGroupVersions,
                                                              .createLibraryActions(.all, .automatic),
                                                              .createUploadActions(libraryId: libraryId, hadOtherWriteActions: false),
-                                                             .uploadAttachment(AttachmentUpload(libraryId: libraryId, key: key, filename: filename, contentType: "text/plain", md5: "", mtime: 0, file: file, oldMd5: nil)),
-                                                             .uploadAttachment(AttachmentUpload(libraryId: libraryId, key: key2, filename: filename2, contentType: "text/plain", md5: "", mtime: 0, file: file2, oldMd5: nil))]
+                                                             .uploadAttachment(AttachmentUpload(libraryId: libraryId, key: key, filename: filename, contentType: "text/plain", md5: "md5hash1", mtime: 100, file: file, oldMd5: nil)),
+                                                             .uploadAttachment(AttachmentUpload(libraryId: libraryId, key: key2, filename: filename2, contentType: "text/plain", md5: "md5hash2", mtime: 200, file: file2, oldMd5: nil))]
 
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: nil, statusCode: 200, jsonResponse: [:])
@@ -2138,7 +2139,6 @@ final class SyncControllerSpec: QuickSpec {
                         item.key = key
                         item.rawType = "attachment"
                         item.customLibraryKey = .myLibrary
-                        item.rawChangedFields = 0
                         item.attachmentNeedsSync = true
 
                         let contentField = RItemField()
@@ -2156,13 +2156,22 @@ final class SyncControllerSpec: QuickSpec {
                         linkModeField.value = LinkMode.importedFile.rawValue
                         item.fields.append(linkModeField)
 
+                        let md5Field = RItemField()
+                        md5Field.key = FieldKeys.Item.Attachment.md5
+                        md5Field.value = "md5hash1"
+                        item.fields.append(md5Field)
+
+                        let mtimeField = RItemField()
+                        mtimeField.key = FieldKeys.Item.Attachment.mtime
+                        mtimeField.value = "100"
+                        item.fields.append(mtimeField)
+
                         self.realm.add(item)
 
                         let item2 = RItem()
                         item2.key = key2
                         item2.rawType = "attachment"
                         item2.customLibraryKey = .myLibrary
-                        item2.rawChangedFields = 0
                         item2.attachmentNeedsSync = true
 
                         let contentField2 = RItemField()
@@ -2179,6 +2188,16 @@ final class SyncControllerSpec: QuickSpec {
                         linkModeField2.key = FieldKeys.Item.Attachment.linkMode
                         linkModeField2.value = LinkMode.importedFile.rawValue
                         item2.fields.append(linkModeField2)
+
+                        let md5Field2 = RItemField()
+                        md5Field2.key = FieldKeys.Item.Attachment.md5
+                        md5Field2.value = "md5hash2"
+                        item2.fields.append(md5Field2)
+
+                        let mtimeField2 = RItemField()
+                        mtimeField2.key = FieldKeys.Item.Attachment.mtime
+                        mtimeField2.value = "200"
+                        item2.fields.append(mtimeField2)
 
                         self.realm.add(item2)
                     }
@@ -2217,7 +2236,7 @@ final class SyncControllerSpec: QuickSpec {
                     let expected: [SyncController.Action] = [.loadKeyPermissions, .syncGroupVersions,
                                                              .createLibraryActions(.all, .automatic),
                                                              .createUploadActions(libraryId: libraryId, hadOtherWriteActions: false),
-                                                             .uploadAttachment(AttachmentUpload(libraryId: libraryId, key: key, filename: filename, contentType: "text/plain", md5: md5, mtime: 0, file: file, oldMd5: nil))]
+                                                             .uploadAttachment(AttachmentUpload(libraryId: libraryId, key: key, filename: filename, contentType: "text/plain", md5: md5, mtime: 1000, file: file, oldMd5: nil))]
 
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: nil, statusCode: 200, jsonResponse: [:])
@@ -2253,7 +2272,6 @@ final class SyncControllerSpec: QuickSpec {
                         item.key = key
                         item.rawType = "attachment"
                         item.customLibraryKey = .myLibrary
-                        item.rawChangedFields = 0
                         item.attachmentNeedsSync = true
 
                         let contentField = RItemField()
@@ -2265,6 +2283,11 @@ final class SyncControllerSpec: QuickSpec {
                         md5Field.key = FieldKeys.Item.Attachment.md5
                         md5Field.value = md5
                         item.fields.append(md5Field)
+
+                        let mtimeField = RItemField()
+                        mtimeField.key = FieldKeys.Item.Attachment.mtime
+                        mtimeField.value = "1000"
+                        item.fields.append(mtimeField)
 
                         let filenameField = RItemField()
                         filenameField.key = FieldKeys.Item.Attachment.filename

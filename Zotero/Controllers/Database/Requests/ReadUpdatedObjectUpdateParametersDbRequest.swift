@@ -36,7 +36,7 @@ struct ReadUpdatedSettingsUpdateParametersDbRequest: DbResponseRequest {
             for object in changed {
                 guard let _parameters = object.updateParameters else { continue }
                 parameters.append(_parameters)
-                uuids[object.key] = object.changes.map({ $0.uuid })
+                uuids[object.key] = object.changes.map({ $0.identifier })
             }
 
             return ReadUpdatedParametersResponse(parameters: parameters, changeUuids: uuids)
@@ -59,7 +59,7 @@ struct ReadUpdatedSearchUpdateParametersDbRequest: DbResponseRequest {
         for object in changed {
             guard let _parameters = object.updateParameters else { continue }
             parameters.append(_parameters)
-            uuids[object.key] = object.changes.map({ $0.uuid })
+            uuids[object.key] = object.changes.map({ $0.identifier })
         }
 
         return ReadUpdatedParametersResponse(parameters: parameters, changeUuids: uuids)
@@ -77,7 +77,7 @@ struct ReadUpdatedItemUpdateParametersDbRequest: DbResponseRequest {
         let objects =  database.objects(RItem.self).filter(.itemChangesWithoutDeletions(in: self.libraryId))
 
         if objects.count == 1, let item = objects.first, let parameters = item.updateParameters {
-            let uuids = Array(item.changes.map({ $0.uuid }))
+            let uuids = Array(item.changes.map({ $0.identifier }))
             return (ReadUpdatedParametersResponse(parameters: [parameters], changeUuids: [item.key: uuids]), item.attachmentNeedsSync)
         }
 
@@ -99,7 +99,7 @@ struct ReadUpdatedItemUpdateParametersDbRequest: DbResponseRequest {
 
             let level = self.level(for: item, levelCache: keyToLevel)
             keyToLevel[item.key] = level
-            uuids[item.key] = item.changes.map({ $0.uuid })
+            uuids[item.key] = item.changes.map({ $0.identifier })
 
             if var array = levels[level] {
                 array.append(parameters)
@@ -146,7 +146,7 @@ struct ReadUpdatedCollectionUpdateParametersDbRequest: DbResponseRequest {
         let objects = database.objects(RCollection.self).filter(.changesWithoutDeletions(in: self.libraryId))
 
         if objects.count == 1, let collection = objects.first, let parameters = collection.updateParameters {
-            let uuids = Array(collection.changes.map({ $0.uuid }))
+            let uuids = Array(collection.changes.map({ $0.identifier }))
             return ReadUpdatedParametersResponse(parameters: [parameters], changeUuids: [collection.key: uuids])
         }
 
@@ -156,7 +156,7 @@ struct ReadUpdatedCollectionUpdateParametersDbRequest: DbResponseRequest {
         for object in objects {
             guard let parameters = object.updateParameters else { continue }
 
-            uuids[object.key] = object.changes.map({ $0.uuid })
+            uuids[object.key] = object.changes.map({ $0.identifier })
 
             let level = object.level(in: database)
             if var array = levels[level] {

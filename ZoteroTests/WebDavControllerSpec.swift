@@ -201,7 +201,8 @@ final class WebDavControllerSpec: QuickSpec {
                     item.rawType = ItemTypes.attachment
                     item.libraryId = .custom(.myLibrary)
                     item.attachmentNeedsSync = true
-                    item.changedFields = .all
+                    let allChanges: RItemChanges = [.fields, .creators, .parent, .trash, .relations, .tags, .collections, .type]
+                    item.changes.append(RObjectChange.create(changes: allChanges))
 
                     let field1 = RItemField()
                     field1.key = FieldKeys.Item.Attachment.contentType
@@ -252,16 +253,16 @@ final class WebDavControllerSpec: QuickSpec {
                 stub(condition: updatesRequest.stubCondition(with: self.apiBaseUrl, ignoreBody: true), response: { request -> HTTPStubsResponse in
                     if request.allHTTPHeaderFields?["If-Unmodified-Since-Version"] != nil {
                         // First request to submit a new item
-                        return HTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []], statusCode: 200, headers: ["last-modified-version" : "\(newVersion)"])
+                        return HTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [:], "failed": [:]], statusCode: 200, headers: ["last-modified-version" : "\(newVersion)"])
                     } else {
                         // Second request to submit new mtime and hash
-                        return HTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []], statusCode: 200, headers: ["last-modified-version" : "\(newVersion + 1)"])
+                        return HTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [:], "failed": [:]], statusCode: 200, headers: ["last-modified-version" : "\(newVersion + 1)"])
                     }
                 })
 
                 waitUntil(timeout: .seconds(100000000)) { doneAction in
                     self.testSync {
-                        let item = try! self.dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: itemKey))
+                        let item = try! self.dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: itemKey), on: .main)
 
                         expect(item.attachmentNeedsSync).to(beFalse())
                         expect(item.version).to(equal(newVersion + 1))
@@ -295,7 +296,8 @@ final class WebDavControllerSpec: QuickSpec {
                     item.rawType = ItemTypes.attachment
                     item.libraryId = .custom(.myLibrary)
                     item.attachmentNeedsSync = true
-                    item.changedFields = .all
+                    let allChanges: RItemChanges = [.fields, .creators, .parent, .trash, .relations, .tags, .collections, .type]
+                    item.changes.append(RObjectChange.create(changes: allChanges))
 
                     let field1 = RItemField()
                     field1.key = FieldKeys.Item.Attachment.contentType
@@ -338,11 +340,11 @@ final class WebDavControllerSpec: QuickSpec {
                 createStub(for: WebDavDownloadRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200,
                            xmlResponse: "<properties version=\"1\"><mtime>2</mtime><hash>aaaa</hash></properties>")
                 createStub(for: UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .item, params: [], version: nil), ignoreBody: true, baseUrl: self.apiBaseUrl,
-                           headers: ["last-modified-version" : "\(newVersion)"], statusCode: 200, jsonResponse: ["success": ["0": [:]], "unchanged": [], "failed": []])
+                           headers: ["last-modified-version" : "\(newVersion)"], statusCode: 200, jsonResponse: ["success": ["0": [:]], "unchanged": [:], "failed": [:]])
 
                 waitUntil(timeout: .seconds(10000000)) { doneAction in
                     self.testSync {
-                        let item = try! self.dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: itemKey))
+                        let item = try! self.dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: itemKey), on: .main)
 
                         expect(item.attachmentNeedsSync).to(beFalse())
 
@@ -379,7 +381,8 @@ final class WebDavControllerSpec: QuickSpec {
                     item.rawType = ItemTypes.attachment
                     item.libraryId = .custom(.myLibrary)
                     item.attachmentNeedsSync = true
-                    item.changedFields = .all
+                    let allChanges: RItemChanges = [.fields, .creators, .parent, .trash, .relations, .tags, .collections, .type]
+                    item.changes.append(RObjectChange.create(changes: allChanges))
 
                     let field1 = RItemField()
                     field1.key = FieldKeys.Item.Attachment.contentType
@@ -421,13 +424,13 @@ final class WebDavControllerSpec: QuickSpec {
                 createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: self.apiBaseUrl, headers: ["last-modified-version" : "\(oldVersion)"], jsonResponse: [:])
                 createStub(for: UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .item, params: [], version: oldVersion),
                            ignoreBody: true, baseUrl: self.apiBaseUrl, headers: ["last-modified-version" : "\(newVersion)"], statusCode: 200,
-                           jsonResponse: ["success": ["0": [:]], "unchanged": [], "failed": []])
+                           jsonResponse: ["success": ["0": [:]], "unchanged": [:], "failed": [:]])
                 createStub(for: WebDavDownloadRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200,
                            xmlResponse: "<properties version=\"1\"><mtime>1</mtime><hash>aaaa</hash></properties>")
 
                 waitUntil(timeout: .seconds(10)) { doneAction in
                     self.testSync {
-                        let item = try! self.dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: itemKey))
+                        let item = try! self.dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: itemKey), on: .main)
 
                         expect(item.attachmentNeedsSync).to(beFalse())
                         expect(item.version).to(equal(newVersion))
@@ -506,7 +509,7 @@ final class WebDavControllerSpec: QuickSpec {
                     self.testSync {
                         expect(deletionCount).to(equal(4))
 
-                        let count = (try? self.dbStorage.perform(request: ReadWebDavDeletionsDbRequest(libraryId: .custom(.myLibrary))))?.count ?? -1
+                        let count = (try? self.dbStorage.perform(request: ReadWebDavDeletionsDbRequest(libraryId: .custom(.myLibrary)), on: .main))?.count ?? -1
                         expect(count).to(equal(0))
 
                         doneAction()
@@ -560,7 +563,9 @@ final class WebDavControllerSpec: QuickSpec {
         self.webDavController = webDavController
 
         self.syncController!.reportFinish = { _ in
-            syncFinishedAction()
+            inMainThread {
+                syncFinishedAction()
+            }
         }
 
         self.syncController!.start(type: .normal, libraries: .all)

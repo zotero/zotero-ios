@@ -35,7 +35,7 @@ final class ReadUpdatedItemUpdateParametersSpec: QuickSpec {
 
                 let child = RItem()
                 child.key = childKey
-                child.changedFields = [.fields]
+                child.changes.append(RObjectChange.create(changes: RItemChanges.fields))
                 child.customLibraryKey = .myLibrary
                 self.realm.add(child)
 
@@ -47,7 +47,7 @@ final class ReadUpdatedItemUpdateParametersSpec: QuickSpec {
 
                 let parent = RItem()
                 parent.key = parentKey
-                parent.changedFields = [.fields]
+                parent.changes.append(RObjectChange.create(changes: RItemChanges.fields))
                 parent.customLibraryKey = .myLibrary
                 self.realm.add(parent)
 
@@ -62,11 +62,11 @@ final class ReadUpdatedItemUpdateParametersSpec: QuickSpec {
 
             self.realm.refresh()
 
-            let (parameters, _) = try! ReadUpdatedItemUpdateParametersDbRequest(libraryId: .custom(.myLibrary)).process(in: self.realm)
+            let (response, _) = try! ReadUpdatedItemUpdateParametersDbRequest(libraryId: .custom(.myLibrary)).process(in: self.realm)
 
-            expect(parameters.count).to(be(2))
-            expect(parameters[0]["key"] as? String).to(equal(parentKey))
-            expect(parameters[1]["key"] as? String).to(equal(childKey))
+            expect(response.parameters.count).to(be(2))
+            expect(response.parameters[0]["key"] as? String).to(equal(parentKey))
+            expect(response.parameters[1]["key"] as? String).to(equal(childKey))
         }
 
         it("Sorts 3 levels of items properly") {
@@ -80,7 +80,7 @@ final class ReadUpdatedItemUpdateParametersSpec: QuickSpec {
 
                 let child = RItem()
                 child.key = childKey
-                child.changedFields = [.fields]
+                child.changes.append(RObjectChange.create(changes: RItemChanges.fields))
                 child.customLibraryKey = .myLibrary
                 self.realm.add(child)
 
@@ -96,7 +96,7 @@ final class ReadUpdatedItemUpdateParametersSpec: QuickSpec {
 
                 let parent = RItem()
                 parent.key = parentKey
-                parent.changedFields = [.fields]
+                parent.changes.append(RObjectChange.create(changes: RItemChanges.fields))
                 parent.customLibraryKey = .myLibrary
                 self.realm.add(parent)
 
@@ -111,11 +111,11 @@ final class ReadUpdatedItemUpdateParametersSpec: QuickSpec {
 
             self.realm.refresh()
 
-            let (parameters, _) = try! ReadUpdatedItemUpdateParametersDbRequest(libraryId: .custom(.myLibrary)).process(in: self.realm)
+            let (response, _) = try! ReadUpdatedItemUpdateParametersDbRequest(libraryId: .custom(.myLibrary)).process(in: self.realm)
 
-            expect(parameters.count).to(be(2))
-            expect(parameters[0]["key"] as? String).to(equal(parentKey))
-            expect(parameters[1]["key"] as? String).to(equal(childKey))
+            expect(response.parameters.count).to(be(2))
+            expect(response.parameters[0]["key"] as? String).to(equal(parentKey))
+            expect(response.parameters[1]["key"] as? String).to(equal(childKey))
         }
     }
 }
