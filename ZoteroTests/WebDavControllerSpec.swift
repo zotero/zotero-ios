@@ -237,8 +237,11 @@ final class WebDavControllerSpec: QuickSpec {
                     self.realm.add(item)
                 }
 
+                var pdfData = "test".data(using: .utf8)!
+                pdfData.insert(contentsOf: [0x25, 0x50, 0x44, 0x46], at: 0)
+
                 let file = Files.attachmentFile(in: libraryId, key: itemKey, filename: filename, contentType: contentType)
-                try! TestControllers.fileStorage.write("test".data(using: .utf8)!, to: file, options: .atomic)
+                try! TestControllers.fileStorage.write(pdfData, to: file, options: .atomic)
 
                 createStub(for: KeyRequest(), baseUrl: self.apiBaseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                 createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: self.apiBaseUrl, headers: ["last-modified-version" : "\(oldVersion)"], jsonResponse: [:])
@@ -253,10 +256,12 @@ final class WebDavControllerSpec: QuickSpec {
                 stub(condition: updatesRequest.stubCondition(with: self.apiBaseUrl, ignoreBody: true), response: { request -> HTTPStubsResponse in
                     if request.allHTTPHeaderFields?["If-Unmodified-Since-Version"] != nil {
                         // First request to submit a new item
-                        return HTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [:], "failed": [:]], statusCode: 200, headers: ["last-modified-version" : "\(newVersion)"])
+                        let itemJson = self.itemJson(key: itemKey, version: newVersion, type: "attachment")
+                        return HTTPStubsResponse(jsonObject: ["success": ["0": itemKey], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]], statusCode: 200, headers: ["last-modified-version" : "\(newVersion)"])
                     } else {
                         // Second request to submit new mtime and hash
-                        return HTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [:], "failed": [:]], statusCode: 200, headers: ["last-modified-version" : "\(newVersion + 1)"])
+                        let itemJson = self.itemJson(key: itemKey, version: newVersion + 1, type: "attachment")
+                        return HTTPStubsResponse(jsonObject: ["success": ["0": itemKey], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]], statusCode: 200, headers: ["last-modified-version" : "\(newVersion + 1)"])
                     }
                 })
 
@@ -280,6 +285,8 @@ final class WebDavControllerSpec: QuickSpec {
                 let oldVersion = 2
                 let newVersion = 3
 
+                let itemJson = self.itemJson(key: itemKey, version: 2, type: "attachment")
+
                 // Setup DB state
                 try! self.realm.write {
                     let myLibrary = RCustomLibrary()
@@ -332,17 +339,20 @@ final class WebDavControllerSpec: QuickSpec {
                     self.realm.add(item)
                 }
 
+                var pdfData = "test".data(using: .utf8)!
+                pdfData.insert(contentsOf: [0x25, 0x50, 0x44, 0x46], at: 0)
+
                 let file = Files.attachmentFile(in: libraryId, key: itemKey, filename: filename, contentType: contentType)
-                try! TestControllers.fileStorage.write("test".data(using: .utf8)!, to: file, options: .atomic)
+                try! TestControllers.fileStorage.write(pdfData, to: file, options: .atomic)
 
                 createStub(for: KeyRequest(), baseUrl: self.apiBaseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                 createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: self.apiBaseUrl, headers: ["last-modified-version" : "\(oldVersion)"], jsonResponse: [:])
                 createStub(for: WebDavDownloadRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200,
                            xmlResponse: "<properties version=\"1\"><mtime>2</mtime><hash>aaaa</hash></properties>")
                 createStub(for: UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .item, params: [], version: nil), ignoreBody: true, baseUrl: self.apiBaseUrl,
-                           headers: ["last-modified-version" : "\(newVersion)"], statusCode: 200, jsonResponse: ["success": ["0": [:]], "unchanged": [:], "failed": [:]])
+                           headers: ["last-modified-version" : "\(newVersion)"], statusCode: 200, jsonResponse: ["success": ["0": itemKey], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]])
 
-                waitUntil(timeout: .seconds(10000000)) { doneAction in
+                waitUntil(timeout: .seconds(10)) { doneAction in
                     self.testSync {
                         let item = try! self.dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: itemKey), on: .main)
 
@@ -365,6 +375,8 @@ final class WebDavControllerSpec: QuickSpec {
                 let oldVersion = 2
                 let newVersion = 3
 
+                let itemJson = self.itemJson(key: itemKey, version: 2, type: "attachment")
+
                 // Setup DB state
                 try! self.realm.write {
                     let myLibrary = RCustomLibrary()
@@ -417,14 +429,17 @@ final class WebDavControllerSpec: QuickSpec {
                     self.realm.add(item)
                 }
 
+                var pdfData = "test".data(using: .utf8)!
+                pdfData.insert(contentsOf: [0x25, 0x50, 0x44, 0x46], at: 0)
+
                 let file = Files.attachmentFile(in: libraryId, key: itemKey, filename: filename, contentType: contentType)
-                try! TestControllers.fileStorage.write("test".data(using: .utf8)!, to: file, options: .atomic)
+                try! TestControllers.fileStorage.write(pdfData, to: file, options: .atomic)
 
                 createStub(for: KeyRequest(), baseUrl: self.apiBaseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                 createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: self.apiBaseUrl, headers: ["last-modified-version" : "\(oldVersion)"], jsonResponse: [:])
                 createStub(for: UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .item, params: [], version: oldVersion),
                            ignoreBody: true, baseUrl: self.apiBaseUrl, headers: ["last-modified-version" : "\(newVersion)"], statusCode: 200,
-                           jsonResponse: ["success": ["0": [:]], "unchanged": [:], "failed": [:]])
+                           jsonResponse: ["success": ["0": itemKey], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]])
                 createStub(for: WebDavDownloadRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200,
                            xmlResponse: "<properties version=\"1\"><mtime>1</mtime><hash>aaaa</hash></properties>")
 
@@ -569,5 +584,16 @@ final class WebDavControllerSpec: QuickSpec {
         }
 
         self.syncController!.start(type: .normal, libraries: .all)
+    }
+
+    private func itemJson(key: String, version: Int, type: String) -> [String: Any] {
+        let itemUrl = Bundle(for: WebDavControllerSpec.self).url(forResource: "test_item", withExtension: "json")!
+        var itemJson = (try! JSONSerialization.jsonObject(with: (try! Data(contentsOf: itemUrl)), options: .allowFragments)) as! [String: Any]
+        itemJson["key"] = key
+        itemJson["version"] = version
+        var itemData = itemJson["data"] as! [String: Any]
+        itemData["itemType"] = type
+        itemJson["data"] = itemData
+        return itemJson
     }
 }

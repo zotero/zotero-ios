@@ -1266,13 +1266,15 @@ final class SyncControllerSpec: QuickSpec {
                     // We don't care about specific params, we just want to catch update for all objecfts of this type
                     let collectionConditions = collectionUpdate.stubCondition(with: baseUrl, ignoreBody: true)
                     stub(condition: collectionConditions, response: { request -> HTTPStubsResponse in
+                        let collectionResponseJson: [String: Any] = ["key": collectionKey, "version": newVersion, "library": ["library": "user", "id": 123, "name": ""], "data": ["name": "New name", "isTrash": false]]
+
                         let params = request.httpBodyStream.flatMap({ self.jsonParameters(from: $0) })
                         expect(params?.count).to(equal(1))
                         let firstParams = params?.first ?? [:]
                         expect(firstParams["key"] as? String).to(equal(collectionKey))
                         expect(firstParams["version"] as? Int).to(equal(oldVersion))
                         expect(firstParams["name"] as? String).to(equal("New name"))
-                        return HTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [:], "failed": [:]], statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
+                        return HTTPStubsResponse(jsonObject: ["success": ["0": collectionKey], "successful": ["0": collectionResponseJson], "unchanged": [:], "failed": [:]], statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
                     })
 
                     let itemUpdate = UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .item,
@@ -1280,6 +1282,7 @@ final class SyncControllerSpec: QuickSpec {
                     // We don't care about specific params, we just want to catch update for all objecfts of this type
                     let itemConditions = itemUpdate.stubCondition(with: baseUrl, ignoreBody: true)
                     stub(condition: itemConditions, response: { request -> HTTPStubsResponse in
+                        let itemResponseJson = self.itemJson(key: itemKey, version: newVersion, type: "attachment")
                         let params = request.httpBodyStream.flatMap({ self.jsonParameters(from: $0) })
                         expect(params?.count).to(equal(1))
                         let firstParams = params?.first ?? [:]
@@ -1288,7 +1291,7 @@ final class SyncControllerSpec: QuickSpec {
                         expect(firstParams["title"] as? String).to(equal("New item"))
                         expect(firstParams["numPages"] as? String).to(equal("1"))
                         expect(firstParams["callNumber"]).to(beNil())
-                        return HTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [:], "failed": [:]], statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
+                        return HTTPStubsResponse(jsonObject: ["success": ["0": itemKey], "successful": ["0": itemResponseJson], "unchanged": [:], "failed": [:]], statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
                     })
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
 
@@ -2327,6 +2330,17 @@ final class SyncControllerSpec: QuickSpec {
     private func jsonParameters(from stream: InputStream) -> [[String: Any]] {
         let json = try? JSONSerialization.jsonObject(with: stream.data, options: .allowFragments)
         return (json as? [[String: Any]]) ?? []
+    }
+
+    private func itemJson(key: String, version: Int, type: String) -> [String: Any] {
+        let itemUrl = Bundle(for: SyncControllerSpec.self).url(forResource: "test_item", withExtension: "json")!
+        var itemJson = (try! JSONSerialization.jsonObject(with: (try! Data(contentsOf: itemUrl)), options: .allowFragments)) as! [String: Any]
+        itemJson["key"] = key
+        itemJson["version"] = version
+        var itemData = itemJson["data"] as! [String: Any]
+        itemData["itemType"] = type
+        itemJson["data"] = itemData
+        return itemJson
     }
 }
 
