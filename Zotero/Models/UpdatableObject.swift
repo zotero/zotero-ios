@@ -32,7 +32,7 @@ protocol Updatable: AnyObject {
 extension Updatable {
     func deleteChanges(uuids: [String], database: Realm) {
         guard self.isChanged && !uuids.isEmpty else { return }
-        database.delete(self.changes.filter("uuid in %@", uuids))
+        database.delete(self.changes.filter("identifier in %@", uuids))
         self.changeType = .sync
     }
 
@@ -249,7 +249,7 @@ extension RItem: Updatable {
     }
 
     func deleteChanges(uuids: [String], database: Realm) {
-        database.delete(self.changes.filter("uuid in %@", uuids))
+        database.delete(self.changes.filter("identifier in %@", uuids))
         self.changeType = .sync
         self.fields.filter("changed = true").forEach { field in
             field.changed = false

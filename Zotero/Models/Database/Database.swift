@@ -48,7 +48,7 @@ struct Database {
         let migrationBlock: MigrationObjectEnumerateBlock = { oldObject, newObject in
             if let oldValue = oldObject?["rawChangedFields"] as? Int16, oldValue > 0 {
                 let object = migration.create(RObjectChange.className())
-                object["uuid"] = UUID().uuidString
+                object["identifier"] = UUID().uuidString
                 object["rawChanges"] = oldValue
                 newObject?.dynamicList("changes").append(object)
             }
