@@ -426,7 +426,7 @@ final class SyncActionsSpec: QuickSpec {
                                                        oldMd5: nil),
                            baseUrl: baseUrl, jsonResponse: ["exists": 1])
 
-                waitUntil(timeout: .seconds(10000), action: { doneAction in
+                waitUntil(timeout: .seconds(10), action: { doneAction in
                     UploadAttachmentSyncAction(key: key,
                                                file: file,
                                                filename: filename,

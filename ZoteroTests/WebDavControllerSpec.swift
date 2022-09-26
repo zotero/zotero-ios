@@ -162,7 +162,7 @@ final class WebDavControllerSpec: QuickSpec {
 
                 createStub(for: request, ignoreBody: true, baseUrl: self.apiBaseUrl, headers: ["Zotero-File-Compressed": "Yes"], statusCode: 200, url: zipUrl)
 
-                waitUntil(timeout: .seconds(1000000000)) { finished in
+                waitUntil(timeout: .seconds(10)) { finished in
                     self.testDownload(attachment: attachment, successAction: {
                         let size = TestControllers.fileStorage.size(of: file)
                         expect(size).to(equal(184292))
@@ -265,7 +265,7 @@ final class WebDavControllerSpec: QuickSpec {
                     }
                 })
 
-                waitUntil(timeout: .seconds(100000000)) { doneAction in
+                waitUntil(timeout: .seconds(10)) { doneAction in
                     self.testSync {
                         let item = try! self.dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: itemKey), on: .main)
 

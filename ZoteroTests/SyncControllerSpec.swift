@@ -936,6 +936,7 @@ final class SyncControllerSpec: QuickSpec {
                         collection.key = collectionKey
                         collection.name = "Locally deleted collection"
                         collection.version = 0
+                        collection.trash = true
                         collection.deleted = true
                         collection.libraryId = .custom(.myLibrary)
                         realm.add(collection)
@@ -951,15 +952,27 @@ final class SyncControllerSpec: QuickSpec {
                         item2.key = "CCCCCCCC"
                         item2.baseTitle = "C"
                         item2.libraryId = .custom(.myLibrary)
+                        item2.deleted = true
+                        item2.trash = true
                         realm.add(item2)
                         collection.items.append(item2)
                     }
+
+                    var item1Response = self.itemJson(key: "BBBBBBBB", version: 2, type: "book")
+                    var item1Data = item1Response["data"] as? [String: Any]
+                    item1Data?["collections"] = [collectionKey]
+                    item1Response["data"] = item1Data
+                    var item2Response = self.itemJson(key: "CCCCCCCC", version: 2, type: "book")
+                    var item2Data = item2Response["data"] as? [String: Any]
+                    item2Data?["collections"] = [collectionKey]
+                    item2Response["data"] = item2Data
 
                     let versionResponses: [SyncObject: Any] = [.collection: [collectionKey: 1]]
                     let objectKeys: [SyncObject: String] = [.collection: collectionKey]
                     let libraryJson: [String: Any] = ["id": 0, "type": "user", "name": "A"]
                     let collectionData: [[String: Any]] = [["key": collectionKey, "version": 1, "library": libraryJson, "data": ["name": "A"]]]
-                    let objectResponses: [SyncObject: Any] = [.collection: collectionData]
+                    let itemsData = [item1Response, item2Response]
+                    let objectResponses: [SyncObject: Any] = [.collection: collectionData, .item: itemsData]
 
                     createStub(for: SubmitDeletionsRequest(libraryId: libraryId, userId: self.userId, objectType: .collection, keys: [collectionKey], version: 0),
                                baseUrl: baseUrl, headers: header, statusCode: 412, jsonResponse: [:])
@@ -995,11 +1008,17 @@ final class SyncControllerSpec: QuickSpec {
                             expect(realm.objects(RCollection.self).count).to(equal(1))
                             expect(realm.objects(RItem.self).count).to(equal(2))
 
+                            let item = realm.objects(RItem.self).filter("key = %@", "CCCCCCCC").first
+                            expect(item).toNot(beNil())
+                            expect(item?.deleted).to(beFalse())
+                            expect(item?.trash).to(beFalse())
+
                             let collection = realm.objects(RCollection.self).filter("key = %@", collectionKey).first
                             expect(collection).toNot(beNil())
                             expect(collection?.syncState).to(equal(.synced))
                             expect(collection?.version).to(equal(1))
                             expect(collection?.deleted).to(beFalse())
+                            expect(collection?.trash).to(beFalse())
                             expect(collection?.customLibraryKey).to(equal(RCustomLibraryType.myLibrary))
                             expect(collection?.parentKey).to(beNil())
                             expect(collection?.items.count).to(equal(2))
@@ -1038,6 +1057,7 @@ final class SyncControllerSpec: QuickSpec {
                         collection.name = "Locally deleted collection"
                         collection.version = 1
                         collection.deleted = true
+                        collection.trash = true
                         collection.libraryId = .custom(.myLibrary)
                         realm.add(collection)
 
@@ -1053,6 +1073,7 @@ final class SyncControllerSpec: QuickSpec {
                         item2.key = deletedItemKey
                         item2.baseTitle = "C"
                         item2.deleted = true
+                        item2.trash = true
                         item2.libraryId = .custom(.myLibrary)
                         realm.add(item2)
 
@@ -1084,7 +1105,7 @@ final class SyncControllerSpec: QuickSpec {
                     createStub(for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 1),
                                baseUrl: baseUrl, headers: header, jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []])
 
-                    waitUntil(timeout: .seconds(10000000)) { doneAction in
+                    waitUntil(timeout: .seconds(10)) { doneAction in
                         self.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: self.realmConfig)
                             realm.refresh()
@@ -1105,6 +1126,7 @@ final class SyncControllerSpec: QuickSpec {
                             expect(collection?.syncState).to(equal(.synced))
                             expect(collection?.version).to(equal(2))
                             expect(collection?.deleted).to(beFalse())
+                            expect(collection?.trash).to(beFalse())
                             expect(collection?.customLibraryKey?.rawValue).to(equal(RCustomLibraryType.myLibrary.rawValue))
                             expect(collection?.parentKey).to(beNil())
                             expect(collection?.items.count).to(equal(2))
@@ -1115,6 +1137,7 @@ final class SyncControllerSpec: QuickSpec {
                             let item = realm.objects(RItem.self).filter("key = %@", "CCCCCCCC").first
                             expect(item).toNot(beNil())
                             expect(item?.deleted).to(beFalse())
+                            expect(item?.trash).to(beFalse())
 
                             doneAction()
                         }
@@ -1184,7 +1207,7 @@ final class SyncControllerSpec: QuickSpec {
                         realm.add(item)
                     }
 
-                    waitUntil(timeout: .seconds(10000000000)) { doneAction in
+                    waitUntil(timeout: .seconds(10)) { doneAction in
                         self.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: self.realmConfig)
                             realm.refresh()
@@ -1295,7 +1318,7 @@ final class SyncControllerSpec: QuickSpec {
                     })
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
 
-                    waitUntil(timeout: .seconds(10000)) { doneAction in
+                    waitUntil(timeout: .seconds(10)) { doneAction in
                         self.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: self.realmConfig)
                             realm.refresh()
@@ -1621,6 +1644,7 @@ final class SyncControllerSpec: QuickSpec {
                     }
 
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
+                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:])
                     createStub(for: SubmitDeletionsRequest(libraryId: libraryId, userId: self.userId, objectType: .collection, keys: [collectionKey], version: 0),
                                baseUrl: baseUrl, headers: header, jsonResponse: [:])
                     createStub(for: SubmitDeletionsRequest(libraryId: libraryId, userId: self.userId, objectType: .search, keys: [searchKey], version: 0),
