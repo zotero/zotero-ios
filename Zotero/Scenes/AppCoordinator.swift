@@ -29,6 +29,11 @@ protocol AppLoginCoordinatorDelegate: AnyObject {
     func showForgotPassword()
 }
 
+protocol CustomURLCoordinatorDelegate: AnyObject {
+    func showItem(key: String, library: Library, animated: Bool)
+    func openPdf(on page: Int, key: String, parentKey: String?, libraryId: LibraryIdentifier, animated: Bool)
+}
+
 final class AppCoordinator: NSObject {
     private typealias Action = (UIViewController) -> Void
 
@@ -614,5 +619,19 @@ extension AppCoordinator: SyncRequestReceiver {
             completed(.cancelSync)
         }))
         self.viewController?.present(alert, animated: true, completion: nil)
+    }
+}
+
+extension AppCoordinator: CustomURLCoordinatorDelegate {
+    func showItem(key: String, library: Library, animated: Bool) {
+        guard let mainController = self.window?.rootViewController as? MainViewController else { return }
+        mainController.masterCoordinator?.showCollections(for: library.identifier, preselectedCollection: .custom(.all), animated: animated)
+        mainController.detailCoordinator?.showItemDetail(for: .preview(key: key), library: library, animated: animated)
+    }
+
+    func openPdf(on page: Int, key: String, parentKey: String?, libraryId: LibraryIdentifier, animated: Bool) {
+        guard let mainController = self.window?.rootViewController as? MainViewController else { return }
+        mainController.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(.all), animated: animated)
+        mainController.detailCoordinator?.showAttachment(key: key, parentKey: parentKey, libraryId: libraryId, animated: animated)
     }
 }

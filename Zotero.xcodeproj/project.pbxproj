@@ -939,6 +939,7 @@
 		B3DCDF21240945D80039ED0D /* CollectionsPickerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDF20240945D80039ED0D /* CollectionsPickerState.swift */; };
 		B3DCDF23240945FA0039ED0D /* CollectionsPickerAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDF22240945FA0039ED0D /* CollectionsPickerAction.swift */; };
 		B3DD9CEA2256340400DE6BAA /* licenses.plist in Resources */ = {isa = PBXBuildFile; fileRef = B3DD9CE92256340400DE6BAA /* licenses.plist */; };
+		B3DDACE928E6F52E0063407E /* CustomURLController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DDACE828E6F52E0063407E /* CustomURLController.swift */; };
 		B3DDC0CB2667824D00B2DFD1 /* RegularExpression+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DDC0CA2667824D00B2DFD1 /* RegularExpression+Extensions.swift */; };
 		B3DDC0CC2667825E00B2DFD1 /* RegularExpression+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DDC0CA2667824D00B2DFD1 /* RegularExpression+Extensions.swift */; };
 		B3DDDAAC24CAD6810014DF99 /* InsetLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DDDAAB24CAD6810014DF99 /* InsetLabel.swift */; };
@@ -1790,6 +1791,7 @@
 		B3DCDF20240945D80039ED0D /* CollectionsPickerState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsPickerState.swift; sourceTree = "<group>"; };
 		B3DCDF22240945FA0039ED0D /* CollectionsPickerAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsPickerAction.swift; sourceTree = "<group>"; };
 		B3DD9CE92256340400DE6BAA /* licenses.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = licenses.plist; path = "pdf-keys/licenses.plist"; sourceTree = SOURCE_ROOT; };
+		B3DDACE828E6F52E0063407E /* CustomURLController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomURLController.swift; sourceTree = "<group>"; };
 		B3DDC0CA2667824D00B2DFD1 /* RegularExpression+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RegularExpression+Extensions.swift"; sourceTree = "<group>"; };
 		B3DDDAAB24CAD6810014DF99 /* InsetLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsetLabel.swift; sourceTree = "<group>"; };
 		B3DEAAA628AD01CA00F72D90 /* URLSession+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URLSession+Extensions.swift"; sourceTree = "<group>"; };
@@ -2002,6 +2004,7 @@
 				B32AB57A25ADB891003CF0C6 /* CommentIconDrawingController.swift */,
 				B305647023FC051E003304F2 /* Controllers.swift */,
 				B305646D23FC051E003304F2 /* CreatorSummaryFormatter.swift */,
+				B3DDACE828E6F52E0063407E /* CustomURLController.swift */,
 				B3BC25CC247E6BA000AC27B5 /* DateParser.swift */,
 				B305647F23FC051E003304F2 /* DragDropController.swift */,
 				B3D3FCA8267762EC008E243A /* ExportLocaleReader.swift */,
@@ -4290,6 +4293,7 @@
 				B3E8FE6A2714344D00F51458 /* SettingsActionHandler.swift in Sources */,
 				B3E8FE3C27142A9900F51458 /* StylePickerAction.swift in Sources */,
 				B305667E23FC051F003304F2 /* Array+Utils.swift in Sources */,
+				B3DDACE928E6F52E0063407E /* CustomURLController.swift in Sources */,
 				B30565FC23FC051E003304F2 /* CoordinatedFileStorage.swift in Sources */,
 				B3A081DD25D2D1420088EC24 /* ConflictViewControllerReceiver.swift in Sources */,
 				B305662623FC051F003304F2 /* MarkChangesAsResolvedSyncAction.swift in Sources */,

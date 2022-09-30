@@ -183,7 +183,7 @@ extension MainViewController: MainCoordinatorSyncToolbarDelegate {
 
             guard let library = library, let collectionType = collectionType else { return }
 
-            self.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(collectionType))
+            self.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(collectionType), animated: true)
             self.showItems(for: Collection(custom: collectionType), in: library, searchItemKeys: keys)
         } catch let error {
             DDLogError("MainViewController: can't load searched keys - \(error)")

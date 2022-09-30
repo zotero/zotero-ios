@@ -14,7 +14,7 @@ import CocoaLumberjackSwift
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
     
-    private var coordinator: AppDelegateCoordinatorDelegate!
+    private var coordinator: (AppDelegateCoordinatorDelegate&CustomURLCoordinatorDelegate)!
     private weak var activityCounter: SceneActivityCounter?
     private var sessionCancellable: AnyCancellable?
 
@@ -36,6 +36,22 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         self.setup(scene: scene, window: window, with: userActivity, delegate: delegate)
         // Start observing
         self.setupObservers(controllers: delegate.controllers)
+        // If scene was started from URL, handle URL
+        if let urlContext = connectionOptions.urlContexts.first, let urlController = delegate.controllers.userControllers?.customUrlController {
+            let sourceApp = urlContext.options.sourceApplication ?? "unknown"
+            DDLogInfo("SceneDelegate: App launched by \(urlContext.url.absoluteString) from \(sourceApp)")
+            urlController.process(url: urlContext.url, coordinatorDelegate: self.coordinator, animated: false)
+        }
+    }
+
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        guard let delegate = UIApplication.shared.delegate as? AppDelegate, let urlController = delegate.controllers.userControllers?.customUrlController else { return }
+        
+        if let urlContext = URLContexts.first {
+            let sourceApp = urlContext.options.sourceApplication ?? "unknown"
+            DDLogInfo("SceneDelegate: App opened by \(urlContext.url.absoluteString) from \(sourceApp)")
+            urlController.process(url: urlContext.url, coordinatorDelegate: self.coordinator, animated: false)
+        }
     }
 
     private func setup(scene: UIScene, window: UIWindow, with userActivity: NSUserActivity?, delegate: AppDelegate) {

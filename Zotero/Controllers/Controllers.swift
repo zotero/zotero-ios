@@ -285,6 +285,7 @@ final class UserControllers {
     let fileCleanupController: AttachmentFileCleanupController
     let citationController: CitationController
     let webDavController: WebDavController
+    let customUrlController: CustomURLController
     private let isFirstLaunch: Bool
     private let lastBuildNumber: Int?
     private unowned let translatorsAndStylesController: TranslatorsAndStylesController
@@ -332,6 +333,7 @@ final class UserControllers {
                                                      dbStorage: dbStorage, bundledDataStorage: controllers.bundledDataStorage)
         self.translatorsAndStylesController = controllers.translatorsAndStylesController
         self.idleTimerController = controllers.idleTimerController
+        self.customUrlController = CustomURLController(dbStorage: dbStorage)
         self.lastBuildNumber = controllers.lastBuildNumber
         self.disposeBag = DisposeBag()
     }

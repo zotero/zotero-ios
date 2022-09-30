@@ -144,13 +144,13 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
         self.navigationController.pushViewController(controller, animated: true)
     }
 
-    func showCollections(for libraryId: LibraryIdentifier, preselectedCollection collectionId: CollectionIdentifier) {
+    func showCollections(for libraryId: LibraryIdentifier, preselectedCollection collectionId: CollectionIdentifier, animated: Bool) {
         guard let userControllers = self.controllers.userControllers else { return }
 
         let collectionId = self.storeIfNeeded(libraryId: libraryId, preselectedCollection: collectionId)
 
         let controller = self.createCollectionsViewController(libraryId: libraryId, selectedCollectionId: collectionId, dbStorage: userControllers.dbStorage, attachmentDownloader: userControllers.fileDownloader)
-        self.navigationController.pushViewController(controller, animated: true)
+        self.navigationController.pushViewController(controller, animated: animated)
     }
 
     func showSettings() {

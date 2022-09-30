@@ -110,9 +110,9 @@ final class ItemsViewController: UIViewController {
                                     self.showItemDetail(for: item)
                                     self.resetActiveSearch()
                                 case .doi(let doi):
-                                    self.coordinatorDelegate?.show(doi: doi)
+                                    self.coordinatorDelegate?.show(doi: doi, animated: true)
                                 case .url(let url):
-                                    self.coordinatorDelegate?.showWeb(url: url)
+                                    self.coordinatorDelegate?.showWeb(url: url, animated: true)
                                 }
                              })
                              .disposed(by: self.disposeBag)
@@ -206,7 +206,7 @@ final class ItemsViewController: UIViewController {
         }
 
         if let key = state.itemKeyToDuplicate {
-            self.coordinatorDelegate?.showItemDetail(for: .duplication(itemKey: key, collectionKey: self.viewModel.state.collection.identifier.key), library: self.viewModel.state.library)
+            self.coordinatorDelegate?.showItemDetail(for: .duplication(itemKey: key, collectionKey: self.viewModel.state.collection.identifier.key), library: self.viewModel.state.library, animated: true)
         }
 
         if state.processingBibliography {
@@ -315,7 +315,7 @@ final class ItemsViewController: UIViewController {
             default: break
             }
 
-            self.coordinatorDelegate?.showItemDetail(for: .creation(type: ItemTypes.document, child: attachment, collectionKey: collectionKey), library: self.viewModel.state.library)
+            self.coordinatorDelegate?.showItemDetail(for: .creation(type: ItemTypes.document, child: attachment, collectionKey: collectionKey), library: self.viewModel.state.library, animated: true)
 
         case .delete:
             guard !selectedKeys.isEmpty else { return }
@@ -406,7 +406,7 @@ final class ItemsViewController: UIViewController {
             })
 
         default:
-            self.coordinatorDelegate?.showItemDetail(for: .preview(key: item.key), library: self.viewModel.state.library)
+            self.coordinatorDelegate?.showItemDetail(for: .preview(key: item.key), library: self.viewModel.state.library, animated: true)
         }
     }
 
@@ -516,7 +516,7 @@ final class ItemsViewController: UIViewController {
 
                       switch update.kind {
                       case .ready:
-                          self.coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
+                          self.coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId, animated: true)
 
                       case .failed(let error):
                           self.coordinatorDelegate?.showAttachmentError(error)

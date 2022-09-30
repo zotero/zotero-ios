@@ -228,7 +228,7 @@ struct AttachmentCreator {
         return item.displayTitle
     }
 
-    private static func contentType(for item: RItem) -> String? {
+    static func contentType(for item: RItem) -> String? {
         if let contentType = item.fields.first(where: { $0.key == FieldKeys.Item.Attachment.contentType })?.value, !contentType.isEmpty {
             return contentType
         }

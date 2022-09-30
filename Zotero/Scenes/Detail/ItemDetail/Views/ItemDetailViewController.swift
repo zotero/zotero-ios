@@ -135,12 +135,12 @@ final class ItemDetailViewController: UIViewController {
 
         case .openUrl(let string):
             if let url = URL(string: string) {
-                self.coordinatorDelegate?.showWeb(url: url)
+                self.coordinatorDelegate?.showWeb(url: url, animated: true)
             }
 
         case .openDoi(let doi):
             guard let encoded = FieldKeys.Item.clean(doi: doi).addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) else { return }
-            self.coordinatorDelegate?.show(doi: encoded)
+            self.coordinatorDelegate?.show(doi: encoded, animated: true)
         }
     }
 
@@ -380,7 +380,7 @@ final class ItemDetailViewController: UIViewController {
 
                 switch update.kind {
                 case .ready:
-                    self.coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
+                    self.coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId, animated: true)
 
                 case .failed(let error):
                     self.coordinatorDelegate?.showAttachmentError(error)
