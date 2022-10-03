@@ -112,6 +112,10 @@ final class PDFReaderViewController: UIViewController {
         return self.annotationsControllerLeft?.constant == 0
     }
 
+    var key: String {
+        return self.viewModel.state.key
+    }
+
     // MARK: - Lifecycle
 
     init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {

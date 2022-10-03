@@ -19,14 +19,28 @@ final class CollectionsViewController: UICollectionViewController {
     private let disposeBag: DisposeBag
 
     private var collectionViewHandler: ExpandableCollectionsCollectionViewHandler!
-    weak var coordinatorDelegate: MasterCollectionsCoordinatorDelegate?
+    private weak var coordinatorDelegate: MasterCollectionsCoordinatorDelegate?
+    var selectedIdentifier: CollectionIdentifier {
+        return self.viewModel.state.selectedCollectionId
+    }
 
-    init(viewModel: ViewModel<CollectionsActionHandler>, dragDropController: DragDropController) {
+    init(viewModel: ViewModel<CollectionsActionHandler>, dragDropController: DragDropController, coordinatorDelegate: MasterCollectionsCoordinatorDelegate) {
         self.viewModel = viewModel
         self.dragDropController = dragDropController
+        self.coordinatorDelegate = coordinatorDelegate
         self.disposeBag = DisposeBag()
 
         super.init(collectionViewLayout: UICollectionViewFlowLayout())
+
+        self.viewModel.process(action: .loadData)
+
+        if self.coordinatorDelegate?.isSplit == true {
+            if let collection = self.viewModel.state.collectionTree.collection(for: self.viewModel.state.selectedCollectionId) {
+                self.coordinatorDelegate?.showItems(for: collection, in: self.viewModel.state.library, isInitial: true)
+            } else {
+                self.viewModel.process(action: .select(.custom(.all)))
+            }
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -36,8 +50,6 @@ final class CollectionsViewController: UICollectionViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.viewModel.process(action: .loadData)
-
         self.setupTitleWithContextMenu(self.viewModel.state.library.name)
         if self.viewModel.state.library.metadataEditable {
             self.setupAddNavbarItem()
@@ -45,14 +57,6 @@ final class CollectionsViewController: UICollectionViewController {
 
         self.collectionViewHandler = ExpandableCollectionsCollectionViewHandler(collectionView: self.collectionView, dragDropController: self.dragDropController, viewModel: self.viewModel, splitDelegate: self.coordinatorDelegate)
         self.collectionViewHandler.update(with: self.viewModel.state.collectionTree, selectedId: self.viewModel.state.selectedCollectionId, animated: false)
-
-        if self.coordinatorDelegate?.isSplit == true {
-            if let collection = self.viewModel.state.collectionTree.collection(for: self.viewModel.state.selectedCollectionId) {
-                self.coordinatorDelegate?.showItems(for: collection, in: self.viewModel.state.library, isInitial: true)
-            } else {
-                self.viewModel.process(action: .select(.custom(.all)))
-            }
-        }
 
         self.viewModel.stateObservable
                       .observe(on: MainScheduler.instance)

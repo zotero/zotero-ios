@@ -30,6 +30,10 @@ final class ItemDetailViewController: UIViewController {
     private var collectionViewHandler: ItemDetailCollectionViewHandler!
     private var downloadingViaNavigationBar: Bool
     private var didAppear: Bool
+    private var scrollToKey: String?
+    var key: String {
+        return self.viewModel.state.key
+    }
 
     weak var coordinatorDelegate: DetailItemDetailCoordinatorDelegate?
 
@@ -75,6 +79,11 @@ final class ItemDetailViewController: UIViewController {
             // Collapsed abstract is sometimes rendered incorrectly initially. The height of cell has proper height, but only 1 line is shown instead of 2.
             self.collectionView.reloadData()
         }
+
+        guard let key = self.scrollToKey, self.collectionViewHandler.hasRows else { return }
+        //
+        self.collectionViewHandler.scrollTo(itemKey: key, animated: false)
+        self.scrollToKey = nil
     }
 
     deinit {
@@ -172,7 +181,8 @@ final class ItemDetailViewController: UIViewController {
 
             self.setNavigationBarButtons(to: state)
             self.collectionViewHandler.recalculateTitleWidth(from: state.data)
-            self.collectionViewHandler.reloadAll(to: state, animated: !wasHidden)
+            self.collectionViewHandler.reloadAll(to: state, animated: (self.didAppear && !wasHidden))
+
             return
         }
 
@@ -335,6 +345,14 @@ final class ItemDetailViewController: UIViewController {
         self.coordinatorDelegate?.showDataReloaded(completion: { [weak self] in
             self?.viewModel.process(action: .reloadData)
         })
+    }
+
+    func scrollTo(itemKey: String, animated: Bool) {
+        if self.collectionViewHandler == nil {
+            self.scrollToKey = itemKey
+        } else {
+            self.collectionViewHandler.scrollTo(itemKey: itemKey, animated: animated)
+        }
     }
 
     // MARK: - Setups

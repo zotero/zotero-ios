@@ -173,6 +173,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
         return self.dataSource?.snapshot().sectionIdentifiers.firstIndex(where: { $0.section == .attachments })
     }
 
+    var hasRows: Bool {
+        return self.dataSource.snapshot().itemIdentifiers.count > 0
+    }
+
     // MARK: - Lifecycle
 
     init(collectionView: UICollectionView, containerWidth: CGFloat, viewModel: ViewModel<ItemDetailActionHandler>, fileDownloader: AttachmentDownloader?) {
@@ -326,6 +330,26 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
         case .title, .abstract, .addAttachment, .addCreator, .addNote, .addTag, .dateAdded, .dateModified, .type, .field: break
         }
+    }
+
+    func scrollTo(itemKey: String, animated: Bool) {
+        var row: Row?
+
+        for _row in self.dataSource.snapshot().itemIdentifiers {
+            switch _row {
+            case .note(let note, _) where note.key == itemKey:
+                row = _row
+                break
+            case .attachment(let attachment, _) where attachment.key == itemKey:
+                row = _row
+                break
+            default: continue
+            }
+        }
+
+        guard let row = row, let indexPath = self.dataSource.indexPath(for: row) else { return }
+
+        self.collectionView.scrollToItem(at: indexPath, at: .centeredVertically, animated: animated)
     }
 
     // MARK: - Helpers

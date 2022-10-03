@@ -30,8 +30,8 @@ protocol AppLoginCoordinatorDelegate: AnyObject {
 }
 
 protocol CustomURLCoordinatorDelegate: AnyObject {
-    func showItem(key: String, library: Library, animated: Bool)
-    func openPdf(on page: Int, key: String, parentKey: String?, libraryId: LibraryIdentifier, animated: Bool)
+    func showItemDetail(key: String, library: Library, selectChildKey childKey: String?, animated: Bool)
+    func open(attachment: Attachment, library: Library, on page: Int, parentKey: String?, animated: Bool)
 }
 
 final class AppCoordinator: NSObject {
@@ -623,15 +623,38 @@ extension AppCoordinator: SyncRequestReceiver {
 }
 
 extension AppCoordinator: CustomURLCoordinatorDelegate {
-    func showItem(key: String, library: Library, animated: Bool) {
+    func showItemDetail(key: String, library: Library, selectChildKey childKey: String?, animated: Bool) {
         guard let mainController = self.window?.rootViewController as? MainViewController else { return }
-        mainController.masterCoordinator?.showCollections(for: library.identifier, preselectedCollection: .custom(.all), animated: animated)
-        mainController.detailCoordinator?.showItemDetail(for: .preview(key: key), library: library, animated: animated)
+
+        if mainController.masterCoordinator?.visibleLibraryId != library.identifier {
+            mainController.masterCoordinator?.navigationController.popToRootViewController(animated: false)
+        }
+
+        if mainController.masterCoordinator?.visibleLibraryId != library.identifier ||
+           (mainController.masterCoordinator?.navigationController.visibleViewController as? CollectionsViewController)?.selectedIdentifier != .custom(.all) {
+            mainController.masterCoordinator?.showCollections(for: library.identifier, preselectedCollection: .custom(.all), animated: animated)
+        }
+
+        if (mainController.detailCoordinator?.navigationController.visibleViewController as? ItemDetailViewController)?.key != key {
+            mainController.detailCoordinator?.showItemDetail(for: .preview(key: key), library: library, animated: animated)
+        }
+
+        if let childKey = childKey {
+            (mainController.detailCoordinator?.navigationController.visibleViewController as? ItemDetailViewController)?.scrollTo(itemKey: childKey, animated: animated)
+        }
     }
 
-    func openPdf(on page: Int, key: String, parentKey: String?, libraryId: LibraryIdentifier, animated: Bool) {
+    func open(attachment: Attachment, library: Library, on page: Int, parentKey: String?, animated: Bool) {
+        #if PDFENABLED
         guard let mainController = self.window?.rootViewController as? MainViewController else { return }
-        mainController.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(.all), animated: animated)
-        mainController.detailCoordinator?.showAttachment(key: key, parentKey: parentKey, libraryId: libraryId, animated: animated)
+
+        self.showItemDetail(key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated)
+
+        if (mainController.detailCoordinator?.navigationController.presentedViewController as? PDFReaderViewController)?.key != attachment.key {
+            DispatchQueue.main.async {
+                mainController.detailCoordinator?.showAttachment(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, animated: true)
+            }
+        }
+        #endif
     }
 }

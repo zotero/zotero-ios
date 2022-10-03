@@ -9,6 +9,7 @@
 import Foundation
 
 import CocoaLumberjackSwift
+import RxSwift
 
 enum CustomURLAction: String {
     case select = "select"
@@ -16,10 +17,16 @@ enum CustomURLAction: String {
 }
 
 final class CustomURLController {
-    private let dbStorage: DbStorage
+    private unowned let dbStorage: DbStorage
+    private unowned let fileStorage: FileStorage
+    private unowned let downloader: AttachmentDownloader
 
-    init(dbStorage: DbStorage) {
+    private var disposeBag: DisposeBag?
+
+    init(dbStorage: DbStorage, fileStorage: FileStorage, downloader: AttachmentDownloader) {
         self.dbStorage = dbStorage
+        self.fileStorage = fileStorage
+        self.downloader = downloader
     }
 
     func process(url: URL, coordinatorDelegate: CustomURLCoordinatorDelegate, animated: Bool) {
@@ -66,12 +73,7 @@ final class CustomURLController {
             let library = try self.dbStorage.perform(request: ReadLibraryDbRequest(libraryId: libraryId), on: .main)
             let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key), on: .main)
 
-            var baseItem = item
-            while let parent = baseItem.parent {
-                baseItem = parent
-            }
-
-            coordinatorDelegate.showItem(key: baseItem.key, library: library, animated: animated)
+            coordinatorDelegate.showItemDetail(key: (item.parent?.key ?? item.key), library: library, selectChildKey: item.key, animated: animated)
         } catch let error {
             DDLogError("CustomURLConverter: library (\(libraryId)) or item (\(key)) not found - \(error)")
         }
@@ -105,33 +107,76 @@ final class CustomURLController {
                 DDLogError("CustomURLController: path invalid for ZotFile format - \(path)")
                 return
             }
-            let libraryParts = parts[1].components(separatedBy: "_")
+            let zotfileParts = parts[1].components(separatedBy: "_")
+            guard zotfileParts.count == 2, let groupId = Int(zotfileParts[0]) else {
+                DDLogError("CustomURLController: wrong library format in ZotFile format - \(path)")
+                return
+            }
             guard let page = Int(parts[2]) else {
                 DDLogError("CustomURLController: page missing in ZotFile format - \(path)")
                 return
             }
+
+            let libraryId: LibraryIdentifier = groupId == 0 ? .custom(.myLibrary) : .group(groupId)
+            self.openPdfIfPossible(on: page, key: zotfileParts[1], libraryId: libraryId, coordinatorDelegate: coordinatorDelegate, animated: animated)
         }
     }
 
     private func openPdfIfPossible(on page: Int, key: String, libraryId: LibraryIdentifier, coordinatorDelegate: CustomURLCoordinatorDelegate, animated: Bool) {
         do {
-            let library = try self.dbStorage.perform(request: ReadLibraryDbRequest(libraryId: libraryId), on: .main)
             let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key), on: .main)
 
-            guard item.rawType == ItemTypes.attachment else {
-                DDLogInfo("CustomURLConverter: trying to open item type \(item.rawType) instead of pdf")
+            guard let attachment = AttachmentCreator.attachment(for: item, fileStorage: self.fileStorage, urlDetector: nil) else {
+                DDLogInfo("CustomURLConverter: trying to open incorrect item - \(item.rawType)")
                 return
             }
 
-            let contentType = AttachmentCreator.contentType(for: item) ?? ""
-            guard contentType == "application/pdf" else {
-                DDLogInfo("CustomURLConverter: trying to open attachment \(contentType) instead of pdf")
+            guard case .file(_, let contentType, let location, _) = attachment.type, contentType == "application/pdf" else {
+                DDLogInfo("CustomURLConverter: trying to open \(attachment.type) instead of pdf")
                 return
             }
 
-            coordinatorDelegate.openPdf(on: page, key: key, parentKey: item.parent?.key, libraryId: libraryId, animated: true)
+            let library = try self.dbStorage.perform(request: ReadLibraryDbRequest(libraryId: libraryId), on: .main)
+            let parentKey = item.parent?.key
+
+            switch location {
+            case .local:
+                coordinatorDelegate.open(attachment: attachment, library: library, on: page, parentKey: parentKey, animated: animated)
+
+            case .remote, .localAndChangedRemotely:
+                coordinatorDelegate.showItemDetail(key: (parentKey ?? item.key), library: library, selectChildKey: item.key, animated: animated)
+                self.download(attachment: attachment, parentKey: parentKey) { [weak coordinatorDelegate] in
+                    coordinatorDelegate?.open(attachment: attachment, library: library, on: page, parentKey: parentKey, animated: true)
+                }
+
+            case .remoteMissing:
+                DDLogInfo("CustomURLConverter: attachment \(attachment.key) missing remotely")
+            }
         } catch let error {
             DDLogError("CustomURLConverter: library (\(libraryId)) or item (\(key)) not found - \(error)")
         }
+    }
+
+    private func download(attachment: Attachment, parentKey: String?, completion: @escaping () -> Void) {
+        let disposeBag = DisposeBag()
+
+        self.downloader.observable
+                       .observe(on: MainScheduler.instance)
+                       .subscribe(onNext: { [weak self] update in
+                           guard let `self` = self, update.libraryId == attachment.libraryId && update.key == attachment.key else { return }
+
+                           switch update.kind {
+                           case .ready:
+                               completion()
+                               self.disposeBag = nil
+                           case .cancelled, .failed:
+                               self.disposeBag = nil
+                           case .progress: break
+                           }
+                       })
+                       .disposed(by: disposeBag)
+
+        self.disposeBag = disposeBag
+        self.downloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey)
     }
 }
