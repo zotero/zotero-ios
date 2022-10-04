@@ -275,7 +275,7 @@ final class DetailCoordinator: Coordinator {
     private func showPdf(at url: URL, key: String, library: Library, animated: Bool) {
         #if PDFENABLED
         guard let navigationController = self.pdfViewController(at: url, key: key, library: library) else { return }
-        self.topViewController.present(navigationController, animated: animated, completion: nil)
+        self.navigationController.present(navigationController, animated: animated, completion: nil)
         #endif
     }
 

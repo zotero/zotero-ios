@@ -14,7 +14,7 @@ import CocoaLumberjackSwift
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
     
-    private var coordinator: (AppDelegateCoordinatorDelegate&CustomURLCoordinatorDelegate)!
+    private var coordinator: AppDelegateCoordinatorDelegate!
     private weak var activityCounter: SceneActivityCounter?
     private var sessionCancellable: AnyCancellable?
 
@@ -32,16 +32,9 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         self.window?.windowScene = windowScene
         self.window?.makeKeyAndVisible()
         // Load state if available, setup scene & window
-        let userActivity = connectionOptions.userActivities.first ?? session.stateRestorationActivity
-        self.setup(scene: scene, window: window, with: userActivity, delegate: delegate)
+        self.setup(scene: scene, window: window, options: connectionOptions, session: session, delegate: delegate)
         // Start observing
         self.setupObservers(controllers: delegate.controllers)
-        // If scene was started from URL, handle URL
-        if let urlContext = connectionOptions.urlContexts.first, let urlController = delegate.controllers.userControllers?.customUrlController {
-            let sourceApp = urlContext.options.sourceApplication ?? "unknown"
-            DDLogInfo("SceneDelegate: App launched by \(urlContext.url.absoluteString) from \(sourceApp)")
-            urlController.process(url: urlContext.url, coordinatorDelegate: self.coordinator, animated: false)
-        }
     }
 
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
@@ -49,18 +42,22 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         if let urlContext = URLContexts.first {
             let sourceApp = urlContext.options.sourceApplication ?? "unknown"
+
             DDLogInfo("SceneDelegate: App opened by \(urlContext.url.absoluteString) from \(sourceApp)")
-            urlController.process(url: urlContext.url, coordinatorDelegate: self.coordinator, animated: false)
+
+            if let kind = urlController.process(url: urlContext.url) {
+                self.coordinator.show(customUrl: kind)
+            }
         }
     }
 
-    private func setup(scene: UIScene, window: UIWindow, with userActivity: NSUserActivity?, delegate: AppDelegate) {
+    private func setup(scene: UIScene, window: UIWindow, options connectionOptions: UIScene.ConnectionOptions, session: UISceneSession, delegate: AppDelegate) {
         scene.userActivity = userActivity
         scene.title = userActivity?.title
 
         // Setup app coordinator and present initial screen
         let coordinator = AppCoordinator(window: self.window, controllers: delegate.controllers)
-        coordinator.start(with: userActivity?.restoredStateData)
+        coordinator.start(options: connectionOptions, session: session)
         self.coordinator = coordinator
     }
 

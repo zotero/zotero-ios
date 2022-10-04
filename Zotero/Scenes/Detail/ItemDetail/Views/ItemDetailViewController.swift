@@ -43,7 +43,10 @@ final class ItemDetailViewController: UIViewController {
         self.downloadingViaNavigationBar = false
         self.didAppear = false
         self.disposeBag = DisposeBag()
+
         super.init(nibName: "ItemDetailViewController", bundle: nil)
+
+        self.viewModel.process(action: .loadInitialData)
     }
 
     required init?(coder: NSCoder) {
@@ -57,14 +60,14 @@ final class ItemDetailViewController: UIViewController {
         self.setupCollectionViewHandler()
         self.setupFileObservers()
 
+        self.update(to: self.viewModel.state)
+
         self.viewModel.stateObservable
                       .observe(on: MainScheduler.instance)
                       .subscribe(onNext: { [weak self] state in
                           self?.update(to: state)
                       })
                       .disposed(by: self.disposeBag)
-
-        self.viewModel.process(action: .loadInitialData)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -429,9 +432,16 @@ extension ItemDetailViewController: ConflictViewControllerReceiver {
 
 extension ItemDetailViewController: DetailCoordinatorAttachmentProvider {
     func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, Library, UIView, CGRect?)? {
-        guard let section = self.collectionViewHandler.attachmentSectionIndex,
-              let index = self.viewModel.state.attachments.firstIndex(where: { $0.key == key && $0.libraryId == libraryId }) else { return nil }
-        let (sourceView, sourceRect) = self.collectionViewHandler.sourceDataForCell(at: IndexPath(row: index, section: section))
-        return (self.viewModel.state.attachments[index], self.viewModel.state.library, sourceView, sourceRect)
+        guard let index = self.viewModel.state.attachments.firstIndex(where: { $0.key == key && $0.libraryId == libraryId }) else { return nil }
+
+        let attachment = self.viewModel.state.attachments[index]
+        let library = self.viewModel.state.library
+
+        guard let handler = self.collectionViewHandler, let section = handler.attachmentSectionIndex else {
+            return (attachment, library, self.view, nil)
+        }
+
+        let (sourceView, sourceRect) = handler.sourceDataForCell(at: IndexPath(row: index, section: section))
+        return (attachment, library, sourceView, sourceRect)
     }
 }

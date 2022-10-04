@@ -12,10 +12,12 @@ import SwiftUI
 import UIKit
 
 import CocoaLumberjackSwift
+import RxSwift
 
 protocol AppDelegateCoordinatorDelegate: AnyObject {
     func showMainScreen(isLoggedIn: Bool)
     func didRotate(to size: CGSize)
+    func show(customUrl: CustomURLController.Kind)
 }
 
 protocol AppOnboardingCoordinatorDelegate: AnyObject {
@@ -27,11 +29,6 @@ protocol AppOnboardingCoordinatorDelegate: AnyObject {
 protocol AppLoginCoordinatorDelegate: AnyObject {
     func dismiss()
     func showForgotPassword()
-}
-
-protocol CustomURLCoordinatorDelegate: AnyObject {
-    func showItemDetail(key: String, library: Library, selectChildKey childKey: String?, animated: Bool)
-    func open(attachment: Attachment, library: Library, on page: Int, parentKey: String?, animated: Bool)
 }
 
 final class AppCoordinator: NSObject {
@@ -47,6 +44,9 @@ final class AppCoordinator: NSObject {
     private var conflictReceiverAlertController: ConflictReceiverAlertController?
     private var conflictAlertQueueController: ConflictAlertQueueController?
     private var presentedRestoredControllerWindow: UIWindow?
+    private var downloadDisposeBag: DisposeBag?
+    private var tmpConnectionOptions: UIScene.ConnectionOptions?
+    private var tmpSession: UISceneSession?
 
     private var viewController: UIViewController? {
         guard let viewController = self.window?.rootViewController else { return nil }
@@ -60,11 +60,13 @@ final class AppCoordinator: NSObject {
         super.init()
     }
 
-    func start(with restoredStateData: RestoredStateData?) {
+    func start(options connectionOptions: UIScene.ConnectionOptions, session: UISceneSession) {
         if !self.controllers.sessionController.isInitialized {
+            self.tmpConnectionOptions = connectionOptions
+            self.tmpSession = session
             self.showLaunchScreen()
         } else {
-            self.showMainScreen(isLogged: self.controllers.sessionController.isLoggedIn, restoredStateData: restoredStateData, animated: false)
+            self.showMainScreen(isLogged: self.controllers.sessionController.isLoggedIn, options: connectionOptions, session: session, animated: false)
         }
 
         // If db needs to be wiped and this is the first start of the app, show beta alert
@@ -87,7 +89,7 @@ final class AppCoordinator: NSObject {
         self.window?.rootViewController = controller
     }
 
-    private func showMainScreen(isLogged: Bool, restoredStateData: RestoredStateData?, animated: Bool) {
+    private func showMainScreen(isLogged: Bool, options connectionOptions: UIScene.ConnectionOptions?, session: UISceneSession?, animated: Bool) {
         guard let window = self.window else { return }
 
         let viewController: UIViewController
@@ -110,9 +112,102 @@ final class AppCoordinator: NSObject {
 
         self.show(viewController: viewController, in: window, animated: animated)
 
-        if let data = restoredStateData {
+        guard let options = connectionOptions, let session = session else { return }
+        self.process(connectionOptions: options, session: session)
+    }
+
+    private func process(connectionOptions: UIScene.ConnectionOptions, session: UISceneSession) {
+        if let urlContext = connectionOptions.urlContexts.first, let urlController = self.controllers.userControllers?.customUrlController {
+            // If scene was started from custom URL
+            let sourceApp = urlContext.options.sourceApplication ?? "unknown"
+            DDLogInfo("AppCoordinator: App launched by \(urlContext.url.absoluteString) from \(sourceApp)")
+
+            if let kind = urlController.process(url: urlContext.url) {
+                self.show(customUrl: kind)
+                return
+            }
+        }
+
+        if let userActivity = connectionOptions.userActivities.first ?? session.stateRestorationActivity, let data = userActivity.restoredStateData {
+            DDLogInfo("AppCoordinator: Restored state - \(data)")
+            // If scene had state stored, restore state
             self.showRestoredState(for: data)
         }
+    }
+
+    func show(customUrl: CustomURLController.Kind) {
+        switch customUrl {
+        case .itemDetail(let key, let library, let preselectedChildKey):
+            self.showItemDetail(key: key, library: library, selectChildKey: preselectedChildKey, animated: false)
+
+        case .pdfReader(let attachment, let library, let page, let parentKey, let isAvailable):
+            if isAvailable {
+                self.open(attachment: attachment, library: library, on: page, parentKey: parentKey, animated: false)
+                return
+            }
+
+            self.showItemDetail(key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: false)
+            self.download(attachment: attachment, parentKey: parentKey) { [weak self] in
+                self?._open(attachment: attachment, library: library, on: page, parentKey: parentKey, animated: true)
+            }
+        }
+    }
+
+    private func showItemDetail(key: String, library: Library, selectChildKey childKey: String?, animated: Bool) {
+        self._showItemDetail(key: key, library: library, selectChildKey: childKey, animated: animated)
+
+        // Dismiss presented screen if any visible
+        if let mainController = self.window?.rootViewController as? MainViewController, mainController.presentedViewController != nil {
+            mainController.dismiss(animated: false)
+        }
+    }
+
+    private func _showItemDetail(key: String, library: Library, selectChildKey childKey: String?, animated: Bool) {
+        guard let mainController = self.window?.rootViewController as? MainViewController else { return }
+
+        // If library/group changed, pop to master navigation to root and given library with "All" pre-selected
+        if mainController.masterCoordinator?.visibleLibraryId != library.identifier {
+            mainController.masterCoordinator?.navigationController.popToRootViewController(animated: false)
+            mainController.masterCoordinator?.showCollections(for: library.identifier, preselectedCollection: .custom(.all), animated: animated)
+        } else if mainController.masterCoordinator?.visibleLibraryId != library.identifier ||
+                  (mainController.masterCoordinator?.navigationController.visibleViewController as? CollectionsViewController)?.selectedIdentifier != .custom(.all) {
+            // Show "All" collection in given library/group
+            mainController.masterCoordinator?.showCollections(for: library.identifier, preselectedCollection: .custom(.all), animated: animated)
+        }
+
+        // Show item detail of given key
+        if (mainController.detailCoordinator?.navigationController.visibleViewController as? ItemDetailViewController)?.key != key {
+            mainController.detailCoordinator?.showItemDetail(for: .preview(key: key), library: library, animated: animated)
+
+            if let childKey = childKey {
+                // If child key is provided, scroll to given key
+                (mainController.detailCoordinator?.navigationController.visibleViewController as? ItemDetailViewController)?.scrollTo(itemKey: childKey, animated: animated)
+            }
+        }
+    }
+
+    private func open(attachment: Attachment, library: Library, on page: Int, parentKey: String?, animated: Bool) {
+        #if PDFENABLED
+        guard let mainController = self.window?.rootViewController as? MainViewController,
+              (mainController.detailCoordinator?.navigationController.presentedViewController as? PDFReaderViewController)?.key != attachment.key else { return }
+        self._showItemDetail(key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated)
+        self._open(attachment: attachment, library: library, on: page, parentKey: parentKey, animated: animated)
+        #endif
+    }
+
+    private func _open(attachment: Attachment, library: Library, on page: Int, parentKey: String?, animated: Bool) {
+        #if PDFENABLED
+        guard let mainController = self.window?.rootViewController as? MainViewController else { return }
+        // Open PDF reader of given attachment
+        if mainController.presentedViewController == nil {
+            mainController.detailCoordinator?.showAttachment(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, animated: true)
+        } else {
+            // Dismiss presented screen if needed
+            mainController.dismiss(animated: animated, completion: {
+                mainController.detailCoordinator?.showAttachment(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, animated: true)
+            })
+        }
+        #endif
     }
 
     private func showRestoredState(for data: RestoredStateData) {
@@ -237,11 +332,41 @@ final class AppCoordinator: NSObject {
         let yPos = windowSize.height - AppCoordinator.debugButtonSize.height - AppCoordinator.debugButtonOffset
         return CGRect(origin: CGPoint(x: xPos, y: yPos), size: AppCoordinator.debugButtonSize)
     }
+
+    private func download(attachment: Attachment, parentKey: String?, completion: @escaping () -> Void) {
+        guard let downloader = self.controllers.userControllers?.fileDownloader else {
+            completion()
+            return
+        }
+
+        let disposeBag = DisposeBag()
+
+        downloader.observable
+                  .observe(on: MainScheduler.instance)
+                  .subscribe(onNext: { [weak self] update in
+                      guard let `self` = self, update.libraryId == attachment.libraryId && update.key == attachment.key else { return }
+
+                      switch update.kind {
+                      case .ready:
+                          completion()
+                          self.downloadDisposeBag = nil
+                      case .cancelled, .failed:
+                          self.downloadDisposeBag = nil
+                      case .progress: break
+                      }
+                  })
+                  .disposed(by: disposeBag)
+
+        self.downloadDisposeBag = disposeBag
+        downloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey)
+    }
 }
 
 extension AppCoordinator: AppDelegateCoordinatorDelegate {
     func showMainScreen(isLoggedIn: Bool) {
-        self.showMainScreen(isLogged: isLoggedIn, restoredStateData: nil, animated: true)
+        self.showMainScreen(isLogged: isLoggedIn, options: self.tmpConnectionOptions, session: self.tmpSession, animated: true)
+        self.tmpConnectionOptions = nil
+        self.tmpSession = nil
     }
 
     func didRotate(to size: CGSize) {
@@ -619,42 +744,5 @@ extension AppCoordinator: SyncRequestReceiver {
             completed(.cancelSync)
         }))
         self.viewController?.present(alert, animated: true, completion: nil)
-    }
-}
-
-extension AppCoordinator: CustomURLCoordinatorDelegate {
-    func showItemDetail(key: String, library: Library, selectChildKey childKey: String?, animated: Bool) {
-        guard let mainController = self.window?.rootViewController as? MainViewController else { return }
-
-        if mainController.masterCoordinator?.visibleLibraryId != library.identifier {
-            mainController.masterCoordinator?.navigationController.popToRootViewController(animated: false)
-        }
-
-        if mainController.masterCoordinator?.visibleLibraryId != library.identifier ||
-           (mainController.masterCoordinator?.navigationController.visibleViewController as? CollectionsViewController)?.selectedIdentifier != .custom(.all) {
-            mainController.masterCoordinator?.showCollections(for: library.identifier, preselectedCollection: .custom(.all), animated: animated)
-        }
-
-        if (mainController.detailCoordinator?.navigationController.visibleViewController as? ItemDetailViewController)?.key != key {
-            mainController.detailCoordinator?.showItemDetail(for: .preview(key: key), library: library, animated: animated)
-        }
-
-        if let childKey = childKey {
-            (mainController.detailCoordinator?.navigationController.visibleViewController as? ItemDetailViewController)?.scrollTo(itemKey: childKey, animated: animated)
-        }
-    }
-
-    func open(attachment: Attachment, library: Library, on page: Int, parentKey: String?, animated: Bool) {
-        #if PDFENABLED
-        guard let mainController = self.window?.rootViewController as? MainViewController else { return }
-
-        self.showItemDetail(key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated)
-
-        if (mainController.detailCoordinator?.navigationController.presentedViewController as? PDFReaderViewController)?.key != attachment.key {
-            DispatchQueue.main.async {
-                mainController.detailCoordinator?.showAttachment(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, animated: true)
-            }
-        }
-        #endif
     }
 }

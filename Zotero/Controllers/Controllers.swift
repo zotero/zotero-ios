@@ -333,7 +333,7 @@ final class UserControllers {
                                                      dbStorage: dbStorage, bundledDataStorage: controllers.bundledDataStorage)
         self.translatorsAndStylesController = controllers.translatorsAndStylesController
         self.idleTimerController = controllers.idleTimerController
-        self.customUrlController = CustomURLController(dbStorage: dbStorage, fileStorage: controllers.fileStorage, downloader: fileDownloader)
+        self.customUrlController = CustomURLController(dbStorage: dbStorage, fileStorage: controllers.fileStorage)
         self.lastBuildNumber = controllers.lastBuildNumber
         self.disposeBag = DisposeBag()
     }
