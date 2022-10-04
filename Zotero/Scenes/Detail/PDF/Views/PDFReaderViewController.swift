@@ -224,6 +224,10 @@ final class PDFReaderViewController: UIViewController {
             }
         }
 
+        if state.changes.contains(.documentAnnotations) {
+            self.pdfController.reloadData()
+        }
+
         if state.changes.contains(.interfaceStyle) {
             self.updateInterface(to: state.settings)
         }

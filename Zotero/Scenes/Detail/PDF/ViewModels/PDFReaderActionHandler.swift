@@ -776,12 +776,23 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         let snapshot = viewModel.state.snapshotKeys ?? viewModel.state.sortedKeys
         let filteredKeys = self.filteredKeys(from: snapshot, term: term, filter: filter, state: viewModel.state)
 
+        for (_, annotations) in viewModel.state.document.allAnnotations(of: PSPDFKit.Annotation.Kind.all) {
+            for annotation in annotations {
+                let isHidden = filteredKeys.first(where: { $0.key == (annotation.key ?? annotation.uuid) }) == nil
+                if isHidden {
+                    annotation.flags.update(with: .hidden)
+                } else {
+                    annotation.flags.remove(.hidden)
+                }
+            }
+        }
+
         self.update(viewModel: viewModel) { state in
             if state.snapshotKeys == nil {
                 state.snapshotKeys = state.sortedKeys
             }
             state.sortedKeys = filteredKeys
-            state.changes = .annotations
+            state.changes = [.annotations, .documentAnnotations]
 
             if filter != state.filter {
                 state.changes.insert(.filter)
