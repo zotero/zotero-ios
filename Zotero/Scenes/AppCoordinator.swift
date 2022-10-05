@@ -177,12 +177,7 @@ final class AppCoordinator: NSObject {
 
         // Show item detail of given key
         if (mainController.detailCoordinator?.navigationController.visibleViewController as? ItemDetailViewController)?.key != key {
-            mainController.detailCoordinator?.showItemDetail(for: .preview(key: key), library: library, animated: animated)
-
-            if let childKey = childKey {
-                // If child key is provided, scroll to given key
-                (mainController.detailCoordinator?.navigationController.visibleViewController as? ItemDetailViewController)?.scrollTo(itemKey: childKey, animated: animated)
-            }
+            mainController.detailCoordinator?.showItemDetail(for: .preview(key: key), library: library, scrolledToKey: childKey, animated: animated)
         }
     }
 

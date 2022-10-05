@@ -29,7 +29,7 @@ protocol DetailCoordinatorAttachmentProvider {
 
 protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showCollectionsPicker(in library: Library, completed: @escaping (Set<String>) -> Void)
-    func showItemDetail(for type: ItemDetailState.DetailType, library: Library, animated: Bool)
+    func showItemDetail(for type: ItemDetailState.DetailType, library: Library, scrolledToKey childKey: String?, animated: Bool)
     func showAttachmentError(_ error: Error)
     func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
@@ -449,12 +449,12 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
-    func showItemDetail(for type: ItemDetailState.DetailType, library: Library, animated: Bool) {
+    func showItemDetail(for type: ItemDetailState.DetailType, library: Library, scrolledToKey childKey: String?, animated: Bool) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage,
               let fileDownloader = self.controllers.userControllers?.fileDownloader,
               let fileCleanupController = self.controllers.userControllers?.fileCleanupController else { return }
 
-        let state = ItemDetailState(type: type, library: library, userId: Defaults.shared.userId)
+        let state = ItemDetailState(type: type, library: library, preScrolledChildKey: childKey, userId: Defaults.shared.userId)
         let handler = ItemDetailActionHandler(apiClient: self.controllers.apiClient,
                                               fileStorage: self.controllers.fileStorage,
                                               dbStorage: dbStorage,
@@ -631,7 +631,7 @@ extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
 
     func showItemCreation(library: Library, collectionKey: String?) {
         self.showTypePicker(selected: "") { [weak self] type in
-            self?.showItemDetail(for: .creation(type: type, child: nil, collectionKey: collectionKey), library: library, animated: true)
+            self?.showItemDetail(for: .creation(type: type, child: nil, collectionKey: collectionKey), library: library, scrolledToKey: nil, animated: true)
         }
     }
 }

@@ -206,7 +206,7 @@ final class ItemsViewController: UIViewController {
         }
 
         if let key = state.itemKeyToDuplicate {
-            self.coordinatorDelegate?.showItemDetail(for: .duplication(itemKey: key, collectionKey: self.viewModel.state.collection.identifier.key), library: self.viewModel.state.library, animated: true)
+            self.coordinatorDelegate?.showItemDetail(for: .duplication(itemKey: key, collectionKey: self.viewModel.state.collection.identifier.key), library: self.viewModel.state.library, scrolledToKey: nil, animated: true)
         }
 
         if state.processingBibliography {
@@ -315,7 +315,7 @@ final class ItemsViewController: UIViewController {
             default: break
             }
 
-            self.coordinatorDelegate?.showItemDetail(for: .creation(type: ItemTypes.document, child: attachment, collectionKey: collectionKey), library: self.viewModel.state.library, animated: true)
+            self.coordinatorDelegate?.showItemDetail(for: .creation(type: ItemTypes.document, child: attachment, collectionKey: collectionKey), library: self.viewModel.state.library, scrolledToKey: nil, animated: true)
 
         case .delete:
             guard !selectedKeys.isEmpty else { return }
@@ -406,7 +406,7 @@ final class ItemsViewController: UIViewController {
             })
 
         default:
-            self.coordinatorDelegate?.showItemDetail(for: .preview(key: item.key), library: self.viewModel.state.library, animated: true)
+            self.coordinatorDelegate?.showItemDetail(for: .preview(key: item.key), library: self.viewModel.state.library, scrolledToKey: nil, animated: true)
         }
     }
 

@@ -141,6 +141,11 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
         case .deleteAttachment(let attachment):
             self.delete(attachment: attachment, in: viewModel)
+
+        case .clearPreScrolledItemKey:
+            self.update(viewModel: viewModel) { state in
+                state.preScrolledChildKey = nil
+            }
         }
     }
 

@@ -243,6 +243,8 @@ struct ItemDetailState: ViewModelState {
     var attachmentToOpen: String?
     // Identifiers of items which are currently being processed in background and should be disabled in UI
     var backgroundProcessedItems: Set<String>
+    // Child key which should be initially shown on screen
+    var preScrolledChildKey: String?
 
     @UserDefault(key: "ItemDetailAbstractCollapsedKey", defaultValue: false)
     var abstractCollapsed: Bool
@@ -252,7 +254,7 @@ struct ItemDetailState: ViewModelState {
         return AttachmentCreator.mainPdfAttachment(from: self.attachments, parentUrl: url)?.key
     }
 
-    init(type: DetailType, library: Library, userId: Int) {
+    init(type: DetailType, library: Library, preScrolledChildKey: String?, userId: Int) {
         switch type {
         case .preview(let key):
             self.key = key
@@ -275,6 +277,7 @@ struct ItemDetailState: ViewModelState {
         self.isSaving = false
         self.backgroundProcessedItems = []
         self.isLoadingData = true
+        self.preScrolledChildKey = preScrolledChildKey
     }
 
     mutating func cleanup() {

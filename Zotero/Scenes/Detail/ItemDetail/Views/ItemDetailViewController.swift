@@ -30,7 +30,6 @@ final class ItemDetailViewController: UIViewController {
     private var collectionViewHandler: ItemDetailCollectionViewHandler!
     private var downloadingViaNavigationBar: Bool
     private var didAppear: Bool
-    private var scrollToKey: String?
     var key: String {
         return self.viewModel.state.key
     }
@@ -83,10 +82,9 @@ final class ItemDetailViewController: UIViewController {
             self.collectionView.reloadData()
         }
 
-        guard let key = self.scrollToKey, self.collectionViewHandler.hasRows else { return }
-        //
+        guard let key = self.viewModel.state.preScrolledChildKey, self.collectionViewHandler.hasRows else { return }
         self.collectionViewHandler.scrollTo(itemKey: key, animated: false)
-        self.scrollToKey = nil
+        self.viewModel.process(action: .clearPreScrolledItemKey)
     }
 
     deinit {
@@ -348,14 +346,6 @@ final class ItemDetailViewController: UIViewController {
         self.coordinatorDelegate?.showDataReloaded(completion: { [weak self] in
             self?.viewModel.process(action: .reloadData)
         })
-    }
-
-    func scrollTo(itemKey: String, animated: Bool) {
-        if self.collectionViewHandler == nil {
-            self.scrollToKey = itemKey
-        } else {
-            self.collectionViewHandler.scrollTo(itemKey: itemKey, animated: animated)
-        }
     }
 
     // MARK: - Setups
