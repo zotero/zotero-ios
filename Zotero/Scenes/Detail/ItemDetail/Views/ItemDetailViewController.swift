@@ -44,8 +44,6 @@ final class ItemDetailViewController: UIViewController {
         self.disposeBag = DisposeBag()
 
         super.init(nibName: "ItemDetailViewController", bundle: nil)
-
-        self.viewModel.process(action: .loadInitialData)
     }
 
     required init?(coder: NSCoder) {
@@ -59,14 +57,14 @@ final class ItemDetailViewController: UIViewController {
         self.setupCollectionViewHandler()
         self.setupFileObservers()
 
-        self.update(to: self.viewModel.state)
-
         self.viewModel.stateObservable
                       .observe(on: MainScheduler.instance)
                       .subscribe(onNext: { [weak self] state in
                           self?.update(to: state)
                       })
                       .disposed(by: self.disposeBag)
+
+        self.viewModel.process(action: .loadInitialData)
     }
 
     override func viewDidAppear(_ animated: Bool) {

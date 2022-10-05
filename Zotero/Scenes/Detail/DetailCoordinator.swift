@@ -183,7 +183,7 @@ final class DetailCoordinator: Coordinator {
 
             switch contentType {
             case "application/pdf":
-                self.showPdf(at: url, key: attachment.key, library: library, animated: animated)
+                self.showPdf(at: url, key: attachment.key, library: library, page: nil, preselectedAnnotationKey: nil, animated: animated)
             case "text/html":
                 self.showWebView(for: url, animated: animated)
             case "text/plain":
@@ -248,7 +248,7 @@ final class DetailCoordinator: Coordinator {
         self.topViewController.present(controller, animated: true, completion: nil)
     }
 
-    func pdfViewController(at url: URL, key: String, library: Library) -> UINavigationController? {
+    func pdfViewController(at url: URL, key: String, library: Library, page: Int?, preselectedAnnotationKey: String?) -> UINavigationController? {
         #if PDFENABLED
         let username = Defaults.shared.username
         guard let dbStorage = self.controllers.userControllers?.dbStorage,
@@ -258,8 +258,8 @@ final class DetailCoordinator: Coordinator {
         let handler = PDFReaderActionHandler(dbStorage: dbStorage, annotationPreviewController: self.controllers.annotationPreviewController,
                                              htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter, schemaController: self.controllers.schemaController,
                                              fileStorage: self.controllers.fileStorage, idleTimerController: self.controllers.idleTimerController)
-        let state = PDFReaderState(url: url, key: key, library: library, settings: Defaults.shared.pdfSettings, userId: userId, username: username, displayName: Defaults.shared.displayName,
-                                   interfaceStyle: self.topViewController.view.traitCollection.userInterfaceStyle)
+        let state = PDFReaderState(url: url, key: key, library: library, initialPage: page, preselectedAnnotationKey: preselectedAnnotationKey, settings: Defaults.shared.pdfSettings, userId: userId,
+                                   username: username, displayName: Defaults.shared.displayName, interfaceStyle: self.topViewController.view.traitCollection.userInterfaceStyle)
         let controller = PDFReaderViewController(viewModel: ViewModel(initialState: state, handler: handler),
                                                  compactSize: UIDevice.current.isCompactWidth(size: self.navigationController.view.frame.size))
         controller.coordinatorDelegate = self
@@ -272,9 +272,9 @@ final class DetailCoordinator: Coordinator {
         #endif
     }
 
-    private func showPdf(at url: URL, key: String, library: Library, animated: Bool) {
+    func showPdf(at url: URL, key: String, library: Library, page: Int?, preselectedAnnotationKey: String?, animated: Bool) {
         #if PDFENABLED
-        guard let navigationController = self.pdfViewController(at: url, key: key, library: library) else { return }
+        guard let navigationController = self.pdfViewController(at: url, key: key, library: library, page: page, preselectedAnnotationKey: preselectedAnnotationKey) else { return }
         self.navigationController.present(navigationController, animated: animated, completion: nil)
         #endif
     }

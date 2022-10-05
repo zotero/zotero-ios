@@ -140,15 +140,15 @@ final class AppCoordinator: NSObject {
         case .itemDetail(let key, let library, let preselectedChildKey):
             self.showItemDetail(key: key, library: library, selectChildKey: preselectedChildKey, animated: false)
 
-        case .pdfReader(let attachment, let library, let page, let parentKey, let isAvailable):
+        case .pdfReader(let attachment, let library, let page, let annotation, let parentKey, let isAvailable):
             if isAvailable {
-                self.open(attachment: attachment, library: library, on: page, parentKey: parentKey, animated: false)
+                self.open(attachment: attachment, library: library, on: page, annotation: annotation, parentKey: parentKey, animated: false)
                 return
             }
 
             self.showItemDetail(key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: false)
             self.download(attachment: attachment, parentKey: parentKey) { [weak self] in
-                self?._open(attachment: attachment, library: library, on: page, parentKey: parentKey, animated: true)
+                self?._open(attachment: attachment, library: library, on: page, annotation: annotation, animated: true)
             }
         }
     }
@@ -181,35 +181,48 @@ final class AppCoordinator: NSObject {
         }
     }
 
-    private func open(attachment: Attachment, library: Library, on page: Int, parentKey: String?, animated: Bool) {
+    private func open(attachment: Attachment, library: Library, on page: Int?, annotation: String?, parentKey: String?, animated: Bool) {
         #if PDFENABLED
         guard let mainController = self.window?.rootViewController as? MainViewController,
               (mainController.detailCoordinator?.navigationController.presentedViewController as? PDFReaderViewController)?.key != attachment.key else { return }
         self._showItemDetail(key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated)
-        self._open(attachment: attachment, library: library, on: page, parentKey: parentKey, animated: animated)
+        self._open(attachment: attachment, library: library, on: page, annotation: annotation, animated: animated)
         #endif
     }
 
-    private func _open(attachment: Attachment, library: Library, on page: Int, parentKey: String?, animated: Bool) {
+    private func _open(attachment: Attachment, library: Library, on page: Int?, annotation: String?, animated: Bool) {
         #if PDFENABLED
         guard let mainController = self.window?.rootViewController as? MainViewController else { return }
         // Open PDF reader of given attachment
         if mainController.presentedViewController == nil {
-            mainController.detailCoordinator?.showAttachment(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, animated: true)
+            self.openPdf(attachment: attachment, library: library, page: page, annotation: annotation, animated: animated, detailCoordinator: mainController.detailCoordinator)
         } else {
             // Dismiss presented screen if needed
             mainController.dismiss(animated: animated, completion: {
-                mainController.detailCoordinator?.showAttachment(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, animated: true)
+                self.openPdf(attachment: attachment, library: library, page: page, annotation: annotation, animated: animated, detailCoordinator: mainController.detailCoordinator)
             })
         }
         #endif
+    }
+
+    private func openPdf(attachment: Attachment, library: Library, page: Int?, annotation: String?, animated: Bool, detailCoordinator: DetailCoordinator?) {
+        switch attachment.type {
+        case .file(let filename, let contentType, _, _) where contentType == "application/pdf":
+            let file = Files.attachmentFile(in: library.identifier, key: attachment.key, filename: filename, contentType: contentType)
+            let url = file.createUrl()
+            guard let controller = detailCoordinator?.pdfViewController(at: url, key: attachment.key, library: library, page: page, preselectedAnnotationKey: annotation) else { return }
+            self.showPresentedRestored(viewController: controller, in: self.window!)
+//            detailCoordinator?.showPdf(at: url, key: attachment.key, library: library, page: page, preselectedAnnotationKey: annotation, animated: animated)
+
+        default: break
+        }
     }
 
     private func showRestoredState(for data: RestoredStateData) {
         #if PDFENABLED
         guard let window = self.window, let detailCoordinator = (window.rootViewController as? MainViewController)?.detailCoordinator,
               let (url, library) = self.loadRestoredStateData(forKey: data.key, libraryId: data.libraryId),
-              let controller = detailCoordinator.pdfViewController(at: url, key: data.key, library: library) else { return }
+              let controller = detailCoordinator.pdfViewController(at: url, key: data.key, library: library, page: nil, preselectedAnnotationKey: nil) else { return }
         self.showPresentedRestored(viewController: controller, in: window)
         #endif
     }

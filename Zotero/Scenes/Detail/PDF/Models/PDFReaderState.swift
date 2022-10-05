@@ -116,8 +116,10 @@ struct PDFReaderState: ViewModelState {
     /// Used when user interface style (dark mode) changes. Indicates that annotation previews need to be stored for new appearance
     /// if they are not available.
     var shouldStoreAnnotationPreviewsIfNeeded: Bool
+    /// Page that should be shown initially, instead of stored page
+    var initialPage: Int?
 
-    init(url: URL, key: String, library: Library, settings: PDFSettings, userId: Int, username: String, displayName: String, interfaceStyle: UIUserInterfaceStyle) {
+    init(url: URL, key: String, library: Library, initialPage: Int?, preselectedAnnotationKey: String?, settings: PDFSettings, userId: Int, username: String, displayName: String, interfaceStyle: UIUserInterfaceStyle) {
         self.key = key
         self.library = library
         self.document = Document(url: url)
@@ -130,7 +132,9 @@ struct PDFReaderState: ViewModelState {
         self.documentAnnotations = [:]
         self.comments = [:]
         self.visiblePage = 0
+        self.initialPage = initialPage
         self.settings = settings
+        self.selectedAnnotationKey = preselectedAnnotationKey.flatMap({ AnnotationKey(key: $0, type: .database) })
         self.changes = []
         self.selectedAnnotationCommentActive = false
         self.selectedAnnotationsDuringEditing = []

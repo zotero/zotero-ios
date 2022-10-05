@@ -1331,6 +1331,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 self.annotationPreviewController.store(for: annotation, parentKey: key, libraryId: library.identifier, isDark: isDark)
             }
 
+            let (page, selectedData) = self.preselectedData(databaseAnnotations: databaseAnnotations, storedPage: page, boundingBoxConverter: boundingBoxConverter, in: viewModel)
+
             self.update(viewModel: viewModel) { state in
                 state.liveAnnotations = liveAnnotations
                 state.databaseAnnotations = databaseAnnotations
@@ -1339,6 +1341,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 state.visiblePage = page
                 state.token = token
                 state.changes = .annotations
+                state.initialPage = nil
+
+                if let (key, location) = selectedData {
+                    state.selectedAnnotationKey = key
+                    state.focusDocumentLocation = location
+                    state.changes.insert(.selection)
+                }
             }
         case .failure(let error):
             // TODO: - show error
@@ -1346,6 +1355,22 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
 
         self.observeDocument(in: viewModel)
+    }
+
+    private func preselectedData(databaseAnnotations: Results<RItem>, storedPage: Int, boundingBoxConverter: AnnotationBoundingBoxConverter,
+                                 in viewModel: ViewModel<PDFReaderActionHandler>) -> (Int, (PDFReaderState.AnnotationKey, AnnotationDocumentLocation)?) {
+        if let key = viewModel.state.selectedAnnotationKey, let item = databaseAnnotations.filter(.key(key.key)).first {
+            let annotation = DatabaseAnnotation(item: item)
+            let page = annotation._page ?? storedPage
+            let boundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter)
+            return (page, (key, (page, boundingBox)))
+        }
+
+        if let initialPage = viewModel.state.initialPage, initialPage >= 0 && initialPage < viewModel.state.document.pageCount {
+            return (initialPage, nil)
+        }
+
+        return (storedPage, nil)
     }
 
     private func processAnnotationObserving(notification: Notification, viewModel: ViewModel<PDFReaderActionHandler>) {

@@ -19,7 +19,7 @@ enum CustomURLAction: String {
 final class CustomURLController {
     enum Kind {
         case itemDetail(key: String, library: Library, preselectedChildKey: String?)
-        case pdfReader(attachment: Attachment, library: Library, page: Int, parentKey: String?, isAvailable: Bool)
+        case pdfReader(attachment: Attachment, library: Library, page: Int?, annotation: String?, parentKey: String?, isAvailable: Bool)
     }
 
     private unowned let dbStorage: DbStorage
@@ -92,18 +92,22 @@ final class CustomURLController {
 
         switch parts[1] {
         case "library":
-            guard parts.count == 4, parts[2] == "items", let queryItem = queryItems.first, queryItem.name == "page", let page = queryItem.value.flatMap(Int.init) else {
+            guard parts.count == 4, parts[2] == "items" else {
                 DDLogError("CustomURLController: path invalid for user library - \(path)")
                 return nil
             }
-            return self.loadPdfKind(on: page, key: parts[3], libraryId: .custom(.myLibrary))
+            let page = queryItems.first(where: { $0.name == "page" }).flatMap({ $0.value }).flatMap(Int.init)
+            let annotation = queryItems.first(where: { $0.name == "annotation" })?.value
+            return self.loadPdfKind(on: page, annotation: annotation, key: parts[3], libraryId: .custom(.myLibrary))
 
         case "groups":
-            guard parts.count == 5, parts[3] == "items", let groupId = Int(parts[2]), let queryItem = queryItems.first, queryItem.name == "page", let page = queryItem.value.flatMap(Int.init) else {
+            guard parts.count == 5, parts[3] == "items", let groupId = Int(parts[2]) else {
                 DDLogError("CustomURLController: path invalid for group - \(path)")
                 return nil
             }
-            return self.loadPdfKind(on: page, key: parts[4], libraryId: .group(groupId))
+            let page = queryItems.first(where: { $0.name == "page" }).flatMap({ $0.value }).flatMap(Int.init)
+            let annotation = queryItems.first(where: { $0.name == "annotation" })?.value
+            return self.loadPdfKind(on: page, annotation: annotation, key: parts[4], libraryId: .group(groupId))
 
         default:
             guard parts.count == 3 else {
@@ -115,17 +119,13 @@ final class CustomURLController {
                 DDLogError("CustomURLController: wrong library format in ZotFile format - \(path)")
                 return nil
             }
-            guard let page = Int(parts[2]) else {
-                DDLogError("CustomURLController: page missing in ZotFile format - \(path)")
-                return nil
-            }
 
             let libraryId: LibraryIdentifier = groupId == 0 ? .custom(.myLibrary) : .group(groupId)
-            return self.loadPdfKind(on: page, key: zotfileParts[1], libraryId: libraryId)
+            return self.loadPdfKind(on: Int(parts[2]), annotation: nil, key: zotfileParts[1], libraryId: libraryId)
         }
     }
 
-    private func loadPdfKind(on page: Int, key: String, libraryId: LibraryIdentifier) -> Kind? {
+    private func loadPdfKind(on page: Int?, annotation: String?, key: String, libraryId: LibraryIdentifier) -> Kind? {
         do {
             let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key), on: .main)
 
@@ -144,10 +144,10 @@ final class CustomURLController {
 
             switch location {
             case .local:
-                return .pdfReader(attachment: attachment, library: library, page: page, parentKey: parentKey, isAvailable: true)
+                return .pdfReader(attachment: attachment, library: library, page: page, annotation: annotation, parentKey: parentKey, isAvailable: true)
 
             case .remote, .localAndChangedRemotely:
-                return .pdfReader(attachment: attachment, library: library, page: page, parentKey: parentKey, isAvailable: false)
+                return .pdfReader(attachment: attachment, library: library, page: page, annotation: annotation, parentKey: parentKey, isAvailable: false)
 
             case .remoteMissing:
                 DDLogInfo("CustomURLConverter: attachment \(attachment.key) missing remotely")
