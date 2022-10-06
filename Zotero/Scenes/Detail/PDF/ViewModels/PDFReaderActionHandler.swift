@@ -1346,7 +1346,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 if let (key, location) = selectedData {
                     state.selectedAnnotationKey = key
                     state.focusDocumentLocation = location
-                    state.changes.insert(.selection)
+                    state.focusSidebarKey = key
                 }
             }
         case .failure(let error):

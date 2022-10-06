@@ -192,30 +192,18 @@ final class AppCoordinator: NSObject {
 
     private func _open(attachment: Attachment, library: Library, on page: Int?, annotation: String?, animated: Bool) {
         #if PDFENABLED
-        guard let mainController = self.window?.rootViewController as? MainViewController else { return }
-        // Open PDF reader of given attachment
-        if mainController.presentedViewController == nil {
-            self.openPdf(attachment: attachment, library: library, page: page, annotation: annotation, animated: animated, detailCoordinator: mainController.detailCoordinator)
-        } else {
-            // Dismiss presented screen if needed
-            mainController.dismiss(animated: animated, completion: {
-                self.openPdf(attachment: attachment, library: library, page: page, annotation: annotation, animated: animated, detailCoordinator: mainController.detailCoordinator)
-            })
-        }
-        #endif
-    }
-
-    private func openPdf(attachment: Attachment, library: Library, page: Int?, annotation: String?, animated: Bool, detailCoordinator: DetailCoordinator?) {
         switch attachment.type {
         case .file(let filename, let contentType, _, _) where contentType == "application/pdf":
             let file = Files.attachmentFile(in: library.identifier, key: attachment.key, filename: filename, contentType: contentType)
             let url = file.createUrl()
-            guard let controller = detailCoordinator?.pdfViewController(at: url, key: attachment.key, library: library, page: page, preselectedAnnotationKey: annotation) else { return }
-            self.showPresentedRestored(viewController: controller, in: self.window!)
-//            detailCoordinator?.showPdf(at: url, key: attachment.key, library: library, page: page, preselectedAnnotationKey: annotation, animated: animated)
+
+            guard let window = self.window, let detailCoordinator = (window.rootViewController as? MainViewController)?.detailCoordinator,
+                  let pdfController = detailCoordinator.pdfViewController(at: url, key: attachment.key, library: library, page: page, preselectedAnnotationKey: annotation) else { return }
+            self.show(pdfController: pdfController, in: window)
 
         default: break
         }
+        #endif
     }
 
     private func showRestoredState(for data: RestoredStateData) {
@@ -223,44 +211,8 @@ final class AppCoordinator: NSObject {
         guard let window = self.window, let detailCoordinator = (window.rootViewController as? MainViewController)?.detailCoordinator,
               let (url, library) = self.loadRestoredStateData(forKey: data.key, libraryId: data.libraryId),
               let controller = detailCoordinator.pdfViewController(at: url, key: data.key, library: library, page: nil, preselectedAnnotationKey: nil) else { return }
-        self.showPresentedRestored(viewController: controller, in: window)
+        self.show(pdfController: controller, in: window)
         #endif
-    }
-
-    /// If the app tries to present a `UIViewController` on a `UIWindow` that is being shown after app launches, there is a small delay where the underlying (presenting) `UIViewController` is visible.
-    /// So the launch animation looks bad, since you can see a snapshot of previous state (PDF reader), then split view controller with collections and items and then PDF reader again. Because of that
-    /// we fake it a little with this function.
-    private func showPresentedRestored(viewController: UIViewController, in window: UIWindow) {
-        // Store original `UIViewController`
-        let oldController = window.rootViewController
-        // Show new view controller in the window so that it's layed out properly
-        window.rootViewController = viewController
-
-        // Make a screenshot of the window
-        UIGraphicsBeginImageContext(window.frame.size)
-        window.layer.render(in: UIGraphicsGetCurrentContext()!)
-        let image = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-
-        // Create a temporary `UIImageView` with given screenshot
-        let imageView = UIImageView(image: image)
-        imageView.contentMode = .scaleAspectFill
-        imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        imageView.frame = window.bounds
-
-        // Create a temporary `UIWindow` which will be shown above current window until it successfully presents the new view controller.
-        let tmpWindow = UIWindow(frame: window.frame)
-        tmpWindow.windowScene = window.windowScene
-        tmpWindow.addSubview(imageView)
-        tmpWindow.makeKeyAndVisible()
-        self.presentedRestoredControllerWindow = tmpWindow
-
-        // New window is visible with a screenshot, return old view controller and present the new one
-        window.rootViewController = oldController
-        window.rootViewController?.present(viewController, animated: false, completion: {
-            // Hide the temporary screenshot window, everything is in place
-            self.presentedRestoredControllerWindow = nil
-        })
     }
 
     private func loadRestoredStateData(forKey key: String, libraryId: LibraryIdentifier) -> (URL, Library)? {
@@ -299,6 +251,58 @@ final class AppCoordinator: NSObject {
             return (url, library)
         }
         return nil
+    }
+
+    private func show(pdfController: UIViewController, in window: UIWindow) {
+        self.show(presentedViewController: pdfController, in: window) { viewController, completion in
+            // Open PDF reader of given attachment
+            if viewController.presentedViewController == nil {
+                viewController.present(pdfController, animated: false, completion: completion)
+                return
+            }
+
+            viewController.dismiss(animated: false, completion: {
+                viewController.present(pdfController, animated: false, completion: completion)
+            })
+        }
+    }
+
+    /// If the app tries to present a `UIViewController` on a `UIWindow` that is being shown after app launches, there is a small delay where the underlying (presenting) `UIViewController` is visible.
+    /// So the launch animation looks bad, since you can see a snapshot of previous state (PDF reader), then split view controller with collections and items and then PDF reader again. Because of that
+    /// we fake it a little with this function.
+    private func show(presentedViewController: UIViewController, in window: UIWindow, presentAction: (UIViewController, @escaping () -> Void) -> Void) {
+        // Store original `UIViewController`
+        guard let oldController = window.rootViewController else { return }
+
+        // Show new view controller in the window so that it's layed out properly
+        window.rootViewController = presentedViewController
+
+        // Make a screenshot of the window
+        UIGraphicsBeginImageContext(window.frame.size)
+        window.layer.render(in: UIGraphicsGetCurrentContext()!)
+        let image = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+
+        // Create a temporary `UIImageView` with given screenshot
+        let imageView = UIImageView(image: image)
+        imageView.contentMode = .scaleAspectFill
+        imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        imageView.frame = window.bounds
+
+        // Create a temporary `UIWindow` which will be shown above current window until it successfully presents the new view controller.
+        let tmpWindow = UIWindow(frame: window.frame)
+        tmpWindow.windowScene = window.windowScene
+        tmpWindow.addSubview(imageView)
+        tmpWindow.makeKeyAndVisible()
+        self.presentedRestoredControllerWindow = tmpWindow
+
+        window.rootViewController = oldController
+
+        presentAction(oldController, {
+            // New window is visible with a screenshot, return old view controller and present the new one
+            window.rootViewController = oldController
+            self.presentedRestoredControllerWindow = nil
+        })
     }
 
     private func showBetaAlert() {

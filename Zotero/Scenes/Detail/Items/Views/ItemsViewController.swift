@@ -110,9 +110,9 @@ final class ItemsViewController: UIViewController {
                                     self.showItemDetail(for: item)
                                     self.resetActiveSearch()
                                 case .doi(let doi):
-                                    self.coordinatorDelegate?.show(doi: doi, animated: true)
+                                    self.coordinatorDelegate?.show(doi: doi)
                                 case .url(let url):
-                                    self.coordinatorDelegate?.showWeb(url: url, animated: true)
+                                    self.coordinatorDelegate?.showWeb(url: url)
                                 }
                              })
                              .disposed(by: self.disposeBag)
@@ -516,7 +516,7 @@ final class ItemsViewController: UIViewController {
 
                       switch update.kind {
                       case .ready:
-                          self.coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId, animated: true)
+                          self.coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
 
                       case .failed(let error):
                           self.coordinatorDelegate?.showAttachmentError(error)

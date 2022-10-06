@@ -84,6 +84,16 @@ final class AnnotationsViewController: UIViewController {
         self.isVisible = false
     }
 
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        guard !self.isVisible else { return }
+
+        if let key = self.viewModel.state.focusSidebarKey, let indexPath = self.dataSource.indexPath(for: key) {
+            self.tableView.selectRow(at: indexPath, animated: false, scrollPosition: .middle)
+        }
+    }
+
     deinit {
         DDLogInfo("AnnotationsViewController deinitialized")
     }
@@ -134,7 +144,7 @@ final class AnnotationsViewController: UIViewController {
             }
 
             if let key = state.focusSidebarKey, let indexPath = self.dataSource.indexPath(for: key) {
-                self.tableView.selectRow(at: indexPath, animated: true, scrollPosition: .middle)
+                self.tableView.selectRow(at: indexPath, animated: self.isVisible, scrollPosition: .middle)
             }
 
             if state.changes.contains(.sidebarEditingSelection) {

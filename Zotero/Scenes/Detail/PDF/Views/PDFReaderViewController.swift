@@ -45,6 +45,7 @@ final class PDFReaderViewController: UIViewController {
     private var pageTimerDisposeBag: DisposeBag
     private var selectionView: SelectionView?
     private var lastGestureRecognizerTouch: UITouch?
+    private var didAppear: Bool
 
     private lazy var shareButton: UIBarButtonItem = {
         let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
@@ -121,6 +122,7 @@ final class PDFReaderViewController: UIViewController {
     init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
         self.viewModel = viewModel
         self.isCompactSize = compactSize
+        self.didAppear = false
         self.isSidebarTransitioning = false
         self.disposeBag = DisposeBag()
         self.annotationTimerDisposeBag = DisposeBag()
@@ -145,7 +147,18 @@ final class PDFReaderViewController: UIViewController {
         self.updateInterface(to: self.viewModel.state.settings)
 
         self.viewModel.process(action: .loadDocumentData(boundingBoxConverter: self))
+
         self.pdfController.setPageIndex(PageIndex(self.viewModel.state.visiblePage), animated: false)
+
+        if let annotation = self.viewModel.state.selectedAnnotation {
+            self.select(annotation: self.viewModel.state.selectedAnnotation, pageIndex: self.pdfController.pageIndex, document: self.viewModel.state.document)
+            self.toggleSidebar(animated: false)
+        }
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        self.didAppear = true
     }
 
     deinit {
@@ -189,6 +202,16 @@ final class PDFReaderViewController: UIViewController {
                 self.updateSelection(on: pageView, annotation: annotation)
             }
         }, completion: nil)
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        guard !self.didAppear else { return }
+
+        if let (page, _) = self.viewModel.state.focusDocumentLocation, let annotation = self.viewModel.state.selectedAnnotation {
+            self.select(annotation: annotation, pageIndex: PageIndex(page), document: self.viewModel.state.document)
+        }
     }
 
     // MARK: - Actions
@@ -390,7 +413,7 @@ final class PDFReaderViewController: UIViewController {
         })
     }
 
-    private func toggleSidebar() {
+    private func toggleSidebar(animated: Bool) {
         let shouldShow = !self.isSidebarVisible
 
         // If the layout is compact, show annotation sidebar above pdf document.
@@ -399,6 +422,18 @@ final class PDFReaderViewController: UIViewController {
         }
         self.annotationsControllerLeft.constant = shouldShow ? 0 : -PDFReaderLayout.sidebarWidth
 
+        self.navigationItem.leftBarButtonItems?.last?.accessibilityLabel = shouldShow ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
+
+        if !animated {
+            self.annotationsController.view.isHidden = !shouldShow
+            self.view.layoutIfNeeded()
+
+            if !shouldShow {
+                self.view.endEditing(true)
+            }
+            return
+        }
+
         if shouldShow {
             self.annotationsController.view.isHidden = false
         } else {
@@ -406,7 +441,6 @@ final class PDFReaderViewController: UIViewController {
         }
 
         self.isSidebarTransitioning = true
-        self.navigationItem.leftBarButtonItems?.last?.accessibilityLabel = shouldShow ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
 
         UIView.animate(withDuration: 0.3, delay: 0,
                        usingSpringWithDamping: 1,
@@ -851,7 +885,7 @@ final class PDFReaderViewController: UIViewController {
         let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"), style: .plain, target: nil, action: nil)
         sidebarButton.accessibilityLabel = self.isSidebarVisible ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
         sidebarButton.rx.tap
-                     .subscribe(with: self, onNext: { `self`, _ in self.toggleSidebar() })
+                     .subscribe(with: self, onNext: { `self`, _ in self.toggleSidebar(animated: true) })
                      .disposed(by: self.disposeBag)
         let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"), style: .plain, target: nil, action: nil)
         closeButton.rx.tap

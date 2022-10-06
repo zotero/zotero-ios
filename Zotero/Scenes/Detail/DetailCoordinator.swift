@@ -34,15 +34,15 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
-    func showWeb(url: URL, animated: Bool)
-    func show(doi: String, animated: Bool)
+    func showWeb(url: URL)
+    func show(doi: String)
     func showFilters(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void, cancelAction: @escaping () -> Void)
     func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void)
     func showCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier)
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
     func showMissingStyleError()
-    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier, animated: Bool)
+    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
     func show(error: ItemsError)
 }
 
@@ -51,15 +51,15 @@ protocol DetailItemDetailCoordinatorDelegate: AnyObject {
     func showAttachmentPicker(save: @escaping ([URL]) -> Void)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func showTypePicker(selected: String, picked: @escaping (String) -> Void)
-    func showWeb(url: URL, animated: Bool)
-    func show(doi: String, animated: Bool)
+    func showWeb(url: URL)
+    func show(doi: String)
     func showCreatorCreation(for itemType: String, saved: @escaping CreatorEditSaveAction)
     func showCreatorEditor(for creator: ItemDetailState.Creator, itemType: String, saved: @escaping CreatorEditSaveAction, deleted: @escaping CreatorEditDeleteAction)
     func showAttachmentError(_ error: Error)
     func showDeletedAlertForItem(completion: @escaping (Bool) -> Void)
     func show(error: ItemDetailError, viewModel: ViewModel<ItemDetailActionHandler>)
     func showDataReloaded(completion: @escaping () -> Void)
-    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier, animated: Bool)
+    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
 }
 
 protocol DetailCreatorEditCoordinatorDelegate: AnyObject {
@@ -67,7 +67,7 @@ protocol DetailCreatorEditCoordinatorDelegate: AnyObject {
 }
 
 protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
-    func showWeb(url: URL, animated: Bool)
+    func showWeb(url: URL)
     func pushTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
 }
 
@@ -165,17 +165,17 @@ final class DetailCoordinator: Coordinator {
         return ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: self.controllers, coordinatorDelegate: self)
     }
 
-    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier, animated: Bool) {
+    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier) {
         guard let (attachment, library, sourceView, sourceRect) = self.navigationController.viewControllers.reversed()
                                                                       .compactMap({ ($0 as? DetailCoordinatorAttachmentProvider)?.attachment(for: key, parentKey: parentKey, libraryId: libraryId) })
                                                                       .first else { return }
-        self.show(attachment: attachment, library: library, sourceView: sourceView, sourceRect: sourceRect, animated: animated)
+        self.show(attachment: attachment, library: library, sourceView: sourceView, sourceRect: sourceRect)
     }
 
-    private func show(attachment: Attachment, library: Library, sourceView: UIView, sourceRect: CGRect?, animated: Bool) {
+    private func show(attachment: Attachment, library: Library, sourceView: UIView, sourceRect: CGRect?) {
         switch attachment.type {
         case .url(let url):
-            self.show(url: url, animated: animated)
+            self.show(url: url)
 
         case .file(let filename, let contentType, _, _):
             let file = Files.attachmentFile(in: library.identifier, key: attachment.key, filename: filename, contentType: contentType)
@@ -183,53 +183,53 @@ final class DetailCoordinator: Coordinator {
 
             switch contentType {
             case "application/pdf":
-                self.showPdf(at: url, key: attachment.key, library: library, page: nil, preselectedAnnotationKey: nil, animated: animated)
+                self.showPdf(at: url, key: attachment.key, library: library)
             case "text/html":
-                self.showWebView(for: url, animated: animated)
+                self.showWebView(for: url)
             case "text/plain":
                 let text = try? String(contentsOf: url, encoding: .utf8)
                 if let text = text {
-                    self.show(text: text, title: filename, animated: animated)
+                    self.show(text: text, title: filename)
                 } else {
-                    self.share(item: url, source: .view(sourceView, sourceRect), animated: animated)
+                    self.share(item: url, source: .view(sourceView, sourceRect))
                 }
             case _ where contentType.contains("image"):
                 let image = (contentType == "image/gif") ? (try? Data(contentsOf: url)).flatMap({ try? UIImage(gifData: $0) }) :
                                                              UIImage(contentsOfFile: url.path)
                 if let image = image {
-                    self.show(image: image, title: filename, animated: animated)
+                    self.show(image: image, title: filename)
                 } else {
-                  self.share(item: url, source: .view(sourceView, sourceRect), animated: animated)
+                  self.share(item: url, source: .view(sourceView, sourceRect))
                 }
             default:
                 if AVURLAsset(url: url).isPlayable {
-                    self.showVideo(for: url, animated: animated)
+                    self.showVideo(for: url)
                 } else {
-                    self.share(item: file.createUrl(), source: .view(sourceView, sourceRect), animated: animated)
+                    self.share(item: file.createUrl(), source: .view(sourceView, sourceRect))
                 }
             }
         }
     }
 
-    private func show(text: String, title: String, animated: Bool) {
+    private func show(text: String, title: String) {
         let controller = TextPreviewViewController(text: text, title: title)
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .fullScreen
-        self.topViewController.present(navigationController, animated: animated, completion: nil)
+        self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
-    private func show(image: UIImage, title: String, animated: Bool) {
+    private func show(image: UIImage, title: String) {
         let controller = ImagePreviewViewController(image: image, title: title)
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .fullScreen
-        self.topViewController.present(navigationController, animated: animated, completion: nil)
+        self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
-    private func showVideo(for url: URL, animated: Bool) {
+    private func showVideo(for url: URL) {
         let player = AVPlayer(url: url)
         let controller = AVPlayerViewController()
         controller.player = player
-        self.topViewController.present(controller, animated: animated) {
+        self.topViewController.present(controller, animated: true) {
             player.play()
         }
     }
@@ -272,21 +272,21 @@ final class DetailCoordinator: Coordinator {
         #endif
     }
 
-    func showPdf(at url: URL, key: String, library: Library, page: Int?, preselectedAnnotationKey: String?, animated: Bool) {
+    private func showPdf(at url: URL, key: String, library: Library) {
         #if PDFENABLED
-        guard let navigationController = self.pdfViewController(at: url, key: key, library: library, page: page, preselectedAnnotationKey: preselectedAnnotationKey) else { return }
-        self.navigationController.present(navigationController, animated: animated, completion: nil)
+        guard let navigationController = self.pdfViewController(at: url, key: key, library: library, page: nil, preselectedAnnotationKey: nil) else { return }
+        self.navigationController.present(navigationController, animated: true, completion: nil)
         #endif
     }
 
-    private func showWebView(for url: URL, animated: Bool) {
+    private func showWebView(for url: URL) {
         let controller = WebViewController(url: url)
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .fullScreen
-        self.topViewController.present(navigationController, animated: animated, completion: nil)
+        self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
-    private func share(item: Any, source: ActivityViewControllerSource, animated: Bool) {
+    private func share(item: Any, source: ActivityViewControllerSource) {
         let controller = UIActivityViewController(activityItems: [item], applicationActivities: nil)
         controller.modalPresentationStyle = .pageSheet
 
@@ -301,30 +301,30 @@ final class DetailCoordinator: Coordinator {
                                                                                         height: (sourceView.frame.height / 3))
         }
 
-        self.topViewController.present(controller, animated: animated, completion: nil)
+        self.topViewController.present(controller, animated: true, completion: nil)
     }
 
-    func show(doi: String, animated: Bool) {
+    func show(doi: String) {
         guard let url = URL(string: "https://doi.org/\(doi)") else { return }
-        self.showWeb(url: url, animated: animated)
+        self.showWeb(url: url)
     }
 
-    private func show(url: URL, animated: Bool) {
+    private func show(url: URL) {
         if let scheme = url.scheme, scheme != "http" && scheme != "https" {
             UIApplication.shared.open(url)
         } else {
-            self.showWeb(url: url, animated: animated)
+            self.showWeb(url: url)
         }
     }
 
-    func showWeb(url: URL, animated: Bool) {
+    func showWeb(url: URL) {
         let controller = SFSafariViewController(url: url.withHttpSchemeIfMissing)
         controller.modalPresentationStyle = .fullScreen
         // Changes transition to normal modal transition instead of push from right.
         self.transitionDelegate = EmptyTransitioningDelegate()
         controller.transitioningDelegate = self.transitionDelegate
         self.transitionDelegate = nil
-        self.topViewController.present(controller, animated: animated, completion: nil)
+        self.topViewController.present(controller, animated: true, completion: nil)
     }
 
     fileprivate var topViewController: UIViewController {
@@ -675,7 +675,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 
                     let message = "\(messageStart) \(L10n.Errors.Attachments.missingAdditional)"
                     let action = UIAlertAction(title: L10n.moreInformation, style: .default) { [weak self] _ in
-                        self?.showWeb(url: URL(string: "https://www.zotero.org/support/kb/files_not_syncing")!, animated: true)
+                        self?.showWeb(url: URL(string: "https://www.zotero.org/support/kb/files_not_syncing")!)
                     }
                     return (message, [action])
 
@@ -945,11 +945,11 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
     }
 
     func share(url: URL, barButton: UIBarButtonItem) {
-        self.share(item: url, source: .barButton(barButton), animated: true)
+        self.share(item: url, source: .barButton(barButton))
     }
 
     func share(text: String, rect: CGRect, view: UIView) {
-        self.share(item: text, source: .view(view, rect), animated: true)
+        self.share(item: text, source: .view(view, rect))
     }
 
     func lookup(text: String, rect: CGRect, view: UIView) {

@@ -162,7 +162,7 @@ extension NoteEditorViewController: WKNavigationDelegate {
 
         // Show other links in SFSafariView
         decisionHandler(.cancel)
-        self.coordinatorDelegate?.showWeb(url: url, animated: true)
+        self.coordinatorDelegate?.showWeb(url: url)
     }
 }
 
