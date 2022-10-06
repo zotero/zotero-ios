@@ -758,6 +758,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         if term == nil && filter == nil {
             guard let snapshot = viewModel.state.snapshotKeys else { return }
 
+            for (_, annotations) in viewModel.state.document.allAnnotations(of: .all) {
+                for annotation in annotations {
+                    if annotation.flags.contains(.hidden) {
+                        annotation.flags.remove(.hidden)
+                        NotificationCenter.default.post(name: .PSPDFAnnotationChanged, object: annotation, userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: ["flags"]])
+                    }
+                }
+            }
+
             self.update(viewModel: viewModel) { state in
                 state.snapshotKeys = nil
                 state.sortedKeys = snapshot
@@ -779,10 +788,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         for (_, annotations) in viewModel.state.document.allAnnotations(of: PSPDFKit.Annotation.Kind.all) {
             for annotation in annotations {
                 let isHidden = filteredKeys.first(where: { $0.key == (annotation.key ?? annotation.uuid) }) == nil
-                if isHidden {
+                if isHidden && !annotation.flags.contains(.hidden) {
                     annotation.flags.update(with: .hidden)
-                } else {
+                    NotificationCenter.default.post(name: .PSPDFAnnotationChanged, object: annotation, userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: ["flags"]])
+                } else if !isHidden && annotation.flags.contains(.hidden) {
                     annotation.flags.remove(.hidden)
+                    NotificationCenter.default.post(name: .PSPDFAnnotationChanged, object: annotation, userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: ["flags"]])
                 }
             }
         }
