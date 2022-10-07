@@ -803,7 +803,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 state.snapshotKeys = state.sortedKeys
             }
             state.sortedKeys = filteredKeys
-            state.changes = [.annotations, .documentAnnotations]
+            state.changes = .annotations
 
             if filter != state.filter {
                 state.changes.insert(.filter)

@@ -48,7 +48,6 @@ struct PDFReaderState: ViewModelState {
         static let sidebarEditingSelection = Changes(rawValue: 1 << 9)
         static let filter = Changes(rawValue: 1 << 10)
         static let activeEraserSize = Changes(rawValue: 1 << 11)
-        static let documentAnnotations = Changes(rawValue: 1 << 12) // Indicates that PDFViewController should reload annotation visibility
     }
 
     enum AppearanceMode: UInt {
