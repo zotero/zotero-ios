@@ -1164,7 +1164,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     }
 
     private func change(annotation: PSPDFKit.Annotation, with changes: [String], in viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard !changes.isEmpty, let key = annotation.key else { return }
+        guard !changes.isEmpty, let key = annotation.key, let boundingBoxConverter = self.delegate else { return }
 
         self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, isDark: (viewModel.state.interfaceStyle == .dark))
 
@@ -1185,7 +1185,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         if let inkAnnotation = annotation as? PSPDFKit.InkAnnotation {
             if hasChanges([.paths, .boundingBox]) {
                 let paths = AnnotationConverter.paths(from: inkAnnotation)
-                requests.append(EditAnnotationPathsDbRequest(key: key, libraryId: viewModel.state.library.identifier, paths: paths))
+                requests.append(EditAnnotationPathsDbRequest(key: key, libraryId: viewModel.state.library.identifier, paths: paths, boundingBoxConverter: boundingBoxConverter))
             }
 
             if hasChanges(.lineWidth) {
@@ -1194,7 +1194,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 requests.append(request)
             }
         } else if hasChanges([.boundingBox, .rects]), let rects = AnnotationConverter.rects(from: annotation) {
-            requests.append(EditAnnotationRectsDbRequest(key: key, libraryId: viewModel.state.library.identifier, rects: rects))
+            requests.append(EditAnnotationRectsDbRequest(key: key, libraryId: viewModel.state.library.identifier, rects: rects, boundingBoxConverter: boundingBoxConverter))
         }
 
         if hasChanges(.color) {

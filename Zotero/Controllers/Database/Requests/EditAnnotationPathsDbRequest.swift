@@ -6,6 +6,8 @@
 //  Copyright © 2022 Corporation for Digital Scholarship. All rights reserved.
 //
 
+#if PDFENABLED
+
 import UIKit
 
 import RealmSwift
@@ -14,12 +16,18 @@ struct EditAnnotationPathsDbRequest: DbRequest {
     let key: String
     let libraryId: LibraryIdentifier
     let paths: [[CGPoint]]
+    unowned let boundingBoxConverter: AnnotationBoundingBoxConverter
 
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first, self.paths(self.paths, differFrom: item.paths) else { return }
-        self.sync(paths: self.paths, in: item, database: database)
+        guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first else { return }
+        let page = UInt(DatabaseAnnotation(item: item).page)
+        let dbPaths = self.paths.map { path in
+            return path.map({ self.boundingBoxConverter.convertToDb(point: $0, page: page) ?? $0 })
+        }
+        guard self.paths(dbPaths, differFrom: item.paths) else { return }
+        self.sync(paths: dbPaths, in: item, database: database)
     }
 
     private func sync(paths: [[CGPoint]], in item: RItem, database: Realm) {
@@ -78,3 +86,5 @@ struct EditAnnotationPathsDbRequest: DbRequest {
         return false
     }
 }
+
+#endif

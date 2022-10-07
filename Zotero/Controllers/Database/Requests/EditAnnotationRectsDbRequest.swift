@@ -6,6 +6,8 @@
 //  Copyright © 2022 Corporation for Digital Scholarship. All rights reserved.
 //
 
+#if PDFENABLED
+
 import UIKit
 
 import RealmSwift
@@ -14,12 +16,16 @@ struct EditAnnotationRectsDbRequest: DbRequest {
     let key: String
     let libraryId: LibraryIdentifier
     let rects: [CGRect]
+    unowned let boundingBoxConverter: AnnotationBoundingBoxConverter
 
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first, self.rects(self.rects, differFrom: item.rects) else { return }
-        self.sync(rects: self.rects, in: item, database: database)
+        guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first else { return }
+        let page = UInt(DatabaseAnnotation(item: item).page)
+        let dbRects = self.rects.map({ self.boundingBoxConverter.convertToDb(rect: $0, page: page) ?? $0 })
+        guard self.rects(dbRects, differFrom: item.rects) else { return }
+        self.sync(rects: dbRects, in: item, database: database)
     }
 
     private func sync(rects: [CGRect], in item: RItem, database: Realm) {
@@ -53,3 +59,5 @@ struct EditAnnotationRectsDbRequest: DbRequest {
         return false
     }
 }
+
+#endif

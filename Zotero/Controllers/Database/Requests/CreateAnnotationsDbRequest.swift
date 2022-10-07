@@ -89,12 +89,17 @@ struct CreateAnnotationsDbRequest: DbRequest {
 
     private func add(rects: [CGRect], to item: RItem, changes: inout RItemChanges, database: Realm) {
         guard !rects.isEmpty else { return }
+
+        let page = UInt(DatabaseAnnotation(item: item).page)
+
         for rect in rects {
+            let dbRect = self.boundingBoxConverter.convertToDb(rect: rect, page: page) ?? rect
+            
             let rRect = RRect()
-            rRect.minX = Double(rect.minX)
-            rRect.minY = Double(rect.minY)
-            rRect.maxX = Double(rect.maxX)
-            rRect.maxY = Double(rect.maxY)
+            rRect.minX = Double(dbRect.minX)
+            rRect.minY = Double(dbRect.minY)
+            rRect.maxX = Double(dbRect.maxX)
+            rRect.maxY = Double(dbRect.maxY)
             item.rects.append(rRect)
         }
         changes.insert(.rects)
@@ -103,18 +108,22 @@ struct CreateAnnotationsDbRequest: DbRequest {
     private func add(paths: [[CGPoint]], to item: RItem, changes: inout RItemChanges, database: Realm) {
         guard !paths.isEmpty else { return }
 
+        let page = UInt(DatabaseAnnotation(item: item).page)
+
         for (idx, path) in paths.enumerated() {
             let rPath = RPath()
             rPath.sortIndex = idx
 
             for (idy, point) in path.enumerated() {
+                let dbPoint = self.boundingBoxConverter.convertToDb(point: point, page: page) ?? point
+
                 let rXCoordinate = RPathCoordinate()
-                rXCoordinate.value = Double(point.x)
+                rXCoordinate.value = Double(dbPoint.x)
                 rXCoordinate.sortIndex = idy * 2
                 rPath.coordinates.append(rXCoordinate)
 
                 let rYCoordinate = RPathCoordinate()
-                rYCoordinate.value = Double(point.y)
+                rYCoordinate.value = Double(dbPoint.y)
                 rYCoordinate.sortIndex = (idy * 2) + 1
                 rPath.coordinates.append(rYCoordinate)
             }
