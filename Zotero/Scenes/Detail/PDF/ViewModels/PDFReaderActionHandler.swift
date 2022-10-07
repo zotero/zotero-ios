@@ -1242,16 +1242,21 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     }
 
     private func splitIfNeededAndProcess(annotations: [PSPDFKit.Annotation], state: PDFReaderState) -> [DocumentAnnotation] {
-        let activeColor = state.activeColor.hexString
+        let activeColor = state.activeColor
+        let activeColorString = activeColor.hexString
         var toRemove: [PSPDFKit.Annotation] = []
         var toAdd: [PSPDFKit.Annotation] = []
         var documentAnnotations: [DocumentAnnotation] = []
 
         for annotation in annotations {
+            // `AnnotationStateManager` doesn't apply the `blendMode` to created annotations, so it needs to be applied to newly created annotations here.
+            let (_, _, blendMode) = AnnotationColorGenerator.color(from: activeColor, isHighlight: (annotation is HighlightAnnotation), userInterfaceStyle: state.interfaceStyle)
+            annotation.blendMode = blendMode ?? .normal
+
             // Either annotation is new (key not assigned) or the user used undo/redo and we check whether the annotation exists in DB
             guard annotation.key == nil || state.annotation(for: .init(key: annotation.key!, type: .database)) == nil else { continue }
 
-            let splitAnnotations = self.splitIfNeeded(annotation: annotation, activeColor: activeColor)
+            let splitAnnotations = self.splitIfNeeded(annotation: annotation, activeColor: activeColorString)
 
             if splitAnnotations.count > 1 {
                 DDLogInfo("PDFReaderActionHandler: did split annotations into \(splitAnnotations.count)")
@@ -1259,7 +1264,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 toAdd.append(contentsOf: splitAnnotations)
             }
 
-            documentAnnotations.append(contentsOf: splitAnnotations.compactMap({ AnnotationConverter.annotation(from: $0, color: activeColor, library: state.library, username: state.username,
+            documentAnnotations.append(contentsOf: splitAnnotations.compactMap({ AnnotationConverter.annotation(from: $0, color: activeColorString, library: state.library, username: state.username,
                                                                                                                 displayName: state.displayName, boundingBoxConverter: self.delegate) }))
 
             for pdfAnnotation in splitAnnotations {

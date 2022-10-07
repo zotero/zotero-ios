@@ -385,8 +385,10 @@ final class PDFReaderViewController: UIViewController {
         }
 
         stateManager.setState(annotationTool, variant: nil)
-        stateManager.drawColor = AnnotationColorGenerator.color(from: self.viewModel.state.activeColor, isHighlight: (annotationTool == .highlight),
-                                                                userInterfaceStyle: self.traitCollection.userInterfaceStyle).color
+
+        let (color, _, blendMode) = AnnotationColorGenerator.color(from: self.viewModel.state.activeColor, isHighlight: (annotationTool == .highlight), userInterfaceStyle: self.traitCollection.userInterfaceStyle)
+        stateManager.drawColor = color
+        stateManager.blendMode = blendMode ?? .normal
 
         switch annotationTool {
         case .ink:
