@@ -411,7 +411,7 @@ extension AppCoordinator: MFMailComposeViewControllerDelegate {
 }
 
 extension AppCoordinator: DebugLoggingCoordinator {
-    func createDebugAlertActions() -> ((Result<(String, String?), DebugLogging.Error>, [URL]?, (() -> Void)?, (() -> Void)?) -> Void, (Double) -> Void) {
+    func createDebugAlertActions() -> ((Result<(String, String?, Int), DebugLogging.Error>, [URL]?, (() -> Void)?, (() -> Void)?) -> Void, (Double) -> Void) {
         var progressAlert: UIAlertController?
         var progressView: CircularProgressView?
 
@@ -428,7 +428,7 @@ extension AppCoordinator: DebugLoggingCoordinator {
             progressView?.progress = CGFloat(progress)
         }
 
-        let createCompletionAlert: (Result<(String, String?), DebugLogging.Error>, [URL]?, (() -> Void)?, (() -> Void)?) -> Void = { [weak self] result, logs, retry, completion in
+        let createCompletionAlert: (Result<(String, String?, Int), DebugLogging.Error>, [URL]?, (() -> Void)?, (() -> Void)?) -> Void = { [weak self] result, logs, retry, completion in
             if let controller = progressAlert {
                 controller.presentingViewController?.dismiss(animated: true, completion: {
                     self?.showAlert(for: result, logs: logs, retry: retry, completion: completion)
@@ -456,10 +456,10 @@ extension AppCoordinator: DebugLoggingCoordinator {
         return (controller, progressView)
     }
 
-    private func showAlert(for result: Result<(String, String?), DebugLogging.Error>, logs: [URL]?, retry: (() -> Void)?, completion: (() -> Void)?) {
+    private func showAlert(for result: Result<(String, String?, Int), DebugLogging.Error>, logs: [URL]?, retry: (() -> Void)?, completion: (() -> Void)?) {
         switch result {
-        case .success((let debugId, let customMessage)):
-            self.share(debugId: debugId, customMessage: customMessage)
+        case .success((let debugId, let customMessage, let userId)):
+            self.share(debugId: debugId, customMessage: customMessage, userId: userId)
             completion?()
 
         case .failure(let error):
@@ -467,11 +467,20 @@ extension AppCoordinator: DebugLoggingCoordinator {
         }
     }
 
-    private func share(debugId: String, customMessage: String?) {
-        let actions = [UIAlertAction(title: L10n.ok, style: .cancel, handler: nil),
+    private func share(debugId: String, customMessage: String?, userId: Int) {
+        var actions = [UIAlertAction(title: L10n.ok, style: .cancel, handler: nil),
                        UIAlertAction(title: L10n.copy, style: .default, handler: { _ in
                           UIPasteboard.general.string = debugId
                        })]
+
+        if userId > 0 {
+            let action = UIAlertAction(title: L10n.Settings.CrashAlert.exportDb, style: .default) { [weak self] _ in
+                UIPasteboard.general.string = debugId
+                self?.exportDb(with: userId, completion: nil)
+            }
+            actions.append(action)
+        }
+
         let message = customMessage ?? L10n.Settings.LogAlert.message(debugId)
         self.showAlert(title: L10n.Settings.LogAlert.title, message: message, actions: actions)
     }
@@ -638,7 +647,7 @@ extension AppCoordinator: CrashReporterCoordinator {
         self.showAlert(title: L10n.Settings.CrashAlert.title, message: L10n.Settings.CrashAlert.message(id), actions: actions)
     }
 
-    private func exportDb(with userId: Int, completion: @escaping () -> Void) {
+    private func exportDb(with userId: Int, completion: (() -> Void)?) {
         let mainUrl = Files.dbFile(for: userId).createUrl()
         let bundledUrl = Files.bundledDataDbFile.createUrl()
 
@@ -647,7 +656,7 @@ extension AppCoordinator: CrashReporterCoordinator {
         controller.popoverPresentationController?.sourceView = self.viewController?.view
         controller.popoverPresentationController?.sourceRect = CGRect(x: 100, y: 100, width: 100, height: 100)
         controller.completionWithItemsHandler = { _, _, _, _ in
-            completion()
+            completion?()
         }
         self.viewController?.present(controller, animated: true, completion: nil)
     }

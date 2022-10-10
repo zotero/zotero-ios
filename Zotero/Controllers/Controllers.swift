@@ -155,7 +155,7 @@ final class Controllers {
             if self.debugLogging.isEnabled {
                 // Stop debug logging
                 DDLogError("Controllers: session controller failed to initialize properly - \(error)")
-                self.debugLogging.stop(ignoreEmptyLogs: true, customAlertMessage: { L10n.loginDebug($0) })
+                self.debugLogging.stop(ignoreEmptyLogs: true, userId: 0, customAlertMessage: { L10n.loginDebug($0) })
             }
 
             // Show login screen
@@ -225,6 +225,8 @@ final class Controllers {
         } catch let error {
             DDLogError("Controllers: can't create UserControllers - \(error)")
 
+            let userId = Defaults.shared.userId
+
             // Initialization failed, clear everything
             self.apiClient.set(authToken: nil, for: .zotero)
             self.userControllers = nil
@@ -234,7 +236,7 @@ final class Controllers {
             // Re-start session observing
             self.startObservingSession()
 
-            debugLogging.stop(ignoreEmptyLogs: true, customAlertMessage: { L10n.migrationDebug($0) })
+            debugLogging.stop(ignoreEmptyLogs: true, userId: userId, customAlertMessage: { L10n.migrationDebug($0) })
 
             self.userInitialized.send(.failure(error))
         }

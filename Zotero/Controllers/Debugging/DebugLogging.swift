@@ -12,13 +12,15 @@ import CocoaLumberjackSwift
 import RxSwift
 
 protocol DebugLoggingCoordinator: AnyObject {
-    func createDebugAlertActions() -> ((Result<(String, String?), DebugLogging.Error>, [URL]?, (() -> Void)?, (() -> Void)?) -> Void, (Double) -> Void)
+    func createDebugAlertActions() -> ((Result<(String, String?, Int), DebugLogging.Error>, [URL]?, (() -> Void)?, (() -> Void)?) -> Void, (Double) -> Void)
     func show(error: DebugLogging.Error, logs: [URL]?, retry: (() -> Void)?, completed: (() -> Void)?)
     func setDebugWindow(visible: Bool)
 }
 
 fileprivate struct PendingCoordinatorAction {
     let ignoreEmptyLogs: Bool
+    // Set `userId` to 0 if you don't want to show "Copy and Export DB" option.
+    let userId: Int
     let customAlertMessage: ((String) -> String)?
 }
 
@@ -55,7 +57,7 @@ final class DebugLogging {
         didSet {
             guard let action = self.pendingAction else { return }
             self.queue.async { [weak self] in
-                self?.shareLogs(ignoreEmptyLogs: action.ignoreEmptyLogs, customAlertMessage: action.customAlertMessage)
+                self?.shareLogs(ignoreEmptyLogs: action.ignoreEmptyLogs, userId: action.userId, customAlertMessage: action.customAlertMessage)
                 self?.logger = nil
             }
         }
@@ -79,7 +81,7 @@ final class DebugLogging {
         }
     }
 
-    func stop(ignoreEmptyLogs: Bool = false, customAlertMessage: ((String) -> String)? = nil) {
+    func stop(ignoreEmptyLogs: Bool = false, userId: Int = 0, customAlertMessage: ((String) -> String)? = nil) {
         self.isEnabled = false
         self.didStartFromLaunch = false
 
@@ -89,12 +91,12 @@ final class DebugLogging {
 
         logger.rollLogFile { [weak self] in
             if self?.coordinator == nil {
-                self?.pendingAction = PendingCoordinatorAction(ignoreEmptyLogs: ignoreEmptyLogs, customAlertMessage: customAlertMessage)
+                self?.pendingAction = PendingCoordinatorAction(ignoreEmptyLogs: ignoreEmptyLogs, userId: userId, customAlertMessage: customAlertMessage)
                 return
             }
 
             self?.queue.async {
-                self?.shareLogs(ignoreEmptyLogs: ignoreEmptyLogs, customAlertMessage: customAlertMessage)
+                self?.shareLogs(ignoreEmptyLogs: ignoreEmptyLogs, userId: userId, customAlertMessage: customAlertMessage)
                 self?.logger = nil
             }
         }
@@ -130,7 +132,7 @@ final class DebugLogging {
         logger.rollLogFile(withCompletion: completed)
     }
 
-    private func shareLogs(ignoreEmptyLogs: Bool, customAlertMessage: ((String) -> String)?) {
+    private func shareLogs(ignoreEmptyLogs: Bool, userId: Int, customAlertMessage: ((String) -> String)?) {
         DDLogInfo("DebugLogging: sharing logs")
 
         do {
@@ -146,7 +148,7 @@ final class DebugLogging {
                 throw Error.noLogsRecorded
             }
 
-            self.submit(logs: logs, customAlertMessage: customAlertMessage)
+            self.submit(logs: logs, userId: userId, customAlertMessage: customAlertMessage)
         } catch let error {
             DDLogError("DebugLogging: can't read debug directory contents - \(error)")
             inMainThread {
@@ -155,7 +157,8 @@ final class DebugLogging {
         }
     }
 
-    private func submit(logs: [URL], customAlertMessage: ((String) -> String)?) {
+    /// Submits logs to Zotero API and shows an alerts with report ID.
+    private func submit(logs: [URL], userId: Int, customAlertMessage: ((String) -> String)?) {
         guard let (completionAlert, _) = self.coordinator?.createDebugAlertActions() else { return }
 
         let data: Data
@@ -167,7 +170,7 @@ final class DebugLogging {
                 completionAlert(.failure((error as? Error) ?? .contentReading),
                                 logs,
                                 { [weak self] in // Retry block
-                                    self?.submit(logs: logs, customAlertMessage: customAlertMessage)
+                                    self?.submit(logs: logs, userId: userId, customAlertMessage: customAlertMessage)
                                 },
                                 { [weak self] in // Completion block
                                     self?.clearDebugDirectory()
@@ -197,13 +200,13 @@ final class DebugLogging {
                           DDLogInfo("DebugLogging: uploaded logs")
                           self?.clearDebugDirectory()
                           let fullDebugId = "D" + debugId
-                          completionAlert(.success((fullDebugId, customAlertMessage?(fullDebugId))), nil, nil, nil)
+                          completionAlert(.success((fullDebugId, customAlertMessage?(fullDebugId), userId)), nil, nil, nil)
                       }, onFailure: { [weak self] error in
                           DDLogError("DebugLogging: can't upload logs - \(error)")
                           completionAlert(.failure((error as? Error) ?? .upload),
                                           logs,
                                           { // Retry block
-                                              self?.submit(logs: logs, customAlertMessage: customAlertMessage)
+                                              self?.submit(logs: logs, userId: userId, customAlertMessage: customAlertMessage)
                                           },
                                           { // Completion block
                                               self?.clearDebugDirectory()
