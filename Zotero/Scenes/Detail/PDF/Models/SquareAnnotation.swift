@@ -15,6 +15,14 @@ final class SquareAnnotation: PSPDFKit.SquareAnnotation {
         return false
     }
 
+    override func lockAndRender(in context: CGContext, options: RenderOptions?) {
+        super.lockAndRender(in: context, options: options)
+
+        guard let comment = self.contents, !comment.isEmpty else { return }
+
+        CommentIconDrawingController.draw(context: context, boundingBox: self.boundingBox, color: (self.color ?? .black))
+    }
+
     override func draw(context: CGContext, options: RenderOptions?) {
         super.draw(context: context, options: options)
 
