@@ -17,7 +17,7 @@ import RxSwift
 protocol AppDelegateCoordinatorDelegate: AnyObject {
     func showMainScreen(isLoggedIn: Bool)
     func didRotate(to size: CGSize)
-    func show(customUrl: CustomURLController.Kind)
+    func show(customUrl: CustomURLController.Kind, animated: Bool)
 }
 
 protocol AppOnboardingCoordinatorDelegate: AnyObject {
@@ -123,7 +123,7 @@ final class AppCoordinator: NSObject {
             DDLogInfo("AppCoordinator: App launched by \(urlContext.url.absoluteString) from \(sourceApp)")
 
             if let kind = urlController.process(url: urlContext.url) {
-                self.show(customUrl: kind)
+                self.show(customUrl: kind, animated: false)
                 return
             }
         }
@@ -135,18 +135,18 @@ final class AppCoordinator: NSObject {
         }
     }
 
-    func show(customUrl: CustomURLController.Kind) {
+    func show(customUrl: CustomURLController.Kind, animated: Bool) {
         switch customUrl {
         case .itemDetail(let key, let library, let preselectedChildKey):
-            self.showItemDetail(key: key, library: library, selectChildKey: preselectedChildKey, animated: false)
+            self.showItemDetail(key: key, library: library, selectChildKey: preselectedChildKey, animated: animated)
 
         case .pdfReader(let attachment, let library, let page, let annotation, let parentKey, let isAvailable):
             if isAvailable {
-                self.open(attachment: attachment, library: library, on: page, annotation: annotation, parentKey: parentKey, animated: false)
+                self.open(attachment: attachment, library: library, on: page, annotation: annotation, parentKey: parentKey, animated: animated)
                 return
             }
 
-            self.showItemDetail(key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: false)
+            self.showItemDetail(key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated)
             self.download(attachment: attachment, parentKey: parentKey) { [weak self] in
                 self?._open(attachment: attachment, library: library, on: page, annotation: annotation, animated: true)
             }
@@ -154,24 +154,21 @@ final class AppCoordinator: NSObject {
     }
 
     private func showItemDetail(key: String, library: Library, selectChildKey childKey: String?, animated: Bool) {
-        self._showItemDetail(key: key, library: library, selectChildKey: childKey, animated: animated)
-
         // Dismiss presented screen if any visible
         if let mainController = self.window?.rootViewController as? MainViewController, mainController.presentedViewController != nil {
-            mainController.dismiss(animated: false)
+            self._showItemDetail(key: key, library: library, selectChildKey: childKey, animated: false)
+            mainController.dismiss(animated: animated)
+        } else {
+            self._showItemDetail(key: key, library: library, selectChildKey: childKey, animated: animated)
         }
     }
 
     private func _showItemDetail(key: String, library: Library, selectChildKey childKey: String?, animated: Bool) {
         guard let mainController = self.window?.rootViewController as? MainViewController else { return }
 
-        // If library/group changed, pop to master navigation to root and given library with "All" pre-selected
-        if mainController.masterCoordinator?.visibleLibraryId != library.identifier {
-            mainController.masterCoordinator?.navigationController.popToRootViewController(animated: false)
-            mainController.masterCoordinator?.showCollections(for: library.identifier, preselectedCollection: .custom(.all), animated: animated)
-        } else if mainController.masterCoordinator?.visibleLibraryId != library.identifier ||
-                  (mainController.masterCoordinator?.navigationController.visibleViewController as? CollectionsViewController)?.selectedIdentifier != .custom(.all) {
-            // Show "All" collection in given library/group
+        // Show "All" collection in given library/group
+        if mainController.masterCoordinator?.visibleLibraryId != library.identifier ||
+           (mainController.masterCoordinator?.navigationController.visibleViewController as? CollectionsViewController)?.selectedIdentifier != .custom(.all) {
             mainController.masterCoordinator?.showCollections(for: library.identifier, preselectedCollection: .custom(.all), animated: animated)
         }
 
@@ -185,12 +182,13 @@ final class AppCoordinator: NSObject {
         #if PDFENABLED
         guard let mainController = self.window?.rootViewController as? MainViewController,
               (mainController.detailCoordinator?.navigationController.presentedViewController as? PDFReaderViewController)?.key != attachment.key else { return }
-        self._showItemDetail(key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated)
-        self._open(attachment: attachment, library: library, on: page, annotation: annotation, animated: animated)
+        self._open(attachment: attachment, library: library, on: page, annotation: annotation, animated: animated) {
+            self._showItemDetail(key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated)
+        }
         #endif
     }
 
-    private func _open(attachment: Attachment, library: Library, on page: Int?, annotation: String?, animated: Bool) {
+    private func _open(attachment: Attachment, library: Library, on page: Int?, annotation: String?, animated: Bool, completion: (() -> Void)? = nil) {
         #if PDFENABLED
         switch attachment.type {
         case .file(let filename, let contentType, _, _) where contentType == "application/pdf":
@@ -198,10 +196,14 @@ final class AppCoordinator: NSObject {
             let url = file.createUrl()
 
             guard let window = self.window, let detailCoordinator = (window.rootViewController as? MainViewController)?.detailCoordinator,
-                  let pdfController = detailCoordinator.pdfViewController(at: url, key: attachment.key, library: library, page: page, preselectedAnnotationKey: annotation) else { return }
-            self.show(pdfController: pdfController, in: window)
+                  let pdfController = detailCoordinator.pdfViewController(at: url, key: attachment.key, library: library, page: page, preselectedAnnotationKey: annotation) else {
+                completion?()
+                return
+            }
+            self.show(pdfController: pdfController, in: window, animated: animated, completion: completion)
 
-        default: break
+        default:
+            completion?()
         }
         #endif
     }
@@ -211,7 +213,7 @@ final class AppCoordinator: NSObject {
         guard let window = self.window, let detailCoordinator = (window.rootViewController as? MainViewController)?.detailCoordinator,
               let (url, library) = self.loadRestoredStateData(forKey: data.key, libraryId: data.libraryId),
               let controller = detailCoordinator.pdfViewController(at: url, key: data.key, library: library, page: nil, preselectedAnnotationKey: nil) else { return }
-        self.show(pdfController: controller, in: window)
+        self.show(pdfController: controller, in: window, animated: false)
         #endif
     }
 
@@ -253,7 +255,19 @@ final class AppCoordinator: NSObject {
         return nil
     }
 
-    private func show(pdfController: UIViewController, in window: UIWindow) {
+    private func show(pdfController: UIViewController, in window: UIWindow, animated: Bool, completion: (() -> Void)? = nil) {
+        if animated {
+            if window.rootViewController?.presentedViewController == nil {
+                window.rootViewController?.present(pdfController, animated: true, completion: completion)
+                return
+            }
+
+            window.rootViewController?.dismiss(animated: true, completion: {
+                window.rootViewController?.present(pdfController, animated: true, completion: completion)
+            })
+            return
+        }
+
         self.show(presentedViewController: pdfController, in: window) { viewController, completion in
             // Open PDF reader of given attachment
             if viewController.presentedViewController == nil {
@@ -265,6 +279,8 @@ final class AppCoordinator: NSObject {
                 viewController.present(pdfController, animated: false, completion: completion)
             })
         }
+
+        completion?()
     }
 
     /// If the app tries to present a `UIViewController` on a `UIWindow` that is being shown after app launches, there is a small delay where the underlying (presenting) `UIViewController` is visible.

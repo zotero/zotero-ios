@@ -965,7 +965,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             self.observer.on(.next(.openTypePicker))
 
         case .field(let fieldId, _):
-            guard let field = self.viewModel.state.data.fields[fieldId], field.isTappable else { return }
+            guard !self.viewModel.state.isEditing, let field = self.viewModel.state.data.fields[fieldId], field.isTappable else { return }
             switch field.key {
             case FieldKeys.Item.Attachment.url:
                 self.observer.on(.next(.openUrl(field.value)))

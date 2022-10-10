@@ -34,7 +34,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
-    func showWeb(url: URL)
+    func show(url: URL)
     func show(doi: String)
     func showFilters(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void, cancelAction: @escaping () -> Void)
@@ -51,7 +51,7 @@ protocol DetailItemDetailCoordinatorDelegate: AnyObject {
     func showAttachmentPicker(save: @escaping ([URL]) -> Void)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func showTypePicker(selected: String, picked: @escaping (String) -> Void)
-    func showWeb(url: URL)
+    func show(url: URL)
     func show(doi: String)
     func showCreatorCreation(for itemType: String, saved: @escaping CreatorEditSaveAction)
     func showCreatorEditor(for creator: ItemDetailState.Creator, itemType: String, saved: @escaping CreatorEditSaveAction, deleted: @escaping CreatorEditDeleteAction)
@@ -68,6 +68,7 @@ protocol DetailCreatorEditCoordinatorDelegate: AnyObject {
 
 protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
     func showWeb(url: URL)
+    func show(url: URL)
     func pushTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
 }
 
@@ -309,7 +310,7 @@ final class DetailCoordinator: Coordinator {
         self.showWeb(url: url)
     }
 
-    private func show(url: URL) {
+    func show(url: URL) {
         if let scheme = url.scheme, scheme != "http" && scheme != "https" {
             UIApplication.shared.open(url)
         } else {

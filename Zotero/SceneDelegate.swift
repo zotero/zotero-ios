@@ -46,7 +46,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             DDLogInfo("SceneDelegate: App opened by \(urlContext.url.absoluteString) from \(sourceApp)")
 
             if let kind = urlController.process(url: urlContext.url) {
-                self.coordinator.show(customUrl: kind)
+                self.coordinator.show(customUrl: kind, animated: (UIApplication.shared.applicationState == .active))
             }
         }
     }

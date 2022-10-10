@@ -154,15 +154,16 @@ extension NoteEditorViewController: WKNavigationDelegate {
             return
         }
 
-        // Allow initial load
-        guard url.scheme == "http" || url.scheme == "https" else {
+        switch (url.scheme ?? "") {
+        case "file", "about":
+            // Allow initial load
             decisionHandler(.allow)
-            return
-        }
 
-        // Show other links in SFSafariView
-        decisionHandler(.cancel)
-        self.coordinatorDelegate?.showWeb(url: url)
+        default:
+            // Try opening other URLs
+            decisionHandler(.cancel)
+            self.coordinatorDelegate?.show(url: url)
+        }
     }
 }
 

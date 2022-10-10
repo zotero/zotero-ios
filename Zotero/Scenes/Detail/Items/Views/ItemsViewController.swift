@@ -112,7 +112,7 @@ final class ItemsViewController: UIViewController {
                                 case .doi(let doi):
                                     self.coordinatorDelegate?.show(doi: doi)
                                 case .url(let url):
-                                    self.coordinatorDelegate?.showWeb(url: url)
+                                    self.coordinatorDelegate?.show(url: url)
                                 }
                              })
                              .disposed(by: self.disposeBag)

@@ -14,7 +14,7 @@ import RealmSwift
 import RxSwift
 
 final class CollectionsViewController: UICollectionViewController {
-    private let viewModel: ViewModel<CollectionsActionHandler>
+    let viewModel: ViewModel<CollectionsActionHandler>
     private unowned let dragDropController: DragDropController
     private let disposeBag: DisposeBag
 

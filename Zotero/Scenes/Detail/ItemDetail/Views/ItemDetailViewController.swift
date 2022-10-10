@@ -143,7 +143,7 @@ final class ItemDetailViewController: UIViewController {
 
         case .openUrl(let string):
             if let url = URL(string: string) {
-                self.coordinatorDelegate?.showWeb(url: url)
+                self.coordinatorDelegate?.show(url: url)
             }
 
         case .openDoi(let doi):

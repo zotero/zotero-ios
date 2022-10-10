@@ -148,8 +148,23 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
 
         let collectionId = self.storeIfNeeded(libraryId: libraryId, preselectedCollection: collectionId)
 
-        let controller = self.createCollectionsViewController(libraryId: libraryId, selectedCollectionId: collectionId, dbStorage: userControllers.dbStorage, attachmentDownloader: userControllers.fileDownloader)
-        self.navigationController.pushViewController(controller, animated: animated)
+        if self.navigationController.viewControllers.count == 1 {
+            // If only "Libraries" screen is visible, push collections
+            let controller = self.createCollectionsViewController(libraryId: libraryId, selectedCollectionId: collectionId, dbStorage: userControllers.dbStorage, attachmentDownloader: userControllers.fileDownloader)
+            self.navigationController.pushViewController(controller, animated: animated)
+        } else if libraryId != self.visibleLibraryId {
+            // If Collections screen is visible, but for different library, switch controllers
+            let controller = self.createCollectionsViewController(libraryId: libraryId, selectedCollectionId: collectionId, dbStorage: userControllers.dbStorage, attachmentDownloader: userControllers.fileDownloader)
+
+            var viewControllers = self.navigationController.viewControllers
+            _ = viewControllers.popLast()
+            viewControllers.append(controller)
+
+            self.navigationController.setViewControllers(viewControllers, animated: animated)
+        } else if let controller = self.navigationController.visibleViewController as? CollectionsViewController, controller.selectedIdentifier != .custom(.all) {
+            // Correct Collections screen is visible, just select proper collection
+            controller.viewModel.process(action: .select(.custom(.all)))
+        }
     }
 
     func showSettings() {
