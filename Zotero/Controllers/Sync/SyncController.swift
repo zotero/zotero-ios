@@ -1719,13 +1719,30 @@ final class SyncController: SynchronizationController {
 
         switch preconditionError {
         case .objectConflict:
-            self.abort(error: .uploadObjectConflict)
+            guard self.conflictRetries < self.conflictDelays.count else {
+                self.abort(error: .uploadObjectConflict)
+                return true
+            }
+
+            DDLogError("SyncController: object conflict - trying full sync")
+
+            let delay = self.conflictDelays[min(self.conflictRetries, (self.conflictDelays.count - 1))]
+            let actions = self.createInitialActions(for: self.libraryType, syncType: .full)
+
+            self.type = .full
+            // Try full sync just once, if it fails, then abort sync
+            self.conflictRetries = self.conflictDelays.count
+
+            self.queue.removeAll()
+            self.enqueue(actions: actions, at: 0, delay: delay)
 
         case .libraryConflict:
             guard self.conflictRetries < self.conflictDelays.count else {
                 self.abort(error: .cantResolveConflict)
                 return true
             }
+
+            DDLogError("SyncController: library conflict - re-downloading library objects and trying writes again")
 
             let delay = self.conflictDelays[min(self.conflictRetries, (self.conflictDelays.count - 1))]
             let actions: [Action] = [.createLibraryActions(.specific([libraryId]), .onlyDownloads),
