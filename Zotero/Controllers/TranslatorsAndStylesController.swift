@@ -69,6 +69,16 @@ final class TranslatorsAndStylesController {
     private let queue: DispatchQueue
     private let scheduler: SchedulerType
 
+    private var didResetTranslatorsToBundle: Bool {
+        get {
+            return UserDefaults.standard.bool(forKey: "DidResetTranslatorsToBundle")
+        }
+
+        set {
+            UserDefaults.standard.set(newValue, forKey: "DidResetTranslatorsToBundle")
+        }
+    }
+
     weak var coordinator: TranslatorsControllerCoordinatorDelegate?
     private lazy var uuidExpression: NSRegularExpression? = {
         do {
@@ -106,11 +116,11 @@ final class TranslatorsAndStylesController {
     func update() {
         self.queue.async(flags: .barrier) { [weak self] in
             guard let `self` = self else { return }
-            self._update()
+            self._update(forceTranslatorBundleUpdate: !self.didResetTranslatorsToBundle)
         }
     }
 
-    private func _update() {
+    private func _update(forceTranslatorBundleUpdate: Bool) {
         let type: UpdateType = self.lastTimestamp == 0 ? .initial : .startup
 
         self.isLoading.accept(true)
@@ -121,7 +131,7 @@ final class TranslatorsAndStylesController {
             .subscribe(on: self.scheduler)
             .observe(on: self.scheduler)
             .flatMap {
-                return self.updateFromBundle()
+                return self.updateFromBundle(forceTranslatorBundleUpdate: forceTranslatorBundleUpdate)
             }
             .flatMap {
                 return self._updateFromRepo(type: type)
@@ -184,7 +194,7 @@ final class TranslatorsAndStylesController {
     }
 
     /// Update local assets with bundled assets if needed.
-    private func updateFromBundle() -> Single<()> {
+    private func updateFromBundle(forceTranslatorBundleUpdate: Bool) -> Single<()> {
         return Single.create { [weak self] subscriber -> Disposable in
             guard let `self` = self else {
                 subscriber(.failure(Error.bundleLoading(Error.expired)))
@@ -192,7 +202,12 @@ final class TranslatorsAndStylesController {
             }
 
             do {
-                try self._updateTranslatorsFromBundle()
+                try self._updateTranslatorsFromBundle(forceUpdate: forceTranslatorBundleUpdate)
+
+                if forceTranslatorBundleUpdate {
+                    self.didResetTranslatorsToBundle = true
+                }
+
                 try self._updateStylesFromBundle()
 
                 let timestamp = try self.loadLastTimestamp()
@@ -214,15 +229,14 @@ final class TranslatorsAndStylesController {
     }
 
     /// Update local translators with bundled translators if needed.
-    private func _updateTranslatorsFromBundle() throws {
+    private func _updateTranslatorsFromBundle(forceUpdate: Bool) throws {
         let hash = try self.loadLastTranslatorCommitHash()
-
-        guard self.lastTranslatorCommitHash != hash else { return }
+        guard forceUpdate || self.lastTranslatorCommitHash != hash else { return }
 
         DDLogInfo("TranslatorsAndStylesController: update translators from bundle")
 
         let (deletedVersion, deletedIndices) = try self.loadDeleted()
-        try self.syncTranslatorsWithBundledData(deleteIndices: deletedIndices)
+        try self.syncTranslatorsWithBundledData(deleteIndices: deletedIndices, forceUpdate: forceUpdate)
 
         self.queue.async(flags: .barrier) { [weak self] in
             self?.lastTranslatorDeleted = deletedVersion
@@ -353,11 +367,11 @@ final class TranslatorsAndStylesController {
     }
 
     /// Sync local translators with bundled translators.
-    private func syncTranslatorsWithBundledData(deleteIndices: [String]) throws {
+    private func syncTranslatorsWithBundledData(deleteIndices: [String], forceUpdate: Bool) throws {
         // Load metadata index
         let metadata = try self.loadIndex()
         // Sync translators
-        let request = SyncTranslatorsDbRequest(updateMetadata: metadata, deleteIndices: deleteIndices, fileStorage: self.fileStorage)
+        let request = SyncTranslatorsDbRequest(updateMetadata: metadata, deleteIndices: deleteIndices, forceUpdate: forceUpdate, fileStorage: self.fileStorage)
         var updated: SyncTranslatorsDbRequest.Response = []
         try self.dbQueue.sync {
             updated = try self.dbStorage.perform(request: request, on: self.dbQueue, invalidateRealm: true)

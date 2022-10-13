@@ -15,6 +15,7 @@ struct SyncTranslatorsDbRequest: DbResponseRequest {
 
     let updateMetadata: [TranslatorMetadata]
     let deleteIndices: [String]
+    let forceUpdate: Bool
     unowned let fileStorage: FileStorage
 
     var needsWrite: Bool { return true }
@@ -30,7 +31,7 @@ struct SyncTranslatorsDbRequest: DbResponseRequest {
             let rMetadata: RTranslatorMetadata
 
             if let existing = database.object(ofType: RTranslatorMetadata.self, forPrimaryKey: metadata.id) {
-                guard existing.lastUpdated.timeIntervalSince(metadata.lastUpdated) < 0 || !self.fileStorage.has(Files.translator(filename: metadata.id)) else { continue }
+                guard self.forceUpdate || existing.lastUpdated.timeIntervalSince(metadata.lastUpdated) < 0 || !self.fileStorage.has(Files.translator(filename: metadata.id)) else { continue }
                 rMetadata = existing
             } else {
                 rMetadata = RTranslatorMetadata()

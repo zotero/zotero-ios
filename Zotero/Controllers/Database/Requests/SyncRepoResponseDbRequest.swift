@@ -20,7 +20,7 @@ struct SyncRepoResponseDbRequest: DbRequest {
 
     func process(in database: Realm) throws {
         if !self.translators.isEmpty || !self.deleteTranslators.isEmpty {
-            _ = try SyncTranslatorsDbRequest(updateMetadata: self.translators, deleteIndices: self.deleteTranslators.map({ $0.id }), fileStorage: self.fileStorage).process(in: database)
+            _ = try SyncTranslatorsDbRequest(updateMetadata: self.translators, deleteIndices: self.deleteTranslators.map({ $0.id }), forceUpdate: false, fileStorage: self.fileStorage).process(in: database)
         }
         if !self.styles.isEmpty {
             _ = try SyncStylesDbRequest(styles: self.styles).process(in: database)
