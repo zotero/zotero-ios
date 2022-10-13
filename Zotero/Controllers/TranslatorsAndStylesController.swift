@@ -745,7 +745,7 @@ final class TranslatorsAndStylesController {
         var delete: [Translator] = []
 
         for translator in translators {
-            guard let priority = translator.metadata["priority"].flatMap(Int.init) else { continue }
+            guard let priority = translator.metadata["priority"] as? Int else { continue }
             if priority > 0 {
                 update.append(translator)
             } else {
@@ -760,11 +760,11 @@ final class TranslatorsAndStylesController {
     /// - parameter translator: Translator to be converted.
     /// - returns: Metadata of given translator.
     private func metadata(from translator: Translator) throws -> TranslatorMetadata {
-        guard let id = translator.metadata["translatorID"] else {
+        guard let id = translator.metadata["translatorID"] as? String else {
             DDLogError("TranslatorsAndStylesController: translator missing id - \(translator.metadata)")
             throw Error.translatorMissingId
         }
-        guard let rawLastUpdated = translator.metadata["lastUpdated"] else {
+        guard let rawLastUpdated = translator.metadata["lastUpdated"] as? String else {
             DDLogError("TranslatorsAndStylesController: translator missing last updated - \(translator.metadata)")
             throw Error.translatorMissingLastUpdated
         }
