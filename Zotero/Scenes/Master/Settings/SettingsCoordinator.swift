@@ -28,6 +28,7 @@ protocol SettingsCoordinatorDelegate: AnyObject {
     func showLogoutAlert(viewModel: ViewModel<SyncSettingsActionHandler>)
     func showSchemePicker(viewModel: ViewModel<SyncSettingsActionHandler>)
     func promptZoteroDirCreation(url: String, create: @escaping () -> Void, cancel: @escaping () -> Void)
+    func showWeb(url: URL, completion: @escaping () -> Void)
 }
 
 protocol CitationStyleSearchSettingsCoordinatorDelegate: AnyObject {
@@ -59,6 +60,8 @@ final class SettingsCoordinator: NSObject, Coordinator {
     private static let defaultSize: CGSize = CGSize(width: 580, height: 560)
 
     private var searchController: UISearchController?
+    private var transitionDelegate: EmptyTransitioningDelegate?
+    private var safariDidFinish: (() -> Void)?
 
     init(startsWithExport: Bool, navigationController: NavigationViewController, controllers: Controllers) {
         self.navigationController = navigationController
@@ -319,6 +322,25 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: { _ in cancel() }))
         controller.addAction(UIAlertAction(title: L10n.create, style: .default, handler: { _ in create() }))
         self.navigationController.present(controller, animated: true, completion: nil)
+    }
+
+    func showWeb(url: URL, completion: @escaping () -> Void) {
+        self.safariDidFinish = completion
+        let controller = SFSafariViewController(url: url.withHttpSchemeIfMissing)
+        controller.delegate = self
+        controller.modalPresentationStyle = .fullScreen
+        // Changes transition to normal modal transition instead of push from right.
+        self.transitionDelegate = EmptyTransitioningDelegate()
+        controller.transitioningDelegate = self.transitionDelegate
+        self.transitionDelegate = nil
+        self.navigationController.present(controller, animated: true, completion: nil)
+    }
+}
+
+extension SettingsCoordinator: SFSafariViewControllerDelegate {
+    func safariViewControllerDidFinish(_ controller: SFSafariViewController) {
+        self.safariDidFinish?()
+        self.safariDidFinish = nil
     }
 }
 

@@ -78,6 +78,41 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
         case .createZoteroDirectory: break
 
         case .cancelZoteroDirectoryCreation: break
+
+        case .recheckKeys:
+            self.observeSyncIssues(in: viewModel)
+            self.syncScheduler.request(sync: .keysOnly, libraries: .all)
+        }
+    }
+
+    /// Observes result of keys only sync, if we're getting Forbidden (403) now, log the user out
+    private func observeSyncIssues(in viewModel: ViewModel<SyncSettingsActionHandler>) {
+        self.syncScheduler.syncController
+                          .progressObservable
+                          .observe(on: MainScheduler.instance)
+                          .subscribe(onNext: { [weak viewModel] progress in
+                              guard let viewModel = viewModel else { return }
+                              self.process(syncProgress: progress, in: viewModel)
+                          })
+                          .disposed(by: viewModel.state.apiDisposeBag)
+    }
+
+    private func process(syncProgress progress: SyncProgress, in viewModel: ViewModel<SyncSettingsActionHandler>) {
+        switch progress {
+        case .aborted(let fatalError):
+            if case .forbidden = fatalError {
+                self.sessionController.reset()
+            }
+            self.update(viewModel: viewModel) { state in
+                state.apiDisposeBag = DisposeBag()
+            }
+
+        case .finished:
+            self.update(viewModel: viewModel) { state in
+                state.apiDisposeBag = DisposeBag()
+            }
+
+        default: break
         }
     }
 

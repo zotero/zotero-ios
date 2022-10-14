@@ -464,6 +464,7 @@
 		B3401D612568047D00BB8D6E /* AnnotationViewTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3401D602568047D00BB8D6E /* AnnotationViewTextView.swift */; };
 		B340692224A60D6A009ECE48 /* Rounding+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340692124A60D6A009ECE48 /* Rounding+Extensions.swift */; };
 		B340831128F95E700087D1A1 /* MigrateBaseKeysToPositionFieldDbAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340831028F95E700087D1A1 /* MigrateBaseKeysToPositionFieldDbAction.swift */; };
+		B340831328F983CF0087D1A1 /* URL+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340831228F983CF0087D1A1 /* URL+Extensions.swift */; };
 		B340868925D574D6000F4446 /* RestoreDeletionsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340868825D574D6000F4446 /* RestoreDeletionsSyncAction.swift */; };
 		B340868D25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340868C25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift */; };
 		B341C8CB25CBFAD3005562E5 /* LibraryIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B341C8CA25CBFAD3005562E5 /* LibraryIdentifier.swift */; };
@@ -1421,6 +1422,7 @@
 		B3401D602568047D00BB8D6E /* AnnotationViewTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewTextView.swift; sourceTree = "<group>"; };
 		B340692124A60D6A009ECE48 /* Rounding+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Rounding+Extensions.swift"; sourceTree = "<group>"; };
 		B340831028F95E700087D1A1 /* MigrateBaseKeysToPositionFieldDbAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrateBaseKeysToPositionFieldDbAction.swift; sourceTree = "<group>"; };
+		B340831228F983CF0087D1A1 /* URL+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URL+Extensions.swift"; sourceTree = "<group>"; };
 		B340868825D574D6000F4446 /* RestoreDeletionsSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreDeletionsSyncAction.swift; sourceTree = "<group>"; };
 		B340868C25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkObjectsAsChangedByUser.swift; sourceTree = "<group>"; };
 		B341C8CA25CBFAD3005562E5 /* LibraryIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryIdentifier.swift; sourceTree = "<group>"; };
@@ -2287,9 +2289,10 @@
 				B384107F281AC752006751B0 /* UITableViewDiffableDataSource+Extensions.swift */,
 				B305651223FC051E003304F2 /* UIView+Extensions.swift */,
 				B305650E23FC051E003304F2 /* UIViewController+Extensions.swift */,
+				B340831228F983CF0087D1A1 /* URL+Extensions.swift */,
+				B3DEAAA628AD01CA00F72D90 /* URLSession+Extensions.swift */,
 				B305650C23FC051E003304F2 /* UserDefault+Extensions.swift */,
 				B3B78C45266FAF8500E91D02 /* WKWebView+Extensions.swift */,
-				B3DEAAA628AD01CA00F72D90 /* URLSession+Extensions.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -4241,6 +4244,7 @@
 				B3486B8B26CFAFEA0036A267 /* SingleCitationAction.swift in Sources */,
 				B3593F3C241A61C700760E20 /* ItemsSortType.swift in Sources */,
 				B372CEE92486748500B423AE /* MarkGroupForResyncSyncAction.swift in Sources */,
+				B340831328F983CF0087D1A1 /* URL+Extensions.swift in Sources */,
 				B378F4C9242CC8EF00B88A05 /* Translator.swift in Sources */,
 				B30565BA23FC051E003304F2 /* EditCollectionDbRequest.swift in Sources */,
 				B36E4F66275123F4001FB99D /* WebDavCreateZoteroDirectoryRequest.swift in Sources */,

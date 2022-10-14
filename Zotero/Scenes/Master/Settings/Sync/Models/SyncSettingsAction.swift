@@ -19,4 +19,5 @@ enum SyncSettingsAction {
     case cancelVerification
     case createZoteroDirectory
     case cancelZoteroDirectoryCreation
+    case recheckKeys
 }

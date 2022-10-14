@@ -42,6 +42,8 @@ final class SyncController: SynchronizationController {
         case full
         /// Synchronize only collections.
         case collectionsOnly
+        /// Only call the `/keys` request to check whether user is still logged in.
+        case keysOnly
     }
 
     /// Specifies which libraries need to be synced.
@@ -620,6 +622,10 @@ final class SyncController: SynchronizationController {
     /// - parameter libraries: Specifies which libraries need to sync.
     /// - returns: Initial ations for a new sync.
     private func createInitialActions(for libraries: LibrarySyncType, syncType: SyncType) -> [SyncController.Action] {
+        if case .keysOnly = syncType {
+            return [.loadKeyPermissions]
+        }
+
         switch libraries {
         case .all:
             return [.loadKeyPermissions, .syncGroupVersions]
@@ -640,7 +646,7 @@ final class SyncController: SynchronizationController {
         switch syncType {
         case .full, .collectionsOnly:
             return .onlyDownloads
-        case .ignoreIndividualDelays, .normal:
+        case .ignoreIndividualDelays, .normal, .keysOnly:
             return .automatic
         }
     }
@@ -832,6 +838,8 @@ final class SyncController: SynchronizationController {
 
     private func createDownloadActions(for libraryId: LibraryIdentifier, versions: Versions) -> [Action] {
         switch self.type {
+        case .keysOnly:
+            return []
         case .collectionsOnly:
             return [.syncVersions(libraryId: libraryId, object: .collection, version: versions.collections, checkRemote: true)]
 
@@ -1194,7 +1202,7 @@ final class SyncController: SynchronizationController {
             self.workQueue.async { [weak self] in
                 self?.performDeletions(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, conflictMode: .restoreConflicts)
             }
-        case .collectionsOnly, .ignoreIndividualDelays, .normal:
+        case .collectionsOnly, .ignoreIndividualDelays, .normal, .keysOnly:
             // Find conflicting objects and perform related actions.
             self.resolve(conflict: .objectsRemovedRemotely(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags))
         }
@@ -1640,8 +1648,10 @@ final class SyncController: SynchronizationController {
                     return .nonFatal(.insufficientSpace)
                 case 503:
                     return .fatal(.serviceUnavailable)
+                case 403:
+                    return .fatal(.forbidden)
                 default:
-                    return (code >= 400 && code <= 499 && code != 403) ? .fatal(.apiError(response: responseMessage(), data: data)) : .nonFatal(.apiError(response: responseMessage(), data: data))
+                    return (code >= 400 && code <= 499) ? .fatal(.apiError(response: responseMessage(), data: data)) : .nonFatal(.apiError(response: responseMessage(), data: data))
                 }
             case .dataFileNil, .dataFileReadFailed, .missingContentType, .unacceptableContentType, .customValidationFailed:
                 return .fatal(.apiError(response: responseMessage(), data: data))

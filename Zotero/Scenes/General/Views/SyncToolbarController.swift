@@ -127,6 +127,8 @@ final class SyncToolbarController {
                 return (L10n.Errors.SyncToolbar.internetConnection, nil)
             case .serviceUnavailable:
                 return (L10n.Errors.SyncToolbar.unavailable, nil)
+            case .forbidden:
+                return (L10n.Errors.SyncToolbar.forbiddenMessage, nil)
             }
         }
 
@@ -245,6 +247,9 @@ final class SyncToolbarController {
         case .deletions(let name):
             return L10n.SyncToolbar.deletion(name)
         case .aborted(let error):
+            if case .forbidden = error {
+                return L10n.Errors.SyncToolbar.forbidden
+            }
             return L10n.SyncToolbar.aborted(self.alertMessage(from: error).message)
         }
     }

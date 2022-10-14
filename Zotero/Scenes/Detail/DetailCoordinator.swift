@@ -110,7 +110,7 @@ protocol DetailCitationCoordinatorDelegate: AnyObject {
     func showMissingStyleError()
 }
 
-fileprivate class EmptyTransitioningDelegate: NSObject, UIViewControllerTransitioningDelegate {}
+class EmptyTransitioningDelegate: NSObject, UIViewControllerTransitioningDelegate {}
 
 final class DetailCoordinator: Coordinator {
     enum ActivityViewControllerSource {
@@ -1094,15 +1094,3 @@ extension DetailCoordinator: AnnotationEditCoordinatorDelegate {
 }
 
 #endif
-
-extension URL {
-    fileprivate var withHttpSchemeIfMissing: URL {
-        if self.scheme == "http" || self.scheme == "https" {
-            return self
-        }
-
-        guard var components = URLComponents(url: self, resolvingAgainstBaseURL: true) else { return self }
-        components.scheme = "http"
-        return components.url ?? self
-    }
-}

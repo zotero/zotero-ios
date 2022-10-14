@@ -571,6 +571,10 @@ internal enum L10n {
       internal static func finishedWithErrors(_ p1: Any) -> String {
         return L10n.tr("Localizable", "errors.sync_toolbar.finished_with_errors", String(describing: p1))
       }
+      /// Invalid username or password
+      internal static let forbidden = L10n.tr("Localizable", "errors.sync_toolbar.forbidden")
+      /// The Zotero sync server did not accept your username and password.\n\nPlease log out and log in with correct login information.
+      internal static let forbiddenMessage = L10n.tr("Localizable", "errors.sync_toolbar.forbidden_message")
       /// You don’t have permission to edit groups.
       internal static let groupPermissions = L10n.tr("Localizable", "errors.sync_toolbar.group_permissions")
       /// The group “%@” has reached its Zotero File Storage quota. Some files were not uploaded. Other Zotero data will continue to sync to the server.\nThe group owner can increase the group's storage capacity from the storage settings section on zotero.org.
@@ -1052,12 +1056,18 @@ internal enum L10n {
       internal static let oneFile = L10n.tr("Localizable", "settings.storage.one_file")
     }
     internal enum Sync {
+      /// Account
+      internal static let account = L10n.tr("Localizable", "settings.sync.account")
       /// Data Syncing
       internal static let dataSyncing = L10n.tr("Localizable", "settings.sync.data_syncing")
+      /// Delete Account
+      internal static let deleteAccount = L10n.tr("Localizable", "settings.sync.delete_account")
       /// File Syncing
       internal static let fileSyncing = L10n.tr("Localizable", "settings.sync.file_syncing")
       /// Sync attachment files in My Library using
       internal static let fileSyncingTypeMessage = L10n.tr("Localizable", "settings.sync.file_syncing_type_message")
+      /// Manage Account
+      internal static let manageAccount = L10n.tr("Localizable", "settings.sync.manage_account")
       /// Password
       internal static let password = L10n.tr("Localizable", "settings.sync.password")
       /// Account

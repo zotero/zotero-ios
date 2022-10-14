@@ -31,6 +31,26 @@ struct SyncSettingsView: View {
             Section(header: Text(L10n.Settings.Sync.fileSyncing)) {
                 self.fileSyncSection
             }
+
+            Section(header: Text(L10n.Settings.Sync.account)) {
+                Button(action: {
+                    self.coordinatorDelegate?.showWeb(url: URL(string: "https://www.zotero.org/settings/account")!, completion: {
+                        self.viewModel.process(action: .recheckKeys)
+                    })
+                }) {
+                    Text(L10n.Settings.Sync.manageAccount)
+                        .foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor)
+                }
+
+                Button(action: {
+                    self.coordinatorDelegate?.showWeb(url: URL(string: "https://www.zotero.org/settings/deleteaccount")!, completion: {
+                        self.viewModel.process(action: .recheckKeys)
+                    })
+                }) {
+                    Text(L10n.Settings.Sync.deleteAccount)
+                        .foregroundColor(.red)
+                }
+            }
         }
         .navigationBarTitle(L10n.Settings.Sync.title)
     }
