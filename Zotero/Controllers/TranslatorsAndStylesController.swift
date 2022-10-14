@@ -59,6 +59,9 @@ final class TranslatorsAndStylesController {
     var lastUpdate: Date {
         return Date(timeIntervalSince1970: Double(self.lastTimestamp))
     }
+    // Used to reset translators to bundled state due to parsing bug fix (#548)
+    @UserDefault(key: "DidResetTranslatorsToBundleBugFix", defaultValue: false)
+    private var didResetTranslatorsToBundle: Bool
 
     private unowned let apiClient: ApiClient
     private unowned let fileStorage: FileStorage
@@ -68,16 +71,6 @@ final class TranslatorsAndStylesController {
     private let dbQueue: DispatchQueue
     private let queue: DispatchQueue
     private let scheduler: SchedulerType
-
-    private var didResetTranslatorsToBundle: Bool {
-        get {
-            return UserDefaults.standard.bool(forKey: "DidResetTranslatorsToBundle")
-        }
-
-        set {
-            UserDefaults.standard.set(newValue, forKey: "DidResetTranslatorsToBundle")
-        }
-    }
 
     weak var coordinator: TranslatorsControllerCoordinatorDelegate?
     private lazy var uuidExpression: NSRegularExpression? = {
