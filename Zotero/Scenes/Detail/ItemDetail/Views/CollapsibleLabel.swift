@@ -98,20 +98,20 @@ final class CollapsibleLabel: UILabel {
         }
 
         // If it doesn't fit, go word by word and check whether it fits without given word
-        (line.string as NSString).enumerateSubstrings(in: _NSRange(location: 0, length: line.length),
-                                                      options: [.byWords, .reverse]) { _, subrange, _, stop in
+        let nsLine = line.string as NSString
+        nsLine.enumerateSubstrings(in: _NSRange(location: 0, length: line.length), options: [.byWords, .reverse]) { _, subrange, _, stop in
             let length: Int
             if subrange.location == 0 {
                 length = 0
-            } else if line.string[line.string.index(line.string.startIndex, offsetBy: subrange.location - 1)] == " " {
+            } else if nsLine.substring(with: NSMakeRange(subrange.location - 1, 1)) == " " {
                 // If last character before this word is a white space, skip it
                 length = subrange.location - 1
             } else {
                 length = subrange.location
             }
 
-            newLine = line.attributedSubstring(from: NSRange(location: 0, length: length))
-                          .appendingString(string)
+            let subString = nsLine.substring(with: NSRange(location: 0, length: length))
+            newLine = NSAttributedString(string: subString).appendingString(string)
 
             if self.text(newLine, fitsWidth: maxWidth) {
                 stop.pointee = true
