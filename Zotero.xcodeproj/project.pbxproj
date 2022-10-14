@@ -463,6 +463,7 @@
 		B3401D5B2567DAAE00BB8D6E /* AnnotationPopoverCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3401D5A2567DAAE00BB8D6E /* AnnotationPopoverCoordinator.swift */; };
 		B3401D612568047D00BB8D6E /* AnnotationViewTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3401D602568047D00BB8D6E /* AnnotationViewTextView.swift */; };
 		B340692224A60D6A009ECE48 /* Rounding+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340692124A60D6A009ECE48 /* Rounding+Extensions.swift */; };
+		B340831128F95E700087D1A1 /* MigrateBaseKeysToPositionFieldDbAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340831028F95E700087D1A1 /* MigrateBaseKeysToPositionFieldDbAction.swift */; };
 		B340868925D574D6000F4446 /* RestoreDeletionsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340868825D574D6000F4446 /* RestoreDeletionsSyncAction.swift */; };
 		B340868D25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340868C25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift */; };
 		B341C8CB25CBFAD3005562E5 /* LibraryIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B341C8CA25CBFAD3005562E5 /* LibraryIdentifier.swift */; };
@@ -1419,6 +1420,7 @@
 		B3401D5A2567DAAE00BB8D6E /* AnnotationPopoverCoordinator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationPopoverCoordinator.swift; sourceTree = "<group>"; };
 		B3401D602568047D00BB8D6E /* AnnotationViewTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewTextView.swift; sourceTree = "<group>"; };
 		B340692124A60D6A009ECE48 /* Rounding+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Rounding+Extensions.swift"; sourceTree = "<group>"; };
+		B340831028F95E700087D1A1 /* MigrateBaseKeysToPositionFieldDbAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrateBaseKeysToPositionFieldDbAction.swift; sourceTree = "<group>"; };
 		B340868825D574D6000F4446 /* RestoreDeletionsSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreDeletionsSyncAction.swift; sourceTree = "<group>"; };
 		B340868C25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkObjectsAsChangedByUser.swift; sourceTree = "<group>"; };
 		B341C8CA25CBFAD3005562E5 /* LibraryIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryIdentifier.swift; sourceTree = "<group>"; };
@@ -2089,6 +2091,7 @@
 				B340868C25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift */,
 				B305644623FC051E003304F2 /* MarkObjectsAsDeletedDbRequest.swift */,
 				B305643A23FC051E003304F2 /* MarkObjectsAsSyncedDbRequest.swift */,
+				B340831028F95E700087D1A1 /* MigrateBaseKeysToPositionFieldDbAction.swift */,
 				B305645823FC051E003304F2 /* MoveItemsToParentDbRequest.swift */,
 				B305644F23FC051E003304F2 /* PerformDeletionsDbRequest.swift */,
 				B35E771D27C52DB2003B1980 /* ReadAllAttachmentsFromCollectionDbRequest.swift */,
@@ -4734,6 +4737,7 @@
 				B3C6AB2D248E3F840009AC96 /* AsynchronousOperation.swift in Sources */,
 				B305662723FC051F003304F2 /* SyncController.swift in Sources */,
 				B30566A323FC051F003304F2 /* Collection.swift in Sources */,
+				B340831128F95E700087D1A1 /* MigrateBaseKeysToPositionFieldDbAction.swift in Sources */,
 				B36CBD5A25DD3BDD003C4613 /* ConflictAlertQueueHandler.swift in Sources */,
 				B30566A423FC051F003304F2 /* UpdatableObject.swift in Sources */,
 				B30566C723FC051F003304F2 /* AppGroup.swift in Sources */,

@@ -23,14 +23,6 @@ struct EditItemFieldsDbRequest: DbRequest {
         var didChange = false
 
         for data in self.fieldValues {
-            // Fix existing items to be compatible with `annotationPosition` stored in `baseKey`.
-            if let baseKey = data.key.baseKey, baseKey == FieldKeys.Item.Annotation.position, item.fields.filter(.key(data.key.key, andBaseKey: baseKey)).first == nil {
-                let fields = item.fields.filter(.key(data.key.key))
-                if fields.count == 1 {
-                    fields.first?.baseKey = FieldKeys.Item.Annotation.position
-                }
-            }
-
             let filter: NSPredicate = data.key.baseKey.flatMap({ .key(data.key.key, andBaseKey: $0) }) ?? .key(data.key.key)
 
             guard let field = item.fields.filter(filter).first, data.value != field.value else { continue }

@@ -38,6 +38,8 @@ final class Controllers {
     private var apiKey: String?
     private var sessionCancellable: AnyCancellable?
     private var didInitialize: Bool
+    @UserDefault(key: "BaseKeyNeedsMigrationToPosition", defaultValue: true)
+    fileprivate var needsBaseKeyMigration: Bool
 
     private static func apiConfiguration(schemaVersion: Int) -> URLSessionConfiguration {
         let configuration = URLSessionConfiguration.default
@@ -315,9 +317,14 @@ final class UserControllers {
         let fileCleanupController = AttachmentFileCleanupController(fileStorage: controllers.fileStorage, dbStorage: dbStorage)
 
         var isFirstLaunch = false
-        try dbStorage.perform(on: .main, with: { coordinator in
+        try dbStorage.perform(on: .main, with: { [weak controllers] coordinator in
             isFirstLaunch = try coordinator.perform(request: InitializeCustomLibrariesDbRequest())
             try coordinator.perform(request: CleanupUnusedTags())
+            if controllers?.needsBaseKeyMigration == true {
+                // Fix "broken" fields which didn't correctly assign "baseKey" to "position" - #560
+                try coordinator.perform(request: MigrateBaseKeysToPositionFieldDbAction())
+//                controllers?.needsBaseKeyMigration = false
+            }
         })
 
         self.isFirstLaunch = isFirstLaunch
