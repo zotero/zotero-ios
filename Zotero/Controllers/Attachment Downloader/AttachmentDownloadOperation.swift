@@ -159,7 +159,7 @@ class AttachmentDownloadOperation: AsynchronousOperation {
             // Remove other contents of folder so that zip extraction doesn't fail
             let files: [File] = try self.fileStorage.contentsOfDirectory(at: zipFile.directory)
             for file in files {
-                guard file.name != zipFile.name && file.ext != zipFile.ext else { continue }
+                guard file.name != zipFile.name || file.ext != zipFile.ext else { continue }
                 try? self.fileStorage.remove(file)
             }
             // Unzip it to the same directory
@@ -168,7 +168,7 @@ class AttachmentDownloadOperation: AsynchronousOperation {
             try? self.fileStorage.remove(zipFile)
             // Rename unzipped file if zip contained only 1 file and the names don't match
             let unzippedFiles: [File] = try self.fileStorage.contentsOfDirectory(at: file.directory)
-            if unzippedFiles.count == 1, let unzipped = unzippedFiles.first, (unzipped.name != file.name || unzipped.mimeType != file.mimeType) {
+            if unzippedFiles.count == 1, let unzipped = unzippedFiles.first, (unzipped.name != file.name || unzipped.ext != file.ext) {
                 try? self.fileStorage.move(from: unzipped, to: file)
             }
 
