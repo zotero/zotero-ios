@@ -112,7 +112,7 @@ final class AnnotationViewController: UIViewController {
             self.tags.setup(with: AnnotationView.attributedString(from: annotation.tags, layout: AnnotationPopoverLayout.annotationLayout))
         }
         self.tags.isHidden = annotation.tags.isEmpty
-        self.tagsButton.isHidden = !annotation.tags.isEmpty
+        self.tagsButton?.isHidden = !annotation.tags.isEmpty
     }
 
     private func name(for color: String, isSelected: Bool) -> String {
