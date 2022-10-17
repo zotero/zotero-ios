@@ -88,6 +88,7 @@ protocol DetailPdfCoordinatorDelegate: AnyObject {
     func showSliderSettings(sender: UIView, title: String, initialValue: CGFloat, valueChanged: @escaping (CGFloat) -> Void)
     func showReader(document: Document)
     func showPdfExportSettings(sender: UIBarButtonItem, completed: @escaping (PDFExportSettings) -> Void)
+    func showTableOfContents(document: Document, delegate: OutlineViewControllerDelegate, barButton: UIBarButtonItem)
 }
 
 protocol DetailAnnotationsCoordinatorDelegate: AnyObject {
@@ -995,7 +996,6 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
     }
 
     func showSettings(with settings: PDFSettings, sender: UIBarButtonItem, completion: @escaping (PDFSettings) -> Void) {
-        #if PDFENABLED
         let state = PDFSettingsState(settings: settings)
         let viewModel = ViewModel(initialState: state, handler: PDFSettingsActionHandler())
 
@@ -1016,7 +1016,6 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         controller.popoverPresentationController?.barButtonItem = sender
         controller.preferredContentSize = CGSize(width: 480, height: 306)
         self.topViewController.present(controller, animated: true, completion: nil)
-        #endif
     }
 
     func showSliderSettings(sender: UIView, title: String, initialValue: CGFloat, valueChanged: @escaping (CGFloat) -> Void) {
@@ -1044,6 +1043,15 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         controller.popoverPresentationController?.barButtonItem = sender
         self.topViewController.present(controller, animated: true)
+    }
+
+    func showTableOfContents(document: Document, delegate: OutlineViewControllerDelegate, barButton: UIBarButtonItem) {
+        let controller = OutlineViewController(document: document)
+        controller.delegate = delegate
+        let navigationController = UINavigationController(rootViewController: controller)
+        navigationController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
+        navigationController.popoverPresentationController?.barButtonItem = barButton
+        self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 }
 

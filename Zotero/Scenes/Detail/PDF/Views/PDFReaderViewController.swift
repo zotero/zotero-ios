@@ -898,8 +898,14 @@ final class PDFReaderViewController: UIViewController {
         readerButton.rx.tap
                     .subscribe(with: self, onNext: { `self`, _ in self.coordinatorDelegate?.showReader(document: self.viewModel.state.document) })
                     .disposed(by: self.disposeBag)
+        let tocButton = UIBarButtonItem(image: self.pdfController.outlineButtonItem.image, style: .plain, target: nil, action: nil)
+        tocButton.rx.tap
+                 .subscribe(with: self, onNext: { [unowned tocButton] `self`, _ in
+                     self.coordinatorDelegate?.showTableOfContents(document: self.viewModel.state.document, delegate: self, barButton: tocButton)
+                 })
+                 .disposed(by: self.disposeBag)
 
-        self.navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton]
+        self.navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton, tocButton]
         self.navigationItem.rightBarButtonItems = self.createRightBarButtonItems(forCompactSize: self.isCompactSize)
     }
 
@@ -1159,6 +1165,13 @@ final class SelectionView: UIView {
 extension PDFReaderViewController: UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         self.lastGestureRecognizerTouch = touch
+        return true
+    }
+}
+
+extension PDFReaderViewController: OutlineViewControllerDelegate {
+    func outlineController(_ outlineController: OutlineViewController, didTapAt outlineElement: OutlineElement) -> Bool {
+        self.scrollIfNeeded(to: outlineElement.pageIndex, animated: true, completion: {})
         return true
     }
 }
