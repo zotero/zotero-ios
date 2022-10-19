@@ -697,6 +697,7 @@
 		B372CEE92486748500B423AE /* MarkGroupForResyncSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372CEE82486748500B423AE /* MarkGroupForResyncSyncAction.swift */; };
 		B372CEEA248675A200B423AE /* MarkGroupForResyncSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372CEE82486748500B423AE /* MarkGroupForResyncSyncAction.swift */; };
 		B37381A727CE6EDE005AD721 /* PDFSettingsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37381A627CE6EDE005AD721 /* PDFSettingsState.swift */; };
+		B373877328FEA0C7004E5031 /* PDFSidebarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B373877228FEA0C7004E5031 /* PDFSidebarViewController.swift */; };
 		B3748D2026566F4800ED05F8 /* ContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3748D1F26566F4800ED05F8 /* ContainerViewController.swift */; };
 		B3748D2226566F6900ED05F8 /* ContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3748D2126566F6900ED05F8 /* ContainerViewController.swift */; };
 		B3764D9D2574F2DE0024274F /* ColorPickerCircleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3764D9C2574F2DE0024274F /* ColorPickerCircleView.swift */; };
@@ -771,6 +772,7 @@
 		B398A915270C6A4300968EE8 /* WebDavController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398A914270C6A4300968EE8 /* WebDavController.swift */; };
 		B398A917270C6A5B00968EE8 /* WebDavSessionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398A916270C6A5B00968EE8 /* WebDavSessionStorage.swift */; };
 		B39A403024BC902600205172 /* ColorPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39A402F24BC902600205172 /* ColorPickerView.swift */; };
+		B39AF554290033CD001F400F /* TableOfContentsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39AF553290033CD001F400F /* TableOfContentsViewController.swift */; };
 		B39B18E8223947050019F467 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E7223947050019F467 /* main.swift */; };
 		B39C7BDE251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39C7BDD251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersSpec.swift */; };
 		B39C9AB7252B589F00462D27 /* Threading+Extras.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650423FC051E003304F2 /* Threading+Extras.swift */; };
@@ -1594,6 +1596,7 @@
 		B372CEE4248670AF00B423AE /* FetchAndStoreGroupSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchAndStoreGroupSyncAction.swift; sourceTree = "<group>"; };
 		B372CEE82486748500B423AE /* MarkGroupForResyncSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkGroupForResyncSyncAction.swift; sourceTree = "<group>"; };
 		B37381A627CE6EDE005AD721 /* PDFSettingsState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSettingsState.swift; sourceTree = "<group>"; };
+		B373877228FEA0C7004E5031 /* PDFSidebarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSidebarViewController.swift; sourceTree = "<group>"; };
 		B3748D1F26566F4800ED05F8 /* ContainerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContainerViewController.swift; sourceTree = "<group>"; };
 		B3748D2126566F6900ED05F8 /* ContainerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContainerViewController.swift; sourceTree = "<group>"; };
 		B3764D9C2574F2DE0024274F /* ColorPickerCircleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerCircleView.swift; sourceTree = "<group>"; };
@@ -1653,6 +1656,7 @@
 		B398A914270C6A4300968EE8 /* WebDavController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebDavController.swift; sourceTree = "<group>"; };
 		B398A916270C6A5B00968EE8 /* WebDavSessionStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavSessionStorage.swift; sourceTree = "<group>"; };
 		B39A402F24BC902600205172 /* ColorPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerView.swift; sourceTree = "<group>"; };
+		B39AF553290033CD001F400F /* TableOfContentsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableOfContentsViewController.swift; sourceTree = "<group>"; };
 		B39B18E7223947050019F467 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		B39C7BDD251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadUpdatedItemUpdateParametersSpec.swift; sourceTree = "<group>"; };
 		B39D336723FFD96C00EF2ACB /* Note.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Note.swift; sourceTree = "<group>"; };
@@ -2562,7 +2566,9 @@
 				B3F5B07E27D1000C00AA81C0 /* PDFSettingsSegmentedCellContentView.swift */,
 				B3F5B08027D1001B00AA81C0 /* PDFSettingsSegmentedCellContentView.xib */,
 				B3ADBCB727CFB64B00B7041F /* PDFSettingsViewController.swift */,
+				B373877228FEA0C7004E5031 /* PDFSidebarViewController.swift */,
 				B3BD86BB258CBCD600EF6674 /* SearchBar.swift */,
+				B39AF553290033CD001F400F /* TableOfContentsViewController.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -4383,6 +4389,7 @@
 				B3593F77241A76E600760E20 /* CollectionEditActionHandler.swift in Sources */,
 				B3BF7EE728A51BDC00A5A659 /* DeleteTagFromItemDbRequest.swift in Sources */,
 				B305661E23FC051E003304F2 /* DeleteGroupSyncAction.swift in Sources */,
+				B373877328FEA0C7004E5031 /* PDFSidebarViewController.swift in Sources */,
 				B3DCDF1D24091EC40039ED0D /* SinglePickerView.swift in Sources */,
 				B32EBFBD276A89190003897E /* BackgroundUploadProcessor.swift in Sources */,
 				B3F5B07F27D1000C00AA81C0 /* PDFSettingsSegmentedCellContentView.swift in Sources */,
@@ -4526,6 +4533,7 @@
 				B3593F62241A62DD00760E20 /* DetailCoordinator.swift in Sources */,
 				B30565EB23FC051E003304F2 /* Controllers.swift in Sources */,
 				B3A351E12715784A002E597A /* WebDavDownloadRequest.swift in Sources */,
+				B39AF554290033CD001F400F /* TableOfContentsViewController.swift in Sources */,
 				B3593F78241A76E600760E20 /* CollectionEditError.swift in Sources */,
 				B36181EC24C96B0500B30D56 /* SearchableCollection.swift in Sources */,
 				B3830CDB255451AB00910FE0 /* TagPickerAction.swift in Sources */,

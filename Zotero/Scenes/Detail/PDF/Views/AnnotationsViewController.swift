@@ -23,7 +23,7 @@ typealias AnnotationsViewControllerAction = (AnnotationView.Action, Annotation, 
 
 final class AnnotationsViewController: UIViewController {
     private static let cellId = "AnnotationCell"
-    private let viewModel: ViewModel<PDFReaderActionHandler>
+    private unowned let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
 
     private weak var tableView: UITableView!

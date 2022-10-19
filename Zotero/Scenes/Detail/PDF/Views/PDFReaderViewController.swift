@@ -23,9 +23,9 @@ final class PDFReaderViewController: UIViewController {
         case share = 3
     }
 
-    private weak var annotationsController: AnnotationsViewController!
+    private weak var sidebarController: PDFSidebarViewController!
     private weak var pdfController: PDFViewController!
-    private weak var annotationsControllerLeft: NSLayoutConstraint!
+    private weak var sidebarControllerLeft: NSLayoutConstraint!
     private weak var pdfControllerLeft: NSLayoutConstraint!
     // Annotation toolbar
     private weak var createNoteButton: CheckboxButton!
@@ -110,7 +110,7 @@ final class PDFReaderViewController: UIViewController {
     weak var coordinatorDelegate: (DetailPdfCoordinatorDelegate & DetailAnnotationsCoordinatorDelegate)?
 
     var isSidebarVisible: Bool {
-        return self.annotationsControllerLeft?.constant == 0
+        return self.sidebarControllerLeft?.constant == 0
     }
 
     var key: String {
@@ -422,12 +422,12 @@ final class PDFReaderViewController: UIViewController {
         if !UIDevice.current.isCompactWidth(size: self.view.frame.size) {
             self.pdfControllerLeft.constant = shouldShow ? PDFReaderLayout.sidebarWidth : 0
         }
-        self.annotationsControllerLeft.constant = shouldShow ? 0 : -PDFReaderLayout.sidebarWidth
+        self.sidebarControllerLeft.constant = shouldShow ? 0 : -PDFReaderLayout.sidebarWidth
 
         self.navigationItem.leftBarButtonItems?.last?.accessibilityLabel = shouldShow ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
 
         if !animated {
-            self.annotationsController.view.isHidden = !shouldShow
+            self.sidebarController.view.isHidden = !shouldShow
             self.view.layoutIfNeeded()
 
             if !shouldShow {
@@ -437,7 +437,7 @@ final class PDFReaderViewController: UIViewController {
         }
 
         if shouldShow {
-            self.annotationsController.view.isHidden = false
+            self.sidebarController.view.isHidden = false
         } else {
             self.view.endEditing(true)
         }
@@ -454,7 +454,7 @@ final class PDFReaderViewController: UIViewController {
                        completion: { finished in
                            guard finished else { return }
                            if !shouldShow {
-                               self.annotationsController.view.isHidden = true
+                               self.sidebarController.view.isHidden = true
                            }
                            self.isSidebarTransitioning = false
                        })
@@ -607,11 +607,11 @@ final class PDFReaderViewController: UIViewController {
         let pdfController = self.createPdfController(with: self.viewModel.state.document, settings: self.viewModel.state.settings)
         pdfController.view.translatesAutoresizingMaskIntoConstraints = false
 
-        let sidebarController = AnnotationsViewController(viewModel: self.viewModel)
+        let sidebarController = PDFSidebarViewController(viewModel: self.viewModel)
         sidebarController.sidebarParent = self
-        sidebarController.view.translatesAutoresizingMaskIntoConstraints = false
         sidebarController.coordinatorDelegate = self.coordinatorDelegate
         sidebarController.boundingBoxConverter = self
+        sidebarController.view.translatesAutoresizingMaskIntoConstraints = false
 
         let separator = UIView()
         separator.translatesAutoresizingMaskIntoConstraints = false
@@ -641,8 +641,8 @@ final class PDFReaderViewController: UIViewController {
 
         self.pdfController = pdfController
         self.pdfControllerLeft = pdfLeftConstraint
-        self.annotationsController = sidebarController
-        self.annotationsControllerLeft = sidebarLeftConstraint
+        self.sidebarController = sidebarController
+        self.sidebarControllerLeft = sidebarLeftConstraint
     }
 
     private func createPdfController(with document: PSPDFKit.Document, settings: PDFSettings) -> PDFViewController {
