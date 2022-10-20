@@ -395,10 +395,16 @@ final class ItemDetailCollectionViewHandler: NSObject {
             return [.abstract]
 
         case .attachments:
-            return state.attachments.map({ attachment in
+            var attachments = state.attachments.map({ attachment in
                 let isProcessing = state.backgroundProcessedItems.contains(attachment.key)
                 return self.attachmentRow(for: attachment, isProcessing: isProcessing)
-            }) + [.addAttachment]
+            })
+
+            if !self.viewModel.state.data.isAttachment {
+                attachments += [.addAttachment]
+            }
+
+            return attachments
 
         case .creators:
             let creators: [Row] = state.data.creatorIds.compactMap({ creatorId in
@@ -492,8 +498,6 @@ final class ItemDetailCollectionViewHandler: NSObject {
     }
 
     private func createContextMenu(for attachment: Attachment) -> UIMenu? {
-        guard !self.viewModel.state.data.isAttachment else { return nil }
-
         var actions: [UIAction] = []
 
         if case .file(_, _, let location, _) = attachment.type, location == .local {
@@ -502,9 +506,11 @@ final class ItemDetailCollectionViewHandler: NSObject {
             })
         }
 
-        actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
-            self?.viewModel.process(action: .deleteAttachment(attachment))
-        })
+        if !self.viewModel.state.data.isAttachment {
+            actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+                self?.viewModel.process(action: .deleteAttachment(attachment))
+            })
+        }
 
         return UIMenu(title: "", children: actions)
     }
@@ -832,7 +838,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             case .field(let key, let multiline):
                 guard let field = self.viewModel.state.data.fields[key] else { return collectionView.dequeueConfiguredReusableCell(using: emptyRegistration, for: indexPath, item: ()) }
 
-                if !isEditing {
+                if !isEditing || self.viewModel.state.data.isAttachment {
                     return collectionView.dequeueConfiguredReusableCell(using: fieldRegistration, for: indexPath, item: (.field(field), titleWidth))
                 }
 
@@ -954,6 +960,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             self.viewModel.process(action: .openAttachment(attachment.key))
 
         case .creator(let creator):
+            guard self.viewModel.state.isEditing else { return }
             self.observer.on(.next(.openCreatorEditor(creator)))
 
         case .note(let note, let isProcessing):
@@ -961,7 +968,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             self.observer.on(.next(.openNoteEditor(note)))
 
         case .type:
-            guard self.viewModel.state.isEditing else { return }
+            guard self.viewModel.state.isEditing && !self.viewModel.state.data.isAttachment else { return }
             self.observer.on(.next(.openTypePicker))
 
         case .field(let fieldId, _):
