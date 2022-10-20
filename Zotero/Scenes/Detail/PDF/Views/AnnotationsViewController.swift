@@ -15,10 +15,6 @@ import PSPDFKit
 import PSPDFKitUI
 import RxSwift
 
-protocol SidebarParent: AnyObject {
-    var isSidebarVisible: Bool { get }
-}
-
 typealias AnnotationsViewControllerAction = (AnnotationView.Action, Annotation, UIButton) -> Void
 
 final class AnnotationsViewController: UIViewController {
@@ -26,6 +22,7 @@ final class AnnotationsViewController: UIViewController {
     private unowned let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
 
+    private weak var emptyLabel: UILabel!
     private weak var tableView: UITableView!
     private weak var toolbarContainer: UIView!
     private weak var toolbar: UIToolbar!
@@ -37,7 +34,7 @@ final class AnnotationsViewController: UIViewController {
     private var searchController: UISearchController!
     private var isVisible: Bool
 
-    weak var sidebarParent: SidebarParent?
+    weak var sidebarDelegate: SidebarDelegate?
     weak var coordinatorDelegate: DetailAnnotationsCoordinatorDelegate?
     weak var boundingBoxConverter: AnnotationBoundingBoxConverter?
 
@@ -138,6 +135,12 @@ final class AnnotationsViewController: UIViewController {
     }
 
     private func update(state: PDFReaderState) {
+        if state.changes.contains(.annotations) {
+            self.tableView.isHidden = (state.snapshotKeys ?? state.sortedKeys).isEmpty
+            self.toolbarContainer.isHidden = self.tableView.isHidden
+            self.emptyLabel.isHidden = !self.tableView.isHidden
+        }
+
         self.reloadIfNeeded(for: state) {
             if let keys = state.loadedPreviewImageAnnotationKeys {
                 self.updatePreviewsIfVisible(for: keys)
@@ -187,7 +190,7 @@ final class AnnotationsViewController: UIViewController {
                 snapshot.reloadItems(keys)
             }
 
-            let isVisible = self.sidebarParent?.isSidebarVisible ?? false
+            let isVisible = self.sidebarDelegate?.isSidebarVisible ?? false
 
             if state.changes.contains(.sidebarEditing) {
                 self.tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
@@ -345,6 +348,15 @@ final class AnnotationsViewController: UIViewController {
     private func setupViews() {
         self.view.backgroundColor = .systemGray6
 
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .preferredFont(forTextStyle: .headline)
+        label.textColor = .systemGray
+        label.text = L10n.Pdf.Sidebar.noAnnotations
+        label.setContentHuggingPriority(.defaultLow, for: .vertical)
+        label.textAlignment = .center
+        self.view.addSubview(label)
+
         let tableView = UITableView(frame: self.view.bounds, style: .plain)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.delegate = self
@@ -381,7 +393,11 @@ final class AnnotationsViewController: UIViewController {
             toolbar.topAnchor.constraint(equalTo: toolbarContainer.topAnchor),
             toolbar.leadingAnchor.constraint(equalTo: toolbarContainer.leadingAnchor),
             toolbar.trailingAnchor.constraint(equalTo: toolbarContainer.trailingAnchor),
-            toolbar.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor)
+            toolbar.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor),
+            label.topAnchor.constraint(equalTo: self.view.topAnchor),
+            label.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
+            label.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
+            label.trailingAnchor.constraint(equalTo: self.view.trailingAnchor)
         ])
 
         if self.viewModel.state.library.metadataEditable {
@@ -395,6 +411,7 @@ final class AnnotationsViewController: UIViewController {
         self.tableView = tableView
         self.tableViewToBottom = tableViewToBottom
         self.tableViewToToolbar = tableViewToToolbar
+        self.emptyLabel = label
     }
 
     private func setupDataSource() {

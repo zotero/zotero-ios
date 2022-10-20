@@ -14,24 +14,26 @@ import PSPDFKit
 import RxSwift
 
 class TableOfContentsViewController: UIViewController {
-    struct Outline: Hashable {
-        let title: String
-        let page: UInt
-
-        init(element: OutlineElement) {
-            self.title = element.title ?? ""
-            self.page = element.pageIndex
-        }
+    enum Section {
+        case search, outline
     }
 
-    private let snapshot: NSDiffableDataSourceSectionSnapshot<Outline>?
+    enum Row: Hashable {
+        case searchBar
+        case outline(TableOfContentsState.Outline)
+    }
+
+    private let viewModel: ViewModel<TableOfContentsActionHandler>
     private let disposeBag: DisposeBag
 
-    private weak var tableView: UITableView!
-    private var dataSource: UITableViewDiffableDataSource<Int, Outline>!
+    private weak var collectionView: UICollectionView!
+    private var dataSource: UICollectionViewDiffableDataSource<Section, Row>?
 
-    init(document: Document) {
-        self.snapshot = TableOfContentsViewController.createSnapshot(from: document)
+    var selectionAction: (UInt) -> Void
+
+    init(viewModel: ViewModel<TableOfContentsActionHandler>, selectionAction: @escaping (UInt) -> Void) {
+        self.viewModel = viewModel
+        self.selectionAction = selectionAction
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -44,76 +46,134 @@ class TableOfContentsViewController: UIViewController {
         super.viewDidLoad()
 
         self.view.backgroundColor = .systemGray6
-        self.setupTableView()
-        self.setupSearchController()
+
+        if (self.viewModel.state.document.outline?.children ?? []).isEmpty {
+            self.setupEmptyView()
+            return
+        }
+
+        self.setupCollectionView()
         self.setupDataSource()
+
+        self.viewModel.stateObservable
+                      .observe(on: MainScheduler.instance)
+                      .subscribe { [weak self] state in
+                          self?.update(state: state)
+                      }
+                      .disposed(by: self.disposeBag)
+
+        self.viewModel.process(action: .load)
     }
 
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
+    // MARK: - State
+
+    private func update(state: TableOfContentsState) {
+        if state.changes.contains(.snapshot), let snapshot = state.outlineSnapshot {
+            self.dataSource?.apply(snapshot, to: .outline)
+        }
     }
 
-    private func setupDataSource() {
-        self.dataSource = UITableViewDiffableDataSource(tableView: self.tableView, cellProvider: { tableView, indexPath, outline in
-            let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+    // MARK: - Empty view
 
-            cell.textLabel?.text = outline.title
-
-            return cell
-        })
-    }
-
-    private func setupTableView() {
-        let tableView = UITableView()
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        tableView.backgroundColor = .systemGray6
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
-        self.view.addSubview(tableView)
-        self.tableView = tableView
+    private func setupEmptyView() {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .preferredFont(forTextStyle: .headline)
+        label.textColor = .systemGray
+        label.text = L10n.Pdf.Sidebar.noOutline
+        label.setContentHuggingPriority(.defaultLow, for: .vertical)
+        label.textAlignment = .center
+        self.view.addSubview(label)
 
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: self.view.topAnchor),
-            tableView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
-            tableView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+            label.topAnchor.constraint(equalTo: self.view.topAnchor),
+            label.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
+            label.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
+            label.trailingAnchor.constraint(equalTo: self.view.trailingAnchor)
         ])
     }
 
-    private func setupSearchController() {
-        let insets = UIEdgeInsets(top: PDFReaderLayout.searchBarVerticalInset,
-                                  left: PDFReaderLayout.annotationLayout.horizontalInset,
-                                  bottom: PDFReaderLayout.searchBarVerticalInset - PDFReaderLayout.cellSelectionLineWidth,
-                                  right: PDFReaderLayout.annotationLayout.horizontalInset)
+    // MARK: - Collection view
 
-        var frame = self.tableView.frame
-        frame.size.height = 65
+    private lazy var outlineRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, TableOfContentsState.Outline> = {
+        return UICollectionView.CellRegistration<UICollectionViewListCell, TableOfContentsState.Outline> { [weak self] cell, indexPath, outline in
+            guard let `self` = self, let dataSource = self.dataSource else { return }
 
-        let searchBar = SearchBar(frame: frame, insets: insets, cornerRadius: 10)
-        searchBar.text.observe(on: MainScheduler.instance)
-                                .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
-                                .subscribe(onNext: { [weak self] text in
-                                    self?.viewModel.process(action: .searchAnnotations(text))
-                                })
-                                .disposed(by: self.disposeBag)
-        self.tableView.tableHeaderView = searchBar
-    }
+            var configuration = cell.defaultContentConfiguration()
+            configuration.text = outline.title
+            configuration.textProperties.color = outline.isActive ? .label : .systemGray
+            configuration.secondaryText = "\(L10n.page) \(outline.page + 1)"
+            configuration.secondaryTextProperties.color = configuration.textProperties.color
+            cell.contentConfiguration = configuration
 
-    private static func createSnapshot(from document: Document) -> NSDiffableDataSourceSectionSnapshot<Outline>? {
-        guard let outlines = document.outline?.children else { return nil }
-
-        var snapshot = NSDiffableDataSourceSectionSnapshot<Outline>()
-        self.append(outlines: outlines, parent: nil, to: snapshot)
-        return snapshot
-    }
-
-    private static func append(outlines: [OutlineElement], parent: Outline?, to snapshot: NSDiffableDataSourceSectionSnapshot<Outline>) {
-        let _outlines = outlines.map(Outline.init)
-        snapshot.append(_outlines, to: parent)
-
-        for (idx, outline) in outlines.enumerated() {
-            guard let children = outline.children else { continue }
-            self.append(outlines: children, parent: _outlines[idx], to: snapshot)
+            let snapshot = dataSource.snapshot(for: .outline)
+            let showToggle = self.viewModel.state.search.isEmpty && snapshot.contains(.outline(outline)) && snapshot.snapshot(of: .outline(outline), includingParent: false).items.count > 0
+            cell.accessories = showToggle ? [.outlineDisclosure()] : []
         }
+    }()
+
+    private lazy var searchRegistration: UICollectionView.CellRegistration<SearchBarCell, String> = {
+        return UICollectionView.CellRegistration<SearchBarCell, String> { [weak self] cell, indexPath, string in
+            cell.contentConfiguration = SearchBarCell.ContentConfiguration(text: string, changeAction: { [weak self] newText in
+                self?.viewModel.process(action: .search(newText))
+            })
+        }
+    }()
+
+    private func setupDataSource() {
+        let outlineRegistration = self.outlineRegistration
+        let searchRegistration = self.searchRegistration
+
+        self.dataSource = UICollectionViewDiffableDataSource(collectionView: self.collectionView, cellProvider: { [weak self] collectionView, indexPath, row in
+            switch row {
+            case .searchBar:
+                return collectionView.dequeueConfiguredReusableCell(using: searchRegistration, for: indexPath, item: (self?.viewModel.state.search ?? ""))
+            case .outline(let outline):
+                return collectionView.dequeueConfiguredReusableCell(using: outlineRegistration, for: indexPath, item: outline)
+            }
+        })
+
+        var baseSnapshot = NSDiffableDataSourceSnapshot<Section, Row>()
+        baseSnapshot.appendSections([.search, .outline])
+        baseSnapshot.appendItems([.searchBar], toSection: .search)
+        self.dataSource!.apply(baseSnapshot)
+    }
+
+    private func setupCollectionView() {
+        let collectionView = UICollectionView(frame: CGRect(), collectionViewLayout: self.createCollectionViewLayout())
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+        collectionView.delegate = self
+        self.view.addSubview(collectionView)
+        self.collectionView = collectionView
+
+        NSLayoutConstraint.activate([
+            collectionView.topAnchor.constraint(equalTo: self.view.topAnchor),
+            collectionView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
+            collectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
+            collectionView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+        ])
+    }
+
+    private func createCollectionViewLayout() -> UICollectionViewCompositionalLayout {
+        return UICollectionViewCompositionalLayout { section, environment in
+            var configuration = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
+            configuration.showsSeparators = true
+            configuration.backgroundColor = .systemGray6
+            configuration.headerMode = .none
+
+            let section = NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
+            section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: PDFReaderLayout.annotationLayout.horizontalInset, bottom: 0, trailing: PDFReaderLayout.annotationLayout.horizontalInset)
+            return section
+        }
+    }
+}
+
+extension TableOfContentsViewController: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        collectionView.deselectItem(at: indexPath, animated: true)
+
+        guard let row = self.dataSource?.itemIdentifier(for: indexPath), case .outline(let outline) = row, outline.isActive else { return }
+        self.selectionAction(outline.page)
     }
 }
 

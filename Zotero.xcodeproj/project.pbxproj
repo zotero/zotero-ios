@@ -808,6 +808,10 @@
 		B3A351E12715784A002E597A /* WebDavDownloadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351E02715784A002E597A /* WebDavDownloadRequest.swift */; };
 		B3A351E3271578B1002E597A /* WebDavDeleteRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351E2271578B1002E597A /* WebDavDeleteRequest.swift */; };
 		B3A351E527157EC6002E597A /* WebDavPropParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351E427157EC6002E597A /* WebDavPropParserDelegate.swift */; };
+		B3A47C3429014F8F00E7D90D /* SearchBarCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A47C3329014F8F00E7D90D /* SearchBarCell.swift */; };
+		B3A47C3629015FCE00E7D90D /* TableOfContentsActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A47C3529015FCE00E7D90D /* TableOfContentsActionHandler.swift */; };
+		B3A47C3829015FDD00E7D90D /* TableOfContentsAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A47C3729015FDD00E7D90D /* TableOfContentsAction.swift */; };
+		B3A47C3A29015FE800E7D90D /* TableOfContentsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A47C3929015FE800E7D90D /* TableOfContentsState.swift */; };
 		B3A6C59F252CA08300F24CBE /* PSPDFKit in Frameworks */ = {isa = PBXBuildFile; productRef = B3A6C59E252CA08300F24CBE /* PSPDFKit */; };
 		B3A94B4A2462F5D300BC7910 /* PSPDFKit+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A94B492462F5D300BC7910 /* PSPDFKit+Extensions.swift */; };
 		B3AAABD72502A40900031065 /* searchresponse_unknownfields.json in Resources */ = {isa = PBXBuildFile; fileRef = B3AAABD52502A40600031065 /* searchresponse_unknownfields.json */; };
@@ -1687,6 +1691,10 @@
 		B3A351E02715784A002E597A /* WebDavDownloadRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavDownloadRequest.swift; sourceTree = "<group>"; };
 		B3A351E2271578B1002E597A /* WebDavDeleteRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavDeleteRequest.swift; sourceTree = "<group>"; };
 		B3A351E427157EC6002E597A /* WebDavPropParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavPropParserDelegate.swift; sourceTree = "<group>"; };
+		B3A47C3329014F8F00E7D90D /* SearchBarCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchBarCell.swift; sourceTree = "<group>"; };
+		B3A47C3529015FCE00E7D90D /* TableOfContentsActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableOfContentsActionHandler.swift; sourceTree = "<group>"; };
+		B3A47C3729015FDD00E7D90D /* TableOfContentsAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableOfContentsAction.swift; sourceTree = "<group>"; };
+		B3A47C3929015FE800E7D90D /* TableOfContentsState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableOfContentsState.swift; sourceTree = "<group>"; };
 		B3A94B492462F5D300BC7910 /* PSPDFKit+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PSPDFKit+Extensions.swift"; sourceTree = "<group>"; };
 		B3AAABD52502A40600031065 /* searchresponse_unknownfields.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = searchresponse_unknownfields.json; sourceTree = "<group>"; };
 		B3AAABD62502A40900031065 /* searchresponse_knownfields.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = searchresponse_knownfields.json; sourceTree = "<group>"; };
@@ -2568,6 +2576,7 @@
 				B3ADBCB727CFB64B00B7041F /* PDFSettingsViewController.swift */,
 				B373877228FEA0C7004E5031 /* PDFSidebarViewController.swift */,
 				B3BD86BB258CBCD600EF6674 /* SearchBar.swift */,
+				B3A47C3329014F8F00E7D90D /* SearchBarCell.swift */,
 				B39AF553290033CD001F400F /* TableOfContentsViewController.swift */,
 			);
 			path = Views;
@@ -3343,6 +3352,8 @@
 				B3ADBCBB27CFB67A00B7041F /* PDFSettingsAction.swift */,
 				B37381A627CE6EDE005AD721 /* PDFSettingsState.swift */,
 				B37BF0AA25A5E2AD00AE0268 /* SquareAnnotation.swift */,
+				B3A47C3729015FDD00E7D90D /* TableOfContentsAction.swift */,
+				B3A47C3929015FE800E7D90D /* TableOfContentsState.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -3352,6 +3363,7 @@
 			children = (
 				B3B953CB245981C100FC96DB /* PDFReaderActionHandler.swift */,
 				B3ADBCB927CFB66C00B7041F /* PDFSettingsActionHandler.swift */,
+				B3A47C3529015FCE00E7D90D /* TableOfContentsActionHandler.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -4335,6 +4347,7 @@
 				B3E8FE2D271429C300F51458 /* ExportActionHandler.swift in Sources */,
 				B300B3352429222B00C1FE1E /* TranslatorMetadata.swift in Sources */,
 				B3ADAE4A2833B56F00D46271 /* LookupViewController.swift in Sources */,
+				B3A47C3829015FDD00E7D90D /* TableOfContentsAction.swift in Sources */,
 				B310091D272C0126003FC743 /* DeleteWebDavDeletionsDbRequest.swift in Sources */,
 				B3593F36241A61C700760E20 /* ItemDetailSectionView.swift in Sources */,
 				B305661423FC051E003304F2 /* Licenses.swift in Sources */,
@@ -4385,6 +4398,7 @@
 				B3593F182668E6A700FA4BB2 /* StyleParserDelegate.swift in Sources */,
 				B3981427257A5A16002C755C /* AnnotationView.swift in Sources */,
 				B36181FD24C9A7C000B30D56 /* LoginError.swift in Sources */,
+				B3A47C3629015FCE00E7D90D /* TableOfContentsActionHandler.swift in Sources */,
 				B30565BE23FC051E003304F2 /* CreateItemFromDetailDbRequest.swift in Sources */,
 				B3593F77241A76E600760E20 /* CollectionEditActionHandler.swift in Sources */,
 				B3BF7EE728A51BDC00A5A659 /* DeleteTagFromItemDbRequest.swift in Sources */,
@@ -4595,6 +4609,7 @@
 				B30566B623FC051F003304F2 /* DeletionsResponse.swift in Sources */,
 				B30566C423FC051F003304F2 /* DeleteBatch.swift in Sources */,
 				B3BD86BC258CBCD600EF6674 /* SearchBar.swift in Sources */,
+				B3A47C3429014F8F00E7D90D /* SearchBarCell.swift in Sources */,
 				B305669523FC051F003304F2 /* DeletableObject.swift in Sources */,
 				B30BDDE828367FC8007034E8 /* RemoteAttachmentDownloader.swift in Sources */,
 				B305660823FC051E003304F2 /* KeyRequest.swift in Sources */,
@@ -4623,6 +4638,7 @@
 				B38B24B926E7664400BDD1BB /* AnnotationSliderViewController.swift in Sources */,
 				B30566A123FC051F003304F2 /* Library.swift in Sources */,
 				B324278225C841A600567504 /* WsResponse.swift in Sources */,
+				B3A47C3A29015FE800E7D90D /* TableOfContentsState.swift in Sources */,
 				B3A351DD2715774E002E597A /* WebDavNonexistentPropRequest.swift in Sources */,
 				B3E8FE30271429C300F51458 /* ExportLocalePickerAction.swift in Sources */,
 				B361820124C9A7C000B30D56 /* OnboardingPageView.swift in Sources */,

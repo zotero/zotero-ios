@@ -14,6 +14,12 @@ import PSPDFKit
 import PSPDFKitUI
 import RxSwift
 
+protocol SidebarDelegate: AnyObject {
+    var isSidebarVisible: Bool { get }
+
+    func tableOfContentsSelected(page: UInt)
+}
+
 class PDFSidebarViewController: UIViewController {
     enum Tab {
         case annotations
@@ -37,7 +43,7 @@ class PDFSidebarViewController: UIViewController {
     private weak var picker: UISegmentedControl!
     private weak var annotationsController: AnnotationsViewController!
     private weak var outlineController: TableOfContentsViewController!
-    weak var sidebarParent: SidebarParent?
+    weak var sidebarDelegate: SidebarDelegate?
     weak var coordinatorDelegate: DetailAnnotationsCoordinatorDelegate?
     weak var boundingBoxConverter: AnnotationBoundingBoxConverter?
 
@@ -69,6 +75,7 @@ class PDFSidebarViewController: UIViewController {
     }
 
     private func show(tab: Tab) {
+        self.view.endEditing(true)
         self.annotationsController.view.isHidden = tab != .annotations
         self.outlineController.view.isHidden = tab != .outline
     }
@@ -94,6 +101,11 @@ class PDFSidebarViewController: UIViewController {
         self.outlineController.view.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(self.outlineController.view)
 
+        picker.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        container.setContentHuggingPriority(.defaultLow, for: .vertical)
+        self.annotationsController.view.setContentHuggingPriority(.defaultLow, for: .vertical)
+        self.outlineController.view.setContentHuggingPriority(.defaultLow, for: .vertical)
+
         NSLayoutConstraint.activate([
             picker.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor, constant: 20),
             container.topAnchor.constraint(equalTo: picker.bottomAnchor, constant: 4),
@@ -115,13 +127,16 @@ class PDFSidebarViewController: UIViewController {
 
     private func setupControllers() {
         let annotationsController = AnnotationsViewController(viewModel: self.viewModel)
-        annotationsController.sidebarParent = self.sidebarParent
+        annotationsController.sidebarDelegate = self.sidebarDelegate
         annotationsController.coordinatorDelegate = self.coordinatorDelegate
         annotationsController.boundingBoxConverter = self.boundingBoxConverter
         self.addChild(annotationsController)
         self.annotationsController = annotationsController
 
-        let outlineController = TableOfContentsViewController(document: self.viewModel.state.document)
+        let state = TableOfContentsState(document: self.viewModel.state.document)
+        let outlineController = TableOfContentsViewController(viewModel: ViewModel(initialState: state, handler: TableOfContentsActionHandler()), selectionAction: { [weak self] page in
+            self?.sidebarDelegate?.tableOfContentsSelected(page: page)
+        })
         self.addChild(outlineController)
         self.outlineController = outlineController
     }

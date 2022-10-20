@@ -608,7 +608,7 @@ final class PDFReaderViewController: UIViewController {
         pdfController.view.translatesAutoresizingMaskIntoConstraints = false
 
         let sidebarController = PDFSidebarViewController(viewModel: self.viewModel)
-        sidebarController.sidebarParent = self
+        sidebarController.sidebarDelegate = self
         sidebarController.coordinatorDelegate = self.coordinatorDelegate
         sidebarController.boundingBoxConverter = self
         sidebarController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -898,14 +898,8 @@ final class PDFReaderViewController: UIViewController {
         readerButton.rx.tap
                     .subscribe(with: self, onNext: { `self`, _ in self.coordinatorDelegate?.showReader(document: self.viewModel.state.document) })
                     .disposed(by: self.disposeBag)
-        let tocButton = UIBarButtonItem(image: self.pdfController.outlineButtonItem.image, style: .plain, target: nil, action: nil)
-        tocButton.rx.tap
-                 .subscribe(with: self, onNext: { [unowned tocButton] `self`, _ in
-                     self.coordinatorDelegate?.showTableOfContents(document: self.viewModel.state.document, delegate: self, barButton: tocButton)
-                 })
-                 .disposed(by: self.disposeBag)
 
-        self.navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton, tocButton]
+        self.navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton]
         self.navigationItem.rightBarButtonItems = self.createRightBarButtonItems(forCompactSize: self.isCompactSize)
     }
 
@@ -1137,8 +1131,6 @@ extension PDFReaderViewController: ConflictViewControllerReceiver {
     }
 }
 
-extension PDFReaderViewController: SidebarParent {}
-
 final class SelectionView: UIView {
     static let inset: CGFloat = 4.5 // 2.5 for border, 2 for padding
 
@@ -1169,13 +1161,10 @@ extension PDFReaderViewController: UIGestureRecognizerDelegate {
     }
 }
 
-extension PDFReaderViewController: OutlineViewControllerDelegate {
-    func outlineController(_ outlineController: OutlineViewController, didTapAt outlineElement: OutlineElement) -> Bool {
-        self.scrollIfNeeded(to: outlineElement.pageIndex, animated: true, completion: {})
-        return true
+extension PDFReaderViewController: SidebarDelegate {
+    func tableOfContentsSelected(page: UInt) {
+        self.scrollIfNeeded(to: page, animated: true, completion: {})
     }
 }
-
-extension PDFReaderViewController: SidebarDelegate {}
 
 #endif

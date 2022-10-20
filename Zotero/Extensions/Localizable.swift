@@ -903,6 +903,12 @@ internal enum L10n {
         internal static let vertical = L10n.tr("Localizable", "pdf.settings.scroll_direction.vertical")
       }
     }
+    internal enum Sidebar {
+      /// No Annotations
+      internal static let noAnnotations = L10n.tr("Localizable", "pdf.sidebar.no_annotations")
+      /// No Outline
+      internal static let noOutline = L10n.tr("Localizable", "pdf.sidebar.no_outline")
+    }
   }
 
   internal enum Searchbar {

@@ -34,10 +34,6 @@ protocol AnnotationBoundingBoxConverter: AnyObject {
     func textOffset(rect: CGRect, page: PageIndex) -> Int?
 }
 
-protocol SidebarDelegate: AnyObject {
-    var isSidebarVisible: Bool { get }
-}
-
 final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionHandler {
     typealias Action = PDFReaderAction
     typealias State = PDFReaderState
@@ -1685,6 +1681,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 self._select(key: key, didSelectInDocument: false, state: &state)
             } else if selectionDeleted {
                 self._select(key: nil, didSelectInDocument: false, state: &state)
+            }
+
+            // Disable sidebar editing if there are no results
+            if (state.snapshotKeys ?? state.sortedKeys).isEmpty {
+                state.sidebarEditingEnabled = false
+                state.changes.insert(.sidebarEditing)
             }
         }
     }
