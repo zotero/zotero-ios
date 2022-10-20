@@ -202,6 +202,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     private func reloadData(isEditing: Bool, in viewModel: ViewModel<ItemDetailActionHandler>) {
         do {
             let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: viewModel.state.key), on: .main, refreshRealm: true)
+
             let token = item.observe(keyPaths: RItem.observableKeypathsForItemDetail) { [weak viewModel] change in
                 guard let viewModel = viewModel else { return }
                 self.itemChanged(change, in: viewModel)

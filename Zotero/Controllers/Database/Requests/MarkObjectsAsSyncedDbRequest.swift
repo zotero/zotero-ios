@@ -25,6 +25,8 @@ struct MarkObjectsAsSyncedDbRequest<Obj: UpdatableObject&Syncable>: DbRequest {
                 object.version = self.version
             }
 
+            object.changeType = .sync
+
             if let uuids = self.changeUuids[object.key] {
                 object.deleteChanges(uuids: uuids, database: database)
             }
@@ -45,6 +47,9 @@ struct MarkSettingsAsSyncedDbRequest: DbRequest {
             if object.version != self.version {
                 object.version = self.version
             }
+
+            object.changeType = .sync
+            
             object.deleteChanges(uuids: self.changeUuids, database: database)
         }
     }
