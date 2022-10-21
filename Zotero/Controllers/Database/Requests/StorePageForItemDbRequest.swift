@@ -11,7 +11,6 @@ import Foundation
 import RealmSwift
 
 struct StorePageForItemDbRequest: DbRequest {
-
     let key: String
     let libraryId: LibraryIdentifier
     let page: Int

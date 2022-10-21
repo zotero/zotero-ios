@@ -1604,7 +1604,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     selectKey = PDFReaderState.AnnotationKey(key: item.key, type: .database)
                 }
 
-            case .sync:
+            case .sync, .syncResponse:
                 let pdfAnnotation = AnnotationConverter.annotation(from: annotation, type: .zotero, interfaceStyle: viewModel.state.interfaceStyle, currentUserId: viewModel.state.userId,
                                                                    library: viewModel.state.library, displayName: viewModel.state.displayName, username: viewModel.state.username,
                                                                    boundingBoxConverter: boundingBoxConverter)
@@ -1693,7 +1693,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func canUpdate(key: PDFReaderState.AnnotationKey, item: RItem, at index: Int, viewModel: ViewModel<PDFReaderActionHandler>) -> Bool {
         // If there was a sync type change, always update item
-        guard item.changeType == .user else { return true }
+        switch item.changeType {
+        case .sync:
+            // If sync happened and this item changed, always update item
+            return true
+        case .syncResponse:
+            // This is a response to local changes being synced to backend, can be ignored
+            return false
+        case .user: break
+        }
 
         // Check whether selected annotation's comment is being edited.
         guard viewModel.state.selectedAnnotationCommentActive && viewModel.state.selectedAnnotationKey == key else { return true }

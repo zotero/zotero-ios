@@ -21,7 +21,7 @@ struct MarkAttachmentsNotUploadedDbRequest: DbRequest {
         for attachment in attachments {
             guard !attachment.isInvalidated else { continue }
             attachment.attachmentNeedsSync = true
-            attachment.changeType = .sync
+            attachment.changeType = .syncResponse
         }
     }
 }

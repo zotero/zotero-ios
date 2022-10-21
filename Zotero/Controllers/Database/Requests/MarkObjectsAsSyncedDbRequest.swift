@@ -25,7 +25,7 @@ struct MarkObjectsAsSyncedDbRequest<Obj: UpdatableObject&Syncable>: DbRequest {
                 object.version = self.version
             }
 
-            object.changeType = .sync
+            object.changeType = .syncResponse
 
             if let uuids = self.changeUuids[object.key] {
                 object.deleteChanges(uuids: uuids, database: database)
@@ -48,7 +48,7 @@ struct MarkSettingsAsSyncedDbRequest: DbRequest {
                 object.version = self.version
             }
 
-            object.changeType = .sync
+            object.changeType = .syncResponse
             
             object.deleteChanges(uuids: self.changeUuids, database: database)
         }
@@ -74,12 +74,13 @@ struct MarkCollectionAsSyncedAndUpdateDbRequest: DbRequest {
 
         if localChanges.isEmpty {
             StoreCollectionsDbRequest.update(collection: collection, response: self.response, libraryId: self.libraryId, database: database)
+            collection.changeType = .syncResponse
             return
         }
 
         collection.version = response.version
         collection.trash = response.data.isTrash
-        collection.changeType = .sync
+        collection.changeType = .syncResponse
 
         if !localChanges.contains(.name) {
             collection.name = response.data.name
@@ -118,13 +119,14 @@ struct MarkItemAsSyncedAndUpdateDbRequest: DbRequest {
         
         if localChanges.isEmpty {
             _ = StoreItemDbRequest.update(item: item, libraryId: self.libraryId, with: response, schemaController: self.schemaController, dateParser: self.dateParser, database: database)
+            item.changeType = .syncResponse
             return
         }
         
         item.version = response.version
         item.dateModified = response.dateModified
         item.inPublications = response.inPublications
-        item.changeType = .sync
+        item.changeType = .syncResponse
         
         if !localChanges.contains(.trash) {
             item.trash = response.isTrash
@@ -192,12 +194,13 @@ struct MarkSearchAsSyncedAndUpdateDbRequest: DbRequest {
 
         if localChanges.isEmpty {
             StoreSearchesDbRequest.update(search: search, response: self.response, libraryId: self.libraryId, database: database)
+            search.changeType = .syncResponse
             return
         }
 
         search.trash = response.data.isTrash
         search.version = response.version
-        search.changeType = .sync
+        search.changeType = .syncResponse
 
         if !localChanges.contains(.name) {
             search.name = response.data.name

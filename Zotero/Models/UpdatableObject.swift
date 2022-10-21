@@ -13,8 +13,12 @@ import RealmSwift
 typealias UpdatableObject = Updatable&Object
 
 enum UpdatableChangeType: Int, PersistableEnum {
+    // Change made by sync, triggered by remote change
     case sync = 0
+    // Change made locally by user
     case user = 1
+    // Change made by sync, triggered by response from submission of local change to backend
+    case syncResponse = 2
 }
 
 protocol Updatable: AnyObject {
@@ -33,7 +37,7 @@ extension Updatable {
     func deleteChanges(uuids: [String], database: Realm) {
         guard self.isChanged && !uuids.isEmpty else { return }
         database.delete(self.changes.filter("identifier in %@", uuids))
-        self.changeType = .sync
+        self.changeType = .syncResponse
     }
 
     func deleteAllChanges(database: Realm) {
@@ -250,7 +254,7 @@ extension RItem: Updatable {
 
     func deleteChanges(uuids: [String], database: Realm) {
         database.delete(self.changes.filter("identifier in %@", uuids))
-        self.changeType = .sync
+        self.changeType = .syncResponse
         self.fields.filter("changed = true").forEach { field in
             field.changed = false
         }
@@ -260,7 +264,7 @@ extension RItem: Updatable {
         guard self.isChanged else { return }
 
         database.delete(self.changes)
-        self.changeType = .sync
+        self.changeType = .syncResponse
         self.fields.filter("changed = true").forEach { field in
             field.changed = false
         }

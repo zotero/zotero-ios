@@ -121,7 +121,7 @@ struct SplitAnnotationsDbRequest: DbRequest {
         new.libraryId = item.libraryId
         new.deleted = item.deleted
         new.syncState = .synced
-        new.changeType = .sync
+        new.changeType = .syncResponse
         let changes: RItemChanges = [.parent, .fields, .type, .tags]
         new.changes.append(RObjectChange.create(changes: changes))
         database.add(new)

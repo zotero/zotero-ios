@@ -32,7 +32,7 @@ struct MarkForResyncDbAction<Obj: SyncableObject&Updatable>: DbRequest {
             }
             object.syncRetries += 1
             object.lastSyncDate = syncDate
-            object.changeType = .sync
+            object.changeType = .syncResponse
             if let index = toCreate.firstIndex(of: object.key) {
                 toCreate.remove(at: index)
             }

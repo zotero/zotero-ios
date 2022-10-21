@@ -20,7 +20,7 @@ struct MarkAttachmentUploadedDbRequest: DbRequest {
     func process(in database: Realm) throws {
         guard let attachment = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first else { return }
         attachment.attachmentNeedsSync = false
-        attachment.changeType = .sync
+        attachment.changeType = .syncResponse
         if let md5 = attachment.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value {
             attachment.backendMd5 = md5
         }
