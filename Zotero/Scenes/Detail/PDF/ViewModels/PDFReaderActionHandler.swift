@@ -1678,9 +1678,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             // Update selection
             if let key = selectKey {
-                self._select(key: key, didSelectInDocument: false, state: &state)
+                self._select(key: key, didSelectInDocument: true, state: &state)
             } else if selectionDeleted {
-                self._select(key: nil, didSelectInDocument: false, state: &state)
+                self._select(key: nil, didSelectInDocument: true, state: &state)
             }
 
             // Disable sidebar editing if there are no results
