@@ -102,8 +102,6 @@ class TableOfContentsViewController: UIViewController {
             var configuration = cell.defaultContentConfiguration()
             configuration.text = outline.title
             configuration.textProperties.color = outline.isActive ? .label : .systemGray
-            configuration.secondaryText = "\(L10n.page) \(outline.page + 1)"
-            configuration.secondaryTextProperties.color = configuration.textProperties.color
             cell.contentConfiguration = configuration
 
             let snapshot = dataSource.snapshot(for: .outline)
