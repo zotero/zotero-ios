@@ -218,6 +218,11 @@ fileprivate final class CredentialSessionDelegate: SessionDelegate {
     var credential: URLCredential?
 
     override func urlSession(_ session: URLSession, task: URLSessionTask, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        guard challenge.previousFailureCount == 0 else {
+            completionHandler(.rejectProtectionSpace, nil)
+            return
+        }
+
         if let credential = self.credential {
             completionHandler(.useCredential, credential)
         } else {

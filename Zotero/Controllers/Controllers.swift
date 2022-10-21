@@ -323,7 +323,7 @@ final class UserControllers {
             if controllers?.needsBaseKeyMigration == true {
                 // Fix "broken" fields which didn't correctly assign "baseKey" to "position" - #560
                 try coordinator.perform(request: MigrateBaseKeysToPositionFieldDbAction())
-//                controllers?.needsBaseKeyMigration = false
+                controllers?.needsBaseKeyMigration = false
             }
         })
 
