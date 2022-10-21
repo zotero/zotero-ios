@@ -92,7 +92,7 @@ struct WebDavSettings: View {
     weak var coordinatorDelegate: SettingsCoordinatorDelegate?
 
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 6) {
             Button(self.viewModel.state.scheme.rawValue + "://") {
                 self.coordinatorDelegate?.showSchemePicker(viewModel: self.viewModel)
             }
