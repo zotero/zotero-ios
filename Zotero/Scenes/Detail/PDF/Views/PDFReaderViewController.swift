@@ -1164,6 +1164,10 @@ extension PDFReaderViewController: UIGestureRecognizerDelegate {
 extension PDFReaderViewController: SidebarDelegate {
     func tableOfContentsSelected(page: UInt) {
         self.scrollIfNeeded(to: page, animated: true, completion: {})
+
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            self.toggleSidebar(animated: true)
+        }
     }
 }
 
