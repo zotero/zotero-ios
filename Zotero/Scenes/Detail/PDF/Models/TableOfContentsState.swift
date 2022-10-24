@@ -22,11 +22,13 @@ struct TableOfContentsState: ViewModelState {
     }
 
     struct Outline: Hashable {
+        let id: UUID
         let title: String
         let page: UInt
         let isActive: Bool
 
         init(element: OutlineElement, isActive: Bool) {
+            self.id = UUID()
             self.title = element.title ?? ""
             self.page = element.pageIndex
             self.isActive = isActive
