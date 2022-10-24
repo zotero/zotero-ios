@@ -16,6 +16,7 @@ struct CreateAnnotationsDbRequest: DbRequest {
     let attachmentKey: String
     let libraryId: LibraryIdentifier
     let annotations: [DocumentAnnotation]
+    let userId: Int
 
     unowned let schemaController: SchemaController
     unowned let boundingBoxConverter: AnnotationBoundingBoxConverter
@@ -47,6 +48,10 @@ struct CreateAnnotationsDbRequest: DbRequest {
         database.add(item)
 
         item.parent = parent
+
+        if annotation.isAuthor {
+            item.createdBy = database.object(ofType: RUser.self, forPrimaryKey: self.userId)
+        }
 
         self.addFields(for: annotation, to: item, database: database)
         self.add(rects: annotation.rects, to: item, changes: &changes, database: database)

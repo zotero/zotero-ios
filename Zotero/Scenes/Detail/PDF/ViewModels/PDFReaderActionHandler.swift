@@ -1146,7 +1146,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         guard !finalAnnotations.isEmpty else { return }
 
-        let request = CreateAnnotationsDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, annotations: finalAnnotations,
+        let request = CreateAnnotationsDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, annotations: finalAnnotations, userId: viewModel.state.userId,
                                                  schemaController: self.schemaController, boundingBoxConverter: boundingBoxConverter)
         self.perform(request: request) { [weak self, weak viewModel] error in
             guard let error = error, let `self` = self, let viewModel = viewModel else { return }
@@ -1252,7 +1252,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             // Either annotation is new (key not assigned) or the user used undo/redo and we check whether the annotation exists in DB
             guard annotation.key == nil || state.annotation(for: .init(key: annotation.key!, type: .database)) == nil else { continue }
 
-            let splitAnnotations = self.splitIfNeeded(annotation: annotation, activeColor: activeColorString)
+            let splitAnnotations = self.splitIfNeeded(annotation: annotation, user: state.displayName, activeColor: activeColorString)
 
             if splitAnnotations.count > 1 {
                 DDLogInfo("PDFReaderActionHandler: did split annotations into \(splitAnnotations.count)")
@@ -1276,10 +1276,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     /// Splits annotation if it exceedes position limit. If it is within limit, it returs original annotation.
     /// - parameter annotation: Annotation to split
+    /// - parameter user: User which created the annotation if it's new
     /// - parameter activeColor: Currently active color
     /// - parameter viewModel: View model
     /// - returns: Array with original annotation if limit was not exceeded. Otherwise array of new split annotations.
-    private func splitIfNeeded(annotation: PSPDFKit.Annotation, activeColor: String) -> [PSPDFKit.Annotation] {
+    private func splitIfNeeded(annotation: PSPDFKit.Annotation, user: String, activeColor: String) -> [PSPDFKit.Annotation] {
         if let annotation = annotation as? HighlightAnnotation, let rects = annotation.rects, let splitRects = AnnotationSplitter.splitRectsIfNeeded(rects: rects) {
             return self.createAnnotations(from: splitRects, original: annotation, activeColor: activeColor)
         }
@@ -1289,6 +1290,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
 
         if annotation.key == nil {
+            annotation.user = user
             annotation.customData = [AnnotationsConfig.keyKey: KeyGenerator.newKey]
         }
 
