@@ -27,36 +27,47 @@ struct CreateAnnotationsDbRequest: DbRequest {
         guard let parent = database.objects(RItem.self).filter(.key(self.attachmentKey, in: self.libraryId)).first else { return }
 
         for annotation in self.annotations {
-            guard database.objects(RItem.self).filter(.key(annotation.key, in: self.libraryId)).first == nil else { continue }
             self.create(annotation: annotation, parent: parent, in: database)
         }
     }
 
     private func create(annotation: DocumentAnnotation, parent: RItem, in database: Realm) {
-        // We need to submit tags on creation even if they are empty, so we need to mark them as changed
-        var changes: RItemChanges = [.parent, .fields, .type, .tags]
+        let item: RItem
 
-        let item = RItem()
-        item.key = annotation.key
-        item.rawType = ItemTypes.annotation
-        item.localizedType = self.schemaController.localized(itemType: ItemTypes.annotation) ?? ""
+        if let _item = database.objects(RItem.self).filter(.key(annotation.key, in: self.libraryId)).first {
+            if !_item.deleted {
+                // If item exists and is not deleted locally, we can ignore this request
+                return
+            }
+
+            // If item exists and was already deleted locally and not yet synced, we re-add the item
+            item = _item
+            item.deleted = false
+        } else {
+            // If item didn't exist, create it
+            item = RItem()
+            item.key = annotation.key
+            item.rawType = ItemTypes.annotation
+            item.localizedType = self.schemaController.localized(itemType: ItemTypes.annotation) ?? ""
+            item.libraryId = self.libraryId
+            item.dateAdded = annotation.dateModified
+            database.add(item)
+        }
+
         item.syncState = .synced
         item.changeType = .user
-        item.dateAdded = annotation.dateModified
         item.dateModified = annotation.dateModified
-        item.libraryId = self.libraryId
-        database.add(item)
-
         item.parent = parent
 
         if annotation.isAuthor {
             item.createdBy = database.object(ofType: RUser.self, forPrimaryKey: self.userId)
         }
 
+        // We need to submit tags on creation even if they are empty, so we need to mark them as changed
+        var changes: RItemChanges = [.parent, .fields, .type, .tags]
         self.addFields(for: annotation, to: item, database: database)
         self.add(rects: annotation.rects, to: item, changes: &changes, database: database)
         self.add(paths: annotation.paths, to: item, changes: &changes, database: database)
-
         item.changes.append(RObjectChange.create(changes: changes))
     }
 
