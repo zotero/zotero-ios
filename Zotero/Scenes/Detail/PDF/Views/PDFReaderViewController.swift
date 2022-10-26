@@ -669,6 +669,7 @@ final class PDFReaderViewController: UIViewController {
         controller.delegate = self
         controller.formSubmissionDelegate = nil
         controller.annotationStateManager.add(self)
+        controller.annotationStateManager.pencilInteraction.delegate = self
         self.setup(scrubberBar: controller.userInterfaceView.scrubberBar)
         self.setup(interactions: controller.interactions)
 
@@ -1046,6 +1047,22 @@ extension PDFReaderViewController: AnnotationStateManagerDelegate {
     func annotationStateManager(_ manager: AnnotationStateManager, didChangeUndoState undoEnabled: Bool, redoState redoEnabled: Bool) {
         self.redoButton.isEnabled = redoEnabled
         self.undoButton.isEnabled = undoEnabled
+    }
+}
+
+extension PDFReaderViewController: UIPencilInteractionDelegate {
+    func pencilInteractionDidTap(_ interaction: UIPencilInteraction) {
+        switch UIPencilInteraction.preferredTapAction {
+        case .switchEraser:
+            self.toggle(annotationTool: .eraser, tappedWithStylus: false)
+
+        case .showColorPalette:
+            self.showColorPicker(sender: self.colorPickerbutton)
+
+        case .switchPrevious, .showInkAttributes, .ignore: break
+
+        @unknown default: break
+        }
     }
 }
 
