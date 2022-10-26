@@ -97,6 +97,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         case .setSortField(let field):
             var sortType = viewModel.state.sortType
             sortType.field = field
+            sortType.ascending = field.defaultOrderAscending
             self.changeSortType(to: sortType, in: viewModel)
 
         case .startEditing:

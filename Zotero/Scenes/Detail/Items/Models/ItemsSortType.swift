@@ -40,6 +40,29 @@ struct ItemsSortType: Codable {
                 return "Year"
             }
         }
+
+        var defaultOrderAscending: Bool {
+            switch self {
+            case .creator:
+                return true
+            case .date:
+                return false
+            case .dateAdded:
+                return false
+            case .dateModified:
+                return false
+            case .itemType:
+                return true
+            case .publicationTitle:
+                return true
+            case .publisher:
+                return true
+            case .title:
+                return true
+            case .year:
+                return false
+            }
+        }
     }
     
     var field: Field
