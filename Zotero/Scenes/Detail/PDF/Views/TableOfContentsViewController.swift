@@ -173,6 +173,38 @@ extension TableOfContentsViewController: UICollectionViewDelegate {
         guard let row = self.dataSource?.itemIdentifier(for: indexPath), case .outline(let outline) = row, outline.isActive else { return }
         self.selectionAction(outline.page)
     }
+
+    func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemsAt indexPaths: [IndexPath], point: CGPoint) -> UIContextMenuConfiguration? {
+        guard var snapshot = self.dataSource?.snapshot(for: .outline) else { return nil }
+
+        let hasExpanded = snapshot.items.first(where: { snapshot.isExpanded($0) }) != nil
+        let hasCollapsed = snapshot.items.first { row in
+            if snapshot.snapshot(of: row, includingParent: false).items.isEmpty {
+                return false
+            }
+            return !snapshot.isExpanded(row)
+        } != nil
+
+        return UIContextMenuConfiguration(actionProvider:  { [weak self] _ in
+            var actions: [UIAction] = []
+
+            if hasCollapsed {
+                actions.append(UIAction(title: L10n.Collections.expandAll, image: UIImage(systemName: "chevron.down")) { [weak self] action in
+                    snapshot.expand(snapshot.items)
+                    self?.dataSource?.apply(snapshot, to: .outline)
+                })
+            }
+
+            if hasExpanded {
+                actions.append(UIAction(title: L10n.Collections.collapseAll, image: UIImage(systemName: "chevron.right")) { [weak self] action in
+                    snapshot.collapse(snapshot.items)
+                    self?.dataSource?.apply(snapshot, to: .outline)
+                })
+            }
+
+            return UIMenu(title: "", children: actions)
+        })
+    }
 }
 
 #endif

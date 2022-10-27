@@ -39,7 +39,10 @@ struct TableOfContentsActionHandler: ViewModelActionHandler {
 
         var snapshot = NSDiffableDataSourceSectionSnapshot<TableOfContentsViewController.Row>()
         self.append(outlines: outlines, parent: nil, to: &snapshot, search: search)
-        snapshot.expand(snapshot.items)
+        snapshot.collapse(snapshot.items)
+        if snapshot.rootItems.count == 1 {
+            snapshot.expand(snapshot.rootItems)
+        }
         return snapshot
     }
 
