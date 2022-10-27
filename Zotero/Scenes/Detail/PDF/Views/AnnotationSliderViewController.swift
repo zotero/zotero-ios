@@ -10,7 +10,6 @@ import UIKit
 
 import RxSwift
 
-
 #if PDFENABLED
 
 class AnnotationSliderViewController: UIViewController {
@@ -41,6 +40,7 @@ class AnnotationSliderViewController: UIViewController {
         super.viewDidLoad()
 
         self.setupView()
+        self.setupNavigationBar()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -59,11 +59,36 @@ class AnnotationSliderViewController: UIViewController {
             .disposed(by: self.disposeBag)
         self.view.addSubview(view)
 
+        let verticalConstraint: NSLayoutConstraint
+
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            verticalConstraint = self.view.safeAreaLayoutGuide.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        } else {
+            verticalConstraint = view.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor, constant: 15)
+        }
+
         NSLayoutConstraint.activate([
-            self.view.safeAreaLayoutGuide.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            verticalConstraint,
             self.view.safeAreaLayoutGuide.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             self.view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
+    }
+
+    private func setupNavigationBar() {
+        guard UIDevice.current.userInterfaceIdiom == .phone else { return }
+
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = .white
+        self.navigationController?.navigationBar.standardAppearance = appearance
+        self.navigationController?.navigationBar.scrollEdgeAppearance = appearance
+
+        let doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: nil, action: nil)
+        doneButton.rx.tap.subscribe(onNext: { [weak self] _ in
+            self?.navigationController?.presentingViewController?.dismiss(animated: true)
+        })
+        .disposed(by: self.disposeBag)
+        self.navigationItem.rightBarButtonItem = doneButton
     }
 }
 

@@ -34,6 +34,10 @@ struct ColorPickerView: View {
                     }
                 }
             }
+
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                Spacer()
+            }
         }
         .padding(12)
     }
