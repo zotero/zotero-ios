@@ -973,6 +973,11 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
             return identifiers.contains(identifier)
         })
 
+        // Overwrite highlight title
+        if let idx = filtered.firstIndex(where: { $0.identifier == TextMenu.annotationMenuHighlight.rawValue }) {
+            filtered[idx].title = L10n.Pdf.highlight
+        }
+
         // Overwrite share action, because the original one reports "[ShareSheet] connection invalidated".
         if let idx = filtered.firstIndex(where: { $0.identifier == TextMenu.share.rawValue }) {
             filtered[idx].actionBlock = { [weak self] in
