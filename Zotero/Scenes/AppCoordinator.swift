@@ -181,7 +181,7 @@ final class AppCoordinator: NSObject {
     private func open(attachment: Attachment, library: Library, on page: Int?, annotation: String?, parentKey: String?, animated: Bool) {
         #if PDFENABLED
         guard let mainController = self.window?.rootViewController as? MainViewController,
-              (mainController.detailCoordinator?.navigationController.presentedViewController as? PDFReaderViewController)?.key != attachment.key else { return }
+              (mainController.detailCoordinator?.navigationController.presentedViewController as? PDFReaderContainerViewController)?.key != attachment.key else { return }
         self._open(attachment: attachment, library: library, on: page, annotation: annotation, animated: animated) {
             self._showItemDetail(key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated)
         }

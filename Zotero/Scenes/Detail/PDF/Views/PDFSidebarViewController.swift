@@ -15,8 +15,6 @@ import PSPDFKitUI
 import RxSwift
 
 protocol SidebarDelegate: AnyObject {
-    var isSidebarVisible: Bool { get }
-
     func tableOfContentsSelected(page: UInt)
 }
 
@@ -43,7 +41,7 @@ class PDFSidebarViewController: UIViewController {
     private weak var picker: UISegmentedControl!
     private weak var annotationsController: AnnotationsViewController!
     private weak var outlineController: TableOfContentsViewController!
-    weak var sidebarDelegate: SidebarDelegate?
+    weak var parent: (PDFReaderContainerDelegate & SidebarDelegate)?
     weak var coordinatorDelegate: DetailAnnotationsCoordinatorDelegate?
     weak var boundingBoxConverter: AnnotationBoundingBoxConverter?
 
