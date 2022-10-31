@@ -261,7 +261,7 @@ final class DetailCoordinator: Coordinator {
                                              fileStorage: self.controllers.fileStorage, idleTimerController: self.controllers.idleTimerController)
         let state = PDFReaderState(url: url, key: key, library: library, initialPage: page, preselectedAnnotationKey: preselectedAnnotationKey, settings: Defaults.shared.pdfSettings, userId: userId,
                                    username: username, displayName: Defaults.shared.displayName, interfaceStyle: self.topViewController.view.traitCollection.userInterfaceStyle)
-        let controller = PDFReaderViewController(viewModel: ViewModel(initialState: state, handler: handler),
+        let controller = PDFReaderContainerViewController(viewModel: ViewModel(initialState: state, handler: handler),
                                                  compactSize: UIDevice.current.isCompactWidth(size: self.navigationController.view.frame.size))
         controller.coordinatorDelegate = self
         handler.delegate = controller
