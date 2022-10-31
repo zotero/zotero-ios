@@ -267,8 +267,8 @@ final class DetailCoordinator: Coordinator {
         let state = PDFReaderState(url: url, key: key, library: library, initialPage: page, preselectedAnnotationKey: preselectedAnnotationKey, settings: settings, userId: userId,
                                    username: username, displayName: Defaults.shared.displayName,
                                    interfaceStyle: settings.appearanceMode.userInterfaceStyle(currentUserInterfaceStyle: self.topViewController.view.traitCollection.userInterfaceStyle))
-        let controller = PDFReaderViewController(viewModel: ViewModel(initialState: state, handler: handler),
-                                                 compactSize: UIDevice.current.isCompactWidth(size: self.navigationController.view.frame.size))
+        let controller = PDFReaderContainerViewController(viewModel: ViewModel(initialState: state, handler: handler),
+                                                          compactSize: UIDevice.current.isCompactWidth(size: self.navigationController.view.frame.size))
         controller.coordinatorDelegate = self
         handler.delegate = controller
         let navigationController = UINavigationController(rootViewController: controller)
