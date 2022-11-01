@@ -467,7 +467,7 @@
 		B340831328F983CF0087D1A1 /* URL+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340831228F983CF0087D1A1 /* URL+Extensions.swift */; };
 		B340868925D574D6000F4446 /* RestoreDeletionsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340868825D574D6000F4446 /* RestoreDeletionsSyncAction.swift */; };
 		B340868D25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340868C25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift */; };
-		B340ECA6290FDC9F00EE920D /* PDFAnnotationToolbarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340ECA5290FDC9F00EE920D /* PDFAnnotationToolbarViewController.swift */; };
+		B340ECA6290FDC9F00EE920D /* AnnotationToolbarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340ECA5290FDC9F00EE920D /* AnnotationToolbarViewController.swift */; };
 		B340ECA8290FDE3B00EE920D /* PDFReaderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340ECA7290FDE3B00EE920D /* PDFReaderViewController.swift */; };
 		B341C8CB25CBFAD3005562E5 /* LibraryIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B341C8CA25CBFAD3005562E5 /* LibraryIdentifier.swift */; };
 		B341C8CF25CBFCE4005562E5 /* ChangeWsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B341C8CE25CBFCE4005562E5 /* ChangeWsResponse.swift */; };
@@ -1433,7 +1433,7 @@
 		B340831228F983CF0087D1A1 /* URL+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URL+Extensions.swift"; sourceTree = "<group>"; };
 		B340868825D574D6000F4446 /* RestoreDeletionsSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreDeletionsSyncAction.swift; sourceTree = "<group>"; };
 		B340868C25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkObjectsAsChangedByUser.swift; sourceTree = "<group>"; };
-		B340ECA5290FDC9F00EE920D /* PDFAnnotationToolbarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFAnnotationToolbarViewController.swift; sourceTree = "<group>"; };
+		B340ECA5290FDC9F00EE920D /* AnnotationToolbarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationToolbarViewController.swift; sourceTree = "<group>"; };
 		B340ECA7290FDE3B00EE920D /* PDFReaderViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReaderViewController.swift; sourceTree = "<group>"; };
 		B341C8CA25CBFAD3005562E5 /* LibraryIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryIdentifier.swift; sourceTree = "<group>"; };
 		B341C8CE25CBFCE4005562E5 /* ChangeWsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeWsResponse.swift; sourceTree = "<group>"; };
@@ -2568,7 +2568,7 @@
 				B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */,
 				B33AB487246D315F00490DDE /* CheckboxButton.swift */,
 				B39A402F24BC902600205172 /* ColorPickerView.swift */,
-				B340ECA5290FDC9F00EE920D /* PDFAnnotationToolbarViewController.swift */,
+				B340ECA5290FDC9F00EE920D /* AnnotationToolbarViewController.swift */,
 				B3B953CD245981DA00FC96DB /* PDFDocumentViewController.swift */,
 				B34E3DEB28CF490700B747AE /* PDFExportSettingsView.swift */,
 				B32259A127070EBA0047598D /* PDFPlainReaderViewController.swift */,
@@ -4818,7 +4818,7 @@
 				B3E8FE1E2714297200F51458 /* CiteSearchViewController.swift in Sources */,
 				B3DCDF102409127A0039ED0D /* CreatorTypePickerViewModelCreator.swift in Sources */,
 				B3E8FE33271429C300F51458 /* ExportSettingsView.swift in Sources */,
-				B340ECA6290FDC9F00EE920D /* PDFAnnotationToolbarViewController.swift in Sources */,
+				B340ECA6290FDC9F00EE920D /* AnnotationToolbarViewController.swift in Sources */,
 				B3401D572567D8F700BB8D6E /* AnnotationViewController.swift in Sources */,
 				B3830CE2255451C200910FE0 /* TagPickerActionHandler.swift in Sources */,
 				B305662223FC051F003304F2 /* StoreVersionSyncAction.swift in Sources */,
