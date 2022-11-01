@@ -80,7 +80,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private let disposeBag: DisposeBag
 
     private var pdfDisposeBag: DisposeBag
-    weak var delegate: (SidebarDelegate&AnnotationBoundingBoxConverter)?
+    weak var delegate: (PDFReaderContainerDelegate & AnnotationBoundingBoxConverter)?
 
     init(dbStorage: DbStorage, annotationPreviewController: AnnotationPreviewController, htmlAttributedStringConverter: HtmlAttributedStringConverter, schemaController: SchemaController,
          fileStorage: FileStorage, idleTimerController: IdleTimerController) {
