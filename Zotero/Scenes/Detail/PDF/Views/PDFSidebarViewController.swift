@@ -41,7 +41,7 @@ class PDFSidebarViewController: UIViewController {
     private weak var picker: UISegmentedControl!
     private weak var annotationsController: AnnotationsViewController!
     private weak var outlineController: TableOfContentsViewController!
-    weak var parent: (PDFReaderContainerDelegate & SidebarDelegate)?
+    weak var parentDelegate: (PDFReaderContainerDelegate & SidebarDelegate)?
     weak var coordinatorDelegate: DetailAnnotationsCoordinatorDelegate?
     weak var boundingBoxConverter: AnnotationBoundingBoxConverter?
 
@@ -125,7 +125,7 @@ class PDFSidebarViewController: UIViewController {
 
     private func setupControllers() {
         let annotationsController = AnnotationsViewController(viewModel: self.viewModel)
-        annotationsController.sidebarDelegate = self.sidebarDelegate
+        annotationsController.parentDelegate = self.parentDelegate
         annotationsController.coordinatorDelegate = self.coordinatorDelegate
         annotationsController.boundingBoxConverter = self.boundingBoxConverter
         self.addChild(annotationsController)
@@ -133,7 +133,7 @@ class PDFSidebarViewController: UIViewController {
 
         let state = TableOfContentsState(document: self.viewModel.state.document)
         let outlineController = TableOfContentsViewController(viewModel: ViewModel(initialState: state, handler: TableOfContentsActionHandler()), selectionAction: { [weak self] page in
-            self?.sidebarDelegate?.tableOfContentsSelected(page: page)
+            self?.parentDelegate?.tableOfContentsSelected(page: page)
         })
         self.addChild(outlineController)
         self.outlineController = outlineController
