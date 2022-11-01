@@ -471,7 +471,7 @@
 		B340868925D574D6000F4446 /* RestoreDeletionsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340868825D574D6000F4446 /* RestoreDeletionsSyncAction.swift */; };
 		B340868D25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340868C25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift */; };
 		B340ECA6290FDC9F00EE920D /* PDFAnnotationToolbarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340ECA5290FDC9F00EE920D /* PDFAnnotationToolbarViewController.swift */; };
-		B340ECA8290FDE3B00EE920D /* PDFReaderContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340ECA7290FDE3B00EE920D /* PDFReaderContainerViewController.swift */; };
+		B340ECA8290FDE3B00EE920D /* PDFReaderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340ECA7290FDE3B00EE920D /* PDFReaderViewController.swift */; };
 		B341C8CB25CBFAD3005562E5 /* LibraryIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B341C8CA25CBFAD3005562E5 /* LibraryIdentifier.swift */; };
 		B341C8CF25CBFCE4005562E5 /* ChangeWsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B341C8CE25CBFCE4005562E5 /* ChangeWsResponse.swift */; };
 		B341C8D425CBFF8A005562E5 /* LibraryIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B341C8CA25CBFAD3005562E5 /* LibraryIdentifier.swift */; };
@@ -1441,7 +1441,7 @@
 		B340868825D574D6000F4446 /* RestoreDeletionsSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreDeletionsSyncAction.swift; sourceTree = "<group>"; };
 		B340868C25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkObjectsAsChangedByUser.swift; sourceTree = "<group>"; };
 		B340ECA5290FDC9F00EE920D /* PDFAnnotationToolbarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFAnnotationToolbarViewController.swift; sourceTree = "<group>"; };
-		B340ECA7290FDE3B00EE920D /* PDFReaderContainerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReaderContainerViewController.swift; sourceTree = "<group>"; };
+		B340ECA7290FDE3B00EE920D /* PDFReaderViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReaderViewController.swift; sourceTree = "<group>"; };
 		B341C8CA25CBFAD3005562E5 /* LibraryIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryIdentifier.swift; sourceTree = "<group>"; };
 		B341C8CE25CBFCE4005562E5 /* ChangeWsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeWsResponse.swift; sourceTree = "<group>"; };
 		B3422F43289A9F2400C53DD2 /* ItemDetailAttachmentContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailAttachmentContentView.swift; sourceTree = "<group>"; };
@@ -2585,7 +2585,7 @@
 				B3B953CD245981DA00FC96DB /* PDFDocumentViewController.swift */,
 				B34E3DEB28CF490700B747AE /* PDFExportSettingsView.swift */,
 				B32259A127070EBA0047598D /* PDFPlainReaderViewController.swift */,
-				B340ECA7290FDE3B00EE920D /* PDFReaderContainerViewController.swift */,
+				B340ECA7290FDE3B00EE920D /* PDFReaderViewController.swift */,
 				B3593AD524B601AB00CA0B57 /* PDFSearchCell.swift */,
 				B3593AD624B601AB00CA0B57 /* PDFSearchCell.xib */,
 				B3593AD324B6007900CA0B57 /* PDFSearchViewController.swift */,
@@ -4469,7 +4469,7 @@
 				B32B4F952475544700F78A05 /* SyncToolbarController.swift in Sources */,
 				B30565DC23FC051E003304F2 /* AssignItemsToCollectionsDbRequest.swift in Sources */,
 				B3B613F7260B844B00B92017 /* EmptyTrashDbRequest.swift in Sources */,
-				B340ECA8290FDE3B00EE920D /* PDFReaderContainerViewController.swift in Sources */,
+				B340ECA8290FDE3B00EE920D /* PDFReaderViewController.swift in Sources */,
 				B3593F2F241A61C700760E20 /* ItemDetailTitleCell.swift in Sources */,
 				B37AA2842899123C00A1C643 /* UICollectionViewListCell+Extensions.swift in Sources */,
 				B3BF7EE928A51EDA00A5A659 /* EditTagsForItemDbRequest.swift in Sources */,

@@ -23,7 +23,7 @@ protocol PDFDocumentDelegate: AnyObject {
 }
 
 final class PDFDocumentViewController: UIViewController {
-    private weak var pdfController: PDFViewController!
+    private(set) weak var pdfController: PDFViewController!
 
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
@@ -33,7 +33,7 @@ final class PDFDocumentViewController: UIViewController {
     private var selectionView: SelectionView?
     private var didAppear: Bool
 
-    weak var parent: (PDFReaderContainerDelegate & PDFDocumentDelegate)?
+    weak var parentDelegate: (PDFReaderContainerDelegate & PDFDocumentDelegate)?
     weak var coordinatorDelegate: (DetailPdfCoordinatorDelegate)?
 
     // MARK: - Lifecycle
@@ -41,7 +41,6 @@ final class PDFDocumentViewController: UIViewController {
     init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
         self.viewModel = viewModel
         self.didAppear = false
-        self.isSidebarTransitioning = false
         self.disposeBag = DisposeBag()
         self.annotationTimerDisposeBag = DisposeBag()
         self.pageTimerDisposeBag = DisposeBag()
@@ -80,10 +79,6 @@ final class PDFDocumentViewController: UIViewController {
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
-
-        let isCompactSize = UIDevice.current.isCompactWidth(size: size)
-        let sizeDidChange = isCompactSize != self.isCompactSize
-        self.isCompactSize = isCompactSize
 
         guard self.viewIfLoaded != nil else { return }
 
@@ -248,7 +243,7 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     private func showPopupAnnotationIfNeeded(state: PDFReaderState) {
-        guard !(self.parent?.isSidebarVisible ?? false),
+        guard !(self.parentDelegate?.isSidebarVisible ?? false),
               let annotation = state.selectedAnnotation,
               let pageView = self.pdfController.pageViewForPage(at: UInt(annotation.page)) else { return }
 
@@ -478,7 +473,7 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
     func pdfViewController(_ pdfController: PDFViewController, willBeginDisplaying pageView: PDFPageView, forPageAt pageIndex: Int) {
         // This delegate method is called for incorrect page index when sidebar is changing size. So if the sidebar is opened/closed, incorrect page
         // is stored in `pageController` and if the user closes the pdf reader without further scrolling, incorrect page is shown on next opening.
-        guard !(self.parent?.isSidebarTransitioning ?? false) && self.didAppear else { return }
+        guard !(self.parentDelegate?.isSidebarTransitioning ?? false) && self.didAppear else { return }
         // Save current page
         self.viewModel.process(action: .setVisiblePage(Int(pdfController.pageIndex)))
     }
@@ -541,7 +536,7 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
         if let idx = filtered.firstIndex(where: { $0.identifier == TextMenu.search.rawValue }) {
             filtered[idx].actionBlock = { [weak self] in
                 guard let `self` = self else { return }
-                self.parent?.showSearch(sender: self.searchButton, text: selectedText)
+                self.parentDelegate?.showSearch(pdfController: self.pdfController, text: selectedText)
             }
         }
 
@@ -559,11 +554,11 @@ extension PDFDocumentViewController: AnnotationStateManagerDelegate {
                                 to newState: PSPDFKit.Annotation.Tool?,
                                 variant oldVariant: PSPDFKit.Annotation.Variant?,
                                 to newVariant: PSPDFKit.Annotation.Variant?) {
-        self.parent?.annotationTool(didChangeStateFrom: oldState, to: newState, variantFrom: oldVariant, to: newVariant)
+        self.parentDelegate?.annotationTool(didChangeStateFrom: oldState, to: newState, variantFrom: oldVariant, to: newVariant)
     }
 
     func annotationStateManager(_ manager: AnnotationStateManager, didChangeUndoState undoEnabled: Bool, redoState redoEnabled: Bool) {
-        self.parent?.didChange(undoState: undoEnabled, redoState: redoEnabled)
+        self.parentDelegate?.didChange(undoState: undoEnabled, redoState: redoEnabled)
     }
 }
 

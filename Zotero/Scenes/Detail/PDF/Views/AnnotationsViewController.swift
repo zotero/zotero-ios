@@ -34,7 +34,7 @@ final class AnnotationsViewController: UIViewController {
     private var searchController: UISearchController!
     private var isVisible: Bool
 
-    weak var sidebarDelegate: SidebarDelegate?
+    weak var parentDelegate: (PDFReaderContainerDelegate & SidebarDelegate)?
     weak var coordinatorDelegate: DetailAnnotationsCoordinatorDelegate?
     weak var boundingBoxConverter: AnnotationBoundingBoxConverter?
 
@@ -190,7 +190,7 @@ final class AnnotationsViewController: UIViewController {
                 snapshot.reloadItems(keys)
             }
 
-            let isVisible = self.sidebarDelegate?.isSidebarVisible ?? false
+            let isVisible = self.parentDelegate?.isSidebarVisible ?? false
 
             if state.changes.contains(.sidebarEditing) {
                 self.tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
