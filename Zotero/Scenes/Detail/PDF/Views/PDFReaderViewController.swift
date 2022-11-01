@@ -1,5 +1,5 @@
 //
-//  PDFReaderContainerViewController.swift
+//  PDFReaderViewController.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 31.10.2022.
@@ -10,14 +10,19 @@
 
 import UIKit
 
+import CocoaLumberjackSwift
+import PSPDFKit
+import PSPDFKitUI
+import RxSwift
+
 protocol PDFReaderContainerDelegate: AnyObject {
     var isSidebarVisible: Bool { get }
     var isSidebarTransitioning: Bool { get }
 
-    func showSearch(sender: UIBarButtonItem, text: String?)
+    func showSearch(pdfController: PDFViewController, text: String?)
 }
 
-class PDFReaderContainerViewController: UIViewController {
+class PDFReaderViewController: UIViewController {
     private enum NavigationBarButton: Int {
         case redo = 1
         case undo = 2
@@ -28,10 +33,11 @@ class PDFReaderContainerViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private weak var sidebarController: PDFSidebarViewController!
-    private weak var pdfController: PDFDocumentViewController!
+    private weak var documentController: PDFDocumentViewController!
     private weak var sidebarControllerLeft: NSLayoutConstraint!
-    private weak var pdfControllerLeft: NSLayoutConstraint!
+    private weak var documentControllerLeft: NSLayoutConstraint!
     private(set) var isSidebarTransitioning: Bool
+    private var isCompactSize: Bool
     var isSidebarVisible: Bool { return self.sidebarControllerLeft?.constant == 0 }
     var key: String { return self.viewModel.state.key }
 
@@ -52,7 +58,7 @@ class PDFReaderContainerViewController: UIViewController {
         return share
     }()
     private lazy var settingsButton: UIBarButtonItem = {
-        let settings = self.pdfController.settingsButtonItem
+        let settings = self.documentController.pdfController.settingsButtonItem
         settings.rx
                 .tap
                 .subscribe(onNext: { [weak self] _ in
@@ -65,7 +71,8 @@ class PDFReaderContainerViewController: UIViewController {
         let search = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"), style: .plain, target: nil, action: nil)
         search.rx.tap
               .subscribe(onNext: { [weak self] _ in
-                  self?.showSearch(sender: search, text: nil)
+                  guard let `self` = self else { return }
+                  self.showSearch(pdfController: self.documentController.pdfController, text: nil)
               })
               .disposed(by: self.disposeBag)
         return search
@@ -99,10 +106,14 @@ class PDFReaderContainerViewController: UIViewController {
 
     init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
         self.viewModel = viewModel
-        self.isCompactSize = compactSize
         self.isSidebarTransitioning = false
+        self.isCompactSize = compactSize
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
 
     override func viewDidLoad() {
@@ -115,7 +126,7 @@ class PDFReaderContainerViewController: UIViewController {
         self.setupObserving()
         self.updateInterface(to: self.viewModel.state.settings)
 
-        self.viewModel.process(action: .loadDocumentData(boundingBoxConverter: self.pdfController))
+        self.viewModel.process(action: .loadDocumentData(boundingBoxConverter: self.documentController))
 
         if let annotation = self.viewModel.state.selectedAnnotation {
             self.toggleSidebar(animated: false)
@@ -125,7 +136,7 @@ class PDFReaderContainerViewController: UIViewController {
     deinit {
         self.viewModel.process(action: .changeIdleTimerDisabled(false))
         self.coordinatorDelegate?.pdfDidDeinitialize()
-        DDLogInfo("PDFReaderContainerViewController deinitialized")
+        DDLogInfo("PDFReaderViewController deinitialized")
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -146,7 +157,7 @@ class PDFReaderContainerViewController: UIViewController {
         guard self.viewIfLoaded != nil else { return }
 
         if self.isSidebarVisible && sizeDidChange {
-            self.pdfControllerLeft.constant = isCompactSize ? 0 : PDFReaderLayout.sidebarWidth
+            self.documentControllerLeft.constant = isCompactSize ? 0 : PDFReaderLayout.sidebarWidth
         }
 
         coordinator.animate(alongsideTransition: { _ in
@@ -169,10 +180,6 @@ class PDFReaderContainerViewController: UIViewController {
 
         if state.changes.contains(.interfaceStyle) || state.changes.contains(.settings) {
             self.updateInterface(to: state.settings)
-        }
-
-        if state.changes.contains(.activeColor) {
-            self.colorPickerbutton.tintColor = state.activeColor
         }
 
         if state.changes.contains(.export) {
@@ -202,12 +209,12 @@ class PDFReaderContainerViewController: UIViewController {
             items[shareId] = button
 
         case .exported(let file):
-            DDLogInfo("PDFReaderContainerViewController: share pdf file - \(file.createUrl().absoluteString)")
+            DDLogInfo("PDFReaderViewController: share pdf file - \(file.createUrl().absoluteString)")
             items[shareId] = self.shareButton
             self.coordinatorDelegate?.share(url: file.createUrl(), barButton: self.shareButton)
 
         case .failed(let error):
-            DDLogError("PDFReaderContainerViewController: could not export pdf - \(error)")
+            DDLogError("PDFReaderViewController: could not export pdf - \(error)")
             self.coordinatorDelegate?.show(error: error)
             items[shareId] = self.shareButton
         }
@@ -237,7 +244,7 @@ class PDFReaderContainerViewController: UIViewController {
 
         // If the layout is compact, show annotation sidebar above pdf document.
         if !UIDevice.current.isCompactWidth(size: self.view.frame.size) {
-            self.pdfControllerLeft.constant = shouldShow ? PDFReaderLayout.sidebarWidth : 0
+            self.documentControllerLeft.constant = shouldShow ? PDFReaderLayout.sidebarWidth : 0
         }
         self.sidebarControllerLeft.constant = shouldShow ? 0 : -PDFReaderLayout.sidebarWidth
 
@@ -277,9 +284,9 @@ class PDFReaderContainerViewController: UIViewController {
                        })
     }
 
-    func showSearch(sender: UIBarButtonItem, text: String?) {
-        self.coordinatorDelegate?.showSearch(pdfController: self.pdfController, text: text, sender: sender, result: { [weak self] result in
-            self?.pdfController.highlight(result: result)
+    func showSearch(pdfController: PDFViewController, text: String?) {
+        self.coordinatorDelegate?.showSearch(pdfController: pdfController, text: text, sender: self.searchButton, result: { [weak self] result in
+            self?.documentController.highlight(result: result)
         })
     }
 
@@ -294,25 +301,6 @@ class PDFReaderContainerViewController: UIViewController {
         self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 
-    @objc private func annotationControlTapped(sender: UIButton, event: UIEvent) {
-        let tool: PSPDFKit.Annotation.Tool
-        if sender == self.createNoteButton {
-            tool = .note
-        } else if sender == self.createAreaButton {
-            tool = .square
-        } else if sender == self.createHighlightButton {
-            tool = .highlight
-        } else if sender == self.createEraserButton {
-            tool = .eraser
-        } else {
-            fatalError()
-        }
-
-        let isStylus = event.allTouches?.first?.type == .stylus
-
-        self.pdfController.toggle(annotationTool: tool, tappedWithStylus: isStylus)
-    }
-
     // MARK: - Setups
 
     private func add(controller: UIViewController) {
@@ -323,26 +311,26 @@ class PDFReaderContainerViewController: UIViewController {
     }
 
     private func setupViews() {
-        let pdfController = PDFDocumentViewController(viewModel: self.viewModel, compactSize: self.isCompactSize)
-        pdfController.parent = self
-        pdfController.coordinatorDelegate = self.coordinatorDelegate
-        pdfController.view.translatesAutoresizingMaskIntoConstraints = false
+        let documentController = PDFDocumentViewController(viewModel: self.viewModel, compactSize: self.isCompactSize)
+        documentController.parentDelegate = self
+        documentController.coordinatorDelegate = self.coordinatorDelegate
+        documentController.view.translatesAutoresizingMaskIntoConstraints = false
 
         let sidebarController = PDFSidebarViewController(viewModel: self.viewModel)
-        sidebarController.parent = self
+        sidebarController.parentDelegate = self
         sidebarController.coordinatorDelegate = self.coordinatorDelegate
-        sidebarController.boundingBoxConverter = self.pdfController
+        sidebarController.boundingBoxConverter = documentController
         sidebarController.view.translatesAutoresizingMaskIntoConstraints = false
 
         let separator = UIView()
         separator.translatesAutoresizingMaskIntoConstraints = false
         separator.backgroundColor = Asset.Colors.annotationSidebarBorderColor.color
 
-        self.add(controller: pdfController)
+        self.add(controller: documentController)
         self.add(controller: sidebarController)
         self.view.addSubview(separator)
 
-        let pdfLeftConstraint = pdfController.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor)
+        let documentLeftConstraint = documentController.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor)
         let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: -PDFReaderLayout.sidebarWidth)
 
         NSLayoutConstraint.activate([
@@ -354,14 +342,14 @@ class PDFReaderContainerViewController: UIViewController {
             separator.leadingAnchor.constraint(equalTo: sidebarController.view.trailingAnchor),
             separator.topAnchor.constraint(equalTo: self.view.topAnchor),
             separator.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
-            pdfController.view.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
-            pdfController.view.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor),
-            pdfController.view.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor),
-            pdfLeftConstraint
+            documentController.view.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+            documentController.view.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor),
+            documentController.view.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor),
+            documentLeftConstraint
         ])
 
-        self.pdfController = pdfController
-        self.pdfControllerLeft = pdfLeftConstraint
+        self.documentController = documentController
+        self.documentControllerLeft = documentLeftConstraint
         self.sidebarController = sidebarController
         self.sidebarControllerLeft = sidebarLeftConstraint
     }
@@ -376,7 +364,7 @@ class PDFReaderContainerViewController: UIViewController {
         closeButton.rx.tap
                    .subscribe(with: self, onNext: { `self`, _ in self.close() })
                    .disposed(by: self.disposeBag)
-        let readerButton = UIBarButtonItem(image: self.pdfController.readerViewButtonItem.image, style: .plain, target: nil, action: nil)
+        let readerButton = UIBarButtonItem(image: self.documentController.pdfController.readerViewButtonItem.image, style: .plain, target: nil, action: nil)
         readerButton.accessibilityLabel = self.isSidebarVisible ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
         readerButton.rx.tap
                     .subscribe(with: self, onNext: { `self`, _ in self.coordinatorDelegate?.showReader(document: self.viewModel.state.document) })
@@ -403,18 +391,29 @@ class PDFReaderContainerViewController: UIViewController {
     }
 }
 
-extension PDFReaderContainerViewController: PDFReaderContainerDelegate {}
+extension PDFReaderViewController: PDFReaderContainerDelegate {}
 
-extension PDFReaderContainerViewController: SidebarDelegate {
+extension PDFReaderViewController: SidebarDelegate {
     func tableOfContentsSelected(page: UInt) {
-        self.pdfController.focus(page: page)
+        self.documentController.focus(page: page)
         if UIDevice.current.userInterfaceIdiom == .phone {
             self.toggleSidebar(animated: true)
         }
     }
 }
 
-extension PDFReaderContainerViewController: ConflictViewControllerReceiver {
+extension PDFReaderViewController: PDFDocumentDelegate {
+    func annotationTool(didChangeStateFrom oldState: PSPDFKit.Annotation.Tool?, to newState: PSPDFKit.Annotation.Tool?,
+                        variantFrom oldVariant: PSPDFKit.Annotation.Variant?, to newVariant: PSPDFKit.Annotation.Variant?) {
+
+    }
+
+    func didChange(undoState undoEnabled: Bool, redoState redoEnabled: Bool) {
+
+    }
+}
+
+extension PDFReaderViewController: ConflictViewControllerReceiver {
     func shows(object: SyncObject, libraryId: LibraryIdentifier) -> String? {
         guard object == .item && libraryId == self.viewModel.state.library.identifier else { return nil }
         return self.viewModel.state.key
@@ -422,6 +421,32 @@ extension PDFReaderContainerViewController: ConflictViewControllerReceiver {
 
     func canDeleteObject(completion: @escaping (Bool) -> Void) {
         self.coordinatorDelegate?.showDeletedAlertForPdf(completion: completion)
+    }
+}
+
+extension PDFReaderViewController: AnnotationBoundingBoxConverter {
+    func convertFromDb(rect: CGRect, page: PageIndex) -> CGRect? {
+        return self.documentController.convertFromDb(rect: rect, page: page)
+    }
+
+    func convertFromDb(point: CGPoint, page: PageIndex) -> CGPoint? {
+        return self.documentController.convertFromDb(point: point, page: page)
+    }
+
+    func convertToDb(rect: CGRect, page: PageIndex) -> CGRect? {
+        return self.documentController.convertToDb(rect: rect, page: page)
+    }
+
+    func convertToDb(point: CGPoint, page: PageIndex) -> CGPoint? {
+        return self.documentController.convertToDb(point: point, page: page)
+    }
+
+    func sortIndexMinY(rect: CGRect, page: PageIndex) -> CGFloat? {
+        return self.documentController.sortIndexMinY(rect: rect, page: page)
+    }
+
+    func textOffset(rect: CGRect, page: PageIndex) -> Int? {
+        return self.documentController.textOffset(rect: rect, page: page)
     }
 }
 
