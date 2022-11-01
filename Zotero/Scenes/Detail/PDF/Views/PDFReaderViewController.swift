@@ -29,13 +29,23 @@ class PDFReaderViewController: UIViewController {
         case share = 3
     }
 
+    private enum ToolbarPosition {
+        case leading, trailing, top, invisible
+    }
+
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
 
     private weak var sidebarController: PDFSidebarViewController!
-    private weak var documentController: PDFDocumentViewController!
     private weak var sidebarControllerLeft: NSLayoutConstraint!
+    private weak var documentController: PDFDocumentViewController!
     private weak var documentControllerLeft: NSLayoutConstraint!
+    private weak var annotationToolbarController: AnnotationToolbarViewController!
+    private var toolbarLeading: NSLayoutConstraint!
+    private var toolbarTrailing: NSLayoutConstraint!
+    private weak var toolbarTop: NSLayoutConstraint!
+    private var contentContainerTop: NSLayoutConstraint!
+    private var toolbarBottomToContentContainerTop: NSLayoutConstraint!
     private(set) var isSidebarTransitioning: Bool
     private var isCompactSize: Bool
     var isSidebarVisible: Bool { return self.sidebarControllerLeft?.constant == 0 }
@@ -122,6 +132,7 @@ class PDFReaderViewController: UIViewController {
         self.view.backgroundColor = .systemGray6
         self.set(userActivity: .pdfActivity(for: self.viewModel.state.key, libraryId: self.viewModel.state.library.identifier))
         self.setupViews()
+        self.moveToolbar(to: .leading, animated: false)
         self.setupNavigationBar()
         self.setupObserving()
         self.updateInterface(to: self.viewModel.state.settings)
@@ -301,16 +312,59 @@ class PDFReaderViewController: UIViewController {
         self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 
+    private func moveToolbar(to position: ToolbarPosition, animated: Bool) {
+        switch position {
+        case .leading:
+            self.annotationToolbarController.view.isHidden = false
+            self.toolbarTop.constant = 20
+            self.contentContainerTop.isActive = true
+            self.toolbarBottomToContentContainerTop.isActive = false
+            self.toolbarLeading.isActive = true
+            self.toolbarLeading.constant = 20
+            self.toolbarTrailing.isActive = false
+            self.annotationToolbarController.set(rotation: .vertical)
+
+        case .trailing:
+            self.annotationToolbarController.view.isHidden = false
+            self.toolbarTop.constant = 20
+            self.contentContainerTop.isActive = true
+            self.toolbarBottomToContentContainerTop.isActive = false
+            self.toolbarTrailing.isActive = true
+            self.toolbarTrailing.constant = 20
+            self.toolbarLeading.isActive = false
+            self.annotationToolbarController.set(rotation: .vertical)
+
+        case .top:
+            self.annotationToolbarController.view.isHidden = false
+            self.toolbarTop.constant = 0
+            self.contentContainerTop.isActive = false
+            self.toolbarBottomToContentContainerTop.isActive = true
+            self.toolbarTrailing.isActive = true
+            self.toolbarTrailing.constant = 0
+            self.toolbarLeading.isActive = true
+            self.toolbarLeading.constant = 0
+            self.annotationToolbarController.set(rotation: .horizontal)
+
+        case .invisible:
+            self.annotationToolbarController.view.isHidden = true
+            self.contentContainerTop.isActive = true
+            self.toolbarBottomToContentContainerTop.isActive = false
+        }
+    }
+
     // MARK: - Setups
 
     private func add(controller: UIViewController) {
         controller.willMove(toParent: self)
         self.addChild(controller)
-        self.view.addSubview(controller.view)
         controller.didMove(toParent: self)
     }
 
     private func setupViews() {
+        let container = UIView()
+        container.backgroundColor = .clear
+        container.translatesAutoresizingMaskIntoConstraints = false
+
         let documentController = PDFDocumentViewController(viewModel: self.viewModel, compactSize: self.isCompactSize)
         documentController.parentDelegate = self
         documentController.coordinatorDelegate = self.coordinatorDelegate
@@ -326,15 +380,29 @@ class PDFReaderViewController: UIViewController {
         separator.translatesAutoresizingMaskIntoConstraints = false
         separator.backgroundColor = Asset.Colors.annotationSidebarBorderColor.color
 
+        let annotationToolbar = AnnotationToolbarViewController(rotation: .vertical)
+        annotationToolbar.delegate = self
+        annotationToolbar.view.translatesAutoresizingMaskIntoConstraints = false
+
         self.add(controller: documentController)
         self.add(controller: sidebarController)
-        self.view.addSubview(separator)
+        self.add(controller: annotationToolbar)
+        container.addSubview(documentController.view)
+        container.addSubview(sidebarController.view)
+        container.addSubview(annotationToolbar.view)
+        container.addSubview(separator)
+        self.view.addSubview(container)
 
-        let documentLeftConstraint = documentController.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor)
-        let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: -PDFReaderLayout.sidebarWidth)
+        let documentLeftConstraint = documentController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor)
+        let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: -PDFReaderLayout.sidebarWidth)
+        let toolbarTop = annotationToolbar.view.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor)
+        self.contentContainerTop = container.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor)
+        self.toolbarLeading = annotationToolbar.view.leadingAnchor.constraint(equalTo: sidebarController.view.trailingAnchor, constant: 20)
+        self.toolbarTrailing = self.view.trailingAnchor.constraint(equalTo: annotationToolbar.view.trailingAnchor, constant: 20)
+        self.toolbarBottomToContentContainerTop = annotationToolbar.view.bottomAnchor.constraint(equalTo: container.topAnchor)
 
         NSLayoutConstraint.activate([
-            sidebarController.view.topAnchor.constraint(equalTo: self.view.topAnchor),
+            sidebarController.view.topAnchor.constraint(equalTo: container.topAnchor),
             sidebarController.view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
             sidebarController.view.widthAnchor.constraint(equalToConstant: PDFReaderLayout.sidebarWidth),
             sidebarLeftConstraint,
@@ -345,13 +413,20 @@ class PDFReaderViewController: UIViewController {
             documentController.view.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
             documentController.view.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor),
             documentController.view.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor),
-            documentLeftConstraint
+            documentLeftConstraint,
+            toolbarTop,
+            self.contentContainerTop,
+            container.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+            container.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
         ])
 
         self.documentController = documentController
         self.documentControllerLeft = documentLeftConstraint
         self.sidebarController = sidebarController
         self.sidebarControllerLeft = sidebarLeftConstraint
+        self.annotationToolbarController = annotationToolbar
+        self.toolbarTop = toolbarTop
     }
 
     private func setupNavigationBar() {
@@ -447,6 +522,20 @@ extension PDFReaderViewController: AnnotationBoundingBoxConverter {
 
     func textOffset(rect: CGRect, page: PageIndex) -> Int? {
         return self.documentController.textOffset(rect: rect, page: page)
+    }
+}
+
+extension PDFReaderViewController: AnnotationToolbarDelegate {
+    func moveToolbarTop() {
+        self.moveToolbar(to: .top, animated: false)
+    }
+
+    func moveToolbarLeft() {
+        self.moveToolbar(to: .leading, animated: false)
+    }
+
+    func moveToolbarRight() {
+        self.moveToolbar(to: .trailing, animated: false)
     }
 }
 
