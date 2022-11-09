@@ -510,3 +510,4 @@
 "accessibility.pdf.search_pdf" = "Search PDF";
 "accessibility.pdf.redo" = "Redo";
 "accessibility.pdf.undo" = "Undo";
+"accessibility.pdf.toggle_annotation_toolbar" = "Toggle annotation toolbar";

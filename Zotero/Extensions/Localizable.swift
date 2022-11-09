@@ -221,6 +221,8 @@ internal enum L10n {
       internal static let tagsHint = L10n.tr("Localizable", "accessibility.pdf.tags_hint")
       /// Undo
       internal static let undo = L10n.tr("Localizable", "accessibility.pdf.undo")
+      /// Toggle annotation toolbar
+      internal static let toggleAnnotationToolbar = L10n.tr("Localizable", "accessibility.pdf.toggle_annotation_toolbar")
     }
   }
 
