@@ -11,8 +11,8 @@ import Foundation
 final class Defaults {
     static let shared = Defaults()
 
-    private static let jsonEncoder = JSONEncoder()
-    private static let jsonDecoder = JSONDecoder()
+    static let jsonEncoder = JSONEncoder()
+    static let jsonDecoder = JSONDecoder()
 
     // MARK: - Session
 

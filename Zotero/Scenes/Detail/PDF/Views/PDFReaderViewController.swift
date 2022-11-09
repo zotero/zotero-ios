@@ -29,8 +29,34 @@ class PDFReaderViewController: UIViewController {
         case share = 3
     }
 
-    private enum ToolbarPosition {
-        case leading, trailing, top, invisible
+    private struct ToolbarState: Codable {
+        enum Position: Int, Codable {
+            case leading = 0
+            case trailing = 1
+            case top = 2
+        }
+
+        let position: Position
+        let visible: Bool
+    }
+
+    private struct Animation {
+        let duration: TimeInterval
+        let velocity: CGFloat
+        let options: UIView.AnimationOptions
+
+        func animate(animation: @escaping () -> Void, completion: ((Bool) -> Void)? = nil) {
+            if self.velocity == 0 && self.options == [] {
+                UIView.animate(withDuration: self.duration, animations: animation, completion: completion)
+                return
+            }
+
+            UIView.animate(withDuration: self.duration, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: self.velocity, options: self.options, animations: animation, completion: completion)
+        }
+
+        static var fade: Animation {
+            return Animation(duration: 0.25, velocity: 0, options: [])
+        }
     }
 
     private let viewModel: ViewModel<PDFReaderActionHandler>
@@ -41,13 +67,21 @@ class PDFReaderViewController: UIViewController {
     private weak var documentController: PDFDocumentViewController!
     private weak var documentControllerLeft: NSLayoutConstraint!
     private weak var annotationToolbarController: AnnotationToolbarViewController!
-    private var toolbarLeading: NSLayoutConstraint!
+    private var toolbarLeadingToParent: NSLayoutConstraint!
+    private var toolbarLeadingToSidebar: NSLayoutConstraint!
     private var toolbarTrailing: NSLayoutConstraint!
     private weak var toolbarTop: NSLayoutConstraint!
     private var contentContainerTop: NSLayoutConstraint!
     private var toolbarBottomToContentContainerTop: NSLayoutConstraint!
+    private weak var toolbarPositionsOverlay: UIView!
+    private weak var toolbarLeadingView: DashedView!
+    private weak var toolbarTrailingView: DashedView!
+    private weak var toolbarTopView: DashedView!
     private(set) var isSidebarTransitioning: Bool
     private var isCompactSize: Bool
+    @CodableUserDefault(key: "PDFReaderToolbarState", defaultValue: ToolbarState(position: .leading, visible: true), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
+    private var toolbarState: ToolbarState
+    private var toolbarInitialFrame: CGRect?
     var isSidebarVisible: Bool { return self.sidebarControllerLeft?.constant == 0 }
     var key: String { return self.viewModel.state.key }
 
@@ -113,6 +147,28 @@ class PDFReaderViewController: UIViewController {
             .disposed(by: self.disposeBag)
         return redo
     }()
+    private lazy var toolbarButton: UIBarButtonItem = {
+        let checkbox = CheckboxButton(type: .custom)
+        checkbox.accessibilityLabel = L10n.Accessibility.Pdf.toggleAnnotationToolbar
+        checkbox.setImage(UIImage(systemName: "pencil.and.outline", withConfiguration: UIImage.SymbolConfiguration(scale: .large))?.withRenderingMode(.alwaysTemplate), for: .normal)
+        checkbox.adjustsImageWhenHighlighted = false
+        checkbox.layer.cornerRadius = 4
+        checkbox.layer.masksToBounds = true
+        checkbox.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
+        checkbox.contentEdgeInsets = UIEdgeInsets(top: 6, left: 6, bottom: 6, right: 6)
+        checkbox.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
+        checkbox.selectedTintColor = .white
+        checkbox.isSelected = self.toolbarState.visible
+        checkbox.rx.controlEvent(.touchDown)
+                .subscribe(onNext: { [weak self, weak checkbox] _ in
+                    guard let `self` = self, let checkbox = checkbox else { return }
+                    checkbox.isSelected = !checkbox.isSelected
+                    self.toolbarState = ToolbarState(position: self.toolbarState.position, visible: checkbox.isSelected)
+                    self.set(toolbarState: self.toolbarState, animation: .fade)
+                })
+                .disposed(by: self.disposeBag)
+        return UIBarButtonItem(customView: checkbox)
+    }()
 
     init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
         self.viewModel = viewModel
@@ -132,14 +188,15 @@ class PDFReaderViewController: UIViewController {
         self.view.backgroundColor = .systemGray6
         self.set(userActivity: .pdfActivity(for: self.viewModel.state.key, libraryId: self.viewModel.state.library.identifier))
         self.setupViews()
-        self.moveToolbar(to: .leading, animated: false)
+        self.setupGestureRecognizer()
+        self.set(toolbarState: self.toolbarState)
         self.setupNavigationBar()
         self.setupObserving()
         self.updateInterface(to: self.viewModel.state.settings)
 
         self.viewModel.process(action: .loadDocumentData(boundingBoxConverter: self.documentController))
 
-        if let annotation = self.viewModel.state.selectedAnnotation {
+        if self.viewModel.state.selectedAnnotation != nil {
             self.toggleSidebar(animated: false)
         }
     }
@@ -244,7 +301,7 @@ class PDFReaderViewController: UIViewController {
         }
     }
 
-    private func showColorPicker(sender: UIButton) {
+    internal func showColorPicker(sender: UIButton) {
         self.coordinatorDelegate?.showColorPicker(selected: self.viewModel.state.activeColor.hexString, sender: sender, save: { [weak self] color in
             self?.viewModel.process(action: .setActiveColor(color))
         })
@@ -312,47 +369,200 @@ class PDFReaderViewController: UIViewController {
         self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 
-    private func moveToolbar(to position: ToolbarPosition, animated: Bool) {
-        switch position {
-        case .leading:
-            self.annotationToolbarController.view.isHidden = false
-            self.toolbarTop.constant = 20
-            self.contentContainerTop.isActive = true
+    private func set(toolbarState: ToolbarState, animation: Animation? = nil) {
+        if !toolbarState.visible {
             self.toolbarBottomToContentContainerTop.isActive = false
-            self.toolbarLeading.isActive = true
-            self.toolbarLeading.constant = 20
+            self.contentContainerTop.isActive = true
+
+            if let animation {
+                animation.animate(animation: {
+                    self.view.layoutIfNeeded()
+                    self.annotationToolbarController.view.alpha = 0
+                }, completion: { finished in
+                    guard finished else { return }
+                    self.annotationToolbarController.view.isHidden = true
+                })
+            } else {
+                self.annotationToolbarController.view.isHidden = true
+            }
+
+            return
+        }
+
+        self.annotationToolbarController.view.isHidden = false
+
+        switch toolbarState.position {
+        case .leading:
+            self.toolbarTop.constant = 20
+            self.toolbarBottomToContentContainerTop.isActive = false
+            self.toolbarLeadingToParent.isActive = false
             self.toolbarTrailing.isActive = false
+            self.contentContainerTop.isActive = true
+            self.toolbarLeadingToSidebar.isActive = true
             self.annotationToolbarController.set(rotation: .vertical)
 
         case .trailing:
-            self.annotationToolbarController.view.isHidden = false
             self.toolbarTop.constant = 20
-            self.contentContainerTop.isActive = true
             self.toolbarBottomToContentContainerTop.isActive = false
+            self.toolbarLeadingToSidebar.isActive = false
+            self.toolbarLeadingToParent.isActive = false
+            self.contentContainerTop.isActive = true
             self.toolbarTrailing.isActive = true
             self.toolbarTrailing.constant = 20
-            self.toolbarLeading.isActive = false
             self.annotationToolbarController.set(rotation: .vertical)
 
         case .top:
-            self.annotationToolbarController.view.isHidden = false
             self.toolbarTop.constant = 0
             self.contentContainerTop.isActive = false
+            self.toolbarLeadingToSidebar.isActive = false
             self.toolbarBottomToContentContainerTop.isActive = true
-            self.toolbarTrailing.isActive = true
             self.toolbarTrailing.constant = 0
-            self.toolbarLeading.isActive = true
-            self.toolbarLeading.constant = 0
+            self.toolbarTrailing.isActive = true
+            self.toolbarLeadingToParent.isActive = true
             self.annotationToolbarController.set(rotation: .horizontal)
+        }
 
-        case .invisible:
-            self.annotationToolbarController.view.isHidden = true
-            self.contentContainerTop.isActive = true
-            self.toolbarBottomToContentContainerTop.isActive = false
+        if let animation = animation {
+            animation.animate(animation: {
+                self.view.layoutIfNeeded()
+                self.annotationToolbarController.view.alpha = 1
+            })
+        } else {
+            self.annotationToolbarController.view.alpha = 1
+        }
+    }
+
+    /// Return new position for given center and velocity of toolbar. The user can pan up/left/right to move the toolbar. If velocity > 1500, it's considered a swipe and the toolbar
+    /// is moved in swipe direction. Otherwise the toolbar is pinned to closest point from center.
+    private func position(fromCenter point: CGPoint, velocity: CGPoint) -> ToolbarState.Position {
+        let maxVelocity = max(abs(velocity.x), abs(velocity.y))
+
+        if velocity.y > -1500 && abs(velocity.x) < 1500 {
+            // Move to closest point
+            if point.y < 100 {
+                return .top
+            }
+
+            return point.x > self.view.frame.width / 2 ? .trailing : .leading
+        }
+
+        // Move in direction of swipe
+
+        if abs(velocity.y) > abs(velocity.x) {
+            // Vertical movement
+            return .top
+        }
+
+        return velocity.x < 0 ? .leading : .trailing
+    }
+
+    private func velocity(from panVelocity: CGPoint, newPosition: ToolbarState.Position) -> CGFloat {
+        let currentPosition: CGFloat
+        let endPosition: CGFloat
+        let velocity: CGFloat
+
+        switch newPosition {
+        case .top:
+            velocity = panVelocity.y
+            currentPosition = self.annotationToolbarController.view.frame.minY
+            endPosition = self.view.safeAreaInsets.top
+
+        case .leading:
+            velocity = panVelocity.x
+            currentPosition = self.annotationToolbarController.view.frame.minX
+            endPosition = 0
+
+        case .trailing:
+            velocity = panVelocity.x
+            currentPosition = self.annotationToolbarController.view.frame.maxX
+            endPosition = self.view.frame.width
+        }
+
+        return abs(velocity / (endPosition - currentPosition))
+    }
+
+    private func toolbarDidPan(recognizer: UIPanGestureRecognizer) {
+        switch recognizer.state {
+        case .began:
+            self.toolbarInitialFrame = self.annotationToolbarController.view.frame
+
+        case .changed:
+            guard let originalFrame = self.toolbarInitialFrame else { return }
+            let translation = recognizer.translation(in: self.annotationToolbarController.view)
+            self.annotationToolbarController.view.frame = originalFrame.offsetBy(dx: translation.x, dy: translation.y)
+
+            let position = self.position(fromCenter: self.annotationToolbarController.view.center, velocity: CGPoint())
+
+            if self.toolbarPositionsOverlay.isHidden && position != self.toolbarState.position {
+                self.toolbarPositionsOverlay.isHidden = false
+            }
+
+            if !self.toolbarPositionsOverlay.isHidden {
+                self.setHighlightSelected(at: position)
+            }
+
+        case .cancelled, .ended, .failed:
+            self.toolbarPositionsOverlay.isHidden = true
+            let velocity = recognizer.velocity(in: self.view)
+            let position = self.position(fromCenter: self.annotationToolbarController.view.center, velocity: velocity)
+            let newState = ToolbarState(position: position, visible: true)
+            let animation = Animation(duration: 0.5, velocity: self.velocity(from: velocity, newPosition: position), options: [.curveEaseOut])
+
+            if newState.position == self.toolbarState.position {
+                let frame = self.toolbarInitialFrame ?? CGRect()
+                animation.animate {
+                    self.annotationToolbarController.view.frame = frame
+                }
+            } else {
+                self.set(toolbarState: newState, animation: animation)
+                self.toolbarState = newState
+            }
+            self.toolbarInitialFrame = nil
+
+        case .possible: break
+        @unknown default: break
+        }
+    }
+
+    private func setHighlightSelected(at position: ToolbarState.Position) {
+        switch position {
+        case .top:
+            self.toolbarLeadingView.backgroundColor = UIColor.systemGray4.withAlphaComponent(0.5)
+            self.toolbarLeadingView.dashColor = UIColor.systemGray4
+            self.toolbarTrailingView.backgroundColor = UIColor.systemGray4.withAlphaComponent(0.5)
+            self.toolbarTrailingView.dashColor = UIColor.systemGray4
+            self.toolbarTopView.backgroundColor = Asset.Colors.zoteroBlueWithDarkMode.color.withAlphaComponent(0.5)
+            self.toolbarTopView.dashColor = Asset.Colors.zoteroBlueWithDarkMode.color
+
+        case .leading:
+            self.toolbarLeadingView.backgroundColor = Asset.Colors.zoteroBlueWithDarkMode.color.withAlphaComponent(0.5)
+            self.toolbarLeadingView.dashColor = Asset.Colors.zoteroBlueWithDarkMode.color
+            self.toolbarTrailingView.backgroundColor = UIColor.systemGray4.withAlphaComponent(0.5)
+            self.toolbarTrailingView.dashColor = UIColor.systemGray4
+            self.toolbarTopView.backgroundColor = UIColor.systemGray4.withAlphaComponent(0.5)
+            self.toolbarTopView.dashColor = UIColor.systemGray4
+
+        case .trailing:
+            self.toolbarLeadingView.backgroundColor = UIColor.systemGray4.withAlphaComponent(0.5)
+            self.toolbarLeadingView.dashColor = UIColor.systemGray4
+            self.toolbarTrailingView.backgroundColor = Asset.Colors.zoteroBlueWithDarkMode.color.withAlphaComponent(0.5)
+            self.toolbarTrailingView.dashColor = Asset.Colors.zoteroBlueWithDarkMode.color
+            self.toolbarTopView.backgroundColor = UIColor.systemGray4.withAlphaComponent(0.5)
+            self.toolbarTopView.dashColor = UIColor.systemGray4
         }
     }
 
     // MARK: - Setups
+
+    private func setupGestureRecognizer() {
+        let panRecognizer = UIPanGestureRecognizer()
+        panRecognizer.rx.event
+                     .subscribe(with: self, onNext: { `self`, recognizer in
+                         self.toolbarDidPan(recognizer: recognizer)
+                     })
+                    .disposed(by: self.disposeBag)
+        self.annotationToolbarController.view.addGestureRecognizer(panRecognizer)
+    }
 
     private func add(controller: UIViewController) {
         controller.willMove(toParent: self)
@@ -384,41 +594,74 @@ class PDFReaderViewController: UIViewController {
         annotationToolbar.delegate = self
         annotationToolbar.view.translatesAutoresizingMaskIntoConstraints = false
 
+        let positionsOverlay = UIView()
+        positionsOverlay.translatesAutoresizingMaskIntoConstraints = false
+        positionsOverlay.backgroundColor = .clear
+        positionsOverlay.isHidden = true
+
+        let topPosition = DashedView(dashColor: .systemGray4)
+        self.setup(toolbarPositionView: topPosition)
+        let leadingPosition = DashedView(dashColor: .systemGray4)
+        self.setup(toolbarPositionView: leadingPosition)
+        let trailingPosition = DashedView(dashColor: .systemGray4)
+        self.setup(toolbarPositionView: trailingPosition)
+
         self.add(controller: documentController)
         self.add(controller: sidebarController)
         self.add(controller: annotationToolbar)
         container.addSubview(documentController.view)
         container.addSubview(sidebarController.view)
-        container.addSubview(annotationToolbar.view)
         container.addSubview(separator)
         self.view.addSubview(container)
+        self.view.addSubview(annotationToolbar.view)
+        self.view.insertSubview(positionsOverlay, belowSubview: annotationToolbar.view)
+        positionsOverlay.addSubview(topPosition)
+        positionsOverlay.addSubview(leadingPosition)
+        positionsOverlay.addSubview(trailingPosition)
 
         let documentLeftConstraint = documentController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor)
         let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: -PDFReaderLayout.sidebarWidth)
         let toolbarTop = annotationToolbar.view.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor)
         self.contentContainerTop = container.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor)
-        self.toolbarLeading = annotationToolbar.view.leadingAnchor.constraint(equalTo: sidebarController.view.trailingAnchor, constant: 20)
+        self.toolbarLeadingToSidebar = annotationToolbar.view.leadingAnchor.constraint(equalTo: sidebarController.view.trailingAnchor, constant: 20)
+        self.toolbarLeadingToParent = annotationToolbar.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 0)
         self.toolbarTrailing = self.view.trailingAnchor.constraint(equalTo: annotationToolbar.view.trailingAnchor, constant: 20)
         self.toolbarBottomToContentContainerTop = annotationToolbar.view.bottomAnchor.constraint(equalTo: container.topAnchor)
 
         NSLayoutConstraint.activate([
             sidebarController.view.topAnchor.constraint(equalTo: container.topAnchor),
-            sidebarController.view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
+            sidebarController.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
             sidebarController.view.widthAnchor.constraint(equalToConstant: PDFReaderLayout.sidebarWidth),
             sidebarLeftConstraint,
             separator.widthAnchor.constraint(equalToConstant: PDFReaderLayout.separatorWidth),
             separator.leadingAnchor.constraint(equalTo: sidebarController.view.trailingAnchor),
-            separator.topAnchor.constraint(equalTo: self.view.topAnchor),
-            separator.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
-            documentController.view.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
-            documentController.view.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor),
-            documentController.view.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor),
+            separator.topAnchor.constraint(equalTo: container.topAnchor),
+            separator.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            documentController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            documentController.view.topAnchor.constraint(equalTo: container.topAnchor),
+            documentController.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
             documentLeftConstraint,
             toolbarTop,
             self.contentContainerTop,
             container.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
             container.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
-            container.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
+            container.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor),
+            positionsOverlay.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor),
+            positionsOverlay.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
+            positionsOverlay.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
+            positionsOverlay.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+            topPosition.topAnchor.constraint(equalTo: positionsOverlay.topAnchor),
+            positionsOverlay.leadingAnchor.constraint(equalTo: topPosition.leadingAnchor),
+            positionsOverlay.trailingAnchor.constraint(equalTo: topPosition.trailingAnchor),
+            topPosition.heightAnchor.constraint(equalToConstant: AnnotationToolbarViewController.size),
+            leadingPosition.topAnchor.constraint(equalTo: topPosition.bottomAnchor, constant: 20),
+            positionsOverlay.bottomAnchor.constraint(equalTo: leadingPosition.bottomAnchor, constant: 20),
+            leadingPosition.leadingAnchor.constraint(equalTo: positionsOverlay.leadingAnchor, constant: 20),
+            leadingPosition.widthAnchor.constraint(equalToConstant: AnnotationToolbarViewController.size),
+            trailingPosition.topAnchor.constraint(equalTo: topPosition.bottomAnchor, constant: 20),
+            positionsOverlay.bottomAnchor.constraint(equalTo: trailingPosition.bottomAnchor, constant: 20),
+            positionsOverlay.trailingAnchor.constraint(equalTo: trailingPosition.trailingAnchor, constant: 20),
+            trailingPosition.widthAnchor.constraint(equalToConstant: AnnotationToolbarViewController.size)
         ])
 
         self.documentController = documentController
@@ -427,6 +670,17 @@ class PDFReaderViewController: UIViewController {
         self.sidebarControllerLeft = sidebarLeftConstraint
         self.annotationToolbarController = annotationToolbar
         self.toolbarTop = toolbarTop
+        self.toolbarPositionsOverlay = positionsOverlay
+        self.toolbarLeadingView = leadingPosition
+        self.toolbarTrailingView = trailingPosition
+        self.toolbarTopView = topPosition
+    }
+
+    private func setup(toolbarPositionView view: UIView) {
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor.systemGray4.withAlphaComponent(0.5)
+        view.layer.cornerRadius = 8
+        view.layer.masksToBounds = true
     }
 
     private func setupNavigationBar() {
@@ -450,10 +704,17 @@ class PDFReaderViewController: UIViewController {
     }
 
     private func createRightBarButtonItems(forCompactSize isCompact: Bool) -> [UIBarButtonItem] {
-        if isCompact {
-            return [self.settingsButton, self.shareButton, self.searchButton]
+        var buttons = [self.settingsButton, self.shareButton, self.searchButton]
+
+        if !isCompact {
+            buttons.insert(contentsOf: [self.redoButton, self.undoButton], at: 2)
         }
-        return [self.settingsButton, self.shareButton, self.redoButton, self.undoButton, self.searchButton]
+
+        if self.viewModel.state.library.metadataEditable {
+            buttons.append(self.toolbarButton)
+        }
+
+        return buttons
     }
 
     private func setupObserving() {
@@ -480,7 +741,13 @@ extension PDFReaderViewController: SidebarDelegate {
 extension PDFReaderViewController: PDFDocumentDelegate {
     func annotationTool(didChangeStateFrom oldState: PSPDFKit.Annotation.Tool?, to newState: PSPDFKit.Annotation.Tool?,
                         variantFrom oldVariant: PSPDFKit.Annotation.Variant?, to newVariant: PSPDFKit.Annotation.Variant?) {
+        if let state = oldState {
+            self.annotationToolbarController.set(selected: false, to: state)
+        }
 
+        if let state = newState {
+            self.annotationToolbarController.set(selected: true, to: state)
+        }
     }
 
     func didChange(undoState undoEnabled: Bool, redoState redoEnabled: Bool) {
@@ -526,16 +793,30 @@ extension PDFReaderViewController: AnnotationBoundingBoxConverter {
 }
 
 extension PDFReaderViewController: AnnotationToolbarDelegate {
-    func moveToolbarTop() {
-        self.moveToolbar(to: .top, animated: false)
+    var activeAnnotationColor: UIColor {
+        return self.viewModel.state.activeColor
     }
 
-    func moveToolbarLeft() {
-        self.moveToolbar(to: .leading, animated: false)
+    var activeAnnotationTool: PSPDFKit.Annotation.Tool? {
+        return self.documentController.pdfController.annotationStateManager.state
     }
 
-    func moveToolbarRight() {
-        self.moveToolbar(to: .trailing, animated: false)
+    func toggle(tool: PSPDFKit.Annotation.Tool, options: AnnotationToolOptions) {
+        self.documentController.toggle(annotationTool: tool, tappedWithStylus: (options == .stylus))
+    }
+
+    func showInkSettings(sender: UIView) {
+        self.coordinatorDelegate?.showSliderSettings(sender: sender, title: L10n.Pdf.AnnotationPopover.lineWidth, initialValue: self.viewModel.state.activeLineWidth,
+                                                     valueChanged: { [weak self] newValue in
+            self?.viewModel.process(action: .setActiveLineWidth(newValue))
+        })
+    }
+
+    func showEraserSettings(sender: UIView) {
+        self.coordinatorDelegate?.showSliderSettings(sender: sender, title: L10n.Pdf.AnnotationPopover.size, initialValue: self.viewModel.state.activeEraserSize,
+                                                     valueChanged: { [weak self] newValue in
+            self?.viewModel.process(action: .setActiveEraserSize(newValue))
+        })
     }
 }
 
