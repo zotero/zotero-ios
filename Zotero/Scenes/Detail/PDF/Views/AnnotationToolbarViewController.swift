@@ -53,6 +53,16 @@ class AnnotationToolbarViewController: UIViewController {
     private weak var colorPickerButton: UIButton!
     private var widthConstraint: NSLayoutConstraint!
     private var heightConstraint: NSLayoutConstraint!
+    private var handleTop: NSLayoutConstraint!
+    private var handleLeading: NSLayoutConstraint!
+    private weak var handleTrailing: NSLayoutConstraint!
+    private weak var handleBottom: NSLayoutConstraint!
+    private weak var containerTop: NSLayoutConstraint!
+    private weak var containerLeading: NSLayoutConstraint!
+    private var containerBottom: NSLayoutConstraint!
+    private var containerTrailing: NSLayoutConstraint!
+    private var containerToHandleVertical: NSLayoutConstraint!
+    private var containerToHandleHorizontal: NSLayoutConstraint!
     private var rotation: Rotation
     weak var delegate: AnnotationToolbarDelegate?
     private var lastGestureRecognizerTouch: UITouch?
@@ -74,6 +84,7 @@ class AnnotationToolbarViewController: UIViewController {
 
         self.setupViews()
         self.set(rotation: self.rotation)
+        self.view.layoutIfNeeded()
     }
 
     func set(selected: Bool, to tool: PSPDFKit.Annotation.Tool) {
@@ -96,18 +107,40 @@ class AnnotationToolbarViewController: UIViewController {
         switch rotation {
         case .vertical:
             self.heightConstraint.isActive = false
+            self.handleTop.isActive = false
+            self.containerBottom.isActive = false
+            self.containerToHandleHorizontal.isActive = false
             self.widthConstraint.isActive = true
+            self.handleLeading.isActive = true
+            self.containerTrailing.isActive = true
+            self.containerToHandleVertical.isActive = true
             self.stackView.axis = .vertical
 
-            self.view.layer.cornerRadius = 0
+            self.handleBottom.constant = 8
+            self.handleTrailing.constant = 0
+            self.containerLeading.constant = 8
+            self.containerTop.constant = 15
+
+            self.view.layer.cornerRadius = 8
             self.view.layer.masksToBounds = false
 
         case .horizontal:
             self.widthConstraint.isActive = false
+            self.handleLeading.isActive = false
+            self.containerTrailing.isActive = false
+            self.containerToHandleVertical.isActive = false
+            self.handleTop.isActive = true
+            self.containerBottom.isActive = true
+            self.containerToHandleHorizontal.isActive = true
             self.heightConstraint.isActive = true
             self.stackView.axis = .horizontal
+
+            self.handleBottom.constant = 0
+            self.handleTrailing.constant = 15
+            self.containerLeading.constant = 20
+            self.containerTop.constant = 8
             
-            self.view.layer.cornerRadius = 8
+            self.view.layer.cornerRadius = 0
             self.view.layer.masksToBounds = true
         }
     }
@@ -253,31 +286,33 @@ class AnnotationToolbarViewController: UIViewController {
         let stackView = UIStackView(arrangedSubviews: self.createButtons())
         stackView.axis = .vertical
         stackView.spacing = 8
-        stackView.distribution = .fillProportionally
+        stackView.distribution = .fill
         stackView.translatesAutoresizingMaskIntoConstraints = false
-        stackView.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        stackView.setContentHuggingPriority(.defaultLow, for: .vertical)
         self.view.addSubview(stackView)
 
         let handle = UIImageView(image: UIImage(systemName: "line.3.horizontal"))
         handle.translatesAutoresizingMaskIntoConstraints = false
-        handle.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-        handle.setContentHuggingPriority(.defaultHigh, for: .vertical)
         handle.contentMode = .center
         self.view.addSubview(handle)
 
-        NSLayoutConstraint.activate([
-            stackView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: 10),
-            self.view.bottomAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 10),
-            stackView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 15),
-            stackView.trailingAnchor.constraint(equalTo: handle.leadingAnchor, constant: 8),
-            handle.widthAnchor.constraint(equalTo: handle.heightAnchor),
-            handle.topAnchor.constraint(equalTo: self.view.topAnchor),
-            self.view.bottomAnchor.constraint(equalTo: handle.bottomAnchor),
-            self.view.trailingAnchor.constraint(equalTo: handle.trailingAnchor)
-        ])
+        self.containerBottom = self.view.bottomAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 8)
+        self.containerTrailing = self.view.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 8)
+        self.handleTop = self.view.topAnchor.constraint(equalTo: handle.topAnchor)
+        self.handleLeading = self.view.leadingAnchor.constraint(equalTo: handle.leadingAnchor)
+        self.containerToHandleVertical = handle.topAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 50)
+        self.containerToHandleHorizontal = handle.leadingAnchor.constraint(greaterThanOrEqualTo: stackView.trailingAnchor, constant: 8)
+        let containerTop = stackView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: 15)
+        let containerLeading = stackView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 15)
+        let handleBottom = self.view.bottomAnchor.constraint(equalTo: handle.bottomAnchor)
+        let handleTrailing = self.view.trailingAnchor.constraint(equalTo: handle.trailingAnchor)
+
+        NSLayoutConstraint.activate([containerTop, containerLeading, self.containerTrailing, self.containerToHandleVertical, handleBottom, handleTrailing, self.handleLeading])
 
         self.stackView = stackView
+        self.containerTop = containerTop
+        self.containerLeading = containerLeading
+        self.handleTrailing = handleTrailing
+        self.handleBottom = handleBottom
     }
 }
 
