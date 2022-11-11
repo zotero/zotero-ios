@@ -481,8 +481,8 @@ class PDFReaderViewController: UIViewController {
             case (.top, .leading), (.top, .trailing):
                 // Move from side to top
                 let velocity = self.velocity(from: velocityPoint, newPosition: newPosition)
-                UIView.animate(withDuration: 0.1, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [.curveEaseOut], animations: {
-                    let newFrame = self.annotationToolbarController.view.frame.offsetBy(dx: velocityPoint.x / 50, dy: velocityPoint.y / 50)
+                UIView.animate(withDuration: 0.1, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [], animations: {
+                    let newFrame = self.annotationToolbarController.view.frame.offsetBy(dx: velocityPoint.x / 10, dy: velocityPoint.y / 10)
                     self.annotationToolbarController.view.frame = newFrame
                     self.annotationToolbarController.view.alpha = 0
                 }, completion: { finished in
@@ -494,11 +494,11 @@ class PDFReaderViewController: UIViewController {
                     self.toolbarTrailing.isActive = true
                     self.toolbarLeadingToParent.isActive = true
                     self.annotationToolbarController.set(rotation: .horizontal)
+                    self.annotationToolbarController.view.alpha = 1
 
                     self.view.layoutIfNeeded()
 
                     UIView.animate(withDuration: 0.2, animations: {
-                        self.annotationToolbarController.view.alpha = 1
                         self.contentContainerTop.isActive = false
                         self.toolbarBottomToContentContainerTop.isActive = true
                         self.view.layoutIfNeeded()
@@ -508,24 +508,21 @@ class PDFReaderViewController: UIViewController {
             case (.leading, .top), (.trailing, .top):
                 // Move from top to side
                 let velocity = self.velocity(from: velocityPoint, newPosition: newPosition)
-                let newFrame = self.annotationToolbarController.view.frame.offsetBy(dx: velocityPoint.x / 50, dy: velocityPoint.y / 50)
-                UIView.animate(withDuration: 0.2, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [.curveEaseOut], animations: {
+                let newFrame = self.annotationToolbarController.view.frame.offsetBy(dx: velocityPoint.x / 10, dy: velocityPoint.y / 10)
+                UIView.animate(withDuration: 0.2, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [], animations: {
                     self.toolbarBottomToContentContainerTop.isActive = false
                     self.contentContainerTop.isActive = true
+                    self.annotationToolbarController.view.alpha = 0
 
                     self.view.layoutIfNeeded()
 
                     self.annotationToolbarController.view.frame = newFrame
-                    self.annotationToolbarController.view.alpha = 0
                 }, completion: { finished in
                     guard finished else { return }
 
+                    self.annotationToolbarController.view.alpha = 1
                     self.setConstraints(for: newPosition)
                     self.view.layoutIfNeeded()
-
-                    UIView.animate(withDuration: 0.1, animations: {
-                        self.annotationToolbarController.view.alpha = 1
-                    })
                 })
         }
     }
