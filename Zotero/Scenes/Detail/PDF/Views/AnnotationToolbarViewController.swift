@@ -34,6 +34,7 @@ protocol AnnotationToolbarDelegate: AnyObject {
     func showInkSettings(sender: UIView)
     func showEraserSettings(sender: UIView)
     func showColorPicker(sender: UIButton)
+    func closeAnnotationToolbar()
 }
 
 class AnnotationToolbarViewController: UIViewController {
@@ -51,18 +52,19 @@ class AnnotationToolbarViewController: UIViewController {
     private weak var inkButton: CheckboxButton!
     private weak var eraserButton: CheckboxButton!
     private weak var colorPickerButton: UIButton!
+    private weak var additionalStackView: UIStackView!
     private var widthConstraint: NSLayoutConstraint!
     private var heightConstraint: NSLayoutConstraint!
     private var handleTop: NSLayoutConstraint!
     private var handleLeading: NSLayoutConstraint!
-    private weak var handleTrailing: NSLayoutConstraint!
-    private weak var handleBottom: NSLayoutConstraint!
+    private weak var additionalTrailing: NSLayoutConstraint!
+    private weak var additionalBottom: NSLayoutConstraint!
     private weak var containerTop: NSLayoutConstraint!
     private weak var containerLeading: NSLayoutConstraint!
     private var containerBottom: NSLayoutConstraint!
     private var containerTrailing: NSLayoutConstraint!
-    private var containerToHandleVertical: NSLayoutConstraint!
-    private var containerToHandleHorizontal: NSLayoutConstraint!
+    private var containerToAdditionalVertical: NSLayoutConstraint!
+    private var containerToAdditionalHorizontal: NSLayoutConstraint!
     private var rotation: Rotation
     weak var delegate: AnnotationToolbarDelegate?
     private var lastGestureRecognizerTouch: UITouch?
@@ -104,44 +106,45 @@ class AnnotationToolbarViewController: UIViewController {
     }
 
     func set(rotation: Rotation) {
+        self.view.layer.cornerRadius = 8
+        self.view.layer.masksToBounds = false
+
         switch rotation {
         case .vertical:
             self.heightConstraint.isActive = false
             self.handleTop.isActive = false
             self.containerBottom.isActive = false
-            self.containerToHandleHorizontal.isActive = false
+            self.containerToAdditionalHorizontal.isActive = false
             self.widthConstraint.isActive = true
             self.handleLeading.isActive = true
             self.containerTrailing.isActive = true
-            self.containerToHandleVertical.isActive = true
-            self.stackView.axis = .vertical
+            self.containerToAdditionalVertical.isActive = true
 
-            self.handleBottom.constant = 8
-            self.handleTrailing.constant = 0
+            self.stackView.axis = .vertical
+            self.additionalStackView.axis = .vertical
+
+            self.additionalBottom.constant = 8
+            self.additionalTrailing.constant = 0
             self.containerLeading.constant = 8
             self.containerTop.constant = 15
-
-            self.view.layer.cornerRadius = 8
-            self.view.layer.masksToBounds = false
 
         case .horizontal:
             self.widthConstraint.isActive = false
             self.handleLeading.isActive = false
             self.containerTrailing.isActive = false
-            self.containerToHandleVertical.isActive = false
+            self.containerToAdditionalVertical.isActive = false
             self.handleTop.isActive = true
             self.containerBottom.isActive = true
-            self.containerToHandleHorizontal.isActive = true
+            self.containerToAdditionalHorizontal.isActive = true
             self.heightConstraint.isActive = true
-            self.stackView.axis = .horizontal
 
-            self.handleBottom.constant = 0
-            self.handleTrailing.constant = 15
+            self.stackView.axis = .horizontal
+            self.additionalStackView.axis = .horizontal
+
+            self.additionalBottom.constant = 0
+            self.additionalTrailing.constant = 15
             self.containerLeading.constant = 20
             self.containerTop.constant = 8
-            
-            self.view.layer.cornerRadius = 0
-            self.view.layer.masksToBounds = true
         }
     }
 
@@ -279,6 +282,25 @@ class AnnotationToolbarViewController: UIViewController {
         return [highlight, note, area, ink, eraser, picker]
     }
 
+    private func createAdditionalItems() -> [UIView] {
+        let close = UIButton(type: .custom)
+        close.setImage(UIImage(systemName: "x.circle", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
+        close.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
+        close.widthAnchor.constraint(equalTo: close.heightAnchor).isActive = true
+        close.rx.controlEvent(.touchUpInside)
+             .subscribe(with: self, onNext: { `self`, _ in
+                 self.delegate?.closeAnnotationToolbar()
+             })
+             .disposed(by: self.disposeBag)
+
+        let handle = UIImageView(image: UIImage(systemName: "line.3.horizontal", withConfiguration: UIImage.SymbolConfiguration(scale: .large)))
+        handle.translatesAutoresizingMaskIntoConstraints = false
+        handle.contentMode = .center
+        handle.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
+
+        return [close, handle]
+    }
+
     private func setupViews() {
         self.widthConstraint = self.view.widthAnchor.constraint(equalToConstant: AnnotationToolbarViewController.size)
         self.heightConstraint = self.view.heightAnchor.constraint(equalToConstant: AnnotationToolbarViewController.size)
@@ -290,29 +312,32 @@ class AnnotationToolbarViewController: UIViewController {
         stackView.translatesAutoresizingMaskIntoConstraints = false
         self.view.addSubview(stackView)
 
-        let handle = UIImageView(image: UIImage(systemName: "line.3.horizontal"))
-        handle.translatesAutoresizingMaskIntoConstraints = false
-        handle.contentMode = .center
-        self.view.addSubview(handle)
+        let additionalStackView = UIStackView(arrangedSubviews: self.createAdditionalItems())
+        additionalStackView.axis = .vertical
+        additionalStackView.spacing = 0
+        additionalStackView.distribution = .fill
+        additionalStackView.translatesAutoresizingMaskIntoConstraints = false
+        self.view.addSubview(additionalStackView)
 
         self.containerBottom = self.view.bottomAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 8)
         self.containerTrailing = self.view.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 8)
-        self.handleTop = self.view.topAnchor.constraint(equalTo: handle.topAnchor)
-        self.handleLeading = self.view.leadingAnchor.constraint(equalTo: handle.leadingAnchor)
-        self.containerToHandleVertical = handle.topAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 50)
-        self.containerToHandleHorizontal = handle.leadingAnchor.constraint(greaterThanOrEqualTo: stackView.trailingAnchor, constant: 8)
+        self.handleTop = self.view.topAnchor.constraint(equalTo: additionalStackView.topAnchor)
+        self.handleLeading = self.view.leadingAnchor.constraint(equalTo: additionalStackView.leadingAnchor)
+        self.containerToAdditionalVertical = additionalStackView.topAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 50)
+        self.containerToAdditionalHorizontal = additionalStackView.leadingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 50)
         let containerTop = stackView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: 15)
         let containerLeading = stackView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 15)
-        let handleBottom = self.view.bottomAnchor.constraint(equalTo: handle.bottomAnchor)
-        let handleTrailing = self.view.trailingAnchor.constraint(equalTo: handle.trailingAnchor)
+        let additionalBottom = self.view.bottomAnchor.constraint(equalTo: additionalStackView.bottomAnchor)
+        let additionalTrailing = self.view.trailingAnchor.constraint(equalTo: additionalStackView.trailingAnchor)
 
-        NSLayoutConstraint.activate([containerTop, containerLeading, self.containerTrailing, self.containerToHandleVertical, handleBottom, handleTrailing, self.handleLeading])
+        NSLayoutConstraint.activate([containerTop, containerLeading, self.containerTrailing, self.containerToAdditionalVertical, additionalBottom, additionalTrailing, self.handleLeading])
 
         self.stackView = stackView
         self.containerTop = containerTop
         self.containerLeading = containerLeading
-        self.handleTrailing = handleTrailing
-        self.handleBottom = handleBottom
+        self.additionalTrailing = additionalTrailing
+        self.additionalBottom = additionalBottom
+        self.additionalStackView = additionalStackView
     }
 }
 
