@@ -20,6 +20,7 @@ protocol PDFDocumentDelegate: AnyObject {
     func annotationTool(didChangeStateFrom oldState: PSPDFKit.Annotation.Tool?, to newState: PSPDFKit.Annotation.Tool?,
                         variantFrom oldVariant: PSPDFKit.Annotation.Variant?, to newVariant: PSPDFKit.Annotation.Variant?)
     func didChange(undoState undoEnabled: Bool, redoState redoEnabled: Bool)
+    func interfaceVisibilityDidChange(to isHidden: Bool)
 }
 
 final class PDFDocumentViewController: UIViewController {
@@ -422,11 +423,16 @@ final class PDFDocumentViewController: UIViewController {
         interactions.selectAnnotation.addActivationCondition { context, _, _ -> Bool in
             return AnnotationsConfig.supported.contains(context.annotation.type)
         }
-
+        
         interactions.selectAnnotation.addActivationCallback { [weak self] context, _, _ in
             let key = context.annotation.key ?? context.annotation.uuid
             let type: PDFReaderState.AnnotationKey.Kind = context.annotation.isZoteroAnnotation ? .database : .document
             self?.viewModel.process(action: .selectAnnotationFromDocument(PDFReaderState.AnnotationKey(key: key, type: type)))
+        }
+        
+        interactions.toggleUserInterface.addActivationCallback { [weak self] _, _, _ in
+            guard let interfaceView = self?.pdfController.userInterfaceView else { return }
+            self?.parentDelegate?.interfaceVisibilityDidChange(to: interfaceView.alpha != 0)
         }
 
         interactions.deselectAnnotation.addActivationCondition { [weak self] _, _, _ -> Bool in
