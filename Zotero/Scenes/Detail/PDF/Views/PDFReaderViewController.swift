@@ -63,6 +63,7 @@ class PDFReaderViewController: UIViewController {
     private weak var documentController: PDFDocumentViewController!
     private weak var documentControllerLeft: NSLayoutConstraint!
     private weak var annotationToolbarController: AnnotationToolbarViewController!
+    private weak var toolbarTop: NSLayoutConstraint!
     private var toolbarLeading: NSLayoutConstraint!
     private var toolbarCenteredLeading: NSLayoutConstraint!
     private var toolbarTrailing: NSLayoutConstraint!
@@ -505,6 +506,7 @@ class PDFReaderViewController: UIViewController {
             self.toolbarCenter.isActive = false
             self.toolbarTrailing.isActive = false
             self.toolbarLeading.isActive = true
+            self.toolbarTop.constant = 20
             self.annotationToolbarController.set(rotation: .vertical)
 
         case .trailing:
@@ -513,6 +515,7 @@ class PDFReaderViewController: UIViewController {
             self.toolbarCenter.isActive = false
             self.toolbarLeading.isActive = false
             self.toolbarTrailing.isActive = true
+            self.toolbarTop.constant = 20
             self.annotationToolbarController.set(rotation: .vertical)
 
         case .top:
@@ -521,6 +524,7 @@ class PDFReaderViewController: UIViewController {
             self.toolbarCenteredTrailing.isActive = true
             self.toolbarCenteredLeading.isActive = true
             self.toolbarCenter.isActive = true
+            self.toolbarTop.constant = 0
             self.annotationToolbarController.set(rotation: .horizontal)
         }
     }
@@ -660,6 +664,7 @@ class PDFReaderViewController: UIViewController {
         self.toolbarTrailing = self.view.trailingAnchor.constraint(equalTo: annotationToolbar.view.trailingAnchor, constant: 20)
         self.toolbarCenteredTrailing = self.view.trailingAnchor.constraint(greaterThanOrEqualTo: annotationToolbar.view.trailingAnchor, constant: 20)
         self.toolbarCenter = annotationToolbar.view.centerXAnchor.constraint(equalTo: self.view.centerXAnchor)
+        let toolbarTop = annotationToolbar.view.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor, constant: 20)
 
         NSLayoutConstraint.activate([
             sidebarController.view.topAnchor.constraint(equalTo: container.topAnchor),
@@ -674,7 +679,7 @@ class PDFReaderViewController: UIViewController {
             documentController.view.topAnchor.constraint(equalTo: container.topAnchor),
             documentController.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
             documentLeftConstraint,
-            annotationToolbar.view.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor, constant: 20),
+            toolbarTop,
             container.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor),
             container.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
             container.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
@@ -706,6 +711,7 @@ class PDFReaderViewController: UIViewController {
         self.toolbarLeadingView = leadingPosition
         self.toolbarTrailingView = trailingPosition
         self.toolbarTopView = topPosition
+        self.toolbarTop = toolbarTop
     }
 
     private func setup(toolbarPositionView view: UIView) {
