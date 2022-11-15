@@ -707,7 +707,7 @@ final class ExtensionViewModel {
         self.getRedirectedPdfUrl(from: url) { [weak self] newUrl in
             guard let `self` = self else { return }
 
-            if let url = newUrl {
+            if let newUrl = newUrl, newUrl != url {
                 self.download(item: item, attachment: attachment, attachmentUrl: url, to: file, cookies: cookies)
                 return
             }
