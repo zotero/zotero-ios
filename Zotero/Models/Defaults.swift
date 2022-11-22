@@ -129,6 +129,9 @@ final class Defaults {
     @UserDefault(key: "AskForSyncPermission", defaultValue: false)
     var askForSyncPermission: Bool
 
+    @UserDefault(key: "DidPerformFullSyncFix", defaultValue: false)
+    var didPerformFullSyncFix: Bool
+
     // MARK: - Actions
 
     func reset() {

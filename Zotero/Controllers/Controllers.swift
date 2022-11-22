@@ -358,6 +358,10 @@ final class UserControllers {
                 switch progress {
                 case .aborted, .finished:
                     self.idleTimerController.enable()
+                    if !Defaults.shared.didPerformFullSyncFix {
+                        Defaults.shared.didPerformFullSyncFix = true
+                    }
+
                 case .starting:
                     self.idleTimerController.disable()
                 default: break
@@ -391,7 +395,9 @@ final class UserControllers {
             guard let `self` = self else { return }
             // Call this before sync so that background uploads are updated and taken care of by sync if needed.
             self.backgroundUploadObserver.updateSessions()
-            self.syncScheduler.request(sync: .normal, libraries: .all)
+
+            let type: SyncController.SyncType = Defaults.shared.didPerformFullSyncFix ? .normal : .full
+            self.syncScheduler.request(sync: type, libraries: .all)
         })
     }
 
