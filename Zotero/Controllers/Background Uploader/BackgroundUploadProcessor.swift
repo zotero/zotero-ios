@@ -143,9 +143,7 @@ final class BackgroundUploadProcessor {
             DDLogInfo("BackgroundUploadProcessor: mark as uploaded")
 
             do {
-                let requests: [DbRequest] = [MarkAttachmentUploadedDbRequest(libraryId: libraryId, key: key, version: version),
-                                             UpdateVersionsDbRequest(version: version, libraryId: libraryId, type: .object(.item))]
-                try self.dbStorage.perform(writeRequests: requests, on: queue)
+                try self.dbStorage.perform(request: MarkAttachmentUploadedDbRequest(libraryId: libraryId, key: key, version: version), on: queue)
                 subscriber(.success(()))
             } catch let error {
                 DDLogError("BackgroundUploadProcessor: can't mark attachment as uploaded - \(error)")
