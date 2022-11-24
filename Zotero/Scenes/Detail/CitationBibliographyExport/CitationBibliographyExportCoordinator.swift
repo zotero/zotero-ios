@@ -97,7 +97,7 @@ final class CitationBibliographyExportCoordinator: NSObject, Coordinator {
     private func share(file: File) {
         let controller = UIActivityViewController(activityItems: [file.createUrl()], applicationActivities: nil)
         controller.modalPresentationStyle = .pageSheet
-        controller.popoverPresentationController?.barButtonItem = self.navigationController.navigationBar.topItem?.rightBarButtonItem
+        controller.popoverPresentationController?.sourceView = self.navigationController.viewControllers.first?.view
         controller.completionWithItemsHandler = { [weak self] _, finished, _, _ in
             if finished {
                 self?.cancel()
