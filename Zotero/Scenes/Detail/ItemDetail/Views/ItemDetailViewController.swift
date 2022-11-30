@@ -161,6 +161,11 @@ final class ItemDetailViewController: UIViewController {
     /// Update UI based on new state.
     /// - parameter state: New state.
     private func update(to state: ItemDetailState) {
+        if state.hideController {
+            self.navigationController?.popViewController(animated: true)
+            return
+        }
+
         if let error = state.error {
             self.coordinatorDelegate?.show(error: error, viewModel: self.viewModel)
         }

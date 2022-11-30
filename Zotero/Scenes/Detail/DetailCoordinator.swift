@@ -808,6 +808,10 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         case .cantSaveTags:
             title = L10n.error
             message = L10n.Errors.ItemDetail.cantSaveTags
+
+        case .cantRemoveDuplicatedItem:
+            title = L10n.error
+            message = L10n.Errors.unknown
         }
 
         let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)

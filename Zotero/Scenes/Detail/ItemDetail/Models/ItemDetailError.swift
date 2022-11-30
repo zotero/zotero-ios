@@ -23,4 +23,5 @@ enum ItemDetailError: Error, Equatable, Hashable {
     case cantSaveNote
     case cantAddAttachments(AttachmentAddError)
     case cantSaveTags
+    case cantRemoveDuplicatedItem
 }

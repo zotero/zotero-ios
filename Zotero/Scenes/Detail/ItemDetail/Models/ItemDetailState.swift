@@ -220,11 +220,11 @@ struct ItemDetailState: ViewModelState {
         case section(ItemDetailCollectionViewHandler.Section)
     }
 
-    let initialType: DetailType
     let key: String
     let library: Library
     let userId: Int
 
+    var type: DetailType
     var changes: Changes
     var isEditing: Bool
     var isSaving: Bool
@@ -245,6 +245,7 @@ struct ItemDetailState: ViewModelState {
     var backgroundProcessedItems: Set<String>
     // Child key which should be initially shown on screen
     var preScrolledChildKey: String?
+    var hideController: Bool
 
     @UserDefault(key: "ItemDetailAbstractCollapsedKey", defaultValue: false)
     var abstractCollapsed: Bool
@@ -264,7 +265,7 @@ struct ItemDetailState: ViewModelState {
             self.isEditing = true
         }
 
-        self.initialType = type
+        self.type = type
         self.userId = userId
         self.library = library
         self.changes = []
@@ -278,6 +279,7 @@ struct ItemDetailState: ViewModelState {
         self.backgroundProcessedItems = []
         self.isLoadingData = true
         self.preScrolledChildKey = preScrolledChildKey
+        self.hideController = false
     }
 
     mutating func cleanup() {

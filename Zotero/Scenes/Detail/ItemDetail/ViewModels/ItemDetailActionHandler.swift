@@ -156,7 +156,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         var data: (data: ItemDetailState.Data, attachments: [Attachment], notes: [Note], tags: [Tag])
 
         do {
-            switch viewModel.state.initialType {
+            switch viewModel.state.type {
             case .creation(let itemType, let child, let _collectionKey):
                 collectionKey = _collectionKey
                 data = try ItemDetailDataCreator.createData(from: .new(itemType: itemType, child: child), schemaController: self.schemaController, dateParser: self.dateParser,
@@ -733,7 +733,28 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     }
 
     private func cancelChanges(in viewModel: ViewModel<ItemDetailActionHandler>) {
+        if case .duplication(let itemKey, _) = viewModel.state.type  {
+            self.perform(request: MarkObjectsAsDeletedDbRequest<RItem>(keys: [itemKey], libraryId: viewModel.state.library.identifier)) { [weak viewModel] error in
+                guard let viewModel = viewModel else { return }
+
+                if let error = error {
+                    DDLogError("ItemDetailActionHandler: can't remove duplicated item - \(error)")
+
+                    self.update(viewModel: viewModel) { state in
+                        state.error = .cantRemoveDuplicatedItem
+                    }
+                    return
+                }
+
+                self.update(viewModel: viewModel) { state in
+                    state.hideController = true
+                }
+            }
+            return
+        }
+
         guard let snapshot = viewModel.state.snapshot else { return }
+        
         self.update(viewModel: viewModel) { state in
             state.data = snapshot
             state.snapshot = nil
@@ -786,6 +807,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 newState.snapshot = nil
                 newState.data.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: newState.data.fieldIds, fields: newState.data.fields)
                 newState.isEditing = false
+                newState.type = .preview(key: newState.key)
                 newState.changes.insert(.editing)
 
                 subscriber(.success(newState))
