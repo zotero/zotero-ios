@@ -733,8 +733,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     }
 
     private func cancelChanges(in viewModel: ViewModel<ItemDetailActionHandler>) {
-        if case .duplication(let itemKey, _) = viewModel.state.type  {
-            self.perform(request: MarkObjectsAsDeletedDbRequest<RItem>(keys: [itemKey], libraryId: viewModel.state.library.identifier)) { [weak viewModel] error in
+        if case .duplication = viewModel.state.type  {
+            self.perform(request: MarkObjectsAsDeletedDbRequest<RItem>(keys: [viewModel.state.key], libraryId: viewModel.state.library.identifier)) { [weak viewModel] error in
                 guard let viewModel = viewModel else { return }
 
                 if let error = error {
