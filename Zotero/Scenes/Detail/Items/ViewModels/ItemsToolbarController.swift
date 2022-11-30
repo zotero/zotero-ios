@@ -20,6 +20,7 @@ final class ItemsToolbarController {
     private static let barButtonItemSingleTag = 2
     private static let barButtonItemFilterTag = 3
     private static let barButtonItemTitleTag = 4
+    private static let barButtonItemDuplicateTag = 5
     private static let finishVisibilityTime: RxTimeInterval = .seconds(2)
 
     private unowned let viewController: UIViewController
@@ -61,7 +62,7 @@ final class ItemsToolbarController {
     func createToolbarItems(for state: ItemsState) {
         if state.isEditing {
             self.viewController.toolbarItems = self.createEditingToolbarItems(from: self.editingActions)
-            self.updateEditingToolbarItems(for: state.selectedItems)
+            self.updateEditingToolbarItems(for: state.selectedItems, results: state.results)
         } else {
             self.viewController.toolbarItems = self.createNormalToolbarItems(for: state.filters)
             self.updateNormalToolbarItems(for: state.filters, downloadBatchData: state.downloadBatchData, results: state.results)
@@ -70,7 +71,7 @@ final class ItemsToolbarController {
 
     func reloadToolbarItems(for state: ItemsState) {
         if state.isEditing {
-            self.updateEditingToolbarItems(for: state.selectedItems)
+            self.updateEditingToolbarItems(for: state.selectedItems, results: state.results)
         } else {
             self.updateNormalToolbarItems(for: state.filters, downloadBatchData: state.downloadBatchData, results: state.results)
         }
@@ -78,13 +79,19 @@ final class ItemsToolbarController {
 
     // MARK: - Helpers
 
-    private func updateEditingToolbarItems(for selectedItems: Set<String>) {
+    private func updateEditingToolbarItems(for selectedItems: Set<String>, results: Results<RItem>?) {
         self.viewController.toolbarItems?.forEach({ item in
             switch item.tag {
             case ItemsToolbarController.barButtonItemEmptyTag:
                 item.isEnabled = !selectedItems.isEmpty
             case ItemsToolbarController.barButtonItemSingleTag:
                 item.isEnabled = selectedItems.count == 1
+            case ItemsToolbarController.barButtonItemDuplicateTag:
+                if selectedItems.count == 1, let key = selectedItems.first, let rItem = results?.filter(.key(key)).first, (rItem.rawType != ItemTypes.attachment && rItem.rawType != ItemTypes.note) {
+                    item.isEnabled = true
+                } else {
+                    item.isEnabled = false
+                }
             default: break
             }
         })
@@ -158,7 +165,7 @@ final class ItemsToolbarController {
             case .addToCollection, .trash, .delete, .removeFromCollection, .restore:
                 item.tag = ItemsToolbarController.barButtonItemEmptyTag
             case .duplicate:
-                item.tag = ItemsToolbarController.barButtonItemSingleTag
+                item.tag = ItemsToolbarController.barButtonItemDuplicateTag
             case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .share, .removeDownload, .download: break
             }
             switch action.type {

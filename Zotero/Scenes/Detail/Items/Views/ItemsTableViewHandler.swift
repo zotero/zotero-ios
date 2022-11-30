@@ -99,7 +99,10 @@ final class ItemsTableViewHandler: NSObject {
             actions.append(ItemAction(type: .removeFromCollection))
         }
 
-        actions.append(contentsOf: [ItemAction(type: .duplicate), ItemAction(type: .trash)])
+        if item.rawType != ItemTypes.note && item.rawType != ItemTypes.attachment {
+            actions.append(ItemAction(type: .duplicate))
+        }
+        actions.append(ItemAction(type: .trash))
 
         return actions
     }
