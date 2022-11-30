@@ -8,10 +8,15 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
 import RealmSwift
 
 struct CreateItemFromDetailDbRequest: DbResponseRequest {
     typealias Response = RItem
+
+    enum Error: Swift.Error {
+        case alreadyExists
+    }
 
     let key: String
     let libraryId: LibraryIdentifier
@@ -26,6 +31,11 @@ struct CreateItemFromDetailDbRequest: DbResponseRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws -> RItem {
+        guard database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first == nil else {
+            DDLogError("CreateItemFromDetailDbRequest: Trying to create item that already exists!")
+            throw Error.alreadyExists
+        }
+
         // Create main item
         let item = RItem()
         item.key = self.key

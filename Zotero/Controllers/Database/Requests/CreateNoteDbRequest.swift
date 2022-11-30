@@ -8,10 +8,15 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
 import RealmSwift
 
 struct CreateNoteDbRequest: DbResponseRequest {
     typealias Response = RItem
+
+    enum Error: Swift.Error {
+        case alreadyExists
+    }
 
     let note: Note
     let localizedType: String
@@ -22,6 +27,11 @@ struct CreateNoteDbRequest: DbResponseRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws -> RItem {
+        guard database.objects(RItem.self).filter(.key(self.note.key, in: self.libraryId)).first == nil else {
+            DDLogError("CreateNoteDbRequest: Trying to create note that already exists!")
+            throw Error.alreadyExists
+        }
+
         var changes: RItemChanges = [.type, .fields]
 
         // Create item

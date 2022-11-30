@@ -8,13 +8,14 @@
 
 import Foundation
 
-import RealmSwift
 import CocoaLumberjackSwift
+import RealmSwift
 
 struct CreateAttachmentDbRequest: DbResponseRequest {
     enum Error: Swift.Error {
         case cantCreateMd5
         case incorrectMd5Value
+        case alreadyExists
     }
 
     typealias Response = RItem
@@ -28,6 +29,11 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws -> RItem {
+        guard database.objects(RItem.self).filter(.key(self.attachment.key, in: self.attachment.libraryId)).first == nil else {
+            DDLogError("CreateAttachmentDbRequest: Trying to create attachment that already exists!")
+            throw Error.alreadyExists
+        }
+
         // We need to submit tags on creation even if they are empty, so we need to mark them as changed
         var changes: RItemChanges = [.type, .fields, .tags]
 
