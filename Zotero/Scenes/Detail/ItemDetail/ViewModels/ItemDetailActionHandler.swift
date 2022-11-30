@@ -165,7 +165,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             case .duplication(let itemKey, let _collectionKey):
                 collectionKey = _collectionKey
                 let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: itemKey), on: .main)
-                data = try ItemDetailDataCreator.createData(from: .existing(item), schemaController: self.schemaController, dateParser: self.dateParser,
+                data = try ItemDetailDataCreator.createData(from: .existing(item: item, ignoreChildren: true), schemaController: self.schemaController, dateParser: self.dateParser,
                                                             fileStorage: self.fileStorage, urlDetector: self.urlDetector, doiDetector: FieldKeys.Item.isDoi)
 
             case .preview:
@@ -208,7 +208,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 self.itemChanged(change, in: viewModel)
             }
 
-            var (data, attachments, notes, tags) = try ItemDetailDataCreator.createData(from: .existing(item), schemaController: self.schemaController, dateParser: self.dateParser,
+            var (data, attachments, notes, tags) = try ItemDetailDataCreator.createData(from: .existing(item: item, ignoreChildren: false), schemaController: self.schemaController, dateParser: self.dateParser,
                                                                                         fileStorage: self.fileStorage, urlDetector: self.urlDetector, doiDetector: FieldKeys.Item.isDoi)
 
             if !isEditing {

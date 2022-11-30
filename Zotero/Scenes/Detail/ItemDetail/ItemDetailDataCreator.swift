@@ -13,7 +13,7 @@ import CocoaLumberjackSwift
 struct ItemDetailDataCreator {
     enum Kind {
         case new(itemType: String, child: Attachment?)
-        case existing(RItem)
+        case existing(item: RItem, ignoreChildren: Bool)
     }
 
     /// Creates `ItemDetailState.Data` for given type.
@@ -29,8 +29,8 @@ struct ItemDetailDataCreator {
         switch type {
         case .new(let itemType, let child):
             return try creationData(itemType: itemType, child: child, schemaController: schemaController, dateParser: dateParser, urlDetector: urlDetector, doiDetector: doiDetector)
-        case .existing(let item):
-            return try itemData(item: item, schemaController: schemaController, dateParser: dateParser, fileStorage: fileStorage, urlDetector: urlDetector, doiDetector: doiDetector)
+        case .existing(let item, let ignoreChildren):
+            return try itemData(item: item, ignoreChildren: ignoreChildren, schemaController: schemaController, dateParser: dateParser, fileStorage: fileStorage, urlDetector: urlDetector, doiDetector: doiDetector)
         }
     }
 
@@ -68,13 +68,14 @@ struct ItemDetailDataCreator {
 
     /// Creates data for `ItemDetailState.DetailType.preview`. When previewing an item, data needs to be fetched and formatted from given item.
     /// - parameter item: Item to preview.
+    /// - parameter ignoreChildren: If `true` child items are not parsed
     /// - parameter schemaController: Schema controller for fetching item type/field data and localizations.
     /// - parameter dateParser: Date parser.
     /// - parameter fileStorage: File storage for checking availability of attachments.
     /// - parameter urlDetector: URL detector.
     /// - parameter doiDetector: DOI detector.
     /// - returns: Data for item detail state.
-    private static func itemData(item: RItem, schemaController: SchemaController, dateParser: DateParser, fileStorage: FileStorage, urlDetector: UrlDetector, doiDetector: (String) -> Bool)
+    private static func itemData(item: RItem, ignoreChildren: Bool, schemaController: SchemaController, dateParser: DateParser, fileStorage: FileStorage, urlDetector: UrlDetector, doiDetector: (String) -> Bool)
                                                                                                                                         throws -> (ItemDetailState.Data, [Attachment], [Note], [Tag]) {
         guard let localizedType = schemaController.localized(itemType: item.rawType) else {
             throw ItemDetailError.typeNotSupported(item.rawType)
@@ -83,7 +84,7 @@ struct ItemDetailDataCreator {
         var abstract: String?
         var values: [String: String] = [:]
 
-        item.fields.forEach { field in
+        for field in item.fields {
             switch field.key {
             case FieldKeys.Item.abstract:
                 abstract = field.value
@@ -112,11 +113,20 @@ struct ItemDetailDataCreator {
             creators[creator.id] = creator
         }
 
-        let notes = item.children.filter(.items(type: ItemTypes.note, notSyncState: .dirty, trash: false))
-                                 .sorted(byKeyPath: "displayTitle")
-                                 .compactMap(Note.init)
+        let notes: [Note]
+
+        if ignoreChildren {
+            notes = []
+        } else {
+            notes = item.children.filter(.items(type: ItemTypes.note, notSyncState: .dirty, trash: false))
+                .sorted(byKeyPath: "displayTitle")
+                .compactMap(Note.init)
+        }
+
         let attachments: [Attachment]
-        if item.rawType == ItemTypes.attachment {
+        if ignoreChildren {
+            attachments = []
+        } else if item.rawType == ItemTypes.attachment {
             let attachment = AttachmentCreator.attachment(for: item, fileStorage: fileStorage, urlDetector: urlDetector)
             attachments = attachment.flatMap { [$0] } ?? []
         } else {
@@ -131,17 +141,17 @@ struct ItemDetailDataCreator {
         }
 
         let tags = item.tags.sorted(byKeyPath: "tag.name").map(Tag.init)
-        let data =  ItemDetailState.Data(title: item.baseTitle,
-                                         type: item.rawType,
-                                         isAttachment: (item.rawType == ItemTypes.attachment),
-                                         localizedType: localizedType,
-                                         creators: creators,
-                                         creatorIds: creatorIds,
-                                         fields: fields,
-                                         fieldIds: fieldIds,
-                                         abstract: abstract,
-                                         dateModified: item.dateModified,
-                                         dateAdded: item.dateAdded)
+        let data = ItemDetailState.Data(title: item.baseTitle,
+                                        type: item.rawType,
+                                        isAttachment: (item.rawType == ItemTypes.attachment),
+                                        localizedType: localizedType,
+                                        creators: creators,
+                                        creatorIds: creatorIds,
+                                        fields: fields,
+                                        fieldIds: fieldIds,
+                                        abstract: abstract,
+                                        dateModified: item.dateModified,
+                                        dateAdded: item.dateAdded)
         return (data, attachments, Array(notes), Array(tags))
     }
 
