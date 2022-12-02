@@ -40,6 +40,8 @@ final class Controllers {
     private var didInitialize: Bool
     @UserDefault(key: "BaseKeyNeedsMigrationToPosition", defaultValue: true)
     fileprivate var needsBaseKeyMigration: Bool
+    @UserDefault(key: "ChildItemsNeedFixingCollections", defaultValue: true)
+    fileprivate var needsChildItemCollectionsFix: Bool
 
     private static func apiConfiguration(schemaVersion: Int) -> URLSessionConfiguration {
         let configuration = URLSessionConfiguration.default
@@ -324,6 +326,10 @@ final class UserControllers {
                 // Fix "broken" fields which didn't correctly assign "baseKey" to "position" - #560
                 try coordinator.perform(request: MigrateBaseKeysToPositionFieldDbAction())
                 controllers?.needsBaseKeyMigration = false
+            }
+            if controllers?.needsChildItemCollectionsFix == true {
+                try coordinator.perform(request: FixChildItemsWithCollectionsDbRequest())
+                controllers?.needsChildItemCollectionsFix = false
             }
         })
 

@@ -14,6 +14,7 @@
 		B300B33924292A7F00C1FE1E /* SyncTranslatorsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B3372429254900C1FE1E /* SyncTranslatorsDbRequest.swift */; };
 		B300B33A24292B7300C1FE1E /* RTranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */; };
 		B3027C1E23BDB2B8007F5B26 /* ItemPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3027C1D23BDB2B8007F5B26 /* ItemPickerView.swift */; };
+		B302DC54293A22A6003497D9 /* FixChildItemsWithCollectionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B302DC53293A22A6003497D9 /* FixChildItemsWithCollectionsDbRequest.swift */; };
 		B30565B123FC051E003304F2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B305643323FC051E003304F2 /* Assets.xcassets */; };
 		B30565B323FC051E003304F2 /* DeleteObjectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643823FC051E003304F2 /* DeleteObjectsDbRequest.swift */; };
 		B30565B423FC051E003304F2 /* MarkForResyncDbAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643923FC051E003304F2 /* MarkForResyncDbAction.swift */; };
@@ -1144,6 +1145,7 @@
 		B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorMetadata.swift; sourceTree = "<group>"; };
 		B300B3372429254900C1FE1E /* SyncTranslatorsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTranslatorsDbRequest.swift; sourceTree = "<group>"; };
 		B3027C1D23BDB2B8007F5B26 /* ItemPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemPickerView.swift; sourceTree = "<group>"; };
+		B302DC53293A22A6003497D9 /* FixChildItemsWithCollectionsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixChildItemsWithCollectionsDbRequest.swift; sourceTree = "<group>"; };
 		B305643323FC051E003304F2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B305643823FC051E003304F2 /* DeleteObjectsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeleteObjectsDbRequest.swift; sourceTree = "<group>"; };
 		B305643923FC051E003304F2 /* MarkForResyncDbAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarkForResyncDbAction.swift; sourceTree = "<group>"; };
@@ -2092,6 +2094,7 @@
 				B3BF7EE828A51EDA00A5A659 /* EditTagsForItemDbRequest.swift */,
 				B3B613F6260B844B00B92017 /* EmptyTrashDbRequest.swift */,
 				B37DD575272AAF500038537D /* FilterAttachmentsDbRequest.swift */,
+				B302DC53293A22A6003497D9 /* FixChildItemsWithCollectionsDbRequest.swift */,
 				B305645223FC051E003304F2 /* InitializeCustomLibrariesDbRequest.swift */,
 				B37F58652672229D00C4089B /* InstallStyleDbRequest.swift */,
 				B305645423FC051E003304F2 /* MarkAllLibraryObjectChangesAsSyncedDbRequest.swift */,
@@ -4782,6 +4785,7 @@
 				B305660623FC051E003304F2 /* UpdatesRequest.swift in Sources */,
 				B3F3D636255EC8F300F310C2 /* AnnotationViewImageContent.swift in Sources */,
 				B3D1ED1F2527282400C31465 /* CollapsibleLabel.swift in Sources */,
+				B302DC54293A22A6003497D9 /* FixChildItemsWithCollectionsDbRequest.swift in Sources */,
 				B372CEE32486512500B423AE /* GroupRequest.swift in Sources */,
 				B3B41F132848E59D0017CA4B /* AnnotationsFilterViewController.swift in Sources */,
 				B3748D2226566F6900ED05F8 /* ContainerViewController.swift in Sources */,

@@ -18,10 +18,7 @@ struct DeleteItemsFromCollectionDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        guard let collection = database.objects(RCollection.self)
-                                       .filter(.key(self.collectionKey, in: self.libraryId)).first else {
-            return
-        }
+        guard let collection = database.objects(RCollection.self).filter(.key(self.collectionKey, in: self.libraryId)).first else { return }
 
         let items = database.objects(RItem.self).filter(.keys(self.itemKeys, in: self.libraryId))
         for item in items {
