@@ -22,9 +22,9 @@ struct DeleteItemsFromCollectionDbRequest: DbRequest {
                                        .filter(.key(self.collectionKey, in: self.libraryId)).first else {
             return
         }
-        let items = database.objects(RItem.self).filter(.keys(self.itemKeys, in: self.libraryId))
 
-        items.forEach { item in
+        let items = database.objects(RItem.self).filter(.keys(self.itemKeys, in: self.libraryId))
+        for item in items {
             if let index = collection.items.index(of: item) {
                 collection.items.remove(at: index)
                 item.changes.append(RObjectChange.create(changes: RItemChanges.collections))

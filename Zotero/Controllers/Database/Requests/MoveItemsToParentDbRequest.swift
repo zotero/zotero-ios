@@ -22,13 +22,23 @@ struct MoveItemsToParentDbRequest: DbRequest {
             return
         }
 
-        database.objects(RItem.self)
-                .filter(.keys(self.itemKeys, in: self.libraryId))
-                .forEach { item in
-                    item.parent = parent
-                    item.changes.append(RObjectChange.create(changes: RItemChanges.parent))
-                    item.changeType = .user
+        let items = database.objects(RItem.self) .filter(.keys(self.itemKeys, in: self.libraryId))
+        for item in items {
+            var changes: RItemChanges = .parent
+
+            item.parent = parent
+
+            if item.collections.count > 0 {
+                for collection in item.collections {
+                    guard let index = collection.items.index(of: item) else { continue }
+                    collection.items.remove(at: index)
                 }
+                changes.insert(.collections)
+            }
+
+            item.changes.append(RObjectChange.create(changes: changes))
+            item.changeType = .user
+        }
 
         // Update the parent item, so that it's updated in the item list to show attachment/note marker
         parent.changeType = .user
