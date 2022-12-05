@@ -972,7 +972,8 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             self.observer.on(.next(.openTypePicker))
 
         case .field(let fieldId, _):
-            guard !self.viewModel.state.isEditing, let field = self.viewModel.state.data.fields[fieldId], field.isTappable else { return }
+            // Tappable fields should be only tappable when not in editing mode, in case of attachment, URL is not editable, so keep it tappable even while editing.
+            guard (!self.viewModel.state.isEditing || self.viewModel.state.data.type == ItemTypes.attachment), let field = self.viewModel.state.data.fields[fieldId], field.isTappable else { return }
             switch field.key {
             case FieldKeys.Item.Attachment.url:
                 self.observer.on(.next(.openUrl(field.value)))
