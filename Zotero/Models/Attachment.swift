@@ -32,6 +32,12 @@ struct Attachment: Identifiable, Equatable {
     let dateAdded: Date
 
     var id: String { return self.key }
+    var hasUrl: Bool {
+        switch self.type {
+        case .url: return true
+        case .file: return self.url != nil
+        }
+    }
 
     var location: FileLocation? {
         switch self.type {

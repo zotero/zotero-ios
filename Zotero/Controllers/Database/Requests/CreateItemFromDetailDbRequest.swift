@@ -121,6 +121,7 @@ struct CreateItemFromDetailDbRequest: DbResponseRequest {
                 let rAttachment = try CreateAttachmentDbRequest(attachment: attachment,
                                                                 parentKey: nil,
                                                                 localizedType: (self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""),
+                                                                includeAccessDate: attachment.hasUrl,
                                                                 collections: [], tags: []).process(in: database)
                 rAttachment.libraryId = self.libraryId
                 rAttachment.parent = item

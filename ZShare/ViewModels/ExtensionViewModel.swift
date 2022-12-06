@@ -145,17 +145,17 @@ final class ExtensionViewModel {
         /// Attachment which has been loaded and translated processed/translated.
         /// - item: Translated item which doesn't have an attachment.
         /// - itemWithAttachment: Translated item with attachment data.
-        /// - localFile: `URL` pointing to a local file.
+        /// - file: `URL` pointing to a local file.
         /// - remoteFile: `URL` pointing to a remote file.
         enum ProcessedAttachment {
             case item(ItemResponse)
             case itemWithAttachment(item: ItemResponse, attachment: [String: Any], attachmentFile: File)
-            case localFile(file: File, filename: String)
+            case file(file: File, filename: String)
         }
 
         fileprivate struct UploadData {
             enum Kind {
-                case localFile(location: File, collections: Set<String>, tags: [TagResponse])
+                case file(location: File, collections: Set<String>, tags: [TagResponse])
                 case translated(item: ItemResponse, location: File)
             }
 
@@ -166,11 +166,12 @@ final class ExtensionViewModel {
             let libraryId: LibraryIdentifier
             let userId: Int
 
-            init(item: ItemResponse, attachmentKey: String, attachmentData: [String: Any], attachmentFile: File, defaultTitle: String, libraryId: LibraryIdentifier, userId: Int, dateParser: DateParser) {
+            init(item: ItemResponse, attachmentKey: String, attachmentData: [String: Any], attachmentFile: File, linkType: Attachment.FileLinkType, defaultTitle: String, libraryId: LibraryIdentifier,
+                 userId: Int, dateParser: DateParser) {
                 let url = attachmentData[FieldKeys.Item.url] as? String
                 let filename = FilenameFormatter.filename(from: item, defaultTitle: defaultTitle, ext: attachmentFile.ext, dateParser: dateParser)
                 let file = Files.attachmentFile(in: libraryId, key: attachmentKey, filename: filename, contentType: attachmentFile.mimeType)
-                let attachment = Attachment(type: .file(filename: filename, contentType: attachmentFile.mimeType, location: .local, linkType: .importedFile),
+                let attachment = Attachment(type: .file(filename: filename, contentType: attachmentFile.mimeType, location: .local, linkType: linkType),
                                             title: filename,
                                             url: url,
                                             key: attachmentKey,
@@ -184,16 +185,18 @@ final class ExtensionViewModel {
                 self.userId = userId
             }
 
-            init(localFile: File, filename: String, attachmentKey: String, collections: Set<String>, tags: [TagResponse], libraryId: LibraryIdentifier, userId: Int) {
-                let file = Files.attachmentFile(in: libraryId, key: attachmentKey, filename: filename, contentType: localFile.mimeType)
-                let attachment = Attachment(type: .file(filename: filename, contentType: localFile.mimeType, location: .local, linkType: .importedFile),
+            init(file: File, filename: String, attachmentKey: String, linkType: Attachment.FileLinkType, remoteUrl: String?, collections: Set<String>, tags: [TagResponse], libraryId: LibraryIdentifier,
+                 userId: Int) {
+                let newFile = Files.attachmentFile(in: libraryId, key: attachmentKey, filename: filename, contentType: file.mimeType)
+                let attachment = Attachment(type: .file(filename: filename, contentType: file.mimeType, location: .local, linkType: linkType),
                                             title: filename,
+                                            url: remoteUrl,
                                             key: attachmentKey,
                                             libraryId: libraryId)
 
-                self.type = .localFile(location: localFile, collections: collections, tags: tags)
+                self.type = .file(location: file, collections: collections, tags: tags)
                 self.attachment = attachment
-                self.file = file
+                self.file = newFile
                 self.filename = filename
                 self.libraryId = libraryId
                 self.userId = userId
@@ -333,7 +336,7 @@ final class ExtensionViewModel {
     func cancel() {
         guard let attachment = self.state.processedAttachment else { return }
         switch attachment {
-        case .itemWithAttachment(_, _, let file), .localFile(let file, _):
+        case .itemWithAttachment(_, _, let file), .file(let file, _):
             // Remove temporary local file if it exists
             try? self.fileStorage.remove(file)
         case .item: break
@@ -427,7 +430,7 @@ final class ExtensionViewModel {
         self.copyFile(from: url.path, to: tmpFile)
             .subscribe(with: self, onSuccess: { `self`, _ in
                 var state = self.state
-                state.processedAttachment = .localFile(file: tmpFile, filename: filename)
+                state.processedAttachment = .file(file: tmpFile, filename: filename)
                 state.expectedAttachment = (filename, tmpFile)
                 state.attachmentState = .processed
                 self.state = state
@@ -457,7 +460,7 @@ final class ExtensionViewModel {
                 var state = self.state
                 if self.fileStorage.isPdf(file: file) {
                     DDLogInfo("ExtensionViewModel: downloaded pdf")
-                    state.processedAttachment = .localFile(file: file, filename: filename)
+                    state.processedAttachment = .file(file: file, filename: filename)
                     state.attachmentState = .processed
                 } else {
                     DDLogInfo("ExtensionViewModel: downloaded unsupported file")
@@ -859,7 +862,7 @@ final class ExtensionViewModel {
                 let newTags = (Defaults.shared.shareExtensionIncludeTags ? item.tags + tags : tags)
                 attachment = .itemWithAttachment(item: item.copy(libraryId: libraryId, collectionKeys: collectionKeys, tags: newTags), attachment: attachmentData, attachmentFile: attachmentFile)
 
-            case .localFile: break
+            case .file: break
             }
 
             switch attachment {
@@ -870,13 +873,14 @@ final class ExtensionViewModel {
 
             case .itemWithAttachment(let item, let attachmentData, let attachmentFile):
                 DDLogInfo("ExtensionViewModel: submit item with attachment")
-                let data = State.UploadData(item: item, attachmentKey: self.state.attachmentKey, attachmentData: attachmentData, attachmentFile: attachmentFile,
+                let data = State.UploadData(item: item, attachmentKey: self.state.attachmentKey, attachmentData: attachmentData, attachmentFile: attachmentFile, linkType: .importedUrl,
                                             defaultTitle: (self.state.title ?? "Unknown"), libraryId: libraryId, userId: userId, dateParser: self.dateParser)
                 self.upload(data: data, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, webDavController: self.webDavController)
 
-            case .localFile(let file, let filename):
+            case .file(let file, let filename):
                 DDLogInfo("ExtensionViewModel: upload local file")
-                let data = State.UploadData(localFile: file, filename: filename, attachmentKey: self.state.attachmentKey, collections: collectionKeys, tags: tags, libraryId: libraryId, userId: userId)
+                let data = State.UploadData(file: file, filename: filename, attachmentKey: self.state.attachmentKey, linkType: (self.state.url == nil ? .importedFile : .importedUrl),
+                                            remoteUrl: self.state.url, collections: collectionKeys, tags: tags, libraryId: libraryId, userId: userId)
                 self.upload(data: data, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, webDavController: self.webDavController)
             }
         } else if let url = self.state.url {
@@ -1130,7 +1134,7 @@ final class ExtensionViewModel {
 
     private func submit(data: State.UploadData, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<SubmissionData> {
         switch data.type {
-        case .localFile(let location, let collections, let tags):
+        case .file(let location, let collections, let tags):
             DDLogInfo("ExtensionViewModel: prepare upload for local file")
             return self.prepareAndSubmit(attachment: data.attachment, collections: collections, tags: tags, file: data.file, tmpFile: location, libraryId: data.libraryId, userId: data.userId,
                                          apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
@@ -1331,7 +1335,7 @@ final class ExtensionViewModel {
                         try coordinator.perform(request: UpdateCollectionLastUsedDbRequest(key: collectionKey, libraryId: attachment.libraryId))
                     }
 
-                    let request = CreateAttachmentDbRequest(attachment: attachment, parentKey: nil, localizedType: localizedType, collections: collections, tags: tags)
+                    let request = CreateAttachmentDbRequest(attachment: attachment, parentKey: nil, localizedType: localizedType, includeAccessDate: attachment.hasUrl, collections: collections, tags: tags)
                     let attachment = try coordinator.perform(request: request)
 
                     updateParameters = attachment.updateParameters

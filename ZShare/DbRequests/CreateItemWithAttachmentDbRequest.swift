@@ -38,6 +38,7 @@ struct CreateItemWithAttachmentDbRequest: DbResponseRequest {
         let attachment = try CreateAttachmentDbRequest(attachment: self.attachment,
                                                        parentKey: nil,
                                                        localizedType: localizedType,
+                                                       includeAccessDate: self.attachment.hasUrl,
                                                        collections: [],
                                                        tags: []).process(in: database)
 

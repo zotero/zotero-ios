@@ -73,7 +73,7 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
             guard let `self` = self else { return }
 
             do {
-                let request = CreateAttachmentDbRequest(attachment: attachment, parentKey: download.parentKey, localizedType: localizedType, collections: [], tags: [])
+                let request = CreateAttachmentDbRequest(attachment: attachment, parentKey: download.parentKey, localizedType: localizedType, includeAccessDate: attachment.hasUrl, collections: [], tags: [])
                 _ = try self.dbStorage.perform(request: request, on: self.backgroundQueue)
             } catch let error {
                 DDLogError("RemoteAttachmentDownloader: can't store attachment after download - \(error)")

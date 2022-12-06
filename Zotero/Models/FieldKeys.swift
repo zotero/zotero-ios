@@ -49,7 +49,7 @@ struct FieldKeys {
             }
 
             static var fieldKeys: [String] {
-                return [Item.title, Attachment.filename, Attachment.contentType, Attachment.linkMode, Attachment.md5, Attachment.mtime, Attachment.url]
+                return [Item.title, Attachment.filename, Attachment.contentType, Attachment.linkMode, Attachment.md5, Attachment.mtime, Attachment.url, Item.accessDate]
             }
         }
 

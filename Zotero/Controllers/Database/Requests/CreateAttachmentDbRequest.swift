@@ -23,6 +23,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
     let attachment: Attachment
     let parentKey: String?
     let localizedType: String
+    let includeAccessDate: Bool
     let collections: Set<String>
     let tags: [TagResponse]
 
@@ -129,6 +130,9 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
                     value = file.createUrl().path
                 default: continue
                 }
+            case FieldKeys.Item.accessDate:
+                guard self.includeAccessDate else { continue }
+                value = Formatter.iso8601.string(from: self.attachment.dateAdded)
             default: continue
             }
 

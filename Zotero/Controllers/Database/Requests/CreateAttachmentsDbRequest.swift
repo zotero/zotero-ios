@@ -34,7 +34,8 @@ struct CreateAttachmentsDbRequest: DbResponseRequest {
 
         for attachment in self.attachments {
             do {
-                let attachment = try CreateAttachmentDbRequest(attachment: attachment, parentKey: nil, localizedType: self.localizedType, collections: self.collections, tags: []).process(in: database)
+                let attachment = try CreateAttachmentDbRequest(attachment: attachment, parentKey: nil, localizedType: self.localizedType, includeAccessDate: attachment.hasUrl,
+                                                               collections: self.collections, tags: []).process(in: database)
                 if let parent = parent {
                     attachment.parent = parent
                     attachment.changes.append(RObjectChange.create(changes: RItemChanges.parent))
