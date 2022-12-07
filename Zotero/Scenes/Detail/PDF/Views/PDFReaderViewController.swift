@@ -57,6 +57,8 @@ class PDFReaderViewController: UIViewController {
 
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
+    private static let overlayTopInset: CGFloat = 12
+    private static let overlayHorizontalInset: CGFloat = 20
 
     private weak var sidebarController: PDFSidebarViewController!
     private weak var sidebarControllerLeft: NSLayoutConstraint!
@@ -71,8 +73,11 @@ class PDFReaderViewController: UIViewController {
     private var toolbarCenter: NSLayoutConstraint!
     private weak var toolbarPositionsOverlay: UIView!
     private weak var toolbarLeadingView: DashedView!
+    private weak var toolbarLeadingViewHeight: NSLayoutConstraint!
     private weak var toolbarTrailingView: DashedView!
+    private weak var toolbarTrailingViewHeight: NSLayoutConstraint!
     private weak var toolbarTopView: DashedView!
+    private weak var toolbarTopViewWidth: NSLayoutConstraint!
     private(set) var isSidebarTransitioning: Bool
     private var isCompactSize: Bool
     @CodableUserDefault(key: "PDFReaderToolbarState", defaultValue: ToolbarState(position: .leading, visible: true), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
@@ -379,12 +384,18 @@ class PDFReaderViewController: UIViewController {
 
     /// Return new position for given center and velocity of toolbar. The user can pan up/left/right to move the toolbar. If velocity > 1500, it's considered a swipe and the toolbar
     /// is moved in swipe direction. Otherwise the toolbar is pinned to closest point from center.
-    private func position(fromCenter point: CGPoint, velocity: CGPoint) -> ToolbarState.Position {
+    private func position(fromCenter point: CGPoint, frame: CGRect, velocity: CGPoint) -> ToolbarState.Position {
         let maxVelocity = max(abs(velocity.x), abs(velocity.y))
 
         if velocity.y > -1500 && abs(velocity.x) < 1500 {
-            // Move to closest point
-            if point.y < 100 {
+            // Move to closest point. Use different threshold for vertical/horizontal rotation.
+            let threshold: CGFloat
+            if frame.height > frame.width {
+                threshold = 100
+            } else {
+                threshold = 200
+            }
+            if point.y < threshold {
                 return .top
             }
 
@@ -436,9 +447,14 @@ class PDFReaderViewController: UIViewController {
             let translation = recognizer.translation(in: self.annotationToolbarController.view)
             self.annotationToolbarController.view.frame = originalFrame.offsetBy(dx: translation.x, dy: translation.y)
 
-            let position = self.position(fromCenter: self.annotationToolbarController.view.center, velocity: CGPoint())
+            let position = self.position(fromCenter: self.annotationToolbarController.view.center, frame: self.annotationToolbarController.view.frame, velocity: CGPoint())
 
             if self.toolbarPositionsOverlay.isHidden && position != self.toolbarState.position {
+                let size = max(self.annotationToolbarController.view.frame.width, self.annotationToolbarController.view.frame.height)
+                self.toolbarLeadingViewHeight.constant = size
+                self.toolbarTrailingViewHeight.constant = size
+                self.toolbarTopViewWidth.constant = size
+                self.toolbarPositionsOverlay.layoutIfNeeded()
                 self.toolbarPositionsOverlay.isHidden = false
             }
 
@@ -448,7 +464,7 @@ class PDFReaderViewController: UIViewController {
 
         case .cancelled, .ended, .failed:
             let velocity = recognizer.velocity(in: self.view)
-            let position = self.position(fromCenter: self.annotationToolbarController.view.center, velocity: velocity)
+            let position = self.position(fromCenter: self.annotationToolbarController.view.center, frame: self.annotationToolbarController.view.frame, velocity: velocity)
             let newState = ToolbarState(position: position, visible: true)
 
             self.toolbarPositionsOverlay.isHidden = true
@@ -524,7 +540,7 @@ class PDFReaderViewController: UIViewController {
             self.toolbarCenteredTrailing.isActive = true
             self.toolbarCenteredLeading.isActive = true
             self.toolbarCenter.isActive = true
-            self.toolbarTop.constant = 0
+            self.toolbarTop.constant = 12
             self.annotationToolbarController.set(rotation: .horizontal)
         }
     }
@@ -665,6 +681,9 @@ class PDFReaderViewController: UIViewController {
         self.toolbarCenteredTrailing = self.view.trailingAnchor.constraint(greaterThanOrEqualTo: annotationToolbar.view.trailingAnchor, constant: 20)
         self.toolbarCenter = annotationToolbar.view.centerXAnchor.constraint(equalTo: self.view.centerXAnchor)
         let toolbarTop = annotationToolbar.view.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor, constant: 20)
+        let topWidth = topPosition.widthAnchor.constraint(equalToConstant: 50)
+        let leadingHeight = leadingPosition.heightAnchor.constraint(equalToConstant: 50)
+        let trailingHeight = trailingPosition.heightAnchor.constraint(equalToConstant: 50)
 
         NSLayoutConstraint.activate([
             sidebarController.view.topAnchor.constraint(equalTo: container.topAnchor),
@@ -688,18 +707,18 @@ class PDFReaderViewController: UIViewController {
             positionsOverlay.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
             positionsOverlay.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
             positionsOverlay.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
-            topPosition.topAnchor.constraint(equalTo: positionsOverlay.topAnchor),
-            positionsOverlay.leadingAnchor.constraint(equalTo: topPosition.leadingAnchor),
-            positionsOverlay.trailingAnchor.constraint(equalTo: topPosition.trailingAnchor),
+            topPosition.topAnchor.constraint(equalTo: positionsOverlay.topAnchor, constant: PDFReaderViewController.overlayTopInset),
+            topPosition.centerXAnchor.constraint(equalTo: positionsOverlay.centerXAnchor),
             topPosition.heightAnchor.constraint(equalToConstant: AnnotationToolbarViewController.size),
-            leadingPosition.topAnchor.constraint(equalTo: topPosition.bottomAnchor, constant: 20),
-            positionsOverlay.bottomAnchor.constraint(equalTo: leadingPosition.bottomAnchor, constant: 20),
-            leadingPosition.leadingAnchor.constraint(equalTo: positionsOverlay.leadingAnchor, constant: 20),
+            leadingPosition.topAnchor.constraint(equalTo: positionsOverlay.topAnchor, constant: PDFReaderViewController.overlayTopInset),
+            leadingPosition.leadingAnchor.constraint(equalTo: positionsOverlay.leadingAnchor, constant: PDFReaderViewController.overlayHorizontalInset),
             leadingPosition.widthAnchor.constraint(equalToConstant: AnnotationToolbarViewController.size),
-            trailingPosition.topAnchor.constraint(equalTo: topPosition.bottomAnchor, constant: 20),
-            positionsOverlay.bottomAnchor.constraint(equalTo: trailingPosition.bottomAnchor, constant: 20),
-            positionsOverlay.trailingAnchor.constraint(equalTo: trailingPosition.trailingAnchor, constant: 20),
-            trailingPosition.widthAnchor.constraint(equalToConstant: AnnotationToolbarViewController.size)
+            trailingPosition.topAnchor.constraint(equalTo: positionsOverlay.topAnchor, constant: PDFReaderViewController.overlayTopInset),
+            positionsOverlay.trailingAnchor.constraint(equalTo: trailingPosition.trailingAnchor, constant: PDFReaderViewController.overlayHorizontalInset),
+            trailingPosition.widthAnchor.constraint(equalToConstant: AnnotationToolbarViewController.size),
+            topWidth,
+            leadingHeight,
+            trailingHeight
         ])
 
         self.documentController = documentController
@@ -712,6 +731,9 @@ class PDFReaderViewController: UIViewController {
         self.toolbarTrailingView = trailingPosition
         self.toolbarTopView = topPosition
         self.toolbarTop = toolbarTop
+        self.toolbarTopViewWidth = topWidth
+        self.toolbarLeadingViewHeight = leadingHeight
+        self.toolbarTrailingViewHeight = trailingHeight
     }
 
     private func setup(toolbarPositionView view: UIView) {
