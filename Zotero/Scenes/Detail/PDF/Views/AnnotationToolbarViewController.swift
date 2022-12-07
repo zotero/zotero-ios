@@ -284,7 +284,7 @@ class AnnotationToolbarViewController: UIViewController {
 
     private func createAdditionalItems() -> [UIView] {
         let close = UIButton(type: .custom)
-        close.setImage(UIImage(systemName: "x.circle", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
+        close.setImage(UIImage(systemName: "xmark.circle", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
         close.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         close.widthAnchor.constraint(equalTo: close.heightAnchor).isActive = true
         close.rx.controlEvent(.touchUpInside)
