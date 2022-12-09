@@ -57,8 +57,8 @@ class PDFReaderViewController: UIViewController {
 
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
-    private static let overlayTopInset: CGFloat = 12
-    private static let overlayHorizontalInset: CGFloat = 20
+    private static let toolbarCompactInset: CGFloat = 12
+    private static let toolbarFullInsetInset: CGFloat = 20
 
     private weak var sidebarController: PDFSidebarViewController!
     private weak var sidebarControllerLeft: NSLayoutConstraint!
@@ -73,13 +73,16 @@ class PDFReaderViewController: UIViewController {
     private var toolbarCenter: NSLayoutConstraint!
     private weak var toolbarPositionsOverlay: UIView!
     private weak var toolbarLeadingView: DashedView!
+    private weak var toolbarLeadingViewTop: NSLayoutConstraint!
     private weak var toolbarLeadingViewHeight: NSLayoutConstraint!
     private weak var toolbarTrailingView: DashedView!
+    private weak var toolbarTrailingViewTop: NSLayoutConstraint!
     private weak var toolbarTrailingViewHeight: NSLayoutConstraint!
     private weak var toolbarTopView: DashedView!
+    private weak var toolbarTopViewTop: NSLayoutConstraint!
     private weak var toolbarTopViewWidth: NSLayoutConstraint!
     private(set) var isSidebarTransitioning: Bool
-    private var isCompactSize: Bool
+    private(set) var isCompactSize: Bool
     @CodableUserDefault(key: "PDFReaderToolbarState", defaultValue: ToolbarState(position: .leading, visible: true), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     private var toolbarState: ToolbarState
     private var toolbarInitialFrame: CGRect?
@@ -122,32 +125,8 @@ class PDFReaderViewController: UIViewController {
               .disposed(by: self.disposeBag)
         return search
     }()
-    private lazy var undoButton: UIBarButtonItem = {
-        let undo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.left"), style: .plain, target: nil, action: nil)
-        undo.isEnabled = self.viewModel.state.document.undoController.undoManager.canUndo
-        undo.tag = NavigationBarButton.undo.rawValue
-        undo.rx
-            .tap
-            .subscribe(onNext: { [weak self] _ in
-                guard let `self` = self, self.viewModel.state.document.undoController.undoManager.canUndo else { return }
-                self.viewModel.state.document.undoController.undoManager.undo()
-            })
-            .disposed(by: self.disposeBag)
-        return undo
-    }()
-    private lazy var redoButton: UIBarButtonItem = {
-        let redo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.right"), style: .plain, target: nil, action: nil)
-        redo.isEnabled = self.viewModel.state.document.undoController.undoManager.canRedo
-        redo.tag = NavigationBarButton.redo.rawValue
-        redo.rx
-            .tap
-            .subscribe(onNext: { [weak self] _ in
-                guard let `self` = self, self.viewModel.state.document.undoController.undoManager.canRedo else { return }
-                self.viewModel.state.document.undoController.undoManager.redo()
-            })
-            .disposed(by: self.disposeBag)
-        return redo
-    }()
+    private var undoBarButton: UIBarButtonItem?
+    private var redoBarButton: UIBarButtonItem?
     private lazy var toolbarButton: UIBarButtonItem = {
         let checkbox = CheckboxButton(type: .custom)
         checkbox.accessibilityLabel = L10n.Accessibility.Pdf.toggleAnnotationToolbar
@@ -244,6 +223,8 @@ class PDFReaderViewController: UIViewController {
         coordinator.animate(alongsideTransition: { _ in
             if sizeDidChange {
                 self.navigationItem.rightBarButtonItems = self.createRightBarButtonItems(forCompactSize: isCompactSize)
+                self.annotationToolbarController.updateAdditionalButtons()
+                self.setConstraints(for: self.toolbarState.position)
                 self.view.layoutIfNeeded()
             }
         }, completion: nil)
@@ -391,7 +372,7 @@ class PDFReaderViewController: UIViewController {
             // Move to closest point. Use different threshold for vertical/horizontal rotation.
             let threshold: CGFloat
             if frame.height > frame.width {
-                threshold = 100
+                threshold = self.isCompactSize ? 150 : 100
             } else {
                 threshold = 200
             }
@@ -451,10 +432,7 @@ class PDFReaderViewController: UIViewController {
 
             if self.toolbarPositionsOverlay.isHidden && position != self.toolbarState.position {
                 let size = max(self.annotationToolbarController.view.frame.width, self.annotationToolbarController.view.frame.height)
-                self.toolbarLeadingViewHeight.constant = size
-                self.toolbarTrailingViewHeight.constant = size
-                self.toolbarTopViewWidth.constant = size
-                self.toolbarPositionsOverlay.layoutIfNeeded()
+                self.updatePositionOverlayViews(for: size)
                 self.toolbarPositionsOverlay.isHidden = false
             }
 
@@ -475,6 +453,26 @@ class PDFReaderViewController: UIViewController {
         case .possible: break
         @unknown default: break
         }
+    }
+
+    private func updatePositionOverlayViews(for size: CGFloat) {
+        self.toolbarLeadingViewHeight.constant = size
+        self.toolbarTrailingViewHeight.constant = size
+        if self.isCompactSize {
+            self.toolbarTopViewWidth.constant = self.view.frame.width
+            self.toolbarTopView.layer.cornerRadius = 0
+            self.toolbarTopViewTop.constant = 0
+            let topInset = AnnotationToolbarViewController.size + PDFReaderViewController.toolbarCompactInset
+            self.toolbarLeadingViewTop.constant = topInset
+            self.toolbarTrailingViewTop.constant = topInset
+        } else {
+            self.toolbarTopViewWidth.constant = size
+            self.toolbarTopView.layer.cornerRadius = 8
+            self.toolbarTopViewTop.constant = PDFReaderViewController.toolbarFullInsetInset
+            self.toolbarLeadingViewTop.constant = PDFReaderViewController.toolbarFullInsetInset
+            self.toolbarTrailingViewTop.constant = PDFReaderViewController.toolbarFullInsetInset
+        }
+        self.toolbarPositionsOverlay.layoutIfNeeded()
     }
 
     private func set(toolbarPosition newPosition: ToolbarState.Position, oldPosition: ToolbarState.Position, velocity velocityPoint: CGPoint) {
@@ -515,6 +513,14 @@ class PDFReaderViewController: UIViewController {
     }
 
     private func setConstraints(for position: ToolbarState.Position) {
+        if self.isCompactSize {
+            self.setCompactConstraints(for: position)
+        } else {
+            self.setFullConstraints(for: position)
+        }
+    }
+
+    private func setFullConstraints(for position: ToolbarState.Position) {
         switch position {
         case .leading:
             self.toolbarCenteredTrailing.isActive = false
@@ -522,8 +528,9 @@ class PDFReaderViewController: UIViewController {
             self.toolbarCenter.isActive = false
             self.toolbarTrailing.isActive = false
             self.toolbarLeading.isActive = true
-            self.toolbarTop.constant = 20
-            self.annotationToolbarController.set(rotation: .vertical)
+            self.toolbarLeading.constant = PDFReaderViewController.toolbarFullInsetInset
+            self.toolbarTop.constant = PDFReaderViewController.toolbarFullInsetInset
+            self.annotationToolbarController.set(rotation: .vertical, isCompactSize: self.isCompactSize)
 
         case .trailing:
             self.toolbarCenteredTrailing.isActive = false
@@ -531,8 +538,9 @@ class PDFReaderViewController: UIViewController {
             self.toolbarCenter.isActive = false
             self.toolbarLeading.isActive = false
             self.toolbarTrailing.isActive = true
-            self.toolbarTop.constant = 20
-            self.annotationToolbarController.set(rotation: .vertical)
+            self.toolbarTrailing.constant = PDFReaderViewController.toolbarFullInsetInset
+            self.toolbarTop.constant = PDFReaderViewController.toolbarFullInsetInset
+            self.annotationToolbarController.set(rotation: .vertical, isCompactSize: self.isCompactSize)
 
         case .top:
             self.toolbarTrailing.isActive = false
@@ -540,8 +548,43 @@ class PDFReaderViewController: UIViewController {
             self.toolbarCenteredTrailing.isActive = true
             self.toolbarCenteredLeading.isActive = true
             self.toolbarCenter.isActive = true
-            self.toolbarTop.constant = 12
-            self.annotationToolbarController.set(rotation: .horizontal)
+            self.toolbarTop.constant = PDFReaderViewController.toolbarCompactInset
+            self.annotationToolbarController.set(rotation: .horizontal, isCompactSize: self.isCompactSize)
+        }
+    }
+
+    private func setCompactConstraints(for position: ToolbarState.Position) {
+        switch position {
+        case .leading:
+            self.toolbarCenteredTrailing.isActive = false
+            self.toolbarCenteredLeading.isActive = false
+            self.toolbarCenter.isActive = false
+            self.toolbarTrailing.isActive = false
+            self.toolbarLeading.isActive = true
+            self.toolbarLeading.constant = PDFReaderViewController.toolbarFullInsetInset
+            self.toolbarTop.constant = PDFReaderViewController.toolbarFullInsetInset
+            self.annotationToolbarController.set(rotation: .vertical, isCompactSize: self.isCompactSize)
+
+        case .trailing:
+            self.toolbarCenteredTrailing.isActive = false
+            self.toolbarCenteredLeading.isActive = false
+            self.toolbarCenter.isActive = false
+            self.toolbarLeading.isActive = false
+            self.toolbarTrailing.isActive = true
+            self.toolbarTrailing.constant = PDFReaderViewController.toolbarFullInsetInset
+            self.toolbarTop.constant = PDFReaderViewController.toolbarFullInsetInset
+            self.annotationToolbarController.set(rotation: .vertical, isCompactSize: self.isCompactSize)
+
+        case .top:
+            self.toolbarCenteredTrailing.isActive = false
+            self.toolbarCenteredLeading.isActive = false
+            self.toolbarCenter.isActive = false
+            self.toolbarTrailing.isActive = true
+            self.toolbarTrailing.constant = 0
+            self.toolbarLeading.isActive = true
+            self.toolbarLeading.constant = 0
+            self.toolbarTop.constant = 0
+            self.annotationToolbarController.set(rotation: .horizontal, isCompactSize: self.isCompactSize)
         }
     }
 
@@ -644,7 +687,7 @@ class PDFReaderViewController: UIViewController {
         separator.translatesAutoresizingMaskIntoConstraints = false
         separator.backgroundColor = Asset.Colors.annotationSidebarBorderColor.color
 
-        let annotationToolbar = AnnotationToolbarViewController(rotation: .vertical)
+        let annotationToolbar = AnnotationToolbarViewController()
         annotationToolbar.delegate = self
         annotationToolbar.view.translatesAutoresizingMaskIntoConstraints = false
 
@@ -656,8 +699,10 @@ class PDFReaderViewController: UIViewController {
         let topPosition = DashedView(dashColor: .systemGray4)
         self.setup(toolbarPositionView: topPosition)
         let leadingPosition = DashedView(dashColor: .systemGray4)
+        leadingPosition.layer.cornerRadius = 8
         self.setup(toolbarPositionView: leadingPosition)
         let trailingPosition = DashedView(dashColor: .systemGray4)
+        trailingPosition.layer.cornerRadius = 8
         self.setup(toolbarPositionView: trailingPosition)
 
         self.add(controller: documentController)
@@ -675,15 +720,18 @@ class PDFReaderViewController: UIViewController {
 
         let documentLeftConstraint = documentController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor)
         let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: -PDFReaderLayout.sidebarWidth)
-        self.toolbarLeading = annotationToolbar.view.leadingAnchor.constraint(equalTo: sidebarController.view.trailingAnchor, constant: 20)
-        self.toolbarCenteredLeading = annotationToolbar.view.leadingAnchor.constraint(greaterThanOrEqualTo: sidebarController.view.trailingAnchor, constant: 20)
-        self.toolbarTrailing = self.view.trailingAnchor.constraint(equalTo: annotationToolbar.view.trailingAnchor, constant: 20)
-        self.toolbarCenteredTrailing = self.view.trailingAnchor.constraint(greaterThanOrEqualTo: annotationToolbar.view.trailingAnchor, constant: 20)
+        self.toolbarLeading = annotationToolbar.view.leadingAnchor.constraint(equalTo: sidebarController.view.trailingAnchor, constant: PDFReaderViewController.toolbarFullInsetInset)
+        self.toolbarCenteredLeading = annotationToolbar.view.leadingAnchor.constraint(greaterThanOrEqualTo: sidebarController.view.trailingAnchor, constant: PDFReaderViewController.toolbarFullInsetInset)
+        self.toolbarTrailing = self.view.trailingAnchor.constraint(equalTo: annotationToolbar.view.trailingAnchor, constant: PDFReaderViewController.toolbarFullInsetInset)
+        self.toolbarCenteredTrailing = self.view.trailingAnchor.constraint(greaterThanOrEqualTo: annotationToolbar.view.trailingAnchor, constant: PDFReaderViewController.toolbarFullInsetInset)
         self.toolbarCenter = annotationToolbar.view.centerXAnchor.constraint(equalTo: self.view.centerXAnchor)
-        let toolbarTop = annotationToolbar.view.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor, constant: 20)
+        let toolbarTop = annotationToolbar.view.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor, constant: PDFReaderViewController.toolbarCompactInset)
         let topWidth = topPosition.widthAnchor.constraint(equalToConstant: 50)
         let leadingHeight = leadingPosition.heightAnchor.constraint(equalToConstant: 50)
         let trailingHeight = trailingPosition.heightAnchor.constraint(equalToConstant: 50)
+        let topPositionTop = topPosition.topAnchor.constraint(equalTo: positionsOverlay.topAnchor, constant: PDFReaderViewController.toolbarCompactInset)
+        let leadingPositionTop = leadingPosition.topAnchor.constraint(equalTo: positionsOverlay.topAnchor, constant: PDFReaderViewController.toolbarCompactInset)
+        let trailingPositionTop = trailingPosition.topAnchor.constraint(equalTo: positionsOverlay.topAnchor, constant: PDFReaderViewController.toolbarCompactInset)
 
         NSLayoutConstraint.activate([
             sidebarController.view.topAnchor.constraint(equalTo: container.topAnchor),
@@ -707,14 +755,14 @@ class PDFReaderViewController: UIViewController {
             positionsOverlay.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
             positionsOverlay.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
             positionsOverlay.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
-            topPosition.topAnchor.constraint(equalTo: positionsOverlay.topAnchor, constant: PDFReaderViewController.overlayTopInset),
+            topPositionTop,
             topPosition.centerXAnchor.constraint(equalTo: positionsOverlay.centerXAnchor),
             topPosition.heightAnchor.constraint(equalToConstant: AnnotationToolbarViewController.size),
-            leadingPosition.topAnchor.constraint(equalTo: positionsOverlay.topAnchor, constant: PDFReaderViewController.overlayTopInset),
-            leadingPosition.leadingAnchor.constraint(equalTo: positionsOverlay.leadingAnchor, constant: PDFReaderViewController.overlayHorizontalInset),
+            leadingPositionTop,
+            leadingPosition.leadingAnchor.constraint(equalTo: positionsOverlay.leadingAnchor, constant: PDFReaderViewController.toolbarFullInsetInset),
             leadingPosition.widthAnchor.constraint(equalToConstant: AnnotationToolbarViewController.size),
-            trailingPosition.topAnchor.constraint(equalTo: positionsOverlay.topAnchor, constant: PDFReaderViewController.overlayTopInset),
-            positionsOverlay.trailingAnchor.constraint(equalTo: trailingPosition.trailingAnchor, constant: PDFReaderViewController.overlayHorizontalInset),
+            trailingPositionTop,
+            positionsOverlay.trailingAnchor.constraint(equalTo: trailingPosition.trailingAnchor, constant: PDFReaderViewController.toolbarFullInsetInset),
             trailingPosition.widthAnchor.constraint(equalToConstant: AnnotationToolbarViewController.size),
             topWidth,
             leadingHeight,
@@ -734,12 +782,14 @@ class PDFReaderViewController: UIViewController {
         self.toolbarTopViewWidth = topWidth
         self.toolbarLeadingViewHeight = leadingHeight
         self.toolbarTrailingViewHeight = trailingHeight
+        self.toolbarTopViewTop = topPositionTop
+        self.toolbarLeadingViewTop = leadingPositionTop
+        self.toolbarTrailingViewTop = trailingPositionTop
     }
 
     private func setup(toolbarPositionView view: UIView) {
         view.translatesAutoresizingMaskIntoConstraints = false
         view.backgroundColor = UIColor.systemGray4.withAlphaComponent(0.5)
-        view.layer.cornerRadius = 8
         view.layer.masksToBounds = true
     }
 
@@ -767,7 +817,31 @@ class PDFReaderViewController: UIViewController {
         var buttons = [self.settingsButton, self.shareButton, self.searchButton]
 
         if !isCompact {
-            buttons.insert(contentsOf: [self.redoButton, self.undoButton], at: 2)
+            let undo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.left"), style: .plain, target: nil, action: nil)
+            undo.isEnabled = self.viewModel.state.document.undoController.undoManager.canUndo
+            undo.tag = NavigationBarButton.undo.rawValue
+            undo.rx
+                .tap
+                .subscribe(onNext: { [weak self] _ in
+                    guard let `self` = self, self.viewModel.state.document.undoController.undoManager.canUndo else { return }
+                    self.viewModel.state.document.undoController.undoManager.undo()
+                })
+                .disposed(by: self.disposeBag)
+            self.undoBarButton = undo
+
+            let redo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.right"), style: .plain, target: nil, action: nil)
+            redo.isEnabled = self.viewModel.state.document.undoController.undoManager.canRedo
+            redo.tag = NavigationBarButton.redo.rawValue
+            redo.rx
+                .tap
+                .subscribe(onNext: { [weak self] _ in
+                    guard let `self` = self, self.viewModel.state.document.undoController.undoManager.canRedo else { return }
+                    self.viewModel.state.document.undoController.undoManager.redo()
+                })
+                .disposed(by: self.disposeBag)
+            self.redoBarButton = redo
+
+            buttons.insert(contentsOf: [redo, undo], at: 2)
         }
 
         if self.viewModel.state.library.metadataEditable {
@@ -860,6 +934,13 @@ extension PDFReaderViewController: AnnotationBoundingBoxConverter {
 }
 
 extension PDFReaderViewController: AnnotationToolbarDelegate {
+    var rotation: AnnotationToolbarViewController.Rotation {
+        switch self.toolbarState.position {
+        case .leading, .trailing: return .vertical
+        case .top: return .horizontal
+        }
+    }
+
     func closeAnnotationToolbar() {
         (self.toolbarButton.customView as? CheckboxButton)?.isSelected = false
         self.hideAnnotationToolbar(animated: true)
@@ -889,6 +970,22 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
                                                      valueChanged: { [weak self] newValue in
             self?.viewModel.process(action: .setActiveEraserSize(newValue))
         })
+    }
+
+    var canUndo: Bool {
+        return self.viewModel.state.document.undoController.undoManager.canUndo
+    }
+
+    func performUndo() {
+        self.viewModel.state.document.undoController.undoManager.undo()
+    }
+
+    var canRedo: Bool {
+        return self.viewModel.state.document.undoController.undoManager.canRedo
+    }
+
+    func performRedo() {
+        self.viewModel.state.document.undoController.undoManager.redo()
     }
 }
 
