@@ -106,14 +106,14 @@ final class AnnotationViewHeader: UIView {
 
     private func setupView(with layout: AnnotationViewLayout) {
         let typeImageView = UIImageView()
-        typeImageView.setContentCompressionResistancePriority(UILayoutPriority(rawValue: 1000), for: .horizontal)
+        typeImageView.setContentCompressionResistancePriority(.required, for: .horizontal)
         typeImageView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         typeImageView.contentMode = .scaleAspectFit
         typeImageView.translatesAutoresizingMaskIntoConstraints = false
 
         let pageLabel = UILabel()
         pageLabel.font = layout.pageLabelFont
-        pageLabel.setContentCompressionResistancePriority(UILayoutPriority(rawValue: 1000), for: .horizontal)
+        pageLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
         pageLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         pageLabel.translatesAutoresizingMaskIntoConstraints = false
 
