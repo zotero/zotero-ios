@@ -27,14 +27,20 @@ struct AnnotationToolOptions: OptionSet {
 }
 
 protocol AnnotationToolbarDelegate: AnyObject {
+    var rotation: AnnotationToolbarViewController.Rotation { get }
+    var isCompactSize: Bool { get }
     var activeAnnotationColor: UIColor { get }
     var activeAnnotationTool: PSPDFKit.Annotation.Tool? { get }
+    var canUndo: Bool { get }
+    var canRedo: Bool { get }
 
     func toggle(tool: PSPDFKit.Annotation.Tool, options: AnnotationToolOptions)
     func showInkSettings(sender: UIView)
     func showEraserSettings(sender: UIView)
     func showColorPicker(sender: UIButton)
     func closeAnnotationToolbar()
+    func performUndo()
+    func performRedo()
 }
 
 class AnnotationToolbarViewController: UIViewController {
@@ -45,6 +51,9 @@ class AnnotationToolbarViewController: UIViewController {
     static let size: CGFloat = 52
     private let disposeBag: DisposeBag
 
+    private weak var scrollView: UIScrollView!
+    private var scrollViewWidthContentConstraint: NSLayoutConstraint!
+    private var scrollViewHeightContentConstraint: NSLayoutConstraint!
     private weak var stackView: UIStackView!
     private weak var noteButton: CheckboxButton!
     private weak var highlightButton: CheckboxButton!
@@ -53,6 +62,8 @@ class AnnotationToolbarViewController: UIViewController {
     private weak var eraserButton: CheckboxButton!
     private weak var colorPickerButton: UIButton!
     private weak var additionalStackView: UIStackView!
+    private(set) weak var undoButton: UIButton?
+    private(set) weak var redoButton: UIButton?
     private var widthConstraint: NSLayoutConstraint!
     private var heightConstraint: NSLayoutConstraint!
     private var handleTop: NSLayoutConstraint!
@@ -65,12 +76,10 @@ class AnnotationToolbarViewController: UIViewController {
     private var containerTrailing: NSLayoutConstraint!
     private var containerToAdditionalVertical: NSLayoutConstraint!
     private var containerToAdditionalHorizontal: NSLayoutConstraint!
-    private var rotation: Rotation
     weak var delegate: AnnotationToolbarDelegate?
     private var lastGestureRecognizerTouch: UITouch?
 
-    init(rotation: Rotation) {
-        self.rotation = rotation
+    init() {
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -85,8 +94,10 @@ class AnnotationToolbarViewController: UIViewController {
         self.view.backgroundColor = Asset.Colors.navbarBackground.color
 
         self.setupViews()
-        self.set(rotation: self.rotation)
-        self.view.layoutIfNeeded()
+        if let delegate = self.delegate {
+            self.set(rotation: delegate.rotation, isCompactSize: delegate.isCompactSize)
+            self.view.layoutIfNeeded()
+        }
     }
 
     func set(selected: Bool, to tool: PSPDFKit.Annotation.Tool) {
@@ -105,7 +116,7 @@ class AnnotationToolbarViewController: UIViewController {
         }
     }
 
-    func set(rotation: Rotation) {
+    func set(rotation: Rotation, isCompactSize: Bool) {
         self.view.layer.cornerRadius = 8
         self.view.layer.masksToBounds = false
 
@@ -115,6 +126,8 @@ class AnnotationToolbarViewController: UIViewController {
             self.handleTop.isActive = false
             self.containerBottom.isActive = false
             self.containerToAdditionalHorizontal.isActive = false
+            self.scrollViewHeightContentConstraint.priority = UILayoutPriority(rawValue: 999)
+            self.scrollViewWidthContentConstraint.priority = .required
             self.widthConstraint.isActive = true
             self.handleLeading.isActive = true
             self.containerTrailing.isActive = true
@@ -127,12 +140,15 @@ class AnnotationToolbarViewController: UIViewController {
             self.additionalTrailing.constant = 0
             self.containerLeading.constant = 8
             self.containerTop.constant = 15
+            self.containerToAdditionalVertical.constant = isCompactSize ? 20 : 50
 
         case .horizontal:
             self.widthConstraint.isActive = false
             self.handleLeading.isActive = false
             self.containerTrailing.isActive = false
             self.containerToAdditionalVertical.isActive = false
+            self.scrollViewWidthContentConstraint.priority = UILayoutPriority(rawValue: 999)
+            self.scrollViewHeightContentConstraint.priority = .required
             self.handleTop.isActive = true
             self.containerBottom.isActive = true
             self.containerToAdditionalHorizontal.isActive = true
@@ -145,6 +161,16 @@ class AnnotationToolbarViewController: UIViewController {
             self.additionalTrailing.constant = 15
             self.containerLeading.constant = 20
             self.containerTop.constant = 8
+            self.containerToAdditionalHorizontal.constant = isCompactSize ? 20 : 50
+        }
+    }
+
+    func updateAdditionalButtons() {
+        for view in self.additionalStackView.arrangedSubviews {
+            view.removeFromSuperview()
+        }
+        for view in self.createAdditionalItems() {
+            self.additionalStackView.addArrangedSubview(view)
         }
     }
 
@@ -283,10 +309,42 @@ class AnnotationToolbarViewController: UIViewController {
     }
 
     private func createAdditionalItems() -> [UIView] {
+        let undo = UIButton(type: .custom)
+        undo.setImage(UIImage(systemName: "arrow.uturn.left", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
+        undo.isEnabled = self.delegate?.canUndo ?? false
+        undo.contentEdgeInsets = UIEdgeInsets(top: 6, left: 6, bottom: 6, right: 6)
+        undo.setContentCompressionResistancePriority(.required, for: .horizontal)
+        undo.setContentCompressionResistancePriority(.required, for: .vertical)
+        undo.rx
+            .tap
+            .subscribe(onNext: { [weak self] _ in
+                guard let `self` = self, self.delegate?.canUndo == true else { return }
+                self.delegate?.performUndo()
+            })
+            .disposed(by: self.disposeBag)
+        self.undoButton = undo
+
+        let redo = UIButton(type: .custom)
+        redo.setImage(UIImage(systemName: "arrow.uturn.right", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
+        redo.isEnabled = self.delegate?.canRedo ?? false
+        redo.contentEdgeInsets = UIEdgeInsets(top: 6, left: 6, bottom: 6, right: 6)
+        redo.setContentCompressionResistancePriority(.required, for: .horizontal)
+        redo.setContentCompressionResistancePriority(.required, for: .vertical)
+        redo.rx
+            .tap
+            .subscribe(onNext: { [weak self] _ in
+                guard let `self` = self, self.delegate?.canRedo == true else { return }
+                self.delegate?.performRedo()
+            })
+            .disposed(by: self.disposeBag)
+        self.redoButton = redo
+
         let close = UIButton(type: .custom)
         close.setImage(UIImage(systemName: "xmark.circle", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
         close.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        close.widthAnchor.constraint(equalTo: close.heightAnchor).isActive = true
+        close.contentEdgeInsets = UIEdgeInsets(top: 6, left: 6, bottom: 6, right: 6)
+        close.setContentCompressionResistancePriority(.required, for: .horizontal)
+        close.setContentCompressionResistancePriority(.required, for: .vertical)
         close.rx.controlEvent(.touchUpInside)
              .subscribe(with: self, onNext: { `self`, _ in
                  self.delegate?.closeAnnotationToolbar()
@@ -297,41 +355,65 @@ class AnnotationToolbarViewController: UIViewController {
         handle.translatesAutoresizingMaskIntoConstraints = false
         handle.contentMode = .center
         handle.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
+        handle.setContentCompressionResistancePriority(.required, for: .horizontal)
+        handle.setContentCompressionResistancePriority(.required, for: .vertical)
 
-        return [close, handle]
+        return [undo, redo, close, handle]
     }
 
     private func setupViews() {
         self.widthConstraint = self.view.widthAnchor.constraint(equalToConstant: AnnotationToolbarViewController.size)
         self.heightConstraint = self.view.heightAnchor.constraint(equalToConstant: AnnotationToolbarViewController.size)
 
+        let scrollView = UIScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.showsHorizontalScrollIndicator = false
+        self.view.addSubview(scrollView)
+
         let stackView = UIStackView(arrangedSubviews: self.createButtons())
         stackView.axis = .vertical
         stackView.spacing = 8
         stackView.distribution = .fill
         stackView.translatesAutoresizingMaskIntoConstraints = false
-        self.view.addSubview(stackView)
+        stackView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        stackView.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        scrollView.addSubview(stackView)
 
         let additionalStackView = UIStackView(arrangedSubviews: self.createAdditionalItems())
+        additionalStackView.setContentCompressionResistancePriority(.required, for: .horizontal)
+        additionalStackView.setContentCompressionResistancePriority(.required, for: .vertical)
+        additionalStackView.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        additionalStackView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         additionalStackView.axis = .vertical
         additionalStackView.spacing = 0
         additionalStackView.distribution = .fill
         additionalStackView.translatesAutoresizingMaskIntoConstraints = false
         self.view.addSubview(additionalStackView)
 
-        self.containerBottom = self.view.bottomAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 8)
-        self.containerTrailing = self.view.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 8)
+        self.containerBottom = self.view.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: 8)
+        self.containerTrailing = self.view.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: 8)
         self.handleTop = self.view.topAnchor.constraint(equalTo: additionalStackView.topAnchor)
         self.handleLeading = self.view.leadingAnchor.constraint(equalTo: additionalStackView.leadingAnchor)
-        self.containerToAdditionalVertical = additionalStackView.topAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 50)
-        self.containerToAdditionalHorizontal = additionalStackView.leadingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 50)
-        let containerTop = stackView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: 15)
-        let containerLeading = stackView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 15)
+        self.containerToAdditionalVertical = additionalStackView.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: 50)
+        self.containerToAdditionalVertical.priority = .required
+        self.containerToAdditionalHorizontal = additionalStackView.leadingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: 50)
+        self.containerToAdditionalHorizontal.priority = .required
+        let containerTop = scrollView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: 15)
+        let containerLeading = scrollView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 15)
         let additionalBottom = self.view.bottomAnchor.constraint(equalTo: additionalStackView.bottomAnchor)
         let additionalTrailing = self.view.trailingAnchor.constraint(equalTo: additionalStackView.trailingAnchor)
+        self.scrollViewWidthContentConstraint = scrollView.frameLayoutGuide.widthAnchor.constraint(equalTo: stackView.widthAnchor)
+        self.scrollViewHeightContentConstraint = scrollView.frameLayoutGuide.heightAnchor.constraint(equalTo: stackView.heightAnchor)
 
-        NSLayoutConstraint.activate([containerTop, containerLeading, self.containerTrailing, self.containerToAdditionalVertical, additionalBottom, additionalTrailing, self.handleLeading])
+        NSLayoutConstraint.activate([containerTop, containerLeading, self.containerTrailing, self.containerToAdditionalVertical, additionalBottom, additionalTrailing, self.handleLeading,
+                                     self.scrollViewWidthContentConstraint, self.scrollViewHeightContentConstraint,
+                                     scrollView.contentLayoutGuide.topAnchor.constraint(equalTo: stackView.topAnchor),
+                                     scrollView.contentLayoutGuide.leadingAnchor.constraint(equalTo: stackView.leadingAnchor),
+                                     scrollView.contentLayoutGuide.bottomAnchor.constraint(equalTo: stackView.bottomAnchor),
+                                     scrollView.contentLayoutGuide.trailingAnchor.constraint(equalTo: stackView.trailingAnchor)])
 
+        self.scrollView = scrollView
         self.stackView = stackView
         self.containerTop = containerTop
         self.containerLeading = containerLeading
