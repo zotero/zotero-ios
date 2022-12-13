@@ -43,6 +43,8 @@ final class Controllers {
     fileprivate var needsBaseKeyMigration: Bool
     @UserDefault(key: "ChildItemsNeedFixingCollections", defaultValue: true)
     fileprivate var needsChildItemCollectionsFix: Bool
+    @UserDefault(key: "EmptyNoteTitlesNeedFixing", defaultValue: true)
+    fileprivate var needsEmptyNoteTitleFix: Bool
 
     private static func apiConfiguration(schemaVersion: Int) -> URLSessionConfiguration {
         let configuration = URLSessionConfiguration.default
@@ -337,6 +339,10 @@ final class UserControllers {
             if controllers?.needsChildItemCollectionsFix == true {
                 try coordinator.perform(request: FixChildItemsWithCollectionsDbRequest())
                 controllers?.needsChildItemCollectionsFix = false
+            }
+            if controllers?.needsEmptyNoteTitleFix == true {
+                try coordinator.perform(request: FixNotesWithEmptyTitlesDbRequest())
+                controllers?.needsEmptyNoteTitleFix = false
             }
         })
 
