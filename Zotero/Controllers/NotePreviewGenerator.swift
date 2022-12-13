@@ -20,8 +20,9 @@ struct NotePreviewGenerator {
         guard !note.isEmpty, var stripped = self.stripHtml(from: note) else { return nil }
 
         stripped = stripped.replacingOccurrences(of: "\t", with: "")
+        stripped = stripped.trimmingCharacters(in: .newlines)
         stripped = stripped.components(separatedBy: .newlines).first ?? stripped
-        stripped = stripped.trimmingCharacters(in: CharacterSet.whitespaces)
+        stripped = stripped.trimmingCharacters(in: .whitespaces)
 
         if stripped.count > 200 {
             let endIndex = stripped.index(stripped.startIndex, offsetBy: 200)
