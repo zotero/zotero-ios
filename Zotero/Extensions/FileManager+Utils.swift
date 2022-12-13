@@ -8,6 +8,8 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
+
 extension FileManager {
     func createMissingDirectories(for url: URL) throws {    
         var isDirectory: ObjCBool = false
@@ -20,6 +22,18 @@ extension FileManager {
 
         if !exists {
             try self.createDirectory(at: url, withIntermediateDirectories: true)
+        }
+    }
+
+    func clearDatabaseFiles(at url: URL) {
+        let realmUrls = [url, url.appendingPathExtension("lock"), url.appendingPathExtension("note"), url.appendingPathExtension("management")]
+
+        for url in realmUrls {
+            do {
+                try FileManager.default.removeItem(at: url)
+            } catch let error {
+                DDLogError("FileManager: couldn't delete db file at '\(url.absoluteString)' - \(error)")
+            }
         }
     }
 }

@@ -10,6 +10,7 @@ import Combine
 import Foundation
 
 import CocoaLumberjackSwift
+import RealmSwift
 import RxSwift
 
 /// Global controllers which don't need user session
@@ -239,6 +240,12 @@ final class Controllers {
             self.sessionController.reset()
             // Re-start session observing
             self.startObservingSession()
+
+            if let error = error as? Realm.Error, error.code == .fail {
+                // Fatal error, remove db and let user log in again.
+                let dbFile = Files.dbFile(for: userId)
+                FileManager.default.clearDatabaseFiles(at: dbFile.createUrl())
+            }
 
             debugLogging.stop(ignoreEmptyLogs: true, userId: userId, customAlertMessage: { L10n.migrationDebug($0) })
 

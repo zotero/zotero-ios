@@ -28,19 +28,7 @@ final class RealmDbStorage {
 
     func clear() {
         guard let realmUrl = self.config.fileURL else { return }
-
-        let realmUrls = [realmUrl,
-                         realmUrl.appendingPathExtension("lock"),
-                         realmUrl.appendingPathExtension("note"),
-                         realmUrl.appendingPathExtension("management")]
-
-        for url in realmUrls {
-            do {
-                try FileManager.default.removeItem(at: url)
-            } catch let error {
-                DDLogError("RealmDbStorage: couldn't delete file at '\(url.absoluteString)' - \(error)")
-            }
-        }
+        FileManager.default.clearDatabaseFiles(at: realmUrl)
     }
 
     fileprivate func performInAutoreleasepoolIfNeeded<Result>(invoking body: () throws -> Result) rethrows -> Result {
