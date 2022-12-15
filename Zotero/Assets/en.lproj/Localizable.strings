@@ -230,6 +230,11 @@
 "pdf.deleted_message" = "This document has been deleted. Do you want to restore it?";
 "pdf.line_width_point" = "%0.1f pt";
 "pdf.highlight" = "Highlight";
+"pdf.annotation_toolbar.eraser" = "Eraser";
+"pdf.annotation_toolbar.highlight" = "Highlight";
+"pdf.annotation_toolbar.note" = "Note";
+"pdf.annotation_toolbar.image" = "Image";
+"pdf.annotation_toolbar.ink" = "Ink";
 
 "pdf.settings.idle_timer_title" = "Allow device to sleep";
 "pdf.settings.scroll_direction.title" = "Scroll Direction";

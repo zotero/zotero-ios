@@ -837,6 +837,18 @@ internal enum L10n {
       /// Update subsequent pages
       internal static let updateSubsequentPages = L10n.tr("Localizable", "pdf.annotation_popover.update_subsequent_pages")
     }
+    internal enum AnnotationToolbar {
+      /// Eraser
+      internal static let eraser = L10n.tr("Localizable", "pdf.annotation_toolbar.eraser")
+      /// Highlight
+      internal static let highlight = L10n.tr("Localizable", "pdf.annotation_toolbar.highlight")
+      /// Image
+      internal static let image = L10n.tr("Localizable", "pdf.annotation_toolbar.image")
+      /// Ink
+      internal static let ink = L10n.tr("Localizable", "pdf.annotation_toolbar.ink")
+      /// Note
+      internal static let note = L10n.tr("Localizable", "pdf.annotation_toolbar.note")
+    }
     internal enum AnnotationsSidebar {
       /// Add comment
       internal static let addComment = L10n.tr("Localizable", "pdf.annotations_sidebar.add_comment")
