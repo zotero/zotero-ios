@@ -48,20 +48,30 @@ class AnnotationToolbarViewController: UIViewController {
         case horizontal, vertical
     }
 
+    private struct Tool {
+        enum Kind {
+            case note, highlight, area, ink, eraser
+        }
+
+        let type: Kind
+        let title: String
+        let accessibilityLabel: String
+        let image: UIImage
+        let isHidden: Bool
+
+        func copy(isHidden: Bool) -> Tool {
+            return Tool(type: self.type, title: self.title, accessibilityLabel: self.accessibilityLabel, image: self.image, isHidden: isHidden)
+        }
+    }
+
     static let size: CGFloat = 52
+    private static let toolsToAdditionalFullOffset: CGFloat = 50
+    private static let toolsToAdditionalCompactOffset: CGFloat = 50
     private let disposeBag: DisposeBag
 
-    private weak var scrollView: UIScrollView!
-    private var scrollViewWidthContentConstraint: NSLayoutConstraint!
-    private var scrollViewHeightContentConstraint: NSLayoutConstraint!
     private weak var stackView: UIStackView!
-    private weak var noteButton: CheckboxButton!
-    private weak var highlightButton: CheckboxButton!
-    private weak var areaButton: CheckboxButton!
-    private weak var inkButton: CheckboxButton!
-    private weak var eraserButton: CheckboxButton!
-    private weak var colorPickerButton: UIButton!
     private weak var additionalStackView: UIStackView!
+    private weak var colorPickerButton: UIButton!
     private(set) weak var undoButton: UIButton?
     private(set) weak var redoButton: UIButton?
     private var widthConstraint: NSLayoutConstraint!
@@ -76,16 +86,26 @@ class AnnotationToolbarViewController: UIViewController {
     private var containerTrailing: NSLayoutConstraint!
     private var containerToAdditionalVertical: NSLayoutConstraint!
     private var containerToAdditionalHorizontal: NSLayoutConstraint!
+    private var tools: [Tool]
     weak var delegate: AnnotationToolbarDelegate?
     private var lastGestureRecognizerTouch: UITouch?
 
     init() {
+        self.tools = AnnotationToolbarViewController.createTools()
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    private static func createTools() -> [Tool] {
+        return [Tool(type: .highlight, title: L10n.Pdf.AnnotationToolbar.highlight, accessibilityLabel: L10n.Accessibility.Pdf.highlightAnnotationTool, image: Asset.Images.Annotations.highlighterLarge.image, isHidden: false),
+                Tool(type: .note, title: L10n.Pdf.AnnotationToolbar.note, accessibilityLabel: L10n.Accessibility.Pdf.noteAnnotationTool, image: Asset.Images.Annotations.noteLarge.image, isHidden: false),
+                Tool(type: .area, title: L10n.Pdf.AnnotationToolbar.image, accessibilityLabel: L10n.Accessibility.Pdf.imageAnnotationTool, image: Asset.Images.Annotations.areaLarge.image, isHidden: false),
+                Tool(type: .ink, title: L10n.Pdf.AnnotationToolbar.ink, accessibilityLabel: L10n.Accessibility.Pdf.inkAnnotationTool, image: Asset.Images.Annotations.inkLarge.image, isHidden: false),
+                Tool(type: .eraser, title: L10n.Pdf.AnnotationToolbar.eraser, accessibilityLabel: L10n.Accessibility.Pdf.eraserAnnotationTool, image: Asset.Images.Annotations.eraserLarge.image, isHidden: false)]
     }
 
     override func viewDidLoad() {
@@ -100,20 +120,48 @@ class AnnotationToolbarViewController: UIViewController {
         }
     }
 
-    func set(selected: Bool, to tool: PSPDFKit.Annotation.Tool) {
-        switch tool {
-        case .highlight:
-            self.highlightButton.isSelected = selected
-        case .note:
-            self.noteButton.isSelected = selected
-        case .square:
-            self.areaButton.isSelected = selected
-        case .ink:
-            self.inkButton.isSelected = selected
-        case .eraser:
-            self.eraserButton.isSelected = selected
-        default: break
+    func showToolsThatFit(containerMaxSize maxSize: CGFloat) {
+        guard self.stackView.arrangedSubviews.count == self.tools.count + 1 else {
+            DDLogError("AnnotationToolbarViewController: too many views in stack view! Stack view views: \(self.stackView.arrangedSubviews.count). Tools: \(self.tools.count)")
+            return
         }
+        guard let button = self.stackView.arrangedSubviews.filter({ !$0.isHidden }).last else { return }
+
+        let isHorizontal = self.view.frame.width > self.view.frame.height
+        let buttonSize = isHorizontal ? button.frame.width : button.frame.height
+
+        guard buttonSize > 0 else { return }
+
+        let stackViewOffset = isHorizontal ? self.containerLeading.constant : self.containerTop.constant
+        let additionalSize = isHorizontal ? self.additionalStackView.frame.width : self.additionalStackView.frame.height
+        let containerToAdditionalOffset = isHorizontal ? self.containerToAdditionalHorizontal.constant : self.containerToAdditionalVertical.constant
+        let additionalOffset = isHorizontal ? self.additionalTrailing.constant : self.additionalBottom.constant
+        let remainingSize = maxSize - stackViewOffset - containerToAdditionalOffset - additionalSize - additionalOffset
+        let count = min(Int(floor(remainingSize / buttonSize)), self.tools.count)
+
+        for idx in 0..<count {
+            self.stackView.arrangedSubviews[idx].isHidden = false
+        }
+
+        if count == self.tools.count {
+            self.stackView.arrangedSubviews.last?.isHidden = true
+        }
+    }
+
+    func set(selected: Bool, to tool: PSPDFKit.Annotation.Tool) {
+//        switch tool {
+//        case .highlight:
+//            self.highlightButton.isSelected = selected
+//        case .note:
+//            self.noteButton.isSelected = selected
+//        case .square:
+//            self.areaButton.isSelected = selected
+//        case .ink:
+//            self.inkButton.isSelected = selected
+//        case .eraser:
+//            self.eraserButton.isSelected = selected
+//        default: break
+//        }
     }
 
     func set(rotation: Rotation, isCompactSize: Bool) {
@@ -122,46 +170,77 @@ class AnnotationToolbarViewController: UIViewController {
 
         switch rotation {
         case .vertical:
-            self.heightConstraint.isActive = false
-            self.handleTop.isActive = false
-            self.containerBottom.isActive = false
-            self.containerToAdditionalHorizontal.isActive = false
-            self.scrollViewHeightContentConstraint.priority = UILayoutPriority(rawValue: 999)
-            self.scrollViewWidthContentConstraint.priority = .required
-            self.widthConstraint.isActive = true
-            self.handleLeading.isActive = true
-            self.containerTrailing.isActive = true
-            self.containerToAdditionalVertical.isActive = true
-
-            self.stackView.axis = .vertical
-            self.additionalStackView.axis = .vertical
-
-            self.additionalBottom.constant = 8
-            self.additionalTrailing.constant = 0
-            self.containerLeading.constant = 8
-            self.containerTop.constant = 15
-            self.containerToAdditionalVertical.constant = isCompactSize ? 20 : 50
-
+            self.setVerticalLayout(isCompactSize: isCompactSize)
         case .horizontal:
-            self.widthConstraint.isActive = false
-            self.handleLeading.isActive = false
-            self.containerTrailing.isActive = false
-            self.containerToAdditionalVertical.isActive = false
-            self.scrollViewWidthContentConstraint.priority = UILayoutPriority(rawValue: 999)
-            self.scrollViewHeightContentConstraint.priority = .required
-            self.handleTop.isActive = true
-            self.containerBottom.isActive = true
-            self.containerToAdditionalHorizontal.isActive = true
-            self.heightConstraint.isActive = true
+            self.setHorizontalLayout(isCompactSize: isCompactSize)
+        }
+    }
 
-            self.stackView.axis = .horizontal
-            self.additionalStackView.axis = .horizontal
+    private func setVerticalLayout(isCompactSize: Bool) {
+        self.heightConstraint.isActive = false
+        self.handleTop.isActive = false
+        self.containerBottom.isActive = false
+        self.containerToAdditionalHorizontal.isActive = false
+        self.widthConstraint.isActive = true
+        self.handleLeading.isActive = true
+        self.containerTrailing.isActive = true
+        self.containerToAdditionalVertical.isActive = true
 
-            self.additionalBottom.constant = 0
-            self.additionalTrailing.constant = 15
-            self.containerLeading.constant = 20
-            self.containerTop.constant = 8
-            self.containerToAdditionalHorizontal.constant = isCompactSize ? 20 : 50
+        self.stackView.axis = .vertical
+        self.additionalStackView.axis = .vertical
+
+        self.additionalBottom.constant = 8
+        self.additionalTrailing.constant = 0
+        self.containerLeading.constant = 8
+        self.containerTop.constant = 15
+        self.containerToAdditionalVertical.constant = isCompactSize ? AnnotationToolbarViewController.toolsToAdditionalCompactOffset : AnnotationToolbarViewController.toolsToAdditionalFullOffset
+
+        let inset: CGFloat = isCompactSize ? 6 : 10
+        let insets = UIEdgeInsets(top: inset, left: 0, bottom: inset, right: 0)
+        self.set(insets: insets, in: self.stackView)
+        self.set(insets: insets, in: self.additionalStackView)
+    }
+
+    private func setHorizontalLayout(isCompactSize: Bool) {
+        self.widthConstraint.isActive = false
+        self.handleLeading.isActive = false
+        self.containerTrailing.isActive = false
+        self.containerToAdditionalVertical.isActive = false
+        self.handleTop.isActive = true
+        self.containerBottom.isActive = true
+        self.containerToAdditionalHorizontal.isActive = true
+        self.heightConstraint.isActive = true
+
+        self.stackView.axis = .horizontal
+        self.additionalStackView.axis = .horizontal
+
+        self.additionalBottom.constant = 0
+        self.additionalTrailing.constant = 15
+        self.containerLeading.constant = 20
+        self.containerTop.constant = 8
+        self.containerToAdditionalHorizontal.constant = isCompactSize ? 20 : 50
+
+        let inset: CGFloat = isCompactSize ? 6 : 10
+        let insets = UIEdgeInsets(top: 0, left: inset, bottom: 0, right: inset)
+        self.set(insets: insets, in: self.stackView)
+        self.set(insets: insets, in: self.additionalStackView)
+    }
+
+    private func set(insets: UIEdgeInsets, in stackView: UIStackView) {
+        for view in stackView.arrangedSubviews {
+            if let button = view as? UIButton {
+                button.contentEdgeInsets = insets
+            } else if let imageView = view as? UIImageView {
+                imageView.constraints.forEach({ $0.isActive = false })
+
+                guard let image = imageView.image else { continue }
+
+                if insets.left == 0 {
+                    imageView.heightAnchor.constraint(equalToConstant: (image.size.height + insets.top + insets.bottom)).isActive = true
+                } else {
+                    imageView.widthAnchor.constraint(equalToConstant: (image.size.width + insets.left + insets.right)).isActive = true
+                }
+            }
         }
     }
 
@@ -181,114 +260,107 @@ class AnnotationToolbarViewController: UIViewController {
         return []
     }
 
-    private func createButtons() -> [UIView] {
-        let symbolConfig = UIImage.SymbolConfiguration(scale: .large)
+    private func process(toolAction action: Tool.Kind) {
+        switch action {
+        case .highlight:
+            self.delegate?.toggle(tool: .highlight, options: self.currentAnnotationOptions)
+        case .note:
+            self.delegate?.toggle(tool: .note, options: self.currentAnnotationOptions)
+        case .area:
+            self.delegate?.toggle(tool: .square, options: self.currentAnnotationOptions)
+        case .ink:
+            self.delegate?.toggle(tool: .ink, options: self.currentAnnotationOptions)
+        case .eraser:
+            self.delegate?.toggle(tool: .eraser, options: self.currentAnnotationOptions)
+        }
+    }
 
-        let highlight = CheckboxButton(type: .custom)
-        highlight.accessibilityLabel = L10n.Accessibility.Pdf.highlightAnnotationTool
-        highlight.setImage(Asset.Images.Annotations.highlighterLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
-        highlight.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        highlight.rx.controlEvent(.touchDown)
-                 .subscribe(with: self, onNext: { `self`, _ in
-                     self.delegate?.toggle(tool: .highlight, options: self.currentAnnotationOptions)
-                 })
-                 .disposed(by: self.disposeBag)
-        self.highlightButton = highlight
+    private func process(longPressToolAction action: Tool.Kind, recognizer: UILongPressGestureRecognizer) {
+        guard recognizer.state == .began, let view = recognizer.view else { return }
 
-        let note = CheckboxButton(type: .custom)
-        note.accessibilityLabel = L10n.Accessibility.Pdf.noteAnnotationTool
-        note.setImage(Asset.Images.Annotations.noteLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
-        note.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        note.rx.controlEvent(.touchDown)
-            .subscribe(with: self, onNext: { `self`, _ in
-                self.delegate?.toggle(tool: .note, options: self.currentAnnotationOptions)
-            })
-            .disposed(by: self.disposeBag)
-        self.noteButton = note
+        switch action {
+        case .ink:
+            self.delegate?.showInkSettings(sender: view)
+            if self.delegate?.activeAnnotationTool != .ink {
+                self.delegate?.toggle(tool: .ink, options: self.currentAnnotationOptions)
+            }
 
-        let area = CheckboxButton(type: .custom)
-        area.accessibilityLabel = L10n.Accessibility.Pdf.imageAnnotationTool
-        area.setImage(Asset.Images.Annotations.areaLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
-        area.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        area.rx.controlEvent(.touchDown)
-            .subscribe(with: self, onNext: { `self`, _ in
-                self.delegate?.toggle(tool: .square, options: self.currentAnnotationOptions)
-            })
-            .disposed(by: self.disposeBag)
-        self.areaButton = area
+        case .eraser:
+            self.delegate?.showEraserSettings(sender: view)
+            if self.delegate?.activeAnnotationTool != .eraser {
+                self.delegate?.toggle(tool: .eraser, options: self.currentAnnotationOptions)
+            }
 
-        let inkLongPress = UILongPressGestureRecognizer()
-        inkLongPress.delegate = self
-        inkLongPress.rx.event
-                    .subscribe(with: self, onNext: { `self`, recognizer in
-                        if recognizer.state == .began, let view = recognizer.view {
-                            self.delegate?.showInkSettings(sender: view)
-                            if self.delegate?.activeAnnotationTool != .ink {
-                                self.delegate?.toggle(tool: .ink, options: self.currentAnnotationOptions)
-                            }
-                        }
-                    })
-                    .disposed(by: self.disposeBag)
+        case .note, .highlight, .area: break
+        }
+    }
 
-        let inkTap = UITapGestureRecognizer()
-        inkTap.delegate = self
-        inkTap.rx.event
-              .subscribe(with: self, onNext: { `self`, _ in
-                  self.delegate?.toggle(tool: .ink, options: self.currentAnnotationOptions)
-              })
-              .disposed(by: self.disposeBag)
-        inkTap.require(toFail: inkLongPress)
+    private func showHiddenTools() {
 
-        let ink = CheckboxButton(type: .custom)
-        ink.accessibilityLabel = L10n.Accessibility.Pdf.inkAnnotationTool
-        ink.setImage(Asset.Images.Annotations.inkLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
-        ink.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        ink.addGestureRecognizer(inkLongPress)
-        ink.addGestureRecognizer(inkTap)
-        self.inkButton = ink
+    }
 
-        let eraserLongPress = UILongPressGestureRecognizer()
-        eraserLongPress.delegate = self
-        eraserLongPress.rx.event
-                       .subscribe(with: self, onNext: { `self`, recognizer in
-                           if recognizer.state == .began, let view = recognizer.view {
-                               self.delegate?.showEraserSettings(sender: view)
-                               if self.delegate?.activeAnnotationTool != .eraser {
-                                   self.delegate?.toggle(tool: .eraser, options: self.currentAnnotationOptions)
-                               }
-                           }
-                       })
-                       .disposed(by: self.disposeBag)
+    private func createToolButtons(from tools: [Tool]) -> [UIView] {
+        let showMoreButton = UIButton(type: .custom)
+        showMoreButton.setContentHuggingPriority(.required, for: .horizontal)
+        showMoreButton.setContentHuggingPriority(.required, for: .vertical)
+        showMoreButton.setContentCompressionResistancePriority(.required, for: .vertical)
+        showMoreButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        showMoreButton.setImage(UIImage(systemName: "ellipsis")?.withRenderingMode(.alwaysTemplate), for: .normal)
+        showMoreButton.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
+        showMoreButton.rx.controlEvent(.touchUpInside).subscribe(with: self, onNext: { `self`, _ in self.showHiddenTools() }).disposed(by: self.disposeBag)
 
-        let eraserTap = UITapGestureRecognizer()
-        eraserTap.delegate = self
-        eraserTap.rx.event
-              .subscribe(with: self, onNext: { `self`, _ in
-                  self.delegate?.toggle(tool: .eraser, options: self.currentAnnotationOptions)
-              })
-              .disposed(by: self.disposeBag)
-        eraserTap.require(toFail: eraserLongPress)
-
-        let eraser = CheckboxButton(type: .custom)
-        eraser.accessibilityLabel = L10n.Accessibility.Pdf.eraserAnnotationTool
-        eraser.setImage(Asset.Images.Annotations.eraserLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
-        eraser.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        eraser.addGestureRecognizer(eraserLongPress)
-        eraser.addGestureRecognizer(eraserTap)
-        self.eraserButton = eraser
-
-        [highlight, note, area, ink, eraser].forEach { button in
+        return tools.map { tool in
+            let button = CheckboxButton(type: .custom)
+            button.accessibilityLabel = tool.accessibilityLabel
+            button.setImage(tool.image.withRenderingMode(.alwaysTemplate), for: .normal)
+            button.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
             button.adjustsImageWhenHighlighted = false
             button.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
             button.selectedTintColor = .white
             button.layer.cornerRadius = 4
             button.layer.masksToBounds = true
-        }
+            button.setContentHuggingPriority(.required, for: .horizontal)
+            button.setContentHuggingPriority(.required, for: .vertical)
+            button.setContentCompressionResistancePriority(.required, for: .vertical)
+            button.setContentCompressionResistancePriority(.required, for: .horizontal)
 
+            switch tool.type {
+            case .area, .highlight, .note:
+                button.rx.controlEvent(.touchDown).subscribe(with: self, onNext: { `self`, _ in self.process(toolAction: tool.type) }).disposed(by: self.disposeBag)
+            case .ink, .eraser:
+                self.createTapAndLongPressAction(for: tool.type, button: button)
+            }
+
+            return button
+        } + [showMoreButton]
+    }
+
+    private func createTapAndLongPressAction(for tool: Tool.Kind, button: UIButton) {
+        let longPress = UILongPressGestureRecognizer()
+        longPress.delegate = self
+        longPress.rx.event
+                    .subscribe(with: self, onNext: { `self`, recognizer in
+                        self.process(longPressToolAction: tool, recognizer: recognizer)
+                    })
+                    .disposed(by: self.disposeBag)
+
+        let tap = UITapGestureRecognizer()
+        tap.delegate = self
+        tap.rx.event
+              .subscribe(with: self, onNext: { `self`, _ in
+                  self.process(toolAction: tool)
+              })
+              .disposed(by: self.disposeBag)
+        tap.require(toFail: longPress)
+
+        button.addGestureRecognizer(longPress)
+        button.addGestureRecognizer(tap)
+    }
+
+    private func createAdditionalItems() -> [UIView] {
         let picker = UIButton()
         picker.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
-        picker.setImage(UIImage(systemName: "circle.fill", withConfiguration: symbolConfig), for: .normal)
-        picker.tintColor = self.delegate?.activeAnnotationColor
+        picker.setImage(UIImage(systemName: "circle.fill", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
         picker.rx.controlEvent(.touchUpInside)
               .subscribe(with: self, onNext: { `self`, _ in
                   self.delegate?.showColorPicker(sender: self.colorPickerButton)
@@ -296,29 +368,11 @@ class AnnotationToolbarViewController: UIViewController {
               .disposed(by: self.disposeBag)
         self.colorPickerButton = picker
 
-        NSLayoutConstraint.activate([
-            highlight.widthAnchor.constraint(equalTo: highlight.heightAnchor),
-            note.widthAnchor.constraint(equalTo: note.heightAnchor),
-            area.widthAnchor.constraint(equalTo: area.heightAnchor),
-            ink.widthAnchor.constraint(equalTo: ink.heightAnchor),
-            picker.widthAnchor.constraint(equalTo: picker.heightAnchor),
-            eraser.widthAnchor.constraint(equalTo: eraser.heightAnchor)
-        ])
-
-        return [highlight, note, area, ink, eraser, picker]
-    }
-
-    private func createAdditionalItems() -> [UIView] {
         let undo = UIButton(type: .custom)
         undo.setImage(UIImage(systemName: "arrow.uturn.left", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
-        undo.isEnabled = self.delegate?.canUndo ?? false
-        undo.contentEdgeInsets = UIEdgeInsets(top: 6, left: 6, bottom: 6, right: 6)
-        undo.setContentCompressionResistancePriority(.required, for: .horizontal)
-        undo.setContentCompressionResistancePriority(.required, for: .vertical)
-        undo.rx
-            .tap
-            .subscribe(onNext: { [weak self] _ in
-                guard let `self` = self, self.delegate?.canUndo == true else { return }
+        undo.rx.controlEvent(.touchUpInside)
+            .subscribe(with: self, onNext: { `self`, _ in
+                guard self.delegate?.canUndo == true else { return }
                 self.delegate?.performUndo()
             })
             .disposed(by: self.disposeBag)
@@ -326,14 +380,9 @@ class AnnotationToolbarViewController: UIViewController {
 
         let redo = UIButton(type: .custom)
         redo.setImage(UIImage(systemName: "arrow.uturn.right", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
-        redo.isEnabled = self.delegate?.canRedo ?? false
-        redo.contentEdgeInsets = UIEdgeInsets(top: 6, left: 6, bottom: 6, right: 6)
-        redo.setContentCompressionResistancePriority(.required, for: .horizontal)
-        redo.setContentCompressionResistancePriority(.required, for: .vertical)
-        redo.rx
-            .tap
-            .subscribe(onNext: { [weak self] _ in
-                guard let `self` = self, self.delegate?.canRedo == true else { return }
+        redo.rx.controlEvent(.touchUpInside)
+            .subscribe(with: self, onNext: { `self`, _ in
+                guard self.delegate?.canRedo == true else { return }
                 self.delegate?.performRedo()
             })
             .disposed(by: self.disposeBag)
@@ -341,10 +390,6 @@ class AnnotationToolbarViewController: UIViewController {
 
         let close = UIButton(type: .custom)
         close.setImage(UIImage(systemName: "xmark.circle", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
-        close.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        close.contentEdgeInsets = UIEdgeInsets(top: 6, left: 6, bottom: 6, right: 6)
-        close.setContentCompressionResistancePriority(.required, for: .horizontal)
-        close.setContentCompressionResistancePriority(.required, for: .vertical)
         close.rx.controlEvent(.touchUpInside)
              .subscribe(with: self, onNext: { `self`, _ in
                  self.delegate?.closeAnnotationToolbar()
@@ -352,68 +397,60 @@ class AnnotationToolbarViewController: UIViewController {
              .disposed(by: self.disposeBag)
 
         let handle = UIImageView(image: UIImage(systemName: "line.3.horizontal", withConfiguration: UIImage.SymbolConfiguration(scale: .large)))
-        handle.translatesAutoresizingMaskIntoConstraints = false
         handle.contentMode = .center
-        handle.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        handle.setContentCompressionResistancePriority(.required, for: .horizontal)
-        handle.setContentCompressionResistancePriority(.required, for: .vertical)
 
-        return [undo, redo, close, handle]
+        for (idx, view) in [picker, undo, redo, close, handle].enumerated() {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            view.tintColor = idx == 0 ? self.delegate?.activeAnnotationColor : Asset.Colors.zoteroBlueWithDarkMode.color
+            view.setContentCompressionResistancePriority(.required, for: .horizontal)
+            view.setContentCompressionResistancePriority(.required, for: .vertical)
+            view.setContentHuggingPriority(.required, for: .horizontal)
+            view.setContentHuggingPriority(.required, for: .vertical)
+        }
+
+        return [picker, undo, redo, close, handle]
     }
 
     private func setupViews() {
         self.widthConstraint = self.view.widthAnchor.constraint(equalToConstant: AnnotationToolbarViewController.size)
         self.heightConstraint = self.view.heightAnchor.constraint(equalToConstant: AnnotationToolbarViewController.size)
 
-        let scrollView = UIScrollView()
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.showsVerticalScrollIndicator = false
-        scrollView.showsHorizontalScrollIndicator = false
-        self.view.addSubview(scrollView)
-
-        let stackView = UIStackView(arrangedSubviews: self.createButtons())
+        let stackView = UIStackView(arrangedSubviews: self.createToolButtons(from: self.tools))
         stackView.axis = .vertical
-        stackView.spacing = 8
         stackView.distribution = .fill
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         stackView.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
-        scrollView.addSubview(stackView)
+        stackView.setContentHuggingPriority(.defaultLow, for: .vertical)
+        stackView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        self.view.addSubview(stackView)
 
         let additionalStackView = UIStackView(arrangedSubviews: self.createAdditionalItems())
         additionalStackView.setContentCompressionResistancePriority(.required, for: .horizontal)
         additionalStackView.setContentCompressionResistancePriority(.required, for: .vertical)
-        additionalStackView.setContentHuggingPriority(.defaultHigh, for: .vertical)
-        additionalStackView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        additionalStackView.setContentHuggingPriority(.required, for: .vertical)
+        additionalStackView.setContentHuggingPriority(.required, for: .horizontal)
         additionalStackView.axis = .vertical
         additionalStackView.spacing = 0
         additionalStackView.distribution = .fill
         additionalStackView.translatesAutoresizingMaskIntoConstraints = false
         self.view.addSubview(additionalStackView)
 
-        self.containerBottom = self.view.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: 8)
-        self.containerTrailing = self.view.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: 8)
+        self.containerBottom = self.view.bottomAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 8)
+        self.containerTrailing = self.view.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 8)
         self.handleTop = self.view.topAnchor.constraint(equalTo: additionalStackView.topAnchor)
         self.handleLeading = self.view.leadingAnchor.constraint(equalTo: additionalStackView.leadingAnchor)
-        self.containerToAdditionalVertical = additionalStackView.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: 50)
+        self.containerToAdditionalVertical = additionalStackView.topAnchor.constraint(greaterThanOrEqualTo: stackView.bottomAnchor, constant: AnnotationToolbarViewController.toolsToAdditionalFullOffset)
         self.containerToAdditionalVertical.priority = .required
-        self.containerToAdditionalHorizontal = additionalStackView.leadingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: 50)
+        self.containerToAdditionalHorizontal = additionalStackView.leadingAnchor.constraint(greaterThanOrEqualTo: stackView.trailingAnchor, constant: AnnotationToolbarViewController.toolsToAdditionalFullOffset)
         self.containerToAdditionalHorizontal.priority = .required
-        let containerTop = scrollView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: 15)
-        let containerLeading = scrollView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 15)
+        let containerTop = stackView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: 15)
+        let containerLeading = stackView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 15)
         let additionalBottom = self.view.bottomAnchor.constraint(equalTo: additionalStackView.bottomAnchor)
         let additionalTrailing = self.view.trailingAnchor.constraint(equalTo: additionalStackView.trailingAnchor)
-        self.scrollViewWidthContentConstraint = scrollView.frameLayoutGuide.widthAnchor.constraint(equalTo: stackView.widthAnchor)
-        self.scrollViewHeightContentConstraint = scrollView.frameLayoutGuide.heightAnchor.constraint(equalTo: stackView.heightAnchor)
 
-        NSLayoutConstraint.activate([containerTop, containerLeading, self.containerTrailing, self.containerToAdditionalVertical, additionalBottom, additionalTrailing, self.handleLeading,
-                                     self.scrollViewWidthContentConstraint, self.scrollViewHeightContentConstraint,
-                                     scrollView.contentLayoutGuide.topAnchor.constraint(equalTo: stackView.topAnchor),
-                                     scrollView.contentLayoutGuide.leadingAnchor.constraint(equalTo: stackView.leadingAnchor),
-                                     scrollView.contentLayoutGuide.bottomAnchor.constraint(equalTo: stackView.bottomAnchor),
-                                     scrollView.contentLayoutGuide.trailingAnchor.constraint(equalTo: stackView.trailingAnchor)])
+        NSLayoutConstraint.activate([containerTop, containerLeading, self.containerTrailing, self.containerToAdditionalVertical, additionalBottom, additionalTrailing, self.handleLeading])
 
-        self.scrollView = scrollView
         self.stackView = stackView
         self.containerTop = containerTop
         self.containerLeading = containerLeading
