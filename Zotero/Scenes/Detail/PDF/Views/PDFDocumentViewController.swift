@@ -33,6 +33,9 @@ final class PDFDocumentViewController: UIViewController {
     private var pageTimerDisposeBag: DisposeBag
     private var selectionView: SelectionView?
     private var didAppear: Bool
+    var scrubberBarHeight: CGFloat {
+        return self.pdfController.userInterfaceView.scrubberBar.frame.height
+    }
 
     weak var parentDelegate: (PDFReaderContainerDelegate & PDFDocumentDelegate)?
     weak var coordinatorDelegate: (DetailPdfCoordinatorDelegate)?
@@ -62,10 +65,7 @@ final class PDFDocumentViewController: UIViewController {
         self.updateInterface(to: self.viewModel.state.settings)
 
         self.pdfController.setPageIndex(PageIndex(self.viewModel.state.visiblePage), animated: false)
-
-        if let annotation = self.viewModel.state.selectedAnnotation {
-            self.select(annotation: self.viewModel.state.selectedAnnotation, pageIndex: self.pdfController.pageIndex, document: self.viewModel.state.document)
-        }
+        self.select(annotation: self.viewModel.state.selectedAnnotation, pageIndex: self.pdfController.pageIndex, document: self.viewModel.state.document)
     }
 
     override func viewDidAppear(_ animated: Bool) {

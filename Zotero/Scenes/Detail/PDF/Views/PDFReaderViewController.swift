@@ -226,6 +226,7 @@ class PDFReaderViewController: UIViewController {
                 self.annotationToolbarController.updateAdditionalButtons()
                 self.setConstraints(for: self.toolbarState.position)
                 self.view.layoutIfNeeded()
+                self.showToolbarButtonsThatFit(size: size)
             }
         }, completion: nil)
     }
@@ -366,8 +367,6 @@ class PDFReaderViewController: UIViewController {
     /// Return new position for given center and velocity of toolbar. The user can pan up/left/right to move the toolbar. If velocity > 1500, it's considered a swipe and the toolbar
     /// is moved in swipe direction. Otherwise the toolbar is pinned to closest point from center.
     private func position(fromCenter point: CGPoint, frame: CGRect, velocity: CGPoint) -> ToolbarState.Position {
-        let maxVelocity = max(abs(velocity.x), abs(velocity.y))
-
         if velocity.y > -1500 && abs(velocity.x) < 1500 {
             // Move to closest point. Use different threshold for vertical/horizontal rotation.
             let threshold: CGFloat
@@ -504,6 +503,7 @@ class PDFReaderViewController: UIViewController {
 
                     self.setConstraints(for: newPosition)
                     self.view.layoutIfNeeded()
+                    self.showToolbarButtonsThatFit(size: self.view.frame.size)
 
                     UIView.animate(withDuration: 0.1, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [], animations: {
                         self.annotationToolbarController.view.alpha = 1
@@ -518,6 +518,20 @@ class PDFReaderViewController: UIViewController {
         } else {
             self.setFullConstraints(for: position)
         }
+    }
+
+    private func showToolbarButtonsThatFit(size: CGSize) {
+        let maxSize: CGFloat
+
+        switch self.toolbarState.position {
+        case .top:
+            maxSize = self.isCompactSize ? size.width : (size.width - (2 * PDFReaderViewController.toolbarFullInsetInset))
+        case .trailing, .leading:
+            let interfaceIsHidden = self.navigationController?.isNavigationBarHidden ?? false
+            maxSize = size.height - (2 * PDFReaderViewController.toolbarCompactInset) - (interfaceIsHidden ? 0 : (self.view.safeAreaInsets.top + self.documentController.scrubberBarHeight))
+        }
+
+        self.annotationToolbarController.showToolsThatFit(containerMaxSize: maxSize)
     }
 
     private func setFullConstraints(for position: ToolbarState.Position) {
@@ -591,16 +605,16 @@ class PDFReaderViewController: UIViewController {
     private func showAnnotationToolbar(at position: ToolbarState.Position, animated: Bool) {
         self.setConstraints(for: position)
         self.annotationToolbarController.view.isHidden = false
+        self.view.layoutIfNeeded()
+        self.showToolbarButtonsThatFit(size: self.view.frame.size)
 
         if !animated {
             self.annotationToolbarController.view.alpha = 1
-            self.view.layoutIfNeeded()
             return
         }
 
         UIView.animate(withDuration: 0.2, animations: {
             self.annotationToolbarController.view.alpha = 1
-            self.view.layoutIfNeeded()
         })
     }
 
