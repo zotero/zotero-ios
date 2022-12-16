@@ -33,6 +33,7 @@ protocol AnnotationToolbarDelegate: AnyObject {
     var activeAnnotationTool: PSPDFKit.Annotation.Tool? { get }
     var canUndo: Bool { get }
     var canRedo: Bool { get }
+    var maxAvailableToolbarSize: CGFloat { get }
 
     func toggle(tool: PSPDFKit.Annotation.Tool, options: AnnotationToolOptions)
     func showInkSettings(sender: UIView)
@@ -120,12 +121,24 @@ class AnnotationToolbarViewController: UIViewController {
         }
     }
 
-    func showToolsThatFit(containerMaxSize maxSize: CGFloat) {
+    func prepareForSizeChange() {
+        for (idx, view) in self.stackView.arrangedSubviews.enumerated() {
+            if idx == self.stackView.arrangedSubviews.count - 1 {
+                view.alpha = 1
+                view.isHidden = false
+            } else {
+                view.alpha = 0
+                view.isHidden = true
+            }
+        }
+    }
+
+    func sizeDidChange() {
         guard self.stackView.arrangedSubviews.count == self.tools.count + 1 else {
             DDLogError("AnnotationToolbarViewController: too many views in stack view! Stack view views: \(self.stackView.arrangedSubviews.count). Tools: \(self.tools.count)")
             return
         }
-        guard let button = self.stackView.arrangedSubviews.filter({ !$0.isHidden }).last else { return }
+        guard let button = self.stackView.arrangedSubviews.last, let maxAvailableSize = self.delegate?.maxAvailableToolbarSize, maxAvailableSize > 0 else { return }
 
         let isHorizontal = self.view.frame.width > self.view.frame.height
         let buttonSize = isHorizontal ? button.frame.width : button.frame.height
@@ -136,14 +149,16 @@ class AnnotationToolbarViewController: UIViewController {
         let additionalSize = isHorizontal ? self.additionalStackView.frame.width : self.additionalStackView.frame.height
         let containerToAdditionalOffset = isHorizontal ? self.containerToAdditionalHorizontal.constant : self.containerToAdditionalVertical.constant
         let additionalOffset = isHorizontal ? self.additionalTrailing.constant : self.additionalBottom.constant
-        let remainingSize = maxSize - stackViewOffset - containerToAdditionalOffset - additionalSize - additionalOffset
+        let remainingSize = maxAvailableSize - stackViewOffset - containerToAdditionalOffset - additionalSize - additionalOffset
         let count = min(Int(floor(remainingSize / buttonSize)), self.tools.count)
 
         for idx in 0..<count {
+            self.stackView.arrangedSubviews[idx].alpha = 1
             self.stackView.arrangedSubviews[idx].isHidden = false
         }
 
         if count == self.tools.count {
+            self.stackView.arrangedSubviews.last?.alpha = 0
             self.stackView.arrangedSubviews.last?.isHidden = true
         }
     }
@@ -321,8 +336,9 @@ class AnnotationToolbarViewController: UIViewController {
             button.layer.masksToBounds = true
             button.setContentHuggingPriority(.required, for: .horizontal)
             button.setContentHuggingPriority(.required, for: .vertical)
-            button.setContentCompressionResistancePriority(.required, for: .vertical)
-            button.setContentCompressionResistancePriority(.required, for: .horizontal)
+            button.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+            button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            button.isHidden = true
 
             switch tool.type {
             case .area, .highlight, .note:
@@ -412,6 +428,7 @@ class AnnotationToolbarViewController: UIViewController {
     }
 
     private func setupViews() {
+        self.view.translatesAutoresizingMaskIntoConstraints = false
         self.widthConstraint = self.view.widthAnchor.constraint(equalToConstant: AnnotationToolbarViewController.size)
         self.heightConstraint = self.view.heightAnchor.constraint(equalToConstant: AnnotationToolbarViewController.size)
 
@@ -421,8 +438,8 @@ class AnnotationToolbarViewController: UIViewController {
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         stackView.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
-        stackView.setContentHuggingPriority(.defaultLow, for: .vertical)
-        stackView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        stackView.setContentHuggingPriority(.required, for: .vertical)
+        stackView.setContentHuggingPriority(.required, for: .horizontal)
         self.view.addSubview(stackView)
 
         let additionalStackView = UIStackView(arrangedSubviews: self.createAdditionalItems())
