@@ -50,11 +50,7 @@ class AnnotationToolbarViewController: UIViewController {
     }
 
     private struct Tool {
-        enum Kind {
-            case note, highlight, area, ink, eraser
-        }
-
-        let type: Kind
+        let type: PSPDFKit.Annotation.Tool
         let title: String
         let accessibilityLabel: String
         let image: UIImage
@@ -104,7 +100,7 @@ class AnnotationToolbarViewController: UIViewController {
     private static func createTools() -> [Tool] {
         return [Tool(type: .highlight, title: L10n.Pdf.AnnotationToolbar.highlight, accessibilityLabel: L10n.Accessibility.Pdf.highlightAnnotationTool, image: Asset.Images.Annotations.highlighterLarge.image, isHidden: false),
                 Tool(type: .note, title: L10n.Pdf.AnnotationToolbar.note, accessibilityLabel: L10n.Accessibility.Pdf.noteAnnotationTool, image: Asset.Images.Annotations.noteLarge.image, isHidden: false),
-                Tool(type: .area, title: L10n.Pdf.AnnotationToolbar.image, accessibilityLabel: L10n.Accessibility.Pdf.imageAnnotationTool, image: Asset.Images.Annotations.areaLarge.image, isHidden: false),
+                Tool(type: .square, title: L10n.Pdf.AnnotationToolbar.image, accessibilityLabel: L10n.Accessibility.Pdf.imageAnnotationTool, image: Asset.Images.Annotations.areaLarge.image, isHidden: false),
                 Tool(type: .ink, title: L10n.Pdf.AnnotationToolbar.ink, accessibilityLabel: L10n.Accessibility.Pdf.inkAnnotationTool, image: Asset.Images.Annotations.inkLarge.image, isHidden: false),
                 Tool(type: .eraser, title: L10n.Pdf.AnnotationToolbar.eraser, accessibilityLabel: L10n.Accessibility.Pdf.eraserAnnotationTool, image: Asset.Images.Annotations.eraserLarge.image, isHidden: false)]
     }
@@ -153,30 +149,31 @@ class AnnotationToolbarViewController: UIViewController {
         let count = min(Int(floor(remainingSize / buttonSize)), self.tools.count)
 
         for idx in 0..<count {
+            guard idx < (count - 1) || count == self.tools.count else { continue }
             self.stackView.arrangedSubviews[idx].alpha = 1
             self.stackView.arrangedSubviews[idx].isHidden = false
+            self.tools[idx] = self.tools[idx].copy(isHidden: false)
         }
 
-        if count == self.tools.count {
+        if count < self.tools.count {
+            for idx in count..<self.tools.count {
+                self.tools[idx] = self.tools[idx].copy(isHidden: true)
+            }
+        } else {
             self.stackView.arrangedSubviews.last?.alpha = 0
             self.stackView.arrangedSubviews.last?.isHidden = true
+        }
+
+        if self.stackView.arrangedSubviews.last?.isHidden == false {
+            (self.stackView.arrangedSubviews.last as? UIButton)?.menu = self.createHiddenToolsMenu()
         }
     }
 
     func set(selected: Bool, to tool: PSPDFKit.Annotation.Tool) {
-//        switch tool {
-//        case .highlight:
-//            self.highlightButton.isSelected = selected
-//        case .note:
-//            self.noteButton.isSelected = selected
-//        case .square:
-//            self.areaButton.isSelected = selected
-//        case .ink:
-//            self.inkButton.isSelected = selected
-//        case .eraser:
-//            self.eraserButton.isSelected = selected
-//        default: break
-//        }
+        guard let idx = self.tools.firstIndex(where: { $0.type == tool }) else { return }
+
+        (self.stackView.arrangedSubviews[idx] as? CheckboxButton)?.isSelected = selected
+        (self.stackView.arrangedSubviews.last as? UIButton)?.menu = self.createHiddenToolsMenu()
     }
 
     func set(rotation: Rotation, isCompactSize: Bool) {
@@ -235,7 +232,7 @@ class AnnotationToolbarViewController: UIViewController {
         self.containerTop.constant = 8
         self.containerToAdditionalHorizontal.constant = isCompactSize ? 20 : 50
 
-        let inset: CGFloat = isCompactSize ? 6 : 10
+        let inset: CGFloat = isCompactSize ? 6 : 8
         let insets = UIEdgeInsets(top: 0, left: inset, bottom: 0, right: inset)
         self.set(insets: insets, in: self.stackView)
         self.set(insets: insets, in: self.additionalStackView)
@@ -275,22 +272,7 @@ class AnnotationToolbarViewController: UIViewController {
         return []
     }
 
-    private func process(toolAction action: Tool.Kind) {
-        switch action {
-        case .highlight:
-            self.delegate?.toggle(tool: .highlight, options: self.currentAnnotationOptions)
-        case .note:
-            self.delegate?.toggle(tool: .note, options: self.currentAnnotationOptions)
-        case .area:
-            self.delegate?.toggle(tool: .square, options: self.currentAnnotationOptions)
-        case .ink:
-            self.delegate?.toggle(tool: .ink, options: self.currentAnnotationOptions)
-        case .eraser:
-            self.delegate?.toggle(tool: .eraser, options: self.currentAnnotationOptions)
-        }
-    }
-
-    private func process(longPressToolAction action: Tool.Kind, recognizer: UILongPressGestureRecognizer) {
+    private func process(longPressToolAction action: PSPDFKit.Annotation.Tool, recognizer: UILongPressGestureRecognizer) {
         guard recognizer.state == .began, let view = recognizer.view else { return }
 
         switch action {
@@ -306,23 +288,31 @@ class AnnotationToolbarViewController: UIViewController {
                 self.delegate?.toggle(tool: .eraser, options: self.currentAnnotationOptions)
             }
 
-        case .note, .highlight, .area: break
+        default: break
         }
     }
 
-    private func showHiddenTools() {
-
+    private func createHiddenToolsMenu() -> UIMenu {
+        let children = self.tools.filter({ $0.isHidden }).map({ tool in
+            let isActive = self.delegate?.activeAnnotationTool == tool.type
+            return UIAction(title: tool.title, image: tool.image.withRenderingMode(.alwaysTemplate), discoverabilityTitle: tool.accessibilityLabel, state: (isActive ? .on : .off),
+                            handler: { [weak self] _ in
+                guard let `self` = self else { return }
+                self.delegate?.toggle(tool: tool.type, options: self.currentAnnotationOptions)
+            })
+        })
+        return UIMenu(children: children)
     }
 
     private func createToolButtons(from tools: [Tool]) -> [UIView] {
         let showMoreButton = UIButton(type: .custom)
-        showMoreButton.setContentHuggingPriority(.required, for: .horizontal)
-        showMoreButton.setContentHuggingPriority(.required, for: .vertical)
+        showMoreButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        showMoreButton.setContentHuggingPriority(.defaultHigh, for: .vertical)
         showMoreButton.setContentCompressionResistancePriority(.required, for: .vertical)
         showMoreButton.setContentCompressionResistancePriority(.required, for: .horizontal)
         showMoreButton.setImage(UIImage(systemName: "ellipsis")?.withRenderingMode(.alwaysTemplate), for: .normal)
         showMoreButton.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        showMoreButton.rx.controlEvent(.touchUpInside).subscribe(with: self, onNext: { `self`, _ in self.showHiddenTools() }).disposed(by: self.disposeBag)
+        showMoreButton.showsMenuAsPrimaryAction = true
 
         return tools.map { tool in
             let button = CheckboxButton(type: .custom)
@@ -334,24 +324,25 @@ class AnnotationToolbarViewController: UIViewController {
             button.selectedTintColor = .white
             button.layer.cornerRadius = 4
             button.layer.masksToBounds = true
-            button.setContentHuggingPriority(.required, for: .horizontal)
-            button.setContentHuggingPriority(.required, for: .vertical)
-            button.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
-            button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+            button.setContentHuggingPriority(.defaultHigh, for: .vertical)
+            button.setContentCompressionResistancePriority(.required, for: .vertical)
+            button.setContentCompressionResistancePriority(.required, for: .horizontal)
             button.isHidden = true
 
             switch tool.type {
-            case .area, .highlight, .note:
-                button.rx.controlEvent(.touchDown).subscribe(with: self, onNext: { `self`, _ in self.process(toolAction: tool.type) }).disposed(by: self.disposeBag)
+            case .square, .highlight, .note:
+                button.rx.controlEvent(.touchDown).subscribe(with: self, onNext: { `self`, _ in self.delegate?.toggle(tool: tool.type, options: self.currentAnnotationOptions) }).disposed(by: self.disposeBag)
             case .ink, .eraser:
                 self.createTapAndLongPressAction(for: tool.type, button: button)
+            default: break
             }
 
             return button
         } + [showMoreButton]
     }
 
-    private func createTapAndLongPressAction(for tool: Tool.Kind, button: UIButton) {
+    private func createTapAndLongPressAction(for tool: PSPDFKit.Annotation.Tool, button: UIButton) {
         let longPress = UILongPressGestureRecognizer()
         longPress.delegate = self
         longPress.rx.event
@@ -364,7 +355,7 @@ class AnnotationToolbarViewController: UIViewController {
         tap.delegate = self
         tap.rx.event
               .subscribe(with: self, onNext: { `self`, _ in
-                  self.process(toolAction: tool)
+                  self.delegate?.toggle(tool: tool, options: self.currentAnnotationOptions)
               })
               .disposed(by: self.disposeBag)
         tap.require(toFail: longPress)
