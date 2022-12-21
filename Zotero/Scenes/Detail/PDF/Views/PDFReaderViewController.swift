@@ -163,6 +163,7 @@ final class PDFReaderViewController: UIViewController {
 
     deinit {
         self.viewModel.process(action: .changeIdleTimerDisabled(false))
+        self.viewModel.process(action: .submitPendingPage(Int(self.pdfController.pageIndex)))
         self.pdfController?.annotationStateManager.remove(self)
         self.coordinatorDelegate?.pdfDidDeinitialize()
         DDLogInfo("PDFReaderViewController deinitialized")
@@ -935,9 +936,9 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
     func pdfViewController(_ pdfController: PDFViewController, willBeginDisplaying pageView: PDFPageView, forPageAt pageIndex: Int) {
         // This delegate method is called for incorrect page index when sidebar is changing size. So if the sidebar is opened/closed, incorrect page
         // is stored in `pageController` and if the user closes the pdf reader without further scrolling, incorrect page is shown on next opening.
-        guard !self.isSidebarTransitioning else { return }
+        guard !self.isSidebarTransitioning && self.didAppear else { return }
         // Save current page
-        self.viewModel.process(action: .setVisiblePage(pageIndex))
+        self.viewModel.process(action: .setVisiblePage(Int(pdfController.pageIndex)))
     }
 
     func pdfViewController(_ pdfController: PDFViewController, shouldShow controller: UIViewController, options: [String : Any]? = nil, animated: Bool) -> Bool {

@@ -80,6 +80,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private let disposeBag: DisposeBag
 
     private var pdfDisposeBag: DisposeBag
+    private var pageDebounceDisposeBag: DisposeBag?
     weak var delegate: (SidebarDelegate&AnnotationBoundingBoxConverter)?
 
     init(dbStorage: DbStorage, annotationPreviewController: AnnotationPreviewController, htmlAttributedStringConverter: HtmlAttributedStringConverter, schemaController: SchemaController,
@@ -93,6 +94,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         self.backgroundQueue = DispatchQueue(label: "org.zotero.Zotero.PDFReaderActionHandler.queue", qos: .userInteractive)
         self.pdfDisposeBag = DisposeBag()
         self.disposeBag = DisposeBag()
+    }
+
+    deinit {
+        DDLogInfo("PDFReaderActionHandler deinitialized")
     }
 
     func process(action: PDFReaderAction, in viewModel: ViewModel<PDFReaderActionHandler>) {
@@ -186,6 +191,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         case .setVisiblePage(let page):
             self.set(page: page, in: viewModel)
+
+        case .submitPendingPage(let page):
+            guard self.pageDebounceDisposeBag != nil else { return }
+            self.pageDebounceDisposeBag = nil
+            self._set(page: page, in: viewModel)
 
         case .export(let settings):
             self.export(settings: settings, viewModel: viewModel)
@@ -430,6 +440,21 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     }
 
     private func set(page: Int, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        self.pageDebounceDisposeBag = nil
+
+        let disposeBag = DisposeBag()
+
+        Single<Int>.timer(.seconds(3), scheduler: MainScheduler.instance)
+                   .subscribe(onSuccess: { [weak self, weak viewModel] _ in
+                       guard let `self` = self, let viewModel = viewModel else { return }
+                       self._set(page: page, in: viewModel)
+                       self.pageDebounceDisposeBag = nil
+                   })
+                   .disposed(by: disposeBag)
+        self.pageDebounceDisposeBag = disposeBag
+    }
+
+    private func _set(page: Int, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard viewModel.state.visiblePage != page else { return }
 
         self.update(viewModel: viewModel) { state in

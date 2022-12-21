@@ -48,6 +48,7 @@ enum PDFReaderAction {
     case setSettings(PDFSettings)
     case changeIdleTimerDisabled(Bool)
     case changeFilter(AnnotationsFilter?)
+    case submitPendingPage(Int)
 }
 
 #endif
