@@ -29,8 +29,6 @@ final class PDFDocumentViewController: UIViewController {
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
 
-    private var annotationTimerDisposeBag: DisposeBag
-    private var pageTimerDisposeBag: DisposeBag
     private var selectionView: SelectionView?
     private var didAppear: Bool
     var scrubberBarHeight: CGFloat {
@@ -46,8 +44,6 @@ final class PDFDocumentViewController: UIViewController {
         self.viewModel = viewModel
         self.didAppear = false
         self.disposeBag = DisposeBag()
-        self.annotationTimerDisposeBag = DisposeBag()
-        self.pageTimerDisposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
 

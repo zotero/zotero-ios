@@ -198,6 +198,9 @@ class PDFReaderViewController: UIViewController {
 
     deinit {
         self.viewModel.process(action: .changeIdleTimerDisabled(false))
+        if let page = self.documentController.pdfController?.pageIndex {
+            self.viewModel.process(action: .submitPendingPage(Int(page)))
+        }
         self.coordinatorDelegate?.pdfDidDeinitialize()
         DDLogInfo("PDFReaderViewController deinitialized")
     }
