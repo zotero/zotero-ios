@@ -233,6 +233,8 @@ final class ExtensionViewModel {
         var isSubmitting: Bool
         // `true` when share extension should close
         var isDone: Bool
+        // Count of retries on download failure
+        var retryCount: Int
 
         init() {
             self.attachmentKey = KeyGenerator.newKey
@@ -244,6 +246,7 @@ final class ExtensionViewModel {
             self.tags = []
             self.isSubmitting = false
             self.isDone = false
+            self.retryCount = 0
         }
     }
 
@@ -706,11 +709,12 @@ final class ExtensionViewModel {
         DDLogInfo("ExtensionViewModel: detected sciencedirect, trying redirect")
 
         self.state.attachmentState = .downloading(0)
+        self.state.retryCount += 1
 
         self.getRedirectedPdfUrl(from: url) { [weak self] newUrl in
             guard let `self` = self else { return }
 
-            if let newUrl = newUrl, newUrl != url {
+            if let newUrl = newUrl, newUrl != url && self.state.retryCount < 3 {
                 self.download(item: item, attachment: attachment, attachmentUrl: url, to: file, cookies: cookies)
                 return
             }
