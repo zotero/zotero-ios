@@ -136,10 +136,10 @@ final class ExtensionViewModel {
         /// - remoteFileUrl: `URL` pointing to a remote file.
         /// - string: `String` on which we'll try to run lookup and see if it contains usable identifiers
         enum RawAttachment {
-            case web(title: String, url: URL, html: String, cookies: String, frames: [String])
+            case web(title: String, url: URL, html: String, cookies: String, frames: [String], userAgent: String, referrer: String)
             case remoteUrl(URL)
             case fileUrl(URL)
-            case remoteFileUrl(url: URL, contentType: String)
+            case remoteFileUrl(url: URL, contentType: String, cookies: String, userAgent: String, referrer: String)
         }
 
         /// Attachment which has been loaded and translated processed/translated.
@@ -387,8 +387,8 @@ final class ExtensionViewModel {
 
     private func process(attachment: State.RawAttachment) {
         switch attachment {
-        case .web(let title, let url, let html, let cookies, let frames):
-            self.processWeb(title: title, url: url, html: html, cookies: cookies, frames: frames)
+        case .web(let title, let url, let html, let cookies, let frames, let userAgent, let referrer):
+            self.processWeb(title: title, url: url, html: html, cookies: cookies, frames: frames, userAgent: userAgent, referrer: referrer)
 
         case .remoteUrl(let url):
             self.process(remoteUrl: url)
@@ -396,12 +396,12 @@ final class ExtensionViewModel {
         case .fileUrl(let url):
             self.process(fileUrl: url)
 
-        case .remoteFileUrl(let url, let contentType):
-            self.process(remoteFileUrl: url, contentType: contentType)
+        case .remoteFileUrl(let url, let contentType, let cookies, let userAgent, let referrer):
+            self.process(remoteFileUrl: url, contentType: contentType, cookies: cookies, userAgent: userAgent, referrer: referrer)
         }
     }
 
-    private func processWeb(title: String, url: URL, html: String, cookies: String, frames: [String]) {
+    private func processWeb(title: String, url: URL, html: String, cookies: String, frames: [String], userAgent: String, referrer: String) {
         var state = self.state
         state.title = title
         state.url = url.absoluteString
@@ -409,7 +409,7 @@ final class ExtensionViewModel {
 
         DDLogInfo("ExtensionViewModel: start translation")
 
-        self.translationHandler.translate(url: url, title: title, html: html, cookies: cookies, frames: frames)
+        self.translationHandler.translate(url: url, title: title, html: html, cookies: cookies, frames: frames, userAgent: userAgent, referrer: referrer)
     }
 
     private func process(remoteUrl url: URL) {
@@ -443,7 +443,7 @@ final class ExtensionViewModel {
             .disposed(by: self.disposeBag)
     }
 
-    private func process(remoteFileUrl url: URL, contentType: String) {
+    private func process(remoteFileUrl url: URL, contentType: String, cookies: String, userAgent: String, referrer: String) {
         let filename = url.lastPathComponent
         let file = Files.shareExtensionDownload(key: self.state.attachmentKey, contentType: contentType)
 
@@ -455,7 +455,7 @@ final class ExtensionViewModel {
         self.state = state
 
         DDLogInfo("ExtensionViewModel: download file")
-        self.download(url: url, to: file, cookies: nil)
+        self.download(url: url, to: file, cookies: cookies, userAgent: userAgent, referrer: referrer)
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] _ in
                 guard let `self` = self else { return }
@@ -536,7 +536,10 @@ final class ExtensionViewModel {
                 guard let scriptData = item as? [String: Any],
                       let data = scriptData[NSExtensionJavaScriptPreprocessingResultsKey] as? [String: Any],
                       let isFile = data["isFile"] as? Bool,
-                      let url = (data["url"] as? String).flatMap(URL.init) else {
+                      let url = (data["url"] as? String).flatMap(URL.init),
+                      let cookies = data["cookies"] as? String,
+                      let userAgent = data["userAgent"] as? String,
+                      let referrer = data["referrer"] as? String else {
                     DDLogError("ExtensionViewModel: can't read script data")
                     subscriber.on(.next(.failure(.cantLoadWebData)))
                     subscriber.on(.completed)
@@ -545,13 +548,12 @@ final class ExtensionViewModel {
 
                 if isFile, let contentType = data["contentType"] as? String {
                     DDLogInfo("ExtensionViewModel: loaded remote file")
-                    subscriber.on(.next(.success(.remoteFileUrl(url: url, contentType: contentType))))
+                    subscriber.on(.next(.success(.remoteFileUrl(url: url, contentType: contentType, cookies: cookies, userAgent: userAgent, referrer: referrer))))
                 } else if let title = data["title"] as? String,
                           let html = data["html"] as? String,
-                          let cookies = data["cookies"] as? String,
                           let frames = data["frames"] as? [String] {
                     DDLogInfo("ExtensionViewModel: loaded web")
-                    subscriber.on(.next(.success(.web(title: title, url: url, html: html, cookies: cookies, frames: frames))))
+                    subscriber.on(.next(.success(.web(title: title, url: url, html: html, cookies: cookies, frames: frames, userAgent: userAgent, referrer: referrer))))
                 } else {
                     DDLogError("ExtensionViewModel: script data don't contain required info")
                     DDLogError("\(data)")
@@ -612,9 +614,9 @@ final class ExtensionViewModel {
                                .observe(on: MainScheduler.instance)
                                .subscribe(onNext: { [weak self] action in
                                    switch action {
-                                   case .loadedItems(let data, let cookies):
+                                   case .loadedItems(let data, let cookies, let userAgent, let referrer):
                                        DDLogInfo("ExtensionViewModel: webview action - loaded \(data.count) zotero items")
-                                       self?.processItems(data, cookies: cookies)
+                                       self?.processItems(data, cookies: cookies, userAgent: userAgent, referrer: referrer)
                                    case .selectItem(let data):
                                        DDLogInfo("ExtensionViewModel: webview action - loaded \(data.count) list items")
                                        self?.state.itemPickerState = State.ItemPickerState(items: data, picked: nil)
@@ -632,7 +634,7 @@ final class ExtensionViewModel {
     }
 
     /// Parses item from translation response, starts attachment download if available.
-    private func processItems(_ data: [[String: Any]], cookies: String?) {
+    private func processItems(_ data: [[String: Any]], cookies: String?, userAgent: String?, referrer: String?) {
         let item: ItemResponse
         let attachment: [String: Any]?
 
@@ -660,10 +662,10 @@ final class ExtensionViewModel {
         DDLogInfo("ExtensionViewModel: parsed item with attachment, download attachment")
 
         let file = Files.shareExtensionDownload(key: self.state.attachmentKey, ext: ExtensionViewModel.defaultExtension)
-        self.download(item: item, attachment: attachment, attachmentUrl: url, to: file, cookies: cookies)
+        self.download(item: item, attachment: attachment, attachmentUrl: url, to: file, cookies: cookies, userAgent: userAgent, referrer: referrer)
     }
 
-    private func download(item: ItemResponse, attachment: [String: Any], attachmentUrl url: URL, to file: File, cookies: String?) {
+    private func download(item: ItemResponse, attachment: [String: Any], attachmentUrl url: URL, to file: File, cookies: String?, userAgent: String?, referrer: String?) {
         let attachmentTitle = ((attachment["title"] as? String) ?? self.state.title) ?? ""
 
         var state = self.state
@@ -673,10 +675,10 @@ final class ExtensionViewModel {
         state.processedAttachment = .item(item)
         self.state = state
 
-        self.download(url: url, to: file, cookies: cookies)
+        self.download(url: url, to: file, cookies: cookies, userAgent: userAgent, referrer: referrer)
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] _ in
-                self?.processDownload(of: attachment, url: url, file: file, item: item, cookies: cookies)
+                self?.processDownload(of: attachment, url: url, file: file, item: item, cookies: cookies, userAgent: userAgent, referrer: referrer)
             }, onFailure: { [weak self] error in
                 DDLogError("ExtensionViewModel: could not download translated file - \(url.absoluteString) - \(error)")
                 self?.state.attachmentState = .failed(.downloadFailed)
@@ -684,7 +686,7 @@ final class ExtensionViewModel {
             .disposed(by: self.disposeBag)
     }
 
-    private func processDownload(of attachment: [String: Any], url: URL, file: File, item: ItemResponse, cookies: String?) {
+    private func processDownload(of attachment: [String: Any], url: URL, file: File, item: ItemResponse, cookies: String?, userAgent: String?, referrer: String?) {
         if self.fileStorage.isPdf(file: file) {
             DDLogInfo("ExtensionViewModel: downloaded pdf")
             var state = self.state
@@ -711,11 +713,11 @@ final class ExtensionViewModel {
         self.state.attachmentState = .downloading(0)
         self.state.retryCount += 1
 
-        self.getRedirectedPdfUrl(from: url) { [weak self] newUrl in
+        self.getRedirectedPdfUrl(from: url) { [weak self] newUrl, newCookies, newUserAgent, newReferrer in
             guard let `self` = self else { return }
 
             if let newUrl = newUrl, newUrl != url && self.state.retryCount < 3 {
-                self.download(item: item, attachment: attachment, attachmentUrl: url, to: file, cookies: cookies)
+                self.download(item: item, attachment: attachment, attachmentUrl: newUrl, to: file, cookies: newCookies, userAgent: newUserAgent, referrer: newReferrer)
                 return
             }
 
@@ -724,9 +726,9 @@ final class ExtensionViewModel {
         }
     }
 
-    private func getRedirectedPdfUrl(from url: URL, completion: @escaping (URL?) -> Void) {
+    private func getRedirectedPdfUrl(from url: URL, completion: @escaping (URL?, String?, String?, String?) -> Void) {
         guard let webView = self.webView else {
-            completion(nil)
+            completion(nil, nil, nil, nil)
             return
         }
 
@@ -777,41 +779,53 @@ final class ExtensionViewModel {
     /// - parameter url: URL of file to download.
     /// - parameter file: File path where the file should be stored.
     /// - parameter cookies: Cookies to include in the request.
-    private func download(url: URL, to file: File, cookies: String?) -> Single<()> {
+    private func download(url: URL, to file: File, cookies: String?, userAgent: String?, referrer: String?) -> Single<()> {
         return Single.create { [weak self] subscriber in
             guard let `self` = self else {
                 subscriber(.failure(State.AttachmentState.Error.expired))
                 return Disposables.create()
             }
 
-            self.downloadUrlSession.set(cookies: cookies, domain: url.host ?? "")
-
-            let task = self.downloadUrlSession.downloadTask(with: url) { [weak self] location, response, error in
-                guard let `self` = self else {
-                    subscriber(.failure(State.AttachmentState.Error.expired))
-                    return
+            do {
+                var request = try URLRequest(url: url, method: .get)
+                if let value = userAgent {
+                    request.setValue(value, forHTTPHeaderField: "User-Agent")
+                }
+                if let value = referrer {
+                    request.setValue(value, forHTTPHeaderField: "Referer")
                 }
 
-                guard let location = location else {
-                    DDLogError("ExtensionViewModel: could not download \(url.absoluteString) - \(String(describing: error))")
-                    subscriber(.failure(error ?? State.AttachmentState.Error.unknown))
-                    return
+                self.downloadUrlSession.set(cookies: cookies, domain: url.host ?? "")
+
+                let task = self.downloadUrlSession.downloadTask(with: request) { [weak self] location, response, error in
+                    guard let `self` = self else {
+                        subscriber(.failure(State.AttachmentState.Error.expired))
+                        return
+                    }
+
+                    guard let location = location else {
+                        DDLogError("ExtensionViewModel: could not download \(url.absoluteString) - \(String(describing: error))")
+                        subscriber(.failure(error ?? State.AttachmentState.Error.unknown))
+                        return
+                    }
+
+                    do {
+                        try self.fileStorage.move(from: location.path, to: file)
+                    } catch let error {
+                        DDLogError("ExtensionViewModel: can't move downloaded file - \(error)")
+                        subscriber(.failure(error))
+                        return
+                    }
+
+                    subscriber(.success(()))
                 }
 
-                do {
-                    try self.fileStorage.move(from: location.path, to: file)
-                } catch let error {
-                    DDLogError("ExtensionViewModel: can't move downloaded file - \(error)")
-                    subscriber(.failure(error))
-                    return
-                }
+                self.observe(downloadProgress: task.progress)
 
-                subscriber(.success(()))
+                task.resume()
+            } catch let error {
+                subscriber(.failure(error))
             }
-
-            self.observe(downloadProgress: task.progress)
-
-            task.resume()
 
             return Disposables.create()
         }

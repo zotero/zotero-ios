@@ -1,6 +1,11 @@
 function extractData() {
+    var cookies = "";
+    try {
+        cookies = document.cookie;
+    } catch (e) {}
+
     if (!document || !document.documentElement) {
-        return {"isFile": true, "contentType": document.contentType}
+        return {"isFile": true, "contentType": document.contentType, "cookies": cookies, "userAgent": window.navigator.userAgent, "referrer": document.referrer}
     }
 
     let allFrames = document.querySelectorAll('iframe, frame');
@@ -25,16 +30,13 @@ function extractData() {
         }
     }
 
-    var cookies = "";
-    try {
-        cookies = document.cookie;
-    } catch (e) {}
-
     return {"title": document.title,
             "html": document.documentElement.innerHTML,
             "cookies": cookies,
             "frames": frames,
-            "isFile": false}
+            "isFile": false,
+            "userAgent": window.navigator.userAgent,
+            "referrer": document.referrer}
 }
 
 extractData();

@@ -23,8 +23,10 @@ final class WebViewHandler: NSObject {
     private weak var webView: WKWebView?
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
     var receivedMessageHandler: ((String, Any) -> Void)?
-    // Cookies from original website are stored and added to requests in `sendRequest(with:)`.
+    // Cookies, User-Agent and Referrer from original website are stored and added to requests in `sendRequest(with:)`.
     private(set) var cookies: String?
+    private(set) var userAgent: String?
+    private(set) var referrer: String?
 
     // MARK: - Lifecycle
 
@@ -53,8 +55,10 @@ final class WebViewHandler: NSObject {
 
     // MARK: - Actions
 
-    func set(cookies: String?) {
+    func set(cookies: String?, userAgent: String?, referrer: String?) {
         self.cookies = cookies
+        self.userAgent = userAgent
+        self.referrer = referrer
     }
 
     func load(fileUrl: URL) -> Single<()> {
@@ -155,6 +159,12 @@ final class WebViewHandler: NSObject {
         request.httpMethod = method
         headers.forEach { key, value in
             request.setValue(value, forHTTPHeaderField: key)
+        }
+        if let value = self.userAgent {
+            request.setValue(value, forHTTPHeaderField: "User-Agent")
+        }
+        if let value = self.referrer {
+            request.setValue(value, forHTTPHeaderField: "Referer")
         }
         request.httpBody = body?.data(using: .utf8)
         request.timeoutInterval = timeout

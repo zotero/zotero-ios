@@ -19,7 +19,7 @@ final class TranslationWebViewHandler {
     /// - reportProgress: Reports progress of translation.
     /// - saveAsWeb: Translation failed. Save as webpage item.
     enum Action {
-        case loadedItems(data: [[String: Any]], cookies: String?)
+        case loadedItems(data: [[String: Any]], cookies: String?, userAgent: String?, referrer: String?)
         case selectItem([(key: String, value: String)])
         case reportProgress(String)
     }
@@ -87,7 +87,10 @@ final class TranslationWebViewHandler {
                    })
                    .flatMap({ data -> Single<ExtensionViewModel.State.RawAttachment> in
                        guard let payload = data as? [String: Any],
-                             let isFile = payload["isFile"] as? Bool else {
+                             let isFile = payload["isFile"] as? Bool,
+                             let cookies = payload["cookies"] as? String,
+                             let userAgent = payload["userAgent"] as? String,
+                             let referrer = payload["referrer"] as? String else {
                            DDLogError("WebViewHandler: extracted data missing response")
                            DDLogError("\(data as? [String: Any])")
                            return Single.error(Error.webExtractionMissingData)
@@ -95,13 +98,12 @@ final class TranslationWebViewHandler {
 
                        if isFile, let contentType = payload["contentType"] as? String {
                            DDLogInfo("WebViewHandler: extracted file")
-                           return Single.just(.remoteFileUrl(url: url, contentType: contentType))
+                           return Single.just(.remoteFileUrl(url: url, contentType: contentType, cookies: cookies, userAgent: userAgent, referrer: referrer))
                        } else if let title = payload["title"] as? String,
                                  let html = payload["html"] as? String,
-                                 let cookies = payload["cookies"] as? String,
                                  let frames = payload["frames"] as? [String] {
                            DDLogInfo("WebViewHandler: extracted html")
-                           return Single.just(.web(title: title, url: url, html: html, cookies: cookies, frames: frames))
+                           return Single.just(.web(title: title, url: url, html: html, cookies: cookies, frames: frames, userAgent: userAgent, referrer: referrer))
                        } else {
                            DDLogError("WebViewHandler: extracted data incompatible")
                            DDLogError("\(payload)")
@@ -116,10 +118,10 @@ final class TranslationWebViewHandler {
     /// - parameter html: HTML content of the shared website. Equals to javascript "document.documentElement.innerHTML".
     /// - parameter cookies: Cookies string from shared website. Equals to javacsript "document.cookie".
     /// - parameter frames: HTML content of frames contained in initial HTML document.
-    func translate(url: URL, title: String, html: String, cookies: String, frames: [String]) {
+    func translate(url: URL, title: String, html: String, cookies: String, frames: [String], userAgent: String, referrer: String) {
         DDLogInfo("WebViewHandler: translate")
 
-        self.webViewHandler.set(cookies: cookies)
+        self.webViewHandler.set(cookies: cookies, userAgent: userAgent, referrer: referrer)
 
         return self.loadIndex()
                    .flatMap { _ -> Single<(String, String)> in
@@ -245,7 +247,7 @@ final class TranslationWebViewHandler {
 
         case .item:
             if let info = body as? [[String: Any]] {
-                self.observable.on(.next(.loadedItems(data: info, cookies: self.webViewHandler.cookies)))
+                self.observable.on(.next(.loadedItems(data: info, cookies: self.webViewHandler.cookies, userAgent: self.webViewHandler.userAgent, referrer: self.webViewHandler.referrer)))
             } else {
                 DDLogError("TranslationWebViewHandler: got incompatible body - \(body)")
                 self.observable.on(.error(Error.incompatibleItem))

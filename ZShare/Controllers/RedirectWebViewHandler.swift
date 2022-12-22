@@ -12,7 +12,7 @@ import WebKit
 import CocoaLumberjackSwift
 import RxSwift
 
-typealias RedirectWebViewCompletion = (URL?) -> Void
+typealias RedirectWebViewCompletion = (URL?, String?, String?, String?) -> Void
 
 final class RedirectWebViewHandler: NSObject {
     private let initialUrl: URL
@@ -36,7 +36,7 @@ final class RedirectWebViewHandler: NSObject {
 
     func getPdfUrl(completion: @escaping RedirectWebViewCompletion) {
         guard let webView = self.webView else {
-            completion(nil)
+            completion(nil, nil, nil, nil)
             return
         }
 
@@ -57,12 +57,46 @@ final class RedirectWebViewHandler: NSObject {
 
                        self.webView?.stopLoading()
                        if let completion = self.completionHandler {
-                           completion(nil)
+                           completion(nil, nil, nil, nil)
                            self.completionHandler = nil
                        }
                    })
                    .disposed(by: disposeBag)
+    }
 
+    private func extractData(from webView: WKWebView, completion: @escaping (String?, String?, String?) -> Void) {
+        guard let url = Bundle.main.url(forResource: "webview_extraction", withExtension: "js"),
+              let script = try? String(contentsOf: url) else {
+            DDLogError("RedirectWebViewHandler: can't load extraction javascript")
+            completion(nil, nil, nil)
+            return
+        }
+
+        DDLogInfo("RedirectWebViewHandler: call data extraction js")
+
+        let disposeBag = DisposeBag()
+        webView.call(javascript: script)
+               .observe(on: MainScheduler.instance)
+               .subscribe(with: self, onSuccess: { `self`, data in
+                   self.disposeBag = nil
+
+                   guard let payload = data as? [String: Any],
+                         let cookies = payload["cookies"] as? String,
+                         let userAgent = payload["userAgent"] as? String,
+                         let referrer = payload["referrer"] as? String else {
+                       DDLogError("RedirectWebViewHandler: extracted data missing response")
+                       DDLogError("\(data as? [String: Any])")
+                       completion(nil, nil, nil)
+                       return
+                   }
+
+                   completion(cookies, userAgent, referrer)
+               }, onFailure: { `self`, _ in
+                   self.disposeBag = nil
+                   completion(nil, nil, nil)
+               })
+               .disposed(by: disposeBag)
+        self.disposeBag = disposeBag
     }
 }
 
@@ -77,12 +111,18 @@ extension RedirectWebViewHandler: WKNavigationDelegate {
         switch mimeType {
         case "application/pdf":
             DDLogInfo("RedirectWebViewHandler: redirection detected pdf - \(navigationResponse.response.url?.absoluteString ?? "-")")
-            inMainThread {
+            inMainThread { [weak self, weak webView] in
+                guard let `self` = self, let webView = webView else { return }
+
                 // Cancel timer
                 self.disposeBag = nil
-                // Return url
-                self.completionHandler?(navigationResponse.response.url)
-                self.completionHandler = nil
+
+                // Extract webView data
+                self.extractData(from: webView) { cookies, userAgent, referrer in
+                    // Return url
+                    self.completionHandler?(navigationResponse.response.url, cookies, userAgent, referrer)
+                    self.completionHandler = nil
+                }
             }
             // Don't load web
             decisionHandler(.cancel)
