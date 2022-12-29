@@ -1432,7 +1432,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             if let changes = notification.userInfo?[PSPDFAnnotationChangedNotificationKeyPathKey] as? [String] {
                 self.change(annotation: annotation, with: changes, in: viewModel)
-            } else if let inkAnnotation = annotation as? PSPDFKit.InkAnnotation, notification.userInfo?["com.pspdfkit.sourceDrawLayer"] != nil {
+            } else if annotation is PSPDFKit.InkAnnotation, notification.userInfo?["com.pspdfkit.sourceDrawLayer"] != nil {
                 let changes = PdfAnnotationChanges.stringValues(from: [.boundingBox, .paths])
                 self.change(annotation: annotation, with: changes, in: viewModel)
             }

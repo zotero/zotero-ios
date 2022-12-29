@@ -151,7 +151,7 @@ final class PDFReaderViewController: UIViewController {
         self.pdfController.setPageIndex(PageIndex(self.viewModel.state.visiblePage), animated: false)
 
         if let annotation = self.viewModel.state.selectedAnnotation {
-            self.select(annotation: self.viewModel.state.selectedAnnotation, pageIndex: self.pdfController.pageIndex, document: self.viewModel.state.document)
+            self.select(annotation: annotation, pageIndex: self.pdfController.pageIndex, document: self.viewModel.state.document)
             self.toggleSidebar(animated: false)
         }
     }

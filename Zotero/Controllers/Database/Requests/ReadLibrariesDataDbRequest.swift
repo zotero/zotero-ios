@@ -23,7 +23,6 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
     func process(in database: Realm) throws -> [LibraryData] {
         var allLibraryData: [LibraryData] = []
 
-        let userId = Defaults.shared.userId
         let separatedIds = self.identifiers.flatMap { self.separateTypes(in: $0) }
 
         var customLibraries = database.objects(RCustomLibrary.self)
