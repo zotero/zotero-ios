@@ -64,7 +64,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 rawChanges.append("lineWidth")
             }
             if changes.contains(.paths) {
-                rawChanges.append("lines")
+                rawChanges.append(contentsOf: ["lines", "lineArray"])
             }
             return rawChanges
         }
