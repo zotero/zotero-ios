@@ -298,6 +298,7 @@ final class AnnotationViewController: UIViewController {
             let button = UIButton()
             button.addTarget(self, action: #selector(AnnotationViewController.deleteAnnotation), for: .touchUpInside)
             button.setTitle(L10n.Pdf.AnnotationPopover.delete, for: .normal)
+            button.titleLabel?.adjustsFontForContentSizeCategory = true
             button.setTitleColor(.red, for: .normal)
             button.contentEdgeInsets = UIEdgeInsets(top: 11, left: 0, bottom: 12, right: 0)
             self.deleteButton = button

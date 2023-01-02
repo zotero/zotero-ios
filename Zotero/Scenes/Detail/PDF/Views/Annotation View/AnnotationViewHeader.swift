@@ -113,12 +113,14 @@ final class AnnotationViewHeader: UIView {
 
         let pageLabel = UILabel()
         pageLabel.font = layout.pageLabelFont
+        pageLabel.adjustsFontForContentSizeCategory = true
         pageLabel.setContentCompressionResistancePriority(UILayoutPriority(rawValue: 1000), for: .horizontal)
         pageLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         pageLabel.translatesAutoresizingMaskIntoConstraints = false
 
         let authorLabel = UILabel()
         authorLabel.font = layout.font
+        authorLabel.adjustsFontForContentSizeCategory = true
         authorLabel.textColor = .systemGray
         authorLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         authorLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -138,6 +140,7 @@ final class AnnotationViewHeader: UIView {
             doneButton.setTitle(L10n.done, for: .normal)
             doneButton.setTitleColor(Asset.Colors.zoteroBlueWithDarkMode.color, for: .normal)
             doneButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: (layout.horizontalInset / 2), bottom: 0, right: layout.horizontalInset)
+            doneButton.titleLabel?.adjustsFontForContentSizeCategory = true
             doneButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
             doneButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
             rightButtons.append(doneButton)

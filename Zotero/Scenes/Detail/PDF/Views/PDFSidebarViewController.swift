@@ -83,6 +83,7 @@ class PDFSidebarViewController: UIViewController {
     private func setupViews() {
         let picker = UISegmentedControl(items: Tab.sortedTabs.map({ $0.title }))
         picker.translatesAutoresizingMaskIntoConstraints = false
+
         picker.rx.controlEvent(.valueChanged).subscribe(with: self, onNext: { `self`, _ in
             let tab = Tab.sortedTabs[self.picker.selectedSegmentIndex]
             self.show(tab: tab)

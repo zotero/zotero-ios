@@ -100,6 +100,7 @@ final class AnnotationViewTextView: UIView {
 
     private func setupView() {
         let textView = AnnotationTextView(defaultFont: self.layout.font)
+        textView.adjustsFontForContentSizeCategory = true
         textView.textContainerInset = UIEdgeInsets()
         textView.textContainer.lineFragmentPadding = 0
         textView.isScrollEnabled = false

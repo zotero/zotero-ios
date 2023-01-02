@@ -350,6 +350,7 @@ final class AnnotationsViewController: UIViewController {
 
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
+        label.adjustsFontForContentSizeCategory = true
         label.font = .preferredFont(forTextStyle: .headline)
         label.textColor = .systemGray
         label.text = L10n.Pdf.Sidebar.noAnnotations

@@ -45,8 +45,8 @@ struct AnnotationViewLayout {
             self.buttonHeight = 36
             self.lineHeight = 20
             self.verticalSpacerHeight = 12.5
-            self.font = .systemFont(ofSize: 15)
-            self.pageLabelFont = .systemFont(ofSize: 15, weight: .bold)
+            self.font = .preferredFont(forTextStyle: .subheadline)
+            self.pageLabelFont = .preferredFont(for: .subheadline, weight: .bold)
             self.showsContent = true
             self.commentMinHeight = nil
             self.scrollableBody = false

@@ -198,6 +198,7 @@ final class ItemsToolbarController {
     private func createTitleView() -> UIStackView {
         // Filter title label
         let filterLabel = UILabel()
+        filterLabel.adjustsFontForContentSizeCategory = true
         filterLabel.textColor = .label
         filterLabel.font = .preferredFont(forTextStyle: .footnote)
         filterLabel.textAlignment = .center

@@ -35,7 +35,8 @@ final class PDFReaderViewController: UIViewController {
     private weak var createEraserButton: CheckboxButton!
     private weak var colorPickerbutton: UIButton!
 
-    private static let saveDelay: Int = 3
+    private static let sidebarButtonTag = 9
+    private static let saveDelay = 3
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
 
@@ -424,8 +425,7 @@ final class PDFReaderViewController: UIViewController {
             self.pdfControllerLeft.constant = shouldShow ? PDFReaderLayout.sidebarWidth : 0
         }
         self.sidebarControllerLeft.constant = shouldShow ? 0 : -PDFReaderLayout.sidebarWidth
-
-        self.navigationItem.leftBarButtonItems?.last?.accessibilityLabel = shouldShow ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
+        self.updateSidebarButtonLabels()
 
         if !animated {
             self.sidebarController.view.isHidden = !shouldShow
@@ -459,6 +459,14 @@ final class PDFReaderViewController: UIViewController {
                            }
                            self.isSidebarTransitioning = false
                        })
+    }
+
+    private func updateSidebarButtonLabels() {
+        guard let index = self.navigationItem.leftBarButtonItems?.firstIndex(where: { $0.tag == PDFReaderViewController.sidebarButtonTag }) else { return }
+
+        let button = (self.navigationItem.leftBarButtonItems ?? [])[index]
+        button.title = self.isSidebarVisible ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
+        button.accessibilityLabel = button.title
     }
 
     private func showSearch(sender: UIBarButtonItem, text: String?) {
@@ -757,6 +765,7 @@ final class PDFReaderViewController: UIViewController {
 
         let highlight = CheckboxButton(type: .custom)
         highlight.accessibilityLabel = L10n.Accessibility.Pdf.highlightAnnotationTool
+        highlight.largeContentTitle = highlight.accessibilityLabel
         highlight.setImage(Asset.Images.Annotations.highlighterLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
         highlight.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         highlight.addTarget(self, action: #selector(PDFReaderViewController.annotationControlTapped(sender:event:)), for: .touchDown)
@@ -764,6 +773,7 @@ final class PDFReaderViewController: UIViewController {
 
         let note = CheckboxButton(type: .custom)
         note.accessibilityLabel = L10n.Accessibility.Pdf.noteAnnotationTool
+        note.largeContentTitle = note.accessibilityLabel
         note.setImage(Asset.Images.Annotations.noteLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
         note.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         note.addTarget(self, action: #selector(PDFReaderViewController.annotationControlTapped(sender:event:)), for: .touchDown)
@@ -771,6 +781,7 @@ final class PDFReaderViewController: UIViewController {
 
         let area = CheckboxButton(type: .custom)
         area.accessibilityLabel = L10n.Accessibility.Pdf.imageAnnotationTool
+        area.largeContentTitle = area.accessibilityLabel
         area.setImage(Asset.Images.Annotations.areaLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
         area.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         area.addTarget(self, action: #selector(PDFReaderViewController.annotationControlTapped(sender:event:)), for: .touchDown)
@@ -805,6 +816,7 @@ final class PDFReaderViewController: UIViewController {
 
         let ink = CheckboxButton(type: .custom)
         ink.accessibilityLabel = L10n.Accessibility.Pdf.inkAnnotationTool
+        ink.largeContentTitle = ink.accessibilityLabel
         ink.setImage(Asset.Images.Annotations.inkLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
         ink.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         ink.addGestureRecognizer(inkLongPress)
@@ -840,6 +852,7 @@ final class PDFReaderViewController: UIViewController {
 
         let eraser = CheckboxButton(type: .custom)
         eraser.accessibilityLabel = L10n.Accessibility.Pdf.eraserAnnotationTool
+        eraser.largeContentTitle = eraser.accessibilityLabel
         eraser.setImage(Asset.Images.Annotations.eraserLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
         eraser.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         eraser.addGestureRecognizer(eraserLongPress)
@@ -887,22 +900,26 @@ final class PDFReaderViewController: UIViewController {
 
     private func setupNavigationBar() {
         let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"), style: .plain, target: nil, action: nil)
-        sidebarButton.accessibilityLabel = self.isSidebarVisible ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
+        sidebarButton.tag = PDFReaderViewController.sidebarButtonTag
         sidebarButton.rx.tap
                      .subscribe(with: self, onNext: { `self`, _ in self.toggleSidebar(animated: true) })
                      .disposed(by: self.disposeBag)
         let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"), style: .plain, target: nil, action: nil)
+        closeButton.accessibilityLabel = L10n.close
+        closeButton.title = L10n.close
         closeButton.rx.tap
                    .subscribe(with: self, onNext: { `self`, _ in self.close() })
                    .disposed(by: self.disposeBag)
         let readerButton = UIBarButtonItem(image: self.pdfController.readerViewButtonItem.image, style: .plain, target: nil, action: nil)
-        readerButton.accessibilityLabel = self.isSidebarVisible ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
+        readerButton.accessibilityLabel = L10n.Accessibility.Pdf.openReader
+        readerButton.title = L10n.Accessibility.Pdf.openReader
         readerButton.rx.tap
                     .subscribe(with: self, onNext: { `self`, _ in self.coordinatorDelegate?.showReader(document: self.viewModel.state.document) })
                     .disposed(by: self.disposeBag)
 
         self.navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton]
         self.navigationItem.rightBarButtonItems = self.createRightBarButtonItems(forCompactSize: self.isCompactSize)
+        self.updateSidebarButtonLabels()
     }
 
     private func createRightBarButtonItems(forCompactSize isCompact: Bool) -> [UIBarButtonItem] {

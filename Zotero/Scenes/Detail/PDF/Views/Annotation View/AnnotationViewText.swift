@@ -54,6 +54,7 @@ final class AnnotationViewText: UIView {
     private func setupView() {
         let label = UILabel()
         label.font = self.layout.font
+        label.adjustsFontForContentSizeCategory = true
         label.numberOfLines = 0
         label.setContentHuggingPriority(.defaultHigh, for: .vertical)
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -61,6 +62,7 @@ final class AnnotationViewText: UIView {
         let button = UIButton()
         button.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
         button.translatesAutoresizingMaskIntoConstraints = false
+        button.titleLabel?.adjustsFontForContentSizeCategory = true
 
         self.addSubview(label)
         self.addSubview(button)

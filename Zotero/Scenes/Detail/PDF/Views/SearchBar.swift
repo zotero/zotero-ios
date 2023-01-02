@@ -88,6 +88,7 @@ final class SearchBar: UIView {
 
         let textField = UITextField()
         textField.delegate = self
+        textField.adjustsFontForContentSizeCategory = true
         textField.attributedPlaceholder = NSAttributedString(string: L10n.Searchbar.placeholder, attributes: [.foregroundColor: Asset.Colors.searchMagnifyingGlass.color])
         textField.translatesAutoresizingMaskIntoConstraints = false
         textField.returnKeyType = .search

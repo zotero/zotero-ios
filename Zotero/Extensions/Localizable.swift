@@ -201,6 +201,8 @@ internal enum L10n {
       internal static let noteAnnotation = L10n.tr("Localizable", "accessibility.pdf.note_annotation")
       /// Create note annotation
       internal static let noteAnnotationTool = L10n.tr("Localizable", "accessibility.pdf.note_annotation_tool")
+      /// Open text reader
+      internal static let openReader = L10n.tr("Localizable", "accessibility.pdf.open_reader")
       /// Selected
       internal static let selected = L10n.tr("Localizable", "accessibility.pdf.selected")
       /// Close sidebar

@@ -50,6 +50,7 @@ struct SelectableTextField: UIViewRepresentable {
     func makeUIView(context: UIViewRepresentableContext<SelectableTextField>) -> UITextField {
         let textField = UITextField(frame: .zero)
         textField.isSecureTextEntry = self.secure
+        textField.adjustsFontForContentSizeCategory = true
         textField.returnKeyType = self.returnKeyType
         textField.autocapitalizationType = self.autocapitalizationType
         textField.placeholder = self.placeholder

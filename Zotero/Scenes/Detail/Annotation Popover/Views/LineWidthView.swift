@@ -94,11 +94,13 @@ final class LineWidthView: UIView {
 
         let title = UILabel()
         title.font = .preferredFont(forTextStyle: .body)
+        title.adjustsFontForContentSizeCategory = true
         title.textColor = .black
         title.text = self.title
         self.titleLabel = title
 
         let value = UILabel()
+        value.adjustsFontForContentSizeCategory = true
         value.font = .preferredFont(forTextStyle: .body)
         value.textColor = .systemGray
         value.text = String(format: "%0.1f", self.slider.value)

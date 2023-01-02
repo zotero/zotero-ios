@@ -34,6 +34,7 @@ final class NoteEditorTitleView: UIStackView {
         self.addArrangedSubview(imageView)
 
         let label = UILabel()
+        label.adjustsFontForContentSizeCategory = true
         label.font = .preferredFont(forTextStyle: .subheadline).withTraits(.traitBold)
         label.text = title
         label.numberOfLines = 1

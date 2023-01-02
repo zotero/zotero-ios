@@ -29,6 +29,7 @@ final class ItemsToolbarDownloadProgressView: UIView {
 
     private func createViews() {
         let label = UILabel()
+        label.adjustsFontForContentSizeCategory = true
         label.textColor = .label
         label.font = .preferredFont(forTextStyle: .footnote)
         label.textAlignment = .center

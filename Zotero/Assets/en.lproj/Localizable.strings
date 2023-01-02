@@ -502,3 +502,4 @@
 "accessibility.pdf.annotation_hint" = "Double tap to select and edit";
 "accessibility.pdf.tags_hint" = "Double tap to edit tags";
 "accessibility.pdf.selected" = "Selected";
+"accessibility.pdf.open_reader" = "Open text reader";
