@@ -180,6 +180,8 @@ internal enum L10n {
       /// Edit annotation
       internal static let editAnnotation = L10n.tr("Localizable", "accessibility.pdf.edit_annotation")
       /// Eraser
+      internal static let eraserAnnotation = L10n.tr("Localizable", "accessibility.pdf.eraser_annotation")
+      /// Eraser
       internal static let eraserAnnotationTool = L10n.tr("Localizable", "accessibility.pdf.eraser_annotation_tool")
       /// Export pdf
       internal static let export = L10n.tr("Localizable", "accessibility.pdf.export")
@@ -203,6 +205,10 @@ internal enum L10n {
       internal static let noteAnnotationTool = L10n.tr("Localizable", "accessibility.pdf.note_annotation_tool")
       /// Open text reader
       internal static let openReader = L10n.tr("Localizable", "accessibility.pdf.open_reader")
+      /// Redo
+      internal static let redo = L10n.tr("Localizable", "accessibility.pdf.redo")
+      /// Search PDF
+      internal static let searchPdf = L10n.tr("Localizable", "accessibility.pdf.search_pdf")
       /// Selected
       internal static let selected = L10n.tr("Localizable", "accessibility.pdf.selected")
       /// Close sidebar
@@ -213,6 +219,8 @@ internal enum L10n {
       internal static let tags = L10n.tr("Localizable", "accessibility.pdf.tags")
       /// Double tap to edit tags
       internal static let tagsHint = L10n.tr("Localizable", "accessibility.pdf.tags_hint")
+      /// Undo
+      internal static let undo = L10n.tr("Localizable", "accessibility.pdf.undo")
     }
   }
 

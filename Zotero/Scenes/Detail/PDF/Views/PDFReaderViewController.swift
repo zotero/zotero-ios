@@ -50,6 +50,7 @@ final class PDFReaderViewController: UIViewController {
 
     private lazy var shareButton: UIBarButtonItem = {
         let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
+        share.title = L10n.Accessibility.Pdf.export
         share.accessibilityLabel = L10n.Accessibility.Pdf.export
         share.tag = NavigationBarButton.share.rawValue
         share.rx.tap
@@ -74,6 +75,8 @@ final class PDFReaderViewController: UIViewController {
     }()
     private lazy var searchButton: UIBarButtonItem = {
         let search = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"), style: .plain, target: nil, action: nil)
+        search.title = L10n.Accessibility.Pdf.searchPdf
+        search.accessibilityLabel = L10n.Accessibility.Pdf.searchPdf
         search.rx.tap
               .subscribe(onNext: { [weak self] _ in
                   self?.showSearch(sender: search, text: nil)
@@ -83,6 +86,8 @@ final class PDFReaderViewController: UIViewController {
     }()
     private lazy var undoButton: UIBarButtonItem = {
         let undo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.left"), style: .plain, target: nil, action: nil)
+        undo.title = L10n.Accessibility.Pdf.undo
+        undo.accessibilityLabel = L10n.Accessibility.Pdf.undo
         undo.isEnabled = self.viewModel.state.document.undoController.undoManager.canUndo
         undo.tag = NavigationBarButton.undo.rawValue
         undo.rx
@@ -96,6 +101,8 @@ final class PDFReaderViewController: UIViewController {
     }()
     private lazy var redoButton: UIBarButtonItem = {
         let redo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.right"), style: .plain, target: nil, action: nil)
+        redo.title = L10n.Accessibility.Pdf.redo
+        redo.accessibilityLabel = L10n.Accessibility.Pdf.redo
         redo.isEnabled = self.viewModel.state.document.undoController.undoManager.canRedo
         redo.tag = NavigationBarButton.redo.rawValue
         redo.rx
@@ -562,6 +569,18 @@ final class PDFReaderViewController: UIViewController {
         self.toggle(annotationTool: tool, tappedWithStylus: isStylus)
     }
 
+    private func updateLongPressRecognizersMinimumPressDuration() {
+        guard let titleView = self.navigationItem.titleView as? UIStackView else { return }
+
+        let duration = UILargeContentViewerInteraction.isEnabled ? 3.0 : 1.0
+
+        for view in titleView.arrangedSubviews {
+            guard let button = view as? UIButton else { continue }
+            let recognizers = (button.gestureRecognizers ?? []).compactMap({ $0 as? UILongPressGestureRecognizer })
+            recognizers.forEach({ $0.minimumPressDuration = duration })
+        }
+    }
+
     // MARK: - Selection
 
     /// (De)Selects given annotation in document.
@@ -734,6 +753,7 @@ final class PDFReaderViewController: UIViewController {
             self.navigationController?.toolbarItems = nil
             let stackView = UIStackView(arrangedSubviews: buttons)
             stackView.spacing = 14
+            stackView.addInteraction(UILargeContentViewerInteraction())
             self.navigationItem.titleView = stackView
             return
         }
@@ -764,31 +784,35 @@ final class PDFReaderViewController: UIViewController {
         let symbolConfig = UIImage.SymbolConfiguration(scale: .large)
 
         let highlight = CheckboxButton(type: .custom)
+        highlight.showsLargeContentViewer = true
+        highlight.largeContentTitle = L10n.Accessibility.Pdf.highlightAnnotation
         highlight.accessibilityLabel = L10n.Accessibility.Pdf.highlightAnnotationTool
-        highlight.largeContentTitle = highlight.accessibilityLabel
         highlight.setImage(Asset.Images.Annotations.highlighterLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
         highlight.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        highlight.addTarget(self, action: #selector(PDFReaderViewController.annotationControlTapped(sender:event:)), for: .touchDown)
+        highlight.addTarget(self, action: #selector(PDFReaderViewController.annotationControlTapped(sender:event:)), for: .touchUpInside)
         self.createHighlightButton = highlight
 
         let note = CheckboxButton(type: .custom)
+        note.showsLargeContentViewer = true
+        note.largeContentTitle = L10n.Accessibility.Pdf.noteAnnotation
         note.accessibilityLabel = L10n.Accessibility.Pdf.noteAnnotationTool
-        note.largeContentTitle = note.accessibilityLabel
         note.setImage(Asset.Images.Annotations.noteLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
         note.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        note.addTarget(self, action: #selector(PDFReaderViewController.annotationControlTapped(sender:event:)), for: .touchDown)
+        note.addTarget(self, action: #selector(PDFReaderViewController.annotationControlTapped(sender:event:)), for: .touchUpInside)
         self.createNoteButton = note
 
         let area = CheckboxButton(type: .custom)
+        area.showsLargeContentViewer = true
         area.accessibilityLabel = L10n.Accessibility.Pdf.imageAnnotationTool
-        area.largeContentTitle = area.accessibilityLabel
+        area.largeContentTitle = L10n.Accessibility.Pdf.imageAnnotation
         area.setImage(Asset.Images.Annotations.areaLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
         area.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        area.addTarget(self, action: #selector(PDFReaderViewController.annotationControlTapped(sender:event:)), for: .touchDown)
+        area.addTarget(self, action: #selector(PDFReaderViewController.annotationControlTapped(sender:event:)), for: .touchUpInside)
         self.createAreaButton = area
 
         let inkLongPress = UILongPressGestureRecognizer()
         inkLongPress.delegate = self
+        inkLongPress.minimumPressDuration = UILargeContentViewerInteraction.isEnabled ? 3.0 : 1.0
         inkLongPress.rx
                     .event
                     .subscribe(with: self, onNext: { `self`, recognizer in
@@ -815,8 +839,9 @@ final class PDFReaderViewController: UIViewController {
         inkTap.require(toFail: inkLongPress)
 
         let ink = CheckboxButton(type: .custom)
+        ink.showsLargeContentViewer = true
+        ink.largeContentTitle = L10n.Accessibility.Pdf.inkAnnotation
         ink.accessibilityLabel = L10n.Accessibility.Pdf.inkAnnotationTool
-        ink.largeContentTitle = ink.accessibilityLabel
         ink.setImage(Asset.Images.Annotations.inkLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
         ink.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         ink.addGestureRecognizer(inkLongPress)
@@ -825,6 +850,7 @@ final class PDFReaderViewController: UIViewController {
 
         let eraserLongPress = UILongPressGestureRecognizer()
         eraserLongPress.delegate = self
+        eraserLongPress.minimumPressDuration = UILargeContentViewerInteraction.isEnabled ? 3.0 : 1.0
         eraserLongPress.rx
                     .event
                     .subscribe(with: self, onNext: { `self`, recognizer in
@@ -851,8 +877,9 @@ final class PDFReaderViewController: UIViewController {
         eraserTap.require(toFail: eraserLongPress)
 
         let eraser = CheckboxButton(type: .custom)
+        eraser.showsLargeContentViewer = true
+        eraser.largeContentTitle = L10n.Accessibility.Pdf.eraserAnnotation
         eraser.accessibilityLabel = L10n.Accessibility.Pdf.eraserAnnotationTool
-        eraser.largeContentTitle = eraser.accessibilityLabel
         eraser.setImage(Asset.Images.Annotations.eraserLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
         eraser.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         eraser.addGestureRecognizer(eraserLongPress)
@@ -868,7 +895,9 @@ final class PDFReaderViewController: UIViewController {
         }
 
         let picker = UIButton()
+        picker.showsLargeContentViewer = true
         picker.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
+        picker.largeContentTitle = L10n.Accessibility.Pdf.colorPicker
         picker.setImage(UIImage(systemName: "circle.fill", withConfiguration: symbolConfig), for: .normal)
         picker.tintColor = self.viewModel.state.activeColor
         picker.rx.controlEvent(.touchUpInside)
@@ -944,6 +973,14 @@ final class PDFReaderViewController: UIViewController {
                                       guard let `self` = self else { return }
                                       self.viewModel.process(action: .updateAnnotationPreviews)
                                       self.updatePencilSettingsIfNeeded()
+                                  })
+                                  .disposed(by: self.disposeBag)
+
+        NotificationCenter.default.rx
+                                  .notification(UILargeContentViewerInteraction.enabledStatusDidChangeNotification)
+                                  .observe(on: MainScheduler.instance)
+                                  .subscribe(with: self, onNext: { `self`, notification in
+                                      self.updateLongPressRecognizersMinimumPressDuration()
                                   })
                                   .disposed(by: self.disposeBag)
     }
@@ -1198,6 +1235,11 @@ extension PDFReaderViewController: UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         self.lastGestureRecognizerTouch = touch
         return true
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard let stackView = self.navigationItem.titleView as? UIStackView, let interaction = stackView.interactions.compactMap({ $0 as? UILargeContentViewerInteraction }).first else { return true }
+        return gestureRecognizer is UILongPressGestureRecognizer && otherGestureRecognizer == interaction.gestureRecognizerForExclusionRelationship
     }
 }
 
