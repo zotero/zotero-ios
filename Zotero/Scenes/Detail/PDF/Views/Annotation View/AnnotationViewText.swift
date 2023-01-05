@@ -57,12 +57,14 @@ final class AnnotationViewText: UIView {
         label.adjustsFontForContentSizeCategory = true
         label.numberOfLines = 0
         label.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        label.setContentCompressionResistancePriority(.required, for: .vertical)
         label.translatesAutoresizingMaskIntoConstraints = false
 
         let button = UIButton()
         button.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.titleLabel?.adjustsFontForContentSizeCategory = true
+        button.titleLabel?.font = self.layout.font
 
         self.addSubview(label)
         self.addSubview(button)
@@ -78,8 +80,8 @@ final class AnnotationViewText: UIView {
             // Vertical
             label.topAnchor.constraint(equalTo: self.topAnchor, constant: topFontInset),
             self.bottomAnchor.constraint(equalTo: label.lastBaselineAnchor, constant: self.layout.verticalSpacerHeight),
-            button.topAnchor.constraint(equalTo: self.topAnchor),
-            button.bottomAnchor.constraint(equalTo: self.bottomAnchor)
+            button.topAnchor.constraint(equalTo: self.topAnchor, constant: topFontInset),
+            self.bottomAnchor.constraint(equalTo: button.bottomAnchor, constant: self.layout.verticalSpacerHeight)
         ])
 
         self.textLabel = label

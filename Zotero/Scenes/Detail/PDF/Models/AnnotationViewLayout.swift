@@ -12,10 +12,10 @@ import UIKit
 
 struct AnnotationViewLayout {
     let horizontalInset: CGFloat
-    let headerHeight: CGFloat
+    let headerVerticalInsets: CGFloat
     let pageLabelLeadingOffset: CGFloat
     let highlightContentLeadingOffset: CGFloat
-    let buttonHeight: CGFloat
+    let buttonVerticalInset: CGFloat
     let lineHeight: CGFloat
     let verticalSpacerHeight: CGFloat
     // Line width shown next to the highlighted text in highlight annotation (sidebar or popover).
@@ -41,8 +41,8 @@ struct AnnotationViewLayout {
 
         switch type {
         case .cell:
-            self.headerHeight = 36
-            self.buttonHeight = 36
+            self.headerVerticalInsets = 9
+            self.buttonVerticalInset = 9
             self.lineHeight = 20
             self.verticalSpacerHeight = 12.5
             self.font = .preferredFont(forTextStyle: .subheadline)
@@ -54,8 +54,8 @@ struct AnnotationViewLayout {
             self.showDoneButton = false
             
         case .popover:
-            self.headerHeight = 50
-            self.buttonHeight = 44
+            self.headerVerticalInsets = 14
+            self.buttonVerticalInset = 11
             self.lineHeight = 22
             self.verticalSpacerHeight = 16
             self.font = .preferredFont(forTextStyle: .body)

@@ -465,7 +465,7 @@ final class PDFDocumentViewController: UIViewController {
                                   .notification(UILargeContentViewerInteraction.enabledStatusDidChangeNotification)
                                   .observe(on: MainScheduler.instance)
                                   .subscribe(with: self, onNext: { `self`, notification in
-                                      self.updateLongPressRecognizersMinimumPressDuration()
+//                                      self.updateLongPressRecognizersMinimumPressDuration()
                                   })
                                   .disposed(by: self.disposeBag)
     }

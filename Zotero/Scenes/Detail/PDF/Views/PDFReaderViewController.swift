@@ -60,6 +60,7 @@ class PDFReaderViewController: UIViewController {
     private static let toolbarCompactInset: CGFloat = 12
     private static let toolbarFullInsetInset: CGFloat = 20
     private static let minToolbarWidth: CGFloat = 300
+    private static let sidebarButtonTag = 7
 
     private weak var sidebarController: PDFSidebarViewController!
     private weak var sidebarControllerLeft: NSLayoutConstraint!
@@ -97,6 +98,7 @@ class PDFReaderViewController: UIViewController {
     private lazy var shareButton: UIBarButtonItem = {
         let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
         share.accessibilityLabel = L10n.Accessibility.Pdf.export
+        share.title = L10n.Accessibility.Pdf.export
         share.tag = NavigationBarButton.share.rawValue
         share.rx.tap
              .subscribe(onNext: { [weak self, weak share] _ in
@@ -120,6 +122,8 @@ class PDFReaderViewController: UIViewController {
     }()
     private lazy var searchButton: UIBarButtonItem = {
         let search = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"), style: .plain, target: nil, action: nil)
+        search.accessibilityLabel = L10n.Accessibility.Pdf.searchPdf
+        search.title = L10n.Accessibility.Pdf.searchPdf
         search.rx.tap
               .subscribe(onNext: { [weak self] _ in
                   guard let `self` = self else { return }
@@ -132,9 +136,9 @@ class PDFReaderViewController: UIViewController {
     private var redoBarButton: UIBarButtonItem?
     private lazy var toolbarButton: UIBarButtonItem = {
         let checkbox = CheckboxButton(type: .custom)
-        checkbox.accessibilityLabel = L10n.Accessibility.Pdf.toggleAnnotationToolbar
-        checkbox.setImage(UIImage(systemName: "pencil.and.outline", withConfiguration: UIImage.SymbolConfiguration(scale: .large))?.withRenderingMode(.alwaysTemplate), for: .normal)
+        checkbox.setImage(UIImage(systemName: "pencil.and.outline", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
         checkbox.adjustsImageWhenHighlighted = false
+        checkbox.scalesLargeContentImage = true
         checkbox.layer.cornerRadius = 4
         checkbox.layer.masksToBounds = true
         checkbox.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
@@ -142,7 +146,7 @@ class PDFReaderViewController: UIViewController {
         checkbox.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
         checkbox.selectedTintColor = .white
         checkbox.isSelected = self.toolbarState.visible
-        checkbox.rx.controlEvent(.touchDown)
+        checkbox.rx.controlEvent(.touchUpInside)
                 .subscribe(onNext: { [weak self, weak checkbox] _ in
                     guard let `self` = self, let checkbox = checkbox else { return }
                     checkbox.isSelected = !checkbox.isSelected
@@ -156,7 +160,11 @@ class PDFReaderViewController: UIViewController {
                     }
                 })
                 .disposed(by: self.disposeBag)
-        return UIBarButtonItem(customView: checkbox)
+        let barButton = UIBarButtonItem(customView: checkbox)
+        barButton.accessibilityLabel = L10n.Accessibility.Pdf.toggleAnnotationToolbar
+        barButton.title = L10n.Accessibility.Pdf.toggleAnnotationToolbar
+        barButton.largeContentSizeImage = UIImage(systemName: "pencil.and.outline", withConfiguration: UIImage.SymbolConfiguration(scale: .large))
+        return barButton
     }()
 
     init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
@@ -327,7 +335,9 @@ class PDFReaderViewController: UIViewController {
         }
         self.sidebarControllerLeft.constant = shouldShow ? 0 : -PDFReaderLayout.sidebarWidth
 
-        self.navigationItem.leftBarButtonItems?.last?.accessibilityLabel = shouldShow ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
+        if let button = self.navigationItem.leftBarButtonItems?.first(where: { $0.tag == PDFReaderViewController.sidebarButtonTag }) {
+            self.setupAccessibility(forSidebarButton: button)
+        }
 
         if !animated {
             self.sidebarController.view.isHidden = !shouldShow
@@ -853,21 +863,26 @@ class PDFReaderViewController: UIViewController {
         view.layer.masksToBounds = true
     }
 
+    private func setupAccessibility(forSidebarButton button: UIBarButtonItem) {
+        button.accessibilityLabel = self.isSidebarVisible ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
+        button.title = self.isSidebarVisible ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
+    }
+
     private func setupNavigationBar() {
         let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"), style: .plain, target: nil, action: nil)
-        sidebarButton.accessibilityLabel = self.isSidebarVisible ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
-        sidebarButton.rx.tap
-                     .subscribe(with: self, onNext: { `self`, _ in self.toggleSidebar(animated: true) })
-                     .disposed(by: self.disposeBag)
+        self.setupAccessibility(forSidebarButton: sidebarButton)
+        sidebarButton.tag = PDFReaderViewController.sidebarButtonTag
+        sidebarButton.rx.tap.subscribe(with: self, onNext: { `self`, _ in self.toggleSidebar(animated: true) }).disposed(by: self.disposeBag)
+
         let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"), style: .plain, target: nil, action: nil)
-        closeButton.rx.tap
-                   .subscribe(with: self, onNext: { `self`, _ in self.close() })
-                   .disposed(by: self.disposeBag)
+        closeButton.title = L10n.close
+        closeButton.accessibilityLabel = L10n.close
+        closeButton.rx.tap.subscribe(with: self, onNext: { `self`, _ in self.close() }).disposed(by: self.disposeBag)
+
         let readerButton = UIBarButtonItem(image: self.documentController.pdfController.readerViewButtonItem.image, style: .plain, target: nil, action: nil)
-        readerButton.accessibilityLabel = self.isSidebarVisible ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
-        readerButton.rx.tap
-                    .subscribe(with: self, onNext: { `self`, _ in self.coordinatorDelegate?.showReader(document: self.viewModel.state.document) })
-                    .disposed(by: self.disposeBag)
+        readerButton.accessibilityLabel = L10n.Accessibility.Pdf.openReader
+        readerButton.title = L10n.Accessibility.Pdf.openReader
+        readerButton.rx.tap.subscribe(with: self, onNext: { `self`, _ in self.coordinatorDelegate?.showReader(document: self.viewModel.state.document) }).disposed(by: self.disposeBag)
 
         self.navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton]
         self.navigationItem.rightBarButtonItems = self.createRightBarButtonItems(forCompactSize: self.isCompactSize)
@@ -878,6 +893,8 @@ class PDFReaderViewController: UIViewController {
 
         if !isCompact {
             let undo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.left"), style: .plain, target: nil, action: nil)
+            undo.accessibilityLabel = L10n.Accessibility.Pdf.undo
+            undo.title = L10n.Accessibility.Pdf.undo
             undo.isEnabled = self.viewModel.state.document.undoController.undoManager.canUndo
             undo.tag = NavigationBarButton.undo.rawValue
             undo.rx
@@ -890,6 +907,8 @@ class PDFReaderViewController: UIViewController {
             self.undoBarButton = undo
 
             let redo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.right"), style: .plain, target: nil, action: nil)
+            redo.accessibilityLabel = L10n.Accessibility.Pdf.redo
+            redo.title = L10n.Accessibility.Pdf.redo
             redo.isEnabled = self.viewModel.state.document.undoController.undoManager.canRedo
             redo.tag = NavigationBarButton.redo.rawValue
             redo.rx

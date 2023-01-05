@@ -114,7 +114,7 @@ final class AnnotationViewHeader: UIView {
         let pageLabel = UILabel()
         pageLabel.font = layout.pageLabelFont
         pageLabel.adjustsFontForContentSizeCategory = true
-        pageLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        pageLabel.setContentCompressionResistancePriority(.init(999), for: .horizontal)
         pageLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         pageLabel.translatesAutoresizingMaskIntoConstraints = false
 
@@ -181,11 +181,11 @@ final class AnnotationViewHeader: UIView {
             // Vertical
             typeImageView.centerYAnchor.constraint(equalTo: self.centerYAnchor),
             pageLabel.centerYAnchor.constraint(equalTo: self.centerYAnchor),
+            pageLabel.topAnchor.constraint(equalTo: self.topAnchor, constant: layout.headerVerticalInsets),
+            self.bottomAnchor.constraint(equalTo: pageLabel.bottomAnchor, constant: layout.headerVerticalInsets),
             authorLabel.centerYAnchor.constraint(equalTo: self.centerYAnchor),
             rightBarButtons.topAnchor.constraint(equalTo: self.topAnchor),
             rightBarButtons.bottomAnchor.constraint(equalTo: self.bottomAnchor),
-            // Height
-            self.heightAnchor.constraint(equalToConstant: layout.headerHeight),
             // Horizontal
             typeImageView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: layout.horizontalInset),
             pageLabel.leadingAnchor.constraint(equalTo: typeImageView.trailingAnchor, constant: layout.pageLabelLeadingOffset),
