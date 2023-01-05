@@ -338,7 +338,7 @@ final class AnnotationView: UIView {
     static func paragraphStyle(for layout: AnnotationViewLayout) -> NSParagraphStyle {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.minimumLineHeight = layout.lineHeight
-        paragraphStyle.maximumLineHeight = layout.lineHeight
+        paragraphStyle.maximumLineHeight = layout.lineHeight * 2
         return paragraphStyle
     }
 

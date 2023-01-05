@@ -17,9 +17,9 @@ final class AnnotationViewButton: UIButton {
         self.translatesAutoresizingMaskIntoConstraints = false
         self.setTitleColor(Asset.Colors.zoteroBlueWithDarkMode.color, for: .normal)
         self.titleLabel?.font = layout.font
+        self.titleLabel?.adjustsFontForContentSizeCategory = true
         self.contentHorizontalAlignment = .leading
-        self.contentEdgeInsets = UIEdgeInsets(top: 0, left: layout.horizontalInset, bottom: 0, right: layout.horizontalInset)
-        self.heightAnchor.constraint(equalToConstant: layout.buttonHeight).isActive = true
+        self.contentEdgeInsets = UIEdgeInsets(top: layout.buttonVerticalInset, left: layout.horizontalInset, bottom: layout.buttonVerticalInset, right: layout.horizontalInset)
     }
 
     required init?(coder: NSCoder) {

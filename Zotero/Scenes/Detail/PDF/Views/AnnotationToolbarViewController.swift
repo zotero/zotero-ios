@@ -109,6 +109,7 @@ class AnnotationToolbarViewController: UIViewController {
         super.viewDidLoad()
 
         self.view.backgroundColor = Asset.Colors.navbarBackground.color
+        self.view.addInteraction(UILargeContentViewerInteraction())
 
         self.setupViews()
         if let delegate = self.delegate {
@@ -306,6 +307,9 @@ class AnnotationToolbarViewController: UIViewController {
 
     private func createToolButtons(from tools: [Tool]) -> [UIView] {
         let showMoreButton = UIButton(type: .custom)
+        showMoreButton.showsLargeContentViewer = true
+        showMoreButton.accessibilityLabel = L10n.Accessibility.Pdf.showMoreTools
+        showMoreButton.largeContentTitle = L10n.Accessibility.Pdf.showMoreTools
         showMoreButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         showMoreButton.setContentHuggingPriority(.defaultHigh, for: .vertical)
         showMoreButton.setContentCompressionResistancePriority(.required, for: .vertical)
@@ -316,7 +320,9 @@ class AnnotationToolbarViewController: UIViewController {
 
         return tools.map { tool in
             let button = CheckboxButton(type: .custom)
+            button.showsLargeContentViewer = true
             button.accessibilityLabel = tool.accessibilityLabel
+            button.largeContentTitle = tool.title
             button.setImage(tool.image.withRenderingMode(.alwaysTemplate), for: .normal)
             button.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
             button.adjustsImageWhenHighlighted = false
@@ -329,44 +335,16 @@ class AnnotationToolbarViewController: UIViewController {
             button.setContentCompressionResistancePriority(.required, for: .vertical)
             button.setContentCompressionResistancePriority(.required, for: .horizontal)
             button.isHidden = true
-
-            switch tool.type {
-            case .square, .highlight, .note:
-                button.rx.controlEvent(.touchDown).subscribe(with: self, onNext: { `self`, _ in self.delegate?.toggle(tool: tool.type, options: self.currentAnnotationOptions) }).disposed(by: self.disposeBag)
-            case .ink, .eraser:
-                self.createTapAndLongPressAction(for: tool.type, button: button)
-            default: break
-            }
-
+            button.rx.controlEvent(.touchUpInside).subscribe(with: self, onNext: { `self`, _ in self.delegate?.toggle(tool: tool.type, options: self.currentAnnotationOptions) }).disposed(by: self.disposeBag)
             return button
         } + [showMoreButton]
     }
 
-    private func createTapAndLongPressAction(for tool: PSPDFKit.Annotation.Tool, button: UIButton) {
-        let longPress = UILongPressGestureRecognizer()
-        longPress.delegate = self
-        longPress.rx.event
-                    .subscribe(with: self, onNext: { `self`, recognizer in
-                        self.process(longPressToolAction: tool, recognizer: recognizer)
-                    })
-                    .disposed(by: self.disposeBag)
-
-        let tap = UITapGestureRecognizer()
-        tap.delegate = self
-        tap.rx.event
-              .subscribe(with: self, onNext: { `self`, _ in
-                  self.delegate?.toggle(tool: tool, options: self.currentAnnotationOptions)
-              })
-              .disposed(by: self.disposeBag)
-        tap.require(toFail: longPress)
-
-        button.addGestureRecognizer(longPress)
-        button.addGestureRecognizer(tap)
-    }
-
     private func createAdditionalItems() -> [UIView] {
         let picker = UIButton()
+        picker.showsLargeContentViewer = true
         picker.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
+        picker.largeContentTitle = L10n.Accessibility.Pdf.colorPicker
         picker.setImage(UIImage(systemName: "circle.fill", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
         picker.rx.controlEvent(.touchUpInside)
               .subscribe(with: self, onNext: { `self`, _ in
@@ -376,6 +354,9 @@ class AnnotationToolbarViewController: UIViewController {
         self.colorPickerButton = picker
 
         let undo = UIButton(type: .custom)
+        undo.showsLargeContentViewer = true
+        undo.accessibilityLabel = L10n.Accessibility.Pdf.undo
+        undo.largeContentTitle = L10n.Accessibility.Pdf.undo
         undo.setImage(UIImage(systemName: "arrow.uturn.left", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
         undo.rx.controlEvent(.touchUpInside)
             .subscribe(with: self, onNext: { `self`, _ in
@@ -386,6 +367,9 @@ class AnnotationToolbarViewController: UIViewController {
         self.undoButton = undo
 
         let redo = UIButton(type: .custom)
+        redo.showsLargeContentViewer = true
+        redo.accessibilityLabel = L10n.Accessibility.Pdf.redo
+        redo.largeContentTitle = L10n.Accessibility.Pdf.redo
         redo.setImage(UIImage(systemName: "arrow.uturn.right", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
         redo.rx.controlEvent(.touchUpInside)
             .subscribe(with: self, onNext: { `self`, _ in
@@ -396,6 +380,9 @@ class AnnotationToolbarViewController: UIViewController {
         self.redoButton = redo
 
         let close = UIButton(type: .custom)
+        close.showsLargeContentViewer = true
+        close.accessibilityLabel = L10n.close
+        close.largeContentTitle = L10n.close
         close.setImage(UIImage(systemName: "xmark.circle", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
         close.rx.controlEvent(.touchUpInside)
              .subscribe(with: self, onNext: { `self`, _ in
@@ -404,6 +391,7 @@ class AnnotationToolbarViewController: UIViewController {
              .disposed(by: self.disposeBag)
 
         let handle = UIImageView(image: UIImage(systemName: "line.3.horizontal", withConfiguration: UIImage.SymbolConfiguration(scale: .large)))
+        handle.showsLargeContentViewer = false
         handle.contentMode = .center
 
         for (idx, view) in [picker, undo, redo, close, handle].enumerated() {
@@ -424,6 +412,7 @@ class AnnotationToolbarViewController: UIViewController {
         self.heightConstraint = self.view.heightAnchor.constraint(equalToConstant: AnnotationToolbarViewController.size)
 
         let stackView = UIStackView(arrangedSubviews: self.createToolButtons(from: self.tools))
+        stackView.showsLargeContentViewer = true
         stackView.axis = .vertical
         stackView.distribution = .fill
         stackView.translatesAutoresizingMaskIntoConstraints = false
@@ -434,6 +423,7 @@ class AnnotationToolbarViewController: UIViewController {
         self.view.addSubview(stackView)
 
         let additionalStackView = UIStackView(arrangedSubviews: self.createAdditionalItems())
+        additionalStackView.showsLargeContentViewer = true
         additionalStackView.setContentCompressionResistancePriority(.required, for: .horizontal)
         additionalStackView.setContentCompressionResistancePriority(.required, for: .vertical)
         additionalStackView.setContentHuggingPriority(.required, for: .vertical)
