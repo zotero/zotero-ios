@@ -62,8 +62,8 @@ class AnnotationToolbarViewController: UIViewController {
     }
 
     static let size: CGFloat = 52
-    private static let toolsToAdditionalFullOffset: CGFloat = 50
-    private static let toolsToAdditionalCompactOffset: CGFloat = 50
+    private static let toolsToAdditionalFullOffset: CGFloat = 70
+    private static let toolsToAdditionalCompactOffset: CGFloat = 20
     private let disposeBag: DisposeBag
 
     private weak var stackView: UIStackView!
@@ -71,10 +71,8 @@ class AnnotationToolbarViewController: UIViewController {
     private weak var colorPickerButton: UIButton!
     private(set) weak var undoButton: UIButton?
     private(set) weak var redoButton: UIButton?
-    private var widthConstraint: NSLayoutConstraint!
-    private var heightConstraint: NSLayoutConstraint!
-    private var handleTop: NSLayoutConstraint!
-    private var handleLeading: NSLayoutConstraint!
+    private var additionalTop: NSLayoutConstraint!
+    private var additionalLeading: NSLayoutConstraint!
     private weak var additionalTrailing: NSLayoutConstraint!
     private weak var additionalBottom: NSLayoutConstraint!
     private weak var containerTop: NSLayoutConstraint!
@@ -187,15 +185,17 @@ class AnnotationToolbarViewController: UIViewController {
         case .horizontal:
             self.setHorizontalLayout(isCompactSize: isCompactSize)
         }
+
+        let inset: CGFloat = isCompactSize ? 4 : 8
+        self.stackView.spacing = inset
+        self.additionalStackView.spacing = inset
     }
 
     private func setVerticalLayout(isCompactSize: Bool) {
-        self.heightConstraint.isActive = false
-        self.handleTop.isActive = false
+        self.additionalTop.isActive = false
         self.containerBottom.isActive = false
         self.containerToAdditionalHorizontal.isActive = false
-        self.widthConstraint.isActive = true
-        self.handleLeading.isActive = true
+        self.additionalLeading.isActive = true
         self.containerTrailing.isActive = true
         self.containerToAdditionalVertical.isActive = true
 
@@ -203,58 +203,28 @@ class AnnotationToolbarViewController: UIViewController {
         self.additionalStackView.axis = .vertical
 
         self.additionalBottom.constant = 8
-        self.additionalTrailing.constant = 0
+        self.additionalTrailing.constant = 8
         self.containerLeading.constant = 8
         self.containerTop.constant = 15
         self.containerToAdditionalVertical.constant = isCompactSize ? AnnotationToolbarViewController.toolsToAdditionalCompactOffset : AnnotationToolbarViewController.toolsToAdditionalFullOffset
-
-        let inset: CGFloat = isCompactSize ? 6 : 10
-        let insets = UIEdgeInsets(top: inset, left: 0, bottom: inset, right: 0)
-        self.set(insets: insets, in: self.stackView)
-        self.set(insets: insets, in: self.additionalStackView)
     }
 
     private func setHorizontalLayout(isCompactSize: Bool) {
-        self.widthConstraint.isActive = false
-        self.handleLeading.isActive = false
+        self.additionalLeading.isActive = false
         self.containerTrailing.isActive = false
         self.containerToAdditionalVertical.isActive = false
-        self.handleTop.isActive = true
+        self.additionalTop.isActive = true
         self.containerBottom.isActive = true
         self.containerToAdditionalHorizontal.isActive = true
-        self.heightConstraint.isActive = true
 
         self.stackView.axis = .horizontal
         self.additionalStackView.axis = .horizontal
 
-        self.additionalBottom.constant = 0
+        self.additionalBottom.constant = 8
         self.additionalTrailing.constant = 15
         self.containerLeading.constant = 20
         self.containerTop.constant = 8
-        self.containerToAdditionalHorizontal.constant = isCompactSize ? 20 : 50
-
-        let inset: CGFloat = isCompactSize ? 6 : 8
-        let insets = UIEdgeInsets(top: 0, left: inset, bottom: 0, right: inset)
-        self.set(insets: insets, in: self.stackView)
-        self.set(insets: insets, in: self.additionalStackView)
-    }
-
-    private func set(insets: UIEdgeInsets, in stackView: UIStackView) {
-        for view in stackView.arrangedSubviews {
-            if let button = view as? UIButton {
-                button.contentEdgeInsets = insets
-            } else if let imageView = view as? UIImageView {
-                imageView.constraints.forEach({ $0.isActive = false })
-
-                guard let image = imageView.image else { continue }
-
-                if insets.left == 0 {
-                    imageView.heightAnchor.constraint(equalToConstant: (image.size.height + insets.top + insets.bottom)).isActive = true
-                } else {
-                    imageView.widthAnchor.constraint(equalToConstant: (image.size.width + insets.left + insets.right)).isActive = true
-                }
-            }
-        }
+        self.containerToAdditionalHorizontal.constant = isCompactSize ? AnnotationToolbarViewController.toolsToAdditionalCompactOffset : AnnotationToolbarViewController.toolsToAdditionalFullOffset
     }
 
     func updateAdditionalButtons() {
@@ -307,19 +277,21 @@ class AnnotationToolbarViewController: UIViewController {
 
     private func createToolButtons(from tools: [Tool]) -> [UIView] {
         let showMoreButton = UIButton(type: .custom)
+        showMoreButton.translatesAutoresizingMaskIntoConstraints = false
         showMoreButton.showsLargeContentViewer = true
         showMoreButton.accessibilityLabel = L10n.Accessibility.Pdf.showMoreTools
         showMoreButton.largeContentTitle = L10n.Accessibility.Pdf.showMoreTools
-        showMoreButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-        showMoreButton.setContentHuggingPriority(.defaultHigh, for: .vertical)
         showMoreButton.setContentCompressionResistancePriority(.required, for: .vertical)
         showMoreButton.setContentCompressionResistancePriority(.required, for: .horizontal)
         showMoreButton.setImage(UIImage(systemName: "ellipsis")?.withRenderingMode(.alwaysTemplate), for: .normal)
         showMoreButton.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         showMoreButton.showsMenuAsPrimaryAction = true
+        showMoreButton.widthAnchor.constraint(equalTo: showMoreButton.heightAnchor).isActive = true
 
         return tools.map { tool in
             let button = CheckboxButton(type: .custom)
+            button.contentEdgeInsets = UIEdgeInsets(top: 4, left: 4, bottom: 4, right: 4)
+            button.translatesAutoresizingMaskIntoConstraints = false
             button.showsLargeContentViewer = true
             button.accessibilityLabel = tool.accessibilityLabel
             button.largeContentTitle = tool.title
@@ -330,12 +302,11 @@ class AnnotationToolbarViewController: UIViewController {
             button.selectedTintColor = .white
             button.layer.cornerRadius = 4
             button.layer.masksToBounds = true
-            button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-            button.setContentHuggingPriority(.defaultHigh, for: .vertical)
             button.setContentCompressionResistancePriority(.required, for: .vertical)
             button.setContentCompressionResistancePriority(.required, for: .horizontal)
             button.isHidden = true
             button.rx.controlEvent(.touchUpInside).subscribe(with: self, onNext: { `self`, _ in self.delegate?.toggle(tool: tool.type, options: self.currentAnnotationOptions) }).disposed(by: self.disposeBag)
+            button.widthAnchor.constraint(equalTo: button.heightAnchor).isActive = true
             return button
         } + [showMoreButton]
     }
@@ -399,8 +370,7 @@ class AnnotationToolbarViewController: UIViewController {
             view.tintColor = idx == 0 ? self.delegate?.activeAnnotationColor : Asset.Colors.zoteroBlueWithDarkMode.color
             view.setContentCompressionResistancePriority(.required, for: .horizontal)
             view.setContentCompressionResistancePriority(.required, for: .vertical)
-            view.setContentHuggingPriority(.required, for: .horizontal)
-            view.setContentHuggingPriority(.required, for: .vertical)
+            view.widthAnchor.constraint(equalTo: view.heightAnchor).isActive = true
         }
 
         return [picker, undo, redo, close, handle]
@@ -408,12 +378,11 @@ class AnnotationToolbarViewController: UIViewController {
 
     private func setupViews() {
         self.view.translatesAutoresizingMaskIntoConstraints = false
-        self.widthConstraint = self.view.widthAnchor.constraint(equalToConstant: AnnotationToolbarViewController.size)
-        self.heightConstraint = self.view.heightAnchor.constraint(equalToConstant: AnnotationToolbarViewController.size)
 
         let stackView = UIStackView(arrangedSubviews: self.createToolButtons(from: self.tools))
         stackView.showsLargeContentViewer = true
         stackView.axis = .vertical
+        stackView.spacing = 6
         stackView.distribution = .fill
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -436,18 +405,18 @@ class AnnotationToolbarViewController: UIViewController {
 
         self.containerBottom = self.view.bottomAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 8)
         self.containerTrailing = self.view.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 8)
-        self.handleTop = self.view.topAnchor.constraint(equalTo: additionalStackView.topAnchor)
-        self.handleLeading = self.view.leadingAnchor.constraint(equalTo: additionalStackView.leadingAnchor)
-        self.containerToAdditionalVertical = additionalStackView.topAnchor.constraint(greaterThanOrEqualTo: stackView.bottomAnchor, constant: AnnotationToolbarViewController.toolsToAdditionalFullOffset)
+        self.additionalTop = additionalStackView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: 8)
+        self.additionalLeading = additionalStackView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 8)
+        self.containerToAdditionalVertical = additionalStackView.topAnchor.constraint(greaterThanOrEqualTo: stackView.bottomAnchor, constant: 0)
         self.containerToAdditionalVertical.priority = .required
-        self.containerToAdditionalHorizontal = additionalStackView.leadingAnchor.constraint(greaterThanOrEqualTo: stackView.trailingAnchor, constant: AnnotationToolbarViewController.toolsToAdditionalFullOffset)
+        self.containerToAdditionalHorizontal = additionalStackView.leadingAnchor.constraint(greaterThanOrEqualTo: stackView.trailingAnchor, constant: 0)
         self.containerToAdditionalHorizontal.priority = .required
         let containerTop = stackView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: 15)
         let containerLeading = stackView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 15)
-        let additionalBottom = self.view.bottomAnchor.constraint(equalTo: additionalStackView.bottomAnchor)
-        let additionalTrailing = self.view.trailingAnchor.constraint(equalTo: additionalStackView.trailingAnchor)
+        let additionalBottom = self.view.bottomAnchor.constraint(equalTo: additionalStackView.bottomAnchor, constant: 8)
+        let additionalTrailing = self.view.trailingAnchor.constraint(equalTo: additionalStackView.trailingAnchor, constant: 8)
 
-        NSLayoutConstraint.activate([containerTop, containerLeading, self.containerTrailing, self.containerToAdditionalVertical, additionalBottom, additionalTrailing, self.handleLeading])
+        NSLayoutConstraint.activate([containerTop, containerLeading, self.containerTrailing, self.containerToAdditionalVertical, additionalBottom, additionalTrailing, self.additionalLeading])
 
         self.stackView = stackView
         self.containerTop = containerTop
