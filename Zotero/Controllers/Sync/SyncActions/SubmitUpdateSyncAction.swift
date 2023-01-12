@@ -57,8 +57,7 @@ struct SubmitUpdateSyncAction: SyncAction {
                              })
                              .flatMap({ settings, newVersion -> Single<(Int, Error?)> in
                                  do {
-                                     let changeUuids = self.changeUuids.values.flatMap({ $0 })
-                                     var requests: [DbRequest] = [MarkSettingsAsSyncedDbRequest(settings: settings, changeUuids: changeUuids, version: newVersion)]
+                                     var requests: [DbRequest] = [MarkSettingsAsSyncedDbRequest(settings: settings, changeUuids: self.changeUuids, version: newVersion)]
                                      if self.updateLibraryVersion {
                                          requests.append(UpdateVersionsDbRequest(version: newVersion, libraryId: self.libraryId, type: .object(self.object)))
                                      }

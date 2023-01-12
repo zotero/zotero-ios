@@ -36,10 +36,21 @@ struct MarkObjectsAsSyncedDbRequest<Obj: UpdatableObject&Syncable>: DbRequest {
 
 struct MarkSettingsAsSyncedDbRequest: DbRequest {
     let settings: [(String, LibraryIdentifier)]
-    let changeUuids: [String]
+    let changeUuids: [String: [String]]
     let version: Int
 
     var needsWrite: Bool { return true }
+
+    private func uuidKey(from key: String, libraryId: LibraryIdentifier) -> String {
+        let libraryPart: String
+        switch libraryId {
+        case .custom:
+            libraryPart = "u"
+        case .group(let groupId):
+            libraryPart = "g\(groupId)"
+        }
+        return "lastPageIndex_\(libraryPart)_\(key)"
+    }
 
     func process(in database: Realm) throws {
         for setting in self.settings {
@@ -49,8 +60,10 @@ struct MarkSettingsAsSyncedDbRequest: DbRequest {
             }
 
             object.changeType = .syncResponse
-            
-            object.deleteChanges(uuids: self.changeUuids, database: database)
+
+            if let uuids = self.changeUuids[self.uuidKey(from: setting.0, libraryId: setting.1)] {
+                object.deleteChanges(uuids: uuids, database: database)
+            }
         }
     }
 }

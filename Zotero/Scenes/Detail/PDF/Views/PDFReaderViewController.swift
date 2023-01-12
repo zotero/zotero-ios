@@ -46,7 +46,7 @@ final class PDFReaderViewController: UIViewController {
     private var pageTimerDisposeBag: DisposeBag
     private var selectionView: SelectionView?
     private var lastGestureRecognizerTouch: UITouch?
-    private var didAppear: Bool
+    private var isCurrentlyVisible: Bool
 
     private lazy var shareButton: UIBarButtonItem = {
         let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
@@ -130,7 +130,7 @@ final class PDFReaderViewController: UIViewController {
     init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
         self.viewModel = viewModel
         self.isCompactSize = compactSize
-        self.didAppear = false
+        self.isCurrentlyVisible = false
         self.isSidebarTransitioning = false
         self.disposeBag = DisposeBag()
         self.annotationTimerDisposeBag = DisposeBag()
@@ -166,7 +166,7 @@ final class PDFReaderViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        self.didAppear = true
+        self.isCurrentlyVisible = true
     }
 
     deinit {
@@ -180,7 +180,7 @@ final class PDFReaderViewController: UIViewController {
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
 
-        guard self.traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
+        guard self.isCurrentlyVisible && self.traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
 
         self.viewModel.process(action: .userInterfaceStyleChanged(self.traitCollection.userInterfaceStyle))
     }
@@ -216,7 +216,7 @@ final class PDFReaderViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
 
-        guard !self.didAppear else { return }
+        guard !self.isCurrentlyVisible else { return }
 
         if let (page, _) = self.viewModel.state.focusDocumentLocation, let annotation = self.viewModel.state.selectedAnnotation {
             self.select(annotation: annotation, pageIndex: PageIndex(page), document: self.viewModel.state.document)
@@ -969,10 +969,18 @@ final class PDFReaderViewController: UIViewController {
         NotificationCenter.default.rx
                                   .notification(UIApplication.didBecomeActiveNotification)
                                   .observe(on: MainScheduler.instance)
-                                  .subscribe(onNext: { [weak self] notification in
-                                      guard let `self` = self else { return }
+                                  .subscribe(with: self, onNext: { `self`, notification in
                                       self.viewModel.process(action: .updateAnnotationPreviews)
                                       self.updatePencilSettingsIfNeeded()
+                                      self.isCurrentlyVisible = true
+                                  })
+                                  .disposed(by: self.disposeBag)
+
+        NotificationCenter.default.rx
+                                  .notification(UIApplication.willResignActiveNotification)
+                                  .observe(on: MainScheduler.instance)
+                                  .subscribe(with: self, onNext: { `self`, notification in
+                                      self.isCurrentlyVisible = false
                                   })
                                   .disposed(by: self.disposeBag)
 
@@ -990,7 +998,7 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
     func pdfViewController(_ pdfController: PDFViewController, willBeginDisplaying pageView: PDFPageView, forPageAt pageIndex: Int) {
         // This delegate method is called for incorrect page index when sidebar is changing size. So if the sidebar is opened/closed, incorrect page
         // is stored in `pageController` and if the user closes the pdf reader without further scrolling, incorrect page is shown on next opening.
-        guard !self.isSidebarTransitioning && self.didAppear else { return }
+        guard !self.isSidebarTransitioning && self.isCurrentlyVisible else { return }
         // Save current page
         self.viewModel.process(action: .setVisiblePage(Int(pdfController.pageIndex)))
     }

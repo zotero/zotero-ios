@@ -34,9 +34,9 @@ struct ReadUpdatedSettingsUpdateParametersDbRequest: DbResponseRequest {
             let changed = database.objects(RPageIndex.self).filter(.changed)
 
             for object in changed {
-                guard let _parameters = object.updateParameters else { continue }
+                guard let _parameters = object.updateParameters, let newKey = _parameters.keys.first else { continue }
                 parameters.append(_parameters)
-                uuids[object.key] = object.changes.map({ $0.identifier })
+                uuids[newKey] = object.changes.map({ $0.identifier })
             }
 
             return ReadUpdatedParametersResponse(parameters: parameters, changeUuids: uuids)

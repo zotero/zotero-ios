@@ -104,7 +104,7 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
         let batches = self.writeBatches(from: collectionParams, libraryId: libraryId, version: version, object: .collection) +
                       self.writeBatches(from: itemParams, libraryId: libraryId, version: version, object: .item) +
                       self.writeBatches(from: searchParams, libraryId: libraryId, version: version, object: .search) +
-                      self.writeBatches(from: settings, libraryId: libraryId, version: version, object: .settings)
+                      self.settingsWriteBatches(from: settings, libraryId: libraryId, version: version)
 
         return (batches, hasUpload)
     }
@@ -120,6 +120,22 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
                 uuids[key] = _uuids
             }
             batches.append(WriteBatch(libraryId: libraryId, object: object, version: version, parameters: chunk, changeUuids: uuids))
+        }
+
+        return batches
+    }
+
+    private func settingsWriteBatches(from response: ReadUpdatedParametersResponse, libraryId: LibraryIdentifier, version: Int) -> [WriteBatch] {
+        let chunks = response.parameters.chunked(into: WriteBatch.maxCount)
+        var batches: [WriteBatch] = []
+
+        for chunk in chunks {
+            var uuids: [String: [String]] = [:]
+            for params in chunk {
+                guard let key = params.keys.first, let _uuids = response.changeUuids[key] else { continue }
+                uuids[key] = _uuids
+            }
+            batches.append(WriteBatch(libraryId: libraryId, object: .settings, version: version, parameters: chunk, changeUuids: uuids))
         }
 
         return batches
