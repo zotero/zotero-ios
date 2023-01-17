@@ -40,14 +40,14 @@ struct PDFReaderState: ViewModelState {
         static let selection = Changes(rawValue: 1 << 1)
         static let interfaceStyle = Changes(rawValue: 1 << 2)
         static let settings = Changes(rawValue: 1 << 3)
-        static let activeColor = Changes(rawValue: 1 << 4)
-        static let activeComment = Changes(rawValue: 1 << 5)
-        static let export = Changes(rawValue: 1 << 6)
-        static let activeLineWidth = Changes(rawValue: 1 << 7)
-        static let sidebarEditing = Changes(rawValue: 1 << 8)
-        static let sidebarEditingSelection = Changes(rawValue: 1 << 9)
-        static let filter = Changes(rawValue: 1 << 10)
-        static let activeEraserSize = Changes(rawValue: 1 << 11)
+        static let activeComment = Changes(rawValue: 1 << 4)
+        static let export = Changes(rawValue: 1 << 5)
+        static let activeLineWidth = Changes(rawValue: 1 << 6)
+        static let sidebarEditing = Changes(rawValue: 1 << 7)
+        static let sidebarEditingSelection = Changes(rawValue: 1 << 8)
+        static let filter = Changes(rawValue: 1 << 9)
+        static let activeEraserSize = Changes(rawValue: 1 << 10)
+        static let initialDataLoaded = Changes(rawValue: 1 << 11)
     }
 
     enum AppearanceMode: UInt {
@@ -106,7 +106,8 @@ struct PDFReaderState: ViewModelState {
 
     var interfaceStyle: UIUserInterfaceStyle
     var sidebarEditingEnabled: Bool
-    var activeColor: UIColor
+    var toolColors: [PSPDFKit.Annotation.Tool: UIColor]
+    var changedColorForTool: PSPDFKit.Annotation.Tool?
     var activeLineWidth: CGFloat
     var activeEraserSize: CGFloat
 
@@ -148,7 +149,10 @@ struct PDFReaderState: ViewModelState {
         self.selectedAnnotationsDuringEditing = []
         self.interfaceStyle = interfaceStyle
         self.sidebarEditingEnabled = false
-        self.activeColor = UIColor(hex: Defaults.shared.activeColorHex)
+        self.toolColors = [.highlight: UIColor(hex: Defaults.shared.highlightColorHex),
+                           .square: UIColor(hex: Defaults.shared.squareColorHex),
+                           .note: UIColor(hex: Defaults.shared.noteColorHex),
+                           .ink: UIColor(hex: Defaults.shared.inkColorHex)]
         self.activeLineWidth = CGFloat(Defaults.shared.activeLineWidth)
         self.activeEraserSize = CGFloat(Defaults.shared.activeEraserSize)
         self.deletionEnabled = false
@@ -186,6 +190,7 @@ struct PDFReaderState: ViewModelState {
         self.loadedPreviewImageAnnotationKeys = nil
         self.error = nil
         self.pdfNotification = nil
+        self.changedColorForTool = nil
     }
 }
 

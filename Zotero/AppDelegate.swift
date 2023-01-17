@@ -43,6 +43,14 @@ final class AppDelegate: UIResponder {
         UserDefaults.standard.removeObject(forKey: "PdfReader.ScrollDirection")
         UserDefaults.standard.removeObject(forKey: "PdfReader.PageTransition")
     }
+
+    private func migrateActiveColor() {
+        guard let activeColorHex = UserDefaults.zotero.object(forKey: "PDFReaderState.activeColor") as? String else { return }
+        Defaults.shared.highlightColorHex = activeColorHex
+        Defaults.shared.noteColorHex = activeColorHex
+        Defaults.shared.squareColorHex = activeColorHex
+        Defaults.shared.inkColorHex = activeColorHex
+    }
     #endif
 
     private func migrateItemsSortType() {
@@ -279,6 +287,7 @@ extension AppDelegate: UIApplicationDelegate {
         self.setupExportDefaults()
 
         #if PDFENABLED
+        self.migrateActiveColor()
         self.migratePdfSettings()
         #endif
         self.migrateItemsSortType()

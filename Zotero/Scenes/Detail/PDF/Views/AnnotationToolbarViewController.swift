@@ -29,7 +29,6 @@ struct AnnotationToolOptions: OptionSet {
 protocol AnnotationToolbarDelegate: AnyObject {
     var rotation: AnnotationToolbarViewController.Rotation { get }
     var isCompactSize: Bool { get }
-    var activeAnnotationColor: UIColor { get }
     var activeAnnotationTool: PSPDFKit.Annotation.Tool? { get }
     var canUndo: Bool { get }
     var canRedo: Bool { get }
@@ -69,6 +68,12 @@ class AnnotationToolbarViewController: UIViewController {
     private weak var stackView: UIStackView!
     private weak var additionalStackView: UIStackView!
     private weak var colorPickerButton: UIButton!
+    private var colorPickerTop: NSLayoutConstraint!
+    private var colorPickerLeading: NSLayoutConstraint!
+    private var colorPickerToAdditionalHorizontal: NSLayoutConstraint!
+    private var colorPickerTrailing: NSLayoutConstraint!
+    private var colorPickerToAdditionalVertical: NSLayoutConstraint!
+    private var colorPickerBottom: NSLayoutConstraint!
     private(set) weak var undoButton: UIButton?
     private(set) weak var redoButton: UIButton?
     private var additionalTop: NSLayoutConstraint!
@@ -79,8 +84,8 @@ class AnnotationToolbarViewController: UIViewController {
     private weak var containerLeading: NSLayoutConstraint!
     private var containerBottom: NSLayoutConstraint!
     private var containerTrailing: NSLayoutConstraint!
-    private var containerToAdditionalVertical: NSLayoutConstraint!
-    private var containerToAdditionalHorizontal: NSLayoutConstraint!
+    private var containerToPickerVertical: NSLayoutConstraint!
+    private var containerToPickerHorizontal: NSLayoutConstraint!
     private var tools: [Tool]
     weak var delegate: AnnotationToolbarDelegate?
     private var lastGestureRecognizerTouch: UITouch?
@@ -142,9 +147,11 @@ class AnnotationToolbarViewController: UIViewController {
 
         let stackViewOffset = isHorizontal ? self.containerLeading.constant : self.containerTop.constant
         let additionalSize = isHorizontal ? self.additionalStackView.frame.width : self.additionalStackView.frame.height
-        let containerToAdditionalOffset = isHorizontal ? self.containerToAdditionalHorizontal.constant : self.containerToAdditionalVertical.constant
+        let containerToPickerOffset = isHorizontal ? self.containerToPickerHorizontal.constant : self.containerToPickerVertical.constant
+        let pickerSize = isHorizontal ? self.colorPickerButton.frame.width : self.colorPickerButton.frame.height
+        let pickerToAdditionalOffset = isHorizontal ? self.colorPickerToAdditionalHorizontal.constant : self.colorPickerToAdditionalVertical.constant
         let additionalOffset = isHorizontal ? self.additionalTrailing.constant : self.additionalBottom.constant
-        let remainingSize = maxAvailableSize - stackViewOffset - containerToAdditionalOffset - additionalSize - additionalOffset
+        let remainingSize = maxAvailableSize - stackViewOffset - containerToPickerOffset - pickerSize - pickerToAdditionalOffset - additionalSize - additionalOffset
         let count = min(Int(floor(remainingSize / buttonSize)), self.tools.count)
 
         for idx in 0..<count {
@@ -168,11 +175,25 @@ class AnnotationToolbarViewController: UIViewController {
         }
     }
 
-    func set(selected: Bool, to tool: PSPDFKit.Annotation.Tool) {
+    func set(activeColor: UIColor) {
+        self.colorPickerButton.tintColor = activeColor
+    }
+
+    func set(selected: Bool, to tool: PSPDFKit.Annotation.Tool, color: UIColor?) {
         guard let idx = self.tools.firstIndex(where: { $0.type == tool }) else { return }
 
         (self.stackView.arrangedSubviews[idx] as? CheckboxButton)?.isSelected = selected
         (self.stackView.arrangedSubviews.last as? UIButton)?.menu = self.createHiddenToolsMenu()
+
+        switch tool {
+        case .ink, .square, .highlight, .note:
+            if selected, let color = color {
+                self.colorPickerButton.tintColor = color
+            }
+            self.colorPickerButton.isHidden = !selected
+        default:
+            self.colorPickerButton.isHidden = true
+        }
     }
 
     func set(rotation: Rotation, isCompactSize: Bool) {
@@ -194,10 +215,16 @@ class AnnotationToolbarViewController: UIViewController {
     private func setVerticalLayout(isCompactSize: Bool) {
         self.additionalTop.isActive = false
         self.containerBottom.isActive = false
-        self.containerToAdditionalHorizontal.isActive = false
+        self.containerToPickerHorizontal.isActive = false
+        self.colorPickerToAdditionalHorizontal.isActive = false
+        self.colorPickerTop.isActive = false
+        self.colorPickerBottom.isActive = false
         self.additionalLeading.isActive = true
         self.containerTrailing.isActive = true
-        self.containerToAdditionalVertical.isActive = true
+        self.containerToPickerVertical.isActive = true
+        self.colorPickerToAdditionalVertical.isActive = true
+        self.colorPickerLeading.isActive = true
+        self.colorPickerTrailing.isActive = true
 
         self.stackView.axis = .vertical
         self.additionalStackView.axis = .vertical
@@ -206,16 +233,25 @@ class AnnotationToolbarViewController: UIViewController {
         self.additionalTrailing.constant = 8
         self.containerLeading.constant = 8
         self.containerTop.constant = 15
-        self.containerToAdditionalVertical.constant = isCompactSize ? AnnotationToolbarViewController.toolsToAdditionalCompactOffset : AnnotationToolbarViewController.toolsToAdditionalFullOffset
+        self.colorPickerLeading.constant = 8
+        self.colorPickerTrailing.constant = 8
+        self.containerToPickerVertical.constant = isCompactSize ? AnnotationToolbarViewController.toolsToAdditionalCompactOffset : AnnotationToolbarViewController.toolsToAdditionalFullOffset
+        self.colorPickerToAdditionalVertical.constant = isCompactSize ? 4 : 8
     }
 
     private func setHorizontalLayout(isCompactSize: Bool) {
         self.additionalLeading.isActive = false
         self.containerTrailing.isActive = false
-        self.containerToAdditionalVertical.isActive = false
+        self.containerToPickerVertical.isActive = false
+        self.colorPickerToAdditionalVertical.isActive = false
+        self.colorPickerLeading.isActive = false
+        self.colorPickerTrailing.isActive = false
         self.additionalTop.isActive = true
         self.containerBottom.isActive = true
-        self.containerToAdditionalHorizontal.isActive = true
+        self.containerToPickerHorizontal.isActive = true
+        self.colorPickerToAdditionalHorizontal.isActive = true
+        self.colorPickerTop.isActive = true
+        self.colorPickerBottom.isActive = true
 
         self.stackView.axis = .horizontal
         self.additionalStackView.axis = .horizontal
@@ -224,7 +260,10 @@ class AnnotationToolbarViewController: UIViewController {
         self.additionalTrailing.constant = 15
         self.containerLeading.constant = 20
         self.containerTop.constant = 8
-        self.containerToAdditionalHorizontal.constant = isCompactSize ? AnnotationToolbarViewController.toolsToAdditionalCompactOffset : AnnotationToolbarViewController.toolsToAdditionalFullOffset
+        self.containerToPickerHorizontal.constant = isCompactSize ? AnnotationToolbarViewController.toolsToAdditionalCompactOffset : AnnotationToolbarViewController.toolsToAdditionalFullOffset
+        self.colorPickerToAdditionalHorizontal.constant = isCompactSize ? 4 : 8
+        self.colorPickerBottom.constant = 8
+        self.colorPickerTop.constant = 8
     }
 
     func updateAdditionalButtons() {
@@ -312,18 +351,6 @@ class AnnotationToolbarViewController: UIViewController {
     }
 
     private func createAdditionalItems() -> [UIView] {
-        let picker = UIButton()
-        picker.showsLargeContentViewer = true
-        picker.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
-        picker.largeContentTitle = L10n.Accessibility.Pdf.colorPicker
-        picker.setImage(UIImage(systemName: "circle.fill", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
-        picker.rx.controlEvent(.touchUpInside)
-              .subscribe(with: self, onNext: { `self`, _ in
-                  self.delegate?.showColorPicker(sender: self.colorPickerButton)
-              })
-              .disposed(by: self.disposeBag)
-        self.colorPickerButton = picker
-
         let undo = UIButton(type: .custom)
         undo.showsLargeContentViewer = true
         undo.accessibilityLabel = L10n.Accessibility.Pdf.undo
@@ -365,15 +392,34 @@ class AnnotationToolbarViewController: UIViewController {
         handle.showsLargeContentViewer = false
         handle.contentMode = .center
 
-        for (idx, view) in [picker, undo, redo, close, handle].enumerated() {
+        for view in [undo, redo, close, handle] {
             view.translatesAutoresizingMaskIntoConstraints = false
-            view.tintColor = idx == 0 ? self.delegate?.activeAnnotationColor : Asset.Colors.zoteroBlueWithDarkMode.color
+            view.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
             view.setContentCompressionResistancePriority(.required, for: .horizontal)
             view.setContentCompressionResistancePriority(.required, for: .vertical)
             view.widthAnchor.constraint(equalTo: view.heightAnchor).isActive = true
         }
 
-        return [picker, undo, redo, close, handle]
+        return [undo, redo, close, handle]
+    }
+
+    private func createColorPickerButton() -> UIButton {
+        let picker = UIButton()
+        picker.showsLargeContentViewer = true
+        picker.translatesAutoresizingMaskIntoConstraints = false
+        picker.setContentCompressionResistancePriority(.required, for: .horizontal)
+        picker.setContentCompressionResistancePriority(.required, for: .vertical)
+        picker.widthAnchor.constraint(equalTo: picker.heightAnchor).isActive = true
+        picker.isHidden = true
+        picker.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
+        picker.largeContentTitle = L10n.Accessibility.Pdf.colorPicker
+        picker.setImage(UIImage(systemName: "circle.fill", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
+        picker.rx.controlEvent(.touchUpInside)
+              .subscribe(with: self, onNext: { `self`, _ in
+                  self.delegate?.showColorPicker(sender: self.colorPickerButton)
+              })
+              .disposed(by: self.disposeBag)
+        return picker
     }
 
     private func setupViews() {
@@ -391,6 +437,10 @@ class AnnotationToolbarViewController: UIViewController {
         stackView.setContentHuggingPriority(.required, for: .horizontal)
         self.view.addSubview(stackView)
 
+        let picker = self.createColorPickerButton()
+        self.view.addSubview(picker)
+        self.colorPickerButton = picker
+
         let additionalStackView = UIStackView(arrangedSubviews: self.createAdditionalItems())
         additionalStackView.showsLargeContentViewer = true
         additionalStackView.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -407,22 +457,30 @@ class AnnotationToolbarViewController: UIViewController {
         self.containerTrailing = self.view.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 8)
         self.additionalTop = additionalStackView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: 8)
         self.additionalLeading = additionalStackView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 8)
-        self.containerToAdditionalVertical = additionalStackView.topAnchor.constraint(greaterThanOrEqualTo: stackView.bottomAnchor, constant: 0)
-        self.containerToAdditionalVertical.priority = .required
-        self.containerToAdditionalHorizontal = additionalStackView.leadingAnchor.constraint(greaterThanOrEqualTo: stackView.trailingAnchor, constant: 0)
-        self.containerToAdditionalHorizontal.priority = .required
+        self.containerToPickerVertical = picker.topAnchor.constraint(greaterThanOrEqualTo: stackView.bottomAnchor, constant: 0)
+        self.containerToPickerVertical.priority = .required
+        self.containerToPickerHorizontal = picker.leadingAnchor.constraint(greaterThanOrEqualTo: stackView.trailingAnchor, constant: 0)
+        self.containerToPickerHorizontal.priority = .required
+        self.colorPickerToAdditionalVertical = additionalStackView.topAnchor.constraint(equalTo: picker.bottomAnchor)
+        self.colorPickerToAdditionalHorizontal = additionalStackView.leadingAnchor.constraint(equalTo: picker.trailingAnchor)
+        self.colorPickerTop = self.view.topAnchor.constraint(equalTo: picker.topAnchor)
+        self.colorPickerBottom = picker.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
+        self.colorPickerLeading = picker.leadingAnchor.constraint(equalTo: self.view.leadingAnchor)
+        self.colorPickerTrailing = self.view.trailingAnchor.constraint(equalTo: picker.trailingAnchor)
         let containerTop = stackView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: 15)
         let containerLeading = stackView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 15)
         let additionalBottom = self.view.bottomAnchor.constraint(equalTo: additionalStackView.bottomAnchor, constant: 8)
         let additionalTrailing = self.view.trailingAnchor.constraint(equalTo: additionalStackView.trailingAnchor, constant: 8)
 
-        NSLayoutConstraint.activate([containerTop, containerLeading, self.containerTrailing, self.containerToAdditionalVertical, additionalBottom, additionalTrailing, self.additionalLeading])
 
-        self.stackView = stackView
+        NSLayoutConstraint.activate([containerTop, containerLeading, self.containerTrailing, self.containerToPickerVertical, self.colorPickerLeading, self.colorPickerTrailing,
+                                     self.colorPickerToAdditionalVertical, additionalBottom, additionalTrailing, self.additionalLeading])
+
         self.containerTop = containerTop
         self.containerLeading = containerLeading
         self.additionalTrailing = additionalTrailing
         self.additionalBottom = additionalBottom
+        self.stackView = stackView
         self.additionalStackView = additionalStackView
     }
 }
