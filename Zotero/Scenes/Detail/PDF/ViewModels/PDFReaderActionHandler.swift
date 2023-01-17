@@ -177,8 +177,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .updateAnnotationPreviews:
             self.storeAnnotationPreviewsIfNeeded(in: viewModel)
 
-        case .setActiveColor(let hex):
-            self.setActiveColor(hex: hex, in: viewModel)
+        case .setActiveColor(let hex, let tool):
+            self.setActiveColor(hex: hex, tool: tool, in: viewModel)
 
         case .setActiveLineWidth(let lineWidth):
             self.setActive(lineWidth: lineWidth, in: viewModel)
@@ -513,12 +513,22 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func setActiveColor(hex: String, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        Defaults.shared.activeColorHex = hex
+    private func setActiveColor(hex: String, tool: PSPDFKit.Annotation.Tool, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        switch tool {
+        case .highlight:
+            Defaults.shared.highlightColorHex = hex
+        case .note:
+            Defaults.shared.noteColorHex = hex
+        case .square:
+            Defaults.shared.squareColorHex = hex
+        case .ink:
+            Defaults.shared.inkColorHex = hex
+        default: return
+        }
 
         self.update(viewModel: viewModel) { state in
-            state.activeColor = UIColor(hex: hex)
-            state.changes = .activeColor
+            state.toolColors[tool] = UIColor(hex: hex)
+            state.changedColorForTool = tool
         }
     }
 
@@ -985,8 +995,38 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     // MARK: - Annotation management
 
+    private func tool(from annotation: PSPDFKit.Annotation) -> PSPDFKit.Annotation.Tool? {
+        if annotation is PSPDFKit.HighlightAnnotation {
+            return .highlight
+        }
+        if annotation is PSPDFKit.NoteAnnotation {
+            return .note
+        }
+        if annotation is PSPDFKit.SquareAnnotation {
+            return .square
+        }
+        if annotation is PSPDFKit.InkAnnotation {
+            return .ink
+        }
+        return nil
+    }
+
+    private func tool(from annotationType: AnnotationType) -> PSPDFKit.Annotation.Tool {
+        switch annotationType {
+        case .note:
+            return .note
+        case .highlight:
+            return .highlight
+        case .image:
+            return .image
+        case .ink:
+            return .ink
+        }
+    }
+
     private func add(annotationType: AnnotationType, pageIndex: PageIndex, origin: CGPoint, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        let color = AnnotationColorGenerator.color(from: viewModel.state.activeColor, isHighlight: false, userInterfaceStyle: viewModel.state.interfaceStyle).color
+        guard let activeColor = viewModel.state.toolColors[self.tool(from: annotationType)] else { return }
+        let color = AnnotationColorGenerator.color(from: activeColor, isHighlight: false, userInterfaceStyle: viewModel.state.interfaceStyle).color
         let pdfAnnotation: PSPDFKit.Annotation
 
         switch annotationType {
@@ -1269,13 +1309,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     }
 
     private func splitIfNeededAndProcess(annotations: [PSPDFKit.Annotation], state: PDFReaderState) -> [DocumentAnnotation] {
-        let activeColor = state.activeColor
-        let activeColorString = activeColor.hexString
         var toRemove: [PSPDFKit.Annotation] = []
         var toAdd: [PSPDFKit.Annotation] = []
         var documentAnnotations: [DocumentAnnotation] = []
 
         for annotation in annotations {
+            guard let tool = self.tool(from: annotation), let activeColor = state.toolColors[tool] else { continue }
+            let activeColorString = activeColor.hexString
             // `AnnotationStateManager` doesn't apply the `blendMode` to created annotations, so it needs to be applied to newly created annotations here.
             let (_, _, blendMode) = AnnotationColorGenerator.color(from: activeColor, isHighlight: (annotation is PSPDFKit.HighlightAnnotation), userInterfaceStyle: state.interfaceStyle)
             annotation.blendMode = blendMode ?? .normal
@@ -1396,7 +1436,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 state.sortedKeys = sortedKeys
                 state.visiblePage = page
                 state.token = token
-                state.changes = .annotations
+                state.changes = [.annotations, .initialDataLoaded]
                 state.initialPage = nil
 
                 if let (key, location) = selectedData {

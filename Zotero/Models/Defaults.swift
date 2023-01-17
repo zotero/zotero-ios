@@ -90,15 +90,24 @@ final class Defaults {
 
     // MARK: - PDF Settings
 
+    #if PDFENABLED && MAINAPP
     @UserDefault(key: "PdfReaderLineWidth", defaultValue: 2)
     var activeLineWidth: Float
 
     @UserDefault(key: "PdfReaderEraserSize", defaultValue: 10)
     var activeEraserSize: Float
 
-    #if PDFENABLED && MAINAPP
-    @UserDefault(key: "PDFReaderState.activeColor", defaultValue: AnnotationsConfig.defaultActiveColor)
-    var activeColorHex: String
+    @UserDefault(key: "PDFReaderState.highlightColor", defaultValue: AnnotationsConfig.defaultActiveColor)
+    var highlightColorHex: String
+
+    @UserDefault(key: "PDFReaderState.noteColor", defaultValue: AnnotationsConfig.defaultActiveColor)
+    var noteColorHex: String
+
+    @UserDefault(key: "PDFReaderState.squareColor", defaultValue: AnnotationsConfig.defaultActiveColor)
+    var squareColorHex: String
+
+    @UserDefault(key: "PDFReaderState.inkColor", defaultValue: AnnotationsConfig.defaultActiveColor)
+    var inkColorHex: String
 
     @CodableUserDefault(key: "PDFReaderSettings", defaultValue: PDFSettings.default, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder, defaults: .standard)
     var pdfSettings: PDFSettings
@@ -160,7 +169,10 @@ final class Defaults {
         self.activeLineWidth = 1
 
         #if PDFENABLED
-        self.activeColorHex = AnnotationsConfig.defaultActiveColor
+        self.inkColorHex = AnnotationsConfig.defaultActiveColor
+        self.squareColorHex = AnnotationsConfig.defaultActiveColor
+        self.noteColorHex = AnnotationsConfig.defaultActiveColor
+        self.highlightColorHex = AnnotationsConfig.defaultActiveColor
         self.pdfSettings = PDFSettings.default
         #endif
         #endif

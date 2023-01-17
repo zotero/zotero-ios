@@ -198,10 +198,6 @@ class PDFReaderViewController: UIViewController {
         self.updateInterface(to: self.viewModel.state.settings)
 
         self.viewModel.process(action: .loadDocumentData(boundingBoxConverter: self.documentController))
-
-        if self.viewModel.state.selectedAnnotation != nil {
-            self.toggleSidebar(animated: false)
-        }
     }
 
     deinit {
@@ -270,6 +266,16 @@ class PDFReaderViewController: UIViewController {
         if state.changes.contains(.export) {
             self.update(state: state.exportState)
         }
+
+        if state.changes.contains(.initialDataLoaded) {
+            if state.selectedAnnotation != nil {
+                self.toggleSidebar(animated: false)
+            }
+        }
+
+        if let tool = state.changedColorForTool, self.activeAnnotationTool == tool, let color = state.toolColors[tool] {
+            self.annotationToolbarController.set(activeColor: color)
+        }
     }
 
     private func update(state: PDFExportState?) {
@@ -319,8 +325,9 @@ class PDFReaderViewController: UIViewController {
     }
 
     internal func showColorPicker(sender: UIButton) {
-        self.coordinatorDelegate?.showColorPicker(selected: self.viewModel.state.activeColor.hexString, sender: sender, save: { [weak self] color in
-            self?.viewModel.process(action: .setActiveColor(color))
+        guard let tool = self.activeAnnotationTool, let color = self.viewModel.state.toolColors[tool] else { return }
+        self.coordinatorDelegate?.showColorPicker(selected: color.hexString, sender: sender, save: { [weak self] color in
+            self?.viewModel.process(action: .setActiveColor(color: color, tool: tool))
         })
     }
 
@@ -955,11 +962,12 @@ extension PDFReaderViewController: PDFDocumentDelegate {
     func annotationTool(didChangeStateFrom oldState: PSPDFKit.Annotation.Tool?, to newState: PSPDFKit.Annotation.Tool?,
                         variantFrom oldVariant: PSPDFKit.Annotation.Variant?, to newVariant: PSPDFKit.Annotation.Variant?) {
         if let state = oldState {
-            self.annotationToolbarController.set(selected: false, to: state)
+            self.annotationToolbarController.set(selected: false, to: state, color: nil)
         }
 
         if let state = newState {
-            self.annotationToolbarController.set(selected: true, to: state)
+            let color = self.viewModel.state.toolColors[state]
+            self.annotationToolbarController.set(selected: true, to: state, color: color)
         }
     }
 
@@ -1025,10 +1033,6 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
         self.hideAnnotationToolbar(animated: true)
     }
 
-    var activeAnnotationColor: UIColor {
-        return self.viewModel.state.activeColor
-    }
-
     var activeAnnotationTool: PSPDFKit.Annotation.Tool? {
         return self.documentController.pdfController.annotationStateManager.state
     }
@@ -1046,7 +1050,8 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
     }
 
     func toggle(tool: PSPDFKit.Annotation.Tool, options: AnnotationToolOptions) {
-        self.documentController.toggle(annotationTool: tool, tappedWithStylus: (options == .stylus))
+        let color = self.viewModel.state.toolColors[tool]
+        self.documentController.toggle(annotationTool: tool, color: color, tappedWithStylus: (options == .stylus))
     }
 
     func showInkSettings(sender: UIView) {

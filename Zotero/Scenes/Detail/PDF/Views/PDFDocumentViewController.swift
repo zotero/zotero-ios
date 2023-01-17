@@ -30,7 +30,7 @@ final class PDFDocumentViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private var selectionView: SelectionView?
-    private var didAppear: Bool
+    private var isCurrentlyVisible: Bool
     var scrubberBarHeight: CGFloat {
         return self.pdfController.userInterfaceView.scrubberBar.frame.height
     }
@@ -42,7 +42,7 @@ final class PDFDocumentViewController: UIViewController {
 
     init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
         self.viewModel = viewModel
-        self.didAppear = false
+        self.isCurrentlyVisible = false
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -56,17 +56,13 @@ final class PDFDocumentViewController: UIViewController {
 
         self.view.backgroundColor = .systemGray6
         self.setupViews()
-        self.set(toolColor: self.viewModel.state.activeColor, in: self.pdfController.annotationStateManager)
         self.setupObserving()
         self.updateInterface(to: self.viewModel.state.settings)
-
-        self.pdfController.setPageIndex(PageIndex(self.viewModel.state.visiblePage), animated: false)
-        self.select(annotation: self.viewModel.state.selectedAnnotation, pageIndex: self.pdfController.pageIndex, document: self.viewModel.state.document)
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        self.didAppear = true
+        self.isCurrentlyVisible = true
     }
 
     deinit {
@@ -91,7 +87,7 @@ final class PDFDocumentViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
 
-        guard !self.didAppear else { return }
+        guard !self.isCurrentlyVisible else { return }
 
         if let (page, _) = self.viewModel.state.focusDocumentLocation, let annotation = self.viewModel.state.selectedAnnotation {
             self.select(annotation: annotation, pageIndex: PageIndex(page), document: self.viewModel.state.document)
@@ -111,7 +107,7 @@ final class PDFDocumentViewController: UIViewController {
         }
     }
 
-    func toggle(annotationTool: PSPDFKit.Annotation.Tool, tappedWithStylus: Bool, resetPencilManager: Bool = true) {
+    func toggle(annotationTool: PSPDFKit.Annotation.Tool, color: UIColor?, tappedWithStylus: Bool, resetPencilManager: Bool = true) {
         let stateManager = self.pdfController.annotationStateManager
         stateManager.stylusMode = .fromStylusManager
 
@@ -129,9 +125,11 @@ final class PDFDocumentViewController: UIViewController {
 
         stateManager.setState(annotationTool, variant: nil)
 
-        let (color, _, blendMode) = AnnotationColorGenerator.color(from: self.viewModel.state.activeColor, isHighlight: (annotationTool == .highlight), userInterfaceStyle: self.traitCollection.userInterfaceStyle)
-        stateManager.drawColor = color
-        stateManager.blendMode = blendMode ?? .normal
+        if let color = color {
+            let (_color, _, blendMode) = AnnotationColorGenerator.color(from: color, isHighlight: (annotationTool == .highlight), userInterfaceStyle: self.traitCollection.userInterfaceStyle)
+            stateManager.drawColor = _color
+            stateManager.blendMode = blendMode ?? .normal
+        }
 
         switch annotationTool {
         case .ink:
@@ -186,8 +184,8 @@ final class PDFDocumentViewController: UIViewController {
             self.showPopupAnnotationIfNeeded(state: state)
         }
 
-        if state.changes.contains(.activeColor) {
-            self.set(toolColor: state.activeColor, in: self.pdfController.annotationStateManager)
+        if let tool = state.changedColorForTool, let color = state.toolColors[tool] {
+            self.set(color: color, for: tool, in: self.pdfController.annotationStateManager)
         }
 
         if state.changes.contains(.activeLineWidth) {
@@ -205,6 +203,26 @@ final class PDFDocumentViewController: UIViewController {
         if let notification = state.pdfNotification {
             self.updatePdf(notification: notification)
         }
+
+        if state.changes.contains(.initialDataLoaded) {
+            self.pdfController.setPageIndex(PageIndex(state.visiblePage), animated: false)
+            self.select(annotation: state.selectedAnnotation, pageIndex: self.pdfController.pageIndex, document: state.document)
+        }
+    }
+
+    private func tool(from annotation: PSPDFKit.Annotation) -> PSPDFKit.Annotation.Tool? {
+        switch annotation.type {
+        case .highlight:
+            return .highlight
+        case .note:
+            return .note
+        case .square:
+            return .square
+        case .ink:
+            return .ink
+        default:
+            return nil
+        }
     }
 
     private func updatePdf(notification: Notification) {
@@ -212,16 +230,16 @@ final class PDFDocumentViewController: UIViewController {
         case .PSPDFAnnotationChanged:
             guard let changes = notification.userInfo?[PSPDFAnnotationChangedNotificationKeyPathKey] as? [String] else { return }
             // Changing annotation color changes the `lastUsed` color in `annotationStateManager` (#487), so we have to re-set it.
-            if changes.contains("color") {
-                self.set(toolColor: self.viewModel.state.activeColor, in: self.pdfController.annotationStateManager)
+            if changes.contains("color"), let annotation = notification.object as? PSPDFKit.Annotation, let tool = self.tool(from: annotation), let color = self.viewModel.state.toolColors[tool] {
+                self.set(color: color, for: tool, in: self.pdfController.annotationStateManager)
             }
 
         case .PSPDFAnnotationsAdded:
             guard let annotations = notification.object as? [PSPDFKit.Annotation] else { return }
             // If Image annotation is active after adding the annotation, deactivate it
-            if annotations.first is PSPDFKit.SquareAnnotation && self.pdfController.annotationStateManager.state == .square {
+            if annotations.first is PSPDFKit.SquareAnnotation && self.pdfController.annotationStateManager.state == .square, let color = self.viewModel.state.toolColors[.square] {
                 // Don't reset apple pencil detection here, this is automatic action, not performed by user.
-                self.toggle(annotationTool: .square, tappedWithStylus: false, resetPencilManager: false)
+                self.toggle(annotationTool: .square, color: color, tappedWithStylus: false, resetPencilManager: false)
             }
 
         default: break
@@ -278,17 +296,10 @@ final class PDFDocumentViewController: UIViewController {
         })
     }
 
-    private func set(toolColor: UIColor, in stateManager: AnnotationStateManager) {
-        let highlightColor = AnnotationColorGenerator.color(from: toolColor, isHighlight: true,
-                                                            userInterfaceStyle: self.traitCollection.userInterfaceStyle).color
-
-        stateManager.setLastUsedColor(highlightColor, annotationString: .highlight)
-        stateManager.setLastUsedColor(toolColor, annotationString: .note)
-        stateManager.setLastUsedColor(toolColor, annotationString: .square)
-
-        if stateManager.state == .highlight {
-            stateManager.drawColor = highlightColor
-        } else {
+    private func set(color: UIColor, for tool: PSPDFKit.Annotation.Tool, in stateManager: AnnotationStateManager) {
+        let toolColor = tool == .highlight ? AnnotationColorGenerator.color(from: color, isHighlight: true, userInterfaceStyle: self.traitCollection.userInterfaceStyle).color : color
+        stateManager.setLastUsedColor(toolColor, annotationString: tool)
+        if stateManager.state == tool {
             stateManager.drawColor = toolColor
         }
     }
@@ -454,10 +465,18 @@ final class PDFDocumentViewController: UIViewController {
         NotificationCenter.default.rx
                                   .notification(UIApplication.didBecomeActiveNotification)
                                   .observe(on: MainScheduler.instance)
-                                  .subscribe(onNext: { [weak self] notification in
-                                      guard let `self` = self else { return }
+                                  .subscribe(with: self, onNext: { `self`, notification in
                                       self.viewModel.process(action: .updateAnnotationPreviews)
                                       self.updatePencilSettingsIfNeeded()
+                                      self.isCurrentlyVisible = true
+                                  })
+                                  .disposed(by: self.disposeBag)
+
+        NotificationCenter.default.rx
+                                  .notification(UIApplication.willResignActiveNotification)
+                                  .observe(on: MainScheduler.instance)
+                                  .subscribe(with: self, onNext: { `self`, notification in
+                                      self.isCurrentlyVisible = false
                                   })
                                   .disposed(by: self.disposeBag)
 
@@ -475,7 +494,7 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
     func pdfViewController(_ pdfController: PDFViewController, willBeginDisplaying pageView: PDFPageView, forPageAt pageIndex: Int) {
         // This delegate method is called for incorrect page index when sidebar is changing size. So if the sidebar is opened/closed, incorrect page
         // is stored in `pageController` and if the user closes the pdf reader without further scrolling, incorrect page is shown on next opening.
-        guard !(self.parentDelegate?.isSidebarTransitioning ?? false) && self.didAppear else { return }
+        guard !(self.parentDelegate?.isSidebarTransitioning ?? false) && self.isCurrentlyVisible else { return }
         // Save current page
         self.viewModel.process(action: .setVisiblePage(Int(pdfController.pageIndex)))
     }
