@@ -256,11 +256,13 @@ final class DetailCoordinator: Coordinator {
               let userId = self.controllers.sessionController.sessionData?.userId,
               !username.isEmpty else { return nil }
 
+        let settings = Defaults.shared.pdfSettings
         let handler = PDFReaderActionHandler(dbStorage: dbStorage, annotationPreviewController: self.controllers.annotationPreviewController,
                                              htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter, schemaController: self.controllers.schemaController,
                                              fileStorage: self.controllers.fileStorage, idleTimerController: self.controllers.idleTimerController)
-        let state = PDFReaderState(url: url, key: key, library: library, initialPage: page, preselectedAnnotationKey: preselectedAnnotationKey, settings: Defaults.shared.pdfSettings, userId: userId,
-                                   username: username, displayName: Defaults.shared.displayName, interfaceStyle: self.topViewController.view.traitCollection.userInterfaceStyle)
+        let state = PDFReaderState(url: url, key: key, library: library, initialPage: page, preselectedAnnotationKey: preselectedAnnotationKey, settings: settings, userId: userId,
+                                   username: username, displayName: Defaults.shared.displayName,
+                                   interfaceStyle: settings.appearanceMode.userInterfaceStyle(currentUserInterfaceStyle: self.topViewController.view.traitCollection.userInterfaceStyle))
         let controller = PDFReaderViewController(viewModel: ViewModel(initialState: state, handler: handler),
                                                  compactSize: UIDevice.current.isCompactWidth(size: self.navigationController.view.frame.size))
         controller.coordinatorDelegate = self

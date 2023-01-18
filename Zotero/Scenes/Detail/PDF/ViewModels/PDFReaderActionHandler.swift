@@ -203,13 +203,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .clearTmpAnnotationPreviews:
             self.clearTmpAnnotationPreviews(in: viewModel)
 
-        case .setSettings(let settings):
-            self.update(settings: settings, in: viewModel)
+        case .setSettings(let settings, let userInterfaceStyle):
+            self.update(settings: settings, currentInterfaceStyle: userInterfaceStyle, in: viewModel)
 
         case .changeIdleTimerDisabled(let disabled):
             var settings = viewModel.state.settings
             settings.idleTimerDisabled = disabled
-            self.update(settings: settings, in: viewModel)
+            self.update(settings: settings, currentInterfaceStyle: nil, in: viewModel)
 
         case .setSidebarEditingEnabled(let enabled):
             self.setSidebar(editing: enabled, in: viewModel)
@@ -223,8 +223,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func userInterfaceChanged(interfaceStyle: UIUserInterfaceStyle, in viewModel: ViewModel<PDFReaderActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            state.changes = .interfaceStyle
             state.interfaceStyle = interfaceStyle
+            state.changes = .interfaceStyle
             state.previewCache.removeAllObjects()
             state.shouldStoreAnnotationPreviewsIfNeeded = true
 
@@ -421,7 +421,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func update(settings: PDFSettings, in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func update(settings: PDFSettings, currentInterfaceStyle: UIUserInterfaceStyle?, in viewModel: ViewModel<PDFReaderActionHandler>) {
         if viewModel.state.settings.idleTimerDisabled != settings.idleTimerDisabled {
             if settings.idleTimerDisabled {
                 self.idleTimerController.disable()
@@ -437,6 +437,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
         // Store new settings to defaults
         Defaults.shared.pdfSettings = settings
+
+        // Check whether interfaceStyle changed and update if needed
+        guard let newUserInterfaceStyle = currentInterfaceStyle.flatMap({ settings.appearanceMode.userInterfaceStyle(currentUserInterfaceStyle: $0) }),
+              newUserInterfaceStyle != viewModel.state.interfaceStyle else { return }
+        self.userInterfaceChanged(interfaceStyle: newUserInterfaceStyle, in: viewModel)
     }
 
     private func set(page: Int, in viewModel: ViewModel<PDFReaderActionHandler>) {
@@ -1271,7 +1276,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         for annotation in annotations {
             // `AnnotationStateManager` doesn't apply the `blendMode` to created annotations, so it needs to be applied to newly created annotations here.
-            let (_, _, blendMode) = AnnotationColorGenerator.color(from: activeColor, isHighlight: (annotation is HighlightAnnotation), userInterfaceStyle: state.interfaceStyle)
+            let (_, _, blendMode) = AnnotationColorGenerator.color(from: activeColor, isHighlight: (annotation is PSPDFKit.HighlightAnnotation), userInterfaceStyle: state.interfaceStyle)
             annotation.blendMode = blendMode ?? .normal
 
             // Either annotation is new (key not assigned) or the user used undo/redo and we check whether the annotation exists in DB

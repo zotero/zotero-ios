@@ -54,6 +54,14 @@ struct PDFReaderState: ViewModelState {
         case light
         case dark
         case automatic
+
+        func userInterfaceStyle(currentUserInterfaceStyle: UIUserInterfaceStyle) -> UIUserInterfaceStyle {
+            switch self {
+            case .automatic: return currentUserInterfaceStyle
+            case .dark: return .dark
+            case .light: return .light
+            }
+        }
     }
 
     enum Error: Swift.Error {

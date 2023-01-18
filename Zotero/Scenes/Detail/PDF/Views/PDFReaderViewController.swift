@@ -47,6 +47,7 @@ final class PDFReaderViewController: UIViewController {
     private var selectionView: SelectionView?
     private var lastGestureRecognizerTouch: UITouch?
     private var isCurrentlyVisible: Bool
+    private var previousTraitCollection: UITraitCollection?
 
     private lazy var shareButton: UIBarButtonItem = {
         let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
@@ -179,10 +180,7 @@ final class PDFReaderViewController: UIViewController {
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
-
-        guard self.isCurrentlyVisible && self.traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
-
-        self.viewModel.process(action: .userInterfaceStyleChanged(self.traitCollection.userInterfaceStyle))
+        self.updateUserInterfaceStyleIfNeeded(previousTraitCollection: previousTraitCollection)
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -225,6 +223,13 @@ final class PDFReaderViewController: UIViewController {
 
     // MARK: - Actions
 
+    private func updateUserInterfaceStyleIfNeeded(previousTraitCollection: UITraitCollection?) {
+        guard self.isCurrentlyVisible && self.traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
+        if self.viewModel.state.settings.appearanceMode == .automatic {
+            self.viewModel.process(action: .userInterfaceStyleChanged(self.traitCollection.userInterfaceStyle))
+        }
+    }
+
     private func update(state: PDFReaderState) {
         if state.changes.contains(.annotations) {
             // Hide popover if annotation has been deleted
@@ -238,8 +243,6 @@ final class PDFReaderViewController: UIViewController {
         }
 
         if state.changes.contains(.settings) {
-            self.updateInterface(to: state.settings)
-
             if self.pdfController.configuration.scrollDirection != state.settings.direction ||
                self.pdfController.configuration.pageTransition != state.settings.transition ||
                self.pdfController.configuration.pageMode != state.settings.pageMode ||
@@ -358,12 +361,15 @@ final class PDFReaderViewController: UIViewController {
         case .automatic:
             self.pdfController.appearanceModeManager.appearanceMode = self.traitCollection.userInterfaceStyle == .dark ? .night : []
             self.navigationController?.overrideUserInterfaceStyle = .unspecified
+            self.pdfController.overrideUserInterfaceStyle = .unspecified
         case .light:
             self.pdfController.appearanceModeManager.appearanceMode = []
             self.navigationController?.overrideUserInterfaceStyle = .light
+            self.pdfController.overrideUserInterfaceStyle = .light
         case .dark:
             self.pdfController.appearanceModeManager.appearanceMode = .night
             self.navigationController?.overrideUserInterfaceStyle = .dark
+            self.pdfController.overrideUserInterfaceStyle = .dark
         }
     }
 
@@ -395,7 +401,7 @@ final class PDFReaderViewController: UIViewController {
 
         stateManager.setState(annotationTool, variant: nil)
 
-        let (color, _, blendMode) = AnnotationColorGenerator.color(from: self.viewModel.state.activeColor, isHighlight: (annotationTool == .highlight), userInterfaceStyle: self.traitCollection.userInterfaceStyle)
+        let (color, _, blendMode) = AnnotationColorGenerator.color(from: self.viewModel.state.activeColor, isHighlight: (annotationTool == .highlight), userInterfaceStyle: self.viewModel.state.interfaceStyle)
         stateManager.drawColor = color
         stateManager.blendMode = blendMode ?? .normal
 
@@ -515,7 +521,8 @@ final class PDFReaderViewController: UIViewController {
 
     private func showSettings(sender: UIBarButtonItem) {
         self.coordinatorDelegate?.showSettings(with: self.viewModel.state.settings, sender: sender, completion: { [weak self] settings in
-            self?.viewModel.process(action: .setSettings(settings))
+            guard let `self` = self, let interfaceStyle = self.presentingViewController?.traitCollection.userInterfaceStyle else { return }
+            self.viewModel.process(action: .setSettings(settings: settings, currentUserInterfaceStyle: interfaceStyle))
         })
     }
 
@@ -525,8 +532,7 @@ final class PDFReaderViewController: UIViewController {
     }
 
     private func set(toolColor: UIColor, in stateManager: AnnotationStateManager) {
-        let highlightColor = AnnotationColorGenerator.color(from: toolColor, isHighlight: true,
-                                                            userInterfaceStyle: self.traitCollection.userInterfaceStyle).color
+        let highlightColor = AnnotationColorGenerator.color(from: toolColor, isHighlight: true, userInterfaceStyle: self.viewModel.state.interfaceStyle).color
 
         stateManager.setLastUsedColor(highlightColor, annotationString: .highlight)
         stateManager.setLastUsedColor(toolColor, annotationString: .note)
@@ -970,9 +976,12 @@ final class PDFReaderViewController: UIViewController {
                                   .notification(UIApplication.didBecomeActiveNotification)
                                   .observe(on: MainScheduler.instance)
                                   .subscribe(with: self, onNext: { `self`, notification in
+                                      self.isCurrentlyVisible = true
+                                      if let previousTraitCollection = self.previousTraitCollection, self.traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+                                          self.updateUserInterfaceStyleIfNeeded(previousTraitCollection: previousTraitCollection)
+                                      }
                                       self.viewModel.process(action: .updateAnnotationPreviews)
                                       self.updatePencilSettingsIfNeeded()
-                                      self.isCurrentlyVisible = true
                                   })
                                   .disposed(by: self.disposeBag)
 
@@ -981,6 +990,7 @@ final class PDFReaderViewController: UIViewController {
                                   .observe(on: MainScheduler.instance)
                                   .subscribe(with: self, onNext: { `self`, notification in
                                       self.isCurrentlyVisible = false
+                                      self.previousTraitCollection = self.traitCollection
                                   })
                                   .disposed(by: self.disposeBag)
 
