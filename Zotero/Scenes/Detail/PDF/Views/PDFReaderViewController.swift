@@ -18,6 +18,7 @@ import RxSwift
 protocol PDFReaderContainerDelegate: AnyObject {
     var isSidebarVisible: Bool { get }
     var isSidebarTransitioning: Bool { get }
+    var isCurrentlyVisible: Bool { get }
 
     func showSearch(pdfController: PDFViewController, text: String?)
 }
@@ -90,6 +91,8 @@ class PDFReaderViewController: UIViewController {
     @CodableUserDefault(key: "PDFReaderToolbarState", defaultValue: ToolbarState(position: .leading, visible: true), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     private var toolbarState: ToolbarState
     private var toolbarInitialFrame: CGRect?
+    private(set) var isCurrentlyVisible: Bool
+    private var previousTraitCollection: UITraitCollection?
     var isSidebarVisible: Bool { return self.sidebarControllerLeft?.constant == 0 }
     var key: String { return self.viewModel.state.key }
 
@@ -103,7 +106,7 @@ class PDFReaderViewController: UIViewController {
         share.rx.tap
              .subscribe(onNext: { [weak self, weak share] _ in
                  guard let `self` = self, let share = share else { return }
-                 self.coordinatorDelegate?.showPdfExportSettings(sender: share) { [weak self] settings in
+                 self.coordinatorDelegate?.showPdfExportSettings(sender: share, userInterfaceStyle: self.viewModel.state.interfaceStyle) { [weak self] settings in
                      self?.viewModel.process(action: .export(settings))
                  }
              })
@@ -171,6 +174,7 @@ class PDFReaderViewController: UIViewController {
         self.viewModel = viewModel
         self.isSidebarTransitioning = false
         self.isCompactSize = compactSize
+        self.isCurrentlyVisible = false
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -195,9 +199,14 @@ class PDFReaderViewController: UIViewController {
         self.setupNavigationBar()
         self.setupGestureRecognizer()
         self.setupObserving()
-        self.updateInterface(to: self.viewModel.state.settings)
 
         self.viewModel.process(action: .loadDocumentData(boundingBoxConverter: self.documentController))
+        self.updateInterface(to: self.viewModel.state.settings)
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        self.isCurrentlyVisible = true
     }
 
     deinit {
@@ -218,10 +227,7 @@ class PDFReaderViewController: UIViewController {
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
-
-        guard self.traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
-
-        self.viewModel.process(action: .userInterfaceStyleChanged(self.traitCollection.userInterfaceStyle))
+        self.updateUserInterfaceStyleIfNeeded(previousTraitCollection: previousTraitCollection)
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -259,7 +265,7 @@ class PDFReaderViewController: UIViewController {
             }
         }
 
-        if state.changes.contains(.interfaceStyle) || state.changes.contains(.settings) {
+        if state.changes.contains(.interfaceStyle) {
             self.updateInterface(to: state.settings)
         }
 
@@ -326,7 +332,7 @@ class PDFReaderViewController: UIViewController {
 
     internal func showColorPicker(sender: UIButton) {
         guard let tool = self.activeAnnotationTool, let color = self.viewModel.state.toolColors[tool] else { return }
-        self.coordinatorDelegate?.showColorPicker(selected: color.hexString, sender: sender, save: { [weak self] color in
+        self.coordinatorDelegate?.showColorPicker(selected: color.hexString, sender: sender, userInterfaceStyle: self.viewModel.state.interfaceStyle, save: { [weak self] color in
             self?.viewModel.process(action: .setActiveColor(color: color, tool: tool))
         })
     }
@@ -384,15 +390,22 @@ class PDFReaderViewController: UIViewController {
                        })
     }
 
+    private func updateUserInterfaceStyleIfNeeded(previousTraitCollection: UITraitCollection?) {
+        // TODO: - Remove `isCurrentlyVisible` when PSPDFKit fixes zoom level change on update (#585)
+        guard self.isCurrentlyVisible && self.traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) && self.viewModel.state.settings.appearanceMode == .automatic else { return }
+        self.viewModel.process(action: .userInterfaceStyleChanged(self.traitCollection.userInterfaceStyle))
+     }
+
     func showSearch(pdfController: PDFViewController, text: String?) {
-        self.coordinatorDelegate?.showSearch(pdfController: pdfController, text: text, sender: self.searchButton, result: { [weak self] result in
+        self.coordinatorDelegate?.showSearch(pdfController: pdfController, text: text, sender: self.searchButton, userInterfaceStyle: self.viewModel.state.interfaceStyle, result: { [weak self] result in
             self?.documentController.highlight(result: result)
         })
     }
 
     private func showSettings(sender: UIBarButtonItem) {
-        self.coordinatorDelegate?.showSettings(with: self.viewModel.state.settings, sender: sender, completion: { [weak self] settings in
-            self?.viewModel.process(action: .setSettings(settings))
+        self.coordinatorDelegate?.showSettings(with: self.viewModel.state.settings, sender: sender, userInterfaceStyle: self.viewModel.state.interfaceStyle, completion: { [weak self] settings in
+            guard let `self` = self, let interfaceStyle = self.presentingViewController?.traitCollection.userInterfaceStyle else { return }
+            self.viewModel.process(action: .setSettings(settings: settings, currentUserInterfaceStyle: interfaceStyle))
         })
     }
 
@@ -889,7 +902,11 @@ class PDFReaderViewController: UIViewController {
         let readerButton = UIBarButtonItem(image: self.documentController.pdfController.readerViewButtonItem.image, style: .plain, target: nil, action: nil)
         readerButton.accessibilityLabel = L10n.Accessibility.Pdf.openReader
         readerButton.title = L10n.Accessibility.Pdf.openReader
-        readerButton.rx.tap.subscribe(with: self, onNext: { `self`, _ in self.coordinatorDelegate?.showReader(document: self.viewModel.state.document) }).disposed(by: self.disposeBag)
+        readerButton.rx.tap
+                       .subscribe(with: self, onNext: { `self`, _ in
+                           self.coordinatorDelegate?.showReader(document: self.viewModel.state.document, userInterfaceStyle: self.viewModel.state.interfaceStyle)
+                       })
+                       .disposed(by: self.disposeBag)
 
         self.navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton]
         self.navigationItem.rightBarButtonItems = self.createRightBarButtonItems(forCompactSize: self.isCompactSize)
@@ -944,6 +961,28 @@ class PDFReaderViewController: UIViewController {
                           self?.update(state: state)
                       })
                       .disposed(by: self.disposeBag)
+
+        NotificationCenter.default.rx
+                                  .notification(UIApplication.didBecomeActiveNotification)
+                                  .observe(on: MainScheduler.instance)
+                                  .subscribe(with: self, onNext: { `self`, notification in
+                                      self.isCurrentlyVisible = true
+                                      if let previousTraitCollection = self.previousTraitCollection {
+                                          self.updateUserInterfaceStyleIfNeeded(previousTraitCollection: previousTraitCollection)
+                                      }
+                                      self.viewModel.process(action: .updateAnnotationPreviews)
+                                      self.documentController.didBecomeActive()
+                                  })
+                                  .disposed(by: self.disposeBag)
+
+        NotificationCenter.default.rx
+                                  .notification(UIApplication.willResignActiveNotification)
+                                  .observe(on: MainScheduler.instance)
+                                  .subscribe(with: self, onNext: { `self`, notification in
+                                      self.isCurrentlyVisible = false
+                                      self.previousTraitCollection = self.traitCollection
+                                  })
+                                  .disposed(by: self.disposeBag)
     }
 }
 

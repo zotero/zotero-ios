@@ -12,7 +12,7 @@ final class PDFSettingsSegmentedCell: UICollectionViewListCell {
     struct ContentConfiguration: UIContentConfiguration {
         let title: String
         let actions: [UIAction]
-        let selectedIndex: Int
+        let getSelectedIndex: () -> Int
 
         func makeContentView() -> UIView & UIContentView {
             return ContentView(configuration: self)
@@ -48,7 +48,7 @@ final class PDFSettingsSegmentedCell: UICollectionViewListCell {
         }
 
         private func apply(configuration: ContentConfiguration) {
-            self.contentView?.setup(title: configuration.title, actions: configuration.actions, selectedIndex: configuration.selectedIndex)
+            self.contentView?.setup(title: configuration.title, actions: configuration.actions, selectedIndex: configuration.getSelectedIndex())
         }
 
         private func setup(view: PDFSettingsSegmentedCellContentView) {

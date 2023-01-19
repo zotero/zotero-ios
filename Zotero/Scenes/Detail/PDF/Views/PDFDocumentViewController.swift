@@ -30,7 +30,7 @@ final class PDFDocumentViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private var selectionView: SelectionView?
-    private var isCurrentlyVisible: Bool
+    private var didAppear: Bool
     var scrubberBarHeight: CGFloat {
         return self.pdfController.userInterfaceView.scrubberBar.frame.height
     }
@@ -42,7 +42,7 @@ final class PDFDocumentViewController: UIViewController {
 
     init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
         self.viewModel = viewModel
-        self.isCurrentlyVisible = false
+        self.didAppear = false
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -62,7 +62,7 @@ final class PDFDocumentViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        self.isCurrentlyVisible = true
+        self.didAppear = true
     }
 
     deinit {
@@ -87,11 +87,15 @@ final class PDFDocumentViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
 
-        guard !self.isCurrentlyVisible else { return }
+        guard !self.didAppear else { return }
 
         if let (page, _) = self.viewModel.state.focusDocumentLocation, let annotation = self.viewModel.state.selectedAnnotation {
             self.select(annotation: annotation, pageIndex: PageIndex(page), document: self.viewModel.state.document)
         }
+    }
+
+    func didBecomeActive() {
+        self.updatePencilSettingsIfNeeded()
     }
 
     // MARK: - Actions
@@ -126,7 +130,7 @@ final class PDFDocumentViewController: UIViewController {
         stateManager.setState(annotationTool, variant: nil)
 
         if let color = color {
-            let (_color, _, blendMode) = AnnotationColorGenerator.color(from: color, isHighlight: (annotationTool == .highlight), userInterfaceStyle: self.traitCollection.userInterfaceStyle)
+            let (_color, _, blendMode) = AnnotationColorGenerator.color(from: color, isHighlight: (annotationTool == .highlight), userInterfaceStyle: self.viewModel.state.interfaceStyle)
             stateManager.drawColor = _color
             stateManager.blendMode = blendMode ?? .normal
         }
@@ -151,8 +155,6 @@ final class PDFDocumentViewController: UIViewController {
         }
 
         if state.changes.contains(.settings) {
-            self.updateInterface(to: state.settings)
-
             if self.pdfController.configuration.scrollDirection != state.settings.direction ||
                self.pdfController.configuration.pageTransition != state.settings.transition ||
                self.pdfController.configuration.pageMode != state.settings.pageMode ||
@@ -250,10 +252,13 @@ final class PDFDocumentViewController: UIViewController {
         switch settings.appearanceMode {
         case .automatic:
             self.pdfController.appearanceModeManager.appearanceMode = self.traitCollection.userInterfaceStyle == .dark ? .night : []
+            self.pdfController.overrideUserInterfaceStyle = .unspecified
         case .light:
             self.pdfController.appearanceModeManager.appearanceMode = []
+            self.pdfController.overrideUserInterfaceStyle = .light
         case .dark:
             self.pdfController.appearanceModeManager.appearanceMode = .night
+            self.pdfController.overrideUserInterfaceStyle = .dark
         }
     }
 
@@ -264,7 +269,7 @@ final class PDFDocumentViewController: UIViewController {
 
         let frame = self.view.convert(annotation.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
 
-        self.coordinatorDelegate?.showAnnotationPopover(viewModel: self.viewModel, sourceRect: frame, popoverDelegate: self)
+        self.coordinatorDelegate?.showAnnotationPopover(viewModel: self.viewModel, sourceRect: frame, popoverDelegate: self, userInterfaceStyle: self.viewModel.state.interfaceStyle)
     }
 
     private func updatePencilSettingsIfNeeded() {
@@ -297,7 +302,7 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     private func set(color: UIColor, for tool: PSPDFKit.Annotation.Tool, in stateManager: AnnotationStateManager) {
-        let toolColor = tool == .highlight ? AnnotationColorGenerator.color(from: color, isHighlight: true, userInterfaceStyle: self.traitCollection.userInterfaceStyle).color : color
+        let toolColor = tool == .highlight ? AnnotationColorGenerator.color(from: color, isHighlight: true, userInterfaceStyle: self.viewModel.state.interfaceStyle).color : color
         stateManager.setLastUsedColor(toolColor, annotationString: tool)
         if stateManager.state == tool {
             stateManager.drawColor = toolColor
@@ -461,32 +466,6 @@ final class PDFDocumentViewController: UIViewController {
                           self?.update(state: state)
                       })
                       .disposed(by: self.disposeBag)
-
-        NotificationCenter.default.rx
-                                  .notification(UIApplication.didBecomeActiveNotification)
-                                  .observe(on: MainScheduler.instance)
-                                  .subscribe(with: self, onNext: { `self`, notification in
-                                      self.viewModel.process(action: .updateAnnotationPreviews)
-                                      self.updatePencilSettingsIfNeeded()
-                                      self.isCurrentlyVisible = true
-                                  })
-                                  .disposed(by: self.disposeBag)
-
-        NotificationCenter.default.rx
-                                  .notification(UIApplication.willResignActiveNotification)
-                                  .observe(on: MainScheduler.instance)
-                                  .subscribe(with: self, onNext: { `self`, notification in
-                                      self.isCurrentlyVisible = false
-                                  })
-                                  .disposed(by: self.disposeBag)
-
-        NotificationCenter.default.rx
-                                  .notification(UILargeContentViewerInteraction.enabledStatusDidChangeNotification)
-                                  .observe(on: MainScheduler.instance)
-                                  .subscribe(with: self, onNext: { `self`, notification in
-//                                      self.updateLongPressRecognizersMinimumPressDuration()
-                                  })
-                                  .disposed(by: self.disposeBag)
     }
 }
 
@@ -494,7 +473,7 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
     func pdfViewController(_ pdfController: PDFViewController, willBeginDisplaying pageView: PDFPageView, forPageAt pageIndex: Int) {
         // This delegate method is called for incorrect page index when sidebar is changing size. So if the sidebar is opened/closed, incorrect page
         // is stored in `pageController` and if the user closes the pdf reader without further scrolling, incorrect page is shown on next opening.
-        guard !(self.parentDelegate?.isSidebarTransitioning ?? false) && self.isCurrentlyVisible else { return }
+        guard !(self.parentDelegate?.isSidebarTransitioning ?? false) && self.parentDelegate?.isCurrentlyVisible == true else { return }
         // Save current page
         self.viewModel.process(action: .setVisiblePage(Int(pdfController.pageIndex)))
     }
@@ -549,8 +528,8 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
         if let idx = filtered.firstIndex(where: { $0.identifier == TextMenu.define.rawValue }) {
             filtered[idx].title = L10n.lookUp
             filtered[idx].actionBlock = { [weak self] in
-                guard let view = self?.pdfController.view else { return }
-                self?.coordinatorDelegate?.lookup(text: selectedText, rect: rect, view: view)
+                guard let `self` = self else { return }
+                self.coordinatorDelegate?.lookup(text: selectedText, rect: rect, view: self.pdfController.view, userInterfaceStyle: self.viewModel.state.interfaceStyle)
             }
         }
 
