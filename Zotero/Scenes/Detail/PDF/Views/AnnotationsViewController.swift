@@ -106,12 +106,12 @@ final class AnnotationsViewController: UIViewController {
         case .tags:
             guard annotation.isAuthor(currentUserId: self.viewModel.state.userId) else { return }
             let selected = Set(annotation.tags.map({ $0.name }))
-            self.coordinatorDelegate?.showTagPicker(libraryId: state.library.identifier, selected: selected, picked: { [weak self] tags in
+            self.coordinatorDelegate?.showTagPicker(libraryId: state.library.identifier, selected: selected, userInterfaceStyle: self.viewModel.state.interfaceStyle, picked: { [weak self] tags in
                 self?.viewModel.process(action: .setTags(key: annotation.key, tags: tags))
             })
 
         case .options(let sender):
-            self.coordinatorDelegate?.showCellOptions(for: annotation, userId: self.viewModel.state.userId, library: self.viewModel.state.library, sender: sender,
+            self.coordinatorDelegate?.showCellOptions(for: annotation, userId: self.viewModel.state.userId, library: self.viewModel.state.library, sender: sender, userInterfaceStyle: self.viewModel.state.interfaceStyle,
                                                       saveAction: { [weak self] key, color, lineWidth, pageLabel, updateSubsequentLabels, highlightText in
                                                           self?.viewModel.process(action: .updateAnnotationProperties(key: key.key, color: color, lineWidth: lineWidth, pageLabel: pageLabel,
                                                                                                                       updateSubsequentLabels: updateSubsequentLabels, highlightText: highlightText))
@@ -337,7 +337,8 @@ final class AnnotationsViewController: UIViewController {
             }
         }
 
-        self.coordinatorDelegate?.showFilterPopup(from: barButton, filter: self.viewModel.state.filter, availableColors: sortedColors, availableTags: sortedTags, completed: { [weak self] filter in
+        self.coordinatorDelegate?.showFilterPopup(from: barButton, filter: self.viewModel.state.filter, availableColors: sortedColors, availableTags: sortedTags,
+                                                  userInterfaceStyle: self.viewModel.state.interfaceStyle, completed: { [weak self] filter in
             self?.viewModel.process(action: .changeFilter(filter))
         })
     }

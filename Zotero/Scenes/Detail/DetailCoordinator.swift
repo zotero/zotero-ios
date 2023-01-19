@@ -79,25 +79,25 @@ protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
 #if PDFENABLED
 
 protocol DetailPdfCoordinatorDelegate: AnyObject {
-    func showColorPicker(selected: String?, sender: UIButton, save: @escaping (String) -> Void)
-    func showSearch(pdfController: PDFViewController, text: String?, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void)
-    func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate)
+    func showColorPicker(selected: String?, sender: UIButton, userInterfaceStyle: UIUserInterfaceStyle, save: @escaping (String) -> Void)
+    func showSearch(pdfController: PDFViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, result: @escaping (SearchResult) -> Void)
+    func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate, userInterfaceStyle: UIUserInterfaceStyle)
     func show(error: PdfDocumentExporter.Error)
     func share(url: URL, barButton: UIBarButtonItem)
     func share(text: String, rect: CGRect, view: UIView)
-    func lookup(text: String, rect: CGRect, view: UIView)
+    func lookup(text: String, rect: CGRect, view: UIView, userInterfaceStyle: UIUserInterfaceStyle)
     func showDeletedAlertForPdf(completion: @escaping (Bool) -> Void)
     func pdfDidDeinitialize()
-    func showSettings(with settings: PDFSettings, sender: UIBarButtonItem, completion: @escaping (PDFSettings) -> Void)
+    func showSettings(with settings: PDFSettings, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (PDFSettings) -> Void)
     func showSliderSettings(sender: UIView, title: String, initialValue: CGFloat, valueChanged: @escaping (CGFloat) -> Void)
-    func showReader(document: Document)
-    func showPdfExportSettings(sender: UIBarButtonItem, completed: @escaping (PDFExportSettings) -> Void)
+    func showReader(document: Document, userInterfaceStyle: UIUserInterfaceStyle)
+    func showPdfExportSettings(sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, completed: @escaping (PDFExportSettings) -> Void)
 }
 
 protocol DetailAnnotationsCoordinatorDelegate: AnyObject {
-    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
-    func showCellOptions(for annotation: Annotation, userId: Int, library: Library, sender: UIButton, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
-    func showFilterPopup(from barButton: UIBarButtonItem, filter: AnnotationsFilter?, availableColors: [String], availableTags: [Tag], completed: @escaping (AnnotationsFilter?) -> Void)
+    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void)
+    func showCellOptions(for annotation: Annotation, userId: Int, library: Library, sender: UIButton, userInterfaceStyle: UIUserInterfaceStyle, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
+    func showFilterPopup(from barButton: UIBarButtonItem, filter: AnnotationsFilter?, availableColors: [String], availableTags: [Tag], userInterfaceStyle: UIUserInterfaceStyle, completed: @escaping (AnnotationsFilter?) -> Void)
 }
 
 #endif
@@ -240,6 +240,10 @@ final class DetailCoordinator: Coordinator {
     }
 
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void) {
+        self.showTagPicker(libraryId: libraryId, selected: selected, userInterfaceStyle: nil, picked: picked)
+    }
+
+    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
 
         let state = TagPickerState(libraryId: libraryId, selectedTags: selected)
@@ -248,6 +252,9 @@ final class DetailCoordinator: Coordinator {
         let tagController = TagPickerViewController(viewModel: viewModel, saveAction: picked)
 
         let controller = UINavigationController(rootViewController: tagController)
+        if let userInterfaceStyle = userInterfaceStyle {
+            controller.overrideUserInterfaceStyle = userInterfaceStyle
+        }
         controller.isModalInPresentation = true
         controller.modalPresentationStyle = .formSheet
         self.topViewController.present(controller, animated: true, completion: nil)
@@ -267,8 +274,8 @@ final class DetailCoordinator: Coordinator {
         let state = PDFReaderState(url: url, key: key, library: library, initialPage: page, preselectedAnnotationKey: preselectedAnnotationKey, settings: settings, userId: userId,
                                    username: username, displayName: Defaults.shared.displayName,
                                    interfaceStyle: settings.appearanceMode.userInterfaceStyle(currentUserInterfaceStyle: self.topViewController.view.traitCollection.userInterfaceStyle))
-        let controller = PDFReaderContainerViewController(viewModel: ViewModel(initialState: state, handler: handler),
-                                                          compactSize: UIDevice.current.isCompactWidth(size: self.navigationController.view.frame.size))
+        let controller = PDFReaderViewController(viewModel: ViewModel(initialState: state, handler: handler),
+                                                 compactSize: UIDevice.current.isCompactWidth(size: self.navigationController.view.frame.size))
         controller.coordinatorDelegate = self
         handler.delegate = controller
         let navigationController = UINavigationController(rootViewController: controller)
@@ -899,7 +906,7 @@ extension DetailCoordinator: DetailCitationCoordinatorDelegate {
 #if PDFENABLED
 
 extension DetailCoordinator: DetailPdfCoordinatorDelegate {
-    func showColorPicker(selected: String?, sender: UIButton, save: @escaping (String) -> Void) {
+    func showColorPicker(selected: String?, sender: UIButton, userInterfaceStyle: UIUserInterfaceStyle, save: @escaping (String) -> Void) {
         let view = ColorPickerView(selected: selected, selectionAction: { [weak self] color in
             save(color)
             self?.topViewController.dismiss(animated: true, completion: nil)
@@ -910,10 +917,12 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
             controller.modalPresentationStyle = .popover
             controller.popoverPresentationController?.sourceView = sender
             controller.preferredContentSize = CGSize(width: 272, height: 60)
+            controller.overrideUserInterfaceStyle = userInterfaceStyle
             self.topViewController.present(controller, animated: true, completion: nil)
         } else {
             let navigationController = UINavigationController(rootViewController: controller)
             navigationController.modalPresentationStyle = .formSheet
+            navigationController.overrideUserInterfaceStyle = userInterfaceStyle
 
             controller.didLoad = { [weak self] viewController in
                 guard let `self` = self else { return }
@@ -936,12 +945,13 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         }
     }
 
-    func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate) {
+    func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate, userInterfaceStyle: UIUserInterfaceStyle) {
         if let coordinator = self.childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
             return
         }
 
         let navigationController = NavigationViewController()
+        navigationController.overrideUserInterfaceStyle = userInterfaceStyle
 
         let coordinator = AnnotationPopoverCoordinator(navigationController: navigationController, controllers: self.controllers, viewModel: viewModel)
         coordinator.parentCoordinator = self
@@ -958,15 +968,16 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
-    func showSearch(pdfController: PDFViewController, text: String?, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void) {
+    func showSearch(pdfController: PDFViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, result: @escaping (SearchResult) -> Void) {
         if let existing = self.pdfSearchController {
             if let controller = existing.presentingViewController {
                 controller.dismiss(animated: true) { [weak self] in
-                    self?.showSearch(pdfController: pdfController, text: text, sender: sender, result: result)
+                    self?.showSearch(pdfController: pdfController, text: text, sender: sender, userInterfaceStyle: userInterfaceStyle, result: result)
                 }
                 return
             }
 
+            existing.overrideUserInterfaceStyle = userInterfaceStyle
             existing.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
             existing.popoverPresentationController?.barButtonItem = sender
             existing.text = text
@@ -975,6 +986,7 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         }
 
         let viewController = PDFSearchViewController(controller: pdfController, text: text, searchSelected: result)
+        viewController.overrideUserInterfaceStyle = userInterfaceStyle
         viewController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         viewController.popoverPresentationController?.barButtonItem = sender
         self.topViewController.present(viewController, animated: true, completion: nil)
@@ -990,8 +1002,9 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         self.share(item: text, source: .view(view, rect))
     }
 
-    func lookup(text: String, rect: CGRect, view: UIView) {
+    func lookup(text: String, rect: CGRect, view: UIView, userInterfaceStyle: UIUserInterfaceStyle) {
         let controller = UIReferenceLibraryViewController(term: text)
+        controller.overrideUserInterfaceStyle = userInterfaceStyle
         controller.modalPresentationStyle = .popover
         controller.popoverPresentationController?.sourceView = view
         controller.popoverPresentationController?.sourceRect = rect
@@ -1031,10 +1044,9 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         self.pdfSearchController = nil
     }
 
-    func showSettings(with settings: PDFSettings, sender: UIBarButtonItem, completion: @escaping (PDFSettings) -> Void) {
+    func showSettings(with settings: PDFSettings, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (PDFSettings) -> Void) {
         let state = PDFSettingsState(settings: settings)
         let viewModel = ViewModel(initialState: state, handler: PDFSettingsActionHandler())
-
 
         let controller: UIViewController
 
@@ -1051,6 +1063,7 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         controller.popoverPresentationController?.barButtonItem = sender
         controller.preferredContentSize = CGSize(width: 480, height: 306)
+        controller.overrideUserInterfaceStyle = userInterfaceStyle
         self.topViewController.present(controller, animated: true, completion: nil)
     }
 
@@ -1068,20 +1081,22 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         }
     }
 
-    func showReader(document: Document) {
+    func showReader(document: Document, userInterfaceStyle: UIUserInterfaceStyle) {
         let controller = PDFPlainReaderViewController(document: document)
         let navigationController = UINavigationController(rootViewController: controller)
+        navigationController.overrideUserInterfaceStyle = userInterfaceStyle
         navigationController.modalPresentationStyle = .fullScreen
         self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
-    func showPdfExportSettings(sender: UIBarButtonItem, completed: @escaping (PDFExportSettings) -> Void) {
+    func showPdfExportSettings(sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, completed: @escaping (PDFExportSettings) -> Void) {
         let view = PDFExportSettingsView(settings: PDFExportSettings(includeAnnotations: true), exportHandler: { [weak self] settings in
             self?.topViewController.dismiss(animated: true, completion: {
                 completed(settings)
             })
         })
         let controller = UIHostingController(rootView: view)
+        controller.overrideUserInterfaceStyle = userInterfaceStyle
         controller.preferredContentSize = CGSize(width: 400, height: 140)
         controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         controller.popoverPresentationController?.barButtonItem = sender
@@ -1090,8 +1105,9 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
 }
 
 extension DetailCoordinator: DetailAnnotationsCoordinatorDelegate {
-    func showFilterPopup(from barButton: UIBarButtonItem, filter: AnnotationsFilter?, availableColors: [String], availableTags: [Tag], completed: @escaping (AnnotationsFilter?) -> Void) {
+    func showFilterPopup(from barButton: UIBarButtonItem, filter: AnnotationsFilter?, availableColors: [String], availableTags: [Tag], userInterfaceStyle: UIUserInterfaceStyle, completed: @escaping (AnnotationsFilter?) -> Void) {
         let navigationController = NavigationViewController()
+        navigationController.overrideUserInterfaceStyle = userInterfaceStyle
 
         let coordinator = AnnotationsFilterPopoverCoordinator(initialFilter: filter, availableColors: availableColors, availableTags: availableTags, navigationController: navigationController,
                                                              controllers: self.controllers, completionHandler: completed)
@@ -1108,7 +1124,7 @@ extension DetailCoordinator: DetailAnnotationsCoordinatorDelegate {
         self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
-    func showCellOptions(for annotation: Annotation, userId: Int, library: Library, sender: UIButton, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
+    func showCellOptions(for annotation: Annotation, userId: Int, library: Library, sender: UIButton, userInterfaceStyle: UIUserInterfaceStyle, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
         let state = AnnotationEditState(annotation: annotation, userId: userId, library: library)
         let handler = AnnotationEditActionHandler()
         let viewModel = ViewModel(initialState: state, handler: handler)
@@ -1116,6 +1132,7 @@ extension DetailCoordinator: DetailAnnotationsCoordinatorDelegate {
         controller.coordinatorDelegate = self
 
         let navigationController = UINavigationController(rootViewController: controller)
+        navigationController.overrideUserInterfaceStyle = userInterfaceStyle
         if UIDevice.current.userInterfaceIdiom == .pad {
             navigationController.modalPresentationStyle = .popover
             navigationController.popoverPresentationController?.sourceView = sender
