@@ -34,6 +34,7 @@ final class LineWidthView: UIView {
         }
     }
 
+    private let contentInsets: UIEdgeInsets
     private let stepFunction: (Float) -> Float
     private let disposeBag: DisposeBag
 
@@ -57,8 +58,9 @@ final class LineWidthView: UIView {
     }
     var valueObservable: Observable<Float> { return self.slider.rx.value.skip(1) }
 
-    init(title: String, settings: Settings) {
+    init(title: String, settings: Settings, contentInsets: UIEdgeInsets) {
         self.title = title
+        self.contentInsets = contentInsets
         self.stepFunction = settings.stepFunction
         self.disposeBag = DisposeBag()
         super.init(frame: CGRect())
@@ -68,6 +70,7 @@ final class LineWidthView: UIView {
     required init?(coder: NSCoder) {
         let settings = Settings.default
         self.stepFunction = settings.stepFunction
+        self.contentInsets = UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16)
         self.disposeBag = DisposeBag()
         super.init(coder: coder)
         self.setup(settings: settings)
@@ -114,10 +117,10 @@ final class LineWidthView: UIView {
         self.addSubview(container)
 
         NSLayoutConstraint.activate([
-            container.topAnchor.constraint(equalTo: self.topAnchor, constant: 8),
-            self.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: 8),
-            container.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: 16),
-            self.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: 16)
+            container.topAnchor.constraint(equalTo: self.topAnchor, constant: self.contentInsets.top),
+            self.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: self.contentInsets.bottom),
+            container.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: self.contentInsets.left),
+            self.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: self.contentInsets.right)
         ])
     }
 }

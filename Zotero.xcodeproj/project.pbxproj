@@ -338,6 +338,9 @@
 		B30BDDE42836642D007034E8 /* FilenameFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A27AD025BEE93400DE0BB2 /* FilenameFormatter.swift */; };
 		B30BDDE628366F1B007034E8 /* CreateTranslatedItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30BDDE528366F1B007034E8 /* CreateTranslatedItemsDbRequest.swift */; };
 		B30BDDE828367FC8007034E8 /* RemoteAttachmentDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30BDDE728367FC8007034E8 /* RemoteAttachmentDownloader.swift */; };
+		B30BE127297AAD9E000AED6A /* AnnotationToolOptionsActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30BE126297AAD9E000AED6A /* AnnotationToolOptionsActionHandler.swift */; };
+		B30BE129297AADAF000AED6A /* AnnotationToolOptionsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30BE128297AADAF000AED6A /* AnnotationToolOptionsState.swift */; };
+		B30BE12B297AADB8000AED6A /* AnnotationToolOptionsAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30BE12A297AADB8000AED6A /* AnnotationToolOptionsAction.swift */; };
 		B30D59592206F60400884C4A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59582206F60400884C4A /* AppDelegate.swift */; };
 		B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B30D59632206F60500884C4A /* LaunchScreen.storyboard */; };
 		B30D597B2206F60500884C4A /* ZoteroUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D597A2206F60500884C4A /* ZoteroUITests.swift */; };
@@ -758,7 +761,7 @@
 		B3868538270D92DA0068A022 /* RawDataEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3868536270D90640068A022 /* RawDataEncoding.swift */; };
 		B3868540270DC3AA0068A022 /* WebDavScheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B386853F270DC3AA0068A022 /* WebDavScheme.swift */; };
 		B3868541270DC3AA0068A022 /* WebDavScheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B386853F270DC3AA0068A022 /* WebDavScheme.swift */; };
-		B38B24B926E7664400BDD1BB /* AnnotationSliderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38B24B826E7664400BDD1BB /* AnnotationSliderViewController.swift */; };
+		B38B24B926E7664400BDD1BB /* AnnotationToolOptionsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38B24B826E7664400BDD1BB /* AnnotationToolOptionsViewController.swift */; };
 		B38CD21E241128D4004299EA /* KeysResponseProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */; };
 		B38CD21F241128FE004299EA /* KeysResponseProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */; };
 		B3902DE62480DBB7007EE48E /* DateParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC25CC247E6BA000AC27B5 /* DateParser.swift */; };
@@ -1330,6 +1333,9 @@
 		B30BA8C3255D415600361D25 /* Bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Bundled; sourceTree = "<group>"; };
 		B30BDDE528366F1B007034E8 /* CreateTranslatedItemsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateTranslatedItemsDbRequest.swift; sourceTree = "<group>"; };
 		B30BDDE728367FC8007034E8 /* RemoteAttachmentDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteAttachmentDownloader.swift; sourceTree = "<group>"; };
+		B30BE126297AAD9E000AED6A /* AnnotationToolOptionsActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationToolOptionsActionHandler.swift; sourceTree = "<group>"; };
+		B30BE128297AADAF000AED6A /* AnnotationToolOptionsState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationToolOptionsState.swift; sourceTree = "<group>"; };
+		B30BE12A297AADB8000AED6A /* AnnotationToolOptionsAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationToolOptionsAction.swift; sourceTree = "<group>"; };
 		B30D59552206F60400884C4A /* Zotero.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Zotero.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B30D59582206F60400884C4A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		B30D59642206F60500884C4A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -1657,7 +1663,7 @@
 		B3866A592417C1C7006693C4 /* Coordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coordinator.swift; sourceTree = "<group>"; };
 		B3868536270D90640068A022 /* RawDataEncoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawDataEncoding.swift; sourceTree = "<group>"; };
 		B386853F270DC3AA0068A022 /* WebDavScheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavScheme.swift; sourceTree = "<group>"; };
-		B38B24B826E7664400BDD1BB /* AnnotationSliderViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationSliderViewController.swift; sourceTree = "<group>"; };
+		B38B24B826E7664400BDD1BB /* AnnotationToolOptionsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationToolOptionsViewController.swift; sourceTree = "<group>"; };
 		B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeysResponseProcessor.swift; sourceTree = "<group>"; };
 		B391480626D9093E0016B7B2 /* UIPasteboard+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIPasteboard+Extensions.swift"; sourceTree = "<group>"; };
 		B394A0E126A709A900CA307F /* NoteEditorTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorTitleView.swift; sourceTree = "<group>"; };
@@ -2579,9 +2585,9 @@
 			children = (
 				B3482E57257E3ED1008E817A /* Annotation View */,
 				B3B953D32459B62D00FC96DB /* AnnotationCell.swift */,
-				B38B24B826E7664400BDD1BB /* AnnotationSliderViewController.swift */,
 				B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */,
 				B340ECA5290FDC9F00EE920D /* AnnotationToolbarViewController.swift */,
+				B38B24B826E7664400BDD1BB /* AnnotationToolOptionsViewController.swift */,
 				B33AB487246D315F00490DDE /* CheckboxButton.swift */,
 				B39A402F24BC902600205172 /* ColorPickerView.swift */,
 				B3A95DA929194BDE00BCCF11 /* DashedView.swift */,
@@ -3360,6 +3366,8 @@
 				B3B953C22459780600FC96DB /* Annotation.swift */,
 				B3F49FB528B8C3F600A1F3E8 /* AnnotationEditability.swift */,
 				B36E9D4825E51B0E00CD1109 /* AnnotationPosition.swift */,
+				B30BE12A297AADB8000AED6A /* AnnotationToolOptionsAction.swift */,
+				B30BE128297AADAF000AED6A /* AnnotationToolOptionsState.swift */,
 				B34C4107257122BF0057D5F5 /* AnnotationViewLayout.swift */,
 				B3F49FB328B8C3D900A1F3E8 /* DatabaseAnnotation.swift */,
 				B3F49FB128B8C3CB00A1F3E8 /* DocumentAnnotation.swift */,
@@ -3383,6 +3391,7 @@
 		B3B953C42459818200FC96DB /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				B30BE126297AAD9E000AED6A /* AnnotationToolOptionsActionHandler.swift */,
 				B3B953CB245981C100FC96DB /* PDFReaderActionHandler.swift */,
 				B3ADBCB927CFB66C00B7041F /* PDFSettingsActionHandler.swift */,
 				B3A47C3529015FCE00E7D90D /* TableOfContentsActionHandler.swift */,
@@ -4525,6 +4534,7 @@
 				B30566A923FC051F003304F2 /* File.swift in Sources */,
 				B305669B23FC051F003304F2 /* RSearch.swift in Sources */,
 				B37AA28C289960FF00A1C643 /* ItemDetailNoteContentView.swift in Sources */,
+				B30BE127297AAD9E000AED6A /* AnnotationToolOptionsActionHandler.swift in Sources */,
 				B338E820273AA9B20003DECD /* DisappearActionHostingController.swift in Sources */,
 				B305667423FC051F003304F2 /* MD5+Url.swift in Sources */,
 				B31FACCA25DBC71200DD5F14 /* ConflictReceiverAlertHandler.swift in Sources */,
@@ -4611,6 +4621,7 @@
 				B305667B23FC051F003304F2 /* UIViewController+Extensions.swift in Sources */,
 				B3DCDF0A240912220039ED0D /* SinglePickerAction.swift in Sources */,
 				B3C43C2028589F300007076D /* NotePreviewGenerator.swift in Sources */,
+				B30BE12B297AADB8000AED6A /* AnnotationToolOptionsAction.swift in Sources */,
 				B3E8FE8727143BDD00F51458 /* SyncSettingsState.swift in Sources */,
 				B3593F38241A61C700760E20 /* ItemDetailDataCreator.swift in Sources */,
 				B3E8FE32271429C300F51458 /* ExportState.swift in Sources */,
@@ -4662,7 +4673,7 @@
 				B3E8FE182714297200F51458 /* CiteState.swift in Sources */,
 				B30565E923FC051E003304F2 /* SessionController.swift in Sources */,
 				B3A081D425D2C1620088EC24 /* ConflictCoordinator.swift in Sources */,
-				B38B24B926E7664400BDD1BB /* AnnotationSliderViewController.swift in Sources */,
+				B38B24B926E7664400BDD1BB /* AnnotationToolOptionsViewController.swift in Sources */,
 				B30566A123FC051F003304F2 /* Library.swift in Sources */,
 				B324278225C841A600567504 /* WsResponse.swift in Sources */,
 				B3A47C3A29015FE800E7D90D /* TableOfContentsState.swift in Sources */,
@@ -4773,6 +4784,7 @@
 				B305662023FC051F003304F2 /* SyncSettingsSyncAction.swift in Sources */,
 				B35EDECB263ADD0C003574AC /* TextPreviewViewController.swift in Sources */,
 				B30566A623FC051F003304F2 /* Files.swift in Sources */,
+				B30BE129297AADAF000AED6A /* AnnotationToolOptionsState.swift in Sources */,
 				B35DC8E5261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.swift in Sources */,
 				B325EE4D27B28AC7002143AA /* ExpandableCollectionsCollectionViewHandler.swift in Sources */,
 				B305661F23FC051E003304F2 /* SubmitUpdateSyncAction.swift in Sources */,

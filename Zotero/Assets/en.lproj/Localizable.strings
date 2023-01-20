@@ -50,6 +50,7 @@
 "clear" = "Clear";
 "scan_text" = "Scan Text";
 "move_to_trash" = "Move to Trash";
+"size" = "Size";
 
 "beta_wipe_title" = "Resync Required";
 "beta_wipe_message" = "Due to a beta update, your data must be redownloaded from zotero.org.";

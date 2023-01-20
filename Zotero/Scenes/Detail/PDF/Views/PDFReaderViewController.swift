@@ -330,11 +330,23 @@ class PDFReaderViewController: UIViewController {
         }
     }
 
-    internal func showColorPicker(sender: UIButton) {
-        guard let tool = self.activeAnnotationTool, let color = self.viewModel.state.toolColors[tool] else { return }
-        self.coordinatorDelegate?.showColorPicker(selected: color.hexString, sender: sender, userInterfaceStyle: self.viewModel.state.interfaceStyle, save: { [weak self] color in
-            self?.viewModel.process(action: .setActiveColor(color: color, tool: tool))
-        })
+    func showToolOptions(sender: UIButton) {
+        guard let tool = self.activeAnnotationTool else { return }
+
+        let colorHex = self.viewModel.state.toolColors[tool]?.hexString
+        let size: Float?
+        switch tool {
+        case .ink:
+            size = Float(self.viewModel.state.activeLineWidth)
+        case .eraser:
+            size = Float(self.viewModel.state.activeEraserSize)
+        default:
+            size = nil
+        }
+
+        self.coordinatorDelegate?.showToolSettings(colorHex: colorHex, sizeValue: size, sender: sender, userInterfaceStyle: self.viewModel.state.interfaceStyle) { [weak self] newColor, newSize in
+            self?.viewModel.process(action: .setToolOptions(color: newColor, size: newSize.flatMap(CGFloat.init), tool: tool))
+        }
     }
 
     private func toggleSidebar(animated: Bool) {
@@ -1091,20 +1103,6 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
     func toggle(tool: PSPDFKit.Annotation.Tool, options: AnnotationToolOptions) {
         let color = self.viewModel.state.toolColors[tool]
         self.documentController.toggle(annotationTool: tool, color: color, tappedWithStylus: (options == .stylus))
-    }
-
-    func showInkSettings(sender: UIView) {
-        self.coordinatorDelegate?.showSliderSettings(sender: sender, title: L10n.Pdf.AnnotationPopover.lineWidth, initialValue: self.viewModel.state.activeLineWidth,
-                                                     valueChanged: { [weak self] newValue in
-            self?.viewModel.process(action: .setActiveLineWidth(newValue))
-        })
-    }
-
-    func showEraserSettings(sender: UIView) {
-        self.coordinatorDelegate?.showSliderSettings(sender: sender, title: L10n.Pdf.AnnotationPopover.size, initialValue: self.viewModel.state.activeEraserSize,
-                                                     valueChanged: { [weak self] newValue in
-            self?.viewModel.process(action: .setActiveEraserSize(newValue))
-        })
     }
 
     var canUndo: Bool {

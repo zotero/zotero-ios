@@ -98,6 +98,8 @@ internal enum L10n {
   internal static let select = L10n.tr("Localizable", "select")
   /// Share
   internal static let share = L10n.tr("Localizable", "share")
+  /// Size
+  internal static let size = L10n.tr("Localizable", "size")
   /// Support and Feedback
   internal static let supportFeedback = L10n.tr("Localizable", "support_feedback")
   /// Title

@@ -30,7 +30,7 @@ class LineWidthCell: RxTableViewCell {
     }
 
     private func setup() {
-        let lineView = LineWidthView(title: L10n.Pdf.AnnotationPopover.lineWidth, settings: .lineWidth)
+        let lineView = LineWidthView(title: L10n.Pdf.AnnotationPopover.lineWidth, settings: .lineWidth, contentInsets: UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16))
         lineView.translatesAutoresizingMaskIntoConstraints = false
         self.lineView = lineView
         self.contentView.addSubview(lineView)

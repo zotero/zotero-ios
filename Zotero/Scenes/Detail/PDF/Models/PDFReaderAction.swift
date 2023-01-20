@@ -34,9 +34,7 @@ enum PDFReaderAction {
     case updateAnnotationProperties(key: String, color: String, lineWidth: CGFloat, pageLabel: String, updateSubsequentLabels: Bool, highlightText: String)
     case userInterfaceStyleChanged(UIUserInterfaceStyle)
     case updateAnnotationPreviews
-    case setActiveColor(color: String, tool: PSPDFKit.Annotation.Tool)
-    case setActiveLineWidth(CGFloat)
-    case setActiveEraserSize(CGFloat)
+    case setToolOptions(color: String?, size: CGFloat?, tool: PSPDFKit.Annotation.Tool)
     case create(annotation: AnnotationType, pageIndex: PageIndex, origin: CGPoint)
     case parseAndCacheComment(key: String, comment: String)
     case setComment(key: String, comment: NSAttributedString)
