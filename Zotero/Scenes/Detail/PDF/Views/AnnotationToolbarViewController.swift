@@ -35,9 +35,7 @@ protocol AnnotationToolbarDelegate: AnyObject {
     var maxAvailableToolbarSize: CGFloat { get }
 
     func toggle(tool: PSPDFKit.Annotation.Tool, options: AnnotationToolOptions)
-    func showInkSettings(sender: UIView)
-    func showEraserSettings(sender: UIView)
-    func showColorPicker(sender: UIButton)
+    func showToolOptions(sender: UIButton)
     func closeAnnotationToolbar()
     func performUndo()
     func performRedo()
@@ -185,14 +183,20 @@ class AnnotationToolbarViewController: UIViewController {
         (self.stackView.arrangedSubviews[idx] as? CheckboxButton)?.isSelected = selected
         (self.stackView.arrangedSubviews.last as? UIButton)?.menu = self.createHiddenToolsMenu()
 
-        switch tool {
-        case .ink, .square, .highlight, .note:
-            if selected, let color = color {
-                self.colorPickerButton.tintColor = color
+        self.colorPickerButton.isHidden = !selected
+
+        if selected {
+            self.colorPickerButton.tintColor = color ?? Asset.Colors.zoteroBlueWithDarkMode.color
+
+            let imageName: String
+            switch tool {
+            case .ink, .square, .highlight, .note:
+                imageName = "circle.fill"
+            default:
+                imageName = "circle"
             }
-            self.colorPickerButton.isHidden = !selected
-        default:
-            self.colorPickerButton.isHidden = true
+
+            self.colorPickerButton.setImage(UIImage(systemName: imageName, withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
         }
     }
 
@@ -280,26 +284,6 @@ class AnnotationToolbarViewController: UIViewController {
             return .stylus
         }
         return []
-    }
-
-    private func process(longPressToolAction action: PSPDFKit.Annotation.Tool, recognizer: UILongPressGestureRecognizer) {
-        guard recognizer.state == .began, let view = recognizer.view else { return }
-
-        switch action {
-        case .ink:
-            self.delegate?.showInkSettings(sender: view)
-            if self.delegate?.activeAnnotationTool != .ink {
-                self.delegate?.toggle(tool: .ink, options: self.currentAnnotationOptions)
-            }
-
-        case .eraser:
-            self.delegate?.showEraserSettings(sender: view)
-            if self.delegate?.activeAnnotationTool != .eraser {
-                self.delegate?.toggle(tool: .eraser, options: self.currentAnnotationOptions)
-            }
-
-        default: break
-        }
     }
 
     private func createHiddenToolsMenu() -> UIMenu {
@@ -416,7 +400,7 @@ class AnnotationToolbarViewController: UIViewController {
         picker.setImage(UIImage(systemName: "circle.fill", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
         picker.rx.controlEvent(.touchUpInside)
               .subscribe(with: self, onNext: { `self`, _ in
-                  self.delegate?.showColorPicker(sender: self.colorPickerButton)
+                  self.delegate?.showToolOptions(sender: self.colorPickerButton)
               })
               .disposed(by: self.disposeBag)
         return picker
@@ -463,8 +447,8 @@ class AnnotationToolbarViewController: UIViewController {
         self.containerToPickerHorizontal.priority = .required
         self.colorPickerToAdditionalVertical = additionalStackView.topAnchor.constraint(equalTo: picker.bottomAnchor)
         self.colorPickerToAdditionalHorizontal = additionalStackView.leadingAnchor.constraint(equalTo: picker.trailingAnchor)
-        self.colorPickerTop = self.view.topAnchor.constraint(equalTo: picker.topAnchor)
-        self.colorPickerBottom = picker.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
+        self.colorPickerTop = picker.topAnchor.constraint(equalTo: self.view.topAnchor)
+        self.colorPickerBottom = self.view.bottomAnchor.constraint(equalTo: picker.bottomAnchor)
         self.colorPickerLeading = picker.leadingAnchor.constraint(equalTo: self.view.leadingAnchor)
         self.colorPickerTrailing = self.view.trailingAnchor.constraint(equalTo: picker.trailingAnchor)
         let containerTop = stackView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: 15)

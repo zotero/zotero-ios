@@ -177,14 +177,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .updateAnnotationPreviews:
             self.storeAnnotationPreviewsIfNeeded(in: viewModel)
 
-        case .setActiveColor(let hex, let tool):
-            self.setActiveColor(hex: hex, tool: tool, in: viewModel)
-
-        case .setActiveLineWidth(let lineWidth):
-            self.setActive(lineWidth: lineWidth, in: viewModel)
-
-        case .setActiveEraserSize(let size):
-            self.setActive(eraserSize: size, in: viewModel)
+        case .setToolOptions(let hex, let size, let tool):
+            self.setToolOptions(hex: hex, size: size, tool: tool, in: viewModel)
 
         case .create(let annotation, let pageIndex, let origin):
             self.add(annotationType: annotation, pageIndex: pageIndex, origin: origin, in: viewModel)
@@ -513,40 +507,38 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func setActiveColor(hex: String, tool: PSPDFKit.Annotation.Tool, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        switch tool {
-        case .highlight:
-            Defaults.shared.highlightColorHex = hex
-        case .note:
-            Defaults.shared.noteColorHex = hex
-        case .square:
-            Defaults.shared.squareColorHex = hex
-        case .ink:
-            Defaults.shared.inkColorHex = hex
-        default: return
+    private func setToolOptions(hex: String?, size: CGFloat?, tool: PSPDFKit.Annotation.Tool, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        if let hex = hex {
+            switch tool {
+            case .highlight:
+                Defaults.shared.highlightColorHex = hex
+            case .note:
+                Defaults.shared.noteColorHex = hex
+            case .square:
+                Defaults.shared.squareColorHex = hex
+            case .ink:
+                Defaults.shared.inkColorHex = hex
+            default: return
+            }
         }
 
         self.update(viewModel: viewModel) { state in
-            state.toolColors[tool] = UIColor(hex: hex)
-            state.changedColorForTool = tool
-        }
-    }
+            if let hex = hex {
+                state.toolColors[tool] = UIColor(hex: hex)
+                state.changedColorForTool = tool
+            }
 
-    private func setActive(lineWidth: CGFloat, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        Defaults.shared.activeLineWidth = Float(lineWidth)
-
-        self.update(viewModel: viewModel) { state in
-            state.activeLineWidth = lineWidth
-            state.changes = .activeLineWidth
-        }
-    }
-
-    private func setActive(eraserSize: CGFloat, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        Defaults.shared.activeEraserSize = Float(eraserSize)
-
-        self.update(viewModel: viewModel) { state in
-            state.activeEraserSize = eraserSize
-            state.changes = .activeEraserSize
+            if let size = size {
+                switch tool {
+                case .ink:
+                    state.activeLineWidth = size
+                    state.changes = .activeLineWidth
+                case .eraser:
+                    state.activeEraserSize = size
+                    state.changes = .activeEraserSize
+                default: break
+                }
+            }
         }
     }
 

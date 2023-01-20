@@ -50,6 +50,7 @@ final class AppDelegate: UIResponder {
         Defaults.shared.noteColorHex = activeColorHex
         Defaults.shared.squareColorHex = activeColorHex
         Defaults.shared.inkColorHex = activeColorHex
+        UserDefaults.zotero.removeObject(forKey: "PDFReaderState.activeColor")
     }
     #endif
 
