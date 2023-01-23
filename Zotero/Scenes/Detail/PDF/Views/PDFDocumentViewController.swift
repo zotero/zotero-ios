@@ -198,10 +198,6 @@ final class PDFDocumentViewController: UIViewController {
             self.set(lineWidth: state.activeEraserSize, in: self.pdfController.annotationStateManager)
         }
 
-        if let error = state.error {
-            // TODO: - show error
-        }
-
         if let notification = state.pdfNotification {
             self.updatePdf(notification: notification)
         }

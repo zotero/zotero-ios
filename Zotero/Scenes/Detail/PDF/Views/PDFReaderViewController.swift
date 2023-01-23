@@ -282,6 +282,10 @@ class PDFReaderViewController: UIViewController {
         if let tool = state.changedColorForTool, self.activeAnnotationTool == tool, let color = state.toolColors[tool] {
             self.annotationToolbarController.set(activeColor: color)
         }
+
+        if let error = state.error {
+            self.coordinatorDelegate?.show(error: error)
+        }
     }
 
     private func update(state: PDFExportState?) {

@@ -549,26 +549,36 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         guard toMerge.count > 1, let oldest = toMerge.first else { return }
 
-        switch oldest.0.type {
-        case .ink:
-            self.merge(inkAnnotations: toMerge, in: viewModel)
-        case .highlight: break
-//            self.merge(highlightAnnotations: toMerge, in: viewModel)
-        default: break
-        }
+        do {
+            switch oldest.0.type {
+            case .ink:
+                try self.merge(inkAnnotations: toMerge, in: viewModel)
+            case .highlight: break
+                //            self.merge(highlightAnnotations: toMerge, in: viewModel)
+            default: break
+            }
 
-        self.update(viewModel: viewModel) { state in
-            state.mergingEnabled = false
-            state.deletionEnabled = false
-            state.selectedAnnotationsDuringEditing = []
-            state.changes = .sidebarEditingSelection
+            self.update(viewModel: viewModel) { state in
+                state.mergingEnabled = false
+                state.deletionEnabled = false
+                state.selectedAnnotationsDuringEditing = []
+                state.changes = .sidebarEditingSelection
+            }
+        } catch let error {
+            self.update(viewModel: viewModel) { state in
+                state.error = (error as? PDFReaderState.Error) ?? .unknown
+            }
         }
     }
 
     typealias InkAnnotatationsData = (oldestAnnotation: Annotation, oldestDocumentAnnotation: PSPDFKit.InkAnnotation, lines: [[DrawingPoint]], lineWidth: CGFloat, tags: [Tag])
 
-    private func merge(inkAnnotations annotations: [(Annotation, PSPDFKit.Annotation)], in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func merge(inkAnnotations annotations: [(Annotation, PSPDFKit.Annotation)], in viewModel: ViewModel<PDFReaderActionHandler>) throws {
         guard let (oldestAnnotation, oldestInkAnnotation, lines, lineWidth, tags) = self.collectInkAnnotationData(from: annotations, in: viewModel) else { return }
+
+        if AnnotationSplitter.splitPathsIfNeeded(paths: lines) != nil {
+            throw PDFReaderState.Error.mergeTooBig
+        }
 
         let toDeleteDocumentAnnotations = annotations.dropFirst().map({ $0.1 })
 
