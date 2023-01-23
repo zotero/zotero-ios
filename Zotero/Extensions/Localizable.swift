@@ -480,6 +480,18 @@ internal enum L10n {
       /// Invalid username
       internal static let invalidUsername = L10n.tr("Localizable", "errors.login.invalid_username")
     }
+    internal enum Pdf {
+      /// Can't add annotations.
+      internal static let cantAddAnnotations = L10n.tr("Localizable", "errors.pdf.cant_add_annotations")
+      /// Can't delete annotations.
+      internal static let cantDeleteAnnotations = L10n.tr("Localizable", "errors.pdf.cant_delete_annotations")
+      /// Can't update annotation.
+      internal static let cantUpdateAnnotation = L10n.tr("Localizable", "errors.pdf.cant_update_annotation")
+      /// The combined annotation would be too large.
+      internal static let mergeTooBig = L10n.tr("Localizable", "errors.pdf.merge_too_big")
+      /// Unable to merge annotations
+      internal static let mergeTooBigTitle = L10n.tr("Localizable", "errors.pdf.merge_too_big_title")
+    }
     internal enum Settings {
       /// Could not collect storage data
       internal static let storage = L10n.tr("Localizable", "errors.settings.storage")

@@ -68,6 +68,8 @@ struct PDFReaderState: ViewModelState {
         case cantDeleteAnnotation
         case cantAddAnnotations
         case cantUpdateAnnotation
+        case mergeTooBig
+        case unknown
     }
 
     let key: String

@@ -465,6 +465,11 @@
 "errors.citation.missing_style" = "No citation style selected. Go to Settings → Quick Copy and select a new style.";
 "errors.citation.open_settings" = "Open Settings";
 "errors.lookup" = "Zotero could not find any identifiers in your input. Please verify your input and try again.";
+"errors.pdf.merge_too_big_title" = "Unable to merge annotations";
+"errors.pdf.merge_too_big" = "The combined annotation would be too large.";
+"errors.pdf.cant_update_annotation" = "Can't update annotation.";
+"errors.pdf.cant_add_annotations" = "Can't add annotations.";
+"errors.pdf.cant_delete_annotations" = "Can't delete annotations.";
 
 "accessibility.untitled" = "Untitled";
 "accessibility.locked" = "Locked";

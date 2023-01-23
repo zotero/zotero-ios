@@ -55,7 +55,7 @@ final class AnnotationSplitter {
     }
 
     static func splitPathsIfNeeded<Point: SplittablePathPoint>(paths: [[Point]]) -> [[[Point]]]? {
-        guard !paths.isEmpty else { return [] }
+        guard !paths.isEmpty else { return nil }
 
         var count = 2 // 2 for starting and ending brackets of array
         var splitPaths: [[[Point]]] = []

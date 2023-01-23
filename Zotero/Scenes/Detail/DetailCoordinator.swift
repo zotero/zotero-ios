@@ -82,6 +82,7 @@ protocol DetailPdfCoordinatorDelegate: AnyObject {
     func showToolSettings(colorHex: String?, sizeValue: Float?, sender: UIButton, userInterfaceStyle: UIUserInterfaceStyle, valueChanged: @escaping (String?, Float?) -> Void)
     func showSearch(pdfController: PDFViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, result: @escaping (SearchResult) -> Void)
     func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate, userInterfaceStyle: UIUserInterfaceStyle)
+    func show(error: PDFReaderState.Error)
     func show(error: PdfDocumentExporter.Error)
     func share(url: URL, barButton: UIBarButtonItem)
     func share(text: String, rect: CGRect, view: UIView)
@@ -1040,6 +1041,33 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         controller.popoverPresentationController?.sourceView = view
         controller.popoverPresentationController?.sourceRect = rect
         self.topViewController.present(controller, animated: true, completion: nil)
+    }
+
+    func show(error: PDFReaderState.Error) {
+        let title: String
+        let message: String
+
+        switch error {
+        case .mergeTooBig:
+            title = L10n.Errors.Pdf.mergeTooBigTitle
+            message = L10n.Errors.Pdf.mergeTooBig
+        case .cantAddAnnotations:
+            title = L10n.error
+            message = L10n.Errors.Pdf.cantAddAnnotations
+        case .cantDeleteAnnotation:
+            title = L10n.error
+            message = L10n.Errors.Pdf.cantDeleteAnnotations
+        case .cantUpdateAnnotation:
+            title = L10n.error
+            message = L10n.Errors.Pdf.cantUpdateAnnotation
+        case .unknown:
+            title = L10n.error
+            message = L10n.Errors.unknown
+        }
+
+        let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.ok, style: .default))
+        self.topViewController.present(controller, animated: true)
     }
 
     func show(error: PdfDocumentExporter.Error) {
