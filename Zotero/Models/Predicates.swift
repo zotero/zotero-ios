@@ -301,7 +301,13 @@ extension NSPredicate {
         let creatorFirstNamePredicate = NSPredicate(format: "any creators.firstName contains[c] %@", text)
         let creatorLastNamePredicate = NSPredicate(format: "any creators.lastName contains[c] %@", text)
 
-        return NSCompoundPredicate(orPredicateWithSubpredicates: [keyPredicate, childrenPredicate, titlePredicate, creatorFullNamePredicate, creatorFirstNamePredicate, creatorLastNamePredicate, tagPredicate])
+        var predicates = [keyPredicate, childrenPredicate, titlePredicate, creatorFullNamePredicate, creatorFirstNamePredicate, creatorLastNamePredicate, tagPredicate]
+        if let int = Int(text) {
+            let yearPredicate = NSPredicate(format: "parsedYear == %d", int)
+            predicates.append(yearPredicate)
+        }
+
+        return NSCompoundPredicate(orPredicateWithSubpredicates: predicates)
     }
 
     static func linkType(_ type: LinkType) -> NSPredicate {
