@@ -755,6 +755,8 @@ internal enum L10n {
     internal enum Filters {
       /// Downloaded Files
       internal static let downloads = L10n.tr("Localizable", "items.filters.downloads")
+      /// Tags
+      internal static let tags = L10n.tr("Localizable", "items.filters.tags")
       /// Filters
       internal static let title = L10n.tr("Localizable", "items.filters.title")
     }
@@ -1201,6 +1203,10 @@ internal enum L10n {
     }
     /// Tag name
     internal static let placeholder = L10n.tr("Localizable", "tag_picker.placeholder")
+    /// %d selected
+    internal static func title(_ p1: Int) -> String {
+      return L10n.tr("Localizable", "tag_picker.title", p1)
+    }
   }
 }
 // swiftlint:enable explicit_type_interface function_parameter_count identifier_name line_length

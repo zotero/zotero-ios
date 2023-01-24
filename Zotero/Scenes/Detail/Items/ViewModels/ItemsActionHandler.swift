@@ -156,8 +156,11 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         case .updateAttachments(let notification):
             self.updateDeletedAttachments(notification, in: viewModel)
 
-        case .filter(let filters):
-            self.filter(with: filters, in: viewModel)
+        case .enableFilter(let filter):
+            self.enable(filter: filter, in: viewModel)
+
+        case .disableFilter(let filter):
+            self.disable(filter: filter, in: viewModel)
 
         case .quickCopyBibliography(let itemIds, let libraryId, let webView):
             self.copyBibliography(itemIds: itemIds, libraryId: libraryId, webView: webView, in: viewModel)
@@ -553,6 +556,37 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
 
     // MARK: - Searching & Filtering
 
+    private func enable(filter: ItemsState.Filter, in viewModel: ViewModel<ItemsActionHandler>) {
+        var filters = viewModel.state.filters
+
+        guard !filters.contains(filter) else { return }
+
+        let modificationIndex = filters.firstIndex(where: { existing in
+            switch (existing, filter) {
+            // Update array inside existing `tags` filter
+            case (.tags, .tags): return true
+            default: return false
+            }
+        })
+
+        if let index = modificationIndex {
+            filters[index] = filter
+        } else {
+            filters.append(filter)
+        }
+
+        self.filter(with: filters, in: viewModel)
+    }
+
+    private func disable(filter: ItemsState.Filter, in viewModel: ViewModel<ItemsActionHandler>) {
+        var filters = viewModel.state.filters
+
+        guard let index = filters.firstIndex(of: filter) else { return }
+
+        filters.remove(at: index)
+        self.filter(with: filters, in: viewModel)
+    }
+
     private func filter(with filters: [ItemsState.Filter], in viewModel: ViewModel<ItemsActionHandler>) {
         guard filters != viewModel.state.filters else { return }
 
@@ -588,7 +622,10 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
             for filter in filters {
                 switch filter {
                 case .downloadedFiles:
-                    results = results.filter("fileDownloaded = true or ANY children.fileDownloaded = true")
+                    results = results.filter("fileDownloaded = true or any children.fileDownloaded = true")
+                case .tags(let tags):
+                    let tagNames = tags.map { $0.name }
+                    results = results.filter("any tags.tag.name in %@ or any children.tags.tag.name in %@", tagNames, tagNames)
                 }
             }
         }

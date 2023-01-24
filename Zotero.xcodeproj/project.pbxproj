@@ -332,6 +332,8 @@
 		B30B550C24B8623900F94B59 /* Assets.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B550A24B85CC900F94B59 /* Assets.swift */; };
 		B30B551024B8646E00F94B59 /* Assets+SwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B550F24B8646E00F94B59 /* Assets+SwiftUI.swift */; };
 		B30B551124B8689900F94B59 /* Assets+SwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B550F24B8646E00F94B59 /* Assets+SwiftUI.swift */; };
+		B30BA03E297ED50B0005021B /* AttributedTagStringGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30BA03D297ED50B0005021B /* AttributedTagStringGenerator.swift */; };
+		B30BA03F297FF78D0005021B /* RightButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B675A026208BAF003231A5 /* RightButton.swift */; };
 		B30BA8C4255D415600361D25 /* Bundled in Resources */ = {isa = PBXBuildFile; fileRef = B30BA8C3255D415600361D25 /* Bundled */; };
 		B30BDDE42836642D007034E8 /* FilenameFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A27AD025BEE93400DE0BB2 /* FilenameFormatter.swift */; };
 		B30BDDE628366F1B007034E8 /* CreateTranslatedItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30BDDE528366F1B007034E8 /* CreateTranslatedItemsDbRequest.swift */; };
@@ -1320,6 +1322,7 @@
 		B30B550424B85A6200F94B59 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		B30B550A24B85CC900F94B59 /* Assets.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Assets.swift; sourceTree = "<group>"; };
 		B30B550F24B8646E00F94B59 /* Assets+SwiftUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Assets+SwiftUI.swift"; sourceTree = "<group>"; };
+		B30BA03D297ED50B0005021B /* AttributedTagStringGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributedTagStringGenerator.swift; sourceTree = "<group>"; };
 		B30BA8C3255D415600361D25 /* Bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Bundled; sourceTree = "<group>"; };
 		B30BDDE528366F1B007034E8 /* CreateTranslatedItemsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateTranslatedItemsDbRequest.swift; sourceTree = "<group>"; };
 		B30BDDE728367FC8007034E8 /* RemoteAttachmentDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteAttachmentDownloader.swift; sourceTree = "<group>"; };
@@ -2018,6 +2021,7 @@
 				B3597D0127DA5C280069F019 /* AnnotationSplitter.swift */,
 				B30B40642491222000FAAF6D /* AttachmentCreator.swift */,
 				B377F2A4249373F300022943 /* AttachmentFileCleanupController.swift */,
+				B30BA03D297ED50B0005021B /* AttributedTagStringGenerator.swift */,
 				B31D4A712767840800E22DCC /* BackgroundTaskController.swift */,
 				B3BD2BB225C98D2900275EF9 /* BackgroundTimer.swift */,
 				B3C8DD8127B502960084E1AD /* CollectionTreeBuilder.swift */,
@@ -4344,6 +4348,7 @@
 				B3AB43A827E8A68D006F3E4E /* Dictionary+Extensions.swift in Sources */,
 				B30565E523FC051E003304F2 /* RItemLocaleController.swift in Sources */,
 				B37C5B6926453C33009A37E5 /* NoteEditorActionHandler.swift in Sources */,
+				B30BA03E297ED50B0005021B /* AttributedTagStringGenerator.swift in Sources */,
 				B3E8FE8627143BDD00F51458 /* SyncSettingsActionHandler.swift in Sources */,
 				B3593F19241A61C700760E20 /* ItemDetailActionHandler.swift in Sources */,
 				B36CBD6225DD4257003C4613 /* ChangedItemsDeletedAlertQueueHandler.swift in Sources */,
@@ -4626,6 +4631,7 @@
 				B30566AC23FC051F003304F2 /* Predicates.swift in Sources */,
 				B30566A023FC051F003304F2 /* KeyedResponse.swift in Sources */,
 				B305667123FC051F003304F2 /* Threading+Extras.swift in Sources */,
+				B30BA03F297FF78D0005021B /* RightButton.swift in Sources */,
 				B3D58D6225EE26A600D8FA31 /* DebugResponseParserDelegate.swift in Sources */,
 				B34341B4260A496200093E63 /* ReadCollectionAndLibraryDbRequest.swift in Sources */,
 				B30566BA23FC051F003304F2 /* Defaults.swift in Sources */,

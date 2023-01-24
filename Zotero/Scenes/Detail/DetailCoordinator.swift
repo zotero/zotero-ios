@@ -46,6 +46,10 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func show(error: ItemsError)
 }
 
+protocol DetailItemsFilterCoordinatorDelegate: AnyObject {
+    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
+}
+
 protocol DetailItemDetailCoordinatorDelegate: AnyObject {
     func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
     func showAttachmentPicker(save: @escaping ([URL]) -> Void)
@@ -339,7 +343,7 @@ final class DetailCoordinator: Coordinator {
     }
 }
 
-extension DetailCoordinator: DetailItemsCoordinatorDelegate {
+extension DetailCoordinator: DetailItemsCoordinatorDelegate, DetailItemsFilterCoordinatorDelegate {
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem) {
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         controller.popoverPresentationController?.barButtonItem = button
@@ -489,6 +493,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
     func showFilters(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem) {
         let controller = ItemsFilterViewController(viewModel: viewModel)
+        controller.coordinatorDelegate = self
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         navigationController.popoverPresentationController?.barButtonItem = button

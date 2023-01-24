@@ -137,6 +137,7 @@
 "items.action.remove_download" = "Remove Download";
 "items.filters.title" = "Filters";
 "items.filters.downloads" = "Downloaded Files";
+"items.filters.tags" = "Tags";
 "items.toolbar_filter_single" = "Filter: 1 item";
 "items.toolbar_filter_multiple" = "Filter: %d items";
 "items.toolbar_downloaded" = "Downloaded %d / %d";
@@ -196,6 +197,7 @@
 "item_detail.deleted_title" = "Deleted";
 "item_detail.deleted_message" = "This item has been deleted. Do you want to restore it?";
 
+"tag_picker.title" = "%d selected";
 "tag_picker.placeholder" = "Tag name";
 "tag_picker.create_tag" = "Create Tag \“%@\”";
 

@@ -26,8 +26,20 @@ struct ItemsState: ViewModelState {
         static let batchData = Changes(rawValue: 1 << 7)
     }
 
-    enum Filter {
+    enum Filter: Equatable {
         case downloadedFiles
+        case tags([Tag])
+
+        static func ==(lhs: Filter, rhs: Filter) -> Bool {
+            switch (lhs, rhs) {
+            case (.downloadedFiles, .downloadedFiles):
+                return true
+            case (.tags(let lTags), .tags(let rTags)):
+                return lTags == rTags
+            default:
+                return false
+            }
+        }
     }
 
     struct DownloadBatchData: Equatable {
