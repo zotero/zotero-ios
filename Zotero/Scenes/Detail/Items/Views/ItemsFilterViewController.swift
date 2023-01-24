@@ -61,8 +61,11 @@ class ItemsFilterViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
+        guard UIDevice.current.userInterfaceIdiom == .pad else { return }
+
         var preferredSize = self.container.systemLayoutSizeFitting(CGSize(width: ItemsFilterViewController.width, height: .greatestFiniteMagnitude))
         preferredSize.width = ItemsFilterViewController.width
+        preferredSize.height += 10
         self.preferredContentSize = preferredSize
         self.navigationController?.preferredContentSize = preferredSize
     }

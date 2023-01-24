@@ -28,8 +28,8 @@
             <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
-                <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="viL-xZ-DgW">
-                    <rect key="frame" x="16" y="48" width="398" height="100"/>
+                <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="6" translatesAutoresizingMaskIntoConstraints="NO" id="viL-xZ-DgW">
+                    <rect key="frame" x="16" y="52" width="398" height="94"/>
                     <subviews>
                         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="puQ-L2-oHw">
                             <rect key="frame" x="0.0" y="0.0" width="398" height="44"/>
@@ -59,7 +59,7 @@
                             </constraints>
                         </view>
                         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="gMm-Co-uSL">
-                            <rect key="frame" x="0.0" y="56" width="398" height="44"/>
+                            <rect key="frame" x="0.0" y="50" width="398" height="44"/>
                             <subviews>
                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Aeh-oc-RBh">
                                     <rect key="frame" x="0.0" y="0.0" width="41.5" height="44"/>
@@ -144,7 +144,7 @@
             <constraints>
                 <constraint firstItem="viL-xZ-DgW" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" constant="16" id="Mez-sR-bkS"/>
                 <constraint firstAttribute="trailing" secondItem="viL-xZ-DgW" secondAttribute="trailing" id="UJ0-3S-Gda"/>
-                <constraint firstItem="viL-xZ-DgW" firstAttribute="top" secondItem="fnl-2z-Ty3" secondAttribute="top" id="Uee-0O-VIO"/>
+                <constraint firstItem="viL-xZ-DgW" firstAttribute="top" secondItem="fnl-2z-Ty3" secondAttribute="top" constant="4" id="Uee-0O-VIO"/>
             </constraints>
             <point key="canvasLocation" x="139" y="133"/>
         </view>
