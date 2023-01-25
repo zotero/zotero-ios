@@ -207,6 +207,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             self.update(settings: settings, currentInterfaceStyle: userInterfaceStyle, in: viewModel)
 
         case .changeIdleTimerDisabled(let disabled):
+            guard viewModel.state.settings.idleTimerDisabled != disabled else { return }
             var settings = viewModel.state.settings
             settings.idleTimerDisabled = disabled
             self.update(settings: settings, currentInterfaceStyle: nil, in: viewModel)
