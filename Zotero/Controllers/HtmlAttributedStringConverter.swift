@@ -42,7 +42,7 @@ final class HtmlAttributedStringConverter {
 
         // Close remaining attributes
         for openedAttribute in self.openedAttributes(from: attributes) {
-            attributes.insert(Attribute(type: openedAttribute, index: attributedString.length, isClosing: true), at: 0)
+            attributes.insert(Attribute(type: openedAttribute, index: attributedString.string.count, isClosing: true), at: 0)
         }
 
         // Generate new string with html tags
