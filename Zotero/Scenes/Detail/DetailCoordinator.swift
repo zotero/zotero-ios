@@ -335,11 +335,12 @@ final class DetailCoordinator: Coordinator {
     }
 
     fileprivate var topViewController: UIViewController {
-        var controller: UIViewController = self.navigationController
-        while let presentedController = controller.presentedViewController {
-            controller = presentedController
+        if let navigationController = self.navigationController.presentedViewController as? UINavigationController {
+            // If PDF Reader is presented, present on top of it
+            return navigationController.topViewController ?? navigationController
         }
-        return controller
+        // Otherwise present on main navigation controller
+        return self.navigationController.topViewController ?? self.navigationController
     }
 }
 
