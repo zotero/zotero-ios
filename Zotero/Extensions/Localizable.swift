@@ -657,6 +657,8 @@ internal enum L10n {
     internal static let deletedTitle = L10n.tr("Localizable", "item_detail.deleted_title")
     /// Merge name
     internal static let mergeName = L10n.tr("Localizable", "item_detail.merge_name")
+    /// Move to Standalone Attachment
+    internal static let moveToStandaloneAttachment = L10n.tr("Localizable", "item_detail.move_to_standalone_attachment")
     /// Notes
     internal static let notes = L10n.tr("Localizable", "item_detail.notes")
     /// Show less

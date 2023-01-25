@@ -146,6 +146,9 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             self.update(viewModel: viewModel) { state in
                 state.preScrolledChildKey = nil
             }
+
+        case .moveAttachmentToStandalone(let attachment):
+            self.moveToStandalone(attachment: attachment, in: viewModel)
         }
     }
 
@@ -717,6 +720,30 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             self.update(viewModel: viewModel) { state in
                 state.attachments[index] = new
                 state.updateAttachmentKey = new.key
+            }
+        }
+    }
+
+    private func moveToStandalone(attachment: Attachment, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            state.backgroundProcessedItems.insert(attachment.key)
+            state.reload = .section(.attachments)
+        }
+
+        self.perform(request: RemoveItemFromParentDbRequest(key: attachment.key, libraryId: attachment.libraryId)) { [weak viewModel] error in
+            guard let viewModel = viewModel else { return }
+
+            self.update(viewModel: viewModel) { state in
+                state.backgroundProcessedItems.remove(attachment.key)
+                state.reload = .section(.attachments)
+
+                if let error = error {
+                    DDLogError("ItemDetailActionHandler: can't move attachment to standalone - \(error)")
+                    state.error = .cantRemoveParent
+                } else {
+                    guard let index = viewModel.state.attachments.firstIndex(of: attachment) else { return }
+                    state.attachments.remove(at: index)
+                }
             }
         }
     }

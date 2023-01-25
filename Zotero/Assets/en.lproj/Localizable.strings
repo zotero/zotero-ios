@@ -196,6 +196,7 @@
 "item_detail.delete_attachment_file" = "Remove Download";
 "item_detail.deleted_title" = "Deleted";
 "item_detail.deleted_message" = "This item has been deleted. Do you want to restore it?";
+"item_detail.move_to_standalone_attachment" = "Move to Standalone Attachment";
 
 "tag_picker.title" = "%d selected";
 "tag_picker.placeholder" = "Tag name";

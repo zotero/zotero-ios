@@ -507,6 +507,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
         }
 
         if !self.viewModel.state.data.isAttachment {
+            actions.append(UIAction(title: L10n.ItemDetail.moveToStandaloneAttachment, image: UIImage(systemName: "arrow.up.to.line"), attributes: []) { [weak self] action in
+                self?.viewModel.process(action: .moveAttachmentToStandalone(attachment))
+            })
+
             actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
                 self?.viewModel.process(action: .deleteAttachment(attachment))
             })

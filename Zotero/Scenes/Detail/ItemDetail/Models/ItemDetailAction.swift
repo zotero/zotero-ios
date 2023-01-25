@@ -21,6 +21,7 @@ enum ItemDetailAction {
     case deleteTag(Tag)
     case loadInitialData
     case moveCreators(CollectionDifference<UUID>)
+    case moveAttachmentToStandalone(Attachment)
     case openAttachment(String)
     case attachmentOpened(String)
     case reloadData
