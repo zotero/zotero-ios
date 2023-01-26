@@ -297,11 +297,14 @@ extension NSPredicate {
         let childrenPredicate = NSPredicate(format: "any children.key == %@", text)
         let titlePredicate = NSPredicate(format: "displayTitle contains[c] %@", text)
         let tagPredicate = NSPredicate(format: "any tags.tag.name contains[c] %@", text)
+        let childTagPredicate = NSPredicate(format: "any children.tags.tag.name contains[c] %@", text)
+        let childChildTagPredicate = NSPredicate(format: "any children.children.tags.tag.name contains[c] %@", text)
         let creatorFullNamePredicate = NSPredicate(format: "any creators.name contains[c] %@", text)
         let creatorFirstNamePredicate = NSPredicate(format: "any creators.firstName contains[c] %@", text)
         let creatorLastNamePredicate = NSPredicate(format: "any creators.lastName contains[c] %@", text)
 
-        var predicates = [keyPredicate, childrenPredicate, titlePredicate, creatorFullNamePredicate, creatorFirstNamePredicate, creatorLastNamePredicate, tagPredicate]
+        var predicates = [keyPredicate, childrenPredicate, titlePredicate, creatorFullNamePredicate, creatorFirstNamePredicate, creatorLastNamePredicate, tagPredicate, childTagPredicate,
+                          childChildTagPredicate]
         if let int = Int(text) {
             let yearPredicate = NSPredicate(format: "parsedYear == %d", int)
             predicates.append(yearPredicate)
