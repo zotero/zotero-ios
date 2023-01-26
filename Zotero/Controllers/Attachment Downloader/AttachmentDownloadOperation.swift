@@ -70,13 +70,17 @@ class AttachmentDownloadOperation: AsynchronousOperation {
         self.downloadRequest(file: self.file, key: self.download.key, libraryId: self.download.libraryId, userId: self.userId)
             .flatMap { [weak self] request -> Observable<DownloadRequest> in
                 let downloadProgress = request.downloadProgress
+                var didAddProgress = false
                 // Check headers on redirect to see whether downloaded file will be compressed zip or base file.
                 let redirector = Redirector(behavior: .modify({ task, request, response -> URLRequest? in
                     if !isCompressed {
                         isCompressed = response.value(forHTTPHeaderField: "Zotero-File-Compressed") == "Yes"
                     }
-                    // If downloaded file is compressed, add download progress as incomplete (90%) and reserve the rest for unzipping. Otherwise it's a complete progress (100%).
-                    self?.progress.addChild(downloadProgress, withPendingUnitCount: (isCompressed ? 90 : 100))
+                    if !didAddProgress {
+                        // If downloaded file is compressed, add download progress as incomplete (90%) and reserve the rest for unzipping. Otherwise it's a complete progress (100%).
+                        self?.progress.addChild(downloadProgress, withPendingUnitCount: (isCompressed ? 90 : 100))
+                        didAddProgress = true
+                    }
                     return request
                 }))
                 return Observable.just(request.redirect(using: redirector))
