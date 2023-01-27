@@ -104,7 +104,7 @@ class AnnotationToolOptionsViewController: UIViewController {
             var colorViews: [UIView] = AnnotationsConfig.colors.enumerated().map { idx, hexColor in
                 let circleView = ColorPickerCircleView(hexColor: hexColor)
                 circleView.backgroundColor = .clear
-                circleView.circleSize = CGSize(width: 50, height: 50)
+                circleView.circleSize = CGSize(width: 40, height: 40)
                 circleView.selectionLineWidth = 3
                 circleView.selectionInset = UIEdgeInsets(top: 4, left: 4, bottom: 4, right: 4)
                 circleView.contentInsets = idx == (AnnotationsConfig.colors.count - 1) ? UIEdgeInsets() : UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 8)
@@ -115,10 +115,8 @@ class AnnotationToolOptionsViewController: UIViewController {
                 return circleView
             }
 
-            if UIDevice.current.userInterfaceIdiom == .phone {
-                // Add spacer on phone
-                colorViews.append(UIView())
-            }
+            // Add spacer
+            colorViews.append(UIView())
 
             let colorPicker = UIStackView(arrangedSubviews: colorViews)
             colorPicker.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
@@ -141,7 +139,7 @@ class AnnotationToolOptionsViewController: UIViewController {
 
         let container = UIStackView(arrangedSubviews: subviews)
         container.setContentHuggingPriority(.required, for: .vertical)
-        container.spacing = 28
+        container.spacing = 12
         container.axis = .vertical
         container.translatesAutoresizingMaskIntoConstraints = false
         self.view.addSubview(container)
