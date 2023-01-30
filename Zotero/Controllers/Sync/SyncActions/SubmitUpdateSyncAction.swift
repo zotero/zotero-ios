@@ -131,7 +131,7 @@ struct SubmitUpdateSyncAction: SyncAction {
                 DDLogError("SubmitUpdateSyncAction: failed \(response.key ?? "unknown key") - \(response.message). Library \(libraryId)")
                 return PreconditionErrorType.objectConflict
 
-            case 400 where response.message == self.splitMessage:
+            case 400 where response.message.contains(self.splitMessage):
                 if let key = response.key {
                     splitKeys.insert(key)
                 }
