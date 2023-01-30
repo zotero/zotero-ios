@@ -14,7 +14,8 @@ import RxSwift
 
 class AnnotationToolOptionsViewController: UIViewController {
     private static let width: CGFloat = 312
-    private static let verticalInsets: CGFloat = 15
+    private static let verticalInset: CGFloat = 15
+    private static let horizontalInset: CGFloat = 15
     private let viewModel: ViewModel<AnnotationToolOptionsActionHandler>
     private let valueChanged: (String?, Float?) -> Void
     private let disposeBag: DisposeBag
@@ -91,7 +92,7 @@ class AnnotationToolOptionsViewController: UIViewController {
     private func updateContentSizeIfNeeded() {
         guard UIDevice.current.userInterfaceIdiom == .pad,
               var size = self.container?.systemLayoutSizeFitting(CGSize(width: AnnotationToolOptionsViewController.width, height: .greatestFiniteMagnitude)) else { return }
-        size.height += 2 * AnnotationToolOptionsViewController.verticalInsets
+        size.height += 2 * AnnotationToolOptionsViewController.verticalInset
         self.preferredContentSize = CGSize(width: AnnotationToolOptionsViewController.width, height: size.height)
     }
 
@@ -121,7 +122,6 @@ class AnnotationToolOptionsViewController: UIViewController {
             let colorPicker = UIStackView(arrangedSubviews: colorViews)
             colorPicker.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
             colorPicker.axis = .horizontal
-            colorPicker.heightAnchor.constraint(equalToConstant: 50).isActive = true
             subviews.append(colorPicker)
             self.colorPicker = colorPicker
         }
@@ -139,7 +139,7 @@ class AnnotationToolOptionsViewController: UIViewController {
 
         let container = UIStackView(arrangedSubviews: subviews)
         container.setContentHuggingPriority(.required, for: .vertical)
-        container.spacing = 12
+        container.spacing = 20
         container.axis = .vertical
         container.translatesAutoresizingMaskIntoConstraints = false
         self.view.addSubview(container)
@@ -148,15 +148,16 @@ class AnnotationToolOptionsViewController: UIViewController {
         let verticalConstraint: NSLayoutConstraint
 
         if UIDevice.current.userInterfaceIdiom == .pad {
-            verticalConstraint = self.view.safeAreaLayoutGuide.centerYAnchor.constraint(equalTo: container.centerYAnchor)
+            // Slider needs some offset from center, because visually the slider is a bit off when paired with other elements, because the offset applies to handle and not the line, so there's too much free space below title text.
+            verticalConstraint = self.view.safeAreaLayoutGuide.centerYAnchor.constraint(equalTo: container.centerYAnchor, constant: subviews.count == 1 ? 0 : -3)
         } else {
-            verticalConstraint = container.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor, constant: 15)
+            verticalConstraint = container.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor, constant: AnnotationToolOptionsViewController.verticalInset)
         }
 
         NSLayoutConstraint.activate([
             verticalConstraint,
-            container.leadingAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.leadingAnchor, constant: 15),
-            self.view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: 15)
+            container.leadingAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.leadingAnchor, constant: AnnotationToolOptionsViewController.horizontalInset),
+            self.view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: AnnotationToolOptionsViewController.horizontalInset)
         ])
     }
 
