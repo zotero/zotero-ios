@@ -16,7 +16,7 @@ struct CollectionRow: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            Image(self.data.iconName(hasChildren: false))
+            Image(self.data.iconName)
                 .renderingMode(.template)
                 .foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
             Text(self.data.name)

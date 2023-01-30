@@ -19,14 +19,10 @@ struct Collection: Identifiable, Equatable, Hashable {
         return self.identifier
     }
 
-    func iconName(hasChildren: Bool) -> String {
+    var iconName: String {
         switch self.identifier {
         case .collection:
-            if hasChildren {
-                return Asset.Images.Cells.collectionChildren.name
-            } else {
-                return Asset.Images.Cells.collection.name
-            }
+            return Asset.Images.Cells.collection.name
         case .search:
             return Asset.Images.Cells.document.name
         case .custom(let type):

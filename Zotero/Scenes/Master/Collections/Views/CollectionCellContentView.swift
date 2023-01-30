@@ -52,7 +52,7 @@ final class CollectionCellContentView: UIView {
         self.toggleCollapsedAction = toggleCollapsed
         self.leftConstraint.constant = (accessories.contains(.chevron) || accessories.contains(.chevronSpace)) ? 32 : 8
 
-        self.setup(with: collection, hasChildren: hasChildren)
+        self.setup(with: collection)
         self.updateBadgeView(for: accessories.contains(.badge) ? collection.itemCount : 0)
         self.setupChevron(visible: (accessories.contains(.chevron) && hasChildren), isCollapsed: isCollapsed)
     }
@@ -85,8 +85,8 @@ final class CollectionCellContentView: UIView {
         }
     }
 
-    private func setup(with collection: Collection, hasChildren: Bool) {
-        self.iconImage.image = UIImage(named: collection.iconName(hasChildren: hasChildren))?.withRenderingMode(.alwaysTemplate)
+    private func setup(with collection: Collection) {
+        self.iconImage.image = UIImage(named: collection.iconName)?.withRenderingMode(.alwaysTemplate)
         self.titleLabel.text = collection.name
         self.titleLabel.accessibilityLabel = collection.name
     }
