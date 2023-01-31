@@ -379,6 +379,18 @@ final class ItemDetailViewController: UIViewController {
                           })
                           .disposed(by: self.disposeBag)
 
+        NotificationCenter.default
+                          .rx
+                          .notification(UIApplication.willEnterForegroundNotification)
+                          .observe(on: MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] notification in
+                              guard let `self` = self else { return }
+                              // Need to reload data to current state before going back to foreground. iOS reloads the collection view when going to foreground with current snapshot. When
+                              // editing text fields we don't update the snapshot (so that the cell is not reloaded while typing), so the edited fields are reset to previous state.
+                              self.collectionViewHandler.reloadAll(to: self.viewModel.state, animated: false)
+                          })
+                          .disposed(by: self.disposeBag)
+
         guard let downloader = self.controllers.userControllers?.fileDownloader else { return }
 
         downloader.observable
