@@ -6120,7 +6120,7 @@
 			repositoryURL = "https://github.com/microsoft/plcrashreporter";
 			requirement = {
 				kind = exactVersion;
-				version = 1.10.1;
+				version = 1.11.0;
 			};
 		};
 		B356A361252490B3003F1943 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
@@ -6128,7 +6128,7 @@
 			repositoryURL = "https://github.com/Alamofire/Alamofire";
 			requirement = {
 				kind = exactVersion;
-				version = 5.6.2;
+				version = 5.6.4;
 			};
 		};
 		B356A367252490DB003F1943 /* XCRemoteSwiftPackageReference "keychain-swift" */ = {
@@ -6152,7 +6152,7 @@
 			repositoryURL = "https://github.com/kirualex/SwiftyGif";
 			requirement = {
 				kind = exactVersion;
-				version = 5.4.2;
+				version = 5.4.4;
 			};
 		};
 		B356A3822524A66A003F1943 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
@@ -6160,7 +6160,7 @@
 			repositoryURL = "https://github.com/weichsel/ZIPFoundation";
 			requirement = {
 				kind = exactVersion;
-				version = 0.9.14;
+				version = 0.9.16;
 			};
 		};
 		B356A3882524A698003F1943 /* XCRemoteSwiftPackageReference "Nimble" */ = {
@@ -6192,7 +6192,7 @@
 			repositoryURL = "https://github.com/CocoaLumberjack/CocoaLumberjack";
 			requirement = {
 				kind = exactVersion;
-				version = 3.7.4;
+				version = 3.8.0;
 			};
 		};
 		B35C9C042642A0BC0004C47E /* XCRemoteSwiftPackageReference "realm-cocoa" */ = {
@@ -6200,7 +6200,7 @@
 			repositoryURL = "https://github.com/realm/realm-cocoa";
 			requirement = {
 				kind = exactVersion;
-				version = 10.33.0;
+				version = 10.34.1;
 			};
 		};
 		B35E4B8B25248B3C000EA134 /* XCRemoteSwiftPackageReference "RxSwift" */ = {
@@ -6216,7 +6216,7 @@
 			repositoryURL = "https://github.com/PSPDFKit/PSPDFKit-SP";
 			requirement = {
 				kind = exactVersion;
-				version = 12.0.2;
+				version = 12.0.3;
 			};
 		};
 		B3D84BEE27919FDE005DDD7C /* XCRemoteSwiftPackageReference "Starscream" */ = {
