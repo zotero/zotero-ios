@@ -63,8 +63,8 @@ final class AnnotationsViewController: UIViewController {
 
         self.viewModel.stateObservable
                       .observe(on: MainScheduler.instance)
-                      .subscribe(onNext: { [weak self] state in
-                          self?.update(state: state)
+                      .subscribe(with: self, onNext: { `self`, state in
+                          self.update(state: state)
                       })
                       .disposed(by: self.disposeBag)
 
@@ -338,8 +338,7 @@ final class AnnotationsViewController: UIViewController {
         }
 
         self.coordinatorDelegate?.showFilterPopup(from: barButton, filter: self.viewModel.state.filter, availableColors: sortedColors, availableTags: sortedTags, completed: { [weak self] filter in
-            guard let `self` = self else { return }
-            self.viewModel.process(action: .changeFilter(filter))
+            self?.viewModel.process(action: .changeFilter(filter))
         })
     }
 
@@ -428,8 +427,8 @@ final class AnnotationsViewController: UIViewController {
         })
 
 
-        self.dataSource.canEditRow = { indexPath in
-            guard let key = self.dataSource.itemIdentifier(for: indexPath) else { return false }
+        self.dataSource.canEditRow = { [weak self] indexPath in
+            guard let `self` = self, let key = self.dataSource.itemIdentifier(for: indexPath) else { return false }
             switch key.type {
             case .database: return true
             case .document: return false
@@ -455,8 +454,8 @@ final class AnnotationsViewController: UIViewController {
         let searchBar = SearchBar(frame: frame, insets: insets, cornerRadius: 10)
         searchBar.text.observe(on: MainScheduler.instance)
                                 .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
-                                .subscribe(onNext: { [weak self] text in
-                                    self?.viewModel.process(action: .searchAnnotations(text))
+                                .subscribe(with: self, onNext: { `self`, text in
+                                    self.viewModel.process(action: .searchAnnotations(text))
                                 })
                                 .disposed(by: self.disposeBag)
         self.tableView.tableHeaderView = searchBar
@@ -472,9 +471,9 @@ final class AnnotationsViewController: UIViewController {
         NotificationCenter.default
                           .keyboardWillShow
                           .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
+                          .subscribe(with: self, onNext: { `self`, notification in
                               if let data = notification.keyboardData {
-                                  self?.setupTableView(with: data)
+                                  self.setupTableView(with: data)
                               }
                           })
                           .disposed(by: self.disposeBag)
@@ -482,9 +481,9 @@ final class AnnotationsViewController: UIViewController {
         NotificationCenter.default
                           .keyboardWillHide
                           .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
+                          .subscribe(with: self, onNext: { `self`, notification in
                               if let data = notification.keyboardData {
-                                  self?.setupTableView(with: data)
+                                  self.setupTableView(with: data)
                               }
                           })
                           .disposed(by: self.disposeBag)
@@ -510,8 +509,8 @@ final class AnnotationsViewController: UIViewController {
             let merge = UIBarButtonItem(title: L10n.Pdf.AnnotationsSidebar.merge, style: .plain, target: nil, action: nil)
             merge.isEnabled = mergingEnabled
             merge.rx.tap
-                 .subscribe(onNext: { [weak self] _ in
-                     guard let `self` = self, self.viewModel.state.sidebarEditingEnabled else { return }
+                .subscribe(with: self, onNext: { `self`, _ in
+                     guard self.viewModel.state.sidebarEditingEnabled else { return }
                      self.viewModel.process(action: .mergeSelectedAnnotations)
                  })
                  .disposed(by: self.disposeBag)
@@ -521,8 +520,8 @@ final class AnnotationsViewController: UIViewController {
             let delete = UIBarButtonItem(title: L10n.delete, style: .plain, target: nil, action: nil)
             delete.isEnabled = deletionEnabled
             delete.rx.tap
-                  .subscribe(onNext: { [weak self] _ in
-                      guard let `self` = self, self.viewModel.state.sidebarEditingEnabled else { return }
+                  .subscribe(with: self, onNext: { `self`, _ in
+                      guard self.viewModel.state.sidebarEditingEnabled else { return }
                       self.viewModel.process(action: .removeSelectedAnnotations)
                   })
                   .disposed(by: self.disposeBag)
@@ -535,8 +534,7 @@ final class AnnotationsViewController: UIViewController {
             let filterImageName = filterOn ? "line.horizontal.3.decrease.circle.fill" : "line.horizontal.3.decrease.circle"
             let filter = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
             filter.rx.tap
-                  .subscribe(onNext: { [weak self] _ in
-                      guard let `self` = self else { return }
+                .subscribe(with: self, onNext: { `self`, _ in
                       self.showFilterPopup(from: filter)
                   })
                   .disposed(by: self.disposeBag)
@@ -545,8 +543,8 @@ final class AnnotationsViewController: UIViewController {
 
         let select = UIBarButtonItem(title: (editingEnabled ? L10n.done : L10n.select), style: .plain, target: nil, action: nil)
         select.rx.tap
-              .subscribe(onNext: { [weak self] _ in
-                  self?.viewModel.process(action: .setSidebarEditingEnabled(!editingEnabled))
+              .subscribe(with: self, onNext: { `self`, _ in
+                  self.viewModel.process(action: .setSidebarEditingEnabled(!editingEnabled))
               })
               .disposed(by: self.disposeBag)
         items.append(select)
