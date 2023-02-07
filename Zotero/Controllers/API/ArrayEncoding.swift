@@ -9,6 +9,12 @@
 import Foundation
 
 import Alamofire
+import CocoaLumberjackSwift
+
+enum ArrayEncodingError: Error {
+    case cantCreateOutputStream
+    case cantCreateInputStream
+}
 
 /// Extenstion that allows an array be sent as a request parameters
 extension Array {
@@ -38,19 +44,41 @@ struct ArrayEncoding: ParameterEncoding {
     public func encode(_ urlRequest: URLRequestConvertible, with parameters: Parameters?) throws -> URLRequest {
         var urlRequest = try urlRequest.asURLRequest()
 
-        guard let array = parameters?[ArrayEncoding.arrayParametersKey] else { return urlRequest }
+        guard let parameters = parameters else { return urlRequest }
 
-        do {
-            let data = try JSONSerialization.data(withJSONObject: array, options: self.options)
+        guard JSONSerialization.isValidJSONObject(parameters) else {
+            throw AFError.parameterEncodingFailed(reason: .jsonEncodingFailed(error: JSONEncoding.Error.invalidJSONObject))
+        }
 
-            if urlRequest.value(forHTTPHeaderField: "Content-Type") == nil {
-                urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            }
+        guard let array = parameters[ArrayEncoding.arrayParametersKey] else { return urlRequest }
 
-            urlRequest.httpBody = data
-        } catch {
+        let tmpPath = NSTemporaryDirectory() + UUID().uuidString + ".json"
+
+        guard let outputStream = OutputStream(toFileAtPath: tmpPath, append: false) else {
+            throw AFError.parameterEncodingFailed(reason: .jsonEncodingFailed(error: ArrayEncodingError.cantCreateOutputStream))
+        }
+
+        outputStream.open()
+
+        var error: NSError?
+        JSONSerialization.writeJSONObject(array, to: outputStream, options: self.options, error: &error)
+
+        outputStream.close()
+
+        if let error = error {
+            DDLogError("ArrayEncoding: serialization error - \(error)")
             throw AFError.parameterEncodingFailed(reason: .jsonEncodingFailed(error: error))
         }
+
+        guard let inputStream = InputStream(fileAtPath: tmpPath) else {
+            throw AFError.parameterEncodingFailed(reason: .jsonEncodingFailed(error: ArrayEncodingError.cantCreateInputStream))
+        }
+
+        if urlRequest.value(forHTTPHeaderField: "Content-Type") == nil {
+            urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
+
+        urlRequest.httpBodyStream = inputStream
 
         return urlRequest
     }
