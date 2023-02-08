@@ -150,7 +150,7 @@ class AnnotationToolbarViewController: UIViewController {
         let pickerToAdditionalOffset = isHorizontal ? self.colorPickerToAdditionalHorizontal.constant : self.colorPickerToAdditionalVertical.constant
         let additionalOffset = isHorizontal ? self.additionalTrailing.constant : self.additionalBottom.constant
         let remainingSize = maxAvailableSize - stackViewOffset - containerToPickerOffset - pickerSize - pickerToAdditionalOffset - additionalSize - additionalOffset
-        let count = min(Int(floor(remainingSize / buttonSize)), self.tools.count)
+        let count = max(0, min(Int(floor(remainingSize / buttonSize)), self.tools.count))
 
         for idx in 0..<count {
             guard idx < (count - 1) || count == self.tools.count else { continue }
