@@ -28,12 +28,12 @@ struct AnnotationToolOptions: OptionSet {
 
 protocol AnnotationToolbarDelegate: AnyObject {
     var rotation: AnnotationToolbarViewController.Rotation { get }
-    var isCompactSize: Bool { get }
     var activeAnnotationTool: PSPDFKit.Annotation.Tool? { get }
     var canUndo: Bool { get }
     var canRedo: Bool { get }
     var maxAvailableToolbarSize: CGFloat { get }
 
+    func isCompactSize(for rotation: AnnotationToolbarViewController.Rotation) -> Bool
     func toggle(tool: PSPDFKit.Annotation.Tool, options: AnnotationToolOptions)
     func showToolOptions(sender: UIButton)
     func closeAnnotationToolbar()
@@ -114,7 +114,8 @@ class AnnotationToolbarViewController: UIViewController {
 
         self.setupViews()
         if let delegate = self.delegate {
-            self.set(rotation: delegate.rotation, isCompactSize: delegate.isCompactSize)
+            let rotation = delegate.rotation
+            self.set(rotation: rotation, isCompactSize: delegate.isCompactSize(for: rotation))
             self.view.layoutIfNeeded()
         }
     }
