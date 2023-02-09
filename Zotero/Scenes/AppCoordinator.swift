@@ -630,7 +630,7 @@ extension AppCoordinator: AppLoginCoordinatorDelegate {
 extension AppCoordinator: CrashReporterCoordinator {
     func report(id: String, completion: @escaping () -> Void) {
         var actions = [UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in completion() }),
-                       UIAlertAction(title: L10n.copy, style: .default, handler: { _ in
+                       UIAlertAction(title: L10n.Settings.CrashAlert.copyId, style: .default, handler: { _ in
                           UIPasteboard.general.string = id
                           completion()
                        })]

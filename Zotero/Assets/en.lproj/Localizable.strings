@@ -302,8 +302,9 @@
 "settings.log_alert.title" = "Logs Sent";
 "settings.log_alert.message" = "Your Debug ID is %@";
 "settings.crash_alert.title" = "Crash Log Sent";
-"settings.crash_alert.message" = "Your Report ID is %@";
-"settings.crash_alert.message_with_db" = "Your Report ID is %@. If Zotero crashes repeatedly, please tap \"Export Database\" and send exported files to support@zotero.org.";
+"settings.crash_alert.message" = "Your Report ID is %@.\n\nPlease post a message to the Zotero Forums (forums.zotero.org) with this Report ID and any steps necessary to reproduce the crash.";
+"settings.crash_alert.message_with_db" = "Your Report ID is %@.\n\nPlease post a message to the Zotero Forums (forums.zotero.org) with this Report ID and any steps necessary to reproduce the crash.\n\nIf Zotero crashes repeatedly, please tap \"Export Database\" and send exported files to support@zotero.org.";
+"settings.crash_alert.copy_id" = "Copy Report ID";
 "settings.crash_alert.export_db" = "Copy and Export Database";
 "settings.websocket_title" = "Server Connection";
 "settings.websocket_connected" = "Connected";
