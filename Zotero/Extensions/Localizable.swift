@@ -1046,7 +1046,7 @@ internal enum L10n {
       internal static func message(_ p1: Any) -> String {
         return L10n.tr("Localizable", "settings.crash_alert.message", String(describing: p1))
       }
-      /// Your Report ID is %@.\n\nPlease post a message to the Zotero Forums (forums.zotero.org) with this Report ID, a description of the problem, and any steps necessary to reproduce it.\n\nIf Zotero crashes repeatedly, please tap "Export Database" and send exported files to support@zotero.org.
+      /// Your Report ID is %@.\n\nPlease post a message to the Zotero Forums (forums.zotero.org) with this Report ID and any steps necessary to reproduce the crash.\n\nIf Zotero crashes repeatedly, please tap "Export Database" and send exported files to support@zotero.org.
       internal static func messageWithDb(_ p1: Any) -> String {
         return L10n.tr("Localizable", "settings.crash_alert.message_with_db", String(describing: p1))
       }
