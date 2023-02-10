@@ -76,7 +76,10 @@ final class WebViewHandler: NSObject {
             return Single.error(Error.webViewMissing)
         }
         let request = URLRequest(url: webUrl)
-        webView.load(request)
+        // Share extension started crashing when `load()` was called immediately, a little delay fixed the crash (##616)
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
+            webView.load(request)
+        }
         return self.createWebLoadedSingle()
     }
 
