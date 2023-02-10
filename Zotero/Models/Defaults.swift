@@ -166,9 +166,9 @@ final class Defaults {
         self.itemsSortType = .default
         self.exportOutputMethod = .copy
         self.exportOutputMode = .bibliography
-        self.activeLineWidth = 1
 
         #if PDFENABLED
+        self.activeLineWidth = 1
         self.inkColorHex = AnnotationsConfig.defaultActiveColor
         self.squareColorHex = AnnotationsConfig.defaultActiveColor
         self.noteColorHex = AnnotationsConfig.defaultActiveColor
