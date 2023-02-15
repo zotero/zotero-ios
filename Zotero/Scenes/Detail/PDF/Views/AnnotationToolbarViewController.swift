@@ -59,6 +59,7 @@ class AnnotationToolbarViewController: UIViewController {
     }
 
     static let size: CGFloat = 52
+    static let fullVerticalHeight: CGFloat = 522
     private static let toolsToAdditionalFullOffset: CGFloat = 70
     private static let toolsToAdditionalCompactOffset: CGFloat = 20
     private let disposeBag: DisposeBag
@@ -84,6 +85,7 @@ class AnnotationToolbarViewController: UIViewController {
     private var containerTrailing: NSLayoutConstraint!
     private var containerToPickerVertical: NSLayoutConstraint!
     private var containerToPickerHorizontal: NSLayoutConstraint!
+    private var hairlineView: UIView!
     private var tools: [Tool]
     weak var delegate: AnnotationToolbarDelegate?
     private var lastGestureRecognizerTouch: UITouch?
@@ -202,7 +204,7 @@ class AnnotationToolbarViewController: UIViewController {
     }
 
     func set(rotation: Rotation, isCompactSize: Bool) {
-        self.view.layer.cornerRadius = 8
+        self.view.layer.cornerRadius = rotation == .vertical ? 8 : 0
         self.view.layer.masksToBounds = false
 
         switch rotation {
@@ -242,6 +244,7 @@ class AnnotationToolbarViewController: UIViewController {
         self.colorPickerTrailing.constant = 8
         self.containerToPickerVertical.constant = isCompactSize ? AnnotationToolbarViewController.toolsToAdditionalCompactOffset : AnnotationToolbarViewController.toolsToAdditionalFullOffset
         self.colorPickerToAdditionalVertical.constant = isCompactSize ? 4 : 8
+        self.hairlineView.isHidden = true
     }
 
     private func setHorizontalLayout(isCompactSize: Bool) {
@@ -269,6 +272,7 @@ class AnnotationToolbarViewController: UIViewController {
         self.colorPickerToAdditionalHorizontal.constant = isCompactSize ? 4 : 8
         self.colorPickerBottom.constant = 8
         self.colorPickerTop.constant = 8
+        self.hairlineView.isHidden = false
     }
 
     func updateAdditionalButtons() {
@@ -438,6 +442,12 @@ class AnnotationToolbarViewController: UIViewController {
         additionalStackView.translatesAutoresizingMaskIntoConstraints = false
         self.view.addSubview(additionalStackView)
 
+        let hairline = UIView()
+        hairline.translatesAutoresizingMaskIntoConstraints = false
+        hairline.backgroundColor = UIColor.separator
+        self.view.addSubview(hairline)
+        self.hairlineView = hairline
+
         self.containerBottom = self.view.bottomAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 8)
         self.containerTrailing = self.view.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 8)
         self.additionalTop = additionalStackView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: 8)
@@ -456,10 +466,13 @@ class AnnotationToolbarViewController: UIViewController {
         let containerLeading = stackView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 15)
         let additionalBottom = self.view.bottomAnchor.constraint(equalTo: additionalStackView.bottomAnchor, constant: 8)
         let additionalTrailing = self.view.trailingAnchor.constraint(equalTo: additionalStackView.trailingAnchor, constant: 8)
+        let hairlineHeight = hairline.heightAnchor.constraint(equalToConstant: 1/UIScreen.main.scale)
+        let hairlineLeading = hairline.leadingAnchor.constraint(equalTo: self.view.leadingAnchor)
+        let hairlineTrailing = hairline.trailingAnchor.constraint(equalTo: self.view.trailingAnchor)
+        let hairlineBottom = hairline.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
 
-
-        NSLayoutConstraint.activate([containerTop, containerLeading, self.containerTrailing, self.containerToPickerVertical, self.colorPickerLeading, self.colorPickerTrailing,
-                                     self.colorPickerToAdditionalVertical, additionalBottom, additionalTrailing, self.additionalLeading])
+        NSLayoutConstraint.activate([containerTop, containerLeading, self.containerTrailing, self.containerToPickerVertical, self.colorPickerLeading, self.colorPickerTrailing, additionalBottom,
+                                     self.colorPickerToAdditionalVertical, additionalTrailing, self.additionalLeading, hairlineHeight, hairlineLeading, hairlineTrailing, hairlineBottom])
 
         self.containerTop = containerTop
         self.containerLeading = containerLeading
