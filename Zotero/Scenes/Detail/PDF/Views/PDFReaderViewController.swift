@@ -94,6 +94,7 @@ class PDFReaderViewController: UIViewController {
     private var toolbarInitialFrame: CGRect?
     private(set) var isCurrentlyVisible: Bool
     private var previousTraitCollection: UITraitCollection?
+    private var statusBarVisible: Bool
     var isSidebarVisible: Bool { return self.sidebarControllerLeft?.constant == 0 }
     var key: String { return self.viewModel.state.key }
 
@@ -177,6 +178,7 @@ class PDFReaderViewController: UIViewController {
         self.isCompactWidth = compactSize
         self.isCurrentlyVisible = false
         self.disposeBag = DisposeBag()
+        self.statusBarVisible = true
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -254,6 +256,10 @@ class PDFReaderViewController: UIViewController {
                 self.annotationToolbarController.sizeDidChange()
             }
         }, completion: nil)
+    }
+
+    override var prefersStatusBarHidden: Bool {
+        return !self.statusBarVisible
     }
 
     // MARK: - Actions
@@ -1042,7 +1048,9 @@ extension PDFReaderViewController: PDFDocumentDelegate {
 
     func interfaceVisibilityDidChange(to isHidden: Bool) {
         self.navigationController?.setNavigationBarHidden(isHidden, animated: true)
+        self.statusBarVisible = !isHidden
         UIView.animate(withDuration: 0.15) {
+            self.setNeedsStatusBarAppearanceUpdate()
             self.view.layoutIfNeeded()
         }
     }
