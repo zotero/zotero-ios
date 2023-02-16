@@ -68,7 +68,9 @@ class PDFReaderViewController: UIViewController {
     private weak var documentController: PDFDocumentViewController!
     private weak var documentControllerLeft: NSLayoutConstraint!
     private weak var annotationToolbarController: AnnotationToolbarViewController!
+    private var documentTop: NSLayoutConstraint!
     private weak var toolbarTop: NSLayoutConstraint!
+    private var toolbarToDocument: NSLayoutConstraint!
     private var toolbarLeading: NSLayoutConstraint!
     private var toolbarLeadingSafeArea: NSLayoutConstraint!
     private var toolbarCenteredLeading: NSLayoutConstraint!
@@ -611,6 +613,7 @@ class PDFReaderViewController: UIViewController {
     private func setFullConstraints(for position: ToolbarState.Position) {
         switch position {
         case .leading:
+            self.toolbarToDocument.isActive = false
             self.toolbarCenteredTrailing.isActive = false
             self.toolbarCenteredLeading.isActive = false
             self.toolbarCenter.isActive = false
@@ -627,16 +630,19 @@ class PDFReaderViewController: UIViewController {
             self.toolbarLeading.isActive = true
             self.toolbarLeading.constant = PDFReaderViewController.toolbarFullInsetInset
             self.toolbarLeadingSafeArea.isActive = true
+            self.documentTop.isActive = true
             self.toolbarTop.constant = PDFReaderViewController.toolbarFullInsetInset
             self.annotationToolbarController.set(rotation: .vertical, isCompactSize: false)
 
         case .trailing:
+            self.toolbarToDocument.isActive = false
             self.toolbarCenteredTrailing.isActive = false
             self.toolbarCenteredLeading.isActive = false
             self.toolbarCenter.isActive = false
             self.toolbarLeading.isActive = false
             self.toolbarLeadingSafeArea.isActive = false
             self.toolbarTrailing.isActive = true
+            self.documentTop.isActive = true
             self.toolbarTrailing.constant = PDFReaderViewController.toolbarFullInsetInset
             self.toolbarTop.constant = PDFReaderViewController.toolbarFullInsetInset
             self.annotationToolbarController.set(rotation: .vertical, isCompactSize: false)
@@ -649,6 +655,7 @@ class PDFReaderViewController: UIViewController {
     private func setCompactConstraints(for position: ToolbarState.Position) {
         switch position {
         case .leading:
+            self.toolbarToDocument.isActive = false
             self.toolbarCenteredTrailing.isActive = false
             self.toolbarCenteredLeading.isActive = false
             self.toolbarCenter.isActive = false
@@ -662,15 +669,18 @@ class PDFReaderViewController: UIViewController {
                 self.toolbarLeadingSafeArea.isActive = true
                 self.toolbarLeadingSafeArea.constant = PDFReaderViewController.toolbarCompactInset
             }
+            self.documentTop.isActive = true
             self.toolbarTop.constant = PDFReaderViewController.toolbarCompactInset
             self.annotationToolbarController.set(rotation: .vertical, isCompactSize: true)
 
         case .trailing:
+            self.toolbarToDocument.isActive = false
             self.toolbarCenteredTrailing.isActive = false
             self.toolbarCenteredLeading.isActive = false
             self.toolbarCenter.isActive = false
             self.toolbarLeading.isActive = false
             self.toolbarLeadingSafeArea.isActive = false
+            self.documentTop.isActive = true
             self.toolbarTrailing.isActive = true
             self.toolbarTrailing.constant = PDFReaderViewController.toolbarCompactInset
             self.toolbarTop.constant = PDFReaderViewController.toolbarCompactInset
@@ -682,6 +692,7 @@ class PDFReaderViewController: UIViewController {
     }
 
     private func setupTopConstraints(isCompact: Bool) {
+        self.documentTop.isActive = false
         self.toolbarCenteredTrailing.isActive = false
         self.toolbarCenteredLeading.isActive = false
         self.toolbarCenter.isActive = false
@@ -689,6 +700,7 @@ class PDFReaderViewController: UIViewController {
         self.toolbarTrailing.isActive = true
         self.toolbarTrailing.constant = 0
         self.toolbarLeading.isActive = true
+        self.toolbarToDocument.isActive = true
         self.toolbarLeading.constant = 0
         self.toolbarTop.constant = 0
         self.annotationToolbarController.set(rotation: .horizontal, isCompactSize: isCompact)
@@ -828,6 +840,8 @@ class PDFReaderViewController: UIViewController {
 
         let documentLeftConstraint = documentController.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor)
         let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: -PDFReaderLayout.sidebarWidth)
+        self.documentTop = documentController.view.topAnchor.constraint(equalTo: self.view.topAnchor)
+        self.toolbarToDocument = annotationToolbar.view.bottomAnchor.constraint(equalTo: documentController.view.topAnchor)
         self.toolbarLeading = annotationToolbar.view.leadingAnchor.constraint(equalTo: sidebarController.view.trailingAnchor, constant: PDFReaderViewController.toolbarFullInsetInset)
         self.toolbarLeading.priority = .init(999)
         self.toolbarCenteredLeading = annotationToolbar.view.leadingAnchor.constraint(greaterThanOrEqualTo: sidebarController.view.trailingAnchor, constant: PDFReaderViewController.toolbarFullInsetInset)
@@ -863,7 +877,7 @@ class PDFReaderViewController: UIViewController {
             separator.topAnchor.constraint(equalTo: self.view.topAnchor),
             separator.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
             documentController.view.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
-            documentController.view.topAnchor.constraint(equalTo: self.view.topAnchor),
+            self.documentTop,
             documentController.view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
             documentLeftConstraint,
             toolbarTop,
