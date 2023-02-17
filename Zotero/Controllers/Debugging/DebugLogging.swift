@@ -253,7 +253,7 @@ final class DebugLogging {
             let targetName = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? ""
             logger.logFormatter = DebugLogFormatter(targetName: targetName)
             logger.doNotReuseLogFiles = true
-            logger.maximumFileSize = 100 * 1024 * 1024 // 100mb
+            logger.maximumFileSize = 1024 * 1024 * 1024 // 1gb
 
             DDLog.add(logger)
             self.logger = logger

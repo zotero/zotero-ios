@@ -38,6 +38,24 @@ struct DebuggingView: View {
                 }
             }
 
+            if self.viewModel.state.isLogging {
+                Section {
+                    Button(action: {
+
+                    }) {
+                        Text("View Output").foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
+                    }
+
+                    Button(action: {
+
+                    }) {
+                        Text("Clear Output").foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
+                    }
+
+                    Text("\(self.viewModel.state.numberOfLines) lines logged")
+                }
+            }
+
             Section {
                 Button {
                     self.viewModel.process(action: .exportDb)

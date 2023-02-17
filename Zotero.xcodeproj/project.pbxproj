@@ -365,6 +365,7 @@
 		B319D6B8265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B319D6B7265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift */; };
 		B31A5E51286308960026589F /* LookupIdentifierCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31A5E4F286308960026589F /* LookupIdentifierCell.swift */; };
 		B31A5E52286308960026589F /* LookupIdentifierCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B31A5E50286308960026589F /* LookupIdentifierCell.xib */; };
+		B31CA56A298AA9B5003A6C88 /* FileMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31CA569298AA9B5003A6C88 /* FileMonitor.swift */; };
 		B31CC57B286468780055C114 /* ManualLookupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31CC57A286468780055C114 /* ManualLookupViewController.swift */; };
 		B31CC57D286468C80055C114 /* ManualLookupViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B31CC57C286468C80055C114 /* ManualLookupViewController.xib */; };
 		B31CC57F28646D8E0055C114 /* ManualLookupAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31CC57E28646D8E0055C114 /* ManualLookupAction.swift */; };
@@ -1361,6 +1362,7 @@
 		B319D6B7265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllDownloadedAndForUploadItemsDbRequest.swift; sourceTree = "<group>"; };
 		B31A5E4F286308960026589F /* LookupIdentifierCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupIdentifierCell.swift; sourceTree = "<group>"; };
 		B31A5E50286308960026589F /* LookupIdentifierCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LookupIdentifierCell.xib; sourceTree = "<group>"; };
+		B31CA569298AA9B5003A6C88 /* FileMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileMonitor.swift; sourceTree = "<group>"; };
 		B31CC57A286468780055C114 /* ManualLookupViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualLookupViewController.swift; sourceTree = "<group>"; };
 		B31CC57C286468C80055C114 /* ManualLookupViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ManualLookupViewController.xib; sourceTree = "<group>"; };
 		B31CC57E28646D8E0055C114 /* ManualLookupAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualLookupAction.swift; sourceTree = "<group>"; };
@@ -2044,6 +2046,7 @@
 				B3BC25CC247E6BA000AC27B5 /* DateParser.swift */,
 				B305647F23FC051E003304F2 /* DragDropController.swift */,
 				B3D3FCA8267762EC008E243A /* ExportLocaleReader.swift */,
+				B31CA569298AA9B5003A6C88 /* FileMonitor.swift */,
 				B305648123FC051E003304F2 /* Formatter.swift */,
 				B367330C24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift */,
 				B307A2722704A87D005986B3 /* IdleTimerController.swift */,
@@ -4781,6 +4784,7 @@
 				B35EDECB263ADD0C003574AC /* TextPreviewViewController.swift in Sources */,
 				B30566A623FC051F003304F2 /* Files.swift in Sources */,
 				B30BE129297AADAF000AED6A /* AnnotationToolOptionsState.swift in Sources */,
+				B31CA56A298AA9B5003A6C88 /* FileMonitor.swift in Sources */,
 				B35DC8E5261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.swift in Sources */,
 				B325EE4D27B28AC7002143AA /* ExpandableCollectionsCollectionViewHandler.swift in Sources */,
 				B305661F23FC051E003304F2 /* SubmitUpdateSyncAction.swift in Sources */,

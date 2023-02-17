@@ -8,11 +8,17 @@
 
 import Foundation
 
+import RxSwift
+
 struct DebuggingState: ViewModelState {
     var isLogging: Bool
+    var fileMonitor: FileMonitor?
+    var numberOfLines: Int
+    var disposeBag: DisposeBag?
 
     init(isLogging: Bool) {
         self.isLogging = isLogging
+        self.numberOfLines = 0
     }
 
     func cleanup() {}

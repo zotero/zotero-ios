@@ -13,4 +13,5 @@ enum DebuggingAction {
     case startLoggingOnNextLaunch
     case stopLogging
     case exportDb
+    case loadNumberOfLines
 }
