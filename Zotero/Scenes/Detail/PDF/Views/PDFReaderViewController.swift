@@ -196,6 +196,7 @@ class PDFReaderViewController: UIViewController {
         self.view.backgroundColor = .systemGray6
         self.setupViews()
         self.setConstraints(for: self.toolbarState.position)
+        self.setDocumentTopConstraint(for: self.toolbarState.position)
         if self.toolbarState.visible {
             self.showAnnotationToolbar(at: self.toolbarState.position, animated: false)
         } else {
@@ -254,6 +255,7 @@ class PDFReaderViewController: UIViewController {
                 self.annotationToolbarController.prepareForSizeChange()
                 self.annotationToolbarController.updateAdditionalButtons()
                 self.setConstraints(for: self.toolbarState.position)
+                self.setDocumentTopConstraint(for: self.toolbarState.position)
                 self.view.layoutIfNeeded()
                 self.annotationToolbarController.sizeDidChange()
             }
@@ -591,6 +593,7 @@ class PDFReaderViewController: UIViewController {
 
                     self.annotationToolbarController.prepareForSizeChange()
                     self.setConstraints(for: newPosition)
+                    self.setDocumentTopConstraint(for: newPosition)
                     self.view.layoutIfNeeded()
                     self.annotationToolbarController.sizeDidChange()
 
@@ -610,10 +613,20 @@ class PDFReaderViewController: UIViewController {
         }
     }
 
+    private func setDocumentTopConstraint(for position: ToolbarState.Position) {
+        switch position {
+        case .top:
+            self.documentTop.isActive = false
+            self.toolbarToDocument.isActive = true
+        case .trailing, .leading:
+            self.toolbarToDocument.isActive = false
+            self.documentTop.isActive = true
+        }
+    }
+
     private func setFullConstraints(for position: ToolbarState.Position) {
         switch position {
         case .leading:
-            self.toolbarToDocument.isActive = false
             self.toolbarCenteredTrailing.isActive = false
             self.toolbarCenteredLeading.isActive = false
             self.toolbarCenter.isActive = false
@@ -630,19 +643,16 @@ class PDFReaderViewController: UIViewController {
             self.toolbarLeading.isActive = true
             self.toolbarLeading.constant = PDFReaderViewController.toolbarFullInsetInset
             self.toolbarLeadingSafeArea.isActive = true
-            self.documentTop.isActive = true
             self.toolbarTop.constant = PDFReaderViewController.toolbarFullInsetInset
             self.annotationToolbarController.set(rotation: .vertical, isCompactSize: false)
 
         case .trailing:
-            self.toolbarToDocument.isActive = false
             self.toolbarCenteredTrailing.isActive = false
             self.toolbarCenteredLeading.isActive = false
             self.toolbarCenter.isActive = false
             self.toolbarLeading.isActive = false
             self.toolbarLeadingSafeArea.isActive = false
             self.toolbarTrailing.isActive = true
-            self.documentTop.isActive = true
             self.toolbarTrailing.constant = PDFReaderViewController.toolbarFullInsetInset
             self.toolbarTop.constant = PDFReaderViewController.toolbarFullInsetInset
             self.annotationToolbarController.set(rotation: .vertical, isCompactSize: false)
@@ -655,7 +665,6 @@ class PDFReaderViewController: UIViewController {
     private func setCompactConstraints(for position: ToolbarState.Position) {
         switch position {
         case .leading:
-            self.toolbarToDocument.isActive = false
             self.toolbarCenteredTrailing.isActive = false
             self.toolbarCenteredLeading.isActive = false
             self.toolbarCenter.isActive = false
@@ -669,18 +678,15 @@ class PDFReaderViewController: UIViewController {
                 self.toolbarLeadingSafeArea.isActive = true
                 self.toolbarLeadingSafeArea.constant = PDFReaderViewController.toolbarCompactInset
             }
-            self.documentTop.isActive = true
             self.toolbarTop.constant = PDFReaderViewController.toolbarCompactInset
             self.annotationToolbarController.set(rotation: .vertical, isCompactSize: true)
 
         case .trailing:
-            self.toolbarToDocument.isActive = false
             self.toolbarCenteredTrailing.isActive = false
             self.toolbarCenteredLeading.isActive = false
             self.toolbarCenter.isActive = false
             self.toolbarLeading.isActive = false
             self.toolbarLeadingSafeArea.isActive = false
-            self.documentTop.isActive = true
             self.toolbarTrailing.isActive = true
             self.toolbarTrailing.constant = PDFReaderViewController.toolbarCompactInset
             self.toolbarTop.constant = PDFReaderViewController.toolbarCompactInset
@@ -692,7 +698,6 @@ class PDFReaderViewController: UIViewController {
     }
 
     private func setupTopConstraints(isCompact: Bool) {
-        self.documentTop.isActive = false
         self.toolbarCenteredTrailing.isActive = false
         self.toolbarCenteredLeading.isActive = false
         self.toolbarCenter.isActive = false
@@ -700,7 +705,6 @@ class PDFReaderViewController: UIViewController {
         self.toolbarTrailing.isActive = true
         self.toolbarTrailing.constant = 0
         self.toolbarLeading.isActive = true
-        self.toolbarToDocument.isActive = true
         self.toolbarLeading.constant = 0
         self.toolbarTop.constant = 0
         self.annotationToolbarController.set(rotation: .horizontal, isCompactSize: isCompact)
@@ -712,6 +716,7 @@ class PDFReaderViewController: UIViewController {
         self.annotationToolbarController.view.isHidden = false
         self.view.layoutIfNeeded()
         self.annotationToolbarController.sizeDidChange()
+        self.setDocumentTopConstraint(for: position)
 
         if self.annotationToolbarController.view.frame.width < PDFReaderViewController.minToolbarWidth && self.isSidebarVisible {
             self.toggleSidebar(animated: animated)
@@ -719,15 +724,22 @@ class PDFReaderViewController: UIViewController {
 
         if !animated {
             self.annotationToolbarController.view.alpha = 1
+            self.view.layoutIfNeeded()
             return
         }
 
         UIView.animate(withDuration: 0.2, animations: {
             self.annotationToolbarController.view.alpha = 1
+            self.view.layoutIfNeeded()
         })
     }
 
     private func hideAnnotationToolbar(animated: Bool) {
+        if self.toolbarToDocument.isActive {
+            self.toolbarToDocument.isActive = false
+            self.documentTop.isActive = true
+        }
+
         if !animated {
             self.view.layoutIfNeeded()
             self.annotationToolbarController.view.alpha = 0
