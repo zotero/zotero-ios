@@ -13,7 +13,9 @@ import RxSwift
 #if PDFENABLED
 
 class AnnotationToolOptionsViewController: UIViewController {
-    private static let width: CGFloat = 312
+    private static let width: CGFloat = 334
+    private static let circleSize: CGFloat = 44
+    private static let circleOffset: CGFloat = 8
     private static let verticalInset: CGFloat = 15
     private static let horizontalInset: CGFloat = 15
     private let viewModel: ViewModel<AnnotationToolOptionsActionHandler>
@@ -78,9 +80,12 @@ class AnnotationToolOptionsViewController: UIViewController {
 
         if state.changes.contains(.color) {
             if let colorPicker = self.colorPicker {
-                for view in colorPicker.arrangedSubviews {
-                    guard let circleView = view as? ColorPickerCircleView else { continue }
-                    circleView.isSelected = circleView.hexColor == state.colorHex
+                for rowView in colorPicker.arrangedSubviews {
+                    guard let row = rowView as? UIStackView else { continue }
+                    for view in row.arrangedSubviews {
+                        guard let circleView = view as? ColorPickerCircleView else { continue }
+                        circleView.isSelected = circleView.hexColor == state.colorHex
+                    }
                 }
             }
             if UIDevice.current.userInterfaceIdiom == .pad {
@@ -98,30 +103,60 @@ class AnnotationToolOptionsViewController: UIViewController {
 
     // MARK: - Setup
 
+    private var idealNumberOfColumns: Int {
+        switch UIDevice.current.userInterfaceIdiom {
+        case .pad:
+            return 6
+        default:
+            // Calculate number of circles which fit in whole screen width
+            return Int((UIScreen.main.bounds.width - (2 * AnnotationToolOptionsViewController.horizontalInset)) / (AnnotationToolOptionsViewController.circleSize + AnnotationToolOptionsViewController.circleOffset))
+        }
+    }
+
     private func setupView() {
         var subviews: [UIView] = []
 
         if let color = self.viewModel.state.colorHex {
-            var colorViews: [UIView] = AnnotationsConfig.colors.enumerated().map { idx, hexColor in
-                let circleView = ColorPickerCircleView(hexColor: hexColor)
-                circleView.backgroundColor = .clear
-                circleView.circleSize = CGSize(width: 40, height: 40)
-                circleView.selectionLineWidth = 3
-                circleView.selectionInset = UIEdgeInsets(top: 4, left: 4, bottom: 4, right: 4)
-                circleView.contentInsets = idx == (AnnotationsConfig.colors.count - 1) ? UIEdgeInsets() : UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 8)
-                circleView.isSelected = hexColor == color
-                circleView.backgroundColor = Asset.Colors.defaultCellBackground.color
-                circleView.isAccessibilityElement = true
-                circleView.tap.subscribe(with: self, onNext: { `self`, hex in self.viewModel.process(action: .setColorHex(hex)) }).disposed(by: self.disposeBag)
-                return circleView
+            let columns = self.idealNumberOfColumns
+            let rows = Int(ceil(Float(AnnotationsConfig.colors.count) / Float(columns)))
+            var colorRows: [UIStackView] = []
+
+            for idx in 0..<rows {
+                let offset = idx * columns
+                var colorViews: [UIView] = []
+
+                for idy in 0..<columns {
+                    let id = offset + idy
+                    if id >= AnnotationsConfig.colors.count {
+                        break
+                    }
+
+                    let hexColor = AnnotationsConfig.colors[id]
+                    let circleView = ColorPickerCircleView(hexColor: hexColor)
+                    circleView.backgroundColor = .clear
+                    circleView.circleSize = CGSize(width: AnnotationToolOptionsViewController.circleSize, height: AnnotationToolOptionsViewController.circleSize)
+                    circleView.selectionLineWidth = 3
+                    circleView.selectionInset = UIEdgeInsets(top: 4, left: 4, bottom: 4, right: 4)
+                    circleView.isSelected = hexColor == color
+                    circleView.backgroundColor = Asset.Colors.defaultCellBackground.color
+                    circleView.isAccessibilityElement = true
+                    circleView.tap.subscribe(with: self, onNext: { `self`, hex in self.viewModel.process(action: .setColorHex(hex)) }).disposed(by: self.disposeBag)
+                    colorViews.append(circleView)
+                }
+
+                // Add spacer
+                colorViews.append(UIView())
+
+                let stackView = UIStackView(arrangedSubviews: colorViews)
+                stackView.spacing = AnnotationToolOptionsViewController.circleOffset
+                stackView.axis = .horizontal
+                colorRows.append(stackView)
             }
 
-            // Add spacer
-            colorViews.append(UIView())
-
-            let colorPicker = UIStackView(arrangedSubviews: colorViews)
+            let colorPicker = UIStackView(arrangedSubviews: colorRows)
             colorPicker.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
-            colorPicker.axis = .horizontal
+            colorPicker.spacing = AnnotationToolOptionsViewController.circleOffset
+            colorPicker.axis = .vertical
             subviews.append(colorPicker)
             self.colorPicker = colorPicker
         }

@@ -924,59 +924,6 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         }
     }
 
-//    func showColorPicker(selected: String?, sender: UIButton, userInterfaceStyle: UIUserInterfaceStyle, save: @escaping (String) -> Void) {
-//        let view = ColorPickerView(selected: selected, selectionAction: { [weak self] color in
-//            save(color)
-//            self?.topViewController.dismiss(animated: true, completion: nil)
-//        })
-//        let controller = DisappearActionHostingController(rootView: view)
-//
-//        if UIDevice.current.userInterfaceIdiom == .pad {
-//            controller.modalPresentationStyle = .popover
-//            controller.popoverPresentationController?.sourceView = sender
-//            controller.preferredContentSize = CGSize(width: 272, height: 60)
-//            controller.overrideUserInterfaceStyle = userInterfaceStyle
-//            self.topViewController.present(controller, animated: true, completion: nil)
-//        } else {
-//            let navigationController = UINavigationController(rootViewController: controller)
-//            navigationController.modalPresentationStyle = .formSheet
-//            navigationController.overrideUserInterfaceStyle = userInterfaceStyle
-//
-//            controller.didLoad = { [weak self] viewController in
-//                guard let `self` = self else { return }
-//
-//                let appearance = UINavigationBarAppearance()
-//                appearance.configureWithOpaqueBackground()
-//                appearance.backgroundColor = .white
-//                viewController.navigationController?.navigationBar.standardAppearance = appearance
-//                viewController.navigationController?.navigationBar.scrollEdgeAppearance = appearance
-//
-//                let doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: nil, action: nil)
-//                doneButton.rx.tap.subscribe(onNext: { [weak self] _ in
-//                    self?.topViewController.dismiss(animated: true)
-//                })
-//                .disposed(by: self.disposeBag)
-//                viewController.navigationItem.rightBarButtonItem = doneButton
-//            }
-//
-//            self.topViewController.present(navigationController, animated: true, completion: nil)
-//        }
-//    }
-//
-//    func showSliderSettings(sender: UIView, title: String, initialValue: CGFloat, valueChanged: @escaping (CGFloat) -> Void) {
-//        let controller = AnnotationSliderViewController(title: title, initialValue: initialValue, valueChanged: valueChanged)
-//
-//        if UIDevice.current.userInterfaceIdiom == .pad {
-//            controller.modalPresentationStyle = .popover
-//            controller.popoverPresentationController?.sourceView = sender
-//            self.topViewController.present(controller, animated: true, completion: nil)
-//        } else {
-//            let navigationController = UINavigationController(rootViewController: controller)
-//            navigationController.modalPresentationStyle = .formSheet
-//            self.topViewController.present(navigationController, animated: true, completion: nil)
-//        }
-//    }
-
     func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate, userInterfaceStyle: UIUserInterfaceStyle) {
         if let coordinator = self.childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
             return

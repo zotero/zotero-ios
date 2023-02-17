@@ -14,8 +14,8 @@ import PSPDFKit
 
 struct AnnotationsConfig {
     static let defaultActiveColor = "#ffd400"
-    static let colors: [String] = ["#ffd400", "#ff6666", "#5fb236", "#2ea8e5", "#a28ae5"]
-    static let colorNames: [String: String] = ["#ffd400": "yellow", "#ff6666": "red", "#5fb236": "green", "#2ea8e5": "blue", "#a28ae5": "purple"]
+    static let colors: [String] = ["#ffd400", "#ff6666", "#5fb236", "#2ea8e5", "#a28ae5", "#e56eee", "#f19837", "#aaaaaa"]
+    static let colorNames: [String: String] = ["#ffd400": "Yellow", "#ff6666": "Red", "#5fb236": "Green", "#2ea8e5": "Blue", "#a28ae5": "Purple", "#e56eee": "Magenta", "#f19837": "Orange", "#aaaaaa": "Gray"]
     // Maps different variations colors to their base color
     static let colorVariationMap: [String: String] = createColorVariationMap()
 
