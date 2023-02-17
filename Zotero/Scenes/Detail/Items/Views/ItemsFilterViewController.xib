@@ -29,7 +29,7 @@
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
                 <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="6" translatesAutoresizingMaskIntoConstraints="NO" id="viL-xZ-DgW">
-                    <rect key="frame" x="16" y="52" width="398" height="94"/>
+                    <rect key="frame" x="16" y="52" width="398" height="44"/>
                     <subviews>
                         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="puQ-L2-oHw">
                             <rect key="frame" x="0.0" y="0.0" width="398" height="44"/>
@@ -58,8 +58,8 @@
                                 <constraint firstItem="hzg-qH-YJL" firstAttribute="leading" secondItem="g5a-Dv-IoG" secondAttribute="trailing" constant="12" id="kTI-rr-gjM"/>
                             </constraints>
                         </view>
-                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="gMm-Co-uSL">
-                            <rect key="frame" x="0.0" y="50" width="398" height="44"/>
+                        <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="gMm-Co-uSL">
+                            <rect key="frame" x="0.0" y="0.0" width="398" height="44"/>
                             <subviews>
                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Aeh-oc-RBh">
                                     <rect key="frame" x="0.0" y="0.0" width="41.5" height="44"/>
