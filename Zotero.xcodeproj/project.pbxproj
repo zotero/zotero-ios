@@ -365,7 +365,6 @@
 		B319D6B8265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B319D6B7265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift */; };
 		B31A5E51286308960026589F /* LookupIdentifierCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31A5E4F286308960026589F /* LookupIdentifierCell.swift */; };
 		B31A5E52286308960026589F /* LookupIdentifierCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B31A5E50286308960026589F /* LookupIdentifierCell.xib */; };
-		B31CA56A298AA9B5003A6C88 /* FileMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31CA569298AA9B5003A6C88 /* FileMonitor.swift */; };
 		B31CC57B286468780055C114 /* ManualLookupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31CC57A286468780055C114 /* ManualLookupViewController.swift */; };
 		B31CC57D286468C80055C114 /* ManualLookupViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B31CC57C286468C80055C114 /* ManualLookupViewController.xib */; };
 		B31CC57F28646D8E0055C114 /* ManualLookupAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31CC57E28646D8E0055C114 /* ManualLookupAction.swift */; };
@@ -439,6 +438,7 @@
 		B32EBFC7276A89430003897E /* BackgroundUploaderRequestProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32EBFB8276A89190003897E /* BackgroundUploaderRequestProvider.swift */; };
 		B32EE26124A092B700442974 /* RUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32EE26024A092B700442974 /* RUser.swift */; };
 		B32EE26224A0998700442974 /* RUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32EE26024A092B700442974 /* RUser.swift */; };
+		B32F0BDA298BFCEE00C04557 /* LogsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32F0BD9298BFCEE00C04557 /* LogsViewController.swift */; };
 		B3300A4927C649E500427FA8 /* AttachmentDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3300A4827C649E500427FA8 /* AttachmentDownloader.swift */; };
 		B3300A4B27C64A0700427FA8 /* AttachmentDownloadOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3300A4A27C64A0700427FA8 /* AttachmentDownloadOperation.swift */; };
 		B330260D25DE9A1100742025 /* RPageIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = B330260C25DE9A1100742025 /* RPageIndex.swift */; };
@@ -1362,7 +1362,6 @@
 		B319D6B7265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllDownloadedAndForUploadItemsDbRequest.swift; sourceTree = "<group>"; };
 		B31A5E4F286308960026589F /* LookupIdentifierCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupIdentifierCell.swift; sourceTree = "<group>"; };
 		B31A5E50286308960026589F /* LookupIdentifierCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LookupIdentifierCell.xib; sourceTree = "<group>"; };
-		B31CA569298AA9B5003A6C88 /* FileMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileMonitor.swift; sourceTree = "<group>"; };
 		B31CC57A286468780055C114 /* ManualLookupViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualLookupViewController.swift; sourceTree = "<group>"; };
 		B31CC57C286468C80055C114 /* ManualLookupViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ManualLookupViewController.xib; sourceTree = "<group>"; };
 		B31CC57E28646D8E0055C114 /* ManualLookupAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualLookupAction.swift; sourceTree = "<group>"; };
@@ -1423,6 +1422,7 @@
 		B32EBFBA276A89190003897E /* URLSessionCreator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = URLSessionCreator.swift; sourceTree = "<group>"; };
 		B32EBFBB276A89190003897E /* BackgroundUpload.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BackgroundUpload.swift; sourceTree = "<group>"; };
 		B32EE26024A092B700442974 /* RUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RUser.swift; sourceTree = "<group>"; };
+		B32F0BD9298BFCEE00C04557 /* LogsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogsViewController.swift; sourceTree = "<group>"; };
 		B3300A4827C649E500427FA8 /* AttachmentDownloader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AttachmentDownloader.swift; sourceTree = "<group>"; };
 		B3300A4A27C64A0700427FA8 /* AttachmentDownloadOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentDownloadOperation.swift; sourceTree = "<group>"; };
 		B330260C25DE9A1100742025 /* RPageIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPageIndex.swift; sourceTree = "<group>"; };
@@ -2046,7 +2046,6 @@
 				B3BC25CC247E6BA000AC27B5 /* DateParser.swift */,
 				B305647F23FC051E003304F2 /* DragDropController.swift */,
 				B3D3FCA8267762EC008E243A /* ExportLocaleReader.swift */,
-				B31CA569298AA9B5003A6C88 /* FileMonitor.swift */,
 				B305648123FC051E003304F2 /* Formatter.swift */,
 				B367330C24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift */,
 				B307A2722704A87D005986B3 /* IdleTimerController.swift */,
@@ -3685,6 +3684,7 @@
 			isa = PBXGroup;
 			children = (
 				B3E8FE5127142C2F00F51458 /* DebuggingView.swift */,
+				B32F0BD9298BFCEE00C04557 /* LogsViewController.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -4836,6 +4836,7 @@
 				B3F3D62C255EBE3500F310C2 /* AnnotationViewHeader.swift in Sources */,
 				B3E8FE34271429C300F51458 /* ExportLocalePickerView.swift in Sources */,
 				B398142E257A649D002C755C /* HighlightEditCell.swift in Sources */,
+				B32F0BDA298BFCEE00C04557 /* LogsViewController.swift in Sources */,
 				B3BC1F60254322D200BA3388 /* ItemDetailAbstractEditCell.swift in Sources */,
 				B3422F44289A9F2400C53DD2 /* ItemDetailAttachmentContentView.swift in Sources */,
 				B30566C523FC051F003304F2 /* Tag.swift in Sources */,

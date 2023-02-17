@@ -9,19 +9,18 @@
 import Foundation
 
 import CocoaLumberjackSwift
+import RxCocoa
 import RxSwift
 
-final class DebuggingActionHandler: ViewModelActionHandler {
+struct DebuggingActionHandler: ViewModelActionHandler {
     typealias Action = DebuggingAction
     typealias State = DebuggingState
 
     private unowned let debugLogging: DebugLogging
-    private unowned let fileStorage: FileStorage
     private unowned let coordinatorDelegate: DebuggingSettingsSettingsCoordinatorDelegate
 
-    init(debugLogging: DebugLogging, fileStorage: FileStorage, coordinatorDelegate: DebuggingSettingsSettingsCoordinatorDelegate) {
+    init(debugLogging: DebugLogging, coordinatorDelegate: DebuggingSettingsSettingsCoordinatorDelegate) {
         self.debugLogging = debugLogging
-        self.fileStorage = fileStorage
         self.coordinatorDelegate = coordinatorDelegate
     }
 
@@ -29,18 +28,9 @@ final class DebuggingActionHandler: ViewModelActionHandler {
         switch action {
         case .startImmediateLogging:
             self.debugLogging.start(type: .immediate)
+            self.monitor(logLines: self.debugLogging.logLines, in: viewModel)
             self.update(viewModel: viewModel) { state in
                 state.isLogging = true
-            }
-
-            do {
-                if let url: URL = try self.fileStorage.contentsOfDirectory(at: Files.debugLogDirectory).first {
-                    try self.monitor(url: url, in: viewModel)
-                } else {
-                    // ?
-                }
-            } catch let error {
-                DDLogError("DebuggingActionHandler: can't read logging file - \(error)")
             }
 
         case .startLoggingOnNextLaunch:
@@ -51,55 +41,49 @@ final class DebuggingActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.isLogging = false
                 state.numberOfLines = 0
-                state.fileMonitor = nil
                 state.disposeBag = nil
             }
 
         case .exportDb:
             self.coordinatorDelegate.exportDb()
 
-        case .loadNumberOfLines:
+        case .monitorIfNeeded:
             guard viewModel.state.isLogging else { return }
+            self.monitor(logLines: self.debugLogging.logLines, in: viewModel)
 
-            do {
-                if let url: URL = try self.fileStorage.contentsOfDirectory(at: Files.debugLogDirectory).first {
-                    let numberOfLines = try self.readNumberOfLines(from: url)
-                    self.update(viewModel: viewModel) { state in
-                        state.numberOfLines = numberOfLines
-                    }
-                    try self.monitor(url: url, in: viewModel)
-                } else {
-                    // ?
+        case .clearLogs:
+            self.debugLogging.cancel {
+                self.update(viewModel: viewModel) { state in
+                    state.numberOfLines = 0
                 }
-            } catch let error {
-                DDLogError("DebuggingActionHandler: can't read logging file - \(error)")
+                self.debugLogging.start(type: .immediate)
+                self.monitor(logLines: self.debugLogging.logLines, in: viewModel)
+            }
+
+        case .showLogs:
+            self.coordinatorDelegate.showLogs(string: self.debugLogging.logString)
+
+        case .cancelLogging:
+            self.debugLogging.cancel()
+            self.update(viewModel: viewModel) { state in
+                state.isLogging = false
+                state.numberOfLines = 0
+                state.disposeBag = nil
             }
         }
     }
 
-    private func readNumberOfLines(from url: URL) throws -> Int {
-        let handler = try FileHandle(forReadingFrom: url)
-        guard let string = try handler.readToEnd().flatMap({ String(data: $0, encoding: .utf8) }) else { return 0 }
-        return string.components(separatedBy: .newlines).count
-    }
-
-    private func monitor(url: URL, in viewModel: ViewModel<DebuggingActionHandler>) throws {
+    private func monitor(logLines: BehaviorRelay<Int>, in viewModel: ViewModel<DebuggingActionHandler>) {
         let disposeBag = DisposeBag()
-        let monitor = try FileMonitor(url: url)
-
-        monitor.observable
-               .observe(on: MainScheduler.instance)
-               .subscribe(with: self, onNext: { [weak viewModel] `self`, data in
-                   guard let viewModel = viewModel, let string = String(data: data, encoding: .utf8) else { return }
-                   self.update(viewModel: viewModel) { state in
-                       state.numberOfLines += string.components(separatedBy: .newlines).count
-                   }
-               })
-               .disposed(by: disposeBag)
-
+        logLines.observe(on: MainScheduler.instance)
+                .subscribe(with: viewModel, onNext: { viewModel, lines in
+                    self.update(viewModel: viewModel) { state in
+                        state.numberOfLines = lines
+                    }
+                })
+                .disposed(by: disposeBag)
         self.update(viewModel: viewModel) { state in
             state.disposeBag = disposeBag
-            state.fileMonitor = monitor
         }
     }
 }

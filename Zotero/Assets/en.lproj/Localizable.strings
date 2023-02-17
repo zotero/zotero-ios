@@ -294,7 +294,12 @@
 "settings.logging_title" = "Logging";
 "settings.start_logging" = "Start Logging";
 "settings.start_logging_on_launch" = "Start Logging on Next App Launch";
+"settings.cancel_logging" = "Cancel Logging";
 "settings.stop_logging" = "Stop Logging";
+"settings.view_output" = "View Output";
+"settings.clear_output" = "Clear Output";
+"settings.lines_logged" = "%d lines logged";
+"settings.lines" = "%d lines";
 "settings.logging_desc1" = "To debug a startup issue, force-quit the app and start it again.";
 "settings.logging_desc2" = "To debug a share extension issue, open the share extension.";
 "settings.send_manually" = "Send Manually";

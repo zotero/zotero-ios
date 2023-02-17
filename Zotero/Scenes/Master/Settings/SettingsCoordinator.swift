@@ -11,6 +11,7 @@ import SafariServices
 import SwiftUI
 
 import CocoaLumberjackSwift
+import RxCocoa
 import RxSwift
 
 protocol SettingsCoordinatorDelegate: AnyObject {
@@ -47,6 +48,7 @@ protocol StorageSettingsSettingsCoordinatorDelegate: AnyObject {
 
 protocol DebuggingSettingsSettingsCoordinatorDelegate: AnyObject {
     func exportDb()
+    func showLogs(string: BehaviorRelay<String>)
 }
 
 final class SettingsCoordinator: NSObject, Coordinator {
@@ -262,9 +264,10 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
     }
 
     func showDebugging() {
-        let handler = DebuggingActionHandler(debugLogging: self.controllers.debugLogging, fileStorage: self.controllers.fileStorage, coordinatorDelegate: self)
-        let viewModel = ViewModel(initialState: DebuggingState(isLogging: self.controllers.debugLogging.isEnabled), handler: handler)
-        viewModel.process(action: .loadNumberOfLines)
+        let state = DebuggingState(isLogging: self.controllers.debugLogging.isEnabled, numberOfLines: self.controllers.debugLogging.logLines.value)
+        let handler = DebuggingActionHandler(debugLogging: self.controllers.debugLogging, coordinatorDelegate: self)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+        viewModel.process(action: .monitorIfNeeded)
         let view = DebuggingView().environmentObject(viewModel)
         self.pushDefaultSize(view: view)
     }
@@ -393,6 +396,11 @@ extension SettingsCoordinator: DebuggingSettingsSettingsCoordinatorDelegate {
         controller.modalPresentationStyle = .pageSheet
         controller.popoverPresentationController?.sourceView = self.navigationController.view
         self.navigationController.present(controller, animated: true, completion: nil)
+    }
+
+    func showLogs(string: BehaviorRelay<String>) {
+        let controller = LogsViewController(logs: self.controllers.debugLogging.logString, lines: self.controllers.debugLogging.logLines)
+        self.navigationController.pushViewController(controller, animated: true)
     }
 }
 

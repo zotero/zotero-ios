@@ -10,9 +10,15 @@ import Foundation
 
 import CocoaLumberjackSwift
 
+protocol DebugLogFormatterDelegate: AnyObject {
+    func didFormat(message: String)
+}
+
 final class DebugLogFormatter: NSObject, DDLogFormatter {
     private let targetName: String
     private var lastTimestamp: Date?
+
+    weak var delegate: DebugLogFormatterDelegate?
 
     private lazy var timeExpression: NSRegularExpression? = {
         do {
@@ -41,9 +47,9 @@ final class DebugLogFormatter: NSObject, DDLogFormatter {
         }
 
         self.lastTimestamp = logMessage.timestamp
-        return "\(level) \(self.targetName)\(formattedTimeDiff): \(message)." +
-               " [(\(logMessage.line)) \(logMessage.fileName).\(logMessage.function ?? ""); " +
-               "\(logMessage.queueLabel)]"
+        let formattedMessage =  "\(level) \(self.targetName)\(formattedTimeDiff): \(message). [(\(logMessage.line)) \(logMessage.fileName).\(logMessage.function ?? ""); \(logMessage.queueLabel)]"
+        self.delegate?.didFormat(message: formattedMessage)
+        return formattedMessage
     }
 
     private func logLevelString(from level: DDLogFlag) -> String {

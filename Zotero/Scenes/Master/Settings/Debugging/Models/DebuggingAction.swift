@@ -11,7 +11,10 @@ import Foundation
 enum DebuggingAction {
     case startImmediateLogging
     case startLoggingOnNextLaunch
+    case cancelLogging
     case stopLogging
     case exportDb
-    case loadNumberOfLines
+    case monitorIfNeeded
+    case clearLogs
+    case showLogs
 }

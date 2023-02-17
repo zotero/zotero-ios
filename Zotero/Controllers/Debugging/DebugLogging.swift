@@ -9,6 +9,7 @@
 import Foundation
 
 import CocoaLumberjackSwift
+import RxCocoa
 import RxSwift
 
 protocol DebugLoggingCoordinator: AnyObject {
@@ -63,6 +64,8 @@ final class DebugLogging {
         }
     }
     private var pendingAction: PendingCoordinatorAction?
+    private(set) var logString: BehaviorRelay<String>
+    private(set) var logLines: BehaviorRelay<Int>
 
     init(apiClient: ApiClient, fileStorage: FileStorage) {
         let queue = DispatchQueue(label: "org.zotero.DebugLogging.Queue", qos: .userInitiated)
@@ -72,6 +75,8 @@ final class DebugLogging {
         self.didStartFromLaunch = false
         self.scheduler = ConcurrentDispatchQueueScheduler(queue: queue)
         self.disposeBag = DisposeBag()
+        self.logString = BehaviorRelay(value: "")
+        self.logLines = BehaviorRelay(value: 0)
     }
 
     func start(type: LoggingType) {
@@ -88,6 +93,8 @@ final class DebugLogging {
         guard let logger = self.logger else { return }
 
         DDLog.remove(logger)
+        self.logString = BehaviorRelay(value: "")
+        self.logLines = BehaviorRelay(value: 0)
 
         logger.rollLogFile { [weak self] in
             if self?.coordinator == nil {
@@ -102,18 +109,26 @@ final class DebugLogging {
         }
     }
 
-    func cancel() {
+    func cancel(completed: (() -> Void)? = nil) {
         self.isEnabled = false
         self.didStartFromLaunch = false
 
         guard let logger = self.logger else { return }
 
         DDLog.remove(logger)
+        self.logString = BehaviorRelay(value: "")
+        self.logLines = BehaviorRelay(value: 0)
 
         logger.rollLogFile { [weak self] in
             self?.queue.async {
                 self?.clearDebugDirectory()
                 self?.logger = nil
+
+                if let completed = completed {
+                    DispatchQueue.main.async {
+                        completed()
+                    }
+                }
             }
         }
     }
@@ -248,12 +263,14 @@ final class DebugLogging {
             }
             try self.fileStorage.createDirectories(for: file)
 
+            let targetName = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? ""
+            let formatter = DebugLogFormatter(targetName: targetName)
+            formatter.delegate = self
             let manager = DDLogFileManagerDefault(logsDirectory: file.createUrl().path)
             let logger = DDFileLogger(logFileManager: manager)
-            let targetName = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? ""
-            logger.logFormatter = DebugLogFormatter(targetName: targetName)
+            logger.logFormatter = formatter
             logger.doNotReuseLogFiles = true
-            logger.maximumFileSize = 1024 * 1024 * 1024 // 1gb
+            logger.maximumFileSize = 100 * 1024 * 1024 // 100mb
 
             DDLog.add(logger)
             self.logger = logger
@@ -261,5 +278,16 @@ final class DebugLogging {
             DDLogError("DebugLogging: can't start logger - \(error)")
             self.coordinator?.show(error: .start, logs: nil, retry: nil, completed: nil)
         }
+    }
+}
+
+extension DebugLogging: DebugLogFormatterDelegate {
+    func didFormat(message: String) {
+        if self.logString.value.isEmpty {
+            self.logString.accept(message)
+        } else {
+            self.logString.accept("\(message)\n\n\(self.logString.value)")
+        }
+        self.logLines.accept(self.logLines.value + 1)
     }
 }

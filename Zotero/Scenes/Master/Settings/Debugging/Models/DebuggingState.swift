@@ -12,13 +12,12 @@ import RxSwift
 
 struct DebuggingState: ViewModelState {
     var isLogging: Bool
-    var fileMonitor: FileMonitor?
     var numberOfLines: Int
     var disposeBag: DisposeBag?
 
-    init(isLogging: Bool) {
+    init(isLogging: Bool, numberOfLines: Int) {
         self.isLogging = isLogging
-        self.numberOfLines = 0
+        self.numberOfLines = numberOfLines
     }
 
     func cleanup() {}

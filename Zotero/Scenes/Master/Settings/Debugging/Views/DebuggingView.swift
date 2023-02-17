@@ -16,6 +16,12 @@ struct DebuggingView: View {
             Section {
                 if self.viewModel.state.isLogging {
                     Button(action: {
+                        self.viewModel.process(action: .cancelLogging)
+                    }) {
+                        Text(L10n.Settings.cancelLogging).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
+                    }
+
+                    Button(action: {
                         self.viewModel.process(action: .stopLogging)
                     }) {
                         Text(L10n.Settings.stopLogging).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
@@ -41,18 +47,18 @@ struct DebuggingView: View {
             if self.viewModel.state.isLogging {
                 Section {
                     Button(action: {
-
+                        self.viewModel.process(action: .showLogs)
                     }) {
-                        Text("View Output").foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
+                        Text(L10n.Settings.viewOutput).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                     }
 
                     Button(action: {
-
+                        self.viewModel.process(action: .clearLogs)
                     }) {
-                        Text("Clear Output").foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
+                        Text(L10n.Settings.clearOutput).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                     }
 
-                    Text("\(self.viewModel.state.numberOfLines) lines logged")
+                    Text(L10n.Settings.linesLogged(self.viewModel.state.numberOfLines))
                 }
             }
 
@@ -60,7 +66,7 @@ struct DebuggingView: View {
                 Button {
                     self.viewModel.process(action: .exportDb)
                 } label: {
-                    Text(L10n.Settings.exportDb)
+                    Text(L10n.Settings.exportDb).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                 }
 
             }

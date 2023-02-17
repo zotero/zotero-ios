@@ -967,6 +967,10 @@ internal enum L10n {
   }
 
   internal enum Settings {
+    /// Cancel Logging
+    internal static let cancelLogging = L10n.tr("Localizable", "settings.cancel_logging")
+    /// Clear Output
+    internal static let clearOutput = L10n.tr("Localizable", "settings.clear_output")
     /// Debug Output Logging
     internal static let debug = L10n.tr("Localizable", "settings.debug")
     /// Export Database File
@@ -975,6 +979,14 @@ internal enum L10n {
     internal static let itemCount = L10n.tr("Localizable", "settings.item_count")
     /// Show item count for all collections.
     internal static let itemCountSubtitle = L10n.tr("Localizable", "settings.item_count_subtitle")
+    /// %d lines
+    internal static func lines(_ p1: Int) -> String {
+      return L10n.tr("Localizable", "settings.lines", p1)
+    }
+    /// %d lines logged
+    internal static func linesLogged(_ p1: Int) -> String {
+      return L10n.tr("Localizable", "settings.lines_logged", p1)
+    }
     /// To debug a startup issue, force-quit the app and start it again.
     internal static let loggingDesc1 = L10n.tr("Localizable", "settings.logging_desc1")
     /// To debug a share extension issue, open the share extension.
@@ -1013,6 +1025,8 @@ internal enum L10n {
     internal static func versionAndBuild(_ p1: Any, _ p2: Any) -> String {
       return L10n.tr("Localizable", "settings.versionAndBuild", String(describing: p1), String(describing: p2))
     }
+    /// View Output
+    internal static let viewOutput = L10n.tr("Localizable", "settings.view_output")
     /// Connect to Server
     internal static let websocketConnect = L10n.tr("Localizable", "settings.websocket_connect")
     /// Connected
