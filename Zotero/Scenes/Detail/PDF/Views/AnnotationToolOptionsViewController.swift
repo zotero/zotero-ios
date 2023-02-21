@@ -13,7 +13,7 @@ import RxSwift
 #if PDFENABLED
 
 class AnnotationToolOptionsViewController: UIViewController {
-    private static let width: CGFloat = 334
+    private static let width: CGFloat = 230
     private static let circleSize: CGFloat = 44
     private static let circleOffset: CGFloat = 8
     private static let verticalInset: CGFloat = 15
@@ -106,7 +106,7 @@ class AnnotationToolOptionsViewController: UIViewController {
     private var idealNumberOfColumns: Int {
         switch UIDevice.current.userInterfaceIdiom {
         case .pad:
-            return 6
+            return 4
         default:
             // Calculate number of circles which fit in whole screen width
             return Int((UIScreen.main.bounds.width - (2 * AnnotationToolOptionsViewController.horizontalInset)) / (AnnotationToolOptionsViewController.circleSize + AnnotationToolOptionsViewController.circleOffset))
@@ -144,8 +144,10 @@ class AnnotationToolOptionsViewController: UIViewController {
                     colorViews.append(circleView)
                 }
 
-                // Add spacer
-                colorViews.append(UIView())
+                if UIDevice.current.userInterfaceIdiom == .phone {
+                    // Add spacer
+                    colorViews.append(UIView())
+                }
 
                 let stackView = UIStackView(arrangedSubviews: colorViews)
                 stackView.spacing = AnnotationToolOptionsViewController.circleOffset
