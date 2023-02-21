@@ -242,8 +242,8 @@ class AnnotationToolbarViewController: UIViewController {
         self.containerTop.constant = 15
         self.colorPickerLeading.constant = 8
         self.colorPickerTrailing.constant = 8
-        self.containerToPickerVertical.constant = isCompactSize ? AnnotationToolbarViewController.toolsToAdditionalCompactOffset : AnnotationToolbarViewController.toolsToAdditionalFullOffset
-        self.colorPickerToAdditionalVertical.constant = isCompactSize ? 4 : 8
+        self.colorPickerToAdditionalVertical.constant = isCompactSize ? AnnotationToolbarViewController.toolsToAdditionalCompactOffset : AnnotationToolbarViewController.toolsToAdditionalFullOffset
+        self.containerToPickerVertical.constant = isCompactSize ? 4 : 8
         self.hairlineView.isHidden = true
     }
 
@@ -268,8 +268,8 @@ class AnnotationToolbarViewController: UIViewController {
         self.additionalTrailing.constant = 15
         self.containerLeading.constant = 20
         self.containerTop.constant = 8
-        self.containerToPickerHorizontal.constant = isCompactSize ? AnnotationToolbarViewController.toolsToAdditionalCompactOffset : AnnotationToolbarViewController.toolsToAdditionalFullOffset
-        self.colorPickerToAdditionalHorizontal.constant = isCompactSize ? 4 : 8
+        self.colorPickerToAdditionalHorizontal.constant = isCompactSize ? AnnotationToolbarViewController.toolsToAdditionalCompactOffset : AnnotationToolbarViewController.toolsToAdditionalFullOffset
+        self.containerToPickerHorizontal.constant = isCompactSize ? 4 : 8
         self.colorPickerBottom.constant = 8
         self.colorPickerTop.constant = 8
         self.hairlineView.isHidden = false
@@ -454,10 +454,10 @@ class AnnotationToolbarViewController: UIViewController {
         self.additionalLeading = additionalStackView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 8)
         self.containerToPickerVertical = picker.topAnchor.constraint(greaterThanOrEqualTo: stackView.bottomAnchor, constant: 0)
         self.containerToPickerVertical.priority = .required
-        self.containerToPickerHorizontal = picker.leadingAnchor.constraint(greaterThanOrEqualTo: stackView.trailingAnchor, constant: 0)
+        self.containerToPickerHorizontal = picker.leadingAnchor.constraint(equalTo: stackView.trailingAnchor)
         self.containerToPickerHorizontal.priority = .required
         self.colorPickerToAdditionalVertical = additionalStackView.topAnchor.constraint(equalTo: picker.bottomAnchor)
-        self.colorPickerToAdditionalHorizontal = additionalStackView.leadingAnchor.constraint(equalTo: picker.trailingAnchor)
+        self.colorPickerToAdditionalHorizontal = additionalStackView.leadingAnchor.constraint(greaterThanOrEqualTo: picker.trailingAnchor, constant: 0)
         self.colorPickerTop = picker.topAnchor.constraint(equalTo: self.view.topAnchor)
         self.colorPickerBottom = self.view.bottomAnchor.constraint(equalTo: picker.bottomAnchor)
         self.colorPickerLeading = picker.leadingAnchor.constraint(equalTo: self.view.leadingAnchor)
