@@ -60,6 +60,8 @@ class AnnotationToolbarViewController: UIViewController {
 
     static let size: CGFloat = 52
     static let fullVerticalHeight: CGFloat = 522
+    private static let buttonSpacing: CGFloat = UIDevice.current.userInterfaceIdiom == .phone ? 8 : 12
+    private static let buttonCompactSpacing: CGFloat = 4
     private static let toolsToAdditionalFullOffset: CGFloat = 70
     private static let toolsToAdditionalCompactOffset: CGFloat = 20
     private let disposeBag: DisposeBag
@@ -214,7 +216,7 @@ class AnnotationToolbarViewController: UIViewController {
             self.setHorizontalLayout(isCompactSize: isCompactSize)
         }
 
-        let inset: CGFloat = isCompactSize ? 4 : 8
+        let inset: CGFloat = isCompactSize ? AnnotationToolbarViewController.buttonCompactSpacing : AnnotationToolbarViewController.buttonSpacing
         self.stackView.spacing = inset
         self.additionalStackView.spacing = inset
     }
@@ -417,7 +419,7 @@ class AnnotationToolbarViewController: UIViewController {
         let stackView = UIStackView(arrangedSubviews: self.createToolButtons(from: self.tools))
         stackView.showsLargeContentViewer = true
         stackView.axis = .vertical
-        stackView.spacing = 6
+        stackView.spacing = 0
         stackView.distribution = .fill
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
