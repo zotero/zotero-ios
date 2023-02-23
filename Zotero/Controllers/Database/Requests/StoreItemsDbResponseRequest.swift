@@ -396,17 +396,32 @@ struct StoreItemDbRequest: DbResponseRequest {
     static func sync(creators: [CreatorResponse], item: RItem, schemaController: SchemaController, database: Realm) {
         database.delete(item.creators)
 
-        for object in creators.enumerated() {
-            let firstName = object.element.firstName ?? ""
-            let lastName = object.element.lastName ?? ""
-            let name = object.element.name ?? ""
+        guard let validCreators = schemaController.creators(for: item.rawType), !validCreators.isEmpty else {
+            DDLogError("StoreItemsDbResponseRequest: can't find valid creators for item type \(item.rawType). Skipping creators.")
+            return
+        }
+
+        for (idx, object) in creators.enumerated() {
+            let firstName = object.firstName ?? ""
+            let lastName = object.lastName ?? ""
+            let name = object.name ?? ""
 
             let creator = RCreator()
-            creator.rawType = object.element.creatorType
+
+            if validCreators.contains(where: { $0.creatorType == object.creatorType }) {
+                creator.rawType = object.creatorType
+            } else if let primaryCreator = validCreators.first(where: { $0.primary }) {
+                DDLogError("StoreItemsDbResponseRquest: creator type '\(object.creatorType)' isn't valid for \(item.rawType) - changing to primary creator")
+                creator.rawType = primaryCreator.creatorType
+            } else {
+                DDLogError("StoreItemsDbResponseRquest: creator type '\(object.creatorType)' isn't valid for \(item.rawType) and primary creator doesn't exist - changing to first valid creator")
+                creator.rawType = validCreators[0].creatorType
+            }
+
             creator.firstName = firstName
             creator.lastName = lastName
             creator.name = name
-            creator.orderId = object.offset
+            creator.orderId = idx
             creator.primary = schemaController.creatorIsPrimary(creator.rawType, itemType: item.rawType)
             item.creators.append(creator)
         }
