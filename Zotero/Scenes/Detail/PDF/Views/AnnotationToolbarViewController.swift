@@ -124,6 +124,15 @@ class AnnotationToolbarViewController: UIViewController {
         }
     }
 
+    // MARK: - Undo/Redo state
+
+    func didChange(undoState undoEnabled: Bool, redoState redoEnabled: Bool) {
+        self.undoButton?.isEnabled = undoEnabled
+        self.redoButton?.isEnabled = redoEnabled
+    }
+
+    // MARK: - Layout
+
     func prepareForSizeChange() {
         for (idx, view) in self.stackView.arrangedSubviews.enumerated() {
             if idx == self.stackView.arrangedSubviews.count - 1 {
@@ -293,6 +302,8 @@ class AnnotationToolbarViewController: UIViewController {
         return []
     }
 
+    // MARK: - Setup
+
     private func createHiddenToolsMenu() -> UIMenu {
         let children = self.tools.filter({ $0.isHidden }).map({ tool in
             let isActive = self.delegate?.activeAnnotationTool == tool.type
@@ -343,6 +354,7 @@ class AnnotationToolbarViewController: UIViewController {
 
     private func createAdditionalItems() -> [UIView] {
         let undo = UIButton(type: .custom)
+        undo.isEnabled = self.delegate?.canUndo ?? false
         undo.showsLargeContentViewer = true
         undo.accessibilityLabel = L10n.Accessibility.Pdf.undo
         undo.largeContentTitle = L10n.Accessibility.Pdf.undo
@@ -356,6 +368,7 @@ class AnnotationToolbarViewController: UIViewController {
         self.undoButton = undo
 
         let redo = UIButton(type: .custom)
+        redo.isEnabled = self.delegate?.canRedo ?? false
         redo.showsLargeContentViewer = true
         redo.accessibilityLabel = L10n.Accessibility.Pdf.redo
         redo.largeContentTitle = L10n.Accessibility.Pdf.redo

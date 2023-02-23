@@ -251,7 +251,6 @@ class PDFReaderViewController: UIViewController {
 
         coordinator.animate(alongsideTransition: { _ in
             if sizeDidChange {
-                self.navigationItem.rightBarButtonItems = self.createRightBarButtonItems(forCompactSize: isCompactWidth)
                 self.annotationToolbarController.prepareForSizeChange()
                 self.annotationToolbarController.updateAdditionalButtons()
                 self.setConstraints(for: self.toolbarState.position)
@@ -967,43 +966,11 @@ class PDFReaderViewController: UIViewController {
                        .disposed(by: self.disposeBag)
 
         self.navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton]
-        self.navigationItem.rightBarButtonItems = self.createRightBarButtonItems(forCompactSize: self.isCompactWidth)
+        self.navigationItem.rightBarButtonItems = self.rightBarButtonItems
     }
 
-    private func createRightBarButtonItems(forCompactSize isCompact: Bool) -> [UIBarButtonItem] {
+    private var rightBarButtonItems: [UIBarButtonItem] {
         var buttons = [self.settingsButton, self.shareButton, self.searchButton]
-
-        if !isCompact {
-            let undo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.left"), style: .plain, target: nil, action: nil)
-            undo.accessibilityLabel = L10n.Accessibility.Pdf.undo
-            undo.title = L10n.Accessibility.Pdf.undo
-            undo.isEnabled = self.viewModel.state.document.undoController.undoManager.canUndo
-            undo.tag = NavigationBarButton.undo.rawValue
-            undo.rx
-                .tap
-                .subscribe(onNext: { [weak self] _ in
-                    guard let `self` = self, self.viewModel.state.document.undoController.undoManager.canUndo else { return }
-                    self.viewModel.state.document.undoController.undoManager.undo()
-                })
-                .disposed(by: self.disposeBag)
-            self.undoBarButton = undo
-
-            let redo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.right"), style: .plain, target: nil, action: nil)
-            redo.accessibilityLabel = L10n.Accessibility.Pdf.redo
-            redo.title = L10n.Accessibility.Pdf.redo
-            redo.isEnabled = self.viewModel.state.document.undoController.undoManager.canRedo
-            redo.tag = NavigationBarButton.redo.rawValue
-            redo.rx
-                .tap
-                .subscribe(onNext: { [weak self] _ in
-                    guard let `self` = self, self.viewModel.state.document.undoController.undoManager.canRedo else { return }
-                    self.viewModel.state.document.undoController.undoManager.redo()
-                })
-                .disposed(by: self.disposeBag)
-            self.redoBarButton = redo
-
-            buttons.insert(contentsOf: [redo, undo], at: 2)
-        }
 
         if self.viewModel.state.library.metadataEditable {
             buttons.append(self.toolbarButton)
@@ -1069,7 +1036,7 @@ extension PDFReaderViewController: PDFDocumentDelegate {
     }
 
     func didChange(undoState undoEnabled: Bool, redoState redoEnabled: Bool) {
-
+        self.annotationToolbarController.didChange(undoState: undoEnabled, redoState: redoEnabled)
     }
 
     func interfaceVisibilityDidChange(to isHidden: Bool) {
