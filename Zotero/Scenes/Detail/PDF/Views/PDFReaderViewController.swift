@@ -525,7 +525,7 @@ class PDFReaderViewController: UIViewController {
                 self.setHighlightSelected(at: position)
             }
 
-        case .cancelled, .ended, .failed:
+        case .ended, .failed:
             let velocity = recognizer.velocity(in: self.view)
             let position = self.position(fromCenter: self.annotationToolbarController.view.center, frame: self.annotationToolbarController.view.frame,
                                          containerFrame: self.documentController.view.frame, velocity: velocity)
@@ -536,7 +536,7 @@ class PDFReaderViewController: UIViewController {
             self.toolbarState = newState
             self.toolbarInitialFrame = nil
 
-        case .possible: break
+        case .cancelled, .possible: break
         @unknown default: break
         }
     }
@@ -828,6 +828,11 @@ class PDFReaderViewController: UIViewController {
         positionsOverlay.backgroundColor = .clear
         positionsOverlay.isHidden = true
 
+        let topSafeAreaSpacer = UIView()
+        topSafeAreaSpacer.translatesAutoresizingMaskIntoConstraints = false
+        topSafeAreaSpacer.backgroundColor = Asset.Colors.navbarBackground.color
+        self.view.addSubview(topSafeAreaSpacer)
+
         let topPosition = DashedView(dashColor: .systemGray4)
         self.setup(toolbarPositionView: topPosition)
         let leadingPosition = DashedView(dashColor: .systemGray4)
@@ -910,7 +915,11 @@ class PDFReaderViewController: UIViewController {
             topPositionWidth,
             leadingHeight,
             trailingHeight,
-            toolbarLeadingSafe
+            toolbarLeadingSafe,
+            topSafeAreaSpacer.topAnchor.constraint(equalTo: self.view.topAnchor),
+            topSafeAreaSpacer.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor),
+            topSafeAreaSpacer.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
+            topSafeAreaSpacer.trailingAnchor.constraint(equalTo: self.view.trailingAnchor)
         ])
 
         self.documentController = documentController
