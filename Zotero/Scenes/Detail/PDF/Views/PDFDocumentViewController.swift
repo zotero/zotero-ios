@@ -409,6 +409,7 @@ final class PDFDocumentViewController: UIViewController {
         controller.formSubmissionDelegate = nil
         controller.annotationStateManager.add(self)
         controller.annotationStateManager.pencilInteraction.delegate = self
+        controller.annotationStateManager.pencilInteraction.isEnabled = true
         self.setup(scrubberBar: controller.userInterfaceView.scrubberBar)
         self.setup(interactions: controller.interactions)
 
