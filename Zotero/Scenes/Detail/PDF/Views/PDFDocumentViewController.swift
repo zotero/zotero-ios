@@ -111,6 +111,11 @@ final class PDFDocumentViewController: UIViewController {
         }
     }
 
+    func disableAnnotationTools() {
+        guard let tool = self.pdfController.annotationStateManager.state else { return }
+        self.toggle(annotationTool: tool, color: nil, tappedWithStylus: false)
+    }
+
     func toggle(annotationTool: PSPDFKit.Annotation.Tool, color: UIColor?, tappedWithStylus: Bool, resetPencilManager: Bool = true) {
         let stateManager = self.pdfController.annotationStateManager
         stateManager.stylusMode = .fromStylusManager

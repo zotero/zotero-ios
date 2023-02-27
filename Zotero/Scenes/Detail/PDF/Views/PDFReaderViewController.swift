@@ -752,6 +752,7 @@ class PDFReaderViewController: UIViewController {
         }, completion: { finished in
             guard finished else { return }
             self.annotationToolbarController.view.isHidden = true
+            self.documentController.disableAnnotationTools()
         })
     }
 
