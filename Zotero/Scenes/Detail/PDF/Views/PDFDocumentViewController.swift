@@ -21,6 +21,7 @@ protocol PDFDocumentDelegate: AnyObject {
                         variantFrom oldVariant: PSPDFKit.Annotation.Variant?, to newVariant: PSPDFKit.Annotation.Variant?)
     func didChange(undoState undoEnabled: Bool, redoState redoEnabled: Bool)
     func interfaceVisibilityDidChange(to isHidden: Bool)
+    func showToolOptions()
 }
 
 final class PDFDocumentViewController: UIViewController {
@@ -568,9 +569,10 @@ extension PDFDocumentViewController: UIPencilInteractionDelegate {
         // TODO: !!!
         switch UIPencilInteraction.preferredTapAction {
         case .switchEraser:
-            break
+            self.toggle(annotationTool: .eraser, color: nil, tappedWithStylus: true)
 
-        case .showColorPalette: break
+        case .showColorPalette:
+            self.parentDelegate?.showToolOptions()
 
         case .switchPrevious, .showInkAttributes, .ignore: break
 

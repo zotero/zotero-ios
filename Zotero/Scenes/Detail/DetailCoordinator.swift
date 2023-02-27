@@ -23,6 +23,11 @@ import PSPDFKitUI
 
 #endif
 
+enum SourceView {
+    case view(UIView, CGRect?)
+    case item(UIBarButtonItem)
+}
+
 protocol DetailCoordinatorAttachmentProvider {
     func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, Library, UIView, CGRect?)?
 }
@@ -79,7 +84,7 @@ protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
 #if PDFENABLED
 
 protocol DetailPdfCoordinatorDelegate: AnyObject {
-    func showToolSettings(colorHex: String?, sizeValue: Float?, sender: UIButton, userInterfaceStyle: UIUserInterfaceStyle, valueChanged: @escaping (String?, Float?) -> Void)
+    func showToolSettings(colorHex: String?, sizeValue: Float?, sender: SourceView, userInterfaceStyle: UIUserInterfaceStyle, valueChanged: @escaping (String?, Float?) -> Void)
     func showSearch(pdfController: PDFViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, result: @escaping (SearchResult) -> Void)
     func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate, userInterfaceStyle: UIUserInterfaceStyle)
     func show(error: PDFReaderState.Error)
@@ -117,11 +122,6 @@ protocol DetailCitationCoordinatorDelegate: AnyObject {
 class EmptyTransitioningDelegate: NSObject, UIViewControllerTransitioningDelegate {}
 
 final class DetailCoordinator: Coordinator {
-    enum ActivityViewControllerSource {
-        case view(UIView, CGRect?)
-        case barButton(UIBarButtonItem)
-    }
-
     var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
     private var transitionDelegate: EmptyTransitioningDelegate?
@@ -185,6 +185,7 @@ final class DetailCoordinator: Coordinator {
         case .file(let filename, let contentType, _, _):
             let file = Files.attachmentFile(in: library.identifier, key: attachment.key, filename: filename, contentType: contentType)
             let url = file.createUrl()
+            let rect = sourceRect ?? CGRect(x: (sourceView.frame.width / 3.0), y: (sourceView.frame.height * 2.0 / 3.0), width: (sourceView.frame.width / 3), height: (sourceView.frame.height / 3))
 
             switch contentType {
             case "application/pdf":
@@ -196,7 +197,7 @@ final class DetailCoordinator: Coordinator {
                 if let text = text {
                     self.show(text: text, title: filename)
                 } else {
-                    self.share(item: url, source: .view(sourceView, sourceRect))
+                    self.share(item: url, source: .view(sourceView, rect))
                 }
             case _ where contentType.contains("image"):
                 let image = (contentType == "image/gif") ? (try? Data(contentsOf: url)).flatMap({ try? UIImage(gifData: $0) }) :
@@ -204,13 +205,13 @@ final class DetailCoordinator: Coordinator {
                 if let image = image {
                     self.show(image: image, title: filename)
                 } else {
-                  self.share(item: url, source: .view(sourceView, sourceRect))
+                  self.share(item: url, source: .view(sourceView, rect))
                 }
             default:
                 if AVURLAsset(url: url).isPlayable {
                     self.showVideo(for: url)
                 } else {
-                    self.share(item: file.createUrl(), source: .view(sourceView, sourceRect))
+                    self.share(item: file.createUrl(), source: .view(sourceView, rect))
                 }
             }
         }
@@ -300,19 +301,18 @@ final class DetailCoordinator: Coordinator {
         self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
-    private func share(item: Any, source: ActivityViewControllerSource) {
+    private func share(item: Any, source: SourceView) {
         let controller = UIActivityViewController(activityItems: [item], applicationActivities: nil)
         controller.modalPresentationStyle = .pageSheet
 
         switch source {
-        case .barButton(let item):
+        case .item(let item):
             controller.popoverPresentationController?.barButtonItem = item
         case .view(let sourceView, let sourceRect):
             controller.popoverPresentationController?.sourceView = sourceView
-            controller.popoverPresentationController?.sourceRect = sourceRect ?? CGRect(x: (sourceView.frame.width / 3.0),
-                                                                                        y: (sourceView.frame.height * 2.0 / 3.0),
-                                                                                        width: (sourceView.frame.width / 3),
-                                                                                        height: (sourceView.frame.height / 3))
+            if let rect = sourceRect {
+                controller.popoverPresentationController?.sourceRect = rect
+            }
         }
 
         self.topViewController.present(controller, animated: true, completion: nil)
@@ -906,7 +906,7 @@ extension DetailCoordinator: DetailCitationCoordinatorDelegate {
 #if PDFENABLED
 
 extension DetailCoordinator: DetailPdfCoordinatorDelegate {
-    func showToolSettings(colorHex: String?, sizeValue: Float?, sender: UIButton, userInterfaceStyle: UIUserInterfaceStyle, valueChanged: @escaping (String?, Float?) -> Void) {
+    func showToolSettings(colorHex: String?, sizeValue: Float?, sender: SourceView, userInterfaceStyle: UIUserInterfaceStyle, valueChanged: @escaping (String?, Float?) -> Void) {
         let state = AnnotationToolOptionsState(colorHex: colorHex, size: sizeValue)
         let handler = AnnotationToolOptionsActionHandler()
         let controller = AnnotationToolOptionsViewController(viewModel: ViewModel(initialState: state, handler: handler), valueChanged: valueChanged)
@@ -914,7 +914,12 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         if UIDevice.current.userInterfaceIdiom == .pad {
             controller.overrideUserInterfaceStyle = userInterfaceStyle
             controller.modalPresentationStyle = .popover
-            controller.popoverPresentationController?.sourceView = sender
+            switch sender {
+            case .view(let view, _):
+                controller.popoverPresentationController?.sourceView = view
+            case .item(let item):
+                controller.popoverPresentationController?.barButtonItem = item
+            }
             self.topViewController.present(controller, animated: true, completion: nil)
         } else {
             let navigationController = UINavigationController(rootViewController: controller)
@@ -974,7 +979,7 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
     }
 
     func share(url: URL, barButton: UIBarButtonItem) {
-        self.share(item: url, source: .barButton(barButton))
+        self.share(item: url, source: .item(barButton))
     }
 
     func share(text: String, rect: CGRect, view: UIView) {

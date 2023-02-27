@@ -35,7 +35,7 @@ protocol AnnotationToolbarDelegate: AnyObject {
 
     func isCompactSize(for rotation: AnnotationToolbarViewController.Rotation) -> Bool
     func toggle(tool: PSPDFKit.Annotation.Tool, options: AnnotationToolOptions)
-    func showToolOptions(sender: UIButton)
+    func showToolOptions(sender: SourceView)
     func closeAnnotationToolbar()
     func performUndo()
     func performRedo()
@@ -68,7 +68,7 @@ class AnnotationToolbarViewController: UIViewController {
 
     private weak var stackView: UIStackView!
     private weak var additionalStackView: UIStackView!
-    private weak var colorPickerButton: UIButton!
+    private(set) weak var colorPickerButton: UIButton!
     private var colorPickerTop: NSLayoutConstraint!
     private var colorPickerLeading: NSLayoutConstraint!
     private var colorPickerToAdditionalHorizontal: NSLayoutConstraint!
@@ -420,7 +420,7 @@ class AnnotationToolbarViewController: UIViewController {
         picker.setImage(UIImage(systemName: "circle.fill", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
         picker.rx.controlEvent(.touchUpInside)
               .subscribe(with: self, onNext: { `self`, _ in
-                  self.delegate?.showToolOptions(sender: self.colorPickerButton)
+                  self.delegate?.showToolOptions(sender: .view(self.colorPickerButton, nil))
               })
               .disposed(by: self.disposeBag)
         return picker
