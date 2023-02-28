@@ -346,8 +346,13 @@ class AnnotationToolbarViewController: UIViewController {
             button.setContentCompressionResistancePriority(.required, for: .vertical)
             button.setContentCompressionResistancePriority(.required, for: .horizontal)
             button.isHidden = true
-            button.rx.controlEvent(.touchUpInside).subscribe(with: self, onNext: { `self`, _ in self.delegate?.toggle(tool: tool.type, options: self.currentAnnotationOptions) }).disposed(by: self.disposeBag)
             button.widthAnchor.constraint(equalTo: button.heightAnchor).isActive = true
+
+            let recognizer = UITapGestureRecognizer()
+            recognizer.delegate = self
+            recognizer.rx.event.subscribe(with: self, onNext: { `self`, _ in self.delegate?.toggle(tool: tool.type, options: self.currentAnnotationOptions) }).disposed(by: self.disposeBag)
+            button.addGestureRecognizer(recognizer)
+
             return button
         } + [showMoreButton]
     }
