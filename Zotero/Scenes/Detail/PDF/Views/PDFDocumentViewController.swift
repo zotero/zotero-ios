@@ -30,6 +30,7 @@ final class PDFDocumentViewController: UIViewController {
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
 
+    private static var toolHistory: [PSPDFKit.Annotation.Tool] = []
     private var selectionView: SelectionView?
     private var didAppear: Bool
     var scrubberBarHeight: CGFloat {
@@ -120,6 +121,13 @@ final class PDFDocumentViewController: UIViewController {
     func toggle(annotationTool: PSPDFKit.Annotation.Tool, color: UIColor?, tappedWithStylus: Bool, resetPencilManager: Bool = true) {
         let stateManager = self.pdfController.annotationStateManager
         stateManager.stylusMode = .fromStylusManager
+
+        if let tool = stateManager.state, tool != .eraser && tool != PDFDocumentViewController.toolHistory.last {
+            PDFDocumentViewController.toolHistory.append(tool)
+            if PDFDocumentViewController.toolHistory.count > 2 {
+                PDFDocumentViewController.toolHistory.remove(at: 0)
+            }
+        }
 
         if stateManager.state == annotationTool {
             stateManager.setState(nil, variant: nil)
@@ -438,13 +446,13 @@ final class PDFDocumentViewController: UIViewController {
         interactions.selectAnnotation.addActivationCondition { context, _, _ -> Bool in
             return AnnotationsConfig.supported.contains(context.annotation.type)
         }
-        
+
         interactions.selectAnnotation.addActivationCallback { [weak self] context, _, _ in
             let key = context.annotation.key ?? context.annotation.uuid
             let type: PDFReaderState.AnnotationKey.Kind = context.annotation.isZoteroAnnotation ? .database : .document
             self?.viewModel.process(action: .selectAnnotationFromDocument(PDFReaderState.AnnotationKey(key: key, type: type)))
         }
-        
+
         interactions.toggleUserInterface.addActivationCallback { [weak self] _, _, _ in
             guard let interfaceView = self?.pdfController.userInterfaceView else { return }
             self?.parentDelegate?.interfaceVisibilityDidChange(to: interfaceView.alpha != 0)
@@ -567,15 +575,31 @@ extension PDFDocumentViewController: AnnotationStateManagerDelegate {
 
 extension PDFDocumentViewController: UIPencilInteractionDelegate {
     func pencilInteractionDidTap(_ interaction: UIPencilInteraction) {
-        // TODO: !!!
         switch UIPencilInteraction.preferredTapAction {
         case .switchEraser:
-            self.toggle(annotationTool: .eraser, color: nil, tappedWithStylus: true)
+            if let tool = self.pdfController.annotationStateManager.state, tool != .eraser {
+                self.toggle(annotationTool: .eraser, color: nil, tappedWithStylus: true)
+            } else {
+                let tool = PDFDocumentViewController.toolHistory.last ?? .ink
+                let color = self.viewModel.state.toolColors[tool]
+                self.toggle(annotationTool: tool, color: color, tappedWithStylus: true)
+            }
 
-        case .showColorPalette:
+        case .switchPrevious:
+            if let tool = self.pdfController.annotationStateManager.state {
+                let previous = PDFDocumentViewController.toolHistory.last ?? (tool == .ink ? .highlight : .ink)
+                let color = self.viewModel.state.toolColors[previous]
+                self.toggle(annotationTool: previous, color: color, tappedWithStylus: true)
+            } else {
+                let previous = !PDFDocumentViewController.toolHistory.isEmpty ? PDFDocumentViewController.toolHistory.removeLast() : .ink
+                let color = self.viewModel.state.toolColors[previous]
+                self.toggle(annotationTool: previous, color: color, tappedWithStylus: true)
+            }
+
+        case .showColorPalette, .showInkAttributes:
             self.parentDelegate?.showToolOptions()
 
-        case .switchPrevious, .showInkAttributes, .ignore: break
+        case .ignore: break
 
         @unknown default: break
         }
