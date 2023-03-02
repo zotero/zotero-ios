@@ -65,32 +65,14 @@ class AnnotationToolOptionsViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-
-        if UIDevice.current.userInterfaceIdiom == .phone {
-            self.valueChanged(self.viewModel.state.colorHex, self.viewModel.state.size)
-        }
+        self.valueChanged(self.viewModel.state.colorHex, self.viewModel.state.size)
     }
 
     // MARK: - Actions
 
     private func update(state: AnnotationToolOptionsState) {
-        if state.changes.contains(.size), UIDevice.current.userInterfaceIdiom == .pad {
-            self.valueChanged(nil, state.size)
-        }
-
         if state.changes.contains(.color) {
-            if let colorPicker = self.colorPicker {
-                for rowView in colorPicker.arrangedSubviews {
-                    guard let row = rowView as? UIStackView else { continue }
-                    for view in row.arrangedSubviews {
-                        guard let circleView = view as? ColorPickerCircleView else { continue }
-                        circleView.isSelected = circleView.hexColor == state.colorHex
-                    }
-                }
-            }
-            if UIDevice.current.userInterfaceIdiom == .pad {
-                self.valueChanged(state.colorHex, nil)
-            }
+            self.presentingViewController?.dismiss(animated: true)
         }
     }
 
