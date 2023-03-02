@@ -77,8 +77,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/PSPDFKit/PSPDFKit-SP",
       "state" : {
-        "revision" : "a1a220a3e2a33d36f148b4c5ace36fc9f8e7f95f",
-        "version" : "12.0.3"
+        "revision" : "17452ad6e455305b30f37cee2d91a0504fcf966a",
+        "version" : "12.1.0"
       }
     },
     {
@@ -95,8 +95,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/realm/realm-cocoa",
       "state" : {
-        "revision" : "b1072f3ef733108dfcc62c2001781e5d65605fbf",
-        "version" : "10.34.1"
+        "revision" : "4d55ba88e78ed427eae439e7c15fac2372f95c64",
+        "version" : "10.36.0"
       }
     },
     {
@@ -104,8 +104,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/realm/realm-core",
       "state" : {
-        "revision" : "b77443ca7fa25407869ca537bf3ae912b1427bff",
-        "version" : "12.13.0"
+        "revision" : "a7d486d07b821e28ffd3587e99355a63148cbb43",
+        "version" : "13.4.1"
       }
     },
     {
