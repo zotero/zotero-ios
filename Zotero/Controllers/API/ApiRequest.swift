@@ -21,6 +21,13 @@ protocol ApiRequest {
     var debugUrl: String { get }
     var acceptableStatusCodes: Set<Int> { get }
     var logParams: ApiLogParameters { get }
+    var timeout: Double { get }
+}
+
+extension ApiRequest {
+    var timeout: Double {
+        return ApiConstants.requestTimeout
+    }
 }
 
 extension ApiRequest {

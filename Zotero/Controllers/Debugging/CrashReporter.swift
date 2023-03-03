@@ -89,8 +89,9 @@ final class CrashReporter {
                                        .subscribe(onNext: { [weak self] reportId in
                                            self?.reportCrashIfNeeded(id: reportId, date: date, completion: completion)
                                            self?.cleanup()
-                                        }, onError: { error in
-                                           DDLogError("CrashReporter: can't upload crash log - \(error)")
+                                        }, onError: { [weak self] error in
+                                            DDLogError("CrashReporter: can't upload crash log - \(error)")
+                                            self?.cleanup()
                                             completion()
                                         })
                                         .disposed(by: self.disposeBag)
@@ -98,6 +99,7 @@ final class CrashReporter {
             DDLogError("CrashReporter: can't load data - \(error)")
             self.cleanup()
             inMainThread {
+                self.cleanup()
                 completion()
             }
         }
@@ -108,7 +110,6 @@ final class CrashReporter {
         return self.apiClient.send(request: request, queue: self.queue)
                              .mapData(httpMethod: request.httpMethod.rawValue)
                              .asObservable()
-                             .retry(.exponentialDelayed(maxCount: 10, initial: 5, multiplier: 1.5))
                              .observe(on: self.scheduler)
                              .flatMap { data, _ -> Observable<String> in
                                  let delegate = DebugResponseParserDelegate()

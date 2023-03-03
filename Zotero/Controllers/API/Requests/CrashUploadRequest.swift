@@ -33,4 +33,8 @@ struct CrashUploadRequest: ApiRequest {
     var headers: [String : String]? {
         return nil
     }
+
+    var timeout: Double {
+        return 5
+    }
 }

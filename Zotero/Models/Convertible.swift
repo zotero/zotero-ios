@@ -17,6 +17,7 @@ struct Convertible {
     private let encoding: ParameterEncoding
     private let parameters: [String: Any]?
     private let headers: [String: String]
+    private let timeout: Double
 
     init(request: ApiRequest, baseUrl: URL, token: String?) {
         switch request.endpoint {
@@ -30,6 +31,7 @@ struct Convertible {
         self.encoding = request.encoding.alamoEncoding
         self.parameters = request.parameters
         self.headers = request.headers ?? [:]
+        self.timeout = request.timeout
     }
 
     var allHeaders: [String: String] {
@@ -46,7 +48,7 @@ struct Convertible {
 extension Convertible: URLRequestConvertible {
     func asURLRequest() throws -> URLRequest {
         var request = URLRequest(url: self.url)
-        request.timeoutInterval = ApiConstants.requestTimeout
+        request.timeoutInterval = self.timeout
         request.httpMethod = self.httpMethod.rawValue
         request.allHTTPHeaderFields = self.headers
         if let token = self.token {
