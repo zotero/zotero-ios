@@ -8,6 +8,11 @@
 
 import UIKit
 
+enum SourceView {
+    case view(UIView, CGRect?)
+    case item(UIBarButtonItem)
+}
+
 protocol Coordinator: AnyObject {
     var parentCoordinator: Coordinator? { get }
     var childCoordinators: [Coordinator] { get set }
@@ -15,6 +20,7 @@ protocol Coordinator: AnyObject {
 
     func start(animated: Bool)
     func childDidFinish(_ child: Coordinator)
+    func share(item: Any, sourceView: SourceView)
 }
 
 extension Coordinator {
@@ -28,5 +34,22 @@ extension Coordinator {
            let delegate = self as? UINavigationControllerDelegate {
             self.navigationController.delegate = delegate
         }
+    }
+
+    func share(item: Any, sourceView: SourceView) {
+        let controller = UIActivityViewController(activityItems: [item], applicationActivities: nil)
+        controller.modalPresentationStyle = .pageSheet
+
+        switch sourceView {
+        case .item(let item):
+            controller.popoverPresentationController?.barButtonItem = item
+        case .view(let sourceView, let sourceRect):
+            controller.popoverPresentationController?.sourceView = sourceView
+            if let rect = sourceRect {
+                controller.popoverPresentationController?.sourceRect = rect
+            }
+        }
+
+        self.navigationController.present(controller, animated: true, completion: nil)
     }
 }

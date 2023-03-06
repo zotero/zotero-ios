@@ -35,7 +35,7 @@ final class AnnotationsViewController: UIViewController {
     private var isVisible: Bool
 
     weak var parentDelegate: (PDFReaderContainerDelegate & SidebarDelegate)?
-    weak var coordinatorDelegate: DetailAnnotationsCoordinatorDelegate?
+    weak var coordinatorDelegate: PdfAnnotationsCoordinatorDelegate?
     weak var boundingBoxConverter: AnnotationBoundingBoxConverter?
 
     // MARK: - Lifecycle

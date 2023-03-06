@@ -100,7 +100,7 @@ class PDFReaderViewController: UIViewController {
     var isSidebarVisible: Bool { return self.sidebarControllerLeft?.constant == 0 }
     var key: String { return self.viewModel.state.key }
 
-    weak var coordinatorDelegate: (DetailPdfCoordinatorDelegate & DetailAnnotationsCoordinatorDelegate)?
+    weak var coordinatorDelegate: (PdfReaderCoordinatorDelegate & PdfAnnotationsCoordinatorDelegate)?
 
     private lazy var shareButton: UIBarButtonItem = {
         let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
@@ -220,7 +220,6 @@ class PDFReaderViewController: UIViewController {
         if let page = self.documentController.pdfController?.pageIndex {
             self.viewModel.process(action: .submitPendingPage(Int(page)))
         }
-        self.coordinatorDelegate?.pdfDidDeinitialize()
         DDLogInfo("PDFReaderViewController deinitialized")
     }
 

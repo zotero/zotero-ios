@@ -38,7 +38,7 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     weak var parentDelegate: (PDFReaderContainerDelegate & PDFDocumentDelegate)?
-    weak var coordinatorDelegate: (DetailPdfCoordinatorDelegate)?
+    weak var coordinatorDelegate: PdfReaderCoordinatorDelegate?
 
     // MARK: - Lifecycle
 

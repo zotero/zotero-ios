@@ -42,7 +42,7 @@ class PDFSidebarViewController: UIViewController {
     private weak var annotationsController: AnnotationsViewController!
     private weak var outlineController: TableOfContentsViewController!
     weak var parentDelegate: (PDFReaderContainerDelegate & SidebarDelegate)?
-    weak var coordinatorDelegate: DetailAnnotationsCoordinatorDelegate?
+    weak var coordinatorDelegate: PdfAnnotationsCoordinatorDelegate?
     weak var boundingBoxConverter: AnnotationBoundingBoxConverter?
 
     required init?(coder: NSCoder) {

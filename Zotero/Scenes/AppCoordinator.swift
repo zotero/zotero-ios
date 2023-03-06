@@ -131,7 +131,9 @@ final class AppCoordinator: NSObject {
         if let userActivity = connectionOptions.userActivities.first ?? session.stateRestorationActivity, let data = userActivity.restoredStateData {
             DDLogInfo("AppCoordinator: Restored state - \(data)")
             // If scene had state stored, restore state
+            #if PDFENABLED
             self.showRestoredState(for: data)
+            #endif
         }
     }
 
@@ -141,6 +143,7 @@ final class AppCoordinator: NSObject {
             self.showItemDetail(key: key, library: library, selectChildKey: preselectedChildKey, animated: animated)
 
         case .pdfReader(let attachment, let library, let page, let annotation, let parentKey, let isAvailable):
+            #if PDFENABLED
             if isAvailable {
                 self.open(attachment: attachment, library: library, on: page, annotation: annotation, parentKey: parentKey, animated: animated)
                 return
@@ -150,6 +153,7 @@ final class AppCoordinator: NSObject {
             self.download(attachment: attachment, parentKey: parentKey) { [weak self] in
                 self?._open(attachment: attachment, library: library, on: page, annotation: annotation, animated: true)
             }
+            #endif
         }
     }
 
@@ -178,44 +182,53 @@ final class AppCoordinator: NSObject {
         }
     }
 
+    #if PDFENABLED
     private func open(attachment: Attachment, library: Library, on page: Int?, annotation: String?, parentKey: String?, animated: Bool) {
-        #if PDFENABLED
         guard let mainController = self.window?.rootViewController as? MainViewController,
               (mainController.detailCoordinator?.navigationController.presentedViewController as? PDFReaderViewController)?.key != attachment.key else { return }
         self._open(attachment: attachment, library: library, on: page, annotation: annotation, animated: animated) {
             self._showItemDetail(key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated)
         }
-        #endif
     }
 
     private func _open(attachment: Attachment, library: Library, on page: Int?, annotation: String?, animated: Bool, completion: (() -> Void)? = nil) {
-        #if PDFENABLED
         switch attachment.type {
         case .file(let filename, let contentType, _, _) where contentType == "application/pdf":
             let file = Files.attachmentFile(in: library.identifier, key: attachment.key, filename: filename, contentType: contentType)
             let url = file.createUrl()
 
-            guard let window = self.window, let detailCoordinator = (window.rootViewController as? MainViewController)?.detailCoordinator,
-                  let pdfController = detailCoordinator.pdfViewController(at: url, key: attachment.key, library: library, page: page, preselectedAnnotationKey: annotation) else {
+            guard let window = self.window, let detailCoordinator = (window.rootViewController as? MainViewController)?.detailCoordinator else {
                 completion?()
                 return
             }
-            self.show(pdfController: pdfController, in: window, animated: animated, completion: completion)
+
+            let controller = self.pdfController(key: attachment.key, library: library, url: url, page: page, preselectedAnnotationKey: annotation, detailCoordinator: detailCoordinator)
+            self.show(pdfController: controller, in: window, animated: animated, completion: completion)
 
         default:
             completion?()
         }
-        #endif
     }
 
     private func showRestoredState(for data: RestoredStateData) {
-        #if PDFENABLED
         guard let window = self.window, let detailCoordinator = (window.rootViewController as? MainViewController)?.detailCoordinator,
-              let (url, library) = self.loadRestoredStateData(forKey: data.key, libraryId: data.libraryId),
-              let controller = detailCoordinator.pdfViewController(at: url, key: data.key, library: library, page: nil, preselectedAnnotationKey: nil) else { return }
+              let (url, library) = self.loadRestoredStateData(forKey: data.key, libraryId: data.libraryId) else { return }
+        let controller = self.pdfController(key: data.key, library: library, url: url, page: nil, preselectedAnnotationKey: nil, detailCoordinator: detailCoordinator)
         self.show(pdfController: controller, in: window, animated: false)
-        #endif
     }
+
+    private func pdfController(key: String, library: Library, url: URL, page: Int?, preselectedAnnotationKey: String?, detailCoordinator: DetailCoordinator) -> UINavigationController {
+        let navigationController = NavigationViewController()
+        navigationController.modalPresentationStyle = .fullScreen
+
+        let coordinator = PDFCoordinator(key: key, library: library, url: url, page: page, preselectedAnnotationKey: preselectedAnnotationKey, navigationController: navigationController, controllers: self.controllers)
+        coordinator.parentCoordinator = detailCoordinator
+        detailCoordinator.childCoordinators.append(coordinator)
+        coordinator.start(animated: false)
+
+        return navigationController
+    }
+    #endif
 
     private func loadRestoredStateData(forKey key: String, libraryId: LibraryIdentifier) -> (URL, Library)? {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return nil }
