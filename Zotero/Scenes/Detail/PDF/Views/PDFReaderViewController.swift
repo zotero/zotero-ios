@@ -1062,9 +1062,14 @@ extension PDFReaderViewController: PDFDocumentDelegate {
     func interfaceVisibilityDidChange(to isHidden: Bool) {
         self.navigationController?.setNavigationBarHidden(isHidden, animated: true)
         self.statusBarVisible = !isHidden
+
         UIView.animate(withDuration: 0.15) {
             self.setNeedsStatusBarAppearanceUpdate()
             self.view.layoutIfNeeded()
+        }
+
+        if isHidden && self.isSidebarVisible {
+            self.toggleSidebar(animated: true)
         }
     }
 }
