@@ -15,6 +15,7 @@ import RxSwift
 
 final class ScannerViewController: UIViewController {
     private let viewModel: ViewModel<ScannerActionHandler>
+    private let sessionQueue: DispatchQueue
     private let disposeBag: DisposeBag
 
     @IBOutlet private weak var webView: WKWebView!
@@ -29,6 +30,7 @@ final class ScannerViewController: UIViewController {
 
     init(viewModel: ViewModel<ScannerActionHandler>) {
         self.viewModel = viewModel
+        self.sessionQueue = DispatchQueue(label: "org.zotero.ScannerViewController.sessionQueue", qos: .userInitiated)
         self.disposeBag = DisposeBag()
         super.init(nibName: "ScannerViewController", bundle: nil)
     }
@@ -59,16 +61,20 @@ final class ScannerViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        if (self.captureSession?.isRunning == false) {
-            self.captureSession?.startRunning()
+        self.sessionQueue.async { [weak self] in
+            if (self?.captureSession?.isRunning == false) {
+                self?.captureSession?.startRunning()
+            }
         }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
-        if (self.captureSession?.isRunning == true) {
-            self.captureSession?.stopRunning()
+        self.sessionQueue.async { [weak self] in
+            if (self?.captureSession?.isRunning == true) {
+                self?.captureSession?.stopRunning()
+            }
         }
     }
 
