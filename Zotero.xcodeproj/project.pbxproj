@@ -918,6 +918,7 @@
 		B3CBB121248A439A00C4228F /* Notification+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CBB120248A439A00C4228F /* Notification+Extensions.swift */; };
 		B3CBB123248A44D100C4228F /* KeyboardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CBB122248A44D100C4228F /* KeyboardData.swift */; };
 		B3CBB125248A46D500C4228F /* NotificationCenter+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CBB124248A46D500C4228F /* NotificationCenter+Extensions.swift */; };
+		B3CCB8D829B72F9B0097520B /* AnnotationEditCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CCB8D729B72F9B0097520B /* AnnotationEditCoordinator.swift */; };
 		B3CD96B3283796F500B8ACCB /* RemoteAttachmentDownloadOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CD96B2283796F500B8ACCB /* RemoteAttachmentDownloadOperation.swift */; };
 		B3CE697624DD7D6A00D333AF /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B30B550224B85A3A00F94B59 /* Colors.xcassets */; };
 		B3CF8830266DFFAF009CFC20 /* ReadStylesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B331F9B4265400D70099F6A6 /* ReadStylesDbRequest.swift */; };
@@ -1799,6 +1800,7 @@
 		B3CBB120248A439A00C4228F /* Notification+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Notification+Extensions.swift"; sourceTree = "<group>"; };
 		B3CBB122248A44D100C4228F /* KeyboardData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardData.swift; sourceTree = "<group>"; };
 		B3CBB124248A46D500C4228F /* NotificationCenter+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationCenter+Extensions.swift"; sourceTree = "<group>"; };
+		B3CCB8D729B72F9B0097520B /* AnnotationEditCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationEditCoordinator.swift; sourceTree = "<group>"; };
 		B3CD96B2283796F500B8ACCB /* RemoteAttachmentDownloadOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteAttachmentDownloadOperation.swift; sourceTree = "<group>"; };
 		B3D0793527CCF63800C454D6 /* AnnotationBoundingBoxCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationBoundingBoxCalculator.swift; sourceTree = "<group>"; };
 		B3D0994626DCCEF700B04FAA /* RPathCoordinate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPathCoordinate.swift; sourceTree = "<group>"; };
@@ -2578,6 +2580,7 @@
 				B3B953C12459780600FC96DB /* Models */,
 				B3B953C42459818200FC96DB /* ViewModels */,
 				B31941D924531F6600BF6296 /* Views */,
+				B3CCB8D729B72F9B0097520B /* AnnotationEditCoordinator.swift */,
 				B390EE2B29B5F419004F979B /* PDFCoordinator.swift */,
 			);
 			path = PDF;
@@ -4370,6 +4373,7 @@
 				B31901942629C9CB00209E33 /* ItemsFilterViewController.swift in Sources */,
 				B3B41F152848E5A30017CA4B /* AnnotationsFilterActionHandler.swift in Sources */,
 				B32AB57B25ADB891003CF0C6 /* CommentIconDrawingController.swift in Sources */,
+				B3CCB8D829B72F9B0097520B /* AnnotationEditCoordinator.swift in Sources */,
 				B3AB43A827E8A68D006F3E4E /* Dictionary+Extensions.swift in Sources */,
 				B30565E523FC051E003304F2 /* RItemLocaleController.swift in Sources */,
 				B37C5B6926453C33009A37E5 /* NoteEditorActionHandler.swift in Sources */,

@@ -311,31 +311,24 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         self.navigationController.present(navigationController, animated: true, completion: nil)
     }
 
-    func showCellOptions(for annotation: Annotation, userId: Int, library: Library, sender: UIButton, userInterfaceStyle: UIUserInterfaceStyle, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
-        let state = AnnotationEditState(annotation: annotation, userId: userId, library: library)
-        let handler = AnnotationEditActionHandler()
-        let viewModel = ViewModel(initialState: state, handler: handler)
-        let controller = AnnotationEditViewController(viewModel: viewModel, includeColorPicker: true, saveAction: saveAction, deleteAction: deleteAction)
-        controller.coordinatorDelegate = self
-
-        let navigationController = UINavigationController(rootViewController: controller)
+    func showCellOptions(for annotation: Annotation, userId: Int, library: Library, sender: UIButton, userInterfaceStyle: UIUserInterfaceStyle, saveAction: @escaping AnnotationEditSaveAction,
+                         deleteAction: @escaping AnnotationEditDeleteAction) {
+        let navigationController = NavigationViewController()
         navigationController.overrideUserInterfaceStyle = userInterfaceStyle
+
+        let coordinator = AnnotationEditCoordinator(annotation: annotation, userId: userId, library: library, saveAction: saveAction, deleteAction: deleteAction,
+                                                    navigationController: navigationController, controllers: self.controllers)
+        coordinator.parentCoordinator = self
+        self.childCoordinators.append(coordinator)
+        coordinator.start(animated: false)
+
         if UIDevice.current.userInterfaceIdiom == .pad {
             navigationController.modalPresentationStyle = .popover
             navigationController.popoverPresentationController?.sourceView = sender
             navigationController.popoverPresentationController?.permittedArrowDirections = .left
         }
+        
         self.navigationController.present(navigationController, animated: true, completion: nil)
-    }
-}
-
-extension PDFCoordinator: AnnotationEditCoordinatorDelegate {
-    func showPageLabelEditor(label: String, updateSubsequentPages: Bool, saveAction: @escaping AnnotationPageLabelSaveAction) {
-        let state = AnnotationPageLabelState(label: label, updateSubsequentPages: updateSubsequentPages)
-        let handler = AnnotationPageLabelActionHandler()
-        let viewModel = ViewModel(initialState: state, handler: handler)
-        let controller = AnnotationPageLabelViewController(viewModel: viewModel, saveAction: saveAction)
-        self.navigationController.pushViewController(controller, animated: true)
     }
 }
 
