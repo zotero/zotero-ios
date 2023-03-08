@@ -129,6 +129,7 @@ struct PDFReaderState: ViewModelState {
     var shouldStoreAnnotationPreviewsIfNeeded: Bool
     /// Page that should be shown initially, instead of stored page
     var initialPage: Int?
+    var unlockSuccessful: Bool?
 
     init(url: URL, key: String, library: Library, initialPage: Int?, preselectedAnnotationKey: String?, settings: PDFSettings, userId: Int, username: String, displayName: String, interfaceStyle: UIUserInterfaceStyle) {
         self.key = key
@@ -193,6 +194,7 @@ struct PDFReaderState: ViewModelState {
         self.error = nil
         self.pdfNotification = nil
         self.changedColorForTool = nil
+        self.unlockSuccessful = nil
     }
 }
 

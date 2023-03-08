@@ -104,6 +104,7 @@ class PDFReaderViewController: UIViewController {
 
     private lazy var shareButton: UIBarButtonItem = {
         let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
+        share.isEnabled = !self.viewModel.state.document.isLocked
         share.accessibilityLabel = L10n.Accessibility.Pdf.export
         share.title = L10n.Accessibility.Pdf.export
         share.tag = NavigationBarButton.share.rawValue
@@ -118,9 +119,11 @@ class PDFReaderViewController: UIViewController {
         return share
     }()
     private lazy var settingsButton: UIBarButtonItem = {
-        let settings = self.documentController.pdfController.settingsButtonItem
-        settings.rx
-                .tap
+        let settings = UIBarButtonItem(image: UIImage(systemName: "gearshape"), style: .plain, target: nil, action: nil)
+        settings.isEnabled = !self.viewModel.state.document.isLocked
+        settings.accessibilityLabel = L10n.Accessibility.Pdf.settings
+        settings.title = L10n.Accessibility.Pdf.settings
+        settings.rx.tap
                 .subscribe(onNext: { [weak self] _ in
                     self?.showSettings(sender: settings)
                 })
@@ -129,12 +132,13 @@ class PDFReaderViewController: UIViewController {
     }()
     private lazy var searchButton: UIBarButtonItem = {
         let search = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"), style: .plain, target: nil, action: nil)
+        search.isEnabled = !self.viewModel.state.document.isLocked
         search.accessibilityLabel = L10n.Accessibility.Pdf.searchPdf
         search.title = L10n.Accessibility.Pdf.searchPdf
         search.rx.tap
               .subscribe(onNext: { [weak self] _ in
-                  guard let `self` = self else { return }
-                  self.showSearch(pdfController: self.documentController.pdfController, text: nil)
+                  guard let `self` = self, let controller = self.documentController.pdfController else { return }
+                  self.showSearch(pdfController: controller, text: nil)
               })
               .disposed(by: self.disposeBag)
         return search
@@ -148,11 +152,11 @@ class PDFReaderViewController: UIViewController {
         checkbox.scalesLargeContentImage = true
         checkbox.layer.cornerRadius = 4
         checkbox.layer.masksToBounds = true
-        checkbox.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
+        checkbox.deselectedTintColor = self.viewModel.state.document.isLocked ? .gray : Asset.Colors.zoteroBlueWithDarkMode.color
         checkbox.contentEdgeInsets = UIEdgeInsets(top: 6, left: 6, bottom: 6, right: 6)
         checkbox.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
         checkbox.selectedTintColor = .white
-        checkbox.isSelected = self.toolbarState.visible
+        checkbox.isSelected = !self.viewModel.state.document.isLocked && self.toolbarState.visible
         checkbox.rx.controlEvent(.touchUpInside)
                 .subscribe(onNext: { [weak self, weak checkbox] _ in
                     guard let `self` = self, let checkbox = checkbox else { return }
@@ -168,6 +172,7 @@ class PDFReaderViewController: UIViewController {
                 })
                 .disposed(by: self.disposeBag)
         let barButton = UIBarButtonItem(customView: checkbox)
+        barButton.isEnabled = !self.viewModel.state.document.isLocked
         barButton.accessibilityLabel = L10n.Accessibility.Pdf.toggleAnnotationToolbar
         barButton.title = L10n.Accessibility.Pdf.toggleAnnotationToolbar
         barButton.largeContentSizeImage = UIImage(systemName: "pencil.and.outline", withConfiguration: UIImage.SymbolConfiguration(scale: .large))
@@ -197,7 +202,7 @@ class PDFReaderViewController: UIViewController {
         self.setupViews()
         self.setConstraints(for: self.toolbarState.position)
         self.setDocumentTopConstraint(for: self.toolbarState.position)
-        if self.toolbarState.visible {
+        if !self.viewModel.state.document.isLocked && self.toolbarState.visible {
             self.showAnnotationToolbar(at: self.toolbarState.position, animated: false)
         } else {
             self.hideAnnotationToolbar(animated: false)
@@ -206,8 +211,11 @@ class PDFReaderViewController: UIViewController {
         self.setupGestureRecognizer()
         self.setupObserving()
 
-        self.viewModel.process(action: .loadDocumentData(boundingBoxConverter: self.documentController))
         self.updateInterface(to: self.viewModel.state.settings)
+
+        if !self.viewModel.state.document.isLocked {
+            self.viewModel.process(action: .loadDocumentData(boundingBoxConverter: self.documentController))
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -267,6 +275,20 @@ class PDFReaderViewController: UIViewController {
     // MARK: - Actions
 
     private func update(state: PDFReaderState) {
+        if let success = state.unlockSuccessful, success {
+            // Enable bar buttons
+            for item in self.navigationItem.leftBarButtonItems ?? [] {
+                item.isEnabled = true
+            }
+            for item in self.navigationItem.rightBarButtonItems ?? [] {
+                item.isEnabled = true
+                guard let checkbox = item.customView as? CheckboxButton else { continue }
+                checkbox.deselectedTintColor = Asset.Colors.zoteroBlueWithDarkMode.color
+            }
+            // Load initial document data after document has been unlocked successfully
+            self.viewModel.process(action: .loadDocumentData(boundingBoxConverter: self.documentController))
+        }
+
         if state.changes.contains(.annotations) {
             // Hide popover if annotation has been deleted
             if let controller = (self.presentedViewController as? UINavigationController)?.viewControllers.first as? AnnotationPopover, let key = controller.annotationKey, !state.sortedKeys.contains(key) {
@@ -726,7 +748,7 @@ class PDFReaderViewController: UIViewController {
         self.annotationToolbarController.sizeDidChange()
         self.setDocumentTopConstraint(for: position)
 
-        if self.annotationToolbarController.view.frame.width < PDFReaderViewController.minToolbarWidth && self.isSidebarVisible {
+        if self.toolbarState.position == .top && self.annotationToolbarController.view.frame.width < PDFReaderViewController.minToolbarWidth && self.isSidebarVisible {
             self.toggleSidebar(animated: animated)
         }
 
@@ -966,6 +988,7 @@ class PDFReaderViewController: UIViewController {
 
     private func setupNavigationBar() {
         let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"), style: .plain, target: nil, action: nil)
+        sidebarButton.isEnabled = !self.viewModel.state.document.isLocked
         self.setupAccessibility(forSidebarButton: sidebarButton)
         sidebarButton.tag = PDFReaderViewController.sidebarButtonTag
         sidebarButton.rx.tap.subscribe(with: self, onNext: { `self`, _ in self.toggleSidebar(animated: true) }).disposed(by: self.disposeBag)
@@ -975,7 +998,8 @@ class PDFReaderViewController: UIViewController {
         closeButton.accessibilityLabel = L10n.close
         closeButton.rx.tap.subscribe(with: self, onNext: { `self`, _ in self.close() }).disposed(by: self.disposeBag)
 
-        let readerButton = UIBarButtonItem(image: self.documentController.pdfController.readerViewButtonItem.image, style: .plain, target: nil, action: nil)
+        let readerButton = UIBarButtonItem(image: Asset.Images.pdfRawReader.image, style: .plain, target: nil, action: nil)
+        readerButton.isEnabled = !self.viewModel.state.document.isLocked
         readerButton.accessibilityLabel = L10n.Accessibility.Pdf.openReader
         readerButton.title = L10n.Accessibility.Pdf.openReader
         readerButton.rx.tap
@@ -1124,7 +1148,7 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
     }
 
     var activeAnnotationTool: PSPDFKit.Annotation.Tool? {
-        return self.documentController.pdfController.annotationStateManager.state
+        return self.documentController.pdfController?.annotationStateManager.state
     }
 
     var maxAvailableToolbarSize: CGFloat {

@@ -25,7 +25,8 @@ protocol PDFDocumentDelegate: AnyObject {
 }
 
 final class PDFDocumentViewController: UIViewController {
-    private(set) weak var pdfController: PDFViewController!
+    private(set) weak var pdfController: PDFViewController?
+    private weak var unlockController: UnlockPdfViewController?
 
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
@@ -34,7 +35,7 @@ final class PDFDocumentViewController: UIViewController {
     private var selectionView: SelectionView?
     private var didAppear: Bool
     var scrubberBarHeight: CGFloat {
-        return self.pdfController.userInterfaceView.scrubberBar.frame.height
+        return self.pdfController?.userInterfaceView.scrubberBar.frame.height ?? 0
     }
 
     weak var parentDelegate: (PDFReaderContainerDelegate & PDFDocumentDelegate)?
@@ -79,8 +80,7 @@ final class PDFDocumentViewController: UIViewController {
 
         coordinator.animate(alongsideTransition: { _ in
             // Update highlight selection if needed
-            if let annotation = self.viewModel.state.selectedAnnotation,
-               let pageView = self.pdfController.pageViewForPage(at: self.pdfController.pageIndex) {
+            if let annotation = self.viewModel.state.selectedAnnotation, let pageIndex = self.pdfController?.pageIndex, let pageView = self.pdfController?.pageViewForPage(at: pageIndex) {
                 self.updateSelection(on: pageView, annotation: annotation)
             }
         }, completion: nil)
@@ -107,19 +107,20 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     func highlight(result: SearchResult) {
-        self.pdfController.searchHighlightViewManager.clearHighlightedSearchResults(animated: (self.pdfController.pageIndex == result.pageIndex))
+        self.pdfController?.searchHighlightViewManager.clearHighlightedSearchResults(animated: (self.pdfController?.pageIndex == result.pageIndex))
         self.scrollIfNeeded(to: result.pageIndex, animated: true) {
-            self.pdfController.searchHighlightViewManager.addHighlight([result], animated: true)
+            self.pdfController?.searchHighlightViewManager.addHighlight([result], animated: true)
         }
     }
 
     func disableAnnotationTools() {
-        guard let tool = self.pdfController.annotationStateManager.state else { return }
+        guard let tool = self.pdfController?.annotationStateManager.state else { return }
         self.toggle(annotationTool: tool, color: nil, tappedWithStylus: false)
     }
 
     func toggle(annotationTool: PSPDFKit.Annotation.Tool, color: UIColor?, tappedWithStylus: Bool, resetPencilManager: Bool = true) {
-        let stateManager = self.pdfController.annotationStateManager
+        guard let stateManager = self.pdfController?.annotationStateManager else { return }
+        
         stateManager.stylusMode = .fromStylusManager
 
         if let tool = stateManager.state, tool != .eraser && tool != PDFDocumentViewController.toolHistory.last {
@@ -164,16 +165,35 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     private func update(state: PDFReaderState) {
+        if let controller = self.pdfController {
+            self.update(state: state, pdfController: controller)
+        } else if let controller = self.unlockController {
+            self.update(state: state, unlockController: controller)
+        }
+    }
+
+    private func update(state: PDFReaderState, unlockController: UnlockPdfViewController) {
+        guard let success = state.unlockSuccessful, success, let controller = self.unlockController else { return }
+        // Remove unlock controller
+        controller.willMove(toParent: nil)
+        controller.view.removeFromSuperview()
+        controller.removeFromParent()
+        controller.didMove(toParent: nil)
+        // Setup PDF controller to show unlocked PDF
+        self.setupPdfController()
+    }
+
+    private func update(state: PDFReaderState, pdfController: PDFViewController) {
         if state.changes.contains(.interfaceStyle) {
             self.updateInterface(to: state.settings)
         }
 
         if state.changes.contains(.settings) {
-            if self.pdfController.configuration.scrollDirection != state.settings.direction ||
-               self.pdfController.configuration.pageTransition != state.settings.transition ||
-               self.pdfController.configuration.pageMode != state.settings.pageMode ||
-               self.pdfController.configuration.spreadFitting != state.settings.pageFitting {
-                self.pdfController.updateConfiguration { configuration in
+            if pdfController.configuration.scrollDirection != state.settings.direction ||
+               pdfController.configuration.pageTransition != state.settings.transition ||
+               pdfController.configuration.pageMode != state.settings.pageMode ||
+               pdfController.configuration.spreadFitting != state.settings.pageFitting {
+                pdfController.updateConfiguration { configuration in
                     configuration.scrollDirection = state.settings.direction
                     configuration.pageTransition = state.settings.transition
                     configuration.pageMode = state.settings.pageMode
@@ -187,29 +207,29 @@ final class PDFDocumentViewController: UIViewController {
                 if let location = state.focusDocumentLocation {
                     // If annotation was selected, focus if needed
                     self.focus(annotation: annotation, at: location, document: state.document)
-                } else if annotation.type != .ink || self.pdfController.annotationStateManager.state != .ink {
+                } else if annotation.type != .ink || pdfController.annotationStateManager.state != .ink {
                     // Update selection if needed.
                     // Never select ink annotation if inking is active in case the user needs to continue typing.
-                    self.select(annotation: annotation, pageIndex: self.pdfController.pageIndex, document: state.document)
+                    self.select(annotation: annotation, pageIndex: pdfController.pageIndex, document: state.document)
                 }
             } else {
                 // Otherwise remove selection if needed
-                self.select(annotation: nil, pageIndex: self.pdfController.pageIndex, document: state.document)
+                self.select(annotation: nil, pageIndex: pdfController.pageIndex, document: state.document)
             }
 
             self.showPopupAnnotationIfNeeded(state: state)
         }
 
         if let tool = state.changedColorForTool, let color = state.toolColors[tool] {
-            self.set(color: color, for: tool, in: self.pdfController.annotationStateManager)
+            self.set(color: color, for: tool, in: pdfController.annotationStateManager)
         }
 
         if state.changes.contains(.activeLineWidth) {
-            self.set(lineWidth: state.activeLineWidth, in: self.pdfController.annotationStateManager)
+            self.set(lineWidth: state.activeLineWidth, in: pdfController.annotationStateManager)
         }
 
         if state.changes.contains(.activeEraserSize) {
-            self.set(lineWidth: state.activeEraserSize, in: self.pdfController.annotationStateManager)
+            self.set(lineWidth: state.activeEraserSize, in: pdfController.annotationStateManager)
         }
 
         if let notification = state.pdfNotification {
@@ -217,8 +237,8 @@ final class PDFDocumentViewController: UIViewController {
         }
 
         if state.changes.contains(.initialDataLoaded) {
-            self.pdfController.setPageIndex(PageIndex(state.visiblePage), animated: false)
-            self.select(annotation: state.selectedAnnotation, pageIndex: self.pdfController.pageIndex, document: state.document)
+            pdfController.setPageIndex(PageIndex(state.visiblePage), animated: false)
+            self.select(annotation: state.selectedAnnotation, pageIndex: pdfController.pageIndex, document: state.document)
         }
     }
 
@@ -238,18 +258,20 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     private func updatePdf(notification: Notification) {
+        guard let pdfController = self.pdfController else { return }
+
         switch notification.name {
         case .PSPDFAnnotationChanged:
             guard let changes = notification.userInfo?[PSPDFAnnotationChangedNotificationKeyPathKey] as? [String] else { return }
             // Changing annotation color changes the `lastUsed` color in `annotationStateManager` (#487), so we have to re-set it.
             if changes.contains("color"), let annotation = notification.object as? PSPDFKit.Annotation, let tool = self.tool(from: annotation), let color = self.viewModel.state.toolColors[tool] {
-                self.set(color: color, for: tool, in: self.pdfController.annotationStateManager)
+                self.set(color: color, for: tool, in: pdfController.annotationStateManager)
             }
 
         case .PSPDFAnnotationsAdded:
             guard let annotations = notification.object as? [PSPDFKit.Annotation] else { return }
             // If Image annotation is active after adding the annotation, deactivate it
-            if annotations.first is PSPDFKit.SquareAnnotation && self.pdfController.annotationStateManager.state == .square, let color = self.viewModel.state.toolColors[.square] {
+            if annotations.first is PSPDFKit.SquareAnnotation && pdfController.annotationStateManager.state == .square, let color = self.viewModel.state.toolColors[.square] {
                 // Don't reset apple pencil detection here, this is automatic action, not performed by user.
                 self.toggle(annotationTool: .square, color: color, tappedWithStylus: false, resetPencilManager: false)
             }
@@ -261,21 +283,24 @@ final class PDFDocumentViewController: UIViewController {
     private func updateInterface(to settings: PDFSettings) {
         switch settings.appearanceMode {
         case .automatic:
-            self.pdfController.appearanceModeManager.appearanceMode = self.traitCollection.userInterfaceStyle == .dark ? .night : []
-            self.pdfController.overrideUserInterfaceStyle = .unspecified
+            self.pdfController?.appearanceModeManager.appearanceMode = self.traitCollection.userInterfaceStyle == .dark ? .night : []
+            self.pdfController?.overrideUserInterfaceStyle = .unspecified
+            self.unlockController?.overrideUserInterfaceStyle = .unspecified
         case .light:
-            self.pdfController.appearanceModeManager.appearanceMode = []
-            self.pdfController.overrideUserInterfaceStyle = .light
+            self.pdfController?.appearanceModeManager.appearanceMode = []
+            self.pdfController?.overrideUserInterfaceStyle = .light
+            self.unlockController?.overrideUserInterfaceStyle = .light
         case .dark:
-            self.pdfController.appearanceModeManager.appearanceMode = .night
-            self.pdfController.overrideUserInterfaceStyle = .dark
+            self.pdfController?.appearanceModeManager.appearanceMode = .night
+            self.pdfController?.overrideUserInterfaceStyle = .dark
+            self.unlockController?.overrideUserInterfaceStyle = .dark
         }
     }
 
     private func showPopupAnnotationIfNeeded(state: PDFReaderState) {
         guard !(self.parentDelegate?.isSidebarVisible ?? false),
               let annotation = state.selectedAnnotation,
-              let pageView = self.pdfController.pageViewForPage(at: UInt(annotation.page)) else { return }
+              let pageView = self.pdfController?.pageViewForPage(at: UInt(annotation.page)) else { return }
 
         let frame = self.view.convert(annotation.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
 
@@ -283,8 +308,8 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     private func updatePencilSettingsIfNeeded() {
-        guard self.pdfController.annotationStateManager.state == .ink else { return }
-        self.pdfController.annotationStateManager.stylusMode = UIPencilInteraction.prefersPencilOnlyDrawing ? .stylus : .fromStylusManager
+        guard self.pdfController?.annotationStateManager.state == .ink else { return }
+        self.pdfController?.annotationStateManager.stylusMode = UIPencilInteraction.prefersPencilOnlyDrawing ? .stylus : .fromStylusManager
     }
 
     /// Scrolls to given page if needed.
@@ -292,19 +317,19 @@ final class PDFDocumentViewController: UIViewController {
     /// - parameter animated: `true` if scrolling is animated, `false` otherwise.
     /// - parameter completion: Completion block called after scroll. Block is also called when scroll was not needed.
     private func scrollIfNeeded(to pageIndex: PageIndex, animated: Bool, completion: @escaping () -> Void) {
-        guard self.pdfController.pageIndex != pageIndex else {
+        guard self.pdfController?.pageIndex != pageIndex else {
             completion()
             return
         }
 
         if !animated {
-            self.pdfController.setPageIndex(pageIndex, animated: false)
+            self.pdfController?.setPageIndex(pageIndex, animated: false)
             completion()
             return
         }
 
         UIView.animate(withDuration: 0.25, animations: {
-            self.pdfController.setPageIndex(pageIndex, animated: false)
+            self.pdfController?.setPageIndex(pageIndex, animated: false)
         }, completion: { finished in
             guard finished else { return }
             completion()
@@ -330,7 +355,7 @@ final class PDFDocumentViewController: UIViewController {
     /// - parameter pageIndex: Page index of page where (de)selection should happen.
     /// - parameter document: Active `Document` instance.
     private func select(annotation: Annotation?, pageIndex: PageIndex, document: PSPDFKit.Document) {
-        guard let pageView = self.pdfController.pageViewForPage(at: pageIndex) else { return }
+        guard let pageView = self.pdfController?.pageViewForPage(at: pageIndex) else { return }
 
         self.updateSelection(on: pageView, annotation: annotation)
 
@@ -374,6 +399,33 @@ final class PDFDocumentViewController: UIViewController {
     // MARK: - Setups
 
     private func setupViews() {
+        if self.viewModel.state.document.isLocked {
+            self.setupLockedView()
+        } else {
+            self.setupPdfController()
+        }
+    }
+
+    private func setupLockedView() {
+        let unlockController = UnlockPdfViewController(viewModel: self.viewModel)
+        unlockController.view.translatesAutoresizingMaskIntoConstraints = false
+
+        unlockController.willMove(toParent: self)
+        self.addChild(unlockController)
+        self.view.addSubview(unlockController.view)
+        unlockController.didMove(toParent: self)
+
+        NSLayoutConstraint.activate([
+            unlockController.view.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+            unlockController.view.topAnchor.constraint(equalTo: self.view.topAnchor),
+            unlockController.view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
+            unlockController.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor)
+        ])
+
+        self.unlockController = unlockController
+    }
+
+    private func setupPdfController() {
         let pdfController = self.createPdfController(with: self.viewModel.state.document, settings: self.viewModel.state.settings)
         pdfController.view.translatesAutoresizingMaskIntoConstraints = false
 
@@ -454,7 +506,7 @@ final class PDFDocumentViewController: UIViewController {
         }
 
         interactions.toggleUserInterface.addActivationCallback { [weak self] _, _, _ in
-            guard let interfaceView = self?.pdfController.userInterfaceView else { return }
+            guard let interfaceView = self?.pdfController?.userInterfaceView else { return }
             self?.parentDelegate?.interfaceVisibilityDidChange(to: interfaceView.alpha != 0)
         }
 
@@ -530,7 +582,7 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
         // Overwrite share action, because the original one reports "[ShareSheet] connection invalidated".
         if let idx = filtered.firstIndex(where: { $0.identifier == TextMenu.share.rawValue }) {
             filtered[idx].actionBlock = { [weak self] in
-                guard let view = self?.pdfController.view else { return }
+                guard let view = self?.pdfController?.view else { return }
                 self?.coordinatorDelegate?.share(text: selectedText, rect: rect, view: view)
             }
         }
@@ -539,15 +591,15 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
         if let idx = filtered.firstIndex(where: { $0.identifier == TextMenu.define.rawValue }) {
             filtered[idx].title = L10n.lookUp
             filtered[idx].actionBlock = { [weak self] in
-                guard let `self` = self else { return }
-                self.coordinatorDelegate?.lookup(text: selectedText, rect: rect, view: self.pdfController.view, userInterfaceStyle: self.viewModel.state.interfaceStyle)
+                guard let `self` = self, let view = self.pdfController?.view else { return }
+                self.coordinatorDelegate?.lookup(text: selectedText, rect: rect, view: view, userInterfaceStyle: self.viewModel.state.interfaceStyle)
             }
         }
 
         if let idx = filtered.firstIndex(where: { $0.identifier == TextMenu.search.rawValue }) {
             filtered[idx].actionBlock = { [weak self] in
-                guard let `self` = self else { return }
-                self.parentDelegate?.showSearch(pdfController: self.pdfController, text: selectedText)
+                guard let `self` = self, let pdfController = self.pdfController else { return }
+                self.parentDelegate?.showSearch(pdfController: pdfController, text: selectedText)
             }
         }
 
@@ -577,7 +629,7 @@ extension PDFDocumentViewController: UIPencilInteractionDelegate {
     func pencilInteractionDidTap(_ interaction: UIPencilInteraction) {
         switch UIPencilInteraction.preferredTapAction {
         case .switchEraser:
-            if let tool = self.pdfController.annotationStateManager.state, tool != .eraser {
+            if let tool = self.pdfController?.annotationStateManager.state, tool != .eraser {
                 self.toggle(annotationTool: .eraser, color: nil, tappedWithStylus: true)
             } else {
                 let tool = PDFDocumentViewController.toolHistory.last ?? .ink
@@ -586,7 +638,7 @@ extension PDFDocumentViewController: UIPencilInteractionDelegate {
             }
 
         case .switchPrevious:
-            if let tool = self.pdfController.annotationStateManager.state {
+            if let tool = self.pdfController?.annotationStateManager.state {
                 let previous = PDFDocumentViewController.toolHistory.last ?? (tool == .ink ? .highlight : .ink)
                 let color = self.viewModel.state.toolColors[previous]
                 self.toggle(annotationTool: previous, color: color, tappedWithStylus: true)

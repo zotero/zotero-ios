@@ -213,6 +213,8 @@ internal enum L10n {
       internal static let searchPdf = L10n.tr("Localizable", "accessibility.pdf.search_pdf")
       /// Selected
       internal static let selected = L10n.tr("Localizable", "accessibility.pdf.selected")
+      /// Settings
+      internal static let settings = L10n.tr("Localizable", "accessibility.pdf.settings")
       /// Show more
       internal static let showMoreTools = L10n.tr("Localizable", "accessibility.pdf.show_more_tools")
       /// Close sidebar
@@ -886,6 +888,14 @@ internal enum L10n {
       internal static let export = L10n.tr("Localizable", "pdf.export.export")
       /// Include annotations
       internal static let includeAnnotations = L10n.tr("Localizable", "pdf.export.include_annotations")
+    }
+    internal enum Locked {
+      /// Please enter the password to open this PDF.
+      internal static let enterPassword = L10n.tr("Localizable", "pdf.locked.enter_password")
+      /// Incorrect password. Please try again.
+      internal static let failed = L10n.tr("Localizable", "pdf.locked.failed")
+      /// Locked
+      internal static let locked = L10n.tr("Localizable", "pdf.locked.locked")
     }
     internal enum Search {
       /// Search failed

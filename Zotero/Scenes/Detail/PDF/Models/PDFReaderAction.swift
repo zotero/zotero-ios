@@ -47,6 +47,7 @@ enum PDFReaderAction {
     case changeIdleTimerDisabled(Bool)
     case changeFilter(AnnotationsFilter?)
     case submitPendingPage(Int)
+    case unlock(String)
 }
 
 #endif

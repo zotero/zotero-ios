@@ -211,6 +211,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         case .changeFilter(let filter):
             self.set(filter: filter, in: viewModel)
+
+        case .unlock(let password):
+            let result = viewModel.state.document.unlock(withPassword: password)
+            self.update(viewModel: viewModel) { state in
+                state.unlockSuccessful = result
+            }
         }
     }
 
