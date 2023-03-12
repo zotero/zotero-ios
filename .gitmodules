@@ -6,7 +6,7 @@
 	url = https://github.com/citation-style-language/locales.git
 [submodule "ZShare/Assets/translation/translate"]
 	path = ZShare/Assets/translation/translate
-	url = git@github.com:zotero/translate.git
+	url = https://github.com/zotero/translate.git
 [submodule "translators"]
 	path = translators
-	url = git@github.com:zotero/translators.git
+	url = https://github.com/zotero/translators.git
