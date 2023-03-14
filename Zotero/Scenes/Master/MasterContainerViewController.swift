@@ -9,8 +9,8 @@
 import UIKit
 
 final class MasterContainerViewController: UIViewController {
-    private let upperController: UIViewController
-    private let bottomController: UIViewController
+    let upperController: UIViewController
+    let bottomController: UIViewController
 
     init(topController: UIViewController, bottomController: UIViewController) {
         self.upperController = topController
@@ -38,6 +38,11 @@ final class MasterContainerViewController: UIViewController {
         self.addChild(self.bottomController)
         self.bottomController.didMove(toParent: self)
 
+        let hairline = UIView()
+        hairline.translatesAutoresizingMaskIntoConstraints = false
+        hairline.backgroundColor = .separator
+        self.view.addSubview(hairline)
+
         NSLayoutConstraint.activate([
             self.view.topAnchor.constraint(equalTo: self.upperController.view.topAnchor),
             self.view.bottomAnchor.constraint(equalTo: self.bottomController.view.bottomAnchor),
@@ -46,7 +51,11 @@ final class MasterContainerViewController: UIViewController {
             self.view.trailingAnchor.constraint(equalTo: self.upperController.view.trailingAnchor),
             self.view.trailingAnchor.constraint(equalTo: self.bottomController.view.trailingAnchor),
             self.upperController.view.bottomAnchor.constraint(equalTo: self.bottomController.view.topAnchor),
-            self.upperController.view.heightAnchor.constraint(equalTo: self.bottomController.view.heightAnchor, multiplier: 2)
+            self.upperController.view.heightAnchor.constraint(equalTo: self.bottomController.view.heightAnchor, multiplier: 2),
+            hairline.heightAnchor.constraint(equalToConstant: 1/UIScreen.main.scale),
+            hairline.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
+            hairline.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+            hairline.topAnchor.constraint(equalTo: self.upperController.view.bottomAnchor)
         ])
     }
 }
