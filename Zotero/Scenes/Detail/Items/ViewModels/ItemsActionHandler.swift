@@ -91,8 +91,8 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         case .search(let text):
             self.search(for: (text.isEmpty ? nil : text), ignoreOriginal: false, in: viewModel)
 
-        case .initialSearch(let text):
-            self.search(for: (text.isEmpty ? nil : text), ignoreOriginal: true, in: viewModel)
+        case .performInitialSearch:
+            self.performInitialSearch(in: viewModel)
 
         case .setSortField(let field):
             var sortType = viewModel.state.sortType
@@ -599,6 +599,15 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         }
     }
 
+    private func performInitialSearch(in viewModel: ViewModel<ItemsActionHandler>) {
+        let results = self.results(for: viewModel.state.searchTerm, filters: viewModel.state.filters, collectionId: viewModel.state.collection.identifier, sortType: viewModel.state.sortType, libraryId: viewModel.state.library.identifier)
+
+        self.update(viewModel: viewModel) { state in
+            state.results = results
+            state.changes = .results
+        }
+    }
+
     private func search(for text: String?, ignoreOriginal: Bool, in viewModel: ViewModel<ItemsActionHandler>) {
         guard ignoreOriginal || text != viewModel.state.searchTerm else { return }
 
@@ -624,8 +633,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
                 case .downloadedFiles:
                     results = results.filter("fileDownloaded = true or any children.fileDownloaded = true")
                 case .tags(let tags):
-                    let tagNames = tags.map { $0.name }
-                    results = results.filter("any tags.tag.name in %@ or any children.tags.tag.name in %@", tagNames, tagNames)
+                    results = results.filter("any tags.tag.name in %@ or any children.tags.tag.name in %@", tags, tags)
                 }
             }
         }
