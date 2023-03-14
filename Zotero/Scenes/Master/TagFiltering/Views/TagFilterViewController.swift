@@ -9,11 +9,22 @@
 import UIKit
 
 import RxSwift
+import TagsFlowLayout
+
+protocol TagFilterDelegate: AnyObject {
+    func tagSelectionDidChange(selected: Set<String>)
+}
 
 class TagFilterViewController: UIViewController {
     private var collectionView: UICollectionView!
     private var dataSource: UICollectionViewDiffableDataSource<Int, Tag>!
+    weak var delegate: TagFilterDelegate?
 
+    var selectedTags: Set<String> {
+        return self.viewModel.state.selectedTags
+    }
+
+    private static let cellId = "TagFilterCell"
     private let viewModel: ViewModel<TagPickerActionHandler>
     private let disposeBag: DisposeBag
 
@@ -44,7 +55,9 @@ class TagFilterViewController: UIViewController {
     }
 
     private func update(to state: TagPickerState) {
-//        self.title = L10n.TagPicker.title(state.selectedTags.count)
+        if state.changes.contains(.selection) {
+            self.delegate?.tagSelectionDidChange(selected: state.selectedTags)
+        }
 
         if state.changes.contains(.tags) {
             var snapshot = NSDiffableDataSourceSnapshot<Int, Tag>()
@@ -58,30 +71,14 @@ class TagFilterViewController: UIViewController {
         }
     }
 
-    private lazy var tagRegistration: UICollectionView.CellRegistration<TagFilterCell, Tag> = {
-        return UICollectionView.CellRegistration { cell, indexPath, tag in
-            let color: UIColor = tag.color.isEmpty ? .clear : UIColor(hex: tag.color)
-            cell.contentConfiguration = TagFilterCell.ContentConfiguration(text: tag.name, color: color)
-        }
-    }()
-
-    private func createCollectionViewLayout() -> UICollectionViewLayout {
-        return UICollectionViewCompositionalLayout { index, environment in
-            let itemSize = NSCollectionLayoutSize(widthDimension: .estimated(100), heightDimension: .absolute(40))
-            let item = NSCollectionLayoutItem(layoutSize: itemSize)
-            item.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 1, bottom: 0, trailing: 1)
-
-            let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(40))
-            let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
-
-            let section = NSCollectionLayoutSection(group: group)
-            return section
-        }
-    }
-
     private func setupViews() {
-        let collectionView = UICollectionView(frame: CGRect(), collectionViewLayout: self.createCollectionViewLayout())
+        let layout = TagsFlowLayout(maxWidth: self.view.frame.width, minimumInteritemSpacing: 8, minimumLineSpacing: 8,
+                                    sectionInset: UIEdgeInsets(top: 8, left: 10, bottom: 8, right: 10))
+        let collectionView = UICollectionView(frame: CGRect(), collectionViewLayout: layout)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
+        collectionView.delegate = self
+        collectionView.allowsMultipleSelection = true
+        collectionView.register(UINib(nibName: "TagFilterCell", bundle: nil), forCellWithReuseIdentifier: TagFilterViewController.cellId)
         self.collectionView = collectionView
 
         self.view.addSubview(collectionView)
@@ -95,10 +92,34 @@ class TagFilterViewController: UIViewController {
     }
 
     private func setupDataSource() {
-        let tagRegistration = self.tagRegistration
-
         self.dataSource = UICollectionViewDiffableDataSource(collectionView: self.collectionView, cellProvider: { collectionView, indexPath, tag in
-            collectionView.dequeueConfiguredReusableCell(using: tagRegistration, for: indexPath, item: tag)
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TagFilterViewController.cellId, for: indexPath)
+            if let cell = cell as? TagFilterCell {
+                cell.maxWidth = collectionView.bounds.width - 20
+                let color: UIColor = tag.color.isEmpty ? .label : UIColor(hex: tag.color)
+                cell.setup(with: tag.name, color: color)
+            }
+            return cell
         })
+    }
+}
+
+extension TagFilterViewController: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard indexPath.row < self.viewModel.state.tags.count else { return }
+
+        let tag = self.viewModel.state.tags[indexPath.row]
+        self.viewModel.process(action: .select(tag.name))
+
+        (collectionView.cellForItem(at: indexPath) as? TagFilterCell)?.set(selected: true)
+    }
+
+    func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
+        guard indexPath.row < self.viewModel.state.tags.count else { return }
+        
+        let tag = self.viewModel.state.tags[indexPath.row]
+        self.viewModel.process(action: .deselect(tag.name))
+
+        (collectionView.cellForItem(at: indexPath) as? TagFilterCell)?.set(selected: false)
     }
 }

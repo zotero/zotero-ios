@@ -83,6 +83,7 @@ final class DetailCoordinator: Coordinator {
     var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
     private var transitionDelegate: EmptyTransitioningDelegate?
+    weak var tagFilterController: TagFilterViewController?
 
     let collection: Collection
     let library: Library
@@ -93,11 +94,12 @@ final class DetailCoordinator: Coordinator {
 
     private weak var citationNavigationController: UINavigationController?
 
-    init(library: Library, collection: Collection, searchItemKeys: [String]?, navigationController: UINavigationController, controllers: Controllers) {
+    init(library: Library, collection: Collection, searchItemKeys: [String]?, navigationController: UINavigationController, tagFilterController: TagFilterViewController?, controllers: Controllers) {
         self.library = library
         self.collection = collection
         self.searchItemKeys = searchItemKeys
         self.navigationController = navigationController
+        self.tagFilterController = tagFilterController
         self.controllers = controllers
         self.childCoordinators = []
         self.disposeBag = DisposeBag()
@@ -110,14 +112,18 @@ final class DetailCoordinator: Coordinator {
     func start(animated: Bool) {
         guard let userControllers = self.controllers.userControllers else { return }
         let controller = self.createItemsViewController(collection: self.collection, library: self.library, dbStorage: userControllers.dbStorage, fileDownloader: userControllers.fileDownloader,
-                                                        syncScheduler: userControllers.syncScheduler, citationController: userControllers.citationController, fileCleanupController: userControllers.fileCleanupController)
+                                                        syncScheduler: userControllers.syncScheduler, citationController: userControllers.citationController, fileCleanupController: userControllers.fileCleanupController, tagFilterController: self.tagFilterController)
         self.navigationController.setViewControllers([controller], animated: animated)
     }
 
     private func createItemsViewController(collection: Collection, library: Library, dbStorage: DbStorage, fileDownloader: AttachmentDownloader, syncScheduler: SynchronizationScheduler,
-                                           citationController: CitationController, fileCleanupController: AttachmentFileCleanupController) -> ItemsViewController {
+                                           citationController: CitationController, fileCleanupController: AttachmentFileCleanupController, tagFilterController: TagFilterViewController?) -> ItemsViewController {
         let searchTerm = self.searchItemKeys?.joined(separator: " ")
-        let state = ItemsState(collection: collection, library: library, sortType: .default, searchTerm: searchTerm, error: nil)
+        var filters: [ItemsState.Filter] = []
+        if let tags = tagFilterController?.selectedTags, !tags.isEmpty {
+            filters.append(.tags(tags))
+        }
+        let state = ItemsState(collection: collection, library: library, sortType: .default, searchTerm: searchTerm, filters: filters, error: nil)
         let handler = ItemsActionHandler(dbStorage: dbStorage,
                                          fileStorage: self.controllers.fileStorage,
                                          schemaController: self.controllers.schemaController,
@@ -126,7 +132,7 @@ final class DetailCoordinator: Coordinator {
                                          citationController: citationController,
                                          fileCleanupController: fileCleanupController,
                                          syncScheduler: syncScheduler)
-        return ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: self.controllers, coordinatorDelegate: self)
+        return ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), tagFilterController: tagFilterController, controllers: self.controllers, coordinatorDelegate: self)
     }
 
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier) {
