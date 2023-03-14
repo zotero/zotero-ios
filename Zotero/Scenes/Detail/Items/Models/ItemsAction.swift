@@ -28,7 +28,7 @@ enum ItemsAction {
     case restoreItems(Set<String>)
     case saveNote(String, String, [Tag])
     case search(String)
-    case initialSearch(String)
+    case performInitialSearch
     case selectItem(String)
     case setSortField(ItemsSortType.Field)
     case setSortOrder(Bool)

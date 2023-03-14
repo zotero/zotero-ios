@@ -26,11 +26,13 @@ struct TagPickerActionHandler: ViewModelActionHandler {
         case .select(let name):
             self.update(viewModel: viewModel) { state in
                 state.selectedTags.insert(name)
+                state.changes = .selection
             }
 
         case .deselect(let name):
             self.update(viewModel: viewModel) { state in
                 state.selectedTags.remove(name)
+                state.changes = .selection
             }
 
         case .load:
@@ -58,7 +60,7 @@ struct TagPickerActionHandler: ViewModelActionHandler {
             state.searchTerm = ""
             state.addedTagName = name
             state.showAddTagButton = false
-            state.changes = .tags
+            state.changes = [.tags, .selection]
         }
     }
 
