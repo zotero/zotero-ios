@@ -89,8 +89,9 @@ final class MainViewController: UISplitViewController {
 
     private func showItems(for collection: Collection, in library: Library, searchItemKeys: [String]?) {
         let navigationController = UINavigationController()
+        let tagFilterController = (self.viewControllers.first as? MasterContainerViewController)?.bottomController as? TagFilterViewController
 
-        let coordinator = DetailCoordinator(library: library, collection: collection, searchItemKeys: searchItemKeys, navigationController: navigationController, controllers: self.controllers)
+        let coordinator = DetailCoordinator(library: library, collection: collection, searchItemKeys: searchItemKeys, navigationController: navigationController, tagFilterController: tagFilterController, controllers: self.controllers)
         coordinator.start(animated: false)
         self.detailCoordinator = coordinator
 
