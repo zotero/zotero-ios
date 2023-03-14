@@ -52,11 +52,13 @@ final class ItemsViewController: UIViewController {
     private weak var searchBarContainer: SearchBarContainer?
     private var searchBarNeedsReset = false
     private weak var webView: WKWebView?
+    private weak var tagFilterController: TagFilterViewController?
 
     private weak var coordinatorDelegate: DetailItemsCoordinatorDelegate?
 
-    init(viewModel: ViewModel<ItemsActionHandler>, controllers: Controllers, coordinatorDelegate: DetailItemsCoordinatorDelegate) {
+    init(viewModel: ViewModel<ItemsActionHandler>, tagFilterController: TagFilterViewController?, controllers: Controllers, coordinatorDelegate: DetailItemsCoordinatorDelegate) {
         self.viewModel = viewModel
+        self.tagFilterController = tagFilterController
         self.controllers = controllers
         self.coordinatorDelegate = coordinatorDelegate
         self.disposeBag = DisposeBag()
@@ -94,13 +96,17 @@ final class ItemsViewController: UIViewController {
         self.setupOverlay()
         self.startObservingSyncProgress()
 
-        if let term = self.viewModel.state.searchTerm, !term.isEmpty {
-            self.viewModel.process(action: .initialSearch(term))
-            self.searchBarContainer?.searchBar.text = term
+        if self.viewModel.state.searchTerm != nil || !self.viewModel.state.filters.isEmpty {
+            self.viewModel.process(action: .performInitialSearch)
+            if let term = self.viewModel.state.searchTerm, !term.isEmpty {
+                self.searchBarContainer?.searchBar.text = term
+            }
         }
         if let results = self.viewModel.state.results {
             self.startObserving(results: results)
         }
+
+        self.tagFilterController?.delegate = self
 
         self.tableViewHandler.tapObserver
                              .observe(on: MainScheduler.instance)
@@ -805,5 +811,17 @@ fileprivate final class SearchBarContainer: UIView {
     func unfreezeWidth() {
         let size = max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
         self.widthConstraint.constant = size
+    }
+}
+
+extension ItemsViewController: TagFilterDelegate {
+    func tagSelectionDidChange(selected: Set<String>) {
+        if selected.isEmpty {
+            if let tags = self.viewModel.state.tagsFilter {
+                self.viewModel.process(action: .disableFilter(.tags(tags)))
+            }
+        } else {
+            self.viewModel.process(action: .enableFilter(.tags(selected)))
+        }
     }
 }

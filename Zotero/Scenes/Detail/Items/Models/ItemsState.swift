@@ -28,7 +28,7 @@ struct ItemsState: ViewModelState {
 
     enum Filter: Equatable {
         case downloadedFiles
-        case tags([Tag])
+        case tags(Set<String>)
 
         static func ==(lhs: Filter, rhs: Filter) -> Bool {
             switch (lhs, rhs) {
@@ -78,7 +78,19 @@ struct ItemsState: ViewModelState {
     var attachmentToOpen: String?
     var downloadBatchData: DownloadBatchData?
 
-    init(collection: Collection, library: Library, sortType: ItemsSortType, searchTerm: String?, error: ItemsError?) {
+    var tagsFilter: Set<String>? {
+        let tagFilter = self.filters.first(where: { filter in
+            switch filter {
+            case .tags: return true
+            default: return false
+            }
+        })
+
+        guard let tagFilter = tagFilter, case .tags(let tags) = tagFilter else { return nil }
+        return tags
+    }
+
+    init(collection: Collection, library: Library, sortType: ItemsSortType, searchTerm: String?, filters: [Filter], error: ItemsError?) {
         self.collection = collection
         self.library = library
         self.filters = []
@@ -89,6 +101,7 @@ struct ItemsState: ViewModelState {
         self.selectedItems = []
         self.changes = []
         self.sortType = sortType
+        self.filters = filters
         self.searchTerm = searchTerm
         self.processingBibliography = false
     }

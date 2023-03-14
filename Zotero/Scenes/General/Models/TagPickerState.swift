@@ -15,6 +15,7 @@ struct TagPickerState: ViewModelState {
         let rawValue: UInt8
 
         static let tags = Changes(rawValue: 1 << 0)
+        static let selection = Changes(rawValue: 1 << 1)
     }
 
     let libraryId: LibraryIdentifier
