@@ -171,9 +171,9 @@ final class AppCoordinator: NSObject {
         guard let mainController = self.window?.rootViewController as? MainViewController else { return }
 
         // Show "All" collection in given library/group
-        if mainController.masterCoordinator?.visibleLibraryId != library.identifier ||
-           (mainController.masterCoordinator?.navigationController.visibleViewController as? CollectionsViewController)?.selectedIdentifier != .custom(.all) {
-            mainController.masterCoordinator?.showCollections(for: library.identifier, preselectedCollection: .custom(.all), animated: animated)
+        if mainController.masterCoordinator?.topCoordinator.visibleLibraryId != library.identifier ||
+           (mainController.masterCoordinator?.topCoordinator.navigationController.visibleViewController as? CollectionsViewController)?.selectedIdentifier != .custom(.all) {
+            mainController.masterCoordinator?.topCoordinator.showCollections(for: library.identifier, preselectedCollection: .custom(.all), animated: animated)
         }
 
         // Show item detail of given key
