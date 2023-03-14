@@ -131,16 +131,13 @@ final class MainViewController: UISplitViewController {
     // MARK: - Setups
 
     private func setupControllers() {
-        let masterController = UINavigationController()
-        let masterCoordinator = MasterCoordinator(navigationController: masterController, mainCoordinatorDelegate: self, controllers: self.controllers)
-        masterCoordinator.start(animated: false)
+        let masterCoordinator = MasterCoordinator(mainController: self, controllers: self.controllers)
+        masterCoordinator.start()
         self.masterCoordinator = masterCoordinator
-
-        self.viewControllers = [masterController]
 
         if let progressObservable = self.controllers.userControllers?.syncScheduler.syncController.progressObservable,
            let dbStorage = self.controllers.userControllers?.dbStorage {
-            self.syncToolbarController = SyncToolbarController(parent: masterController, progressObservable: progressObservable, dbStorage: dbStorage)
+            self.syncToolbarController = SyncToolbarController(parent: masterCoordinator.topCoordinator.navigationController, progressObservable: progressObservable, dbStorage: dbStorage)
             self.syncToolbarController?.coordinatorDelegate = self
         }
     }
@@ -183,7 +180,7 @@ extension MainViewController: MainCoordinatorSyncToolbarDelegate {
 
             guard let library = library, let collectionType = collectionType else { return }
 
-            self.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(collectionType), animated: true)
+            self.masterCoordinator?.topCoordinator.showCollections(for: libraryId, preselectedCollection: .custom(collectionType), animated: true)
             self.showItems(for: Collection(custom: collectionType), in: library, searchItemKeys: keys)
         } catch let error {
             DDLogError("MainViewController: can't load searched keys - \(error)")
