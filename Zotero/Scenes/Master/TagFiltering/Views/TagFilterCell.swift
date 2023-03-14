@@ -2,55 +2,51 @@
 //  TagFilterCell.swift
 //  Zotero
 //
-//  Created by Michal Rentka on 13.03.2023.
+//  Created by Michal Rentka on 14.03.2023.
 //  Copyright © 2023 Corporation for Digital Scholarship. All rights reserved.
 //
 
 import UIKit
 
-final class TagFilterCell: UICollectionViewCell {
-    struct ContentConfiguration: UIContentConfiguration {
-        let text: String
-        let color: UIColor
-
-        func makeContentView() -> UIView & UIContentView {
-            return ContentView(configuration: self)
-        }
-
-        func updated(for state: UIConfigurationState) -> ContentConfiguration {
-            return self
+class TagFilterCell: UICollectionViewCell {
+    @IBOutlet private weak var label: UILabel!
+    @IBOutlet private weak var roundBackground: UIView!
+    @IBOutlet private var maxWidthConstraint: NSLayoutConstraint! {
+        didSet {
+            self.maxWidthConstraint.isActive = false
         }
     }
 
-    final class ContentView: UIView, UIContentView {
-        var configuration: UIContentConfiguration {
-            didSet {
-                guard let configuration = self.configuration as? ContentConfiguration else { return }
-                self.apply(configuration: configuration)
-            }
+    var maxWidth: CGFloat? = nil {
+        didSet {
+            guard let maxWidth = self.maxWidth else { return }
+            self.maxWidthConstraint.isActive = true
+            self.maxWidthConstraint.constant = maxWidth
         }
+    }
 
-        fileprivate weak var contentView: TagFilterContentView!
+    override func awakeFromNib() {
+        super.awakeFromNib()
 
-        init(configuration: ContentConfiguration) {
-            self.configuration = configuration
+        self.roundBackground.layer.masksToBounds = true
+        self.roundBackground.layer.borderWidth = 1
+        self.roundBackground.layer.borderColor = Asset.Colors.zoteroBlueWithDarkMode.color.cgColor
+        self.roundBackground.backgroundColor = Asset.Colors.zoteroBlueWithDarkMode.color.withAlphaComponent(0.25)
+    }
 
-            super.init(frame: .zero)
+    override func layoutSubviews() {
+        super.layoutSubviews()
 
-            guard let view = UINib.init(nibName: "TagFilterContentView", bundle: nil).instantiate(withOwner: self)[0] as? TagFilterContentView else { return }
+        self.roundBackground.layer.cornerRadius = self.frame.height / 2
+    }
 
-            self.add(contentView: view)
-            self.contentView = view
-            self.apply(configuration: configuration)
-        }
+    func set(selected: Bool) {
+        self.roundBackground.isHidden = !selected
+    }
 
-        required init?(coder: NSCoder) {
-            fatalError()
-        }
-
-        private func apply(configuration: ContentConfiguration) {
-            self.contentView.setup(with: configuration.text, color: configuration.color)
-        }
+    func setup(with text: String, color: UIColor) {
+        self.label.text = text
+        self.label.textColor = color
+        self.roundBackground.isHidden = !self.isSelected
     }
 }
-
