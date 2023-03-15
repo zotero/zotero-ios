@@ -8,13 +8,26 @@
 
 import UIKit
 
+import CocoaLumberjackSwift
+import RxSwift
+
 final class MasterContainerViewController: UIViewController {
+    private static let handleHeight: CGFloat = 40
+    private static let minTopHeight: CGFloat = 256
+    private static let minBottomHeight: CGFloat = 88
     let upperController: UIViewController
     let bottomController: UIViewController
+    private let disposeBag: DisposeBag
+
+    private var didAppear: Bool
+    private var dragHandleFrame: CGRect?
+    private weak var dragHandleCenterYConstraint: NSLayoutConstraint!
 
     init(topController: UIViewController, bottomController: UIViewController) {
         self.upperController = topController
         self.bottomController = bottomController
+        self.didAppear = false
+        self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -24,7 +37,62 @@ final class MasterContainerViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.setupView()
+    }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        self.didAppear = true
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        guard !self.didAppear else { return }
+        self.dragHandleCenterYConstraint.constant = self.view.frame.height / 4
+    }
+
+    private func toolbarDidPan(recognizer: UIPanGestureRecognizer) {
+        guard let dragHandle = recognizer.view else { return }
+
+        switch recognizer.state {
+        case .began:
+            self.dragHandleFrame = dragHandle.frame
+
+        case .changed:
+            guard let originalFrame = self.dragHandleFrame else { return }
+
+            let translation = recognizer.translation(in: dragHandle)
+            var newFrame = originalFrame
+            newFrame.origin.y = originalFrame.minY + translation.y
+            if newFrame.minY < MasterContainerViewController.minTopHeight {
+                newFrame.origin.y = MasterContainerViewController.minTopHeight
+            } else if newFrame.maxY > self.view.frame.height - MasterContainerViewController.minBottomHeight {
+                newFrame.origin.y = self.view.frame.height - MasterContainerViewController.minBottomHeight - newFrame.height
+            }
+
+            self.dragHandleCenterYConstraint.constant = (newFrame.minY + (newFrame.height / 2)) - (self.view.frame.height / 2)
+            self.view.layoutIfNeeded()
+
+        case .ended, .failed:
+            self.dragHandleFrame = nil
+
+        case .cancelled, .possible: break
+        @unknown default: break
+        }
+    }
+
+    private func setupGestureRecognizer(for dragHandle: UIView) {
+        let panRecognizer = UIPanGestureRecognizer()
+        panRecognizer.rx.event
+                     .subscribe(with: self, onNext: { `self`, recognizer in
+                         self.toolbarDidPan(recognizer: recognizer)
+                     })
+                    .disposed(by: self.disposeBag)
+        dragHandle.addGestureRecognizer(panRecognizer)
+    }
+
+    private func setupView() {
         self.upperController.view.translatesAutoresizingMaskIntoConstraints = false
         self.bottomController.view.translatesAutoresizingMaskIntoConstraints = false
 
@@ -38,10 +106,19 @@ final class MasterContainerViewController: UIViewController {
         self.addChild(self.bottomController)
         self.bottomController.didMove(toParent: self)
 
-        let hairline = UIView()
-        hairline.translatesAutoresizingMaskIntoConstraints = false
-        hairline.backgroundColor = .separator
-        self.view.addSubview(hairline)
+        let dragHandle = UIView()
+        dragHandle.translatesAutoresizingMaskIntoConstraints = false
+        dragHandle.backgroundColor = .secondarySystemBackground
+        self.view.addSubview(dragHandle)
+
+        self.setupGestureRecognizer(for: dragHandle)
+
+        let dragIcon = UIImageView(image: UIImage(systemName: "arrow.up.and.down", withConfiguration: UIImage.SymbolConfiguration(scale: .small)))
+        dragIcon.translatesAutoresizingMaskIntoConstraints = false
+        dragIcon.tintColor = .gray.withAlphaComponent(0.6)
+        dragHandle.addSubview(dragIcon)
+
+        let dragYConstraint = dragHandle.centerYAnchor.constraint(equalTo: self.view.centerYAnchor)
 
         NSLayoutConstraint.activate([
             self.view.topAnchor.constraint(equalTo: self.upperController.view.topAnchor),
@@ -50,12 +127,16 @@ final class MasterContainerViewController: UIViewController {
             self.view.leadingAnchor.constraint(equalTo: self.bottomController.view.leadingAnchor),
             self.view.trailingAnchor.constraint(equalTo: self.upperController.view.trailingAnchor),
             self.view.trailingAnchor.constraint(equalTo: self.bottomController.view.trailingAnchor),
-            self.upperController.view.bottomAnchor.constraint(equalTo: self.bottomController.view.topAnchor),
-            self.upperController.view.heightAnchor.constraint(equalTo: self.bottomController.view.heightAnchor, multiplier: 2),
-            hairline.heightAnchor.constraint(equalToConstant: 1/UIScreen.main.scale),
-            hairline.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
-            hairline.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
-            hairline.topAnchor.constraint(equalTo: self.upperController.view.bottomAnchor)
+            dragYConstraint,
+            dragHandle.heightAnchor.constraint(equalToConstant: MasterContainerViewController.handleHeight),
+            dragHandle.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
+            dragHandle.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+            dragHandle.topAnchor.constraint(equalTo: self.upperController.view.bottomAnchor),
+            dragHandle.bottomAnchor.constraint(equalTo: self.bottomController.view.topAnchor),
+            dragIcon.centerXAnchor.constraint(equalTo: dragHandle.centerXAnchor),
+            dragIcon.centerYAnchor.constraint(equalTo: dragHandle.centerYAnchor)
         ])
+
+        self.dragHandleCenterYConstraint = dragYConstraint
     }
 }
