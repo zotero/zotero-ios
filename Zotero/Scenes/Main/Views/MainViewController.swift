@@ -40,12 +40,6 @@ final class MainViewController: UISplitViewController {
     // Variables
     private var didAppear: Bool = false
     private var syncToolbarController: SyncToolbarController?
-    private var isViewingLibraries: Bool {
-        return (self.viewControllers.first as? UINavigationController)?.viewControllers.count == 1
-    }
-    private var maxSize: CGFloat {
-        return max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
-    }
     private(set) var masterCoordinator: MasterCoordinator?
     private(set) var detailCoordinator: DetailCoordinator?
 
