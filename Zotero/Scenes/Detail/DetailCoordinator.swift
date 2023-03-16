@@ -80,7 +80,7 @@ protocol DetailCitationCoordinatorDelegate: AnyObject {
 class EmptyTransitioningDelegate: NSObject, UIViewControllerTransitioningDelegate {}
 
 final class DetailCoordinator: Coordinator {
-    var parentCoordinator: Coordinator?
+    weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
     private var transitionDelegate: EmptyTransitioningDelegate?
     weak var tagFilterController: TagFilterViewController?
@@ -132,7 +132,9 @@ final class DetailCoordinator: Coordinator {
                                          citationController: citationController,
                                          fileCleanupController: fileCleanupController,
                                          syncScheduler: syncScheduler)
-        return ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), tagFilterController: tagFilterController, controllers: self.controllers, coordinatorDelegate: self)
+        let controller = ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: self.controllers, coordinatorDelegate: self)
+        tagFilterController?.delegate = controller
+        return controller
     }
 
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier) {
@@ -212,7 +214,7 @@ final class DetailCoordinator: Coordinator {
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, navigationController: UINavigationController, picked: @escaping ([Tag]) -> Void) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
 
-        let state = TagPickerState(libraryId: libraryId, selectedTags: selected)
+        let state = TagPickerState(libraryId: libraryId, selectedTags: selected, observeChanges: false)
         let handler = TagPickerActionHandler(dbStorage: dbStorage)
         let viewModel = ViewModel(initialState: state, handler: handler)
         let tagController = TagPickerViewController(viewModel: viewModel, saveAction: picked)
@@ -775,7 +777,7 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
     func pushTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
 
-        let state = TagPickerState(libraryId: libraryId, selectedTags: selected)
+        let state = TagPickerState(libraryId: libraryId, selectedTags: selected, observeChanges: false)
         let handler = TagPickerActionHandler(dbStorage: dbStorage)
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = TagPickerViewController(viewModel: viewModel, saveAction: picked)
