@@ -20,7 +20,7 @@ protocol LookupCoordinatorDelegate: AnyObject {
 }
 
 final class LookupCoordinator: NSObject, Coordinator {
-    var parentCoordinator: Coordinator?
+    weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
 
     private let startingView: LookupStartingView
