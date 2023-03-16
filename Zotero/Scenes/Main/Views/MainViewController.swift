@@ -27,7 +27,6 @@ protocol MainCoordinatorSyncToolbarDelegate: AnyObject {
 }
 
 final class MainViewController: UISplitViewController {
-
     private struct InitialLoadData {
         let collection: Collection
         let library: Library
