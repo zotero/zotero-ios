@@ -147,7 +147,7 @@ final class ItemDetailViewController: UIViewController {
             }
 
         case .openDoi(let doi):
-            guard let encoded = FieldKeys.Item.clean(doi: doi).addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) else { return }
+            guard let encoded = FieldKeys.Item.clean(doi: doi).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else { return }
             self.coordinatorDelegate?.show(doi: encoded)
         }
     }
