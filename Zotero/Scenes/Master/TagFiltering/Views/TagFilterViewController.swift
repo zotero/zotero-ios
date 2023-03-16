@@ -10,7 +10,6 @@ import UIKit
 
 import RealmSwift
 import RxSwift
-import TagsFlowLayout
 
 protocol TagFilterDelegate: AnyObject {
     func tagSelectionDidChange(selected: Set<String>)
