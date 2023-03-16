@@ -78,7 +78,7 @@ struct Database {
         }
 
         /// Same as above, but with insertion. In this case it doesn't crash, but incorrect indices are taken.
-        /// Example: there are 2 results, there is an insertion at index 0 and ther objects are modified
+        /// Example: there are 2 results, there is an insertion at index 0 and other objects are modified
         ///          insertions = [0], modifications = [0, 1] - index 0 is taken twice and index 2 is missing
         let modifications = correctedModifications
         insertions.forEach { insertion in

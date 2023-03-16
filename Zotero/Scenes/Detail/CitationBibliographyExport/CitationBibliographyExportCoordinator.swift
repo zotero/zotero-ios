@@ -20,7 +20,7 @@ protocol CitationBibliographyExportCoordinatorDelegate: AnyObject {
 }
 
 final class CitationBibliographyExportCoordinator: NSObject, Coordinator {
-    var parentCoordinator: Coordinator?
+    weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
 
     private static let defaultSize: CGSize = CGSize(width: 600, height: 504)

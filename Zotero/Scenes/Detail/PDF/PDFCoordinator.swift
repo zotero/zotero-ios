@@ -38,7 +38,7 @@ protocol PdfAnnotationsCoordinatorDelegate: AnyObject {
 }
 
 final class PDFCoordinator: Coordinator {
-    var parentCoordinator: Coordinator?
+    weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
     private var pdfSearchController: PDFSearchViewController?
 
