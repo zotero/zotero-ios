@@ -211,7 +211,7 @@ extension AnnotationEditViewController: UITableViewDataSource {
         switch section {
         case .properties:
             if let cell = cell as? ColorPickerCell {
-                cell.setup(selectedColor: self.viewModel.state.color)
+                cell.setup(selectedColor: self.viewModel.state.color, annotationType: self.viewModel.state.type)
                 cell.colorChange.subscribe(onNext: { hex in self.viewModel.process(action: .setColor(hex)) }).disposed(by: cell.disposeBag)
             } else if let cell = cell as? LineWidthCell {
                 cell.set(value: Float(self.viewModel.state.lineWidth))

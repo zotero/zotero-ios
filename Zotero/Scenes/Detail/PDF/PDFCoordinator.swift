@@ -17,7 +17,7 @@ import PSPDFKitUI
 import RxSwift
 
 protocol PdfReaderCoordinatorDelegate: AnyObject {
-    func showToolSettings(colorHex: String?, sizeValue: Float?, sender: SourceView, userInterfaceStyle: UIUserInterfaceStyle, valueChanged: @escaping (String?, Float?) -> Void)
+    func showToolSettings(tool: PSPDFKit.Annotation.Tool, colorHex: String?, sizeValue: Float?, sender: SourceView, userInterfaceStyle: UIUserInterfaceStyle, valueChanged: @escaping (String?, Float?) -> Void)
     func showSearch(pdfController: PDFViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, result: @escaping (SearchResult) -> Void)
     func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate, userInterfaceStyle: UIUserInterfaceStyle)
     func show(error: PDFReaderState.Error)
@@ -94,8 +94,8 @@ final class PDFCoordinator: Coordinator {
 }
 
 extension PDFCoordinator: PdfReaderCoordinatorDelegate {
-    func showToolSettings(colorHex: String?, sizeValue: Float?, sender: SourceView, userInterfaceStyle: UIUserInterfaceStyle, valueChanged: @escaping (String?, Float?) -> Void) {
-        let state = AnnotationToolOptionsState(colorHex: colorHex, size: sizeValue)
+    func showToolSettings(tool: PSPDFKit.Annotation.Tool, colorHex: String?, sizeValue: Float?, sender: SourceView, userInterfaceStyle: UIUserInterfaceStyle, valueChanged: @escaping (String?, Float?) -> Void) {
+        let state = AnnotationToolOptionsState(tool: tool, colorHex: colorHex, size: sizeValue)
         let handler = AnnotationToolOptionsActionHandler()
         let controller = AnnotationToolOptionsViewController(viewModel: ViewModel(initialState: state, handler: handler), valueChanged: valueChanged)
 

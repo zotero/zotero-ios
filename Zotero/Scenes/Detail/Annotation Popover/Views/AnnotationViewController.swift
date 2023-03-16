@@ -218,7 +218,7 @@ final class AnnotationViewController: UIViewController {
             let colorPickerStackView = UIStackView(arrangedSubviews: [])
             colorPickerStackView.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
             colorPickerStackView.translatesAutoresizingMaskIntoConstraints = false
-            for (idx, hexColor) in AnnotationsConfig.colors.enumerated() {
+            for (idx, hexColor) in AnnotationsConfig.colors(for: annotation.type).enumerated() {
                 let circleView = ColorPickerCircleView(hexColor: hexColor)
                 circleView.contentInsets = UIEdgeInsets(top: 11, left: (idx == 0 ? 16 : 11), bottom: 11, right: 11)
                 circleView.backgroundColor = .clear

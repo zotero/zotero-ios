@@ -21,7 +21,7 @@ final class ColorPickerCell: UITableViewCell {
 
         self.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
 
-        AnnotationsConfig.colors.forEach { hexColor in
+        AnnotationsConfig.allColors.forEach { hexColor in
             let circleView = ColorPickerCircleView(hexColor: hexColor)
             circleView.contentInsets = UIEdgeInsets(top: 11, left: 11, bottom: 11, right: 11)
             circleView.backgroundColor = .clear
@@ -32,11 +32,18 @@ final class ColorPickerCell: UITableViewCell {
         }
     }
 
-    func setup(selectedColor: String) {
-        for view in self.stackView.arrangedSubviews {
+    func setup(selectedColor: String, annotationType: AnnotationType) {
+        let colors = AnnotationsConfig.colors(for: annotationType)
+        for (idx, view) in self.stackView.arrangedSubviews.enumerated() {
             guard let circleView = view as? ColorPickerCircleView else { continue }
-            circleView.isSelected = circleView.hexColor == selectedColor
-            circleView.accessibilityLabel = self.name(for: circleView.hexColor, isSelected: circleView.isSelected)
+
+            if idx >= colors.count {
+                circleView.isHidden = true
+            } else {
+                circleView.isHidden = false
+                circleView.isSelected = circleView.hexColor == selectedColor
+                circleView.accessibilityLabel = self.name(for: circleView.hexColor, isSelected: circleView.isSelected)
+            }
         }
     }
 

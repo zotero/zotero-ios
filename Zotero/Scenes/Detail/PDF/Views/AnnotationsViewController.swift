@@ -331,7 +331,7 @@ final class AnnotationsViewController: UIViewController {
             return false
         })
         var sortedColors: [String] = []
-        AnnotationsConfig.colors.forEach { color in
+        AnnotationsConfig.allColors.forEach { color in
             if colors.contains(color) {
                 sortedColors.append(color)
             }

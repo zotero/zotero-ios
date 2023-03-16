@@ -6,11 +6,12 @@
 //  Copyright © 2021 Corporation for Digital Scholarship. All rights reserved.
 //
 
+#if PDFENABLED
+
 import UIKit
 
+import PSPDFKit
 import RxSwift
-
-#if PDFENABLED
 
 class AnnotationToolOptionsViewController: UIViewController {
     private static let width: CGFloat = 230
@@ -95,12 +96,23 @@ class AnnotationToolOptionsViewController: UIViewController {
         }
     }
 
+    private func colors(for tool: PSPDFKit.Annotation.Tool) -> [String] {
+        switch tool {
+        case .ink: return AnnotationsConfig.colors(for: .ink)
+        case .note: return AnnotationsConfig.colors(for: .note)
+        case .highlight: return AnnotationsConfig.colors(for: .highlight)
+        case .square: return AnnotationsConfig.colors(for: .image)
+        default: return []
+        }
+    }
+
     private func setupView() {
         var subviews: [UIView] = []
 
         if let color = self.viewModel.state.colorHex {
             let columns = self.idealNumberOfColumns
-            let rows = Int(ceil(Float(AnnotationsConfig.colors.count) / Float(columns)))
+            let colors = self.colors(for: self.viewModel.state.tool)
+            let rows = Int(ceil(Float(colors.count) / Float(columns)))
             var colorRows: [UIStackView] = []
 
             for idx in 0..<rows {
@@ -109,11 +121,11 @@ class AnnotationToolOptionsViewController: UIViewController {
 
                 for idy in 0..<columns {
                     let id = offset + idy
-                    if id >= AnnotationsConfig.colors.count {
+                    if id >= colors.count {
                         break
                     }
 
-                    let hexColor = AnnotationsConfig.colors[id]
+                    let hexColor = colors[id]
                     let circleView = ColorPickerCircleView(hexColor: hexColor)
                     circleView.backgroundColor = .clear
                     circleView.circleSize = CGSize(width: AnnotationToolOptionsViewController.circleSize, height: AnnotationToolOptionsViewController.circleSize)

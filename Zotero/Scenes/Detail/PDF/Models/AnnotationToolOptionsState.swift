@@ -6,7 +6,11 @@
 //  Copyright © 2023 Corporation for Digital Scholarship. All rights reserved.
 //
 
+#if PDFENABLED
+
 import Foundation
+
+import PSPDFKit
 
 struct AnnotationToolOptionsState: ViewModelState {
     struct Changes: OptionSet {
@@ -18,11 +22,14 @@ struct AnnotationToolOptionsState: ViewModelState {
         static let size = Changes(rawValue: 1 << 1)
     }
 
+    let tool: PSPDFKit.Annotation.Tool
+
     var colorHex: String?
     var size: Float?
     var changes: Changes
 
-    init(colorHex: String?, size: Float?) {
+    init(tool: PSPDFKit.Annotation.Tool, colorHex: String?, size: Float?) {
+        self.tool = tool
         self.colorHex = colorHex
         self.size = size
         self.changes = []
@@ -32,3 +39,5 @@ struct AnnotationToolOptionsState: ViewModelState {
         self.changes = []
     }
 }
+
+#endif

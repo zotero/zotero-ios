@@ -389,7 +389,7 @@ class PDFReaderViewController: UIViewController {
             size = nil
         }
 
-        self.coordinatorDelegate?.showToolSettings(colorHex: colorHex, sizeValue: size, sender: sender, userInterfaceStyle: self.viewModel.state.interfaceStyle) { [weak self] newColor, newSize in
+        self.coordinatorDelegate?.showToolSettings(tool: tool, colorHex: colorHex, sizeValue: size, sender: sender, userInterfaceStyle: self.viewModel.state.interfaceStyle) { [weak self] newColor, newSize in
             self?.viewModel.process(action: .setToolOptions(color: newColor, size: newSize.flatMap(CGFloat.init), tool: tool))
         }
     }
