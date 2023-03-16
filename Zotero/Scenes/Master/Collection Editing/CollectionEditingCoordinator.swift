@@ -16,7 +16,7 @@ protocol CollectionEditingCoordinatorDelegate: AnyObject {
 }
 
 final class CollectionEditingCoordinator: Coordinator {
-    var parentCoordinator: Coordinator?
+    weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
 
     private let library: Library

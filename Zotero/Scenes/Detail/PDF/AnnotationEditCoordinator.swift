@@ -14,7 +14,7 @@ import CocoaLumberjackSwift
 import RxSwift
 
 final class AnnotationEditCoordinator: Coordinator {
-    var parentCoordinator: Coordinator?
+    weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
 
     private let annotation: Annotation

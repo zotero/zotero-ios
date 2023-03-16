@@ -52,7 +52,7 @@ protocol DebuggingSettingsSettingsCoordinatorDelegate: AnyObject {
 }
 
 final class SettingsCoordinator: NSObject, Coordinator {
-    var parentCoordinator: Coordinator?
+    weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
 
     unowned let navigationController: UINavigationController

@@ -8,6 +8,8 @@
 
 import Foundation
 
+import RealmSwift
+
 struct TagPickerState: ViewModelState {
     struct Changes: OptionSet {
         typealias RawValue = UInt8
@@ -18,23 +20,28 @@ struct TagPickerState: ViewModelState {
         static let selection = Changes(rawValue: 1 << 1)
     }
 
-    let libraryId: LibraryIdentifier
+    let observeChanges: Bool
+
+    var libraryId: LibraryIdentifier
     var tags: [Tag]
     var snapshot: [Tag]?
     var selectedTags: Set<String>
+    var results: Results<RTag>?
+    var token: NotificationToken?
     var searchTerm: String
     var showAddTagButton: Bool
     var addedTagName: String?
     var error: TagPickerError?
     var changes: Changes
 
-    init(libraryId: LibraryIdentifier, selectedTags: Set<String>, tags: [Tag] = []) {
+    init(libraryId: LibraryIdentifier, selectedTags: Set<String>, tags: [Tag] = [], observeChanges: Bool) {
         self.libraryId = libraryId
         self.tags = tags
         self.searchTerm = ""
         self.selectedTags = selectedTags
         self.showAddTagButton = false
         self.changes = []
+        self.observeChanges = observeChanges
     }
 
     mutating func cleanup() {

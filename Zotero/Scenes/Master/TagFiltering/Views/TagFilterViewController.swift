@@ -8,6 +8,7 @@
 
 import UIKit
 
+import RealmSwift
 import RxSwift
 import TagsFlowLayout
 
@@ -52,6 +53,10 @@ class TagFilterViewController: UIViewController {
                       .disposed(by: self.disposeBag)
 
         self.viewModel.process(action: .load)
+    }
+
+    func changeLibrary(to libraryId: LibraryIdentifier) {
+        self.viewModel.process(action: .changeLibrary(libraryId))
     }
 
     private func update(to state: TagPickerState) {

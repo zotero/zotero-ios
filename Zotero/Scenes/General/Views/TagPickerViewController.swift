@@ -59,7 +59,9 @@ final class TagPickerViewController: UIViewController {
     // MARK: - Actions
 
     private func update(to state: TagPickerState) {
-        self.title = L10n.TagPicker.title(state.selectedTags.count)
+        if state.changes.contains(.selection) {
+            self.title = L10n.TagPicker.title(state.selectedTags.count)
+        }
 
         if state.changes.contains(.tags) {
             self.tableView.reloadData()
