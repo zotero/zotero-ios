@@ -52,13 +52,11 @@ final class ItemsViewController: UIViewController {
     private weak var searchBarContainer: SearchBarContainer?
     private var searchBarNeedsReset = false
     private weak var webView: WKWebView?
-    private weak var tagFilterController: TagFilterViewController?
 
     private weak var coordinatorDelegate: DetailItemsCoordinatorDelegate?
 
-    init(viewModel: ViewModel<ItemsActionHandler>, tagFilterController: TagFilterViewController?, controllers: Controllers, coordinatorDelegate: DetailItemsCoordinatorDelegate) {
+    init(viewModel: ViewModel<ItemsActionHandler>, controllers: Controllers, coordinatorDelegate: DetailItemsCoordinatorDelegate) {
         self.viewModel = viewModel
-        self.tagFilterController = tagFilterController
         self.controllers = controllers
         self.coordinatorDelegate = coordinatorDelegate
         self.disposeBag = DisposeBag()
@@ -105,8 +103,6 @@ final class ItemsViewController: UIViewController {
         if let results = self.viewModel.state.results {
             self.startObserving(results: results)
         }
-
-        self.tagFilterController?.delegate = self
 
         self.tableViewHandler.tapObserver
                              .observe(on: MainScheduler.instance)

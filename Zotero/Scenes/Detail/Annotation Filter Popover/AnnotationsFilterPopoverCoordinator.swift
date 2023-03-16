@@ -13,7 +13,7 @@ protocol AnnotationsFilterPopoverToAnnotationsFilterCoordinatorDelegate: AnyObje
 }
 
 final class AnnotationsFilterPopoverCoordinator: NSObject, Coordinator {
-    var parentCoordinator: Coordinator?
+    weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
 
     private let initialFilter: AnnotationsFilter?
@@ -56,7 +56,7 @@ final class AnnotationsFilterPopoverCoordinator: NSObject, Coordinator {
 extension AnnotationsFilterPopoverCoordinator: AnnotationsFilterPopoverToAnnotationsFilterCoordinatorDelegate {
     func showTagPicker(with tags: [Tag], selected: Set<String>, completed: @escaping (Set<String>) -> Void) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-        let state = TagPickerState(libraryId: .custom(.myLibrary), selectedTags: selected, tags: tags)
+        let state = TagPickerState(libraryId: .custom(.myLibrary), selectedTags: selected, tags: tags, observeChanges: false)
         let handler = TagPickerActionHandler(dbStorage: dbStorage)
         let controller = TagPickerViewController(viewModel: ViewModel(initialState: state, handler: handler), saveAction: { picked in
             var tagNames: Set<String> = []
