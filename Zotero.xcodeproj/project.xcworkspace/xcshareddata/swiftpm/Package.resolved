@@ -77,8 +77,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/PSPDFKit/PSPDFKit-SP",
       "state" : {
-        "revision" : "17452ad6e455305b30f37cee2d91a0504fcf966a",
-        "version" : "12.1.0"
+        "revision" : "0089f7f19ff673584bc4ca7ec9a163d4c5c51c87",
+        "version" : "12.1.2"
       }
     },
     {
