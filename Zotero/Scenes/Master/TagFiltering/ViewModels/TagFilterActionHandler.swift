@@ -91,10 +91,11 @@ struct TagFilterActionHandler: ViewModelActionHandler {
 
     private func load(libraryId: LibraryIdentifier, collectionId: CollectionIdentifier, clearSelection: Bool, in viewModel: ViewModel<TagFilterActionHandler>) {
         do {
-            let request = ReadFilterTagsDbRequest(libraryId: libraryId, collectionId: collectionId, selectedNames: (clearSelection ? [] : viewModel.state.selectedTags))
-            let results = try self.dbStorage.perform(request: request, on: .main)
-            let colored = results.filter("color != \"\"").sorted(byKeyPath: "name")
-            let other = results.filter("color = \"\"").sorted(byKeyPath: "name")
+            let filteredRequest = ReadFilterTagsDbRequest(libraryId: libraryId, collectionId: collectionId, selectedNames: (clearSelection ? [] : viewModel.state.selectedTags))
+            let filtered = (try self.dbStorage.perform(request: filteredRequest, on: .main)).sorted(byKeyPath: "name")
+            let coloredRequest = ReadColoredTagsDbRequest(libraryId: libraryId)
+            let colored = (try self.dbStorage.perform(request: coloredRequest, on: .main)).sorted(byKeyPath: "name")
+            let other = filtered.filter("color = \"\"")
 
             let coloredToken = colored.observe { [weak viewModel] change in
                 guard let viewModel = viewModel else { return }
@@ -125,6 +126,7 @@ struct TagFilterActionHandler: ViewModelActionHandler {
                 state.coloredNotificationToken = coloredToken
                 state.otherResults = other
                 state.otherNotificationToken = otherToken
+                state.filteredResults = filtered
                 state.changes = .tags
 
                 if clearSelection {
