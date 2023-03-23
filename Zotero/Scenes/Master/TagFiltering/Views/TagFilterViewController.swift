@@ -16,8 +16,13 @@ protocol TagFilterDelegate: AnyObject {
 }
 
 class TagFilterViewController: UIViewController, ItemsTagFilterDelegate {
+    private struct FilterTag: Hashable, Equatable {
+        let tag: Tag
+        let isActive: Bool
+    }
+
     private var collectionView: UICollectionView!
-    private var dataSource: UICollectionViewDiffableDataSource<Int, Tag>!
+    private var dataSource: UICollectionViewDiffableDataSource<Int, FilterTag>!
     weak var delegate: TagFilterDelegate?
 
     var selectedTags: Set<String> {
@@ -41,6 +46,7 @@ class TagFilterViewController: UIViewController, ItemsTagFilterDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        self.view.backgroundColor = .secondarySystemBackground
         self.setupViews()
         self.setupDataSource()
 
@@ -63,12 +69,12 @@ class TagFilterViewController: UIViewController, ItemsTagFilterDelegate {
             self.delegate?.tagSelectionDidChange(selected: state.selectedTags)
         }
 
-        if state.changes.contains(.tags), let colored = state.coloredResults, let other = state.otherResults {
-            self.dataSource.apply(self.createSnapshot(fromColoredResults: colored, otherResults: other))
+        if state.changes.contains(.tags), let colored = state.coloredResults, let other = state.otherResults, let filtered = state.filteredResults {
+            self.dataSource.apply(self.createSnapshot(fromColoredResults: colored, otherResults: other, filteredResults: filtered))
         }
 
-        if state.coloredChange != nil || state.otherChange != nil, let coloredResults = state.coloredResults {
-            self.dataSource.apply(self.updatedSnapshot(withColoredChange: state.coloredChange, coloredResults: coloredResults, otherChange: state.otherChange))
+        if state.coloredChange != nil || state.otherChange != nil, let coloredResults = state.coloredResults, let filteredResults = state.filteredResults {
+            self.dataSource.apply(self.updatedSnapshot(withColoredChange: state.coloredChange, coloredResults: coloredResults, otherChange: state.otherChange, filteredResults: filteredResults))
         }
 
         if let error = state.error {
@@ -76,38 +82,52 @@ class TagFilterViewController: UIViewController, ItemsTagFilterDelegate {
         }
     }
 
-    private func createSnapshot(fromColoredResults coloredResults: Results<RTag>, otherResults: Results<RTag>) -> NSDiffableDataSourceSnapshot<Int, Tag> {
-        var snapshot = NSDiffableDataSourceSnapshot<Int, Tag>()
-        snapshot.appendSections([0])
-        snapshot.appendItems(Array(coloredResults.map(Tag.init)) + Array(otherResults.map(Tag.init)))
-        return snapshot
-    }
-
-    private func updatedSnapshot(withColoredChange coloredChange: TagFilterState.ObservedChange?, coloredResults: Results<RTag>, otherChange: TagFilterState.ObservedChange?) -> NSDiffableDataSourceSnapshot<Int, Tag> {
-        var tags = self.dataSource.snapshot().itemIdentifiers
-
-        if let change = coloredChange {
-            self.update(tags: &tags, change: change)
+    private func createSnapshot(fromColoredResults coloredResults: Results<RTag>, otherResults: Results<RTag>, filteredResults: Results<RTag>) -> NSDiffableDataSourceSnapshot<Int, FilterTag> {
+        var tags: [FilterTag] = []
+        // Load colored and other results, see whether tags are included in the filter or not.
+        for rTag in coloredResults {
+            let isActive = filteredResults.filter(.name(rTag.name)).first != nil
+            tags.append(FilterTag(tag: Tag(tag: rTag), isActive: isActive))
         }
-
-        if let change = otherChange {
-            let coloredCount = (coloredChange?.results ?? coloredResults).count
-            self.update(tags: &tags, change: change, baseIndex: coloredCount)
-        }
-
-        var snapshot = NSDiffableDataSourceSnapshot<Int, Tag>()
+//        for rTag in otherResults {
+//            let isActive = filteredResults.filter(.name(rTag.name)).first != nil
+//            tags.append(FilterTag(tag: Tag(tag: rTag), isActive: isActive))
+//        }
+        tags.append(contentsOf: otherResults.map({ FilterTag(tag: Tag(tag: $0), isActive: true) }))
+        
+        var snapshot = NSDiffableDataSourceSnapshot<Int, FilterTag>()
         snapshot.appendSections([0])
         snapshot.appendItems(tags)
         return snapshot
     }
 
-    private func update(tags: inout [Tag], change: TagFilterState.ObservedChange, baseIndex: Int = 0) {
+    private func updatedSnapshot(withColoredChange coloredChange: TagFilterState.ObservedChange?, coloredResults: Results<RTag>, otherChange: TagFilterState.ObservedChange?, filteredResults: Results<RTag>) -> NSDiffableDataSourceSnapshot<Int, FilterTag> {
+        var tags = self.dataSource.snapshot().itemIdentifiers
+
+        if let change = coloredChange {
+            self.update(tags: &tags, change: change, filteredResults: filteredResults)
+        }
+
+        if let change = otherChange {
+            let coloredCount = (coloredChange?.results ?? coloredResults).count
+            self.update(tags: &tags, change: change, filteredResults: filteredResults, baseIndex: coloredCount, defaultIsActive: true)
+        }
+
+        var snapshot = NSDiffableDataSourceSnapshot<Int, FilterTag>()
+        snapshot.appendSections([0])
+        snapshot.appendItems(tags)
+        return snapshot
+    }
+
+    private func update(tags: inout [FilterTag], change: TagFilterState.ObservedChange, filteredResults: Results<RTag>, baseIndex: Int = 0, defaultIsActive: Bool? = nil) {
         // Get modification indices in new results
         let correctedModifications = Database.correctedModifications(from: change.modifications, insertions: change.insertions, deletions: change.deletions)
         // Update modified tags
         for idx in 0..<change.modifications.count {
+            let newTag = change.results[correctedModifications[idx]]
             let index = baseIndex + change.modifications[idx]
-            tags[index] = Tag(tag: change.results[correctedModifications[idx]])
+            let isActive = defaultIsActive ?? (filteredResults.filter(.name(newTag.name)).first != nil)
+            tags[index] = FilterTag(tag: Tag(tag: newTag), isActive: isActive)
         }
         // Remove deleted tags
         for index in change.deletions.reversed() {
@@ -115,37 +135,40 @@ class TagFilterViewController: UIViewController, ItemsTagFilterDelegate {
         }
         // Insert new tags
         for index in change.insertions {
-            tags.insert(Tag(tag: change.results[index]), at: (baseIndex + index))
+            let newTag = change.results[index]
+            let isActive = defaultIsActive ?? (filteredResults.filter(.name(newTag.name)).first != nil)
+            tags.insert(FilterTag(tag: Tag(tag: newTag), isActive: isActive), at: (baseIndex + index))
         }
     }
 
     private func setupViews() {
         let layout = TagsFlowLayout(maxWidth: self.view.frame.width, minimumInteritemSpacing: 8, minimumLineSpacing: 8,
-                                    sectionInset: UIEdgeInsets(top: 8, left: 10, bottom: 8, right: 10))
+                                    sectionInset: UIEdgeInsets(top: 0, left: 10, bottom: 8, right: 10))
         let collectionView = UICollectionView(frame: CGRect(), collectionViewLayout: layout)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.delegate = self
         collectionView.allowsMultipleSelection = true
+        collectionView.backgroundColor = .systemBackground
         collectionView.register(UINib(nibName: "TagFilterCell", bundle: nil), forCellWithReuseIdentifier: TagFilterViewController.cellId)
         self.collectionView = collectionView
 
         self.view.addSubview(collectionView)
 
         NSLayoutConstraint.activate([
-            self.collectionView.topAnchor.constraint(equalTo: self.view.topAnchor),
+            self.collectionView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: -8),
             self.collectionView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
-            self.collectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
-            self.collectionView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor)
+            self.collectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 12),
+            self.view.trailingAnchor.constraint(equalTo: self.collectionView.trailingAnchor, constant: 12)
         ])
     }
 
     private func setupDataSource() {
-        self.dataSource = UICollectionViewDiffableDataSource(collectionView: self.collectionView, cellProvider: { collectionView, indexPath, tag in
+        self.dataSource = UICollectionViewDiffableDataSource(collectionView: self.collectionView, cellProvider: { collectionView, indexPath, filterTag in
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TagFilterViewController.cellId, for: indexPath)
             if let cell = cell as? TagFilterCell {
                 cell.maxWidth = collectionView.bounds.width - 20
-                let color: UIColor = tag.color.isEmpty ? .label : UIColor(hex: tag.color)
-                cell.setup(with: tag.name, color: color)
+                let color: UIColor = filterTag.tag.color.isEmpty ? .label : UIColor(hex: filterTag.tag.color)
+                cell.setup(with: filterTag.tag.name, color: color, isActive: filterTag.isActive)
             }
             return cell
         })
@@ -154,18 +177,24 @@ class TagFilterViewController: UIViewController, ItemsTagFilterDelegate {
 
 extension TagFilterViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        guard let tag = self.dataSource.itemIdentifier(for: indexPath) else { return }
+        guard let filterTag = self.dataSource.itemIdentifier(for: indexPath), filterTag.isActive else { return }
 
-        self.viewModel.process(action: .select(tag.name))
+        self.viewModel.process(action: .select(filterTag.tag.name))
 
         (collectionView.cellForItem(at: indexPath) as? TagFilterCell)?.set(selected: true)
     }
 
     func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
-        guard let tag = self.dataSource.itemIdentifier(for: indexPath) else { return }
+        guard let filterTag = self.dataSource.itemIdentifier(for: indexPath), filterTag.isActive else { return }
 
-        self.viewModel.process(action: .deselect(tag.name))
+        self.viewModel.process(action: .deselect(filterTag.tag.name))
 
         (collectionView.cellForItem(at: indexPath) as? TagFilterCell)?.set(selected: false)
+    }
+}
+
+extension TagFilterViewController: DraggableViewController {
+    func add(panRecognizer: UIPanGestureRecognizer) {
+        self.collectionView.addGestureRecognizer(panRecognizer)
     }
 }

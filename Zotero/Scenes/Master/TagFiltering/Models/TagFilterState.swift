@@ -39,6 +39,7 @@ struct TagFilterState: ViewModelState {
     var otherResults: Results<RTag>?
     var otherChange: ObservedChange?
     var otherNotificationToken: NotificationToken?
+    var filteredResults: Results<RTag>?
     var selectedTags: Set<String>
     var searchTerm: String
     var error: Error?
