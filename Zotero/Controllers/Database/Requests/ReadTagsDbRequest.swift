@@ -23,6 +23,32 @@ struct ReadTagsDbRequest: DbResponseRequest {
     }
 }
 
+struct ReadTagsWithNamesDbRequest: DbResponseRequest {
+    typealias Response = Results<RTag>
+
+    let names: Set<String>
+    let libraryId: LibraryIdentifier
+
+    var needsWrite: Bool { return false }
+
+    func process(in database: Realm) throws -> Results<RTag> {
+        return database.objects(RTag.self).filter(.names(self.names, in: self.libraryId))
+    }
+}
+
+struct ReadColoredTagsDbRequest: DbResponseRequest {
+    typealias Response = Results<RTag>
+
+    let libraryId: LibraryIdentifier
+
+    var needsWrite: Bool { return false }
+
+    func process(in database: Realm) throws -> Results<RTag> {
+        return database.objects(RTag.self).filter(.library(with: self.libraryId))
+                                          .filter("color != \"\"")
+    }
+}
+
 struct ReadFilterTagsDbRequest: DbResponseRequest {
     typealias Response = Results<RTag>
 
@@ -33,7 +59,7 @@ struct ReadFilterTagsDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> Results<RTag> {
-        var conditions: [NSPredicate] = [NSPredicate(format: "tags.@count > 0")]
+        var conditions: [NSPredicate] = [.library(with: self.libraryId), NSPredicate(format: "tags.@count > 0")]
 
         switch self.collectionId {
         case .collection(let string):
@@ -53,23 +79,6 @@ struct ReadFilterTagsDbRequest: DbResponseRequest {
             conditions.append(NSPredicate(format: "any tags.item.tags.tag.name in %@", self.selectedNames))
         }
 
-        let conditionsPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: conditions)
-        let colorPredicate = NSPredicate(format: "color != \"\"")
-        let coloredOrConditionedPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [colorPredicate, conditionsPredicate])
-        let finalPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [.library(with: self.libraryId), coloredOrConditionedPredicate])
-        return database.objects(RTag.self).filter(finalPredicate)
-    }
-}
-
-struct ReadTagsWithNamesDbRequest: DbResponseRequest {
-    typealias Response = Results<RTag>
-
-    let names: Set<String>
-    let libraryId: LibraryIdentifier
-
-    var needsWrite: Bool { return false }
-
-    func process(in database: Realm) throws -> Results<RTag> {
-        return database.objects(RTag.self).filter(.names(self.names, in: self.libraryId))
+        return database.objects(RTag.self).filter(NSCompoundPredicate(andPredicateWithSubpredicates: conditions))
     }
 }
