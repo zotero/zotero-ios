@@ -12,7 +12,8 @@ import CocoaLumberjackSwift
 import RxSwift
 
 protocol DraggableViewController: UIViewController {
-    func add(panRecognizer: UIPanGestureRecognizer)
+    func enablePanning()
+    func disablePanning()
 }
 
 final class MasterContainerViewController: UIViewController {
@@ -26,17 +27,19 @@ final class MasterContainerViewController: UIViewController {
             switch self {
             case .mostlyVisible: return 246
             case .default: return availableHeight * 0.6
-            case .hidden: return availableHeight - MasterContainerViewController.handleHeight
+            case .hidden: return availableHeight - MasterContainerViewController.bottomControllerTopPadding
             case .custom(let offset): return offset
             }
         }
     }
 
-    private static let handleHeight: CGFloat = 40
+    private static let bottomControllerTopPadding: CGFloat = 30
+    private static let bottomContainerTappableHeight: CGFloat = 40
     let upperController: UIViewController
     let bottomController: DraggableViewController
     private let disposeBag: DisposeBag
 
+    private weak var bottomContainer: UIView!
     private weak var bottomYConstraint: NSLayoutConstraint!
     // Current position of bottom container
     private var bottomPosition: BottomPosition
@@ -63,7 +66,7 @@ final class MasterContainerViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.view.backgroundColor = .systemBackground
+        self.view.backgroundColor = .clear
         self.setupView()
     }
 
@@ -114,16 +117,17 @@ final class MasterContainerViewController: UIViewController {
     }
 
     private func toolbarDidPan(recognizer: UIPanGestureRecognizer) {
-        guard let bottomContainer = recognizer.view else { return }
-
         switch recognizer.state {
         case .began:
-            self.initialBottomMinY = bottomContainer.frame.minY
+            DDLogInfo("PAN: did start")
+            self.initialBottomMinY = self.bottomContainer.frame.minY
+            self.bottomController.disablePanning()
 
         case .changed:
             guard let initialMinY = self.initialBottomMinY else { return }
 
-            let translation = recognizer.translation(in: bottomContainer)
+            let translation = recognizer.translation(in: self.view)
+            DDLogInfo("PAN: changed with translation \(translation.y)")
             var minY = initialMinY + translation.y
             if minY < BottomPosition.mostlyVisible.topOffset(availableHeight: self.view.frame.height) {
                 minY = BottomPosition.mostlyVisible.topOffset(availableHeight: self.view.frame.height)
@@ -152,6 +156,7 @@ final class MasterContainerViewController: UIViewController {
             }
 
             self.initialBottomMinY = nil
+            self.bottomController.enablePanning()
 
         case .cancelled, .possible: break
         @unknown default: break
@@ -186,12 +191,22 @@ final class MasterContainerViewController: UIViewController {
         self.view.addSubview(self.upperController.view)
         self.addChild(self.upperController)
         self.upperController.didMove(toParent: self)
+        self.upperController.additionalSafeAreaInsets = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
 
-        let panRecognizer = UIPanGestureRecognizer()
-        panRecognizer.delegate = self
-        panRecognizer.rx.event
+        let bottomPanRecognizer = UIPanGestureRecognizer()
+        bottomPanRecognizer.delegate = self
+        bottomPanRecognizer.rx.event
                      .subscribe(with: self, onNext: { `self`, recognizer in
                          self.toolbarDidPan(recognizer: recognizer)
+                     })
+                    .disposed(by: self.disposeBag)
+
+        let tapRecognizer = UITapGestureRecognizer()
+        tapRecognizer.delegate = self
+        tapRecognizer.require(toFail: bottomPanRecognizer)
+        tapRecognizer.rx.event
+                     .subscribe(with: self, onNext: { `self`, recognizer in
+                         self.toggleBottomPosition()
                      })
                     .disposed(by: self.disposeBag)
 
@@ -201,68 +216,38 @@ final class MasterContainerViewController: UIViewController {
         bottomContainer.layer.cornerRadius = 16
         bottomContainer.layer.masksToBounds = true
         bottomContainer.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner]
-//        bottomContainer.addGestureRecognizer(panRecognizer)
+        bottomContainer.addGestureRecognizer(bottomPanRecognizer)
+        bottomContainer.addGestureRecognizer(tapRecognizer)
         self.view.addSubview(bottomContainer)
+        self.bottomContainer = bottomContainer
 
         self.bottomController.willMove(toParent: self)
         bottomContainer.addSubview(self.bottomController.view)
         self.addChild(self.bottomController)
         self.bottomController.didMove(toParent: self)
-        self.bottomController.add(panRecognizer: panRecognizer)
-
-        let dragHandle = UIView()
-        dragHandle.translatesAutoresizingMaskIntoConstraints = false
-        self.view.addSubview(dragHandle)
-
-        let tapRecognizer = UITapGestureRecognizer()
-//        tapRecognizer.require(toFail: panRecognizer)
-        tapRecognizer.rx.event
-                     .subscribe(with: self, onNext: { `self`, recognizer in
-                         self.toggleBottomPosition()
-                     })
-                    .disposed(by: self.disposeBag)
-
-        dragHandle.addGestureRecognizer(tapRecognizer)
-//        dragHandle.addGestureRecognizer(panRecognizer)
-
-//        let whiteCorneredBorders = UIView()
-//        whiteCorneredBorders.translatesAutoresizingMaskIntoConstraints = false
-//        whiteCorneredBorders.backgroundColor = .systemBackground
-//        whiteCorneredBorders.layer.cornerRadius = 8
-//        whiteCorneredBorders.layer.masksToBounds = true
-//        whiteCorneredBorders.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner]
-//        dragHandle.addSubview(whiteCorneredBorders)
 
         let dragIcon = UIImageView(image: Asset.Images.dragHandle.image.withRenderingMode(.alwaysTemplate))
         dragIcon.translatesAutoresizingMaskIntoConstraints = false
         dragIcon.tintColor = .gray.withAlphaComponent(0.6)
-        dragHandle.addSubview(dragIcon)
+        bottomContainer.addSubview(dragIcon)
 
         let bottomYConstraint = bottomContainer.topAnchor.constraint(equalTo: self.view.topAnchor)
 
         NSLayoutConstraint.activate([
             self.view.topAnchor.constraint(equalTo: self.upperController.view.topAnchor),
-            self.view.bottomAnchor.constraint(equalTo: bottomContainer.bottomAnchor),
             self.view.leadingAnchor.constraint(equalTo: self.upperController.view.leadingAnchor),
-            self.view.leadingAnchor.constraint(equalTo: bottomContainer.leadingAnchor),
             self.view.trailingAnchor.constraint(equalTo: self.upperController.view.trailingAnchor),
-            self.view.trailingAnchor.constraint(equalTo: bottomContainer.trailingAnchor),
-            bottomContainer.topAnchor.constraint(equalTo: self.upperController.view.bottomAnchor),
+            bottomContainer.topAnchor.constraint(equalTo: self.upperController.view.bottomAnchor, constant: -16),
             bottomYConstraint,
-            dragHandle.heightAnchor.constraint(equalToConstant: MasterContainerViewController.handleHeight),
-            dragHandle.leadingAnchor.constraint(equalTo: bottomContainer.leadingAnchor),
-            dragHandle.trailingAnchor.constraint(equalTo: bottomContainer.trailingAnchor),
-            dragHandle.topAnchor.constraint(equalTo: bottomContainer.topAnchor),
-            dragHandle.bottomAnchor.constraint(equalTo: self.bottomController.view.topAnchor),
+            self.view.leadingAnchor.constraint(equalTo: bottomContainer.leadingAnchor),
+            self.view.trailingAnchor.constraint(equalTo: bottomContainer.trailingAnchor),
+            self.view.bottomAnchor.constraint(equalTo: bottomContainer.bottomAnchor),
+            self.bottomController.view.topAnchor.constraint(equalTo: bottomContainer.topAnchor, constant: MasterContainerViewController.bottomControllerTopPadding),
             self.bottomController.view.leadingAnchor.constraint(equalTo: bottomContainer.leadingAnchor),
             self.bottomController.view.trailingAnchor.constraint(equalTo: bottomContainer.trailingAnchor),
             self.bottomController.view.bottomAnchor.constraint(equalTo: bottomContainer.bottomAnchor),
-            dragIcon.centerXAnchor.constraint(equalTo: dragHandle.centerXAnchor),
-            dragIcon.topAnchor.constraint(equalTo: dragHandle.topAnchor, constant: 10),
-//            whiteCorneredBorders.leadingAnchor.constraint(equalTo: dragHandle.leadingAnchor, constant: 11),
-//            dragHandle.trailingAnchor.constraint(equalTo: whiteCorneredBorders.trailingAnchor, constant: 11),
-//            whiteCorneredBorders.bottomAnchor.constraint(equalTo: dragHandle.bottomAnchor),
-//            whiteCorneredBorders.heightAnchor.constraint(equalToConstant: 8)
+            dragIcon.centerXAnchor.constraint(equalTo: bottomContainer.centerXAnchor),
+            dragIcon.topAnchor.constraint(equalTo: bottomContainer.topAnchor, constant: 12.5)
         ])
 
         self.bottomYConstraint = bottomYConstraint
@@ -270,7 +255,23 @@ final class MasterContainerViewController: UIViewController {
 }
 
 extension MasterContainerViewController: UIGestureRecognizerDelegate {
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard let tapRecognizer = gestureRecognizer as? UITapGestureRecognizer else { return true }
+        let location = tapRecognizer.location(in: self.bottomContainer)
+        return location.y <= MasterContainerViewController.bottomContainerTappableHeight
+    }
+
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
-        return true
+        guard let panRecognizer = gestureRecognizer as? UIPanGestureRecognizer, let collectionView = otherGestureRecognizer.view as? UICollectionView else { return true }
+
+        let translation = panRecognizer.translation(in: self.view)
+
+        if collectionView.contentSize.height <= collectionView.frame.height {
+            return true
+        }
+        if translation.y > 0 {
+            return collectionView.contentOffset.y == 0
+        }
+        return false
     }
 }
