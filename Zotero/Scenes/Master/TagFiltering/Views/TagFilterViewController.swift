@@ -149,13 +149,16 @@ class TagFilterViewController: UIViewController, ItemsTagFilterDelegate {
         collectionView.delegate = self
         collectionView.allowsMultipleSelection = true
         collectionView.backgroundColor = .systemBackground
+        collectionView.layer.cornerRadius = 8
+        collectionView.layer.masksToBounds = true
+        collectionView.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner]
         collectionView.register(UINib(nibName: "TagFilterCell", bundle: nil), forCellWithReuseIdentifier: TagFilterViewController.cellId)
         self.collectionView = collectionView
 
         self.view.addSubview(collectionView)
 
         NSLayoutConstraint.activate([
-            self.collectionView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: -8),
+            self.collectionView.topAnchor.constraint(equalTo: self.view.topAnchor),
             self.collectionView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
             self.collectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 12),
             self.view.trailingAnchor.constraint(equalTo: self.collectionView.trailingAnchor, constant: 12)
@@ -165,8 +168,9 @@ class TagFilterViewController: UIViewController, ItemsTagFilterDelegate {
     private func setupDataSource() {
         self.dataSource = UICollectionViewDiffableDataSource(collectionView: self.collectionView, cellProvider: { collectionView, indexPath, filterTag in
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TagFilterViewController.cellId, for: indexPath)
-            if let cell = cell as? TagFilterCell {
-                cell.maxWidth = collectionView.bounds.width - 20
+            if let cell = cell as? TagFilterCell, let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout {
+                cell.maxWidth = collectionView.frame.width - flowLayout.sectionInset.left - flowLayout.sectionInset.right -
+                                collectionView.contentInset.left - collectionView.contentInset.right - 20
                 let color: UIColor = filterTag.tag.color.isEmpty ? .label : UIColor(hex: filterTag.tag.color)
                 cell.setup(with: filterTag.tag.name, color: color, isActive: filterTag.isActive)
             }
@@ -194,7 +198,13 @@ extension TagFilterViewController: UICollectionViewDelegate {
 }
 
 extension TagFilterViewController: DraggableViewController {
-    func add(panRecognizer: UIPanGestureRecognizer) {
-        self.collectionView.addGestureRecognizer(panRecognizer)
+    func enablePanning() {
+        NSLog("ENABLE PAN")
+        self.collectionView.isScrollEnabled = true
+    }
+
+    func disablePanning() {
+        NSLog("DISABLE PAN")
+        self.collectionView.isScrollEnabled = false
     }
 }
