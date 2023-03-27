@@ -59,10 +59,6 @@ protocol DetailItemDetailCoordinatorDelegate: AnyObject {
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
 }
 
-protocol DetailCreatorEditCoordinatorDelegate: AnyObject {
-    func showCreatorTypePicker(itemType: String, selected: String, picked: @escaping (String) -> Void)
-}
-
 protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
     func showWeb(url: URL)
     func show(url: URL)
@@ -635,15 +631,15 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
     }
 
     private func _showCreatorEditor(for creator: ItemDetailState.Creator, itemType: String, saved: @escaping CreatorEditSaveAction, deleted: CreatorEditDeleteAction?) {
-        let state = CreatorEditState(itemType: itemType, creator: creator)
-        let handler = CreatorEditActionHandler(schemaController: self.controllers.schemaController)
-        let viewModel = ViewModel(initialState: state, handler: handler)
-        let controller = CreatorEditViewController(viewModel: viewModel, saved: saved, deleted: deleted)
-        controller.coordinatorDelegate = self
-
-        let navigationController = UINavigationController(rootViewController: controller)
+        let navigationController = NavigationViewController()
         navigationController.isModalInPresentation = true
         navigationController.modalPresentationStyle = .formSheet
+
+        let coordinator = CreatorEditCoordinator(creator: creator, itemType: itemType, saved: saved, deleted: deleted, navigationController: navigationController, controllers: self.controllers)
+        coordinator.parentCoordinator = self
+        self.childCoordinators.append(coordinator)
+        coordinator.start(animated: false)
+
         self.navigationController.present(navigationController, animated: true, completion: nil)
     }
 
@@ -766,21 +762,6 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
             completion()
         }))
         self.navigationController.present(controller, animated: true, completion: nil)
-    }
-}
-
-extension DetailCoordinator: DetailCreatorEditCoordinatorDelegate {
-    func showCreatorTypePicker(itemType: String, selected: String, picked: @escaping (String) -> Void) {
-        let viewModel = CreatorTypePickerViewModelCreator.create(itemType: itemType, selected: selected,
-                                                                 schemaController: self.controllers.schemaController)
-        let view = SinglePickerView(requiresSaveButton: false, requiresCancelButton: false, saveAction: picked) { [weak navigationController] completion in
-            navigationController?.popViewController(animated: true)
-            completion?()
-        }
-        .environmentObject(viewModel)
-
-        let controller = UIHostingController(rootView: view)
-        self.navigationController.pushViewController(controller, animated: true)
     }
 }
 

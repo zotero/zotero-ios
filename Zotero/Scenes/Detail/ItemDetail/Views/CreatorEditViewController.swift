@@ -35,7 +35,7 @@ final class CreatorEditViewController: UIViewController {
     private let deleteAction: CreatorEditDeleteAction?
     private let disposeBag: DisposeBag
 
-    weak var coordinatorDelegate: DetailCreatorEditCoordinatorDelegate?
+    weak var coordinatorDelegate: CreatorEditCoordinatorDelegate?
 
     // MARK: - Lifecycle
 

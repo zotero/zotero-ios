@@ -923,6 +923,7 @@
 		B3CD96B3283796F500B8ACCB /* RemoteAttachmentDownloadOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CD96B2283796F500B8ACCB /* RemoteAttachmentDownloadOperation.swift */; };
 		B3CE697624DD7D6A00D333AF /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B30B550224B85A3A00F94B59 /* Colors.xcassets */; };
 		B3CF8830266DFFAF009CFC20 /* ReadStylesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B331F9B4265400D70099F6A6 /* ReadStylesDbRequest.swift */; };
+		B3CF906629D1C71800614A89 /* CreatorEditCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CF906529D1C71800614A89 /* CreatorEditCoordinator.swift */; };
 		B3D037202604FCBA00BCFB05 /* FileAttachmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B40622490F09400FAAF6D /* FileAttachmentView.swift */; };
 		B3D0793627CCF63800C454D6 /* AnnotationBoundingBoxCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D0793527CCF63800C454D6 /* AnnotationBoundingBoxCalculator.swift */; };
 		B3D0994726DCCEF700B04FAA /* RPathCoordinate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D0994626DCCEF700B04FAA /* RPathCoordinate.swift */; };
@@ -1804,6 +1805,7 @@
 		B3CCB8D729B72F9B0097520B /* AnnotationEditCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationEditCoordinator.swift; sourceTree = "<group>"; };
 		B3CCB8D929B73DED0097520B /* UnlockPdfViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockPdfViewController.swift; sourceTree = "<group>"; };
 		B3CD96B2283796F500B8ACCB /* RemoteAttachmentDownloadOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteAttachmentDownloadOperation.swift; sourceTree = "<group>"; };
+		B3CF906529D1C71800614A89 /* CreatorEditCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorEditCoordinator.swift; sourceTree = "<group>"; };
 		B3D0793527CCF63800C454D6 /* AnnotationBoundingBoxCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationBoundingBoxCalculator.swift; sourceTree = "<group>"; };
 		B3D0994626DCCEF700B04FAA /* RPathCoordinate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPathCoordinate.swift; sourceTree = "<group>"; };
 		B3D0AC97255C14AB007648F5 /* PDFReaderLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReaderLayout.swift; sourceTree = "<group>"; };
@@ -2583,6 +2585,7 @@
 				B3B953C42459818200FC96DB /* ViewModels */,
 				B31941D924531F6600BF6296 /* Views */,
 				B3CCB8D729B72F9B0097520B /* AnnotationEditCoordinator.swift */,
+				B3CF906529D1C71800614A89 /* CreatorEditCoordinator.swift */,
 				B390EE2B29B5F419004F979B /* PDFCoordinator.swift */,
 			);
 			path = PDF;
@@ -4381,6 +4384,7 @@
 				B30565E523FC051E003304F2 /* RItemLocaleController.swift in Sources */,
 				B37C5B6926453C33009A37E5 /* NoteEditorActionHandler.swift in Sources */,
 				B30BA03E297ED50B0005021B /* AttributedTagStringGenerator.swift in Sources */,
+				B3CF906629D1C71800614A89 /* CreatorEditCoordinator.swift in Sources */,
 				B3E8FE8627143BDD00F51458 /* SyncSettingsActionHandler.swift in Sources */,
 				B3593F19241A61C700760E20 /* ItemDetailActionHandler.swift in Sources */,
 				B36CBD6225DD4257003C4613 /* ChangedItemsDeletedAlertQueueHandler.swift in Sources */,
