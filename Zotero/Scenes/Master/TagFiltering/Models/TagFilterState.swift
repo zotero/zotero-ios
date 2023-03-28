@@ -35,9 +35,11 @@ struct TagFilterState: ViewModelState {
     var collectionId: CollectionIdentifier
     var coloredResults: Results<RTag>?
     var coloredChange: ObservedChange?
+    var coloredSnapshot: Results<RTag>?
     var coloredNotificationToken: NotificationToken?
     var otherResults: Results<RTag>?
     var otherChange: ObservedChange?
+    var otherSnapshot: Results<RTag>?
     var otherNotificationToken: NotificationToken?
     var filteredResults: Results<RTag>?
     var selectedTags: Set<String>

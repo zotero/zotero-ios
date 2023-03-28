@@ -46,7 +46,7 @@ class TagFilterViewController: UIViewController, ItemsTagFilterDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.view.backgroundColor = .secondarySystemBackground
+        self.view.backgroundColor = .systemBackground
         self.setupViews()
         self.setupDataSource()
 
@@ -142,6 +142,19 @@ class TagFilterViewController: UIViewController, ItemsTagFilterDelegate {
     }
 
     private func setupViews() {
+        let searchBar = UISearchBar()
+        searchBar.translatesAutoresizingMaskIntoConstraints = false
+        searchBar.placeholder = "Search Tags"
+        searchBar.backgroundImage = UIImage()
+        searchBar.rx.text.observe(on: MainScheduler.instance)
+                 .skip(1)
+                 .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+                 .subscribe(onNext: { [weak self] text in
+                     self?.viewModel.process(action: .search(text ?? ""))
+                 })
+                 .disposed(by: self.disposeBag)
+        self.view.addSubview(searchBar)
+
         let layout = TagsFlowLayout(maxWidth: self.view.frame.width, minimumInteritemSpacing: 8, minimumLineSpacing: 8,
                                     sectionInset: UIEdgeInsets(top: 0, left: 10, bottom: 8, right: 10))
         let collectionView = UICollectionView(frame: CGRect(), collectionViewLayout: layout)
@@ -158,10 +171,13 @@ class TagFilterViewController: UIViewController, ItemsTagFilterDelegate {
         self.view.addSubview(collectionView)
 
         NSLayoutConstraint.activate([
-            self.collectionView.topAnchor.constraint(equalTo: self.view.topAnchor),
+            searchBar.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
+            searchBar.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+            searchBar.topAnchor.constraint(equalTo: self.view.topAnchor, constant: -10),
+            searchBar.bottomAnchor.constraint(equalTo: self.collectionView.topAnchor),
             self.collectionView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
-            self.collectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 12),
-            self.view.trailingAnchor.constraint(equalTo: self.collectionView.trailingAnchor, constant: 12)
+            self.collectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
+            self.view.trailingAnchor.constraint(equalTo: self.collectionView.trailingAnchor)
         ])
     }
 
@@ -199,12 +215,10 @@ extension TagFilterViewController: UICollectionViewDelegate {
 
 extension TagFilterViewController: DraggableViewController {
     func enablePanning() {
-        NSLog("ENABLE PAN")
         self.collectionView.isScrollEnabled = true
     }
 
     func disablePanning() {
-        NSLog("DISABLE PAN")
         self.collectionView.isScrollEnabled = false
     }
 }
