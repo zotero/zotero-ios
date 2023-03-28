@@ -22,7 +22,7 @@ final class NoteEditorViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private var debounceDisposeBag: DisposeBag?
-    weak var coordinatorDelegate: DetailNoteEditorCoordinatorDelegate?
+    weak var coordinatorDelegate: NoteEditorCoordinatorDelegate?
 
     private var htmlUrl: URL? {
         if self.viewModel.state.readOnly {
@@ -119,7 +119,7 @@ final class NoteEditorViewController: UIViewController {
     @IBAction private func changeTags() {
         guard !self.viewModel.state.readOnly else { return }
         let selected = Set(self.viewModel.state.tags.map({ $0.name }))
-        self.coordinatorDelegate?.pushTagPicker(libraryId: self.viewModel.state.libraryId, selected: selected, picked: { [weak self] tags in
+        self.coordinatorDelegate?.showTagPicker(libraryId: self.viewModel.state.libraryId, selected: selected, picked: { [weak self] tags in
             self?.viewModel.process(action: .setTags(tags))
         })
     }

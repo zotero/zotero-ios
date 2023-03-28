@@ -144,8 +144,6 @@ extension MasterTopCoordinator: MasterLibrariesCoordinatorDelegate {
 
         let controller = self.createCollectionsViewController(libraryId: libraryId, selectedCollectionId: collectionId, dbStorage: userControllers.dbStorage, attachmentDownloader: userControllers.fileDownloader)
         self.navigationController.pushViewController(controller, animated: true)
-
-        self.coordinatorDelegate?.libraryDidChange(to: libraryId)
     }
 
     func showCollections(for libraryId: LibraryIdentifier, preselectedCollection collectionId: CollectionIdentifier, animated: Bool) {
@@ -157,8 +155,6 @@ extension MasterTopCoordinator: MasterLibrariesCoordinatorDelegate {
             // If only "Libraries" screen is visible, push collections
             let controller = self.createCollectionsViewController(libraryId: libraryId, selectedCollectionId: collectionId, dbStorage: userControllers.dbStorage, attachmentDownloader: userControllers.fileDownloader)
             self.navigationController.pushViewController(controller, animated: animated)
-
-            self.coordinatorDelegate?.libraryDidChange(to: libraryId)
         } else if libraryId != self.visibleLibraryId {
             // If Collections screen is visible, but for different library, switch controllers
             let controller = self.createCollectionsViewController(libraryId: libraryId, selectedCollectionId: collectionId, dbStorage: userControllers.dbStorage, attachmentDownloader: userControllers.fileDownloader)
@@ -168,8 +164,6 @@ extension MasterTopCoordinator: MasterLibrariesCoordinatorDelegate {
             viewControllers.append(controller)
 
             self.navigationController.setViewControllers(viewControllers, animated: animated)
-
-            self.coordinatorDelegate?.libraryDidChange(to: libraryId)
         } else if let controller = self.navigationController.visibleViewController as? CollectionsViewController, controller.selectedIdentifier != .custom(.all) {
             // Correct Collections screen is visible, just select proper collection
             controller.viewModel.process(action: .select(.custom(.all)))
@@ -211,6 +205,7 @@ extension MasterTopCoordinator: MasterCollectionsCoordinatorDelegate {
             Defaults.shared.selectedCollectionId = collection.identifier
         }
         self.mainCoordinatorDelegate.showItems(for: collection, in: library, isInitial: isInitial)
+        self.coordinatorDelegate?.didChange(toLibraryId: library.identifier, collectionId: collection.identifier)
     }
 
     var isSplit: Bool {
