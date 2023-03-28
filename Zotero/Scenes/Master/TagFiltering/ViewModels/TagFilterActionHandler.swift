@@ -67,26 +67,32 @@ struct TagFilterActionHandler: ViewModelActionHandler {
     }
 
     private func search(with term: String, in viewModel: ViewModel<TagFilterActionHandler>) {
-//        if !term.isEmpty {
-//            self.update(viewModel: viewModel) { state in
-//                if state.snapshot == nil {
-//                    state.snapshot = state.tags
-//                }
-//                state.searchTerm = term
-//                state.tags = (state.snapshot ?? state.tags).filter({ $0.name.localizedCaseInsensitiveContains(term) })
-//                state.changes = .tags
+        if !term.isEmpty {
+            self.update(viewModel: viewModel) { state in
+                if state.coloredSnapshot == nil {
+                    state.coloredSnapshot = state.coloredResults
+                }
+                if state.otherSnapshot == nil {
+                    state.otherSnapshot = state.otherResults
+                }
+                state.coloredResults = state.coloredSnapshot?.filter("name contains[c] %@", term)
+                state.otherResults = state.otherSnapshot?.filter("name contains[c] %@", term)
+                state.searchTerm = term
+                state.changes = .tags
 //                state.showAddTagButton = state.tags.isEmpty || state.tags.first(where: { $0.name == term }) == nil
-//            }
-//        } else {
-//            guard let snapshot = viewModel.state.snapshot else { return }
-//            self.update(viewModel: viewModel) { state in
-//                state.tags = snapshot
-//                state.snapshot = nil
-//                state.searchTerm = ""
-//                state.changes = .tags
+            }
+        } else {
+            guard let coloredSnapshot = viewModel.state.coloredSnapshot, let otherSnapshot = viewModel.state.otherSnapshot else { return }
+            self.update(viewModel: viewModel) { state in
+                state.coloredResults = coloredSnapshot
+                state.otherResults = otherSnapshot
+                state.coloredSnapshot = nil
+                state.otherSnapshot = nil
+                state.searchTerm = ""
+                state.changes = .tags
 //                state.showAddTagButton = false
-//            }
-//        }
+            }
+        }
     }
 
     private func load(libraryId: LibraryIdentifier, collectionId: CollectionIdentifier, clearSelection: Bool, in viewModel: ViewModel<TagFilterActionHandler>) {
@@ -98,7 +104,8 @@ struct TagFilterActionHandler: ViewModelActionHandler {
             let other = filtered.filter("color = \"\"")
 
             let coloredToken = colored.observe { [weak viewModel] change in
-                guard let viewModel = viewModel else { return }
+                // Don't update when search is active
+                guard let viewModel = viewModel, viewModel.state.coloredSnapshot == nil else { return }
                 switch change {
                 case .update(let results, let deletions, let insertions, let modifications):
                     self.update(viewModel: viewModel) { state in
@@ -109,7 +116,8 @@ struct TagFilterActionHandler: ViewModelActionHandler {
             }
 
             let otherToken = other.observe { [weak viewModel] change in
-                guard let viewModel = viewModel else { return }
+                // Don't update when search is active
+                guard let viewModel = viewModel, viewModel.state.otherSnapshot == nil else { return }
                 switch change {
                 case .update(let results, let deletions, let insertions, let modifications):
                     self.update(viewModel: viewModel) { state in
