@@ -37,16 +37,13 @@ struct TagPickerActionHandler: ViewModelActionHandler {
             }
 
         case .load:
-            self.load(for: viewModel.state.libraryId, clearSelection: false, in: viewModel)
+            self.load(in: viewModel)
 
         case .search(let term):
             self.search(with: term, in: viewModel)
 
         case .add(let name):
             self.add(name: name, in: viewModel)
-
-        case .changeLibrary(let libraryId):
-            self.load(for: libraryId, clearSelection: true, in: viewModel)
         }
     }
 
@@ -91,91 +88,22 @@ struct TagPickerActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func load(for libraryId: LibraryIdentifier, clearSelection: Bool, in viewModel: ViewModel<TagPickerActionHandler>) {
+    private func load(in viewModel: ViewModel<TagPickerActionHandler>) {
         do {
-            let request = ReadTagsDbRequest(libraryId: libraryId)
+            let request = ReadTagsDbRequest(libraryId: viewModel.state.libraryId)
             let results = try self.dbStorage.perform(request: request, on: .main)
-            var tags = Array(results.map(Tag.init))
-            var token: NotificationToken?
-
-            if viewModel.state.observeChanges {
-                token = results.observe { [weak viewModel] changes in
-                    guard let viewModel = viewModel else { return }
-
-                    switch changes {
-                    case .update(let results, _, _, _):
-                        self.update(results: results, viewModel: viewModel)
-                    case .error, .initial: break
-                    }
-                }
-            }
-
-            self.sortByColors(tags: &tags)
-
+            let colored = results.filter("color != \"\"").sorted(byKeyPath: "name")
+            let others = results.filter("color = \"\"").sorted(byKeyPath: "name")
+            let tags = Array(colored.map(Tag.init)) + Array(others.map(Tag.init))
             self.update(viewModel: viewModel) { state in
-                if state.libraryId != libraryId {
-                    state.libraryId = libraryId
-                }
-                
-                if clearSelection && !state.selectedTags.isEmpty {
-                    state.selectedTags = []
-                }
-
                 state.tags = tags
-                state.results = results
-                state.token = token
                 state.changes = [.tags, .selection]
             }
         } catch let error {
-            DDLogError("TagPickerStore: can't load tag: \(error)")
+            DDLogError("TagPickerActionHandler: can't load tag: \(error)")
             self.update(viewModel: viewModel) { state in
                 state.error = .loadingFailed
             }
         }
-    }
-
-    private func update(results: Results<RTag>, viewModel: ViewModel<TagPickerActionHandler>) {
-        // Create & sort new tags
-        var tags = Array(results.map(Tag.init))
-        self.sortByColors(tags: &tags)
-        // Filter out deleted selections
-        var selection = viewModel.state.selectedTags
-        for name in viewModel.state.selectedTags {
-            if results.filter("name == %@", name).first == nil {
-                selection.remove(name)
-            }
-        }
-
-        self.update(viewModel: viewModel) { state in
-            if state.snapshot == nil {
-                state.tags = tags
-            } else {
-                state.snapshot = tags
-                state.tags = tags.filter({ $0.name.localizedCaseInsensitiveContains(state.searchTerm) })
-                state.showAddTagButton = state.tags.isEmpty || state.tags.first(where: { $0.name == state.searchTerm }) == nil
-            }
-
-            state.changes = .tags
-
-            if state.selectedTags != selection {
-                state.selectedTags = selection
-                state.changes.insert(.selection)
-            }
-        }
-    }
-
-    private func sortByColors(tags: inout [Tag]) {
-        var coloredIndices: [Int] = []
-        for (index, tag) in tags.enumerated() {
-            if !tag.color.isEmpty {
-                coloredIndices.append(index)
-            }
-        }
-
-        var coloredTags: [Tag] = []
-        for idx in coloredIndices.reversed() {
-            coloredTags.append(tags.remove(at: idx))
-        }
-        tags.insert(contentsOf: coloredTags, at: 0)
     }
 }
