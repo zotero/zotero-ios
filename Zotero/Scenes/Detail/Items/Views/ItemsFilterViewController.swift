@@ -23,8 +23,9 @@ class ItemsFilterViewController: UIViewController {
     private static let width: CGFloat = 320
     private let viewModel: ViewModel<ItemsActionHandler>
     private let disposeBag: DisposeBag
+    private unowned let dbStorage: DbStorage
 
-    weak var coordinatorDelegate: DetailItemsFilterCoordinatorDelegate?
+    weak var coordinatorDelegate: ItemsFilterCoordinatorDelegate?
     private var downloadsFilterEnabled: Bool {
         return self.viewModel.state.filters.contains(where: { filter in
             switch filter {
@@ -34,8 +35,9 @@ class ItemsFilterViewController: UIViewController {
         })
     }
 
-    init(viewModel: ViewModel<ItemsActionHandler>) {
+    init(viewModel: ViewModel<ItemsActionHandler>, dbStorage: DbStorage) {
         self.viewModel = viewModel
+        self.dbStorage = dbStorage
         self.disposeBag = DisposeBag()
         super.init(nibName: "ItemsFilterViewController", bundle: nil)
     }
@@ -74,21 +76,28 @@ class ItemsFilterViewController: UIViewController {
 
     private func update(state: ItemsState) {
         if state.changes.contains(.filters) {
-//            self.update(tags: self.tagsFilter(from: state))
+            self.update(tagNames: state.tagsFilter)
         }
     }
 
-    private func update(tags: [Tag]?) {
-//        if let tags = tags {
-//            self.tagFilterButtonTitle.attributedText = AttributedTagStringGenerator.attributedString(from: tags, limit: 5)
-//            self.tagFilterChevron.isHidden = true
-//            self.tagFilterClearButton.isHidden = false
-//        } else {
-//            self.tagFilterButtonTitle.text = "-"
-//            self.tagFilterButtonTitle.textColor = .systemGray3
-//            self.tagFilterChevron.isHidden = false
-//            self.tagFilterClearButton.isHidden = true
-//        }
+    private func update(tagNames: Set<String>?) {
+        if let tagNames = tagNames {
+            do {
+                let request = ReadTagsWithNamesDbRequest(names: tagNames, libraryId: self.viewModel.state.library.identifier)
+                let tags = try self.dbStorage.perform(request: request, on: .main)
+                self.tagFilterButtonTitle.attributedText = AttributedTagStringGenerator.attributedString(fromUnsortedResults: tags, limit: 5)
+            } catch {
+                self.tagFilterButtonTitle.text = tagNames.sorted().joined(separator: ", ")
+            }
+
+            self.tagFilterChevron.isHidden = true
+            self.tagFilterClearButton.isHidden = false
+        } else {
+            self.tagFilterButtonTitle.text = "-"
+            self.tagFilterButtonTitle.textColor = .systemGray3
+            self.tagFilterChevron.isHidden = false
+            self.tagFilterClearButton.isHidden = true
+        }
     }
 
     @IBAction private func clearTags() {
@@ -112,17 +121,16 @@ class ItemsFilterViewController: UIViewController {
     }
 
     @IBAction private func showTagPicker() {
-//        let tags = self.tagsFilter(from: self.viewModel.state)
-//        let selected = tags.flatMap({ tags in tags.compactMap({ $0.name }) }).flatMap(Set.init) ?? []
-//        self.coordinatorDelegate?.showTagPicker(libraryId: self.viewModel.state.library.identifier, selected: selected, picked: { [weak self] newTags in
-//            if newTags.isEmpty {
-//                if let tags = tags {
-//                    self?.viewModel.process(action: .disableFilter(.tags(tags)))
-//                }
-//            } else {
-//                self?.viewModel.process(action: .enableFilter(.tags(newTags)))
-//            }
-//        })
+        let tags = self.viewModel.state.tagsFilter
+        self.coordinatorDelegate?.showTagPicker(libraryId: self.viewModel.state.library.identifier, selected: (tags ?? []), picked: { [weak self] newTags in
+            if newTags.isEmpty {
+                if let tags = tags {
+                    self?.viewModel.process(action: .disableFilter(.tags(tags)))
+                }
+            } else {
+                self?.viewModel.process(action: .enableFilter(.tags(Set(newTags.map({ $0.name })))))
+            }
+        })
     }
 
     @objc private func done() {
@@ -145,6 +153,6 @@ class ItemsFilterViewController: UIViewController {
         self.tagFilterClearButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 16)
 
         self.downloadsSwitch.isOn = self.downloadsFilterEnabled
-//        self.update(tags: self.tagsFilter(from: self.viewModel.state))
+        self.update(tagNames: self.viewModel.state.tagsFilter)
     }
 }
