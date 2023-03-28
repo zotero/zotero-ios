@@ -10,7 +10,6 @@ import Foundation
 
 enum TagPickerAction {
     case load
-    case changeLibrary(LibraryIdentifier)
     case select(String)
     case deselect(String)
     case search(String)
