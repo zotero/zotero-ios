@@ -33,14 +33,18 @@ final class MasterContainerViewController: UIViewController {
         }
     }
 
-    private static let bottomControllerTopPadding: CGFloat = 30
-    private static let bottomContainerTappableHeight: CGFloat = 40
+    private static let bottomControllerTopPadding: CGFloat = 35
+    private static let bottomContainerTappableHeight: CGFloat = 35
+    private static let minVisibleBottomHeight: CGFloat = 200
     let upperController: UIViewController
     let bottomController: DraggableViewController
     private let disposeBag: DisposeBag
 
     private weak var bottomContainer: UIView!
     private weak var bottomYConstraint: NSLayoutConstraint!
+    private weak var bottomContainerBottomConstraint: NSLayoutConstraint!
+    private weak var tapRecognizer: UITapGestureRecognizer?
+    private weak var panRecognizer: UIPanGestureRecognizer?
     // Current position of bottom container
     private var bottomPosition: BottomPosition
     // Previous position of bottom container. Used to return to previous position when drag handle is tapped.
@@ -68,6 +72,7 @@ final class MasterContainerViewController: UIViewController {
         super.viewDidLoad()
         self.view.backgroundColor = .clear
         self.setupView()
+        self.setupKeyboardObserving()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -109,6 +114,24 @@ final class MasterContainerViewController: UIViewController {
         })
     }
 
+    private func setupBottomView(with keyboardData: KeyboardData) {
+        if keyboardData.visibleHeight > 0 {
+            guard self.bottomContainerBottomConstraint.constant == 0 else { return }
+            self.previousBottomPosition = self.bottomPosition
+            self.set(bottomPosition: .mostlyVisible, containerHeight: (self.view.frame.height - keyboardData.visibleHeight))
+        } else {
+            self.set(bottomPosition: (self.previousBottomPosition ?? .default), containerHeight: self.view.frame.height)
+            self.previousBottomPosition = nil
+        }
+
+        self.bottomContainerBottomConstraint.constant = keyboardData.visibleHeight
+        self.tapRecognizer?.isEnabled = keyboardData.visibleHeight == 0
+        self.panRecognizer?.isEnabled = keyboardData.visibleHeight == 0
+        UIView.animate(withDuration: 0.5, delay: 0, options: .curveEaseOut, animations: {
+            self.view.layoutIfNeeded()
+        })
+    }
+
     // MARK: - Bottom panning
 
     private func set(bottomPosition: BottomPosition, containerHeight: CGFloat) {
@@ -119,7 +142,6 @@ final class MasterContainerViewController: UIViewController {
     private func toolbarDidPan(recognizer: UIPanGestureRecognizer) {
         switch recognizer.state {
         case .began:
-            DDLogInfo("PAN: did start")
             self.initialBottomMinY = self.bottomContainer.frame.minY
             self.bottomController.disablePanning()
 
@@ -127,7 +149,6 @@ final class MasterContainerViewController: UIViewController {
             guard let initialMinY = self.initialBottomMinY else { return }
 
             let translation = recognizer.translation(in: self.view)
-            DDLogInfo("PAN: changed with translation \(translation.y)")
             var minY = initialMinY + translation.y
             if minY < BottomPosition.mostlyVisible.topOffset(availableHeight: self.view.frame.height) {
                 minY = BottomPosition.mostlyVisible.topOffset(availableHeight: self.view.frame.height)
@@ -174,6 +195,11 @@ final class MasterContainerViewController: UIViewController {
                 return velocity.y > 0 ? .default : .mostlyVisible
             }
         }
+
+        if yPos > (containerHeight - MasterContainerViewController.minVisibleBottomHeight) {
+            return velocity.y > 0 ? .hidden : .default
+        }
+
         return .custom(yPos)
     }
 
@@ -200,6 +226,7 @@ final class MasterContainerViewController: UIViewController {
                          self.toolbarDidPan(recognizer: recognizer)
                      })
                     .disposed(by: self.disposeBag)
+        self.panRecognizer = bottomPanRecognizer
 
         let tapRecognizer = UITapGestureRecognizer()
         tapRecognizer.delegate = self
@@ -209,13 +236,11 @@ final class MasterContainerViewController: UIViewController {
                          self.toggleBottomPosition()
                      })
                     .disposed(by: self.disposeBag)
+        self.tapRecognizer = tapRecognizer
 
         let bottomContainer = UIView()
         bottomContainer.translatesAutoresizingMaskIntoConstraints = false
-        bottomContainer.backgroundColor = .secondarySystemBackground
-        bottomContainer.layer.cornerRadius = 16
-        bottomContainer.layer.masksToBounds = true
-        bottomContainer.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner]
+        bottomContainer.backgroundColor = .systemBackground
         bottomContainer.addGestureRecognizer(bottomPanRecognizer)
         bottomContainer.addGestureRecognizer(tapRecognizer)
         self.view.addSubview(bottomContainer)
@@ -231,7 +256,17 @@ final class MasterContainerViewController: UIViewController {
         dragIcon.tintColor = .gray.withAlphaComponent(0.6)
         bottomContainer.addSubview(dragIcon)
 
+        let separator = UIView()
+        separator.translatesAutoresizingMaskIntoConstraints = false
+        separator.backgroundColor = .opaqueSeparator
+        bottomContainer.addSubview(separator)
+
         let bottomYConstraint = bottomContainer.topAnchor.constraint(equalTo: self.view.topAnchor)
+        let bottomControllerHeight = self.bottomController.view.heightAnchor.constraint(greaterThanOrEqualToConstant: 100)
+        bottomControllerHeight.priority = .required
+        let bottomControllerBottom = self.bottomController.view.bottomAnchor.constraint(equalTo: bottomContainer.bottomAnchor)
+        bottomControllerBottom.priority = UILayoutPriority(999)
+        let bottomContainerBottomConstraint = self.view.bottomAnchor.constraint(equalTo: bottomContainer.bottomAnchor)
 
         NSLayoutConstraint.activate([
             self.view.topAnchor.constraint(equalTo: self.upperController.view.topAnchor),
@@ -241,16 +276,44 @@ final class MasterContainerViewController: UIViewController {
             bottomYConstraint,
             self.view.leadingAnchor.constraint(equalTo: bottomContainer.leadingAnchor),
             self.view.trailingAnchor.constraint(equalTo: bottomContainer.trailingAnchor),
-            self.view.bottomAnchor.constraint(equalTo: bottomContainer.bottomAnchor),
+            bottomContainerBottomConstraint,
             self.bottomController.view.topAnchor.constraint(equalTo: bottomContainer.topAnchor, constant: MasterContainerViewController.bottomControllerTopPadding),
             self.bottomController.view.leadingAnchor.constraint(equalTo: bottomContainer.leadingAnchor),
             self.bottomController.view.trailingAnchor.constraint(equalTo: bottomContainer.trailingAnchor),
-            self.bottomController.view.bottomAnchor.constraint(equalTo: bottomContainer.bottomAnchor),
+            bottomControllerHeight,
+            bottomControllerBottom,
             dragIcon.centerXAnchor.constraint(equalTo: bottomContainer.centerXAnchor),
-            dragIcon.topAnchor.constraint(equalTo: bottomContainer.topAnchor, constant: 12.5)
+            dragIcon.topAnchor.constraint(equalTo: bottomContainer.topAnchor, constant: 12.5),
+            separator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale),
+            separator.topAnchor.constraint(equalTo: bottomContainer.topAnchor),
+            separator.leadingAnchor.constraint(equalTo: bottomContainer.leadingAnchor),
+            separator.trailingAnchor.constraint(equalTo: bottomContainer.trailingAnchor)
         ])
 
         self.bottomYConstraint = bottomYConstraint
+        self.bottomContainerBottomConstraint = bottomContainerBottomConstraint
+    }
+
+    private func setupKeyboardObserving() {
+        NotificationCenter.default
+                          .keyboardWillShow
+                          .observe(on: MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] notification in
+                              if let data = notification.keyboardData {
+                                  self?.setupBottomView(with: data)
+                              }
+                          })
+                          .disposed(by: self.disposeBag)
+
+        NotificationCenter.default
+                          .keyboardWillHide
+                          .observe(on: MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] notification in
+                              if let data = notification.keyboardData {
+                                  self?.setupBottomView(with: data)
+                              }
+                          })
+                          .disposed(by: self.disposeBag)
     }
 }
 
