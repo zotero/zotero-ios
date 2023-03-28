@@ -84,7 +84,7 @@ final class MainViewController: UISplitViewController {
         let navigationController = UINavigationController()
         let tagFilterController = (self.viewControllers.first as? MasterContainerViewController)?.bottomController as? TagFilterViewController
 
-        let coordinator = DetailCoordinator(library: library, collection: collection, searchItemKeys: searchItemKeys, navigationController: navigationController, tagFilterController: tagFilterController, controllers: self.controllers)
+        let coordinator = DetailCoordinator(library: library, collection: collection, searchItemKeys: searchItemKeys, navigationController: navigationController, itemsTagFilterDelegate: tagFilterController, controllers: self.controllers)
         coordinator.start(animated: false)
         self.detailCoordinator = coordinator
 
