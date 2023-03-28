@@ -163,7 +163,7 @@ final class ShareViewController: UIViewController {
     @IBAction private func showTagPicker() {
         guard let dbStorage = self.dbStorage else { return }
 
-        let state = TagPickerState(libraryId: self.viewModel.state.selectedLibraryId, selectedTags: Set(self.viewModel.state.tags.map({ $0.name })), observeChanges: false)
+        let state = TagPickerState(libraryId: self.viewModel.state.selectedLibraryId, selectedTags: Set(self.viewModel.state.tags.map({ $0.name })))
         let handler = TagPickerActionHandler(dbStorage: dbStorage)
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = TagPickerViewController(viewModel: viewModel, saveAction: { [weak self] tags in
