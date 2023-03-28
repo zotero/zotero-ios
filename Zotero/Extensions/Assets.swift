@@ -145,6 +145,7 @@ internal enum Asset {
       internal static let share = ImageAsset(name: "Onboarding/share")
       internal static let sync = ImageAsset(name: "Onboarding/sync")
     }
+    internal static let dragHandle = ImageAsset(name: "drag_handle")
     internal static let emptyTrash = ImageAsset(name: "empty_trash")
     internal static let pdfRawReader = ImageAsset(name: "pdf_raw_reader")
     internal static let restoreTrash = ImageAsset(name: "restore_trash")

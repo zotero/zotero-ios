@@ -39,10 +39,6 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func show(error: ItemsError)
 }
 
-protocol DetailItemsFilterCoordinatorDelegate: AnyObject {
-    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
-}
-
 protocol DetailItemDetailCoordinatorDelegate: AnyObject {
     func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
     func showAttachmentPicker(save: @escaping ([URL]) -> Void)
@@ -77,13 +73,18 @@ protocol DetailCitationCoordinatorDelegate: AnyObject {
     func showMissingStyleError()
 }
 
+protocol ItemsTagFilterDelegate: AnyObject {
+    var selectedTags: Set<String> { get }
+    var delegate: TagFilterDelegate? { get set }
+}
+
 class EmptyTransitioningDelegate: NSObject, UIViewControllerTransitioningDelegate {}
 
 final class DetailCoordinator: Coordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
     private var transitionDelegate: EmptyTransitioningDelegate?
-    weak var tagFilterController: TagFilterViewController?
+    weak var itemsTagFilterDelegate: ItemsTagFilterDelegate?
 
     let collection: Collection
     let library: Library
@@ -94,12 +95,12 @@ final class DetailCoordinator: Coordinator {
 
     private weak var citationNavigationController: UINavigationController?
 
-    init(library: Library, collection: Collection, searchItemKeys: [String]?, navigationController: UINavigationController, tagFilterController: TagFilterViewController?, controllers: Controllers) {
+    init(library: Library, collection: Collection, searchItemKeys: [String]?, navigationController: UINavigationController, itemsTagFilterDelegate: ItemsTagFilterDelegate?, controllers: Controllers) {
         self.library = library
         self.collection = collection
         self.searchItemKeys = searchItemKeys
         self.navigationController = navigationController
-        self.tagFilterController = tagFilterController
+        self.itemsTagFilterDelegate = itemsTagFilterDelegate
         self.controllers = controllers
         self.childCoordinators = []
         self.disposeBag = DisposeBag()
@@ -112,15 +113,15 @@ final class DetailCoordinator: Coordinator {
     func start(animated: Bool) {
         guard let userControllers = self.controllers.userControllers else { return }
         let controller = self.createItemsViewController(collection: self.collection, library: self.library, dbStorage: userControllers.dbStorage, fileDownloader: userControllers.fileDownloader,
-                                                        syncScheduler: userControllers.syncScheduler, citationController: userControllers.citationController, fileCleanupController: userControllers.fileCleanupController, tagFilterController: self.tagFilterController)
+                                                        syncScheduler: userControllers.syncScheduler, citationController: userControllers.citationController, fileCleanupController: userControllers.fileCleanupController, itemsTagFilterDelegate: self.itemsTagFilterDelegate)
         self.navigationController.setViewControllers([controller], animated: animated)
     }
 
     private func createItemsViewController(collection: Collection, library: Library, dbStorage: DbStorage, fileDownloader: AttachmentDownloader, syncScheduler: SynchronizationScheduler,
-                                           citationController: CitationController, fileCleanupController: AttachmentFileCleanupController, tagFilterController: TagFilterViewController?) -> ItemsViewController {
+                                           citationController: CitationController, fileCleanupController: AttachmentFileCleanupController, itemsTagFilterDelegate: ItemsTagFilterDelegate?) -> ItemsViewController {
         let searchTerm = self.searchItemKeys?.joined(separator: " ")
         var filters: [ItemsState.Filter] = []
-        if let tags = tagFilterController?.selectedTags, !tags.isEmpty {
+        if let tags = itemsTagFilterDelegate?.selectedTags, !tags.isEmpty {
             filters.append(.tags(tags))
         }
         let state = ItemsState(collection: collection, library: library, sortType: .default, searchTerm: searchTerm, filters: filters, error: nil)
@@ -133,7 +134,7 @@ final class DetailCoordinator: Coordinator {
                                          fileCleanupController: fileCleanupController,
                                          syncScheduler: syncScheduler)
         let controller = ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: self.controllers, coordinatorDelegate: self)
-        tagFilterController?.delegate = controller
+        itemsTagFilterDelegate?.delegate = controller
         return controller
     }
 
@@ -214,7 +215,7 @@ final class DetailCoordinator: Coordinator {
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, navigationController: UINavigationController, picked: @escaping ([Tag]) -> Void) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
 
-        let state = TagPickerState(libraryId: libraryId, selectedTags: selected, observeChanges: false)
+        let state = TagPickerState(libraryId: libraryId, selectedTags: selected)
         let handler = TagPickerActionHandler(dbStorage: dbStorage)
         let viewModel = ViewModel(initialState: state, handler: handler)
         let tagController = TagPickerViewController(viewModel: viewModel, saveAction: picked)
@@ -273,7 +274,7 @@ final class DetailCoordinator: Coordinator {
     }
 }
 
-extension DetailCoordinator: DetailItemsCoordinatorDelegate, DetailItemsFilterCoordinatorDelegate {
+extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem) {
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         controller.popoverPresentationController?.barButtonItem = button
@@ -374,15 +375,15 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate, DetailItemsFilterCo
     }
 
     func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void) {
-        let state = NoteEditorState(title: title, text: text, tags: tags, libraryId: libraryId, readOnly: readOnly)
-        let handler = NoteEditorActionHandler(saveAction: save)
-        let viewModel = ViewModel(initialState: state, handler: handler)
-        let controller = NoteEditorViewController(viewModel: viewModel)
-        controller.coordinatorDelegate = self
-
-        let navigationController = UINavigationController(rootViewController: controller)
+        let navigationController = NavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
         navigationController.isModalInPresentation = true
+
+        let coordinator = NoteEditorCoordinator(text: text, tags: tags, title: title, libraryId: libraryId, readOnly: readOnly, save: save, navigationController: navigationController, controllers: self.controllers)
+        coordinator.parentCoordinator = self
+        self.childCoordinators.append(coordinator)
+        coordinator.start(animated: false)
+
         self.navigationController.present(navigationController, animated: true, completion: nil)
     }
 
@@ -422,11 +423,15 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate, DetailItemsFilterCo
     }
 
     func showFilters(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem) {
-        let controller = ItemsFilterViewController(viewModel: viewModel)
-        controller.coordinatorDelegate = self
-        let navigationController = UINavigationController(rootViewController: controller)
+        let navigationController = NavigationViewController()
         navigationController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         navigationController.popoverPresentationController?.barButtonItem = button
+
+        let coordinator = ItemsFilterCoordinator(viewModel: viewModel, navigationController: navigationController, controllers: self.controllers)
+        coordinator.parentCoordinator = self
+        self.childCoordinators.append(coordinator)
+        coordinator.start(animated: false)
+
         self.navigationController.present(navigationController, animated: true, completion: nil)
     }
 
