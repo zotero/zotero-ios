@@ -113,7 +113,7 @@ final class MasterContainerViewController: UIViewController {
 
         self.setupGestureRecognizer(for: dragHandle)
 
-        let dragIcon = UIImageView(image: UIImage(systemName: "arrow.up.and.down", withConfiguration: UIImage.SymbolConfiguration(scale: .small)))
+        let dragIcon = UIImageView(image: Asset.Images.dragHandle.image.withRenderingMode(.alwaysTemplate))
         dragIcon.translatesAutoresizingMaskIntoConstraints = false
         dragIcon.tintColor = .gray.withAlphaComponent(0.6)
         dragHandle.addSubview(dragIcon)
