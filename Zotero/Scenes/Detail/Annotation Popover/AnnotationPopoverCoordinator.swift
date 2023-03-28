@@ -71,7 +71,7 @@ extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDe
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
 
-        let state = TagPickerState(libraryId: libraryId, selectedTags: selected, observeChanges: false)
+        let state = TagPickerState(libraryId: libraryId, selectedTags: selected)
         let handler = TagPickerActionHandler(dbStorage: dbStorage)
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = TagPickerViewController(viewModel: viewModel, saveAction: picked)
