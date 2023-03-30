@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-struct ReadTagsDbRequest: DbResponseRequest {
+struct ReadTagPickerTagsDbRequest: DbResponseRequest {
     typealias Response = Results<RTag>
 
     let libraryId: LibraryIdentifier
@@ -49,36 +49,46 @@ struct ReadColoredTagsDbRequest: DbResponseRequest {
     }
 }
 
-struct ReadFilterTagsDbRequest: DbResponseRequest {
+struct ReadTagsForCollectionDbRequest: DbResponseRequest {
     typealias Response = Results<RTag>
 
-    let libraryId: LibraryIdentifier
     let collectionId: CollectionIdentifier
-    let selectedNames: Set<String>
+    let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> Results<RTag> {
-        var conditions: [NSPredicate] = [.library(with: self.libraryId), NSPredicate(format: "tags.@count > 0")]
+        var results = database.objects(RTag.self).filter(.library(with: self.libraryId)).filter("tags.@count > 0")
 
         switch self.collectionId {
         case .collection(let string):
-            conditions.append(NSPredicate(format: "any tags.item.collections.key = %@", string))
+            results = results.filter(NSPredicate(format: "any tags.item.collections.key = %@", string))
         case .custom(let customType):
             switch customType {
             case .all, .publications: break
             case .unfiled:
-                conditions.append(NSPredicate(format: "any tags.item.collections.@count == 0"))
+                results = results.filter(NSPredicate(format: "any tags.item.collections.@count == 0"))
             case .trash:
-                conditions.append(NSPredicate(format: "any tags.item.trash = true"))
+                results = results.filter(NSPredicate(format: "any tags.item.trash = true"))
             }
         case .search: break
         }
 
-        if !self.selectedNames.isEmpty {
-            conditions.append(NSPredicate(format: "any tags.item.tags.tag.name in %@", self.selectedNames))
-        }
+        return results
+    }
+}
 
-        return database.objects(RTag.self).filter(NSCompoundPredicate(andPredicateWithSubpredicates: conditions))
+struct ReadTagsForItemsDbRequest: DbResponseRequest {
+    typealias Response = Results<RTag>
+
+    let itemKeys: Set<String>
+    let libraryId: LibraryIdentifier
+
+    var needsWrite: Bool { return false }
+
+    func process(in database: Realm) throws -> Results<RTag> {
+        return database.objects(RTag.self).filter(.library(with: self.libraryId))
+                                          .filter("tags.@count > 0")
+                                          .filter("any tags.item.key in %@", self.itemKeys)
     }
 }

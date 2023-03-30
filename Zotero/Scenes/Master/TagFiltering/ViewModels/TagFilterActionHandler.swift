@@ -28,17 +28,18 @@ struct TagFilterActionHandler: ViewModelActionHandler {
                 state.selectedTags.insert(name)
                 state.changes = .selection
             }
-            self.load(libraryId: viewModel.state.libraryId, collectionId: viewModel.state.collectionId, clearSelection: false, in: viewModel)
 
         case .deselect(let name):
             self.update(viewModel: viewModel) { state in
                 state.selectedTags.remove(name)
                 state.changes = .selection
             }
-            self.load(libraryId: viewModel.state.libraryId, collectionId: viewModel.state.collectionId, clearSelection: false, in: viewModel)
 
-        case .load(let libraryId, let collectionId, let clearSelection):
-            self.load(libraryId: libraryId, collectionId: collectionId, clearSelection: clearSelection, in: viewModel)
+        case .loadWithKeys(let keys, let libraryId, let clearSelection):
+            self.load(itemKeys: keys, libraryId: libraryId, clearSelection: clearSelection, in: viewModel)
+
+        case .loadWithCollection(let collectionId, let libraryId, let clearSelection):
+            self.load(collectionId: collectionId, libraryId: libraryId, clearSelection: clearSelection, in: viewModel)
 
         case .search(let term):
             self.search(with: term, in: viewModel)
@@ -95,10 +96,19 @@ struct TagFilterActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func load(libraryId: LibraryIdentifier, collectionId: CollectionIdentifier, clearSelection: Bool, in viewModel: ViewModel<TagFilterActionHandler>) {
+    private func load(itemKeys: Set<String>, libraryId: LibraryIdentifier, clearSelection: Bool, in viewModel: ViewModel<TagFilterActionHandler>) {
+        let request = ReadTagsForItemsDbRequest(itemKeys: itemKeys, libraryId: libraryId)
+        self.load(filterRequest: request, libraryId: libraryId, clearSelection: clearSelection, in: viewModel)
+    }
+
+    private func load(collectionId: CollectionIdentifier, libraryId: LibraryIdentifier, clearSelection: Bool, in viewModel: ViewModel<TagFilterActionHandler>) {
+        let request = ReadTagsForCollectionDbRequest(collectionId: collectionId, libraryId: libraryId)
+        self.load(filterRequest: request, libraryId: libraryId, clearSelection: clearSelection, in: viewModel)
+    }
+
+    private func load<Request: DbResponseRequest>(filterRequest: Request, libraryId: LibraryIdentifier, clearSelection: Bool, in viewModel: ViewModel<TagFilterActionHandler>) where Request.Response == Results<RTag> {
         do {
-            let filteredRequest = ReadFilterTagsDbRequest(libraryId: libraryId, collectionId: collectionId, selectedNames: (clearSelection ? [] : viewModel.state.selectedTags))
-            let filtered = (try self.dbStorage.perform(request: filteredRequest, on: .main)).sorted(byKeyPath: "name")
+            let filtered = (try self.dbStorage.perform(request: filterRequest, on: .main)).sorted(byKeyPath: "name")
             let coloredRequest = ReadColoredTagsDbRequest(libraryId: libraryId)
             let colored = (try self.dbStorage.perform(request: coloredRequest, on: .main)).sorted(byKeyPath: "name")
             let other = filtered.filter("color = \"\"")
@@ -128,8 +138,6 @@ struct TagFilterActionHandler: ViewModelActionHandler {
             }
 
             self.update(viewModel: viewModel) { state in
-                state.libraryId = libraryId
-                state.collectionId = collectionId
                 state.coloredResults = colored
                 state.coloredNotificationToken = coloredToken
                 state.otherResults = other
