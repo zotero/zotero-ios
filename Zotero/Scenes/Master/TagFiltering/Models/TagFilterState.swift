@@ -31,8 +31,6 @@ struct TagFilterState: ViewModelState {
         let deletions: [Int]
     }
 
-    var libraryId: LibraryIdentifier
-    var collectionId: CollectionIdentifier
     var coloredResults: Results<RTag>?
     var coloredChange: ObservedChange?
     var coloredSnapshot: Results<RTag>?
@@ -47,9 +45,7 @@ struct TagFilterState: ViewModelState {
     var error: Error?
     var changes: Changes
 
-    init(libraryId: LibraryIdentifier, collectionId: CollectionIdentifier, selectedTags: Set<String>) {
-        self.libraryId = libraryId
-        self.collectionId = collectionId
+    init(selectedTags: Set<String>) {
         self.searchTerm = ""
         self.selectedTags = selectedTags
         self.changes = []

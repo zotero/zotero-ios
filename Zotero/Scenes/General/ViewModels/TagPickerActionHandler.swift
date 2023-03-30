@@ -90,7 +90,7 @@ struct TagPickerActionHandler: ViewModelActionHandler {
 
     private func load(in viewModel: ViewModel<TagPickerActionHandler>) {
         do {
-            let request = ReadTagsDbRequest(libraryId: viewModel.state.libraryId)
+            let request = ReadTagPickerTagsDbRequest(libraryId: viewModel.state.libraryId)
             let results = try self.dbStorage.perform(request: request, on: .main)
             let colored = results.filter("color != \"\"").sorted(byKeyPath: "name")
             let others = results.filter("color = \"\"").sorted(byKeyPath: "name")
