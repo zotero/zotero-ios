@@ -633,7 +633,11 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
                 case .downloadedFiles:
                     results = results.filter("fileDownloaded = true or any children.fileDownloaded = true")
                 case .tags(let tags):
-                    results = results.filter("any tags.tag.name in %@ or any children.tags.tag.name in %@", tags, tags)
+                    var predicates: [NSPredicate] = []
+                    for tag in tags {
+                        predicates.append(NSPredicate(format: "any tags.tag.name == %@ or any children.tags.tag.name == %@ or SUBQUERY(children, $item, any $item.children.tags.tag.name == %@).@count > 0", tag, tag, tag))
+                    }
+                    results = results.filter(NSCompoundPredicate(andPredicateWithSubpredicates: predicates))
                 }
             }
         }
