@@ -29,10 +29,7 @@ protocol MasterCollectionsCoordinatorDelegate: MainCoordinatorDelegate {
 }
 
 final class MasterTopCoordinator: NSObject, Coordinator {
-    // parentCoordinator can't be used because `MasterCoordinator` does not conform to `Coordinator` protocol
     weak var parentCoordinator: Coordinator?
-    // `coordinatorDelegate` is used in its place
-    weak var coordinatorDelegate: MasterToMasterTopCoordinatorDelegate?
     var childCoordinators: [Coordinator]
     private(set) var visibleLibraryId: LibraryIdentifier
 
@@ -205,7 +202,6 @@ extension MasterTopCoordinator: MasterCollectionsCoordinatorDelegate {
             Defaults.shared.selectedCollectionId = collection.identifier
         }
         self.mainCoordinatorDelegate.showItems(for: collection, in: library, isInitial: isInitial)
-        self.coordinatorDelegate?.didChange(toLibraryId: library.identifier, collectionId: collection.identifier)
     }
 
     var isSplit: Bool {
