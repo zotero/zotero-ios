@@ -52,6 +52,7 @@ final class ItemsViewController: UIViewController {
     private weak var searchBarContainer: SearchBarContainer?
     private var searchBarNeedsReset = false
     private weak var webView: WKWebView?
+    weak var tagFilterDelegate: ItemsTagFilterDelegate?
 
     private weak var coordinatorDelegate: DetailItemsCoordinatorDelegate?
 
@@ -63,7 +64,10 @@ final class ItemsViewController: UIViewController {
 
         super.init(nibName: "ItemsViewController", bundle: nil)
 
+        let start = CFAbsoluteTimeGetCurrent()
         viewModel.process(action: .loadInitialState)
+        let res = CFAbsoluteTimeGetCurrent() - start
+        DDLogInfo("ITEMS TIME: \(res)")
     }
 
     required init?(coder: NSCoder) {
@@ -103,6 +107,8 @@ final class ItemsViewController: UIViewController {
         if let results = self.viewModel.state.results {
             self.startObserving(results: results)
         }
+
+        self.updateTagFilter(with: self.viewModel.state, isInitial: true)
 
         self.tableViewHandler.tapObserver
                              .observe(on: MainScheduler.instance)
@@ -175,9 +181,9 @@ final class ItemsViewController: UIViewController {
             self.webView = nil
         }
 
-        if state.changes.contains(.results),
-           let results = state.results {
+        if state.changes.contains(.results), let results = state.results {
             self.startObserving(results: results)
+            self.updateTagFilter(with: state, isInitial: false)
         } else if state.changes.contains(.attachmentsRemoved) {
             self.tableViewHandler.reloadAllAttachments()
         } else if let key = state.updateItemKey {
@@ -247,6 +253,14 @@ final class ItemsViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    private func updateTagFilter(with state: ItemsState, isInitial: Bool) {
+        if !state.filters.isEmpty, let results = state.results {
+            self.tagFilterDelegate?.itemsDidChange(results: results, libraryId: viewModel.state.library.identifier, isInitial: isInitial)
+        } else {
+            self.tagFilterDelegate?.itemsDidChange(collectionId: state.collection.identifier, libraryId: state.library.identifier, isInitial: isInitial)
+        }
+    }
 
     private func process(error: ItemsError, state: ItemsState) {
         // Perform additional actions for individual errors if needed

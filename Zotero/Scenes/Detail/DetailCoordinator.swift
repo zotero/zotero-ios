@@ -13,6 +13,7 @@ import SafariServices
 import SwiftUI
 
 import CocoaLumberjackSwift
+import RealmSwift
 import RxSwift
 import SwiftyGif
 
@@ -76,6 +77,9 @@ protocol DetailCitationCoordinatorDelegate: AnyObject {
 protocol ItemsTagFilterDelegate: AnyObject {
     var selectedTags: Set<String> { get }
     var delegate: TagFilterDelegate? { get set }
+    
+    func itemsDidChange(collectionId: CollectionIdentifier, libraryId: LibraryIdentifier, isInitial: Bool)
+    func itemsDidChange(results: Results<RItem>, libraryId: LibraryIdentifier, isInitial: Bool)
 }
 
 class EmptyTransitioningDelegate: NSObject, UIViewControllerTransitioningDelegate {}
@@ -134,6 +138,7 @@ final class DetailCoordinator: Coordinator {
                                          fileCleanupController: fileCleanupController,
                                          syncScheduler: syncScheduler)
         let controller = ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: self.controllers, coordinatorDelegate: self)
+        controller.tagFilterDelegate = itemsTagFilterDelegate
         itemsTagFilterDelegate?.delegate = controller
         return controller
     }
