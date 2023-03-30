@@ -25,16 +25,17 @@ final class MasterContainerViewController: UIViewController {
 
         func topOffset(availableHeight: CGFloat) -> CGFloat {
             switch self {
-            case .mostlyVisible: return 246
+            case .mostlyVisible: return 202
             case .default: return availableHeight * 0.6
-            case .hidden: return availableHeight - MasterContainerViewController.bottomControllerTopPadding
+            case .hidden: return availableHeight - MasterContainerViewController.bottomControllerHandleHeight
             case .custom(let offset): return offset
             }
         }
     }
 
-    private static let bottomControllerTopPadding: CGFloat = 35
+    private static let bottomControllerHandleHeight: CGFloat = 35
     private static let bottomContainerTappableHeight: CGFloat = 35
+    private static let bottomContainerDraggableHeight: CGFloat = 55
     private static let minVisibleBottomHeight: CGFloat = 200
     let upperController: UIViewController
     let bottomController: DraggableViewController
@@ -240,6 +241,7 @@ final class MasterContainerViewController: UIViewController {
 
         let bottomContainer = UIView()
         bottomContainer.translatesAutoresizingMaskIntoConstraints = false
+        bottomContainer.layer.masksToBounds = true
         bottomContainer.backgroundColor = .systemBackground
         bottomContainer.addGestureRecognizer(bottomPanRecognizer)
         bottomContainer.addGestureRecognizer(tapRecognizer)
@@ -250,6 +252,11 @@ final class MasterContainerViewController: UIViewController {
         bottomContainer.addSubview(self.bottomController.view)
         self.addChild(self.bottomController)
         self.bottomController.didMove(toParent: self)
+
+        let handleBackground = UIView()
+        handleBackground.translatesAutoresizingMaskIntoConstraints = false
+        handleBackground.backgroundColor = .systemBackground
+        bottomContainer.addSubview(handleBackground)
 
         let dragIcon = UIImageView(image: Asset.Images.dragHandle.image.withRenderingMode(.alwaysTemplate))
         dragIcon.translatesAutoresizingMaskIntoConstraints = false
@@ -277,11 +284,15 @@ final class MasterContainerViewController: UIViewController {
             self.view.leadingAnchor.constraint(equalTo: bottomContainer.leadingAnchor),
             self.view.trailingAnchor.constraint(equalTo: bottomContainer.trailingAnchor),
             bottomContainerBottomConstraint,
-            self.bottomController.view.topAnchor.constraint(equalTo: bottomContainer.topAnchor, constant: MasterContainerViewController.bottomControllerTopPadding),
+            self.bottomController.view.topAnchor.constraint(equalTo: bottomContainer.topAnchor, constant: MasterContainerViewController.bottomControllerHandleHeight),
             self.bottomController.view.leadingAnchor.constraint(equalTo: bottomContainer.leadingAnchor),
             self.bottomController.view.trailingAnchor.constraint(equalTo: bottomContainer.trailingAnchor),
             bottomControllerHeight,
             bottomControllerBottom,
+            handleBackground.topAnchor.constraint(equalTo: bottomContainer.topAnchor),
+            handleBackground.leadingAnchor.constraint(equalTo: bottomContainer.leadingAnchor),
+            handleBackground.trailingAnchor.constraint(equalTo: bottomContainer.trailingAnchor),
+            handleBackground.heightAnchor.constraint(equalToConstant: MasterContainerViewController.bottomControllerHandleHeight),
             dragIcon.centerXAnchor.constraint(equalTo: bottomContainer.centerXAnchor),
             dragIcon.topAnchor.constraint(equalTo: bottomContainer.topAnchor, constant: 12.5),
             separator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale),
@@ -319,22 +330,30 @@ final class MasterContainerViewController: UIViewController {
 
 extension MasterContainerViewController: UIGestureRecognizerDelegate {
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        guard let tapRecognizer = gestureRecognizer as? UITapGestureRecognizer else { return true }
-        let location = tapRecognizer.location(in: self.bottomContainer)
-        return location.y <= MasterContainerViewController.bottomContainerTappableHeight
-    }
+        let location = gestureRecognizer.location(in: self.bottomContainer)
 
-    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
-        guard let panRecognizer = gestureRecognizer as? UIPanGestureRecognizer, let collectionView = otherGestureRecognizer.view as? UICollectionView else { return true }
-
-        let translation = panRecognizer.translation(in: self.view)
-
-        if collectionView.contentSize.height <= collectionView.frame.height {
-            return true
+        if gestureRecognizer is UITapGestureRecognizer {
+            return location.y <= MasterContainerViewController.bottomContainerTappableHeight
         }
-        if translation.y > 0 {
-            return collectionView.contentOffset.y == 0
+
+        if gestureRecognizer is UIPanGestureRecognizer {
+            return location.y <= MasterContainerViewController.bottomContainerDraggableHeight
         }
+
         return false
     }
+
+//    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+//        guard let panRecognizer = gestureRecognizer as? UIPanGestureRecognizer, let collectionView = otherGestureRecognizer.view as? UICollectionView else { return true }
+//
+//        let translation = panRecognizer.translation(in: self.view)
+//
+//        if collectionView.contentSize.height <= collectionView.frame.height {
+//            return true
+//        }
+//        if translation.y > 0 {
+//            return collectionView.contentOffset.y == 0
+//        }
+//        return false
+//    }
 }
