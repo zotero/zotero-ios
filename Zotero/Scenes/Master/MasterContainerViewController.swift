@@ -33,7 +33,8 @@ final class MasterContainerViewController: UIViewController {
         }
     }
 
-    private static let bottomControllerHandleHeight: CGFloat = 35
+    private static let dragHandleTopOffset: CGFloat = 11
+    private static let bottomControllerHandleHeight: CGFloat = 27
     private static let bottomContainerTappableHeight: CGFloat = 35
     private static let bottomContainerDraggableHeight: CGFloat = 55
     private static let minVisibleBottomHeight: CGFloat = 200
@@ -294,7 +295,7 @@ final class MasterContainerViewController: UIViewController {
             handleBackground.trailingAnchor.constraint(equalTo: bottomContainer.trailingAnchor),
             handleBackground.heightAnchor.constraint(equalToConstant: MasterContainerViewController.bottomControllerHandleHeight),
             dragIcon.centerXAnchor.constraint(equalTo: bottomContainer.centerXAnchor),
-            dragIcon.topAnchor.constraint(equalTo: bottomContainer.topAnchor, constant: 12.5),
+            dragIcon.topAnchor.constraint(equalTo: bottomContainer.topAnchor, constant: MasterContainerViewController.dragHandleTopOffset),
             separator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale),
             separator.topAnchor.constraint(equalTo: bottomContainer.topAnchor),
             separator.leadingAnchor.constraint(equalTo: bottomContainer.leadingAnchor),

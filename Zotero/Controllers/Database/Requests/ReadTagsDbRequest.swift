@@ -54,6 +54,7 @@ struct ReadTagsForCollectionDbRequest: DbResponseRequest {
 
     let collectionId: CollectionIdentifier
     let libraryId: LibraryIdentifier
+    let showAutomatic: Bool
 
     var needsWrite: Bool { return false }
 
@@ -74,6 +75,10 @@ struct ReadTagsForCollectionDbRequest: DbResponseRequest {
         case .search: break
         }
 
+        if !self.showAutomatic {
+            results = results.filter("SUBQUERY(tags, $tag, $tag.type == %@).@count == 0", RTypedTag.Kind.automatic)
+        }
+
         return results
     }
 }
@@ -83,12 +88,16 @@ struct ReadTagsForItemsDbRequest: DbResponseRequest {
 
     let itemKeys: Set<String>
     let libraryId: LibraryIdentifier
+    let showAutomatic: Bool
 
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> Results<RTag> {
-        return database.objects(RTag.self).filter(.library(with: self.libraryId))
-                                          .filter("tags.@count > 0")
-                                          .filter("any tags.item.key in %@", self.itemKeys)
+        var results =  database.objects(RTag.self).filter(.library(with: self.libraryId))
+                                                  .filter("tags.@count > 0")
+        if !self.showAutomatic {
+            results = results.filter("SUBQUERY(tags, $tag, $tag.type == %@).@count == 0", RTypedTag.Kind.automatic)
+        }
+        return results.filter("any tags.item.key in %@", self.itemKeys)
     }
 }
