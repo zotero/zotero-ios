@@ -44,10 +44,11 @@ class TagFilterCell: UICollectionViewCell {
         self.roundBackground.isHidden = !selected
     }
 
-    func setup(with text: String, color: UIColor, isActive: Bool) {
+    func setup(with text: String, color: UIColor, bolded: Bool, isActive: Bool) {
         self.label.text = text
         self.label.textColor = color
         self.label.alpha = isActive ? 1 : 0.55
+        self.label.font = bolded ? .preferredFont(for: .body, weight: .medium) : .preferredFont(forTextStyle: .body)
         self.roundBackground.isHidden = !self.isSelected
         self.roundBackground.alpha = isActive ? 1 : 0.55
     }
