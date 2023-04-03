@@ -64,10 +64,7 @@ final class ItemsViewController: UIViewController {
 
         super.init(nibName: "ItemsViewController", bundle: nil)
 
-        let start = CFAbsoluteTimeGetCurrent()
         viewModel.process(action: .loadInitialState)
-        let res = CFAbsoluteTimeGetCurrent() - start
-        DDLogInfo("ITEMS TIME: \(res)")
     }
 
     required init?(coder: NSCoder) {
@@ -256,7 +253,7 @@ final class ItemsViewController: UIViewController {
 
     private func updateTagFilter(with state: ItemsState, isInitial: Bool) {
         if !state.filters.isEmpty, let results = state.results {
-            self.tagFilterDelegate?.itemsDidChange(results: results, libraryId: viewModel.state.library.identifier, isInitial: isInitial)
+            self.tagFilterDelegate?.itemsDidChange(results: results, libraryId: state.library.identifier, isInitial: isInitial)
         } else {
             self.tagFilterDelegate?.itemsDidChange(collectionId: state.collection.identifier, libraryId: state.library.identifier, isInitial: isInitial)
         }
@@ -833,5 +830,9 @@ extension ItemsViewController: TagFilterDelegate {
         } else {
             self.viewModel.process(action: .enableFilter(.tags(selected)))
         }
+    }
+
+    func tagOptionsDidChange() {
+        self.updateTagFilter(with: self.viewModel.state, isInitial: false)
     }
 }
