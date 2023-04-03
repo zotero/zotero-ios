@@ -36,7 +36,7 @@ final class MasterCoordinator {
         masterCoordinator.start(animated: false)
         self.topCoordinator = masterCoordinator
 
-        let state = TagFilterState(selectedTags: [])
+        let state = TagFilterState(selectedTags: [], showAutomatic: Defaults.shared.tagPickerShowAutomaticTags, displayAll: Defaults.shared.tagPickerDisplayAllTags)
         let handler = TagFilterActionHandler(dbStorage: dbStorage)
         let viewModel = ViewModel(initialState: state, handler: handler)
         let tagController = TagFilterViewController(viewModel: viewModel)

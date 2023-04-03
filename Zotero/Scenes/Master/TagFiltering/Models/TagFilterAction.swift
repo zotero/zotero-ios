@@ -15,4 +15,8 @@ enum TagFilterAction {
     case deselect(String)
     case search(String)
     case add(String)
+    case setDisplayAll(Bool)
+    case setShowAutomatic(Bool)
+    case deselectAll
+    case deleteAutomatic
 }
