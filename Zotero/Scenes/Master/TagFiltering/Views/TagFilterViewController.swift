@@ -14,6 +14,7 @@ import RxSwift
 
 protocol TagFilterDelegate: AnyObject {
     func tagSelectionDidChange(selected: Set<String>)
+    func tagOptionsDidChange()
 }
 
 class TagFilterViewController: UIViewController {
@@ -22,8 +23,9 @@ class TagFilterViewController: UIViewController {
         let isActive: Bool
     }
 
-    private var collectionView: UICollectionView!
+    private weak var collectionView: UICollectionView!
     private weak var searchBarTopConstraint: NSLayoutConstraint!
+    private weak var optionsButton: UIButton!
     private var dataSource: UICollectionViewDiffableDataSource<Int, FilterTag>!
     weak var delegate: TagFilterDelegate?
     private var searchBarScrollEnabled: Bool
@@ -31,7 +33,8 @@ class TagFilterViewController: UIViewController {
 
     private static let cellId = "TagFilterCell"
     private static let searchBarHeight: CGFloat = 56
-    private static let searchBarOffset: CGFloat = -10
+    private static let searchBarTopOffset: CGFloat = -10
+    private static let searchBarBottomOffset: CGFloat = -8
     private let viewModel: ViewModel<TagFilterActionHandler>
     private let disposeBag: DisposeBag
 
@@ -72,7 +75,7 @@ class TagFilterViewController: UIViewController {
 
         guard !self.didAppear else { return }
 
-        let height = TagFilterViewController.searchBarHeight + TagFilterViewController.searchBarOffset
+        let height = TagFilterViewController.searchBarHeight + TagFilterViewController.searchBarTopOffset
         self.collectionView.setContentOffset(CGPoint(x: 0, y: height), animated: false)
     }
 
@@ -82,11 +85,18 @@ class TagFilterViewController: UIViewController {
         }
 
         if state.changes.contains(.tags), let colored = state.coloredResults, let other = state.otherResults, let filtered = state.filteredResults {
-            self.dataSource.apply(self.createSnapshot(fromColoredResults: colored, otherResults: other, filteredResults: filtered))
+            self.dataSource.apply(self.createSnapshot(fromColoredResults: colored, otherResults: other, filteredResults: filtered, displayAll: state.displayAll))
+            self.fixSelectionIfNeeded(selected: state.selectedTags)
         }
 
         if state.coloredChange != nil || state.otherChange != nil, let coloredResults = state.coloredResults, let filteredResults = state.filteredResults {
             self.dataSource.apply(self.updatedSnapshot(withColoredChange: state.coloredChange, coloredResults: coloredResults, otherChange: state.otherChange, filteredResults: filteredResults))
+            self.fixSelectionIfNeeded(selected: state.selectedTags)
+        }
+
+        if state.changes.contains(.options) {
+            self.optionsButton.menu = self.createOptionsMenu(with: state)
+            self.delegate?.tagOptionsDidChange()
         }
 
         if let error = state.error {
@@ -94,25 +104,58 @@ class TagFilterViewController: UIViewController {
         }
     }
 
+    private func fixSelectionIfNeeded(selected: Set<String>) {
+        guard let selectedIndexPaths = self.collectionView.indexPathsForSelectedItems else { return }
+
+        var currentlySelected: Set<String> = []
+        for indexPath in selectedIndexPaths {
+            guard let name = self.dataSource.itemIdentifier(for: indexPath)?.tag.name else { continue }
+            currentlySelected.insert(name)
+        }
+
+        guard selected != currentlySelected else { return }
+
+        for indexPath in selectedIndexPaths {
+            self.collectionView.deselectItem(at: indexPath, animated: false)
+            (self.collectionView.cellForItem(at: indexPath) as? TagFilterCell)?.set(selected: false)
+        }
+
+        let itemIdentifiers = self.dataSource.snapshot().itemIdentifiers
+        var indexPathsToSelect: [IndexPath] = []
+        for name in selected {
+            guard let index = itemIdentifiers.firstIndex(where: { $0.tag.name == name }) else { continue }
+            indexPathsToSelect.append(IndexPath(row: index, section: 0))
+        }
+
+        for indexPath in indexPathsToSelect {
+            self.collectionView.selectItem(at: indexPath, animated: false, scrollPosition: [])
+            (self.collectionView.cellForItem(at: indexPath) as? TagFilterCell)?.set(selected: true)
+        }
+    }
+
     private func snapSearchBarToAppropriatePosition(scrollView: UIScrollView) {
-        let height = TagFilterViewController.searchBarHeight + TagFilterViewController.searchBarOffset
+        let height = TagFilterViewController.searchBarHeight + TagFilterViewController.searchBarTopOffset
         guard scrollView.contentOffset.y > 0 && scrollView.contentOffset.y < height else { return }
         let offset = scrollView.contentOffset.y > (height / 2) ? CGPoint(x: 0, y: height) : CGPoint()
         self.collectionView.setContentOffset(offset, animated: true)
     }
 
-    private func createSnapshot(fromColoredResults coloredResults: Results<RTag>, otherResults: Results<RTag>, filteredResults: Results<RTag>) -> NSDiffableDataSourceSnapshot<Int, FilterTag> {
+    private func createSnapshot(fromColoredResults coloredResults: Results<RTag>, otherResults: Results<RTag>, filteredResults: Results<RTag>, displayAll: Bool) -> NSDiffableDataSourceSnapshot<Int, FilterTag> {
         var tags: [FilterTag] = []
         // Load colored and other results, see whether tags are included in the filter or not.
         for rTag in coloredResults {
             let isActive = filteredResults.filter(.name(rTag.name)).first != nil
             tags.append(FilterTag(tag: Tag(tag: rTag), isActive: isActive))
         }
-//        for rTag in otherResults {
-//            let isActive = filteredResults.filter(.name(rTag.name)).first != nil
-//            tags.append(FilterTag(tag: Tag(tag: rTag), isActive: isActive))
-//        }
-        tags.append(contentsOf: otherResults.map({ FilterTag(tag: Tag(tag: $0), isActive: true) }))
+
+        if !displayAll {
+            tags.append(contentsOf: otherResults.map({ FilterTag(tag: Tag(tag: $0), isActive: true) }))
+        } else {
+            for rTag in otherResults {
+                let isActive = filteredResults.filter(.name(rTag.name)).first != nil
+                tags.append(FilterTag(tag: Tag(tag: rTag), isActive: isActive))
+            }
+        }
         
         var snapshot = NSDiffableDataSourceSnapshot<Int, FilterTag>()
         snapshot.appendSections([0])
@@ -160,9 +203,30 @@ class TagFilterViewController: UIViewController {
         }
     }
 
+    private func createOptionsMenu(with state: TagFilterState) -> UIMenu {
+        let deselectAction = UIAction(title: "Deselect All", handler: { [weak self] _ in
+            self?.viewModel.process(action: .deselectAll)
+        })
+        let deselectMenu = UIMenu(options: .displayInline, children: [deselectAction])
+
+        let showAutomatic = UIAction(title: "Show Automatic", state: (state.showAutomatic ? .on : .off), handler: { [weak self] _ in
+            guard let `self` = self else { return }
+            self.viewModel.process(action: .setShowAutomatic(!self.viewModel.state.showAutomatic))
+        })
+        let displayAll = UIAction(title: "Display All Tags in This Library", state: (state.displayAll ? .on : .off), handler: { [weak self] _ in
+            guard let `self` = self else { return }
+            self.viewModel.process(action: .setDisplayAll(!self.viewModel.state.displayAll))
+        })
+        let optionsMenu = UIMenu(options: .displayInline, children: [showAutomatic, displayAll])
+
+        let deleteAutomatic = UIAction(title: "Delete Automatic Tags in This Library", attributes: .destructive, handler: { _ in })
+        let deleteMenu = UIMenu(options: .displayInline, children: [deleteAutomatic])
+
+        return UIMenu(children: [deleteMenu, optionsMenu, deselectMenu])
+    }
+
     private func setupViews() {
         let searchBar = UISearchBar()
-        searchBar.translatesAutoresizingMaskIntoConstraints = false
         searchBar.placeholder = "Search Tags"
         searchBar.backgroundColor = .systemBackground
         searchBar.backgroundImage = UIImage()
@@ -174,10 +238,21 @@ class TagFilterViewController: UIViewController {
                      self?.viewModel.process(action: .search(text ?? ""))
                  })
                  .disposed(by: self.disposeBag)
-        self.view.addSubview(searchBar)
+
+        let optionsButton = UIButton()
+        optionsButton.setTitle("Options", for: .normal)
+        optionsButton.setTitleColor(Asset.Colors.zoteroBlueWithDarkMode.color, for: .normal)
+        optionsButton.showsMenuAsPrimaryAction = true
+        optionsButton.menu = self.createOptionsMenu(with: self.viewModel.state)
+        self.optionsButton = optionsButton
+
+        let searchContainer = UIStackView(arrangedSubviews: [searchBar, optionsButton])
+        searchContainer.translatesAutoresizingMaskIntoConstraints = false
+        searchContainer.axis = .horizontal
+        self.view.addSubview(searchContainer)
 
         let layout = TagsFlowLayout(maxWidth: self.view.frame.width, minimumInteritemSpacing: 8, minimumLineSpacing: 8,
-                                    sectionInset: UIEdgeInsets(top: (TagFilterViewController.searchBarHeight + TagFilterViewController.searchBarOffset), left: 10, bottom: 8, right: 10))
+                                    sectionInset: UIEdgeInsets(top: (TagFilterViewController.searchBarHeight + TagFilterViewController.searchBarTopOffset + TagFilterViewController.searchBarBottomOffset), left: 10, bottom: 8, right: 10))
         let collectionView = UICollectionView(frame: CGRect(), collectionViewLayout: layout)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.delegate = self
@@ -186,13 +261,13 @@ class TagFilterViewController: UIViewController {
         collectionView.layer.masksToBounds = true
         collectionView.register(UINib(nibName: "TagFilterCell", bundle: nil), forCellWithReuseIdentifier: TagFilterViewController.cellId)
         self.collectionView = collectionView
-        self.view.insertSubview(collectionView, belowSubview: searchBar)
+        self.view.insertSubview(collectionView, belowSubview: searchContainer)
 
-        let searchBarTop = searchBar.topAnchor.constraint(equalTo: self.view.topAnchor, constant: TagFilterViewController.searchBarOffset)
+        let searchBarTop = searchContainer.topAnchor.constraint(equalTo: self.view.topAnchor, constant: TagFilterViewController.searchBarTopOffset)
 
         NSLayoutConstraint.activate([
-            searchBar.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
-            searchBar.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+            searchContainer.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 10),
+            self.view.trailingAnchor.constraint(equalTo: searchContainer.trailingAnchor, constant: 10),
             searchBarTop,
             self.collectionView.topAnchor.constraint(equalTo: self.view.topAnchor),
             self.collectionView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
@@ -210,7 +285,7 @@ class TagFilterViewController: UIViewController {
                 cell.maxWidth = collectionView.frame.width - flowLayout.sectionInset.left - flowLayout.sectionInset.right -
                                 collectionView.contentInset.left - collectionView.contentInset.right - 20
                 let color: UIColor = filterTag.tag.color.isEmpty ? .label : UIColor(hex: filterTag.tag.color)
-                cell.setup(with: filterTag.tag.name, color: color, isActive: filterTag.isActive)
+                cell.setup(with: filterTag.tag.name, color: color, bolded: !filterTag.tag.color.isEmpty, isActive: filterTag.isActive)
             }
             return cell
         })
@@ -236,7 +311,7 @@ extension TagFilterViewController: UICollectionViewDelegate {
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         guard self.searchBarScrollEnabled else { return }
-        self.searchBarTopConstraint.constant = -scrollView.contentOffset.y + TagFilterViewController.searchBarOffset
+        self.searchBarTopConstraint.constant = -scrollView.contentOffset.y + TagFilterViewController.searchBarTopOffset
     }
 
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
@@ -262,7 +337,7 @@ extension TagFilterViewController: DraggableViewController {
 extension TagFilterViewController: UISearchBarDelegate {
     func searchBarShouldBeginEditing(_ searchBar: UISearchBar) -> Bool {
         self.searchBarScrollEnabled = false
-        self.searchBarTopConstraint.constant = TagFilterViewController.searchBarOffset
+        self.searchBarTopConstraint.constant = TagFilterViewController.searchBarTopOffset
 
         UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseOut, animations: {
             self.collectionView.setContentOffset(CGPoint(), animated: false)
@@ -284,22 +359,16 @@ extension TagFilterViewController: ItemsTagFilterDelegate {
     }
 
     func itemsDidChange(collectionId: CollectionIdentifier, libraryId: LibraryIdentifier, isInitial: Bool) {
-        let start = CFAbsoluteTimeGetCurrent()
         self.viewModel.process(action: .loadWithCollection(collectionId: collectionId, libraryId: libraryId, clearSelection: isInitial))
-        let res = CFAbsoluteTimeGetCurrent() - start
-        DDLogInfo("TAGS TIME 1: \(res)")
     }
 
     func itemsDidChange(results: Results<RItem>, libraryId: LibraryIdentifier, isInitial: Bool) {
-        let start = CFAbsoluteTimeGetCurrent()
         var keys: Set<String> = []
         for item in results {
             keys.insert(item.key)
             self.keys(fromChildren: item.children, keys: &keys)
         }
         self.viewModel.process(action: .loadWithKeys(itemKeys: keys, libraryId: libraryId, clearSelection: isInitial))
-        let res = CFAbsoluteTimeGetCurrent() - start
-        DDLogInfo("TAGS TIME 2: \(res)")
     }
 
     private func keys(fromChildren results: LinkingObjects<RItem>, keys: inout Set<String>) {
