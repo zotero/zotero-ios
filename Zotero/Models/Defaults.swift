@@ -130,6 +130,14 @@ final class Defaults {
     var exportOutputMode: CitationBibliographyExportState.OutputMode
     #endif
 
+    // MARK: - Tag picker
+
+    @UserDefault(key: "TagPickerShowAutomatic", defaultValue: true)
+    var tagPickerShowAutomaticTags: Bool
+
+    @UserDefault(key: "TagPickerDisplayAllTags", defaultValue: true)
+    var tagPickerDisplayAllTags: Bool
+
     // MARK: - Helpers
 
     @OptionalUserDefault(key: "LastLaunchBuildNumber", defaults: .standard)

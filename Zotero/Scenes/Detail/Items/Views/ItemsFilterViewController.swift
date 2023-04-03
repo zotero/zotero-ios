@@ -14,6 +14,7 @@ class ItemsFilterViewController: UIViewController {
     @IBOutlet private weak var container: UIStackView!
     @IBOutlet private weak var downloadsTitleLabel: UILabel!
     @IBOutlet private weak var downloadsSwitch: UISwitch!
+    @IBOutlet private weak var tagFilterContainer: UIView!
     @IBOutlet private weak var tagFilterTitleLabel: UILabel!
     @IBOutlet private weak var tagFilterButton: UIView!
     @IBOutlet private weak var tagFilterChevron: UIImageView!
@@ -75,7 +76,7 @@ class ItemsFilterViewController: UIViewController {
     // MARK: - Actions
 
     private func update(state: ItemsState) {
-        if state.changes.contains(.filters) {
+        if state.changes.contains(.filters) && UIDevice.current.userInterfaceIdiom == .phone {
             self.update(tagNames: state.tagsFilter)
         }
     }
@@ -147,6 +148,7 @@ class ItemsFilterViewController: UIViewController {
 
     private func setupUI() {
         self.downloadsTitleLabel.text = L10n.Items.Filters.downloads
+        self.tagFilterContainer.isHidden = UIDevice.current.userInterfaceIdiom == .pad
         self.tagFilterTitleLabel.text = L10n.Items.Filters.tags
         self.tagFilterChevron.image = UIImage(systemName: "chevron.right")?.withAlignmentRectInsets(UIEdgeInsets(top: 0, left: 0, bottom: 0, right: -16))
         self.tagFilterClearButton.setTitle("", for: .normal)

@@ -22,6 +22,7 @@ struct TagFilterState: ViewModelState {
 
         static let tags = Changes(rawValue: 1 << 0)
         static let selection = Changes(rawValue: 1 << 1)
+        static let options = Changes(rawValue: 1 << 2)
     }
 
     struct ObservedChange {
@@ -42,12 +43,16 @@ struct TagFilterState: ViewModelState {
     var filteredResults: Results<RTag>?
     var selectedTags: Set<String>
     var searchTerm: String
+    var showAutomatic: Bool
+    var displayAll: Bool
     var error: Error?
     var changes: Changes
 
-    init(selectedTags: Set<String>) {
+    init(selectedTags: Set<String>, showAutomatic: Bool, displayAll: Bool) {
         self.searchTerm = ""
         self.selectedTags = selectedTags
+        self.showAutomatic = showAutomatic
+        self.displayAll = displayAll
         self.changes = []
     }
 
