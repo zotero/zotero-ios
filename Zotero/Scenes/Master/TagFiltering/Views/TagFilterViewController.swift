@@ -13,6 +13,8 @@ import RealmSwift
 import RxSwift
 
 protocol TagFilterDelegate: AnyObject {
+    var currentLibraryId: LibraryIdentifier { get }
+
     func tagSelectionDidChange(selected: Set<String>)
     func tagOptionsDidChange()
 }
@@ -26,7 +28,7 @@ class TagFilterViewController: UIViewController {
     private weak var collectionView: UICollectionView!
     private weak var searchBarTopConstraint: NSLayoutConstraint!
     private weak var optionsButton: UIButton!
-    private var dataSource: UICollectionViewDiffableDataSource<Int, FilterTag>!
+//    private var dataSource: UICollectionViewDiffableDataSource<Int, FilterTag>!
     weak var delegate: TagFilterDelegate?
     private var searchBarScrollEnabled: Bool
     private var didAppear: Bool
@@ -55,7 +57,6 @@ class TagFilterViewController: UIViewController {
 
         self.view.backgroundColor = .systemBackground
         self.setupViews()
-        self.setupDataSource()
 
         self.viewModel.stateObservable
                       .observe(on: MainScheduler.instance)
@@ -84,19 +85,18 @@ class TagFilterViewController: UIViewController {
             self.delegate?.tagSelectionDidChange(selected: state.selectedTags)
         }
 
-        if state.changes.contains(.tags), let colored = state.coloredResults, let other = state.otherResults, let filtered = state.filteredResults {
-            self.dataSource.apply(self.createSnapshot(fromColoredResults: colored, otherResults: other, filteredResults: filtered, displayAll: state.displayAll))
-            self.fixSelectionIfNeeded(selected: state.selectedTags)
-        }
-
-        if state.coloredChange != nil || state.otherChange != nil, let coloredResults = state.coloredResults, let filteredResults = state.filteredResults {
-            self.dataSource.apply(self.updatedSnapshot(withColoredChange: state.coloredChange, coloredResults: coloredResults, otherChange: state.otherChange, filteredResults: filteredResults))
+        if state.changes.contains(.tags) {
+            self.collectionView.reloadData()
             self.fixSelectionIfNeeded(selected: state.selectedTags)
         }
 
         if state.changes.contains(.options) {
             self.optionsButton.menu = self.createOptionsMenu(with: state)
             self.delegate?.tagOptionsDidChange()
+        }
+
+        if let count = state.automaticCount {
+            self.confirmDeletion(count: count)
         }
 
         if let error = state.error {
@@ -109,7 +109,7 @@ class TagFilterViewController: UIViewController {
 
         var currentlySelected: Set<String> = []
         for indexPath in selectedIndexPaths {
-            guard let name = self.dataSource.itemIdentifier(for: indexPath)?.tag.name else { continue }
+            guard let name = self.tag(for: indexPath)?.name else { continue }
             currentlySelected.insert(name)
         }
 
@@ -120,11 +120,21 @@ class TagFilterViewController: UIViewController {
             (self.collectionView.cellForItem(at: indexPath) as? TagFilterCell)?.set(selected: false)
         }
 
-        let itemIdentifiers = self.dataSource.snapshot().itemIdentifiers
         var indexPathsToSelect: [IndexPath] = []
-        for name in selected {
-            guard let index = itemIdentifiers.firstIndex(where: { $0.tag.name == name }) else { continue }
-            indexPathsToSelect.append(IndexPath(row: index, section: 0))
+        if let tags = self.viewModel.state.coloredResults {
+            for (idx, tag) in tags.enumerated() {
+                if selected.contains(tag.name) {
+                    indexPathsToSelect.append(IndexPath(row: idx, section: 0))
+                }
+            }
+        }
+        let coloredCount = self.viewModel.state.coloredResults?.count ?? 0
+        if let tags = self.viewModel.state.otherResults {
+            for (idx, tag) in tags.enumerated() {
+                if selected.contains(tag.name) {
+                    indexPathsToSelect.append(IndexPath(row: (coloredCount + idx), section: 0))
+                }
+            }
         }
 
         for indexPath in indexPathsToSelect {
@@ -140,86 +150,36 @@ class TagFilterViewController: UIViewController {
         self.collectionView.setContentOffset(offset, animated: true)
     }
 
-    private func createSnapshot(fromColoredResults coloredResults: Results<RTag>, otherResults: Results<RTag>, filteredResults: Results<RTag>, displayAll: Bool) -> NSDiffableDataSourceSnapshot<Int, FilterTag> {
-        var tags: [FilterTag] = []
-        // Load colored and other results, see whether tags are included in the filter or not.
-        for rTag in coloredResults {
-            let isActive = filteredResults.filter(.name(rTag.name)).first != nil
-            tags.append(FilterTag(tag: Tag(tag: rTag), isActive: isActive))
-        }
-
-        if !displayAll {
-            tags.append(contentsOf: otherResults.map({ FilterTag(tag: Tag(tag: $0), isActive: true) }))
-        } else {
-            for rTag in otherResults {
-                let isActive = filteredResults.filter(.name(rTag.name)).first != nil
-                tags.append(FilterTag(tag: Tag(tag: rTag), isActive: isActive))
-            }
-        }
-        
-        var snapshot = NSDiffableDataSourceSnapshot<Int, FilterTag>()
-        snapshot.appendSections([0])
-        snapshot.appendItems(tags)
-        return snapshot
-    }
-
-    private func updatedSnapshot(withColoredChange coloredChange: TagFilterState.ObservedChange?, coloredResults: Results<RTag>, otherChange: TagFilterState.ObservedChange?, filteredResults: Results<RTag>) -> NSDiffableDataSourceSnapshot<Int, FilterTag> {
-        var tags = self.dataSource.snapshot().itemIdentifiers
-
-        if let change = coloredChange {
-            self.update(tags: &tags, change: change, filteredResults: filteredResults)
-        }
-
-        if let change = otherChange {
-            let coloredCount = (coloredChange?.results ?? coloredResults).count
-            self.update(tags: &tags, change: change, filteredResults: filteredResults, baseIndex: coloredCount, defaultIsActive: true)
-        }
-
-        var snapshot = NSDiffableDataSourceSnapshot<Int, FilterTag>()
-        snapshot.appendSections([0])
-        snapshot.appendItems(tags)
-        return snapshot
-    }
-
-    private func update(tags: inout [FilterTag], change: TagFilterState.ObservedChange, filteredResults: Results<RTag>, baseIndex: Int = 0, defaultIsActive: Bool? = nil) {
-        // Get modification indices in new results
-        let correctedModifications = Database.correctedModifications(from: change.modifications, insertions: change.insertions, deletions: change.deletions)
-        // Update modified tags
-        for idx in 0..<change.modifications.count {
-            let newTag = change.results[correctedModifications[idx]]
-            let index = baseIndex + change.modifications[idx]
-            let isActive = defaultIsActive ?? (filteredResults.filter(.name(newTag.name)).first != nil)
-            tags[index] = FilterTag(tag: Tag(tag: newTag), isActive: isActive)
-        }
-        // Remove deleted tags
-        for index in change.deletions.reversed() {
-            tags.remove(at: (baseIndex + index))
-        }
-        // Insert new tags
-        for index in change.insertions {
-            let newTag = change.results[index]
-            let isActive = defaultIsActive ?? (filteredResults.filter(.name(newTag.name)).first != nil)
-            tags.insert(FilterTag(tag: Tag(tag: newTag), isActive: isActive), at: (baseIndex + index))
-        }
+    private func confirmDeletion(count: Int) {
+        let controller = UIAlertController(title: L10n.TagPicker.confirmDeletionQuestion, message: L10n.TagPicker.confirmDeletion(count), preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.ok, style: .destructive, handler: { [weak self] _ in
+            guard let libraryId = self?.delegate?.currentLibraryId else { return }
+            self?.viewModel.process(action: .deleteAutomatic(libraryId))
+        }))
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel))
+        self.present(controller, animated: true)
     }
 
     private func createOptionsMenu(with state: TagFilterState) -> UIMenu {
-        let deselectAction = UIAction(title: "Deselect All", handler: { [weak self] _ in
+        let deselectAction = UIAction(title: L10n.TagPicker.deselectAll, handler: { [weak self] _ in
             self?.viewModel.process(action: .deselectAll)
         })
         let deselectMenu = UIMenu(options: .displayInline, children: [deselectAction])
 
-        let showAutomatic = UIAction(title: "Show Automatic", state: (state.showAutomatic ? .on : .off), handler: { [weak self] _ in
+        let showAutomatic = UIAction(title: L10n.TagPicker.showAuto, state: (state.showAutomatic ? .on : .off), handler: { [weak self] _ in
             guard let `self` = self else { return }
             self.viewModel.process(action: .setShowAutomatic(!self.viewModel.state.showAutomatic))
         })
-        let displayAll = UIAction(title: "Display All Tags in This Library", state: (state.displayAll ? .on : .off), handler: { [weak self] _ in
+        let displayAll = UIAction(title: L10n.TagPicker.showAll, state: (state.displayAll ? .on : .off), handler: { [weak self] _ in
             guard let `self` = self else { return }
             self.viewModel.process(action: .setDisplayAll(!self.viewModel.state.displayAll))
         })
-        let optionsMenu = UIMenu(options: .displayInline, children: [showAutomatic, displayAll])
+        let optionsMenu = UIMenu(options: .displayInline, children: [displayAll, showAutomatic])
 
-        let deleteAutomatic = UIAction(title: "Delete Automatic Tags in This Library", attributes: .destructive, handler: { _ in })
+        let deleteAutomatic = UIAction(title: L10n.TagPicker.deleteAutomatic, attributes: .destructive, handler: { [weak self] _ in
+            guard let `self` = self, let libraryId = self.delegate?.currentLibraryId else { return }
+            self.viewModel.process(action: .loadAutomaticCount(libraryId))
+        })
         let deleteMenu = UIMenu(options: .displayInline, children: [deleteAutomatic])
 
         return UIMenu(children: [deleteMenu, optionsMenu, deselectMenu])
@@ -227,7 +187,7 @@ class TagFilterViewController: UIViewController {
 
     private func setupViews() {
         let searchBar = UISearchBar()
-        searchBar.placeholder = "Search Tags"
+        searchBar.placeholder = L10n.TagPicker.searchPlaceholder
         searchBar.backgroundColor = .systemBackground
         searchBar.backgroundImage = UIImage()
         searchBar.delegate = self
@@ -240,7 +200,8 @@ class TagFilterViewController: UIViewController {
                  .disposed(by: self.disposeBag)
 
         let optionsButton = UIButton()
-        optionsButton.setTitle("Options", for: .normal)
+        optionsButton.setImage(UIImage(systemName: "ellipsis"), for: .normal)
+        optionsButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 8)
         optionsButton.setTitleColor(Asset.Colors.zoteroBlueWithDarkMode.color, for: .normal)
         optionsButton.showsMenuAsPrimaryAction = true
         optionsButton.menu = self.createOptionsMenu(with: self.viewModel.state)
@@ -256,10 +217,11 @@ class TagFilterViewController: UIViewController {
         let collectionView = UICollectionView(frame: CGRect(), collectionViewLayout: layout)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.delegate = self
+        collectionView.dataSource = self
         collectionView.allowsMultipleSelection = true
         collectionView.backgroundColor = .systemBackground
         collectionView.layer.masksToBounds = true
-        collectionView.register(UINib(nibName: "TagFilterCell", bundle: nil), forCellWithReuseIdentifier: TagFilterViewController.cellId)
+        collectionView.register(UINib(nibName: TagFilterViewController.cellId, bundle: nil), forCellWithReuseIdentifier: TagFilterViewController.cellId)
         self.collectionView = collectionView
         self.view.insertSubview(collectionView, belowSubview: searchContainer)
 
@@ -277,34 +239,61 @@ class TagFilterViewController: UIViewController {
 
         self.searchBarTopConstraint = searchBarTop
     }
+}
 
-    private func setupDataSource() {
-        self.dataSource = UICollectionViewDiffableDataSource(collectionView: self.collectionView, cellProvider: { collectionView, indexPath, filterTag in
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TagFilterViewController.cellId, for: indexPath)
-            if let cell = cell as? TagFilterCell, let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout {
-                cell.maxWidth = collectionView.frame.width - flowLayout.sectionInset.left - flowLayout.sectionInset.right -
-                                collectionView.contentInset.left - collectionView.contentInset.right - 20
-                let color: UIColor = filterTag.tag.color.isEmpty ? .label : UIColor(hex: filterTag.tag.color)
-                cell.setup(with: filterTag.tag.name, color: color, bolded: !filterTag.tag.color.isEmpty, isActive: filterTag.isActive)
+extension TagFilterViewController: UICollectionViewDataSource {
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
+        return 1
+    }
+
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return (self.viewModel.state.coloredResults?.count ?? 0) + (self.viewModel.state.otherResults?.count ?? 0)
+    }
+
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TagFilterViewController.cellId, for: indexPath)
+        if let cell = cell as? TagFilterCell, let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout, let tag = self.tag(for: indexPath) {
+            cell.maxWidth = collectionView.frame.width - flowLayout.sectionInset.left - flowLayout.sectionInset.right -
+                            collectionView.contentInset.left - collectionView.contentInset.right - 20
+            let color: UIColor = tag.color.isEmpty ? .label : UIColor(hex: tag.color)
+            cell.setup(with: tag.name, color: color, bolded: !tag.color.isEmpty, isActive: self.isActive(tag: tag))
+        }
+        return cell
+    }
+
+    private func tag(for indexPath: IndexPath) -> RTag? {
+        if let colored = self.viewModel.state.coloredResults, indexPath.row < colored.count {
+            return colored[indexPath.row]
+        }
+
+        if let other = self.viewModel.state.otherResults {
+            let index = indexPath.row - (self.viewModel.state.coloredResults?.count ?? 0)
+            if index < other.count {
+                return other[index]
             }
-            return cell
-        })
+        }
+
+        return nil
+    }
+
+    private func isActive(tag: RTag) -> Bool {
+        return self.viewModel.state.filteredResults?.filter(.name(tag.name)).first != nil
     }
 }
 
 extension TagFilterViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        guard let filterTag = self.dataSource.itemIdentifier(for: indexPath), filterTag.isActive else { return }
+        guard let tag = self.tag(for: indexPath), self.isActive(tag: tag) else { return }
 
-        self.viewModel.process(action: .select(filterTag.tag.name))
+        self.viewModel.process(action: .select(tag.name))
 
         (collectionView.cellForItem(at: indexPath) as? TagFilterCell)?.set(selected: true)
     }
 
     func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
-        guard let filterTag = self.dataSource.itemIdentifier(for: indexPath), filterTag.isActive else { return }
+        guard let tag = self.tag(for: indexPath), self.isActive(tag: tag) else { return }
 
-        self.viewModel.process(action: .deselect(filterTag.tag.name))
+        self.viewModel.process(action: .deselect(tag.name))
 
         (collectionView.cellForItem(at: indexPath) as? TagFilterCell)?.set(selected: false)
     }
@@ -354,21 +343,21 @@ extension TagFilterViewController: UISearchBarDelegate {
 }
 
 extension TagFilterViewController: ItemsTagFilterDelegate {
-    var selectedTags: Set<String> {
-        return self.viewModel.state.selectedTags
+    func clearSelection() {
+        self.viewModel.process(action: .deselectAllWithoutNotifying)
     }
 
-    func itemsDidChange(collectionId: CollectionIdentifier, libraryId: LibraryIdentifier, isInitial: Bool) {
-        self.viewModel.process(action: .loadWithCollection(collectionId: collectionId, libraryId: libraryId, clearSelection: isInitial))
+    func itemsDidChange(collectionId: CollectionIdentifier, libraryId: LibraryIdentifier) {
+        self.viewModel.process(action: .loadWithCollection(collectionId: collectionId, libraryId: libraryId))
     }
 
-    func itemsDidChange(results: Results<RItem>, libraryId: LibraryIdentifier, isInitial: Bool) {
+    func itemsDidChange(results: Results<RItem>, libraryId: LibraryIdentifier) {
         var keys: Set<String> = []
         for item in results {
             keys.insert(item.key)
             self.keys(fromChildren: item.children, keys: &keys)
         }
-        self.viewModel.process(action: .loadWithKeys(itemKeys: keys, libraryId: libraryId, clearSelection: isInitial))
+        self.viewModel.process(action: .loadWithKeys(itemKeys: keys, libraryId: libraryId))
     }
 
     private func keys(fromChildren results: LinkingObjects<RItem>, keys: inout Set<String>) {

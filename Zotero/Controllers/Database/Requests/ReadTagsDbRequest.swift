@@ -59,27 +59,35 @@ struct ReadTagsForCollectionDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> Results<RTag> {
-        var results = database.objects(RTag.self).filter(.library(with: self.libraryId)).filter("tags.@count > 0")
+        var predicates: [NSPredicate] = [.typedTagLibrary(with: self.libraryId)]
 
         switch self.collectionId {
         case .collection(let string):
-            results = results.filter(NSPredicate(format: "any tags.item.collections.key = %@", string))
+            predicates.append(NSPredicate(format: "any item.collections.key = %@", string))
         case .custom(let customType):
             switch customType {
             case .all, .publications: break
             case .unfiled:
-                results = results.filter(NSPredicate(format: "any tags.item.collections.@count == 0"))
+                predicates.append(NSPredicate(format: "item.collections.@count == 0"))
             case .trash:
-                results = results.filter(NSPredicate(format: "any tags.item.trash = true"))
+                predicates.append(NSPredicate(format: "item.trash = true"))
             }
         case .search: break
         }
 
         if !self.showAutomatic {
-            results = results.filter("SUBQUERY(tags, $tag, $tag.type == %@).@count == 0", RTypedTag.Kind.automatic)
+            // Don't apply this filter to colored tags
+            predicates.append(NSPredicate(format: "type = %d or tag.color != \"\"", RTypedTag.Kind.manual.rawValue))
         }
 
-        return results
+        let typedTags = database.objects(RTypedTag.self).filter(NSCompoundPredicate(andPredicateWithSubpredicates: predicates))
+
+        var names: Set<String> = []
+        for tag in typedTags {
+            guard let name = tag.tag?.name else { continue }
+            names.insert(name)
+        }
+        return database.objects(RTag.self).filter(.library(with: self.libraryId)).filter("name in %@", names)
     }
 }
 
@@ -93,11 +101,34 @@ struct ReadTagsForItemsDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> Results<RTag> {
-        var results =  database.objects(RTag.self).filter(.library(with: self.libraryId))
-                                                  .filter("tags.@count > 0")
+        var predicates: [NSPredicate] = [.typedTagLibrary(with: self.libraryId)]
+
         if !self.showAutomatic {
-            results = results.filter("SUBQUERY(tags, $tag, $tag.type == %@).@count == 0", RTypedTag.Kind.automatic)
+            // Don't apply this filter to colored tags
+            predicates.append(NSPredicate(format: "type = %d or tag.color != \"\"", RTypedTag.Kind.manual.rawValue))
         }
-        return results.filter("any tags.item.key in %@", self.itemKeys)
+
+        predicates.append(NSPredicate(format: "item.key in %@", self.itemKeys))
+
+        let typedTags = database.objects(RTypedTag.self).filter(NSCompoundPredicate(andPredicateWithSubpredicates: predicates))
+
+        var names: Set<String> = []
+        for tag in typedTags {
+            guard let name = tag.tag?.name else { continue }
+            names.insert(name)
+        }
+        return database.objects(RTag.self).filter(.library(with: self.libraryId)).filter("name in %@", names)
+    }
+}
+
+struct ReadAutomaticTagsDbRequest: DbResponseRequest {
+    typealias Response = Results<RTypedTag>
+
+    let libraryId: LibraryIdentifier
+
+    var needsWrite: Bool { return false }
+
+    func process(in database: Realm) throws -> Results<RTypedTag> {
+        return database.objects(RTypedTag.self).filter(.typedTagLibrary(with: self.libraryId)).filter("type = %@", RTypedTag.Kind.automatic)
     }
 }
