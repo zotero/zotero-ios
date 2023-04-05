@@ -124,6 +124,15 @@ extension NSPredicate {
         }
     }
 
+    static func typedTagLibrary(with identifier: LibraryIdentifier) -> NSPredicate {
+        switch identifier {
+        case .custom(let type):
+            return NSPredicate(format: "tag.customLibraryKey = %d", type.rawValue)
+        case .group(let identifier):
+            return NSPredicate(format: "tag.groupKey = %d", identifier)
+        }
+    }
+
     static var changed: NSPredicate {
         return NSPredicate(format: "changes.@count > 0")
     }
