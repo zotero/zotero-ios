@@ -9,8 +9,8 @@
 import Foundation
 
 enum TagFilterAction {
-    case loadWithCollection(collectionId: CollectionIdentifier, libraryId: LibraryIdentifier, clearSelection: Bool)
-    case loadWithKeys(itemKeys: Set<String>, libraryId: LibraryIdentifier, clearSelection: Bool)
+    case loadWithCollection(collectionId: CollectionIdentifier, libraryId: LibraryIdentifier)
+    case loadWithKeys(itemKeys: Set<String>, libraryId: LibraryIdentifier)
     case select(String)
     case deselect(String)
     case search(String)
@@ -18,5 +18,7 @@ enum TagFilterAction {
     case setDisplayAll(Bool)
     case setShowAutomatic(Bool)
     case deselectAll
-    case deleteAutomatic
+    case deselectAllWithoutNotifying
+    case loadAutomaticCount(LibraryIdentifier)
+    case deleteAutomatic(LibraryIdentifier)
 }

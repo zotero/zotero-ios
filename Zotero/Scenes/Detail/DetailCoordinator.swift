@@ -75,11 +75,11 @@ protocol DetailCitationCoordinatorDelegate: AnyObject {
 }
 
 protocol ItemsTagFilterDelegate: AnyObject {
-    var selectedTags: Set<String> { get }
     var delegate: TagFilterDelegate? { get set }
-    
-    func itemsDidChange(collectionId: CollectionIdentifier, libraryId: LibraryIdentifier, isInitial: Bool)
-    func itemsDidChange(results: Results<RItem>, libraryId: LibraryIdentifier, isInitial: Bool)
+
+    func clearSelection()
+    func itemsDidChange(collectionId: CollectionIdentifier, libraryId: LibraryIdentifier)
+    func itemsDidChange(results: Results<RItem>, libraryId: LibraryIdentifier)
 }
 
 class EmptyTransitioningDelegate: NSObject, UIViewControllerTransitioningDelegate {}
@@ -123,12 +123,10 @@ final class DetailCoordinator: Coordinator {
 
     private func createItemsViewController(collection: Collection, library: Library, dbStorage: DbStorage, fileDownloader: AttachmentDownloader, syncScheduler: SynchronizationScheduler,
                                            citationController: CitationController, fileCleanupController: AttachmentFileCleanupController, itemsTagFilterDelegate: ItemsTagFilterDelegate?) -> ItemsViewController {
+        itemsTagFilterDelegate?.clearSelection()
+
         let searchTerm = self.searchItemKeys?.joined(separator: " ")
-        var filters: [ItemsState.Filter] = []
-        if let tags = itemsTagFilterDelegate?.selectedTags, !tags.isEmpty {
-            filters.append(.tags(tags))
-        }
-        let state = ItemsState(collection: collection, library: library, sortType: .default, searchTerm: searchTerm, filters: filters, error: nil)
+        let state = ItemsState(collection: collection, library: library, sortType: .default, searchTerm: searchTerm, filters: [], error: nil)
         let handler = ItemsActionHandler(dbStorage: dbStorage,
                                          fileStorage: self.controllers.fileStorage,
                                          schemaController: self.controllers.schemaController,

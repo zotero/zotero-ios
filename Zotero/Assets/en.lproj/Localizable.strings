@@ -202,6 +202,13 @@
 "tag_picker.title" = "%d selected";
 "tag_picker.placeholder" = "Tag name";
 "tag_picker.create_tag" = "Create Tag \“%@\”";
+"tag_picker.confirm_deletion_question" = "Delete Automatic Tags";
+"tag_picker.confirm_deletion" = "Are you sure you want to delete %d automatic tags in this library?\n\nThis action cannot be undone.";
+"tag_picker.search_placeholder" = "Search Tags";
+"tag_picker.deselect_all" = "Deselect All";
+"tag_picker.show_auto" = "Show Automatic";
+"tag_picker.show_all" = "Display All Tags in This Library";
+"tag_picker.delete_automatic" = "Delete Automatic Tags in This Library";
 
 "creator_editor.creator" = "Creator Type";
 "creator_editor.first_name" = "First Name";
