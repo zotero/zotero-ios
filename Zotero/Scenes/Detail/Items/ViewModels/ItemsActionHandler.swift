@@ -91,9 +91,6 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         case .search(let text):
             self.search(for: (text.isEmpty ? nil : text), ignoreOriginal: false, in: viewModel)
 
-        case .performInitialSearch:
-            self.performInitialSearch(in: viewModel)
-
         case .setSortField(let field):
             var sortType = viewModel.state.sortType
             sortType.field = field
@@ -234,8 +231,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
 
     private func loadInitialState(in viewModel: ViewModel<ItemsActionHandler>) {
         let sortType = Defaults.shared.itemsSortType
-        let request = ReadItemsDbRequest(collectionId: viewModel.state.collection.identifier, libraryId: viewModel.state.library.identifier)
-        let results = try? self.dbStorage.perform(request: request, on: .main).sorted(by: sortType.descriptors)
+        let results = self.results(for: viewModel.state.searchTerm, filters: viewModel.state.filters, collectionId: viewModel.state.collection.identifier, sortType: sortType, libraryId: viewModel.state.library.identifier)
 
         self.update(viewModel: viewModel) { state in
             state.results = results
@@ -596,15 +592,6 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
             state.filters = filters
             state.results = results
             state.changes = [.results, .filters]
-        }
-    }
-
-    private func performInitialSearch(in viewModel: ViewModel<ItemsActionHandler>) {
-        let results = self.results(for: viewModel.state.searchTerm, filters: viewModel.state.filters, collectionId: viewModel.state.collection.identifier, sortType: viewModel.state.sortType, libraryId: viewModel.state.library.identifier)
-
-        self.update(viewModel: viewModel) { state in
-            state.results = results
-            state.changes = .results
         }
     }
 
