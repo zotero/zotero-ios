@@ -1255,12 +1255,28 @@ internal enum L10n {
   }
 
   internal enum TagPicker {
+    /// Are you sure you want to delete %d automatic tags in this library?\n\nThis action cannot be undone.
+    internal static func confirmDeletion(_ p1: Int) -> String {
+      return L10n.tr("Localizable", "tag_picker.confirm_deletion", p1)
+    }
+    /// Delete Automatic Tags
+    internal static let confirmDeletionQuestion = L10n.tr("Localizable", "tag_picker.confirm_deletion_question")
     /// Create Tag “%@”
     internal static func createTag(_ p1: Any) -> String {
       return L10n.tr("Localizable", "tag_picker.create_tag", String(describing: p1))
     }
+    /// Delete Automatic Tags in This Library
+    internal static let deleteAutomatic = L10n.tr("Localizable", "tag_picker.delete_automatic")
+    /// Deselect All
+    internal static let deselectAll = L10n.tr("Localizable", "tag_picker.deselect_all")
     /// Tag name
     internal static let placeholder = L10n.tr("Localizable", "tag_picker.placeholder")
+    /// Search Tags
+    internal static let searchPlaceholder = L10n.tr("Localizable", "tag_picker.search_placeholder")
+    /// Display All Tags in This Library
+    internal static let showAll = L10n.tr("Localizable", "tag_picker.show_all")
+    /// Show Automatic
+    internal static let showAuto = L10n.tr("Localizable", "tag_picker.show_auto")
     /// %d selected
     internal static func title(_ p1: Int) -> String {
       return L10n.tr("Localizable", "tag_picker.title", p1)
