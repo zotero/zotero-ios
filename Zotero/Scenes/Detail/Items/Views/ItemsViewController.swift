@@ -95,17 +95,12 @@ final class ItemsViewController: UIViewController {
         self.setupOverlay()
         self.startObservingSyncProgress()
 
-        if self.viewModel.state.searchTerm != nil || !self.viewModel.state.filters.isEmpty {
-            self.viewModel.process(action: .performInitialSearch)
-            if let term = self.viewModel.state.searchTerm, !term.isEmpty {
-                self.searchBarContainer?.searchBar.text = term
-            }
+        if let term = self.viewModel.state.searchTerm, !term.isEmpty {
+            self.searchBarContainer?.searchBar.text = term
         }
         if let results = self.viewModel.state.results {
             self.startObserving(results: results)
         }
-
-        self.updateTagFilter(with: self.viewModel.state, isInitial: true)
 
         self.tableViewHandler.tapObserver
                              .observe(on: MainScheduler.instance)
@@ -180,7 +175,6 @@ final class ItemsViewController: UIViewController {
 
         if state.changes.contains(.results), let results = state.results {
             self.startObserving(results: results)
-            self.updateTagFilter(with: state, isInitial: false)
         } else if state.changes.contains(.attachmentsRemoved) {
             self.tableViewHandler.reloadAllAttachments()
         } else if let key = state.updateItemKey {
@@ -251,11 +245,11 @@ final class ItemsViewController: UIViewController {
 
     // MARK: - Actions
 
-    private func updateTagFilter(with state: ItemsState, isInitial: Bool) {
-        if !state.filters.isEmpty, let results = state.results {
-            self.tagFilterDelegate?.itemsDidChange(results: results, libraryId: state.library.identifier, isInitial: isInitial)
+    private func updateTagFilter(with state: ItemsState, results: Results<RItem>) {
+        if !state.filters.isEmpty {
+            self.tagFilterDelegate?.itemsDidChange(results: results, libraryId: state.library.identifier)
         } else {
-            self.tagFilterDelegate?.itemsDidChange(collectionId: state.collection.identifier, libraryId: state.library.identifier, isInitial: isInitial)
+            self.tagFilterDelegate?.itemsDidChange(collectionId: state.collection.identifier, libraryId: state.library.identifier)
         }
     }
 
@@ -428,13 +422,15 @@ final class ItemsViewController: UIViewController {
             guard let `self` = self else { return }
 
             switch changes {
-            case .initial(let objects):
-                self.tableViewHandler.reloadAll(snapshot: objects.freeze())
+            case .initial(let results):
+                self.tableViewHandler.reloadAll(snapshot: results.freeze())
+                self.updateTagFilter(with: self.viewModel.state, results: results)
             case .update(let results, let deletions, let insertions, let modifications):
                 let correctedModifications = Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions)
                 self.viewModel.process(action: .updateKeys(items: results, deletions: deletions, insertions: insertions, modifications: correctedModifications))
                 self.tableViewHandler.reload(snapshot: results.freeze(), modifications: modifications, insertions: insertions, deletions: deletions)
                 self.updateEmptyTrashButton(toEnabled: !results.isEmpty)
+                self.updateTagFilter(with: self.viewModel.state, results: results)
             case .error(let error):
                 DDLogError("ItemsViewController: could not load results - \(error)")
                 self.viewModel.process(action: .observingFailed)
@@ -822,6 +818,10 @@ fileprivate final class SearchBarContainer: UIView {
 }
 
 extension ItemsViewController: TagFilterDelegate {
+    var currentLibraryId: LibraryIdentifier {
+        return self.viewModel.state.library.identifier
+    }
+
     func tagSelectionDidChange(selected: Set<String>) {
         if selected.isEmpty {
             if let tags = self.viewModel.state.tagsFilter {
@@ -833,6 +833,7 @@ extension ItemsViewController: TagFilterDelegate {
     }
 
     func tagOptionsDidChange() {
-        self.updateTagFilter(with: self.viewModel.state, isInitial: false)
+        guard let results = self.viewModel.state.results else { return }
+        self.updateTagFilter(with: self.viewModel.state, results: results)
     }
 }

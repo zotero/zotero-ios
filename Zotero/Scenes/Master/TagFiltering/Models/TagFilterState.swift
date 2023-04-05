@@ -13,6 +13,7 @@ import RealmSwift
 struct TagFilterState: ViewModelState {
     enum Error: Swift.Error {
         case loadingFailed
+        case deletionFailed
     }
 
     struct Changes: OptionSet {
@@ -25,27 +26,17 @@ struct TagFilterState: ViewModelState {
         static let options = Changes(rawValue: 1 << 2)
     }
 
-    struct ObservedChange {
-        let results: Results<RTag>
-        let modifications: [Int]
-        let insertions: [Int]
-        let deletions: [Int]
-    }
-
     var coloredResults: Results<RTag>?
-    var coloredChange: ObservedChange?
     var coloredSnapshot: Results<RTag>?
-    var coloredNotificationToken: NotificationToken?
     var otherResults: Results<RTag>?
-    var otherChange: ObservedChange?
     var otherSnapshot: Results<RTag>?
-    var otherNotificationToken: NotificationToken?
     var filteredResults: Results<RTag>?
     var selectedTags: Set<String>
     var searchTerm: String
     var showAutomatic: Bool
     var displayAll: Bool
     var error: Error?
+    var automaticCount: Int?
     var changes: Changes
 
     init(selectedTags: Set<String>, showAutomatic: Bool, displayAll: Bool) {
@@ -59,8 +50,7 @@ struct TagFilterState: ViewModelState {
     mutating func cleanup() {
         self.changes = []
         self.error = nil
-        self.coloredChange = nil
-        self.otherChange = nil
+        self.automaticCount = nil
     }
 }
 

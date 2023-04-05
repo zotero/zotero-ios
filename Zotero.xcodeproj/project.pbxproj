@@ -932,6 +932,7 @@
 		B3CF8830266DFFAF009CFC20 /* ReadStylesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B331F9B4265400D70099F6A6 /* ReadStylesDbRequest.swift */; };
 		B3CF906629D1C71800614A89 /* CreatorEditCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CF906529D1C71800614A89 /* CreatorEditCoordinator.swift */; };
 		B3D037202604FCBA00BCFB05 /* FileAttachmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B40622490F09400FAAF6D /* FileAttachmentView.swift */; };
+		B3D06ADE29DD8C21009C0D98 /* DeleteAutomaticTagsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D06ADD29DD8C21009C0D98 /* DeleteAutomaticTagsDbRequest.swift */; };
 		B3D0793627CCF63800C454D6 /* AnnotationBoundingBoxCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D0793527CCF63800C454D6 /* AnnotationBoundingBoxCalculator.swift */; };
 		B3D0994726DCCEF700B04FAA /* RPathCoordinate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D0994626DCCEF700B04FAA /* RPathCoordinate.swift */; };
 		B3D0994826DCCF6500B04FAA /* RPathCoordinate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D0994626DCCEF700B04FAA /* RPathCoordinate.swift */; };
@@ -1826,6 +1827,7 @@
 		B3CCB8D929B73DED0097520B /* UnlockPdfViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockPdfViewController.swift; sourceTree = "<group>"; };
 		B3CD96B2283796F500B8ACCB /* RemoteAttachmentDownloadOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteAttachmentDownloadOperation.swift; sourceTree = "<group>"; };
 		B3CF906529D1C71800614A89 /* CreatorEditCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorEditCoordinator.swift; sourceTree = "<group>"; };
+		B3D06ADD29DD8C21009C0D98 /* DeleteAutomaticTagsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteAutomaticTagsDbRequest.swift; sourceTree = "<group>"; };
 		B3D0793527CCF63800C454D6 /* AnnotationBoundingBoxCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationBoundingBoxCalculator.swift; sourceTree = "<group>"; };
 		B3D0994626DCCEF700B04FAA /* RPathCoordinate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPathCoordinate.swift; sourceTree = "<group>"; };
 		B3D0AC97255C14AB007648F5 /* PDFReaderLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReaderLayout.swift; sourceTree = "<group>"; };
@@ -2133,6 +2135,7 @@
 				B30BDDE528366F1B007034E8 /* CreateTranslatedItemsDbRequest.swift */,
 				B3100919272C00BA003FC743 /* CreateWebDavDeletionsDbRequest.swift */,
 				B37ACB922730338A002EF4E1 /* DeleteAllWebDavDeletionsDbRequest.swift */,
+				B3D06ADD29DD8C21009C0D98 /* DeleteAutomaticTagsDbRequest.swift */,
 				B305644223FC051E003304F2 /* DeleteGroupDbRequest.swift */,
 				B305643E23FC051E003304F2 /* DeleteItemsFromCollectionDbRequest.swift */,
 				B305643823FC051E003304F2 /* DeleteObjectsDbRequest.swift */,
@@ -4695,6 +4698,7 @@
 				B3B41F1B2848E5A90017CA4B /* AnnotationsFilter.swift in Sources */,
 				B30565CB23FC051E003304F2 /* ReadSearchDbRequest.swift in Sources */,
 				B31CC58128646D990055C114 /* ManualLookupState.swift in Sources */,
+				B3D06ADE29DD8C21009C0D98 /* DeleteAutomaticTagsDbRequest.swift in Sources */,
 				B305669A23FC051F003304F2 /* RItem.swift in Sources */,
 				B3FE4B9C268DDE6100CE123F /* CitationBibliographyExportCoordinator.swift in Sources */,
 				B34A4B7026E63C9900B3E993 /* LineWidthView.swift in Sources */,
