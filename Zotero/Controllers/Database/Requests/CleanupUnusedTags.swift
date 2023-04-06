@@ -14,7 +14,10 @@ struct CleanupUnusedTags: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        let toRemoveBase = database.objects(RTag.self).filter("tags.@count == 0 AND color == %@", "")
+        let toRemoveTyped = database.objects(RTypedTag.self).filter("item == nil")
+        database.delete(toRemoveTyped)
+
+        let toRemoveBase = database.objects(RTag.self).filter("tags.@count == 0 and color == \"\"")
         database.delete(toRemoveBase)
     }
 }
