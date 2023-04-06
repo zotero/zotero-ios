@@ -672,6 +672,7 @@
 		B361A3022511F9BE00271173 /* LinkMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = B361A3002511F98700271173 /* LinkMode.swift */; };
 		B361A3042511F9FB00271173 /* AnnotationType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B361A3032511F9FB00271173 /* AnnotationType.swift */; };
 		B361A3052511FA0C00271173 /* AnnotationType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B361A3032511F9FB00271173 /* AnnotationType.swift */; };
+		B361C2B429DECB220035BF7E /* ResetSettingsVersionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B361C2B329DECB220035BF7E /* ResetSettingsVersionDbRequest.swift */; };
 		B36459DA2644116000A0C2C0 /* TagPickerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CD9255451AA00910FE0 /* TagPickerState.swift */; };
 		B36459DB2644117D00A0C2C0 /* TagPickerActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CE1255451C200910FE0 /* TagPickerActionHandler.swift */; };
 		B36459DC2644118800A0C2C0 /* TagPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CE8255451DC00910FE0 /* TagPickerViewController.swift */; };
@@ -1621,6 +1622,7 @@
 		B361820E24C9B9E800B30D56 /* SelectableTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectableTextField.swift; sourceTree = "<group>"; };
 		B361A3002511F98700271173 /* LinkMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkMode.swift; sourceTree = "<group>"; };
 		B361A3032511F9FB00271173 /* AnnotationType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationType.swift; sourceTree = "<group>"; };
+		B361C2B329DECB220035BF7E /* ResetSettingsVersionDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetSettingsVersionDbRequest.swift; sourceTree = "<group>"; };
 		B36459E626441A1800A0C2C0 /* TagRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagRow.swift; sourceTree = "<group>"; };
 		B36459E826441A2000A0C2C0 /* TagRow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TagRow.xib; sourceTree = "<group>"; };
 		B367330C24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HtmlAttributedStringConverter.swift; sourceTree = "<group>"; };
@@ -2202,6 +2204,7 @@
 				B349182A25E00771006C3313 /* ReadVersionDbRequest.swift */,
 				B3100920272C0960003FC743 /* ReadWebDavDeletionsDbRequest.swift */,
 				B35DD74229813AA6004CC34D /* RemoveItemFromParentDbRequest.swift */,
+				B361C2B329DECB220035BF7E /* ResetSettingsVersionDbRequest.swift */,
 				B353F1FA242E21880062EE24 /* ResetTranslatorsDbRequest.swift */,
 				B3588C6825FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift */,
 				B3E8B24E27DA3969001825F8 /* SplitAnnotationsDbRequest.swift */,
@@ -4670,6 +4673,7 @@
 				B3E8FE172714297200F51458 /* CiteSearchActionHandler.swift in Sources */,
 				B34A9F6825BF1D27007C9A4A /* AnnotationConverter.swift in Sources */,
 				B3A081C425D2ADCD0088EC24 /* PerformDeletionsSyncAction.swift in Sources */,
+				B361C2B429DECB220035BF7E /* ResetSettingsVersionDbRequest.swift in Sources */,
 				B30565B623FC051E003304F2 /* StoreItemsDbResponseRequest.swift in Sources */,
 				B395EFEB25494B3200CEBD9F /* CreatorEditActionHandler.swift in Sources */,
 				B30565E623FC051E003304F2 /* SchemaController.swift in Sources */,
@@ -5557,7 +5561,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
-                CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
@@ -5595,7 +5599,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
-                CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -5739,7 +5743,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
-                CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -5770,7 +5774,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
-                CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -5899,7 +5903,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
-                CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
@@ -6054,7 +6058,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
-                CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -6140,7 +6144,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
-                CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",

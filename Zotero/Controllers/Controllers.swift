@@ -47,6 +47,8 @@ final class Controllers {
     fileprivate var needsEmptyNoteTitleFix: Bool
     @UserDefault(key: "SchemaDatasetFieldIssueFix", defaultValue: true)
     fileprivate var needsSchemaDatasetFieldIssueFix: Bool
+    @UserDefault(key: "TagOrderNeedsSync", defaultValue: true)
+    fileprivate var tagOrderNeedsSync: Bool
 
     private static func apiConfiguration(schemaVersion: Int) -> URLSessionConfiguration {
         let configuration = URLSessionConfiguration.default
@@ -349,6 +351,10 @@ final class UserControllers {
             if controllers?.needsSchemaDatasetFieldIssueFix == true {
                 try coordinator.perform(request: FixSchemaIssueDbRequest())
                 controllers?.needsSchemaDatasetFieldIssueFix = false
+            }
+            if controllers?.tagOrderNeedsSync == true {
+                try coordinator.perform(request: ResetSettingsVersionDbRequest())
+                controllers?.tagOrderNeedsSync = false
             }
         })
 
