@@ -51,15 +51,38 @@ struct StoreSettingsDbRequest: DbRequest {
     }
 
     private func syncTagColors(tags: [TagColorResponse], in database: Realm) {
+        let names = tags.map { $0.name }
+        let toDelete = database.objects(RTag.self).filter(.library(with: self.libraryId)).filter("color != \"\" and not name in %@", names)
+        for tag in toDelete {
+            database.delete(tag.tags)
+        }
+        database.delete(toDelete)
+
         let allTags = database.objects(RTag.self)
-        tags.forEach { tag in
+        for (idx, tag) in tags.enumerated() {
             if let existing = allTags.filter(.name(tag.name, in: self.libraryId)).first {
+                var didChange = false
                 if existing.color != tag.color {
                     existing.color = tag.color
+                    didChange = true
+                }
+                if existing.order != idx {
+                    existing.order = idx
+                    didChange = true
+                }
+
+                if didChange {
+                    for tag in existing.tags {
+                        guard let item = tag.item else { continue }
+                        // Update item so that items list and tag picker are updated with color/order changes
+                        item.rawType = item.rawType
+                    }
                 }
             } else {
                 let new = RTag()
                 new.name = tag.name
+                new.updateSortName()
+                new.order = idx
                 new.color = tag.color
                 new.libraryId = self.libraryId
                 database.add(new)

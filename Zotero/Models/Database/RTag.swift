@@ -23,10 +23,23 @@ final class RTypedTag: Object {
 
 final class RTag: Object {
     @Persisted(indexed: true) var name: String
+    @Persisted var sortName: String
     @Persisted var color: String
+    @Persisted var order: Int
     @Persisted var customLibraryKey: RCustomLibraryType?
     @Persisted var groupKey: Int?
     @Persisted(originProperty: "tag") var tags: LinkingObjects<RTypedTag>
+
+    func updateSortName() {
+        let newName = RTag.sortName(from: self.name)
+        if newName != self.sortName {
+            self.sortName = newName
+        }
+    }
+
+    static func sortName(from name: String) -> String {
+        return name.trimmingCharacters(in: CharacterSet(charactersIn: "[]'\"")).lowercased()
+    }
 
     // MARK: - Sync properties
 

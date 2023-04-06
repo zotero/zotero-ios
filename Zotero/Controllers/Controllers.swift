@@ -45,6 +45,8 @@ final class Controllers {
     fileprivate var needsChildItemCollectionsFix: Bool
     @UserDefault(key: "EmptyNoteTitlesNeedFixing", defaultValue: true)
     fileprivate var needsEmptyNoteTitleFix: Bool
+    @UserDefault(key: "TagOrderNeedsSync", defaultValue: true)
+    fileprivate var tagOrderNeedsSync: Bool
 
     private static func apiConfiguration(schemaVersion: Int) -> URLSessionConfiguration {
         let configuration = URLSessionConfiguration.default
@@ -343,6 +345,10 @@ final class UserControllers {
             if controllers?.needsEmptyNoteTitleFix == true {
                 try coordinator.perform(request: FixNotesWithEmptyTitlesDbRequest())
                 controllers?.needsEmptyNoteTitleFix = false
+            }
+            if controllers?.tagOrderNeedsSync == true {
+                try coordinator.perform(request: ResetSettingsVersionDbRequest())
+                controllers?.tagOrderNeedsSync = false
             }
         })
 
