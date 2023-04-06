@@ -80,7 +80,6 @@ struct SyncVersionsDbRequest: DbResponseRequest {
     }
 }
 
-
 struct SyncGroupVersionsDbRequest: DbResponseRequest {
     typealias Response = ([Int], [(Int, String)])
 

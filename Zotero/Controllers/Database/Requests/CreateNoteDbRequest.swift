@@ -82,6 +82,7 @@ struct CreateNoteDbRequest: DbResponseRequest {
             } else {
                 rTag = RTag()
                 rTag.name = tag.name
+                rTag.updateSortName()
                 rTag.color = tag.color
                 rTag.libraryId = self.libraryId
                 database.add(rTag)
