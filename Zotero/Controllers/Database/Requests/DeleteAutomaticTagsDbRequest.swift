@@ -18,9 +18,11 @@ struct DeleteAutomaticTagsDbRequest: DbRequest {
     func process(in database: Realm) throws {
         let typedTags = try ReadAutomaticTagsDbRequest(libraryId: self.libraryId).process(in: database)
 
+        let date = Date()
         for tag in typedTags {
             guard let item = tag.item else { continue }
             item.changes.append(RObjectChange.create(changes: RItemChanges.tags))
+            item.dateModified = date
             tag.item = nil
         }
         database.delete(typedTags)

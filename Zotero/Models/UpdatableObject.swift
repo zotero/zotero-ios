@@ -163,7 +163,7 @@ extension RItem: Updatable {
             parameters["deleted"] = self.trash
         }
         if changes.contains(.tags) {
-            parameters["tags"] = Array(self.tags.map({ ["tag": ($0.tag?.name ?? ""), "type": $0.type.rawValue] }))
+            parameters["tags"] = Array(self.tags.map({ ["tag": ($0.tag?.name ?? ""), "type": $0.type.rawValue] as [String : Any] }))
         }
         if changes.contains(.collections) {
             parameters["collections"] = Array(self.collections.map({ $0.key }))
