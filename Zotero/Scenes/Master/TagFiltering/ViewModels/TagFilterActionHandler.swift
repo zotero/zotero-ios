@@ -160,14 +160,15 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
         do {
             let filtered = (try self.dbStorage.perform(request: filterRequest, on: .main))
             let coloredRequest = ReadColoredTagsDbRequest(libraryId: libraryId)
-            let colored = (try self.dbStorage.perform(request: coloredRequest, on: .main)).sorted(byKeyPath: "name")
+            let colored = (try self.dbStorage.perform(request: coloredRequest, on: .main)).sorted(by: [SortDescriptor(keyPath: "order", ascending: true),
+                                                                                                       SortDescriptor(keyPath: "sortName", ascending: true)])
             let other: Results<RTag>
 
             if !viewModel.state.displayAll {
-                other = filtered.filter("color = \"\"").sorted(byKeyPath: "name")
+                other = filtered.filter("color = \"\"").sorted(byKeyPath: "sortName")
             } else {
                 let otherRequest = ReadTagsForCollectionDbRequest(collectionId: .custom(.all), libraryId: libraryId, showAutomatic: viewModel.state.showAutomatic)
-                other = (try self.dbStorage.perform(request: otherRequest, on: .main)).filter("color = \"\"").sorted(byKeyPath: "name")
+                other = (try self.dbStorage.perform(request: otherRequest, on: .main)).filter("color = \"\"").sorted(byKeyPath: "sortName")
             }
 
             var selected: Set<String> = []

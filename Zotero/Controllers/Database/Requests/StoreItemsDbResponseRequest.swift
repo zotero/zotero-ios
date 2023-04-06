@@ -380,6 +380,7 @@ struct StoreItemDbRequest: DbResponseRequest {
             } else {
                 rTag = RTag()
                 rTag.name = tag.tag
+                rTag.updateSortName()
                 rTag.libraryId = libraryId
                 database.add(rTag)
             }
