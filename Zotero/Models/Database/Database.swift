@@ -13,7 +13,7 @@ import RealmSwift
 import Network
 
 struct Database {
-    private static let schemaVersion: UInt64 = 35
+    private static let schemaVersion: UInt64 = 36
 
     static func mainConfiguration(url: URL, fileStorage: FileStorage) -> Realm.Configuration {
         var config = Realm.Configuration(fileURL: url,
@@ -41,6 +41,9 @@ struct Database {
                 // Migrate to new object change model.
                 self.migrateObjectChange(migration: migration)
             }
+            if schemaVersion < 36 {
+                self.migrateTagNames(migration: migration)
+            }
         }
     }
 
@@ -56,6 +59,15 @@ struct Database {
         migration.enumerateObjects(ofType: RCollection.className(), migrationBlock)
         migration.enumerateObjects(ofType: RSearch.className(), migrationBlock)
         migration.enumerateObjects(ofType: RPageIndex.className(), migrationBlock)
+    }
+
+    private static func migrateTagNames(migration: Migration) {
+        migration.enumerateObjects(ofType: RTag.className()) { oldObject, newObject in
+            if let name = oldObject?["name"] as? String, !name.isEmpty {
+                newObject?["sortName"] = RTag.sortName(from: name)
+                newObject?["order"] = 0
+            }
+        }
     }
 
     /// Realm results observer returns modifications from old array, so if there is a need to retrieve updated objects from updated `Results`
