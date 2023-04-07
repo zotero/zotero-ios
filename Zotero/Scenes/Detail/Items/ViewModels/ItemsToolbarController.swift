@@ -20,7 +20,6 @@ final class ItemsToolbarController {
     private static let barButtonItemSingleTag = 2
     private static let barButtonItemFilterTag = 3
     private static let barButtonItemTitleTag = 4
-    private static let barButtonItemDuplicateTag = 5
     private static let finishVisibilityTime: RxTimeInterval = .seconds(2)
 
     private unowned let viewController: UIViewController
@@ -47,7 +46,7 @@ final class ItemsToolbarController {
             return [ItemAction(type: .restore), ItemAction(type: .delete)]
         }
 
-        var actions = [ItemAction(type: .addToCollection), ItemAction(type: .duplicate), ItemAction(type: .trash)]
+        var actions = [ItemAction(type: .addToCollection), ItemAction(type: .trash)]
         switch state.collection.identifier {
         case .collection:
             actions.insert(ItemAction(type: .removeFromCollection), at: 1)
@@ -86,12 +85,6 @@ final class ItemsToolbarController {
                 item.isEnabled = !selectedItems.isEmpty
             case ItemsToolbarController.barButtonItemSingleTag:
                 item.isEnabled = selectedItems.count == 1
-            case ItemsToolbarController.barButtonItemDuplicateTag:
-                if selectedItems.count == 1, let key = selectedItems.first, let rItem = results?.filter(.key(key)).first, (rItem.rawType != ItemTypes.attachment && rItem.rawType != ItemTypes.note) {
-                    item.isEnabled = true
-                } else {
-                    item.isEnabled = false
-                }
             default: break
             }
         })
@@ -164,9 +157,7 @@ final class ItemsToolbarController {
             switch action.type {
             case .addToCollection, .trash, .delete, .removeFromCollection, .restore:
                 item.tag = ItemsToolbarController.barButtonItemEmptyTag
-            case .duplicate:
-                item.tag = ItemsToolbarController.barButtonItemDuplicateTag
-            case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .share, .removeDownload, .download: break
+            case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .share, .removeDownload, .download, .duplicate: break
             }
             switch action.type {
             case .addToCollection:
@@ -179,11 +170,9 @@ final class ItemsToolbarController {
                 item.accessibilityLabel = L10n.Accessibility.Items.removeFromCollection
             case .restore:
                 item.accessibilityLabel = L10n.Accessibility.Items.restore
-            case .duplicate:
-                item.accessibilityLabel = L10n.Accessibility.Items.duplicate
             case .share:
                 item.accessibilityLabel = L10n.Accessibility.Items.share
-            case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .removeDownload, .download: break
+            case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .removeDownload, .download, .duplicate: break
             }
             item.rx.tap.subscribe(onNext: { [weak self] _ in
                 guard let `self` = self else { return }
