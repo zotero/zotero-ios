@@ -206,9 +206,11 @@
 "tag_picker.confirm_deletion" = "Are you sure you want to delete %d automatic tags in this library?\n\nThis action cannot be undone.";
 "tag_picker.search_placeholder" = "Search Tags";
 "tag_picker.deselect_all" = "Deselect All";
-"tag_picker.show_auto" = "Show Automatic";
+"tag_picker.show_auto" = "Show Automatic Tags";
 "tag_picker.show_all" = "Display All Tags in This Library";
 "tag_picker.delete_automatic" = "Delete Automatic Tags in This Library";
+"tag_picker.one_tag_selected" = "1 tag selected";
+"tag_picker.x_tags_selected" = "%d tags selected";
 
 "creator_editor.creator" = "Creator Type";
 "creator_editor.first_name" = "First Name";

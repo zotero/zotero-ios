@@ -8,7 +8,7 @@
 //  Taken from: https://www.hackingwithswift.com/example-code/language/how-to-split-an-array-into-chunks
 //
 
-import Foundation
+import UIKit
 
 extension Array {
     func chunked(into size: Int) -> [[Element]] {
@@ -31,5 +31,12 @@ extension Array {
             }
         }
         return low // element not found, should be inserted here
+    }
+
+    func orderedMenuChildrenBasedOnDevice() -> Array<Element> {
+        switch UIDevice.current.userInterfaceIdiom {
+        case .pad: return self.reversed()
+        default: return self
+        }
     }
 }
