@@ -33,7 +33,11 @@ final class ItemDetailTitleContentView: UIView {
 
         let font = self.textView.font!
         self.topConstraint.constant = font.capHeight - font.ascender
-        self.bottomConstraint.constant = -font.descender
+        switch UIDevice.current.userInterfaceIdiom {
+        case .pad:
+            self.bottomConstraint.constant = -font.descender
+        default: break
+        }
     }
 
     override func layoutSubviews() {
