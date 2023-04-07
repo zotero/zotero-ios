@@ -15,9 +15,9 @@ struct CiteSettingsView: View {
 
     var body: some View {
         Form {
-            if let styles = self.viewModel.state.styles, !styles.isEmpty {
+            if !self.viewModel.state.styles.isEmpty {
                 Section(header: Text(L10n.Settings.Cite.stylesTitle)) {
-                    ForEach(styles) { style in
+                    ForEach(self.viewModel.state.styles) { style in
                         StyleRow(style: style)
                     }
                     .onDelete(perform: self.delete)
