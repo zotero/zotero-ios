@@ -354,7 +354,7 @@ final class ItemsViewController: UIViewController {
 
         case .filter:
             guard let button = button else { return }
-            self.coordinatorDelegate?.showFilters(viewModel: self.viewModel, button: button)
+            self.coordinatorDelegate?.showFilters(viewModel: self.viewModel, itemsController: self, button: button)
 
         case .sort:
             guard let button = button else { return }
