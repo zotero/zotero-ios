@@ -66,6 +66,17 @@ class TagFilterViewController: UIViewController {
                       .disposed(by: self.disposeBag)
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        switch UIDevice.current.userInterfaceIdiom {
+        case .phone:
+        // Trigger initial load on phone.
+        self.delegate?.tagOptionsDidChange()
+        default: break
+        }
+    }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         self.didAppear = true
@@ -74,7 +85,7 @@ class TagFilterViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
 
-        guard !self.didAppear else { return }
+        guard UIDevice.current.userInterfaceIdiom == .pad && !self.didAppear else { return }
 
         let height = TagFilterViewController.searchBarHeight + TagFilterViewController.searchBarTopOffset
         self.collectionView.setContentOffset(CGPoint(x: 0, y: height), animated: false)
@@ -82,6 +93,7 @@ class TagFilterViewController: UIViewController {
 
     private func update(to state: TagFilterState) {
         if state.changes.contains(.selection) {
+            self.optionsButton.menu = self.createOptionsMenu(with: state)
             self.delegate?.tagSelectionDidChange(selected: state.selectedTags)
         }
 
@@ -161,20 +173,22 @@ class TagFilterViewController: UIViewController {
     }
 
     private func createOptionsMenu(with state: TagFilterState) -> UIMenu {
-        let deselectAction = UIAction(title: L10n.TagPicker.deselectAll, handler: { [weak self] _ in
+        let deselectAction = UIAction(title: L10n.TagPicker.deselectAll, attributes: (state.selectedTags.isEmpty ? .disabled : []), handler: { [weak self] _ in
             self?.viewModel.process(action: .deselectAll)
         })
-        let deselectMenu = UIMenu(options: .displayInline, children: [deselectAction])
+        let selectionTitle = state.selectedTags.count == 1 ? L10n.TagPicker.oneTagSelected : L10n.TagPicker.xTagsSelected(state.selectedTags.count)
+        let selectionCount = UIAction(title: selectionTitle, attributes: .disabled, handler: { _ in })
+        let deselectMenu = UIMenu(options: .displayInline, children: [selectionCount, deselectAction].orderedMenuChildrenBasedOnDevice())
 
         let showAutomatic = UIAction(title: L10n.TagPicker.showAuto, state: (state.showAutomatic ? .on : .off), handler: { [weak self] _ in
             guard let `self` = self else { return }
             self.viewModel.process(action: .setShowAutomatic(!self.viewModel.state.showAutomatic))
         })
-        let displayAll = UIAction(title: L10n.TagPicker.showAll, state: (state.displayAll ? .on : .off), handler: { [weak self] _ in
+        let displayAll = UIAction(title: L10n.TagPicker.showAll, attributes: .hidden, state: (state.displayAll ? .on : .off), handler: { [weak self] _ in
             guard let `self` = self else { return }
             self.viewModel.process(action: .setDisplayAll(!self.viewModel.state.displayAll))
         })
-        let optionsMenu = UIMenu(options: .displayInline, children: [displayAll, showAutomatic])
+        let optionsMenu = UIMenu(options: .displayInline, children: [showAutomatic, displayAll].orderedMenuChildrenBasedOnDevice())
 
         let deleteAutomatic = UIAction(title: L10n.TagPicker.deleteAutomatic, attributes: .destructive, handler: { [weak self] _ in
             guard let `self` = self, let libraryId = self.delegate?.currentLibraryId else { return }
@@ -182,7 +196,7 @@ class TagFilterViewController: UIViewController {
         })
         let deleteMenu = UIMenu(options: .displayInline, children: [deleteAutomatic])
 
-        return UIMenu(children: [deleteMenu, optionsMenu, deselectMenu])
+        return UIMenu(children: [deselectMenu, optionsMenu, deleteMenu].orderedMenuChildrenBasedOnDevice())
     }
 
     private func setupViews() {
@@ -191,6 +205,7 @@ class TagFilterViewController: UIViewController {
         searchBar.backgroundColor = .systemBackground
         searchBar.backgroundImage = UIImage()
         searchBar.delegate = self
+
         searchBar.rx.text.observe(on: MainScheduler.instance)
                  .skip(1)
                  .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
@@ -224,6 +239,12 @@ class TagFilterViewController: UIViewController {
         collectionView.register(UINib(nibName: TagFilterViewController.cellId, bundle: nil), forCellWithReuseIdentifier: TagFilterViewController.cellId)
         self.collectionView = collectionView
         self.view.insertSubview(collectionView, belowSubview: searchContainer)
+
+        switch UIDevice.current.userInterfaceIdiom {
+        case .phone:
+            collectionView.keyboardDismissMode = .onDrag
+        default: break
+        }
 
         let searchBarTop = searchContainer.topAnchor.constraint(equalTo: self.view.topAnchor, constant: TagFilterViewController.searchBarTopOffset)
 
@@ -334,6 +355,10 @@ extension TagFilterViewController: UISearchBarDelegate {
         })
 
         return true
+    }
+
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.resignFirstResponder()
     }
 
     func searchBarShouldEndEditing(_ searchBar: UISearchBar) -> Bool {

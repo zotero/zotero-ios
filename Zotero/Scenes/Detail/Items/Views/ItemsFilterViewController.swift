@@ -14,17 +14,13 @@ class ItemsFilterViewController: UIViewController {
     @IBOutlet private weak var container: UIStackView!
     @IBOutlet private weak var downloadsTitleLabel: UILabel!
     @IBOutlet private weak var downloadsSwitch: UISwitch!
-    @IBOutlet private weak var tagFilterContainer: UIView!
-    @IBOutlet private weak var tagFilterTitleLabel: UILabel!
-    @IBOutlet private weak var tagFilterButton: UIView!
-    @IBOutlet private weak var tagFilterChevron: UIImageView!
-    @IBOutlet private weak var tagFilterButtonTitle: UILabel!
-    @IBOutlet private weak var tagFilterClearButton: UIButton!
+    @IBOutlet private weak var separator: UIView!
+    @IBOutlet private weak var tagFilterControllerContainer: UIView!
 
     private static let width: CGFloat = 320
     private let viewModel: ViewModel<ItemsActionHandler>
+    private let tagFilterController: TagFilterViewController
     private let disposeBag: DisposeBag
-    private unowned let dbStorage: DbStorage
 
     weak var coordinatorDelegate: ItemsFilterCoordinatorDelegate?
     private var downloadsFilterEnabled: Bool {
@@ -36,9 +32,9 @@ class ItemsFilterViewController: UIViewController {
         })
     }
 
-    init(viewModel: ViewModel<ItemsActionHandler>, dbStorage: DbStorage) {
+    init(viewModel: ViewModel<ItemsActionHandler>, tagFilterController: TagFilterViewController) {
         self.viewModel = viewModel
-        self.dbStorage = dbStorage
+        self.tagFilterController = tagFilterController
         self.disposeBag = DisposeBag()
         super.init(nibName: "ItemsFilterViewController", bundle: nil)
     }
@@ -76,41 +72,6 @@ class ItemsFilterViewController: UIViewController {
     // MARK: - Actions
 
     private func update(state: ItemsState) {
-        if state.changes.contains(.filters) && UIDevice.current.userInterfaceIdiom == .phone {
-            self.update(tagNames: state.tagsFilter)
-        }
-    }
-
-    private func update(tagNames: Set<String>?) {
-        if let tagNames = tagNames {
-            do {
-                let request = ReadTagsWithNamesDbRequest(names: tagNames, libraryId: self.viewModel.state.library.identifier)
-                let tags = try self.dbStorage.perform(request: request, on: .main)
-                self.tagFilterButtonTitle.attributedText = AttributedTagStringGenerator.attributedString(fromUnsortedResults: tags, limit: 5)
-            } catch {
-                self.tagFilterButtonTitle.text = tagNames.sorted().joined(separator: ", ")
-            }
-
-            self.tagFilterChevron.isHidden = true
-            self.tagFilterClearButton.isHidden = false
-        } else {
-            self.tagFilterButtonTitle.text = "-"
-            self.tagFilterButtonTitle.textColor = .systemGray3
-            self.tagFilterChevron.isHidden = false
-            self.tagFilterClearButton.isHidden = true
-        }
-    }
-
-    @IBAction private func clearTags() {
-        let tagFilter = self.viewModel.state.filters.first(where: { filter in
-            switch filter {
-            case .tags: return true
-            default: return false
-            }
-        })
-
-        guard let filter = tagFilter else { return }
-        self.viewModel.process(action: .disableFilter(filter))
     }
 
     @IBAction private func toggleDownloads(sender: UISwitch) {
@@ -119,19 +80,6 @@ class ItemsFilterViewController: UIViewController {
         } else {
             self.viewModel.process(action: .disableFilter(.downloadedFiles))
         }
-    }
-
-    @IBAction private func showTagPicker() {
-        let tags = self.viewModel.state.tagsFilter
-        self.coordinatorDelegate?.showTagPicker(libraryId: self.viewModel.state.library.identifier, selected: (tags ?? []), picked: { [weak self] newTags in
-            if newTags.isEmpty {
-                if let tags = tags {
-                    self?.viewModel.process(action: .disableFilter(.tags(tags)))
-                }
-            } else {
-                self?.viewModel.process(action: .enableFilter(.tags(Set(newTags.map({ $0.name })))))
-            }
-        })
     }
 
     @objc private func done() {
@@ -148,13 +96,19 @@ class ItemsFilterViewController: UIViewController {
 
     private func setupUI() {
         self.downloadsTitleLabel.text = L10n.Items.Filters.downloads
-        self.tagFilterContainer.isHidden = UIDevice.current.userInterfaceIdiom == .pad
-        self.tagFilterTitleLabel.text = L10n.Items.Filters.tags
-        self.tagFilterChevron.image = UIImage(systemName: "chevron.right")?.withAlignmentRectInsets(UIEdgeInsets(top: 0, left: 0, bottom: 0, right: -16))
-        self.tagFilterClearButton.setTitle("", for: .normal)
-        self.tagFilterClearButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 16)
-
         self.downloadsSwitch.isOn = self.downloadsFilterEnabled
-        self.update(tagNames: self.viewModel.state.tagsFilter)
+
+        self.tagFilterController.willMove(toParent: self)
+        self.tagFilterControllerContainer.addSubview(self.tagFilterController.view)
+        self.addChild(self.tagFilterController)
+        self.tagFilterController.didMove(toParent: self)
+
+        NSLayoutConstraint.activate([
+            self.tagFilterControllerContainer.leadingAnchor.constraint(equalTo: self.tagFilterController.view.leadingAnchor),
+            self.tagFilterControllerContainer.trailingAnchor.constraint(equalTo: self.tagFilterController.view.trailingAnchor),
+            self.tagFilterControllerContainer.topAnchor.constraint(equalTo: self.tagFilterController.view.topAnchor),
+            self.tagFilterControllerContainer.bottomAnchor.constraint(equalTo: self.tagFilterController.view.bottomAnchor),
+            self.separator.heightAnchor.constraint(equalToConstant: 1/UIScreen.main.scale)
+        ])
     }
 }
