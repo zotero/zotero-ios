@@ -135,7 +135,7 @@ final class Defaults {
     @UserDefault(key: "TagPickerShowAutomatic", defaultValue: true)
     var tagPickerShowAutomaticTags: Bool
 
-    @UserDefault(key: "TagPickerDisplayAllTags", defaultValue: true)
+    @UserDefault(key: "TagPickerDisplayAllTags", defaultValue: false)
     var tagPickerDisplayAllTags: Bool
 
     // MARK: - Helpers
