@@ -22,7 +22,7 @@ enum ItemsAction {
     case disableFilter(ItemsState.Filter)
     case loadInitialState
     case loadItemToDuplicate(String)
-    case moveItems([String], String)
+    case moveItems(keys: Set<String>, toItemKey: String)
     case observingFailed
     case removeDownloads(Set<String>)
     case restoreItems(Set<String>)
@@ -33,6 +33,7 @@ enum ItemsAction {
     case setSortOrder(Bool)
     case startEditing
     case stopEditing
+    case tagItem(itemKey: String, libraryId: LibraryIdentifier, tagNames: Set<String>)
     case toggleSelectionState
     case trashItems(Set<String>)
     case cacheItemAccessory(item: RItem)
