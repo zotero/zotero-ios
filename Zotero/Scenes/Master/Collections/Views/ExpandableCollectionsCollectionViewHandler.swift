@@ -228,8 +228,8 @@ extension ExpandableCollectionsCollectionViewHandler: UICollectionViewDropDelega
 
         switch coordinator.proposal.operation {
         case .copy:
-            self.dragDropController.itemKeys(from: coordinator.items.map({ $0.dragItem })) { [weak self] keys in
-                self?.viewModel.process(action: .assignKeysToCollection(keys, key))
+            self.dragDropController.keys(from: coordinator.items.map({ $0.dragItem })) { [weak self] keys in
+                self?.viewModel.process(action: .assignKeysToCollection(itemKeys: keys, collectionKey: key))
             }
         default: break
         }
