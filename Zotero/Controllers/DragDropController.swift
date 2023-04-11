@@ -20,8 +20,19 @@ final class DragDropController {
         return dragItem.localObject as? RItem
     }
 
-    func itemKeys(from dragItems: [UIDragItem], completed: @escaping ([String]) -> Void) {
-        var keys: [String] = []
+    func dragItem(from tag: RTag) -> UIDragItem {
+        let provider = NSItemProvider(object: tag.name as NSString)
+        let dragItem = UIDragItem(itemProvider: provider)
+        dragItem.localObject = tag
+        return dragItem
+    }
+
+    func tag(from dragItem: UIDragItem) -> RTag? {
+        return dragItem.localObject as? RTag
+    }
+
+    func keys(from dragItems: [UIDragItem], completed: @escaping (Set<String>) -> Void) {
+        var keys: Set<String> = []
 
         let group = DispatchGroup()
 
@@ -30,7 +41,7 @@ final class DragDropController {
 
             dragItem.itemProvider.loadObject(ofClass: NSString.self) { nsString, error in
                 if let key = nsString as? String {
-                    keys.append(key)
+                    keys.insert(key)
                 }
                 group.leave()
             }

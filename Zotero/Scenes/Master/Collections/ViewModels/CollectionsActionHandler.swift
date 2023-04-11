@@ -250,8 +250,9 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
         }
     }
 
-    private func assignItems(keys: [String], to collectionKey: String, in viewModel: ViewModel<CollectionsActionHandler>) {
-        let request = AssignItemsToCollectionsDbRequest(collectionKeys: Set([collectionKey]), itemKeys: Set(keys), libraryId: viewModel.state.library.identifier)
+    private func assignItems(keys: Set<String>, to collectionKey: String, in viewModel: ViewModel<CollectionsActionHandler>) {
+        let collectionKeys: Set<String> = [collectionKey]
+        let request = AssignItemsToCollectionsDbRequest(collectionKeys: collectionKeys, itemKeys: keys, libraryId: viewModel.state.library.identifier)
         self.perform(request: request) { [weak viewModel] error in
             guard let error = error, let viewModel = viewModel else { return }
 

@@ -11,7 +11,7 @@ import Foundation
 import RealmSwift
 
 struct MoveItemsToParentDbRequest: DbRequest {
-    let itemKeys: [String]
+    let itemKeys: Set<String>
     let parentKey: String
     let libraryId: LibraryIdentifier
 

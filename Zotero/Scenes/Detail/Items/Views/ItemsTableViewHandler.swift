@@ -397,12 +397,19 @@ extension ItemsTableViewHandler: UITableViewDragDelegate {
 extension ItemsTableViewHandler: UITableViewDropDelegate {
     func tableView(_ tableView: UITableView, performDropWith coordinator: UITableViewDropCoordinator) {
         guard let indexPath = coordinator.destinationIndexPath,
-              let key = self.snapshot?[indexPath.row].key else { return }
+              let item = self.snapshot?[indexPath.row],
+              let libraryId = item.libraryId else { return }
 
         switch coordinator.proposal.operation {
         case .copy:
-            self.dragDropController.itemKeys(from: coordinator.items.map({ $0.dragItem })) { [weak self] keys in
-                self?.viewModel.process(action: .moveItems(keys, key))
+            let key = item.key
+            let localObject = coordinator.items.first?.dragItem.localObject
+            self.dragDropController.keys(from: coordinator.items.map({ $0.dragItem })) { [weak self] keys in
+                if localObject is RItem {
+                    self?.viewModel.process(action: .moveItems(keys: keys, toItemKey: key))
+                } else if localObject is RTag {
+                    self?.viewModel.process(action: .tagItem(itemKey: key, libraryId: libraryId, tagNames: keys))
+                }
             }
         default: break
         }
@@ -419,6 +426,16 @@ extension ItemsTableViewHandler: UITableViewDropDelegate {
             return UITableViewDropProposal(operation: .forbidden)
         }
 
+        if session.items.first?.localObject is RItem {
+            return self.itemDropSessionDidUpdate(session: session, withDestinationIndexPath: destinationIndexPath, results: results)
+        } else if session.items.first?.localObject is RTag {
+            return self.tagDropSessionDidUpdate(session: session, withDestinationIndexPath: destinationIndexPath)
+        }
+
+        return UITableViewDropProposal(operation: .forbidden)
+    }
+
+    private func itemDropSessionDidUpdate(session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath, results: Results<RItem>) -> UITableViewDropProposal {
         let dragItemsLibraryId = session.items.compactMap({ $0.localObject as? RItem }).compactMap({ $0.libraryId }).first
         let item = results[destinationIndexPath.row]
 
@@ -429,6 +446,10 @@ extension ItemsTableViewHandler: UITableViewDropDelegate {
            return UITableViewDropProposal(operation: .forbidden)
         }
 
+        return UITableViewDropProposal(operation: .copy, intent: .insertIntoDestinationIndexPath)
+    }
+
+    private func tagDropSessionDidUpdate(session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath) -> UITableViewDropProposal {
         return UITableViewDropProposal(operation: .copy, intent: .insertIntoDestinationIndexPath)
     }
 }
