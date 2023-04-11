@@ -174,6 +174,18 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
 
         case .emptyTrash:
             self.emptyTrash(in: viewModel)
+
+        case .tagItem(let itemKey, let libraryId, let tagNames):
+            self.tagItem(key: itemKey, libraryId: libraryId, with: tagNames, in: viewModel)
+        }
+    }
+
+    private func tagItem(key: String, libraryId: LibraryIdentifier, with names: Set<String>, in viewModel: ViewModel<ItemsActionHandler>) {
+        let request = AddTagsToItemDbRequest(key: key, libraryId: libraryId, tagNames: names)
+        self.perform(request: request) { error in
+            guard let error = error else { return }
+            // TODO: - show error
+            DDLogError("ItemsActionHandler: can't add tags - \(error)")
         }
     }
 
@@ -360,7 +372,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
 
     // MARK: - Drag & Drop
 
-    private func moveItems(from keys: [String], to key: String, in viewModel: ViewModel<ItemsActionHandler>) {
+    private func moveItems(from keys: Set<String>, to key: String, in viewModel: ViewModel<ItemsActionHandler>) {
         let request = MoveItemsToParentDbRequest(itemKeys: keys, parentKey: key, libraryId: viewModel.state.library.identifier)
         self.perform(request: request) { [weak viewModel] error in
             guard let viewModel = viewModel, let error = error else { return }
