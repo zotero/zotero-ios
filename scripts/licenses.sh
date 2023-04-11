@@ -4,8 +4,8 @@ realpath() {
     [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
 }
 
-SCRIPT_PATH=`realpath $0`
-SCRIPT_DIR=`dirname $SCRIPT_PATH`
+SCRIPT_PATH=`realpath "$0"`
+SCRIPT_DIR=`dirname "$SCRIPT_PATH"`
 LICENSES_DIR="$SCRIPT_DIR/../pdf-keys"
 LICENSES_FILE="$LICENSES_DIR/licenses.plist"
 

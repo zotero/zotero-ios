@@ -4190,7 +4190,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "$SCRIPT_INPUT_FILE_0 config lint\n$SCRIPT_INPUT_FILE_0 config run\n\n";
+			shellScript = "\"$SCRIPT_INPUT_FILE_0\" config lint\n\"$SCRIPT_INPUT_FILE_0\" config run\n\n";
 		};
 		B34A85AC243CB1E4003D5638 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -4209,7 +4209,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "python3 $SCRIPT_INPUT_FILE_0\n";
+			shellScript = "python3 \"$SCRIPT_INPUT_FILE_0\"\n";
 		};
 		B3593F142668D37900FA4BB2 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -4228,7 +4228,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "python3 $SCRIPT_INPUT_FILE_0\n";
+			shellScript = "python3 \"$SCRIPT_INPUT_FILE_0\"\n";
 		};
 		B3CF8840266E0FE6009CFC20 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -4247,7 +4247,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "python3 $SCRIPT_INPUT_FILE_0\n";
+			shellScript = "python3 \"$SCRIPT_INPUT_FILE_0\"\n";
 		};
 		B3E196FB25308DA500DBBE5C /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
