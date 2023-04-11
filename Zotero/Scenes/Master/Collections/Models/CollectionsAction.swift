@@ -9,7 +9,7 @@
 import Foundation
 
 enum CollectionsAction {
-    case assignKeysToCollection([String], String)
+    case assignKeysToCollection(itemKeys: Set<String>, collectionKey: String)
     case collapseAll(selectedCollectionIsRoot: Bool)
     case deleteCollection(String)
     case deleteSearch(String)
