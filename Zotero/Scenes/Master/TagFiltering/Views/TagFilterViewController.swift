@@ -28,7 +28,6 @@ class TagFilterViewController: UIViewController {
     private weak var collectionView: UICollectionView!
     private weak var searchBarTopConstraint: NSLayoutConstraint!
     private weak var optionsButton: UIButton!
-//    private var dataSource: UICollectionViewDiffableDataSource<Int, FilterTag>!
     weak var delegate: TagFilterDelegate?
     private var searchBarScrollEnabled: Bool
     private var didAppear: Bool
@@ -38,10 +37,12 @@ class TagFilterViewController: UIViewController {
     private static let searchBarTopOffset: CGFloat = -10
     private static let searchBarBottomOffset: CGFloat = -8
     private let viewModel: ViewModel<TagFilterActionHandler>
+    private unowned let dragDropController: DragDropController
     private let disposeBag: DisposeBag
 
-    init(viewModel: ViewModel<TagFilterActionHandler>) {
+    init(viewModel: ViewModel<TagFilterActionHandler>, dragDropController: DragDropController) {
         self.viewModel = viewModel
+        self.dragDropController = dragDropController
         self.searchBarScrollEnabled = true
         self.disposeBag = DisposeBag()
         self.didAppear = false
@@ -243,6 +244,8 @@ class TagFilterViewController: UIViewController {
         switch UIDevice.current.userInterfaceIdiom {
         case .phone:
             collectionView.keyboardDismissMode = .onDrag
+        case .pad:
+            collectionView.dragDelegate = self
         default: break
         }
 
@@ -299,6 +302,13 @@ extension TagFilterViewController: UICollectionViewDataSource {
 
     private func isActive(tag: RTag) -> Bool {
         return self.viewModel.state.filteredResults?.filter(.name(tag.name)).first != nil
+    }
+}
+
+extension TagFilterViewController: UICollectionViewDragDelegate {
+    func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
+        guard let tag = self.tag(for: indexPath) else { return [] }
+        return [self.dragDropController.dragItem(from: tag)]
     }
 }
 

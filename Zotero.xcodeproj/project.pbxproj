@@ -357,6 +357,7 @@
 		B3100922272C098D003FC743 /* ReadWebDavDeletionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3100920272C0960003FC743 /* ReadWebDavDeletionsDbRequest.swift */; };
 		B3100927272C2441003FC743 /* DeleteWebDavFilesSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3100926272C2441003FC743 /* DeleteWebDavFilesSyncAction.swift */; };
 		B3100928272C32E9003FC743 /* DeleteWebDavFilesSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3100926272C2441003FC743 /* DeleteWebDavFilesSyncAction.swift */; };
+		B310FA4529E5765800FA2F15 /* AddTagsToItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B310FA4429E5765800FA2F15 /* AddTagsToItemDbRequest.swift */; };
 		B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B311B3202386A39800BCF592 /* MainInterface.storyboard */; };
 		B311B3262386A39800BCF592 /* ZShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B311B31C2386A39800BCF592 /* ZShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B3129855270EE9DE002376F9 /* Error+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3129854270EE9DE002376F9 /* Error+Helpers.swift */; };
@@ -1370,6 +1371,7 @@
 		B310091C272C0126003FC743 /* DeleteWebDavDeletionsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteWebDavDeletionsDbRequest.swift; sourceTree = "<group>"; };
 		B3100920272C0960003FC743 /* ReadWebDavDeletionsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadWebDavDeletionsDbRequest.swift; sourceTree = "<group>"; };
 		B3100926272C2441003FC743 /* DeleteWebDavFilesSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteWebDavFilesSyncAction.swift; sourceTree = "<group>"; };
+		B310FA4429E5765800FA2F15 /* AddTagsToItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTagsToItemDbRequest.swift; sourceTree = "<group>"; };
 		B311B31C2386A39800BCF592 /* ZShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ZShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B311B3212386A39800BCF592 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
 		B311B3232386A39800BCF592 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -2122,6 +2124,7 @@
 		B305643723FC051E003304F2 /* Requests */ = {
 			isa = PBXGroup;
 			children = (
+				B310FA4429E5765800FA2F15 /* AddTagsToItemDbRequest.swift */,
 				B305646123FC051E003304F2 /* AssignItemsToCollectionsDbRequest.swift */,
 				B358D3B3279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift */,
 				B305644423FC051E003304F2 /* CheckItemIsChangedDbRequest.swift */,
@@ -4832,6 +4835,7 @@
 				B3DCDF06240912060039ED0D /* DocumentPickerViewController.swift in Sources */,
 				B37BF0B125A6035D00AE0268 /* ReadDocumentDataDbRequest.swift in Sources */,
 				B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */,
+				B310FA4529E5765800FA2F15 /* AddTagsToItemDbRequest.swift in Sources */,
 				B39D42DF29C0CE7D0035CDA9 /* TagsFlowLayout.swift in Sources */,
 				B30BDDE628366F1B007034E8 /* CreateTranslatedItemsDbRequest.swift in Sources */,
 				B31A5E51286308960026589F /* LookupIdentifierCell.swift in Sources */,
