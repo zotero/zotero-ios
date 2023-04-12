@@ -818,8 +818,8 @@ fileprivate final class SearchBarContainer: UIView {
 }
 
 extension ItemsViewController: TagFilterDelegate {
-    var currentLibraryId: LibraryIdentifier {
-        return self.viewModel.state.library.identifier
+    var currentLibrary: Library {
+        return self.viewModel.state.library
     }
 
     func tagSelectionDidChange(selected: Set<String>) {
