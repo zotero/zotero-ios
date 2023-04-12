@@ -396,8 +396,7 @@ extension ItemsTableViewHandler: UITableViewDragDelegate {
 
 extension ItemsTableViewHandler: UITableViewDropDelegate {
     func tableView(_ tableView: UITableView, performDropWith coordinator: UITableViewDropCoordinator) {
-        guard let indexPath = coordinator.destinationIndexPath,
-              let item = self.snapshot?[indexPath.row],
+        guard let item = coordinator.destinationIndexPath.flatMap({ self.snapshot?[$0.row] }),
               let libraryId = item.libraryId else { return }
 
         switch coordinator.proposal.operation {
@@ -428,8 +427,6 @@ extension ItemsTableViewHandler: UITableViewDropDelegate {
 
         if session.items.first?.localObject is RItem {
             return self.itemDropSessionDidUpdate(session: session, withDestinationIndexPath: destinationIndexPath, results: results)
-        } else if session.items.first?.localObject is RTag {
-            return self.tagDropSessionDidUpdate(session: session, withDestinationIndexPath: destinationIndexPath)
         }
 
         return UITableViewDropProposal(operation: .forbidden)
@@ -446,10 +443,6 @@ extension ItemsTableViewHandler: UITableViewDropDelegate {
            return UITableViewDropProposal(operation: .forbidden)
         }
 
-        return UITableViewDropProposal(operation: .copy, intent: .insertIntoDestinationIndexPath)
-    }
-
-    private func tagDropSessionDidUpdate(session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath) -> UITableViewDropProposal {
         return UITableViewDropProposal(operation: .copy, intent: .insertIntoDestinationIndexPath)
     }
 }

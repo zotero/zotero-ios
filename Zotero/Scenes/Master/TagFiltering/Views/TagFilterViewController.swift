@@ -13,7 +13,7 @@ import RealmSwift
 import RxSwift
 
 protocol TagFilterDelegate: AnyObject {
-    var currentLibraryId: LibraryIdentifier { get }
+    var currentLibrary: Library { get }
 
     func tagSelectionDidChange(selected: Set<String>)
     func tagOptionsDidChange()
@@ -166,7 +166,7 @@ class TagFilterViewController: UIViewController {
     private func confirmDeletion(count: Int) {
         let controller = UIAlertController(title: L10n.TagPicker.confirmDeletionQuestion, message: L10n.TagPicker.confirmDeletion(count), preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .destructive, handler: { [weak self] _ in
-            guard let libraryId = self?.delegate?.currentLibraryId else { return }
+            guard let libraryId = self?.delegate?.currentLibrary.identifier else { return }
             self?.viewModel.process(action: .deleteAutomatic(libraryId))
         }))
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel))
@@ -192,7 +192,7 @@ class TagFilterViewController: UIViewController {
         let optionsMenu = UIMenu(options: .displayInline, children: [showAutomatic, displayAll].orderedMenuChildrenBasedOnDevice())
 
         let deleteAutomatic = UIAction(title: L10n.TagPicker.deleteAutomatic, attributes: .destructive, handler: { [weak self] _ in
-            guard let `self` = self, let libraryId = self.delegate?.currentLibraryId else { return }
+            guard let `self` = self, let libraryId = self.delegate?.currentLibrary.identifier else { return }
             self.viewModel.process(action: .loadAutomaticCount(libraryId))
         })
         let deleteMenu = UIMenu(options: .displayInline, children: [deleteAutomatic])
@@ -245,7 +245,7 @@ class TagFilterViewController: UIViewController {
         case .phone:
             collectionView.keyboardDismissMode = .onDrag
         case .pad:
-            collectionView.dragDelegate = self
+            collectionView.dropDelegate = self
         default: break
         }
 
@@ -305,10 +305,35 @@ extension TagFilterViewController: UICollectionViewDataSource {
     }
 }
 
-extension TagFilterViewController: UICollectionViewDragDelegate {
-    func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
-        guard let tag = self.tag(for: indexPath) else { return [] }
-        return [self.dragDropController.dragItem(from: tag)]
+extension TagFilterViewController: UICollectionViewDropDelegate {
+    func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal {
+        guard self.delegate?.currentLibrary.metadataEditable == true,    // allow only when library is editable
+              session.localDragSession != nil,                  // allow only local drag session
+              let destinationIndexPath = destinationIndexPath,
+              destinationIndexPath.row < self.collectionView(collectionView, numberOfItemsInSection: destinationIndexPath.section) else {
+            return UICollectionViewDropProposal(operation: .forbidden)
+        }
+
+        let dragItemsLibraryId = session.items.compactMap({ $0.localObject as? RItem }).compactMap({ $0.libraryId }).first
+        if dragItemsLibraryId == self.delegate?.currentLibrary.identifier {
+            return UICollectionViewDropProposal(operation: .copy, intent: .insertIntoDestinationIndexPath)
+        }
+
+        return UICollectionViewDropProposal(operation: .forbidden)
+    }
+
+    func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator) {
+        guard let tag = coordinator.destinationIndexPath.flatMap({ self.tag(for: $0) }),
+              let libraryId = (coordinator.items.first?.dragItem.localObject as? RItem)?.libraryId else { return }
+
+        switch coordinator.proposal.operation {
+        case .copy:
+            let name = tag.name
+            self.dragDropController.keys(from: coordinator.items.map({ $0.dragItem })) { [weak self] keys in
+                self?.viewModel.process(action: .assignTag(name: name, toItemKeys: keys, libraryId: libraryId))
+            }
+        default: break
+        }
     }
 }
 

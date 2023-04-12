@@ -50,4 +50,3 @@ struct AddTagsToItemDbRequest: DbRequest {
         item.changes.append(RObjectChange.create(changes: RItemChanges.tags))
     }
 }
-
