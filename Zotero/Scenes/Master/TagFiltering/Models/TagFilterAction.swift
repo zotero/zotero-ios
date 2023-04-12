@@ -21,4 +21,5 @@ enum TagFilterAction {
     case deselectAllWithoutNotifying
     case loadAutomaticCount(LibraryIdentifier)
     case deleteAutomatic(LibraryIdentifier)
+    case assignTag(name: String, toItemKeys: Set<String>, libraryId: LibraryIdentifier)
 }
