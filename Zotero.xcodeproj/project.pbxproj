@@ -319,6 +319,7 @@
 		B305677F23FC0D0A003304F2 /* SessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305646E23FC051E003304F2 /* SessionController.swift */; };
 		B305678323FC0D6B003304F2 /* SecureStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305646F23FC051E003304F2 /* SecureStorage.swift */; };
 		B305679023FC1D9B003304F2 /* CollectionDifference+Separated.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305678F23FC1D9B003304F2 /* CollectionDifference+Separated.swift */; };
+		B305CEBB29E6E67600B9E2B4 /* AssignItemsToTagDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305CEBA29E6E67600B9E2B4 /* AssignItemsToTagDbRequest.swift */; };
 		B307A2732704A87D005986B3 /* IdleTimerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B307A2722704A87D005986B3 /* IdleTimerController.swift */; };
 		B307E55E22D4A87B00592B3C /* SyncActionsSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B307E55D22D4A87B00592B3C /* SyncActionsSpec.swift */; };
 		B30A44A629B8799600332B4E /* MasterContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30A44A529B8799600332B4E /* MasterContainerViewController.swift */; };
@@ -1336,6 +1337,7 @@
 		B305656223FC051E003304F2 /* SortType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SortType.swift; sourceTree = "<group>"; };
 		B30566D823FC0769003304F2 /* tinymce */ = {isa = PBXFileReference; lastKnownFileType = folder; path = tinymce; sourceTree = "<group>"; };
 		B305678F23FC1D9B003304F2 /* CollectionDifference+Separated.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CollectionDifference+Separated.swift"; sourceTree = "<group>"; };
+		B305CEBA29E6E67600B9E2B4 /* AssignItemsToTagDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssignItemsToTagDbRequest.swift; sourceTree = "<group>"; };
 		B307A2722704A87D005986B3 /* IdleTimerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdleTimerController.swift; sourceTree = "<group>"; };
 		B307E55D22D4A87B00592B3C /* SyncActionsSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncActionsSpec.swift; sourceTree = "<group>"; };
 		B30A44A529B8799600332B4E /* MasterContainerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterContainerViewController.swift; sourceTree = "<group>"; };
@@ -2126,6 +2128,7 @@
 			children = (
 				B310FA4429E5765800FA2F15 /* AddTagsToItemDbRequest.swift */,
 				B305646123FC051E003304F2 /* AssignItemsToCollectionsDbRequest.swift */,
+				B305CEBA29E6E67600B9E2B4 /* AssignItemsToTagDbRequest.swift */,
 				B358D3B3279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift */,
 				B305644423FC051E003304F2 /* CheckItemIsChangedDbRequest.swift */,
 				B3E34888283CFA92002A8A06 /* CleanupUnusedTags.swift */,
@@ -4680,6 +4683,7 @@
 				B3593F62241A62DD00760E20 /* DetailCoordinator.swift in Sources */,
 				B30565EB23FC051E003304F2 /* Controllers.swift in Sources */,
 				B3A351E12715784A002E597A /* WebDavDownloadRequest.swift in Sources */,
+				B305CEBB29E6E67600B9E2B4 /* AssignItemsToTagDbRequest.swift in Sources */,
 				B39AF554290033CD001F400F /* TableOfContentsViewController.swift in Sources */,
 				B3593F78241A76E600760E20 /* CollectionEditError.swift in Sources */,
 				B36181EC24C96B0500B30D56 /* SearchableCollection.swift in Sources */,
