@@ -14,6 +14,7 @@ struct TagFilterState: ViewModelState {
     enum Error: Swift.Error {
         case loadingFailed
         case deletionFailed
+        case tagAssignFailed
     }
 
     struct Changes: OptionSet {
