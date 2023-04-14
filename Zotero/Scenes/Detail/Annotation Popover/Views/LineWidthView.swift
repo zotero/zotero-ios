@@ -98,7 +98,7 @@ final class LineWidthView: UIView {
         let title = UILabel()
         title.font = .preferredFont(forTextStyle: .body)
         title.adjustsFontForContentSizeCategory = true
-        title.textColor = .black
+        title.textColor = Asset.Colors.annotationText.color
         title.text = self.title
         self.titleLabel = title
 

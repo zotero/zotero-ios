@@ -41,7 +41,7 @@ class AnnotationToolOptionsViewController: UIViewController {
 
     override func loadView() {
         let view = UIView()
-        view.backgroundColor = .white
+        view.backgroundColor = Asset.Colors.annotationPopoverBackground.color
         self.view = view
     }
 
@@ -197,7 +197,7 @@ class AnnotationToolOptionsViewController: UIViewController {
 
         let appearance = UINavigationBarAppearance()
         appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = .white
+        appearance.backgroundColor = Asset.Colors.navbarBackground.color
         self.navigationController?.navigationBar.standardAppearance = appearance
         self.navigationController?.navigationBar.scrollEdgeAppearance = appearance
 
