@@ -99,8 +99,12 @@ class TagFilterViewController: UIViewController {
         }
 
         if state.changes.contains(.tags) {
-            self.collectionView.reloadData()
-            self.fixSelectionIfNeeded(selected: state.selectedTags)
+            logPerformance(logMessage: "TagFilterViewController: reload data") {
+                self.collectionView.reloadData()
+            }
+            logPerformance(logMessage: "TagFilterViewController: fix selection") {
+                self.fixSelectionIfNeeded(selected: state.selectedTags)
+            }
         }
 
         if state.changes.contains(.options) {
@@ -276,11 +280,13 @@ extension TagFilterViewController: UICollectionViewDataSource {
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TagFilterViewController.cellId, for: indexPath)
-        if let cell = cell as? TagFilterCell, let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout, let tag = self.tag(for: indexPath) {
-            cell.maxWidth = collectionView.frame.width - flowLayout.sectionInset.left - flowLayout.sectionInset.right -
-                            collectionView.contentInset.left - collectionView.contentInset.right - 20
-            let color: UIColor = tag.color.isEmpty ? .label : UIColor(hex: tag.color)
-            cell.setup(with: tag.name, color: color, bolded: !tag.color.isEmpty, isActive: self.isActive(tag: tag))
+        logPerformance(logMessage: "TagFilterViewController: load cell") {
+            if let cell = cell as? TagFilterCell, let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout, let tag = self.tag(for: indexPath) {
+                cell.maxWidth = collectionView.frame.width - flowLayout.sectionInset.left - flowLayout.sectionInset.right -
+                collectionView.contentInset.left - collectionView.contentInset.right - 20
+                let color: UIColor = tag.color.isEmpty ? .label : UIColor(hex: tag.color)
+                cell.setup(with: tag.name, color: color, bolded: !tag.color.isEmpty, isActive: self.isActive(tag: tag))
+            }
         }
         return cell
     }
