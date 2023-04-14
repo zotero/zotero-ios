@@ -8,6 +8,7 @@
 
 import UIKit
 
+#if PDFENABLED
 protocol SplittablePathPoint {
     var x: Double { get }
     var y: Double { get }
@@ -113,3 +114,4 @@ final class AnnotationSplitter {
         return splitPaths
     }
 }
+#endif
