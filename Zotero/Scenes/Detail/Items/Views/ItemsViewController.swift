@@ -247,7 +247,7 @@ final class ItemsViewController: UIViewController {
 
     private func updateTagFilter(with state: ItemsState, results: Results<RItem>) {
         if !state.filters.isEmpty {
-            self.tagFilterDelegate?.itemsDidChange(results: results, libraryId: state.library.identifier)
+//            self.tagFilterDelegate?.itemsDidChange(results: results, libraryId: state.library.identifier)
         } else {
             self.tagFilterDelegate?.itemsDidChange(collectionId: state.collection.identifier, libraryId: state.library.identifier)
         }

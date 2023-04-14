@@ -77,7 +77,7 @@ final class ItemsToolbarController {
         }
     }
 
-    private func deviceSpecificFilters(from filters: [ItemsState.Filter]) -> [ItemsState.Filter] {
+    private func deviceSpecificFilters(from filters: [ItemsFilter]) -> [ItemsFilter] {
         // There is different functionality on iPad and iPhone. iPhone shows tag filters in filter popup in items screen while iPad shows tag filters in master controller.
         // So filter icon and description should always show up on iPhone, while it should not show up on iPad for tag filters.
         // Therefore we ignore `.tag` filter on iPad and keep it on iPhone.
@@ -108,7 +108,7 @@ final class ItemsToolbarController {
         })
     }
 
-    private func updateNormalToolbarItems(for filters: [ItemsState.Filter], downloadBatchData: ItemsState.DownloadBatchData?, results: Results<RItem>?) {
+    private func updateNormalToolbarItems(for filters: [ItemsFilter], downloadBatchData: ItemsState.DownloadBatchData?, results: Results<RItem>?) {
         if let item = self.viewController.toolbarItems?.first(where: { $0.tag == ItemsToolbarController.barButtonItemFilterTag }) {
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
             item.image = UIImage(systemName: filterImageName)
@@ -140,7 +140,7 @@ final class ItemsToolbarController {
         }
     }
 
-    private func createNormalToolbarItems(for filters: [ItemsState.Filter]) -> [UIBarButtonItem] {
+    private func createNormalToolbarItems(for filters: [ItemsFilter]) -> [UIBarButtonItem] {
         let fixedSpacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
         fixedSpacer.width = 16
         let flexibleSpacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
