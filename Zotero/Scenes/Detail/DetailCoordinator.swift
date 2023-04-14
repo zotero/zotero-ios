@@ -774,7 +774,8 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = TagPickerViewController(viewModel: viewModel, saveAction: picked)
 
-        self.navigationController.pushViewController(controller, animated: true)
+        let navigationController = (self.navigationController.presentedViewController as? UINavigationController) ?? self.navigationController
+        navigationController.pushViewController(controller, animated: true)
     }
 }
 
