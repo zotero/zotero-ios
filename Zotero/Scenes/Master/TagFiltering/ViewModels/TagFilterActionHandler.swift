@@ -161,13 +161,17 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
     }
 
     private func load(itemKeys: Set<String>, libraryId: LibraryIdentifier, in viewModel: ViewModel<TagFilterActionHandler>) {
-        let request = ReadTagsForItemsDbRequest(itemKeys: itemKeys, libraryId: libraryId, showAutomatic: viewModel.state.showAutomatic)
-        self.load(filterRequest: request, libraryId: libraryId, in: viewModel)
+        logPerformance(logMessage: "TagFilterActionHandler: load item keys") {
+            let request = ReadTagsForItemsDbRequest(itemKeys: itemKeys, libraryId: libraryId, showAutomatic: viewModel.state.showAutomatic)
+            self.load(filterRequest: request, libraryId: libraryId, in: viewModel)
+        }
     }
 
     private func load(collectionId: CollectionIdentifier, libraryId: LibraryIdentifier, in viewModel: ViewModel<TagFilterActionHandler>) {
-        let request = ReadTagsForCollectionDbRequest(collectionId: collectionId, libraryId: libraryId, showAutomatic: viewModel.state.showAutomatic)
-        self.load(filterRequest: request, libraryId: libraryId, in: viewModel)
+        logPerformance(logMessage: "TagFilterActionHandler: load item keys") {
+            let request = ReadTagsForCollectionDbRequest(collectionId: collectionId, libraryId: libraryId, showAutomatic: viewModel.state.showAutomatic)
+            self.load(filterRequest: request, libraryId: libraryId, in: viewModel)
+        }
     }
 
     private func load<Request: DbResponseRequest>(filterRequest: Request, libraryId: LibraryIdentifier, in viewModel: ViewModel<TagFilterActionHandler>) where Request.Response == Results<RTag> {
