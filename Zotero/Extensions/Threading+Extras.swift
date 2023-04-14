@@ -8,6 +8,8 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
+
 func inMainThread(sync: Bool = false, action: @escaping () -> Void) {
     if Thread.isMainThread {
         action()
@@ -22,5 +24,17 @@ func inMainThread(sync: Bool = false, action: @escaping () -> Void) {
         DispatchQueue.main.async {
             action()
         }
+    }
+}
+
+func logPerformance(logMessage: String? = nil, action: () -> Void) {
+    let start = CFAbsoluteTimeGetCurrent()
+    action()
+    let duration = CFAbsoluteTimeGetCurrent() - start
+
+    if let message = logMessage {
+        DDLogInfo("PERF: \(message) \(duration)")
+    } else {
+        DDLogInfo("PERF: \(duration)")
     }
 }

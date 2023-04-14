@@ -26,22 +26,6 @@ struct ItemsState: ViewModelState {
         static let batchData = Changes(rawValue: 1 << 7)
     }
 
-    enum Filter: Equatable {
-        case downloadedFiles
-        case tags(Set<String>)
-
-        static func ==(lhs: Filter, rhs: Filter) -> Bool {
-            switch (lhs, rhs) {
-            case (.downloadedFiles, .downloadedFiles):
-                return true
-            case (.tags(let lTags), .tags(let rTags)):
-                return lTags == rTags
-            default:
-                return false
-            }
-        }
-    }
-
     struct DownloadBatchData: Equatable {
         let fraction: Double
         let downloaded: Int
@@ -61,7 +45,7 @@ struct ItemsState: ViewModelState {
     var sortType: ItemsSortType
     var searchTerm: String?
     var results: Results<RItem>?
-    var filters: [Filter]
+    var filters: [ItemsFilter]
     // Keys for all results are stored so that when a deletion comes in it can be determined which keys were deleted and we can remove them from `selectedItems`
     var keys: [String]
     // Cache of item accessories (attachment, doi, url) so that they don't need to be re-fetched in tableView. The key is key of parent item, or item if it's a standalone attachment.
@@ -90,7 +74,7 @@ struct ItemsState: ViewModelState {
         return tags
     }
 
-    init(collection: Collection, library: Library, sortType: ItemsSortType, searchTerm: String?, filters: [Filter], error: ItemsError?) {
+    init(collection: Collection, library: Library, sortType: ItemsSortType, searchTerm: String?, filters: [ItemsFilter], error: ItemsError?) {
         self.collection = collection
         self.library = library
         self.filters = []
