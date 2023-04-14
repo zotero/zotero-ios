@@ -528,6 +528,16 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
         }
 
+        if let size = size {
+            switch tool {
+            case .eraser:
+                Defaults.shared.activeEraserSize = Float(size)
+            case .ink:
+                Defaults.shared.activeLineWidth = Float(size)
+            default: break
+            }
+        }
+
         self.update(viewModel: viewModel) { state in
             if let hex = hex {
                 state.toolColors[tool] = UIColor(hex: hex)
