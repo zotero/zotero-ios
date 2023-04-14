@@ -198,8 +198,10 @@ final class ItemsTableViewHandler: NSObject {
     }
 
     func reloadAll(snapshot: Results<RItem>) {
-        self.snapshot = snapshot
-        self.tableView.reloadData()
+        logPerformance(logMessage: "ItemsTableViewHandler: reload") {
+            self.snapshot = snapshot
+            self.tableView.reloadData()
+        }
     }
 
     func reloadAllAttachments() {
@@ -309,21 +311,23 @@ extension ItemsTableViewHandler: UITableViewDataSource {
             return cell
         }
 
-        if let item = self.snapshot?[indexPath.row],
-           let cell = cell as? ItemCell {
-            // Create and cache attachment if needed
-            self.viewModel.process(action: .cacheItemAccessory(item: item))
-
-            let accessory = self.viewModel.state.itemAccessories[item.key]
-            let typeName = self.schemaController?.localized(itemType: item.rawType) ?? item.rawType
-            cell.set(item: ItemCellModel(item: item, typeName: typeName, accessory: self.cellAccessory(from: accessory)))
-
-            let openInfoAction = UIAccessibilityCustomAction(name: L10n.Accessibility.Items.openItem, actionHandler: { [weak self, weak tableView] _ in
-                guard let `self` = self, let tableView = tableView else { return false }
-                self.tableView(tableView, didSelectRowAt: indexPath)
-                return true
-            })
-            cell.accessibilityCustomActions = [openInfoAction]
+        logPerformance(logMessage: "ItemsTableViewHandler: load cell") {
+            if let item = self.snapshot?[indexPath.row],
+               let cell = cell as? ItemCell {
+                // Create and cache attachment if needed
+                self.viewModel.process(action: .cacheItemAccessory(item: item))
+                
+                let accessory = self.viewModel.state.itemAccessories[item.key]
+                let typeName = self.schemaController?.localized(itemType: item.rawType) ?? item.rawType
+                cell.set(item: ItemCellModel(item: item, typeName: typeName, accessory: self.cellAccessory(from: accessory)))
+                
+                let openInfoAction = UIAccessibilityCustomAction(name: L10n.Accessibility.Items.openItem, actionHandler: { [weak self, weak tableView] _ in
+                    guard let `self` = self, let tableView = tableView else { return false }
+                    self.tableView(tableView, didSelectRowAt: indexPath)
+                    return true
+                })
+                cell.accessibilityCustomActions = [openInfoAction]
+            }
         }
 
         return cell

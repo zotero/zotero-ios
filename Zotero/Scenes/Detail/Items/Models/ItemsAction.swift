@@ -18,8 +18,8 @@ enum ItemsAction {
     case deleteItems(Set<String>)
     case deselectItem(String)
     case download(Set<String>)
-    case enableFilter(ItemsState.Filter)
-    case disableFilter(ItemsState.Filter)
+    case enableFilter(ItemsFilter)
+    case disableFilter(ItemsFilter)
     case loadInitialState
     case loadItemToDuplicate(String)
     case moveItems(keys: Set<String>, toItemKey: String)
