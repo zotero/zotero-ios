@@ -44,51 +44,51 @@ struct SubmitUpdateSyncAction: SyncAction {
     private func submitSettings() -> Single<(Int, Error?)> {
         let request = UpdatesRequest(libraryId: self.libraryId, userId: self.userId, objectType: self.object, params: self.parameters, version: self.sinceVersion)
         return self.apiClient.send(request: request, queue: self.queue)
-                             .observe(on: self.scheduler)
-                             .flatMap({ _, response -> Single<([(String, LibraryIdentifier)], Int)> in
-                                 let newVersion = response.allHeaderFields.lastModifiedVersion
-                                 var settings: [(String, LibraryIdentifier)] = []
-                                 for params in self.parameters {
-                                     guard let key = params.keys.first,
-                                           let setting = try? PageIndexResponse.parse(key: key) else { continue }
-                                    settings.append(setting)
-                                 }
-                                 return Single.just((settings, newVersion))
-                             })
-                             .flatMap({ settings, newVersion -> Single<(Int, Error?)> in
-                                 do {
-                                     var requests: [DbRequest] = [MarkSettingsAsSyncedDbRequest(settings: settings, changeUuids: self.changeUuids, version: newVersion)]
-                                     if self.updateLibraryVersion {
-                                         requests.append(UpdateVersionsDbRequest(version: newVersion, libraryId: self.libraryId, type: .object(self.object)))
-                                     }
-                                     try self.dbStorage.perform(writeRequests: requests, on: self.queue)
+            .observe(on: self.scheduler)
+            .flatMap({ _, response -> Single<([(String, LibraryIdentifier)], Int)> in
+                let newVersion = response.allHeaderFields.lastModifiedVersion
+                var settings: [(String, LibraryIdentifier)] = []
+                for params in self.parameters {
+                    guard let key = params.keys.first,
+                          let setting = try? PageIndexResponse.parse(key: key) else { continue }
+                    settings.append(setting)
+                }
+                return Single.just((settings, newVersion))
+            })
+            .flatMap({ settings, newVersion -> Single<(Int, Error?)> in
+                do {
+                    var requests: [DbRequest] = [MarkSettingsAsSyncedDbRequest(settings: settings, changeUuids: self.changeUuids, version: newVersion)]
+                    if self.updateLibraryVersion {
+                        requests.append(UpdateVersionsDbRequest(version: newVersion, libraryId: self.libraryId, type: .object(self.object)))
+                    }
+                    try self.dbStorage.perform(writeRequests: requests, on: self.queue)
 
-                                     return Single.just((newVersion, nil))
-                                 } catch let error {
-                                     return Single.just((newVersion, error))
-                                 }
-                             })
+                    return Single.just((newVersion, nil))
+                } catch let error {
+                    return Single.just((newVersion, error))
+                }
+            })
     }
 
     private func submitOther() -> Single<(Int, Error?)> {
         let request = UpdatesRequest(libraryId: self.libraryId, userId: self.userId, objectType: self.object, params: self.parameters, version: self.sinceVersion)
         return self.apiClient.send(request: request, queue: self.queue)
-                             .mapData(httpMethod: request.httpMethod.rawValue)
-                             .observe(on: self.scheduler)
-                             .flatMap({ data, response -> Single<(UpdatesResponse, Int)> in
-                                 do {
-                                     let newVersion = response.allHeaderFields.lastModifiedVersion
-                                     let json = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
-                                     let keys = self.parameters.map({ $0["key"] as? String })
-                                     return Single.just((try UpdatesResponse(json: json, keys: keys), newVersion))
-                                 } catch let error {
-                                     DDLogError("SubmitUpdateSyncAction: can't parse updates response - \(error)")
-                                     return Single.error(error)
-                                 }
-                             })
-                             .flatMap({ response, newVersion -> Single<(Int, Error?)> in
-                                 return self.process(response: response, newVersion: newVersion)
-                             })
+            .mapData(httpMethod: request.httpMethod.rawValue)
+            .observe(on: self.scheduler)
+            .flatMap({ data, response -> Single<(UpdatesResponse, Int)> in
+                do {
+                    let newVersion = response.allHeaderFields.lastModifiedVersion
+                    let json = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
+                    let keys = self.parameters.map({ $0["key"] as? String })
+                    return Single.just((try UpdatesResponse(json: json, keys: keys), newVersion))
+                } catch let error {
+                    DDLogError("SubmitUpdateSyncAction: can't parse updates response - \(error)")
+                    return Single.error(error)
+                }
+            })
+            .flatMap({ response, newVersion -> Single<(Int, Error?)> in
+                return self.process(response: response, newVersion: newVersion)
+            })
     }
 
     private func process(response: UpdatesResponse, newVersion: Int) -> Single<(Int, Error?)> {
