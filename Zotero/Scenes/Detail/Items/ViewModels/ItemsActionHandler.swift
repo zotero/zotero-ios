@@ -242,13 +242,15 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     }
 
     private func loadInitialState(in viewModel: ViewModel<ItemsActionHandler>) {
-        let sortType = Defaults.shared.itemsSortType
-        let results = self.results(for: viewModel.state.searchTerm, filters: viewModel.state.filters, collectionId: viewModel.state.collection.identifier, sortType: sortType, libraryId: viewModel.state.library.identifier)
+        logPerformance(logMessage: "ItemsActionHandler: load items") {
+            let sortType = Defaults.shared.itemsSortType
+            let results = self.results(for: viewModel.state.searchTerm, filters: viewModel.state.filters, collectionId: viewModel.state.collection.identifier, sortType: sortType, libraryId: viewModel.state.library.identifier)
 
-        self.update(viewModel: viewModel) { state in
-            state.results = results
-            state.sortType = sortType
-            state.error = (results == nil ? .dataLoading : nil)
+            self.update(viewModel: viewModel) { state in
+                state.results = results
+                state.sortType = sortType
+                state.error = (results == nil ? .dataLoading : nil)
+            }
         }
     }
 
@@ -564,7 +566,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
 
     // MARK: - Searching & Filtering
 
-    private func enable(filter: ItemsState.Filter, in viewModel: ViewModel<ItemsActionHandler>) {
+    private func enable(filter: ItemsFilter, in viewModel: ViewModel<ItemsActionHandler>) {
         var filters = viewModel.state.filters
 
         guard !filters.contains(filter) else { return }
@@ -586,7 +588,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         self.filter(with: filters, in: viewModel)
     }
 
-    private func disable(filter: ItemsState.Filter, in viewModel: ViewModel<ItemsActionHandler>) {
+    private func disable(filter: ItemsFilter, in viewModel: ViewModel<ItemsActionHandler>) {
         var filters = viewModel.state.filters
 
         guard let index = filters.firstIndex(of: filter) else { return }
@@ -595,15 +597,17 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         self.filter(with: filters, in: viewModel)
     }
 
-    private func filter(with filters: [ItemsState.Filter], in viewModel: ViewModel<ItemsActionHandler>) {
+    private func filter(with filters: [ItemsFilter], in viewModel: ViewModel<ItemsActionHandler>) {
         guard filters != viewModel.state.filters else { return }
 
-        let results = self.results(for: viewModel.state.searchTerm, filters: filters, collectionId: viewModel.state.collection.identifier, sortType: viewModel.state.sortType, libraryId: viewModel.state.library.identifier)
-
-        self.update(viewModel: viewModel) { state in
-            state.filters = filters
-            state.results = results
-            state.changes = [.results, .filters]
+        logPerformance(logMessage: "ItemsActionHandler: filters") {
+            let results = self.results(for: viewModel.state.searchTerm, filters: filters, collectionId: viewModel.state.collection.identifier, sortType: viewModel.state.sortType, libraryId: viewModel.state.library.identifier)
+            
+            self.update(viewModel: viewModel) { state in
+                state.filters = filters
+                state.results = results
+                state.changes = [.results, .filters]
+            }
         }
     }
 
@@ -619,28 +623,13 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         }
     }
 
-    private func results(for searchText: String?, filters: [ItemsState.Filter], collectionId: CollectionIdentifier, sortType: ItemsSortType, libraryId: LibraryIdentifier) -> Results<RItem>? {
-        let request = ReadItemsDbRequest(collectionId: collectionId, libraryId: libraryId)
-        guard var results = (try? self.dbStorage.perform(request: request, on: .main)) else { return nil }
+    private func results(for searchText: String?, filters: [ItemsFilter], collectionId: CollectionIdentifier, sortType: ItemsSortType, libraryId: LibraryIdentifier) -> Results<RItem>? {
+        var searchComponents: [String] = []
         if let text = searchText, !text.isEmpty {
-            let components = self.createComponents(from: text)
-            results = results.filter(.itemSearch(for: components))
+            searchComponents = self.createComponents(from: text)
         }
-        if !filters.isEmpty {
-            for filter in filters {
-                switch filter {
-                case .downloadedFiles:
-                    results = results.filter("fileDownloaded = true or any children.fileDownloaded = true")
-                case .tags(let tags):
-                    var predicates: [NSPredicate] = []
-                    for tag in tags {
-                        predicates.append(NSPredicate(format: "any tags.tag.name == %@ or any children.tags.tag.name == %@ or SUBQUERY(children, $item, any $item.children.tags.tag.name == %@).@count > 0", tag, tag, tag))
-                    }
-                    results = results.filter(NSCompoundPredicate(andPredicateWithSubpredicates: predicates))
-                }
-            }
-        }
-        return results.sorted(by: sortType.descriptors)
+        let request = ReadItemsDbRequest(collectionId: collectionId, libraryId: libraryId, filters: filters, sortType: sortType, searchTextComponents: searchComponents)
+        return try? self.dbStorage.perform(request: request, on: .main)
     }
 
     private func createComponents(from searchTerm: String) -> [String] {
