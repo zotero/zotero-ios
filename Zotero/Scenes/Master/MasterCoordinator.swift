@@ -20,12 +20,13 @@ final class MasterCoordinator {
     }
 
     func start() {
-        switch UIDevice.current.userInterfaceIdiom {
-        case .pad:
-            self.startPad()
-        default:
+        // TODO: - Temporarily disabled for in-between build
+//        switch UIDevice.current.userInterfaceIdiom {
+//        case .pad:
+//            self.startPad()
+//        default:
             self.startPhone()
-        }
+//        }
     }
 
     private func startPad() {
