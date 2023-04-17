@@ -1161,7 +1161,7 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
         case .top:
             return self.isCompactWidth ? documentController.view.frame.size.width : (documentController.view.frame.size.width - (2 * PDFReaderViewController.toolbarFullInsetInset))
         case .trailing, .leading:
-            let window = UIApplication.shared.keyWindow
+            let window = UIApplication.shared.windows.first(where: \.isKeyWindow)
             let topInset = window?.safeAreaInsets.top ?? 0
             let bottomInset = window?.safeAreaInsets.bottom ?? 0
             let interfaceIsHidden = self.navigationController?.isNavigationBarHidden ?? false
