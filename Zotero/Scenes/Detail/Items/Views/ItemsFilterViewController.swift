@@ -98,24 +98,25 @@ class ItemsFilterViewController: UIViewController {
         self.downloadsTitleLabel.text = L10n.Items.Filters.downloads
         self.downloadsSwitch.isOn = self.downloadsFilterEnabled
 
-        guard UIDevice.current.userInterfaceIdiom == .phone else {
+        // TODO: - Temporarily disabled for in-between build
+//        guard UIDevice.current.userInterfaceIdiom == .phone else {
             self.tagFilterControllerContainer.isHidden = true
             self.separator.isHidden = true
-            return
-        }
-
-        self.containerTop.constant = 4
-        self.tagFilterController.willMove(toParent: self)
-        self.tagFilterControllerContainer.addSubview(self.tagFilterController.view)
-        self.addChild(self.tagFilterController)
-        self.tagFilterController.didMove(toParent: self)
-
-        NSLayoutConstraint.activate([
-            self.tagFilterControllerContainer.leadingAnchor.constraint(equalTo: self.tagFilterController.view.leadingAnchor),
-            self.tagFilterControllerContainer.trailingAnchor.constraint(equalTo: self.tagFilterController.view.trailingAnchor),
-            self.tagFilterControllerContainer.topAnchor.constraint(equalTo: self.tagFilterController.view.topAnchor),
-            self.tagFilterControllerContainer.bottomAnchor.constraint(equalTo: self.tagFilterController.view.bottomAnchor),
-            self.separator.heightAnchor.constraint(equalToConstant: 1/UIScreen.main.scale)
-        ])
+//            return
+//        }
+//
+//        self.containerTop.constant = 4
+//        self.tagFilterController.willMove(toParent: self)
+//        self.tagFilterControllerContainer.addSubview(self.tagFilterController.view)
+//        self.addChild(self.tagFilterController)
+//        self.tagFilterController.didMove(toParent: self)
+//
+//        NSLayoutConstraint.activate([
+//            self.tagFilterControllerContainer.leadingAnchor.constraint(equalTo: self.tagFilterController.view.leadingAnchor),
+//            self.tagFilterControllerContainer.trailingAnchor.constraint(equalTo: self.tagFilterController.view.trailingAnchor),
+//            self.tagFilterControllerContainer.topAnchor.constraint(equalTo: self.tagFilterController.view.topAnchor),
+//            self.tagFilterControllerContainer.bottomAnchor.constraint(equalTo: self.tagFilterController.view.bottomAnchor),
+//            self.separator.heightAnchor.constraint(equalToConstant: 1/UIScreen.main.scale)
+//        ])
     }
 }
