@@ -12,6 +12,7 @@ import RxSwift
 
 class ItemsFilterViewController: UIViewController {
     @IBOutlet private weak var container: UIStackView!
+    @IBOutlet private weak var containerTop: NSLayoutConstraint!
     @IBOutlet private weak var downloadsTitleLabel: UILabel!
     @IBOutlet private weak var downloadsSwitch: UISwitch!
     @IBOutlet private weak var separator: UIView!
@@ -64,7 +65,6 @@ class ItemsFilterViewController: UIViewController {
 
         var preferredSize = self.container.systemLayoutSizeFitting(CGSize(width: ItemsFilterViewController.width, height: .greatestFiniteMagnitude))
         preferredSize.width = ItemsFilterViewController.width
-        preferredSize.height += 10
         self.preferredContentSize = preferredSize
         self.navigationController?.preferredContentSize = preferredSize
     }
@@ -98,6 +98,13 @@ class ItemsFilterViewController: UIViewController {
         self.downloadsTitleLabel.text = L10n.Items.Filters.downloads
         self.downloadsSwitch.isOn = self.downloadsFilterEnabled
 
+        guard UIDevice.current.userInterfaceIdiom == .phone else {
+            self.tagFilterControllerContainer.isHidden = true
+            self.separator.isHidden = true
+            return
+        }
+
+        self.containerTop.constant = 4
         self.tagFilterController.willMove(toParent: self)
         self.tagFilterControllerContainer.addSubview(self.tagFilterController.view)
         self.addChild(self.tagFilterController)
