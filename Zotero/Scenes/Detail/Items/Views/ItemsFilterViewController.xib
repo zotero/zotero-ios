@@ -12,6 +12,7 @@
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="ItemsFilterViewController" customModule="Zotero" customModuleProvider="target">
             <connections>
                 <outlet property="container" destination="viL-xZ-DgW" id="fMd-QB-3oB"/>
+                <outlet property="containerTop" destination="Uee-0O-VIO" id="7e8-71-Z4S"/>
                 <outlet property="downloadsSwitch" destination="hzg-qH-YJL" id="mAT-NR-Ih4"/>
                 <outlet property="downloadsTitleLabel" destination="g5a-Dv-IoG" id="qM8-Ta-xg9"/>
                 <outlet property="separator" destination="Z5d-n7-Xo7" id="QaG-J8-gJQ"/>
@@ -25,22 +26,22 @@
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="dH3-NN-2Fd">
-                    <rect key="frame" x="0.0" y="111" width="414" height="751"/>
+                    <rect key="frame" x="0.0" y="122" width="414" height="740"/>
                     <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                 </view>
                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="7Ze-eB-ZDT">
-                    <rect key="frame" x="0.0" y="48" width="414" height="48"/>
+                    <rect key="frame" x="0.0" y="48" width="414" height="59"/>
                     <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                 </view>
                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Z5d-n7-Xo7">
-                    <rect key="frame" x="0.0" y="100" width="414" height="1"/>
+                    <rect key="frame" x="0.0" y="111" width="414" height="1"/>
                     <color key="backgroundColor" systemColor="opaqueSeparatorColor"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="NlC-vK-8WJ"/>
                     </constraints>
                 </view>
                 <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="6" translatesAutoresizingMaskIntoConstraints="NO" id="viL-xZ-DgW">
-                    <rect key="frame" x="16" y="52" width="398" height="44"/>
+                    <rect key="frame" x="16" y="63" width="398" height="44"/>
                     <subviews>
                         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="puQ-L2-oHw">
                             <rect key="frame" x="0.0" y="0.0" width="398" height="44"/>
@@ -85,7 +86,7 @@
                 <constraint firstItem="7Ze-eB-ZDT" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" id="QF7-bq-rU7"/>
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="bottom" secondItem="dH3-NN-2Fd" secondAttribute="bottom" id="SRp-b0-EUK"/>
                 <constraint firstAttribute="trailing" secondItem="viL-xZ-DgW" secondAttribute="trailing" id="UJ0-3S-Gda"/>
-                <constraint firstItem="viL-xZ-DgW" firstAttribute="top" secondItem="fnl-2z-Ty3" secondAttribute="top" constant="4" id="Uee-0O-VIO"/>
+                <constraint firstItem="viL-xZ-DgW" firstAttribute="top" secondItem="fnl-2z-Ty3" secondAttribute="top" constant="15" id="Uee-0O-VIO"/>
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="dH3-NN-2Fd" secondAttribute="trailing" id="cnm-UT-Zow"/>
                 <constraint firstItem="Z5d-n7-Xo7" firstAttribute="leading" secondItem="i5M-Pr-FkT" secondAttribute="leading" id="sQy-gy-0Oe"/>
                 <constraint firstItem="Z5d-n7-Xo7" firstAttribute="top" secondItem="7Ze-eB-ZDT" secondAttribute="bottom" constant="4" id="wez-KL-JNR"/>
