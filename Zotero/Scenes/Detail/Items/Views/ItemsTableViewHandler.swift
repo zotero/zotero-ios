@@ -198,22 +198,21 @@ final class ItemsTableViewHandler: NSObject {
     }
 
     func reloadAll(snapshot: Results<RItem>) {
-        logPerformance(logMessage: "ItemsTableViewHandler: reload") {
-            self.snapshot = snapshot
-            self.tableView.reloadData()
-        }
+        self.snapshot = snapshot
+        self.tableView.reloadData()
     }
 
     func reloadAllAttachments() {
         self.tableView.reloadData()
     }
 
-    func reload(snapshot: Results<RItem>, modifications: [Int], insertions: [Int], deletions: [Int]) {
+    func reload(snapshot: Results<RItem>, modifications: [Int], insertions: [Int], deletions: [Int], completion: (() -> Void)? = nil) {
         if !self.delegate.isInViewHierarchy || self.reloadAnimationsDisabled {
             // If view controller is outside of view hierarchy, performing batch updates with animations will cause a crash (UITableViewAlertForLayoutOutsideViewHierarchy).
             // Simple reload will suffice, animations will not be seen anyway.
             self.snapshot = snapshot
             self.tableView.reloadData()
+            completion?()
             return
         }
 
@@ -223,6 +222,7 @@ final class ItemsTableViewHandler: NSObject {
             self.tableView.reloadRows(at: modifications.map({ IndexPath(row: $0, section: 0) }), with: .none)
             self.tableView.insertRows(at: insertions.map({ IndexPath(row: $0, section: 0) }), with: .automatic)
         }, completion: { _ in
+            completion?()
         })
     }
 
@@ -311,23 +311,20 @@ extension ItemsTableViewHandler: UITableViewDataSource {
             return cell
         }
 
-        logPerformance(logMessage: "ItemsTableViewHandler: load cell") {
-            if let item = self.snapshot?[indexPath.row],
-               let cell = cell as? ItemCell {
-                // Create and cache attachment if needed
-                self.viewModel.process(action: .cacheItemAccessory(item: item))
-                
-                let accessory = self.viewModel.state.itemAccessories[item.key]
-                let typeName = self.schemaController?.localized(itemType: item.rawType) ?? item.rawType
-                cell.set(item: ItemCellModel(item: item, typeName: typeName, accessory: self.cellAccessory(from: accessory)))
-                
-                let openInfoAction = UIAccessibilityCustomAction(name: L10n.Accessibility.Items.openItem, actionHandler: { [weak self, weak tableView] _ in
-                    guard let `self` = self, let tableView = tableView else { return false }
-                    self.tableView(tableView, didSelectRowAt: indexPath)
-                    return true
-                })
-                cell.accessibilityCustomActions = [openInfoAction]
-            }
+        if let item = self.snapshot?[indexPath.row], let cell = cell as? ItemCell {
+            // Create and cache attachment if needed
+            self.viewModel.process(action: .cacheItemAccessory(item: item))
+
+            let accessory = self.viewModel.state.itemAccessories[item.key]
+            let typeName = self.schemaController?.localized(itemType: item.rawType) ?? item.rawType
+            cell.set(item: ItemCellModel(item: item, typeName: typeName, accessory: self.cellAccessory(from: accessory)))
+
+            let openInfoAction = UIAccessibilityCustomAction(name: L10n.Accessibility.Items.openItem, actionHandler: { [weak self, weak tableView] _ in
+                guard let `self` = self, let tableView = tableView else { return false }
+                self.tableView(tableView, didSelectRowAt: indexPath)
+                return true
+            })
+            cell.accessibilityCustomActions = [openInfoAction]
         }
 
         return cell

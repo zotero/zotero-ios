@@ -37,11 +37,8 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
                 state.changes = .selection
             }
 
-        case .loadWithKeys(let keys, let libraryId):
-            self.load(itemKeys: keys, libraryId: libraryId, in: viewModel)
-
-        case .loadWithCollection(let collectionId, let libraryId):
-            self.load(collectionId: collectionId, libraryId: libraryId, in: viewModel)
+        case .load(let itemFilters, let collectionId, let libraryId):
+            self.load(with: itemFilters, collectionId: collectionId, libraryId: libraryId, in: viewModel)
 
         case .search(let term):
             self.search(with: term, in: viewModel)
@@ -135,71 +132,90 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
 
     private func search(with term: String, in viewModel: ViewModel<TagFilterActionHandler>) {
         if !term.isEmpty {
+            let filtered = viewModel.state.tags.filter({ $0.tag.name.localizedCaseInsensitiveContains(term) })
             self.update(viewModel: viewModel) { state in
-                if state.coloredSnapshot == nil {
-                    state.coloredSnapshot = state.coloredResults
+                if state.snapshot == nil {
+                    state.snapshot = state.tags
                 }
-                if state.otherSnapshot == nil {
-                    state.otherSnapshot = state.otherResults
-                }
-                state.coloredResults = state.coloredSnapshot?.filter("name contains[c] %@", term)
-                state.otherResults = state.otherSnapshot?.filter("name contains[c] %@", term)
+                state.tags = filtered
                 state.searchTerm = term
                 state.changes = .tags
             }
         } else {
-            guard let coloredSnapshot = viewModel.state.coloredSnapshot, let otherSnapshot = viewModel.state.otherSnapshot else { return }
+            guard let snapshot = viewModel.state.snapshot else { return }
             self.update(viewModel: viewModel) { state in
-                state.coloredResults = coloredSnapshot
-                state.otherResults = otherSnapshot
-                state.coloredSnapshot = nil
-                state.otherSnapshot = nil
+                state.tags = snapshot
+                state.snapshot = nil
                 state.searchTerm = ""
                 state.changes = .tags
             }
         }
     }
 
-    private func load(itemKeys: Set<String>, libraryId: LibraryIdentifier, in viewModel: ViewModel<TagFilterActionHandler>) {
-        logPerformance(logMessage: "TagFilterActionHandler: load item keys") {
-            let request = ReadTagsForItemsDbRequest(itemKeys: itemKeys, libraryId: libraryId, showAutomatic: viewModel.state.showAutomatic)
-            self.load(filterRequest: request, libraryId: libraryId, in: viewModel)
-        }
-    }
-
-    private func load(collectionId: CollectionIdentifier, libraryId: LibraryIdentifier, in viewModel: ViewModel<TagFilterActionHandler>) {
-        logPerformance(logMessage: "TagFilterActionHandler: load item keys") {
-            let request = ReadTagsForCollectionDbRequest(collectionId: collectionId, libraryId: libraryId, showAutomatic: viewModel.state.showAutomatic)
-            self.load(filterRequest: request, libraryId: libraryId, in: viewModel)
-        }
-    }
-
-    private func load<Request: DbResponseRequest>(filterRequest: Request, libraryId: LibraryIdentifier, in viewModel: ViewModel<TagFilterActionHandler>) where Request.Response == Results<RTag> {
+    private func load(with filters: [ItemsFilter], collectionId: CollectionIdentifier, libraryId: LibraryIdentifier, in viewModel: ViewModel<TagFilterActionHandler>) {
         do {
-            let filtered = (try self.dbStorage.perform(request: filterRequest, on: .main))
-            let coloredRequest = ReadColoredTagsDbRequest(libraryId: libraryId)
-            let colored = (try self.dbStorage.perform(request: coloredRequest, on: .main)).sorted(by: [SortDescriptor(keyPath: "order", ascending: true),
-                                                                                                       SortDescriptor(keyPath: "sortName", ascending: true)])
-            let other: Results<RTag>
+            // Read filtered tags
+            let filtered = try self.dbStorage.perform(request: ReadFilteredTagsDbRequest(collectionId: collectionId, libraryId: libraryId, showAutomatic: viewModel.state.showAutomatic, filters: filters), on: .main)
 
-            if !viewModel.state.displayAll {
-                other = filtered.filter("color = \"\"").sorted(byKeyPath: "sortName")
-            } else {
-                let otherRequest = ReadTagsForCollectionDbRequest(collectionId: .custom(.all), libraryId: libraryId, showAutomatic: viewModel.state.showAutomatic)
-                other = (try self.dbStorage.perform(request: otherRequest, on: .main)).filter("color = \"\"").sorted(byKeyPath: "sortName")
-            }
-
-            var selected: Set<String> = []
             // Update selection based on current filter to exclude selected tags which were filtered out by some change.
-            let filteredSelected = filtered.filter(.name(in: viewModel.state.selectedTags))
-            for tag in filteredSelected {
+            var selected: Set<String> = []
+            for tag in filtered {
+                guard viewModel.state.selectedTags.contains(tag.name) else { continue }
                 selected.insert(tag.name)
             }
 
+            // Read colored tags which always appear in picker
+            let colored = try self.dbStorage.perform(request: ReadColoredTagsDbRequest(libraryId: libraryId), on: .main)
+            let comparator: (TagFilterState.FilterTag, TagFilterState.FilterTag) -> Bool = {
+                if !$0.tag.color.isEmpty && $1.tag.color.isEmpty {
+                    return true
+                }
+                if $0.tag.color.isEmpty && !$1.tag.color.isEmpty {
+                    return false
+                }
+                return $0.tag.name.localizedCaseInsensitiveCompare($1.tag.name) == .orderedAscending
+            }
+
+            var snapshot: [TagFilterState.FilterTag]? = nil
+            var sorted: [TagFilterState.FilterTag] = []
+
+            // Add colored tags
+            for rTag in colored {
+                let tag = Tag(tag: rTag)
+                let isActive = filtered.contains(tag)
+                let filterTag = TagFilterState.FilterTag(tag: tag, isActive: isActive)
+                let index = sorted.index(of: filterTag, sortedBy: comparator)
+                sorted.insert(filterTag, at: index)
+            }
+
+            if !viewModel.state.displayAll {
+                // Add remaining filtered tags, ignore colored
+                for tag in filtered {
+                    guard tag.color.isEmpty else { continue }
+                    let filterTag = TagFilterState.FilterTag(tag: tag, isActive: true)
+                    let index = sorted.index(of: filterTag, sortedBy: comparator)
+                    sorted.insert(filterTag, at: index)
+                }
+            } else {
+                // Add all remaining tags with proper isActive flag
+                let tags = try self.dbStorage.perform(request: ReadFilteredTagsDbRequest(collectionId: collectionId, libraryId: libraryId, showAutomatic: viewModel.state.showAutomatic, filters: []), on: .main)
+                for tag in tags {
+                    guard tag.color.isEmpty else { continue }
+                    let isActive = filtered.contains(tag)
+                    let filterTag = TagFilterState.FilterTag(tag: tag, isActive: isActive)
+                    let index = sorted.index(of: filterTag, sortedBy: comparator)
+                    sorted.insert(filterTag, at: index)
+                }
+            }
+
+            if !viewModel.state.searchTerm.isEmpty {
+                snapshot = sorted
+                sorted = sorted.filter({ $0.tag.name.localizedCaseInsensitiveContains(viewModel.state.searchTerm) })
+            }
+
             self.update(viewModel: viewModel) { state in
-                state.coloredResults = colored
-                state.otherResults = other
-                state.filteredResults = filtered
+                state.tags = sorted
+                state.snapshot = snapshot
                 state.changes = .tags
                 state.selectedTags = selected
             }
