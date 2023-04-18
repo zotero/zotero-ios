@@ -8,9 +8,10 @@
 
 import Foundation
 
+import RealmSwift
+
 enum TagFilterAction {
-    case loadWithCollection(collectionId: CollectionIdentifier, libraryId: LibraryIdentifier)
-    case loadWithKeys(itemKeys: Set<String>, libraryId: LibraryIdentifier)
+    case load(itemFilters: [ItemsFilter], collectionId: CollectionIdentifier, libraryId: LibraryIdentifier)
     case select(String)
     case deselect(String)
     case search(String)

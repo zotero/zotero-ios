@@ -242,15 +242,13 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     }
 
     private func loadInitialState(in viewModel: ViewModel<ItemsActionHandler>) {
-        logPerformance(logMessage: "ItemsActionHandler: load items") {
-            let sortType = Defaults.shared.itemsSortType
-            let results = self.results(for: viewModel.state.searchTerm, filters: viewModel.state.filters, collectionId: viewModel.state.collection.identifier, sortType: sortType, libraryId: viewModel.state.library.identifier)
+        let sortType = Defaults.shared.itemsSortType
+        let results = self.results(for: viewModel.state.searchTerm, filters: viewModel.state.filters, collectionId: viewModel.state.collection.identifier, sortType: sortType, libraryId: viewModel.state.library.identifier)
 
-            self.update(viewModel: viewModel) { state in
-                state.results = results
-                state.sortType = sortType
-                state.error = (results == nil ? .dataLoading : nil)
-            }
+        self.update(viewModel: viewModel) { state in
+            state.results = results
+            state.sortType = sortType
+            state.error = (results == nil ? .dataLoading : nil)
         }
     }
 
@@ -600,14 +598,12 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     private func filter(with filters: [ItemsFilter], in viewModel: ViewModel<ItemsActionHandler>) {
         guard filters != viewModel.state.filters else { return }
 
-        logPerformance(logMessage: "ItemsActionHandler: filters") {
-            let results = self.results(for: viewModel.state.searchTerm, filters: filters, collectionId: viewModel.state.collection.identifier, sortType: viewModel.state.sortType, libraryId: viewModel.state.library.identifier)
-            
-            self.update(viewModel: viewModel) { state in
-                state.filters = filters
-                state.results = results
-                state.changes = [.results, .filters]
-            }
+        let results = self.results(for: viewModel.state.searchTerm, filters: filters, collectionId: viewModel.state.collection.identifier, sortType: viewModel.state.sortType, libraryId: viewModel.state.library.identifier)
+
+        self.update(viewModel: viewModel) { state in
+            state.filters = filters
+            state.results = results
+            state.changes = [.results, .filters]
         }
     }
 
