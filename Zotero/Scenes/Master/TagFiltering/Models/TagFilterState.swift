@@ -11,6 +11,11 @@ import Foundation
 import RealmSwift
 
 struct TagFilterState: ViewModelState {
+    struct FilterTag: Hashable, Equatable {
+        let tag: Tag
+        let isActive: Bool
+    }
+    
     enum Error: Swift.Error {
         case loadingFailed
         case deletionFailed
@@ -27,11 +32,8 @@ struct TagFilterState: ViewModelState {
         static let options = Changes(rawValue: 1 << 2)
     }
 
-    var coloredResults: Results<RTag>?
-    var coloredSnapshot: Results<RTag>?
-    var otherResults: Results<RTag>?
-    var otherSnapshot: Results<RTag>?
-    var filteredResults: Results<RTag>?
+    var tags: [FilterTag]
+    var snapshot: [FilterTag]?
     var selectedTags: Set<String>
     var searchTerm: String
     var showAutomatic: Bool
@@ -41,6 +43,7 @@ struct TagFilterState: ViewModelState {
     var changes: Changes
 
     init(selectedTags: Set<String>, showAutomatic: Bool, displayAll: Bool) {
+        self.tags = []
         self.searchTerm = ""
         self.selectedTags = selectedTags
         self.showAutomatic = showAutomatic
