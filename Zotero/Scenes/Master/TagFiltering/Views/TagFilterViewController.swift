@@ -20,11 +20,6 @@ protocol TagFilterDelegate: AnyObject {
 }
 
 class TagFilterViewController: UIViewController {
-    private struct FilterTag: Hashable, Equatable {
-        let tag: Tag
-        let isActive: Bool
-    }
-
     private weak var collectionView: UICollectionView!
     private weak var searchBarTopConstraint: NSLayoutConstraint!
     private weak var optionsButton: UIButton!
@@ -99,12 +94,8 @@ class TagFilterViewController: UIViewController {
         }
 
         if state.changes.contains(.tags) {
-            logPerformance(logMessage: "TagFilterViewController: reload data") {
-                self.collectionView.reloadData()
-            }
-            logPerformance(logMessage: "TagFilterViewController: fix selection") {
-                self.fixSelectionIfNeeded(selected: state.selectedTags)
-            }
+            self.collectionView.reloadData()
+            self.fixSelectionIfNeeded(selected: state.selectedTags)
         }
 
         if state.changes.contains(.options) {
@@ -126,7 +117,7 @@ class TagFilterViewController: UIViewController {
 
         var currentlySelected: Set<String> = []
         for indexPath in selectedIndexPaths {
-            guard let name = self.tag(for: indexPath)?.name else { continue }
+            guard let name = self.tag(for: indexPath)?.tag.name else { continue }
             currentlySelected.insert(name)
         }
 
@@ -137,24 +128,10 @@ class TagFilterViewController: UIViewController {
             (self.collectionView.cellForItem(at: indexPath) as? TagFilterCell)?.set(selected: false)
         }
 
-        var indexPathsToSelect: [IndexPath] = []
-        if let tags = self.viewModel.state.coloredResults {
-            for (idx, tag) in tags.enumerated() {
-                if selected.contains(tag.name) {
-                    indexPathsToSelect.append(IndexPath(row: idx, section: 0))
-                }
-            }
-        }
-        let coloredCount = self.viewModel.state.coloredResults?.count ?? 0
-        if let tags = self.viewModel.state.otherResults {
-            for (idx, tag) in tags.enumerated() {
-                if selected.contains(tag.name) {
-                    indexPathsToSelect.append(IndexPath(row: (coloredCount + idx), section: 0))
-                }
-            }
-        }
+        for (idx, tag) in self.viewModel.state.tags.enumerated() {
+            guard selected.contains(tag.tag.name) else { continue }
 
-        for indexPath in indexPathsToSelect {
+            let indexPath = IndexPath(row: idx, section: 0)
             self.collectionView.selectItem(at: indexPath, animated: false, scrollPosition: [])
             (self.collectionView.cellForItem(at: indexPath) as? TagFilterCell)?.set(selected: true)
         }
@@ -275,39 +252,23 @@ extension TagFilterViewController: UICollectionViewDataSource {
     }
 
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return (self.viewModel.state.coloredResults?.count ?? 0) + (self.viewModel.state.otherResults?.count ?? 0)
+        return self.viewModel.state.tags.count
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TagFilterViewController.cellId, for: indexPath)
-        logPerformance(logMessage: "TagFilterViewController: load cell") {
-            if let cell = cell as? TagFilterCell, let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout, let tag = self.tag(for: indexPath) {
-                cell.maxWidth = collectionView.frame.width - flowLayout.sectionInset.left - flowLayout.sectionInset.right -
-                collectionView.contentInset.left - collectionView.contentInset.right - 20
-                let color: UIColor = tag.color.isEmpty ? .label : UIColor(hex: tag.color)
-                cell.setup(with: tag.name, color: color, bolded: !tag.color.isEmpty, isActive: self.isActive(tag: tag))
-            }
+        if let cell = cell as? TagFilterCell, let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout, let tag = self.tag(for: indexPath) {
+            cell.maxWidth = collectionView.frame.width - flowLayout.sectionInset.left - flowLayout.sectionInset.right -
+            collectionView.contentInset.left - collectionView.contentInset.right - 20
+            let color: UIColor = tag.tag.color.isEmpty ? .label : UIColor(hex: tag.tag.color)
+            cell.setup(with: tag.tag.name, color: color, bolded: !tag.tag.color.isEmpty, isActive: tag.isActive)
         }
         return cell
     }
 
-    private func tag(for indexPath: IndexPath) -> RTag? {
-        if let colored = self.viewModel.state.coloredResults, indexPath.row < colored.count {
-            return colored[indexPath.row]
-        }
-
-        if let other = self.viewModel.state.otherResults {
-            let index = indexPath.row - (self.viewModel.state.coloredResults?.count ?? 0)
-            if index < other.count {
-                return other[index]
-            }
-        }
-
-        return nil
-    }
-
-    private func isActive(tag: RTag) -> Bool {
-        return self.viewModel.state.filteredResults?.filter(.name(tag.name)).first != nil
+    private func tag(for indexPath: IndexPath) -> TagFilterState.FilterTag? {
+        guard indexPath.row < self.viewModel.state.tags.count else { return nil }
+        return self.viewModel.state.tags[indexPath.row]
     }
 }
 
@@ -334,9 +295,8 @@ extension TagFilterViewController: UICollectionViewDropDelegate {
 
         switch coordinator.proposal.operation {
         case .copy:
-            let name = tag.name
             self.dragDropController.keys(from: coordinator.items.map({ $0.dragItem })) { [weak self] keys in
-                self?.viewModel.process(action: .assignTag(name: name, toItemKeys: keys, libraryId: libraryId))
+                self?.viewModel.process(action: .assignTag(name: tag.tag.name, toItemKeys: keys, libraryId: libraryId))
             }
         default: break
         }
@@ -345,17 +305,17 @@ extension TagFilterViewController: UICollectionViewDropDelegate {
 
 extension TagFilterViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        guard let tag = self.tag(for: indexPath), self.isActive(tag: tag) else { return }
+        guard let tag = self.tag(for: indexPath), tag.isActive else { return }
 
-        self.viewModel.process(action: .select(tag.name))
+        self.viewModel.process(action: .select(tag.tag.name))
 
         (collectionView.cellForItem(at: indexPath) as? TagFilterCell)?.set(selected: true)
     }
 
     func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
-        guard let tag = self.tag(for: indexPath), self.isActive(tag: tag) else { return }
+        guard let tag = self.tag(for: indexPath), tag.isActive else { return }
 
-        self.viewModel.process(action: .deselect(tag.name))
+        self.viewModel.process(action: .deselect(tag.tag.name))
 
         (collectionView.cellForItem(at: indexPath) as? TagFilterCell)?.set(selected: false)
     }
@@ -413,24 +373,7 @@ extension TagFilterViewController: ItemsTagFilterDelegate {
         self.viewModel.process(action: .deselectAllWithoutNotifying)
     }
 
-    func itemsDidChange(collectionId: CollectionIdentifier, libraryId: LibraryIdentifier) {
-        self.viewModel.process(action: .loadWithCollection(collectionId: collectionId, libraryId: libraryId))
-    }
-
-    func itemsDidChange(results: Results<RItem>, libraryId: LibraryIdentifier) {
-        var keys: Set<String> = []
-        for item in results {
-            keys.insert(item.key)
-            self.keys(fromChildren: item.children, keys: &keys)
-        }
-        self.viewModel.process(action: .loadWithKeys(itemKeys: keys, libraryId: libraryId))
-    }
-
-    private func keys(fromChildren results: LinkingObjects<RItem>, keys: inout Set<String>) {
-        guard !results.isEmpty else { return }
-        for item in results {
-            keys.insert(item.key)
-            self.keys(fromChildren: item.children, keys: &keys)
-        }
+    func itemsDidChange(filters: [ItemsFilter], collectionId: CollectionIdentifier, libraryId: LibraryIdentifier) {
+        self.viewModel.process(action: .load(itemFilters: filters, collectionId: collectionId, libraryId: libraryId))
     }
 }
