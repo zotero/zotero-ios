@@ -245,12 +245,8 @@ final class ItemsViewController: UIViewController {
 
     // MARK: - Actions
 
-    private func updateTagFilter(with state: ItemsState, results: Results<RItem>) {
-        if !state.filters.isEmpty {
-//            self.tagFilterDelegate?.itemsDidChange(results: results, libraryId: state.library.identifier)
-        } else {
-            self.tagFilterDelegate?.itemsDidChange(collectionId: state.collection.identifier, libraryId: state.library.identifier)
-        }
+    private func updateTagFilter(with state: ItemsState) {
+        self.tagFilterDelegate?.itemsDidChange(filters: state.filters, collectionId: state.collection.identifier, libraryId: state.library.identifier)
     }
 
     private func process(error: ItemsError, state: ItemsState) {
@@ -424,13 +420,14 @@ final class ItemsViewController: UIViewController {
             switch changes {
             case .initial(let results):
                 self.tableViewHandler.reloadAll(snapshot: results.freeze())
-                self.updateTagFilter(with: self.viewModel.state, results: results)
+                self.updateTagFilter(with: self.viewModel.state)
             case .update(let results, let deletions, let insertions, let modifications):
                 let correctedModifications = Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions)
                 self.viewModel.process(action: .updateKeys(items: results, deletions: deletions, insertions: insertions, modifications: correctedModifications))
-                self.tableViewHandler.reload(snapshot: results.freeze(), modifications: modifications, insertions: insertions, deletions: deletions)
+                self.tableViewHandler.reload(snapshot: results.freeze(), modifications: modifications, insertions: insertions, deletions: deletions) {
+                    self.updateTagFilter(with: self.viewModel.state)
+                }
                 self.updateEmptyTrashButton(toEnabled: !results.isEmpty)
-                self.updateTagFilter(with: self.viewModel.state, results: results)
             case .error(let error):
                 DDLogError("ItemsViewController: could not load results - \(error)")
                 self.viewModel.process(action: .observingFailed)
@@ -833,7 +830,6 @@ extension ItemsViewController: TagFilterDelegate {
     }
 
     func tagOptionsDidChange() {
-        guard let results = self.viewModel.state.results else { return }
-        self.updateTagFilter(with: self.viewModel.state, results: results)
+        self.updateTagFilter(with: self.viewModel.state)
     }
 }
