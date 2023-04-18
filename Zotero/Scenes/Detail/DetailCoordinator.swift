@@ -78,8 +78,7 @@ protocol ItemsTagFilterDelegate: AnyObject {
     var delegate: TagFilterDelegate? { get set }
 
     func clearSelection()
-    func itemsDidChange(collectionId: CollectionIdentifier, libraryId: LibraryIdentifier)
-    func itemsDidChange(results: Results<RItem>, libraryId: LibraryIdentifier)
+    func itemsDidChange(filters: [ItemsFilter], collectionId: CollectionIdentifier, libraryId: LibraryIdentifier)
 }
 
 class EmptyTransitioningDelegate: NSObject, UIViewControllerTransitioningDelegate {}
