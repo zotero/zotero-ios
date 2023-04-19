@@ -114,6 +114,13 @@ extension AnnotationPreviewController {
         }
     }
 
+    func deleteAll(parentKey: String, libraryId: LibraryIdentifier) {
+        self.queue.async(flags: .barrier) { [weak self] in
+            guard let `self` = self else { return }
+            try? self.fileStorage.remove(Files.annotationPreviews(for: parentKey, libraryId: libraryId))
+        }
+    }
+
     /// Checks whether preview is available for given annotation.
     /// - parameter key: Key of annotation.
     /// - parameter parentKey: Key of PDF item.

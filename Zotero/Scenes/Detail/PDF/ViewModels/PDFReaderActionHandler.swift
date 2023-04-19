@@ -195,7 +195,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             self.export(settings: settings, viewModel: viewModel)
 
         case .clearTmpAnnotationPreviews:
-            self.clearTmpAnnotationPreviews(in: viewModel)
+            /// Annotations which originate from document and are not synced generate their previews based on annotation UUID, which is in-memory and is not stored in PDF. So these previews are only
+            /// temporary and should be cleared when user closes the document.
+            self.annotationPreviewController.deleteAll(parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
 
         case .setSettings(let settings, let userInterfaceStyle):
             self.update(settings: settings, currentInterfaceStyle: userInterfaceStyle, in: viewModel)
@@ -996,22 +998,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             guard !loadedKeys.isEmpty, let viewModel = viewModel else { return }
             self.update(viewModel: viewModel) { state in
                 state.loadedPreviewImageAnnotationKeys = loadedKeys
-            }
-        }
-    }
-
-    /// Annotations which originate from document and are not synced generate their previews based on annotation UUID, which is in-memory and is not stored in PDF. So these previews are only
-    /// temporary and should be cleared when user closes the document.
-    private func clearTmpAnnotationPreviews(in viewModel: ViewModel<PDFReaderActionHandler>) {
-        let libraryId = viewModel.state.library.identifier
-        let itemKey = viewModel.state.key
-        let annotationKeys = Array(viewModel.state.documentAnnotations.keys)
-        let fileStorage = self.fileStorage
-
-        self.backgroundQueue.async {
-            for key in annotationKeys {
-                try? fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: itemKey, libraryId: libraryId, isDark: false))
-                try? fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: itemKey, libraryId: libraryId, isDark: true))
             }
         }
     }
