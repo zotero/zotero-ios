@@ -153,19 +153,17 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
     }
 
     private func load(with filters: [ItemsFilter], collectionId: CollectionIdentifier, libraryId: LibraryIdentifier, in viewModel: ViewModel<TagFilterActionHandler>) {
+        self.backgroundQueue.async { [weak viewModel] in
+            guard let viewModel = viewModel else { return }
+            self._load(with: filters, collectionId: collectionId, libraryId: libraryId, in: viewModel)
+        }
+    }
+
+    private func _load(with filters: [ItemsFilter], collectionId: CollectionIdentifier, libraryId: LibraryIdentifier, in viewModel: ViewModel<TagFilterActionHandler>) {
         do {
-            // Read filtered tags
-            let filtered = try self.dbStorage.perform(request: ReadFilteredTagsDbRequest(collectionId: collectionId, libraryId: libraryId, showAutomatic: viewModel.state.showAutomatic, filters: filters), on: .main)
-
-            // Update selection based on current filter to exclude selected tags which were filtered out by some change.
             var selected: Set<String> = []
-            for tag in filtered {
-                guard viewModel.state.selectedTags.contains(tag.name) else { continue }
-                selected.insert(tag.name)
-            }
-
-            // Read colored tags which always appear in picker
-            let colored = try self.dbStorage.perform(request: ReadColoredTagsDbRequest(libraryId: libraryId), on: .main)
+            var snapshot: [TagFilterState.FilterTag]? = nil
+            var sorted: [TagFilterState.FilterTag] = []
             let comparator: (TagFilterState.FilterTag, TagFilterState.FilterTag) -> Bool = {
                 if !$0.tag.color.isEmpty && $1.tag.color.isEmpty {
                     return true
@@ -176,53 +174,70 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
                 return $0.tag.name.localizedCaseInsensitiveCompare($1.tag.name) == .orderedAscending
             }
 
-            var snapshot: [TagFilterState.FilterTag]? = nil
-            var sorted: [TagFilterState.FilterTag] = []
+            try self.dbStorage.perform(on: self.backgroundQueue) { coordinator in
+                let filtered = try coordinator.perform(request: ReadFilteredTagsDbRequest(collectionId: collectionId, libraryId: libraryId, showAutomatic: viewModel.state.showAutomatic, filters: filters))
+                let colored = try coordinator.perform(request: ReadColoredTagsDbRequest(libraryId: libraryId))
 
-            // Add colored tags
-            for rTag in colored {
-                let tag = Tag(tag: rTag)
-                let isActive = filtered.contains(tag)
-                let filterTag = TagFilterState.FilterTag(tag: tag, isActive: isActive)
-                let index = sorted.index(of: filterTag, sortedBy: comparator)
-                sorted.insert(filterTag, at: index)
-            }
-
-            if !viewModel.state.displayAll {
-                // Add remaining filtered tags, ignore colored
+                // Update selection based on current filter to exclude selected tags which were filtered out by some change.
                 for tag in filtered {
-                    guard tag.color.isEmpty else { continue }
-                    let filterTag = TagFilterState.FilterTag(tag: tag, isActive: true)
-                    let index = sorted.index(of: filterTag, sortedBy: comparator)
-                    sorted.insert(filterTag, at: index)
+                    guard viewModel.state.selectedTags.contains(tag.name) else { continue }
+                    selected.insert(tag.name)
                 }
-            } else {
-                // Add all remaining tags with proper isActive flag
-                let tags = try self.dbStorage.perform(request: ReadFilteredTagsDbRequest(collectionId: collectionId, libraryId: libraryId, showAutomatic: viewModel.state.showAutomatic, filters: []), on: .main)
-                for tag in tags {
-                    guard tag.color.isEmpty else { continue }
+
+                // Add colored tags
+                for rTag in colored {
+                    let tag = Tag(tag: rTag)
                     let isActive = filtered.contains(tag)
                     let filterTag = TagFilterState.FilterTag(tag: tag, isActive: isActive)
                     let index = sorted.index(of: filterTag, sortedBy: comparator)
                     sorted.insert(filterTag, at: index)
                 }
+
+                if !viewModel.state.displayAll {
+                    // Add remaining filtered tags, ignore colored
+                    for tag in filtered {
+                        guard tag.color.isEmpty else { continue }
+                        let filterTag = TagFilterState.FilterTag(tag: tag, isActive: true)
+                        let index = sorted.index(of: filterTag, sortedBy: comparator)
+                        sorted.insert(filterTag, at: index)
+                    }
+                } else {
+                    // Add all remaining tags with proper isActive flag
+                    let tags = try coordinator.perform(request: ReadFilteredTagsDbRequest(collectionId: collectionId, libraryId: libraryId, showAutomatic: viewModel.state.showAutomatic, filters: []))
+                    for tag in tags {
+                        guard tag.color.isEmpty else { continue }
+                        let isActive = filtered.contains(tag)
+                        let filterTag = TagFilterState.FilterTag(tag: tag, isActive: isActive)
+                        let index = sorted.index(of: filterTag, sortedBy: comparator)
+                        sorted.insert(filterTag, at: index)
+                    }
+                }
+
+                coordinator.invalidate()
+
+                if !viewModel.state.searchTerm.isEmpty {
+                    // Perform search filter if needed
+                    snapshot = sorted
+                    sorted = sorted.filter({ $0.tag.name.localizedCaseInsensitiveContains(viewModel.state.searchTerm) })
+                }
             }
 
-            if !viewModel.state.searchTerm.isEmpty {
-                snapshot = sorted
-                sorted = sorted.filter({ $0.tag.name.localizedCaseInsensitiveContains(viewModel.state.searchTerm) })
-            }
-
-            self.update(viewModel: viewModel) { state in
-                state.tags = sorted
-                state.snapshot = snapshot
-                state.changes = .tags
-                state.selectedTags = selected
+            inMainThread { [weak viewModel] in
+                guard let viewModel = viewModel else { return }
+                self.update(viewModel: viewModel) { state in
+                    state.tags = sorted
+                    state.snapshot = snapshot
+                    state.changes = .tags
+                    state.selectedTags = selected
+                }
             }
         } catch let error {
-            DDLogError("TagFilterActionHandler: can't load tag: \(error)")
-            self.update(viewModel: viewModel) { state in
-                state.error = .loadingFailed
+            inMainThread { [weak viewModel] in
+                guard let viewModel = viewModel else { return }
+                DDLogError("TagFilterActionHandler: can't load tag: \(error)")
+                self.update(viewModel: viewModel) { state in
+                    state.error = .loadingFailed
+                }
             }
         }
     }
