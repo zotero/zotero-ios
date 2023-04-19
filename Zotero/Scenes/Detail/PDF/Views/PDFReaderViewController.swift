@@ -224,10 +224,6 @@ class PDFReaderViewController: UIViewController {
     }
 
     deinit {
-        self.viewModel.process(action: .changeIdleTimerDisabled(false))
-        if let page = self.documentController.pdfController?.pageIndex {
-            self.viewModel.process(action: .submitPendingPage(Int(page)))
-        }
         DDLogInfo("PDFReaderViewController deinitialized")
     }
 
@@ -476,6 +472,10 @@ class PDFReaderViewController: UIViewController {
     }
 
     private func close() {
+        if let page = self.documentController?.pdfController?.pageIndex {
+            self.viewModel.process(action: .submitPendingPage(Int(page)))
+        }
+        self.viewModel.process(action: .changeIdleTimerDisabled(false))
         self.viewModel.process(action: .clearTmpAnnotationPreviews)
         self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
@@ -1049,6 +1049,9 @@ class PDFReaderViewController: UIViewController {
                                   .subscribe(with: self, onNext: { `self`, notification in
                                       self.isCurrentlyVisible = false
                                       self.previousTraitCollection = self.traitCollection
+                                      if let page = self.documentController?.pdfController?.pageIndex {
+                                          self.viewModel.process(action: .submitPendingPage(Int(page)))
+                                      }
                                   })
                                   .disposed(by: self.disposeBag)
     }

@@ -62,8 +62,7 @@ final class PDFCoordinator: Coordinator {
         self.childCoordinators = []
         self.disposeBag = DisposeBag()
 
-        navigationController.dismissHandler = { [weak self] in
-            guard let `self` = self else { return }
+        navigationController.dismissHandler = {
             self.parentCoordinator?.childDidFinish(self)
         }
     }

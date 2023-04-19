@@ -45,8 +45,7 @@ final class AnnotationPopoverCoordinator: NSObject, Coordinator {
         super.init()
 
         navigationController.delegate = self
-        navigationController.dismissHandler = { [weak self] in
-            guard let `self` = self else { return }
+        navigationController.dismissHandler = {
             self.parentCoordinator?.childDidFinish(self)
         }
     }

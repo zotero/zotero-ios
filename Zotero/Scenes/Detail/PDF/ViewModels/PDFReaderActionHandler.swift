@@ -1004,10 +1004,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     /// temporary and should be cleared when user closes the document.
     private func clearTmpAnnotationPreviews(in viewModel: ViewModel<PDFReaderActionHandler>) {
         let libraryId = viewModel.state.library.identifier
+        let itemKey = viewModel.state.key
+        let annotationKeys = Array(viewModel.state.documentAnnotations.keys)
+        let fileStorage = self.fileStorage
 
-        for annotation in viewModel.state.documentAnnotations {
-            try? self.fileStorage.remove(Files.annotationPreview(annotationKey: annotation.key, pdfKey: viewModel.state.key, libraryId: libraryId, isDark: false))
-            try? self.fileStorage.remove(Files.annotationPreview(annotationKey: annotation.key, pdfKey: viewModel.state.key, libraryId: libraryId, isDark: true))
+        self.backgroundQueue.async {
+            for key in annotationKeys {
+                try? fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: itemKey, libraryId: libraryId, isDark: false))
+                try? fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: itemKey, libraryId: libraryId, isDark: true))
+            }
         }
     }
 
