@@ -94,6 +94,8 @@ final class MainViewController: UISplitViewController {
     private func loadInitialDetailData(collectionId: CollectionIdentifier, libraryId: LibraryIdentifier) -> InitialLoadData? {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return nil }
 
+        DDLogInfo("MainViewController: load initial detail data collectionId=\(collectionId); libraryId=\(libraryId)")
+
         var collection: Collection?
         var library: Library?
 
@@ -119,7 +121,10 @@ final class MainViewController: UISplitViewController {
         if let collection = collection, let library = library {
             return InitialLoadData(collection: collection, library: library)
         }
-        return nil
+
+        DDLogWarn("MainViewController: returning default library and collection")
+        return InitialLoadData(collection: Collection(custom: .all),
+                               library: Library(identifier: .custom(.myLibrary), name: "My Library", metadataEditable: true, filesEditable: true))
     }
 
     // MARK: - Setups
