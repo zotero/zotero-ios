@@ -62,18 +62,23 @@ final class AppCoordinator: NSObject {
 
     func start(options connectionOptions: UIScene.ConnectionOptions, session: UISceneSession) {
         if !self.controllers.sessionController.isInitialized {
+            DDLogInfo("AppCoordinator: start while waiting for initialization")
             self.tmpConnectionOptions = connectionOptions
             self.tmpSession = session
             self.showLaunchScreen()
         } else {
+            DDLogInfo("AppCoordinator: start logged \(self.controllers.sessionController.isLoggedIn ? "in" : "out")")
             self.showMainScreen(isLogged: self.controllers.sessionController.isLoggedIn, options: connectionOptions, session: session, animated: false)
         }
 
         // If db needs to be wiped and this is the first start of the app, show beta alert
         if self.controllers.userControllers?.dbStorage.willPerformBetaWipe == true && self.controllers.sessionController.isLoggedIn {
+            DDLogInfo("AppCoordinator: show beta alert")
             self.showBetaAlert()
         }
+
         if self.controllers.sessionController.isInitialized && self.controllers.debugLogging.isEnabled {
+            DDLogInfo("AppCoordinator: show debug window")
             self.setDebugWindow(visible: true)
         }
 
@@ -110,6 +115,7 @@ final class AppCoordinator: NSObject {
             self.controllers.userControllers?.syncScheduler.syncController.set(coordinator: self)
         }
 
+        DDLogInfo("AppCoordinator: show main screen logged \(isLogged ? "in" : "out"); animated=\(animated)")
         self.show(viewController: viewController, in: window, animated: animated)
 
         guard let options = connectionOptions, let session = session else { return }
@@ -140,9 +146,11 @@ final class AppCoordinator: NSObject {
     func show(customUrl: CustomURLController.Kind, animated: Bool) {
         switch customUrl {
         case .itemDetail(let key, let library, let preselectedChildKey):
+            DDLogInfo("AppCoordinator: show custom url - item detail; key=\(key); library=\(library.identifier)")
             self.showItemDetail(key: key, library: library, selectChildKey: preselectedChildKey, animated: animated)
 
         case .pdfReader(let attachment, let library, let page, let annotation, let parentKey, let isAvailable):
+            DDLogInfo("AppCoordinator: show custom url - pdf reader; key=\(attachment.key); library=\(library.identifier); page=\(page.flatMap(String.init) ?? "nil"); annotation=\(annotation ?? "nil"); parentKey=\(parentKey ?? "nil")")
             #if PDFENABLED
             if isAvailable {
                 self.open(attachment: attachment, library: library, on: page, annotation: annotation, parentKey: parentKey, animated: animated)
@@ -213,6 +221,7 @@ final class AppCoordinator: NSObject {
     private func showRestoredState(for data: RestoredStateData) {
         guard let window = self.window, let detailCoordinator = (window.rootViewController as? MainViewController)?.detailCoordinator,
               let (url, library) = self.loadRestoredStateData(forKey: data.key, libraryId: data.libraryId) else { return }
+        DDLogInfo("AppCoordinator: show restored state - \(data.key); \(data.libraryId); \(url.relativePath)")
         let controller = self.pdfController(key: data.key, library: library, url: url, page: nil, preselectedAnnotationKey: nil, detailCoordinator: detailCoordinator)
         self.show(pdfController: controller, in: window, animated: false)
     }
@@ -269,13 +278,18 @@ final class AppCoordinator: NSObject {
     }
 
     private func show(pdfController: UIViewController, in window: UIWindow, animated: Bool, completion: (() -> Void)? = nil) {
+        DDLogInfo("AppCoordinator: show pdf controller; animated=\(animated)")
+
         if animated {
             if window.rootViewController?.presentedViewController == nil {
+                DDLogInfo("AppCoordinator: no presented controller, present pdf controller")
                 window.rootViewController?.present(pdfController, animated: true, completion: completion)
                 return
             }
 
+            DDLogInfo("AppCoordinator: previously presented controller, dismiss")
             window.rootViewController?.dismiss(animated: true, completion: {
+                DDLogInfo("AppCoordinator: present pdf controller")
                 window.rootViewController?.present(pdfController, animated: true, completion: completion)
             })
             return
@@ -284,11 +298,14 @@ final class AppCoordinator: NSObject {
         self.show(presentedViewController: pdfController, in: window) { viewController, completion in
             // Open PDF reader of given attachment
             if viewController.presentedViewController == nil {
+                DDLogInfo("AppCoordinator: no presented controller, present pdf controller")
                 viewController.present(pdfController, animated: false, completion: completion)
                 return
             }
 
+            DDLogInfo("AppCoordinator: previously presented controller, dismiss")
             viewController.dismiss(animated: false, completion: {
+                DDLogInfo("AppCoordinator: present pdf controller")
                 viewController.present(pdfController, animated: false, completion: completion)
             })
         }
