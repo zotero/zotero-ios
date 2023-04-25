@@ -60,6 +60,10 @@ final class MainViewController: UISplitViewController {
         fatalError()
     }
 
+    deinit {
+        DDLogInfo("MainViewController: deinitialized")
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -68,6 +72,8 @@ final class MainViewController: UISplitViewController {
         self.preferredPrimaryColumnWidthFraction = 1/3
         self.maximumPrimaryColumnWidth = .infinity
         self.minimumPrimaryColumnWidth = 320
+
+        DDLogInfo("MainViewController: viewDidLoad")
 
         if let data = self.loadInitialDetailData(collectionId: Defaults.shared.selectedCollectionId, libraryId: Defaults.shared.selectedLibrary) {
             self.showItems(for: data.collection, in: data.library, searchItemKeys: nil)

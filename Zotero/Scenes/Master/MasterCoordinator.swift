@@ -8,6 +8,8 @@
 
 import UIKit
 
+import CocoaLumberjackSwift
+
 final class MasterCoordinator {
     private let controllers: Controllers
     private unowned let mainController: MainViewController
@@ -17,6 +19,10 @@ final class MasterCoordinator {
     init(mainController: MainViewController, controllers: Controllers) {
         self.mainController = mainController
         self.controllers = controllers
+    }
+
+    deinit {
+        DDLogInfo("MasterCoordinator: deinitialized")
     }
 
     func start() {
