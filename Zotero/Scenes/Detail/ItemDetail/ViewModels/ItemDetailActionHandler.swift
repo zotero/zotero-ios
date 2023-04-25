@@ -769,7 +769,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                     DDLogError("ItemDetailActionHandler: can't remove duplicated/cancelled item - \(error)")
 
                     self.update(viewModel: viewModel) { state in
-                        state.error = .cantRemoveDuplicatedItem
+                        state.error = .cantRemoveItem
                     }
                     return
                 }
