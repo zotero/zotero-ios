@@ -760,15 +760,16 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     }
 
     private func cancelChanges(in viewModel: ViewModel<ItemDetailActionHandler>) {
-        if case .duplication = viewModel.state.type  {
+        switch viewModel.state.type {
+        case .duplication, .creation:
             self.perform(request: MarkObjectsAsDeletedDbRequest<RItem>(keys: [viewModel.state.key], libraryId: viewModel.state.library.identifier)) { [weak viewModel] error in
                 guard let viewModel = viewModel else { return }
 
                 if let error = error {
-                    DDLogError("ItemDetailActionHandler: can't remove duplicated item - \(error)")
+                    DDLogError("ItemDetailActionHandler: can't remove duplicated/cancelled item - \(error)")
 
                     self.update(viewModel: viewModel) { state in
-                        state.error = .cantRemoveDuplicatedItem
+                        state.error = .cantRemoveItem
                     }
                     return
                 }
@@ -777,16 +778,15 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                     state.hideController = true
                 }
             }
-            return
-        }
+        case .preview:
+            guard let snapshot = viewModel.state.snapshot else { return }
 
-        guard let snapshot = viewModel.state.snapshot else { return }
-        
-        self.update(viewModel: viewModel) { state in
-            state.data = snapshot
-            state.snapshot = nil
-            state.isEditing = false
-            state.changes.insert(.editing)
+            self.update(viewModel: viewModel) { state in
+                state.data = snapshot
+                state.snapshot = nil
+                state.isEditing = false
+                state.changes.insert(.editing)
+            }
         }
     }
 

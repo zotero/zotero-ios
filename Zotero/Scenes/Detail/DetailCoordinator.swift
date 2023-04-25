@@ -738,7 +738,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
             title = L10n.error
             message = L10n.Errors.ItemDetail.cantSaveTags
 
-        case .cantRemoveDuplicatedItem, .cantRemoveParent:
+        case .cantRemoveItem, .cantRemoveParent:
             title = L10n.error
             message = L10n.Errors.unknown
         }
