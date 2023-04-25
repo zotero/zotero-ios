@@ -45,11 +45,14 @@ struct AnnotationConverter {
 
         let textOffset = boundingBoxConverter?.textOffset(rect: rect, page: annotation.pageIndex) ?? 0
         let minY = boundingBoxConverter?.sortIndexMinY(rect: rect, page: annotation.pageIndex).flatMap({ Int(round($0)) }) ?? 0
+        if minY < 0 {
+            DDLogWarn("AnnotationConverter: annotation \(annotation.key) has negative y position \(minY)")
+        }
         return self.sortIndex(pageIndex: annotation.pageIndex, textOffset: textOffset, minY: minY)
     }
 
     static func sortIndex(pageIndex: PageIndex, textOffset: Int, minY: Int) -> String {
-        return String(format: "%05d|%06d|%05d", pageIndex, textOffset, minY)
+        return String(format: "%05d|%06d|%05d", pageIndex, textOffset, max(0, minY))
     }
 
     // MARK: - PSPDFKit -> Zotero
