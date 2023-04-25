@@ -20,6 +20,7 @@ protocol TagFilterDelegate: AnyObject {
 }
 
 class TagFilterViewController: UIViewController {
+    private(set) weak var searchBar: UISearchBar!
     private weak var collectionView: UICollectionView!
     private weak var searchBarTopConstraint: NSLayoutConstraint!
     private weak var optionsButton: UIButton!
@@ -187,6 +188,7 @@ class TagFilterViewController: UIViewController {
         searchBar.backgroundColor = .systemBackground
         searchBar.backgroundImage = UIImage()
         searchBar.delegate = self
+        self.searchBar = searchBar
 
         searchBar.rx.text.observe(on: MainScheduler.instance)
                  .skip(1)
