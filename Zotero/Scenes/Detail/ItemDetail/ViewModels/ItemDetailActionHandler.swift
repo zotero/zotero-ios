@@ -778,17 +778,15 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                     state.hideController = true
                 }
             }
-        default:
-            break
-        }
+        case .preview:
+            guard let snapshot = viewModel.state.snapshot else { return }
 
-        guard let snapshot = viewModel.state.snapshot else { return }
-        
-        self.update(viewModel: viewModel) { state in
-            state.data = snapshot
-            state.snapshot = nil
-            state.isEditing = false
-            state.changes.insert(.editing)
+            self.update(viewModel: viewModel) { state in
+                state.data = snapshot
+                state.snapshot = nil
+                state.isEditing = false
+                state.changes.insert(.editing)
+            }
         }
     }
 
