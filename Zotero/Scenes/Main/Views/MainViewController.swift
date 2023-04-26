@@ -40,7 +40,15 @@ final class MainViewController: UISplitViewController {
     private var didAppear: Bool = false
     private var syncToolbarController: SyncToolbarController?
     private(set) var masterCoordinator: MasterCoordinator?
-    private(set) var detailCoordinator: DetailCoordinator?
+    private var detailCoordinator: DetailCoordinator? {
+        didSet {
+            if let action = self.detailCoordinatorGetter, let coordinator = self.detailCoordinator {
+                action(coordinator)
+                self.detailCoordinatorGetter = nil
+            }
+        }
+    }
+    private var detailCoordinatorGetter: ((DetailCoordinator) -> Void)?
 
     // MARK: - Lifecycle
 
@@ -74,16 +82,20 @@ final class MainViewController: UISplitViewController {
         self.minimumPrimaryColumnWidth = 320
 
         DDLogInfo("MainViewController: viewDidLoad")
-
-        if let data = self.loadInitialDetailData(collectionId: Defaults.shared.selectedCollectionId, libraryId: Defaults.shared.selectedLibrary) {
-            self.showItems(for: data.collection, in: data.library, searchItemKeys: nil)
-        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         self.set(userActivity: .mainActivity)
         self.didAppear = true
+    }
+
+    func getDetailCoordinator(completed: @escaping (DetailCoordinator) -> Void) {
+        if let coordinator = self.detailCoordinator {
+            completed(coordinator)
+            return
+        }
+        self.detailCoordinatorGetter = completed
     }
 
     private func showItems(for collection: Collection, in library: Library, searchItemKeys: [String]?) {
