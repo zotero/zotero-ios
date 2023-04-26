@@ -21,7 +21,7 @@ struct AnnotationsConfig {
     // Line width of image annotation in PDF document.
     static let imageAnnotationLineWidth: CGFloat = 2
     // Size of note annotation in PDF document.
-    static let noteAnnotationSize: CGSize = CGSize(width: 22, height: 22)
+    static let noteAnnotationSize: CGSize = CGSize(width: 16, height: 16)
     static let positionSizeLimit = 65000
     static let supported: PSPDFKit.Annotation.Kind = [.note, .highlight, .square, .ink]
 
