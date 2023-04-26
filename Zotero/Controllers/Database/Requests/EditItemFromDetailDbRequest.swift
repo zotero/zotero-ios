@@ -45,10 +45,8 @@ struct EditItemFromDetailDbRequest: DbRequest {
     }
 
     private func updateCreators(with data: ItemDetailState.Data, snapshot: ItemDetailState.Data, item: RItem, changes: inout RItemChanges, database: Realm) {
-        guard data.creatorIds != snapshot.creatorIds else { return }
-
+        guard data.creators != snapshot.creators else { return }
         database.delete(item.creators)
-
         for (offset, creatorId) in data.creatorIds.enumerated() {
             guard let creator = data.creators[creatorId] else { continue }
 
