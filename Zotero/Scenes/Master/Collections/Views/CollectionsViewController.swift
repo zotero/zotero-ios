@@ -33,14 +33,6 @@ final class CollectionsViewController: UICollectionViewController {
         super.init(collectionViewLayout: UICollectionViewFlowLayout())
 
         self.viewModel.process(action: .loadData)
-
-        if self.coordinatorDelegate?.isSplit == true {
-            if let collection = self.viewModel.state.collectionTree.collection(for: self.viewModel.state.selectedCollectionId) {
-                self.coordinatorDelegate?.showItems(for: collection, in: self.viewModel.state.library, isInitial: true)
-            } else {
-                self.viewModel.process(action: .select(.custom(.all)))
-            }
-        }
     }
 
     required init?(coder: NSCoder) {
@@ -49,6 +41,14 @@ final class CollectionsViewController: UICollectionViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        if self.coordinatorDelegate?.isSplit == true {
+            if let collection = self.viewModel.state.collectionTree.collection(for: self.viewModel.state.selectedCollectionId) {
+                self.coordinatorDelegate?.showItems(for: collection, in: self.viewModel.state.library, isInitial: true)
+            } else {
+                self.viewModel.process(action: .select(.custom(.all)))
+            }
+        }
 
         self.setupTitleWithContextMenu(self.viewModel.state.library.name)
         if self.viewModel.state.library.metadataEditable {
