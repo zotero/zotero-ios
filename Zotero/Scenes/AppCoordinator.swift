@@ -117,7 +117,6 @@ final class AppCoordinator: NSObject {
 
         DDLogInfo("AppCoordinator: show main screen logged \(isLogged ? "in" : "out"); animated=\(animated)")
         self.show(viewController: viewController, in: window, animated: animated)
-
         guard let options = connectionOptions, let session = session else { return }
         self.process(connectionOptions: options, session: session)
     }
@@ -157,9 +156,14 @@ final class AppCoordinator: NSObject {
                 return
             }
 
-            self.showItemDetail(key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated)
-            self.download(attachment: attachment, parentKey: parentKey) { [weak self] in
-                self?._open(attachment: attachment, library: library, on: page, annotation: annotation, animated: true)
+            guard let window = self.window, let mainController = window.rootViewController as? MainViewController else { return }
+
+            mainController.getDetailCoordinator { [weak self] coordinator in
+                guard let `self` = self else { return }
+                self.showItemDetail(key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated)
+                self.download(attachment: attachment, parentKey: parentKey) { [weak self] in
+                    self?._open(attachment: attachment, library: library, on: page, annotation: annotation, window: window, detailCoordinator: coordinator, animated: true)
+                }
             }
             #endif
         }
@@ -185,31 +189,30 @@ final class AppCoordinator: NSObject {
         }
 
         // Show item detail of given key
-        if (mainController.detailCoordinator?.navigationController.visibleViewController as? ItemDetailViewController)?.key != key {
-            mainController.detailCoordinator?.showItemDetail(for: .preview(key: key), library: library, scrolledToKey: childKey, animated: animated)
+        mainController.getDetailCoordinator { coordinator in
+            if (coordinator.navigationController.visibleViewController as? ItemDetailViewController)?.key != key {
+                coordinator.showItemDetail(for: .preview(key: key), library: library, scrolledToKey: childKey, animated: animated)
+            }
         }
     }
 
     #if PDFENABLED
     private func open(attachment: Attachment, library: Library, on page: Int?, annotation: String?, parentKey: String?, animated: Bool) {
-        guard let mainController = self.window?.rootViewController as? MainViewController,
-              (mainController.detailCoordinator?.navigationController.presentedViewController as? PDFReaderViewController)?.key != attachment.key else { return }
-        self._open(attachment: attachment, library: library, on: page, annotation: annotation, animated: animated) {
-            self._showItemDetail(key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated)
+        guard let window = self.window, let mainController = window.rootViewController as? MainViewController else { return }
+
+        mainController.getDetailCoordinator { [weak self] coordinator in
+            guard let `self` = self, (coordinator.navigationController.presentedViewController as? PDFReaderViewController)?.key != attachment.key else { return }
+            self._open(attachment: attachment, library: library, on: page, annotation: annotation, window: window, detailCoordinator: coordinator, animated: animated) {
+                self._showItemDetail(key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated)
+            }
         }
     }
 
-    private func _open(attachment: Attachment, library: Library, on page: Int?, annotation: String?, animated: Bool, completion: (() -> Void)? = nil) {
+    private func _open(attachment: Attachment, library: Library, on page: Int?, annotation: String?, window: UIWindow, detailCoordinator: DetailCoordinator, animated: Bool, completion: (() -> Void)? = nil) {
         switch attachment.type {
         case .file(let filename, let contentType, _, _) where contentType == "application/pdf":
             let file = Files.attachmentFile(in: library.identifier, key: attachment.key, filename: filename, contentType: contentType)
             let url = file.createUrl()
-
-            guard let window = self.window, let detailCoordinator = (window.rootViewController as? MainViewController)?.detailCoordinator else {
-                completion?()
-                return
-            }
-
             let controller = self.pdfController(key: attachment.key, library: library, url: url, page: page, preselectedAnnotationKey: annotation, detailCoordinator: detailCoordinator)
             self.show(pdfController: controller, in: window, animated: animated, completion: completion)
 
@@ -219,11 +222,15 @@ final class AppCoordinator: NSObject {
     }
 
     private func showRestoredState(for data: RestoredStateData) {
-        guard let window = self.window, let detailCoordinator = (window.rootViewController as? MainViewController)?.detailCoordinator,
+        guard let mainController = self.window?.rootViewController as? MainViewController,
               let (url, library) = self.loadRestoredStateData(forKey: data.key, libraryId: data.libraryId) else { return }
         DDLogInfo("AppCoordinator: show restored state - \(data.key); \(data.libraryId); \(url.relativePath)")
-        let controller = self.pdfController(key: data.key, library: library, url: url, page: nil, preselectedAnnotationKey: nil, detailCoordinator: detailCoordinator)
-        self.show(pdfController: controller, in: window, animated: false)
+
+        mainController.getDetailCoordinator { [weak self] coordinator in
+            guard let `self` = self, let window = self.window else { return }
+            let controller = self.pdfController(key: data.key, library: library, url: url, page: nil, preselectedAnnotationKey: nil, detailCoordinator: coordinator)
+            self.show(pdfController: controller, in: window, animated: false)
+        }
     }
 
     private func pdfController(key: String, library: Library, url: URL, page: Int?, preselectedAnnotationKey: String?, detailCoordinator: DetailCoordinator) -> UINavigationController {
