@@ -167,7 +167,7 @@ class TagFilterViewController: UIViewController {
             guard let `self` = self else { return }
             self.viewModel.process(action: .setShowAutomatic(!self.viewModel.state.showAutomatic))
         })
-        let displayAll = UIAction(title: L10n.TagPicker.showAll, attributes: .hidden, state: (state.displayAll ? .on : .off), handler: { [weak self] _ in
+        let displayAll = UIAction(title: L10n.TagPicker.showAll, state: (state.displayAll ? .on : .off), handler: { [weak self] _ in
             guard let `self` = self else { return }
             self.viewModel.process(action: .setDisplayAll(!self.viewModel.state.displayAll))
         })
