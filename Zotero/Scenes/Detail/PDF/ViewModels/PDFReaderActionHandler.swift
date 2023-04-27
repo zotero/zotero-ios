@@ -250,7 +250,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         let libraryId = viewModel.state.library.identifier
 
         // Load area annotations if needed.
-        for (_, annotations) in viewModel.state.document.allAnnotations(of: .square) {
+        for (_, annotations) in viewModel.state.document.allAnnotations(of: [.square, .ink]) {
             for annotation in annotations {
                 guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation &&
                       !self.annotationPreviewController.hasPreview(for: annotation.previewId, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark) else { continue }
