@@ -1641,44 +1641,71 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         // Check which annotations changed and update `Document`
         for index in modifications {
+            if index >= keys.count {
+                DDLogWarn("PDFReaderActionHandler: tried modifying index out of bounds! keys.count=\(keys.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
+                continue
+            }
+
             let key = keys[index]
-
             guard let item = objects.filter(.key(key.key)).first else { continue }
-
             let annotation = DatabaseAnnotation(item: item)
 
             if self.canUpdate(key: key, item: item, at: index, viewModel: viewModel) {
+                DDLogInfo("PDFReaderActionHandler: update key \(key)")
                 updatedKeys.append(key)
 
                 if item.changeType == .sync {
                     // Update comment if it's remote sync change
+                    DDLogInfo("PDFReaderActionHandler: update comment")
                     comments[key.key] = self.htmlAttributedStringConverter.convert(text: annotation.comment, baseAttributes: [.font: viewModel.state.commentFont])
                 }
             }
 
-            guard item.changeType == .sync else { continue }
+            guard item.changeType == .sync,
+                  let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(annotation.page)).first(where: { $0.key == key.key }) else { continue }
 
-            guard let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(annotation.page)).first(where: { $0.key == key.key }) else { continue }
+            DDLogInfo("PDFReaderActionHandler: update PDF annotation")
             updatedPdfAnnotations.append((pdfAnnotation, annotation))
         }
 
+        var shouldCancelUpdate = false
+
         // Find `Document` annotations to be removed from document
         for index in deletions.reversed() {
+            if index >= keys.count {
+                DDLogWarn("PDFReaderActionHandler: tried removing index out of bounds! keys.count=\(keys.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
+                shouldCancelUpdate = true
+                break
+            }
+
             let key = keys.remove(at: index)
+            DDLogInfo("PDFReaderActionHandler: delete key \(key)")
 
             if viewModel.state.selectedAnnotationKey == key {
+                DDLogInfo("PDFReaderActionHandler: deleted selected annotation")
                 selectionDeleted = true
             }
 
             let oldAnnotation = DatabaseAnnotation(item: viewModel.state.databaseAnnotations[index])
             guard let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(oldAnnotation.page)).first(where: { $0.key == oldAnnotation.key }) else { continue }
+            DDLogInfo("PDFReaderActionHandler: delete PDF annotation")
             deletedPdfAnnotations.append(pdfAnnotation)
+        }
+
+        if shouldCancelUpdate {
+            return
         }
 
         // Create `PSPDFKit.Annotation`s which need to be added to the `Document`
         for index in insertions {
+            if index > keys.count {
+                DDLogWarn("PDFReaderActionHandler: tried inserting index out of bounds! keys.count=\(keys.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
+                shouldCancelUpdate = true
+            }
+
             let item = objects[index]
             keys.insert(PDFReaderState.AnnotationKey(key: item.key, type: .database), at: index)
+            DDLogInfo("PDFReaderActionHandler: insert key \(item.key)")
 
             let annotation = DatabaseAnnotation(item: item)
 
@@ -1689,6 +1716,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 let isNote = annotation.type == .note
                 if !viewModel.state.sidebarEditingEnabled && (sidebarVisible || isNote) {
                     selectKey = PDFReaderState.AnnotationKey(key: item.key, type: .database)
+                    DDLogInfo("PDFReaderActionHandler: select new annotation")
                 }
 
             case .sync, .syncResponse:
@@ -1696,6 +1724,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                                                                    library: viewModel.state.library, displayName: viewModel.state.displayName, username: viewModel.state.username,
                                                                    boundingBoxConverter: boundingBoxConverter)
                 insertedPdfAnnotations.append(pdfAnnotation)
+                DDLogInfo("PDFReaderActionHandler: insert PDF annotation")
             }
         }
 
