@@ -1629,10 +1629,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         // Get sorted database keys
         var keys = (viewModel.state.snapshotKeys ?? viewModel.state.sortedKeys).filter({ $0.type == .database })
-
+        var comments = viewModel.state.comments
         var selectKey: PDFReaderState.AnnotationKey?
         var selectionDeleted = false
-
         // Update database keys based on realm notification
         var updatedKeys: [PDFReaderState.AnnotationKey] = []
         // Collect modified, deleted and inserted annotations to update the `Document`
@@ -1646,13 +1645,19 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             guard let item = objects.filter(.key(key.key)).first else { continue }
 
+            let annotation = DatabaseAnnotation(item: item)
+
             if self.canUpdate(key: key, item: item, at: index, viewModel: viewModel) {
                 updatedKeys.append(key)
+
+                if item.changeType == .sync {
+                    // Update comment if it's remote sync change
+                    comments[key.key] = self.htmlAttributedStringConverter.convert(text: annotation.comment, baseAttributes: [.font: viewModel.state.commentFont])
+                }
             }
 
             guard item.changeType == .sync else { continue }
 
-            let annotation = DatabaseAnnotation(item: item)
             guard let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(annotation.page)).first(where: { $0.key == key.key }) else { continue }
             updatedPdfAnnotations.append((pdfAnnotation, annotation))
         }
@@ -1744,6 +1749,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         self.update(viewModel: viewModel) { state in
             // Update db annotations
             state.databaseAnnotations = objects.freeze()
+            state.comments = comments
             state.changes = .annotations
 
             // Apply changed keys
@@ -1754,7 +1760,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 state.sortedKeys = keys
             }
 
-            // Filter updated keys to include only keys that are actually available in `sorterKeys`. If filter/search is turned on and an item is edited so that it disappears from the filter/search,
+            // Filter updated keys to include only keys that are actually available in `sortedKeys`. If filter/search is turned on and an item is edited so that it disappears from the filter/search,
             // `updatedKeys` will try to update it while the key will be deleted from data source at the same time.
             state.updatedAnnotationKeys = updatedKeys.filter({ state.sortedKeys.contains($0) })
 
