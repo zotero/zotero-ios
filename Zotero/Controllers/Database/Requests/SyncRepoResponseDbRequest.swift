@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
 import RealmSwift
 
 struct SyncRepoResponseDbRequest: DbRequest {
@@ -20,9 +21,11 @@ struct SyncRepoResponseDbRequest: DbRequest {
 
     func process(in database: Realm) throws {
         if !self.translators.isEmpty || !self.deleteTranslators.isEmpty {
+            DDLogInfo("SyncRepoResponseDbRequest: sync translators")
             _ = try SyncTranslatorsDbRequest(updateMetadata: self.translators, deleteIndices: self.deleteTranslators.map({ $0.id }), forceUpdate: false, fileStorage: self.fileStorage).process(in: database)
         }
         if !self.styles.isEmpty {
+            DDLogInfo("SyncRepoResponseDbRequest: sync styles")
             _ = try SyncStylesDbRequest(styles: self.styles).process(in: database)
         }
     }
