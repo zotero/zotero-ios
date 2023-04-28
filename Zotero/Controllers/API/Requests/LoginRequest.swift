@@ -36,7 +36,7 @@ struct LoginRequest: ApiResponseRequest {
                            "access": ["user": ["library": true,
                                                "notes": true,
                                                "write": true,
-                                               "files": true],
+                                               "files": true] as [String : Any],
                                       "groups": ["all": ["library": true,
                                                          "write": true]]]]
     }

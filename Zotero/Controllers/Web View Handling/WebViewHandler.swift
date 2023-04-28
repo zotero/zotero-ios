@@ -106,7 +106,7 @@ final class WebViewHandler: NSObject {
         if isSuccess {
             payload = ["status": statusCode, "responseText": responseText, "headers": headers]
         } else {
-            payload = ["error": ["status": statusCode, "responseText": responseText]]
+            payload = ["error": ["status": statusCode, "responseText": responseText] as [String : Any]]
         }
 
         self.sendMessaging(response: payload, for: messageId)

@@ -384,8 +384,8 @@ class CitationController: NSObject {
         data["dateModified"] = Formatter.iso8601.string(from: item.dateModified)
         data["uri"] = "https://www.zotero.org/\(item.key)"
         data["inPublications"] = item.inPublications
-        data["collections"] = []
-        data["tags"] = []
+        data["collections"] = [] as [Any]
+        data["tags"] = [] as [Any]
 
         return data
     }

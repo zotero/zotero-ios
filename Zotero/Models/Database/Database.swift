@@ -47,7 +47,7 @@ struct Database {
     private static func migrateObjectChange(migration: Migration) {
         let migrationBlock: MigrationObjectEnumerateBlock = { oldObject, newObject in
             if let oldValue = oldObject?["rawChangedFields"] as? Int16, oldValue > 0 {
-                let objectData = ["identifier": UUID().uuidString, "rawChanges": oldValue]
+                let objectData: [String: Any] = ["identifier": UUID().uuidString, "rawChanges": oldValue]
                 newObject?.setValue([objectData], forKey: "changes")
             }
         }

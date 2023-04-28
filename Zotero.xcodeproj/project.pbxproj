@@ -3972,8 +3972,9 @@
 		B30D594D2206F60400884C4A /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 1120;
-				LastUpgradeCheck = 1400;
+				LastUpgradeCheck = 1430;
 				ORGANIZATIONNAME = "Corporation for Digital Scholarship";
 				TargetAttributes = {
 					B30D59542206F60400884C4A = {
