@@ -224,6 +224,9 @@ final class TranslatorsAndStylesController {
     /// Update local translators with bundled translators if needed.
     private func _updateTranslatorsFromBundle(forceUpdate: Bool) throws {
         let hash = try self.loadLastTranslatorCommitHash()
+
+        DDLogInfo("TranslatorsAndStylesController: should update translators from bundle, forceUpdate=\(forceUpdate); oldHash=\(self.lastTranslatorCommitHash); newHash=\(hash)")
+
         guard forceUpdate || self.lastTranslatorCommitHash != hash else { return }
 
         DDLogInfo("TranslatorsAndStylesController: update translators from bundle")
@@ -280,7 +283,7 @@ final class TranslatorsAndStylesController {
         // Startup update is limited to once daily, other updates happen always
         guard type != .startup || self.didDayChange(from: Date(timeIntervalSince1970: Double(self.lastTimestamp))) else { return Single.just(self.lastTimestamp) }
 
-        DDLogInfo("TranslatorsAndStylesController: update from repo")
+        DDLogInfo("TranslatorsAndStylesController: update from repo, type=\(type)")
 
         let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? ""
         let bundle = (Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? ""
@@ -362,8 +365,10 @@ final class TranslatorsAndStylesController {
     /// Sync local translators with bundled translators.
     private func syncTranslatorsWithBundledData(deleteIndices: [String], forceUpdate: Bool) throws {
         // Load metadata index
+        DDLogInfo("TranslatorsAndStylesController: load index")
         let metadata = try self.loadIndex()
         // Sync translators
+        DDLogInfo("TranslatorsAndStylesController: sync translators to database")
         let request = SyncTranslatorsDbRequest(updateMetadata: metadata, deleteIndices: deleteIndices, forceUpdate: forceUpdate, fileStorage: self.fileStorage)
         var updated: SyncTranslatorsDbRequest.Response = []
         try self.dbQueue.sync {
@@ -375,6 +380,7 @@ final class TranslatorsAndStylesController {
             try? self.fileStorage.remove(Files.translator(filename: id))
         }
         // Unzip updated translators
+        DDLogInfo("TranslatorsAndStylesController: unzip translators")
         try self.unzip(translators: updated)
         DDLogInfo("TranslatorsAndStylesController: unzipped translators")
     }
@@ -433,23 +439,25 @@ final class TranslatorsAndStylesController {
 
                 // Split translators into deletions and updates, parse metadata.
                 let (updateTranslators, deleteTranslators) = self.split(translators: translators)
+                DDLogInfo("TranslatorsAndStylesController: updateTranslators=\(updateTranslators.count); deleteTranslators=\(deleteTranslators.count)")
                 let updateTranslatorMetadata = try updateTranslators.compactMap({ try self.metadata(from: $0) })
                 let deleteTranslatorMetadata = try deleteTranslators.compactMap({ try self.metadata(from: $0) })
 
                 // Split styles into metadata and xml data.
                 let (updateStyles, stylesData) = self.split(styles: styles)
-
-                DDLogInfo("TranslatorsAndStylesController: update local files from repo")
+                DDLogInfo("TranslatorsAndStylesController: updateStyles=\(updateStyles.count); remove local translators")
 
                 // Remove local translators
                 for metadata in deleteTranslatorMetadata {
                     try? self.fileStorage.remove(Files.translator(filename: metadata.id))
                 }
+                DDLogInfo("TranslatorsAndStylesController: write updated translators")
                 // Write updated translators
                 for (index, metadata) in updateTranslatorMetadata.enumerated() {
                     let data = try self.data(from: updateTranslators[index])
                     try self.fileStorage.write(data, to: Files.translator(filename: metadata.id), options: .atomicWrite)
                 }
+                DDLogInfo("TranslatorsAndStylesController: write updated styles")
                 // Write updated styles
                 for (filename, data) in stylesData {
                     try self.fileStorage.write(data, to: Files.style(filename: filename), options: .atomicWrite)
@@ -481,6 +489,7 @@ final class TranslatorsAndStylesController {
 
     private func _resetToBundle(completion: (() -> Void)?) {
         do {
+            DDLogInfo("TranslatorsAndStylesController: reset translators to bundle")
             // TODO: - implement styles reset if needed
             try self._resetToBundle()
 
@@ -511,16 +520,21 @@ final class TranslatorsAndStylesController {
               let archive = Archive(url: zipUrl, accessMode: .read) else {
             throw Error.bundleMissing
         }
+        DDLogInfo("TranslatorsAndStylesController: load index")
         let metadata = try self.loadIndex()
+        DDLogInfo("TranslatorsAndStylesController: loaded \(metadata.count) translators")
         // Remove existing translators and unzip all translators to folder
+        DDLogInfo("TranslatorsAndStylesController: delete all existing local translators")
         if self.fileStorage.has(Files.translators) {
             try self.fileStorage.remove(Files.translators)
         }
         try self.fileStorage.createDirectories(for: Files.translators)
+        DDLogInfo("TranslatorsAndStylesController: extract bundled translators")
         for data in metadata {
             guard let entry = archive[data.filename] else { continue }
             _ = try archive.extract(entry, to: Files.translator(filename: data.id).createUrl())
         }
+        DDLogInfo("TranslatorsAndStylesController: reset database translators")
         // Reset metadata in database
         try self.dbQueue.sync {
             try self.dbStorage.perform(request: ResetTranslatorsDbRequest(metadata: metadata), on: self.dbQueue)
@@ -531,6 +545,8 @@ final class TranslatorsAndStylesController {
 
     func translators(matching url: String? = nil) -> Single<[RawTranslator]> {
         var result: Single<[RawTranslator]> = .just([])
+
+        DDLogInfo("TranslatorsAndStylesController: load translators for \(url ?? "-")")
 
         self.queue.sync { [weak self] in
             guard let `self` = self else { return }

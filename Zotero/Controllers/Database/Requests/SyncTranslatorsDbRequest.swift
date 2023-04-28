@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
 import RealmSwift
 
 struct SyncTranslatorsDbRequest: DbResponseRequest {
@@ -22,11 +23,13 @@ struct SyncTranslatorsDbRequest: DbResponseRequest {
 
     func process(in database: Realm) throws -> [(String, String)] {
         if !self.deleteIndices.isEmpty {
+            DDLogInfo("SyncTranslatorsDbRequest: delete \(self.deleteIndices.count) translators")
             let objects = database.objects(RTranslatorMetadata.self).filter("id IN %@", self.deleteIndices)
             database.delete(objects)
         }
 
         var update: [(String, String)] = []
+        DDLogInfo("SyncTranslatorsDbRequest: update \(self.updateMetadata.count) translators")
         for metadata in self.updateMetadata {
             let rMetadata: RTranslatorMetadata
 

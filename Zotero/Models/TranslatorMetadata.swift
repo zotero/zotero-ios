@@ -44,7 +44,7 @@ struct TranslatorMetadata {
 
     init(id: String, filename: String, rawLastUpdated: String) throws {
         guard let lastUpdated = TranslatorMetadata.formatter.date(from: rawLastUpdated) else {
-            DDLogError("TranslatorMetadata: translator \(id) has incorrect date format - \(rawLastUpdated)")
+            DDLogError("TranslatorMetadata: translator \(id) has incorrect date format - \"\(rawLastUpdated)\"")
             throw Error.incorrectDateFormat
         }
 
