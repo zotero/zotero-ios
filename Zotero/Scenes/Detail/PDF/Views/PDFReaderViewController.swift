@@ -486,11 +486,12 @@ class PDFReaderViewController: UIViewController {
         self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 
+    // MARK: - Annotation Bar
+
     /// Return new position for given center and velocity of toolbar. The user can pan up/left/right to move the toolbar. If velocity > 1500, it's considered a swipe and the toolbar
     /// is moved in swipe direction. Otherwise the toolbar is pinned to closest point from center.
     private func position(fromCenter point: CGPoint, frame: CGRect, containerFrame: CGRect, velocity: CGPoint) -> ToolbarState.Position {
         if velocity.y > -1500 && abs(velocity.x) < 1500 {
-            // Move to closest point. Use different threshold for vertical/horizontal rotation.
             let threshold: CGFloat
             if frame.height > frame.width {
                 threshold = self.isCompactWidth ? 150 : 100
@@ -499,7 +500,7 @@ class PDFReaderViewController: UIViewController {
             }
 
             if point.y < threshold && containerFrame.size.width >= PDFReaderViewController.minToolbarWidth {
-                if frame.minY < containerFrame.minY + AnnotationToolbarViewController.size {
+                if point.y < containerFrame.minY + AnnotationToolbarViewController.size {
                     return .pinned
                 } else {
                     return .top
@@ -569,6 +570,7 @@ class PDFReaderViewController: UIViewController {
             }
 
             if !self.toolbarPositionsOverlay.isHidden {
+                // when swiping to change bar position, the nav bar shouldn't be toggled
                 let velocity = CGPoint()
                 if velocity.y > -1500 && abs(velocity.x) < 1500 {
                     self.prepareNavBar()
@@ -665,7 +667,7 @@ class PDFReaderViewController: UIViewController {
     }
 
     private func prepareNavBar() {
-        if !self.toolbarPositionsOverlay.isHidden {
+        if !self.toolbarPositionsOverlay.isHidden || !statusBarVisible {
             self.navigationController?.setNavigationBarHidden(true, animated: true)
             return
         }
