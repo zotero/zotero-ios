@@ -296,10 +296,6 @@ class PDFReaderViewController: UIViewController {
             self.updateInterface(to: state.settings)
         }
 
-        if state.shouldStoreAnnotationPreviewsIfNeeded {
-            self.viewModel.process(action: .updateAnnotationPreviews)
-        }
-
         if state.changes.contains(.export) {
             self.update(state: state.exportState)
         }
