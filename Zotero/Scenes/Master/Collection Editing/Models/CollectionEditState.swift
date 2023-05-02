@@ -17,8 +17,9 @@ struct CollectionEditState: ViewModelState {
     var error: CollectionEditError?
     var loading: Bool
     var shouldDismiss: Bool
+    var shouldCollapse: Bool
 
-    init(library: Library, key: String?, name: String, parent: Collection?) {
+    init(library: Library, key: String?, name: String, parent: Collection?, shouldCollapse: Bool) {
         self.library = library
         self.key = key
         self.name = name
@@ -26,6 +27,7 @@ struct CollectionEditState: ViewModelState {
         self.error = nil
         self.loading = false
         self.shouldDismiss = false
+        self.shouldCollapse = shouldCollapse
     }
 
     func cleanup() {}

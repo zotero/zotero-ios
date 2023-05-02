@@ -111,9 +111,10 @@ struct CollectionEditView_Previews: PreviewProvider {
                                                        filesEditable: true),
                                         key: nil,
                                         name: "",
-                                        parent: nil)
+                                        parent: nil,
+                                        shouldCollapse: false)
         let handler = CollectionEditActionHandler(dbStorage: Controllers().userControllers!.dbStorage)
         return CollectionEditView()
-                        .environmentObject(ViewModel(initialState: state, handler: handler))
+            .environmentObject(ViewModel(initialState: state, handler: handler))
     }
 }

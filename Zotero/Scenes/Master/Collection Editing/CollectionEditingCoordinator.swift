@@ -40,7 +40,7 @@ final class CollectionEditingCoordinator: Coordinator {
     }
 
     private func createEditViewController(dbStorage: DbStorage) -> UIViewController {
-        let state = CollectionEditState(library: self.library, key: data.key, name: data.name, parent: data.parent)
+        let state = CollectionEditState(library: self.library, key: data.key, name: data.name, parent: data.parent, shouldCollapse: data.shouldCollapse)
         let handler = CollectionEditActionHandler(dbStorage: dbStorage)
         let viewModel = ViewModel(initialState: state, handler: handler)
         var view = CollectionEditView()
