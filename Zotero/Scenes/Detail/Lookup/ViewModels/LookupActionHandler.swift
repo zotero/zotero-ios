@@ -211,6 +211,7 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
         let request = CreateTranslatedItemsDbRequest(responses: [data.response], schemaController: self.schemaController, dateParser: self.dateParser)
         try self.dbStorage.perform(request: request, on: self.backgroundQueue)
 
+        guard Defaults.shared.shareExtensionIncludeAttachment else { return }
         let downloadData = data.attachments.map({ ($0, $1, data.response.key) })
         self.remoteFileDownloader.download(data: downloadData)
     }
