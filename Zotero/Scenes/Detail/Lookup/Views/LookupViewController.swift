@@ -182,6 +182,8 @@ class LookupViewController: UIViewController {
 
             if value.height >= self.tableView.frame.height {
                 self.tableView.isScrollEnabled = true
+                let bottomPoint = CGPoint(x: 0, y: value.height)
+                self.tableView.setContentOffset(bottomPoint, animated: true)
                 self.contentSizeObserver = nil
             }
 
