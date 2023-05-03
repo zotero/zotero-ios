@@ -167,11 +167,15 @@ class TagFilterViewController: UIViewController {
             guard let `self` = self else { return }
             self.viewModel.process(action: .setShowAutomatic(!self.viewModel.state.showAutomatic))
         })
-        let displayAll = UIAction(title: L10n.TagPicker.showAll, state: (state.displayAll ? .on : .off), handler: { [weak self] _ in
-            guard let `self` = self else { return }
-            self.viewModel.process(action: .setDisplayAll(!self.viewModel.state.displayAll))
-        })
-        let optionsMenu = UIMenu(options: .displayInline, children: [showAutomatic, displayAll].orderedMenuChildrenBasedOnDevice())
+        var options: [UIAction] = [showAutomatic]
+        if UIDevice.current.userInterfaceIdiom != .phone {
+            let displayAll = UIAction(title: L10n.TagPicker.showAll, state: (state.displayAll ? .on : .off), handler: { [weak self] _ in
+                guard let `self` = self else { return }
+                self.viewModel.process(action: .setDisplayAll(!self.viewModel.state.displayAll))
+            })
+            options.append(displayAll)
+        }
+        let optionsMenu = UIMenu(options: .displayInline, children: options.orderedMenuChildrenBasedOnDevice())
 
         let deleteAutomatic = UIAction(title: L10n.TagPicker.deleteAutomatic, attributes: .destructive, handler: { [weak self] _ in
             guard let `self` = self, let libraryId = self.delegate?.currentLibrary.identifier else { return }
