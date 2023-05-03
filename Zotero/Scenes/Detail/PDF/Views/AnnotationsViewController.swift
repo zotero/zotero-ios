@@ -141,6 +141,10 @@ final class AnnotationsViewController: UIViewController {
             self.emptyLabel.isHidden = !self.tableView.isHidden
         }
 
+        if state.shouldStoreAnnotationPreviewsIfNeeded {
+            self.viewModel.process(action: .updateAnnotationPreviews)
+        }
+
         self.reloadIfNeeded(for: state) {
             if let keys = state.loadedPreviewImageAnnotationKeys {
                 self.updatePreviewsIfVisible(for: keys)
@@ -182,7 +186,7 @@ final class AnnotationsViewController: UIViewController {
             return
         }
 
-        if state.changes.contains(.annotations) || state.changes.contains(.interfaceStyle) {
+        if state.changes.contains(.annotations) {
             var snapshot = NSDiffableDataSourceSnapshot<Int, PDFReaderState.AnnotationKey>()
             snapshot.appendSections([0])
             snapshot.appendItems(state.sortedKeys)
@@ -197,6 +201,13 @@ final class AnnotationsViewController: UIViewController {
             }
             self.dataSource.apply(snapshot, animatingDifferences: isVisible, completion: completion)
 
+            return
+        }
+
+        if state.changes.contains(.interfaceStyle) {
+            var snapshot = self.dataSource.snapshot()
+            snapshot.reloadSections([0])
+            self.dataSource.apply(snapshot, animatingDifferences: false, completion: completion)
             return
         }
 
