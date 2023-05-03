@@ -203,7 +203,7 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
                     }
                 } else {
                     // Add all remaining tags with proper isActive flag
-                    let tags = try coordinator.perform(request: ReadFilteredTagsDbRequest(collectionId: collectionId, libraryId: libraryId, showAutomatic: viewModel.state.showAutomatic, filters: []))
+                    let tags = try coordinator.perform(request: ReadFilteredTagsDbRequest(collectionId: .custom(.all), libraryId: libraryId, showAutomatic: viewModel.state.showAutomatic, filters: []))
                     for tag in tags {
                         guard tag.color.isEmpty else { continue }
                         let isActive = filtered.contains(tag)
