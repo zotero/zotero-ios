@@ -15,6 +15,7 @@ import PSPDFKitUI
 import RealmSwift
 
 typealias AnnotationDocumentLocation = (page: Int, boundingBox: CGRect)
+typealias AnnotationsPreviewCache = NSCache<NSString, UIImage>
 
 struct PDFReaderState: ViewModelState {
     struct AnnotationKey: Equatable, Hashable, Identifiable {
@@ -75,7 +76,7 @@ struct PDFReaderState: ViewModelState {
     let key: String
     let library: Library
     let document: PSPDFKit.Document
-    let previewCache: NSCache<NSString, UIImage>
+    let previewCache: AnnotationsPreviewCache
     let commentFont: UIFont
     let userId: Int
     let username: String

@@ -127,17 +127,13 @@ final class AnnotationViewController: UIViewController {
 
     private func showSettings() {
         guard let annotation = self.viewModel.state.selectedAnnotation else { return }
-        self.coordinatorDelegate?.showEdit(annotation: annotation, userId: self.viewModel.state.userId, library: self.viewModel.state.library,
+        self.coordinatorDelegate?.showEdit(annotation: annotation, userId: self.viewModel.state.userId, library: self.viewModel.state.library, previewCache: self.viewModel.state.previewCache,
                                            saveAction: { [weak self] key, color, lineWidth, pageLabel, updateSubsequentLabels, highlightText in
             self?.viewModel.process(action: .updateAnnotationProperties(key: key.key, color: color, lineWidth: lineWidth, pageLabel: pageLabel,
                                                                         updateSubsequentLabels: updateSubsequentLabels, highlightText: highlightText))
         },
                                            deleteAction: { [weak self] key in
             self?.viewModel.process(action: .removeAnnotation(key))
-        },
-                                           shareAction: { [weak self] key in
-            print("Share this image")
-
         })
     }
 

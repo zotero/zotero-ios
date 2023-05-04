@@ -14,7 +14,6 @@ import RxSwift
 
 typealias AnnotationEditSaveAction = (PDFReaderState.AnnotationKey, String, CGFloat, String, Bool, String) -> Void // key, color, lineWidth, pageLabel, updateSubsequentLabels, highlightText
 typealias AnnotationEditDeleteAction = (PDFReaderState.AnnotationKey) -> Void
-typealias AnnotationEditShareAction = (PDFReaderState.AnnotationKey) -> Void
 
 final class AnnotationEditViewController: UIViewController {
     private enum Section {
@@ -35,13 +34,12 @@ final class AnnotationEditViewController: UIViewController {
     private let viewModel: ViewModel<AnnotationEditActionHandler>
     private let sections: [Section]
     private let saveAction: AnnotationEditSaveAction
-    private let shareAction: AnnotationEditShareAction
     private let deleteAction: AnnotationEditDeleteAction
     private let disposeBag: DisposeBag
 
     weak var coordinatorDelegate: AnnotationEditCoordinatorDelegate?
 
-    init(viewModel: ViewModel<AnnotationEditActionHandler>, includeColorPicker: Bool, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction, shareAction: @escaping AnnotationEditShareAction) {
+    init(viewModel: ViewModel<AnnotationEditActionHandler>, includeColorPicker: Bool, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
         var sections: [Section] = [.pageLabel, .actions]
         if includeColorPicker && viewModel.state.isEditable {
             sections.insert(.properties, at: 0)
@@ -54,7 +52,6 @@ final class AnnotationEditViewController: UIViewController {
         self.sections = sections
         self.saveAction = saveAction
         self.deleteAction = deleteAction
-        self.shareAction = shareAction
         self.disposeBag = DisposeBag()
         super.init(nibName: "AnnotationEditViewController", bundle: nil)
     }
@@ -253,6 +250,13 @@ extension AnnotationEditViewController: UITableViewDataSource {
             }
 
         case .actions:
+            if self.viewModel.state.type != .image {
+                cell.textLabel?.text = L10n.Pdf.AnnotationPopover.delete
+                cell.textLabel?.textAlignment = .center
+                cell.textLabel?.textColor = .red
+                return cell
+            }
+
             switch indexPath.row {
             case 0:
                 cell.textLabel?.text = L10n.Pdf.AnnotationPopover.share
@@ -277,9 +281,14 @@ extension AnnotationEditViewController: UITableViewDelegate {
         switch self.sections[indexPath.section] {
         case .properties, .highlight: break
         case .actions:
+            guard self.viewModel.state.type == .image else {
+                self.deleteAction(self.viewModel.state.key)
+                return
+            }
+
             switch indexPath.row {
             case 0:
-                self.shareAction(self.viewModel.state.key)
+                self.coordinatorDelegate?.showShare(key: self.viewModel.state.key)
             case 1:
                 self.deleteAction(self.viewModel.state.key)
             default: break

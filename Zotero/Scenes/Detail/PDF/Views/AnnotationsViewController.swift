@@ -111,17 +111,14 @@ final class AnnotationsViewController: UIViewController {
             })
 
         case .options(let sender):
-            self.coordinatorDelegate?.showCellOptions(for: annotation, userId: self.viewModel.state.userId, library: self.viewModel.state.library, sender: sender, userInterfaceStyle: self.viewModel.state.interfaceStyle,
+            self.coordinatorDelegate?.showCellOptions(for: annotation, userId: self.viewModel.state.userId, library: self.viewModel.state.library, previewCache: self.viewModel.state.previewCache, sender: sender, userInterfaceStyle: self.viewModel.state.interfaceStyle,
                                                       saveAction: { [weak self] key, color, lineWidth, pageLabel, updateSubsequentLabels, highlightText in
                                                           self?.viewModel.process(action: .updateAnnotationProperties(key: key.key, color: color, lineWidth: lineWidth, pageLabel: pageLabel,
                                                                                                                       updateSubsequentLabels: updateSubsequentLabels, highlightText: highlightText))
                                                       },
                                                       deleteAction: { [weak self] key in
                                                           self?.viewModel.process(action: .removeAnnotation(key))
-            }, shareAction: { [weak self] key in
-                // Fix: add appropriate action
             })
-
         case .setComment(let comment):
             self.viewModel.process(action: .setComment(key: annotation.key, comment: comment))
 

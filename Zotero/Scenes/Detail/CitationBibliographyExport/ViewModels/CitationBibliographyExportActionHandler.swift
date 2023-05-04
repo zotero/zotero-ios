@@ -92,7 +92,7 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
                     self.copy(html: data.0, plaintext: data.1, in: viewModel)
                     self.citationController.finishCitation()
                 }, onFailure: { viewModel, error in
-                    DDLogError("CitationBibliographyExportActionHbi andler: can't create citation of bibliography - \(error)")
+                    DDLogError("CitationBibliographyExportActionHandler: can't create citation of bibliography - \(error)")
                     self.handle(error: error, in: viewModel)
                     self.citationController.finishCitation()
                 })
