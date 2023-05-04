@@ -15,6 +15,8 @@ struct TranslatorMetadatas {
     let errors: [Error]
 }
 
+fileprivate struct EmptyDecodable: Decodable {}
+
 extension TranslatorMetadatas: Decodable {
     init(from decoder: Decoder) throws {
         var container = try decoder.unkeyedContainer()
@@ -27,6 +29,7 @@ extension TranslatorMetadatas: Decodable {
                 let metadata = try container.decode(TranslatorMetadata.self)
                 metadatas.append(metadata)
             } catch let error {
+                _ = try container.decode(EmptyDecodable.self)
                 errors.append(error)
             }
         }
@@ -36,14 +39,16 @@ extension TranslatorMetadatas: Decodable {
 }
 
 struct TranslatorMetadata {
-    private static let formatter = createFormatter()
+    enum Error: Swift.Error {
+        case incorrectDateFormat
+    }
 
     let id: String
     let lastUpdated: Date
     let filename: String
 
     init(id: String, filename: String, rawLastUpdated: String) throws {
-        guard let lastUpdated = TranslatorMetadata.formatter.date(from: rawLastUpdated) else {
+        guard let lastUpdated = Formatter.sqlFormat.date(from: rawLastUpdated) else {
             DDLogError("TranslatorMetadata: translator \(id) has incorrect date format - \"\(rawLastUpdated)\"")
             throw Error.incorrectDateFormat
         }
@@ -52,21 +57,11 @@ struct TranslatorMetadata {
         self.lastUpdated = lastUpdated
         self.filename = filename
     }
-
-    private static func createFormatter() -> DateFormatter {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        return formatter
-    }
 }
 
 extension TranslatorMetadata: Decodable {
     private enum Keys: String, CodingKey {
         case id, lastUpdated, fileName
-    }
-
-    enum Error: Swift.Error {
-        case incorrectDateFormat
     }
 
     init(from decoder: Decoder) throws {

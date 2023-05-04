@@ -32,9 +32,9 @@ extension Formatter {
 
     static let sqlFormat: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.locale = Locale.autoupdatingCurrent
-        formatter.calendar = Calendar.autoupdatingCurrent
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
         return formatter
     }()
 }
