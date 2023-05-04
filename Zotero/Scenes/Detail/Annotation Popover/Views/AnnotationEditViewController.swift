@@ -137,6 +137,10 @@ final class AnnotationEditViewController: UIViewController {
             height += 49 // for line width slider
         }
 
+        if self.viewModel.state.type == .image {
+            height += 44 // for extra cell
+        }
+
         let size = CGSize(width: AnnotationPopoverLayout.width, height: height)
         self.preferredContentSize = size
         self.navigationController?.preferredContentSize = size
@@ -185,6 +189,7 @@ final class AnnotationEditViewController: UIViewController {
         self.tableView.register(LineWidthCell.self, forCellReuseIdentifier: Section.properties.cellId(index: 1))
         self.tableView.register(UINib(nibName: "HighlightEditCell", bundle: nil), forCellReuseIdentifier: Section.highlight.cellId(index: 0))
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.actions.cellId(index: 0))
+        self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.actions.cellId(index: 1))
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.pageLabel.cellId(index: 0))
         self.tableView.setDefaultSizedHeader()
     }
@@ -199,6 +204,8 @@ extension AnnotationEditViewController: UITableViewDataSource {
         switch self.sections[section] {
         case .properties:
             return self.viewModel.state.type == .ink ? 2 : 1
+        case .actions:
+            return self.viewModel.state.type == .image ? 2 : 1
         default:
             return 1
         }
@@ -243,9 +250,17 @@ extension AnnotationEditViewController: UITableViewDataSource {
             }
 
         case .actions:
-            cell.textLabel?.text = L10n.Pdf.AnnotationPopover.delete
-            cell.textLabel?.textAlignment = .center
-            cell.textLabel?.textColor = .red
+            switch indexPath.row {
+            case 0:
+                cell.textLabel?.text = L10n.Pdf.AnnotationPopover.share
+                cell.textLabel?.textAlignment = .center
+                cell.textLabel?.textColor = Asset.Colors.zoteroBlue.color
+            case 1:
+                cell.textLabel?.text = L10n.Pdf.AnnotationPopover.delete
+                cell.textLabel?.textAlignment = .center
+                cell.textLabel?.textColor = .red
+            default: break
+            }
         }
 
         return cell

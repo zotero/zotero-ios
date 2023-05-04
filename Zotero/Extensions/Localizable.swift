@@ -848,6 +848,8 @@ internal enum L10n {
       internal static let noComment = L10n.tr("Localizable", "pdf.annotation_popover.no_comment")
       /// Edit Page Number
       internal static let pageLabelTitle = L10n.tr("Localizable", "pdf.annotation_popover.page_label_title")
+      /// Share Annotation
+      internal static let share = L10n.tr("Localizable", "pdf.annotation_popover.share")
       /// Size
       internal static let size = L10n.tr("Localizable", "pdf.annotation_popover.size")
       /// Edit Annotation

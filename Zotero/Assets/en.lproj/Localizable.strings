@@ -221,6 +221,7 @@
 "pdf.search.one_match" = "Found 1 match";
 "pdf.search.multiple_matches" = "Found %d matches";
 "pdf.annotation_popover.title" = "Edit Annotation";
+"pdf.annotation_popover.share" = "Share Annotation";
 "pdf.annotation_popover.delete" = "Delete Annotation";
 "pdf.annotation_popover.update_subsequent_pages" = "Update subsequent pages";
 "pdf.annotation_popover.page_label_title" = "Edit Page Number";
