@@ -33,7 +33,8 @@ protocol PdfReaderCoordinatorDelegate: AnyObject {
 
 protocol PdfAnnotationsCoordinatorDelegate: AnyObject {
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void)
-    func showCellOptions(for annotation: Annotation, userId: Int, library: Library, sender: UIButton, userInterfaceStyle: UIUserInterfaceStyle, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
+    func showCellOptions(for annotation: Annotation, userId: Int, library: Library, sender: UIButton, userInterfaceStyle: UIUserInterfaceStyle, saveAction: @escaping AnnotationEditSaveAction,
+                         deleteAction: @escaping AnnotationEditDeleteAction, shareAction: @escaping AnnotationEditShareAction)
     func showFilterPopup(from barButton: UIBarButtonItem, filter: AnnotationsFilter?, availableColors: [String], availableTags: [Tag], userInterfaceStyle: UIUserInterfaceStyle, completed: @escaping (AnnotationsFilter?) -> Void)
 }
 
@@ -311,11 +312,11 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
     }
 
     func showCellOptions(for annotation: Annotation, userId: Int, library: Library, sender: UIButton, userInterfaceStyle: UIUserInterfaceStyle, saveAction: @escaping AnnotationEditSaveAction,
-                         deleteAction: @escaping AnnotationEditDeleteAction) {
+                         deleteAction: @escaping AnnotationEditDeleteAction, shareAction: @escaping AnnotationEditShareAction) {
         let navigationController = NavigationViewController()
         navigationController.overrideUserInterfaceStyle = userInterfaceStyle
 
-        let coordinator = AnnotationEditCoordinator(annotation: annotation, userId: userId, library: library, saveAction: saveAction, deleteAction: deleteAction,
+        let coordinator = AnnotationEditCoordinator(annotation: annotation, userId: userId, library: library, saveAction: saveAction, deleteAction: deleteAction, shareAction: shareAction,
                                                     navigationController: navigationController, controllers: self.controllers)
         coordinator.parentCoordinator = self
         self.childCoordinators.append(coordinator)

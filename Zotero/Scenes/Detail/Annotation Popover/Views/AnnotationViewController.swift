@@ -56,11 +56,11 @@ final class AnnotationViewController: UIViewController {
         self.view.layoutSubviews()
 
         self.viewModel.stateObservable
-                      .observe(on: MainScheduler.instance)
-                      .subscribe(onNext: { [weak self] state in
-                          self?.update(state: state)
-                      })
-                      .disposed(by: self.disposeBag)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] state in
+                self?.update(state: state)
+            })
+            .disposed(by: self.disposeBag)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -129,12 +129,16 @@ final class AnnotationViewController: UIViewController {
         guard let annotation = self.viewModel.state.selectedAnnotation else { return }
         self.coordinatorDelegate?.showEdit(annotation: annotation, userId: self.viewModel.state.userId, library: self.viewModel.state.library,
                                            saveAction: { [weak self] key, color, lineWidth, pageLabel, updateSubsequentLabels, highlightText in
-                                               self?.viewModel.process(action: .updateAnnotationProperties(key: key.key, color: color, lineWidth: lineWidth, pageLabel: pageLabel,
-                                                                                                           updateSubsequentLabels: updateSubsequentLabels, highlightText: highlightText))
-                                           },
+            self?.viewModel.process(action: .updateAnnotationProperties(key: key.key, color: color, lineWidth: lineWidth, pageLabel: pageLabel,
+                                                                        updateSubsequentLabels: updateSubsequentLabels, highlightText: highlightText))
+        },
                                            deleteAction: { [weak self] key in
-                                               self?.viewModel.process(action: .removeAnnotation(key))
-                                           })
+            self?.viewModel.process(action: .removeAnnotation(key))
+        },
+                                           shareAction: { [weak self] key in
+            print("Share this image")
+
+        })
     }
 
     private func set(color: String) {
@@ -173,10 +177,10 @@ final class AnnotationViewController: UIViewController {
         header.setup(with: annotation, libraryId: self.viewModel.state.library.identifier, isEditable: (editability == .editable), showsLock: (editability != .editable), showDoneButton: false,
                      accessibilityType: .view, displayName: self.viewModel.state.displayName, username: self.viewModel.state.username)
         header.menuTap
-              .subscribe(with: self, onNext: { `self`, _ in
-                  self.showSettings()
-              })
-              .disposed(by: self.disposeBag)
+            .subscribe(with: self, onNext: { `self`, _ in
+                self.showSettings()
+            })
+            .disposed(by: self.disposeBag)
         if let tap = header.doneTap {
             tap.subscribe(with: self, onNext: { `self`, _ in
                 self.presentingViewController?.dismiss(animated: true, completion: nil)
@@ -195,15 +199,15 @@ final class AnnotationViewController: UIViewController {
             commentView.setup(text: comment)
             commentView.isUserInteractionEnabled = editability == .editable
             commentView.textObservable
-                       .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
-                       .subscribe(with: self, onNext: { `self`, data in
-                           self.viewModel.process(action: .setComment(key: annotation.key, comment: data.0))
-                           if data.1 {
-                               self.updatePreferredContentSize()
-                               self.scrollToCursorIfNeeded()
-                           }
-                       })
-                       .disposed(by: self.disposeBag)
+                .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
+                .subscribe(with: self, onNext: { `self`, data in
+                    self.viewModel.process(action: .setComment(key: annotation.key, comment: data.0))
+                    if data.1 {
+                        self.updatePreferredContentSize()
+                        self.scrollToCursorIfNeeded()
+                    }
+                })
+                .disposed(by: self.disposeBag)
             self.comment = commentView
 
             self.containerStackView.addArrangedSubview(commentView)
@@ -224,10 +228,10 @@ final class AnnotationViewController: UIViewController {
                 circleView.backgroundColor = .clear
                 circleView.isSelected = circleView.hexColor == self.viewModel.state.selectedAnnotation?.color
                 circleView.tap
-                          .subscribe(with: self, onNext: { `self`, color in
-                              self.set(color: color)
-                          })
-                          .disposed(by: self.disposeBag)
+                    .subscribe(with: self, onNext: { `self`, color in
+                        self.set(color: color)
+                    })
+                    .disposed(by: self.disposeBag)
                 circleView.isAccessibilityElement = true
                 circleView.accessibilityLabel = self.name(for: circleView.hexColor, isSelected: circleView.isSelected)
                 circleView.backgroundColor = Asset.Colors.defaultCellBackground.color
@@ -251,10 +255,10 @@ final class AnnotationViewController: UIViewController {
                 let lineView = LineWidthView(title: L10n.Pdf.AnnotationPopover.lineWidth, settings: .lineWidth, contentInsets: UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16))
                 lineView.value = Float(annotation.lineWidth ?? 0)
                 lineView.valueObservable
-                        .subscribe(with: self, onNext: { `self`, value in
-                            self.viewModel.process(action: .setLineWidth(key: annotation.key , width: CGFloat(value)))
-                        })
-                        .disposed(by: self.disposeBag)
+                    .subscribe(with: self, onNext: { `self`, value in
+                        self.viewModel.process(action: .setLineWidth(key: annotation.key , width: CGFloat(value)))
+                    })
+                    .disposed(by: self.disposeBag)
                 self.containerStackView.addArrangedSubview(lineView)
                 self.containerStackView.addArrangedSubview(AnnotationViewSeparator())
             }
@@ -283,10 +287,10 @@ final class AnnotationViewController: UIViewController {
             tagButton.setTitle(L10n.Pdf.AnnotationsSidebar.addTags, for: .normal)
             tagButton.isHidden = !annotation.tags.isEmpty
             tagButton.rx.tap
-                     .subscribe(with: self, onNext: { `self`, _ in
-                         self.showTagPicker()
-                     })
-                     .disposed(by: self.disposeBag)
+                .subscribe(with: self, onNext: { `self`, _ in
+                    self.showTagPicker()
+                })
+                .disposed(by: self.disposeBag)
             tagButton.accessibilityLabel = L10n.Pdf.AnnotationsSidebar.addTags
             self.tagsButton = tagButton
 

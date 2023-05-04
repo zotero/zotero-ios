@@ -14,6 +14,7 @@ import RxSwift
 
 typealias AnnotationEditSaveAction = (PDFReaderState.AnnotationKey, String, CGFloat, String, Bool, String) -> Void // key, color, lineWidth, pageLabel, updateSubsequentLabels, highlightText
 typealias AnnotationEditDeleteAction = (PDFReaderState.AnnotationKey) -> Void
+typealias AnnotationEditShareAction = (PDFReaderState.AnnotationKey) -> Void
 
 final class AnnotationEditViewController: UIViewController {
     private enum Section {
@@ -34,12 +35,13 @@ final class AnnotationEditViewController: UIViewController {
     private let viewModel: ViewModel<AnnotationEditActionHandler>
     private let sections: [Section]
     private let saveAction: AnnotationEditSaveAction
+    private let shareAction: AnnotationEditShareAction
     private let deleteAction: AnnotationEditDeleteAction
     private let disposeBag: DisposeBag
 
     weak var coordinatorDelegate: AnnotationEditCoordinatorDelegate?
 
-    init(viewModel: ViewModel<AnnotationEditActionHandler>, includeColorPicker: Bool, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
+    init(viewModel: ViewModel<AnnotationEditActionHandler>, includeColorPicker: Bool, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction, shareAction: @escaping AnnotationEditShareAction) {
         var sections: [Section] = [.pageLabel, .actions]
         if includeColorPicker && viewModel.state.isEditable {
             sections.insert(.properties, at: 0)
@@ -52,6 +54,7 @@ final class AnnotationEditViewController: UIViewController {
         self.sections = sections
         self.saveAction = saveAction
         self.deleteAction = deleteAction
+        self.shareAction = shareAction
         self.disposeBag = DisposeBag()
         super.init(nibName: "AnnotationEditViewController", bundle: nil)
     }
@@ -69,10 +72,10 @@ final class AnnotationEditViewController: UIViewController {
         self.setupNavigationBar()
 
         self.viewModel.stateObservable
-                      .subscribe(onNext: { [weak self] state in
-                          self?.update(to: state)
-                      })
-                      .disposed(by: self.disposeBag)
+            .subscribe(onNext: { [weak self] state in
+                self?.update(to: state)
+            })
+            .disposed(by: self.disposeBag)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -123,8 +126,8 @@ final class AnnotationEditViewController: UIViewController {
 
         if self.viewModel.state.type == .highlight {
             let width = AnnotationPopoverLayout.width - ((AnnotationPopoverLayout.annotationLayout.horizontalInset * 2) +
-                                                          AnnotationPopoverLayout.annotationLayout.highlightContentLeadingOffset +
-                                                          AnnotationPopoverLayout.annotationLayout.highlightLineWidth)
+                                                         AnnotationPopoverLayout.annotationLayout.highlightContentLeadingOffset +
+                                                         AnnotationPopoverLayout.annotationLayout.highlightLineWidth)
             let paragraphStyle = NSMutableParagraphStyle()
             paragraphStyle.minimumLineHeight = AnnotationPopoverLayout.annotationLayout.lineHeight
             paragraphStyle.maximumLineHeight = AnnotationPopoverLayout.annotationLayout.lineHeight
@@ -170,13 +173,13 @@ final class AnnotationEditViewController: UIViewController {
 
         let save = UIBarButtonItem(title: L10n.save, style: .done, target: nil, action: nil)
         save.rx.tap
-               .subscribe(onNext: { [weak self] in
-                   guard let `self` = self else { return }
-                   let state = self.viewModel.state
-                   self.saveAction(state.key, state.color, state.lineWidth, state.pageLabel, state.updateSubsequentLabels, state.highlightText)
-                   self.cancel()
-               })
-               .disposed(by: self.disposeBag)
+            .subscribe(onNext: { [weak self] in
+                guard let `self` = self else { return }
+                let state = self.viewModel.state
+                self.saveAction(state.key, state.color, state.lineWidth, state.pageLabel, state.updateSubsequentLabels, state.highlightText)
+                self.cancel()
+            })
+            .disposed(by: self.disposeBag)
 
         self.navigationItem.rightBarButtonItem = save
     }
@@ -274,7 +277,13 @@ extension AnnotationEditViewController: UITableViewDelegate {
         switch self.sections[indexPath.section] {
         case .properties, .highlight: break
         case .actions:
-            self.deleteAction(self.viewModel.state.key)
+            switch indexPath.row {
+            case 0:
+                self.shareAction(self.viewModel.state.key)
+            case 1:
+                self.deleteAction(self.viewModel.state.key)
+            default: break
+            }
         case .pageLabel:
             guard self.viewModel.state.isEditable else { return }
 
@@ -282,7 +291,7 @@ extension AnnotationEditViewController: UITableViewDelegate {
                                                           saveAction: { [weak self] newLabel, shouldUpdateSubsequentPages in
                 self?.viewModel.process(action: .setPageLabel(newLabel, shouldUpdateSubsequentPages))
             })
-        break
+            break
         }
     }
 }

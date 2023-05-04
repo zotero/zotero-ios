@@ -118,7 +118,9 @@ final class AnnotationsViewController: UIViewController {
                                                       },
                                                       deleteAction: { [weak self] key in
                                                           self?.viewModel.process(action: .removeAnnotation(key))
-                                                      })
+            }, shareAction: { [weak self] key in
+                // Fix: add appropriate action
+            })
 
         case .setComment(let comment):
             self.viewModel.process(action: .setComment(key: annotation.key, comment: comment))

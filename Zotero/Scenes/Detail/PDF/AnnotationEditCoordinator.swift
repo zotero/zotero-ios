@@ -22,17 +22,19 @@ final class AnnotationEditCoordinator: Coordinator {
     private let library: Library
     private let saveAction: AnnotationEditSaveAction
     private let deleteAction: AnnotationEditDeleteAction
+    private let shareAction: AnnotationEditShareAction
     private unowned let controllers: Controllers
     unowned let navigationController: UINavigationController
     private let disposeBag: DisposeBag
 
-    init(annotation: Annotation, userId: Int, library: Library, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction,
+    init(annotation: Annotation, userId: Int, library: Library, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction, shareAction: @escaping AnnotationEditShareAction,
          navigationController: NavigationViewController, controllers: Controllers) {
         self.annotation = annotation
         self.userId = userId
         self.library = library
         self.saveAction = saveAction
         self.deleteAction = deleteAction
+        self.shareAction = shareAction
         self.navigationController = navigationController
         self.controllers = controllers
         self.childCoordinators = []
@@ -51,7 +53,7 @@ final class AnnotationEditCoordinator: Coordinator {
         let state = AnnotationEditState(annotation: self.annotation, userId: self.userId, library: self.library)
         let handler = AnnotationEditActionHandler()
         let viewModel = ViewModel(initialState: state, handler: handler)
-        let controller = AnnotationEditViewController(viewModel: viewModel, includeColorPicker: true, saveAction: self.saveAction, deleteAction: self.deleteAction)
+        let controller = AnnotationEditViewController(viewModel: viewModel, includeColorPicker: true, saveAction: self.saveAction, deleteAction: self.deleteAction, shareAction: self.shareAction)
         controller.coordinatorDelegate = self
         self.navigationController.setViewControllers([controller], animated: false)
     }
