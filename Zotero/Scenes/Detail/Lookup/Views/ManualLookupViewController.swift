@@ -180,6 +180,8 @@ class ManualLookupViewController: UIViewController {
     private func setup() {
         self.view.backgroundColor = .systemGroupedBackground
         self.titleLabel.text = L10n.Lookup.title
+        self.roundedContainer.backgroundColor = Asset.Colors.defaultCellBackground.color
+        self.textView.backgroundColor = Asset.Colors.defaultCellBackground.color
         self.roundedContainer.layer.cornerRadius = 10
         self.roundedContainer.layer.masksToBounds = true
 
