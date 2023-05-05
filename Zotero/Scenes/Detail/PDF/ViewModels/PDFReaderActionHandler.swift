@@ -1701,6 +1701,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             if index > keys.count {
                 DDLogWarn("PDFReaderActionHandler: tried inserting index out of bounds! keys.count=\(keys.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
                 shouldCancelUpdate = true
+                break
             }
 
             let item = objects[index]
@@ -1726,6 +1727,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 insertedPdfAnnotations.append(pdfAnnotation)
                 DDLogInfo("PDFReaderActionHandler: insert PDF annotation")
             }
+        }
+
+        if shouldCancelUpdate {
+            return
         }
 
         let getSortIndex: (PDFReaderState.AnnotationKey) -> String? = { key in
