@@ -282,7 +282,6 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
         let key: String?
         let name: String
         var parent: Collection?
-        var shouldCollapse = false
 
         switch type {
         case .add:
@@ -293,7 +292,6 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
             key = nil
             name = ""
             parent = collection
-            shouldCollapse = viewModel.state.collectionTree.isCollapsed(identifier: collection.id) ?? false
         case .edit(let collection):
             key = collection.identifier.key
             name = collection.name
@@ -308,7 +306,7 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
 
         self.update(viewModel: viewModel) { state in
-            state.editingData = (key, name, parent, shouldCollapse)
+            state.editingData = (key, name, parent)
         }
     }
 

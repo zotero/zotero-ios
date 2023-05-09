@@ -73,12 +73,6 @@ struct CollectionEditActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                                                     parentKey: viewModel.state.parent?.identifier.key)
             self.perform(request: request, dismissAfterSuccess: true, in: viewModel)
         }
-
-        guard viewModel.state.shouldCollapse else { return }
-        if let parent = viewModel.state.parent {
-            let request = SetCollectionCollapsedDbRequest(collapsed: false, identifier: parent.id, libraryId: viewModel.state.library.identifier)
-            self.perform(request: request, dismissAfterSuccess: true, in: viewModel)
-        }
     }
 
     private func perform<Request: DbRequest>(request: Request, dismissAfterSuccess shouldDismiss: Bool, in viewModel: ViewModel<CollectionEditActionHandler>) {
