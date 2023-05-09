@@ -500,7 +500,7 @@ class PDFReaderViewController: UIViewController {
             }
 
             if point.y < threshold && containerFrame.size.width >= PDFReaderViewController.minToolbarWidth {
-                if point.y < containerFrame.minY + AnnotationToolbarViewController.size {
+                if point.y < containerFrame.minY + PDFReaderViewController.toolbarCompactInset / 2 {
                     return .pinned
                 } else {
                     return .top
