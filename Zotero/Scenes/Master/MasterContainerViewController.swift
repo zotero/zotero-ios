@@ -141,7 +141,7 @@ final class MasterContainerViewController: UIViewController {
     // MARK: - Bottom panning
 
     private func set(bottomPosition: BottomPosition, containerHeight: CGFloat) {
-        self.bottomYConstraint.constant = bottomPosition.topOffset(availableHeight: containerHeight)
+        self.bottomYConstraint?.constant = bottomPosition.topOffset(availableHeight: containerHeight)
         self.bottomPosition = bottomPosition
     }
 
