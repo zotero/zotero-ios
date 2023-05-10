@@ -8,6 +8,8 @@
 
 import UIKit
 
+import CocoaLumberjackSwift
+
 extension UIViewController {
     func showAlert(for error: Error, cancelled: @escaping () -> Void) {
         let controller = UIAlertController(title: "Error", message: error.localizedDescription, preferredStyle: .alert)
@@ -18,9 +20,17 @@ extension UIViewController {
     }
 
     var topController: UIViewController {
+        // We were getting some infinite-loop crashes here. So for debugging and to get rid of crash, we're checking which controllers repeat.
+        var controllers: [UIViewController] = [self]
         var topController = self
         while let presented = topController.presentedViewController {
+            if controllers.contains(presented) {
+                let controllerNames = controllers.map({ String(describing: $0) })
+                DDLogError("UIViewController: topController inifnite loop, repeating controller: \(String(describing: presented)), controllers: \(controllerNames)")
+                break
+            }
             topController = presented
+            controllers.append(presented)
         }
         return topController
     }

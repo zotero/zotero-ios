@@ -16,15 +16,6 @@ class ConflictAlertQueueController {
     private var count: Int = 0
     private var currentIndex: Int = 0
 
-    private var topController: UIViewController? {
-        guard let mainController = self.mainController else { return nil }
-        var topController = mainController
-        while let controller = topController.presentedViewController {
-            topController = controller
-        }
-        return topController
-    }
-
     init(viewController: UIViewController) {
         self.mainController = viewController
     }
@@ -36,7 +27,7 @@ class ConflictAlertQueueController {
     }
 
     private func present(nextAlert action: @escaping ConflictAlertQueueAction, completion: @escaping () -> Void) {
-        guard let viewController = self.topController, self.currentIndex < self.count else {
+        guard let viewController = self.mainController?.topController, self.currentIndex < self.count else {
             completion()
             return
         }
