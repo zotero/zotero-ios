@@ -24,6 +24,7 @@ struct RemoteStylesResponse: Decodable {
                 styles.append(style)
             } catch let error {
                 DDLogWarn("CitationStylesResponse: can't parse style - \(error)")
+                _ = try container.decode(EmptyDecodable.self)
             }
         }
 

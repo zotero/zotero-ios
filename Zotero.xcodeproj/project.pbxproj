@@ -855,6 +855,8 @@
 		B3ADBCB827CFB64B00B7041F /* PDFSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ADBCB727CFB64B00B7041F /* PDFSettingsViewController.swift */; };
 		B3ADBCBA27CFB66C00B7041F /* PDFSettingsActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ADBCB927CFB66C00B7041F /* PDFSettingsActionHandler.swift */; };
 		B3ADBCBC27CFB67A00B7041F /* PDFSettingsAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ADBCBB27CFB67A00B7041F /* PDFSettingsAction.swift */; };
+		B3AFB83C2A0CE82C008C2374 /* EmptyDecodable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AFB83B2A0CE82C008C2374 /* EmptyDecodable.swift */; };
+		B3AFB83D2A0CF1EE008C2374 /* EmptyDecodable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AFB83B2A0CE82C008C2374 /* EmptyDecodable.swift */; };
 		B3B1C5842664E23A00883597 /* ReadItemsForUploadDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1C5832664E23A00883597 /* ReadItemsForUploadDbRequest.swift */; };
 		B3B1C58626651E2A00883597 /* StorageSettingsActionHandlerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1C58526651E2A00883597 /* StorageSettingsActionHandlerSpec.swift */; };
 		B3B1C5892665258400883597 /* bitcoin.pdf in Resources */ = {isa = PBXBuildFile; fileRef = B3B1C5882665258400883597 /* bitcoin.pdf */; };
@@ -1770,6 +1772,7 @@
 		B3ADBCB727CFB64B00B7041F /* PDFSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSettingsViewController.swift; sourceTree = "<group>"; };
 		B3ADBCB927CFB66C00B7041F /* PDFSettingsActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSettingsActionHandler.swift; sourceTree = "<group>"; };
 		B3ADBCBB27CFB67A00B7041F /* PDFSettingsAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSettingsAction.swift; sourceTree = "<group>"; };
+		B3AFB83B2A0CE82C008C2374 /* EmptyDecodable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyDecodable.swift; sourceTree = "<group>"; };
 		B3B1C5832664E23A00883597 /* ReadItemsForUploadDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadItemsForUploadDbRequest.swift; sourceTree = "<group>"; };
 		B3B1C58526651E2A00883597 /* StorageSettingsActionHandlerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageSettingsActionHandlerSpec.swift; sourceTree = "<group>"; };
 		B3B1C5882665258400883597 /* bitcoin.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = bitcoin.pdf; sourceTree = "<group>"; };
@@ -2428,6 +2431,7 @@
 				B305655323FC051E003304F2 /* Defaults.swift */,
 				B305653F23FC051E003304F2 /* DelayIntervals.swift */,
 				B305652C23FC051E003304F2 /* DeletableObject.swift */,
+				B3AFB83B2A0CE82C008C2374 /* EmptyDecodable.swift */,
 				B3BC6B1C250F797B006A8B9C /* FieldKeys.swift */,
 				B305654123FC051E003304F2 /* File.swift */,
 				B305653E23FC051E003304F2 /* Files.swift */,
@@ -4681,6 +4685,7 @@
 				B37AA28628994B7600A1C643 /* ItemDetailFieldContentView.swift in Sources */,
 				B305667323FC051F003304F2 /* FileManager+Utils.swift in Sources */,
 				B307A2732704A87D005986B3 /* IdleTimerController.swift in Sources */,
+				B3AFB83C2A0CE82C008C2374 /* EmptyDecodable.swift in Sources */,
 				B347F2BA24DC4D5D000D5FF6 /* CapHeightLabel.swift in Sources */,
 				B30566B023FC051F003304F2 /* AuthorizeUploadResponse.swift in Sources */,
 				B30565E323FC051E003304F2 /* DbStorage.swift in Sources */,
@@ -5221,6 +5226,7 @@
 				B36459E2264411DB00A0C2C0 /* TagPickerAction.swift in Sources */,
 				B3BC6B1E250F79C4006A8B9C /* FieldKeys.swift in Sources */,
 				B30566F123FC0845003304F2 /* CheckItemIsChangedDbRequest.swift in Sources */,
+				B3AFB83D2A0CF1EE008C2374 /* EmptyDecodable.swift in Sources */,
 				B36459E42644120D00A0C2C0 /* Color+Extension.swift in Sources */,
 				B34ACC7F2514EB6100040C17 /* AnnotationColorGenerator.swift in Sources */,
 				B305670423FC08A6003304F2 /* ReadAllCustomLibrariesDbRequest.swift in Sources */,

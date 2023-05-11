@@ -15,8 +15,6 @@ struct TranslatorMetadatas {
     let errors: [Error]
 }
 
-fileprivate struct EmptyDecodable: Decodable {}
-
 extension TranslatorMetadatas: Decodable {
     init(from decoder: Decoder) throws {
         var container = try decoder.unkeyedContainer()
@@ -29,6 +27,7 @@ extension TranslatorMetadatas: Decodable {
                 let metadata = try container.decode(TranslatorMetadata.self)
                 metadatas.append(metadata)
             } catch let error {
+                DDLogWarn("TranslatorMetadatas: can't parse translator - \(error)")
                 _ = try container.decode(EmptyDecodable.self)
                 errors.append(error)
             }

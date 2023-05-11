@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
 import RealmSwift
 
 struct ReadUpdatedParametersResponse {
@@ -118,17 +119,23 @@ struct ReadUpdatedItemUpdateParametersDbRequest: DbResponseRequest {
     }
 
     private func level(for item: RItem, levelCache: [String: Int]) -> Int {
+        var keys: Set<String> = [item.key]
         var level = 0
         var parent: RItem? = item.parent
 
         while let current = parent {
             if let currentLevel = levelCache[current.key] {
-                level += currentLevel + 1
-                break
+                return currentLevel + 1
+            }
+
+            if keys.contains(current.key) {
+                DDLogInfo("RItem: parent infinite loop; key=\(current.key); keys=\(keys)")
+                return level
             }
 
             parent = current.parent
             level += 1
+            keys.insert(current.key)
         }
 
         return level
@@ -181,12 +188,20 @@ extension RCollection {
     fileprivate func level(in database: Realm) -> Int {
         guard let libraryId = self.libraryId else { return 0 }
 
+        var keys: Set<String> = [self.key]
         var level = 0
         var object: RCollection? = self
+
         while let parentKey = object?.parentKey {
+            if keys.contains(parentKey) {
+                DDLogInfo("RCollection: parent infinite loop; key=\(parentKey); keys=\(keys)")
+                return level
+            }
             object = database.objects(RCollection.self).filter(.key(parentKey, in: libraryId)).first
             level += 1
+            keys.insert(parentKey)
         }
+
         return level
     }
 }
