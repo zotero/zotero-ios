@@ -146,7 +146,7 @@ struct SubmitUpdateSyncAction: SyncAction {
 
             do {
                 try self.dbStorage.perform(request: SplitAnnotationsDbRequest(keys: splitKeys, libraryId: libraryId), on: self.queue)
-                return SyncActionError.annotationNeededSplitting(message: self.splitMessage, libraryId: libraryId)
+                return SyncActionError.annotationNeededSplitting(message: self.splitMessage, keys: splitKeys, libraryId: libraryId)
             } catch let error {
                 DDLogError("SubmitUpdateSyncAction: could not split annotations - \(error)")
             }

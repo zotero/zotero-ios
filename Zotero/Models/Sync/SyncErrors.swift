@@ -52,12 +52,12 @@ enum SyncError {
         case dbError
         case groupSyncFailed
         case allLibrariesFetchFailed
-        case uploadObjectConflict
+        case uploadObjectConflict(data: ErrorData)
         case permissionLoadingFailed
         case missingGroupPermissions
         case cancelled
-        case preconditionErrorCantBeResolved
-        case cantResolveConflict
+        case preconditionErrorCantBeResolved(data: ErrorData)
+        case cantResolveConflict(data: ErrorData)
         case serviceUnavailable
         case forbidden
     }
@@ -65,13 +65,13 @@ enum SyncError {
     enum NonFatal: Error {
         case versionMismatch(LibraryIdentifier)
         case apiError(response: String, data: ErrorData)
-        case unknown(String)
-        case schema(SchemaError)
-        case parsing(Parsing.Error)
+        case unknown(message: String, data: ErrorData)
+        case schema(error: SchemaError, data: ErrorData)
+        case parsing(error: Parsing.Error, data: ErrorData)
         case quotaLimit(LibraryIdentifier)
         case unchanged
         case attachmentMissing(key: String, libraryId: LibraryIdentifier, title: String)
-        case annotationDidSplit(message: String, libraryId: LibraryIdentifier)
+        case annotationDidSplit(message: String, keys: Set<String>, libraryId: LibraryIdentifier)
         case insufficientSpace
         case webDavDeletion(count: Int, library: String)
         case webDavDeletionFailed(error: String, library: String)
@@ -98,7 +98,7 @@ enum SyncActionError: Error {
          attachmentAlreadyUploaded,
          attachmentMissing(key: String, libraryId: LibraryIdentifier, title: String),
          submitUpdateFailures(String),
-         annotationNeededSplitting(message: String, libraryId: LibraryIdentifier)
+         annotationNeededSplitting(message: String, keys: Set<String>, libraryId: LibraryIdentifier)
 }
 
 enum PreconditionErrorType: Error {

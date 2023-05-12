@@ -395,7 +395,7 @@ final class SyncController: SynchronizationController {
                     retryLibraries.append(libraryId)
                 }
 
-            case .annotationDidSplit(_, let libraryId):
+            case .annotationDidSplit(_, _, let libraryId):
                 if !retryLibraries.contains(libraryId) {
                     retryLibraries.append(libraryId)
                 }
@@ -1054,7 +1054,7 @@ final class SyncController: SynchronizationController {
     private func finishBatchesSyncAction(for libraryId: LibraryIdentifier, object: SyncObject, result: Swift.Result<SyncBatchResponse, Error>) {
         switch result {
         case .success((let failedKeys, let parseErrors, _))://let itemConflicts)):
-            self.nonFatalErrors.append(contentsOf: parseErrors.map({ self.syncError(from: $0, data: .from(libraryId: libraryId)).nonFatal ?? .unknown($0.localizedDescription) }))
+            self.nonFatalErrors.append(contentsOf: parseErrors.map({ self.syncError(from: $0, data: .from(syncObject: object, keys: failedKeys, libraryId: libraryId)).nonFatal ?? .unknown(message: $0.localizedDescription, data: .from(syncObject: object, keys: failedKeys, libraryId: libraryId)) }))
 
             // Decoding of other objects is performed in batches, out of the whole batch only some objects may fail,
             // so these failures are reported as success (because some succeeded) and failed ones are marked for resync
@@ -1187,7 +1187,7 @@ final class SyncController: SynchronizationController {
                   }
               }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishDeletionsSync(result: .failure(error), libraryId: libraryId, version: sinceVersion)
+                      self?.finishDeletionsSync(result: .failure(error), items: nil, libraryId: libraryId, version: sinceVersion)
                   }
               })
               .disposed(by: self.disposeBag)
@@ -1214,17 +1214,17 @@ final class SyncController: SynchronizationController {
         action.result.subscribe(on: self.workScheduler)
                      .subscribe(onSuccess: { [weak self] conflicts in
                          self?.accessQueue.async(flags: .barrier) { [weak self] in
-                             self?.finishDeletionsSync(result: .success(conflicts), libraryId: libraryId)
+                             self?.finishDeletionsSync(result: .success(conflicts), items: items, libraryId: libraryId)
                          }
                      }, onFailure: { [weak self] error in
                          self?.accessQueue.async(flags: .barrier) { [weak self] in
-                             self?.finishDeletionsSync(result: .failure(error), libraryId: libraryId)
+                             self?.finishDeletionsSync(result: .failure(error), items: items, libraryId: libraryId)
                          }
                      })
                      .disposed(by: self.disposeBag)
     }
 
-    private func finishDeletionsSync(result: Result<[(String, String)], Error>, libraryId: LibraryIdentifier, version: Int? = nil) {
+    private func finishDeletionsSync(result: Result<[(String, String)], Error>, items: [String]?, libraryId: LibraryIdentifier, version: Int? = nil) {
         switch result {
         case .success(let conflicts):
             if !conflicts.isEmpty {
@@ -1234,7 +1234,8 @@ final class SyncController: SynchronizationController {
             }
 
         case .failure(let error):
-            switch self.syncError(from: error, data: .from(libraryId: libraryId)) {
+            let data = items.flatMap { SyncError.ErrorData.from(syncObject: (!$0.isEmpty ? .item : .collection), keys: $0, libraryId: libraryId) } ?? SyncError.ErrorData.from(libraryId: libraryId)
+            switch self.syncError(from: error, data: data) {
             case .fatal(let error):
                 self.abort(error: error)
             case .nonFatal(let error):
@@ -1380,7 +1381,7 @@ final class SyncController: SynchronizationController {
             }
         }
 
-        if self.handleUpdatePreconditionFailureIfNeeded(for: error, libraryId: libraryId) {
+        if self.handleUpdatePreconditionFailureIfNeeded(for: error, keys: keys, libraryId: libraryId, object: object) {
             return
         }
 
@@ -1575,13 +1576,13 @@ final class SyncController: SynchronizationController {
         if let error = error as? SyncActionError {
             switch error {
             case .attachmentAlreadyUploaded, .attachmentItemNotSubmitted: // These shouldn't really get here
-                return .nonFatal(.unknown(error.localizedDescription))
+                return .nonFatal(.unknown(message: error.localizedDescription, data: data))
             case .attachmentMissing(let key, let libraryId, let title):
                 return .nonFatal(.attachmentMissing(key: key, libraryId: libraryId, title: title))
-            case .annotationNeededSplitting(let message, let libraryId):
-                return .nonFatal(.annotationDidSplit(message: message, libraryId: libraryId))
+            case .annotationNeededSplitting(let message, let keys, let libraryId):
+                return .nonFatal(.annotationDidSplit(message: message, keys: keys, libraryId: libraryId))
             case .submitUpdateFailures(let messages):
-                return .nonFatal(.unknown(messages))
+                return .nonFatal(.unknown(message: messages, data: data))
             }
         }
 
@@ -1596,7 +1597,7 @@ final class SyncController: SynchronizationController {
         if let error = error as? ZoteroApiError {
             switch error {
             case .unchanged: return .nonFatal(.unchanged)
-            case .responseMissing: return .nonFatal(.unknown("missing response"))
+            case .responseMissing: return .nonFatal(.unknown(message: "missing response", data: data))
             }
         }
 
@@ -1615,13 +1616,13 @@ final class SyncController: SynchronizationController {
         }
 
         if let error = error as? SchemaError {
-            return .nonFatal(.schema(error))
+            return .nonFatal(.schema(error: error, data: data))
         }
         if let error = error as? Parsing.Error {
-            return .nonFatal(.parsing(error))
+            return .nonFatal(.parsing(error: error, data: data))
         }
         DDLogError("SyncController: received unknown error - \(error)")
-        return .nonFatal(.unknown(error.localizedDescription))
+        return .nonFatal(.unknown(message: error.localizedDescription, data: data))
     }
 
     /// Checks whether given `AFError` is fatal and requires abort.
@@ -1714,7 +1715,7 @@ final class SyncController: SynchronizationController {
     /// - parameter error: Error to check.
     /// - parameter libraryId: Identifier of current library, which is being synced.
     /// - returns: `true` if there was a precondition error, `false` otherwise.
-    private func handleUpdatePreconditionFailureIfNeeded(for error: Error, libraryId: LibraryIdentifier) -> Bool {
+    private func handleUpdatePreconditionFailureIfNeeded(for error: Error, keys: [String], libraryId: LibraryIdentifier, object: SyncObject) -> Bool {
         guard let preconditionError = error.preconditionError else { return false }
 
         // Remote has newer version than local, we need to remove remaining write actions for this library from queue,
@@ -1723,14 +1724,14 @@ final class SyncController: SynchronizationController {
 
         if self.createActionOptions == .onlyWrites {
             // We already tried this before and it didn't work, abort sync.
-            self.abort(error: .preconditionErrorCantBeResolved)
+            self.abort(error: .preconditionErrorCantBeResolved(data: .from(syncObject: object, keys: keys, libraryId: libraryId)))
             return true
         }
 
         switch preconditionError {
         case .objectConflict:
             guard self.conflictRetries < self.conflictDelays.count else {
-                self.abort(error: .uploadObjectConflict)
+                self.abort(error: .uploadObjectConflict(data: .from(syncObject: object, keys: keys, libraryId: libraryId)))
                 return true
             }
 
@@ -1748,7 +1749,7 @@ final class SyncController: SynchronizationController {
 
         case .libraryConflict:
             guard self.conflictRetries < self.conflictDelays.count else {
-                self.abort(error: .cantResolveConflict)
+                self.abort(error: .cantResolveConflict(data: .from(syncObject: object, keys: keys, libraryId: libraryId)))
                 return true
             }
 

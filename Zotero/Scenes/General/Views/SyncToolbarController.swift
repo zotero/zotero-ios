@@ -142,8 +142,8 @@ final class SyncToolbarController {
                 return (L10n.Errors.api(response), data)
             case .versionMismatch:
                 return (L10n.Errors.versionMismatch, nil)
-            case .unknown(let _message):
-                return _message.isEmpty ? (L10n.Errors.unknown, nil) : (_message, nil)
+            case .unknown(let _message, let data):
+                return _message.isEmpty ? (L10n.Errors.unknown, data) : (_message, data)
             case .attachmentMissing(let key, let libraryId, let title):
                 return (L10n.Errors.SyncToolbar.attachmentMissing("\(title) (\(key))"), SyncError.ErrorData(itemKeys: [key], libraryId: libraryId))
             case .quotaLimit(let libraryId):
@@ -170,8 +170,8 @@ final class SyncToolbarController {
                     return (L10n.Errors.SyncToolbar.webdavItemProp(string), nil)
                 case .notChanged: break // Should not happen
                 }
-            case .annotationDidSplit(let string, _):
-                return (string, nil)
+            case .annotationDidSplit(let string, let keys, let libraryId):
+                return (string, SyncError.ErrorData(itemKeys: Array(keys), libraryId: libraryId))
             case .unchanged: break
             }
         }
