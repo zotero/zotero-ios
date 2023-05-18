@@ -282,17 +282,19 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     private func startEditing(type: CollectionsState.EditingType, in viewModel: ViewModel<CollectionsActionHandler>) {
         let key: String?
         let name: String
-        var parent: Collection?
+        let parent: Collection?
 
         switch type {
         case .add:
             key = nil
             name = ""
             parent = nil
+
         case .addSubcollection(let collection):
             key = nil
             name = ""
             parent = collection
+
         case .edit(let collection):
             key = collection.identifier.key
             name = collection.name
@@ -301,8 +303,11 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                 let request = ReadCollectionDbRequest(libraryId: viewModel.state.library.identifier, key: parentKey)
                 let rCollection = try? self.dbStorage.perform(request: request, on: .main)
                 parent = rCollection.flatMap { Collection(object: $0, itemCount: 0) }
+            } else {
+                parent = nil
             }
         }
+
 
         self.update(viewModel: viewModel) { state in
             state.editingData = (key, name, parent)
