@@ -27,12 +27,13 @@ struct CreateCollectionDbRequest: DbRequest {
 
         var changes: RCollectionChanges = .name
 
-        if let key = self.parentKey, let parent = database.objects(RCollection.self).filter(.key(key, in: self.libraryId)).first {
+        if let key = self.parentKey {
             collection.parentKey = key
-            if parent.collapsed {
+            changes.insert(.parent)
+
+            if let parent = database.objects(RCollection.self).filter(.key(key, in: self.libraryId)).first {
                 parent.collapsed = false
             }
-            changes.insert(.parent)
         }
 
         let change = RObjectChange.create(changes: changes)
