@@ -56,14 +56,15 @@ class AnnotationToolbarViewController: UIViewController {
         }
     }
 
-    static let size: CGFloat = 52
-    static let fullVerticalHeight: CGFloat = 522
+    let size: CGFloat
+    static let estimatedVerticalHeight: CGFloat = 500
     private static let buttonSpacing: CGFloat = UIDevice.current.userInterfaceIdiom == .phone ? 8 : 12
     private static let buttonCompactSpacing: CGFloat = 4
     private static let toolsToAdditionalFullOffset: CGFloat = 70
     private static let toolsToAdditionalCompactOffset: CGFloat = 20
     private let disposeBag: DisposeBag
 
+    private var horizontalHeight: NSLayoutConstraint!
     private weak var stackView: UIStackView!
     private weak var additionalStackView: UIStackView!
     private(set) weak var colorPickerButton: UIButton!
@@ -90,7 +91,8 @@ class AnnotationToolbarViewController: UIViewController {
     weak var delegate: AnnotationToolbarDelegate?
     private var lastGestureRecognizerTouch: UITouch?
 
-    init() {
+    init(size: CGFloat) {
+        self.size = size
         self.tools = AnnotationToolbarViewController.createTools()
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
@@ -101,11 +103,43 @@ class AnnotationToolbarViewController: UIViewController {
     }
 
     private static func createTools() -> [Tool] {
-        return [Tool(type: .highlight, title: L10n.Pdf.AnnotationToolbar.highlight, accessibilityLabel: L10n.Accessibility.Pdf.highlightAnnotationTool, image: Asset.Images.Annotations.highlighterLarge.image, isHidden: false),
-                Tool(type: .note, title: L10n.Pdf.AnnotationToolbar.note, accessibilityLabel: L10n.Accessibility.Pdf.noteAnnotationTool, image: Asset.Images.Annotations.noteLarge.image, isHidden: false),
-                Tool(type: .square, title: L10n.Pdf.AnnotationToolbar.image, accessibilityLabel: L10n.Accessibility.Pdf.imageAnnotationTool, image: Asset.Images.Annotations.areaLarge.image, isHidden: false),
-                Tool(type: .ink, title: L10n.Pdf.AnnotationToolbar.ink, accessibilityLabel: L10n.Accessibility.Pdf.inkAnnotationTool, image: Asset.Images.Annotations.inkLarge.image, isHidden: false),
-                Tool(type: .eraser, title: L10n.Pdf.AnnotationToolbar.eraser, accessibilityLabel: L10n.Accessibility.Pdf.eraserAnnotationTool, image: Asset.Images.Annotations.eraserLarge.image, isHidden: false)]
+        return [
+            Tool(
+                type: .highlight,
+                title: L10n.Pdf.AnnotationToolbar.highlight,
+                accessibilityLabel: L10n.Accessibility.Pdf.highlightAnnotationTool,
+                image: Asset.Images.Annotations.highlighterLarge.image,
+                isHidden: false
+            ),
+            Tool(
+                type: .note,
+                title: L10n.Pdf.AnnotationToolbar.note,
+                accessibilityLabel: L10n.Accessibility.Pdf.noteAnnotationTool,
+                image: Asset.Images.Annotations.noteLarge.image,
+                isHidden: false
+            ),
+            Tool(
+                type: .square,
+                title: L10n.Pdf.AnnotationToolbar.image,
+                accessibilityLabel: L10n.Accessibility.Pdf.imageAnnotationTool,
+                image: Asset.Images.Annotations.areaLarge.image,
+                isHidden: false
+            ),
+            Tool(
+                type: .ink,
+                title: L10n.Pdf.AnnotationToolbar.ink,
+                accessibilityLabel: L10n.Accessibility.Pdf.inkAnnotationTool,
+                image: Asset.Images.Annotations.inkLarge.image,
+                isHidden: false
+            ),
+            Tool(
+                type: .eraser,
+                title: L10n.Pdf.AnnotationToolbar.eraser,
+                accessibilityLabel: L10n.Accessibility.Pdf.eraserAnnotationTool,
+                image: Asset.Images.Annotations.eraserLarge.image,
+                isHidden: false
+            )
+        ]
     }
 
     override func viewDidLoad() {
@@ -230,6 +264,7 @@ class AnnotationToolbarViewController: UIViewController {
     }
 
     private func setVerticalLayout(isCompactSize: Bool) {
+        self.horizontalHeight.isActive = false
         self.additionalTop.isActive = false
         self.containerBottom.isActive = false
         self.containerToPickerHorizontal.isActive = false
@@ -264,6 +299,7 @@ class AnnotationToolbarViewController: UIViewController {
         self.colorPickerToAdditionalVertical.isActive = false
         self.colorPickerLeading.isActive = false
         self.colorPickerTrailing.isActive = false
+        self.horizontalHeight.isActive = true
         self.additionalTop.isActive = true
         self.containerBottom.isActive = true
         self.containerToPickerHorizontal.isActive = true
@@ -467,6 +503,8 @@ class AnnotationToolbarViewController: UIViewController {
         self.view.addSubview(hairline)
         self.hairlineView = hairline
 
+        self.horizontalHeight = self.view.heightAnchor.constraint(equalToConstant: self.size)
+        self.horizontalHeight.priority = .required
         self.containerBottom = self.view.bottomAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 8)
         self.containerTrailing = self.view.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 8)
         self.additionalTop = additionalStackView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: 8)
@@ -490,8 +528,22 @@ class AnnotationToolbarViewController: UIViewController {
         let hairlineTrailing = hairline.trailingAnchor.constraint(equalTo: self.view.trailingAnchor)
         let hairlineBottom = hairline.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
 
-        NSLayoutConstraint.activate([containerTop, containerLeading, self.containerTrailing, self.containerToPickerVertical, self.colorPickerLeading, self.colorPickerTrailing, additionalBottom,
-                                     self.colorPickerToAdditionalVertical, additionalTrailing, self.additionalLeading, hairlineHeight, hairlineLeading, hairlineTrailing, hairlineBottom])
+        NSLayoutConstraint.activate([
+            containerTop,
+            containerLeading,
+            self.containerTrailing,
+            self.containerToPickerVertical,
+            self.colorPickerLeading,
+            self.colorPickerTrailing,
+            additionalBottom,
+            self.colorPickerToAdditionalVertical,
+            additionalTrailing,
+            self.additionalLeading,
+            hairlineHeight,
+            hairlineLeading,
+            hairlineTrailing,
+            hairlineBottom
+        ])
 
         self.containerTop = containerTop
         self.containerLeading = containerLeading

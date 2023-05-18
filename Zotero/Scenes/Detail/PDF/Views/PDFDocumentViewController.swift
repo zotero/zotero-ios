@@ -15,8 +15,12 @@ import RxSwift
 import RealmSwift
 
 protocol PDFDocumentDelegate: AnyObject {
-    func annotationTool(didChangeStateFrom oldState: PSPDFKit.Annotation.Tool?, to newState: PSPDFKit.Annotation.Tool?,
-                        variantFrom oldVariant: PSPDFKit.Annotation.Variant?, to newVariant: PSPDFKit.Annotation.Variant?)
+    func annotationTool(
+        didChangeStateFrom oldState: PSPDFKit.Annotation.Tool?,
+        to newState: PSPDFKit.Annotation.Tool?,
+        variantFrom oldVariant: PSPDFKit.Annotation.Variant?,
+        to newVariant: PSPDFKit.Annotation.Variant?
+    )
     func didChange(undoState undoEnabled: Bool, redoState redoEnabled: Bool)
     func interfaceVisibilityDidChange(to isHidden: Bool)
     func showToolOptions()
@@ -28,6 +32,7 @@ final class PDFDocumentViewController: UIViewController {
 
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
+    private let initialUIHidden: Bool
 
     private static var toolHistory: [PSPDFKit.Annotation.Tool] = []
     private var selectionView: SelectionView?
@@ -41,9 +46,10 @@ final class PDFDocumentViewController: UIViewController {
 
     // MARK: - Lifecycle
 
-    init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
+    init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool, initialUIHidden: Bool) {
         self.viewModel = viewModel
         self.didAppear = false
+        self.initialUIHidden = initialUIHidden
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -59,6 +65,14 @@ final class PDFDocumentViewController: UIViewController {
         self.setupViews()
         self.setupObserving()
         self.updateInterface(to: self.viewModel.state.settings)
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        if !self.didAppear {
+            self.setInterface(hidden: self.initialUIHidden)
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -352,6 +366,10 @@ final class PDFDocumentViewController: UIViewController {
         stateManager.lineWidth = lineWidth
     }
 
+    func setInterface(hidden: Bool) {
+        self.pdfController?.userInterfaceView.alpha = hidden ? 0 : 1
+    }
+
     // MARK: - Selection
 
     /// (De)Selects given annotation in document.
@@ -616,11 +634,13 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
 }
 
 extension PDFDocumentViewController: AnnotationStateManagerDelegate {
-    func annotationStateManager(_ manager: AnnotationStateManager,
-                                didChangeState oldState: PSPDFKit.Annotation.Tool?,
-                                to newState: PSPDFKit.Annotation.Tool?,
-                                variant oldVariant: PSPDFKit.Annotation.Variant?,
-                                to newVariant: PSPDFKit.Annotation.Variant?) {
+    func annotationStateManager(
+        _ manager: AnnotationStateManager,
+        didChangeState oldState: PSPDFKit.Annotation.Tool?,
+        to newState: PSPDFKit.Annotation.Tool?,
+        variant oldVariant: PSPDFKit.Annotation.Variant?,
+        to newVariant: PSPDFKit.Annotation.Variant?
+    ) {
         self.parentDelegate?.annotationTool(didChangeStateFrom: oldState, to: newState, variantFrom: oldVariant, to: newVariant)
     }
 
