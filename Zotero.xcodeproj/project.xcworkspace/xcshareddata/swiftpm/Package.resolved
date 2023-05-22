@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Alamofire/Alamofire",
       "state" : {
-        "revision" : "78424be314842833c04bc3bef5b72e85fff99204",
-        "version" : "5.6.4"
+        "revision" : "bc268c28fb170f494de9e9927c371b8342979ece",
+        "version" : "5.7.1"
       }
     },
     {
@@ -95,8 +95,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/realm/realm-cocoa",
       "state" : {
-        "revision" : "933294d98787d1b85d6a9d6b3e8a4b8eecc83f08",
-        "version" : "10.38.2"
+        "revision" : "08ee98e7f52a5fb11b10b7430e6f84adbb7433a4",
+        "version" : "10.39.1"
       }
     },
     {
@@ -104,8 +104,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/realm/realm-core",
       "state" : {
-        "revision" : "27cc7f4a1d60299e69a08221d807a3563d0ecc8c",
-        "version" : "13.9.3"
+        "revision" : "72226e2fd84f3a3a8ab3cffc2890c7951f1351d5",
+        "version" : "13.10.1"
       }
     },
     {
