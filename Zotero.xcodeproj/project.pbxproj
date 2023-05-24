@@ -5599,7 +5599,11 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
+<<<<<<< HEAD
                 CURRENT_PROJECT_VERSION = 8;
+=======
+				CURRENT_PROJECT_VERSION = 4;
+>>>>>>> 6e6377d9 (build bump)
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
@@ -5637,7 +5641,11 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
+<<<<<<< HEAD
                 CURRENT_PROJECT_VERSION = 8;
+=======
+				CURRENT_PROJECT_VERSION = 4;
+>>>>>>> 6e6377d9 (build bump)
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -5781,7 +5789,11 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
+<<<<<<< HEAD
                 CURRENT_PROJECT_VERSION = 8;
+=======
+				CURRENT_PROJECT_VERSION = 4;
+>>>>>>> 6e6377d9 (build bump)
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -5812,7 +5824,11 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
+<<<<<<< HEAD
                 CURRENT_PROJECT_VERSION = 8;
+=======
+				CURRENT_PROJECT_VERSION = 4;
+>>>>>>> 6e6377d9 (build bump)
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -5843,7 +5859,11 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
+<<<<<<< HEAD
                 CURRENT_PROJECT_VERSION = 8;
+=======
+				CURRENT_PROJECT_VERSION = 4;
+>>>>>>> 6e6377d9 (build bump)
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -5941,7 +5961,11 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
+<<<<<<< HEAD
                 CURRENT_PROJECT_VERSION = 8;
+=======
+				CURRENT_PROJECT_VERSION = 4;
+>>>>>>> 6e6377d9 (build bump)
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
@@ -6096,7 +6120,11 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
+<<<<<<< HEAD
                 CURRENT_PROJECT_VERSION = 8;
+=======
+				CURRENT_PROJECT_VERSION = 4;
+>>>>>>> 6e6377d9 (build bump)
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -6182,7 +6210,11 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
+<<<<<<< HEAD
 				CURRENT_PROJECT_VERSION = 8;
+=======
+				CURRENT_PROJECT_VERSION = 4;
+>>>>>>> 6e6377d9 (build bump)
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
