@@ -10,6 +10,11 @@ import UIKit
 
 class NavigationViewController: UINavigationController {
     var dismissHandler: (() -> Void)?
+    var statusBarVisible: Bool = true
+
+    override var prefersStatusBarHidden: Bool {
+        return !self.statusBarVisible
+    }
 
     deinit {
         self.dismissHandler?()
