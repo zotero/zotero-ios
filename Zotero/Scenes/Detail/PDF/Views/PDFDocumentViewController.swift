@@ -28,6 +28,7 @@ final class PDFDocumentViewController: UIViewController {
 
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
+    private let initialUIHidden: Bool
 
     private static var toolHistory: [PSPDFKit.Annotation.Tool] = []
     private var selectionView: SelectionView?
@@ -41,9 +42,10 @@ final class PDFDocumentViewController: UIViewController {
 
     // MARK: - Lifecycle
 
-    init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
+    init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool, initialUIHidden: Bool) {
         self.viewModel = viewModel
         self.didAppear = false
+        self.initialUIHidden = initialUIHidden
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -59,6 +61,14 @@ final class PDFDocumentViewController: UIViewController {
         self.setupViews()
         self.setupObserving()
         self.updateInterface(to: self.viewModel.state.settings)
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        if !self.didAppear {
+            self.pdfController?.userInterfaceView.alpha = self.initialUIHidden ? 0 : 1
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
