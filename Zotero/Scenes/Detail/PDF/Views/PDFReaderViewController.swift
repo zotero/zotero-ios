@@ -74,7 +74,11 @@ class PDFReaderViewController: UIViewController {
     private var toolbarState: ToolbarState
     private var toolbarInitialFrame: CGRect?
     @UserDefault(key: "PDFReaderStatusBarVisible", defaultValue: true)
-    private var statusBarVisible: Bool
+    private var statusBarVisible: Bool {
+        didSet {
+            (self.navigationController as? NavigationViewController)?.statusBarVisible = self.statusBarVisible
+        }
+    }
     private var didAppear: Bool
     private(set) var isCurrentlyVisible: Bool
     private var previousTraitCollection: UITraitCollection?
@@ -182,7 +186,6 @@ class PDFReaderViewController: UIViewController {
         super.viewDidLoad()
 
         self.set(userActivity: .pdfActivity(for: self.viewModel.state.key, libraryId: self.viewModel.state.library.identifier))
-        (self.navigationController as? NavigationViewController)?.statusBarVisible = self.statusBarVisible
 
         self.view.backgroundColor = .systemGray6
         self.setupViews()
@@ -572,7 +575,7 @@ class PDFReaderViewController: UIViewController {
                     self.navigationController?.navigationBar.alpha = 0
                 }, completion: { finished in
                     guard finished else { return }
-                    self.navigationController?.navigationBar.isHidden = true
+                    self.navigationController?.setNavigationBarHidden(true, animated: false)
                 })
             }
 
@@ -639,7 +642,7 @@ class PDFReaderViewController: UIViewController {
             let velocity = self.velocity(from: velocityPoint, newPosition: newPosition)
 
             if !navigationBarHidden && self.navigationController?.navigationBar.isHidden == true {
-                self.navigationController?.navigationBar.isHidden = false
+                self.navigationController?.setNavigationBarHidden(false, animated: false)
                 self.navigationController?.navigationBar.alpha = 0
             }
 
@@ -649,7 +652,7 @@ class PDFReaderViewController: UIViewController {
                 self.documentController.setInterface(hidden: !statusBarVisible)
             }, completion: { finished in
                 guard finished && navigationBarHidden else { return }
-                self.navigationController?.navigationBar.isHidden = true
+                self.navigationController?.setNavigationBarHidden(true, animated: false)
             })
 
         case (.leading, .trailing), (.trailing, .leading), (.top, .pinned), (.pinned, .top):
@@ -662,7 +665,7 @@ class PDFReaderViewController: UIViewController {
             self.hideSidebarIfNeeded(forPosition: newPosition, animated: true)
 
             if !navigationBarHidden && self.navigationController?.navigationBar.isHidden == true {
-                self.navigationController?.navigationBar.isHidden = false
+                self.navigationController?.setNavigationBarHidden(false, animated: false)
                 self.navigationController?.navigationBar.alpha = 0
             }
 
@@ -670,10 +673,11 @@ class PDFReaderViewController: UIViewController {
                 self.view.layoutIfNeeded()
                 self.navigationController?.navigationBar.alpha = navigationBarHidden ? 0 : 1
                 self.documentController.setInterface(hidden: !statusBarVisible)
+                self.navigationController?.setNeedsStatusBarAppearanceUpdate()
                 self.setNeedsStatusBarAppearanceUpdate()
             }, completion: { finished in
                 guard finished && navigationBarHidden else { return }
-                self.navigationController?.navigationBar.isHidden = true
+                self.navigationController?.setNavigationBarHidden(true, animated: false)
             })
 
         case (.top, .leading), (.top, .trailing), (.leading, .top), (.leading, .pinned), (.trailing, .top), (.trailing, .pinned), (.pinned, .leading), (.pinned, .trailing):
@@ -686,7 +690,7 @@ class PDFReaderViewController: UIViewController {
                 guard finished else { return }
 
                 if !navigationBarHidden && self.navigationController?.navigationBar.isHidden == true {
-                    self.navigationController?.navigationBar.isHidden = false
+                    self.navigationController?.setNavigationBarHidden(false, animated: false)
                     self.navigationController?.navigationBar.alpha = 0
                 }
 
@@ -704,10 +708,11 @@ class PDFReaderViewController: UIViewController {
                     self.view.layoutIfNeeded()
                     self.navigationController?.navigationBar.alpha = navigationBarHidden ? 0 : 1
                     self.documentController.setInterface(hidden: !statusBarVisible)
+                    self.navigationController?.setNeedsStatusBarAppearanceUpdate()
                     self.setNeedsStatusBarAppearanceUpdate()
                 }, completion: { finished in
                     guard finished && navigationBarHidden else { return }
-                    self.navigationController?.navigationBar.isHidden = true
+                    self.navigationController?.setNavigationBarHidden(true, animated: false)
                 })
             })
         }
@@ -837,14 +842,14 @@ class PDFReaderViewController: UIViewController {
 
         if !animated {
             self.annotationToolbarController.view.alpha = 1
-            self.navigationController?.navigationBar.isHidden = navigationBarHidden
+            self.navigationController?.setNavigationBarHidden(navigationBarHidden, animated: false)
             self.navigationController?.navigationBar.alpha = navigationBarHidden ? 0 : 1
             self.view.layoutIfNeeded()
             return
         }
 
         if !navigationBarHidden && self.navigationController?.navigationBar.isHidden == true {
-            self.navigationController?.navigationBar.isHidden = false
+            self.navigationController?.setNavigationBarHidden(false, animated: false)
             self.navigationController?.navigationBar.alpha = 0
         }
 
@@ -854,7 +859,7 @@ class PDFReaderViewController: UIViewController {
             self.view.layoutIfNeeded()
         }, completion: { finished in
             guard finished && navigationBarHidden else { return }
-            self.navigationController?.navigationBar.isHidden = true
+            self.navigationController?.setNavigationBarHidden(true, animated: false)
         })
     }
 
@@ -868,12 +873,12 @@ class PDFReaderViewController: UIViewController {
             self.annotationToolbarController.view.alpha = 0
             self.annotationToolbarController.view.isHidden = true
             self.navigationController?.navigationBar.alpha = statusBarVisible ? 1 : 0
-            self.navigationController?.navigationBar.isHidden = !statusBarVisible
+            self.navigationController?.setNavigationBarHidden(!statusBarVisible, animated: false)
             return
         }
 
         if statusBarVisible && self.navigationController?.navigationBar.isHidden == true {
-            self.navigationController?.navigationBar.isHidden = false
+            self.navigationController?.setNavigationBarHidden(false, animated: false)
             self.navigationController?.navigationBar.alpha = 0
         }
 
@@ -887,7 +892,7 @@ class PDFReaderViewController: UIViewController {
             self.toolbarState = newState
             self.documentController.disableAnnotationTools()
             if !statusBarVisible {
-                self.navigationController?.navigationBar.isHidden = true
+                self.navigationController?.setNavigationBarHidden(true, animated: false)
             }
         })
     }
@@ -1206,25 +1211,24 @@ extension PDFReaderViewController: PDFDocumentDelegate {
         let shouldChangeNavigationBarVisibility = !state.visible || state.position != .pinned
 
         if !isHidden && shouldChangeNavigationBarVisibility && self.navigationController?.navigationBar.isHidden == true {
-            self.navigationController?.navigationBar.isHidden = false
+            self.navigationController?.setNavigationBarHidden(false, animated: false)
             self.navigationController?.navigationBar.alpha = 0
         }
 
         self.statusBarVisible = !isHidden
-        (self.navigationController as? NavigationViewController)?.statusBarVisible = self.statusBarVisible
         self.setDocumentTopConstraint(forToolbarState: state, statusBarVisible: self.statusBarVisible)
         self.setConstraints(for: state.position, statusBarVisible: self.statusBarVisible)
 
         UIView.animate(withDuration: 0.15, animations: {
-            self.setNeedsStatusBarAppearanceUpdate()
             self.navigationController?.setNeedsStatusBarAppearanceUpdate()
+            self.setNeedsStatusBarAppearanceUpdate()
             self.view.layoutIfNeeded()
             if shouldChangeNavigationBarVisibility {
                 self.navigationController?.navigationBar.alpha = isHidden ? 0 : 1
             }
         }, completion: { finished in
             guard finished && shouldChangeNavigationBarVisibility else { return }
-            self.navigationController?.navigationBar.isHidden = isHidden
+            self.navigationController?.setNavigationBarHidden(isHidden, animated: false)
         })
 
         if isHidden && self.isSidebarVisible {
