@@ -501,10 +501,10 @@ class PDFReaderViewController: UIViewController {
             let xPos = point.x - containerFrame.minX
 
             if point.y < (topViewBottomRightPoint.y + 150) {
-                if xPos > 250 && xPos < (containerFrame.size.width - 250) {
+                if xPos > 150 && xPos < (containerFrame.size.width - 150) {
                     return .top
                 }
-                return xPos <= 250 ? .leading : .trailing
+                return xPos <= 150 ? .leading : .trailing
             }
 
             return xPos > containerFrame.size.width / 2 ? .trailing : .leading
@@ -646,6 +646,7 @@ class PDFReaderViewController: UIViewController {
             UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [.curveEaseOut], animations: {
                 self.annotationToolbarController.view.frame = frame
                 self.navigationController?.navigationBar.alpha = navigationBarHidden ? 0 : 1
+                self.documentController.setInterface(hidden: !statusBarVisible)
             }, completion: { finished in
                 guard finished && navigationBarHidden else { return }
                 self.navigationController?.navigationBar.isHidden = true
@@ -668,6 +669,7 @@ class PDFReaderViewController: UIViewController {
             UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [], animations: {
                 self.view.layoutIfNeeded()
                 self.navigationController?.navigationBar.alpha = navigationBarHidden ? 0 : 1
+                self.documentController.setInterface(hidden: !statusBarVisible)
                 self.setNeedsStatusBarAppearanceUpdate()
             }, completion: { finished in
                 guard finished && navigationBarHidden else { return }
@@ -701,6 +703,7 @@ class PDFReaderViewController: UIViewController {
                     self.annotationToolbarController.view.alpha = 1
                     self.view.layoutIfNeeded()
                     self.navigationController?.navigationBar.alpha = navigationBarHidden ? 0 : 1
+                    self.documentController.setInterface(hidden: !statusBarVisible)
                     self.setNeedsStatusBarAppearanceUpdate()
                 }, completion: { finished in
                     guard finished && navigationBarHidden else { return }
@@ -834,8 +837,8 @@ class PDFReaderViewController: UIViewController {
 
         if !animated {
             self.annotationToolbarController.view.alpha = 1
-            self.navigationController?.navigationBar.isHidden = true
-            self.navigationController?.navigationBar.alpha = 1
+            self.navigationController?.navigationBar.isHidden = navigationBarHidden
+            self.navigationController?.navigationBar.alpha = navigationBarHidden ? 0 : 1
             self.view.layoutIfNeeded()
             return
         }

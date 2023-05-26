@@ -67,7 +67,7 @@ final class PDFDocumentViewController: UIViewController {
         super.viewWillAppear(animated)
 
         if !self.didAppear {
-            self.pdfController?.userInterfaceView.alpha = self.initialUIHidden ? 0 : 1
+            self.setInterface(hidden: self.initialUIHidden)
         }
     }
 
@@ -360,6 +360,10 @@ final class PDFDocumentViewController: UIViewController {
 
     private func set(lineWidth: CGFloat, in stateManager: AnnotationStateManager) {
         stateManager.lineWidth = lineWidth
+    }
+
+    func setInterface(hidden: Bool) {
+        self.pdfController?.userInterfaceView.alpha = hidden ? 0 : 1
     }
 
     // MARK: - Selection
