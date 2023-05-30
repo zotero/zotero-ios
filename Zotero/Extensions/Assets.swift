@@ -37,6 +37,7 @@ internal enum Asset {
     internal static let itemDetailHeaderTitle = ColorAsset(name: "itemDetailHeaderTitle")
     internal static let navbarBackground = ColorAsset(name: "navbarBackground")
     internal static let onboardingTitle = ColorAsset(name: "onboardingTitle")
+    internal static let pdfReaderPreview = ColorAsset(name: "pdfReaderPreview")
     internal static let pdfScrubberBarBackground = ColorAsset(name: "pdfScrubberBarBackground")
     internal static let searchBackground = ColorAsset(name: "searchBackground")
     internal static let searchMagnifyingGlass = ColorAsset(name: "searchMagnifyingGlass")
