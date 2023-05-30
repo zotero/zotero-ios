@@ -1,0 +1,29 @@
+only_rules:
+  - comma
+  - computed_accessors_order
+  - control_statement
+  - empty_enum_arguments
+  - empty_parameters
+  - mark
+  - trailing_newline
+  - trailing_semicolon
+  - trailing_whitespace
+
+comma: error
+
+control_statement: error
+
+empty_enum_arguments: error
+
+empty_parameters: error
+
+mark: error
+
+trailing_newline: error
+
+trailing_semicolon: error
+
+trailing_whitespace:
+  severity: error
+  ignores_empty_lines: true
+  ignores_comments: true

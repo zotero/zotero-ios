@@ -3968,6 +3968,7 @@
 				B311B3272386A39800BCF592 /* Embed Foundation Extensions */,
 				B3E196FA25308D9700DBBE5C /* CopyFiles */,
 				B3E196FB25308DA500DBBE5C /* ShellScript */,
+				61AE2F282A2619E50072571D /* SwiftLint */,
 			);
 			buildRules = (
 			);
@@ -4265,6 +4266,26 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		61AE2F282A2619E50072571D /* SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PROJECT_DIR}/swiftlint/bin/swiftlint",
+			);
+			name = SwiftLint;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"$SCRIPT_INPUT_FILE_0\"\n";
+		};
 		B3087B87245190F500FF05ED /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
