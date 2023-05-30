@@ -56,7 +56,7 @@ class AnnotationToolbarViewController: UIViewController {
         }
     }
 
-    static let size: CGFloat = 52
+    let size: CGFloat
     static let fullVerticalHeight: CGFloat = 522
     private static let buttonSpacing: CGFloat = UIDevice.current.userInterfaceIdiom == .phone ? 8 : 12
     private static let buttonCompactSpacing: CGFloat = 4
@@ -64,6 +64,7 @@ class AnnotationToolbarViewController: UIViewController {
     private static let toolsToAdditionalCompactOffset: CGFloat = 20
     private let disposeBag: DisposeBag
 
+    private var horizontalHeight: NSLayoutConstraint!
     private weak var stackView: UIStackView!
     private weak var additionalStackView: UIStackView!
     private(set) weak var colorPickerButton: UIButton!
@@ -90,7 +91,8 @@ class AnnotationToolbarViewController: UIViewController {
     weak var delegate: AnnotationToolbarDelegate?
     private var lastGestureRecognizerTouch: UITouch?
 
-    init() {
+    init(size: CGFloat) {
+        self.size = size
         self.tools = AnnotationToolbarViewController.createTools()
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
@@ -230,6 +232,7 @@ class AnnotationToolbarViewController: UIViewController {
     }
 
     private func setVerticalLayout(isCompactSize: Bool) {
+        self.horizontalHeight.isActive = false
         self.additionalTop.isActive = false
         self.containerBottom.isActive = false
         self.containerToPickerHorizontal.isActive = false
@@ -264,6 +267,7 @@ class AnnotationToolbarViewController: UIViewController {
         self.colorPickerToAdditionalVertical.isActive = false
         self.colorPickerLeading.isActive = false
         self.colorPickerTrailing.isActive = false
+        self.horizontalHeight.isActive = true
         self.additionalTop.isActive = true
         self.containerBottom.isActive = true
         self.containerToPickerHorizontal.isActive = true
@@ -467,6 +471,8 @@ class AnnotationToolbarViewController: UIViewController {
         self.view.addSubview(hairline)
         self.hairlineView = hairline
 
+        self.horizontalHeight = self.view.heightAnchor.constraint(equalToConstant: self.size)
+        self.horizontalHeight.priority = .required
         self.containerBottom = self.view.bottomAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 8)
         self.containerTrailing = self.view.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 8)
         self.additionalTop = additionalStackView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: 8)
