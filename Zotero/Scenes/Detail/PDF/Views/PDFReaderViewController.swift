@@ -563,13 +563,13 @@ class PDFReaderViewController: UIViewController {
             guard let originalFrame = self.toolbarInitialFrame else { return }
             let translation = recognizer.translation(in: self.annotationToolbarController.view)
             let location = recognizer.location(in: self.view)
+            let position = self.position(fromTouch: location, frame: self.annotationToolbarController.view.frame, containerFrame: self.documentController.view.frame,
+                                         velocity: CGPoint(), statusBarVisible: self.statusBarVisible)
 
             self.annotationToolbarController.view.frame = originalFrame.offsetBy(dx: translation.x, dy: translation.y)
-            self.showPreviewsIfNeeded(translation: translation, velocity: recognizer.velocity(in: self.view))
+            self.showPreviewsIfNeeded(translation: translation, velocity: recognizer.velocity(in: self.view), currentPosition: self.toolbarState.position)
 
             if !self.toolbarPreviewsOverlay.isHidden {
-                let position = self.position(fromTouch: location, frame: self.annotationToolbarController.view.frame, containerFrame: self.documentController.view.frame,
-                                             velocity: CGPoint(), statusBarVisible: self.statusBarVisible)
                 self.setHighlightSelected(at: position)
             }
 
@@ -593,11 +593,12 @@ class PDFReaderViewController: UIViewController {
         }
     }
 
-    private func showPreviewsIfNeeded(translation: CGPoint, velocity: CGPoint) {
+    private func showPreviewsIfNeeded(translation: CGPoint, velocity: CGPoint, currentPosition: ToolbarState.Position) {
         guard self.toolbarPreviewsOverlay.isHidden else { return }
 
         let distance = sqrt((translation.x * translation.x) + (translation.y * translation.y))
-        guard distance > 70 && !self.isSwipe(fromVelocity: velocity) else { return }
+        let distanceThreshold: CGFloat = (currentPosition == .pinned || currentPosition == .top) ? 10 : 70
+        guard distance > distanceThreshold && !self.isSwipe(fromVelocity: velocity) else { return }
 
         let size = min(self.documentController.view.frame.size.height, AnnotationToolbarViewController.fullVerticalHeight)
         self.updatePositionOverlayViews(for: size, containerSize: self.documentController.view.frame.size)
