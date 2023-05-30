@@ -58,7 +58,7 @@ class ManualLookupViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        if (!self.inputContainer.isHidden) {
+        if !self.inputContainer.isHidden {
             self.textView.becomeFirstResponder()
         }
     }

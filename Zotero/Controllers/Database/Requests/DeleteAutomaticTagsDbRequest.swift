@@ -33,4 +33,3 @@ struct DeleteAutomaticTagsDbRequest: DbRequest {
         database.delete(tags)
     }
 }
-

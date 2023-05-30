@@ -550,7 +550,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
     }
 
     private func createContextMenu(for field: ItemDetailState.Field) -> UIMenu? {
-        guard ((field.key == FieldKeys.Item.doi || field.baseField == FieldKeys.Item.doi) || (field.key == FieldKeys.Item.url || field.baseField == FieldKeys.Item.url)) else { return nil }
+        guard (field.key == FieldKeys.Item.doi || field.baseField == FieldKeys.Item.doi) || (field.key == FieldKeys.Item.url || field.baseField == FieldKeys.Item.url) else { return nil }
         return UIMenu(title: "", children: [UIAction(title: L10n.copy, handler: { _ in
             UIPasteboard.general.string = field.value
         })])

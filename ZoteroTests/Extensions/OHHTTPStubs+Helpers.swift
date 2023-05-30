@@ -108,4 +108,3 @@ fileprivate func compareKeys(lQuery: String, rQuery: String) -> Bool {
     }
     return false
 }
-

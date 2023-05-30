@@ -68,4 +68,3 @@ struct AnnotationBoundingBoxCalculator {
         return CGRect(x: minX, y: minY, width: (maxX - minX), height: (maxY - minY))
     }
 }
-

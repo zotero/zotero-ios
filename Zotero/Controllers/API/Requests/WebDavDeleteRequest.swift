@@ -37,4 +37,3 @@ struct WebDavDeleteRequest: ApiRequest {
         self.logParams = logParams
     }
 }
-

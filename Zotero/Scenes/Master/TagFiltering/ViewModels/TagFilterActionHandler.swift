@@ -242,4 +242,3 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
         }
     }
 }
-

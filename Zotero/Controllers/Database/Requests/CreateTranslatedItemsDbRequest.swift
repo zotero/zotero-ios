@@ -28,16 +28,16 @@ struct CreateTranslatedItemsDbRequest: DbRequest {
             }
 
             var changes: RItemChanges = [.type, .fields, .trash, .tags]
-            if (!item.collections.isEmpty) {
+            if !item.collections.isEmpty {
                 changes.insert(.collections)
             }
-            if (!item.relations.isEmpty) {
+            if !item.relations.isEmpty {
                 changes.insert(.relations)
             }
-            if (!item.creators.isEmpty) {
+            if !item.creators.isEmpty {
                 changes.insert(.creators)
             }
-            if (!item.tags.isEmpty) {
+            if !item.tags.isEmpty {
                 changes.insert(.tags)
             }
             item.changes.append(RObjectChange.create(changes: changes))

@@ -209,4 +209,3 @@ extension WebViewHandler: WKScriptMessageHandler {
         }
     }
 }
-

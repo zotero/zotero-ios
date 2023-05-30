@@ -71,4 +71,3 @@ class ItemDetailFieldContentView: UIView {
         self.valueBottom.constant = needsOffset ? -1 : 0//-ItemDetailLayout.separatorHeight
     }
 }
-

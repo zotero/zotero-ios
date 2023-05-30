@@ -256,7 +256,7 @@ final class ItemsViewController: UIViewController {
             if let snapshot = state.results {
                 self.tableViewHandler.reloadAll(snapshot: snapshot.freeze())
             }
-        case .dataLoading, .collectionAssignment, .noteSaving, .attachmentAdding(_), .duplicationLoading: break
+        case .dataLoading, .collectionAssignment, .noteSaving, .attachmentAdding, .duplicationLoading: break
         }
 
         // Show appropriate message

@@ -191,7 +191,7 @@ extension CollectionTree {
     }
 
     private func apply(selectedId: CollectionIdentifier?, collapseState: CollapseState, to snapshot: inout NSDiffableDataSourceSectionSnapshot<Collection>) {
-        let expandParents: (CollectionIdentifier , inout NSDiffableDataSourceSectionSnapshot<Collection>) -> Void = { identifier, snapshot in
+        let expandParents: (CollectionIdentifier, inout NSDiffableDataSourceSectionSnapshot<Collection>) -> Void = { identifier, snapshot in
             let parents = self.parentChain(for: identifier)
             if !parents.isEmpty {
                 snapshot.expand(parents)
@@ -241,7 +241,7 @@ extension CollectionTree {
 
     private func apply<T, CollectionArray: Sequence>(selectedId: CollectionIdentifier?, to snapshot: inout NSDiffableDataSourceSectionSnapshot<T>, mapping: (Collection) -> T,
                                                      allCollections: CollectionArray, collapsedState: [CollectionIdentifier: Bool]) where CollectionArray.Element == Collection {
-        let expandParents: (CollectionIdentifier , inout NSDiffableDataSourceSectionSnapshot<T>, (Collection) -> T) -> Void = { identifier, snapshot, mapping in
+        let expandParents: (CollectionIdentifier, inout NSDiffableDataSourceSectionSnapshot<T>, (Collection) -> T) -> Void = { identifier, snapshot, mapping in
             let parents = self.parentChain(for: identifier)
             if !parents.isEmpty {
                 snapshot.expand(parents.map(mapping))

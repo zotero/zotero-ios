@@ -154,7 +154,7 @@ extension NoteEditorViewController: WKNavigationDelegate {
             return
         }
 
-        switch (url.scheme ?? "") {
+        switch url.scheme ?? "" {
         case "file", "about":
             // Allow initial load
             decisionHandler(.allow)

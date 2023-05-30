@@ -258,4 +258,3 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
         }
     }
 }
-

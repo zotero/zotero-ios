@@ -44,4 +44,3 @@ struct ReadRecentCollections: DbResponseRequest {
         return recent
     }
 }
-

@@ -9,7 +9,7 @@
 import Foundation
 
 struct CreatorTypePickerViewModelCreator {
-    static func create(itemType: String, selected: String , schemaController: SchemaController) -> ViewModel<SinglePickerActionHandler> {
+    static func create(itemType: String, selected: String, schemaController: SchemaController) -> ViewModel<SinglePickerActionHandler> {
         let creators = schemaController.creators(for: itemType) ?? []
         let models: [SinglePickerModel] = creators.compactMap { creator in
             guard let name = schemaController.localized(creator: creator.creatorType) else { return nil }

@@ -76,4 +76,3 @@ extension CreatorEditCoordinator: CreatorEditCoordinatorDelegate {
         self.navigationController.pushViewController(controller, animated: true)
     }
 }
-

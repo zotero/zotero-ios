@@ -20,4 +20,3 @@ struct StylePickerState: ViewModelState {
 
     func cleanup() {}
 }
-

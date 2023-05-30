@@ -9,7 +9,7 @@
 import Foundation
 
 struct ItemTypePickerViewModelCreator {
-    static func create(selected: String , schemaController: SchemaController) -> ViewModel<SinglePickerActionHandler> {
+    static func create(selected: String, schemaController: SchemaController) -> ViewModel<SinglePickerActionHandler> {
         let types: [SinglePickerModel] = schemaController.itemTypes.compactMap { type in
             guard !ItemTypes.excludedFromTypePicker.contains(type), let name = schemaController.localized(itemType: type) else { return nil }
             return SinglePickerModel(id: type, name: name)

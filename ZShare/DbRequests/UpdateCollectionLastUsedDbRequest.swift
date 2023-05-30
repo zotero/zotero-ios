@@ -21,4 +21,3 @@ struct UpdateCollectionLastUsedDbRequest: DbRequest {
         collection.lastUsed = Date()
     }
 }
-

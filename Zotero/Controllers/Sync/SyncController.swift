@@ -1096,7 +1096,7 @@ final class SyncController: SynchronizationController {
     }
 
     private func processGroupSync(groupId: Int) {
-        let action = FetchAndStoreGroupSyncAction(identifier: groupId, userId: self.userId, apiClient: self.apiClient, dbStorage: self.dbStorage, queue: self.workQueue,scheduler: self.workScheduler)
+        let action = FetchAndStoreGroupSyncAction(identifier: groupId, userId: self.userId, apiClient: self.apiClient, dbStorage: self.dbStorage, queue: self.workQueue, scheduler: self.workScheduler)
         action.result
               .subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] result in

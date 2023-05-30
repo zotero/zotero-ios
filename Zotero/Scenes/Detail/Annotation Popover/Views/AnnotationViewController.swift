@@ -250,7 +250,7 @@ final class AnnotationViewController: UIViewController {
                 lineView.value = Float(annotation.lineWidth ?? 0)
                 lineView.valueObservable
                         .subscribe(with: self, onNext: { `self`, value in
-                            self.viewModel.process(action: .setLineWidth(key: annotation.key , width: CGFloat(value)))
+                            self.viewModel.process(action: .setLineWidth(key: annotation.key, width: CGFloat(value)))
                         })
                         .disposed(by: self.disposeBag)
                 self.containerStackView.addArrangedSubview(lineView)

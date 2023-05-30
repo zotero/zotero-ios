@@ -22,4 +22,3 @@ struct FilterAttachmentsDbRequest: DbResponseRequest {
         return database.objects(RItem.self).filter(.keys(self.keys, in: self.libraryId)).filter(.item(type: ItemTypes.attachment)).map({ $0.key })
     }
 }
-

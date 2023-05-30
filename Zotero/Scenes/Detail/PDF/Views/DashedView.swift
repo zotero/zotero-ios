@@ -48,7 +48,7 @@ class DashedView: UIView {
         shapeLayer.strokeColor = color.cgColor
         shapeLayer.lineWidth = 3
         shapeLayer.lineJoin = CAShapeLayerLineJoin.round
-        shapeLayer.lineDashPattern = [6,3]
+        shapeLayer.lineDashPattern = [6, 3]
         shapeLayer.path = UIBezierPath(roundedRect: self.bounds, cornerRadius: self.layer.cornerRadius).cgPath
         self.layer.addSublayer(shapeLayer)
     }
