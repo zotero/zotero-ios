@@ -20,10 +20,10 @@ class DashedView: UIView {
         }
     }
 
-    init(dashColor: UIColor) {
-        self.dashColor = dashColor
+    init() {
+        self.dashColor = .black
         super.init(frame: CGRect())
-        self.addDashedBorder(color: dashColor)
+        self.addDashedBorder(color: .black)
     }
 
     required init?(coder: NSCoder) {
