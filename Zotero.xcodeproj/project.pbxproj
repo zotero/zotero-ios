@@ -1972,7 +1972,7 @@
 		B3F5B07C27D0FFF500AA81C0 /* PDFSettingsSegmentedCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSettingsSegmentedCell.swift; sourceTree = "<group>"; };
 		B3F5B07E27D1000C00AA81C0 /* PDFSettingsSegmentedCellContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSettingsSegmentedCellContentView.swift; sourceTree = "<group>"; };
 		B3F5B08027D1001B00AA81C0 /* PDFSettingsSegmentedCellContentView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PDFSettingsSegmentedCellContentView.xib; sourceTree = "<group>"; };
-		B3F6415F2A28B21E00A78CB0 /* pre-xcodebuild.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "pre-xcodebuild.sh"; sourceTree = "<group>"; };
+		B3F6415F2A28B21E00A78CB0 /* ci_pre_xcodebuild.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ci_pre_xcodebuild.sh; sourceTree = "<group>"; };
 		B3F83807263960FA00E128A6 /* ItemAccessory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemAccessory.swift; sourceTree = "<group>"; };
 		B3FBAC1824570BDE00AA00C0 /* AnnotationPreviewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPreviewController.swift; sourceTree = "<group>"; };
 		B3FC7430272181E500F55531 /* WebDavWriteRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavWriteRequest.swift; sourceTree = "<group>"; };
@@ -3910,7 +3910,7 @@
 		B3F6415E2A28B1EF00A78CB0 /* ci_scripts */ = {
 			isa = PBXGroup;
 			children = (
-				B3F6415F2A28B21E00A78CB0 /* pre-xcodebuild.sh */,
+				B3F6415F2A28B21E00A78CB0 /* ci_pre_xcodebuild.sh */,
 			);
 			path = ci_scripts;
 			sourceTree = "<group>";
