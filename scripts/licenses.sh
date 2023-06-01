@@ -6,14 +6,14 @@ realpath() {
 
 SCRIPT_PATH=`realpath "$0"`
 SCRIPT_DIR=`dirname "$SCRIPT_PATH"`
-LICENSES_DIR="$SCRIPT_DIR/../pdf-keys"
+LICENSES_DIR="$SCRIPT_DIR/../licenses"
 LICENSES_FILE="$LICENSES_DIR/licenses.plist"
 
 if [ -d "$LICENSES_DIR" ]; then
 exit
 fi
 
-mkdir "pdf-keys"
+mkdir "licenses"
 
 cat > "$LICENSES_FILE" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
