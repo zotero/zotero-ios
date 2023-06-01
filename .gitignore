@@ -77,7 +77,7 @@ fastlane/test_output
 
 # Licenses
 
-pdf-keys
+pdf-keys/*
 
 # Bundled data
 
