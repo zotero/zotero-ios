@@ -47,7 +47,7 @@ final class AnnotationView: UIView {
     private var tags: AnnotationViewText!
     private var scrollView: UIScrollView?
     private var scrollViewContent: UIView?
-    private(set) var disposeBag: DisposeBag!
+    private(set) var disposeBag: CompositeDisposable!
 
     var tagString: String? {
         return self.tags.textLabel.text
@@ -213,31 +213,31 @@ final class AnnotationView: UIView {
         }
     }
 
-    private func setupObserving() {
-        self.disposeBag = DisposeBag()
-
+    @DisposeBag.DisposableBuilder
+    private func buildDisposables() -> [Disposable] {
         self.commentTextView.didBecomeActive.subscribe(onNext: { [weak self] _ in
             self?.actionPublisher.on(.next(.setCommentActive(true)))
         })
-        .disposed(by: self.disposeBag)
-
         self.commentTextView.textObservable
-                            .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
-                            .subscribe(onNext: { text, needsHeightReload in
-                                self.actionPublisher.on(.next(.setComment(text)))
-                                if needsHeightReload {
-                                    self.actionPublisher.on(.next(.reloadHeight))
-                                    self.scrollToBottomIfNeeded()
-                                }
-                            })
-                            .disposed(by: self.disposeBag)
-
-        self.tags.tap.flatMap({ _ in Observable.just(Action.tags) }).bind(to: self.actionPublisher).disposed(by: self.disposeBag)
-        self.tagsButton.rx.tap.flatMap({ Observable.just(Action.tags) }).bind(to: self.actionPublisher).disposed(by: self.disposeBag)
-        self.header.menuTap.flatMap({ Observable.just(Action.options($0)) }).bind(to: self.actionPublisher).disposed(by: self.disposeBag)
+            .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
+            .subscribe(onNext: { text, needsHeightReload in
+                self.actionPublisher.on(.next(.setComment(text)))
+                if needsHeightReload {
+                    self.actionPublisher.on(.next(.reloadHeight))
+                    self.scrollToBottomIfNeeded()
+                }
+            })
+        self.tags.tap.flatMap({ _ in Observable.just(Action.tags) }).bind(to: self.actionPublisher)
+        self.tagsButton.rx.tap.flatMap({ Observable.just(Action.tags) }).bind(to: self.actionPublisher)
+        self.header.menuTap.flatMap({ Observable.just(Action.options($0)) }).bind(to: self.actionPublisher)
+    }
+    
+    private func setupObserving() {
+        var disposables: [Disposable] = buildDisposables()
         if let doneTap = self.header.doneTap {
-            doneTap.flatMap({ Observable.just(Action.done) }).bind(to: self.actionPublisher).disposed(by: self.disposeBag)
+            disposables.append(doneTap.flatMap({ Observable.just(Action.done) }).bind(to: self.actionPublisher))            
         }
+        disposeBag = CompositeDisposable(disposables: disposables)
     }
 
     private func setupView(commentPlaceholder: String) {

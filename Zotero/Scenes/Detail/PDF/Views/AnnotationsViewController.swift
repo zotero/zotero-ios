@@ -293,10 +293,10 @@ final class AnnotationsViewController: UIViewController {
                        isEditing: state.sidebarEditingEnabled, currentUserId: self.viewModel.state.userId, displayName: self.viewModel.state.displayName, username: self.viewModel.state.username,
                        boundingBoxConverter: boundingBoxConverter)
         }
-        cell.actionPublisher.subscribe(onNext: { [weak self] action in
+        let actionSubscription = cell.actionPublisher.subscribe(onNext: { [weak self] action in
             self?.perform(action: action, annotation: annotation)
         })
-        .disposed(by: cell.disposeBag)
+        cell.disposeBag.insert(actionSubscription)
     }
 
     private func loadAttributedComment(for annotation: Annotation) -> NSAttributedString? {
