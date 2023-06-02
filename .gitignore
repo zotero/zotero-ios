@@ -75,10 +75,6 @@ fastlane/test_output
 # MacOS files
 .DS_Store
 
-# Licenses
-
-licenses/licenses.plist
-
 # Bundled data
 
 bundled/translators
