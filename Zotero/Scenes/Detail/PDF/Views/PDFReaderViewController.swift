@@ -564,7 +564,8 @@ class PDFReaderViewController: UIViewController {
     private func didTapToolbar(recognizer: UILongPressGestureRecognizer) {
         switch recognizer.state {
         case .began:
-            self.showPreviewsOnTouchDownIfNeeded(locationInToolbar: recognizer.location(in: self.annotationToolbarController.view), currentPosition: self.toolbarState.position)
+            self.setHighlightSelected(at: self.toolbarState.position)
+            self.showPreviews()
 
         case .ended, .failed:
             self.hidePreviewsIfNeeded()
@@ -609,12 +610,6 @@ class PDFReaderViewController: UIViewController {
 
         @unknown default: break
         }
-    }
-
-    private func showPreviewsOnTouchDownIfNeeded(locationInToolbar location: CGPoint, currentPosition: ToolbarState.Position) {
-        guard location.y >= self.annotationToolbarController.view.frame.height - PDFReaderViewController.annotationToolbarDragHandleHeight else { return }
-        self.setHighlightSelected(at: currentPosition)
-        self.showPreviews()
     }
 
     private func showPreviewsOnDragIfNeeded(translation: CGPoint, velocity: CGPoint, currentPosition: ToolbarState.Position) {
@@ -1409,6 +1404,24 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
 }
 
 extension PDFReaderViewController: UIGestureRecognizerDelegate {
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard let longPressRecognizer = gestureRecognizer as? UILongPressGestureRecognizer else { return true }
+
+        let location = longPressRecognizer.location(in: self.annotationToolbarController.view)
+        let currentLocation: CGFloat
+        let border: CGFloat
+
+        switch self.toolbarState.position {
+        case .pinned, .top:
+            currentLocation = location.x
+            border = self.annotationToolbarController.view.frame.width - PDFReaderViewController.annotationToolbarDragHandleHeight
+        case .leading, .trailing:
+            currentLocation = location.y
+            border = self.annotationToolbarController.view.frame.height - PDFReaderViewController.annotationToolbarDragHandleHeight
+        }
+        return currentLocation >= border
+    }
+
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         return true
     }
