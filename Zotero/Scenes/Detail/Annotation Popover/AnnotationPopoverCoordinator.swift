@@ -15,6 +15,7 @@ protocol AnnotationPopover: AnyObject {
 }
 
 protocol AnnotationPopoverAnnotationCoordinatorDelegate: AnyObject {
+    func shareAnnotation(sender: UIButton)
     func showEdit(annotation: Annotation, userId: Int, library: Library, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func didFinish()
@@ -57,6 +58,16 @@ final class AnnotationPopoverCoordinator: NSObject, Coordinator {
 }
 
 extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDelegate {
+    func shareAnnotation(sender: UIButton) {
+        guard let pdfCoordinator = parentCoordinator as? PDFCoordinator else { return }
+        pdfCoordinator.shareAnnotation(
+            viewModel: viewModel,
+            annotationKey: nil,
+            sender: sender,
+            presenter: navigationController
+        )
+    }
+    
     func showEdit(annotation: Annotation, userId: Int, library: Library, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
         let state = AnnotationEditState(annotation: annotation, userId: userId, library: library)
         let handler = AnnotationEditActionHandler()

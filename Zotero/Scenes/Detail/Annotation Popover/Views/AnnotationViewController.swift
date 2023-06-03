@@ -93,8 +93,17 @@ final class AnnotationViewController: UIViewController {
 
         // Update header
         let editability = annotation.editability(currentUserId: state.userId, library: state.library)
-        self.header.setup(with: annotation, libraryId: state.library.identifier, isEditable: (editability == .editable), showsLock: (editability != .editable), showDoneButton: false,
-                          accessibilityType: .view, displayName: state.displayName, username: state.username)
+        self.header.setup(
+            with: annotation,
+            libraryId: state.library.identifier,
+            showShareButton: (annotation.type == .image),
+            isEditable: (editability == .editable),
+            showsLock: (editability != .editable),
+            showDoneButton: false,
+            accessibilityType: .view,
+            displayName: state.displayName,
+            username: state.username
+        )
 
         // Update selected color
         if let views = self.colorPickerContainer?.arrangedSubviews {
@@ -121,6 +130,13 @@ final class AnnotationViewController: UIViewController {
     @objc private func deleteAnnotation() {
         guard let key = self.viewModel.state.selectedAnnotationKey else { return }
         self.viewModel.process(action: .removeAnnotation(key))
+    }
+    
+    private func shareAnnotation(sender: UIButton) {
+        guard let annotation = self.viewModel.state.selectedAnnotation,
+              annotation.type == .image
+        else { return }
+        coordinatorDelegate?.shareAnnotation(sender: sender)
     }
 
     private func showSettings() {
@@ -168,8 +184,27 @@ final class AnnotationViewController: UIViewController {
         // Setup header
         let header = AnnotationViewHeader(layout: layout)
         let editability = annotation.editability(currentUserId: self.viewModel.state.userId, library: self.viewModel.state.library)
-        header.setup(with: annotation, libraryId: self.viewModel.state.library.identifier, isEditable: (editability == .editable), showsLock: (editability != .editable), showDoneButton: false,
-                     accessibilityType: .view, displayName: self.viewModel.state.displayName, username: self.viewModel.state.username)
+        let annotationIsShareable: Bool = (annotation.type == .image)
+        header.setup(
+            with: annotation,
+            libraryId: self.viewModel.state.library.identifier,
+            showShareButton: annotationIsShareable,
+            isEditable: (editability == .editable),
+            showsLock: (editability != .editable),
+            showDoneButton: false,
+            accessibilityType: .view,
+            displayName: self.viewModel.state.displayName,
+            username: self.viewModel.state.username
+        )
+        if annotationIsShareable {
+            header.shareTap.subscribe(
+                with: self,
+                onNext: { (`self`: AnnotationViewController, button: UIButton) in
+                    self.shareAnnotation(sender: button)
+                }
+            )
+            .disposed(by: self.disposeBag)
+        }
         header.menuTap
               .subscribe(with: self, onNext: { `self`, _ in
                   self.showSettings()

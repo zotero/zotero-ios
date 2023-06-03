@@ -129,6 +129,14 @@ final class AnnotationsViewController: UIViewController {
             self.viewModel.process(action: .setCommentActive(isActive))
 
         case .done: break // Done button doesn't appear here
+            
+        case .share(let sender):
+            coordinatorDelegate?.shareAnnotation(
+                viewModel: viewModel,
+                annotationKey: annotation.readerKey,
+                sender: sender,
+                presenter: nil
+            )
         }
     }
 

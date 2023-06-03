@@ -22,6 +22,7 @@ final class AnnotationView: UIView {
         case setComment(NSAttributedString)
         case setCommentActive(Bool)
         case done
+        case share(UIButton)
     }
 
     enum AccessibilityType {
@@ -103,8 +104,17 @@ final class AnnotationView: UIView {
         let color = UIColor(hex: annotation.color)
         let canEdit = editability == .editable && selected
 
-        self.header.setup(with: annotation, libraryId: library.identifier, isEditable: (editability != .notEditable && selected), showsLock: editability != .editable,
-                          showDoneButton: self.layout.showDoneButton, accessibilityType: .cell, displayName: displayName, username: username)
+        self.header.setup(
+            with: annotation,
+            libraryId: library.identifier,
+            showShareButton: (annotation.type == .image),
+            isEditable: (editability != .notEditable && selected),
+            showsLock: editability != .editable,
+            showDoneButton: self.layout.showDoneButton,
+            accessibilityType: .cell,
+            displayName: displayName,
+            username: username
+        )
         self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth, accessibilityType: .cell, boundingBoxConverter: boundingBoxConverter)
         self.setup(comment: comment, canEdit: canEdit)
         self.setupTags(for: annotation, canEdit: canEdit, accessibilityEnabled: selected)
@@ -230,6 +240,11 @@ final class AnnotationView: UIView {
         self.tags.tap.flatMap({ _ in Observable.just(Action.tags) }).bind(to: self.actionPublisher)
         self.tagsButton.rx.tap.flatMap({ Observable.just(Action.tags) }).bind(to: self.actionPublisher)
         self.header.menuTap.flatMap({ Observable.just(Action.options($0)) }).bind(to: self.actionPublisher)
+        header.shareTap.subscribe(
+            onNext: { [weak self] (sender: UIButton) in
+                self?.actionPublisher.on(.next(.share(sender)))
+            }
+        )
     }
     
     private func setupObserving() {

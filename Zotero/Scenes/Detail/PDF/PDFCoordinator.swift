@@ -30,6 +30,12 @@ protocol PdfReaderCoordinatorDelegate: AnyObject {
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: AnyObject {
+    func shareAnnotation(
+        viewModel: ViewModel<PDFReaderActionHandler>,
+        annotationKey: PDFReaderState.AnnotationKey?,
+        sender: UIButton,
+        presenter: UIViewController?
+    )
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void)
     func showCellOptions(for annotation: Annotation, userId: Int, library: Library, sender: UIButton, userInterfaceStyle: UIUserInterfaceStyle, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
     func showFilterPopup(from barButton: UIBarButtonItem, filter: AnnotationsFilter?, availableColors: [String], availableTags: [Tag], userInterfaceStyle: UIUserInterfaceStyle, completed: @escaping (AnnotationsFilter?) -> Void)
@@ -291,6 +297,45 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
 }
 
 extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
+    func shareAnnotation(
+        viewModel: ViewModel<PDFReaderActionHandler>,
+        annotationKey: PDFReaderState.AnnotationKey? = nil,
+        sender: UIButton,
+        presenter: UIViewController? = nil
+    ) {
+        let state = viewModel.state
+        let document: PSPDFKit.Document = state.document
+        guard let annotationKey = annotationKey ?? state.selectedAnnotationKey,
+              let annotation = state.annotation(for: annotationKey),
+              annotation.type == .image,
+              let documentAnnotation = document.annotation(on: annotation.page, with: annotation.key)
+        else { return }
+        
+        let annotationPreviewController = controllers.annotationPreviewController
+        let rect = documentAnnotation.boundingBox
+        // TODO: check if size should be scaled by a factor, either fixed, or dynamic e.g. screen scale
+        let size = rect.size
+        annotationPreviewController.render(
+            document: document,
+            page: documentAnnotation.pageIndex,
+            rect: rect,
+            imageSize: size,
+            key: annotation.key,
+            parentKey: viewModel.state.key,
+            libraryId: viewModel.state.library.id
+        )
+        .subscribe { [weak self] (image: UIImage) in
+            guard let self else { return }
+            inMainThread {
+                self.share(item: image, sourceView: .view(sender, nil), presenter: presenter)
+            }
+        } onFailure: { (error: Error) in
+            // TODO: log error
+            // TODO: show error
+        }
+        .disposed(by: disposeBag)
+    }
+    
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void) {
         (self.parentCoordinator as? DetailCoordinator)?.showTagPicker(libraryId: libraryId, selected: selected, userInterfaceStyle: userInterfaceStyle, navigationController: self.navigationController, picked: picked)
     }

@@ -20,7 +20,7 @@ protocol Coordinator: AnyObject {
 
     func start(animated: Bool)
     func childDidFinish(_ child: Coordinator)
-    func share(item: Any, sourceView: SourceView)
+    func share(item: Any, sourceView: SourceView, presenter: UIViewController?)
 }
 
 extension Coordinator {
@@ -36,7 +36,7 @@ extension Coordinator {
         }
     }
 
-    func share(item: Any, sourceView: SourceView) {
+    func share(item: Any, sourceView: SourceView, presenter: UIViewController? = nil) {
         let controller = UIActivityViewController(activityItems: [item], applicationActivities: nil)
         controller.modalPresentationStyle = .pageSheet
 
@@ -51,6 +51,6 @@ extension Coordinator {
             }
         }
 
-        self.navigationController.present(controller, animated: true, completion: nil)
+        (presenter ?? navigationController).present(controller, animated: true, completion: nil)
     }
 }
