@@ -657,7 +657,7 @@ class PDFReaderViewController: UIViewController {
         case .leading, .trailing:
             // Position the preview so that the bottom of preview matches actual bottom of toolbar, add offset for dashed border
             let offset = self.annotationToolbarController.size + (statusBarVisible ? 0 : self.annotationToolbarController.size)
-            verticalHeight = currentHeight - offset + (DashedView.dashWidth * 2)
+            verticalHeight = currentHeight - offset + (DashedView.dashWidth * 2) + 1
         case .top, .pinned:
             verticalHeight = min(containerSize.height, AnnotationToolbarViewController.estimatedVerticalHeight)
         }
@@ -666,15 +666,7 @@ class PDFReaderViewController: UIViewController {
         self.inbetweenTopDashedView.isHidden = self.toolbarPinnedPreview.isHidden
         if !self.toolbarPinnedPreview.isHidden {
             // Change height based on current position so that preview is shown around currently visible toolbar
-            self.toolbarPinnedPreviewHeight.constant = self.annotationToolbarController.size + self.topOffsets(statusBarVisible: statusBarVisible).statusBarHeight
-
-            switch position {
-            case .top:
-                self.toolbarPinnedPreviewHeight.constant -= 3
-            case .pinned:
-                self.toolbarPinnedPreviewHeight.constant -= 2
-            case .leading, .trailing: break
-            }
+            self.toolbarPinnedPreviewHeight.constant = self.annotationToolbarController.size + self.topOffsets(statusBarVisible: statusBarVisible).statusBarHeight - (position == .top ? 1 : 0)
         }
         self.toolbarTopPreview.isHidden = !topToolbarsAvailable
         self.toolbarLeadingPreviewHeight.constant = verticalHeight
@@ -1158,7 +1150,7 @@ class PDFReaderViewController: UIViewController {
             trailingPreview.topAnchor.constraint(equalTo: topPreviewContainer.bottomAnchor, constant: PDFReaderViewController.toolbarCompactInset),
             trailingPreviewHeight,
             trailingPreview.widthAnchor.constraint(equalToConstant: annotationToolbar.size + (DashedView.dashWidth * 2)),
-            inbetweenTopDash.heightAnchor.constraint(equalToConstant: DashedView.dashWidth)
+            inbetweenTopDash.heightAnchor.constraint(equalToConstant: 2/UIScreen.main.scale)
         ])
 
         self.documentController = documentController
