@@ -57,7 +57,7 @@ class AnnotationToolbarViewController: UIViewController {
     }
 
     let size: CGFloat
-    static let fullVerticalHeight: CGFloat = 522
+    static let estimatedVerticalHeight: CGFloat = 500
     private static let buttonSpacing: CGFloat = UIDevice.current.userInterfaceIdiom == .phone ? 8 : 12
     private static let buttonCompactSpacing: CGFloat = 4
     private static let toolsToAdditionalFullOffset: CGFloat = 70
