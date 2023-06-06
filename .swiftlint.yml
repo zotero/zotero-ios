@@ -29,6 +29,7 @@ only_rules:
   - trailing_semicolon
   - trailing_whitespace
   - unavailable_condition
+  - unneeded_break_in_switch
 
 closing_brace: error
 
@@ -102,4 +103,6 @@ trailing_whitespace:
   ignores_comments: true
 
 unavailable_condition: error
+
+unneeded_break_in_switch: error
 

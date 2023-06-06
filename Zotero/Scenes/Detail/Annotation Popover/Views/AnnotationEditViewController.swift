@@ -265,7 +265,6 @@ extension AnnotationEditViewController: UITableViewDelegate {
                                                           saveAction: { [weak self] newLabel, shouldUpdateSubsequentPages in
                 self?.viewModel.process(action: .setPageLabel(newLabel, shouldUpdateSubsequentPages))
             })
-        break
         }
     }
 }

@@ -339,11 +339,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
             switch _row {
             case .note(let note, _) where note.key == itemKey:
                 row = _row
-                break
             case .attachment(let attachment, _) where attachment.key == itemKey:
                 row = _row
-                break
-            default: continue
+            default:
+                continue
             }
         }
 

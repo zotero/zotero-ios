@@ -457,7 +457,6 @@ final class ItemsViewController: UIViewController {
                 default:
                     // Re-enable batched reloads when items are synced.
                     self.tableViewHandler.enableReloadAnimations()
-                break
                 }
             })
             .disposed(by: self.disposeBag)
