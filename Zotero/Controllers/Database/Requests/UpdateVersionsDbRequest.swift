@@ -38,7 +38,6 @@ struct UpdateVersionsDbRequest: DbRequest {
                 throw DbError.objectNotFound
             }
 
-
             if let versions = library.versions {
                 try self.update(versions: versions, type: self.type, version: self.version)
             }

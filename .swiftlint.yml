@@ -36,7 +36,11 @@ only_rules:
   - redundant_string_enum_value
   - redundant_void_return
   - return_arrow_whitespace
+  - self_in_property_initialization
+  - shorthand_operator
+  - statement_position
   - switch_case_alignment
+  - syntactic_sugar
   - trailing_comma
   - trailing_newline
   - trailing_semicolon
@@ -48,6 +52,7 @@ only_rules:
   - unused_optional_binding
   - unused_setter_value
   - vertical_parameter_alignment
+  - vertical_whitespace
   - void_return
   # opt-in rules
 
@@ -132,8 +137,18 @@ redundant_void_return: error
 
 return_arrow_whitespace: error
 
+self_in_property_initialization: error
+
+shorthand_operator: error
+
+statement_position: 
+  statement_mode: default
+  severity: error
+
 switch_case_alignment:
   severity: error
+
+syntactic_sugar: error
 
 trailing_comma:
   severity: error
@@ -163,5 +178,9 @@ unused_optional_binding:
 unused_setter_value: error
 
 vertical_parameter_alignment: error
+
+vertical_whitespace:
+  severity: error
+  max_empty_lines: 1
 
 void_return: error

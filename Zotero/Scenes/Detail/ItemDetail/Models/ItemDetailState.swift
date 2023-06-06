@@ -204,7 +204,6 @@ struct ItemDetailState: ViewModelState {
                                        isTappable: false))
             }
 
-
             return allFields
         }
 

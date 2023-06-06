@@ -88,7 +88,6 @@ struct SplitAnnotationsDbRequest: DbRequest {
                 }
             }
 
-
         default: break
         }
     }

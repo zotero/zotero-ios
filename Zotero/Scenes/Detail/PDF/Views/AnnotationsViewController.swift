@@ -436,7 +436,6 @@ final class AnnotationsViewController: UIViewController {
             return cell
         })
 
-
         self.dataSource.canEditRow = { [weak self] indexPath in
             guard let `self` = self, let key = self.dataSource.itemIdentifier(for: indexPath) else { return false }
             switch key.type {

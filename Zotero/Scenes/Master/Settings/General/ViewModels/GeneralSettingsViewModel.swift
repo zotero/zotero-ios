@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 struct GeneralSettingsActionHandler: ViewModelActionHandler {
     typealias Action = GeneralSettingsAction
     typealias State = GeneralSettingsState

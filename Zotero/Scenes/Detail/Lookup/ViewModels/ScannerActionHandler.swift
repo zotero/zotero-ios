@@ -14,7 +14,6 @@ final class ScannerActionHandler: ViewModelActionHandler {
     typealias State = ScannerState
     typealias Action = ScannerAction
 
-
     func process(action: ScannerAction, in viewModel: ViewModel<ScannerActionHandler>) {
         switch action {
         case .setBarcodes(let barcodes):

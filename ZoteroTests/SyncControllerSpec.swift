@@ -1793,7 +1793,6 @@ final class SyncControllerSpec: QuickSpec {
                     let newColor = "#000000"
                     let header = ["last-modified-version": "\(newVersion)"]
 
-
                     let libraryJson: [String: Any] = ["id": 0, "type": "user", "name": "A"]
                     let dataAJson: [String: Any] = ["title": "A", "itemType": "book", "collections": [], "tags": [["tag": tagName]]]
                     let dataBJson: [String: Any] = ["title": "B", "itemType": "thesis", "collections": []]

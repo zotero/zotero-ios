@@ -33,7 +33,7 @@ extension Array {
         return low // element not found, should be inserted here
     }
 
-    func orderedMenuChildrenBasedOnDevice() -> Array<Element> {
+    func orderedMenuChildrenBasedOnDevice() -> [Element] {
         switch UIDevice.current.userInterfaceIdiom {
         case .pad: return self.reversed()
         default: return self

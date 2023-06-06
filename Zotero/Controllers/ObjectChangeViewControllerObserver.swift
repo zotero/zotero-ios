@@ -18,7 +18,6 @@ class ObjectChangeReporter {
     func report(changed: [String], hasDeletions: Bool) {
         guard let controller = self.controller else { return }
 
-
     }
 }
 

@@ -205,7 +205,7 @@ class CitationController: NSObject {
                 newResult = "{\\rtf\n" + newResult
             }
             if !result.hasSuffix("}") {
-                newResult = newResult + "\n}"
+                newResult += "\n}"
             }
             return newResult
 
@@ -215,7 +215,7 @@ class CitationController: NSObject {
                 newResult = "<!DOCTYPE html><html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"></head><body>" + newResult
             }
             if !result.hasSuffix("</html>") {
-                newResult = newResult + "</body></html>"
+                newResult += "</body></html>"
             }
             return newResult
 

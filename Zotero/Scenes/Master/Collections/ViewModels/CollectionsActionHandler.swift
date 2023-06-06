@@ -308,7 +308,6 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
             }
         }
 
-
         self.update(viewModel: viewModel) { state in
             state.editingData = (key, name, parent)
         }
