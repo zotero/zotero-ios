@@ -112,6 +112,8 @@ final class SyncController: SynchronizationController {
         case syncGroupToDb(Int)
         /// Removes files of deleted attachment items from remote WebDAV storage.
         case performWebDavDeletions(LibraryIdentifier)
+        /// Fix for #584 where background upload is processed but main app is not notified and tries to upload the same file again.
+        case fixUpload(key: String, libraryId: LibraryIdentifier)
 
         var logString: String {
             switch self {
@@ -125,6 +127,8 @@ final class SyncController: SynchronizationController {
                 return "submitWriteBatch(\(batch.libraryId), \(batch.object), \(batch.version), \(batch.parameters.count) objects)"
             case .submitDeleteBatch(let batch):
                 return "submitDeleteBatch(\(batch.libraryId), \(batch.object), \(batch.version), \(batch.keys.count) objects)"
+            case .fixUpload(let key, let libraryId):
+                return "fixUpload(\(key); \(libraryId))"
             case .loadKeyPermissions,
                  .createLibraryActions,
                  .createUploadActions,
@@ -581,6 +585,8 @@ final class SyncController: SynchronizationController {
 
         case .performWebDavDeletions(let libraryId):
             self.performWebDavDeletions(libraryId: libraryId)
+        case .fixUpload(let key, let libraryId):
+            self.processUploadFix(forKey: key, libraryId: libraryId)
         }
     }
 
@@ -1369,6 +1375,22 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
+    private func processUploadFix(forKey key: String, libraryId: LibraryIdentifier) {
+        let action = UploadFixSyncAction(key: key, libraryId: libraryId, apiClient: self.apiClient, dbStorage: self.dbStorage, queue: self.workQueue, scheduler: self.workScheduler)
+        action.result
+              .subscribe(on: self.workScheduler)
+              .subscribe(with: self, onSuccess: { `self`, _ in
+                  self?.accessQueue.async(flags: .barrier) { [weak self] in
+                      self?.processNextAction()
+                  }
+              }, onFailure: { `self`, error in
+                  self?.accessQueue.async(flags: .barrier) { [weak self] in
+                      self?.abort(error: .preconditionErrorCantBeResolved(data: SyncError.ErrorData(itemKeys: [key], libraryId: libraryId)))
+                  }
+              })
+              .disposed(by: self.disposeBag)
+    }
+
     private func processSubmitDeletion(for batch: DeleteBatch) {
         let result = SubmitDeletionSyncAction(keys: batch.keys, object: batch.object, version: batch.version, libraryId: batch.libraryId, userId: self.userId,
                                               webDavEnabled: self.webDavController.sessionStorage.isEnabled, apiClient: self.apiClient, dbStorage: self.dbStorage, queue: self.workQueue,
@@ -1792,9 +1814,20 @@ final class SyncController: SynchronizationController {
             self.queue.removeAll()
             self.enqueue(actions: actions, at: 0, delay: delay)
 
-        case .libraryConflict:
+        case .libraryConflict(let response):
             guard self.conflictRetries < self.conflictDelays.count else {
                 self.abort(error: .cantResolveConflict(data: .from(syncObject: object, keys: keys, libraryId: libraryId)))
+                return true
+            }
+
+            if response == "If-None-Match: * set but file exists" {
+                // This happens if file upload passed properly but main app has not been notified and didn't update the database state. Force-download attachment and mark item as uploaded.
+                DDLogError("SyncController: library conflict - force-downloading remote attachment and mark attachment as uploaded")
+
+                // TODO: Check whether this is sufficient when attachment editing is enabled
+                let actions: [Action] = keys.map({ .fixUpload(key: $0, libraryId: libraryId) })
+                self.enqueue(actions: actions, at: 0)
+
                 return true
             }
 
@@ -1969,7 +2002,8 @@ fileprivate extension SyncController.Action {
              .markChangesAsResolved(let libraryId),
              .revertLibraryToOriginal(let libraryId),
              .createUploadActions(let libraryId, _),
-             .performWebDavDeletions(let libraryId):
+             .performWebDavDeletions(let libraryId),
+             .fixUpload(_, let libraryId):
             return libraryId
         }
     }
@@ -1980,7 +2014,7 @@ fileprivate extension SyncController.Action {
             return true
         case .loadKeyPermissions, .createLibraryActions, .syncSettings, .syncVersions, .storeVersion, .submitDeleteBatch, .submitWriteBatch, .deleteGroup, .markChangesAsResolved,
              .markGroupAsLocalOnly, .revertLibraryToOriginal, .uploadAttachment, .createUploadActions, .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb, .performDeletions, .restoreDeletions,
-             .storeDeletionVersion, .performWebDavDeletions:
+             .storeDeletionVersion, .performWebDavDeletions, .fixUpload:
             return false
         }
     }
@@ -1991,7 +2025,7 @@ fileprivate extension SyncController.Action {
             return true
         case .loadKeyPermissions, .createLibraryActions, .syncSettings, .syncVersions, .storeVersion, .syncDeletions, .deleteGroup, .markChangesAsResolved, .markGroupAsLocalOnly,
              .revertLibraryToOriginal, .createUploadActions, .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb, .performDeletions,
-             .restoreDeletions, .storeDeletionVersion, .performWebDavDeletions:
+             .restoreDeletions, .storeDeletionVersion, .performWebDavDeletions, .fixUpload:
             return false
         }
     }
@@ -2004,6 +2038,8 @@ fileprivate extension SyncController.Action {
             return "Write \(batch.parameters.count) changes for \(batch.object) in \(batch.libraryId.debugName)\n\(batch.parameters)"
         case .uploadAttachment(let upload):
             return "Upload \(upload.filename) (\(upload.contentType)) in \(upload.libraryId.debugName)\n\(upload.file.createUrl().absoluteString)"
+        case .fixUpload(let key, let libraryId):
+            return "Fix upload \(key); \(libraryId)"
         case .loadKeyPermissions, .createLibraryActions, .syncSettings, .syncVersions, .storeVersion, .syncDeletions, .deleteGroup, .markChangesAsResolved, .markGroupAsLocalOnly,
              .revertLibraryToOriginal, .createUploadActions, .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb, .performDeletions,
              .restoreDeletions, .storeDeletionVersion, .performWebDavDeletions:

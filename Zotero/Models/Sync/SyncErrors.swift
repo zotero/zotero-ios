@@ -104,7 +104,8 @@ enum SyncActionError: Error {
 }
 
 enum PreconditionErrorType: Error {
-    case objectConflict, libraryConflict
+    case objectConflict
+    case libraryConflict(response: String)
 }
 
 extension Error {
@@ -112,18 +113,11 @@ extension Error {
         if let error = self as? PreconditionErrorType {
             return error
         }
-        if self.afError.flatMap({ $0.responseCode == 412 }) == true {
-            return .libraryConflict
+        if let responseError = self as? AFResponseError, responseError.error.responseCode == 412 {
+            return .libraryConflict(response: responseError.response)
         }
-        return nil
-    }
-
-    private var afError: AFError? {
-        if let responseError = self as? AFResponseError {
-            return responseError.error
-        }
-        if let alamoError = self as? AFError {
-            return alamoError
+        if let alamoError = self as? AFError, alamoError.responseCode == 412 {
+            return .libraryConflict(response: "")
         }
         return nil
     }
