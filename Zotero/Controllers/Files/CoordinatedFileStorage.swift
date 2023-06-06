@@ -31,7 +31,7 @@ final class CoordinatedFileStorageController: CoordinatedFileStorage {
         }
 
         guard let data = readData else {
-            throw coordinatorError ?? readingError ?? NSError()
+            throw (coordinatorError ?? readingError)!
         }
         return data
     }

@@ -8,6 +8,7 @@ only_rules:
   - computed_accessors_order
   - control_statement
   - deployment_target
+  - discouraged_direct_init
   - empty_enum_arguments
   - empty_parameters
   - empty_parentheses_with_trailing_closure
@@ -59,6 +60,9 @@ deployment_target:
     severity: error
     iOSApplicationExtension_deployment_target: 14.7
     iOS_deployment_target: 14.7
+
+discouraged_direct_init:
+  severity: error
 
 empty_enum_arguments: error
 
