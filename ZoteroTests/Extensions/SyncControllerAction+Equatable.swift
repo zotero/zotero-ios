@@ -11,7 +11,7 @@ import Foundation
 @testable import Zotero
 
 extension WriteBatch {
-    public static func ==(lhs: WriteBatch, rhs: WriteBatch) -> Bool {
+    public static func == (lhs: WriteBatch, rhs: WriteBatch) -> Bool {
         if lhs.libraryId != rhs.libraryId || lhs.object != rhs.object || lhs.version != rhs.version {
             return false
         }
@@ -44,7 +44,7 @@ extension WriteBatch {
 }
 
 extension DeleteBatch {
-    public static func ==(lhs: DeleteBatch, rhs: DeleteBatch) -> Bool {
+    public static func == (lhs: DeleteBatch, rhs: DeleteBatch) -> Bool {
         if lhs.libraryId != rhs.libraryId || lhs.object != rhs.object || lhs.version != rhs.version {
             return false
         }
@@ -53,7 +53,7 @@ extension DeleteBatch {
 }
 
 extension DownloadBatch {
-    public static func ==(lhs: DownloadBatch, rhs: DownloadBatch) -> Bool {
+    public static func == (lhs: DownloadBatch, rhs: DownloadBatch) -> Bool {
         if lhs.libraryId != rhs.libraryId || lhs.object != rhs.object || lhs.version != rhs.version {
             return false
         }

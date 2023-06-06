@@ -51,7 +51,7 @@ struct ItemDetailState: ViewModelState {
 
         var id: String { return self.key }
 
-        static func ==(lhs: Field, rhs: Field) -> Bool {
+        static func == (lhs: Field, rhs: Field) -> Bool {
             return lhs.key == rhs.key && lhs.value == rhs.value
         }
 

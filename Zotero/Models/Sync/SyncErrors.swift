@@ -128,7 +128,7 @@ extension Error {
 }
 
 extension SyncError.Fatal: Equatable {
-    static func ==(lhs: SyncError.Fatal, rhs: SyncError.Fatal) -> Bool {
+    static func == (lhs: SyncError.Fatal, rhs: SyncError.Fatal) -> Bool {
         switch (lhs, rhs) {
         case (.noInternetConnection, .noInternetConnection),
              (.apiError, .apiError),
@@ -144,7 +144,7 @@ extension SyncError.Fatal: Equatable {
 }
 
 extension SyncError.NonFatal: Equatable {
-    static func ==(lhs: SyncError.NonFatal, rhs: SyncError.NonFatal) -> Bool {
+    static func == (lhs: SyncError.NonFatal, rhs: SyncError.NonFatal) -> Bool {
         switch (lhs, rhs) {
         case (.versionMismatch, .versionMismatch):
             return true

@@ -22,7 +22,7 @@ struct DeleteBatch: Equatable {
     // We don't really need equatability in this target, we need it for testing. Swift can't automatically
     // synthesize equatability function in an extension in a different file to the type. So I'm adding "placeholder"
     // equatability functions here so that SyncAction equatability is synthesized automatically.
-    static func ==(lhs: DeleteBatch, rhs: DeleteBatch) -> Bool {
+    static func == (lhs: DeleteBatch, rhs: DeleteBatch) -> Bool {
         return true
     }
 }

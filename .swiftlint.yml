@@ -13,7 +13,10 @@ only_rules:
   - leading_whitespace
   - mark
   - multiple_closures_with_trailing_closure
+  - no_space_in_method_call
   - opening_brace
+  - operator_whitespace
+  - orphaned_doc_comment
   - trailing_newline
   - trailing_semicolon
   - trailing_whitespace
@@ -50,9 +53,15 @@ mark: error
 
 multiple_closures_with_trailing_closure: error
 
+no_space_in_method_call: error
+
 opening_brace:
   severity: error
   allowMultilineFunc: true
+
+operator_whitespace: error
+
+orphaned_doc_comment: error
 
 trailing_newline: error
 

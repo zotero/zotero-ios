@@ -29,7 +29,7 @@ final class RGroup: Object {
 
     // MARK: - Sync data
     /// Flag that indicates that this group is kept only locally on this device, the group was either removed remotely
-    // or the user was removed from the group, but the user chose to keep it
+    /// or the user was removed from the group, but the user chose to keep it
     @Persisted var isLocalOnly: Bool
     /// Indicates local version of object
     @Persisted var version: Int
