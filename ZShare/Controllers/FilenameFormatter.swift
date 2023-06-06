@@ -43,7 +43,7 @@ struct FilenameFormatter {
             return "_"
         }
         // Don't allow hidden files
-        if valid[valid.startIndex] == "."  {
+        if valid[valid.startIndex] == "." {
             return String(valid[valid.index(valid.startIndex, offsetBy: 1)..<valid.endIndex])
         }
         return valid

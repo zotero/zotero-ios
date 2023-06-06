@@ -37,9 +37,8 @@ extension String {
         }
 
         guard let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, self as CFString, nil),
-              let ext = UTTypeCopyPreferredTagWithClass(uti.takeRetainedValue(), kUTTagClassFilenameExtension) else{
-            return nil
-        }
+              let ext = UTTypeCopyPreferredTagWithClass(uti.takeRetainedValue(), kUTTagClassFilenameExtension)
+        else { return nil }
         return ext.takeRetainedValue() as String
     }
 }

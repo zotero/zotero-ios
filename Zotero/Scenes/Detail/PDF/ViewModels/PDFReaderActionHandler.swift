@@ -1291,7 +1291,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     }
 
     private func remove(annotations: [PSPDFKit.Annotation], in viewModel: ViewModel<PDFReaderActionHandler>) {
-        let keys = annotations.compactMap{( $0.key )}
+        let keys = annotations.compactMap({ $0.key })
 
         for annotation in annotations {
             self.annotationPreviewController.delete(for: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)

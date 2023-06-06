@@ -184,7 +184,7 @@ extension TableOfContentsViewController: UICollectionViewDelegate {
             return !snapshot.isExpanded(row)
         } != nil
 
-        return UIContextMenuConfiguration(actionProvider:  { [weak self] _ in
+        return UIContextMenuConfiguration(actionProvider: { [weak self] _ in
             var actions: [UIAction] = []
 
             if hasCollapsed {

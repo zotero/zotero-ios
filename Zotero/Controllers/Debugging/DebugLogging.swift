@@ -183,11 +183,9 @@ final class DebugLogging {
             DDLogError("DebugLogging: can't read all logs - \(error)")
             inMainThread {
                 completionAlert(.failure((error as? Error) ?? .contentReading),
-                                logs,
-                                { [weak self] in // Retry block
+                                logs, { [weak self] in // Retry block
                                     self?.submit(logs: logs, userId: userId, customAlertMessage: customAlertMessage)
-                                },
-                                { [weak self] in // Completion block
+                                }, { [weak self] in // Completion block
                                     self?.clearDebugDirectory()
                                 })
             }
@@ -219,11 +217,9 @@ final class DebugLogging {
                       }, onFailure: { [weak self] error in
                           DDLogError("DebugLogging: can't upload logs - \(error)")
                           completionAlert(.failure((error as? Error) ?? .upload),
-                                          logs,
-                                          { // Retry block
+                                          logs, { // Retry block
                                               self?.submit(logs: logs, userId: userId, customAlertMessage: customAlertMessage)
-                                          },
-                                          { // Completion block
+                                          }, { // Completion block
                                               self?.clearDebugDirectory()
                                           })
                       })

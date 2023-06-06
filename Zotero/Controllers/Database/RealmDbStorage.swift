@@ -106,7 +106,7 @@ struct RealmDbCoordinator {
 }
 
 extension RealmDbCoordinator: DbCoordinator {
-    func perform(request: DbRequest) throws  {
+    func perform(request: DbRequest) throws {
         if !request.needsWrite {
             try request.process(in: self.realm)
             return
