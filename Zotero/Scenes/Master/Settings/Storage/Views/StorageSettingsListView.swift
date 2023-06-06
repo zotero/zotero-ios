@@ -27,9 +27,9 @@ struct StorageSettingsListView: View {
 
             if self.viewModel.state.totalStorageData.fileCount > 0 {
                 Section {
-                    Button(action: {
+                    Button {
                         self.coordinatorDelegate?.showDeleteAllStorageAlert(viewModel: self.viewModel)
-                    }) {
+                    } label: {
                         Text(L10n.Settings.Storage.deleteAll).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                     }
                 }

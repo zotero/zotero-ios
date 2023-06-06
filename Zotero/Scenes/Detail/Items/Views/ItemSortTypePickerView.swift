@@ -16,10 +16,10 @@ struct ItemSortTypePickerView: View {
     var body: some View {
         List {
             ForEach(ItemsSortType.Field.allCases) { sortType in
-                Button(action: {
+                Button {
                     self.sortBy = sortType
                     self.closeAction()
-                }) {
+                } label: {
                     SortTypeRow(title: sortType.title,
                                 isSelected: (self.sortBy == sortType))
                 }
