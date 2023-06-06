@@ -1,4 +1,6 @@
 only_rules:
+  # default rules
+  - block_based_kvo
   - closing_brace
   - closure_parameter_position
   - colon
@@ -31,6 +33,14 @@ only_rules:
   - unavailable_condition
   - unneeded_break_in_switch
   - unused_closure_parameter
+  - unused_enumerated
+  - unused_optional_binding
+  - unused_setter_value
+  - vertical_parameter_alignment
+  - void_return
+  # opt-in rules
+
+block_based_kvo: error
 
 closing_brace: error
 
@@ -108,3 +118,15 @@ unavailable_condition: error
 unneeded_break_in_switch: error
 
 unused_closure_parameter: error
+
+unused_enumerated: error
+
+unused_optional_binding:
+  severity: error
+  ignore_optional_try: false
+
+unused_setter_value: error
+
+vertical_parameter_alignment: error
+
+void_return: error
