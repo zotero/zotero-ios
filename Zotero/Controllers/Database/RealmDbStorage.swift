@@ -49,19 +49,19 @@ extension RealmDbStorage: DbStorage {
         }
     }
 
-    func perform<Request>(request: Request, on queue: DispatchQueue) throws -> Request.Response where Request : DbResponseRequest {
+    func perform<Request>(request: Request, on queue: DispatchQueue) throws -> Request.Response where Request: DbResponseRequest {
         return try self.perform(request: request, on: queue, invalidateRealm: false, refreshRealm: false)
     }
 
-    func perform<Request>(request: Request, on queue: DispatchQueue, refreshRealm: Bool) throws -> Request.Response where Request : DbResponseRequest {
+    func perform<Request>(request: Request, on queue: DispatchQueue, refreshRealm: Bool) throws -> Request.Response where Request: DbResponseRequest {
         return try self.perform(request: request, on: queue, invalidateRealm: false, refreshRealm: refreshRealm)
     }
 
-    func perform<Request>(request: Request, on queue: DispatchQueue, invalidateRealm: Bool) throws -> Request.Response where Request : DbResponseRequest {
+    func perform<Request>(request: Request, on queue: DispatchQueue, invalidateRealm: Bool) throws -> Request.Response where Request: DbResponseRequest {
         return try self.perform(request: request, on: queue, invalidateRealm: invalidateRealm, refreshRealm: false)
     }
 
-    func perform<Request>(request: Request, on queue: DispatchQueue, invalidateRealm: Bool, refreshRealm: Bool) throws -> Request.Response where Request : DbResponseRequest {
+    func perform<Request>(request: Request, on queue: DispatchQueue, invalidateRealm: Bool, refreshRealm: Bool) throws -> Request.Response where Request: DbResponseRequest {
         return try self.performInAutoreleasepoolIfNeeded {
             let coordinator = try RealmDbCoordinator(configuration: self.config, queue: queue)
             if refreshRealm {
@@ -123,7 +123,7 @@ extension RealmDbCoordinator: DbCoordinator {
         }
     }
 
-    func perform<Request>(request: Request) throws -> Request.Response where Request : DbResponseRequest {
+    func perform<Request>(request: Request) throws -> Request.Response where Request: DbResponseRequest {
         if !request.needsWrite {
             return try request.process(in: self.realm)
         }

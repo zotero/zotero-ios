@@ -185,10 +185,10 @@ struct Files {
         if let range = urlString.range(of: self.appGroupPath) {
             return (self.appGroupPath, self.components(from: urlString, excluding: range))
         }
-        if let range = urlString.range(of:self.cachesRootPath) {
+        if let range = urlString.range(of: self.cachesRootPath) {
             return (self.cachesRootPath, self.components(from: urlString, excluding: range))
         }
-        if let range = urlString.range(of:self.documentsRootPath) {
+        if let range = urlString.range(of: self.documentsRootPath) {
             return (self.documentsRootPath, self.components(from: urlString, excluding: range))
         }
 

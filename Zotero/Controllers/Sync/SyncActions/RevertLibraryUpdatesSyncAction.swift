@@ -12,7 +12,7 @@ import CocoaLumberjackSwift
 import RxSwift
 
 struct RevertLibraryUpdatesSyncAction: SyncAction {
-    typealias Result = [SyncObject : [String]]
+    typealias Result = [SyncObject: [String]]
 
     let libraryId: LibraryIdentifier
 
@@ -22,7 +22,7 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
     unowned let dateParser: DateParser
     let queue: DispatchQueue
 
-    var result: Single<[SyncObject : [String]]> {
+    var result: Single<[SyncObject: [String]]> {
         return Single.create { subscriber -> Disposable in
             do {
                 var changes: [StoreItemsResponse.FilenameChange] = []

@@ -30,7 +30,7 @@ struct AuthorizeUploadRequest: ApiRequest {
         return .url
     }
 
-    var parameters: [String : Any]? {
+    var parameters: [String: Any]? {
         return ["filename": self.filename,
                 "filesize": self.filesize,
                 "md5": self.md5,
@@ -38,7 +38,7 @@ struct AuthorizeUploadRequest: ApiRequest {
                 "params": 1]
     }
 
-    var headers: [String : String]? {
+    var headers: [String: String]? {
         if let md5 = self.oldMd5 {
             return ["If-Match": md5]
         }

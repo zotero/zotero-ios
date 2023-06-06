@@ -1343,7 +1343,7 @@ final class ExtensionViewModel {
             let localizedType = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
 
             do {
-                var updateParameters: [String : Any]?
+                var updateParameters: [String: Any]?
                 var changeUuids: [String: [String]]?
                 var md5: String?
                 var mtime: Int?

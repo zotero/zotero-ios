@@ -20,7 +20,7 @@ struct CrashUploadRequest: ApiRequest {
         return .post
     }
 
-    var parameters: [String : Any]? {
+    var parameters: [String: Any]? {
         return ["error": 1,
                 "errorData": self.crashLog,
                 "diagnostic": self.deviceInfo]
@@ -30,7 +30,7 @@ struct CrashUploadRequest: ApiRequest {
         return .url
     }
 
-    var headers: [String : String]? {
+    var headers: [String: String]? {
         return nil
     }
 

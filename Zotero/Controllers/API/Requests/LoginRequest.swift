@@ -23,9 +23,9 @@ struct LoginRequest: ApiResponseRequest {
         return .json
     }
 
-    private(set) var parameters: [String : Any]?
+    private(set) var parameters: [String: Any]?
 
-    var headers: [String : String]? {
+    var headers: [String: String]? {
         return nil
     }
 
@@ -36,7 +36,7 @@ struct LoginRequest: ApiResponseRequest {
                            "access": ["user": ["library": true,
                                                "notes": true,
                                                "write": true,
-                                               "files": true] as [String : Any],
+                                               "files": true] as [String: Any],
                                       "groups": ["all": ["library": true,
                                                          "write": true]]]]
     }

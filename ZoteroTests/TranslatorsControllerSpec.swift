@@ -56,7 +56,7 @@ final class TranslatorsControllerSpec: QuickSpec {
             // Perform update and wait for results
             waitUntil(timeout: .seconds(10)) { doneAction in
                 self.controller.isLoading.skip(1).filter({ !$0 }).first()
-                    .observe(on:MainScheduler.instance)
+                    .observe(on: MainScheduler.instance)
                     .subscribe(onSuccess: { _ in
                         expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(Double(self.bundledTimestamp)))
 
@@ -68,7 +68,7 @@ final class TranslatorsControllerSpec: QuickSpec {
                         expect(TestControllers.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
 
                         self.controller.translators(matching: self.translatorUrl)
-                            .observe(on:MainScheduler.instance)
+                            .observe(on: MainScheduler.instance)
                             .subscribe(onSuccess: { translators in
                                 expect(translators.first?["browserSupport"] as? String).to(equal("gcsibv"))
                                 doneAction()

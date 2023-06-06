@@ -17,7 +17,7 @@ struct DebugLogUploadRequest: ApiRequest {
         return .post
     }
 
-    var parameters: [String : Any]? {
+    var parameters: [String: Any]? {
         return nil
     }
 
@@ -25,7 +25,7 @@ struct DebugLogUploadRequest: ApiRequest {
         return .url
     }
 
-    var headers: [String : String]? {
+    var headers: [String: String]? {
         return nil
     }
 }

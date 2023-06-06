@@ -9,7 +9,7 @@
 import UIKit
 import SwiftUI
 
-final class DisappearActionHostingController<Content>: UIHostingController<Content> where Content : View {
+final class DisappearActionHostingController<Content>: UIHostingController<Content> where Content: View {
     var didLoad: ((UIViewController) -> Void)?
     var willAppear: (() -> Void)?
     var willDisappear: (() -> Void)?

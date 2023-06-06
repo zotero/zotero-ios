@@ -539,7 +539,7 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
         self.viewModel.process(action: .setVisiblePage(Int(pdfController.pageIndex)))
     }
 
-    func pdfViewController(_ pdfController: PDFViewController, shouldShow controller: UIViewController, options: [String : Any]? = nil, animated: Bool) -> Bool {
+    func pdfViewController(_ pdfController: PDFViewController, shouldShow controller: UIViewController, options: [String: Any]? = nil, animated: Bool) -> Bool {
         return false
     }
 

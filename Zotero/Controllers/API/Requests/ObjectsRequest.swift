@@ -26,7 +26,7 @@ struct ObjectsRequest: ApiRequest {
         return .url
     }
 
-    var parameters: [String : Any]? {
+    var parameters: [String: Any]? {
         switch self.objectType {
         case .collection:
             return ["collectionKey": self.keys]
@@ -39,7 +39,7 @@ struct ObjectsRequest: ApiRequest {
         }
     }
 
-    var headers: [String : String]? {
+    var headers: [String: String]? {
         return nil
     }
 

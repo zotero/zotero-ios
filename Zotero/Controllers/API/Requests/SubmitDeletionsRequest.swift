@@ -27,7 +27,7 @@ struct SubmitDeletionsRequest: ApiRequest {
         return .url
     }
 
-    var parameters: [String : Any]? {
+    var parameters: [String: Any]? {
         let joinedKeys = self.keys.joined(separator: ",")
         switch self.objectType {
         case .collection:
@@ -41,7 +41,7 @@ struct SubmitDeletionsRequest: ApiRequest {
         }
     }
 
-    var headers: [String : String]? {
+    var headers: [String: String]? {
         return ["If-Unmodified-Since-Version": self.version.description]
     }
 }

@@ -33,7 +33,7 @@ struct UpdatesRequest: ApiRequest {
         }
     }
 
-    var parameters: [String : Any]? {
+    var parameters: [String: Any]? {
         switch self.objectType {
         case .settings:
             // Settings don't support batched writes and they are not generated in batches, the array always contains 1 batch.
@@ -43,7 +43,7 @@ struct UpdatesRequest: ApiRequest {
         }
     }
 
-    var headers: [String : String]? {
+    var headers: [String: String]? {
         return self.version.flatMap { ["If-Unmodified-Since-Version": $0.description] }
     }
 }

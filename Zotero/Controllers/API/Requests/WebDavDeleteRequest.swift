@@ -11,9 +11,9 @@ import Foundation
 struct WebDavDeleteRequest: ApiRequest {
     let endpoint: ApiEndpoint
     let httpMethod: ApiHttpMethod
-    let parameters: [String : Any]?
+    let parameters: [String: Any]?
     let encoding: ApiParameterEncoding
-    let headers: [String : String]?
+    let headers: [String: String]?
     let acceptableStatusCodes: Set<Int>
     let logParams: ApiLogParameters
 

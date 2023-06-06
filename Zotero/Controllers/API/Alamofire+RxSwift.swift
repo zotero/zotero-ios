@@ -15,7 +15,7 @@ import RxSwift
 struct AFResponseError: Error {
     let url: URL?
     let error: AFError
-    let headers: [AnyHashable : Any]?
+    let headers: [AnyHashable: Any]?
     let response: String
 }
 

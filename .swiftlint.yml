@@ -1,6 +1,7 @@
 only_rules:
   - closing_brace
   - closure_parameter_position
+  - colon
   - comma
   - computed_accessors_order
   - control_statement
@@ -15,6 +16,11 @@ only_rules:
 closing_brace: error
 
 closure_parameter_position: error
+
+colon:
+  severity: error
+  # flexible_right_spacing: true
+  # apply_to_dictionaries: false
 
 comma: error
 

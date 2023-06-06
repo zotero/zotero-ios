@@ -15,7 +15,7 @@ import RxSwift
 struct SubmitUpdateSyncAction: SyncAction {
     typealias Result = (Int, Error?)
 
-    let parameters: [[String : Any]]
+    let parameters: [[String: Any]]
     let changeUuids: [String: [String]]
     let sinceVersion: Int?
     let object: SyncObject

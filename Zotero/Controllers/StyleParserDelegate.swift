@@ -44,7 +44,7 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
         super.init()
     }
 
-    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
+    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String: String] = [:]) {
         guard let element = Element(rawValue: elementName) else { return }
 
         switch element {
