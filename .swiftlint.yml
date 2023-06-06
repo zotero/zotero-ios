@@ -23,9 +23,12 @@ only_rules:
   - redundant_string_enum_value
   - redundant_void_return
   - return_arrow_whitespace
+  - switch_case_alignment
+  - trailing_comma
   - trailing_newline
   - trailing_semicolon
   - trailing_whitespace
+  - unavailable_condition
 
 closing_brace: error
 
@@ -82,6 +85,13 @@ redundant_void_return: error
 
 return_arrow_whitespace: error
 
+switch_case_alignment:
+  severity: error
+
+trailing_comma:
+  severity: error
+  mandatory_comma: false
+
 trailing_newline: error
 
 trailing_semicolon: error
@@ -90,3 +100,6 @@ trailing_whitespace:
   severity: error
   ignores_empty_lines: true
   ignores_comments: true
+
+unavailable_condition: error
+

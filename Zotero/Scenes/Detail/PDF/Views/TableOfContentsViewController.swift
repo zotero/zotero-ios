@@ -147,7 +147,7 @@ class TableOfContentsViewController: UIViewController {
             collectionView.topAnchor.constraint(equalTo: self.view.topAnchor),
             collectionView.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor),
             collectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
-            collectionView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+            collectionView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor)
         ])
     }
 

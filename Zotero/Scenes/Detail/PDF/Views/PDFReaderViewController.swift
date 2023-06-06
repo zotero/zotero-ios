@@ -594,41 +594,41 @@ class PDFReaderViewController: UIViewController {
 
     private func set(toolbarPosition newPosition: ToolbarState.Position, oldPosition: ToolbarState.Position, velocity velocityPoint: CGPoint) {
         switch (newPosition, oldPosition) {
-            case (.leading, .leading), (.trailing, .trailing), (.top, .top):
-                // Position didn't change, move to initial frame
-                let frame = self.toolbarInitialFrame ?? CGRect()
-                let velocity = self.velocity(from: velocityPoint, newPosition: newPosition)
-                UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [.curveEaseOut], animations: {
-                    self.annotationToolbarController.view.frame = frame
-                })
-
-            case (.leading, .trailing), (.trailing, .leading):
-                // Move from side to side
-                let velocity = self.velocity(from: velocityPoint, newPosition: newPosition)
+        case (.leading, .leading), (.trailing, .trailing), (.top, .top):
+            // Position didn't change, move to initial frame
+            let frame = self.toolbarInitialFrame ?? CGRect()
+            let velocity = self.velocity(from: velocityPoint, newPosition: newPosition)
+            UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [.curveEaseOut], animations: {
+                self.annotationToolbarController.view.frame = frame
+            })
+            
+        case (.leading, .trailing), (.trailing, .leading):
+            // Move from side to side
+            let velocity = self.velocity(from: velocityPoint, newPosition: newPosition)
+            self.setConstraints(for: newPosition)
+            UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [.curveEaseOut], animations: {
+                self.view.layoutIfNeeded()
+            })
+            
+        case (.top, .leading), (.top, .trailing), (.leading, .top), (.trailing, .top):
+            let velocity = self.velocity(from: velocityPoint, newPosition: newPosition)
+            UIView.animate(withDuration: 0.1, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [], animations: {
+                let newFrame = self.annotationToolbarController.view.frame.offsetBy(dx: velocityPoint.x / 10, dy: velocityPoint.y / 10)
+                self.annotationToolbarController.view.frame = newFrame
+                self.annotationToolbarController.view.alpha = 0
+            }, completion: { finished in
+                guard finished else { return }
+                
+                self.annotationToolbarController.prepareForSizeChange()
                 self.setConstraints(for: newPosition)
-                UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [.curveEaseOut], animations: {
-                    self.view.layoutIfNeeded()
-                })
-
-            case (.top, .leading), (.top, .trailing), (.leading, .top), (.trailing, .top):
-                let velocity = self.velocity(from: velocityPoint, newPosition: newPosition)
+                self.setDocumentTopConstraint(for: newPosition)
+                self.view.layoutIfNeeded()
+                self.annotationToolbarController.sizeDidChange()
+                
                 UIView.animate(withDuration: 0.1, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [], animations: {
-                    let newFrame = self.annotationToolbarController.view.frame.offsetBy(dx: velocityPoint.x / 10, dy: velocityPoint.y / 10)
-                    self.annotationToolbarController.view.frame = newFrame
-                    self.annotationToolbarController.view.alpha = 0
-                }, completion: { finished in
-                    guard finished else { return }
-
-                    self.annotationToolbarController.prepareForSizeChange()
-                    self.setConstraints(for: newPosition)
-                    self.setDocumentTopConstraint(for: newPosition)
-                    self.view.layoutIfNeeded()
-                    self.annotationToolbarController.sizeDidChange()
-
-                    UIView.animate(withDuration: 0.1, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [], animations: {
-                        self.annotationToolbarController.view.alpha = 1
-                    })
+                    self.annotationToolbarController.view.alpha = 1
                 })
+            })
         }
     }
 
