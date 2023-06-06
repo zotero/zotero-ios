@@ -146,7 +146,7 @@ final class WebDavControllerSpec: QuickSpec {
                     self.testDownload(attachment: attachment, successAction: {
                         fail("Succeeded to download missing file")
                         finished()
-                    }, errorAction: { error in
+                    }, errorAction: { _ in
                         finished()
                     })
                 }

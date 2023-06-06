@@ -93,7 +93,7 @@ extension ObservableType where Element == (Data?, HTTPURLResponse) {
 extension DataRequest {
     func validate(acceptableStatusCodes: Set<Int>) -> Self {
        return self.validate(contentType: self.acceptableContentTypes)
-                  .validate { request, response, _ -> Request.ValidationResult in
+                  .validate { _, response, _ -> Request.ValidationResult in
                       if acceptableStatusCodes.contains(response.statusCode) {
                           return .success(())
                       }

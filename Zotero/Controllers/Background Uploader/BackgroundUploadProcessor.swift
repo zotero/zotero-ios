@@ -56,7 +56,7 @@ final class BackgroundUploadProcessor {
         let request = RegisterUploadRequest(libraryId: libraryId, userId: userId, key: key, uploadKey: uploadKey, oldMd5: nil)
         return self.apiClient.send(request: request, queue: queue)
                              .observe(on: scheduler)
-                             .flatMap { [weak self] data, response -> Single<()> in
+                             .flatMap { [weak self] _, response -> Single<()> in
                                  guard let `self` = self else { return Single.error(Error.expired) }
                                  return self.markAttachmentAsUploaded(version: response.allHeaderFields.lastModifiedVersion, key: key, libraryId: libraryId, queue: queue)
                              }

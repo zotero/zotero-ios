@@ -95,7 +95,7 @@ class TableOfContentsViewController: UIViewController {
     // MARK: - Collection view
 
     private lazy var outlineRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, TableOfContentsState.Outline> = {
-        return UICollectionView.CellRegistration<UICollectionViewListCell, TableOfContentsState.Outline> { [weak self] cell, indexPath, outline in
+        return UICollectionView.CellRegistration<UICollectionViewListCell, TableOfContentsState.Outline> { [weak self] cell, _, outline in
             guard let `self` = self, let dataSource = self.dataSource else { return }
 
             var configuration = cell.defaultContentConfiguration()
@@ -110,7 +110,7 @@ class TableOfContentsViewController: UIViewController {
     }()
 
     private lazy var searchRegistration: UICollectionView.CellRegistration<SearchBarCell, String> = {
-        return UICollectionView.CellRegistration<SearchBarCell, String> { [weak self] cell, indexPath, string in
+        return UICollectionView.CellRegistration<SearchBarCell, String> { [weak self] cell, _, string in
             cell.contentConfiguration = SearchBarCell.ContentConfiguration(text: string, changeAction: { [weak self] newText in
                 self?.viewModel.process(action: .search(newText))
             })
@@ -188,14 +188,14 @@ extension TableOfContentsViewController: UICollectionViewDelegate {
             var actions: [UIAction] = []
 
             if hasCollapsed {
-                actions.append(UIAction(title: L10n.Collections.expandAll, image: UIImage(systemName: "chevron.down")) { [weak self] action in
+                actions.append(UIAction(title: L10n.Collections.expandAll, image: UIImage(systemName: "chevron.down")) { [weak self] _ in
                     snapshot.expand(snapshot.items)
                     self?.dataSource?.apply(snapshot, to: .outline)
                 })
             }
 
             if hasExpanded {
-                actions.append(UIAction(title: L10n.Collections.collapseAll, image: UIImage(systemName: "chevron.right")) { [weak self] action in
+                actions.append(UIAction(title: L10n.Collections.collapseAll, image: UIImage(systemName: "chevron.right")) { [weak self] _ in
                     snapshot.collapse(snapshot.items)
                     self?.dataSource?.apply(snapshot, to: .outline)
                 })

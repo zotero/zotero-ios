@@ -30,6 +30,7 @@ only_rules:
   - trailing_whitespace
   - unavailable_condition
   - unneeded_break_in_switch
+  - unused_closure_parameter
 
 closing_brace: error
 
@@ -106,3 +107,4 @@ unavailable_condition: error
 
 unneeded_break_in_switch: error
 
+unused_closure_parameter: error

@@ -707,7 +707,7 @@ final class SyncControllerSpec: QuickSpec {
                     self.createNewSyncController()
 
                     waitUntil(timeout: .seconds(10)) { doneAction in
-                        self.syncController.reportFinish = { result in
+                        self.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: self.realmConfig)
                             realm.refresh()
 

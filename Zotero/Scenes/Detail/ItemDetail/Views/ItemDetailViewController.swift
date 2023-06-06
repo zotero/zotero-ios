@@ -383,7 +383,7 @@ final class ItemDetailViewController: UIViewController {
                           .rx
                           .notification(UIApplication.willEnterForegroundNotification)
                           .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
+                          .subscribe(onNext: { [weak self] _ in
                               guard let `self` = self else { return }
                               // Need to reload data to current state before going back to foreground. iOS reloads the collection view when going to foreground with current snapshot. When
                               // editing text fields we don't update the snapshot (so that the cell is not reloaded while typing), so the edited fields are reset to previous state.

@@ -160,7 +160,7 @@ extension LibrariesViewController: UITableViewDataSource, UITableViewDelegate {
     }
 
     private func createContextMenu(for groupId: Int, groupName: String) -> UIMenu {
-        let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+        let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
             self?.viewModel.process(action: .showDeleteGroupQuestion((groupId, groupName)))
         }
         return UIMenu(title: "", children: [delete])

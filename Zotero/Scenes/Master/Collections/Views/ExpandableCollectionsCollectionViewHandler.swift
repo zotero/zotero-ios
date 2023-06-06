@@ -151,7 +151,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
     }
 
     private lazy var cellRegistration: UICollectionView.CellRegistration<CollectionCell, Collection> = {
-        return UICollectionView.CellRegistration<CollectionCell, Collection> { [weak self] cell, indexPath, collection in
+        return UICollectionView.CellRegistration<CollectionCell, Collection> { [weak self] cell, _, collection in
             guard let `self` = self else { return }
 
             let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
@@ -193,7 +193,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
     }
 
     private func createCollectionViewLayout() -> UICollectionViewCompositionalLayout {
-        return UICollectionViewCompositionalLayout { section, environment in
+        return UICollectionViewCompositionalLayout { _, environment in
             var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
             configuration.showsSeparators = false
             return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)

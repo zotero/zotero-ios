@@ -175,7 +175,7 @@ class LookupViewController: UIViewController {
 
         var isFirstCall = true
         // For some reason, the observer subscription has to be here, doesn't work if it's in `viewDidLoad`.
-        self.contentSizeObserver = self.tableView.observe(\.contentSize, options: [.new]) { [weak self] tableView, change in
+        self.contentSizeObserver = self.tableView.observe(\.contentSize, options: [.new]) { [weak self] _, change in
             guard let `self` = self, let value = change.newValue, value.height != self.tableViewHeight.constant else { return }
 
             self.tableViewHeight.constant = value.height

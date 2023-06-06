@@ -437,7 +437,7 @@ final class ExtensionViewModel {
                 state.expectedAttachment = (filename, tmpFile)
                 state.attachmentState = .processed
                 self.state = state
-            }, onFailure: { `self`, error in
+            }, onFailure: { `self`, _ in
                 self.state.attachmentState = .failed(.fileMissing)
             })
             .disposed(by: self.disposeBag)
@@ -797,7 +797,7 @@ final class ExtensionViewModel {
 
                 self.downloadUrlSession.set(cookies: cookies, domain: url.host ?? "")
 
-                let task = self.downloadUrlSession.downloadTask(with: request) { [weak self] location, response, error in
+                let task = self.downloadUrlSession.downloadTask(with: request) { [weak self] location, _, error in
                     guard let `self` = self else {
                         subscriber(.failure(State.AttachmentState.Error.expired))
                         return

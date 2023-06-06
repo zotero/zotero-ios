@@ -500,17 +500,17 @@ final class ItemDetailCollectionViewHandler: NSObject {
         var actions: [UIAction] = []
 
         if case .file(_, _, let location, _) = attachment.type, location == .local {
-            actions.append(UIAction(title: L10n.ItemDetail.deleteAttachmentFile, image: UIImage(systemName: "trash"), attributes: []) { [weak self] action in
+            actions.append(UIAction(title: L10n.ItemDetail.deleteAttachmentFile, image: UIImage(systemName: "trash"), attributes: []) { [weak self] _ in
                 self?.viewModel.process(action: .deleteAttachmentFile(attachment))
             })
         }
 
         if !self.viewModel.state.data.isAttachment {
-            actions.append(UIAction(title: L10n.ItemDetail.moveToStandaloneAttachment, image: UIImage(systemName: "arrow.up.to.line"), attributes: []) { [weak self] action in
+            actions.append(UIAction(title: L10n.ItemDetail.moveToStandaloneAttachment, image: UIImage(systemName: "arrow.up.to.line"), attributes: []) { [weak self] _ in
                 self?.viewModel.process(action: .moveAttachmentToStandalone(attachment))
             })
 
-            actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+            actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
                 self?.viewModel.process(action: .deleteAttachment(attachment))
             })
         }
@@ -521,7 +521,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
     private func createContextMenu(for note: Note) -> UIMenu? {
         var actions: [UIAction] = []
 
-        actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+        actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
             self?.viewModel.process(action: .deleteNote(note))
         })
 
@@ -531,7 +531,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
     private func createContextMenu(for tag: Tag) -> UIMenu? {
         var actions: [UIAction] = []
 
-        actions.append(UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+        actions.append(UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
             self?.viewModel.process(action: .deleteTag(tag))
         })
 
@@ -541,7 +541,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
     private func createContextMenu(for creator: ItemDetailState.Creator) -> UIMenu? {
         var actions: [UIAction] = []
 
-        actions.append(UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+        actions.append(UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
             self?.viewModel.process(action: .deleteCreator(creator.id))
         })
 
@@ -650,7 +650,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
     }()
 
     private lazy var emptyRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, ()> = {
-        return UICollectionView.CellRegistration { cell, indexPath, _ in }
+        return UICollectionView.CellRegistration { _, _, _ in }
     }()
 
     // MARK: - Layout

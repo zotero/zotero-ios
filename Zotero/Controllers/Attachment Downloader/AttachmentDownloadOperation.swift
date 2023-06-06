@@ -72,7 +72,7 @@ class AttachmentDownloadOperation: AsynchronousOperation {
                 let downloadProgress = request.downloadProgress
                 var didAddProgress = false
                 // Check headers on redirect to see whether downloaded file will be compressed zip or base file.
-                let redirector = Redirector(behavior: .modify({ task, request, response -> URLRequest? in
+                let redirector = Redirector(behavior: .modify({ _, request, response -> URLRequest? in
                     if !isCompressed {
                         isCompressed = response.value(forHTTPHeaderField: "Zotero-File-Compressed") == "Yes"
                     }

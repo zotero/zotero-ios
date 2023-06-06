@@ -1031,7 +1031,7 @@ class PDFReaderViewController: UIViewController {
         NotificationCenter.default.rx
                                   .notification(UIApplication.didBecomeActiveNotification)
                                   .observe(on: MainScheduler.instance)
-                                  .subscribe(with: self, onNext: { `self`, notification in
+                                  .subscribe(with: self, onNext: { `self`, _ in
                                       self.isCurrentlyVisible = true
                                       if let previousTraitCollection = self.previousTraitCollection {
                                           self.updateUserInterfaceStyleIfNeeded(previousTraitCollection: previousTraitCollection)
@@ -1044,7 +1044,7 @@ class PDFReaderViewController: UIViewController {
         NotificationCenter.default.rx
                                   .notification(UIApplication.willResignActiveNotification)
                                   .observe(on: MainScheduler.instance)
-                                  .subscribe(with: self, onNext: { `self`, notification in
+                                  .subscribe(with: self, onNext: { `self`, _ in
                                       self.isCurrentlyVisible = false
                                       self.previousTraitCollection = self.traitCollection
                                       if let page = self.documentController?.pdfController?.pageIndex {

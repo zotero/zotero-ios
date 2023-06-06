@@ -1099,7 +1099,7 @@ final class SyncController: SynchronizationController {
         let action = FetchAndStoreGroupSyncAction(identifier: groupId, userId: self.userId, apiClient: self.apiClient, dbStorage: self.dbStorage, queue: self.workQueue, scheduler: self.workScheduler)
         action.result
               .subscribe(on: self.workScheduler)
-              .subscribe(onSuccess: { [weak self] result in
+              .subscribe(onSuccess: { [weak self] _ in
                   self?.finishGroupSyncAction(for: groupId, error: nil)
               }, onFailure: { [weak self] error in
                   self?.finishGroupSyncAction(for: groupId, error: error)
@@ -1247,7 +1247,7 @@ final class SyncController: SynchronizationController {
     private func restoreDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String]) {
         let result = RestoreDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, dbStorage: self.dbStorage, queue: self.workQueue).result
         result.subscribe(on: self.workScheduler)
-              .subscribe(onSuccess: { [weak self] data in
+              .subscribe(onSuccess: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishCompletableAction(error: nil)
                   }
@@ -1472,12 +1472,12 @@ final class SyncController: SynchronizationController {
         let result = RevertLibraryUpdatesSyncAction(libraryId: libraryId, dbStorage: self.dbStorage, fileStorage: self.fileStorage,
                                                     schemaController: self.schemaController, dateParser: self.dateParser, queue: self.workQueue).result
         result.subscribe(on: self.workScheduler)
-              .subscribe(onSuccess: { [weak self] failures in
+              .subscribe(onSuccess: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       // TODO: - report failures?
                       self?.finishCompletableAction(error: nil)
                   }
-              }, onFailure: { [weak self] error in
+              }, onFailure: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishCompletableAction(error: nil)
                   }

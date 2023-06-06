@@ -237,7 +237,7 @@ final class MasterContainerViewController: UIViewController {
         tapRecognizer.delegate = self
         tapRecognizer.require(toFail: bottomPanRecognizer)
         tapRecognizer.rx.event
-                     .subscribe(with: self, onNext: { `self`, recognizer in
+                     .subscribe(with: self, onNext: { `self`, _ in
                          self.toggleBottomPosition()
                      })
                     .disposed(by: self.disposeBag)

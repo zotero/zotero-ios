@@ -91,7 +91,7 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
     }
 
     private func assign(tagName: String, toItemKeys keys: Set<String>, libraryId: LibraryIdentifier, viewModel: ViewModel<TagFilterActionHandler>) {
-        self.perform(request: AssignItemsToTagDbRequest(keys: keys, libraryId: libraryId, tagName: tagName)) { [weak viewModel] error in
+        self.perform(request: AssignItemsToTagDbRequest(keys: keys, libraryId: libraryId, tagName: tagName)) { [weak viewModel] _ in
             inMainThread {
                 guard let viewModel = viewModel else { return }
                 self.update(viewModel: viewModel) { state in
@@ -102,7 +102,7 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
     }
 
     private func deleteAutomaticTags(in libraryId: LibraryIdentifier, viewModel: ViewModel<TagFilterActionHandler>) {
-        self.perform(request: DeleteAutomaticTagsDbRequest(libraryId: libraryId)) { [weak viewModel] error in
+        self.perform(request: DeleteAutomaticTagsDbRequest(libraryId: libraryId)) { [weak viewModel] _ in
             inMainThread {
                 guard let viewModel = viewModel else { return }
                 self.update(viewModel: viewModel) { state in

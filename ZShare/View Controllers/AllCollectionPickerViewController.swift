@@ -185,7 +185,7 @@ final class AllCollectionPickerViewController: UICollectionViewController {
     }
 
     private func createCollectionViewLayout() -> UICollectionViewCompositionalLayout {
-        return UICollectionViewCompositionalLayout { section, environment in
+        return UICollectionViewCompositionalLayout { _, environment in
             var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
             configuration.showsSeparators = false
             return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
@@ -287,7 +287,7 @@ private class SearchResultsController: UICollectionViewController {
     }
 
     private func createCollectionViewLayout() -> UICollectionViewCompositionalLayout {
-        return UICollectionViewCompositionalLayout { section, environment in
+        return UICollectionViewCompositionalLayout { _, environment in
             var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
             configuration.showsSeparators = false
             return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)

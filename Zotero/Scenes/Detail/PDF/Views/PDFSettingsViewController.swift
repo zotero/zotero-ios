@@ -109,7 +109,7 @@ final class PDFSettingsViewController: UICollectionViewController {
     // MARK: - Collection View
 
     private lazy var switchRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, ()> = {
-        return UICollectionView.CellRegistration<UICollectionViewListCell, ()> { [weak self] cell, indexPath, _ in
+        return UICollectionView.CellRegistration<UICollectionViewListCell, ()> { [weak self] cell, _, _ in
             guard let `self` = self else { return }
 
             var configuration = cell.defaultContentConfiguration()
@@ -126,7 +126,7 @@ final class PDFSettingsViewController: UICollectionViewController {
     }()
 
     private lazy var segmentedRegistration: UICollectionView.CellRegistration<PDFSettingsSegmentedCell, Row> = {
-        return UICollectionView.CellRegistration<PDFSettingsSegmentedCell, Row> { [weak self] cell, indexPath, row in
+        return UICollectionView.CellRegistration<PDFSettingsSegmentedCell, Row> { [weak self] cell, _, row in
             guard let `self` = self else { return }
 
             let title: String
@@ -186,7 +186,7 @@ final class PDFSettingsViewController: UICollectionViewController {
     }()
 
     private func createCollectionViewLayout() -> UICollectionViewCompositionalLayout {
-        return UICollectionViewCompositionalLayout { section, environment in
+        return UICollectionViewCompositionalLayout { _, environment in
             let configuration = UICollectionLayoutListConfiguration(appearance: .plain)
             return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
         }

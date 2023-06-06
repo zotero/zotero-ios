@@ -380,7 +380,7 @@ final class WebDavControllerImpl: WebDavController {
             let _disposeBag = DisposeBag()
             disposeBag = _disposeBag
 
-            self.checkServer(queue: queue).subscribe(with: self, onSuccess: { `self`, url in
+            self.checkServer(queue: queue).subscribe(with: self, onSuccess: { _, url in
                 subscriber(.success(url))
             }, onFailure: { `self`, error in
                 /// .fileMissingAfterUpload is not a critical/fatal error. The sync can continue working.
