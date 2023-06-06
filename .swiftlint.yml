@@ -9,6 +9,8 @@ only_rules:
   - empty_enum_arguments
   - empty_parameters
   - empty_parentheses_with_trailing_closure
+  - implicit_getter
+  - leading_whitespace
   - mark
   - opening_brace
   - trailing_newline
@@ -38,6 +40,10 @@ empty_enum_arguments: error
 empty_parameters: error
 
 empty_parentheses_with_trailing_closure: error
+
+implicit_getter: error
+
+leading_whitespace: error
 
 mark: error
 

@@ -48,12 +48,10 @@ final class RPageIndex: Object {
     // MARK: - Sync properties
 
     var changedFields: RPageIndexChanges {
-        get {
-            var changes: RPageIndexChanges = []
-            for change in self.changes {
-                changes.insert(RPageIndexChanges(rawValue: change.rawChanges))
-            }
-            return changes
+        var changes: RPageIndexChanges = []
+        for change in self.changes {
+            changes.insert(RPageIndexChanges(rawValue: change.rawChanges))
         }
+        return changes
     }
 }

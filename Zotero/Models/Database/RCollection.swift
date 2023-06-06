@@ -60,12 +60,10 @@ final class RCollection: Object {
     // MARK: - Sync properties
 
     var changedFields: RCollectionChanges {
-        get {
-            var changes: RCollectionChanges = []
-            for change in self.changes {
-                changes.insert(RCollectionChanges(rawValue: change.rawChanges))
-            }
-            return changes
+        var changes: RCollectionChanges = []
+        for change in self.changes {
+            changes.insert(RCollectionChanges(rawValue: change.rawChanges))
         }
+        return changes
     }
 }
