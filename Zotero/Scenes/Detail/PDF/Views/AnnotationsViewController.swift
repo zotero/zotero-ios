@@ -508,12 +508,7 @@ final class AnnotationsViewController: UIViewController {
         guard !self.toolbarContainer.isHidden else { return }
 
         var items: [UIBarButtonItem] = []
-
-        if #available(iOS 14.0, *) {
-            items.append(UIBarButtonItem(systemItem: .flexibleSpace, primaryAction: nil, menu: nil))
-        } else {
-            items.append(UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil))
-        }
+        items.append(UIBarButtonItem(systemItem: .flexibleSpace, primaryAction: nil, menu: nil))
 
         if editingEnabled {
             let merge = UIBarButtonItem(title: L10n.Pdf.AnnotationsSidebar.merge, style: .plain, target: nil, action: nil)

@@ -5,8 +5,10 @@ only_rules:
   - comma
   - computed_accessors_order
   - control_statement
+  - deployment_target
   - empty_enum_arguments
   - empty_parameters
+  - empty_parentheses_with_trailing_closure
   - mark
   - opening_brace
   - trailing_newline
@@ -26,9 +28,16 @@ comma: error
 
 control_statement: error
 
+deployment_target:
+    severity: error
+    iOSApplicationExtension_deployment_target: 14.7
+    iOS_deployment_target: 14.7
+
 empty_enum_arguments: error
 
 empty_parameters: error
+
+empty_parentheses_with_trailing_closure: error
 
 mark: error
 
