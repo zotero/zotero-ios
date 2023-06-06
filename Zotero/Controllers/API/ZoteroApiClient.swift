@@ -24,7 +24,7 @@ enum ZoteroApiError: Error {
     case responseMissing(String)
 }
 
-fileprivate enum ApiAuthType {
+private enum ApiAuthType {
     case authHeader(String)
     case credentials(username: String, password: String)
 
@@ -214,7 +214,7 @@ extension ResponseHeaders {
     }
 }
 
-fileprivate final class CredentialSessionDelegate: SessionDelegate {
+private final class CredentialSessionDelegate: SessionDelegate {
     var credential: URLCredential?
 
     override func urlSession(_ session: URLSession, task: URLSessionTask, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {

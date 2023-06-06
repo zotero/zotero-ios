@@ -86,7 +86,7 @@ struct CitationBibliographyExportView: View {
     }
 }
 
-fileprivate struct Overlay: View {
+private struct Overlay: View {
     enum Kind {
         case loading
         case error(String)
@@ -117,7 +117,7 @@ fileprivate struct Overlay: View {
     }
 }
 
-fileprivate struct CiteView: View {
+private struct CiteView: View {
     @EnvironmentObject var viewModel: ViewModel<CitationBibliographyExportActionHandler>
 
     weak var coordinatorDelegate: CitationBibliographyExportCoordinatorDelegate?
@@ -187,7 +187,7 @@ fileprivate struct CiteView: View {
     }
 }
 
-fileprivate struct RowView: View {
+private struct RowView: View {
     let title: String
     let enabled: Bool
 
@@ -211,7 +211,7 @@ fileprivate struct RowView: View {
     }
 }
 
-fileprivate struct OutputMethodRow: View {
+private struct OutputMethodRow: View {
     let title: String
     let isSelected: Bool
 
@@ -230,7 +230,7 @@ fileprivate struct OutputMethodRow: View {
     }
 }
 
-fileprivate struct ExportView: View {
+private struct ExportView: View {
     var body: some View {
         Text("Export")
     }

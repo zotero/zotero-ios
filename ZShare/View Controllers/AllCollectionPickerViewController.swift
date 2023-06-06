@@ -232,7 +232,7 @@ extension AllCollectionPickerViewController {
     }
 }
 
-fileprivate class SearchResultsController: UICollectionViewController {
+private class SearchResultsController: UICollectionViewController {
     fileprivate enum Row: Hashable {
         case library(Library)
         case collection(SearchableCollection)

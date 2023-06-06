@@ -19,7 +19,7 @@ struct AFResponseError: Error {
     let response: String
 }
 
-fileprivate enum RetryDelay {
+private enum RetryDelay {
     case constant(Double)
     case progressive(initial: Double, multiplier: Double, maxDelay: Double)
 }
@@ -233,7 +233,7 @@ extension AFDownloadResponse where Success == URL?, Failure == AFError {
     }
 }
 
-fileprivate struct ResponseCreator {
+private struct ResponseCreator {
     static func string(from data: Data?, mimeType: String) -> String? {
         switch mimeType {
         case "text/plain", "text/html", "application/xml", "application/json":

@@ -9,7 +9,7 @@
 import UIKit
 
 /// Container to weakly store receivers in an array.
-fileprivate class ReceiverContainer {
+private class ReceiverContainer {
     weak var receiver: ConflictViewControllerReceiver?
 
     init(receiver: ConflictViewControllerReceiver) {

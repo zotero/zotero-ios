@@ -13,7 +13,7 @@ import RxSwift
 
 typealias AnnotationPreviewUpdate = (annotationKey: String, pdfKey: String, image: UIImage)
 
-fileprivate struct SubscriberKey: Hashable {
+private struct SubscriberKey: Hashable {
     let key: String
     let parentKey: String
 }

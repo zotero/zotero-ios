@@ -13,7 +13,7 @@ import RxCocoa
 import RxSwift
 import Starscream
 
-fileprivate struct Response {
+private struct Response {
     let timer: BackgroundTimer
     let completion: () -> Void
 

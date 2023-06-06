@@ -18,7 +18,7 @@ protocol DebugLoggingCoordinator: AnyObject {
     func setDebugWindow(visible: Bool)
 }
 
-fileprivate struct PendingCoordinatorAction {
+private struct PendingCoordinatorAction {
     let ignoreEmptyLogs: Bool
     // Set `userId` to 0 if you don't want to show "Copy and Export DB" option.
     let userId: Int

@@ -12,7 +12,7 @@ import WebKit
 import CocoaLumberjackSwift
 import RxSwift
 
-fileprivate struct StyleData {
+private struct StyleData {
     let filename: String
     let defaultLocaleId: String?
     let supportsBibliography: Bool

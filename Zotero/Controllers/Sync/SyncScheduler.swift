@@ -23,7 +23,7 @@ protocol WebSocketScheduler: AnyObject {
     func webSocketUpdate(libraryId: LibraryIdentifier)
 }
 
-fileprivate typealias SchedulerAction = (syncType: SyncController.SyncType, librarySyncType: SyncController.LibrarySyncType)
+private typealias SchedulerAction = (syncType: SyncController.SyncType, librarySyncType: SyncController.LibrarySyncType)
 
 final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
     /// Timeout in which a new `LibrarySyncType.specific` is started. It's required so that local changes are not submitted immediately or in case of multiple quick changes we don't enqueue multiple syncs.

@@ -32,7 +32,7 @@ struct ItemSortTypePickerView: View {
     }
 }
 
-fileprivate struct SortTypeRow: View {
+private struct SortTypeRow: View {
     let title: String
     let isSelected: Bool
 

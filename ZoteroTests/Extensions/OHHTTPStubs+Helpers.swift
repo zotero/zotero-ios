@@ -82,7 +82,7 @@ extension ApiRequest {
     }
 }
 
-fileprivate func isQuery(_ query: String?) -> HTTPStubsTestBlock {
+private func isQuery(_ query: String?) -> HTTPStubsTestBlock {
     return {
         if $0.url?.query == query {
             return true
@@ -96,7 +96,7 @@ fileprivate func isQuery(_ query: String?) -> HTTPStubsTestBlock {
     }
 }
 
-fileprivate func compareKeys(lQuery: String, rQuery: String) -> Bool {
+private func compareKeys(lQuery: String, rQuery: String) -> Bool {
     let keys = ["collectionKey", "itemKey", "searchKey"]
     for key in keys {
         if let lIndex = lQuery.range(of: key),

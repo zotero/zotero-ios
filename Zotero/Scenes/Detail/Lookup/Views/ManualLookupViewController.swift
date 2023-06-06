@@ -260,7 +260,7 @@ class ManualLookupViewController: UIViewController {
     }
 }
 
-fileprivate final class LiveTextResponder: UIResponder, UIKeyInput {
+private final class LiveTextResponder: UIResponder, UIKeyInput {
     private weak var viewModel: ViewModel<ManualLookupActionHandler>?
 
     init(viewModel: ViewModel<ManualLookupActionHandler>) {

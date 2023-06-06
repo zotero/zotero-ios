@@ -15,7 +15,7 @@ import CocoaLumberjackSwift
 import RealmSwift
 import RxSwift
 
-fileprivate enum MainAttachmentButtonState {
+private enum MainAttachmentButtonState {
     case ready(String), downloading(String, CGFloat), error(String, Error)
 }
 

@@ -556,7 +556,7 @@ extension SyncActionError: Equatable {
     }
 }
 
-fileprivate class WebDavTestController: WebDavController {
+private class WebDavTestController: WebDavController {
     enum Error: Swift.Error {
         case shouldntBeCalled
     }
@@ -603,7 +603,7 @@ fileprivate class WebDavTestController: WebDavController {
     func cancelDeletions() {}
 }
 
-fileprivate class WebDavSession: WebDavSessionStorage {
+private class WebDavSession: WebDavSessionStorage {
     var isEnabled: Bool = false
     var isVerified: Bool = false
     var username: String = ""

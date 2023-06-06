@@ -10,7 +10,7 @@ import Foundation
 
 import CocoaLumberjackSwift
 
-fileprivate struct Part {
+private struct Part {
     enum Position {
         case beginning
         case ending

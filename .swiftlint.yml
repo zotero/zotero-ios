@@ -17,6 +17,12 @@ only_rules:
   - opening_brace
   - operator_whitespace
   - orphaned_doc_comment
+  - private_over_fileprivate
+  - redundant_discardable_let
+  - redundant_set_access_control
+  - redundant_string_enum_value
+  - redundant_void_return
+  - return_arrow_whitespace
   - trailing_newline
   - trailing_semicolon
   - trailing_whitespace
@@ -62,6 +68,19 @@ opening_brace:
 operator_whitespace: error
 
 orphaned_doc_comment: error
+
+private_over_fileprivate:
+  severity: error
+
+redundant_discardable_let: error
+
+redundant_set_access_control: error
+
+redundant_string_enum_value: error
+
+redundant_void_return: error
+
+return_arrow_whitespace: error
 
 trailing_newline: error
 
