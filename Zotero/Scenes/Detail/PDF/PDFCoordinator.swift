@@ -324,11 +324,10 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
             parentKey: viewModel.state.key,
             libraryId: viewModel.state.library.id
         )
+        .observe(on: MainScheduler.instance)
         .subscribe { [weak self] (image: UIImage) in
             guard let self else { return }
-            inMainThread {
-                self.share(item: image, sourceView: .view(sender, nil), presenter: presenter)
-            }
+            self.share(item: image, sourceView: .view(sender, nil), presenter: presenter)
         } onFailure: { (error: Error) in
             // TODO: log error
             // TODO: show error

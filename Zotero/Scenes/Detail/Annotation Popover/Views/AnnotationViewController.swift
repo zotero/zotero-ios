@@ -184,7 +184,7 @@ final class AnnotationViewController: UIViewController {
         // Setup header
         let header = AnnotationViewHeader(layout: layout)
         let editability = annotation.editability(currentUserId: self.viewModel.state.userId, library: self.viewModel.state.library)
-        let annotationIsShareable: Bool = (annotation.type == .image)
+        let annotationIsShareable = (annotation.type == .image)
         header.setup(
             with: annotation,
             libraryId: self.viewModel.state.library.identifier,
