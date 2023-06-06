@@ -602,7 +602,7 @@ class PDFReaderViewController: UIViewController {
                                          velocity: velocity, statusBarVisible: self.statusBarVisible)
             let newState = ToolbarState(position: position, visible: true)
 
-            if position == .top && self.toolbarState.position != .top {
+            if position == .top && self.toolbarState.position == .pinned {
                 self.statusBarVisible = true
             }
             self.set(toolbarPosition: position, oldPosition: self.toolbarState.position, velocity: velocity, statusBarVisible: self.statusBarVisible)
@@ -970,7 +970,6 @@ class PDFReaderViewController: UIViewController {
             self.toolbarTopPreview.dashColor = self.previewSelectedDashColor
             self.toolbarPinnedPreview.backgroundColor = self.previewBackgroundColor
             self.toolbarPinnedPreview.dashColor = self.previewDashColor
-            self.inbetweenTopDashedView.dashColor = self.previewSelectedDashColor
 
         case .leading:
             self.toolbarLeadingPreview.backgroundColor = self.previewSelectedBackgroundColor
@@ -981,7 +980,6 @@ class PDFReaderViewController: UIViewController {
             self.toolbarTopPreview.dashColor = self.previewDashColor
             self.toolbarPinnedPreview.backgroundColor = self.previewBackgroundColor
             self.toolbarPinnedPreview.dashColor = self.previewDashColor
-            self.inbetweenTopDashedView.dashColor = self.previewDashColor
 
         case .trailing:
             self.toolbarLeadingPreview.backgroundColor = self.previewBackgroundColor
@@ -992,7 +990,6 @@ class PDFReaderViewController: UIViewController {
             self.toolbarTopPreview.dashColor = self.previewDashColor
             self.toolbarPinnedPreview.backgroundColor = self.previewBackgroundColor
             self.toolbarPinnedPreview.dashColor = self.previewDashColor
-            self.inbetweenTopDashedView.dashColor = self.previewDashColor
 
         case .pinned:
             self.toolbarLeadingPreview.backgroundColor = self.previewBackgroundColor
@@ -1003,7 +1000,6 @@ class PDFReaderViewController: UIViewController {
             self.toolbarTopPreview.dashColor = self.previewDashColor
             self.toolbarPinnedPreview.backgroundColor = self.previewSelectedBackgroundColor
             self.toolbarPinnedPreview.dashColor = self.previewSelectedDashColor
-            self.inbetweenTopDashedView.dashColor = self.previewSelectedDashColor
         }
     }
 
@@ -1137,15 +1133,15 @@ class PDFReaderViewController: UIViewController {
             topPreviewContainer.leadingAnchor.constraint(equalTo: previewsOverlay.leadingAnchor),
             previewsOverlay.trailingAnchor.constraint(equalTo: topPreviewContainer.trailingAnchor),
             pinnedPreviewHeight,
-            topPreview.heightAnchor.constraint(equalToConstant: annotationToolbar.size + 1),
-            leadingPreview.leadingAnchor.constraint(equalTo: previewsOverlay.leadingAnchor, constant: PDFReaderViewController.toolbarFullInsetInset - 2),
+            topPreview.heightAnchor.constraint(equalToConstant: annotationToolbar.size),
+            leadingPreview.leadingAnchor.constraint(equalTo: previewsOverlay.leadingAnchor, constant: PDFReaderViewController.toolbarFullInsetInset),
             leadingPreview.topAnchor.constraint(equalTo: topPreviewContainer.bottomAnchor, constant: PDFReaderViewController.toolbarCompactInset),
             leadingPreviewHeight,
-            leadingPreview.widthAnchor.constraint(equalToConstant: annotationToolbar.size + (DashedView.dashWidth * 2)),
-            previewsOverlay.trailingAnchor.constraint(equalTo: trailingPreview.trailingAnchor, constant: PDFReaderViewController.toolbarFullInsetInset - 2),
+            leadingPreview.widthAnchor.constraint(equalToConstant: annotationToolbar.size),
+            previewsOverlay.trailingAnchor.constraint(equalTo: trailingPreview.trailingAnchor, constant: PDFReaderViewController.toolbarFullInsetInset),
             trailingPreview.topAnchor.constraint(equalTo: topPreviewContainer.bottomAnchor, constant: PDFReaderViewController.toolbarCompactInset),
             trailingPreviewHeight,
-            trailingPreview.widthAnchor.constraint(equalToConstant: annotationToolbar.size + (DashedView.dashWidth * 2)),
+            trailingPreview.widthAnchor.constraint(equalToConstant: annotationToolbar.size),
             inbetweenTopDash.heightAnchor.constraint(equalToConstant: 2/UIScreen.main.scale)
         ])
 
