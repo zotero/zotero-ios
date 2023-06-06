@@ -14,14 +14,24 @@ only_rules:
   - empty_parentheses_with_trailing_closure
   - implicit_getter
   - leading_whitespace
+  - legacy_cggeometry_functions
+  - legacy_constant
+  - legacy_constructor
+  - legacy_hashing
+  - legacy_nsgeometry_functions
+  - legacy_random
   - mark
   - multiple_closures_with_trailing_closure
   - no_space_in_method_call
+  - ns_number_init_as_function_reference
   - opening_brace
   - operator_whitespace
   - orphaned_doc_comment
   - private_over_fileprivate
+  - private_unit_test
+  - protocol_property_accessors_order
   - redundant_discardable_let
+  - redundant_optional_initialization
   - redundant_set_access_control
   - redundant_string_enum_value
   - redundant_void_return
@@ -74,11 +84,25 @@ implicit_getter: error
 
 leading_whitespace: error
 
+legacy_cggeometry_functions: error
+
+legacy_constant: error
+
+legacy_constructor: error
+
+legacy_hashing: error
+
+legacy_nsgeometry_functions: error
+
+legacy_random: error
+
 mark: error
 
 multiple_closures_with_trailing_closure: error
 
 no_space_in_method_call: error
+
+ns_number_init_as_function_reference: error
 
 opening_brace:
   severity: error
@@ -91,7 +115,14 @@ orphaned_doc_comment: error
 private_over_fileprivate:
   severity: error
 
+private_unit_test:
+  warning: XCTestCase
+
+protocol_property_accessors_order: error
+
 redundant_discardable_let: error
+
+redundant_optional_initialization: error
 
 redundant_set_access_control: error
 

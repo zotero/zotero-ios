@@ -324,7 +324,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     }
 
     private func selectedAnnotationsMergeable(selected: Set<PDFReaderState.AnnotationKey>, in viewModel: ViewModel<PDFReaderActionHandler>) -> Bool {
-        var page: Int? = nil
+        var page: Int?
         var type: AnnotationType?
         var color: String?
 //        var rects: [CGRect]?

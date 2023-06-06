@@ -165,7 +165,7 @@ final class HtmlAttributedStringConverter {
                     nsStringAttributes[key] = value
                 }
             }
-            attributedString.addAttributes(nsStringAttributes, range: NSMakeRange(attribute.index, length))
+            attributedString.addAttributes(nsStringAttributes, range: NSRange(location: attribute.index, length: length))
         }
 
         return attributedString

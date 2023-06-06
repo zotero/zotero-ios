@@ -162,7 +162,7 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
     private func _load(with filters: [ItemsFilter], collectionId: CollectionIdentifier, libraryId: LibraryIdentifier, in viewModel: ViewModel<TagFilterActionHandler>) {
         do {
             var selected: Set<String> = []
-            var snapshot: [TagFilterState.FilterTag]? = nil
+            var snapshot: [TagFilterState.FilterTag]?
             var sorted: [TagFilterState.FilterTag] = []
             let comparator: (TagFilterState.FilterTag, TagFilterState.FilterTag) -> Bool = {
                 if !$0.tag.color.isEmpty && $1.tag.color.isEmpty {
