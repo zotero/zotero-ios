@@ -16,6 +16,7 @@ typealias AnnotationPreviewUpdate = (annotationKey: String, pdfKey: String, imag
 private struct SubscriberKey: Hashable {
     let key: String
     let parentKey: String
+    let size: CGSize
 }
 
 final class AnnotationPreviewController: NSObject {
@@ -27,8 +28,8 @@ final class AnnotationPreviewController: NSObject {
     /// - temporary: Rendered image is returned by `Single<UIImage>` immediately, no caching is performed.
     /// - cachedAndReported: Rendered image is cached and reported through global observable `PublishSubject<AnnotationPreviewUpdate>`.
     /// - cachedOnly: Rendered image is only cached for later use.
-    enum PreviewType: Int {
-        case temporary
+    enum PreviewType {
+        case temporary(size: CGSize)
         case cachedAndReported
         case cachedOnly
     }
@@ -69,11 +70,10 @@ extension AnnotationPreviewController {
             guard let self = self else { return Disposables.create() }
 
             self.queue.async(flags: .barrier) {
-                // TODO: check if image size should be part of subscriber key
-                self.subscribers[SubscriberKey(key: key, parentKey: parentKey)] = subscriber
+                self.subscribers[SubscriberKey(key: key, parentKey: parentKey, size: imageSize)] = subscriber
             }
 
-            self.enqueue(key: key, parentKey: parentKey, libraryId: libraryId, document: document, pageIndex: page, rect: rect, imageSize: imageSize, type: .temporary)
+            self.enqueue(key: key, parentKey: parentKey, libraryId: libraryId, document: document, pageIndex: page, rect: rect, imageSize: imageSize, type: .temporary(size: imageSize))
 
             return Disposables.create()
         }
@@ -217,8 +217,8 @@ extension AnnotationPreviewController {
         switch result {
         case .success(let image):
             switch type {
-            case .temporary:
-                self.perform(event: .success(image), key: key, parentKey: parentKey)
+            case .temporary(let size):
+                self.perform(event: .success(image), key: key, parentKey: parentKey, size: size)
 
             case .cachedOnly:
                 self.cache(image: image, key: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark)
@@ -231,15 +231,18 @@ extension AnnotationPreviewController {
         case .failure(let error):
             DDLogError("AnnotationPreviewController: could not generate image - \(error)")
 
-            if type == .temporary {
+            switch type {
+            case .temporary(let size):
                 // Temporary request always needs to return an error if image was not available
-                self.perform(event: .failure(error), key: key, parentKey: parentKey)
+                self.perform(event: .failure(error), key: key, parentKey: parentKey, size: size)
+            default:
+                break
             }
         }
     }
 
-    private func perform(event: SingleEvent<UIImage>, key: String, parentKey: String) {
-        let key = SubscriberKey(key: key, parentKey: parentKey)
+    private func perform(event: SingleEvent<UIImage>, key: String, parentKey: String, size: CGSize) {
+        let key = SubscriberKey(key: key, parentKey: parentKey, size: size)
         self.subscribers[key]?(event)
         self.subscribers[key] = nil
     }
