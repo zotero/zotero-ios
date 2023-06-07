@@ -6,8 +6,6 @@
 //  Copyright © 2022 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import SwiftUI
 
 struct PDFExportSettingsView: View {
@@ -41,5 +39,3 @@ struct PDFExportSettingsView_Previews: PreviewProvider {
         PDFExportSettingsView(settings: PDFExportSettings(includeAnnotations: false), exportHandler: { _ in })
     }
 }
-
-#endif

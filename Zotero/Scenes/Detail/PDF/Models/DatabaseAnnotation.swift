@@ -6,8 +6,6 @@
 //  Copyright © 2022 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 
 import CocoaLumberjackSwift
@@ -191,5 +189,3 @@ extension RItem {
         return value
     }
 }
-
-#endif

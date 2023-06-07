@@ -79,11 +79,7 @@ final class Controllers {
         let translatorsAndStylesController = TranslatorsAndStylesController(apiClient: apiClient, bundledDataStorage: bundledDataStorage, fileStorage: fileStorage)
         let previewSize: CGSize
 
-        #if PDFENABLED
         previewSize = CGSize(width: PDFReaderLayout.sidebarWidth, height: PDFReaderLayout.sidebarWidth)
-        #else
-        previewSize = CGSize()
-        #endif
 
         self.bundledDataStorage = bundledDataStorage
         self.sessionController = sessionController

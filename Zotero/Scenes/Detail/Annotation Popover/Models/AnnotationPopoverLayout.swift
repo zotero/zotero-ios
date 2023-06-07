@@ -6,8 +6,6 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 
 struct AnnotationPopoverLayout {
@@ -17,5 +15,3 @@ struct AnnotationPopoverLayout {
 
     static let annotationLayout = AnnotationViewLayout(type: .popover)
 }
-
-#endif

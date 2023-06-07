@@ -6,8 +6,6 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 
 import PSPDFKit
@@ -49,5 +47,3 @@ enum PDFReaderAction {
     case submitPendingPage(Int)
     case unlock(String)
 }
-
-#endif

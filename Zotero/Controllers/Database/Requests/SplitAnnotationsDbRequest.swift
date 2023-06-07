@@ -10,7 +10,6 @@ import UIKit
 
 import RealmSwift
 
-#if PDFENABLED
 struct SplitAnnotationsDbRequest: DbRequest {
     private struct Point: SplittablePathPoint {
         let x: Double
@@ -152,4 +151,3 @@ struct SplitAnnotationsDbRequest: DbRequest {
         additionalChange(new)
     }
 }
-#endif

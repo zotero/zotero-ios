@@ -6,8 +6,6 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import Foundation
 
 struct AnnotationEditActionHandler: ViewModelActionHandler {
@@ -41,5 +39,3 @@ struct AnnotationEditActionHandler: ViewModelActionHandler {
         }
     }
 }
-
-#endif

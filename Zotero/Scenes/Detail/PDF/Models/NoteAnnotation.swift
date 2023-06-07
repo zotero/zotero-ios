@@ -10,7 +10,6 @@ import Foundation
 
 import PSPDFKit
 
-#if PDFENABLED
 final class NoteAnnotation: PSPDFKit.NoteAnnotation {
 
     override var fixedSize: CGSize {
@@ -35,4 +34,3 @@ final class NoteAnnotation: PSPDFKit.NoteAnnotation {
         true
     }
 }
-#endif

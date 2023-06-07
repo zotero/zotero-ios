@@ -6,8 +6,6 @@
 //  Copyright © 2022 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 
 import RealmSwift
@@ -150,5 +148,3 @@ struct CreateAnnotationsDbRequest: DbRequest {
         changes.insert(.paths)
     }
 }
-
-#endif

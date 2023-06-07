@@ -8,8 +8,6 @@
 
 import UIKit
 
-#if PDFENABLED
-
 import CocoaLumberjackSwift
 import PSPDFKit
 import RealmSwift
@@ -306,5 +304,3 @@ extension RItem {
         return value
     }
 }
-
-#endif

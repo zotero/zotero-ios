@@ -8,7 +8,6 @@
 
 import Foundation
 
-#if PDFENABLED
 struct AnnotationToolOptionsActionHandler: ViewModelActionHandler {
     typealias Action = AnnotationToolOptionsAction
     typealias State = AnnotationToolOptionsState
@@ -28,4 +27,3 @@ struct AnnotationToolOptionsActionHandler: ViewModelActionHandler {
         }
     }
 }
-#endif

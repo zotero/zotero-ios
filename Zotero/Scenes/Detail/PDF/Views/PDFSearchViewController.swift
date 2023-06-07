@@ -6,8 +6,6 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 
 import CocoaLumberjackSwift
@@ -187,5 +185,3 @@ extension PDFSearchViewController: TextSearchDelegate {
         self.searchBar.isLoading = false
     }
 }
-
-#endif

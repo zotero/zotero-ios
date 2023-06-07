@@ -12,10 +12,8 @@ import CocoaLumberjackSwift
 import RealmSwift
 import SwiftUI
 
-#if PDFENABLED
 import PSPDFKit
 import PSPDFKitUI
-#endif
 
 protocol SceneActivityCounter: AnyObject {
     func sceneWillEnterForeground()
@@ -28,7 +26,6 @@ final class AppDelegate: UIResponder {
 
     // MARK: - Migration
 
-    #if PDFENABLED
     private func migratePdfSettings() {
         let rawScrollDirection = UserDefaults.standard.value(forKey: "PdfReader.ScrollDirection") as? UInt
         let rawPageTransition = UserDefaults.standard.value(forKey: "PdfReader.PageTransition") as? UInt
@@ -52,7 +49,6 @@ final class AppDelegate: UIResponder {
         Defaults.shared.inkColorHex = activeColorHex
         UserDefaults.zotero.removeObject(forKey: "PDFReaderState.activeColor")
     }
-    #endif
 
     private func migrateItemsSortType() {
         guard let sortTypeData = UserDefaults.standard.data(forKey: "ItemsSortType"),
@@ -273,24 +269,20 @@ extension AppDelegate: SceneActivityCounter {
 
 extension AppDelegate: UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        #if PDFENABLED
         if let key = Licenses.shared.pspdfkitKey {
             PSPDFKit.SDK.setLicenseKey(key)
         }
         PSPDFKit.SDK.shared.styleManager.setLastUsedValue(AnnotationsConfig.imageAnnotationLineWidth,
                                                           forProperty: "lineWidth",
                                                           forKey: PSPDFKit.Annotation.ToolVariantID(tool: .square))
-        #endif
 
         self.setupLogs()
         self.controllers = Controllers()
         self.setupAppearance()
         self.setupExportDefaults()
 
-        #if PDFENABLED
         self.migrateActiveColor()
         self.migratePdfSettings()
-        #endif
         self.migrateItemsSortType()
 
         let queue = DispatchQueue(label: "org.zotero.AppDelegateMigration", qos: .userInitiated)

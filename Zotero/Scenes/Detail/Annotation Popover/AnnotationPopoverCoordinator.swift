@@ -10,8 +10,6 @@ import UIKit
 
 import RxSwift
 
-#if PDFENABLED
-
 protocol AnnotationPopover: AnyObject {
     var annotationKey: PDFReaderState.AnnotationKey? { get }
 }
@@ -100,5 +98,3 @@ extension AnnotationPopoverCoordinator: UINavigationControllerDelegate {
         navigationController.setNavigationBarHidden((viewController is AnnotationViewController), animated: animated)
     }
 }
-
-#endif

@@ -140,7 +140,6 @@ struct SubmitUpdateSyncAction: SyncAction {
             }
         }
 
-#if PDFENABLED
         if !splitKeys.isEmpty {
             DDLogWarn("SubmitUpdateSyncAction: annotations too long: \(splitKeys) in \(libraryId)")
 
@@ -151,7 +150,6 @@ struct SubmitUpdateSyncAction: SyncAction {
                 DDLogError("SubmitUpdateSyncAction: could not split annotations - \(error)")
             }
         }
-#endif
 
         DDLogError("SubmitUpdateSyncAction: failures - \(failedResponses)")
 

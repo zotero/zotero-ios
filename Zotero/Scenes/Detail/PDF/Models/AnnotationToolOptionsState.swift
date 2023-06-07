@@ -6,8 +6,6 @@
 //  Copyright © 2023 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import Foundation
 
 import PSPDFKit
@@ -39,5 +37,3 @@ struct AnnotationToolOptionsState: ViewModelState {
         self.changes = []
     }
 }
-
-#endif

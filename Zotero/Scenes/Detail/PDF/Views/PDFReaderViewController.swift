@@ -6,8 +6,6 @@
 //  Copyright © 2022 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 
 import CocoaLumberjackSwift
@@ -1199,5 +1197,3 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
         self.viewModel.state.document.undoController.undoManager.redo()
     }
 }
-
-#endif

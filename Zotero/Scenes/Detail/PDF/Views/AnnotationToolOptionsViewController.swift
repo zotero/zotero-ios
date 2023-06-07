@@ -6,8 +6,6 @@
 //  Copyright © 2021 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 
 import PSPDFKit
@@ -209,5 +207,3 @@ class AnnotationToolOptionsViewController: UIViewController {
         self.navigationItem.rightBarButtonItem = doneButton
     }
 }
-
-#endif

@@ -6,8 +6,6 @@
 //  Copyright © 2022 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 
 import PSPDFKit
@@ -146,5 +144,3 @@ class PDFSidebarViewController: UIViewController {
         controller.didMove(toParent: self)
     }
 }
-
-#endif

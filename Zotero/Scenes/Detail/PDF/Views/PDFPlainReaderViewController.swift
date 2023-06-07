@@ -6,8 +6,6 @@
 //  Copyright © 2021 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 
 import PSPDFKit
@@ -27,5 +25,3 @@ final class PDFPlainReaderViewController: ReaderViewController {
         self.navigationItem.leftBarButtonItem = closeButton
     }
 }
-
-#endif
