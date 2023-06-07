@@ -6,13 +6,9 @@
 //  Copyright © 2022 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import Foundation
 
 enum TableOfContentsAction {
     case load
     case search(String)
 }
-
-#endif

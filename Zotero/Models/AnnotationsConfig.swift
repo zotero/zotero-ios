@@ -8,7 +8,6 @@
 
 import UIKit
 
-#if PDFENABLED
 import PSPDFKit
 
 struct AnnotationsConfig {
@@ -50,5 +49,3 @@ struct AnnotationsConfig {
         return map
     }
 }
-
-#endif

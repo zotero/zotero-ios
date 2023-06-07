@@ -6,8 +6,6 @@
 //  Copyright © 2023 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 
 import CocoaLumberjackSwift
@@ -66,5 +64,3 @@ extension AnnotationEditCoordinator: AnnotationEditCoordinatorDelegate {
         self.navigationController.pushViewController(controller, animated: true)
     }
 }
-
-#endif

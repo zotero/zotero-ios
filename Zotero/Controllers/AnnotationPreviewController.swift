@@ -50,8 +50,6 @@ final class AnnotationPreviewController: NSObject {
     }
 }
 
-#if PDFENABLED
-
 import PSPDFKit
 
 // MARK: - PSPDFKit
@@ -256,5 +254,3 @@ extension AnnotationPreviewController {
         }
     }
 }
-
-#endif

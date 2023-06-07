@@ -8,8 +8,6 @@
 
 import Foundation
 
-#if PDFENABLED
-
 import PSPDFKitUI
 
 struct PDFSettings {
@@ -56,5 +54,3 @@ extension PDFSettings: Codable {
         try container.encode(self.pageFitting.rawValue, forKey: .pageFitting)
     }
 }
-
-#endif

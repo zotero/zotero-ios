@@ -6,8 +6,6 @@
 //  Copyright © 2022 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 
 import PSPDFKit
@@ -107,5 +105,3 @@ struct TableOfContentsActionHandler: ViewModelActionHandler {
         return (outline.title ?? "").localizedCaseInsensitiveContains(string) || UInt(string) == outline.pageIndex
     }
 }
-
-#endif

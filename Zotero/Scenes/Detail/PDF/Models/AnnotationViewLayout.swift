@@ -6,8 +6,6 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 
 struct AnnotationViewLayout {
@@ -68,5 +66,3 @@ struct AnnotationViewLayout {
         }
     }
 }
-
-#endif

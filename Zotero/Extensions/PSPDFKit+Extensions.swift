@@ -6,8 +6,6 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 
 import PSPDFKit
@@ -64,5 +62,3 @@ extension PSPDFKit.InkAnnotation {
         return AnnotationPreviewBoundingBoxCalculator.inkPreviewRect(from: self.boundingBox)
     }
 }
-
-#endif

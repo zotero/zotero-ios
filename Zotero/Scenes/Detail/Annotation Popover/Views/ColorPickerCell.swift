@@ -10,7 +10,6 @@ import UIKit
 
 import RxSwift
 
-#if PDFENABLED
 final class ColorPickerCell: UITableViewCell {
     @IBOutlet private weak var stackView: UIStackView!
 
@@ -51,4 +50,3 @@ final class ColorPickerCell: UITableViewCell {
         return !isSelected ? colorName : L10n.Accessibility.Pdf.selected + ": " + colorName
     }
 }
-#endif

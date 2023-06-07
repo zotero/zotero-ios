@@ -6,8 +6,6 @@
 //  Copyright © 2022 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 
 struct DocumentAnnotation {
@@ -68,5 +66,3 @@ extension DocumentAnnotation: Annotation {
         return []
     }
 }
-
-#endif

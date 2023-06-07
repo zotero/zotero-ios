@@ -6,8 +6,6 @@
 //  Copyright © 2023 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 import SwiftUI
 
@@ -330,5 +328,3 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         self.navigationController.present(navigationController, animated: true, completion: nil)
     }
 }
-
-#endif

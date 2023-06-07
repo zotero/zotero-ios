@@ -6,8 +6,6 @@
 //  Copyright © 2022 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import Foundation
 
 import PSPDFKit
@@ -45,5 +43,3 @@ struct PDFSettingsActionHandler: ViewModelActionHandler {
         }
     }
 }
-
-#endif

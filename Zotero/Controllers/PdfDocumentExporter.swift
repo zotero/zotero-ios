@@ -8,8 +8,6 @@
 
 import UIKit
 
-#if PDFENABLED
-
 import PSPDFKit
 
 struct PdfDocumentExporter {
@@ -55,5 +53,3 @@ struct PdfDocumentExporter {
         }
     }
 }
-
-#endif

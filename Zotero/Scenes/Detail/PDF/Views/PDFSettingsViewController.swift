@@ -6,8 +6,6 @@
 //  Copyright © 2022 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 
 import PSPDFKitUI
@@ -203,5 +201,3 @@ final class PDFSettingsViewController: UICollectionViewController {
         self.navigationItem.rightBarButtonItem = button
     }
 }
-
-#endif

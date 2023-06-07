@@ -6,8 +6,6 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 
 import PSPDFKit
@@ -197,5 +195,3 @@ struct PDFReaderState: ViewModelState {
         self.unlockSuccessful = nil
     }
 }
-
-#endif

@@ -90,7 +90,7 @@ final class Defaults {
 
     // MARK: - PDF Settings
 
-    #if PDFENABLED && MAINAPP
+    #if MAINAPP
     @UserDefault(key: "PdfReaderLineWidth", defaultValue: 2)
     var activeLineWidth: Float
 
@@ -175,14 +175,12 @@ final class Defaults {
         self.exportOutputMethod = .copy
         self.exportOutputMode = .bibliography
 
-        #if PDFENABLED
         self.activeLineWidth = 1
         self.inkColorHex = AnnotationsConfig.defaultActiveColor
         self.squareColorHex = AnnotationsConfig.defaultActiveColor
         self.noteColorHex = AnnotationsConfig.defaultActiveColor
         self.highlightColorHex = AnnotationsConfig.defaultActiveColor
         self.pdfSettings = PDFSettings.default
-        #endif
         #endif
     }
 }

@@ -6,8 +6,6 @@
 //  Copyright © 2022 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import Foundation
 
 import PSPDFKitUI
@@ -20,5 +18,3 @@ enum PDFSettingsAction {
     case setAppearanceMode(PDFReaderState.AppearanceMode)
     case setIdleTimerDisabled(Bool)
 }
-
-#endif

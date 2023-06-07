@@ -6,8 +6,6 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 
 import CocoaLumberjackSwift
@@ -1918,5 +1916,3 @@ extension PSPDFKit.Annotation {
         return self.color.flatMap({ AnnotationsConfig.colorVariationMap[$0.hexString] }) ?? AnnotationsConfig.defaultActiveColor
     }
 }
-
-#endif

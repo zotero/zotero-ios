@@ -10,8 +10,6 @@ import UIKit
 
 import RxSwift
 
-#if PDFENABLED
-
 typealias AnnotationEditSaveAction = (PDFReaderState.AnnotationKey, String, CGFloat, String, Bool, String) -> Void // key, color, lineWidth, pageLabel, updateSubsequentLabels, highlightText
 typealias AnnotationEditDeleteAction = (PDFReaderState.AnnotationKey) -> Void
 
@@ -277,5 +275,3 @@ extension AnnotationEditViewController: AnnotationPopover {
         return self.viewModel.state.key
     }
 }
-
-#endif

@@ -6,12 +6,8 @@
 //  Copyright © 2022 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import Foundation
 
 struct PDFExportSettings {
     var includeAnnotations: Bool
 }
-
-#endif

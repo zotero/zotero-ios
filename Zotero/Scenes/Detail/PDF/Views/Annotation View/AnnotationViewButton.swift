@@ -6,8 +6,6 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 
 final class AnnotationViewButton: UIButton {
@@ -26,5 +24,3 @@ final class AnnotationViewButton: UIButton {
         fatalError("init(coder:) has not been implemented")
     }
 }
-
-#endif

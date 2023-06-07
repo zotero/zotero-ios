@@ -11,8 +11,6 @@ import UIKit
 import RxSwift
 import CocoaLumberjackSwift
 
-#if PDFENABLED
-
 final class AnnotationViewController: UIViewController {
     let annotationKey: PDFReaderState.AnnotationKey?
     private let viewModel: ViewModel<PDFReaderActionHandler>
@@ -310,5 +308,3 @@ final class AnnotationViewController: UIViewController {
 }
 
 extension AnnotationViewController: AnnotationPopover {}
-
-#endif

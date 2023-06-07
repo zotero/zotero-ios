@@ -232,7 +232,6 @@ final class DetailCoordinator: Coordinator {
     }
 
     private func showPdf(at url: URL, key: String, library: Library) {
-        #if PDFENABLED
         let navigationController = NavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
 
@@ -242,7 +241,6 @@ final class DetailCoordinator: Coordinator {
         coordinator.start(animated: false)
 
         self.navigationController.present(navigationController, animated: true, completion: nil)
-        #endif
     }
 
     private func showWebView(for url: URL) {

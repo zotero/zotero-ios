@@ -136,9 +136,7 @@ final class AppCoordinator: NSObject {
         if let userActivity = connectionOptions.userActivities.first ?? session.stateRestorationActivity, let data = userActivity.restoredStateData {
             DDLogInfo("AppCoordinator: Restored state - \(data)")
             // If scene had state stored, restore state
-            #if PDFENABLED
             self.showRestoredState(for: data)
-            #endif
         }
     }
 
@@ -150,7 +148,6 @@ final class AppCoordinator: NSObject {
 
         case .pdfReader(let attachment, let library, let page, let annotation, let parentKey, let isAvailable):
             DDLogInfo("AppCoordinator: show custom url - pdf reader; key=\(attachment.key); library=\(library.identifier); page=\(page.flatMap(String.init) ?? "nil"); annotation=\(annotation ?? "nil"); parentKey=\(parentKey ?? "nil")")
-            #if PDFENABLED
             if isAvailable {
                 self.open(attachment: attachment, library: library, on: page, annotation: annotation, parentKey: parentKey, animated: animated)
                 return
@@ -165,7 +162,6 @@ final class AppCoordinator: NSObject {
                     self?._open(attachment: attachment, library: library, on: page, annotation: annotation, window: window, detailCoordinator: coordinator, animated: true)
                 }
             }
-            #endif
         }
     }
 
@@ -196,7 +192,6 @@ final class AppCoordinator: NSObject {
         }
     }
 
-    #if PDFENABLED
     private func open(attachment: Attachment, library: Library, on page: Int?, annotation: String?, parentKey: String?, animated: Bool) {
         guard let window = self.window, let mainController = window.rootViewController as? MainViewController else { return }
 
@@ -244,7 +239,6 @@ final class AppCoordinator: NSObject {
 
         return navigationController
     }
-    #endif
 
     private func loadRestoredStateData(forKey key: String, libraryId: LibraryIdentifier) -> (URL, Library)? {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return nil }

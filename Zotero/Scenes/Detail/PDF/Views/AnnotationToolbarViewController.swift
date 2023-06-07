@@ -6,8 +6,6 @@
 //  Copyright © 2022 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 
 import CocoaLumberjackSwift
@@ -509,5 +507,3 @@ extension AnnotationToolbarViewController: UIGestureRecognizerDelegate {
         return true
     }
 }
-
-#endif
