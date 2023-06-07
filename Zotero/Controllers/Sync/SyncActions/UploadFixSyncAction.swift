@@ -60,8 +60,10 @@ class UploadFixSyncAction: SyncAction {
                 switch update.kind {
                 case .failed(let error):
                     self.finishDownload?(.failure(error))
+                    self.finishDownload = nil
                 case .ready:
                     self.finishDownload?(.success(()))
+                    self.finishDownload = nil
                 case .progress, .cancelled: break
                 }
             })
