@@ -304,20 +304,19 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         presenter: UIViewController? = nil
     ) {
         let state = viewModel.state
-        let document: PSPDFKit.Document = state.document
+        let document = state.document
         guard let annotationKey = annotationKey ?? state.selectedAnnotationKey,
               let annotation = state.annotation(for: annotationKey),
               annotation.type == .image,
-              let documentAnnotation = document.annotation(on: annotation.page, with: annotation.key)
+              let pdfReaderViewController = navigationController.viewControllers.last as? PDFReaderViewController
         else { return }
-        
         let annotationPreviewController = controllers.annotationPreviewController
-        let rect = documentAnnotation.boundingBox
+        let rect = annotation.boundingBox(boundingBoxConverter: pdfReaderViewController)
         // TODO: check if size should be scaled by a factor, either fixed, or dynamic e.g. screen scale
         let size = rect.size
         annotationPreviewController.render(
             document: document,
-            page: documentAnnotation.pageIndex,
+            page: UInt(annotation.page),
             rect: rect,
             imageSize: size,
             key: annotation.key,
@@ -327,7 +326,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         .observe(on: MainScheduler.instance)
         .subscribe { [weak self] (image: UIImage) in
             guard let self else { return }
-            self.share(item: image, sourceView: .view(sender, nil), presenter: presenter)
+            (self as Coordinator).share(item: image, sourceView: .view(sender, nil), presenter: presenter)
         } onFailure: { (error: Error) in
             // TODO: log error
             // TODO: show error
