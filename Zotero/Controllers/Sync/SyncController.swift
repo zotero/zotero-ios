@@ -159,13 +159,14 @@ final class SyncController: SynchronizationController {
     // All processing of actions is scheduled on this scheduler.
     private let workScheduler: SerialDispatchQueueScheduler
     // Controllers
-    private let apiClient: ApiClient
-    private let dbStorage: DbStorage
-    private let fileStorage: FileStorage
-    private let schemaController: SchemaController
-    private let dateParser: DateParser
-    private let backgroundUploaderContext: BackgroundUploaderContext
-    private let webDavController: WebDavController
+    private unowned let apiClient: ApiClient
+    private unowned let attachmentDownloader: AttachmentDownloader
+    private unowned let dbStorage: DbStorage
+    private unowned let fileStorage: FileStorage
+    private unowned let schemaController: SchemaController
+    private unowned let dateParser: DateParser
+    private unowned let backgroundUploaderContext: BackgroundUploaderContext
+    private unowned let webDavController: WebDavController
     // Handler for reporting sync progress to observers.
     private let progressHandler: SyncProgressHandler
     // Id of currently logged in user.
@@ -224,7 +225,7 @@ final class SyncController: SynchronizationController {
     // MARK: - Lifecycle
 
     init(userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, dateParser: DateParser, backgroundUploaderContext: BackgroundUploaderContext,
-         webDavController: WebDavController, syncDelayIntervals: [Double], conflictDelays: [Int]) {
+         webDavController: WebDavController, attachmentDownloader: AttachmentDownloader, syncDelayIntervals: [Double], conflictDelays: [Int]) {
         let accessQueue = DispatchQueue(label: "org.zotero.SyncController.accessQueue", qos: .userInteractive, attributes: .concurrent)
         let workQueue = DispatchQueue(label: "org.zotero.SyncController.workQueue", qos: .userInteractive)
         self.userId = userId
@@ -243,6 +244,7 @@ final class SyncController: SynchronizationController {
         self.conflictDelays = conflictDelays
         self.conflictRetries = 0
         self.apiClient = apiClient
+        self.attachmentDownloader = attachmentDownloader
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
@@ -1376,7 +1378,7 @@ final class SyncController: SynchronizationController {
     }
 
     private func processUploadFix(forKey key: String, libraryId: LibraryIdentifier) {
-        let action = UploadFixSyncAction(key: key, libraryId: libraryId, apiClient: self.apiClient, dbStorage: self.dbStorage, queue: self.workQueue, scheduler: self.workScheduler)
+        let action = UploadFixSyncAction(key: key, libraryId: libraryId, userId: self.userId, attachmentDownloader: self.attachmentDownloader, fileStorage: self.fileStorage, dbStorage: self.dbStorage, queue: self.workQueue, scheduler: self.workScheduler)
         action.result
               .subscribe(on: self.workScheduler)
               .subscribe(with: self, onSuccess: { `self`, _ in

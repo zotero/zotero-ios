@@ -266,6 +266,7 @@ final class ExtensionViewModel {
 
     private let syncController: SyncController
     private let apiClient: ApiClient
+    private let attachmentDownloader: AttachmentDownloader
     private let dbStorage: DbStorage
     private let fileStorage: FileStorage
     private let schemaController: SchemaController
@@ -286,7 +287,7 @@ final class ExtensionViewModel {
         let mtime: Int
     }
 
-    init(webView: WKWebView, apiClient: ApiClient, backgroundUploader: BackgroundUploader, backgroundUploadObserver: BackgroundUploadObserver, dbStorage: DbStorage, schemaController: SchemaController,
+    init(webView: WKWebView, apiClient: ApiClient, attachmentDownloader: AttachmentDownloader, backgroundUploader: BackgroundUploader, backgroundUploadObserver: BackgroundUploadObserver, dbStorage: DbStorage, schemaController: SchemaController,
          webDavController: WebDavController, dateParser: DateParser, fileStorage: FileStorage, syncController: SyncController, translatorsController: TranslatorsAndStylesController) {
         let queue = DispatchQueue(label: "org.zotero.ZShare.BackgroundQueue", qos: .userInteractive)
 
@@ -305,6 +306,7 @@ final class ExtensionViewModel {
         self.webView = webView
         self.syncController = syncController
         self.apiClient = apiClient
+        self.attachmentDownloader = attachmentDownloader
         self.backgroundUploader = backgroundUploader
         self.backgroundUploadObserver = backgroundUploadObserver
         self.dbStorage = dbStorage
