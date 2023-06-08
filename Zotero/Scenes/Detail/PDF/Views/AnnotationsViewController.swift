@@ -130,10 +130,11 @@ final class AnnotationsViewController: UIViewController {
 
         case .done: break // Done button doesn't appear here
             
-        case .share(let sender):
+        case .shareImage(let sender, let scale):
             coordinatorDelegate?.shareAnnotation(
                 viewModel: viewModel,
                 annotationKey: annotation.readerKey,
+                scale: scale,
                 sender: sender,
                 presenter: nil
             )

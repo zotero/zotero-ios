@@ -22,7 +22,7 @@ final class AnnotationView: UIView {
         case setComment(NSAttributedString)
         case setCommentActive(Bool)
         case done
-        case share(UIButton)
+        case shareImage(sender: UIButton, scale: CGFloat)
     }
 
     enum AccessibilityType {
@@ -118,6 +118,7 @@ final class AnnotationView: UIView {
         self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth, accessibilityType: .cell, boundingBoxConverter: boundingBoxConverter)
         self.setup(comment: comment, canEdit: canEdit)
         self.setupTags(for: annotation, canEdit: canEdit, accessibilityEnabled: selected)
+        self.setupShareMenu()
         self.setupObserving()
 
         let commentButtonIsHidden = self.commentTextView.isHidden
@@ -222,6 +223,19 @@ final class AnnotationView: UIView {
             self.tags.button.accessibilityHint = nil
         }
     }
+    
+    private func setupShareMenu() {
+        guard let sender = header.shareButton else { return }
+        // TODO: ask delegate for menu instead?
+        let shareMediumImageAction = UIAction(title: L10n.Pdf.AnnotationShare.Image.medium) { [weak self] (_: UIAction) in
+            self?.actionPublisher.on(.next(.shareImage(sender: sender, scale: 1.0)))
+        }
+        let shareLargeImageAction = UIAction(title: L10n.Pdf.AnnotationShare.Image.large) { [weak self](_: UIAction) in
+            self?.actionPublisher.on(.next(.shareImage(sender: sender, scale: 300.0 / 72.0)))
+        }
+        sender.showsMenuAsPrimaryAction = true
+        sender.menu = UIMenu(children: [shareMediumImageAction, shareLargeImageAction])
+    }
 
     @DisposeBag.DisposableBuilder
     private func buildDisposables() -> [Disposable] {
@@ -240,11 +254,6 @@ final class AnnotationView: UIView {
         self.tags.tap.flatMap({ _ in Observable.just(Action.tags) }).bind(to: self.actionPublisher)
         self.tagsButton.rx.tap.flatMap({ Observable.just(Action.tags) }).bind(to: self.actionPublisher)
         self.header.menuTap.flatMap({ Observable.just(Action.options($0)) }).bind(to: self.actionPublisher)
-        header.shareTap.subscribe(
-            onNext: { [weak self] (sender: UIButton) in
-                self?.actionPublisher.on(.next(.share(sender)))
-            }
-        )
     }
     
     private func setupObserving() {

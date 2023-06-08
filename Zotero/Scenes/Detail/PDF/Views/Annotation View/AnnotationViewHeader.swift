@@ -15,7 +15,7 @@ final class AnnotationViewHeader: UIView {
     private weak var typeImageView: UIImageView!
     private weak var pageLabel: UILabel!
     private weak var authorLabel: UILabel!
-    private weak var shareButton: UIButton!
+    public weak var shareButton: UIButton!
     private weak var menuButton: UIButton!
     private weak var doneButton: UIButton?
     private weak var lockIcon: UIImageView?
@@ -140,6 +140,8 @@ final class AnnotationViewHeader: UIView {
 
         self.menuButton.accessibilityLabel = L10n.Accessibility.Pdf.editAnnotation
         self.menuButton.isAccessibilityElement = true
+        
+        // TODO: setup accessibility for share button
     }
 
     private func setupView(with layout: AnnotationViewLayout) {

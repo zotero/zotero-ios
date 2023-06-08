@@ -855,6 +855,14 @@ internal enum L10n {
       /// Update subsequent pages
       internal static let updateSubsequentPages = L10n.tr("Localizable", "pdf.annotation_popover.update_subsequent_pages")
     }
+    internal enum AnnotationShare {
+      internal enum Image {
+        /// Share large image
+        internal static let large = L10n.tr("Localizable", "pdf.annotation_share.image.large")
+        /// Share medium image
+        internal static let medium = L10n.tr("Localizable", "pdf.annotation_share.image.medium")
+      }
+    }
     internal enum AnnotationToolbar {
       /// Eraser
       internal static let eraser = L10n.tr("Localizable", "pdf.annotation_toolbar.eraser")

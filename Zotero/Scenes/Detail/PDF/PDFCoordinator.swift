@@ -33,6 +33,7 @@ protocol PdfAnnotationsCoordinatorDelegate: AnyObject {
     func shareAnnotation(
         viewModel: ViewModel<PDFReaderActionHandler>,
         annotationKey: PDFReaderState.AnnotationKey?,
+        scale: CGFloat,
         sender: UIButton,
         presenter: UIViewController?
     )
@@ -300,6 +301,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
     func shareAnnotation(
         viewModel: ViewModel<PDFReaderActionHandler>,
         annotationKey: PDFReaderState.AnnotationKey? = nil,
+        scale: CGFloat = 1.0,
         sender: UIButton,
         presenter: UIViewController? = nil
     ) {
@@ -313,14 +315,15 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         let annotationPreviewController = controllers.annotationPreviewController
         let pageIndex: PageIndex = UInt(annotation.page)
         let rect = annotation.boundingBox(boundingBoxConverter: pdfReaderViewController)
-        // TODO: check if size should be scaled by a factor, either fixed, or dynamic e.g. screen scale
-        let size = rect.size
+        var size = rect.size
+        size.width *= scale
+        size.height *= scale
         annotationPreviewController.render(
             document: document,
             page: pageIndex,
             rect: rect,
             imageSize: size,
-            imageScale: 0.0,
+            imageScale: 1.0,
             key: annotation.key,
             parentKey: viewModel.state.key,
             libraryId: viewModel.state.library.id

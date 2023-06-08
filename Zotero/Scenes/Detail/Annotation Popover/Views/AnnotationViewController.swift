@@ -132,11 +132,11 @@ final class AnnotationViewController: UIViewController {
         self.viewModel.process(action: .removeAnnotation(key))
     }
     
-    private func shareAnnotation(sender: UIButton) {
+    private func shareAnnotation(sender: UIButton, scale: CGFloat = 1.0) {
         guard let annotation = self.viewModel.state.selectedAnnotation,
               annotation.type == .image
         else { return }
-        coordinatorDelegate?.shareAnnotation(sender: sender)
+        coordinatorDelegate?.shareAnnotation(sender: sender, scale: scale)
     }
 
     private func showSettings() {
@@ -196,14 +196,16 @@ final class AnnotationViewController: UIViewController {
             displayName: self.viewModel.state.displayName,
             username: self.viewModel.state.username
         )
-        if annotationIsShareable {
-            header.shareTap.subscribe(
-                with: self,
-                onNext: { (`self`: AnnotationViewController, button: UIButton) in
-                    self.shareAnnotation(sender: button)
-                }
-            )
-            .disposed(by: self.disposeBag)
+        if annotationIsShareable, let button = header.shareButton {
+            // TODO: ask delegate for menu instead?
+            let shareMediumImageAction = UIAction(title: L10n.Pdf.AnnotationShare.Image.medium) { (_: UIAction) in
+                self.shareAnnotation(sender: button, scale: 1.0)
+            }
+            let shareLargeImageAction = UIAction(title: L10n.Pdf.AnnotationShare.Image.large) { (_: UIAction) in
+                self.shareAnnotation(sender: button, scale: 300.0 / 72.0)
+            }
+            button.showsMenuAsPrimaryAction = true
+            button.menu = UIMenu(children: [shareMediumImageAction, shareLargeImageAction])
         }
         header.menuTap
               .subscribe(with: self, onNext: { `self`, _ in
