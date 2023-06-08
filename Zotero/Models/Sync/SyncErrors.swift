@@ -53,12 +53,13 @@ enum SyncError {
         case dbError
         case groupSyncFailed
         case allLibrariesFetchFailed
+        case preconditionErrorWithoutVersion(data: ErrorData)
         case uploadObjectConflict(data: ErrorData)
+        case cantSubmitAttachmentItem(data: ErrorData)
         case permissionLoadingFailed
         case missingGroupPermissions
         case cancelled
         case preconditionErrorCantBeResolved(data: ErrorData)
-        case cantResolveConflict(data: ErrorData)
         case serviceUnavailable
         case forbidden
     }
@@ -78,6 +79,7 @@ enum SyncError {
         case webDavDeletionFailed(error: String, library: String)
         case webDavVerification(WebDavError.Verification)
         case webDavDownload(WebDavError.Download)
+        case fileEditingDenied(LibraryIdentifier)
 
         var isVersionMismatch: Bool {
             switch self {
@@ -92,35 +94,21 @@ enum SyncError {
 }
 
 /// Errors for sync actions
-/// - attachmentItemNotSubmitted: Upload action for attachment is called, but the attachments RItem has not been submitted yet.
+/// - annotationNeededSplitting: Some annotations were too long and required splitting. Should repeat sync so that new annotations are submitted.
 /// - attachmentAlreadyUploaded: Upload authorization is called and the backend returns that the attachment has already been uploaded.
+/// - attachmentItemNotSubmitted: Upload action for attachment is called, but the attachments RItem has not been submitted yet.
 /// - attachmentMissing: Attachment upload can't start because a file is missing.
+/// - authorizationFailed: File upload authorization failed. Most cases require special handling.
+/// - objectPreconditionError: 412 of individual object when submitted to backend.
+/// - submitUpdateFailures: Failures of individual objects when submitting changes to backend
 enum SyncActionError: Error {
-    case attachmentItemNotSubmitted,
-         attachmentAlreadyUploaded,
-         attachmentMissing(key: String, libraryId: LibraryIdentifier, title: String),
-         submitUpdateFailures(String),
-         annotationNeededSplitting(message: String, keys: Set<String>, libraryId: LibraryIdentifier)
-}
-
-enum PreconditionErrorType: Error {
-    case objectConflict
-    case libraryConflict(response: String)
-}
-
-extension Error {
-    var preconditionError: PreconditionErrorType? {
-        if let error = self as? PreconditionErrorType {
-            return error
-        }
-        if let responseError = self as? AFResponseError, responseError.error.responseCode == 412 {
-            return .libraryConflict(response: responseError.response)
-        }
-        if let alamoError = self as? AFError, alamoError.responseCode == 412 {
-            return .libraryConflict(response: "")
-        }
-        return nil
-    }
+    case annotationNeededSplitting(message: String, keys: Set<String>, libraryId: LibraryIdentifier)
+    case attachmentAlreadyUploaded
+    case attachmentItemNotSubmitted
+    case attachmentMissing(key: String, libraryId: LibraryIdentifier, title: String)
+    case authorizationFailed(statusCode: Int, response: String, hadIfMatchHeader: Bool)
+    case objectPreconditionError
+    case submitUpdateFailures(String)
 }
 
 extension SyncError.Fatal: Equatable {

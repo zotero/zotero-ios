@@ -285,7 +285,7 @@ extension RItem: Updatable {
     }
 
     func markAsChanged(in database: Realm) {
-        self.changes.append(RObjectChange.create(changes: self.currentChanges))
+        self.changes.append(RObjectChange.create(changes: self.allChanges))
         self.changeType = .user
         self.deleted = false
         self.version = 0
@@ -304,8 +304,19 @@ extension RItem: Updatable {
         }
     }
 
-    private var currentChanges: RItemChanges {
-        var changes: RItemChanges = [.type, .fields]
+    var allChanges: RItemChanges {
+        if self.rawType == ItemTypes.annotation {
+            var changes: RItemChanges = [.parent, .fields, .type, .tags]
+            if !self.rects.isEmpty {
+                changes.insert(.rects)
+            }
+            if !self.paths.isEmpty {
+                changes.insert(.paths)
+            }
+            return changes
+        }
+        
+        var changes: RItemChanges = [.type, .fields, .tags]
         if !self.creators.isEmpty {
             changes.insert(.creators)
         }
@@ -315,20 +326,11 @@ extension RItem: Updatable {
         if self.parent != nil {
             changes.insert(.parent)
         }
-        if !self.tags.isEmpty {
-            changes.insert(.tags)
-        }
         if self.trash {
             changes.insert(.trash)
         }
         if !self.relations.isEmpty {
             changes.insert(.relations)
-        }
-        if !self.rects.isEmpty {
-            changes.insert(.rects)
-        }
-        if !self.paths.isEmpty {
-            changes.insert(.paths)
         }
         return changes
     }

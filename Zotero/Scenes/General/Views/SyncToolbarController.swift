@@ -120,7 +120,7 @@ final class SyncToolbarController {
             case .allLibrariesFetchFailed:
                 return (L10n.Errors.SyncToolbar.librariesMissing, nil)
 
-            case .cantResolveConflict, .preconditionErrorCantBeResolved:
+            case .preconditionErrorCantBeResolved:
                 return (L10n.Errors.SyncToolbar.conflictRetryLimit, nil)
 
             case .groupSyncFailed:

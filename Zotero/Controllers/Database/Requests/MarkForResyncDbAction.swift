@@ -25,7 +25,7 @@ struct MarkForResyncDbAction<Obj: SyncableObject&Updatable>: DbRequest {
         let syncDate = Date()
         var toCreate: [String] = self.keys
         let objects = database.objects(Obj.self).filter(.keys(self.keys, in: self.libraryId))
-        
+
         for object in objects {
             if object.syncState == .synced {
                 object.syncState = .outdated

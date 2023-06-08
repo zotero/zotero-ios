@@ -23,7 +23,12 @@ protocol WebSocketScheduler: AnyObject {
     func webSocketUpdate(libraryId: LibraryIdentifier)
 }
 
-private typealias SchedulerAction = (syncType: SyncController.SyncType, librarySyncType: SyncController.LibrarySyncType)
+struct SyncSchedulerAction {
+    let syncType: SyncController.SyncType
+    let librarySyncType: SyncController.LibrarySyncType
+    let retryAttempt: Int
+    let retryOnce: Bool
+}
 
 final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
     /// Timeout in which a new `LibrarySyncType.specific` is started. It's required so that local changes are not submitted immediately or in case of multiple quick changes we don't enqueue multiple syncs.
@@ -34,8 +39,8 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
     private let scheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
 
-    private var inProgress: SchedulerAction?
-    private var nextAction: SchedulerAction?
+    private var inProgress: SyncSchedulerAction?
+    private var nextAction: SyncSchedulerAction?
     private(set) var lastSyncDate: Date?
     private var lastFullSyncDate: Date?
     private var timerDisposeBag: DisposeBag
@@ -85,7 +90,7 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
     }
 
     func webSocketUpdate(libraryId: LibraryIdentifier) {
-        self.enqueueAndStartTimer(action: (.normal, .specific([libraryId])))
+        self.enqueueAndStartTimer(action: SyncSchedulerAction(syncType: .normal, librarySyncType: .specific([libraryId]), retryCount: 0))
     }
 
     func cancelSync() {
@@ -98,38 +103,40 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
         }
     }
 
-    private func enqueueAndStart(action: SchedulerAction) {
+    private func enqueueAndStart(action: SyncSchedulerAction) {
         self.queue.async(flags: .barrier) { [weak self] in
             self?._enqueueAndStart(action: action)
         }
     }
 
-    private func _enqueueAndStart(action: SchedulerAction) {
+    private func _enqueueAndStart(action: SyncSchedulerAction) {
         guard action.syncType != .full || self.canPerformFullSync else { return }
         self.enqueue(action: action)
         self.startNextAction()
     }
 
-    private func enqueueAndStartTimer(action: SchedulerAction) {
+    private func enqueueAndStartTimer(action: SyncSchedulerAction) {
         self.queue.async(flags: .barrier) { [weak self] in
             self?._enqueueAndStartTimer(action: action)
         }
     }
 
-    private func _enqueueAndStartTimer(action: SchedulerAction) {
+    private func _enqueueAndStartTimer(action: SyncSchedulerAction) {
         guard action.syncType != .full || self.canPerformFullSync else { return }
         self.enqueue(action: action)
         self.startTimer()
     }
 
-    private func enqueue(action: SchedulerAction) {
-        guard let (nextSyncType, nextLibrarySyncType) = self.nextAction else {
+    private func enqueue(action: SyncSchedulerAction) {
+        guard let nextAction = self.nextAction else {
             self.nextAction = action
             return
         }
 
-        let type = nextSyncType > action.syncType ? nextSyncType : action.syncType
-        switch (nextLibrarySyncType, action.librarySyncType) {
+        let type = nextAction.syncType > action.syncType ? nextAction.syncType : action.syncType
+        let retryCount =
+
+        switch (nextAction.librarySyncType, action.librarySyncType) {
         case (.all, .all):
             self.nextAction = (type, .all)
 

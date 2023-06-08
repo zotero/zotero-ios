@@ -81,21 +81,17 @@ class UploadFixSyncAction: SyncAction {
 
     private func markAsUploaded(attachment: Attachment) -> Single<()> {
         return Single.create { [weak self] subscriber in
-            guard let `self` = self, case .file(let filename, let contentType, _, _) = attachment.type else {
-                subscriber(.failure(Error.incorrectAttachmentType(attachment.type)))
+            guard let `self` = self else {
+                subscriber(.failure(Error.expired))
                 return Disposables.create()
             }
-
-            let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
-            guard let md5 = md5(from: file.createUrl()) else {
-                subscriber(.failure(Error.fileNotDownloaded))
-                return Disposables.create()
-            }
-
-            let request = MarkAttachmentUploadedDbRequest(libraryId: self.libraryId, key: self.key, version: nil, md5: md5)
 
             do {
-                try self.dbStorage.perform(request: request, on: self.queue)
+                // Mark object as uploaded, since backend already has the file and we just downloaded to match the file locally
+                let markAsUploaded = MarkAttachmentUploadedDbRequest(libraryId: self.libraryId, key: self.key, version: nil)
+                // Mark for resync so that local object matches remote object in version and md5
+                let markForResync = MarkForResyncDbAction<RItem>(libraryId: self.libraryId, keys: [self.key])
+                try self.dbStorage.perform(writeRequests: [markAsUploaded, markForResync], on: self.queue)
                 subscriber(.success(()))
             } catch let error {
                 subscriber(.failure(error))

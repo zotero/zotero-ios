@@ -130,7 +130,7 @@ struct SubmitUpdateSyncAction: SyncAction {
             switch response.code {
             case 412:
                 DDLogError("SubmitUpdateSyncAction: failed \(response.key ?? "unknown key") - \(response.message). Library \(libraryId)")
-                return PreconditionErrorType.objectConflict
+                return SyncActionError.objectPreconditionError
 
             case 400 where response.message.contains(self.splitMessage):
                 if let key = response.key {
