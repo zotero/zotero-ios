@@ -311,14 +311,16 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
               let pdfReaderViewController = navigationController.viewControllers.last as? PDFReaderViewController
         else { return }
         let annotationPreviewController = controllers.annotationPreviewController
+        let pageIndex: PageIndex = UInt(annotation.page)
         let rect = annotation.boundingBox(boundingBoxConverter: pdfReaderViewController)
         // TODO: check if size should be scaled by a factor, either fixed, or dynamic e.g. screen scale
         let size = rect.size
         annotationPreviewController.render(
             document: document,
-            page: UInt(annotation.page),
+            page: pageIndex,
             rect: rect,
             imageSize: size,
+            imageScale: 0.0,
             key: annotation.key,
             parentKey: viewModel.state.key,
             libraryId: viewModel.state.library.id
