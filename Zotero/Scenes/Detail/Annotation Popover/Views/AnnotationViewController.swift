@@ -93,10 +93,16 @@ final class AnnotationViewController: UIViewController {
 
         // Update header
         let editability = annotation.editability(currentUserId: state.userId, library: state.library)
+        var annotationIsShareable = false
+        if let button = header.shareButton, let menu = shareAnnotationMenu(sender: button) {
+            annotationIsShareable = true
+            button.showsMenuAsPrimaryAction = true
+            button.menu = menu
+        }
         self.header.setup(
             with: annotation,
             libraryId: state.library.identifier,
-            showShareButton: (annotation.type == .image),
+            showShareButton: annotationIsShareable,
             isEditable: (editability == .editable),
             showsLock: (editability != .editable),
             showDoneButton: false,
@@ -132,8 +138,8 @@ final class AnnotationViewController: UIViewController {
         self.viewModel.process(action: .removeAnnotation(key))
     }
     
-    private func shareAnnotation(sender: UIButton, scale: CGFloat = 1.0) {
-        coordinatorDelegate?.shareAnnotation(sender: sender, scale: scale)
+    private func shareAnnotationMenu(sender: UIButton) -> UIMenu? {
+        coordinatorDelegate?.shareAnnotationMenu(sender: sender)
     }
 
     private func showSettings() {
@@ -181,7 +187,12 @@ final class AnnotationViewController: UIViewController {
         // Setup header
         let header = AnnotationViewHeader(layout: layout)
         let editability = annotation.editability(currentUserId: self.viewModel.state.userId, library: self.viewModel.state.library)
-        let annotationIsShareable = (annotation.type == .image)
+        var annotationIsShareable = false
+        if let button = header.shareButton, let menu = shareAnnotationMenu(sender: button) {
+            annotationIsShareable = true
+            button.showsMenuAsPrimaryAction = true
+            button.menu = menu
+        }
         header.setup(
             with: annotation,
             libraryId: self.viewModel.state.library.identifier,
@@ -193,17 +204,6 @@ final class AnnotationViewController: UIViewController {
             displayName: self.viewModel.state.displayName,
             username: self.viewModel.state.username
         )
-        if annotationIsShareable, let button = header.shareButton {
-            // TODO: ask delegate for menu instead?
-            let shareMediumImageAction = UIAction(title: L10n.Pdf.AnnotationShare.Image.medium) { (_: UIAction) in
-                self.shareAnnotation(sender: button, scale: 300.0 / 72.0)
-            }
-            let shareLargeImageAction = UIAction(title: L10n.Pdf.AnnotationShare.Image.large) { (_: UIAction) in
-                self.shareAnnotation(sender: button, scale: 600.0 / 72.0)
-            }
-            button.showsMenuAsPrimaryAction = true
-            button.menu = UIMenu(children: [shareMediumImageAction, shareLargeImageAction])
-        }
         header.menuTap
               .subscribe(with: self, onNext: { `self`, _ in
                   self.showSettings()

@@ -22,7 +22,6 @@ final class AnnotationView: UIView {
         case setComment(NSAttributedString)
         case setCommentActive(Bool)
         case done
-        case shareImage(sender: UIButton, scale: CGFloat)
     }
 
     enum AccessibilityType {
@@ -98,16 +97,26 @@ final class AnnotationView: UIView {
     /// - parameter selected: If true, selected state style is applied.
     /// - parameter availableWidth: Available width for view.
     /// - parameter library: Library of given annotation
+    /// - parameter pdfAnnotationsCoordinatorDelegate: Delegate for getting share menu.
+    /// - parameter state: State required for setting up share menu.
     func setup(with annotation: Annotation, comment: Comment?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, library: Library, currentUserId: Int, displayName: String, username: String,
-               boundingBoxConverter: AnnotationBoundingBoxConverter) {
+               boundingBoxConverter: AnnotationBoundingBoxConverter, pdfAnnotationsCoordinatorDelegate: PdfAnnotationsCoordinatorDelegate, state: PDFReaderState) {
         let editability = annotation.editability(currentUserId: currentUserId, library: library)
         let color = UIColor(hex: annotation.color)
         let canEdit = editability == .editable && selected
 
+        var annotationIsShareable = false
+        if let button = header.shareButton,
+           let menu = pdfAnnotationsCoordinatorDelegate.shareAnnotationMenu(state: state, annotation: annotation, sender: button)
+        {
+            annotationIsShareable = true
+            button.showsMenuAsPrimaryAction = true
+            button.menu = menu
+        }
         self.header.setup(
             with: annotation,
             libraryId: library.identifier,
-            showShareButton: (annotation.type == .image),
+            showShareButton: annotationIsShareable,
             isEditable: (editability != .notEditable && selected),
             showsLock: editability != .editable,
             showDoneButton: self.layout.showDoneButton,
@@ -118,7 +127,6 @@ final class AnnotationView: UIView {
         self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth, accessibilityType: .cell, boundingBoxConverter: boundingBoxConverter)
         self.setup(comment: comment, canEdit: canEdit)
         self.setupTags(for: annotation, canEdit: canEdit, accessibilityEnabled: selected)
-        self.setupShareMenu()
         self.setupObserving()
 
         let commentButtonIsHidden = self.commentTextView.isHidden
@@ -222,19 +230,6 @@ final class AnnotationView: UIView {
             self.tags.button.accessibilityTraits = .staticText
             self.tags.button.accessibilityHint = nil
         }
-    }
-    
-    private func setupShareMenu() {
-        guard let sender = header.shareButton else { return }
-        // TODO: ask delegate for menu instead?
-        let shareMediumImageAction = UIAction(title: L10n.Pdf.AnnotationShare.Image.medium) { [weak self] (_: UIAction) in
-            self?.actionPublisher.on(.next(.shareImage(sender: sender, scale: 300.0 / 72.0)))
-        }
-        let shareLargeImageAction = UIAction(title: L10n.Pdf.AnnotationShare.Image.large) { [weak self](_: UIAction) in
-            self?.actionPublisher.on(.next(.shareImage(sender: sender, scale: 600.0 / 72.0)))
-        }
-        sender.showsMenuAsPrimaryAction = true
-        sender.menu = UIMenu(children: [shareMediumImageAction, shareLargeImageAction])
     }
 
     @DisposeBag.DisposableBuilder

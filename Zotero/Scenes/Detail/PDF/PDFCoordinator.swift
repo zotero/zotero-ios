@@ -30,12 +30,16 @@ protocol PdfReaderCoordinatorDelegate: AnyObject {
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: AnyObject {
-    func shareAnnotation(
+    func shareAnnotationMenu(
+        state: PDFReaderState,
+        annotation: Annotation,
+        sender: UIButton
+    ) -> UIMenu?
+    func shareAnnotationImage(
         state: PDFReaderState,
         annotation: Annotation,
         scale: CGFloat,
-        sender: UIButton,
-        presenter: UIViewController?
+        sender: UIButton
     )
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void)
     func showCellOptions(for annotation: Annotation, userId: Int, library: Library, sender: UIButton, userInterfaceStyle: UIUserInterfaceStyle, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
@@ -298,12 +302,33 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
 }
 
 extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
-    func shareAnnotation(
+    func shareAnnotationMenu(
+        state: PDFReaderState,
+        annotation: Annotation,
+        sender: UIButton
+    ) -> UIMenu? {
+        var children = [UIMenuElement]()
+        if annotation.type == .image {
+            let shareMediumImageAction = UIAction(title: L10n.Pdf.AnnotationShare.Image.medium) { [weak self] (_: UIAction) in
+                guard let self else { return }
+                self.shareAnnotationImage(state: state, annotation: annotation, scale: 300.0 / 72.0, sender: sender)
+            }
+            children.append(shareMediumImageAction)
+            let shareLargeImageAction = UIAction(title: L10n.Pdf.AnnotationShare.Image.large) { [weak self] (_: UIAction) in
+                guard let self else { return }
+                self.shareAnnotationImage(state: state, annotation: annotation, scale: 600.0 / 72.0, sender: sender)
+            }
+            children.append(shareLargeImageAction)
+        }
+        guard !children.isEmpty else { return nil }
+        return UIMenu(children: children)
+    }
+    
+    func shareAnnotationImage(
         state: PDFReaderState,
         annotation: Annotation,
         scale: CGFloat = 1.0,
-        sender: UIButton,
-        presenter: UIViewController? = nil
+        sender: UIButton
     ) {
         guard annotation.type == .image,
               let pdfReaderViewController = navigationController.viewControllers.last as? PDFReaderViewController
@@ -327,7 +352,11 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         .observe(on: MainScheduler.instance)
         .subscribe { [weak self] (image: UIImage) in
             guard let self else { return }
-            (self as Coordinator).share(item: image, sourceView: .view(sender, nil), presenter: presenter)
+            if let coordinator = self.childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
+                coordinator.share(item: image, sourceView: .view(sender, nil))
+            } else {
+                (self as Coordinator).share(item: image, sourceView: .view(sender, nil))
+            }
         } onFailure: { (error: Error) in
             // TODO: log error
             // TODO: show error

@@ -129,15 +129,6 @@ final class AnnotationsViewController: UIViewController {
             self.viewModel.process(action: .setCommentActive(isActive))
 
         case .done: break // Done button doesn't appear here
-            
-        case .shareImage(let sender, let scale):
-            coordinatorDelegate?.shareAnnotation(
-                state: state,
-                annotation: annotation,
-                scale: scale,
-                sender: sender,
-                presenter: nil
-            )
         }
     }
 
@@ -297,10 +288,10 @@ final class AnnotationsViewController: UIViewController {
             comment = .init(attributedString: self.loadAttributedComment(for: annotation), isActive: state.selectedAnnotationCommentActive)
         }
 
-        if let boundingBoxConverter = self.boundingBoxConverter {
+        if let boundingBoxConverter = self.boundingBoxConverter, let pdfAnnotationsCoordinatorDelegate = coordinatorDelegate {
             cell.setup(with: annotation, comment: comment, preview: preview, selected: selected, availableWidth: PDFReaderLayout.sidebarWidth, library: state.library,
                        isEditing: state.sidebarEditingEnabled, currentUserId: self.viewModel.state.userId, displayName: self.viewModel.state.displayName, username: self.viewModel.state.username,
-                       boundingBoxConverter: boundingBoxConverter)
+                       boundingBoxConverter: boundingBoxConverter, pdfAnnotationsCoordinatorDelegate: pdfAnnotationsCoordinatorDelegate, state: state)
         }
         let actionSubscription = cell.actionPublisher.subscribe(onNext: { [weak self] action in
             self?.perform(action: action, annotation: annotation)
