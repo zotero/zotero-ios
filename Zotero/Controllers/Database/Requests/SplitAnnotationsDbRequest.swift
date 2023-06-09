@@ -53,9 +53,9 @@ struct SplitAnnotationsDbRequest: DbRequest {
                         rRect.minY = rect.minY
                         rRect.maxX = rect.maxX
                         rRect.maxY = rect.maxY
-                        item.rects.append(rRect)
+                        new.rects.append(rRect)
                     }
-                    item.changes.append(RObjectChange.create(changes: RItemChanges.rects))
+                    new.changes.append(RObjectChange.create(changes: RItemChanges.rects))
                 })
             }
 
@@ -84,7 +84,7 @@ struct SplitAnnotationsDbRequest: DbRequest {
 
                         new.paths.append(rPath)
                     }
-                    item.changes.append(RObjectChange.create(changes: RItemChanges.paths))
+                    new.changes.append(RObjectChange.create(changes: RItemChanges.paths))
                 }
             }
 
