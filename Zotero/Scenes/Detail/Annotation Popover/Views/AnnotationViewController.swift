@@ -133,9 +133,6 @@ final class AnnotationViewController: UIViewController {
     }
     
     private func shareAnnotation(sender: UIButton, scale: CGFloat = 1.0) {
-        guard let annotation = self.viewModel.state.selectedAnnotation,
-              annotation.type == .image
-        else { return }
         coordinatorDelegate?.shareAnnotation(sender: sender, scale: scale)
     }
 

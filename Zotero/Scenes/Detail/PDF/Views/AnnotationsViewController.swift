@@ -132,8 +132,8 @@ final class AnnotationsViewController: UIViewController {
             
         case .shareImage(let sender, let scale):
             coordinatorDelegate?.shareAnnotation(
-                viewModel: viewModel,
-                annotationKey: annotation.readerKey,
+                state: state,
+                annotation: annotation,
                 scale: scale,
                 sender: sender,
                 presenter: nil

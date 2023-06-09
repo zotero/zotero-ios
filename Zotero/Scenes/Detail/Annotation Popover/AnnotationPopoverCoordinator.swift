@@ -59,10 +59,12 @@ final class AnnotationPopoverCoordinator: NSObject, Coordinator {
 
 extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDelegate {
     func shareAnnotation(sender: UIButton, scale: CGFloat = 1.0) {
-        guard let pdfCoordinator = parentCoordinator as? PDFCoordinator else { return }
+        guard let pdfCoordinator = parentCoordinator as? PDFCoordinator,
+              let annotation = viewModel.state.selectedAnnotation
+        else { return }
         pdfCoordinator.shareAnnotation(
-            viewModel: viewModel,
-            annotationKey: nil,
+            state: viewModel.state,
+            annotation: annotation,
             scale: scale,
             sender: sender,
             presenter: navigationController

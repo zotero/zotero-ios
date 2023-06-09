@@ -31,8 +31,8 @@ protocol PdfReaderCoordinatorDelegate: AnyObject {
 
 protocol PdfAnnotationsCoordinatorDelegate: AnyObject {
     func shareAnnotation(
-        viewModel: ViewModel<PDFReaderActionHandler>,
-        annotationKey: PDFReaderState.AnnotationKey?,
+        state: PDFReaderState,
+        annotation: Annotation,
         scale: CGFloat,
         sender: UIButton,
         presenter: UIViewController?
@@ -299,17 +299,13 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
 
 extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
     func shareAnnotation(
-        viewModel: ViewModel<PDFReaderActionHandler>,
-        annotationKey: PDFReaderState.AnnotationKey? = nil,
+        state: PDFReaderState,
+        annotation: Annotation,
         scale: CGFloat = 1.0,
         sender: UIButton,
         presenter: UIViewController? = nil
     ) {
-        let state = viewModel.state
-        let document = state.document
-        guard let annotationKey = annotationKey ?? state.selectedAnnotationKey,
-              let annotation = state.annotation(for: annotationKey),
-              annotation.type == .image,
+        guard annotation.type == .image,
               let pdfReaderViewController = navigationController.viewControllers.last as? PDFReaderViewController
         else { return }
         let annotationPreviewController = controllers.annotationPreviewController
@@ -319,14 +315,14 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         size.width *= scale
         size.height *= scale
         annotationPreviewController.render(
-            document: document,
+            document: state.document,
             page: pageIndex,
             rect: rect,
             imageSize: size,
             imageScale: 1.0,
             key: annotation.key,
-            parentKey: viewModel.state.key,
-            libraryId: viewModel.state.library.id
+            parentKey: state.key,
+            libraryId: state.library.id
         )
         .observe(on: MainScheduler.instance)
         .subscribe { [weak self] (image: UIImage) in
