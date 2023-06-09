@@ -228,10 +228,10 @@ final class AnnotationView: UIView {
         guard let sender = header.shareButton else { return }
         // TODO: ask delegate for menu instead?
         let shareMediumImageAction = UIAction(title: L10n.Pdf.AnnotationShare.Image.medium) { [weak self] (_: UIAction) in
-            self?.actionPublisher.on(.next(.shareImage(sender: sender, scale: 1.0)))
+            self?.actionPublisher.on(.next(.shareImage(sender: sender, scale: 300.0 / 72.0)))
         }
         let shareLargeImageAction = UIAction(title: L10n.Pdf.AnnotationShare.Image.large) { [weak self](_: UIAction) in
-            self?.actionPublisher.on(.next(.shareImage(sender: sender, scale: 300.0 / 72.0)))
+            self?.actionPublisher.on(.next(.shareImage(sender: sender, scale: 600.0 / 72.0)))
         }
         sender.showsMenuAsPrimaryAction = true
         sender.menu = UIMenu(children: [shareMediumImageAction, shareLargeImageAction])

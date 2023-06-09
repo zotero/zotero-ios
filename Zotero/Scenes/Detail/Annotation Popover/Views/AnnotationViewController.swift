@@ -196,10 +196,10 @@ final class AnnotationViewController: UIViewController {
         if annotationIsShareable, let button = header.shareButton {
             // TODO: ask delegate for menu instead?
             let shareMediumImageAction = UIAction(title: L10n.Pdf.AnnotationShare.Image.medium) { (_: UIAction) in
-                self.shareAnnotation(sender: button, scale: 1.0)
+                self.shareAnnotation(sender: button, scale: 300.0 / 72.0)
             }
             let shareLargeImageAction = UIAction(title: L10n.Pdf.AnnotationShare.Image.large) { (_: UIAction) in
-                self.shareAnnotation(sender: button, scale: 300.0 / 72.0)
+                self.shareAnnotation(sender: button, scale: 600.0 / 72.0)
             }
             button.showsMenuAsPrimaryAction = true
             button.menu = UIMenu(children: [shareMediumImageAction, shareLargeImageAction])
