@@ -169,7 +169,6 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
             self.fileCleanupController.delete(.allForItems(ids, viewModel.state.library.identifier), completed: nil)
 
         case .startSync:
-            guard !self.syncScheduler.syncController.inProgress else { return }
             self.syncScheduler.request(sync: .ignoreIndividualDelays, libraries: .specific([viewModel.state.library.identifier]))
 
         case .emptyTrash:

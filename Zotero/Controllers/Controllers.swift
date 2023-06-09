@@ -322,8 +322,7 @@ final class UserControllers {
         let backgroundUploadObserver = BackgroundUploadObserver(context: backgroundUploadContext, processor: backgroundUploadProcessor, backgroundTaskController: controllers.backgroundTaskController)
         let fileDownloader = AttachmentDownloader(userId: userId, apiClient: controllers.apiClient, fileStorage: controllers.fileStorage, dbStorage: dbStorage, webDavController: webDavController)
         let syncController = SyncController(userId: userId, apiClient: controllers.apiClient, dbStorage: dbStorage, fileStorage: controllers.fileStorage, schemaController: controllers.schemaController,
-                                            dateParser: controllers.dateParser, backgroundUploaderContext: backgroundUploadContext, webDavController: webDavController, attachmentDownloader: fileDownloader, syncDelayIntervals: DelayIntervals.sync,
-                                            conflictDelays: DelayIntervals.conflict)
+                                            dateParser: controllers.dateParser, backgroundUploaderContext: backgroundUploadContext, webDavController: webDavController, attachmentDownloader: fileDownloader, syncDelayIntervals: DelayIntervals.sync, maxRetryCount: DelayIntervals.retry.count)
         let webSocketController = WebSocketController(dbStorage: dbStorage, lowPowerModeController: controllers.lowPowerModeController)
         let fileCleanupController = AttachmentFileCleanupController(fileStorage: controllers.fileStorage, dbStorage: dbStorage)
 
@@ -356,7 +355,7 @@ final class UserControllers {
 
         self.isFirstLaunch = isFirstLaunch
         self.dbStorage = dbStorage
-        self.syncScheduler = SyncScheduler(controller: syncController)
+        self.syncScheduler = SyncScheduler(controller: syncController, retryIntervals: DelayIntervals.retry)
         self.webDavController = webDavController
         self.changeObserver = RealmObjectUserChangeObserver(dbStorage: dbStorage)
         self.itemLocaleController = RItemLocaleController(schemaController: controllers.schemaController, dbStorage: dbStorage)
@@ -379,33 +378,32 @@ final class UserControllers {
         self.itemLocaleController.loadLocale()
 
         // Observe sync to enable/disable the device falling asleep
-        self.syncScheduler.syncController.progressObservable
+        self.syncScheduler.inProgress
             .observe(on: MainScheduler.instance)
-            .subscribe(with: self, onNext: { `self`, progress in
-                switch progress {
-                case .aborted, .finished:
+            .subscribe(with: self, onNext: { `self`, inProgress in
+                if inProgress {
+                    self.idleTimerController.disable()
+                } else {
                     self.idleTimerController.enable()
                     if !Defaults.shared.didPerformFullSyncFix {
                         Defaults.shared.didPerformFullSyncFix = true
                     }
-
-                case .starting:
-                    self.idleTimerController.disable()
-                default: break
                 }
             })
             .disposed(by: self.disposeBag)
 
         // Observe local changes to start sync
         self.changeObserver.observable
+            .debounce(.seconds(3), scheduler: MainScheduler.instance)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] changedLibraries in
-                self?.syncScheduler.request(sync: .normal, libraries: .specific(changedLibraries), applyDelay: true)
+                self?.syncScheduler.request(sync: .normal, libraries: .specific(changedLibraries))
             })
             .disposed(by: self.disposeBag)
 
         // Observe remote changes to start sync/translator update
         self.webSocketController.observable
+            .debounce(.seconds(3), scheduler: MainScheduler.instance)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] change in
                 switch change {
@@ -424,7 +422,7 @@ final class UserControllers {
             // Call this before sync so that background uploads are updated and taken care of by sync if needed.
             self.backgroundUploadObserver.updateSessions()
 
-            let type: SyncController.SyncType = Defaults.shared.didPerformFullSyncFix ? .normal : .full
+            let type: SyncController.Kind = Defaults.shared.didPerformFullSyncFix ? .normal : .full
             self.syncScheduler.request(sync: type, libraries: .all)
         })
     }

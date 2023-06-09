@@ -722,8 +722,7 @@ final class ShareViewController: UIViewController {
         let backgroundUploadObserver = BackgroundUploadObserver(context: backgroundUploadContext, processor: backgroundProcessor, backgroundTaskController: backgroundTaskController)
         let attachmentDownloader = AttachmentDownloader(userId: userId, apiClient: apiClient, fileStorage: fileStorage, dbStorage: dbStorage, webDavController: webDavController)
         let syncController = SyncController(userId: userId, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, schemaController: schemaController, dateParser: dateParser,
-                                            backgroundUploaderContext: backgroundUploadContext, webDavController: webDavController, attachmentDownloader: attachmentDownloader, syncDelayIntervals: DelayIntervals.sync,
-                                            conflictDelays: DelayIntervals.conflict)
+                                            backgroundUploaderContext: backgroundUploadContext, webDavController: webDavController, attachmentDownloader: attachmentDownloader, syncDelayIntervals: DelayIntervals.sync, maxRetryCount: DelayIntervals.retry.count)
 
         return ExtensionViewModel(webView: self.webView, apiClient: apiClient, attachmentDownloader: attachmentDownloader, backgroundUploader: backgroundUploader, backgroundUploadObserver: backgroundUploadObserver, dbStorage: dbStorage,
                                   schemaController: schemaController, webDavController: webDavController, dateParser: dateParser, fileStorage: fileStorage, syncController: syncController,

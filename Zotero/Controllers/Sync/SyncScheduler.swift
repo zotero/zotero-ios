@@ -13,9 +13,9 @@ import RxSwift
 
 protocol SynchronizationScheduler: AnyObject {
     var syncController: SynchronizationController { get }
+    var inProgress: BehaviorRelay<Bool> { get }
 
-    func request(sync type: SyncController.SyncType, libraries: SyncController.LibrarySyncType)
-    func request(sync type: SyncController.SyncType, libraries: SyncController.LibrarySyncType, applyDelay: Bool)
+    func request(sync type: SyncController.Kind, libraries: SyncController.Libraries)
     func cancelSync()
 }
 
@@ -23,74 +23,83 @@ protocol WebSocketScheduler: AnyObject {
     func webSocketUpdate(libraryId: LibraryIdentifier)
 }
 
-struct SyncSchedulerAction {
-    let syncType: SyncController.SyncType
-    let librarySyncType: SyncController.LibrarySyncType
-    let retryAttempt: Int
-    let retryOnce: Bool
-}
-
 final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
-    /// Timeout in which a new `LibrarySyncType.specific` is started. It's required so that local changes are not submitted immediately or in case of multiple quick changes we don't enqueue multiple syncs.
-    private static let timeout: RxTimeInterval = .seconds(3)
+    struct Sync {
+        let type: SyncController.Kind
+        let libraries: SyncController.Libraries
+        let retryAttempt: Int
+        let retryOnce: Bool
+
+        init(type: SyncController.Kind, libraries: SyncController.Libraries, retryAttempt: Int = 0, retryOnce: Bool = false) {
+            self.type = type
+            self.libraries = libraries
+            self.retryAttempt = retryAttempt
+            self.retryOnce = retryOnce
+        }
+    }
+
+    // Minimum time between syncs
+    private static let syncTimeout: Int = 3000 // 3s
+    // Minimum time between full syncs
     private static let fullSyncTimeout: Double = 3600 // 1 hour
     let syncController: SynchronizationController
+    // Intervals in which retry attempts should be scheduled
+    private let retryIntervals: [Int]
     private let queue: DispatchQueue
     private let scheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
 
-    private var inProgress: SyncSchedulerAction?
-    private var nextAction: SyncSchedulerAction?
-    private(set) var lastSyncDate: Date?
-    private var lastFullSyncDate: Date?
+    private var syncInProgress: Sync?
+    private var syncQueue: [Sync]
+    private var lastSyncFinishDate: Date
+    private var lastFullSyncDate: Date
     private var timerDisposeBag: DisposeBag
 
     private var canPerformFullSync: Bool {
-        guard let date = self.lastFullSyncDate else { return true }
-        return Date().timeIntervalSince(date) <= SyncScheduler.fullSyncTimeout
+        return Date().timeIntervalSince(self.lastFullSyncDate) > SyncScheduler.fullSyncTimeout
     }
 
-    init(controller: SyncController) {
-        self.syncController = controller
+    var inProgress: BehaviorRelay<Bool>
+
+    init(controller: SyncController, retryIntervals: [Int]) {
         let queue = DispatchQueue(label: "org.zotero.SchedulerAccessQueue", qos: .utility, attributes: .concurrent)
+
+        self.syncController = controller
+        self.retryIntervals = retryIntervals
         self.queue = queue
+        self.inProgress = BehaviorRelay(value: false)
+        self.syncQueue = []
+        self.lastSyncFinishDate = Date(timeIntervalSince1970: 0)
+        self.lastFullSyncDate = Date(timeIntervalSince1970: 0)
         self.scheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.SchedulerAccessQueue")
         self.disposeBag = DisposeBag()
         self.timerDisposeBag = DisposeBag()
 
         controller.observable
                   .observe(on: self.scheduler)
-                  .subscribe(onNext: { [weak self] data in
-                      self?.inProgress = nil
-                      if let data = data { // We're retrying, enqueue the new sync
-                          self?._enqueueAndStartTimer(action: data)
-                      } else if self?.nextAction != nil {
-                          // We're not retrying, start timer so that next in queue is processed
-                          self?.startTimer()
-                      }
-                  }, onError: { [weak self] _ in
-                      self?.inProgress = nil
-                      if self?.nextAction != nil {
-                          self?.startTimer()
+                  .subscribe(onNext: { [weak self] sync in
+                      guard let self else { return }
+
+                      self.syncInProgress = nil
+                      self.lastSyncFinishDate = Date()
+
+                      if let sync = sync {
+                          // We're retrying, enqueue the new sync
+                          self.enqueueAndStart(sync: sync)
+                      } else if !self.syncQueue.isEmpty {
+                          // We're not retrying, process next action
+                          self.startNextSync()
                       }
                   })
                   .disposed(by: self.disposeBag)
     }
 
-    func request(sync type: SyncController.SyncType, libraries: SyncController.LibrarySyncType) {
-        self.request(sync: type, libraries: libraries, applyDelay: false)
-    }
-
-    func request(sync type: SyncController.SyncType, libraries: SyncController.LibrarySyncType, applyDelay: Bool) {
-        if applyDelay {
-            self.enqueueAndStartTimer(action: (type, libraries))
-        } else {
-            self.enqueueAndStart(action: (type, libraries))
-        }
+    func request(sync type: SyncController.Kind, libraries: SyncController.Libraries) {
+        self.enqueueAndStart(sync: Sync(type: type, libraries: libraries))
     }
 
     func webSocketUpdate(libraryId: LibraryIdentifier) {
-        self.enqueueAndStartTimer(action: SyncSchedulerAction(syncType: .normal, librarySyncType: .specific([libraryId]), retryCount: 0))
+        self.enqueueAndStart(sync: Sync(type: .normal, libraries: .specific([libraryId])))
     }
 
     func cancelSync() {
@@ -98,97 +107,83 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
             guard let self = self else { return }
             self.syncController.cancel()
             self.timerDisposeBag = DisposeBag()
-            self.inProgress = nil
-            self.nextAction = nil
+            self.syncInProgress = nil
+            self.syncQueue = []
         }
     }
 
-    private func enqueueAndStart(action: SyncSchedulerAction) {
+    private func enqueueAndStart(sync: Sync) {
         self.queue.async(flags: .barrier) { [weak self] in
-            self?._enqueueAndStart(action: action)
+            guard let self else { return }
+            self.enqueue(sync: sync)
+            self.startNextSync()
         }
     }
 
-    private func _enqueueAndStart(action: SyncSchedulerAction) {
-        guard action.syncType != .full || self.canPerformFullSync else { return }
-        self.enqueue(action: action)
-        self.startNextAction()
-    }
-
-    private func enqueueAndStartTimer(action: SyncSchedulerAction) {
-        self.queue.async(flags: .barrier) { [weak self] in
-            self?._enqueueAndStartTimer(action: action)
+    private func enqueue(sync: Sync) {
+        if sync.type == .full && sync.libraries == .all {
+            guard self.canPerformFullSync else { return }
+            // Full sync overrides all queued syncs, since it will sync up everything
+            self.syncQueue = [sync]
+            // Also reset timer in case we're already waiting for delayed re-sync
+            self.timerDisposeBag = DisposeBag()
+        } else if self.syncQueue.isEmpty {
+            self.syncQueue.append(sync)
+        } else if sync.retryAttempt > 0 {
+            // Retry sync should be added to the beginning of queue so that retries are processed before new syncs
+            if let index = self.syncQueue.firstIndex(where: { $0.retryAttempt == 0 }) {
+                self.syncQueue.insert(sync, at: index)
+            } else {
+                self.syncQueue.append(sync)
+            }
+        } else if !self.syncQueue.contains(where: { return $0.type == sync.type && $0.libraries == sync.libraries }) {
+            // New sync request should be added to the end of queue if it's not a duplicate
+            self.syncQueue.append(sync)
         }
     }
 
-    private func _enqueueAndStartTimer(action: SyncSchedulerAction) {
-        guard action.syncType != .full || self.canPerformFullSync else { return }
-        self.enqueue(action: action)
-        self.startTimer()
-    }
-
-    private func enqueue(action: SyncSchedulerAction) {
-        guard let nextAction = self.nextAction else {
-            self.nextAction = action
+    private func startNextSync() {
+        guard self.syncInProgress == nil, let nextSync = self.syncQueue.first else {
+            if self.syncInProgress == nil && self.syncQueue.isEmpty {
+                // Report finished queue
+                self.inProgress.accept(false)
+            }
             return
         }
 
-        let type = nextAction.syncType > action.syncType ? nextAction.syncType : action.syncType
-        let retryCount =
-
-        switch (nextAction.librarySyncType, action.librarySyncType) {
-        case (.all, .all):
-            self.nextAction = (type, .all)
-
-        case (.specific, .all):
-            self.nextAction = (type, .all)
-
-        case (.specific(let nextIds), .specific(let newIds)):
-            let unionedIds = Array(Set(nextIds).union(Set(newIds)))
-            self.nextAction = (type, .specific(unionedIds))
-        case (.all, .specific): break // If full sync is enqueued we don't "degrade" it to specific
+        let delay: Int
+        if nextSync.retryAttempt > 0 {
+            let index = min(nextSync.retryAttempt, self.retryIntervals.count)
+            delay = self.retryIntervals[index - 1]
+        } else {
+            delay = SyncScheduler.syncTimeout
         }
+
+        let timeSinceLastSync = Int(ceil(Date().timeIntervalSince(self.lastSyncFinishDate) * 1000))
+        if timeSinceLastSync < delay {
+            self.delay(for: delay - timeSinceLastSync)
+            return
+        }
+
+        if !self.inProgress.value {
+            // Report sync start
+            self.inProgress.accept(true)
+        }
+
+        self.syncQueue.removeFirst()
+        self.syncInProgress = nextSync
+        self.syncController.start(type: nextSync.type, libraries: nextSync.libraries, retryAttempt: nextSync.retryAttempt)
     }
 
-    private func startTimer() {
-        guard self.inProgress == nil else { return }
+    private func delay(for timeout: Int) {
+        guard self.syncInProgress == nil else { return }
 
         self.timerDisposeBag = DisposeBag()
 
-        Single<Int>.timer(SyncScheduler.timeout, scheduler: self.scheduler)
+        Single<Int>.timer(.milliseconds(timeout), scheduler: self.scheduler)
                    .subscribe(onSuccess: { [weak self] _ in
-                       self?.startNextAction()
+                       self?.startNextSync()
                    })
                    .disposed(by: self.timerDisposeBag)
-    }
-
-    private func startNextAction() {
-        guard self.inProgress == nil, let (syncType, librarySyncType) = self.nextAction else { return }
-
-        self.inProgress = self.nextAction
-        self.nextAction = nil
-        self.lastSyncDate = Date()
-        if syncType == .full {
-            self.lastFullSyncDate = self.lastSyncDate
-        }
-
-        self.syncController.start(type: syncType, libraries: librarySyncType)
-    }
-}
-
-extension SyncController.SyncType: Comparable {
-    static func < (lhs: SyncController.SyncType, rhs: SyncController.SyncType) -> Bool {
-        switch (lhs, rhs) {
-        case (.collectionsOnly, .normal),
-             (.collectionsOnly, .ignoreIndividualDelays),
-             (.collectionsOnly, .full),
-             (.normal, .ignoreIndividualDelays),
-             (.normal, .full),
-             (.ignoreIndividualDelays, .full):
-            return true
-
-        default:
-            return false
-        }
     }
 }

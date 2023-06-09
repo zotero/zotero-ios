@@ -21,24 +21,16 @@ protocol SyncAction {
 }
 
 protocol SynchronizationController: AnyObject {
-    var inProgress: Bool { get }
-    var libraryIdInProgress: LibraryIdentifier? { get }
     var progressObservable: PublishSubject<SyncProgress> { get }
 
-    func start(type: SyncController.SyncType, libraries: SyncController.LibrarySyncType)
+    func start(type: SyncController.Kind, libraries: SyncController.Libraries, retryAttempt: Int)
     func set(coordinator: ConflictCoordinator?)
     func cancel()
 }
 
-struct SyncRetry {
-    let type: SyncController.SyncType?
-    let libraryType: SyncController.LibrarySyncType?
-    let retryOnce: Bool
-}
-
 final class SyncController: SynchronizationController {
     /// Type of sync
-    enum SyncType {
+    enum Kind {
         /// Only objects which need to be synced are fetched. Either synced objects with old version or unsynced objects with expired backoff schedule.
         case normal
         /// Same as .normal, but individual backoff schedule is ignored.
@@ -53,7 +45,7 @@ final class SyncController: SynchronizationController {
     }
 
     /// Specifies which libraries need to be synced.
-    enum LibrarySyncType: Equatable {
+    enum Libraries: Equatable {
         /// All libraries will be synced.
         case all
         /// Only specified libraries will be synced.
@@ -79,7 +71,7 @@ final class SyncController: SynchronizationController {
         /// Fetch `SyncObject` versions from API, update DB based on response.
         case syncVersions(libraryId: LibraryIdentifier, object: SyncObject, version: Int, checkRemote: Bool)
         /// Loads required libraries, spawns actions for each.
-        case createLibraryActions(LibrarySyncType, CreateLibraryActionsOptions)
+        case createLibraryActions(Libraries, CreateLibraryActionsOptions)
         /// Loads items that need upload, spawns actions for each.
         case createUploadActions(libraryId: LibraryIdentifier, hadOtherWriteActions: Bool)
         /// Starts `SyncBatchProcessor` which downloads and stores all batches.
@@ -181,21 +173,17 @@ final class SyncController: SynchronizationController {
     private let maxRetryCount: Int
     // Delay for syncing. Local objects won't try to sync again until the delay passes (based on count of retries).
     private let syncDelayIntervals: [Double]
-    // SyncType and LibrarySyncType are types used for new sync, if available, otherwise sync is not needed.
-    let observable: PublishSubject<SyncSchedulerAction?>
+    // Kind and Libraries are types used for new sync, if available, otherwise sync is not needed.
+    let observable: PublishSubject<SyncScheduler.Sync?>
 
     // Type of current sync.
-    private var type: SyncType
+    private var type: Kind
     // Queue of sync actions.
     private var queue: [Action]
     // Current action in progress.
     private var processingAction: Action?
-    // Type of previous sync. Used for figuring out resync policy.
-    private var previousType: SyncType?
     // Sync type for libraries.
-    private var libraryType: LibrarySyncType
-    // Create action option
-    private var createActionOptions: CreateLibraryActionsOptions
+    private var libraryType: Libraries
     // Version returned by last object sync, used to check for version mismatches between object syncs
     private var lastReturnedVersion: Int?
     // Array of non-fatal errors that happened during current sync
@@ -229,8 +217,9 @@ final class SyncController: SynchronizationController {
 
     // MARK: - Lifecycle
 
-    init(userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, dateParser: DateParser, backgroundUploaderContext: BackgroundUploaderContext,
-         webDavController: WebDavController, attachmentDownloader: AttachmentDownloader, syncDelayIntervals: [Double]) {
+    init(userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, dateParser: DateParser,
+         backgroundUploaderContext: BackgroundUploaderContext, webDavController: WebDavController, attachmentDownloader: AttachmentDownloader,
+         syncDelayIntervals: [Double], maxRetryCount: Int) {
         let accessQueue = DispatchQueue(label: "org.zotero.SyncController.accessQueue", qos: .userInteractive, attributes: .concurrent)
         let workQueue = DispatchQueue(label: "org.zotero.SyncController.workQueue", qos: .userInteractive)
         self.userId = userId
@@ -243,8 +232,6 @@ final class SyncController: SynchronizationController {
         self.queue = []
         self.nonFatalErrors = []
         self.type = .normal
-        self.previousType = nil
-        self.createActionOptions = .automatic
         self.libraryType = .all
         self.apiClient = apiClient
         self.attachmentDownloader = attachmentDownloader
@@ -259,21 +246,10 @@ final class SyncController: SynchronizationController {
         self.enqueuedUploads = 0
         self.uploadsFailedBeforeReachingZoteroBackend = 0
         self.retryAttempt = 0
+        self.maxRetryCount = maxRetryCount
     }
 
     // MARK: - SynchronizationController
-
-    var inProgress: Bool {
-        return self.accessQueue.sync { [unowned self] in
-            return self.progressHandler.inProgress
-        }
-    }
-
-    var libraryIdInProgress: LibraryIdentifier? {
-        return self.accessQueue.sync { [unowned self] in
-            return self.progressHandler.libraryIdInProgress
-        }
-    }
 
     var progressObservable: PublishSubject<SyncProgress> {
         return self.progressHandler.observable
@@ -295,19 +271,20 @@ final class SyncController: SynchronizationController {
     }
 
     /// Start a new sync if another sync is not already in progress (current sync is not automatically cancelled).
-    /// - parameter type: Type of sync. See `SyncType` documentation for more info.
-    /// - parameter libraries: Specifies which libraries should be synced. See `LibrarySyncType` documentation for more info.
-    func start(action: SyncSchedulerAction) {
+    /// - parameter type: Type of sync. See `Kind` documentation for more info.
+    /// - parameter libraries: Specifies which libraries should be synced. See `Libraries` documentation for more info.
+    /// - parameter retryAttempt: Current retry attempt count
+    func start(type: Kind, libraries: Libraries, retryAttempt: Int) {
         self.accessQueue.async(flags: .barrier) { [weak self] in
             guard let self = self, !self.isSyncing else { return }
 
             DDLogInfo("Sync: starting")
 
-            self.type = action.syncType
-            self.libraryType = action.librarySyncType
-            self.retryAttempt = action.retryAttempt
+            self.type = type
+            self.libraryType = libraries
+            self.retryAttempt = retryAttempt
             self.progressHandler.reportNewSync()
-            self.queue.append(contentsOf: self.createInitialActions(for: action.librarySyncType, syncType: action.syncType))
+            self.queue.append(contentsOf: self.createInitialActions(for: libraries, syncType: type))
 
             self.processNextAction()
         }
@@ -368,7 +345,6 @@ final class SyncController: SynchronizationController {
         self.accessPermissions = nil
         self.batchProcessor = nil
         self.libraryType = .all
-        self.createActionOptions = .automatic
         self.didEnqueueWriteActionsToZoteroBackend = false
         self.enqueuedUploads = 0
         self.uploadsFailedBeforeReachingZoteroBackend = 0
@@ -380,26 +356,24 @@ final class SyncController: SynchronizationController {
     /// Reports fatal error. Fatal error stops the sync and aborts it. Enqueues a new sync if needed.
     /// - parameter fatalError: Error to be reported.
     private func report(fatalError: SyncError.Fatal) {
-        guard let retry = self.requiresRetry(fatalError: fatalError), self.retryAttempt < self.maxRetryCount else {
-            // Fatal error not retried, report and confirm finished sync.
-            self.progressHandler.reportAbort(with: fatalError)
-            self.observable.on(.next(nil))
+        if let sync = self.requiresRetry(fatalError: fatalError), self.retryAttempt < self.maxRetryCount {
+            // Fatal error should be re-tried, don't report it yet.
+            self.observable.on(.next(sync))
             return
         }
 
-        // Fatal error should be re-tried, don't report it yet.
-        let action = SyncSchedulerAction(syncType: (retry.type ?? self.type), librarySyncType: (retry.libraryType ?? self.libraryType),
-                                         retryAttempt: self.retryAttempt, retryOnce: retry.retryOnce)
-        self.observable.on(.next(action))
+        // Fatal error not retried, report and confirm finished sync.
+        self.progressHandler.reportAbort(with: fatalError)
+        self.observable.on(.next(nil))
     }
 
-    private func requiresRetry(fatalError: SyncError.Fatal) -> SyncRetry? {
+    private func requiresRetry(fatalError: SyncError.Fatal) -> SyncScheduler.Sync? {
         switch fatalError {
         case .uploadObjectConflict:
-            return SyncRetry(type: .full, libraryType: .all, retryOnce: true)
+            return SyncScheduler.Sync(type: .full, libraries: .all, retryAttempt: (self.retryAttempt + 1), retryOnce: true)
 
         case .cantSubmitAttachmentItem:
-            return SyncRetry(type: nil, libraryType: nil, retryOnce: false)
+            return SyncScheduler.Sync(type: self.type, libraries: self.libraryType, retryAttempt: (self.retryAttempt + 1), retryOnce: false)
 
         default:
             return nil
@@ -408,7 +382,7 @@ final class SyncController: SynchronizationController {
 
     /// Reports non-fatal errors. These happened during sync, but didn't need to stop it. Enqueues a new sync if needed.
     private func reportFinish(nonFatalErrors errors: [SyncError.NonFatal]) {
-        guard let (retry, remainingErrors) = self.requireRetry(nonFatalErrors: errors), self.retryAttempt < self.maxRetryCount else {
+        guard let (sync, remainingErrors) = self.requireRetry(nonFatalErrors: errors), self.retryAttempt < self.maxRetryCount else {
             // Don't try to retry any more. Report all errors.
             self.progressHandler.reportFinish(with: errors)
             self.observable.on(.next(nil))
@@ -416,13 +390,11 @@ final class SyncController: SynchronizationController {
         }
 
         // Retry libraries with errors that can be fixed on next sync. Report remaining errors.
-        let action = SyncSchedulerAction(syncType: (retry.type ?? self.type), librarySyncType: (retry.libraryType ?? self.libraryType),
-                                         retryAttempt: self.retryAttempt, retryOnce: retry.retryOnce)
         self.progressHandler.reportFinish(with: remainingErrors)
-        self.observable.on(.next(action))
+        self.observable.on(.next(sync))
     }
 
-    private func requireRetry(nonFatalErrors errors: [SyncError.NonFatal]) -> (SyncRetry, [SyncError.NonFatal])? {
+    private func requireRetry(nonFatalErrors errors: [SyncError.NonFatal]) -> (SyncScheduler.Sync, [SyncError.NonFatal])? {
         // Find libraries which reported retry-able errors.
         var retryLibraries: [LibraryIdentifier] = []
         var reportErrors: [SyncError.NonFatal] = []
@@ -443,7 +415,8 @@ final class SyncController: SynchronizationController {
                     retryLibraries.append(libraryId)
                 }
 
-            case .unknown, .schema, .parsing, .apiError, .unchanged, .quotaLimit, .attachmentMissing, .insufficientSpace, .webDavDeletion, .webDavDeletionFailed, .webDavVerification, .webDavDownload, .fileEditingDenied:
+            case .unknown, .schema, .parsing, .apiError, .unchanged, .quotaLimit, .attachmentMissing, .insufficientSpace, .webDavDeletion,
+                 .webDavDeletionFailed, .webDavVerification, .webDavDownload, .fileEditingDenied:
                 reportErrors.append(error)
             }
         }
@@ -452,7 +425,8 @@ final class SyncController: SynchronizationController {
             return nil
         }
 
-        return (SyncRetry(type: nil, libraryType: .specific(retryLibraries), retryOnce: retryOnce), reportErrors)
+        return (SyncScheduler.Sync(type: self.type, libraries: .specific(retryLibraries), retryAttempt: (self.retryAttempt + 1), retryOnce: retryOnce),
+                reportErrors)
     }
 
     // MARK: - Queue management
@@ -674,7 +648,7 @@ final class SyncController: SynchronizationController {
     /// key sync jump straight to .createLibraryActions.
     /// - parameter libraries: Specifies which libraries need to sync.
     /// - returns: Initial ations for a new sync.
-    private func createInitialActions(for libraries: LibrarySyncType, syncType: SyncType) -> [SyncController.Action] {
+    private func createInitialActions(for libraries: Libraries, syncType: Kind) -> [SyncController.Action] {
         if case .keysOnly = syncType {
             return [.loadKeyPermissions]
         }
@@ -685,18 +659,16 @@ final class SyncController: SynchronizationController {
 
         case .specific(let identifiers):
             // If there is a group to be synced, sync group metadata as well
-            for identifier in identifiers {
-                if case .group = identifier {
-                    return [.loadKeyPermissions, .syncGroupVersions]
-                }
+            if identifiers.contains(where: { $0.isGroupLibrary }) {
+                return [.loadKeyPermissions, .syncGroupVersions]
             }
-            // If only my library is being synced, skip group metadata sync
+            // Otherwise skip group metadata sync
             let options = self.libraryActionsOptions(from: syncType)
             return [.loadKeyPermissions, .createLibraryActions(libraries, options)]
         }
     }
 
-    private func libraryActionsOptions(from syncType: SyncType) -> CreateLibraryActionsOptions {
+    private func libraryActionsOptions(from syncType: Kind) -> CreateLibraryActionsOptions {
         switch syncType {
         case .full, .collectionsOnly:
             return .onlyDownloads
@@ -757,7 +729,7 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
-    private func processCreateLibraryActions(for libraries: LibrarySyncType, options: CreateLibraryActionsOptions) {
+    private func processCreateLibraryActions(for libraries: Libraries, options: CreateLibraryActionsOptions) {
         let result = LoadLibraryDataSyncAction(type: libraries, fetchUpdates: (options != .onlyDownloads), loadVersions: (self.type != .full),
                                                webDavEnabled: self.webDavController.sessionStorage.isEnabled, dbStorage: self.dbStorage, queue: self.workQueue).result
         result.subscribe(on: self.workScheduler)
@@ -792,7 +764,6 @@ final class SyncController: SynchronizationController {
             self.didEnqueueWriteActionsToZoteroBackend = options != .automatic || writeCount > 0
 
             self.accessQueue.async(flags: .barrier) { [weak self] in
-                self?.createActionOptions = options
                 if let names = libraryNames {
                     self?.progressHandler.set(libraryNames: names)
                 }
@@ -981,7 +952,7 @@ final class SyncController: SynchronizationController {
         self.enqueue(actions: actions, at: 0)
     }
 
-    private func createGroupActions(updateIds: [Int], deleteGroups: [(Int, String)], syncType: SyncType) -> [Action] {
+    private func createGroupActions(updateIds: [Int], deleteGroups: [(Int, String)], syncType: Kind) -> [Action] {
         var idsToSync: [Int]
 
         switch self.libraryType {
@@ -1034,7 +1005,7 @@ final class SyncController: SynchronizationController {
         self.enqueue(actions: actions, at: 0)
     }
 
-    private func createBatchedObjectActions(for libraryId: LibraryIdentifier, object: SyncObject, from keys: [String], version: Int, shouldStoreVersion: Bool, syncType: SyncType) -> [Action] {
+    private func createBatchedObjectActions(for libraryId: LibraryIdentifier, object: SyncObject, from keys: [String], version: Int, shouldStoreVersion: Bool, syncType: Kind) -> [Action] {
         let batches = self.createBatchObjects(for: keys, libraryId: libraryId, object: object, version: version)
 
         guard !batches.isEmpty else {
@@ -1409,7 +1380,7 @@ final class SyncController: SynchronizationController {
                   }
               }, onFailure: { `self`, error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.abort(error: .preconditionErrorCantBeResolved(data: SyncError.ErrorData(itemKeys: [key], libraryId: libraryId)))
+                      self?.abort(error: .uploadObjectConflict(data: SyncError.ErrorData(itemKeys: [key], libraryId: libraryId)))
                   }
               })
               .disposed(by: self.disposeBag)
@@ -1523,21 +1494,12 @@ final class SyncController: SynchronizationController {
             return
 
         case 412:
-            guard let version = newVersion else {
-                self.abort(error: .preconditionErrorWithoutVersion(data: .from(syncObject: object, keys: [key], libraryId: libraryId)))
-                return
-            }
+            // This happens if file upload passed properly but main app has not been notified and didn't update the database state. Force-download attachment and mark item as uploaded.
+            DDLogError("SyncController: download remote attachment file and mark attachment as uploaded")
 
-            if !hadIfMatchHeader {
-                // This happens if file upload passed properly but main app has not been notified and didn't update the database state. Force-download attachment and mark item as uploaded.
-                DDLogError("SyncController: download remote attachment file and mark attachment as uploaded")
-
-                // TODO: Check whether this is sufficient when attachment editing is enabled
-                self.enqueue(actions: [.fixUpload(key: key, libraryId: libraryId)], at: 0)
-                return
-            }
-
-            nonFatalError = .apiError(response: response, data: .from(syncObject: object, keys: [key], libraryId: libraryId))
+            // TODO: Check whether this is sufficient when attachment editing is enabled
+            self.enqueue(actions: [.fixUpload(key: key, libraryId: libraryId)], at: 0)
+            return
 
         default:
             nonFatalError = .apiError(response: response, data: .from(syncObject: object, keys: [key], libraryId: libraryId))

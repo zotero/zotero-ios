@@ -16,7 +16,7 @@ struct SyncVersionsDbRequest: DbResponseRequest {
     let versions: [String: Int]
     let libraryId: LibraryIdentifier
     let syncObject: SyncObject
-    let syncType: SyncController.SyncType
+    let syncType: SyncController.Kind
     let delayIntervals: [Double]
 
     var needsWrite: Bool { return false }

@@ -13,7 +13,7 @@ import RxSwift
 struct LoadLibraryDataSyncAction: SyncAction {
     typealias Result = [LibraryData]
 
-    let type: SyncController.LibrarySyncType
+    let type: SyncController.Libraries
     let fetchUpdates: Bool
     let loadVersions: Bool
     let webDavEnabled: Bool

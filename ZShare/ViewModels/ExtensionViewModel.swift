@@ -329,7 +329,7 @@ final class ExtensionViewModel {
     func start(with extensionItem: NSExtensionItem) {
         // Start sync in background, so that collections are available for user to pick
         DDLogInfo("ExtensionViewModel: start sync")
-        self.syncController.start(type: .collectionsOnly, libraries: .all)
+        self.syncController.start(type: .collectionsOnly, libraries: .all, retryAttempt: 0)
         DDLogInfo("ExtensionViewModel: load extension item")
         self.loadAttachment(from: extensionItem)
             .subscribe(onSuccess: { [weak self] attachment in
@@ -1434,8 +1434,6 @@ final class ExtensionViewModel {
                            .observe(on: MainScheduler.instance)
                            .subscribe(onNext: { [weak self] data in
                                self?.finishSync(successful: (data == nil))
-                           }, onError: { [weak self] _ in
-                               self?.finishSync(successful: false)
                            })
                            .disposed(by: self.disposeBag)
     }

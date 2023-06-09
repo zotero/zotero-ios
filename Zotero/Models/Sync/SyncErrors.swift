@@ -53,13 +53,11 @@ enum SyncError {
         case dbError
         case groupSyncFailed
         case allLibrariesFetchFailed
-        case preconditionErrorWithoutVersion(data: ErrorData)
         case uploadObjectConflict(data: ErrorData)
         case cantSubmitAttachmentItem(data: ErrorData)
         case permissionLoadingFailed
         case missingGroupPermissions
         case cancelled
-        case preconditionErrorCantBeResolved(data: ErrorData)
         case serviceUnavailable
         case forbidden
     }
