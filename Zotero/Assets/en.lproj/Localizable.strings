@@ -240,8 +240,9 @@
 "pdf.deleted_message" = "This document has been deleted. Do you want to restore it?";
 "pdf.line_width_point" = "%0.1f pt";
 "pdf.highlight" = "Highlight";
-"pdf.annotation_share.image.medium" = "Share medium image";
-"pdf.annotation_share.image.large" = "Share large image";
+"pdf.annotation_share.image.share" = "Share image";
+"pdf.annotation_share.image.medium" = "Medium";
+"pdf.annotation_share.image.large" = "Large";
 "pdf.annotation_toolbar.eraser" = "Eraser";
 "pdf.annotation_toolbar.highlight" = "Highlight";
 "pdf.annotation_toolbar.note" = "Note";

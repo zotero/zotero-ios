@@ -857,10 +857,12 @@ internal enum L10n {
     }
     internal enum AnnotationShare {
       internal enum Image {
-        /// Share large image
+        /// Large
         internal static let large = L10n.tr("Localizable", "pdf.annotation_share.image.large")
-        /// Share medium image
+        /// Medium
         internal static let medium = L10n.tr("Localizable", "pdf.annotation_share.image.medium")
+        /// Share image
+        internal static let share = L10n.tr("Localizable", "pdf.annotation_share.image.share")
       }
     }
     internal enum AnnotationToolbar {
