@@ -140,8 +140,8 @@ final class AnnotationViewHeader: UIView {
 
         self.menuButton.accessibilityLabel = L10n.Accessibility.Pdf.editAnnotation
         self.menuButton.isAccessibilityElement = true
-        
-        // TODO: setup accessibility for share button
+        self.shareButton.accessibilityLabel = L10n.Accessibility.Pdf.shareAnnotation
+        self.shareButton.isAccessibilityElement = true
     }
 
     private func setupView(with layout: AnnotationViewLayout) {

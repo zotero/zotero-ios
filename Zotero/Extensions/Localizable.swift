@@ -215,6 +215,10 @@ internal enum L10n {
       internal static let selected = L10n.tr("Localizable", "accessibility.pdf.selected")
       /// Settings
       internal static let settings = L10n.tr("Localizable", "accessibility.pdf.settings")
+      /// Share annotation
+      internal static let shareAnnotation = L10n.tr("Localizable", "accessibility.pdf.share_annotation")
+      /// Share annotation image
+      internal static let shareAnnotationImage = L10n.tr("Localizable", "accessibility.pdf.share_annotation_image")
       /// Show more
       internal static let showMoreTools = L10n.tr("Localizable", "accessibility.pdf.show_more_tools")
       /// Close sidebar

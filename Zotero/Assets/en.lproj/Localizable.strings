@@ -528,6 +528,8 @@
 "accessibility.pdf.image_annotation" = "Image annotation";
 "accessibility.pdf.ink_annotation" = "Ink annotation";
 "accessibility.pdf.edit_annotation" = "Edit annotation";
+"accessibility.pdf.share_annotation" = "Share annotation";
+"accessibility.pdf.share_annotation_image" = "Share annotation image";
 "accessibility.pdf.eraser_annotation" = "Eraser";
 "accessibility.pdf.highlighted_text" = "Highlighted text";
 "accessibility.pdf.author" = "Author";

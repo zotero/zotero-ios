@@ -355,6 +355,8 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
                         (self as Coordinator).share(item: image, sourceView: .view(sender, nil))
                     }
                 }
+                action.accessibilityLabel = L10n.Accessibility.Pdf.shareAnnotationImage + " " + title
+                action.isAccessibilityElement = true
                 elementProvider([action])
             } onFailure: { (error: Error) in
                 DDLogError("PDFCoordinator: can't render annotation image - \(error)")
