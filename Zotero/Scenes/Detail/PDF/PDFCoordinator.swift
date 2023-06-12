@@ -349,10 +349,14 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
                 let action = UIAction(title: menuTitle) { [weak self] (_: UIAction) in
                     guard let self else { return }
                     DDLogInfo("PDFCoordinator: share pdf annotation image - \(title)")
+                    let completion = { (activityType: UIActivity.ActivityType?, completed: Bool, _: [Any]?, error: Error?) in
+                        DDLogInfo("PDFCoordinator: share pdf annotation image - activity type: \(String(describing: activityType)) completed: \(completed) error: \(String(describing: error))")
+                    }
+                    
                     if let coordinator = self.childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
-                        coordinator.share(item: image, sourceView: .view(sender, nil))
+                        coordinator.share(item: image, sourceView: .view(sender, nil), completionWithItemsHandler: completion)
                     } else {
-                        (self as Coordinator).share(item: image, sourceView: .view(sender, nil))
+                        (self as Coordinator).share(item: image, sourceView: .view(sender, nil), completionWithItemsHandler: completion)
                     }
                 }
                 action.accessibilityLabel = L10n.Accessibility.Pdf.shareAnnotationImage + " " + title
