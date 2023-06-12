@@ -310,7 +310,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         scale: CGFloat,
         title: String
     ) -> UIDeferredMenuElement {
-        UIDeferredMenuElement { [weak self] (elementProvider: @escaping ([UIMenuElement]) -> Void) in
+        UIDeferredMenuElement { [weak self] elementProvider in
             guard let self else {
                 elementProvider([])
                 return
@@ -332,7 +332,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
                 libraryId: state.library.id
             )
             .observe(on: MainScheduler.instance)
-            .subscribe { [weak self] (image: UIImage) in
+            .subscribe { [weak self] image in
                 var menuTitle = title
                 // By default UIActivityViewController shares a JPEG image with 0.8 compression quality,
                 // so we compute the image size as such. Actual image produced can be overriden if we need to.
