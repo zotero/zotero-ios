@@ -371,22 +371,20 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         annotation: Annotation,
         sender: UIButton
     ) -> UIMenu? {
+        guard annotation.type == .image,
+              let boundingBoxConverter = self.navigationController.viewControllers.last as? AnnotationBoundingBoxConverter
+        else { return nil }
         var children: [UIMenuElement] = []
-        if annotation.type == .image,
-           let boundingBoxConverter = self.navigationController.viewControllers.last as? AnnotationBoundingBoxConverter
-        {
-            var shareImageMenuChildren: [UIMenuElement] = []
-            for (scale, title) in [
-                (300.0 / 72.0, L10n.Pdf.AnnotationShare.Image.medium),
-                (600.0 / 72.0, L10n.Pdf.AnnotationShare.Image.large)
-            ] {
-                let menuElement = deferredShareImageMenuElement(state: state, annotation: annotation, sender: sender, boundingBoxConverter: boundingBoxConverter, scale: scale, title: title)
-                shareImageMenuChildren.append(menuElement)
-            }
-            let shareImageMenu = UIMenu(title: L10n.Pdf.AnnotationShare.Image.share, options: [.displayInline], children: shareImageMenuChildren)
-            children.append(shareImageMenu)
+        var shareImageMenuChildren: [UIMenuElement] = []
+        for (scale, title) in [
+            (300.0 / 72.0, L10n.Pdf.AnnotationShare.Image.medium),
+            (600.0 / 72.0, L10n.Pdf.AnnotationShare.Image.large)
+        ] {
+            let menuElement = deferredShareImageMenuElement(state: state, annotation: annotation, sender: sender, boundingBoxConverter: boundingBoxConverter, scale: scale, title: title)
+            shareImageMenuChildren.append(menuElement)
         }
-        guard !children.isEmpty else { return nil }
+        let shareImageMenu = UIMenu(title: L10n.Pdf.AnnotationShare.Image.share, options: [.displayInline], children: shareImageMenuChildren)
+        children.append(shareImageMenu)
         return UIMenu(children: children)
     }
     
