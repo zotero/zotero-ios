@@ -176,13 +176,13 @@ extension TableOfContentsViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemsAt indexPaths: [IndexPath], point: CGPoint) -> UIContextMenuConfiguration? {
         guard var snapshot = self.dataSource?.snapshot(for: .outline) else { return nil }
 
-        let hasExpanded = snapshot.items.first(where: { snapshot.isExpanded($0) }) != nil
-        let hasCollapsed = snapshot.items.first { row in
+        let hasExpanded = snapshot.items.contains(where: { snapshot.isExpanded($0) })
+        let hasCollapsed = snapshot.items.contains { row in
             if snapshot.snapshot(of: row, includingParent: false).items.isEmpty {
                 return false
             }
             return !snapshot.isExpanded(row)
-        } != nil
+        }
 
         return UIContextMenuConfiguration(actionProvider: { [weak self] _ in
             var actions: [UIAction] = []

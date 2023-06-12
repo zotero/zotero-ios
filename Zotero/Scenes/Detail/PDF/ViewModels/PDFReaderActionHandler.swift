@@ -400,10 +400,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 //    }
 //
     private func selectedAnnotationsDeletable(selected: Set<PDFReaderState.AnnotationKey>, in viewModel: ViewModel<PDFReaderActionHandler>) -> Bool {
-        return selected.first(where: { key in
+        return selected.contains(where: { key in
             guard let annotation = viewModel.state.annotation(for: key) else { return false }
             return !annotation.isSyncable || annotation.editability(currentUserId: viewModel.state.userId, library: viewModel.state.library) == .notEditable
-        }) == nil
+        })
     }
 
     private func setSidebar(editing enabled: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
@@ -842,7 +842,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         for (_, annotations) in viewModel.state.document.allAnnotations(of: PSPDFKit.Annotation.Kind.all) {
             for annotation in annotations {
-                let isHidden = filteredKeys.first(where: { $0.key == (annotation.key ?? annotation.uuid) }) == nil
+                let isHidden = filteredKeys.contains(where: { $0.key == (annotation.key ?? annotation.uuid) })
                 if isHidden && !annotation.flags.contains(.hidden) {
                     annotation.flags.update(with: .hidden)
                     NotificationCenter.default.post(name: .PSPDFAnnotationChanged, object: annotation, userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: ["flags"]])
@@ -890,7 +890,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func filter(annotation: Annotation, with filter: AnnotationsFilter?) -> Bool {
         guard let filter = filter else { return true }
-        let hasTag = filter.tags.isEmpty ? true : annotation.tags.first(where: { filter.tags.contains($0.name) }) != nil
+        let hasTag = filter.tags.isEmpty ? true : annotation.tags.contains(where: { filter.tags.contains($0.name) })
         let hasColor = filter.colors.isEmpty ? true : filter.colors.contains(annotation.color)
         return hasTag && hasColor
     }

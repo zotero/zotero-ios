@@ -267,7 +267,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             return false
         }
 
-        if changes.first(where: { $0.name == "children" }) != nil {
+        if changes.contains(where: { $0.name == "children" }) {
             // Realm has an issue when reporting changes in children for `LinkingObjects`. The `oldValue` and `newValue` point to the same `LinkingObjects`, so we can't distinguish whether this was
             // user or sync change. To mitigate this, when updating child items version after successful backend submission, the `parent.version` is also updated. So this change is ignored by above
             // condition and other `children` changes are always made by backend.

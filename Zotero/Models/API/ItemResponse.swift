@@ -314,14 +314,14 @@ struct ItemResponse {
                 }
 
             case FieldKeys.Item.Annotation.Position.paths:
-                guard let parsedPaths = object.value as? [[Double]], !parsedPaths.isEmpty && parsedPaths.first(where: { $0.count % 2 != 0 }) == nil else {
+                guard let parsedPaths = object.value as? [[Double]], !parsedPaths.isEmpty && parsedPaths.contains(where: { $0.count % 2 != 0 }) else {
                     throw SchemaError.invalidValue(value: "\(object.value)", field: FieldKeys.Item.Annotation.Position.paths, key: key)
                 }
                 paths = parsedPaths
                 continue
 
             case FieldKeys.Item.Annotation.Position.rects:
-                guard let parsedRects = object.value as? [[Double]], !parsedRects.isEmpty && parsedRects.first(where: { $0.count != 4 }) == nil else {
+                guard let parsedRects = object.value as? [[Double]], !parsedRects.isEmpty && parsedRects.contains(where: { $0.count != 4 }) else {
                     throw SchemaError.invalidValue(value: "\(object.value)", field: FieldKeys.Item.Annotation.Position.rects, key: key)
                 }
                 rects = parsedRects

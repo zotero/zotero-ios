@@ -60,6 +60,7 @@ only_rules:
   - closure_end_indentation
   - closure_spacing
   - collection_alignment
+  - contains_over_first_not_nil
 
 anyobject_protocol: error
 
@@ -85,6 +86,8 @@ colon:
   # apply_to_dictionaries: false
 
 comma: error
+
+contains_over_first_not_nil: error
 
 control_statement: error
 
