@@ -31,7 +31,7 @@ final class CoordinatedFileStorageController: CoordinatedFileStorage {
         }
 
         guard let data = readData else {
-            throw (coordinatorError ?? readingError)!
+            throw coordinatorError ?? readingError ?? NSError(domain: "org.zotero.ios.Zotero.CoordinatedFileStorage", code: 0)
         }
         return data
     }
