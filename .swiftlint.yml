@@ -65,6 +65,7 @@ only_rules:
   - direct_return
   - discarded_notification_center_observer
   - empty_collection_literal
+  - empty_count
 
 anyobject_protocol: error
 
@@ -110,6 +111,10 @@ discouraged_direct_init:
   severity: error
 
 empty_collection_literal: error
+
+empty_count:
+  severity: error
+  only_after_dot: true
 
 empty_enum_arguments: error
 

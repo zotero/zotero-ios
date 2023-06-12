@@ -104,7 +104,7 @@ class TableOfContentsViewController: UIViewController {
             cell.contentConfiguration = configuration
 
             let snapshot = dataSource.snapshot(for: .outline)
-            let showToggle = self.viewModel.state.search.isEmpty && snapshot.contains(.outline(outline)) && snapshot.snapshot(of: .outline(outline), includingParent: false).items.count > 0
+            let showToggle = self.viewModel.state.search.isEmpty && snapshot.contains(.outline(outline)) && !snapshot.snapshot(of: .outline(outline), includingParent: false).items.isEmpty
             cell.accessories = showToggle ? [.outlineDisclosure()] : []
         }
     }()

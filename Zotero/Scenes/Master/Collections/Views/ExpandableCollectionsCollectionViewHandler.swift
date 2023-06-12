@@ -155,7 +155,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
             guard let `self` = self else { return }
 
             let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
-            let hasChildren = snapshot.contains(collection) && snapshot.snapshot(of: collection, includingParent: false).items.count > 0
+            let hasChildren = snapshot.contains(collection) && !snapshot.snapshot(of: collection, includingParent: false).items.isEmpty
             var accessories: CollectionCell.Accessories = .chevron
 
             if !collection.isCollection || Defaults.shared.showCollectionItemCounts {

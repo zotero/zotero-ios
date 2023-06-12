@@ -45,7 +45,7 @@ extension Updatable {
     }
 
     var isChanged: Bool {
-        return self.changes.count > 0
+        return !self.changes.isEmpty
     }
 }
 

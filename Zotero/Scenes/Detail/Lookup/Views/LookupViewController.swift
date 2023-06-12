@@ -194,7 +194,7 @@ class LookupViewController: UIViewController {
     }
 
     private func process(update: RemoteAttachmentDownloader.Update) {
-        guard update.download.libraryId == self.viewModel.state.libraryId, var snapshot = self.dataSource?.snapshot(), snapshot.sectionIdentifiers.count > 0 else { return }
+        guard update.download.libraryId == self.viewModel.state.libraryId, var snapshot = self.dataSource?.snapshot(), !snapshot.sectionIdentifiers.isEmpty else { return }
 
         var rows = snapshot.itemIdentifiers(inSection: 0)
 

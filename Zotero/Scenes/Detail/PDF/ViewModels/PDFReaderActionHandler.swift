@@ -659,7 +659,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     /// - parameter lineWidthData: Line widths data collected from annotations. It contains count of usage and date of oldest annotation grouped by lineWidth.
     /// - returns: Best line width based on above properties.
     private func chooseMergedLineWidth(from lineWidthData: [CGFloat: (Int, Date)]) -> CGFloat {
-        if lineWidthData.count == 0 {
+        if lineWidthData.isEmpty {
             // Should never happen
             return 1
         }

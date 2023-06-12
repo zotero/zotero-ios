@@ -153,7 +153,7 @@ final class AllCollectionPickerViewController: UICollectionViewController {
             switch row {
             case .collection(let collection):
                 let snapshot = self.dataSource.snapshot(for: section)
-                let hasChildren = snapshot.snapshot(of: row, includingParent: false).items.count > 0
+                let hasChildren = !snapshot.snapshot(of: row, includingParent: false).items.isEmpty
                 var configuration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren, accessories: .chevron)
                 configuration.isCollapsedProvider = isCollapsedProvider
                 configuration.toggleCollapsed = { [weak self, weak cell] in
@@ -267,7 +267,7 @@ private class SearchResultsController: UICollectionViewController {
             case .collection(let searchable):
                 let section = self.dataSource.snapshot().sectionIdentifiers[indexPath.section]
                 let snapshot = self.dataSource.snapshot(for: section)
-                let hasChildren = snapshot.snapshot(of: row, includingParent: false).items.count > 0
+                let hasChildren = !snapshot.snapshot(of: row, includingParent: false).items.isEmpty
                 cellConfiguration = CollectionCell.SearchContentConfiguration(collection: searchable.collection, hasChildren: hasChildren, isActive: searchable.isActive, accessories: [])
 
             case .library(let library):

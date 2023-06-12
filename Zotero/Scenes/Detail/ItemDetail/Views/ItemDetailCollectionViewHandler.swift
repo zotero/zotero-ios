@@ -174,7 +174,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
     }
 
     var hasRows: Bool {
-        return self.dataSource.snapshot().itemIdentifiers.count > 0
+        return !self.dataSource.snapshot().itemIdentifiers.isEmpty
     }
 
     // MARK: - Lifecycle
