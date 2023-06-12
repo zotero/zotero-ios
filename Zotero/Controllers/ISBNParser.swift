@@ -38,7 +38,7 @@ final class ISBNParser {
 
         for idx in 0..<10 {
             let startIndex = isbn.index(isbn.startIndex, offsetBy: idx)
-            let endIndex = isbn.index(isbn.startIndex, offsetBy: idx+1)
+            let endIndex = isbn.index(isbn.startIndex, offsetBy: idx + 1)
             let character = isbn[startIndex..<endIndex]
 
             if let intValue = Int(character) {
@@ -59,7 +59,7 @@ final class ISBNParser {
 
         for idx in 0..<13 {
             let startIndex = isbn.index(isbn.startIndex, offsetBy: idx)
-            let endIndex = isbn.index(isbn.startIndex, offsetBy: idx+1)
+            let endIndex = isbn.index(isbn.startIndex, offsetBy: idx + 1)
             let character = isbn[startIndex..<endIndex]
 
             guard let intValue = Int(character) else {

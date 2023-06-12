@@ -247,7 +247,7 @@ final class AnnotationsViewController: UIViewController {
     private func focusSelectedCell() {
         guard !self.viewModel.state.sidebarEditingEnabled, let indexPath = self.tableView.indexPathForSelectedRow else { return }
 
-        let cellFrame =  self.tableView.rectForRow(at: indexPath)
+        let cellFrame = self.tableView.rectForRow(at: indexPath)
         let cellBottom = cellFrame.maxY - self.tableView.contentOffset.y
         let tableViewBottom = self.tableView.superview!.bounds.maxY - self.tableView.contentInset.bottom
         let safeAreaTop = self.tableView.superview!.safeAreaInsets.top

@@ -47,7 +47,7 @@ final class DebugLogFormatter: NSObject, DDLogFormatter {
         }
 
         self.lastTimestamp = logMessage.timestamp
-        let formattedMessage =  "\(level) \(self.targetName)\(formattedTimeDiff): \(message). [(\(logMessage.line)) \(logMessage.fileName).\(logMessage.function ?? ""); \(logMessage.queueLabel)]"
+        let formattedMessage = "\(level) \(self.targetName)\(formattedTimeDiff): \(message). [(\(logMessage.line)) \(logMessage.fileName).\(logMessage.function ?? ""); \(logMessage.queueLabel)]"
         self.delegate?.didFormat(message: formattedMessage)
         return formattedMessage
     }

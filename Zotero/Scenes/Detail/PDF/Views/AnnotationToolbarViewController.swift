@@ -484,7 +484,7 @@ class AnnotationToolbarViewController: UIViewController {
         let containerLeading = stackView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 15)
         let additionalBottom = self.view.bottomAnchor.constraint(equalTo: additionalStackView.bottomAnchor, constant: 8)
         let additionalTrailing = self.view.trailingAnchor.constraint(equalTo: additionalStackView.trailingAnchor, constant: 8)
-        let hairlineHeight = hairline.heightAnchor.constraint(equalToConstant: 1/UIScreen.main.scale)
+        let hairlineHeight = hairline.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale)
         let hairlineLeading = hairline.leadingAnchor.constraint(equalTo: self.view.leadingAnchor)
         let hairlineTrailing = hairline.trailingAnchor.constraint(equalTo: self.view.trailingAnchor)
         let hairlineBottom = hairline.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)

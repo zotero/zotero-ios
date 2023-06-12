@@ -281,7 +281,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     /// Update height of updated cell and scroll to it. The cell itself doesn't need to be reloaded, since the change took place inside of it (text field or text view).
     func updateHeightAndScrollToUpdated(row: Row, state: ItemDetailState) {
-        guard let indexPath = self.dataSource.indexPath(for: row), let cellFrame =  self.collectionView.cellForItem(at: indexPath)?.frame else { return }
+        guard let indexPath = self.dataSource.indexPath(for: row), let cellFrame = self.collectionView.cellForItem(at: indexPath)?.frame else { return }
 
         let snapshot = self.dataSource.snapshot()
         self.dataSource.apply(snapshot, animatingDifferences: false)

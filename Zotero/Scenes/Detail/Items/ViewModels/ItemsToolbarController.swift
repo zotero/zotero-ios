@@ -199,7 +199,7 @@ final class ItemsToolbarController {
             .disposed(by: self.disposeBag)
             return item
         })
-        return [spacer] + (0..<(2 * items.count)).map({ idx -> UIBarButtonItem in idx % 2 == 0 ? items[idx/2] : spacer })
+        return [spacer] + (0..<(2 * items.count)).map({ idx -> UIBarButtonItem in idx % 2 == 0 ? items[idx / 2] : spacer })
     }
 
     private func createTitleView() -> UIStackView {

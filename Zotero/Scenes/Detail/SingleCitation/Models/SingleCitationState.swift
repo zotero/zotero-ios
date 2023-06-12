@@ -59,7 +59,7 @@ struct SingleCitationState: ViewModelState {
     }
 
     mutating func cleanup() {
-        self.error =  nil
+        self.error = nil
         self.changes = []
     }
 }

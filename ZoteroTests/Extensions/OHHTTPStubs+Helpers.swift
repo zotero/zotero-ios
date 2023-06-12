@@ -78,7 +78,7 @@ extension ApiRequest {
             bodyCondition = { $0.ohhttpStubs_httpBody == urlRequest.ohhttpStubs_httpBody }
         }
 
-        return methodCondition&&isHost(host)&&isPath(url.path)&&isQuery(url.query)&&bodyCondition
+        return methodCondition && isHost(host) && isPath(url.path) && isQuery(url.query) && bodyCondition
     }
 }
 

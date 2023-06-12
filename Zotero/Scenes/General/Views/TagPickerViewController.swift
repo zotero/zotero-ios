@@ -76,7 +76,7 @@ final class TagPickerViewController: UIViewController {
     private func select(selected: Set<String>, tags: [Tag], focusTagName: String?) {
         for name in selected {
             guard let index = tags.firstIndex(where: { $0.name == name }) else { continue }
-            self.tableView.selectRow(at: IndexPath(row: index, section: TagPickerViewController.tagsSection), animated: false, scrollPosition: (focusTagName == name ? .middle: .none))
+            self.tableView.selectRow(at: IndexPath(row: index, section: TagPickerViewController.tagsSection), animated: false, scrollPosition: (focusTagName == name ? .middle : .none))
         }
     }
 

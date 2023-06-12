@@ -92,7 +92,7 @@ final class BackgroundUploadObserver: NSObject {
 
         // Remove temporary upload files
         if !timedOutUploads.isEmpty {
-            let deleteActions =  timedOutUploads.map({ self.processor.finish(upload: $0, successful: false, queue: .main, scheduler: MainScheduler.instance) })
+            let deleteActions = timedOutUploads.map({ self.processor.finish(upload: $0, successful: false, queue: .main, scheduler: MainScheduler.instance) })
             Observable.concat(deleteActions).subscribe(on: MainScheduler.instance).subscribe().disposed(by: self.disposeBag)
         }
     }
