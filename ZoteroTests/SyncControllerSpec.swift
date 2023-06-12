@@ -289,8 +289,7 @@ final class SyncControllerSpec: QuickSpec {
                             objectResponses[object] = [["key": "AAAAAAAA",
                                                         "version": 3,
                                                         "library": ["id": groupId, "type": "group", "name": "A"],
-                                                        "data": ["title": "A", "itemType":
-                                                                 "thesis", "tags": [["tag": "A"]]]]]
+                                                        "data": ["title": "A", "itemType": "thesis", "tags": [["tag": "A"]]]]]
                         case .trash:
                             objectResponses[object] = [["key": "BBBBBBBB",
                                                         "version": 4,
@@ -753,8 +752,8 @@ final class SyncControllerSpec: QuickSpec {
                     }
 
                     let objectKeys: [SyncObject: String] = [.collection: "AAAAAAAA,BBBBBBBB,CCCCCCCC",
-                                                                       .search: "GGGGGGGG,HHHHHHHH,IIIIIIII",
-                                                                       .item: "DDDDDDDD,EEEEEEEE,FFFFFFFF"]
+                                                            .search: "GGGGGGGG,HHHHHHHH,IIIIIIII",
+                                                            .item: "DDDDDDDD,EEEEEEEE,FFFFFFFF"]
                     var objectResponses: [SyncObject: Any] = [:]
                     objects.forEach { object in
                         switch object {
@@ -796,8 +795,7 @@ final class SyncControllerSpec: QuickSpec {
                             objectResponses[object] = [["key": "DDDDDDDD",
                                                         "version": 3,
                                                         "library": ["id": 0, "type": "user", "name": "A"],
-                                                        "data": ["title": "D", "itemType":
-                                                                 "thesis", "tags": [], "unknownField": "B"]],
+                                                        "data": ["title": "D", "itemType": "thesis", "tags": [], "unknownField": "B"]],
                                                        // Unknown item type - should be queued
                                                        ["key": "EEEEEEEE",
                                                         "version": 3,

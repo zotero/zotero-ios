@@ -74,7 +74,7 @@ struct SinglePickerView_Previews: PreviewProvider {
     static var previews: some View {
         SinglePickerView(requiresSaveButton: true,
                          requiresCancelButton: true,
-                         saveAction: { _ in }, closeAction: { _ in})
+                         saveAction: { _ in }, closeAction: { _ in })
             .environmentObject(ViewModel(initialState: SinglePickerState(objects: [], selectedRow: ""),
                                          handler: SinglePickerActionHandler()))
     }

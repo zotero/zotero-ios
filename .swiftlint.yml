@@ -55,12 +55,29 @@ only_rules:
   - vertical_whitespace
   - void_return
   # opt-in rules
+  - anyobject_protocol
+  - array_init
+  - closure_end_indentation
+  - closure_spacing
+  - collection_alignment
+
+anyobject_protocol: error
+
+array_init: error
 
 block_based_kvo: error
 
 closing_brace: error
 
+closure_end_indentation: error
+
 closure_parameter_position: error
+
+closure_spacing: error
+
+collection_alignment:
+  severity: error
+  align_colons: false
 
 colon:
   severity: error

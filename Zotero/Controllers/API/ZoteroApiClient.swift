@@ -123,13 +123,13 @@ final class ZoteroApiClient: ApiClient {
     func download(request: ApiDownloadRequest, queue: DispatchQueue) -> Observable<DownloadRequest> {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
         return self.createRequestSingle(for: request.endpoint) { manager -> DownloadRequest in
-                       return manager.download(convertible) { _, _ in (request.downloadUrl, [.createIntermediateDirectories, .removePreviousFile]) }
-                                     .validate(statusCode: request.acceptableStatusCodes)
-                   }
-                   .asObservable()
-                   .flatMap { downloadRequest -> Observable<DownloadRequest> in
-                       return downloadRequest.rx.loggedResponseWithResponseError(queue: queue, encoding: request.encoding, logParams: request.logParams)
-                   }
+            return manager.download(convertible) { _, _ in (request.downloadUrl, [.createIntermediateDirectories, .removePreviousFile]) }
+                .validate(statusCode: request.acceptableStatusCodes)
+        }
+        .asObservable()
+        .flatMap { downloadRequest -> Observable<DownloadRequest> in
+            return downloadRequest.rx.loggedResponseWithResponseError(queue: queue, encoding: request.encoding, logParams: request.logParams)
+        }
     }
 
     func upload(request: ApiRequest, data: Data, queue: DispatchQueue) -> Single<(Data?, HTTPURLResponse)> {

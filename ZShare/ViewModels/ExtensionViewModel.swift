@@ -1054,49 +1054,49 @@ final class ExtensionViewModel {
                             }
 
         authorize.flatMap { [weak self] response, md5 -> Single<()> in
-                   guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
-
-                   switch response {
-                   case .exists(let version):
-                       DDLogInfo("ExtensionViewModel: file exists remotely")
-
-                       do {
-                           let request = MarkAttachmentUploadedDbRequest(libraryId: data.libraryId, key: data.attachment.key, version: version)
-                           let request2 = UpdateVersionsDbRequest(version: version, libraryId: data.libraryId, type: .object(.item))
-                           try dbStorage.perform(writeRequests: [request, request2], on: self.backgroundQueue)
-                           return Single.just(())
-                       } catch let error {
-                           return Single.error(error)
-                       }
-
-                   case .new(let response):
-                       DDLogInfo("ExtensionViewModel: upload authorized")
-
-                       // sessionId and size are set by background uploader.
-                       let upload = BackgroundUpload(type: .zotero(uploadKey: response.uploadKey), key: self.state.attachmentKey, libraryId: data.libraryId, userId: data.userId,
-                                                     remoteUrl: response.url, fileUrl: data.file.createUrl(), md5: md5, date: Date())
-                       return self.backgroundUploader.start(upload: upload, filename: data.filename, mimeType: ExtensionViewModel.defaultMimetype, parameters: response.params,
-                                                            headers: ["If-None-Match": "*"], delegate: self.backgroundUploadObserver)
-                                  .flatMap({ session in
-                                      self.backgroundUploadObserver.startObservingInShareExtension(session: session)
-                                      return Single.just(())
-                                  })
-                   }
-               }
-               .observe(on: MainScheduler.instance)
-               .subscribe(onSuccess: { [weak self] _ in
-                   self?.state.isDone = true
-               }, onFailure: { [weak self] error in
-                   guard let `self` = self else { return }
-
-                   DDLogError("ExtensionViewModel: could not submit item or attachment - \(error)")
-
-                   var state = self.state
-                   state.attachmentState = .failed(self.attachmentError(from: error, libraryId: data.libraryId))
-                   state.isSubmitting = false
-                   self.state = state
-               })
-               .disposed(by: self.disposeBag)
+            guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
+            
+            switch response {
+            case .exists(let version):
+                DDLogInfo("ExtensionViewModel: file exists remotely")
+                
+                do {
+                    let request = MarkAttachmentUploadedDbRequest(libraryId: data.libraryId, key: data.attachment.key, version: version)
+                    let request2 = UpdateVersionsDbRequest(version: version, libraryId: data.libraryId, type: .object(.item))
+                    try dbStorage.perform(writeRequests: [request, request2], on: self.backgroundQueue)
+                    return Single.just(())
+                } catch let error {
+                    return Single.error(error)
+                }
+                
+            case .new(let response):
+                DDLogInfo("ExtensionViewModel: upload authorized")
+                
+                // sessionId and size are set by background uploader.
+                let upload = BackgroundUpload(type: .zotero(uploadKey: response.uploadKey), key: self.state.attachmentKey, libraryId: data.libraryId, userId: data.userId,
+                                              remoteUrl: response.url, fileUrl: data.file.createUrl(), md5: md5, date: Date())
+                return self.backgroundUploader.start(upload: upload, filename: data.filename, mimeType: ExtensionViewModel.defaultMimetype, parameters: response.params,
+                                                     headers: ["If-None-Match": "*"], delegate: self.backgroundUploadObserver)
+                .flatMap({ session in
+                    self.backgroundUploadObserver.startObservingInShareExtension(session: session)
+                    return Single.just(())
+                })
+            }
+        }
+        .observe(on: MainScheduler.instance)
+        .subscribe(onSuccess: { [weak self] _ in
+            self?.state.isDone = true
+        }, onFailure: { [weak self] error in
+            guard let `self` = self else { return }
+            
+            DDLogError("ExtensionViewModel: could not submit item or attachment - \(error)")
+            
+            var state = self.state
+            state.attachmentState = .failed(self.attachmentError(from: error, libraryId: data.libraryId))
+            state.isSubmitting = false
+            self.state = state
+        })
+        .disposed(by: self.disposeBag)
     }
 
     private func uploadToWebDav(data: State.UploadData, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, webDavController: WebDavController) {

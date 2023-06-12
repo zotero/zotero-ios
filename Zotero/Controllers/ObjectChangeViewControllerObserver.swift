@@ -21,6 +21,6 @@ class ObjectChangeReporter {
     }
 }
 
-protocol ObjectChangeResponder: class {
+protocol ObjectChangeResponder: AnyObject {
     
 }
