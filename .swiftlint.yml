@@ -72,6 +72,9 @@ only_rules:
   - identical_operands
   - joined_default_parameter
   - operator_usage_whitespace
+  - overridden_super_call
+  - period_spacing
+  - prefer_zero_over_explicit_init
 
 anyobject_protocol: error
 
@@ -175,6 +178,15 @@ operator_usage_whitespace:
 operator_whitespace: error
 
 orphaned_doc_comment: error
+
+overridden_super_call:
+  severity: error
+  excluded: []
+  included: ["*"]
+
+period_spacing: error
+
+prefer_zero_over_explicit_init: error
 
 private_over_fileprivate:
   severity: error
