@@ -94,7 +94,7 @@ final class AnnotationViewController: UIViewController {
         // Update header
         let editability = annotation.editability(currentUserId: state.userId, library: state.library)
         var annotationIsShareable = false
-        if let button = header.shareButton, let menu = shareAnnotationMenu(sender: button) {
+        if let button = header.shareButton, let menu = createShareAnnotationMenu(sender: button) {
             annotationIsShareable = true
             button.showsMenuAsPrimaryAction = true
             button.menu = menu
@@ -138,8 +138,8 @@ final class AnnotationViewController: UIViewController {
         self.viewModel.process(action: .removeAnnotation(key))
     }
     
-    private func shareAnnotationMenu(sender: UIButton) -> UIMenu? {
-        coordinatorDelegate?.shareAnnotationMenu(sender: sender)
+    private func createShareAnnotationMenu(sender: UIButton) -> UIMenu? {
+        coordinatorDelegate?.createShareAnnotationMenu(sender: sender)
     }
 
     private func showSettings() {
@@ -188,7 +188,7 @@ final class AnnotationViewController: UIViewController {
         let header = AnnotationViewHeader(layout: layout)
         let editability = annotation.editability(currentUserId: self.viewModel.state.userId, library: self.viewModel.state.library)
         var annotationIsShareable = false
-        if let button = header.shareButton, let menu = shareAnnotationMenu(sender: button) {
+        if let button = header.shareButton, let menu = createShareAnnotationMenu(sender: button) {
             annotationIsShareable = true
             button.showsMenuAsPrimaryAction = true
             button.menu = menu

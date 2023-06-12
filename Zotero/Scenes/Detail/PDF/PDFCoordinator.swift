@@ -30,7 +30,7 @@ protocol PdfReaderCoordinatorDelegate: AnyObject {
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: AnyObject {
-    func shareAnnotationMenu(
+    func createShareAnnotationMenu(
         state: PDFReaderState,
         annotation: Annotation,
         sender: UIButton
@@ -366,7 +366,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         }
     }
         
-    func shareAnnotationMenu(
+    func createShareAnnotationMenu(
         state: PDFReaderState,
         annotation: Annotation,
         sender: UIButton

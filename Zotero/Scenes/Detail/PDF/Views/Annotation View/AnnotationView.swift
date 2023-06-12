@@ -107,7 +107,7 @@ final class AnnotationView: UIView {
 
         var annotationIsShareable = false
         if let button = header.shareButton,
-           let menu = pdfAnnotationsCoordinatorDelegate.shareAnnotationMenu(state: state, annotation: annotation, sender: button)
+           let menu = pdfAnnotationsCoordinatorDelegate.createShareAnnotationMenu(state: state, annotation: annotation, sender: button)
         {
             annotationIsShareable = true
             button.showsMenuAsPrimaryAction = true
