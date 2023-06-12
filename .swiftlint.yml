@@ -61,6 +61,9 @@ only_rules:
   - closure_spacing
   - collection_alignment
   - contains_over_first_not_nil
+  - contains_over_range_nil_comparison
+  - direct_return
+  - discarded_notification_center_observer
 
 anyobject_protocol: error
 
@@ -89,12 +92,18 @@ comma: error
 
 contains_over_first_not_nil: error
 
+contains_over_range_nil_comparison: error
+
 control_statement: error
 
 deployment_target:
     severity: error
     iOSApplicationExtension_deployment_target: 14.7
     iOS_deployment_target: 14.7
+
+direct_return: error
+
+discarded_notification_center_observer: error
 
 discouraged_direct_init:
   severity: error
