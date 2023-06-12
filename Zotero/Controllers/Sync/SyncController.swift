@@ -217,9 +217,19 @@ final class SyncController: SynchronizationController {
 
     // MARK: - Lifecycle
 
-    init(userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, dateParser: DateParser,
-         backgroundUploaderContext: BackgroundUploaderContext, webDavController: WebDavController, attachmentDownloader: AttachmentDownloader,
-         syncDelayIntervals: [Double], maxRetryCount: Int) {
+    init(
+        userId: Int,
+        apiClient: ApiClient,
+        dbStorage: DbStorage,
+        fileStorage: FileStorage,
+        schemaController: SchemaController,
+        dateParser: DateParser,
+        backgroundUploaderContext: BackgroundUploaderContext,
+        webDavController: WebDavController,
+        attachmentDownloader: AttachmentDownloader,
+        syncDelayIntervals: [Double],
+        maxRetryCount: Int
+    ) {
         let accessQueue = DispatchQueue(label: "org.zotero.SyncController.accessQueue", qos: .userInteractive, attributes: .concurrent)
         let workQueue = DispatchQueue(label: "org.zotero.SyncController.workQueue", qos: .userInteractive)
         self.userId = userId
@@ -730,8 +740,14 @@ final class SyncController: SynchronizationController {
     }
 
     private func processCreateLibraryActions(for libraries: Libraries, options: CreateLibraryActionsOptions) {
-        let result = LoadLibraryDataSyncAction(type: libraries, fetchUpdates: (options != .onlyDownloads), loadVersions: (self.type != .full),
-                                               webDavEnabled: self.webDavController.sessionStorage.isEnabled, dbStorage: self.dbStorage, queue: self.workQueue).result
+        let result = LoadLibraryDataSyncAction(
+            type: libraries,
+            fetchUpdates: (options != .onlyDownloads),
+            loadVersions: (self.type != .full),
+            webDavEnabled: self.webDavController.sessionStorage.isEnabled,
+            dbStorage: self.dbStorage,
+            queue: self.workQueue
+        ).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] data in
                   self?.finishCreateLibraryActions(with: .success((data, options)))
@@ -760,10 +776,10 @@ final class SyncController: SynchronizationController {
                 libraryNames = nameDictionary
             }
             let (actions, queueIndex, writeCount) = self.createLibraryActions(for: data, creationOptions: options)
-            // If `options != .automatic`, this is most likely a 412, or other kind of retry action, so we definitely already had write actions before. We don't need to check for this anymore.
-            self.didEnqueueWriteActionsToZoteroBackend = options != .automatic || writeCount > 0
 
             self.accessQueue.async(flags: .barrier) { [weak self] in
+                // If `options != .automatic`, this is most likely a 412, or other kind of retry action, so we definitely already had write actions before. We don't need to check for this anymore.
+                self?.didEnqueueWriteActionsToZoteroBackend = options != .automatic || writeCount > 0
                 if let names = libraryNames {
                     self?.progressHandler.set(libraryNames: names)
                 }
@@ -893,8 +909,13 @@ final class SyncController: SynchronizationController {
     }
 
     private func processCreateUploadActions(for libraryId: LibraryIdentifier, hadOtherWriteActions: Bool) {
-        let result = LoadUploadDataSyncAction(libraryId: libraryId, backgroundUploaderContext: self.backgroundUploaderContext, dbStorage: self.dbStorage,
-                                              fileStorage: self.fileStorage, queue: self.workQueue).result
+        let result = LoadUploadDataSyncAction(
+            libraryId: libraryId,
+            backgroundUploaderContext: self.backgroundUploaderContext,
+            dbStorage: self.dbStorage,
+            fileStorage: self.fileStorage,
+            queue: self.workQueue
+        ).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] uploads in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -981,9 +1002,20 @@ final class SyncController: SynchronizationController {
 
     private func processSyncVersions(libraryId: LibraryIdentifier, object: SyncObject, since version: Int, checkRemote: Bool) {
         let lastVersion = self.lastReturnedVersion
-        let result = SyncVersionsSyncAction(object: object, sinceVersion: version, currentVersion: lastVersion, syncType: self.type, libraryId: libraryId, userId: self.userId,
-                                            syncDelayIntervals: self.syncDelayIntervals, checkRemote: checkRemote, apiClient: self.apiClient, dbStorage: self.dbStorage, queue: self.workQueue,
-                                            scheduler: self.workScheduler).result
+        let result = SyncVersionsSyncAction(
+            object: object,
+            sinceVersion: version,
+            currentVersion: lastVersion,
+            syncType: self.type,
+            libraryId: libraryId,
+            userId: self.userId,
+            syncDelayIntervals: self.syncDelayIntervals,
+            checkRemote: checkRemote,
+            apiClient: self.apiClient,
+            dbStorage: self.dbStorage,
+            queue: self.workQueue,
+            scheduler: self.workScheduler
+        ).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] newVersion, toUpdate in
                   guard let self = self else { return }
@@ -1065,26 +1097,36 @@ final class SyncController: SynchronizationController {
         let libraryId = batch.libraryId
         let object = batch.object
 
-        self.batchProcessor = SyncBatchProcessor(batches: batches, userId: self.userId, apiClient: self.apiClient,
-                                                 dbStorage: self.dbStorage, fileStorage: self.fileStorage, schemaController: self.schemaController,
-                                                 dateParser: self.dateParser, progress: { [weak self] processed in
-                                                    self?.accessQueue.async(flags: .barrier) {
-                                                        self?.progressHandler.reportDownloadBatchSynced(size: processed, for: object, in: libraryId)
-                                                    }
-                                                 },
-                                                 completion: { [weak self] result in
-                                                    self?.accessQueue.async(flags: .barrier) {
-                                                        self?.batchProcessor = nil
-                                                        self?.finishBatchesSyncAction(for: libraryId, object: object, result: result)
-                                                    }
-                                                 })
+        self.batchProcessor = SyncBatchProcessor(
+            batches: batches,
+            userId: self.userId,
+            apiClient: self.apiClient,
+            dbStorage: self.dbStorage,
+            fileStorage: self.fileStorage,
+            schemaController: self.schemaController,
+            dateParser: self.dateParser,
+            progress: { [weak self] processed in
+                self?.accessQueue.async(flags: .barrier) {
+                    self?.progressHandler.reportDownloadBatchSynced(size: processed, for: object, in: libraryId)
+                }
+            },
+            completion: { [weak self] result in
+                self?.accessQueue.async(flags: .barrier) {
+                    self?.batchProcessor = nil
+                    self?.finishBatchesSyncAction(for: libraryId, object: object, result: result)
+                }
+            })
         self.batchProcessor?.start()
     }
 
     private func finishBatchesSyncAction(for libraryId: LibraryIdentifier, object: SyncObject, result: Swift.Result<SyncBatchResponse, Error>) {
         switch result {
         case .success((let failedKeys, let parseErrors, _))://let itemConflicts)):
-            self.nonFatalErrors.append(contentsOf: parseErrors.map({ self.syncError(from: $0, data: .from(syncObject: object, keys: failedKeys, libraryId: libraryId)).nonFatal ?? .unknown(message: $0.localizedDescription, data: .from(syncObject: object, keys: failedKeys, libraryId: libraryId)) }))
+            let nonFatalErrors = parseErrors.map({
+                self.syncError(from: $0, data: .from(syncObject: object, keys: failedKeys, libraryId: libraryId)).nonFatal ??
+                .unknown(message: $0.localizedDescription, data: .from(syncObject: object, keys: failedKeys, libraryId: libraryId))
+            })
+            self.nonFatalErrors.append(contentsOf: nonFatalErrors)
 
             // Decoding of other objects is performed in batches, out of the whole batch only some objects may fail,
             // so these failures are reported as success (because some succeeded) and failed ones are marked for resync
@@ -1210,8 +1252,15 @@ final class SyncController: SynchronizationController {
     }
 
     private func loadRemoteDeletions(libraryId: LibraryIdentifier, since sinceVersion: Int) {
-        let result = LoadDeletionsSyncAction(currentVersion: self.lastReturnedVersion, sinceVersion: sinceVersion, libraryId: libraryId, userId: self.userId, apiClient: self.apiClient,
-                                             queue: self.workQueue, scheduler: self.workScheduler).result
+        let result = LoadDeletionsSyncAction(
+            currentVersion: self.lastReturnedVersion,
+            sinceVersion: sinceVersion,
+            libraryId: libraryId,
+            userId: self.userId,
+            apiClient: self.apiClient,
+            queue: self.workQueue,
+            scheduler: self.workScheduler
+        ).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] collections, items, searches, tags, version in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1241,9 +1290,24 @@ final class SyncController: SynchronizationController {
         }
     }
 
-    private func performDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String],
-                                  conflictMode: PerformDeletionsDbRequest.ConflictResolutionMode) {
-        let action = PerformDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, conflictMode: conflictMode, dbStorage: self.dbStorage, queue: self.workQueue)
+    private func performDeletions(
+        libraryId: LibraryIdentifier,
+        collections: [String],
+        items: [String],
+        searches: [String],
+        tags: [String],
+        conflictMode: PerformDeletionsDbRequest.ConflictResolutionMode
+    ) {
+        let action = PerformDeletionsSyncAction(
+            libraryId: libraryId,
+            collections: collections,
+            items: items,
+            searches: searches,
+            tags: tags,
+            conflictMode: conflictMode,
+            dbStorage: self.dbStorage,
+            queue: self.workQueue
+        )
         action.result.subscribe(on: self.workScheduler)
                      .subscribe(onSuccess: { [weak self] conflicts in
                          self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1294,8 +1358,16 @@ final class SyncController: SynchronizationController {
     }
 
     private func processSettingsSync(for libraryId: LibraryIdentifier, since version: Int) {
-        let result = SyncSettingsSyncAction(currentVersion: self.lastReturnedVersion, sinceVersion: version, libraryId: libraryId, userId: self.userId, apiClient: self.apiClient,
-                                            dbStorage: self.dbStorage, queue: self.workQueue, scheduler: self.workScheduler).result
+        let result = SyncSettingsSyncAction(
+            currentVersion: self.lastReturnedVersion,
+            sinceVersion: version,
+            libraryId: libraryId,
+            userId: self.userId,
+            apiClient: self.apiClient,
+            dbStorage: self.dbStorage,
+            queue: self.workQueue,
+            scheduler: self.workScheduler
+        ).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] data in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1332,9 +1404,22 @@ final class SyncController: SynchronizationController {
     }
 
     private func processSubmitUpdate(for batch: WriteBatch) {
-        let result = SubmitUpdateSyncAction(parameters: batch.parameters, changeUuids: batch.changeUuids, sinceVersion: batch.version, object: batch.object, libraryId: batch.libraryId,
-                                            userId: self.userId, updateLibraryVersion: true, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage,
-                                            schemaController: self.schemaController, dateParser: self.dateParser, queue: self.workQueue, scheduler: self.workScheduler).result
+        let result = SubmitUpdateSyncAction(
+            parameters: batch.parameters,
+            changeUuids: batch.changeUuids,
+            sinceVersion: batch.version,
+            object: batch.object,
+            libraryId: batch.libraryId,
+            userId: self.userId,
+            updateLibraryVersion: true,
+            apiClient: self.apiClient,
+            dbStorage: self.dbStorage,
+            fileStorage: self.fileStorage,
+            schemaController: self.schemaController,
+            dateParser: self.dateParser,
+            queue: self.workQueue,
+            scheduler: self.workScheduler
+        ).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] version, error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1351,9 +1436,25 @@ final class SyncController: SynchronizationController {
     }
 
     private func processUploadAttachment(for upload: AttachmentUpload) {
-        let action = UploadAttachmentSyncAction(key: upload.key, file: upload.file, filename: upload.filename, md5: upload.md5, mtime: upload.mtime, libraryId: upload.libraryId, userId: self.userId,
-                                                oldMd5: upload.oldMd5, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, webDavController: self.webDavController,
-                                                schemaController: self.schemaController, dateParser: self.dateParser, queue: self.workQueue, scheduler: self.workScheduler, disposeBag: self.disposeBag)
+        let action = UploadAttachmentSyncAction(
+            key: upload.key,
+            file: upload.file,
+            filename: upload.filename,
+            md5: upload.md5,
+            mtime: upload.mtime,
+            libraryId: upload.libraryId,
+            userId: self.userId,
+            oldMd5: upload.oldMd5,
+            apiClient: self.apiClient,
+            dbStorage: self.dbStorage,
+            fileStorage: self.fileStorage,
+            webDavController: self.webDavController,
+            schemaController: self.schemaController,
+            dateParser: self.dateParser,
+            queue: self.workQueue,
+            scheduler: self.workScheduler,
+            disposeBag: self.disposeBag
+        )
         action.result
               .subscribe(on: self.workScheduler)
               .subscribe(with: self, onSuccess: { `self`, _ in
@@ -1363,15 +1464,32 @@ final class SyncController: SynchronizationController {
                   }
               }, onFailure: { `self`, error in
                   self.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.progressHandler.reportUploaded()
-                      self?.finishSubmission(error: error, newVersion: nil, keys: [upload.key], libraryId: upload.libraryId, object: .item, failedBeforeReachingApi: action.failedBeforeZoteroApiRequest)
+                      guard let self else { return }
+                      self.progressHandler.reportUploaded()
+                      self.finishSubmission(
+                        error: error,
+                        newVersion: nil,
+                        keys: [upload.key],
+                        libraryId: upload.libraryId,
+                        object: .item,
+                        failedBeforeReachingApi: action.failedBeforeZoteroApiRequest
+                      )
                   }
               })
               .disposed(by: self.disposeBag)
     }
 
     private func processUploadFix(forKey key: String, libraryId: LibraryIdentifier) {
-        let action = UploadFixSyncAction(key: key, libraryId: libraryId, userId: self.userId, attachmentDownloader: self.attachmentDownloader, fileStorage: self.fileStorage, dbStorage: self.dbStorage, queue: self.workQueue, scheduler: self.workScheduler)
+        let action = UploadFixSyncAction(
+            key: key,
+            libraryId: libraryId,
+            userId: self.userId,
+            attachmentDownloader: self.attachmentDownloader,
+            fileStorage: self.fileStorage,
+            dbStorage: self.dbStorage,
+            queue: self.workQueue,
+            scheduler: self.workScheduler
+        )
         action.result
               .subscribe(on: self.workScheduler)
               .subscribe(with: self, onSuccess: { `self`, _ in
@@ -1387,9 +1505,18 @@ final class SyncController: SynchronizationController {
     }
 
     private func processSubmitDeletion(for batch: DeleteBatch) {
-        let result = SubmitDeletionSyncAction(keys: batch.keys, object: batch.object, version: batch.version, libraryId: batch.libraryId, userId: self.userId,
-                                              webDavEnabled: self.webDavController.sessionStorage.isEnabled, apiClient: self.apiClient, dbStorage: self.dbStorage, queue: self.workQueue,
-                                              scheduler: self.workScheduler).result
+        let result = SubmitDeletionSyncAction(
+            keys: batch.keys,
+            object: batch.object,
+            version: batch.version,
+            libraryId: batch.libraryId,
+            userId: self.userId,
+            webDavEnabled: self.webDavController.sessionStorage.isEnabled,
+            apiClient: self.apiClient,
+            dbStorage: self.dbStorage,
+            queue: self.workQueue,
+            scheduler: self.workScheduler
+        ).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] version, didCreateDeletions in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1408,7 +1535,15 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
-    private func finishSubmission(error: Error?, newVersion: Int?, keys: [String], libraryId: LibraryIdentifier, object: SyncObject, failedBeforeReachingApi: Bool = false, ignoreWebDav: Bool = false) {
+    private func finishSubmission(
+        error: Error?,
+        newVersion: Int?,
+        keys: [String],
+        libraryId: LibraryIdentifier,
+        object: SyncObject,
+        failedBeforeReachingApi: Bool = false,
+        ignoreWebDav: Bool = false
+    ) {
         let nextAction: () -> Void = {
             if let version = newVersion {
                 self.updateVersionInNextWriteBatch(to: version)
@@ -1424,8 +1559,10 @@ final class SyncController: SynchronizationController {
 
         // In case of special web dav error (missing zotero directory), ask user whether they want to create the missing directory
         if !ignoreWebDav &&
-            self.handleZoteroDirectoryMissing(for: error, continue: { [weak self] in self?.finishSubmission(error: error, newVersion: newVersion, keys: keys, libraryId: libraryId, object: object,
-                                                                                                            failedBeforeReachingApi: failedBeforeReachingApi, ignoreWebDav: true) }) {
+           self.handleZoteroDirectoryMissing(for: error, continue: { [weak self] in
+               self?.finishSubmission(error: error, newVersion: newVersion, keys: keys, libraryId: libraryId, object: object, failedBeforeReachingApi: failedBeforeReachingApi, ignoreWebDav: true)
+           })
+        {
             return
         }
 
@@ -1439,8 +1576,16 @@ final class SyncController: SynchronizationController {
 
             case .authorizationFailed(let statusCode, let response, let hadIfMatchHeader):
                 // Handle upload authorization errors
-                self.handleUploadAuthorizationFailure(statusCode: statusCode, response: response, hadIfMatchHeader: hadIfMatchHeader, key: (keys.first ?? ""),
-                                                      libraryId: libraryId, object: object, newVersion: newVersion, failedBeforeReachingApi: failedBeforeReachingApi)
+                self.handleUploadAuthorizationFailure(
+                    statusCode: statusCode,
+                    response: response,
+                    hadIfMatchHeader: hadIfMatchHeader,
+                    key: (keys.first ?? ""),
+                    libraryId: libraryId,
+                    object: object,
+                    newVersion: newVersion,
+                    failedBeforeReachingApi: failedBeforeReachingApi
+                )
                 return
 
             case .attachmentItemNotSubmitted:
@@ -1476,8 +1621,16 @@ final class SyncController: SynchronizationController {
         }
     }
 
-    private func handleUploadAuthorizationFailure(statusCode: Int, response: String, hadIfMatchHeader: Bool, key: String,
-                                                  libraryId: LibraryIdentifier, object: SyncObject, newVersion: Int?, failedBeforeReachingApi: Bool) {
+    private func handleUploadAuthorizationFailure(
+        statusCode: Int,
+        response: String,
+        hadIfMatchHeader: Bool,
+        key: String,
+        libraryId: LibraryIdentifier,
+        object: SyncObject,
+        newVersion: Int?,
+        failedBeforeReachingApi: Bool
+    ) {
         let nonFatalError: SyncError.NonFatal
 
         switch statusCode {
@@ -1608,8 +1761,14 @@ final class SyncController: SynchronizationController {
     }
 
     private func revertGroupData(in libraryId: LibraryIdentifier) {
-        let result = RevertLibraryUpdatesSyncAction(libraryId: libraryId, dbStorage: self.dbStorage, fileStorage: self.fileStorage,
-                                                    schemaController: self.schemaController, dateParser: self.dateParser, queue: self.workQueue).result
+        let result = RevertLibraryUpdatesSyncAction(
+            libraryId: libraryId,
+            dbStorage: self.dbStorage,
+            fileStorage: self.fileStorage,
+            schemaController: self.schemaController,
+            dateParser: self.dateParser,
+            queue: self.workQueue
+        ).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1817,8 +1976,16 @@ final class SyncController: SynchronizationController {
             } else {
                 return .fatal(.apiError(response: error.localizedDescription, data: data))
             }
-        case .multipartEncodingFailed, .parameterEncodingFailed, .parameterEncoderFailed, .invalidURL, .createURLRequestFailed,
-             .requestAdaptationFailed, .requestRetryFailed, .serverTrustEvaluationFailed, .sessionDeinitialized, .sessionInvalidated,
+        case .multipartEncodingFailed,
+             .parameterEncodingFailed,
+             .parameterEncoderFailed,
+             .invalidURL,
+             .createURLRequestFailed,
+             .requestAdaptationFailed,
+             .requestRetryFailed,
+             .serverTrustEvaluationFailed,
+             .sessionDeinitialized,
+             .sessionInvalidated,
              .urlRequestValidationFailed:
             return .fatal(.apiError(response: responseMessage(), data: data))
 
@@ -1948,9 +2115,8 @@ final class SyncController: SynchronizationController {
             guard action.libraryId == libraryId else { break }
             switch action {
             case .syncVersions(let libraryId, let object, let version, _):
-                // If there are no remote changes for previous `Object`, we should check whether current `Object` has been synced up to recent version,
-                // so we compare current version with last returned version.
-                // Even if the current object was previously fully synced, we need to check for local unsynced objects anyway.
+                // If there are no remote changes for previous `Object`, we should check whether current `Object` has been synced up to recent version, so we compare current version with
+                // last returned version. Even if the current object was previously fully synced, we need to check for local unsynced objects anyway.
                 self.queue[index] = .syncVersions(libraryId: libraryId, object: object, version: version, checkRemote: (version < lastVersion))
 
             case .syncSettings(_, let version),
@@ -2034,9 +2200,27 @@ fileprivate extension SyncController.Action {
         switch self {
         case .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncDeletions:
             return true
-        case .loadKeyPermissions, .createLibraryActions, .syncSettings, .syncVersions, .storeVersion, .submitDeleteBatch, .submitWriteBatch, .deleteGroup, .markChangesAsResolved,
-             .markGroupAsLocalOnly, .revertLibraryToOriginal, .uploadAttachment, .createUploadActions, .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb, .performDeletions, .restoreDeletions,
-             .storeDeletionVersion, .performWebDavDeletions, .fixUpload:
+        case .loadKeyPermissions,
+             .createLibraryActions,
+             .syncSettings,
+             .syncVersions,
+             .storeVersion,
+             .submitDeleteBatch,
+             .submitWriteBatch,
+             .deleteGroup,
+             .markChangesAsResolved,
+             .markGroupAsLocalOnly,
+             .revertLibraryToOriginal,
+             .uploadAttachment,
+             .createUploadActions,
+             .syncGroupVersions,
+             .syncGroupToDb,
+             .syncBatchesToDb,
+             .performDeletions,
+             .restoreDeletions,
+             .storeDeletionVersion,
+             .performWebDavDeletions,
+             .fixUpload:
             return false
         }
     }
@@ -2045,9 +2229,27 @@ fileprivate extension SyncController.Action {
         switch self {
         case .submitDeleteBatch, .submitWriteBatch, .uploadAttachment:
             return true
-        case .loadKeyPermissions, .createLibraryActions, .syncSettings, .syncVersions, .storeVersion, .syncDeletions, .deleteGroup, .markChangesAsResolved, .markGroupAsLocalOnly,
-             .revertLibraryToOriginal, .createUploadActions, .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb, .performDeletions,
-             .restoreDeletions, .storeDeletionVersion, .performWebDavDeletions, .fixUpload:
+        case .loadKeyPermissions,
+             .createLibraryActions,
+             .syncSettings,
+             .syncVersions,
+             .storeVersion,
+             .syncDeletions,
+             .deleteGroup,
+             .markChangesAsResolved,
+             .markGroupAsLocalOnly,
+             .revertLibraryToOriginal,
+             .createUploadActions,
+             .resolveDeletedGroup,
+             .resolveGroupMetadataWritePermission,
+             .syncGroupVersions,
+             .syncGroupToDb,
+             .syncBatchesToDb,
+             .performDeletions,
+             .restoreDeletions,
+             .storeDeletionVersion,
+             .performWebDavDeletions,
+             .fixUpload:
             return false
         }
     }
@@ -2062,9 +2264,26 @@ fileprivate extension SyncController.Action {
             return "Upload \(upload.filename) (\(upload.contentType)) in \(upload.libraryId.debugName)\n\(upload.file.createUrl().absoluteString)"
         case .fixUpload(let key, let libraryId):
             return "Fix upload \(key); \(libraryId)"
-        case .loadKeyPermissions, .createLibraryActions, .syncSettings, .syncVersions, .storeVersion, .syncDeletions, .deleteGroup, .markChangesAsResolved, .markGroupAsLocalOnly,
-             .revertLibraryToOriginal, .createUploadActions, .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb, .performDeletions,
-             .restoreDeletions, .storeDeletionVersion, .performWebDavDeletions:
+        case .loadKeyPermissions,
+             .createLibraryActions,
+             .syncSettings,
+             .syncVersions,
+             .storeVersion,
+             .syncDeletions,
+             .deleteGroup,
+             .markChangesAsResolved,
+             .markGroupAsLocalOnly,
+             .revertLibraryToOriginal,
+             .createUploadActions,
+             .resolveDeletedGroup,
+             .resolveGroupMetadataWritePermission,
+             .syncGroupVersions,
+             .syncGroupToDb,
+             .syncBatchesToDb,
+             .performDeletions,
+             .restoreDeletions,
+             .storeDeletionVersion,
+             .performWebDavDeletions:
             return "Unknown action"
         }
     }
