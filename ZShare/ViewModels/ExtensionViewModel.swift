@@ -593,7 +593,6 @@ final class ExtensionViewModel {
                         DDLogInfo("ExtensionViewModel: plaintext not url - \(string)")
                         subscriber.on(.next(.failure(.cantLoadWebData)))
                     }
-
                 } else {
                     DDLogError("ExtensionViewModel: can't load plaintext")
                     subscriber.on(.next(.failure(.cantLoadWebData)))
@@ -630,7 +629,6 @@ final class ExtensionViewModel {
                                    self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: nil))
                                })
                                .disposed(by: self.disposeBag)
-
     }
 
     /// Parses item from translation response, starts attachment download if available.
@@ -1002,7 +1000,6 @@ final class ExtensionViewModel {
     /// - returns: `Single` with `updateParameters` of created `RItem`.
     private func createItem(_ item: ItemResponse, libraryId: LibraryIdentifier, schemaController: SchemaController, dateParser: DateParser, queue: DispatchQueue) -> Single<([String: Any], [String: [String]])> {
         return Single.create { subscriber -> Disposable in
-
             DDLogInfo("ExtensionViewModel: create db item")
 
             do {

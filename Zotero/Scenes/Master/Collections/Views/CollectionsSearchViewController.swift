@@ -144,7 +144,6 @@ final class CollectionsSearchViewController: UIViewController {
                           })
                           .disposed(by: self.disposeBag)
     }
-
 }
 
 extension CollectionsSearchViewController: UICollectionViewDelegate {

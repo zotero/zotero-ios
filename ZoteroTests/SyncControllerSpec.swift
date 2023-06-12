@@ -57,7 +57,6 @@ final class SyncControllerSpec: QuickSpec {
     }
 
     override func spec() {
-
         beforeEach {
             HTTPStubs.removeAllStubs()
             Defaults.shared.userId = self.userId
@@ -611,11 +610,11 @@ final class SyncControllerSpec: QuickSpec {
                     objects.forEach { object in
                         if object == .item {
                             createStub(for: VersionsRequest(libraryId: libraryId, userId: self.userId, objectType: object, version: 0),
-                                            baseUrl: baseUrl, headers: header,
-                                            jsonResponse: [responseItemKey: 3])
+                                       baseUrl: baseUrl, headers: header,
+                                       jsonResponse: [responseItemKey: 3])
                         } else {
                             createStub(for: VersionsRequest(libraryId: libraryId, userId: self.userId,
-                                                                         objectType: object, version: 0),
+                                                            objectType: object, version: 0),
                                             baseUrl: baseUrl, headers: header,
                                             jsonResponse: [:])
                         }

@@ -474,7 +474,6 @@ struct CreatorResponse {
 }
 
 struct RelationResponse {
-
 }
 
 struct UserResponse {

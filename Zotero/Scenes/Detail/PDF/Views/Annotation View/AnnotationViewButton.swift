@@ -9,7 +9,6 @@
 import UIKit
 
 final class AnnotationViewButton: UIButton {
-
     init(layout: AnnotationViewLayout) {
         super.init(frame: CGRect())
         self.translatesAutoresizingMaskIntoConstraints = false

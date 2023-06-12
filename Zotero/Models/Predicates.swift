@@ -174,7 +174,6 @@ extension NSPredicate {
         return NSCompoundPredicate(andPredicateWithSubpredicates: [changePredicate,
                                                                    .library(with: libraryId),
                                                                    .deleted(false)])
-
     }
 
     static func changesOrDeletions(in libraryId: LibraryIdentifier) -> NSPredicate {

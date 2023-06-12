@@ -294,7 +294,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         navigationController.overrideUserInterfaceStyle = userInterfaceStyle
 
         let coordinator = AnnotationsFilterPopoverCoordinator(initialFilter: filter, availableColors: availableColors, availableTags: availableTags, navigationController: navigationController,
-                                                             controllers: self.controllers, completionHandler: completed)
+                                                              controllers: self.controllers, completionHandler: completed)
         coordinator.parentCoordinator = self
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)

@@ -184,7 +184,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         }
 
         let request = CreateItemFromDetailDbRequest(key: key, libraryId: libraryId, collectionKey: collectionKey, data: data.data, attachments: data.attachments, notes: data.notes, tags: data.tags,
-                                          schemaController: self.schemaController, dateParser: self.dateParser)
+                                                    schemaController: self.schemaController, dateParser: self.dateParser)
 
         self.perform(request: request, invalidateRealm: true) { [weak viewModel] result in
             guard let viewModel = viewModel else { return }

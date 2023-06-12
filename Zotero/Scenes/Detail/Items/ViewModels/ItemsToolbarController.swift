@@ -116,7 +116,6 @@ final class ItemsToolbarController {
 
         if let item = self.viewController.toolbarItems?.first(where: { $0.tag == ItemsToolbarController.barButtonItemTitleTag }),
            let stackView = item.customView as? UIStackView {
-
             if let filterLabel = stackView.subviews.first as? UILabel {
                 let itemCount = results?.count ?? 0
                 filterLabel.isHidden = filters.isEmpty

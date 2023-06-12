@@ -18,10 +18,10 @@ struct Versions: Equatable {
 
     var max: Int {
         return Swift.max(self.collections,
-               Swift.max(self.items,
-               Swift.max(self.trash,
-               Swift.max(self.searches,
-               Swift.max(self.deletions, self.settings)))))
+                         Swift.max(self.items,
+                                   Swift.max(self.trash,
+                                             Swift.max(self.searches,
+                                                       Swift.max(self.deletions, self.settings)))))
     }
 
     init(collections: Int, items: Int, trash: Int, searches: Int, deletions: Int, settings: Int) {

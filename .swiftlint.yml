@@ -76,6 +76,11 @@ only_rules:
   - period_spacing
   - prefer_zero_over_explicit_init
   - self_binding
+  - unused_capture_list
+  - vertical_parameter_alignment_on_call
+  - vertical_whitespace_closing_braces
+  - vertical_whitespace_opening_braces
+  - yoda_condition
 
 anyobject_protocol: error
 
@@ -243,6 +248,8 @@ unavailable_condition: error
 
 unneeded_break_in_switch: error
 
+unused_capture_list: error
+
 unused_closure_parameter: error
 
 unused_enumerated: error
@@ -255,8 +262,18 @@ unused_setter_value: error
 
 vertical_parameter_alignment: error
 
+vertical_parameter_alignment_on_call: error
+
 vertical_whitespace:
   severity: error
   max_empty_lines: 1
 
+vertical_whitespace_closing_braces:
+  severity: error
+  only_enforce_before_trivial_lines: false
+
+vertical_whitespace_opening_braces: error
+
 void_return: error
+
+yoda_condition: error

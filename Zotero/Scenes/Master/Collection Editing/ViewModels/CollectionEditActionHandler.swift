@@ -53,7 +53,6 @@ struct CollectionEditActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             guard let key = viewModel.state.key else { return }
             let request = MarkCollectionAndItemsAsDeletedDbRequest(key: key, libraryId: viewModel.state.library.identifier)
             self.perform(request: request, dismissAfterSuccess: true, in: viewModel)
-
         }
     }
 

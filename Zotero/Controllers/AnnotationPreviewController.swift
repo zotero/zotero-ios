@@ -55,7 +55,6 @@ import PSPDFKit
 // MARK: - PSPDFKit
 
 extension AnnotationPreviewController {
-
     /// Renders part of document if it's not cached already and returns as `Single`. Does not write results to cache file.
     /// - parameter document: Document to render.
     /// - parameter page: Page of document to render.
@@ -203,7 +202,6 @@ extension AnnotationPreviewController {
                 self?.queue.async {
                     self?.completeRequest(with: result, key: key, parentKey: parentKey, libraryId: libraryId, isDark: isDark, type: type)
                 }
-
             }
 
             PSPDFKit.SDK.shared.renderManager.renderQueue.schedule(task)

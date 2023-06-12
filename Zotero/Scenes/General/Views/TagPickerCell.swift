@@ -32,5 +32,4 @@ final class TagPickerCell: UITableViewCell {
 
         self.label.text = tag.name
     }
-    
 }

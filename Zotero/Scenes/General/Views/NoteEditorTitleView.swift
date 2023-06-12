@@ -9,7 +9,6 @@
 import UIKit
 
 final class NoteEditorTitleView: UIStackView {
-
     init(type: String, title: String) {
         super.init(frame: CGRect())
 

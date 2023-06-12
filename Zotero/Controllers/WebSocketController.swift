@@ -98,7 +98,6 @@ final class WebSocketController {
                                   self?.lowPowerModeChanged(isEnabled: isEnabled)
                               })
                               .disposed(by: self.disposeBag)
-
     }
 
     // MARK: - Connection
@@ -333,7 +332,6 @@ final class WebSocketController {
 
             case .connected, .subscriptionCreated, .subscriptionDeleted: break
             }
-
         } catch let error {
             let message = String(data: data, encoding: .utf8) ?? ""
             DDLogError("WebSocketController: received unknown message - \(error). Original message: \(self.redact(logMessage: message))")

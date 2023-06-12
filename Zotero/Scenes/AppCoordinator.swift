@@ -248,7 +248,6 @@ final class AppCoordinator: NSObject {
 
         do {
             try dbStorage.perform(on: .main, with: { coordinator in
-
                 let item = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
 
                 guard let attachment = AttachmentCreator.attachment(for: item, fileStorage: self.controllers.fileStorage, urlDetector: nil) else { return }

@@ -267,7 +267,6 @@ class CitationController: NSObject {
                 let styleData = try self.fileStorage.read(Files.style(filename: styleFilename))
 
                 subscriber(.success((WKWebView.encodeForJavascript(styleData), WKWebView.encodeForJavascript(localeData))))
-
             } catch let error {
                 DDLogError("CitationController: can't read locale or style - \(error)")
                 subscriber(.failure(Error.styleOrLocaleMissing))

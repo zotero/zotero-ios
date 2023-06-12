@@ -16,7 +16,7 @@ struct MigrateBaseKeysToPositionFieldDbAction: DbRequest {
     func process(in database: Realm) throws {
         let items = database.objects(RItem.self).filter(.item(type: ItemTypes.annotation))
                                                 .filter("SUBQUERY(fields, $field, $field.baseKey == nil AND ($field.key == %@ OR $field.key == %@)).@count > 0", FieldKeys.Item.Annotation.Position.lineWidth,
-                                                                                                                                                                 FieldKeys.Item.Annotation.Position.pageIndex)
+                                                        FieldKeys.Item.Annotation.Position.pageIndex)
         for item in items {
             let fields = item.fields.filter("key = %@ OR key = %@", FieldKeys.Item.Annotation.Position.lineWidth, FieldKeys.Item.Annotation.Position.pageIndex)
             for field in fields {

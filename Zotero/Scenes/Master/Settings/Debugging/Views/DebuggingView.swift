@@ -68,7 +68,6 @@ struct DebuggingView: View {
                 } label: {
                     Text(L10n.Settings.exportDb).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                 }
-
             }
         }
         .navigationBarTitle(L10n.Settings.debug)

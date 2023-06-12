@@ -101,16 +101,16 @@ final class SyncActionsSpec: QuickSpec {
                                                 dateModified: Date(),
                                                 dateAdded: Date())
                 let snapshot = ItemDetailState.Data(title: "Bachelor thesis",
-                                                type: "thesis",
-                                                isAttachment: false,
-                                                localizedType: "Thesis",
-                                                creators: [:],
-                                                creatorIds: [],
-                                                fields: [:],
-                                                fieldIds: [],
-                                                abstract: "Some note",
-                                                dateModified: Date(),
-                                                dateAdded: Date())
+                                                    type: "thesis",
+                                                    isAttachment: false,
+                                                    localizedType: "Thesis",
+                                                    creators: [:],
+                                                    creatorIds: [],
+                                                    fields: [:],
+                                                    fieldIds: [],
+                                                    abstract: "Some note",
+                                                    dateModified: Date(),
+                                                    dateAdded: Date())
 
                 let changeRequest = EditItemFromDetailDbRequest(libraryId: .custom(.myLibrary), itemKey: "AAAAAAAA", data: data, snapshot: snapshot, schemaController: TestControllers.schemaController,
                                                                 dateParser: TestControllers.dateParser)
@@ -212,16 +212,16 @@ final class SyncActionsSpec: QuickSpec {
                                                 dateModified: Date(),
                                                 dateAdded: Date())
                 let snapshot = ItemDetailState.Data(title: "Bachelor thesis",
-                                                type: "thesis",
-                                                isAttachment: false,
-                                                localizedType: "Thesis",
-                                                creators: [:],
-                                                creatorIds: [],
-                                                fields: [:],
-                                                fieldIds: [],
-                                                abstract: "Some note",
-                                                dateModified: Date(),
-                                                dateAdded: Date())
+                                                    type: "thesis",
+                                                    isAttachment: false,
+                                                    localizedType: "Thesis",
+                                                    creators: [:],
+                                                    creatorIds: [],
+                                                    fields: [:],
+                                                    fieldIds: [],
+                                                    abstract: "Some note",
+                                                    dateModified: Date(),
+                                                    dateAdded: Date())
                 let changeRequest = EditItemFromDetailDbRequest(libraryId: .custom(.myLibrary), itemKey: "AAAAAAAA", data: data, snapshot: snapshot, schemaController: TestControllers.schemaController,
                                                                 dateParser: TestControllers.dateParser)
                 try! self.dbStorage.perform(request: changeRequest, on: .main)

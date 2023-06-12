@@ -11,7 +11,6 @@ import UIKit
 import RxSwift
 
 class LineWidthCell: RxTableViewCell {
-
     private weak var lineView: LineWidthView!
     var valueObservable: Observable<Float> { return self.lineView.valueObservable }
 
