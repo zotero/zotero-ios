@@ -105,18 +105,12 @@ final class AnnotationView: UIView {
         let color = UIColor(hex: annotation.color)
         let canEdit = editability == .editable && selected
 
-        var annotationIsShareable = false
-        if let button = header.shareButton,
-           let menu = pdfAnnotationsCoordinatorDelegate.createShareAnnotationMenu(state: state, annotation: annotation, sender: button)
-        {
-            annotationIsShareable = true
-            button.showsMenuAsPrimaryAction = true
-            button.menu = menu
-        }
         self.header.setup(
             with: annotation,
             libraryId: library.identifier,
-            showShareButton: annotationIsShareable,
+            shareMenuProvider: { button in
+                pdfAnnotationsCoordinatorDelegate.createShareAnnotationMenu(state: state, annotation: annotation, sender: button)
+            },
             isEditable: (editability != .notEditable && selected),
             showsLock: editability != .editable,
             showDoneButton: self.layout.showDoneButton,

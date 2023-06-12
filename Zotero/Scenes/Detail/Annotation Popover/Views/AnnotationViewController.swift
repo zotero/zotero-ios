@@ -93,16 +93,12 @@ final class AnnotationViewController: UIViewController {
 
         // Update header
         let editability = annotation.editability(currentUserId: state.userId, library: state.library)
-        var annotationIsShareable = false
-        if let button = header.shareButton, let menu = createShareAnnotationMenu(sender: button) {
-            annotationIsShareable = true
-            button.showsMenuAsPrimaryAction = true
-            button.menu = menu
-        }
         self.header.setup(
             with: annotation,
             libraryId: state.library.identifier,
-            showShareButton: annotationIsShareable,
+            shareMenuProvider: { [weak self] button in
+                self?.createShareAnnotationMenu(sender: button)
+            },
             isEditable: (editability == .editable),
             showsLock: (editability != .editable),
             showDoneButton: false,
@@ -187,16 +183,12 @@ final class AnnotationViewController: UIViewController {
         // Setup header
         let header = AnnotationViewHeader(layout: layout)
         let editability = annotation.editability(currentUserId: self.viewModel.state.userId, library: self.viewModel.state.library)
-        var annotationIsShareable = false
-        if let button = header.shareButton, let menu = createShareAnnotationMenu(sender: button) {
-            annotationIsShareable = true
-            button.showsMenuAsPrimaryAction = true
-            button.menu = menu
-        }
         header.setup(
             with: annotation,
             libraryId: self.viewModel.state.library.identifier,
-            showShareButton: annotationIsShareable,
+            shareMenuProvider: { [weak self] button in
+                self?.createShareAnnotationMenu(sender: button)
+            },
             isEditable: (editability == .editable),
             showsLock: (editability != .editable),
             showDoneButton: false,

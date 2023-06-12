@@ -15,7 +15,7 @@ final class AnnotationViewHeader: UIView {
     private weak var typeImageView: UIImageView!
     private weak var pageLabel: UILabel!
     private weak var authorLabel: UILabel!
-    public weak var shareButton: UIButton!
+    private weak var shareButton: UIButton!
     private weak var menuButton: UIButton!
     private weak var doneButton: UIButton?
     private weak var lockIcon: UIImageView?
@@ -80,7 +80,7 @@ final class AnnotationViewHeader: UIView {
         color: UIColor,
         pageLabel: String,
         author: String,
-        showsShareButton: Bool,
+        shareMenu: UIMenu?,
         showsMenuButton: Bool,
         showsDoneButton: Bool,
         showsLock: Bool,
@@ -90,7 +90,16 @@ final class AnnotationViewHeader: UIView {
         self.typeImageView.tintColor = color
         self.pageLabel.text = L10n.page + " " + pageLabel
         self.authorLabel.text = author
-        self.shareButton.isHidden = !showsShareButton
+        
+        if let shareMenu {
+            shareButton.isHidden = false
+            shareButton.showsMenuAsPrimaryAction = true
+            shareButton.menu = shareMenu
+        } else {
+            shareButton.isHidden = true
+            shareButton.showsMenuAsPrimaryAction = false
+            shareButton.menu = nil
+        }
         self.menuButton.isHidden = !showsMenuButton
         self.lockIcon?.isHidden = !showsLock
 
@@ -104,7 +113,7 @@ final class AnnotationViewHeader: UIView {
     func setup(
         with annotation: Annotation,
         libraryId: LibraryIdentifier,
-        showShareButton: Bool,
+        shareMenuProvider: @escaping ((UIButton) -> UIMenu?),
         isEditable: Bool,
         showsLock: Bool,
         showDoneButton: Bool,
@@ -119,7 +128,7 @@ final class AnnotationViewHeader: UIView {
             color: color,
             pageLabel: annotation.pageLabel,
             author: author,
-            showsShareButton: showShareButton,
+            shareMenu: shareMenuProvider(shareButton),
             showsMenuButton: isEditable,
             showsDoneButton: showDoneButton,
             showsLock: showsLock,
