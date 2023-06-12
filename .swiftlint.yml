@@ -64,6 +64,7 @@ only_rules:
   - contains_over_range_nil_comparison
   - direct_return
   - discarded_notification_center_observer
+  - empty_collection_literal
 
 anyobject_protocol: error
 
@@ -107,6 +108,8 @@ discarded_notification_center_observer: error
 
 discouraged_direct_init:
   severity: error
+
+empty_collection_literal: error
 
 empty_enum_arguments: error
 
