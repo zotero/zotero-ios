@@ -77,7 +77,7 @@ final class AttachmentDownloader {
         var remainingBatchCount = 0
 
         self.accessQueue.sync { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             progress = self.batchProgress
             remainingBatchCount = self.operations.count
             totalBatchCount = self.totalBatchCount
@@ -113,7 +113,7 @@ final class AttachmentDownloader {
 
     func batchDownload(attachments: [(Attachment, String?)]) {
         self.accessQueue.async(flags: .barrier) { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             var operations: [(Download, String?, AttachmentDownloadOperation)] = []
 
@@ -240,7 +240,7 @@ final class AttachmentDownloader {
 
     private func download(file: File, key: String, parentKey: String?, libraryId: LibraryIdentifier, hasLocalCopy: Bool) {
         self.accessQueue.async(flags: .barrier) { [weak self] in
-            guard let `self` = self, let (download, operation) = self.createDownload(file: file, key: key, parentKey: parentKey, libraryId: libraryId, hasLocalCopy: hasLocalCopy) else { return }
+            guard let self = self, let (download, operation) = self.createDownload(file: file, key: key, parentKey: parentKey, libraryId: libraryId, hasLocalCopy: hasLocalCopy) else { return }
             self.enqueue(operation: operation, download: download, parentKey: parentKey)
         }
     }
@@ -265,12 +265,12 @@ final class AttachmentDownloader {
         let operation = AttachmentDownloadOperation(file: file, download: download, progress: progress, userId: self.userId, apiClient: self.apiClient, webDavController: self.webDavController,
                                                     fileStorage: self.fileStorage, queue: self.processingQueue)
         operation.finishedDownload = { [weak self] result in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             switch result {
             case .success:
                 self.dbQueue.sync { [weak self] in
-                    guard let `self` = self else { return }
+                    guard let self = self else { return }
                     // Mark file as downloaded in DB
                     try? self.dbStorage.perform(request: MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true), on: self.dbQueue)
                 }

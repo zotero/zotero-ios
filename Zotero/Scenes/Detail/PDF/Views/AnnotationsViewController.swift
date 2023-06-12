@@ -428,7 +428,7 @@ final class AnnotationsViewController: UIViewController {
         self.dataSource = TableViewDiffableDataSource(tableView: self.tableView, cellProvider: { [weak self] tableView, indexPath, key in
             let cell = tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
 
-            if let `self` = self, let cell = cell as? AnnotationCell, let annotation = self.viewModel.state.annotation(for: key) {
+            if let self = self, let cell = cell as? AnnotationCell, let annotation = self.viewModel.state.annotation(for: key) {
                 cell.contentView.backgroundColor = self.view.backgroundColor
                 self.setup(cell: cell, with: annotation, state: self.viewModel.state)
             }
@@ -437,7 +437,7 @@ final class AnnotationsViewController: UIViewController {
         })
 
         self.dataSource.canEditRow = { [weak self] indexPath in
-            guard let `self` = self, let key = self.dataSource.itemIdentifier(for: indexPath) else { return false }
+            guard let self = self, let key = self.dataSource.itemIdentifier(for: indexPath) else { return false }
             switch key.type {
             case .database: return true
             case .document: return false
@@ -445,7 +445,7 @@ final class AnnotationsViewController: UIViewController {
         }
 
         self.dataSource.commitEditingStyle = { [weak self] editingStyle, indexPath in
-            guard let `self` = self, !self.viewModel.state.sidebarEditingEnabled && editingStyle == .delete,
+            guard let self = self, !self.viewModel.state.sidebarEditingEnabled && editingStyle == .delete,
                   let key = self.dataSource.itemIdentifier(for: indexPath), key.type == .database else { return }
             self.viewModel.process(action: .removeAnnotation(key))
         }

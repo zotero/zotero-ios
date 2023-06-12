@@ -43,7 +43,7 @@ class ApiOperation: AsynchronousOperation {
         }
 
         request.response(queue: self.queue) { [weak self] response in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             switch response.logAndCreateResult(logData: logData) {
             case .success(let data):

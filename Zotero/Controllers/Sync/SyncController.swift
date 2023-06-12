@@ -289,7 +289,7 @@ final class SyncController: SynchronizationController {
     /// - parameter libraries: Specifies which libraries should be synced. See `LibrarySyncType` documentation for more info.
     func start(type: SyncType, libraries: LibrarySyncType) {
         self.accessQueue.async(flags: .barrier) { [weak self] in
-            guard let `self` = self, !self.isSyncing else { return }
+            guard let self = self, !self.isSyncing else { return }
 
             DDLogInfo("Sync: starting")
 
@@ -305,7 +305,7 @@ final class SyncController: SynchronizationController {
     /// Cancels ongoing sync.
     func cancel() {
         self.accessQueue.async(flags: .barrier) { [weak self] in
-            guard let `self` = self, self.isSyncing else { return }
+            guard let self = self, self.isSyncing else { return }
 
             DDLogInfo("Sync: cancelled")
 
@@ -570,7 +570,7 @@ final class SyncController: SynchronizationController {
 
         receiver.resolve(conflict: conflict) { [weak self] resolution in
             self?.accessQueue.async(flags: .barrier) {
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 if let resolution = resolution {
                     self.enqueue(actions: self.actions(for: resolution), at: 0)
                 } else {
@@ -905,7 +905,7 @@ final class SyncController: SynchronizationController {
         let result = SyncGroupVersionsSyncAction(userId: self.userId, apiClient: self.apiClient, dbStorage: self.dbStorage, queue: self.workQueue, scheduler: self.workScheduler).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] toUpdate, toRemove in
-                  guard let `self` = self else { return }
+                  guard let self = self else { return }
                 let actions = self.createGroupActions(updateIds: toUpdate, deleteGroups: toRemove, syncType: self.type)
                   self.accessQueue.async(flags: .barrier) { [weak self] in
                     self?.finishSyncGroupVersions(actions: actions, updateCount: toUpdate.count)
@@ -956,7 +956,7 @@ final class SyncController: SynchronizationController {
                                             scheduler: self.workScheduler).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] newVersion, toUpdate in
-                  guard let `self` = self else { return }
+                  guard let self = self else { return }
                   let versionDidChange = version != lastVersion
                   let actions = self.createBatchedObjectActions(for: libraryId, object: object, from: toUpdate, version: newVersion, shouldStoreVersion: versionDidChange, syncType: self.type)
                   self.accessQueue.async(flags: .barrier) { [weak self] in

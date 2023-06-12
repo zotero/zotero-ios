@@ -329,7 +329,7 @@ final class ExtensionViewModel {
             .subscribe(onSuccess: { [weak self] attachment in
                 self?.process(attachment: attachment)
             }, onFailure: { [weak self] error in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 DDLogError("ExtensionViewModel: could not load attachment - \(error)")
                 self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: nil))
             })
@@ -419,7 +419,7 @@ final class ExtensionViewModel {
                                .subscribe(onSuccess: { [weak self] attachment in
                                    self?.process(attachment: attachment)
                                }, onFailure: { [weak self] error in
-                                   guard let `self` = self else { return }
+                                   guard let self = self else { return }
                                    DDLogError("ExtensionViewModel: webview could not load data - \(error)")
                                    self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: nil))
                                })
@@ -458,7 +458,7 @@ final class ExtensionViewModel {
         self.download(url: url, to: file, cookies: cookies, userAgent: userAgent, referrer: referrer)
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] _ in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
 
                 var state = self.state
                 if self.fileStorage.isPdf(file: file) {
@@ -625,7 +625,7 @@ final class ExtensionViewModel {
                                        self?.state.attachmentState = .translating(progress)
                                    }
                                }, onError: { [weak self] error in
-                                   guard let `self` = self else { return }
+                                   guard let self = self else { return }
                                    DDLogError("ExtensionViewModel: web view error - \(error)")
                                    self.state.attachmentState = .failed(self.attachmentError(from: error, libraryId: nil))
                                })
@@ -714,7 +714,7 @@ final class ExtensionViewModel {
         self.state.retryCount += 1
 
         self.getRedirectedPdfUrl(from: url) { [weak self] newUrl, newCookies, newUserAgent, newReferrer in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             if let newUrl = newUrl, newUrl != url && self.state.retryCount < 3 {
                 self.download(item: item, attachment: attachment, attachmentUrl: newUrl, to: file, cookies: newCookies, userAgent: newUserAgent, referrer: newReferrer)
@@ -781,7 +781,7 @@ final class ExtensionViewModel {
     /// - parameter cookies: Cookies to include in the request.
     private func download(url: URL, to file: File, cookies: String?, userAgent: String?, referrer: String?) -> Single<()> {
         return Single.create { [weak self] subscriber in
-            guard let `self` = self else {
+            guard let self = self else {
                 subscriber(.failure(State.AttachmentState.Error.expired))
                 return Disposables.create()
             }
@@ -798,7 +798,7 @@ final class ExtensionViewModel {
                 self.downloadUrlSession.set(cookies: cookies, domain: url.host ?? "")
 
                 let task = self.downloadUrlSession.downloadTask(with: request) { [weak self] location, _, error in
-                    guard let `self` = self else {
+                    guard let self = self else {
                         subscriber(.failure(State.AttachmentState.Error.expired))
                         return
                     }
@@ -835,7 +835,7 @@ final class ExtensionViewModel {
         downloadProgress.observable
                        .observe(on: MainScheduler.instance)
                        .subscribe(onNext: { [weak self] progress in
-                           guard let `self` = self else { return }
+                           guard let self = self else { return }
                            switch self.state.attachmentState {
                            case .downloading:
                                self.state.attachmentState = .downloading(progress.fractionCompleted)
@@ -942,7 +942,7 @@ final class ExtensionViewModel {
             .subscribe(onSuccess: { [weak self] _ in
                 self?.state.isDone = true
             }, onFailure: { [weak self] error in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
 
                 DDLogError("ExtensionViewModel: could not submit standalone item - \(error)")
 
@@ -1054,7 +1054,7 @@ final class ExtensionViewModel {
                             }
 
         authorize.flatMap { [weak self] response, md5 -> Single<()> in
-            guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
+            guard let self = self else { return Single.error(State.AttachmentState.Error.expired) }
             
             switch response {
             case .exists(let version):
@@ -1087,7 +1087,7 @@ final class ExtensionViewModel {
         .subscribe(onSuccess: { [weak self] _ in
             self?.state.isDone = true
         }, onFailure: { [weak self] error in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             
             DDLogError("ExtensionViewModel: could not submit item or attachment - \(error)")
             
@@ -1107,7 +1107,7 @@ final class ExtensionViewModel {
                           }
 
         prepare.flatMap { [weak self] response, submissionData -> Single<()> in
-            guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
+            guard let self = self else { return Single.error(State.AttachmentState.Error.expired) }
 
             switch response {
             case .exists:
@@ -1138,7 +1138,7 @@ final class ExtensionViewModel {
         .subscribe(onSuccess: { [weak self] _ in
             self?.state.isDone = true
         }, onFailure: { [weak self] error in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             DDLogError("ExtensionViewModel: could not submit item or attachment - \(error)")
 
@@ -1182,7 +1182,7 @@ final class ExtensionViewModel {
         return self.moveFile(from: tmpFile, to: file)
                    .subscribe(on: self.backgroundScheduler)
                    .flatMap { [weak self] filesize -> Single<([String: Any], [String: [String]], SubmissionData)> in
-                       guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
+                       guard let self = self else { return Single.error(State.AttachmentState.Error.expired) }
                        return self.create(attachment: attachment, collections: collections, tags: tags, queue: self.backgroundQueue)
                                   .flatMap({ Single.just(($0, $1, SubmissionData(filesize: filesize, md5: $2, mtime: $3))) })
                                   .do(onError: { [weak self] _ in
@@ -1215,7 +1215,7 @@ final class ExtensionViewModel {
         return self.moveFile(from: tmpFile, to: file)
                    .subscribe(on: self.backgroundScheduler)
                    .flatMap { [weak self] filesize -> Single<([[String: Any]], [String: [String]], SubmissionData)> in
-                       guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
+                       guard let self = self else { return Single.error(State.AttachmentState.Error.expired) }
                        return self.createItems(item: item, attachment: attachment, queue: self.backgroundQueue)
                                   .flatMap({ Single.just(($0, $1, SubmissionData(filesize: filesize, md5: $2, mtime: $3))) })
                                   .do(onError: { [weak self] _ in

@@ -288,7 +288,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         }))
 
         controller.addAction(UIAlertAction(title: L10n.Items.new, style: .default, handler: { [weak self, weak viewModel] _ in
-            guard let `self` = self, let viewModel = viewModel else { return }
+            guard let self = self, let viewModel = viewModel else { return }
             let collectionKey: String?
             switch viewModel.state.collection.identifier {
             case .collection(let key):
@@ -300,7 +300,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         }))
 
         controller.addAction(UIAlertAction(title: L10n.Items.newNote, style: .default, handler: { [weak self, weak viewModel] _ in
-            guard let `self` = self, let viewModel = viewModel else { return }
+            guard let self = self, let viewModel = viewModel else { return }
             let key = KeyGenerator.newKey
             self.showNoteCreation(title: nil, libraryId: viewModel.state.library.identifier, save: { [weak viewModel] text, tags in
                 viewModel?.process(action: .saveNote(key, text, tags))
@@ -326,7 +326,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let sortByBinding = viewModel.binding(keyPath: \.sortType.field, action: { .setSortField($0) })
 
         let view = ItemSortingView(viewModel: viewModel, showPickerAction: { [weak self, weak navigationController] in
-            guard let `self` = self, let navigationController = navigationController else { return }
+            guard let self = self, let navigationController = navigationController else { return }
             self.showSortTypePicker(sortBy: sortByBinding, in: navigationController)
         })
 
@@ -343,7 +343,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
         if UIDevice.current.userInterfaceIdiom == .phone {
             controller.didLoad = { [weak self] viewController in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 let doneButton = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
                 doneButton.rx.tap.subscribe({ [weak self] _ in
                     self?.navigationController.dismiss(animated: true)

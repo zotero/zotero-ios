@@ -90,7 +90,7 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
 
     func cancelSync() {
         self.queue.async(flags: .barrier) { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             self.syncController.cancel()
             self.timerDisposeBag = DisposeBag()
             self.inProgress = nil

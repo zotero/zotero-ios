@@ -39,7 +39,7 @@ final class RItemLocaleController {
         }
 
         self.queue.async { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             do {
                 try self.dbStorage.perform(request: UpdateItemLocaleDbRequest(locale: locale), on: self.queue)

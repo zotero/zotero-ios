@@ -16,7 +16,7 @@ final class IdleTimerController {
 
     func disable() {
         inMainThread { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             self.activeProcesses += 1
             UIApplication.shared.isIdleTimerDisabled = true
         }
@@ -24,7 +24,7 @@ final class IdleTimerController {
 
     func enable() {
         inMainThread { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             guard self.activeProcesses > 0 else {
                 DDLogWarn("IdleTimerController: tried to enable idle timer with no active processes")
                 return

@@ -59,7 +59,7 @@ final class CollectionsSearchViewController: UIViewController {
 
     private lazy var cellRegistration: UICollectionView.CellRegistration<CollectionCell, SearchableCollection> = {
         return UICollectionView.CellRegistration<CollectionCell, SearchableCollection> { [weak self] cell, _, searchable in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
             let hasChildren = !snapshot.snapshot(of: searchable, includingParent: false).items.isEmpty

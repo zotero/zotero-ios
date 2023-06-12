@@ -415,7 +415,7 @@ final class ItemsViewController: UIViewController {
 
     private func startObserving(results: Results<RItem>) {
         self.resultsToken = results.observe(keyPaths: RItem.observableKeypathsForItemList, { [weak self] changes in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             switch changes {
             case .initial(let results):
@@ -442,7 +442,7 @@ final class ItemsViewController: UIViewController {
         syncController.progressObservable
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] progress in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 switch progress {
                 case .object(let object, let progress, _, let libraryId):
                     if self.viewModel.state.library.identifier == libraryId && object == .item {
@@ -481,7 +481,7 @@ final class ItemsViewController: UIViewController {
                           .notification(.willEnterForeground)
                           .observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] _ in
-                              guard let `self` = self else { return }
+                              guard let self = self else { return }
                               if self.searchBarNeedsReset {
                                   self.resetSearchBar()
                                   self.searchBarNeedsReset = false
@@ -608,7 +608,7 @@ final class ItemsViewController: UIViewController {
             accessibilityLabel = L10n.Items.new
             title = nil
             action = { [weak self] item in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 self.coordinatorDelegate?.showAddActions(viewModel: self.viewModel, button: item)
             }
 

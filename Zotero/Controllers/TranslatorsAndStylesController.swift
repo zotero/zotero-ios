@@ -108,7 +108,7 @@ final class TranslatorsAndStylesController {
     /// Loads bundled translators if needed, then loads remote translators.
     func update() {
         self.queue.async(flags: .barrier) { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             self._update(forceTranslatorBundleUpdate: !self.didResetTranslatorsToBundle)
         }
     }
@@ -143,7 +143,7 @@ final class TranslatorsAndStylesController {
 
     private func checkFolderIntegrity(type: UpdateType) -> Single<()> {
         return Single.create { [weak self] subscriber in
-            guard let `self` = self else {
+            guard let self = self else {
                 subscriber(.failure(Error.bundleLoading(Error.expired)))
                 return Disposables.create()
             }
@@ -189,7 +189,7 @@ final class TranslatorsAndStylesController {
     /// Update local assets with bundled assets if needed.
     private func updateFromBundle(forceTranslatorBundleUpdate: Bool) -> Single<()> {
         return Single.create { [weak self] subscriber -> Disposable in
-            guard let `self` = self else {
+            guard let self = self else {
                 subscriber(.failure(Error.bundleLoading(Error.expired)))
                 return Disposables.create()
             }
@@ -549,7 +549,7 @@ final class TranslatorsAndStylesController {
         DDLogInfo("TranslatorsAndStylesController: load translators for \(url ?? "-")")
 
         self.queue.sync { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             if !self.isLoading.value {
                 result = self.loadTranslators(matching: url)

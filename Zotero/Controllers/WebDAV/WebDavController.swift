@@ -375,7 +375,7 @@ final class WebDavControllerImpl: WebDavController {
         var disposeBag: DisposeBag?
 
         return Single.create { [weak self] subscriber in
-            guard let `self` = self else { return Disposables.create() }
+            guard let self = self else { return Disposables.create() }
 
             let _disposeBag = DisposeBag()
             disposeBag = _disposeBag
@@ -519,7 +519,7 @@ final class WebDavControllerImpl: WebDavController {
     /// Creates and validates WebDAV server URL based on stored session.
     private func createUrl() -> Single<URL> {
         return Single.create { [weak self, weak sessionStorage] subscriber in
-            guard let `self` = self else {
+            guard let self = self else {
                 DDLogError("WebDavController: self doesn't exist")
                 subscriber(.failure(WebDavError.Verification.noUsername))
                 return Disposables.create()

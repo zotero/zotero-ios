@@ -161,7 +161,7 @@ final class CollectionsViewController: UICollectionViewController {
         searchItem.accessibilityLabel = L10n.Accessibility.Collections.searchCollections
         searchItem.rx.tap
                   .subscribe(onNext: { [weak self] _ in
-                      guard let `self` = self else { return }
+                      guard let self = self else { return }
                       self.coordinatorDelegate?.showSearch(for: self.viewModel.state, in: self, selectAction: { [weak self] collection in
                           self?.select(searchResult: collection)
                       })

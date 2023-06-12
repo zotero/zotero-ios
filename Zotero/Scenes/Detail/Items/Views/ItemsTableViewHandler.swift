@@ -320,7 +320,7 @@ extension ItemsTableViewHandler: UITableViewDataSource {
             cell.set(item: ItemCellModel(item: item, typeName: typeName, accessory: self.cellAccessory(from: accessory)))
 
             let openInfoAction = UIAccessibilityCustomAction(name: L10n.Accessibility.Items.openItem, actionHandler: { [weak self, weak tableView] _ in
-                guard let `self` = self, let tableView = tableView else { return false }
+                guard let self = self, let tableView = tableView else { return false }
                 self.tableView(tableView, didSelectRowAt: indexPath)
                 return true
             })

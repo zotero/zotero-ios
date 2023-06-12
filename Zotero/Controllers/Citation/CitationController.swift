@@ -411,7 +411,7 @@ class CitationController: NSObject {
     /// Performs javascript script in web view, returns `Single` with registered response handler.
     private func perform(javascript: String, in webView: WKWebView) -> Single<String> {
         return Single.create { [weak self, weak webView] subscriber -> Disposable in
-            guard let `self` = self, let webView = webView else {
+            guard let self = self, let webView = webView else {
                 subscriber(.failure(Error.deinitialized))
                 return Disposables.create()
             }

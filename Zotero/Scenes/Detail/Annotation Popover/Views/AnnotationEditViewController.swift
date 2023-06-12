@@ -165,7 +165,7 @@ final class AnnotationEditViewController: UIViewController {
         let save = UIBarButtonItem(title: L10n.save, style: .done, target: nil, action: nil)
         save.rx.tap
                .subscribe(onNext: { [weak self] in
-                   guard let `self` = self else { return }
+                   guard let self = self else { return }
                    let state = self.viewModel.state
                    self.saveAction(state.key, state.color, state.lineWidth, state.pageLabel, state.updateSubsequentLabels, state.highlightText)
                    self.cancel()

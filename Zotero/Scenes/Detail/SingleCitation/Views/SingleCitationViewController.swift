@@ -197,7 +197,7 @@ final class SingleCitationViewController: UIViewController {
 
         self.omitAuthorSwitch.rx.controlEvent(.valueChanged)
                                 .subscribe(onNext: { [weak self] _ in
-                                    guard let `self` = self else { return }
+                                    guard let self = self else { return }
                                     self.viewModel.process(action: .setOmitAuthor(self.omitAuthorSwitch.isOn))
                                 })
                                 .disposed(by: self.disposeBag)

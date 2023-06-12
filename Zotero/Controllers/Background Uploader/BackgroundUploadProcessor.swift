@@ -57,7 +57,7 @@ final class BackgroundUploadProcessor {
         return self.apiClient.send(request: request, queue: queue)
                              .observe(on: scheduler)
                              .flatMap { [weak self] _, response -> Single<()> in
-                                 guard let `self` = self else { return Single.error(Error.expired) }
+                                 guard let self = self else { return Single.error(Error.expired) }
                                  return self.markAttachmentAsUploaded(version: response.allHeaderFields.lastModifiedVersion, key: key, libraryId: libraryId, queue: queue)
                              }
                              .do(onSuccess: { [weak self] _ in

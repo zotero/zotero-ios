@@ -145,7 +145,7 @@ final class WebSocketController {
 
             let completionTimer = BackgroundTimer(timeInterval: .milliseconds(WebSocketController.completionTimeout), queue: self.queue)
             completionTimer.eventHandler = { [weak self] in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 self.completionAction?()
                 self.completionAction = nil
                 self.completionTimer = nil
@@ -221,7 +221,7 @@ final class WebSocketController {
 
         let timer = BackgroundTimer(timeInterval: .seconds(interval), queue: self.queue)
         timer.eventHandler = { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             switch self.connectionState.value {
             case .connecting, .disconnected:
@@ -265,7 +265,7 @@ final class WebSocketController {
     /// - parameter apiKey: Api key to unsubscribe from. If none is provided, websocket is just disconnected.
     func disconnect(apiKey: String?) {
         self.queue.async { [weak self] in
-            guard let `self` = self, self.connectionState.value != .disconnected else { return }
+            guard let self = self, self.connectionState.value != .disconnected else { return }
 
             if let key = apiKey, self.connectionState.value == .connected {
                 self.unsubscribe(apiKey: key)

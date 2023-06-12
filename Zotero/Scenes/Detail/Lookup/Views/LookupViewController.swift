@@ -114,7 +114,7 @@ class LookupViewController: UIViewController {
             // It takes a little while for the `contentSize` observer notification to come, so all the content is hidden after the notification arrives, so that there is not an empty screen while
             // waiting for it.
             self.show(data: data) { [weak self] in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 self.activityIndicator.stopAnimating()
                 self.activityIndicator.isHidden = true
                 self.errorLabel.isHidden = true
@@ -176,7 +176,7 @@ class LookupViewController: UIViewController {
         var isFirstCall = true
         // For some reason, the observer subscription has to be here, doesn't work if it's in `viewDidLoad`.
         self.contentSizeObserver = self.tableView.observe(\.contentSize, options: [.new]) { [weak self] _, change in
-            guard let `self` = self, let value = change.newValue, value.height != self.tableViewHeight.constant else { return }
+            guard let self = self, let value = change.newValue, value.height != self.tableViewHeight.constant else { return }
 
             self.tableViewHeight.constant = value.height
 
@@ -257,7 +257,7 @@ class LookupViewController: UIViewController {
 
             let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)
 
-            guard let `self` = self else { return cell }
+            guard let self = self else { return cell }
 
             var separatorInset: CGFloat = 0
 

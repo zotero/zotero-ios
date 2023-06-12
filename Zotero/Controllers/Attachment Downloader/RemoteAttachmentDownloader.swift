@@ -81,7 +81,7 @@ final class RemoteAttachmentDownloader {
 
     func download(data: [(Attachment, URL, String)]) {
         self.queue.async(flags: .barrier) { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             DDLogInfo("RemoteAttachmentDownloader: enqueue \(data.count) attachments")
 
@@ -98,13 +98,13 @@ final class RemoteAttachmentDownloader {
         let operation = RemoteAttachmentDownloadOperation(url: url, file: file, apiClient: self.apiClient, fileStorage: self.fileStorage, queue: self.queue)
         operation.finishedDownload = { [weak self] result in
             self?.queue.async(flags: .barrier) {
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 self.finish(download: download, file: file, attachment: attachment, parentKey: parentKey, result: result)
             }
         }
         operation.progressHandler = { [weak self] progress in
             self?.queue.async(flags: .barrier) {
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 self.observe(progress: progress, attachment: attachment, download: download)
             }
         }

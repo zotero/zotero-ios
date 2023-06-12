@@ -135,7 +135,7 @@ class CollectionsPickerViewController: UICollectionViewController {
 
     private func updateDataSource(with state: CollectionsPickerState, animated: Bool) {
         self.dataSource.apply(state.collectionTree.createSnapshot(collapseState: .expandedAll), to: 0, animatingDifferences: animated) { [weak self] in
-            guard let `self` = self, self.multipleSelectionAllowed else { return }
+            guard let self = self, self.multipleSelectionAllowed else { return }
             self.select(selected: state.selected, tree: state.collectionTree)
         }
     }
@@ -155,7 +155,7 @@ class CollectionsPickerViewController: UICollectionViewController {
 
     private lazy var cellRegistration: UICollectionView.CellRegistration<CollectionCell, Collection> = {
         return UICollectionView.CellRegistration<CollectionCell, Collection> { [weak self] cell, _, collection in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
             let hasChildren = !snapshot.snapshot(of: collection, includingParent: false).items.isEmpty

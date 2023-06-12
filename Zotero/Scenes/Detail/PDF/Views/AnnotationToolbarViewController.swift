@@ -307,7 +307,7 @@ class AnnotationToolbarViewController: UIViewController {
             let isActive = self.delegate?.activeAnnotationTool == tool.type
             return UIAction(title: tool.title, image: tool.image.withRenderingMode(.alwaysTemplate), discoverabilityTitle: tool.accessibilityLabel, state: (isActive ? .on : .off),
                             handler: { [weak self] _ in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 self.delegate?.toggle(tool: tool.type, options: self.currentAnnotationOptions)
             })
         })

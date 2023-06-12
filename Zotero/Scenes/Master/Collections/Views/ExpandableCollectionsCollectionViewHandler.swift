@@ -152,7 +152,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
 
     private lazy var cellRegistration: UICollectionView.CellRegistration<CollectionCell, Collection> = {
         return UICollectionView.CellRegistration<CollectionCell, Collection> { [weak self] cell, _, collection in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
             let hasChildren = snapshot.contains(collection) && !snapshot.snapshot(of: collection, includingParent: false).items.isEmpty
@@ -164,12 +164,12 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
 
             var configuration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren, accessories: accessories)
             configuration.isCollapsedProvider = { [weak self] in
-                guard let `self` = self else { return false }
+                guard let self = self else { return false }
                 let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
                 return snapshot.contains(collection) ? !snapshot.isExpanded(collection) : false
             }
             configuration.toggleCollapsed = { [weak self, weak cell] in
-                guard let `self` = self, let cell = cell else { return }
+                guard let self = self, let cell = cell else { return }
                 self.viewModel.process(action: .toggleCollapsed(collection))
             }
 

@@ -110,7 +110,7 @@ final class PDFSettingsViewController: UICollectionViewController {
 
     private lazy var switchRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, ()> = {
         return UICollectionView.CellRegistration<UICollectionViewListCell, ()> { [weak self] cell, _, _ in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             var configuration = cell.defaultContentConfiguration()
             configuration.text = L10n.Pdf.Settings.idleTimerTitle
@@ -127,7 +127,7 @@ final class PDFSettingsViewController: UICollectionViewController {
 
     private lazy var segmentedRegistration: UICollectionView.CellRegistration<PDFSettingsSegmentedCell, Row> = {
         return UICollectionView.CellRegistration<PDFSettingsSegmentedCell, Row> { [weak self] cell, _, row in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             let title: String
             let actions: [UIAction]
@@ -137,7 +137,7 @@ final class PDFSettingsViewController: UICollectionViewController {
             case .pageTransition:
                 title = L10n.Pdf.Settings.PageTransition.title
                 getSelectedIndex = { [weak self] in
-                    guard let `self` = self else { return 0}
+                    guard let self = self else { return 0}
                     return Int(self.viewModel.state.settings.transition.rawValue)
                 }
                 actions = [UIAction(title: L10n.Pdf.Settings.PageTransition.jump, handler: { _ in self.viewModel.process(action: .setTransition(.scrollPerSpread)) }),
@@ -145,7 +145,7 @@ final class PDFSettingsViewController: UICollectionViewController {
             case .pageMode:
                 title = L10n.Pdf.Settings.PageMode.title
                 getSelectedIndex = { [weak self] in
-                    guard let `self` = self else { return 0}
+                    guard let self = self else { return 0}
                     return Int(self.viewModel.state.settings.pageMode.rawValue)
                 }
                 actions = [UIAction(title: L10n.Pdf.Settings.PageMode.single, handler: { _ in self.viewModel.process(action: .setPageMode(.single)) }),
@@ -154,7 +154,7 @@ final class PDFSettingsViewController: UICollectionViewController {
             case .scrollDirection:
                 title = L10n.Pdf.Settings.ScrollDirection.title
                 getSelectedIndex = { [weak self] in
-                    guard let `self` = self else { return 0}
+                    guard let self = self else { return 0}
                     return Int(self.viewModel.state.settings.direction.rawValue)
                 }
                 actions = [UIAction(title: L10n.Pdf.Settings.ScrollDirection.horizontal, handler: { _ in self.viewModel.process(action: .setDirection(.horizontal)) }),
@@ -162,7 +162,7 @@ final class PDFSettingsViewController: UICollectionViewController {
             case .pageFitting:
                 title = L10n.Pdf.Settings.PageFitting.title
                 getSelectedIndex = { [weak self] in
-                    guard let `self` = self else { return 0}
+                    guard let self = self else { return 0}
                     return self.viewModel.state.settings.pageFitting.rawValue
                 }
                 actions = [UIAction(title: L10n.Pdf.Settings.PageFitting.fit, handler: { _ in self.viewModel.process(action: .setPageFitting(.fit)) }),
@@ -171,7 +171,7 @@ final class PDFSettingsViewController: UICollectionViewController {
             case .appearance:
                 title = L10n.Pdf.Settings.Appearance.title
                 getSelectedIndex = { [weak self] in
-                    guard let `self` = self else { return 0}
+                    guard let self = self else { return 0}
                     return Int(self.viewModel.state.settings.appearanceMode.rawValue)
                 }
                 actions = [UIAction(title: L10n.Pdf.Settings.Appearance.lightMode, handler: { _ in self.viewModel.process(action: .setAppearanceMode(.light)) }),

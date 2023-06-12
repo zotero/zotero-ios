@@ -66,7 +66,7 @@ extension AnnotationPreviewController {
     /// - returns: `Single` with rendered image.
     func render(document: Document, page: PageIndex, rect: CGRect, key: String, parentKey: String, libraryId: LibraryIdentifier) -> Single<UIImage> {
         return Single.create { [weak self] subscriber -> Disposable in
-            guard let `self` = self else { return Disposables.create() }
+            guard let self = self else { return Disposables.create() }
 
             self.queue.async(flags: .barrier) {
                 self.subscribers[SubscriberKey(key: key, parentKey: parentKey)] = subscriber
@@ -106,7 +106,7 @@ extension AnnotationPreviewController {
 
         let key = annotation.previewId
         self.queue.async(flags: .barrier) { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             try? self.fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: true))
             try? self.fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: false))
         }
@@ -114,7 +114,7 @@ extension AnnotationPreviewController {
 
     func deleteAll(parentKey: String, libraryId: LibraryIdentifier) {
         self.queue.async(flags: .barrier) { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             try? self.fileStorage.remove(Files.annotationPreviews(for: parentKey, libraryId: libraryId))
         }
     }
@@ -137,7 +137,7 @@ extension AnnotationPreviewController {
     /// - parameter completed: Completion handler which contains loaded preview or `nil` if loading wasn't successful.
     func preview(for key: String, parentKey: String, libraryId: LibraryIdentifier, isDark: Bool, completed: @escaping (UIImage?) -> Void) {
         self.queue.async { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             do {
                 let data = try self.fileStorage.read(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark))

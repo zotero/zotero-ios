@@ -452,7 +452,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         Single<Int>.timer(.seconds(3), scheduler: MainScheduler.instance)
                    .subscribe(onSuccess: { [weak self, weak viewModel] _ in
-                       guard let `self` = self, let viewModel = viewModel else { return }
+                       guard let self = self, let viewModel = viewModel else { return }
                        self._set(page: page, in: viewModel)
                        self.pageDebounceDisposeBag = nil
                    })
@@ -1119,7 +1119,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.comment, baseKey: nil): htmlComment]
         let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values)
         self.perform(request: request) { [weak self, weak viewModel] error in
-            guard let error = error, let `self` = self, let viewModel = viewModel else { return }
+            guard let error = error, let self = self, let viewModel = viewModel else { return }
 
             DDLogError("PDFReaderActionHandler: can't update annotation \(key) - \(error)")
 
@@ -1134,7 +1134,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.text, baseKey: nil): highlightText]
         let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values)
         self.perform(request: request) { [weak self, weak viewModel] error in
-            guard let error = error, let `self` = self, let viewModel = viewModel else { return }
+            guard let error = error, let self = self, let viewModel = viewModel else { return }
 
             DDLogError("PDFReaderActionHandler: can't update annotation \(key) - \(error)")
 
@@ -1147,7 +1147,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private func set(tags: [Tag], key: String, viewModel: ViewModel<PDFReaderActionHandler>) {
         let request = EditTagsForItemDbRequest(key: key, libraryId: viewModel.state.library.identifier, tags: tags)
         self.perform(request: request) { [weak self, weak viewModel] error in
-            guard let error = error, let `self` = self, let viewModel = viewModel else { return }
+            guard let error = error, let self = self, let viewModel = viewModel else { return }
 
             DDLogError("PDFReaderActionHandler: can't set tags \(key) - \(error)")
 
@@ -1167,7 +1167,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                       KeyBaseKeyPair(key: FieldKeys.Item.Annotation.text, baseKey: nil): highlightText]
         let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values)
         self.perform(request: request) { [weak self, weak viewModel] error in
-            guard let error = error, let `self` = self, let viewModel = viewModel else { return }
+            guard let error = error, let self = self, let viewModel = viewModel else { return }
 
             DDLogError("PDFReaderActionHandler: can't update annotation \(key) - \(error)")
 
@@ -1227,7 +1227,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         let request = CreateAnnotationsDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, annotations: finalAnnotations, userId: viewModel.state.userId,
                                                  schemaController: self.schemaController, boundingBoxConverter: boundingBoxConverter)
         self.perform(request: request) { [weak self, weak viewModel] error in
-            guard let error = error, let `self` = self, let viewModel = viewModel else { return }
+            guard let error = error, let self = self, let viewModel = viewModel else { return }
 
             DDLogError("PDFReaderActionHandler: can't add annotations - \(error)")
 
@@ -1280,7 +1280,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         guard !requests.isEmpty else { return }
 
         self.perform(writeRequests: requests) { [weak self, weak viewModel] error in
-            guard let error = error, let `self` = self, let viewModel = viewModel else { return }
+            guard let error = error, let self = self, let viewModel = viewModel else { return }
 
             DDLogError("PDFReaderActionHandler: can't update changed annotations - \(error)")
 
@@ -1303,7 +1303,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         let request = MarkObjectsAsDeletedDbRequest<RItem>(keys: keys, libraryId: viewModel.state.library.identifier)
         self.perform(request: request) { [weak self, weak viewModel] error in
-            guard let `self` = self, let viewModel = viewModel else { return }
+            guard let self = self, let viewModel = viewModel else { return }
 
             if let error = error {
                 DDLogError("PDFReaderActionHandler: can't remove annotations \(keys) - \(error)")
@@ -1521,7 +1521,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                                   .notification(.PSPDFAnnotationChanged)
                                   .observe(on: MainScheduler.instance)
                                   .subscribe(onNext: { [weak self, weak viewModel] notification in
-                                      guard let `self` = self, let viewModel = viewModel else { return }
+                                      guard let self = self, let viewModel = viewModel else { return }
                                       self.processAnnotationObserving(notification: notification, viewModel: viewModel)
                                   })
                                   .disposed(by: self.pdfDisposeBag)
@@ -1530,7 +1530,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                                   .notification(.PSPDFAnnotationsAdded)
                                   .observe(on: MainScheduler.instance)
                                   .subscribe(onNext: { [weak self, weak viewModel] notification in
-                                      guard let `self` = self, let viewModel = viewModel else { return }
+                                      guard let self = self, let viewModel = viewModel else { return }
                                       self.processAnnotationObserving(notification: notification, viewModel: viewModel)
                                   })
                                   .disposed(by: self.pdfDisposeBag)
@@ -1539,7 +1539,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                                   .notification(.PSPDFAnnotationsRemoved)
                                   .observe(on: MainScheduler.instance)
                                   .subscribe(onNext: { [weak self, weak viewModel] notification in
-                                      guard let `self` = self, let viewModel = viewModel else { return }
+                                      guard let self = self, let viewModel = viewModel else { return }
                                       self.processAnnotationObserving(notification: notification, viewModel: viewModel)
                                   })
                                   .disposed(by: self.pdfDisposeBag)
@@ -1578,7 +1578,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func observe(items: Results<RItem>, viewModel: ViewModel<PDFReaderActionHandler>) -> NotificationToken {
         return items.observe { [weak self, weak viewModel] change in
-            guard let `self` = self, let viewModel = viewModel else { return }
+            guard let self = self, let viewModel = viewModel else { return }
             switch change {
             case .update(let objects, let deletions, let insertions, let modifications):
                 self.update(objects: objects, deletions: deletions, insertions: insertions, modifications: modifications, viewModel: viewModel)

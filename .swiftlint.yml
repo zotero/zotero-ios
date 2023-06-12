@@ -75,6 +75,7 @@ only_rules:
   - overridden_super_call
   - period_spacing
   - prefer_zero_over_explicit_init
+  - self_binding
 
 anyobject_protocol: error
 
@@ -207,6 +208,10 @@ redundant_string_enum_value: error
 redundant_void_return: error
 
 return_arrow_whitespace: error
+
+self_binding:
+  severity: error
+  bindIdentifier: self
 
 self_in_property_initialization: error
 

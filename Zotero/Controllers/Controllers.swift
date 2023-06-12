@@ -192,7 +192,7 @@ final class Controllers {
                                                         .receive(on: DispatchQueue.main)
                                                         .dropFirst()
                                                         .sink { [weak self] data in
-                                                            guard let `self` = self else { return }
+                                                            guard let self = self else { return }
                                                             self.update(with: data, isLogin: true, debugLogging: self.debugLogging)
                                                         }
     }
@@ -419,7 +419,7 @@ final class UserControllers {
 
         // Connect to websockets and start sync
         self.webSocketController.connect(apiKey: apiKey, completed: { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             // Call this before sync so that background uploads are updated and taken care of by sync if needed.
             self.backgroundUploadObserver.updateSessions()
 

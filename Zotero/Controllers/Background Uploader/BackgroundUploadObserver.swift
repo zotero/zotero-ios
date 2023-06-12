@@ -75,7 +75,7 @@ final class BackgroundUploadObserver: NSObject {
 
     func updateSessions() {
         inMainThread { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             self._updateSessions(uploadsWithTaskIds: self.context.uploadsWithTaskIds, sessionIds: Set(self.context.sessionIds), shareExtensionSessionIds: Set(self.context.shareExtensionSessionIds))
         }
     }

@@ -96,7 +96,7 @@ class TableOfContentsViewController: UIViewController {
 
     private lazy var outlineRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, TableOfContentsState.Outline> = {
         return UICollectionView.CellRegistration<UICollectionViewListCell, TableOfContentsState.Outline> { [weak self] cell, _, outline in
-            guard let `self` = self, let dataSource = self.dataSource else { return }
+            guard let self = self, let dataSource = self.dataSource else { return }
 
             var configuration = cell.defaultContentConfiguration()
             configuration.text = outline.title

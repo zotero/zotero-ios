@@ -559,7 +559,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     private lazy var titleRegistration: UICollectionView.CellRegistration<ItemDetailTitleCell, (String, Bool)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             cell.contentConfiguration = ItemDetailTitleCell.ContentConfiguration(title: data.0, isEditing: data.1, layoutMargins: self.layoutMargins(for: indexPath), textChanged: { [weak self] text in
                 self?.viewModel.process(action: .setTitle(text))
             })
@@ -568,7 +568,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     private lazy var fieldRegistration: UICollectionView.CellRegistration<ItemDetailFieldCell, (ItemDetailFieldCell.CellType, CGFloat)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             cell.contentConfiguration = ItemDetailFieldCell.ContentConfiguration(type: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath))
 
@@ -583,7 +583,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     private lazy var fieldEditRegistration: UICollectionView.CellRegistration<ItemDetailFieldEditCell, (ItemDetailState.Field, CGFloat)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             cell.contentConfiguration = ItemDetailFieldEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath),
                                                                                      textChanged: { [weak self] text in
@@ -594,7 +594,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     private lazy var fieldMultilineEditRegistration: UICollectionView.CellRegistration<ItemDetailFieldMultilineEditCell, (ItemDetailState.Field, CGFloat)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             cell.contentConfiguration = ItemDetailFieldMultilineEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath),
                                                                                               textChanged: { [weak self] text in
@@ -605,14 +605,14 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     private lazy var addRegistration: UICollectionView.CellRegistration<ItemDetailAddCell, String> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, title in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             cell.contentConfiguration = ItemDetailAddCell.ContentConfiguration(title: title, layoutMargins: self.layoutMargins(for: indexPath))
         }
     }()
 
     private lazy var abstractRegistration: UICollectionView.CellRegistration<ItemDetailAbstractCell, (String, Bool)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             let width = floor(self.collectionView.frame.width) - (ItemDetailLayout.horizontalInset * 2)
             cell.contentConfiguration = ItemDetailAbstractCell.ContentConfiguration(text: data.0, isCollapsed: data.1, layoutMargins: self.layoutMargins(for: indexPath), maxWidth: width)
         }
@@ -620,7 +620,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     private lazy var abstractEditRegistration: UICollectionView.CellRegistration<ItemDetailAbstractEditCell, String> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, text in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             cell.contentConfiguration = ItemDetailAbstractEditCell.ContentConfiguration(text: text, layoutMargins: self.layoutMargins(for: indexPath), textChanged: { [weak self] text in
                 self?.viewModel.process(action: .setAbstract(text))
@@ -630,21 +630,21 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     private lazy var noteRegistration: UICollectionView.CellRegistration<ItemDetailNoteCell, (Note, Bool)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             cell.contentConfiguration = ItemDetailNoteCell.ContentConfiguration(note: data.0, isProcessing: data.1, layoutMargins: self.layoutMargins(for: indexPath))
         }
     }()
 
     private lazy var tagRegistration: UICollectionView.CellRegistration<ItemDetailTagCell, (Tag, Bool)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             cell.contentConfiguration = ItemDetailTagCell.ContentConfiguration(tag: data.0, isProcessing: data.1, layoutMargins: self.layoutMargins(for: indexPath))
         }
     }()
 
     private lazy var attachmentRegistration: UICollectionView.CellRegistration<ItemDetailAttachmentCell, (Attachment, ItemDetailAttachmentCell.Kind)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             cell.contentConfiguration = ItemDetailAttachmentCell.ContentConfiguration(attachment: data.0, type: data.1, layoutMargins: self.layoutMargins(for: indexPath))
         }
     }()
@@ -792,7 +792,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         let attachmentRegistration = self.attachmentRegistration
 
         self.dataSource = UICollectionViewDiffableDataSource(collectionView: self.collectionView, cellProvider: { [weak self] collectionView, indexPath, row in
-            guard let `self` = self else { return collectionView.dequeueConfiguredReusableCell(using: emptyRegistration, for: indexPath, item: ()) }
+            guard let self = self else { return collectionView.dequeueConfiguredReusableCell(using: emptyRegistration, for: indexPath, item: ()) }
 
             let isEditing = self.viewModel.state.isEditing
             let titleWidth = isEditing ? self.maxTitleWidth : self.maxNonemptyTitleWidth
@@ -881,7 +881,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         }
 
         self.dataSource.reorderingHandlers.didReorder = { [weak self] transaction in
-            guard let `self` = self, let difference = transaction.sectionTransactions.first?.difference else { return }
+            guard let self = self, let difference = transaction.sectionTransactions.first?.difference else { return }
 
             let changes = difference.compactMap({ change -> CollectionDifference<UUID>.Change? in
                 switch change {

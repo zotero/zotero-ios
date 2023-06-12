@@ -193,7 +193,7 @@ final class ItemsToolbarController {
             case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .removeDownload, .download, .duplicate: break
             }
             item.rx.tap.subscribe(onNext: { [weak self] _ in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 self.delegate?.process(action: action.type, button: item)
             })
             .disposed(by: self.disposeBag)

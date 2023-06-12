@@ -139,13 +139,13 @@ final class AllCollectionPickerViewController: UICollectionViewController {
 
     private lazy var cellRegistration: UICollectionView.CellRegistration<CollectionCell, Row> = {
         return UICollectionView.CellRegistration<CollectionCell, Row> { [weak self] cell, indexPath, row in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             let cellConfiguration: UIContentConfiguration
 
             let section = self.dataSource.snapshot().sectionIdentifiers[indexPath.section]
             let isCollapsedProvider: () -> Bool = { [weak self] in
-                guard let `self` = self else { return false }
+                guard let self = self else { return false }
                 let snapshot = self.dataSource.snapshot(for: section)
                 return snapshot.items.contains(row) ? !snapshot.isExpanded(row) : false
             }
@@ -157,7 +157,7 @@ final class AllCollectionPickerViewController: UICollectionViewController {
                 var configuration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren, accessories: .chevron)
                 configuration.isCollapsedProvider = isCollapsedProvider
                 configuration.toggleCollapsed = { [weak self, weak cell] in
-                    guard let `self` = self, let cell = cell else { return }
+                    guard let self = self, let cell = cell else { return }
                     self.viewModel.process(action: .toggleCollection(collection.identifier, section))
                 }
                 cellConfiguration = configuration
@@ -166,7 +166,7 @@ final class AllCollectionPickerViewController: UICollectionViewController {
                 var configuration = CollectionCell.LibraryContentConfiguration(name: library.name, accessories: .chevron)
                 configuration.isCollapsedProvider = isCollapsedProvider
                 configuration.toggleCollapsed = { [weak self, weak cell] in
-                    guard let `self` = self, let cell = cell else { return }
+                    guard let self = self, let cell = cell else { return }
                     self.viewModel.process(action: .toggleLibrary(section))
                 }
                 cellConfiguration = configuration
@@ -259,7 +259,7 @@ private class SearchResultsController: UICollectionViewController {
 
     private lazy var cellRegistration: UICollectionView.CellRegistration<CollectionCell, Row> = {
         return UICollectionView.CellRegistration<CollectionCell, Row> { [weak self] cell, indexPath, row in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             let cellConfiguration: UIContentConfiguration
 

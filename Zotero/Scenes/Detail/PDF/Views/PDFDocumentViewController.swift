@@ -589,14 +589,14 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
         if let idx = filtered.firstIndex(where: { $0.identifier == TextMenu.define.rawValue }) {
             filtered[idx].title = L10n.lookUp
             filtered[idx].actionBlock = { [weak self] in
-                guard let `self` = self, let view = self.pdfController?.view else { return }
+                guard let self = self, let view = self.pdfController?.view else { return }
                 self.coordinatorDelegate?.lookup(text: selectedText, rect: rect, view: view, userInterfaceStyle: self.viewModel.state.interfaceStyle)
             }
         }
 
         if let idx = filtered.firstIndex(where: { $0.identifier == TextMenu.search.rawValue }) {
             filtered[idx].actionBlock = { [weak self] in
-                guard let `self` = self, let pdfController = self.pdfController else { return }
+                guard let self = self, let pdfController = self.pdfController else { return }
                 self.parentDelegate?.showSearch(pdfController: pdfController, text: selectedText)
             }
         }
