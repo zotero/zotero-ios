@@ -46,7 +46,7 @@ struct SplitAnnotationsDbRequest: DbRequest {
             guard let splitRects = AnnotationSplitter.splitRectsIfNeeded(rects: Array(rects)) else { return }
 
             for split in splitRects {
-                self.createCopyWithoutPathsAndRects(of: item, database: database, additionalChange: { _ in
+                self.createCopyWithoutPathsAndRects(of: item, database: database, additionalChange: { new in
                     for rect in split {
                         let rRect = RRect()
                         rRect.minX = rect.minX
