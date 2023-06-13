@@ -44,7 +44,7 @@ final class OnboardingPageView: UIView {
 
         self.textLabel.attributedText = htmlConverter.convert(text: string,
                                                               baseAttributes: [.font: font,
-                                                                                .paragraphStyle: paragraphStyle,
+                                                                               .paragraphStyle: paragraphStyle,
                                                                                .kern: kern,
                                                                                .foregroundColor: Asset.Colors.onboardingTitle.color])
 

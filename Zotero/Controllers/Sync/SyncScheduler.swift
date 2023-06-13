@@ -23,7 +23,7 @@ protocol WebSocketScheduler: AnyObject {
     func webSocketUpdate(libraryId: LibraryIdentifier)
 }
 
-fileprivate typealias SchedulerAction = (syncType: SyncController.SyncType, librarySyncType: SyncController.LibrarySyncType)
+private typealias SchedulerAction = (syncType: SyncController.SyncType, librarySyncType: SyncController.LibrarySyncType)
 
 final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
     /// Timeout in which a new `LibrarySyncType.specific` is started. It's required so that local changes are not submitted immediately or in case of multiple quick changes we don't enqueue multiple syncs.
@@ -90,7 +90,7 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
 
     func cancelSync() {
         self.queue.async(flags: .barrier) { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             self.syncController.cancel()
             self.timerDisposeBag = DisposeBag()
             self.inProgress = nil
@@ -132,8 +132,10 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
         switch (nextLibrarySyncType, action.librarySyncType) {
         case (.all, .all):
             self.nextAction = (type, .all)
+
         case (.specific, .all):
             self.nextAction = (type, .all)
+
         case (.specific(let nextIds), .specific(let newIds)):
             let unionedIds = Array(Set(nextIds).union(Set(newIds)))
             self.nextAction = (type, .specific(unionedIds))
@@ -177,6 +179,7 @@ extension SyncController.SyncType: Comparable {
              (.normal, .full),
              (.ignoreIndividualDelays, .full):
             return true
+
         default:
             return false
         }

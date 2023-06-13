@@ -77,6 +77,7 @@ extension RItem: Deletable {
         case ItemTypes.attachment:
             self.deletePageIndex(in: database)
             self.cleanupAttachmentFiles()
+
         case ItemTypes.annotation:
             self.cleanupAnnotationFiles()
         default: break

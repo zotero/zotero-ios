@@ -23,6 +23,7 @@ struct Convertible {
         switch request.endpoint {
         case .zotero(let path):
             self.url = baseUrl.appendingPathComponent(path)
+
         case .webDav(let url), .other(let url):
             self.url = url
         }
@@ -71,10 +72,13 @@ extension ApiParameterEncoding {
         switch self {
         case .json:
             return JSONEncoding()
+
         case .url:
             return URLEncoding()
+
         case .array:
             return ArrayEncoding()
+
         case .data:
             return RawDataEncoding()
         }

@@ -26,11 +26,14 @@ struct ReadFilteredTagsDbRequest: DbResponseRequest {
         switch self.collectionId {
         case .collection(let string):
             predicates.append(NSPredicate(format: "any item.collections.key = %@", string))
+
         case .custom(let customType):
             switch customType {
             case .all, .publications: break
+
             case .unfiled:
                 predicates.append(NSPredicate(format: "any item.collections.@count == 0"))
+
             case .trash:
                 predicates.append(NSPredicate(format: "item.trash = true"))
             }

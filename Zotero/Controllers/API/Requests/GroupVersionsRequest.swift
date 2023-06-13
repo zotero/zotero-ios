@@ -25,11 +25,11 @@ struct GroupVersionsRequest: ApiResponseRequest {
         return .url
     }
 
-    var parameters: [String : Any]? {
+    var parameters: [String: Any]? {
         return ["format": "versions"]
     }
 
-    var headers: [String : String]? {
+    var headers: [String: String]? {
         return nil
     }
 }

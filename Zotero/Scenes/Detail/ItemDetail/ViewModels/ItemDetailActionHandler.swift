@@ -184,7 +184,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         }
 
         let request = CreateItemFromDetailDbRequest(key: key, libraryId: libraryId, collectionKey: collectionKey, data: data.data, attachments: data.attachments, notes: data.notes, tags: data.tags,
-                                          schemaController: self.schemaController, dateParser: self.dateParser)
+                                                    schemaController: self.schemaController, dateParser: self.dateParser)
 
         self.perform(request: request, invalidateRealm: true) { [weak viewModel] result in
             guard let viewModel = viewModel else { return }
@@ -267,7 +267,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             return false
         }
 
-        if changes.first(where: { $0.name == "children" }) != nil {
+        if changes.contains(where: { $0.name == "children" }) {
             // Realm has an issue when reporting changes in children for `LinkingObjects`. The `oldValue` and `newValue` point to the same `LinkingObjects`, so we can't distinguish whether this was
             // user or sync change. To mitigate this, when updating child items version after successful backend submission, the `parent.version` is also updated. So this change is ignored by above
             // condition and other `children` changes are always made by backend.
@@ -475,6 +475,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             switch result {
             case .success:
                 finishSave(nil)
+
             case .failure(let error):
                 finishSave(error)
             }
@@ -778,6 +779,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                     state.hideController = true
                 }
             }
+
         case .preview:
             guard let snapshot = viewModel.state.snapshot else { return }
 
@@ -890,6 +892,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             return Date()
         case "yesterday":
             return Calendar.current.date(byAdding: .day, value: -1, to: Date())
+
         default:
             return nil
         }

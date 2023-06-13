@@ -39,7 +39,7 @@ final class DragDropController {
         for dragItem in dragItems {
             group.enter()
 
-            dragItem.itemProvider.loadObject(ofClass: NSString.self) { nsString, error in
+            dragItem.itemProvider.loadObject(ofClass: NSString.self) { nsString, _ in
                 if let key = nsString as? String {
                     keys.insert(key)
                 }

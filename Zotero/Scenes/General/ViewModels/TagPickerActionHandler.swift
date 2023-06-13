@@ -74,7 +74,7 @@ struct TagPickerActionHandler: ViewModelActionHandler {
                 state.searchTerm = term
                 state.tags = (state.snapshot ?? state.tags).filter({ $0.name.localizedCaseInsensitiveContains(term) })
                 state.changes = .tags
-                state.showAddTagButton = state.tags.isEmpty || state.tags.first(where: { $0.name == term }) == nil
+                state.showAddTagButton = state.tags.isEmpty || state.tags.contains(where: { $0.name == term })
             }
         } else {
             guard let snapshot = viewModel.state.snapshot else { return }

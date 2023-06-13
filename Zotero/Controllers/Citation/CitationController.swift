@@ -12,7 +12,7 @@ import WebKit
 import CocoaLumberjackSwift
 import RxSwift
 
-fileprivate struct StyleData {
+private struct StyleData {
     let filename: String
     let defaultLocaleId: String?
     let supportsBibliography: Bool
@@ -205,7 +205,7 @@ class CitationController: NSObject {
                 newResult = "{\\rtf\n" + newResult
             }
             if !result.hasSuffix("}") {
-                newResult = newResult + "\n}"
+                newResult += "\n}"
             }
             return newResult
 
@@ -215,7 +215,7 @@ class CitationController: NSObject {
                 newResult = "<!DOCTYPE html><html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"></head><body>" + newResult
             }
             if !result.hasSuffix("</html>") {
-                newResult = newResult + "</body></html>"
+                newResult += "</body></html>"
             }
             return newResult
 
@@ -267,7 +267,6 @@ class CitationController: NSObject {
                 let styleData = try self.fileStorage.read(Files.style(filename: styleFilename))
 
                 subscriber(.success((WKWebView.encodeForJavascript(styleData), WKWebView.encodeForJavascript(localeData))))
-
             } catch let error {
                 DDLogError("CitationController: can't read locale or style - \(error)")
                 subscriber(.failure(Error.styleOrLocaleMissing))
@@ -411,7 +410,7 @@ class CitationController: NSObject {
     /// Performs javascript script in web view, returns `Single` with registered response handler.
     private func perform(javascript: String, in webView: WKWebView) -> Single<String> {
         return Single.create { [weak self, weak webView] subscriber -> Disposable in
-            guard let `self` = self, let webView = webView else {
+            guard let self = self, let webView = webView else {
                 subscriber(.failure(Error.deinitialized))
                 return Disposables.create()
             }

@@ -50,12 +50,14 @@ struct SubmitDeletionSyncAction: SyncAction {
                     switch self.object {
                     case .collection:
                         requests.insert(DeleteObjectsDbRequest<RCollection>(keys: self.keys, libraryId: self.libraryId), at: 0)
+
                     case .item, .trash:
                         requests.insert(DeleteObjectsDbRequest<RItem>(keys: self.keys, libraryId: self.libraryId), at: 0)
                         if self.webDavEnabled {
                             // This one needs to happen before `DeleteObjectsDbRequest`, because it reads item keys and checks whether they are actually attachment items
                             didCreateDeletions = try coordinator.perform(request: CreateWebDavDeletionsDbRequest(keys: self.keys, libraryId: self.libraryId))
                         }
+
                     case .search:
                         requests.insert(DeleteObjectsDbRequest<RSearch>(keys: self.keys, libraryId: self.libraryId), at: 0)
                     case .settings: break

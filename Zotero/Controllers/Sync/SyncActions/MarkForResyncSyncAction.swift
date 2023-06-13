@@ -28,10 +28,13 @@ struct MarkForResyncSyncAction: SyncAction {
                 switch self.object {
                 case .collection:
                     request = MarkForResyncDbAction<RCollection>(libraryId: self.libraryId, keys: self.keys)
+
                 case .item, .trash:
                     request = MarkForResyncDbAction<RItem>(libraryId: self.libraryId, keys: self.keys)
+
                 case .search:
                     request = MarkForResyncDbAction<RSearch>(libraryId: self.libraryId, keys: self.keys)
+
                 case .settings:
                     request = MarkForResyncDbAction<RPageIndex>(libraryId: self.libraryId, keys: self.keys)
                 }

@@ -44,7 +44,7 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
         super.init()
     }
 
-    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
+    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String: String] = [:]) {
         guard let element = Element(rawValue: elementName) else { return }
 
         switch element {
@@ -84,12 +84,16 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
         switch element {
         case .identifier:
             self.identifier = self.currentValue
+
         case .title:
             self.title = self.currentValue
+
         case .updated:
             self.updated = Formatter.iso8601.date(from: self.currentValue)
+
         case .citation:
             self.supportsCitation = true
+
         case .bibliography:
             self.supportsBibliography = true
         case .link, .style: break

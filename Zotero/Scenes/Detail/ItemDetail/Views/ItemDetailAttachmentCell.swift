@@ -19,10 +19,13 @@ final class ItemDetailAttachmentCell: UICollectionViewListCell {
             switch (lhs, rhs) {
             case (.default, .default), (.disabled, .disabled):
                 return true
+
             case (.inProgress(let lProgress), .inProgress(let rProgress)) where lProgress == rProgress:
                 return true
+
             case (.failed(let lError), .failed(let rError)) where lError.localizedDescription == rError.localizedDescription:
                 return true
+
             default:
                 return false
             }
@@ -32,11 +35,14 @@ final class ItemDetailAttachmentCell: UICollectionViewListCell {
             switch self {
             case .default:
                 hasher.combine(1)
+
             case .disabled:
                 hasher.combine(2)
+
             case .inProgress(let progress):
                 hasher.combine(3)
                 hasher.combine(progress)
+
             case .failed(let error):
                 hasher.combine(4)
                 hasher.combine(error.localizedDescription.hash)

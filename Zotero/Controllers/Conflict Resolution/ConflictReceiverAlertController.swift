@@ -9,7 +9,7 @@
 import UIKit
 
 /// Container to weakly store receivers in an array.
-fileprivate class ReceiverContainer {
+private class ReceiverContainer {
     weak var receiver: ConflictViewControllerReceiver?
 
     init(receiver: ConflictViewControllerReceiver) {
@@ -77,7 +77,7 @@ class ConflictReceiverAlertController {
         }
 
         action(receiver, { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             if self.receiverQueue.isEmpty {
                 completion()
             } else {

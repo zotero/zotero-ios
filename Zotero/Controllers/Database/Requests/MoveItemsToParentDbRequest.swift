@@ -28,7 +28,7 @@ struct MoveItemsToParentDbRequest: DbRequest {
 
             item.parent = parent
 
-            if item.collections.count > 0 {
+            if !item.collections.isEmpty {
                 for collection in item.collections {
                     guard let index = collection.items.index(of: item) else { continue }
                     collection.items.remove(at: index)

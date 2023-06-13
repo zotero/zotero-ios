@@ -34,7 +34,7 @@ final class SyncToolbarController {
 
         progressObservable.observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] progress in
-                              guard let `self` = self else { return }
+                              guard let self = self else { return }
                               self.update(progress: progress, in: self.viewController)
                           })
                           .disposed(by: self.disposeBag)
@@ -113,20 +113,28 @@ final class SyncToolbarController {
             case .cancelled, .uploadObjectConflict: break // should not happen
             case .apiError(let response, let data):
                 return (L10n.Errors.api(response), data)
+
             case .dbError:
                 return (L10n.Errors.db, nil)
+
             case .allLibrariesFetchFailed:
                 return (L10n.Errors.SyncToolbar.librariesMissing, nil)
+
             case .cantResolveConflict, .preconditionErrorCantBeResolved:
                 return (L10n.Errors.SyncToolbar.conflictRetryLimit, nil)
+
             case .groupSyncFailed:
                 return (L10n.Errors.SyncToolbar.groupsFailed, nil)
+
             case .missingGroupPermissions, .permissionLoadingFailed:
                 return (L10n.Errors.SyncToolbar.groupPermissions, nil)
+
             case .noInternetConnection:
                 return (L10n.Errors.SyncToolbar.internetConnection, nil)
+
             case .serviceUnavailable:
                 return (L10n.Errors.SyncToolbar.unavailable, nil)
+
             case .forbidden:
                 return (L10n.Errors.SyncToolbar.forbiddenMessage, nil)
             }
@@ -136,16 +144,22 @@ final class SyncToolbarController {
             switch error {
             case .schema:
                 return (L10n.Errors.schema, nil)
+
             case .parsing:
                 return (L10n.Errors.parsing, nil)
+
             case .apiError(let response, let data):
                 return (L10n.Errors.api(response), data)
+
             case .versionMismatch:
                 return (L10n.Errors.versionMismatch, nil)
+
             case .unknown(let _message, let data):
                 return _message.isEmpty ? (L10n.Errors.unknown, data) : (_message, data)
+
             case .attachmentMissing(let key, let libraryId, let title):
                 return (L10n.Errors.SyncToolbar.attachmentMissing("\(title) (\(key))"), SyncError.ErrorData(itemKeys: [key], libraryId: libraryId))
+
             case .quotaLimit(let libraryId):
                 switch libraryId {
                 case .custom:
@@ -156,20 +170,26 @@ final class SyncToolbarController {
                     let groupName = group?.name ?? "\(groupId)"
                     return (L10n.Errors.SyncToolbar.groupQuotaReached(groupName), nil)
                 }
+
             case .insufficientSpace:
                 return (L10n.Errors.SyncToolbar.insufficientSpace, nil)
+
             case .webDavDeletionFailed(let error, _):
                 return (L10n.Errors.SyncToolbar.webdavError(error), nil)
+
             case .webDavDeletion(let count, _):
                 return (L10n.Errors.SyncToolbar.webdavError2(count), nil)
+
             case .webDavVerification(let error):
                 return (error.message, nil)
+
             case .webDavDownload(let error):
                 switch error {
                 case .itemPropInvalid(let string):
                     return (L10n.Errors.SyncToolbar.webdavItemProp(string), nil)
                 case .notChanged: break // Should not happen
                 }
+
             case .annotationDidSplit(let string, let keys, let libraryId):
                 return (string, SyncError.ErrorData(itemKeys: Array(keys), libraryId: libraryId))
             case .unchanged: break
@@ -222,30 +242,38 @@ final class SyncToolbarController {
         switch progress {
         case .starting:
             return L10n.SyncToolbar.starting
+
         case .groups(let progress):
             if let progress = progress {
                 return L10n.SyncToolbar.groupsWithData(progress.completed, progress.total)
             }
             return L10n.SyncToolbar.groups
+
         case .library(let name):
             return L10n.SyncToolbar.library(name)
+
         case .object(let object, let progress, let libraryName, _):
             if let progress = progress {
                 return L10n.SyncToolbar.objectWithData(self.name(for: object), progress.completed, progress.total, libraryName)
             }
             return L10n.SyncToolbar.object(self.name(for: object), libraryName)
+
         case .changes(let progress):
             return L10n.SyncToolbar.writes(progress.completed, progress.total)
+
         case .uploads(let progress):
         return L10n.SyncToolbar.uploads(progress.completed, progress.total)
+
         case .finished(let errors):
             if errors.isEmpty {
                 return L10n.SyncToolbar.finished
             }
             let issues = errors.count == 1 ? L10n.Errors.SyncToolbar.oneError : L10n.Errors.SyncToolbar.multipleErrors(errors.count)
             return L10n.Errors.SyncToolbar.finishedWithErrors(issues)
+
         case .deletions(let name):
             return L10n.SyncToolbar.deletion(name)
+
         case .aborted(let error):
             if case .forbidden = error {
                 return L10n.Errors.SyncToolbar.forbidden
@@ -258,10 +286,13 @@ final class SyncToolbarController {
         switch object {
         case .collection:
             return L10n.SyncToolbar.Object.collections
+
         case .item, .trash:
             return L10n.SyncToolbar.Object.items
+
         case .search:
             return L10n.SyncToolbar.Object.searches
+
         case .settings:
             return ""
         }

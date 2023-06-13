@@ -18,7 +18,7 @@ extension WKWebView {
     /// - returns: `Single` with response from `webView`.
     func call(javascript script: String) -> Single<Any> {
         return Single.create { [weak self] subscriber -> Disposable in
-            guard let `self` = self else { return Disposables.create() }
+            guard let self = self else { return Disposables.create() }
 
             self.evaluateJavaScript(script) { result, error in
                 if let error = error {

@@ -72,7 +72,7 @@ class AttachmentDownloadOperation: AsynchronousOperation {
                 let downloadProgress = request.downloadProgress
                 var didAddProgress = false
                 // Check headers on redirect to see whether downloaded file will be compressed zip or base file.
-                let redirector = Redirector(behavior: .modify({ task, request, response -> URLRequest? in
+                let redirector = Redirector(behavior: .modify({ _, request, response -> URLRequest? in
                     if !isCompressed {
                         isCompressed = response.value(forHTTPHeaderField: "Zotero-File-Compressed") == "Yes"
                     }
@@ -91,7 +91,7 @@ class AttachmentDownloadOperation: AsynchronousOperation {
                 // Start request
                 request.resume()
             }, onError: { [weak self] error in
-                guard let `self` = self, !self.isCancelled else { return }
+                guard let self = self, !self.isCancelled else { return }
 
                 if self.fileStorage.has(self.file) {
                     try? self.fileStorage.remove(self.file)
@@ -101,7 +101,7 @@ class AttachmentDownloadOperation: AsynchronousOperation {
                 self.state = .done
                 self.finish(with: .failure(error))
             }, onCompleted: { [weak self] in
-                guard let `self` = self, !self.isCancelled else { return }
+                guard let self = self, !self.isCancelled else { return }
 
                 self.request = nil
                 self.state = .done
@@ -224,6 +224,7 @@ class AttachmentDownloadOperation: AsynchronousOperation {
             self.request?.cancel()
             self.disposeBag = nil
             self.request = nil
+
         case .unzipping:
             // Request already finished, cancel unzipping action.
             self.zipProgress?.cancel()

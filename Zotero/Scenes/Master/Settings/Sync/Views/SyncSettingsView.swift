@@ -20,9 +20,9 @@ struct SyncSettingsView: View {
             Section(header: Text(L10n.Settings.Sync.dataSyncing)) {
                 Text(self.viewModel.state.account)
 
-                Button(action: {
+                Button {
                     self.coordinatorDelegate?.showLogoutAlert(viewModel: self.viewModel)
-                }) {
+                } label: {
                     Text(L10n.Settings.logout)
                         .foregroundColor(.red)
                 }
@@ -33,20 +33,20 @@ struct SyncSettingsView: View {
             }
 
             Section(header: Text(L10n.Settings.Sync.account)) {
-                Button(action: {
+                Button {
                     self.coordinatorDelegate?.showWeb(url: URL(string: "https://www.zotero.org/settings/account")!, completion: {
                         self.viewModel.process(action: .recheckKeys)
                     })
-                }) {
+                } label: {
                     Text(L10n.Settings.Sync.manageAccount)
                         .foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor)
                 }
 
-                Button(action: {
+                Button {
                     self.coordinatorDelegate?.showWeb(url: URL(string: "https://www.zotero.org/settings/deleteaccount")!, completion: {
                         self.viewModel.process(action: .recheckKeys)
                     })
-                }) {
+                } label: {
                     Text(L10n.Settings.Sync.deleteAccount)
                         .foregroundColor(.red)
                 }
@@ -180,6 +180,7 @@ struct WebDavSettings: View {
                 switch nsError.code {
                 case NSURLErrorNotConnectedToInternet:
                     return L10n.Errors.Settings.Webdav.internetConnection
+
                 case NSURLErrorCannotConnectToHost, NSURLErrorTimedOut:
                     return L10n.Errors.Settings.Webdav.hostNotFound
                 default: break
@@ -192,6 +193,7 @@ struct WebDavSettings: View {
                 switch statusCode {
                 case 401:
                     return L10n.Errors.Settings.Webdav.unauthorized
+
                 case 403:
                     return L10n.Errors.Settings.Webdav.forbidden
                 default: return nil

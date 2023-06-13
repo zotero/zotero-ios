@@ -40,7 +40,7 @@ struct ExportSettingsView: View {
     }
 }
 
-fileprivate struct TextRow: View {
+private struct TextRow: View {
     let title: String
     let value: String
 
@@ -55,7 +55,7 @@ fileprivate struct TextRow: View {
     }
 }
 
-fileprivate struct ToggleRow: View {
+private struct ToggleRow: View {
     let title: String
     @Binding var isOn: Bool
 

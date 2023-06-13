@@ -139,7 +139,7 @@ final class SyncProgressHandler {
     }
 
     private func reportDownloadObjectProgress(for object: SyncObject, libraryId: LibraryIdentifier) {
-        guard let name =  self.libraryNames?[libraryId] else { return }
+        guard let name = self.libraryNames?[libraryId] else { return }
         self.observable.on(.next(.object(object: object, progress: (self.currentDone, self.currentTotal), libraryName: name, libraryId: libraryId)))
     }
 

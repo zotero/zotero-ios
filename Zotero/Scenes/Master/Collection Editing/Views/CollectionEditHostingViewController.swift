@@ -10,7 +10,7 @@ import UIKit
 import SwiftUI
 
 /// Container created for receiving Conflict updates from `ConflictViewControllerReceiver`.
-class CollectionEditHostingViewController<Content>: UIHostingController<Content> where Content : View {
+class CollectionEditHostingViewController<Content>: UIHostingController<Content> where Content: View {
     private unowned let viewModel: ViewModel<CollectionEditActionHandler>
 
     weak var coordinatorDelegate: CollectionEditingCoordinatorDelegate?

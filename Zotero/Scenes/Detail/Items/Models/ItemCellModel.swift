@@ -39,9 +39,9 @@ struct ItemCellModel {
     }
 
     fileprivate static func hasNote(item: RItem) -> Bool {
-        return item.children.filter(.items(type: ItemTypes.note, notSyncState: .dirty))
-                            .filter(.isTrash(false))
-                            .count > 0
+        return !item.children.filter(.items(type: ItemTypes.note, notSyncState: .dirty))
+                             .filter(.isTrash(false))
+                             .isEmpty
     }
 
     fileprivate static func tagColors(item: RItem) -> [UIColor] {

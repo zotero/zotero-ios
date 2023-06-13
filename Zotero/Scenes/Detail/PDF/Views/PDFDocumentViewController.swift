@@ -244,12 +244,16 @@ final class PDFDocumentViewController: UIViewController {
         switch annotation.type {
         case .highlight:
             return .highlight
+
         case .note:
             return .note
+
         case .square:
             return .square
+
         case .ink:
             return .ink
+
         default:
             return nil
         }
@@ -284,10 +288,12 @@ final class PDFDocumentViewController: UIViewController {
             self.pdfController?.appearanceModeManager.appearanceMode = self.traitCollection.userInterfaceStyle == .dark ? .night : []
             self.pdfController?.overrideUserInterfaceStyle = .unspecified
             self.unlockController?.overrideUserInterfaceStyle = .unspecified
+
         case .light:
             self.pdfController?.appearanceModeManager.appearanceMode = []
             self.pdfController?.overrideUserInterfaceStyle = .light
             self.unlockController?.overrideUserInterfaceStyle = .light
+
         case .dark:
             self.pdfController?.appearanceModeManager.appearanceMode = .night
             self.pdfController?.overrideUserInterfaceStyle = .dark
@@ -539,7 +545,7 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
         self.viewModel.process(action: .setVisiblePage(Int(pdfController.pageIndex)))
     }
 
-    func pdfViewController(_ pdfController: PDFViewController, shouldShow controller: UIViewController, options: [String : Any]? = nil, animated: Bool) -> Bool {
+    func pdfViewController(_ pdfController: PDFViewController, shouldShow controller: UIViewController, options: [String: Any]? = nil, animated: Bool) -> Bool {
         return false
     }
 
@@ -589,14 +595,14 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
         if let idx = filtered.firstIndex(where: { $0.identifier == TextMenu.define.rawValue }) {
             filtered[idx].title = L10n.lookUp
             filtered[idx].actionBlock = { [weak self] in
-                guard let `self` = self, let view = self.pdfController?.view else { return }
+                guard let self = self, let view = self.pdfController?.view else { return }
                 self.coordinatorDelegate?.lookup(text: selectedText, rect: rect, view: view, userInterfaceStyle: self.viewModel.state.interfaceStyle)
             }
         }
 
         if let idx = filtered.firstIndex(where: { $0.identifier == TextMenu.search.rawValue }) {
             filtered[idx].actionBlock = { [weak self] in
-                guard let `self` = self, let pdfController = self.pdfController else { return }
+                guard let self = self, let pdfController = self.pdfController else { return }
                 self.parentDelegate?.showSearch(pdfController: pdfController, text: selectedText)
             }
         }
@@ -694,10 +700,13 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
         switch pageInfo.savedRotation {
         case .rotation0:
             return pageInfo.size.height - rect.maxY
+
         case .rotation180:
             return rect.minY
+
         case .rotation90:
             return pageInfo.size.width - rect.minX
+
         case .rotation270:
             return rect.minX
         }

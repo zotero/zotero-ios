@@ -48,6 +48,7 @@ struct TagColorGenerator {
             return 0.9
         case "#a6507b", "#576dd9", "#000000":
             return 1.0
+
         default:
             return 0.8
         }

@@ -90,7 +90,7 @@ final class AnnotationViewHighlightContent: UIView {
             lineView.topAnchor.constraint(equalTo: label.topAnchor),
             lineView.bottomAnchor.constraint(equalTo: label.bottomAnchor),
             lineView.topAnchor.constraint(equalTo: self.topAnchor, constant: self.layout.highlightLineVerticalInsets),
-            bottomInset,
+            bottomInset
 //            button.topAnchor.constraint(equalTo: self.topAnchor),
 //            button.bottomAnchor.constraint(equalTo: self.bottomAnchor)
         ])

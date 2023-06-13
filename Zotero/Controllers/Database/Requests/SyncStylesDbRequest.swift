@@ -47,4 +47,3 @@ struct SyncStylesDbRequest: DbResponseRequest {
         return update
     }
 }
-

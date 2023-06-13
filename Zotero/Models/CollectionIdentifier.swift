@@ -26,8 +26,10 @@ enum CollectionIdentifier: Identifiable, Equatable, Hashable {
             case .trash: return "trash"
             case .unfiled: return "unfiled"
             }
+
         case .collection(let key):
             return "c_" + key
+
         case .search(let key):
             return "s_" + key
         }
@@ -92,8 +94,10 @@ extension CollectionIdentifier: Codable {
         switch self {
         case .custom(let type):
             try container.encode(type, forKey: .custom)
+
         case .collection(let key):
             try container.encode(key, forKey: .collection)
+
         case .search(let key):
             try container.encode(key, forKey: .search)
         }

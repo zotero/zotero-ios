@@ -75,7 +75,7 @@ struct ReadUpdatedItemUpdateParametersDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> (ReadUpdatedParametersResponse, Bool) {
-        let objects =  database.objects(RItem.self).filter(.itemChangesWithoutDeletions(in: self.libraryId))
+        let objects = database.objects(RItem.self).filter(.itemChangesWithoutDeletions(in: self.libraryId))
 
         if objects.count == 1, let item = objects.first, let parameters = item.updateParameters {
             let uuids = Array(item.changes.map({ $0.identifier }))

@@ -79,19 +79,24 @@ struct CreateAnnotationsDbRequest: DbRequest {
             switch field.key {
             case FieldKeys.Item.Annotation.type:
                 rField.value = annotation.type.rawValue
+
             case FieldKeys.Item.Annotation.color:
                 rField.value = annotation.color
+
             case FieldKeys.Item.Annotation.comment:
                 rField.value = annotation.comment
+
             case FieldKeys.Item.Annotation.Position.pageIndex where field.baseKey == FieldKeys.Item.Annotation.position:
                 rField.value = "\(annotation.page)"
             case FieldKeys.Item.Annotation.Position.lineWidth where field.baseKey == FieldKeys.Item.Annotation.position:
                 rField.value = annotation.lineWidth.flatMap({ "\(Decimal($0).rounded(to: 3))" }) ?? ""
             case FieldKeys.Item.Annotation.pageLabel:
                 rField.value = annotation.pageLabel
+
             case FieldKeys.Item.Annotation.sortIndex:
                 rField.value = annotation.sortIndex
                 item.annotationSortIndex = annotation.sortIndex
+
             case FieldKeys.Item.Annotation.text:
                 rField.value = annotation.text ?? ""
             default: break

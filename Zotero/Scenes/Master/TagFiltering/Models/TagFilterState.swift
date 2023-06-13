@@ -57,4 +57,3 @@ struct TagFilterState: ViewModelState {
         self.automaticCount = nil
     }
 }
-

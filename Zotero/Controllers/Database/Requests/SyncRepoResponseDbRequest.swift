@@ -30,5 +30,3 @@ struct SyncRepoResponseDbRequest: DbRequest {
         }
     }
 }
-
-

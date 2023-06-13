@@ -177,6 +177,7 @@ final class DetailCoordinator: Coordinator {
                 } else {
                   self.share(item: url, sourceView: .view(sourceView, rect))
                 }
+
             default:
                 if AVURLAsset(url: url).isPlayable {
                     self.showVideo(for: url)
@@ -288,11 +289,12 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         }))
 
         controller.addAction(UIAlertAction(title: L10n.Items.new, style: .default, handler: { [weak self, weak viewModel] _ in
-            guard let `self` = self, let viewModel = viewModel else { return }
+            guard let self = self, let viewModel = viewModel else { return }
             let collectionKey: String?
             switch viewModel.state.collection.identifier {
             case .collection(let key):
                 collectionKey = key
+
             case .search, .custom:
                 collectionKey = nil
             }
@@ -300,7 +302,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         }))
 
         controller.addAction(UIAlertAction(title: L10n.Items.newNote, style: .default, handler: { [weak self, weak viewModel] _ in
-            guard let `self` = self, let viewModel = viewModel else { return }
+            guard let self = self, let viewModel = viewModel else { return }
             let key = KeyGenerator.newKey
             self.showNoteCreation(title: nil, libraryId: viewModel.state.library.identifier, save: { [weak viewModel] text, tags in
                 viewModel?.process(action: .saveNote(key, text, tags))
@@ -326,7 +328,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let sortByBinding = viewModel.binding(keyPath: \.sortType.field, action: { .setSortField($0) })
 
         let view = ItemSortingView(viewModel: viewModel, showPickerAction: { [weak self, weak navigationController] in
-            guard let `self` = self, let navigationController = navigationController else { return }
+            guard let self = self, let navigationController = navigationController else { return }
             self.showSortTypePicker(sortBy: sortByBinding, in: navigationController)
         })
 
@@ -343,7 +345,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
         if UIDevice.current.userInterfaceIdiom == .phone {
             controller.didLoad = { [weak self] viewController in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 let doneButton = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
                 doneButton.rx.tap.subscribe({ [weak self] _ in
                     self?.navigationController.dismiss(animated: true)
@@ -515,23 +517,31 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         switch error {
         case .dataLoading:
             message = L10n.Errors.Items.loading
+
         case .deletion:
             message = L10n.Errors.Items.deletion
+
         case .deletionFromCollection:
             message = L10n.Errors.Items.deletionFromCollection
+
         case .collectionAssignment:
             message = L10n.Errors.Items.addToCollection
+
         case .itemMove:
             message = L10n.Errors.Items.moveItem
+
         case .noteSaving:
             message = L10n.Errors.Items.saveNote
+
         case .attachmentAdding(let type):
             switch type {
             case .couldNotSave:
                 message = L10n.Errors.Items.addAttachment
+
             case .someFailed(let failed):
                 message = L10n.Errors.Items.addSomeAttachments(failed.joined(separator: ","))
             }
+
         case .duplicationLoading:
             message = L10n.Errors.Items.loadDuplication
         }
@@ -595,8 +605,10 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
             switch error {
             case .incompatibleAttachment:
                 return (L10n.Errors.Attachments.incompatibleAttachment, [])
+
             case .zipDidntContainRequestedFile:
                 return (L10n.Errors.Attachments.cantOpenAttachment, [])
+
             case .cantUnzipSnapshot:
                 return (L10n.Errors.Attachments.cantUnzipSnapshot, [])
             }

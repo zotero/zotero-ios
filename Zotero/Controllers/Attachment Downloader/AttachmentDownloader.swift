@@ -77,7 +77,7 @@ final class AttachmentDownloader {
         var remainingBatchCount = 0
 
         self.accessQueue.sync { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             progress = self.batchProgress
             remainingBatchCount = self.operations.count
             totalBatchCount = self.totalBatchCount
@@ -113,19 +113,22 @@ final class AttachmentDownloader {
 
     func batchDownload(attachments: [(Attachment, String?)]) {
         self.accessQueue.async(flags: .barrier) { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             var operations: [(Download, String?, AttachmentDownloadOperation)] = []
 
             for (attachment, parentKey) in attachments {
                 switch attachment.type {
                 case .url: break
+
                 case .file(let filename, let contentType, let location, let linkType):
                     switch linkType {
                     case .linkedFile, .embeddedImage: break
+
                     case .importedFile, .importedUrl:
                         switch location {
                         case .local: break
+
                         case .remote, .remoteMissing, .localAndChangedRemotely:
                             DDLogInfo("AttachmentDownloader: batch download remote\(location == .remoteMissing ? "ly missing" : "") file \(attachment.key)")
                             let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
@@ -152,21 +155,25 @@ final class AttachmentDownloader {
         case .url:
             DDLogInfo("AttachmentDownloader: open url \(attachment.key)")
             self.observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .ready)))
+
         case .file(let filename, let contentType, let location, let linkType):
             switch linkType {
             case .linkedFile, .embeddedImage:
                 DDLogWarn("AttachmentDownloader: tried opening linkedFile or embeddedImage \(attachment.key)")
                 self.observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .failed(Error.incompatibleAttachment))))
+
             case .importedFile, .importedUrl:
                 switch location {
                 case .local:
                     DDLogInfo("AttachmentDownloader: open local file \(attachment.key)")
                     self.observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .ready)))
+
                 case .remote, .remoteMissing:
                     DDLogInfo("AttachmentDownloader: download remote\(location == .remoteMissing ? "ly missing" : "") file \(attachment.key)")
 
                     let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
                     self.download(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, hasLocalCopy: false)
+
                 case .localAndChangedRemotely:
                     let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
 
@@ -240,7 +247,7 @@ final class AttachmentDownloader {
 
     private func download(file: File, key: String, parentKey: String?, libraryId: LibraryIdentifier, hasLocalCopy: Bool) {
         self.accessQueue.async(flags: .barrier) { [weak self] in
-            guard let `self` = self, let (download, operation) = self.createDownload(file: file, key: key, parentKey: parentKey, libraryId: libraryId, hasLocalCopy: hasLocalCopy) else { return }
+            guard let self = self, let (download, operation) = self.createDownload(file: file, key: key, parentKey: parentKey, libraryId: libraryId, hasLocalCopy: hasLocalCopy) else { return }
             self.enqueue(operation: operation, download: download, parentKey: parentKey)
         }
     }
@@ -265,12 +272,12 @@ final class AttachmentDownloader {
         let operation = AttachmentDownloadOperation(file: file, download: download, progress: progress, userId: self.userId, apiClient: self.apiClient, webDavController: self.webDavController,
                                                     fileStorage: self.fileStorage, queue: self.processingQueue)
         operation.finishedDownload = { [weak self] result in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             switch result {
             case .success:
                 self.dbQueue.sync { [weak self] in
-                    guard let `self` = self else { return }
+                    guard let self = self else { return }
                     // Mark file as downloaded in DB
                     try? self.dbStorage.perform(request: MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true), on: self.dbQueue)
                 }

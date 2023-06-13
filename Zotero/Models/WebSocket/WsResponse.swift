@@ -27,7 +27,7 @@ struct WsResponse {
 
 extension WsResponse: Decodable {
     enum Keys: String, CodingKey {
-        case event = "event"
+        case event
     }
 
     init(from decoder: Decoder) throws {

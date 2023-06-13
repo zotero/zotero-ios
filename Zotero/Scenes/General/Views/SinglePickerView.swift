@@ -19,12 +19,12 @@ struct SinglePickerView: View {
     var body: some View {
         List {
             ForEach(self.viewModel.state.objects) { object in
-                Button(action: {
+                Button {
                     self.viewModel.process(action: .select(object.id))
                     if !self.requiresSaveButton {
                         self.save()
                     }
-                }) {
+                } label: {
                     SinglePickerRow(text: object.name, isSelected: self.viewModel.state.selectedRow == object.id)
                 }
                 .foregroundColor(Color(UIColor.label))
@@ -48,9 +48,9 @@ struct SinglePickerView: View {
     private var trailingItems: some View {
         Group {
             if self.requiresSaveButton {
-                Button(action: {
+                Button {
                     self.save()
-                }) {
+                } label: {
                     Text(L10n.save)
                         .padding(.vertical, 10)
                         .padding(.leading, 10)
@@ -74,7 +74,7 @@ struct SinglePickerView_Previews: PreviewProvider {
     static var previews: some View {
         SinglePickerView(requiresSaveButton: true,
                          requiresCancelButton: true,
-                         saveAction: { _ in }, closeAction: { _ in})
+                         saveAction: { _ in }, closeAction: { _ in })
             .environmentObject(ViewModel(initialState: SinglePickerState(objects: [], selectedRow: ""),
                                          handler: SinglePickerActionHandler()))
     }

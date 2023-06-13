@@ -65,8 +65,7 @@ final class MasterTopCoordinator: NSObject, Coordinator {
     private func createCollectionsViewController(libraryId: LibraryIdentifier, selectedCollectionId: CollectionIdentifier, dbStorage: DbStorage, attachmentDownloader: AttachmentDownloader) -> CollectionsViewController {
         let handler = CollectionsActionHandler(dbStorage: dbStorage, fileStorage: self.controllers.fileStorage, attachmentDownloader: attachmentDownloader)
         let state = CollectionsState(libraryId: libraryId, selectedCollectionId: selectedCollectionId)
-        let controller = CollectionsViewController(viewModel: ViewModel(initialState: state, handler: handler), dragDropController: self.controllers.dragDropController, coordinatorDelegate: self)
-        return controller
+        return CollectionsViewController(viewModel: ViewModel(initialState: state, handler: handler), dragDropController: self.controllers.dragDropController, coordinatorDelegate: self)
     }
 
     private func storeIfNeeded(libraryId: LibraryIdentifier, preselectedCollection collectionId: CollectionIdentifier? = nil) -> CollectionIdentifier {

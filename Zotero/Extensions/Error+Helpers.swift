@@ -49,9 +49,11 @@ extension AFError {
             switch reason {
             case .unacceptableStatusCode(let code):
                 return code
+
             default:
                 return nil
             }
+
         default:
             return nil
         }

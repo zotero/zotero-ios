@@ -101,16 +101,16 @@ final class SyncActionsSpec: QuickSpec {
                                                 dateModified: Date(),
                                                 dateAdded: Date())
                 let snapshot = ItemDetailState.Data(title: "Bachelor thesis",
-                                                type: "thesis",
-                                                isAttachment: false,
-                                                localizedType: "Thesis",
-                                                creators: [:],
-                                                creatorIds: [],
-                                                fields: [:],
-                                                fieldIds: [],
-                                                abstract: "Some note",
-                                                dateModified: Date(),
-                                                dateAdded: Date())
+                                                    type: "thesis",
+                                                    isAttachment: false,
+                                                    localizedType: "Thesis",
+                                                    creators: [:],
+                                                    creatorIds: [],
+                                                    fields: [:],
+                                                    fieldIds: [],
+                                                    abstract: "Some note",
+                                                    dateModified: Date(),
+                                                    dateAdded: Date())
 
                 let changeRequest = EditItemFromDetailDbRequest(libraryId: .custom(.myLibrary), itemKey: "AAAAAAAA", data: data, snapshot: snapshot, schemaController: TestControllers.schemaController,
                                                                 dateParser: TestControllers.dateParser)
@@ -212,16 +212,16 @@ final class SyncActionsSpec: QuickSpec {
                                                 dateModified: Date(),
                                                 dateAdded: Date())
                 let snapshot = ItemDetailState.Data(title: "Bachelor thesis",
-                                                type: "thesis",
-                                                isAttachment: false,
-                                                localizedType: "Thesis",
-                                                creators: [:],
-                                                creatorIds: [],
-                                                fields: [:],
-                                                fieldIds: [],
-                                                abstract: "Some note",
-                                                dateModified: Date(),
-                                                dateAdded: Date())
+                                                    type: "thesis",
+                                                    isAttachment: false,
+                                                    localizedType: "Thesis",
+                                                    creators: [:],
+                                                    creatorIds: [],
+                                                    fields: [:],
+                                                    fieldIds: [],
+                                                    abstract: "Some note",
+                                                    dateModified: Date(),
+                                                    dateAdded: Date())
                 let changeRequest = EditItemFromDetailDbRequest(libraryId: .custom(.myLibrary), itemKey: "AAAAAAAA", data: data, snapshot: snapshot, schemaController: TestControllers.schemaController,
                                                                 dateParser: TestControllers.dateParser)
                 try! self.dbStorage.perform(request: changeRequest, on: .main)
@@ -548,15 +548,17 @@ extension SyncActionError: Equatable {
         switch (lhs, rhs) {
         case (.attachmentItemNotSubmitted, .attachmentItemNotSubmitted), (.attachmentAlreadyUploaded, .attachmentAlreadyUploaded), (.submitUpdateFailures, .submitUpdateFailures):
             return true
+
         case (.attachmentMissing(let lKey, let lLibraryId, let lTitle), .attachmentMissing(let rKey, let rLibraryId, let rTitle)):
             return lKey == rKey && lTitle == rTitle && lLibraryId == rLibraryId
+
         default:
             return false
         }
     }
 }
 
-fileprivate class WebDavTestController: WebDavController {
+private class WebDavTestController: WebDavController {
     enum Error: Swift.Error {
         case shouldntBeCalled
     }
@@ -603,7 +605,7 @@ fileprivate class WebDavTestController: WebDavController {
     func cancelDeletions() {}
 }
 
-fileprivate class WebDavSession: WebDavSessionStorage {
+private class WebDavSession: WebDavSessionStorage {
     var isEnabled: Bool = false
     var isVerified: Bool = false
     var username: String = ""

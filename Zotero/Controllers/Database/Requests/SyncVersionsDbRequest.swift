@@ -59,6 +59,7 @@ struct SyncVersionsDbRequest: DbResponseRequest {
             case .ignoreIndividualDelays, .full:
                 guard !toUpdate.contains(object.key) else { continue }
                 toUpdate.append(object.key)
+
             case .collectionsOnly, .normal, .keysOnly:
                 // Check backoff schedule to see whether object can be synced again
                 let delayIdx = min(object.syncRetries, (self.delayIntervals.count - 1))

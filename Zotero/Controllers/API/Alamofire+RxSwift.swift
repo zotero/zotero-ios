@@ -15,11 +15,11 @@ import RxSwift
 struct AFResponseError: Error {
     let url: URL?
     let error: AFError
-    let headers: [AnyHashable : Any]?
+    let headers: [AnyHashable: Any]?
     let response: String
 }
 
-fileprivate enum RetryDelay {
+private enum RetryDelay {
     case constant(Double)
     case progressive(initial: Double, multiplier: Double, maxDelay: Double)
 }
@@ -29,6 +29,7 @@ extension RetryDelay {
         switch self {
         case .constant(let time):
             return time
+
         case .progressive(let initial, let multiplier, let maxDelay):
             let delay = attempt == 1 ? initial : (initial * pow(multiplier, Double(attempt - 1)))
             return min(maxDelay, delay)
@@ -93,7 +94,7 @@ extension ObservableType where Element == (Data?, HTTPURLResponse) {
 extension DataRequest {
     func validate(acceptableStatusCodes: Set<Int>) -> Self {
        return self.validate(contentType: self.acceptableContentTypes)
-                  .validate { request, response, _ -> Request.ValidationResult in
+                  .validate { _, response, _ -> Request.ValidationResult in
                       if acceptableStatusCodes.contains(response.statusCode) {
                           return .success(())
                       }
@@ -233,11 +234,12 @@ extension AFDownloadResponse where Success == URL?, Failure == AFError {
     }
 }
 
-fileprivate struct ResponseCreator {
+private struct ResponseCreator {
     static func string(from data: Data?, mimeType: String) -> String? {
         switch mimeType {
         case "text/plain", "text/html", "application/xml", "application/json":
             return data.flatMap({ String(data: $0, encoding: .utf8) })
+
         default:
             return nil
         }

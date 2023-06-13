@@ -32,7 +32,6 @@ final class CreatorSummaryFormatterSpec: QuickSpec {
         }
 
         it("creates summary for no creators") {
-            
             try? self.realm.write {
                 self.realm.add(self.createCreators(type: "author", namePresentation: .separate, count: 0))
             }

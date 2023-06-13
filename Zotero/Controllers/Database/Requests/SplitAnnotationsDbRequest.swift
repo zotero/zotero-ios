@@ -46,7 +46,7 @@ struct SplitAnnotationsDbRequest: DbRequest {
             guard let splitRects = AnnotationSplitter.splitRectsIfNeeded(rects: Array(rects)) else { return }
 
             for split in splitRects {
-                self.createCopyWithoutPathsAndRects(of: item, database: database, additionalChange: { new in
+                self.createCopyWithoutPathsAndRects(of: item, database: database, additionalChange: { _ in
                     for rect in split {
                         let rRect = RRect()
                         rRect.minX = rect.minX
@@ -87,7 +87,6 @@ struct SplitAnnotationsDbRequest: DbRequest {
                     new.changes.append(RObjectChange.create(changes: RItemChanges.paths))
                 }
             }
-
 
         default: break
         }

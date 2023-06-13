@@ -21,7 +21,7 @@ struct KeyRequest: ApiRequest {
         return .json
     }
 
-    var parameters: [String : Any]? { return nil }
+    var parameters: [String: Any]? { return nil }
 
-    var headers: [String : String]? { return nil }
+    var headers: [String: String]? { return nil }
 }

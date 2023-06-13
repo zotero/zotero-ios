@@ -67,6 +67,7 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
             switch identifier {
             case .custom(let type):
                 custom.append(type)
+
             case .group(let groupId):
                 group.append(groupId)
             }

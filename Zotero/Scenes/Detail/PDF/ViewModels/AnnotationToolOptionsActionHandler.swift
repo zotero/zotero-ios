@@ -19,6 +19,7 @@ struct AnnotationToolOptionsActionHandler: ViewModelActionHandler {
                 state.size = size
                 state.changes = .size
             }
+
         case .setColorHex(let hex):
             self.update(viewModel: viewModel) { state in
                 state.colorHex = hex

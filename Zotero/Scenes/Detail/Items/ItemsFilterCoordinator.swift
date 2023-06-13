@@ -31,7 +31,7 @@ final class ItemsFilterCoordinator: NSObject, Coordinator {
         super.init()
 
         navigationController.dismissHandler = { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             self.parentCoordinator?.childDidFinish(self)
         }
     }

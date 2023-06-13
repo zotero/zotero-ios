@@ -64,6 +64,7 @@ class UploadAttachmentSyncAction: SyncAction {
         switch self.libraryId {
         case .custom:
             return self.webDavController.sessionStorage.isEnabled ? self.webDavResult : self.zoteroResult
+
         case .group:
             return self.zoteroResult
         }
@@ -131,7 +132,7 @@ class UploadAttachmentSyncAction: SyncAction {
                    .flatMap { _ -> Single<UInt64> in
                        return self.validateFile()
                    }
-                   .flatMap { filesize -> Single<WebDavUploadResult> in
+                   .flatMap { _ -> Single<WebDavUploadResult> in
                        return self.webDavController.prepareForUpload(key: self.key, mtime: self.mtime, hash: self.md5, file: self.file, queue: self.queue)
                    }
                    .observe(on: self.scheduler)

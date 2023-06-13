@@ -30,6 +30,7 @@ final class RepoParserDelegate: NSObject, XMLParserDelegate {
             switch self {
             case .timestamp, .translator, .style:
                 return false
+
             case .priority, .label, .creator, .target, .code:
                 return true
             }
@@ -44,11 +45,12 @@ final class RepoParserDelegate: NSObject, XMLParserDelegate {
         super.init()
     }
 
-    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
+    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String: String] = [:]) {
         guard let element = Element(rawValue: elementName) else { return }
         switch element {
         case .translator:
             self.currentTranslator = Translator(metadata: attributeDict, code: "")
+
         case .style:
             self.currentStyleId = attributeDict["id"]
         default: break
@@ -60,15 +62,19 @@ final class RepoParserDelegate: NSObject, XMLParserDelegate {
             switch element {
             case .timestamp:
                 self.timestamp = Int(self.currentValue) ?? 0
+
             case .translator:
                 if let translator = self.currentTranslator {
                     self.translators.append(translator)
                     self.currentTranslator = nil
                 }
+
             case .code:
                 self.currentTranslator = self.currentTranslator?.withCode(self.currentValue)
+
             case .creator, .label, .priority, .target:
                 self.currentTranslator = self.currentTranslator?.withMetadata(key: element.rawValue, value: self.currentValue)
+
             case .style:
                 if let id = self.currentStyleId {
                     self.styles.append((id, self.currentValue))

@@ -23,4 +23,3 @@ struct InstallStyleDbRequest: DbResponseRequest {
         return true
     }
 }
-

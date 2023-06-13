@@ -10,7 +10,6 @@ import Combine
 import UIKit
 
 final class KeyboardResponder: ObservableObject {
-
     @Published var keyboardHeight: CGFloat = 0
     private var cancellable: AnyCancellable?
 

@@ -69,26 +69,37 @@ final class ItemDetailCollectionViewHandler: NSObject {
             switch (lhs, rhs) {
             case (.addNote, .addNote), (.addCreator, .addCreator), (.addTag, .addTag), (.addAttachment, .addAttachment):
                 return true
+
             case (.abstract, .abstract):
                 return true
+
             case (.attachment(let lAttachment, let lType), .attachment(let rAttachment, let rType)):
                 return lAttachment == rAttachment && lType == rType
+
             case (.creator(let lCreator), .creator(let rCreator)):
                 return lCreator == rCreator
+
             case (.dateAdded(let lDate), .dateAdded(let rDate)):
                 return lDate == rDate
+
             case (.dateModified(let lDate), .dateModified(let rDate)):
                 return lDate == rDate
+
             case (.field(let lKey, let lMultiline), .field(let rKey, let rMultiline)):
                 return lKey == rKey && lMultiline == rMultiline
+
             case (.note(let lNote, let lIsSaving), .note(let rNote, let rIsSaving)):
                 return lNote == rNote && lIsSaving == rIsSaving
+
             case (.tag(let lTag, let lIsProcessing), .tag(let rTag, let rIsProcessing)):
                 return lTag == rTag && lIsProcessing == rIsProcessing
+
             case (.title, .title):
                 return true
+
             case (.type(let lValue), .type(let rValue)):
                 return lValue == rValue
+
             default:
                 return false
             }
@@ -98,42 +109,55 @@ final class ItemDetailCollectionViewHandler: NSObject {
             switch self {
             case .abstract:
                 hasher.combine(1)
+
             case .attachment(let attachment, let type):
                 hasher.combine(2)
                 hasher.combine(attachment)
                 hasher.combine(type)
+
             case .creator(let creator):
                 hasher.combine(3)
                 hasher.combine(creator)
+
             case .dateAdded(let date):
                 hasher.combine(4)
                 hasher.combine(date)
+
             case .dateModified(let date):
                 hasher.combine(5)
                 hasher.combine(date)
+
             case .field(let field, let multiline):
                 hasher.combine(6)
                 hasher.combine(field)
                 hasher.combine(multiline)
+
             case .note(let note, let isSaving):
                 hasher.combine(7)
                 hasher.combine(note)
                 hasher.combine(isSaving)
+
             case .tag(let tag, let isSaving):
                 hasher.combine(8)
                 hasher.combine(tag)
                 hasher.combine(isSaving)
+
             case .title:
                 hasher.combine(9)
+
             case .type(let value):
                 hasher.combine(10)
                 hasher.combine(value)
+
             case .addTag:
                 hasher.combine(11)
+
             case .addNote:
                 hasher.combine(12)
+
             case .addCreator:
                 hasher.combine(13)
+
             case .addAttachment:
                 hasher.combine(14)
             }
@@ -143,6 +167,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             switch self {
             case .attachment(let attachment, _):
                 return attachment.key == key
+
             default:
                 return false
             }
@@ -174,7 +199,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
     }
 
     var hasRows: Bool {
-        return self.dataSource.snapshot().itemIdentifiers.count > 0
+        return !self.dataSource.snapshot().itemIdentifiers.isEmpty
     }
 
     // MARK: - Lifecycle
@@ -281,7 +306,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     /// Update height of updated cell and scroll to it. The cell itself doesn't need to be reloaded, since the change took place inside of it (text field or text view).
     func updateHeightAndScrollToUpdated(row: Row, state: ItemDetailState) {
-        guard let indexPath = self.dataSource.indexPath(for: row), let cellFrame =  self.collectionView.cellForItem(at: indexPath)?.frame else { return }
+        guard let indexPath = self.dataSource.indexPath(for: row), let cellFrame = self.collectionView.cellForItem(at: indexPath)?.frame else { return }
 
         let snapshot = self.dataSource.snapshot()
         self.dataSource.apply(snapshot, animatingDifferences: false)
@@ -339,11 +364,12 @@ final class ItemDetailCollectionViewHandler: NSObject {
             switch _row {
             case .note(let note, _) where note.key == itemKey:
                 row = _row
-                break
+
             case .attachment(let attachment, _) where attachment.key == itemKey:
                 row = _row
-                break
-            default: continue
+
+            default:
+                continue
             }
         }
 
@@ -501,17 +527,17 @@ final class ItemDetailCollectionViewHandler: NSObject {
         var actions: [UIAction] = []
 
         if case .file(_, _, let location, _) = attachment.type, location == .local {
-            actions.append(UIAction(title: L10n.ItemDetail.deleteAttachmentFile, image: UIImage(systemName: "trash"), attributes: []) { [weak self] action in
+            actions.append(UIAction(title: L10n.ItemDetail.deleteAttachmentFile, image: UIImage(systemName: "trash"), attributes: []) { [weak self] _ in
                 self?.viewModel.process(action: .deleteAttachmentFile(attachment))
             })
         }
 
         if !self.viewModel.state.data.isAttachment {
-            actions.append(UIAction(title: L10n.ItemDetail.moveToStandaloneAttachment, image: UIImage(systemName: "arrow.up.to.line"), attributes: []) { [weak self] action in
+            actions.append(UIAction(title: L10n.ItemDetail.moveToStandaloneAttachment, image: UIImage(systemName: "arrow.up.to.line"), attributes: []) { [weak self] _ in
                 self?.viewModel.process(action: .moveAttachmentToStandalone(attachment))
             })
 
-            actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+            actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
                 self?.viewModel.process(action: .deleteAttachment(attachment))
             })
         }
@@ -522,7 +548,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
     private func createContextMenu(for note: Note) -> UIMenu? {
         var actions: [UIAction] = []
 
-        actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+        actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
             self?.viewModel.process(action: .deleteNote(note))
         })
 
@@ -532,7 +558,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
     private func createContextMenu(for tag: Tag) -> UIMenu? {
         var actions: [UIAction] = []
 
-        actions.append(UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+        actions.append(UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
             self?.viewModel.process(action: .deleteTag(tag))
         })
 
@@ -542,7 +568,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
     private func createContextMenu(for creator: ItemDetailState.Creator) -> UIMenu? {
         var actions: [UIAction] = []
 
-        actions.append(UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+        actions.append(UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
             self?.viewModel.process(action: .deleteCreator(creator.id))
         })
 
@@ -550,7 +576,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
     }
 
     private func createContextMenu(for field: ItemDetailState.Field) -> UIMenu? {
-        guard ((field.key == FieldKeys.Item.doi || field.baseField == FieldKeys.Item.doi) || (field.key == FieldKeys.Item.url || field.baseField == FieldKeys.Item.url)) else { return nil }
+        guard (field.key == FieldKeys.Item.doi || field.baseField == FieldKeys.Item.doi) || (field.key == FieldKeys.Item.url || field.baseField == FieldKeys.Item.url) else { return nil }
         return UIMenu(title: "", children: [UIAction(title: L10n.copy, handler: { _ in
             UIPasteboard.general.string = field.value
         })])
@@ -560,7 +586,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     private lazy var titleRegistration: UICollectionView.CellRegistration<ItemDetailTitleCell, (String, Bool)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             cell.contentConfiguration = ItemDetailTitleCell.ContentConfiguration(title: data.0, isEditing: data.1, layoutMargins: self.layoutMargins(for: indexPath), textChanged: { [weak self] text in
                 self?.viewModel.process(action: .setTitle(text))
             })
@@ -569,13 +595,14 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     private lazy var fieldRegistration: UICollectionView.CellRegistration<ItemDetailFieldCell, (ItemDetailFieldCell.CellType, CGFloat)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             cell.contentConfiguration = ItemDetailFieldCell.ContentConfiguration(type: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath))
 
             switch data.0 {
             case .creator:
                 cell.accessories = self.viewModel.state.isEditing ? [.disclosureIndicator(), .delete(), .reorder()] : []
+
             default:
                 cell.accessories = []
             }
@@ -584,7 +611,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     private lazy var fieldEditRegistration: UICollectionView.CellRegistration<ItemDetailFieldEditCell, (ItemDetailState.Field, CGFloat)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             cell.contentConfiguration = ItemDetailFieldEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath),
                                                                                      textChanged: { [weak self] text in
@@ -595,7 +622,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     private lazy var fieldMultilineEditRegistration: UICollectionView.CellRegistration<ItemDetailFieldMultilineEditCell, (ItemDetailState.Field, CGFloat)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             cell.contentConfiguration = ItemDetailFieldMultilineEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath),
                                                                                               textChanged: { [weak self] text in
@@ -606,14 +633,14 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     private lazy var addRegistration: UICollectionView.CellRegistration<ItemDetailAddCell, String> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, title in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             cell.contentConfiguration = ItemDetailAddCell.ContentConfiguration(title: title, layoutMargins: self.layoutMargins(for: indexPath))
         }
     }()
 
     private lazy var abstractRegistration: UICollectionView.CellRegistration<ItemDetailAbstractCell, (String, Bool)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             let width = floor(self.collectionView.frame.width) - (ItemDetailLayout.horizontalInset * 2)
             cell.contentConfiguration = ItemDetailAbstractCell.ContentConfiguration(text: data.0, isCollapsed: data.1, layoutMargins: self.layoutMargins(for: indexPath), maxWidth: width)
         }
@@ -621,7 +648,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     private lazy var abstractEditRegistration: UICollectionView.CellRegistration<ItemDetailAbstractEditCell, String> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, text in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             cell.contentConfiguration = ItemDetailAbstractEditCell.ContentConfiguration(text: text, layoutMargins: self.layoutMargins(for: indexPath), textChanged: { [weak self] text in
                 self?.viewModel.process(action: .setAbstract(text))
@@ -631,27 +658,27 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     private lazy var noteRegistration: UICollectionView.CellRegistration<ItemDetailNoteCell, (Note, Bool)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             cell.contentConfiguration = ItemDetailNoteCell.ContentConfiguration(note: data.0, isProcessing: data.1, layoutMargins: self.layoutMargins(for: indexPath))
         }
     }()
 
     private lazy var tagRegistration: UICollectionView.CellRegistration<ItemDetailTagCell, (Tag, Bool)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             cell.contentConfiguration = ItemDetailTagCell.ContentConfiguration(tag: data.0, isProcessing: data.1, layoutMargins: self.layoutMargins(for: indexPath))
         }
     }()
 
     private lazy var attachmentRegistration: UICollectionView.CellRegistration<ItemDetailAttachmentCell, (Attachment, ItemDetailAttachmentCell.Kind)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             cell.contentConfiguration = ItemDetailAttachmentCell.ContentConfiguration(attachment: data.0, type: data.1, layoutMargins: self.layoutMargins(for: indexPath))
         }
     }()
 
     private lazy var emptyRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, ()> = {
-        return UICollectionView.CellRegistration { cell, indexPath, _ in }
+        return UICollectionView.CellRegistration { _, _, _ in }
     }()
 
     // MARK: - Layout
@@ -693,6 +720,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             let height = ItemDetailLayout.sectionHeaderHeight - ItemDetailLayout.separatorHeight
             return NSCollectionLayoutBoundarySupplementaryItem(layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(height)),
                                                                elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
+
         default:
             return nil
         }
@@ -734,12 +762,16 @@ final class ItemDetailCollectionViewHandler: NSObject {
         switch section {
         case .title:
             return true
+
         case .abstract:
             return false
+
         case .type, .fields, .creators:
             return isEditing
+
         case .attachments, .notes, .tags:
             return !isLastRow
+
         case .dates:
             return isEditing || isLastRow
         }
@@ -749,6 +781,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         switch section {
         case .notes, .attachments, .tags:
             return ItemDetailLayout.iconWidth + ItemDetailLayout.horizontalInset + 17
+
         case .abstract, .creators, .dates, .fields, .title, .type:
             return ItemDetailLayout.horizontalInset
         }
@@ -764,8 +797,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
         switch section {
         case .notes:
             view.setup(with: L10n.ItemDetail.notes)
+
         case .attachments:
             view.setup(with: L10n.ItemDetail.attachments)
+
         case .tags:
             view.setup(with: L10n.ItemDetail.tags)
         default: break
@@ -793,7 +828,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         let attachmentRegistration = self.attachmentRegistration
 
         self.dataSource = UICollectionViewDiffableDataSource(collectionView: self.collectionView, cellProvider: { [weak self] collectionView, indexPath, row in
-            guard let `self` = self else { return collectionView.dequeueConfiguredReusableCell(using: emptyRegistration, for: indexPath, item: ()) }
+            guard let self = self else { return collectionView.dequeueConfiguredReusableCell(using: emptyRegistration, for: indexPath, item: ()) }
 
             let isEditing = self.viewModel.state.isEditing
             let titleWidth = isEditing ? self.maxTitleWidth : self.maxNonemptyTitleWidth
@@ -882,7 +917,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         }
 
         self.dataSource.reorderingHandlers.didReorder = { [weak self] transaction in
-            guard let `self` = self, let difference = transaction.sectionTransactions.first?.difference else { return }
+            guard let self = self, let difference = transaction.sectionTransactions.first?.difference else { return }
 
             let changes = difference.compactMap({ change -> CollectionDifference<UUID>.Change? in
                 switch change {
@@ -892,6 +927,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
                         return .insert(offset: offset, element: creator.id, associatedWith: associatedWith)
                     default: return nil
                     }
+
                 case .remove(let offset, let element, let associatedWith):
                     switch element {
                     case .creator(let creator):
@@ -981,6 +1017,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             switch field.key {
             case FieldKeys.Item.Attachment.url:
                 self.observer.on(.next(.openUrl(field.value)))
+
             case FieldKeys.Item.doi:
                 self.observer.on(.next(.openDoi(field.value)))
             default: break

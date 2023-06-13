@@ -33,6 +33,7 @@ class LookupViewController: UIViewController {
             switch self {
             case .attachment(let attachment, _):
                 return attachment.key == key && attachment.libraryId == libraryId
+
             case .item, .identifier:
                 return false
             }
@@ -114,7 +115,7 @@ class LookupViewController: UIViewController {
             // It takes a little while for the `contentSize` observer notification to come, so all the content is hidden after the notification arrives, so that there is not an empty screen while
             // waiting for it.
             self.show(data: data) { [weak self] in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 self.activityIndicator.stopAnimating()
                 self.activityIndicator.isHidden = true
                 self.errorLabel.isHidden = true
@@ -175,8 +176,8 @@ class LookupViewController: UIViewController {
 
         var isFirstCall = true
         // For some reason, the observer subscription has to be here, doesn't work if it's in `viewDidLoad`.
-        self.contentSizeObserver = self.tableView.observe(\.contentSize, options: [.new]) { [weak self] tableView, change in
-            guard let `self` = self, let value = change.newValue, value.height != self.tableViewHeight.constant else { return }
+        self.contentSizeObserver = self.tableView.observe(\.contentSize, options: [.new]) { [weak self] _, change in
+            guard let self = self, let value = change.newValue, value.height != self.tableViewHeight.constant else { return }
 
             self.tableViewHeight.constant = value.height
 
@@ -194,7 +195,7 @@ class LookupViewController: UIViewController {
     }
 
     private func process(update: RemoteAttachmentDownloader.Update) {
-        guard update.download.libraryId == self.viewModel.state.libraryId, var snapshot = self.dataSource?.snapshot(), snapshot.sectionIdentifiers.count > 0 else { return }
+        guard update.download.libraryId == self.viewModel.state.libraryId, var snapshot = self.dataSource?.snapshot(), !snapshot.sectionIdentifiers.isEmpty else { return }
 
         var rows = snapshot.itemIdentifiers(inSection: 0)
 
@@ -221,11 +222,14 @@ class LookupViewController: UIViewController {
                 switch update {
                 case .progress, .failed:
                     return true
+
                 default:
                     return false
                 }
+
             case .identifier:
                 return true
+
             case .item:
                 return false
             }
@@ -257,7 +261,7 @@ class LookupViewController: UIViewController {
 
             let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)
 
-            guard let `self` = self else { return cell }
+            guard let self = self else { return cell }
 
             var separatorInset: CGFloat = 0
 
@@ -267,11 +271,13 @@ class LookupViewController: UIViewController {
                     separatorInset = LookupViewController.iconWidth + LookupItemCell.attachmentToLabelOffset
                     cell.set(title: data.title, type: data.type, hasDarkBackground: self.viewModel.state.hasDarkBackground)
                 }
+
             case .attachment(let attachment, let update):
                 if let cell = cell as? LookupItemCell {
                     cell.set(title: attachment.title, attachmentType: attachment.type, update: update, hasDarkBackground: self.viewModel.state.hasDarkBackground)
                     separatorInset = LookupViewController.iconWidth + LookupItemCell.attachmentToLabelOffset + LookupItemCell.attachmentOffset
                 }
+
             case .identifier(let identifier, let state):
                 if let cell = cell as? LookupIdentifierCell {
                     cell.set(title: identifier, state: state, hasDarkBackground: self.viewModel.state.hasDarkBackground)

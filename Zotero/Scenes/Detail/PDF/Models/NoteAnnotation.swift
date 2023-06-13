@@ -11,7 +11,6 @@ import Foundation
 import PSPDFKit
 
 final class NoteAnnotation: PSPDFKit.NoteAnnotation {
-
     override var fixedSize: CGSize {
         return AnnotationsConfig.noteAnnotationSize
     }

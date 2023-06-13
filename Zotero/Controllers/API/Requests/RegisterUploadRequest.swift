@@ -27,11 +27,11 @@ struct RegisterUploadRequest: ApiRequest {
         return .url
     }
 
-    var parameters: [String : Any]? {
+    var parameters: [String: Any]? {
         return ["upload": self.uploadKey]
     }
 
-    var headers: [String : String]? {
+    var headers: [String: String]? {
         if let md5 = self.oldMd5 {
             return ["If-Match": md5]
         }

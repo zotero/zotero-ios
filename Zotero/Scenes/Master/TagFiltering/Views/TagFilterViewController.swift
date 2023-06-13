@@ -164,13 +164,13 @@ class TagFilterViewController: UIViewController {
         let deselectMenu = UIMenu(options: .displayInline, children: [selectionCount, deselectAction].orderedMenuChildrenBasedOnDevice())
 
         let showAutomatic = UIAction(title: L10n.TagPicker.showAuto, state: (state.showAutomatic ? .on : .off), handler: { [weak self] _ in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             self.viewModel.process(action: .setShowAutomatic(!self.viewModel.state.showAutomatic))
         })
         var options: [UIAction] = [showAutomatic]
         if UIDevice.current.userInterfaceIdiom != .phone {
             let displayAll = UIAction(title: L10n.TagPicker.showAll, state: (state.displayAll ? .on : .off), handler: { [weak self] _ in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 self.viewModel.process(action: .setDisplayAll(!self.viewModel.state.displayAll))
             })
             options.append(displayAll)
@@ -178,7 +178,7 @@ class TagFilterViewController: UIViewController {
         let optionsMenu = UIMenu(options: .displayInline, children: options.orderedMenuChildrenBasedOnDevice())
 
         let deleteAutomatic = UIAction(title: L10n.TagPicker.deleteAutomatic, attributes: .destructive, handler: { [weak self] _ in
-            guard let `self` = self, let libraryId = self.delegate?.currentLibrary.identifier else { return }
+            guard let self = self, let libraryId = self.delegate?.currentLibrary.identifier else { return }
             self.viewModel.process(action: .loadAutomaticCount(libraryId))
         })
         let deleteMenu = UIMenu(options: .displayInline, children: [deleteAutomatic])
@@ -231,6 +231,7 @@ class TagFilterViewController: UIViewController {
         switch UIDevice.current.userInterfaceIdiom {
         case .phone:
             collectionView.keyboardDismissMode = .onDrag
+
         case .pad:
             collectionView.dropDelegate = self
         default: break

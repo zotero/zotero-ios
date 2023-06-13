@@ -48,6 +48,7 @@ struct LibraryResponse {
             return .custom(.myLibrary)
         case "group":
             return .group(self.id)
+
         default:
             return nil
         }

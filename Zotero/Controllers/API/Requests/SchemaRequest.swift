@@ -23,11 +23,11 @@ struct SchemaRequest: ApiRequest {
         return .url
     }
 
-    var parameters: [String : Any]? {
+    var parameters: [String: Any]? {
         return nil
     }
 
-    var headers: [String : String]? {
+    var headers: [String: String]? {
         if let etag = self.etag {
             return ["If-None-Match": etag]
         }

@@ -25,6 +25,7 @@ struct ItemAction {
         switch self._image {
         case .asset(let name):
             return UIImage(named: name)?.withRenderingMode(.alwaysTemplate)
+
         case .system(let name):
             return UIImage(systemName: name)?.withRenderingMode(.alwaysTemplate)
         }
@@ -43,42 +44,55 @@ struct ItemAction {
         case .addToCollection:
             self.title = L10n.Items.Action.addToCollection
             self._image = .system("folder.badge.plus")
+
         case .delete:
             self.title = L10n.delete
             self._image = .asset(Asset.Images.emptyTrash.name)
+
         case .duplicate:
             self.title = L10n.Items.Action.duplicate
             self._image = .system("square.on.square")
+
         case .removeFromCollection:
             self.title = L10n.Items.Action.removeFromCollection
             self._image = .system("folder.badge.minus")
+
         case .restore:
             self.title = L10n.restore
             self._image = .asset(Asset.Images.restoreTrash.name)
+
         case .trash:
             self.title = L10n.moveToTrash
             self._image = .system("trash")
+
         case .createParent:
             self.title = L10n.Items.Action.createParent
             self._image = .system("plus")
+
         case .sort:
             self.title = ""
             self._image = .system("arrow.up.arrow.down")
+
         case .filter:
             self.title = ""
             self._image = .system("")
+
         case .copyCitation:
             self.title = L10n.Citation.copyCitation
             self._image = .system("doc.on.doc")
+
         case .copyBibliography:
             self.title = L10n.Citation.copyBibliography
             self._image = .system("doc.on.doc")
+
         case .share:
             self.title = L10n.share
             self._image = .system("square.and.arrow.up")
+
         case .download:
             self.title = L10n.Items.Action.download
             self._image = .system("arrow.down.circle")
+
         case .removeDownload:
             self.title = L10n.Items.Action.removeDownload
             self._image = .system("trash")

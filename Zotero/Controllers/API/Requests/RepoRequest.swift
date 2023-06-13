@@ -26,7 +26,7 @@ struct RepoRequest: ApiRequest {
         return .url
     }
 
-    var parameters: [String : Any]? {
+    var parameters: [String: Any]? {
         guard let styles = self.styles else { return nil }
 
         let styleParameters = styles.map({ style -> [String: Any] in
@@ -42,7 +42,7 @@ struct RepoRequest: ApiRequest {
         return nil
     }
 
-    var headers: [String : String]? {
+    var headers: [String: String]? {
         return nil
     }
 }

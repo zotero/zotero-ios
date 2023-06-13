@@ -110,6 +110,7 @@ extension NSPredicate {
         switch identifier {
         case .custom(let type):
             return NSPredicate(format: "customLibraryKey = %d", type.rawValue)
+
         case .group(let identifier):
             return NSPredicate(format: "groupKey = %d", identifier)
         }
@@ -119,6 +120,7 @@ extension NSPredicate {
         switch identifier {
         case .custom(let type):
             return NSPredicate(format: "parent.customLibraryKey = %d", type.rawValue)
+
         case .group(let identifier):
             return NSPredicate(format: "parent.groupKey = %d", identifier)
         }
@@ -128,6 +130,7 @@ extension NSPredicate {
         switch identifier {
         case .custom(let type):
             return NSPredicate(format: "tag.customLibraryKey = %d", type.rawValue)
+
         case .group(let identifier):
             return NSPredicate(format: "tag.groupKey = %d", identifier)
         }
@@ -174,7 +177,6 @@ extension NSPredicate {
         return NSCompoundPredicate(andPredicateWithSubpredicates: [changePredicate,
                                                                    .library(with: libraryId),
                                                                    .deleted(false)])
-
     }
 
     static func changesOrDeletions(in libraryId: LibraryIdentifier) -> NSPredicate {
@@ -223,6 +225,7 @@ extension NSPredicate {
         switch collectionId {
         case .collection(let key):
             predicates.append(NSPredicate(format: "any collections.key = %@", key))
+
         case .custom(let type):
             switch type {
             case .unfiled:

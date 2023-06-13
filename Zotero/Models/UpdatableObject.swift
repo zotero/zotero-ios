@@ -45,7 +45,7 @@ extension Updatable {
     }
 
     var isChanged: Bool {
-        return self.changes.count > 0
+        return !self.changes.isEmpty
     }
 }
 
@@ -146,7 +146,7 @@ extension RCondition {
 }
 
 extension RItem: Updatable {
-    var updateParameters: [String : Any]? {
+    var updateParameters: [String: Any]? {
         guard self.isChanged else { return nil }
 
         var positionFieldChanged = false
@@ -163,7 +163,7 @@ extension RItem: Updatable {
             parameters["deleted"] = self.trash
         }
         if changes.contains(.tags) {
-            parameters["tags"] = Array(self.tags.map({ ["tag": ($0.tag?.name ?? ""), "type": $0.type.rawValue] as [String : Any] }))
+            parameters["tags"] = Array(self.tags.map({ ["tag": ($0.tag?.name ?? ""), "type": $0.type.rawValue] as [String: Any] }))
         }
         if changes.contains(.collections) {
             parameters["collections"] = Array(self.collections.map({ $0.key }))
@@ -348,7 +348,7 @@ extension RCreator {
 }
 
 extension RPageIndex: Updatable {
-    var updateParameters: [String : Any]? {
+    var updateParameters: [String: Any]? {
         guard let libraryId = self.libraryId else { return nil }
         
         let libraryPart: String

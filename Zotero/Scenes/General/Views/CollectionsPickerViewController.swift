@@ -74,6 +74,7 @@ class CollectionsPickerViewController: UICollectionViewController {
         switch self.titleType {
         case .fixed(let title):
             self.title = title
+
         case .dynamic:
             self.updateTitle(with: self.viewModel.state.selected.count)
         }
@@ -126,8 +127,10 @@ class CollectionsPickerViewController: UICollectionViewController {
         switch selectedCount {
         case 0:
             self.title = L10n.Items.zeroCollectionsSelected
+
         case 1:
             self.title = L10n.Items.oneCollectionsSelected
+
         default:
             self.title = L10n.Items.manyCollectionsSelected(selectedCount)
         }
@@ -135,7 +138,7 @@ class CollectionsPickerViewController: UICollectionViewController {
 
     private func updateDataSource(with state: CollectionsPickerState, animated: Bool) {
         self.dataSource.apply(state.collectionTree.createSnapshot(collapseState: .expandedAll), to: 0, animatingDifferences: animated) { [weak self] in
-            guard let `self` = self, self.multipleSelectionAllowed else { return }
+            guard let self = self, self.multipleSelectionAllowed else { return }
             self.select(selected: state.selected, tree: state.collectionTree)
         }
     }
@@ -154,11 +157,11 @@ class CollectionsPickerViewController: UICollectionViewController {
     }
 
     private lazy var cellRegistration: UICollectionView.CellRegistration<CollectionCell, Collection> = {
-        return UICollectionView.CellRegistration<CollectionCell, Collection> { [weak self] cell, indexPath, collection in
-            guard let `self` = self else { return }
+        return UICollectionView.CellRegistration<CollectionCell, Collection> { [weak self] cell, _, collection in
+            guard let self = self else { return }
 
             let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
-            let hasChildren = snapshot.snapshot(of: collection, includingParent: false).items.count > 0
+            let hasChildren = !snapshot.snapshot(of: collection, includingParent: false).items.isEmpty
             let configuration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren, accessories: [])
 
             cell.contentConfiguration = configuration
@@ -183,7 +186,7 @@ class CollectionsPickerViewController: UICollectionViewController {
         self.collectionView.allowsMultipleSelectionDuringEditing = true
         self.collectionView.isEditing = self.multipleSelectionAllowed
 
-        self.collectionView.collectionViewLayout = UICollectionViewCompositionalLayout { section, environment in
+        self.collectionView.collectionViewLayout = UICollectionViewCompositionalLayout { _, environment in
             var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
             configuration.showsSeparators = false
             return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)

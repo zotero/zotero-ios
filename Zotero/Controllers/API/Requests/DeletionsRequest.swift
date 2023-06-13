@@ -27,11 +27,11 @@ struct DeletionsRequest: ApiResponseRequest {
         return .url
     }
 
-    var parameters: [String : Any]? {
+    var parameters: [String: Any]? {
         return ["since": self.version]
     }
 
-    var headers: [String : String]? {
+    var headers: [String: String]? {
         return ["If-Modified-Since-Version": "\(self.version)"]
     }
 }

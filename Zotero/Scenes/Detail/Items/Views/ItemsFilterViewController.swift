@@ -115,7 +115,7 @@ class ItemsFilterViewController: UIViewController {
             self.tagFilterControllerContainer.trailingAnchor.constraint(equalTo: self.tagFilterController.view.trailingAnchor),
             self.tagFilterControllerContainer.topAnchor.constraint(equalTo: self.tagFilterController.view.topAnchor),
             self.tagFilterControllerContainer.bottomAnchor.constraint(equalTo: self.tagFilterController.view.bottomAnchor),
-            self.separator.heightAnchor.constraint(equalToConstant: 1/UIScreen.main.scale)
+            self.separator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale)
         ])
     }
 }

@@ -156,7 +156,7 @@ final class AppCoordinator: NSObject {
             guard let window = self.window, let mainController = window.rootViewController as? MainViewController else { return }
 
             mainController.getDetailCoordinator { [weak self] coordinator in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 self.showItemDetail(key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated)
                 self.download(attachment: attachment, parentKey: parentKey) { [weak self] in
                     self?._open(attachment: attachment, library: library, on: page, annotation: annotation, window: window, detailCoordinator: coordinator, animated: true)
@@ -196,7 +196,7 @@ final class AppCoordinator: NSObject {
         guard let window = self.window, let mainController = window.rootViewController as? MainViewController else { return }
 
         mainController.getDetailCoordinator { [weak self] coordinator in
-            guard let `self` = self, (coordinator.navigationController.presentedViewController as? PDFReaderViewController)?.key != attachment.key else { return }
+            guard let self = self, (coordinator.navigationController.presentedViewController as? PDFReaderViewController)?.key != attachment.key else { return }
             self._open(attachment: attachment, library: library, on: page, annotation: annotation, window: window, detailCoordinator: coordinator, animated: animated) {
                 self._showItemDetail(key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated)
             }
@@ -222,7 +222,7 @@ final class AppCoordinator: NSObject {
         DDLogInfo("AppCoordinator: show restored state - \(data.key); \(data.libraryId); \(url.relativePath)")
 
         mainController.getDetailCoordinator { [weak self] coordinator in
-            guard let `self` = self, let window = self.window else { return }
+            guard let self = self, let window = self.window else { return }
             let controller = self.pdfController(key: data.key, library: library, url: url, page: nil, preselectedAnnotationKey: nil, detailCoordinator: coordinator)
             self.show(pdfController: controller, in: window, animated: false)
         }
@@ -248,7 +248,6 @@ final class AppCoordinator: NSObject {
 
         do {
             try dbStorage.perform(on: .main, with: { coordinator in
-
                 let item = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
 
                 guard let attachment = AttachmentCreator.attachment(for: item, fileStorage: self.controllers.fileStorage, urlDetector: nil) else { return }
@@ -403,12 +402,13 @@ final class AppCoordinator: NSObject {
         downloader.observable
                   .observe(on: MainScheduler.instance)
                   .subscribe(onNext: { [weak self] update in
-                      guard let `self` = self, update.libraryId == attachment.libraryId && update.key == attachment.key else { return }
+                      guard let self = self, update.libraryId == attachment.libraryId && update.key == attachment.key else { return }
 
                       switch update.kind {
                       case .ready:
                           completion()
                           self.downloadDisposeBag = nil
+
                       case .cancelled, .failed:
                           self.downloadDisposeBag = nil
                       case .progress: break
@@ -447,7 +447,7 @@ extension AppCoordinator: DebugLoggingCoordinator {
         var progressView: CircularProgressView?
 
         let createProgressAlert: (Double) -> Void = { [weak self] progress in
-            guard let `self` = self, progress > 0 && progress < 1 else { return }
+            guard let self = self, progress > 0 && progress < 1 else { return }
 
             if progressAlert == nil {
                 let (controller, progress) = self.createCircularProgressAlertController(title: L10n.Settings.LogAlert.progressTitle)
@@ -521,12 +521,16 @@ extension AppCoordinator: DebugLoggingCoordinator {
         switch error {
         case .start:
             message = L10n.Errors.Logging.start
+
         case .contentReading, .cantCreateData:
             message = L10n.Errors.Logging.contentReading
+
         case .noLogsRecorded:
             message = L10n.Errors.Logging.noLogsRecorded
+
         case .upload:
             message = L10n.Errors.Logging.upload
+
         case .responseParsing:
             message = L10n.Errors.Logging.responseParsing
         }

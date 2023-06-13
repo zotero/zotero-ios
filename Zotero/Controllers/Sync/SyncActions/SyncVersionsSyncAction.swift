@@ -33,15 +33,19 @@ struct SyncVersionsSyncAction: SyncAction {
         case .collection:
             return self.synchronizeVersions(for: RCollection.self, libraryId: self.libraryId, userId: self.userId, object: self.object, since: self.sinceVersion, current: self.currentVersion,
                                             syncType: self.syncType)
+
         case .item:
             return self.synchronizeVersions(for: RItem.self, libraryId: self.libraryId, userId: self.userId, object: self.object, since: self.sinceVersion, current: self.currentVersion,
                                             syncType: self.syncType)
+
         case .trash:
             return self.synchronizeVersions(for: RItem.self, libraryId: self.libraryId, userId: self.userId, object: self.object, since: self.sinceVersion, current: self.currentVersion,
                                             syncType: self.syncType)
+
         case .search:
             return self.synchronizeVersions(for: RSearch.self, libraryId: self.libraryId, userId: self.userId, object: self.object, since: self.sinceVersion, current: self.currentVersion,
                                             syncType: self.syncType)
+
         case .settings:
             return Single.just((0, []))
         }

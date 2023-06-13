@@ -85,6 +85,7 @@ final class SyncBatchProcessor {
             } else {
                 self.cancel(with: AFError.responseSerializationFailed(reason: .inputDataNilOrZeroLength))
             }
+
         case .failure(let error):
             self.cancel(with: error)
         }

@@ -109,8 +109,10 @@ final class ItemsViewController: UIViewController {
                                 case .metadata(let item):
                                     self.showItemDetail(for: item)
                                     self.resetActiveSearch()
+
                                 case .doi(let doi):
                                     self.coordinatorDelegate?.show(doi: doi)
+
                                 case .url(let url):
                                     self.coordinatorDelegate?.show(url: url)
                                 }
@@ -256,7 +258,7 @@ final class ItemsViewController: UIViewController {
             if let snapshot = state.results {
                 self.tableViewHandler.reloadAll(snapshot: snapshot.freeze())
             }
-        case .dataLoading, .collectionAssignment, .noteSaving, .attachmentAdding(_), .duplicationLoading: break
+        case .dataLoading, .collectionAssignment, .noteSaving, .attachmentAdding, .duplicationLoading: break
         }
 
         // Show appropriate message
@@ -415,12 +417,13 @@ final class ItemsViewController: UIViewController {
 
     private func startObserving(results: Results<RItem>) {
         self.resultsToken = results.observe(keyPaths: RItem.observableKeypathsForItemList, { [weak self] changes in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             switch changes {
             case .initial(let results):
                 self.tableViewHandler.reloadAll(snapshot: results.freeze())
                 self.updateTagFilter(with: self.viewModel.state)
+
             case .update(let results, let deletions, let insertions, let modifications):
                 let correctedModifications = Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions)
                 self.viewModel.process(action: .updateKeys(items: results, deletions: deletions, insertions: insertions, modifications: correctedModifications))
@@ -428,6 +431,7 @@ final class ItemsViewController: UIViewController {
                     self.updateTagFilter(with: self.viewModel.state)
                 }
                 self.updateEmptyTrashButton(toEnabled: !results.isEmpty)
+
             case .error(let error):
                 DDLogError("ItemsViewController: could not load results - \(error)")
                 self.viewModel.process(action: .observingFailed)
@@ -442,7 +446,7 @@ final class ItemsViewController: UIViewController {
         syncController.progressObservable
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] progress in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 switch progress {
                 case .object(let object, let progress, _, let libraryId):
                     if self.viewModel.state.library.identifier == libraryId && object == .item {
@@ -454,10 +458,10 @@ final class ItemsViewController: UIViewController {
                         // Re-enable batched reloads when items are synced.
                         self.tableViewHandler.enableReloadAnimations()
                     }
+
                 default:
                     // Re-enable batched reloads when items are synced.
                     self.tableViewHandler.enableReloadAnimations()
-                break
                 }
             })
             .disposed(by: self.disposeBag)
@@ -482,7 +486,7 @@ final class ItemsViewController: UIViewController {
                           .notification(.willEnterForeground)
                           .observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] _ in
-                              guard let `self` = self else { return }
+                              guard let self = self else { return }
                               if self.searchBarNeedsReset {
                                   self.resetSearchBar()
                                   self.searchBarNeedsReset = false
@@ -586,30 +590,34 @@ final class ItemsViewController: UIViewController {
             action = { [weak self] _ in
                 self?.viewModel.process(action: .toggleSelectionState)
             }
+
         case .selectAll:
             title = L10n.Items.selectAll
             accessibilityLabel = L10n.Accessibility.Items.selectAllItems
             action = { [weak self] _ in
                 self?.viewModel.process(action: .toggleSelectionState)
             }
+
         case .done:
             title = L10n.done
             accessibilityLabel = L10n.done
             action = { [weak self] _ in
                 self?.viewModel.process(action: .stopEditing)
             }
+
         case .select:
             title = L10n.select
             accessibilityLabel = L10n.Accessibility.Items.selectItems
             action = { [weak self] _ in
                 self?.viewModel.process(action: .startEditing)
             }
+
         case .add:
             image = UIImage(systemName: "plus")
             accessibilityLabel = L10n.Items.new
             title = nil
             action = { [weak self] item in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 self.coordinatorDelegate?.showAddActions(viewModel: self.viewModel, button: item)
             }
 
@@ -768,7 +776,7 @@ extension ItemsViewController: ItemsToolbarControllerDelegate {
 /// constraint to current width of search bar. When the animation finishes the parent controller has to call `unfreezeWidth()` to set the width back
 /// to `.greatestFiniteMagnitude`, so that it stretches to appropriate size when needed (for example when the device rotates).
 ///
-fileprivate final class SearchBarContainer: UIView {
+private final class SearchBarContainer: UIView {
     unowned let searchBar: UISearchBar
     private var widthConstraint: NSLayoutConstraint!
 

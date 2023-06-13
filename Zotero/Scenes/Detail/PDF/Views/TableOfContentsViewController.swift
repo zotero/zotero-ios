@@ -95,8 +95,8 @@ class TableOfContentsViewController: UIViewController {
     // MARK: - Collection view
 
     private lazy var outlineRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, TableOfContentsState.Outline> = {
-        return UICollectionView.CellRegistration<UICollectionViewListCell, TableOfContentsState.Outline> { [weak self] cell, indexPath, outline in
-            guard let `self` = self, let dataSource = self.dataSource else { return }
+        return UICollectionView.CellRegistration<UICollectionViewListCell, TableOfContentsState.Outline> { [weak self] cell, _, outline in
+            guard let self = self, let dataSource = self.dataSource else { return }
 
             var configuration = cell.defaultContentConfiguration()
             configuration.text = outline.title
@@ -104,13 +104,13 @@ class TableOfContentsViewController: UIViewController {
             cell.contentConfiguration = configuration
 
             let snapshot = dataSource.snapshot(for: .outline)
-            let showToggle = self.viewModel.state.search.isEmpty && snapshot.contains(.outline(outline)) && snapshot.snapshot(of: .outline(outline), includingParent: false).items.count > 0
+            let showToggle = self.viewModel.state.search.isEmpty && snapshot.contains(.outline(outline)) && !snapshot.snapshot(of: .outline(outline), includingParent: false).items.isEmpty
             cell.accessories = showToggle ? [.outlineDisclosure()] : []
         }
     }()
 
     private lazy var searchRegistration: UICollectionView.CellRegistration<SearchBarCell, String> = {
-        return UICollectionView.CellRegistration<SearchBarCell, String> { [weak self] cell, indexPath, string in
+        return UICollectionView.CellRegistration<SearchBarCell, String> { [weak self] cell, _, string in
             cell.contentConfiguration = SearchBarCell.ContentConfiguration(text: string, changeAction: { [weak self] newText in
                 self?.viewModel.process(action: .search(newText))
             })
@@ -125,6 +125,7 @@ class TableOfContentsViewController: UIViewController {
             switch row {
             case .searchBar:
                 return collectionView.dequeueConfiguredReusableCell(using: searchRegistration, for: indexPath, item: (self?.viewModel.state.search ?? ""))
+
             case .outline(let outline):
                 return collectionView.dequeueConfiguredReusableCell(using: outlineRegistration, for: indexPath, item: outline)
             }
@@ -147,7 +148,7 @@ class TableOfContentsViewController: UIViewController {
             collectionView.topAnchor.constraint(equalTo: self.view.topAnchor),
             collectionView.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor),
             collectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
-            collectionView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+            collectionView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor)
         ])
     }
 
@@ -176,26 +177,26 @@ extension TableOfContentsViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemsAt indexPaths: [IndexPath], point: CGPoint) -> UIContextMenuConfiguration? {
         guard var snapshot = self.dataSource?.snapshot(for: .outline) else { return nil }
 
-        let hasExpanded = snapshot.items.first(where: { snapshot.isExpanded($0) }) != nil
-        let hasCollapsed = snapshot.items.first { row in
+        let hasExpanded = snapshot.items.contains(where: { snapshot.isExpanded($0) })
+        let hasCollapsed = snapshot.items.contains { row in
             if snapshot.snapshot(of: row, includingParent: false).items.isEmpty {
                 return false
             }
             return !snapshot.isExpanded(row)
-        } != nil
+        }
 
-        return UIContextMenuConfiguration(actionProvider:  { [weak self] _ in
+        return UIContextMenuConfiguration(actionProvider: { [weak self] _ in
             var actions: [UIAction] = []
 
             if hasCollapsed {
-                actions.append(UIAction(title: L10n.Collections.expandAll, image: UIImage(systemName: "chevron.down")) { [weak self] action in
+                actions.append(UIAction(title: L10n.Collections.expandAll, image: UIImage(systemName: "chevron.down")) { [weak self] _ in
                     snapshot.expand(snapshot.items)
                     self?.dataSource?.apply(snapshot, to: .outline)
                 })
             }
 
             if hasExpanded {
-                actions.append(UIAction(title: L10n.Collections.collapseAll, image: UIImage(systemName: "chevron.right")) { [weak self] action in
+                actions.append(UIAction(title: L10n.Collections.collapseAll, image: UIImage(systemName: "chevron.right")) { [weak self] _ in
                     snapshot.collapse(snapshot.items)
                     self?.dataSource?.apply(snapshot, to: .outline)
                 })

@@ -24,4 +24,3 @@ struct ReadGroupDbRequest: DbResponseRequest {
         return group
     }
 }
-

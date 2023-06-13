@@ -247,7 +247,7 @@ final class AnnotationsViewController: UIViewController {
     private func focusSelectedCell() {
         guard !self.viewModel.state.sidebarEditingEnabled, let indexPath = self.tableView.indexPathForSelectedRow else { return }
 
-        let cellFrame =  self.tableView.rectForRow(at: indexPath)
+        let cellFrame = self.tableView.rectForRow(at: indexPath)
         let cellBottom = cellFrame.maxY - self.tableView.contentOffset.y
         let tableViewBottom = self.tableView.superview!.bounds.maxY - self.tableView.contentInset.bottom
         let safeAreaTop = self.tableView.superview!.safeAreaInsets.top
@@ -428,7 +428,7 @@ final class AnnotationsViewController: UIViewController {
         self.dataSource = TableViewDiffableDataSource(tableView: self.tableView, cellProvider: { [weak self] tableView, indexPath, key in
             let cell = tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
 
-            if let `self` = self, let cell = cell as? AnnotationCell, let annotation = self.viewModel.state.annotation(for: key) {
+            if let self = self, let cell = cell as? AnnotationCell, let annotation = self.viewModel.state.annotation(for: key) {
                 cell.contentView.backgroundColor = self.view.backgroundColor
                 self.setup(cell: cell, with: annotation, state: self.viewModel.state)
             }
@@ -436,9 +436,8 @@ final class AnnotationsViewController: UIViewController {
             return cell
         })
 
-
         self.dataSource.canEditRow = { [weak self] indexPath in
-            guard let `self` = self, let key = self.dataSource.itemIdentifier(for: indexPath) else { return false }
+            guard let self = self, let key = self.dataSource.itemIdentifier(for: indexPath) else { return false }
             switch key.type {
             case .database: return true
             case .document: return false
@@ -446,7 +445,7 @@ final class AnnotationsViewController: UIViewController {
         }
 
         self.dataSource.commitEditingStyle = { [weak self] editingStyle, indexPath in
-            guard let `self` = self, !self.viewModel.state.sidebarEditingEnabled && editingStyle == .delete,
+            guard let self = self, !self.viewModel.state.sidebarEditingEnabled && editingStyle == .delete,
                   let key = self.dataSource.itemIdentifier(for: indexPath), key.type == .database else { return }
             self.viewModel.process(action: .removeAnnotation(key))
         }
@@ -508,12 +507,7 @@ final class AnnotationsViewController: UIViewController {
         guard !self.toolbarContainer.isHidden else { return }
 
         var items: [UIBarButtonItem] = []
-
-        if #available(iOS 14.0, *) {
-            items.append(UIBarButtonItem(systemItem: .flexibleSpace, primaryAction: nil, menu: nil))
-        } else {
-            items.append(UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil))
-        }
+        items.append(UIBarButtonItem(systemItem: .flexibleSpace, primaryAction: nil, menu: nil))
 
         if editingEnabled {
             let merge = UIBarButtonItem(title: L10n.Pdf.AnnotationsSidebar.merge, style: .plain, target: nil, action: nil)

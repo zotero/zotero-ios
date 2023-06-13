@@ -11,7 +11,7 @@ import Foundation
 struct AttachmentUploadRequest: ApiRequest {
     let endpoint: ApiEndpoint
     let httpMethod: ApiHttpMethod
-    let headers: [String : String]?
+    let headers: [String: String]?
     let logParams: ApiLogParameters
 
     init(endpoint: ApiEndpoint, httpMethod: ApiHttpMethod, headers: [String: String]? = nil, logParams: ApiLogParameters = []) {
@@ -21,7 +21,7 @@ struct AttachmentUploadRequest: ApiRequest {
         self.logParams = logParams
     }
 
-    var parameters: [String : Any]? {
+    var parameters: [String: Any]? {
         return nil
     }
 

@@ -6,7 +6,6 @@
 //  Copyright © 2021 Corporation for Digital Scholarship. All rights reserved.
 //
 
-
 @testable import Zotero
 
 import Foundation

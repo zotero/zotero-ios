@@ -13,7 +13,7 @@ import RxSwift
 
 typealias AnnotationPreviewUpdate = (annotationKey: String, pdfKey: String, image: UIImage)
 
-fileprivate struct SubscriberKey: Hashable {
+private struct SubscriberKey: Hashable {
     let key: String
     let parentKey: String
 }
@@ -55,7 +55,6 @@ import PSPDFKit
 // MARK: - PSPDFKit
 
 extension AnnotationPreviewController {
-
     /// Renders part of document if it's not cached already and returns as `Single`. Does not write results to cache file.
     /// - parameter document: Document to render.
     /// - parameter page: Page of document to render.
@@ -66,7 +65,7 @@ extension AnnotationPreviewController {
     /// - returns: `Single` with rendered image.
     func render(document: Document, page: PageIndex, rect: CGRect, key: String, parentKey: String, libraryId: LibraryIdentifier) -> Single<UIImage> {
         return Single.create { [weak self] subscriber -> Disposable in
-            guard let `self` = self else { return Disposables.create() }
+            guard let self = self else { return Disposables.create() }
 
             self.queue.async(flags: .barrier) {
                 self.subscribers[SubscriberKey(key: key, parentKey: parentKey)] = subscriber
@@ -106,7 +105,7 @@ extension AnnotationPreviewController {
 
         let key = annotation.previewId
         self.queue.async(flags: .barrier) { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             try? self.fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: true))
             try? self.fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: false))
         }
@@ -114,7 +113,7 @@ extension AnnotationPreviewController {
 
     func deleteAll(parentKey: String, libraryId: LibraryIdentifier) {
         self.queue.async(flags: .barrier) { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             try? self.fileStorage.remove(Files.annotationPreviews(for: parentKey, libraryId: libraryId))
         }
     }
@@ -137,7 +136,7 @@ extension AnnotationPreviewController {
     /// - parameter completed: Completion handler which contains loaded preview or `nil` if loading wasn't successful.
     func preview(for key: String, parentKey: String, libraryId: LibraryIdentifier, isDark: Bool, completed: @escaping (UIImage?) -> Void) {
         self.queue.async { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             do {
                 let data = try self.fileStorage.read(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark))
@@ -203,7 +202,6 @@ extension AnnotationPreviewController {
                 self?.queue.async {
                     self?.completeRequest(with: result, key: key, parentKey: parentKey, libraryId: libraryId, isDark: isDark, type: type)
                 }
-
             }
 
             PSPDFKit.SDK.shared.renderManager.renderQueue.schedule(task)
@@ -218,8 +216,10 @@ extension AnnotationPreviewController {
             switch type {
             case .temporary:
                 self.perform(event: .success(image), key: key, parentKey: parentKey)
+
             case .cachedOnly:
                 self.cache(image: image, key: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark)
+
             case .cachedAndReported:
                 self.cache(image: image, key: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark)
                 self.observable.on(.next((key, parentKey, image)))

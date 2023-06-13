@@ -20,13 +20,13 @@ struct AnnotationPreviewBoundingBoxCalculator {
 
         if boundingBox.width == boundingBox.height {
             // If it's square, increase size to match min width.
-            return boundingBox.insetBy(dx: widthDifference/2, dy: widthDifference/2).rounded(to: 3)
+            return boundingBox.insetBy(dx: widthDifference / 2, dy: widthDifference / 2).rounded(to: 3)
         }
 
         // Otherwise increase individual sizes to match their minimums
         var newBoundingBox = boundingBox
         if widthDifference < 0 {
-            newBoundingBox = newBoundingBox.insetBy(dx: widthDifference/2, dy: 0).rounded(to: 3)
+            newBoundingBox = newBoundingBox.insetBy(dx: widthDifference / 2, dy: 0).rounded(to: 3)
         }
         if heightDifference < 0 {
             // Narrow heights are lines. Lines usually want to highlight something above them. Move the preview bounding box above line.

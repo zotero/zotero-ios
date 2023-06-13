@@ -17,7 +17,7 @@ class TagFilterCell: UICollectionViewCell {
         }
     }
 
-    var maxWidth: CGFloat? = nil {
+    var maxWidth: CGFloat? {
         didSet {
             guard let maxWidth = self.maxWidth else { return }
             self.maxWidthConstraint.isActive = true

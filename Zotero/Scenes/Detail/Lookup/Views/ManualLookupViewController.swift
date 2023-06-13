@@ -58,7 +58,7 @@ class ManualLookupViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        if (!self.inputContainer.isHidden) {
+        if !self.inputContainer.isHidden {
             self.textView.becomeFirstResponder()
         }
     }
@@ -129,12 +129,12 @@ class ManualLookupViewController: UIViewController {
             self.setupCloseBarButton(title: L10n.cancel)
 
         case .lookup(let data):
-            let didTranslateAll = data.first(where: { data in
+            let didTranslateAll = data.contains(where: { data in
                 switch data.state {
                 case .enqueued, .inProgress: return true
                 case .failed, .translated: return false
                 }
-            }) == nil
+            })
             self.setupCloseBarButton(title: didTranslateAll ? L10n.close : L10n.cancel)
         }
     }
@@ -260,7 +260,7 @@ class ManualLookupViewController: UIViewController {
     }
 }
 
-fileprivate final class LiveTextResponder: UIResponder, UIKeyInput {
+private final class LiveTextResponder: UIResponder, UIKeyInput {
     private weak var viewModel: ViewModel<ManualLookupActionHandler>?
 
     init(viewModel: ViewModel<ManualLookupActionHandler>) {

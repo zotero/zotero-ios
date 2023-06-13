@@ -82,6 +82,7 @@ final class SingleCitationViewController: UIViewController {
             switch error {
             case .styleMissing:
                 self.coordinatorDelegate?.showMissingStyleError()
+
             case .cantPreloadWebView:
                 self.coordinatorDelegate?.showCitationPreview(errorMessage: L10n.Errors.citationPreview)
             }
@@ -159,6 +160,7 @@ final class SingleCitationViewController: UIViewController {
         switch UIDevice.current.userInterfaceIdiom {
         case .pad:
             self.view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: self.container.bottomAnchor, constant: 12).isActive = true
+
         case .phone:
             self.view.safeAreaLayoutGuide.bottomAnchor.constraint(greaterThanOrEqualTo: self.container.bottomAnchor, constant: 12).isActive = true
         default: break
@@ -197,7 +199,7 @@ final class SingleCitationViewController: UIViewController {
 
         self.omitAuthorSwitch.rx.controlEvent(.valueChanged)
                                 .subscribe(onNext: { [weak self] _ in
-                                    guard let `self` = self else { return }
+                                    guard let self = self else { return }
                                     self.viewModel.process(action: .setOmitAuthor(self.omitAuthorSwitch.isOn))
                                 })
                                 .disposed(by: self.disposeBag)

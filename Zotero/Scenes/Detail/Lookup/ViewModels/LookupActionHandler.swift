@@ -70,7 +70,7 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
         let localizedType = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ItemTypes.attachment
 
         self.backgroundQueue.async { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             do {
                 let request = CreateAttachmentDbRequest(attachment: attachment, parentKey: download.parentKey, localizedType: localizedType, includeAccessDate: attachment.hasUrl, collections: [], tags: [])
@@ -162,13 +162,13 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
             }
 
             self.backgroundQueue.async { [weak self, weak viewModel] in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
 
                 do {
                     try self.storeDataAndDownloadAttachmentIfNecessary(parsedData)
 
                     inMainThread { [weak self] in
-                        guard let `self` = self, let viewModel = viewModel else { return }
+                        guard let self = self, let viewModel = viewModel else { return }
                         let translatedData = LookupState.LookupData(identifier: identifier, state: .translated(parsedData))
                         self.update(lookupData: translatedData, in: viewModel)
                     }
@@ -176,7 +176,7 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                     DDLogError("LookupActionHandler: can't create item(s) - \(error)")
 
                     inMainThread { [weak self] in
-                        guard let `self` = self, let viewModel = viewModel else { return }
+                        guard let self = self, let viewModel = viewModel else { return }
                         let failedData = LookupState.LookupData(identifier: identifier, state: .failed)
                         self.update(lookupData: failedData, in: viewModel)
                     }

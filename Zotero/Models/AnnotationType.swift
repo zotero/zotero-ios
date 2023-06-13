@@ -9,8 +9,8 @@
 import Foundation
 
 enum AnnotationType: String {
-    case note = "note"
-    case highlight = "highlight"
-    case image = "image"
-    case ink = "ink"
+    case note
+    case highlight
+    case image
+    case ink
 }

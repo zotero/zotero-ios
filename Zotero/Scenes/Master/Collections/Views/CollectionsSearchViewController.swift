@@ -58,11 +58,11 @@ final class CollectionsSearchViewController: UIViewController {
     }
 
     private lazy var cellRegistration: UICollectionView.CellRegistration<CollectionCell, SearchableCollection> = {
-        return UICollectionView.CellRegistration<CollectionCell, SearchableCollection> { [weak self] cell, indexPath, searchable in
-            guard let `self` = self else { return }
+        return UICollectionView.CellRegistration<CollectionCell, SearchableCollection> { [weak self] cell, _, searchable in
+            guard let self = self else { return }
 
             let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
-            let hasChildren = snapshot.snapshot(of: searchable, includingParent: false).items.count > 0
+            let hasChildren = !snapshot.snapshot(of: searchable, includingParent: false).items.isEmpty
             let configuration = CollectionCell.SearchContentConfiguration(collection: searchable.collection, hasChildren: hasChildren, isActive: searchable.isActive, accessories: [.badge])
 
             cell.contentConfiguration = configuration
@@ -87,7 +87,7 @@ final class CollectionsSearchViewController: UIViewController {
         self.searchBar.rx.cancelButtonClicked
                          .observe(on: MainScheduler.instance)
                          .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
-                         .subscribe(onNext: { [weak self] text in
+                         .subscribe(onNext: { [weak self] _ in
                              self?.dismiss(animated: true, completion: nil)
                          })
                          .disposed(by: self.disposeBag)
@@ -97,7 +97,7 @@ final class CollectionsSearchViewController: UIViewController {
 
     private func setupCollectionView() {
         self.collectionView.delegate = self
-        self.collectionView.collectionViewLayout = UICollectionViewCompositionalLayout { section, environment in
+        self.collectionView.collectionViewLayout = UICollectionViewCompositionalLayout { _, environment in
             var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
             configuration.showsSeparators = false
             return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
@@ -144,7 +144,6 @@ final class CollectionsSearchViewController: UIViewController {
                           })
                           .disposed(by: self.disposeBag)
     }
-
 }
 
 extension CollectionsSearchViewController: UICollectionViewDelegate {

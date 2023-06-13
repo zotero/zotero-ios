@@ -36,8 +36,10 @@ extension Annotation {
         switch self.type {
         case .image:
             return AnnotationPreviewBoundingBoxCalculator.imagePreviewRect(from: boundingBox, lineWidth: AnnotationsConfig.imageAnnotationLineWidth)
+
         case .ink:
             return AnnotationPreviewBoundingBoxCalculator.inkPreviewRect(from: boundingBox)
+
         case .note, .highlight:
             return boundingBox.rounded(to: 3)
         }

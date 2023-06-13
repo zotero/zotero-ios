@@ -308,7 +308,6 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
             }
         }
 
-
         self.update(viewModel: viewModel) { state in
             state.editingData = (key, name, parent)
         }
@@ -333,8 +332,10 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
             switch customType {
             case .all:
                 state.changes = .allItemCount
+
             case .unfiled:
                 state.changes = .unfiledItemCount
+
             case .trash:
                 state.changes = .trashItemCount
             case .publications: break

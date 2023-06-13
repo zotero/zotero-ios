@@ -130,10 +130,13 @@ final class AnnotationCell: UITableViewCell {
         switch type {
         case .highlight:
             annotationName = L10n.Accessibility.Pdf.highlightAnnotation
+
         case .image:
             annotationName = L10n.Accessibility.Pdf.imageAnnotation
+
         case .note:
             annotationName = L10n.Accessibility.Pdf.noteAnnotation
+
         case .ink:
             annotationName = L10n.Accessibility.Pdf.inkAnnotation
         }

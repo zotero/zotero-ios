@@ -172,7 +172,6 @@ final class ItemTitleFormatterSpec: QuickSpec {
             }
         }
 
-
         describe("interview") {
             describe("baseTitle exists") {
                 it("title is same as baseTitle") {
@@ -313,7 +312,6 @@ final class ItemTitleFormatterSpec: QuickSpec {
                 }
             }
         }
-
 
         describe("case") {
             describe("baseTitle exists") {

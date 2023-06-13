@@ -62,7 +62,7 @@ final class ScannerViewController: UIViewController {
         super.viewWillAppear(animated)
 
         self.sessionQueue.async { [weak self] in
-            if (self?.captureSession?.isRunning == false) {
+            if self?.captureSession?.isRunning == false {
                 self?.captureSession?.startRunning()
             }
         }
@@ -72,7 +72,7 @@ final class ScannerViewController: UIViewController {
         super.viewWillDisappear(animated)
 
         self.sessionQueue.async { [weak self] in
-            if (self?.captureSession?.isRunning == true) {
+            if self?.captureSession?.isRunning == true {
                 self?.captureSession?.stopRunning()
             }
         }
@@ -98,10 +98,13 @@ final class ScannerViewController: UIViewController {
         switch orientation {
         case .portrait:
             self.previewLayer?.connection?.videoOrientation = .portrait
+
         case .portraitUpsideDown:
             self.previewLayer?.connection?.videoOrientation = .portraitUpsideDown
+
         case .landscapeLeft:
             self.previewLayer?.connection?.videoOrientation = .landscapeLeft
+
         case .landscapeRight:
             self.previewLayer?.connection?.videoOrientation = .landscapeRight
         case .unknown: break

@@ -16,7 +16,7 @@ final class DebugResponseParserDelegate: NSObject, XMLParserDelegate {
         super.init()
     }
 
-    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
+    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String: String] = [:]) {
         switch elementName {
         case "reported":
             guard let reportId = attributeDict["reportID"] else { return }

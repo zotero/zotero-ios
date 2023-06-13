@@ -6,7 +6,6 @@
 //  Copyright © 2021 Corporation for Digital Scholarship. All rights reserved.
 //
 
-
 @testable import Zotero
 
 import Foundation
@@ -146,7 +145,7 @@ final class WebDavControllerSpec: QuickSpec {
                     self.testDownload(attachment: attachment, successAction: {
                         fail("Succeeded to download missing file")
                         finished()
-                    }, errorAction: { error in
+                    }, errorAction: { _ in
                         finished()
                     })
                 }
@@ -244,7 +243,7 @@ final class WebDavControllerSpec: QuickSpec {
                 try! TestControllers.fileStorage.write(pdfData, to: file, options: .atomic)
 
                 createStub(for: KeyRequest(), baseUrl: self.apiBaseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
-                createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: self.apiBaseUrl, headers: ["last-modified-version" : "\(oldVersion)"], jsonResponse: [:])
+                createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: self.apiBaseUrl, headers: ["last-modified-version": "\(oldVersion)"], jsonResponse: [:])
                 createStub(for: WebDavDownloadRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200,
                            xmlResponse: "<properties version=\"1\"><mtime>2</mtime><hash>bbbb</hash></properties>")
                 createStub(for: WebDavDeleteRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [])
@@ -257,11 +256,11 @@ final class WebDavControllerSpec: QuickSpec {
                     if request.allHTTPHeaderFields?["If-Unmodified-Since-Version"] != nil {
                         // First request to submit a new item
                         let itemJson = self.itemJson(key: itemKey, version: newVersion, type: "attachment")
-                        return HTTPStubsResponse(jsonObject: ["success": ["0": itemKey], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]], statusCode: 200, headers: ["last-modified-version" : "\(newVersion)"])
+                        return HTTPStubsResponse(jsonObject: ["success": ["0": itemKey], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]], statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
                     } else {
                         // Second request to submit new mtime and hash
                         let itemJson = self.itemJson(key: itemKey, version: newVersion + 1, type: "attachment")
-                        return HTTPStubsResponse(jsonObject: ["success": ["0": itemKey], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]], statusCode: 200, headers: ["last-modified-version" : "\(newVersion + 1)"])
+                        return HTTPStubsResponse(jsonObject: ["success": ["0": itemKey], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]], statusCode: 200, headers: ["last-modified-version": "\(newVersion + 1)"])
                     }
                 })
 
@@ -346,11 +345,11 @@ final class WebDavControllerSpec: QuickSpec {
                 try! TestControllers.fileStorage.write(pdfData, to: file, options: .atomic)
 
                 createStub(for: KeyRequest(), baseUrl: self.apiBaseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
-                createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: self.apiBaseUrl, headers: ["last-modified-version" : "\(oldVersion)"], jsonResponse: [:])
+                createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: self.apiBaseUrl, headers: ["last-modified-version": "\(oldVersion)"], jsonResponse: [:])
                 createStub(for: WebDavDownloadRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200,
                            xmlResponse: "<properties version=\"1\"><mtime>2</mtime><hash>aaaa</hash></properties>")
                 createStub(for: UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .item, params: [], version: nil), ignoreBody: true, baseUrl: self.apiBaseUrl,
-                           headers: ["last-modified-version" : "\(newVersion)"], statusCode: 200, jsonResponse: ["success": ["0": itemKey], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]])
+                           headers: ["last-modified-version": "\(newVersion)"], statusCode: 200, jsonResponse: ["success": ["0": itemKey], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]])
 
                 waitUntil(timeout: .seconds(10)) { doneAction in
                     self.testSync {
@@ -436,9 +435,9 @@ final class WebDavControllerSpec: QuickSpec {
                 try! TestControllers.fileStorage.write(pdfData, to: file, options: .atomic)
 
                 createStub(for: KeyRequest(), baseUrl: self.apiBaseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
-                createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: self.apiBaseUrl, headers: ["last-modified-version" : "\(oldVersion)"], jsonResponse: [:])
+                createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: self.apiBaseUrl, headers: ["last-modified-version": "\(oldVersion)"], jsonResponse: [:])
                 createStub(for: UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .item, params: [], version: oldVersion),
-                           ignoreBody: true, baseUrl: self.apiBaseUrl, headers: ["last-modified-version" : "\(newVersion)"], statusCode: 200,
+                           ignoreBody: true, baseUrl: self.apiBaseUrl, headers: ["last-modified-version": "\(newVersion)"], statusCode: 200,
                            jsonResponse: ["success": ["0": itemKey], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]])
                 createStub(for: WebDavDownloadRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200,
                            xmlResponse: "<properties version=\"1\"><mtime>1</mtime><hash>aaaa</hash></properties>")
@@ -456,7 +455,7 @@ final class WebDavControllerSpec: QuickSpec {
             }
 
             it("Removes files from WebDAV after submission of local deletions to Zotero API") {
-                let header = ["last-modified-version" : "1"]
+                let header = ["last-modified-version": "1"]
                 let libraryId = LibraryIdentifier.custom(.myLibrary)
                 let itemKey = "AAAAAA"
                 let itemKey2 = "BBBBBB"
@@ -555,6 +554,7 @@ final class WebDavControllerSpec: QuickSpec {
                 switch update.kind {
                 case .failed(let error):
                     errorAction(error)
+
                 case .ready:
                     successAction()
                 default: break

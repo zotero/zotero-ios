@@ -27,7 +27,7 @@ func md5(from url: URL) -> String? {
         // Read up to `bufferSize` bytes, until EOF is reached, and update MD5 hash:
         while autoreleasepool(invoking: {
             let data = file.readData(ofLength: bufferSize)
-            if data.count > 0 {
+            if !data.isEmpty {
                 md5.update(data: data)
                 return true // Continue
             } else {

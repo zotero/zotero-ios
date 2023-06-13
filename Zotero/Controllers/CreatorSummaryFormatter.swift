@@ -34,11 +34,14 @@ struct CreatorSummaryFormatter {
         switch creators.count {
         case 0:
             return nil
+
         case 1:
             return creators.first?.summaryName
+
         case 2:
             let sorted = creators.sorted(byKeyPath: "orderId")
             return L10n.Items.CreatorSummary.and(sorted.first!.summaryName, sorted.last!.summaryName)
+
         default:
             let sorted = creators.sorted(byKeyPath: "orderId")
             return L10n.Items.CreatorSummary.etal(sorted.first!.summaryName)

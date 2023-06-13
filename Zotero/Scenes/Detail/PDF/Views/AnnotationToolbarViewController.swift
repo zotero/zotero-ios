@@ -219,6 +219,7 @@ class AnnotationToolbarViewController: UIViewController {
         switch rotation {
         case .vertical:
             self.setVerticalLayout(isCompactSize: isCompactSize)
+
         case .horizontal:
             self.setHorizontalLayout(isCompactSize: isCompactSize)
         }
@@ -307,7 +308,7 @@ class AnnotationToolbarViewController: UIViewController {
             let isActive = self.delegate?.activeAnnotationTool == tool.type
             return UIAction(title: tool.title, image: tool.image.withRenderingMode(.alwaysTemplate), discoverabilityTitle: tool.accessibilityLabel, state: (isActive ? .on : .off),
                             handler: { [weak self] _ in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 self.delegate?.toggle(tool: tool.type, options: self.currentAnnotationOptions)
             })
         })
@@ -484,7 +485,7 @@ class AnnotationToolbarViewController: UIViewController {
         let containerLeading = stackView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 15)
         let additionalBottom = self.view.bottomAnchor.constraint(equalTo: additionalStackView.bottomAnchor, constant: 8)
         let additionalTrailing = self.view.trailingAnchor.constraint(equalTo: additionalStackView.trailingAnchor, constant: 8)
-        let hairlineHeight = hairline.heightAnchor.constraint(equalToConstant: 1/UIScreen.main.scale)
+        let hairlineHeight = hairline.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale)
         let hairlineLeading = hairline.leadingAnchor.constraint(equalTo: self.view.leadingAnchor)
         let hairlineTrailing = hairline.trailingAnchor.constraint(equalTo: self.view.trailingAnchor)
         let hairlineBottom = hairline.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)

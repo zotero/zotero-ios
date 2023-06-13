@@ -106,7 +106,7 @@ final class WebViewHandler: NSObject {
         if isSuccess {
             payload = ["status": statusCode, "responseText": responseText, "headers": headers]
         } else {
-            payload = ["error": ["status": statusCode, "responseText": responseText] as [String : Any]]
+            payload = ["error": ["status": statusCode, "responseText": responseText] as [String: Any]]
         }
 
         self.sendMessaging(response: payload, for: messageId)
@@ -173,7 +173,7 @@ final class WebViewHandler: NSObject {
         request.timeoutInterval = timeout
 
         let task = self.session.dataTask(with: request) { [weak self] data, response, error in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             if let response = response as? HTTPURLResponse {
                 self.sendHttpResponse(data: data, statusCode: response.statusCode, successCodes: successCodes, headers: response.allHeaderFields, for: messageId)
             } else if let error = error {
@@ -209,4 +209,3 @@ extension WebViewHandler: WKScriptMessageHandler {
         }
     }
 }
-

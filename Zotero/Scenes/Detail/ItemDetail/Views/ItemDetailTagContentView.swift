@@ -29,6 +29,7 @@ class ItemDetailTagContentView: UIView {
             self.tagView.backgroundColor = .clear
             self.tagView.layer.borderWidth = 1
             self.tagView.layer.borderColor = color.cgColor
+
         case .filled:
             self.tagView.backgroundColor = color
             self.tagView.layer.borderWidth = 0

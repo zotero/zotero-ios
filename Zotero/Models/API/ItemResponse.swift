@@ -88,6 +88,7 @@ struct ItemResponse {
         case ItemTypes.annotation:
             try self.init(key: key, library: library, links: links, parsedDate: parsedDate, createdBy: createdBy, lastModifiedBy: lastModifiedBy, version: version, annotationData: data,
                           schemaController: schemaController)
+
         default:
             try self.init(key: key, rawType: itemType, library: library, links: links, parsedDate: parsedDate, createdBy: createdBy, lastModifiedBy: lastModifiedBy, version: version, data: data,
                           schemaController: schemaController)
@@ -314,14 +315,14 @@ struct ItemResponse {
                 }
 
             case FieldKeys.Item.Annotation.Position.paths:
-                guard let parsedPaths = object.value as? [[Double]], !parsedPaths.isEmpty && parsedPaths.first(where: { $0.count % 2 != 0 }) == nil else {
+                guard let parsedPaths = object.value as? [[Double]], !parsedPaths.isEmpty && parsedPaths.contains(where: { $0.count % 2 != 0 }) else {
                     throw SchemaError.invalidValue(value: "\(object.value)", field: FieldKeys.Item.Annotation.Position.paths, key: key)
                 }
                 paths = parsedPaths
                 continue
 
             case FieldKeys.Item.Annotation.Position.rects:
-                guard let parsedRects = object.value as? [[Double]], !parsedRects.isEmpty && parsedRects.first(where: { $0.count != 4 }) == nil else {
+                guard let parsedRects = object.value as? [[Double]], !parsedRects.isEmpty && parsedRects.contains(where: { $0.count != 4 }) else {
                     throw SchemaError.invalidValue(value: "\(object.value)", field: FieldKeys.Item.Annotation.Position.rects, key: key)
                 }
                 rects = parsedRects
@@ -363,6 +364,7 @@ struct ItemResponse {
                 if !hasRects {
                     throw SchemaError.missingField(key: key, field: FieldKeys.Item.Annotation.Position.rects, itemType: itemType)
                 }
+
             case .ink:
                 if !hasPaths {
                     throw SchemaError.missingField(key: key, field: FieldKeys.Item.Annotation.Position.paths, itemType: itemType)
@@ -420,9 +422,11 @@ struct ItemResponse {
         case ItemTypes.annotation:
             // Annotations don't have some fields that are returned by backend in schema, so we have to filter them out here manually.
             return FieldKeys.Item.Annotation.knownKeys.contains(field)
+
         case ItemTypes.attachment:
             // Attachments don't have some fields that are returned by backend in schema, so we have to filter them out here manually.
             return FieldKeys.Item.Attachment.knownKeys.contains(field)
+
         default:
             // Field not found in schema and is not a special case.
             return false
@@ -474,7 +478,6 @@ struct CreatorResponse {
 }
 
 struct RelationResponse {
-
 }
 
 struct UserResponse {

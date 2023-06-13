@@ -20,11 +20,11 @@ struct FileRequest: ApiDownloadRequest {
         return .url
     }
 
-    var parameters: [String : Any]? {
+    var parameters: [String: Any]? {
         return nil
     }
 
-    var headers: [String : String]? {
+    var headers: [String: String]? {
         return nil
     }
 

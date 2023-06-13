@@ -44,9 +44,11 @@ class LookupItemCell: UITableViewCell {
         switch update {
         case .ready:
             self.attachmentView.set(state: .ready(attachmentType), style: .lookup)
+
         case .failed, .cancelled:
             // Just assign any error, it doesn't matter here
             self.attachmentView.set(state: .failed(attachmentType, ZoteroApiError.unchanged), style: .lookup)
+
         case .progress(let progress):
             self.attachmentView.set(state: .progress(progress), style: .lookup)
         }

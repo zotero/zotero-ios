@@ -139,13 +139,13 @@ final class AllCollectionPickerViewController: UICollectionViewController {
 
     private lazy var cellRegistration: UICollectionView.CellRegistration<CollectionCell, Row> = {
         return UICollectionView.CellRegistration<CollectionCell, Row> { [weak self] cell, indexPath, row in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             let cellConfiguration: UIContentConfiguration
 
             let section = self.dataSource.snapshot().sectionIdentifiers[indexPath.section]
             let isCollapsedProvider: () -> Bool = { [weak self] in
-                guard let `self` = self else { return false }
+                guard let self = self else { return false }
                 let snapshot = self.dataSource.snapshot(for: section)
                 return snapshot.items.contains(row) ? !snapshot.isExpanded(row) : false
             }
@@ -153,11 +153,11 @@ final class AllCollectionPickerViewController: UICollectionViewController {
             switch row {
             case .collection(let collection):
                 let snapshot = self.dataSource.snapshot(for: section)
-                let hasChildren = snapshot.snapshot(of: row, includingParent: false).items.count > 0
+                let hasChildren = !snapshot.snapshot(of: row, includingParent: false).items.isEmpty
                 var configuration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren, accessories: .chevron)
                 configuration.isCollapsedProvider = isCollapsedProvider
                 configuration.toggleCollapsed = { [weak self, weak cell] in
-                    guard let `self` = self, let cell = cell else { return }
+                    guard let self = self, let cell = cell else { return }
                     self.viewModel.process(action: .toggleCollection(collection.identifier, section))
                 }
                 cellConfiguration = configuration
@@ -166,7 +166,7 @@ final class AllCollectionPickerViewController: UICollectionViewController {
                 var configuration = CollectionCell.LibraryContentConfiguration(name: library.name, accessories: .chevron)
                 configuration.isCollapsedProvider = isCollapsedProvider
                 configuration.toggleCollapsed = { [weak self, weak cell] in
-                    guard let `self` = self, let cell = cell else { return }
+                    guard let self = self, let cell = cell else { return }
                     self.viewModel.process(action: .toggleLibrary(section))
                 }
                 cellConfiguration = configuration
@@ -185,7 +185,7 @@ final class AllCollectionPickerViewController: UICollectionViewController {
     }
 
     private func createCollectionViewLayout() -> UICollectionViewCompositionalLayout {
-        return UICollectionViewCompositionalLayout { section, environment in
+        return UICollectionViewCompositionalLayout { _, environment in
             var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
             configuration.showsSeparators = false
             return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
@@ -232,7 +232,7 @@ extension AllCollectionPickerViewController {
     }
 }
 
-fileprivate class SearchResultsController: UICollectionViewController {
+private class SearchResultsController: UICollectionViewController {
     fileprivate enum Row: Hashable {
         case library(Library)
         case collection(SearchableCollection)
@@ -259,7 +259,7 @@ fileprivate class SearchResultsController: UICollectionViewController {
 
     private lazy var cellRegistration: UICollectionView.CellRegistration<CollectionCell, Row> = {
         return UICollectionView.CellRegistration<CollectionCell, Row> { [weak self] cell, indexPath, row in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             let cellConfiguration: UIContentConfiguration
 
@@ -267,7 +267,7 @@ fileprivate class SearchResultsController: UICollectionViewController {
             case .collection(let searchable):
                 let section = self.dataSource.snapshot().sectionIdentifiers[indexPath.section]
                 let snapshot = self.dataSource.snapshot(for: section)
-                let hasChildren = snapshot.snapshot(of: row, includingParent: false).items.count > 0
+                let hasChildren = !snapshot.snapshot(of: row, includingParent: false).items.isEmpty
                 cellConfiguration = CollectionCell.SearchContentConfiguration(collection: searchable.collection, hasChildren: hasChildren, isActive: searchable.isActive, accessories: [])
 
             case .library(let library):
@@ -287,7 +287,7 @@ fileprivate class SearchResultsController: UICollectionViewController {
     }
 
     private func createCollectionViewLayout() -> UICollectionViewCompositionalLayout {
-        return UICollectionViewCompositionalLayout { section, environment in
+        return UICollectionViewCompositionalLayout { _, environment in
             var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
             configuration.showsSeparators = false
             return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)

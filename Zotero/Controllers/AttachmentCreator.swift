@@ -29,6 +29,7 @@ struct AttachmentCreator {
                 switch attachment.type {
                 case .url:
                     return attachment
+
                 case .file(_, _, _, let linkType) where linkType == .importedFile || linkType == .importedUrl:
                     return attachment
                 default: break
@@ -148,12 +149,16 @@ struct AttachmentCreator {
         switch linkMode {
         case .importedFile:
             return self.importedType(for: item, libraryId: libraryId, fileStorage: fileStorage, linkType: .importedFile)
+
         case .embeddedImage:
             return self.embeddedImageType(for: item, libraryId: libraryId, options: options, fileStorage: fileStorage)
+
         case .importedUrl:
             return self.importedType(for: item, libraryId: libraryId, fileStorage: fileStorage, linkType: .importedUrl)
+
         case .linkedFile:
             return self.linkedFileType(item: item, libraryId: libraryId)
+
         case .linkedUrl:
             guard let urlDetector = urlDetector else { return nil }
             return self.linkedUrlType(for: item, libraryId: libraryId, urlDetector: urlDetector)

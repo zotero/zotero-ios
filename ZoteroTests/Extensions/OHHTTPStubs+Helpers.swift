@@ -51,22 +51,31 @@ extension ApiRequest {
         switch self.httpMethod {
         case .delete:
             methodCondition = isMethodDELETE()
+
         case .get:
             methodCondition = isMethodGET()
+
         case .post:
             methodCondition = isMethodPOST()
+
         case .put:
             methodCondition = isMethodPUT()
+
         case .head:
             methodCondition = isMethodHEAD()
+
         case .patch:
             methodCondition = isMethodPATCH()
+
         case .options:
             methodCondition = { $0.httpMethod == "OPTIONS" }
+
         case .propfind:
             methodCondition = { $0.httpMethod == "PROPFIND" }
+
         case .mkcol:
             methodCondition = { $0.httpMethod == "MKCOL" }
+
         default:
             methodCondition = isMethodGET()
         }
@@ -78,11 +87,11 @@ extension ApiRequest {
             bodyCondition = { $0.ohhttpStubs_httpBody == urlRequest.ohhttpStubs_httpBody }
         }
 
-        return methodCondition&&isHost(host)&&isPath(url.path)&&isQuery(url.query)&&bodyCondition
+        return methodCondition && isHost(host) && isPath(url.path) && isQuery(url.query) && bodyCondition
     }
 }
 
-fileprivate func isQuery(_ query: String?) -> HTTPStubsTestBlock {
+private func isQuery(_ query: String?) -> HTTPStubsTestBlock {
     return {
         if $0.url?.query == query {
             return true
@@ -96,7 +105,7 @@ fileprivate func isQuery(_ query: String?) -> HTTPStubsTestBlock {
     }
 }
 
-fileprivate func compareKeys(lQuery: String, rQuery: String) -> Bool {
+private func compareKeys(lQuery: String, rQuery: String) -> Bool {
     let keys = ["collectionKey", "itemKey", "searchKey"]
     for key in keys {
         if let lIndex = lQuery.range(of: key),
@@ -108,4 +117,3 @@ fileprivate func compareKeys(lQuery: String, rQuery: String) -> Bool {
     }
     return false
 }
-

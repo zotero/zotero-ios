@@ -1,0 +1,282 @@
+only_rules:
+  # default rules
+  - block_based_kvo
+  - closing_brace
+  - closure_parameter_position
+  - colon
+  - comma
+  - computed_accessors_order
+  - control_statement
+  - deployment_target
+  - discouraged_direct_init
+  - empty_enum_arguments
+  - empty_parameters
+  - empty_parentheses_with_trailing_closure
+  - implicit_getter
+  - leading_whitespace
+  - legacy_cggeometry_functions
+  - legacy_constant
+  - legacy_constructor
+  - legacy_hashing
+  - legacy_nsgeometry_functions
+  - legacy_random
+  - mark
+  - multiple_closures_with_trailing_closure
+  - no_space_in_method_call
+  - ns_number_init_as_function_reference
+  - opening_brace
+  - operator_whitespace
+  - orphaned_doc_comment
+  - private_over_fileprivate
+  - private_unit_test
+  - protocol_property_accessors_order
+  - redundant_discardable_let
+  - redundant_optional_initialization
+  - redundant_set_access_control
+  - redundant_string_enum_value
+  - redundant_void_return
+  - return_arrow_whitespace
+  - self_in_property_initialization
+  - shorthand_operator
+  - statement_position
+  - switch_case_alignment
+  - syntactic_sugar
+  - trailing_comma
+  - trailing_newline
+  - trailing_semicolon
+  - trailing_whitespace
+  - unavailable_condition
+  - unneeded_break_in_switch
+  - unused_closure_parameter
+  - unused_enumerated
+  - unused_optional_binding
+  - unused_setter_value
+  - vertical_parameter_alignment
+  - vertical_whitespace
+  - void_return
+  # opt-in rules
+  - anyobject_protocol
+  - array_init
+  - closure_end_indentation
+  - closure_spacing
+  - collection_alignment
+  - contains_over_first_not_nil
+  - contains_over_range_nil_comparison
+  - direct_return
+  - discarded_notification_center_observer
+  - empty_collection_literal
+  - empty_count
+  - empty_string
+  - fallthrough
+  - flatmap_over_map_reduce
+  - identical_operands
+  - joined_default_parameter
+  - operator_usage_whitespace
+  - overridden_super_call
+  - period_spacing
+  - prefer_zero_over_explicit_init
+  - self_binding
+  - unused_capture_list
+  - vertical_parameter_alignment_on_call
+  - vertical_whitespace_between_cases
+  - vertical_whitespace_closing_braces
+  - vertical_whitespace_opening_braces
+  - yoda_condition
+
+anyobject_protocol: error
+
+array_init: error
+
+block_based_kvo: error
+
+closing_brace: error
+
+closure_end_indentation: error
+
+closure_parameter_position: error
+
+closure_spacing: error
+
+collection_alignment:
+  severity: error
+  align_colons: false
+
+colon:
+  severity: error
+  # flexible_right_spacing: true
+  # apply_to_dictionaries: false
+
+comma: error
+
+contains_over_first_not_nil: error
+
+contains_over_range_nil_comparison: error
+
+control_statement: error
+
+deployment_target:
+    severity: error
+    iOSApplicationExtension_deployment_target: 14.7
+    iOS_deployment_target: 14.7
+
+direct_return: error
+
+discarded_notification_center_observer: error
+
+discouraged_direct_init:
+  severity: error
+
+empty_collection_literal: error
+
+empty_count:
+  severity: error
+  only_after_dot: true
+
+empty_enum_arguments: error
+
+empty_parameters: error
+
+empty_parentheses_with_trailing_closure: error
+
+empty_string: error
+
+fallthrough: error
+
+flatmap_over_map_reduce: error
+
+identical_operands: error
+
+implicit_getter: error
+
+joined_default_parameter: error
+
+leading_whitespace: error
+
+legacy_cggeometry_functions: error
+
+legacy_constant: error
+
+legacy_constructor: error
+
+legacy_hashing: error
+
+legacy_nsgeometry_functions: error
+
+legacy_random: error
+
+mark: error
+
+multiple_closures_with_trailing_closure: error
+
+no_space_in_method_call: error
+
+ns_number_init_as_function_reference: error
+
+opening_brace:
+  severity: error
+  allowMultilineFunc: true
+
+operator_usage_whitespace:
+  severity: error
+  lines_look_around: 2
+  skip_aligned_constants: true
+  allowed_no_space_operators: ["...", "..<"]
+
+operator_whitespace: error
+
+orphaned_doc_comment: error
+
+overridden_super_call:
+  severity: error
+  excluded: []
+  included: ["*"]
+
+period_spacing: error
+
+prefer_zero_over_explicit_init: error
+
+private_over_fileprivate:
+  severity: error
+
+private_unit_test:
+  warning: XCTestCase
+
+protocol_property_accessors_order: error
+
+redundant_discardable_let: error
+
+redundant_optional_initialization: error
+
+redundant_set_access_control: error
+
+redundant_string_enum_value: error
+
+redundant_void_return: error
+
+return_arrow_whitespace: error
+
+self_binding:
+  severity: error
+  bindIdentifier: self
+
+self_in_property_initialization: error
+
+shorthand_operator: error
+
+statement_position: 
+  statement_mode: default
+  severity: error
+
+switch_case_alignment:
+  severity: error
+
+syntactic_sugar: error
+
+trailing_comma:
+  severity: error
+  mandatory_comma: false
+
+trailing_newline: error
+
+trailing_semicolon: error
+
+trailing_whitespace:
+  severity: error
+  ignores_empty_lines: true
+  ignores_comments: true
+
+unavailable_condition: error
+
+unneeded_break_in_switch: error
+
+unused_capture_list: error
+
+unused_closure_parameter: error
+
+unused_enumerated: error
+
+unused_optional_binding:
+  severity: error
+  ignore_optional_try: false
+
+unused_setter_value: error
+
+vertical_parameter_alignment: error
+
+vertical_parameter_alignment_on_call: error
+
+vertical_whitespace:
+  severity: error
+  max_empty_lines: 1
+
+vertical_whitespace_between_cases: error
+
+vertical_whitespace_closing_braces:
+  severity: error
+  only_enforce_before_trivial_lines: false
+
+vertical_whitespace_opening_braces: error
+
+void_return: error
+
+yoda_condition: error

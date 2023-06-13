@@ -12,12 +12,14 @@ enum ItemsFilter: Equatable {
     case downloadedFiles
     case tags(Set<String>)
 
-    static func ==(lhs: ItemsFilter, rhs: ItemsFilter) -> Bool {
+    static func == (lhs: ItemsFilter, rhs: ItemsFilter) -> Bool {
         switch (lhs, rhs) {
         case (.downloadedFiles, .downloadedFiles):
             return true
+
         case (.tags(let lTags), .tags(let rTags)):
             return lTags == rTags
+
         default:
             return false
         }

@@ -55,13 +55,11 @@ final class RSearch: Object {
     // MARK: - Sync properties
 
     var changedFields: RSearchChanges {
-        get {
-            var changes: RSearchChanges = []
-            for change in self.changes {
-                changes.insert(RSearchChanges(rawValue: change.rawChanges))
-            }
-            return changes
+        var changes: RSearchChanges = []
+        for change in self.changes {
+            changes.insert(RSearchChanges(rawValue: change.rawChanges))
         }
+        return changes
     }
 }
 

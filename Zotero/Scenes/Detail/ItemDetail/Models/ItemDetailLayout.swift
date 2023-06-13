@@ -29,6 +29,7 @@ struct ItemDetailLayout {
                 top = 20
                 bottom = 11
             }
+
         case .dates:
             if isEditing {
                 top = 15
@@ -37,6 +38,7 @@ struct ItemDetailLayout {
                 top = 10
                 bottom = isLastRow ? 20 : 10
             }
+
         case .creators:
             if isEditing {
                 top = isLastRow ? 2 : 15
@@ -45,15 +47,19 @@ struct ItemDetailLayout {
                 top = 10
                 bottom = 11
             }
+
         case .fields:
             top = isEditing ? 15 : 10
             bottom = isEditing ? 15 : 11
+
         case .abstract:
             top = 15
             bottom = 15
+
         case .attachments, .notes, .tags:
             top = isLastRow ? 2 : 15
             bottom = isLastRow ? 2 : 15
+
         case .title:
             top = 43 + separatorHeight
             bottom = 7 + separatorHeight

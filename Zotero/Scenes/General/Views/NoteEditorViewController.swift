@@ -112,7 +112,7 @@ final class NoteEditorViewController: UIViewController {
             }
         }
 
-        attributedString.addAttribute(.font, value: UIFont.preferredFont(forTextStyle: .body), range: NSMakeRange(0, attributedString.string.count))
+        attributedString.addAttribute(.font, value: UIFont.preferredFont(forTextStyle: .body), range: NSRange(location: 0, length: attributedString.string.count))
         self.tagsLabel.attributedText = attributedString
     }
 
@@ -154,7 +154,7 @@ extension NoteEditorViewController: WKNavigationDelegate {
             return
         }
 
-        switch (url.scheme ?? "") {
+        switch url.scheme ?? "" {
         case "file", "about":
             // Allow initial load
             decisionHandler(.allow)

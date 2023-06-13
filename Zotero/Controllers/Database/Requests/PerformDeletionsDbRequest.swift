@@ -54,6 +54,7 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
                     conflicts.append((object.key, object.displayTitle))
                     continue
                 }
+
             case .restoreConflicts:
                 if object.selfOrChildChanged {
                     object.markAsChanged(in: database)

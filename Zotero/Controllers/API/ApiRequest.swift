@@ -39,6 +39,7 @@ extension ApiRequest {
         switch self.endpoint {
         case .zotero(let path):
             return ApiConstants.baseUrlString + path
+
         case .other(let url), .webDav(let url):
             return url.absoluteString
         }

@@ -57,7 +57,6 @@ final class SyncControllerSpec: QuickSpec {
     }
 
     override func spec() {
-
         beforeEach {
             HTTPStubs.removeAllStubs()
             Defaults.shared.userId = self.userId
@@ -71,7 +70,7 @@ final class SyncControllerSpec: QuickSpec {
 
             describe("Download") {
                 it("should download items into a new library") {
-                    let header = ["last-modified-version" : "3"]
+                    let header = ["last-modified-version": "3"]
                     let libraryId = self.userLibraryId
                     let objects = SyncObject.allCases
 
@@ -80,10 +79,13 @@ final class SyncControllerSpec: QuickSpec {
                         switch object {
                         case .collection:
                             versionResponses[object] = ["AAAAAAAA": 1]
+
                         case .search:
                             versionResponses[object] = ["AAAAAAAA": 2]
+
                         case .item:
                             versionResponses[object] = ["AAAAAAAA": 3]
+
                         case .trash:
                             versionResponses[object] = ["BBBBBBBB": 3]
                         case .settings: break
@@ -103,6 +105,7 @@ final class SyncControllerSpec: QuickSpec {
                                                         "version": 1,
                                                         "library": libraryJson,
                                                         "data": ["name": "A"]]]
+
                         case .search:
                             objectResponses[object] = [["key": "AAAAAAAA",
                                                         "version": 2,
@@ -111,12 +114,14 @@ final class SyncControllerSpec: QuickSpec {
                                                                  "conditions": [["condition": "itemType",
                                                                                  "operator": "is",
                                                                                  "value": "thesis"]]]]]
+
                         case .item:
                             objectResponses[object] = [["key": "AAAAAAAA",
                                                         "version": 3,
                                                         "library": libraryJson,
                                                         "data": ["title": "A", "itemType": "thesis",
                                                                  "tags": [["tag": "A"]]]]]
+
                         case .trash:
                             objectResponses[object] = [["key": "BBBBBBBB",
                                                         "version": 4,
@@ -141,7 +146,7 @@ final class SyncControllerSpec: QuickSpec {
                     }
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0),
-                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 2]])
+                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors": ["value": [["name": "A", "color": "#CC66CC"]], "version": 2]])
                     createStub(for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                                baseUrl: baseUrl, headers: header, jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []])
 
@@ -245,7 +250,7 @@ final class SyncControllerSpec: QuickSpec {
                 }
 
                 it("should download items into a new read-only group") {
-                    let header = ["last-modified-version" : "3"]
+                    let header = ["last-modified-version": "3"]
                     let groupId = 123
                     let libraryId = LibraryIdentifier.group(groupId)
                     let objects = SyncObject.allCases
@@ -255,10 +260,13 @@ final class SyncControllerSpec: QuickSpec {
                         switch object {
                         case .collection:
                             versionResponses[object] = ["AAAAAAAA": 1]
+
                         case .search:
                             versionResponses[object] = ["AAAAAAAA": 2]
+
                         case .item:
                             versionResponses[object] = ["AAAAAAAA": 3]
+
                         case .trash:
                             versionResponses[object] = ["BBBBBBBB": 3]
                         case .settings: break
@@ -277,6 +285,7 @@ final class SyncControllerSpec: QuickSpec {
                                                         "version": 1,
                                                         "library": ["id": groupId, "type": "group", "name": "A"],
                                                         "data": ["name": "A"]]]
+
                         case .search:
                             objectResponses[object] = [["key": "AAAAAAAA",
                                                         "version": 2,
@@ -285,12 +294,13 @@ final class SyncControllerSpec: QuickSpec {
                                                                  "conditions": [["condition": "itemType",
                                                                                  "operator": "is",
                                                                                  "value": "thesis"]]]]]
+
                         case .item:
                             objectResponses[object] = [["key": "AAAAAAAA",
                                                         "version": 3,
                                                         "library": ["id": groupId, "type": "group", "name": "A"],
-                                                        "data": ["title": "A", "itemType":
-                                                                 "thesis", "tags": [["tag": "A"]]]]]
+                                                        "data": ["title": "A", "itemType": "thesis", "tags": [["tag": "A"]]]]]
+
                         case .trash:
                             objectResponses[object] = [["key": "BBBBBBBB",
                                                         "version": 4,
@@ -334,9 +344,9 @@ final class SyncControllerSpec: QuickSpec {
                     }
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(for: SettingsRequest(libraryId: myLibrary, userId: self.userId, version: 0),
-                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors" : ["value": [], "version": 2]])
+                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors": ["value": [], "version": 2]])
                     createStub(for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0),
-                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 2]])
+                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors": ["value": [["name": "A", "color": "#CC66CC"]], "version": 2]])
                     createStub(for: DeletionsRequest(libraryId: myLibrary, userId: self.userId, version: 0),
                                baseUrl: baseUrl, headers: header, jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []])
                     createStub(for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
@@ -404,7 +414,7 @@ final class SyncControllerSpec: QuickSpec {
                 }
 
                 it("should apply remote deletions") {
-                    let header = ["last-modified-version" : "3"]
+                    let header = ["last-modified-version": "3"]
                     let libraryId = self.userLibraryId
                     let itemToDelete = "CCCCCCCC"
                     let objects = SyncObject.allCases
@@ -429,7 +439,7 @@ final class SyncControllerSpec: QuickSpec {
                     }
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0),
-                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors" : ["value": [], "version": 2]])
+                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors": ["value": [], "version": 2]])
                     createStub(for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                                baseUrl: baseUrl, headers: header, jsonResponse: ["collections": [], "searches": [], "items": [itemToDelete], "tags": []])
 
@@ -522,7 +532,7 @@ final class SyncControllerSpec: QuickSpec {
 //                }
 
                 it("should handle new remote item referencing locally missing collection") {
-                    let header = ["last-modified-version" : "3"]
+                    let header = ["last-modified-version": "3"]
                     let libraryId = self.userLibraryId
                     let objects = SyncObject.allCases
                     let itemKey = "AAAAAAAA"
@@ -552,7 +562,7 @@ final class SyncControllerSpec: QuickSpec {
                     createStub(for: ObjectsRequest(libraryId: libraryId, userId: self.userId, objectType: .item, keys: itemKey),
                                baseUrl: baseUrl, headers: header, jsonResponse: itemResponse)
                     createStub(for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0),
-                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors" : ["value": [], "version": 2]])
+                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors": ["value": [], "version": 2]])
                     createStub(for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                                baseUrl: baseUrl, headers: header, jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []])
 
@@ -579,7 +589,7 @@ final class SyncControllerSpec: QuickSpec {
                 }
 
                 it("should include unsynced objects in sync queue") {
-                    let header = ["last-modified-version" : "3"]
+                    let header = ["last-modified-version": "3"]
                     let libraryId = self.userLibraryId
                     let objects = SyncObject.allCases
                     let unsyncedItemKey = "AAAAAAAA"
@@ -612,11 +622,11 @@ final class SyncControllerSpec: QuickSpec {
                     objects.forEach { object in
                         if object == .item {
                             createStub(for: VersionsRequest(libraryId: libraryId, userId: self.userId, objectType: object, version: 0),
-                                            baseUrl: baseUrl, headers: header,
-                                            jsonResponse: [responseItemKey: 3])
+                                       baseUrl: baseUrl, headers: header,
+                                       jsonResponse: [responseItemKey: 3])
                         } else {
                             createStub(for: VersionsRequest(libraryId: libraryId, userId: self.userId,
-                                                                         objectType: object, version: 0),
+                                                            objectType: object, version: 0),
                                             baseUrl: baseUrl, headers: header,
                                             jsonResponse: [:])
                         }
@@ -627,7 +637,7 @@ final class SyncControllerSpec: QuickSpec {
                     createStub(for: ObjectsRequest(libraryId: libraryId, userId: self.userId, objectType: .item, keys: "\(responseItemKey),\(unsyncedItemKey)"),
                                baseUrl: baseUrl, headers: header, jsonResponse: itemResponse)
                     createStub(for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0),
-                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors" : ["value": [], "version": 2]])
+                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors": ["value": [], "version": 2]])
                     createStub(for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                                baseUrl: baseUrl, headers: header, jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []])
 
@@ -645,11 +655,13 @@ final class SyncControllerSpec: QuickSpec {
                                         guard batches.first?.object == .item,
                                             let strKeys = batches.first?.keys else { return false }
                                         return strKeys.contains(unsyncedItemKey) && strKeys.contains(responseItemKey)
+
                                     default:
                                         return false
                                     }
                                 }).first
                                 expect(itemAction).toNot(beNil())
+
                             case .failure:
                                 fail("Sync aborted")
                             }
@@ -671,7 +683,7 @@ final class SyncControllerSpec: QuickSpec {
                 }
 
                 it("should mark object as needsSync if not parsed correctly and syncRetries should be increased") {
-                    let header = ["last-modified-version" : "3"]
+                    let header = ["last-modified-version": "3"]
                     let libraryId = self.userLibraryId
                     let objects = SyncObject.allCases
                     let correctKey = "AAAAAAAA"
@@ -700,14 +712,14 @@ final class SyncControllerSpec: QuickSpec {
                     createStub(for: ObjectsRequest(libraryId: libraryId, userId: self.userId, objectType: .item, keys: "\(incorrectKey),\(correctKey)"),
                                baseUrl: baseUrl, headers: header, jsonResponse: itemResponse)
                     createStub(for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0),
-                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors" : ["value": [], "version": 2]])
+                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors": ["value": [], "version": 2]])
                     createStub(for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                                baseUrl: baseUrl, headers: header, jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []])
 
                     self.createNewSyncController()
 
                     waitUntil(timeout: .seconds(10)) { doneAction in
-                        self.syncController.reportFinish = { result in
+                        self.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: self.realmConfig)
                             realm.refresh()
 
@@ -729,7 +741,7 @@ final class SyncControllerSpec: QuickSpec {
                 }
 
                 it("should ignore errors when saving downloaded objects") {
-                    let header = ["last-modified-version" : "2"]
+                    let header = ["last-modified-version": "2"]
                     let libraryId = self.userLibraryId
                     let objects = SyncObject.allCases
 
@@ -740,10 +752,12 @@ final class SyncControllerSpec: QuickSpec {
                             versionResponses[object] = ["AAAAAAAA": 1,
                                                         "BBBBBBBB": 1,
                                                         "CCCCCCCC": 1]
+
                         case .search:
                             versionResponses[object] = ["GGGGGGGG": 1,
                                                         "HHHHHHHH": 1,
                                                         "IIIIIIII": 1]
+
                         case .item:
                             versionResponses[object] = ["DDDDDDDD": 1,
                                                         "EEEEEEEE": 1,
@@ -753,8 +767,8 @@ final class SyncControllerSpec: QuickSpec {
                     }
 
                     let objectKeys: [SyncObject: String] = [.collection: "AAAAAAAA,BBBBBBBB,CCCCCCCC",
-                                                                       .search: "GGGGGGGG,HHHHHHHH,IIIIIIII",
-                                                                       .item: "DDDDDDDD,EEEEEEEE,FFFFFFFF"]
+                                                            .search: "GGGGGGGG,HHHHHHHH,IIIIIIII",
+                                                            .item: "DDDDDDDD,EEEEEEEE,FFFFFFFF"]
                     var objectResponses: [SyncObject: Any] = [:]
                     objects.forEach { object in
                         switch object {
@@ -774,6 +788,7 @@ final class SyncControllerSpec: QuickSpec {
                                                         "version": 1,
                                                         "library": ["id": 0, "type": "user", "name": "A"],
                                                         "data": ["name": "C", "unknownField": 5]]]
+
                         case .search:
                                                        // Unknown condition - should be queued
                             objectResponses[object] = [["key": "GGGGGGGG",
@@ -791,13 +806,13 @@ final class SyncControllerSpec: QuickSpec {
                                                                  "conditions": [["condition": "itemType",
                                                                                  "operator": "unknownOperator",
                                                                                  "value": "thesis"]]]]]
+
                         case .item:
                                                        // Unknown field - should be rejected
                             objectResponses[object] = [["key": "DDDDDDDD",
                                                         "version": 3,
                                                         "library": ["id": 0, "type": "user", "name": "A"],
-                                                        "data": ["title": "D", "itemType":
-                                                                 "thesis", "tags": [], "unknownField": "B"]],
+                                                        "data": ["title": "D", "itemType": "thesis", "tags": [], "unknownField": "B"]],
                                                        // Unknown item type - should be queued
                                                        ["key": "EEEEEEEE",
                                                         "version": 3,
@@ -825,7 +840,7 @@ final class SyncControllerSpec: QuickSpec {
                     }
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0),
-                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 2]])
+                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors": ["value": [["name": "A", "color": "#CC66CC"]], "version": 2]])
                     createStub(for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                                baseUrl: baseUrl, headers: header, jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []])
 
@@ -918,7 +933,7 @@ final class SyncControllerSpec: QuickSpec {
                 }
 
                 it("should add items that exist remotely in a locally deleted, remotely modified collection back to collection") {
-                    let header = ["last-modified-version" : "1"]
+                    let header = ["last-modified-version": "1"]
                     let libraryId = self.userLibraryId
                     let objects = SyncObject.allCases
                     let collectionKey = "AAAAAAAA"
@@ -987,7 +1002,7 @@ final class SyncControllerSpec: QuickSpec {
                     }
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0),
-                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 1]])
+                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors": ["value": [["name": "A", "color": "#CC66CC"]], "version": 1]])
                     createStub(for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                                baseUrl: baseUrl, headers: header, jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []])
 
@@ -1031,7 +1046,7 @@ final class SyncControllerSpec: QuickSpec {
                 }
 
                 it("should add locally deleted items that exist remotely in a locally deleted, remotely modified collection to sync queue and remove from delete log") {
-                    let header = ["last-modified-version" : "1"]
+                    let header = ["last-modified-version": "1"]
                     let libraryId = self.userLibraryId
                     let objects = SyncObject.allCases
                     let collectionKey = "AAAAAAAA"
@@ -1101,7 +1116,7 @@ final class SyncControllerSpec: QuickSpec {
                                    baseUrl: baseUrl, headers: header, jsonResponse: (objectResponses[object] ?? [:]))
                     }
                     createStub(for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 1),
-                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 1]])
+                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors": ["value": [["name": "A", "color": "#CC66CC"]], "version": 1]])
                     createStub(for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 1),
                                baseUrl: baseUrl, headers: header, jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []])
 
@@ -1147,7 +1162,7 @@ final class SyncControllerSpec: QuickSpec {
                 }
 
                 it("renames local file if remote filename changed") {
-                    let header = ["last-modified-version" : "3"]
+                    let header = ["last-modified-version": "3"]
                     let itemKey = "AAAAAAAA"
                     let libraryId = self.userLibraryId
                     let oldFilename = "filename"
@@ -1162,7 +1177,7 @@ final class SyncControllerSpec: QuickSpec {
 
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0),
-                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors" : ["value": [], "version": 3]])
+                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors": ["value": [], "version": 3]])
                     createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:])
                     objects.forEach { object in
                         createStub(for: VersionsRequest(libraryId: libraryId, userId: self.userId, objectType: object, version: 0),
@@ -1564,7 +1579,7 @@ final class SyncControllerSpec: QuickSpec {
                 }
 
                 it("should process downloads after upload failure") {
-                    let header = ["last-modified-version" : "3"]
+                    let header = ["last-modified-version": "3"]
                     let libraryId = self.userLibraryId
                     let objects = SyncObject.allCases
 
@@ -1604,7 +1619,7 @@ final class SyncControllerSpec: QuickSpec {
                 }
 
                 it("should upload local deletions") {
-                    let header = ["last-modified-version" : "1"]
+                    let header = ["last-modified-version": "1"]
                     let libraryId = self.userLibraryId
                     let collectionKey = "AAAAAAAA"
                     let searchKey = "BBBBBBBB"
@@ -1770,6 +1785,7 @@ final class SyncControllerSpec: QuickSpec {
                             switch result {
                             case .success(let data):
                                 expect(data.0).to(equal(expected))
+
                             case .failure(let error):
                                 fail("Failure: \(error)")
                             }
@@ -1791,8 +1807,7 @@ final class SyncControllerSpec: QuickSpec {
                     let tagName = "Tag name"
                     let oldColor = "#ffffff"
                     let newColor = "#000000"
-                    let header = ["last-modified-version" : "\(newVersion)"]
-
+                    let header = ["last-modified-version": "\(newVersion)"]
 
                     let libraryJson: [String: Any] = ["id": 0, "type": "user", "name": "A"]
                     let dataAJson: [String: Any] = ["title": "A", "itemType": "book", "collections": [], "tags": [["tag": tagName]]]
@@ -1814,7 +1829,7 @@ final class SyncControllerSpec: QuickSpec {
                     createStub(for: ObjectsRequest(libraryId: libraryId, userId: self.userId, objectType: .item, keys: "\(outdatedKey),\(locallyMissingKey)"),
                                baseUrl: baseUrl, headers: header, jsonResponse: objectResponse)
                     createStub(for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0),
-                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors" : ["value": [["name": tagName, "color": newColor]], "version": newVersion]])
+                               baseUrl: baseUrl, headers: header, jsonResponse: ["tagColors": ["value": [["name": tagName, "color": newColor]], "version": newVersion]])
                     createStub(for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                                baseUrl: baseUrl, headers: header, jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []])
 
@@ -1900,7 +1915,7 @@ final class SyncControllerSpec: QuickSpec {
                     let newVersion = 5
                     let syncedKey = "AAAAAAAA"
                     let changedKey = "BBBBBBBB"
-                    let header = ["last-modified-version" : "\(newVersion)"]
+                    let header = ["last-modified-version": "\(newVersion)"]
 
                     SyncObject.allCases.forEach { object in
                         createStub(for: VersionsRequest(libraryId: libraryId, userId: self.userId, objectType: object, version: 0), baseUrl: baseUrl, headers: header, jsonResponse: [:])
@@ -1967,6 +1982,7 @@ final class SyncControllerSpec: QuickSpec {
                                 let changedItem = realm.objects(RItem.self).filter(.key(changedKey)).first
                                 expect(changedItem).toNot(beNil())
                                 expect(changedItem?.fields.first?.changed).to(beTrue())
+
                             case .failure(let error):
                                 fail("Failure: \(error)")
                             }
@@ -2040,6 +2056,7 @@ final class SyncControllerSpec: QuickSpec {
                             switch result {
                             case .success(let data):
                                 expect(data.0).to(equal(expected))
+
                             case .failure(let error):
                                 fail("Failure: \(error)")
                             }
@@ -2114,6 +2131,7 @@ final class SyncControllerSpec: QuickSpec {
                             switch result {
                             case .success(let data):
                                 expect(data.0).to(equal(expected))
+
                             case .failure(let error):
                                 fail("Failure: \(error)")
                             }
@@ -2234,6 +2252,7 @@ final class SyncControllerSpec: QuickSpec {
                             switch result {
                             case .success(let data):
                                 expect(data.0).to(equal(expected))
+
                             case .failure(let error):
                                 fail("Failure: \(error)")
                             }
@@ -2335,6 +2354,7 @@ final class SyncControllerSpec: QuickSpec {
                             case .success(let data):
                                 expect(data.0).to(equal(expected))
                                 expect(didCreateParent).to(beTrue())
+
                             case .failure(let error):
                                 fail("Failure: \(error)")
                             }
@@ -2405,10 +2425,13 @@ struct TestConflictCoordinator: ConflictReceiver & SyncRequestReceiver {
         case .objectsRemovedRemotely(let libraryId, let collections, let items, let searches, let tags):
             completed(.remoteDeletionOfActiveObject(libraryId: libraryId, toDeleteCollections: collections, toRestoreCollections: [],
                                                     toDeleteItems: items, toRestoreItems: [], searches: searches, tags: tags))
+
         case .removedItemsHaveLocalChanges(let keys, let libraryId):
             completed(.remoteDeletionOfChangedItem(libraryId: libraryId, toDelete: keys.map({ $0.0 }), toRestore: []))
+
         case .groupRemoved(let id, _):
             completed(.deleteGroup(id))
+
         case .groupWriteDenied(let id, _):
             completed(.revertGroupChanges(.group(id)))
         }

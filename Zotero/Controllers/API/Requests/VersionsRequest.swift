@@ -28,7 +28,7 @@ struct VersionsRequest: ApiResponseRequest {
         return .url
     }
 
-    var parameters: [String : Any]? {
+    var parameters: [String: Any]? {
         var parameters: [String: Any] = ["format": "versions"]
         if let version = self.version {
             parameters["since"] = version
@@ -36,7 +36,7 @@ struct VersionsRequest: ApiResponseRequest {
         return parameters
     }
 
-    var headers: [String : String]? {
+    var headers: [String: String]? {
         guard let version = self.version else { return nil }
         return ["If-Modified-Since-Version": "\(version)"]
     }

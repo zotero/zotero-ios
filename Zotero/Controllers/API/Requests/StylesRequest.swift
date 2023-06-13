@@ -19,7 +19,7 @@ struct StylesRequest: ApiResponseRequest {
         return .get
     }
 
-    var parameters: [String : Any]? {
+    var parameters: [String: Any]? {
         return nil
     }
 
@@ -27,7 +27,7 @@ struct StylesRequest: ApiResponseRequest {
         return .url
     }
 
-    var headers: [String : String]? {
+    var headers: [String: String]? {
         return nil
     }
 }

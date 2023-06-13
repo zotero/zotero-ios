@@ -133,13 +133,11 @@ final class RItem: Object {
     // MARK: - Sync properties
 
     var changedFields: RItemChanges {
-        get {
-            var changes: RItemChanges = []
-            for change in self.changes {
-                changes.insert(RItemChanges(rawValue: change.rawChanges))
-            }
-            return changes
+        var changes: RItemChanges = []
+        for change in self.changes {
+            changes.insert(RItemChanges(rawValue: change.rawChanges))
         }
+        return changes
     }
 
     // MARK: - Helpers

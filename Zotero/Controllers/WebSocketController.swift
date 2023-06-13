@@ -13,7 +13,7 @@ import RxCocoa
 import RxSwift
 import Starscream
 
-fileprivate struct Response {
+private struct Response {
     let timer: BackgroundTimer
     let completion: () -> Void
 
@@ -98,7 +98,6 @@ final class WebSocketController {
                                   self?.lowPowerModeChanged(isEnabled: isEnabled)
                               })
                               .disposed(by: self.disposeBag)
-
     }
 
     // MARK: - Connection
@@ -145,7 +144,7 @@ final class WebSocketController {
 
             let completionTimer = BackgroundTimer(timeInterval: .milliseconds(WebSocketController.completionTimeout), queue: self.queue)
             completionTimer.eventHandler = { [weak self] in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 self.completionAction?()
                 self.completionAction = nil
                 self.completionTimer = nil
@@ -221,11 +220,12 @@ final class WebSocketController {
 
         let timer = BackgroundTimer(timeInterval: .seconds(interval), queue: self.queue)
         timer.eventHandler = { [weak self] in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
 
             switch self.connectionState.value {
             case .connecting, .disconnected:
                 self._connect(apiKey: apiKey, completed: nil)
+
             case .subscribing:
                 self.subscribe(apiKey: apiKey, completion: { [weak self] error in
                     self?.processConnectionResponse(with: error, apiKey: apiKey)
@@ -265,7 +265,7 @@ final class WebSocketController {
     /// - parameter apiKey: Api key to unsubscribe from. If none is provided, websocket is just disconnected.
     func disconnect(apiKey: String?) {
         self.queue.async { [weak self] in
-            guard let `self` = self, self.connectionState.value != .disconnected else { return }
+            guard let self = self, self.connectionState.value != .disconnected else { return }
 
             if let key = apiKey, self.connectionState.value == .connected {
                 self.unsubscribe(apiKey: key)
@@ -333,7 +333,6 @@ final class WebSocketController {
 
             case .connected, .subscriptionCreated, .subscriptionDeleted: break
             }
-
         } catch let error {
             let message = String(data: data, encoding: .utf8) ?? ""
             DDLogError("WebSocketController: received unknown message - \(error). Original message: \(self.redact(logMessage: message))")

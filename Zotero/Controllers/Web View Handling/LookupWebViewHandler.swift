@@ -189,8 +189,10 @@ final class LookupWebViewHandler {
             switch errorNumber {
             case 0:
                 self.observable.on(.next(.failure(Error.invalidIdentifiers)))
+
             case 1:
                 self.observable.on(.next(.failure(Error.noSuccessfulTranslators)))
+
             default:
                 self.observable.on(.next(.failure(Error.lookupFailed)))
             }

@@ -91,7 +91,7 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
     }
 
     private func assign(tagName: String, toItemKeys keys: Set<String>, libraryId: LibraryIdentifier, viewModel: ViewModel<TagFilterActionHandler>) {
-        self.perform(request: AssignItemsToTagDbRequest(keys: keys, libraryId: libraryId, tagName: tagName)) { [weak viewModel] error in
+        self.perform(request: AssignItemsToTagDbRequest(keys: keys, libraryId: libraryId, tagName: tagName)) { [weak viewModel] _ in
             inMainThread {
                 guard let viewModel = viewModel else { return }
                 self.update(viewModel: viewModel) { state in
@@ -102,7 +102,7 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
     }
 
     private func deleteAutomaticTags(in libraryId: LibraryIdentifier, viewModel: ViewModel<TagFilterActionHandler>) {
-        self.perform(request: DeleteAutomaticTagsDbRequest(libraryId: libraryId)) { [weak viewModel] error in
+        self.perform(request: DeleteAutomaticTagsDbRequest(libraryId: libraryId)) { [weak viewModel] _ in
             inMainThread {
                 guard let viewModel = viewModel else { return }
                 self.update(viewModel: viewModel) { state in
@@ -162,7 +162,7 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
     private func _load(with filters: [ItemsFilter], collectionId: CollectionIdentifier, libraryId: LibraryIdentifier, in viewModel: ViewModel<TagFilterActionHandler>) {
         do {
             var selected: Set<String> = []
-            var snapshot: [TagFilterState.FilterTag]? = nil
+            var snapshot: [TagFilterState.FilterTag]?
             var sorted: [TagFilterState.FilterTag] = []
             let comparator: (TagFilterState.FilterTag, TagFilterState.FilterTag) -> Bool = {
                 if !$0.tag.color.isEmpty && $1.tag.color.isEmpty {
@@ -242,4 +242,3 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
         }
     }
 }
-

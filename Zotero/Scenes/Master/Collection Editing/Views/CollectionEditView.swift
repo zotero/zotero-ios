@@ -24,9 +24,9 @@ struct CollectionEditView: View {
             }
 
             Section {
-                Button(action: {
+                Button {
                     self.showPickerView()
-                }) {
+                } label: {
                     HStack {
                         Image(uiImage: self.viewModel.state.parent == nil ?
                                         Asset.Images.Cells.library.image :
@@ -43,15 +43,15 @@ struct CollectionEditView: View {
 
             if self.viewModel.state.key != nil {
                 Section {
-                    Button(action: {
+                    Button {
                         self.viewModel.process(action: .delete)
-                    }) {
+                    } label: {
                         Text(L10n.Collections.delete)
                             .foregroundColor(Color.red)
                     }
-                    Button(action: {
+                    Button {
                         self.viewModel.process(action: .deleteWithItems)
-                    }) {
+                    } label: {
                         Text(L10n.Collections.deleteWithItems)
                             .foregroundColor(Color.red)
                     }
@@ -87,9 +87,9 @@ struct CollectionEditView: View {
             if self.viewModel.state.loading {
                 ActivityIndicatorView(style: .medium, isAnimating: .constant(true))
             } else {
-                Button(action: {
+                Button {
                     self.viewModel.process(action: .save)
-                }) {
+                } label: {
                     Text(L10n.save)
                         .padding(.vertical, 10)
                         .padding(.leading, 10)

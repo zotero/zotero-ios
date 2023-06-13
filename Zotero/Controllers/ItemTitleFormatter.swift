@@ -17,10 +17,13 @@ struct ItemTitleFormatter {
         switch item.rawType {
         case ItemTypes.letter:
             return letterDisplayTitle(from: item.baseTitle, creators: item.creators)
+
         case ItemTypes.interview:
             return interviewDisplayTitle(from: item.baseTitle, creators: item.creators)
+
         case ItemTypes.case:
             return caseDisplayTitle(from: item.baseTitle, fields: item.fields, creators: item.creators)
+
         default:
             return item.baseTitle
         }
@@ -56,10 +59,13 @@ struct ItemTitleFormatter {
             return ""
         case 1:
             return names[0]
+
         case 2:
             return names[0] + " and " + names[1]
+
         case 3:
             return names[0] + ", " + names[1] + " and " + names[2]
+
         default:
             return names[0] + " et al."
         }

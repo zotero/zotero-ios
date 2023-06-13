@@ -154,7 +154,7 @@ final class CreatorEditViewController: UIViewController {
     @IBAction private func delete() {
         let controller = UIAlertController(title: L10n.warning, message: L10n.CreatorEditor.deleteConfirmation, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { [weak self] _ in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             self.deleteAction?(self.viewModel.state.creator.id)
             self.presentingViewController?.dismiss(animated: true, completion: nil)
         }))
@@ -192,10 +192,11 @@ final class CreatorEditViewController: UIViewController {
             .controlEvent(.editingChanged)
             .flatMap({ Observable.just(self.input1TextField.text ?? "") })
             .subscribe(onNext: { [weak self] value in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 switch self.viewModel.state.creator.namePresentation {
                 case .full:
                     self.viewModel.process(action: .setFullName(value))
+
                 case .separate:
                     self.viewModel.process(action: .setLastName(value))
                 }

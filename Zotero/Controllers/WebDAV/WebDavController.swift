@@ -34,20 +34,28 @@ enum WebDavError {
             switch self {
             case .fileMissingAfterUpload:
                 return L10n.Errors.Settings.Webdav.fileMissingAfterUpload
+
             case .invalidUrl:
                 return L10n.Errors.Settings.Webdav.invalidUrl
+
             case .noPassword:
                 return L10n.Errors.Settings.Webdav.noPassword
+
             case .noUrl:
                 return L10n.Errors.Settings.Webdav.noUrl
+
             case .noUsername:
                 return L10n.Errors.Settings.Webdav.noUsername
+
             case .nonExistentFileNotMissing:
                 return L10n.Errors.Settings.Webdav.nonExistentFileNotMissing
+
             case .notDav:
                 return L10n.Errors.Settings.Webdav.notDav
+
             case .parentDirNotFound:
                 return L10n.Errors.Settings.Webdav.parentDirNotFound
+
             case .zoteroDirNotFound:
                 return L10n.Errors.Settings.Webdav.zoteroDirNotFound
             }
@@ -375,12 +383,12 @@ final class WebDavControllerImpl: WebDavController {
         var disposeBag: DisposeBag?
 
         return Single.create { [weak self] subscriber in
-            guard let `self` = self else { return Disposables.create() }
+            guard let self = self else { return Disposables.create() }
 
             let _disposeBag = DisposeBag()
             disposeBag = _disposeBag
 
-            self.checkServer(queue: queue).subscribe(with: self, onSuccess: { `self`, url in
+            self.checkServer(queue: queue).subscribe(with: self, onSuccess: { _, url in
                 subscriber(.success(url))
             }, onFailure: { `self`, error in
                 /// .fileMissingAfterUpload is not a critical/fatal error. The sync can continue working.
@@ -519,7 +527,7 @@ final class WebDavControllerImpl: WebDavController {
     /// Creates and validates WebDAV server URL based on stored session.
     private func createUrl() -> Single<URL> {
         return Single.create { [weak self, weak sessionStorage] subscriber in
-            guard let `self` = self else {
+            guard let self = self else {
                 DDLogError("WebDavController: self doesn't exist")
                 subscriber(.failure(WebDavError.Verification.noUsername))
                 return Disposables.create()

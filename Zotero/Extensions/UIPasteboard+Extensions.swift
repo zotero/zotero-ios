@@ -23,7 +23,7 @@ extension UIPasteboard {
 
         do {
             let attrString = try NSAttributedString(data: htmlData, options: [.documentType: NSAttributedString.DocumentType.html], documentAttributes: nil)
-            let data = try attrString.data(from: NSMakeRange(0, attrString.length), documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf])
+            let data = try attrString.data(from: NSRange(location: 0, length: attrString.length), documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf])
             item[kUTTypeRTF as String] = data
         } catch let error {
             DDLogError("UIPasteboard: can't convert html to attributed string or rtf - \(error)")

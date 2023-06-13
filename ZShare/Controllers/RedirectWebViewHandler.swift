@@ -51,7 +51,7 @@ final class RedirectWebViewHandler: NSObject {
         Single<Int>.timer(self.timeout, scheduler: self.timerScheduler)
                    .observe(on: MainScheduler.instance)
                    .subscribe(onSuccess: { [weak self] _ in
-                       guard let `self` = self else { return }
+                       guard let self = self else { return }
 
                        DDLogInfo("RedirectWebViewHandler: redirection timed out")
 
@@ -112,7 +112,7 @@ extension RedirectWebViewHandler: WKNavigationDelegate {
         case "application/pdf":
             DDLogInfo("RedirectWebViewHandler: redirection detected pdf - \(navigationResponse.response.url?.absoluteString ?? "-")")
             inMainThread { [weak self, weak webView] in
-                guard let `self` = self, let webView = webView else { return }
+                guard let self = self, let webView = webView else { return }
 
                 // Cancel timer
                 self.disposeBag = nil
@@ -126,6 +126,7 @@ extension RedirectWebViewHandler: WKNavigationDelegate {
             }
             // Don't load web
             decisionHandler(.cancel)
+
         default:
             self.startTimer()
             decisionHandler(.allow)

@@ -21,7 +21,7 @@ struct ReadRecentCollections: DbResponseRequest {
     func process(in database: Realm) throws -> [RecentData] {
         let collections = database.objects(RCollection.self).sorted(byKeyPath: "lastUsed", ascending: false)
 
-        guard collections.count > 0 else { return [] }
+        guard !collections.isEmpty else { return [] }
 
         var recent: [RecentData] = []
         for rCollection in collections {
@@ -44,4 +44,3 @@ struct ReadRecentCollections: DbResponseRequest {
         return recent
     }
 }
-

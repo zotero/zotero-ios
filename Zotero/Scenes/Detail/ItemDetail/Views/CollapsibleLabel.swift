@@ -103,7 +103,7 @@ final class CollapsibleLabel: UILabel {
             let length: Int
             if subrange.location == 0 {
                 length = 0
-            } else if nsString.substring(with: NSMakeRange(subrange.location - 1, 1)) == " " {
+            } else if nsString.substring(with: NSRange(location: subrange.location - 1, length: 1)) == " " {
                 // If last character before this word is a white space, skip it
                 length = subrange.location - 1
             } else {

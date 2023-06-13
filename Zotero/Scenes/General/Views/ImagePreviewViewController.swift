@@ -75,7 +75,7 @@ final class ImagePreviewViewController: UIViewController {
     private func zoomRectangle(scale: CGFloat, center: CGPoint) -> CGRect {
         var rect = CGRect()
         rect.size.height = self.imageView.frame.height / scale
-        rect.size.width  = self.imageView.frame.width  / scale
+        rect.size.width  = self.imageView.frame.width / scale
         rect.origin.x = center.x - (rect.width / 2)
         rect.origin.y = center.y - (rect.height / 2)
         return rect

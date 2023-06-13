@@ -187,20 +187,27 @@ struct StoreItemDbRequest: DbResponseRequest {
             switch (field.key, field.baseKey) {
             case (FieldKeys.Item.title, _), (_, FieldKeys.Item.title):
                 item.baseTitle = value
+
             case (FieldKeys.Item.note, _) where item.rawType == ItemTypes.note:
                 item.baseTitle = NotePreviewGenerator.preview(from: value) ?? value
+
             case (FieldKeys.Item.date, _):
                 date = value
+
             case (FieldKeys.Item.publisher, _), (_, FieldKeys.Item.publisher):
                 publisher = value
+
             case (FieldKeys.Item.publicationTitle, _), (_, FieldKeys.Item.publicationTitle):
                 publicationTitle = value
+
             case (FieldKeys.Item.Annotation.sortIndex, _):
                 sortIndex = value
+
             case (FieldKeys.Item.Attachment.md5, _):
                 if value != "<null>" {
                     md5 = value
                 }
+
             case (FieldKeys.Item.Attachment.contentType, _), (_, FieldKeys.Item.Attachment.contentType):
                 contentType = value
             default: break

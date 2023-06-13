@@ -59,12 +59,12 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
 
         let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
 
-        if snapshot.items.first(where: { $0.identifier == collectionId }) == nil {
+        if snapshot.items.contains(where: { $0.identifier == collectionId }) {
             // Collection is not stored in this snapshot, nothing to select.
             return
         }
 
-        if snapshot.visibleItems.first(where: { $0.identifier == collectionId }) == nil {
+        if snapshot.visibleItems.contains(where: { $0.identifier == collectionId }) {
             // Selection is collapsed, we need to expand and select it then
             self.update(with: tree, selectedId: collectionId, animated: false) { [weak self] in
                 self?.selectIfNeeded(collectionId: collectionId, tree: tree, scrollToPosition: scrollToPosition)
@@ -151,11 +151,11 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
     }
 
     private lazy var cellRegistration: UICollectionView.CellRegistration<CollectionCell, Collection> = {
-        return UICollectionView.CellRegistration<CollectionCell, Collection> { [weak self] cell, indexPath, collection in
-            guard let `self` = self else { return }
+        return UICollectionView.CellRegistration<CollectionCell, Collection> { [weak self] cell, _, collection in
+            guard let self = self else { return }
 
             let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
-            let hasChildren = snapshot.contains(collection) && snapshot.snapshot(of: collection, includingParent: false).items.count > 0
+            let hasChildren = snapshot.contains(collection) && !snapshot.snapshot(of: collection, includingParent: false).items.isEmpty
             var accessories: CollectionCell.Accessories = .chevron
 
             if !collection.isCollection || Defaults.shared.showCollectionItemCounts {
@@ -164,12 +164,12 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
 
             var configuration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren, accessories: accessories)
             configuration.isCollapsedProvider = { [weak self] in
-                guard let `self` = self else { return false }
+                guard let self = self else { return false }
                 let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
                 return snapshot.contains(collection) ? !snapshot.isExpanded(collection) : false
             }
             configuration.toggleCollapsed = { [weak self, weak cell] in
-                guard let `self` = self, let cell = cell else { return }
+                guard let self = self, let cell = cell else { return }
                 self.viewModel.process(action: .toggleCollapsed(collection))
             }
 
@@ -193,7 +193,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
     }
 
     private func createCollectionViewLayout() -> UICollectionViewCompositionalLayout {
-        return UICollectionViewCompositionalLayout { section, environment in
+        return UICollectionViewCompositionalLayout { _, environment in
             var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
             configuration.showsSeparators = false
             return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)

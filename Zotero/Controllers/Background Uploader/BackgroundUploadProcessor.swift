@@ -45,6 +45,7 @@ final class BackgroundUploadProcessor {
         switch upload.type {
         case .zotero(let uploadKey):
             return self.finishZoteroUpload(uploadKey: uploadKey, key: upload.key, libraryId: upload.libraryId, fileUrl: upload.fileUrl, userId: upload.userId, queue: queue, scheduler: scheduler)
+
         case .webdav(let mtime):
             return self.finishWebdavUpload(key: upload.key, libraryId: upload.libraryId, mtime: mtime, md5: upload.md5, userId: upload.userId,
                                            fileUrl: upload.fileUrl, webDavUrl: upload.remoteUrl, queue: queue, scheduler: scheduler)
@@ -56,8 +57,8 @@ final class BackgroundUploadProcessor {
         let request = RegisterUploadRequest(libraryId: libraryId, userId: userId, key: key, uploadKey: uploadKey, oldMd5: nil)
         return self.apiClient.send(request: request, queue: queue)
                              .observe(on: scheduler)
-                             .flatMap { [weak self] data, response -> Single<()> in
-                                 guard let `self` = self else { return Single.error(Error.expired) }
+                             .flatMap { [weak self] _, response -> Single<()> in
+                                 guard let self = self else { return Single.error(Error.expired) }
                                  return self.markAttachmentAsUploaded(version: response.allHeaderFields.lastModifiedVersion, key: key, libraryId: libraryId, queue: queue)
                              }
                              .do(onSuccess: { [weak self] _ in

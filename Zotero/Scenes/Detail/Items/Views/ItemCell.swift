@@ -45,7 +45,7 @@ final class ItemCell: UITableViewCell {
 
         let font = UIFont.preferredFont(for: .headline, weight: .regular)
         self.titleLabel.font = font
-        self.titleLabelsToContainerBottom.constant = 12  + ItemDetailLayout.separatorHeight // + bottom separator
+        self.titleLabelsToContainerBottom.constant = 12 + ItemDetailLayout.separatorHeight // + bottom separator
         self.fileView.contentInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
         self.tagCircles.borderColor = self.tagBorderColor
 
@@ -134,6 +134,7 @@ final class ItemCell: UITableViewCell {
             self.fileView.set(state: state, style: .list)
             self.fileView.isHidden = false
             self.accessoryImageView.isHidden = true
+
         case .doi, .url:
             self.fileView.isHidden = true
             self.accessoryImageView.isHidden = false

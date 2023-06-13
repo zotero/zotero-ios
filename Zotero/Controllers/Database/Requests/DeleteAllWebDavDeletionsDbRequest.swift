@@ -17,4 +17,3 @@ struct DeleteAllWebDavDeletionsDbRequest: DbRequest {
         database.delete(database.objects(RWebDavDeletion.self))
     }
 }
-

@@ -27,21 +27,24 @@ struct SubmitDeletionsRequest: ApiRequest {
         return .url
     }
 
-    var parameters: [String : Any]? {
+    var parameters: [String: Any]? {
         let joinedKeys = self.keys.joined(separator: ",")
         switch self.objectType {
         case .collection:
             return ["collectionKey": joinedKeys]
+
         case .item, .trash:
             return ["itemKey": joinedKeys]
+
         case .search:
             return ["searchKey": joinedKeys]
+
         case .settings:
             return nil
         }
     }
 
-    var headers: [String : String]? {
+    var headers: [String: String]? {
         return ["If-Unmodified-Since-Version": self.version.description]
     }
 }

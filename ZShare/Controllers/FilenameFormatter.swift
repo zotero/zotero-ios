@@ -43,7 +43,7 @@ struct FilenameFormatter {
             return "_"
         }
         // Don't allow hidden files
-        if valid[valid.startIndex] == "."  {
+        if valid[valid.startIndex] == "." {
             return String(valid[valid.index(valid.startIndex, offsetBy: 1)..<valid.endIndex])
         }
         return valid
@@ -54,8 +54,10 @@ struct FilenameFormatter {
         switch creators.count {
         case 0:
             return nil
+
         case 1:
             return creators.first?.summaryName
+
         case 2:
             return "\(creators.first?.summaryName ?? "") and \(creators.last?.summaryName ?? "")"
         default:

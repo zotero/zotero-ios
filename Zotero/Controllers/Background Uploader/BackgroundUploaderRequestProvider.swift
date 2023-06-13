@@ -31,6 +31,7 @@ final class BackgroundUploaderRequestProvider {
                            let size = self.fileStorage.size(of: Files.file(from: upload.fileUrl))
                            return Single.just((request, upload.fileUrl, size))
                        })
+
         case .zotero:
             return self.createMultipartformRequest(for: upload, filename: filename, mimeType: mimeType, parameters: parameters, headers: headers, schemaVersion: schemaVersion)
                        .flatMap({ request, url in
@@ -50,7 +51,7 @@ final class BackgroundUploaderRequestProvider {
     /// - returns: Returns a `Single` with properly formed `URLRequest` and `URL` pointing to file, which should be uploaded.
     func createMultipartformRequest(for upload: BackgroundUpload, filename: String, mimeType: String, parameters: [String: String]?, headers: [String: String]?, schemaVersion: Int) -> Single<(URLRequest, URL)> {
         return Single.create { [weak self] subscriber -> Disposable in
-            guard let `self` = self else {
+            guard let self = self else {
                 subscriber(.failure(Error.expired))
                 return Disposables.create()
             }

@@ -25,9 +25,9 @@ struct CreateItemRequest: ApiRequest {
         return .json
     }
 
-    let parameters: [String : Any]?
+    let parameters: [String: Any]?
 
-    var headers: [String : String]? {
+    var headers: [String: String]? {
         return ["If-Unmodified-Since-Version": "0"]
     }
 }

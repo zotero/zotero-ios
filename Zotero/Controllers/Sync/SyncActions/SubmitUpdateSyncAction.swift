@@ -15,7 +15,7 @@ import RxSwift
 struct SubmitUpdateSyncAction: SyncAction {
     typealias Result = (Int, Error?)
 
-    let parameters: [[String : Any]]
+    let parameters: [[String: Any]]
     let changeUuids: [String: [String]]
     let sinceVersion: Int?
     let object: SyncObject
@@ -36,6 +36,7 @@ struct SubmitUpdateSyncAction: SyncAction {
         switch self.object {
         case .settings:
             return self.submitSettings()
+
         case .collection, .item, .search, .trash:
             return self.submitOther()
         }
@@ -172,9 +173,11 @@ struct SubmitUpdateSyncAction: SyncAction {
                 case .collection:
                     let response = try CollectionResponse(response: json)
                     changedCollections.append(response)
+
                 case .item, .trash:
                     let response = try ItemResponse(response: json, schemaController: self.schemaController)
                     changedItems.append(response)
+
                 case .search:
                     let response = try SearchResponse(response: json)
                     changedSearches.append(response)
@@ -202,8 +205,10 @@ struct SubmitUpdateSyncAction: SyncAction {
             switch self.object {
             case .collection:
                 requests.append(MarkObjectsAsSyncedDbRequest<RCollection>(libraryId: self.libraryId, keys: unchangedKeys, changeUuids: self.changeUuids, version: version))
+
             case .item, .trash:
                 requests.append(MarkObjectsAsSyncedDbRequest<RItem>(libraryId: self.libraryId, keys: unchangedKeys, changeUuids: self.changeUuids, version: version))
+
             case .search:
                 requests.append(MarkObjectsAsSyncedDbRequest<RSearch>(libraryId: self.libraryId, keys: unchangedKeys, changeUuids: self.changeUuids, version: version))
             case .settings: break
@@ -215,8 +220,10 @@ struct SubmitUpdateSyncAction: SyncAction {
             switch self.object {
             case .collection:
                 requests.append(MarkForResyncDbAction<RCollection>(libraryId: self.libraryId, keys: unchangedKeys))
+
             case .item, .trash:
                 requests.append(MarkForResyncDbAction<RItem>(libraryId: self.libraryId, keys: unchangedKeys))
+
             case .search:
                 requests.append(MarkForResyncDbAction<RSearch>(libraryId: self.libraryId, keys: unchangedKeys))
             case .settings: break

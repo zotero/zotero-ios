@@ -55,6 +55,7 @@ extension Syncable {
             switch identifier {
             case .custom(let type):
                 self.customLibraryKey = type
+
             case .group(let id):
                 self.groupKey = id
             }

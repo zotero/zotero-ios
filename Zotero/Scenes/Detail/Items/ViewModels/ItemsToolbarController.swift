@@ -89,6 +89,7 @@ final class ItemsToolbarController {
                 case .downloadedFiles: return true
                 }
             })
+
         default:
             return filters
         }
@@ -101,6 +102,7 @@ final class ItemsToolbarController {
             switch item.tag {
             case ItemsToolbarController.barButtonItemEmptyTag:
                 item.isEnabled = !selectedItems.isEmpty
+
             case ItemsToolbarController.barButtonItemSingleTag:
                 item.isEnabled = selectedItems.count == 1
             default: break
@@ -116,7 +118,6 @@ final class ItemsToolbarController {
 
         if let item = self.viewController.toolbarItems?.first(where: { $0.tag == ItemsToolbarController.barButtonItemTitleTag }),
            let stackView = item.customView as? UIStackView {
-
             if let filterLabel = stackView.subviews.first as? UILabel {
                 let itemCount = results?.count ?? 0
                 filterLabel.isHidden = filters.isEmpty
@@ -180,26 +181,31 @@ final class ItemsToolbarController {
             switch action.type {
             case .addToCollection:
                 item.accessibilityLabel = L10n.Accessibility.Items.addToCollection
+
             case .trash:
                 item.accessibilityLabel = L10n.Accessibility.Items.trash
+
             case .delete:
                 item.accessibilityLabel = L10n.Accessibility.Items.delete
+
             case .removeFromCollection:
                 item.accessibilityLabel = L10n.Accessibility.Items.removeFromCollection
+
             case .restore:
                 item.accessibilityLabel = L10n.Accessibility.Items.restore
+
             case .share:
                 item.accessibilityLabel = L10n.Accessibility.Items.share
             case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .removeDownload, .download, .duplicate: break
             }
             item.rx.tap.subscribe(onNext: { [weak self] _ in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 self.delegate?.process(action: action.type, button: item)
             })
             .disposed(by: self.disposeBag)
             return item
         })
-        return [spacer] + (0..<(2 * items.count)).map({ idx -> UIBarButtonItem in idx % 2 == 0 ? items[idx/2] : spacer })
+        return [spacer] + (0..<(2 * items.count)).map({ idx -> UIBarButtonItem in idx % 2 == 0 ? items[idx / 2] : spacer })
     }
 
     private func createTitleView() -> UIStackView {

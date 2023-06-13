@@ -41,6 +41,7 @@ struct CitationBibliographyExportView: View {
             switch error {
             case .invalidItemTypes:
                 return L10n.Errors.Citation.invalidTypes
+
             case .styleOrLocaleMissing:
                 return nil
             default: break
@@ -50,6 +51,7 @@ struct CitationBibliographyExportView: View {
         switch mode {
         case .bibliography:
             return L10n.Errors.Citation.generateBibliography
+
         case .citation:
             return L10n.Errors.Citation.generateCitation
         }
@@ -86,7 +88,7 @@ struct CitationBibliographyExportView: View {
     }
 }
 
-fileprivate struct Overlay: View {
+private struct Overlay: View {
     enum Kind {
         case loading
         case error(String)
@@ -101,6 +103,7 @@ fileprivate struct Overlay: View {
         switch self.type {
         case .loading:
             ActivityIndicatorView(style: .large, color: .white, isAnimating: .constant(true))
+
         case .error(let message):
             VStack(spacing: 12) {
                 Image(systemName: "exclamationmark.circle")
@@ -117,7 +120,7 @@ fileprivate struct Overlay: View {
     }
 }
 
-fileprivate struct CiteView: View {
+private struct CiteView: View {
     @EnvironmentObject var viewModel: ViewModel<CitationBibliographyExportActionHandler>
 
     weak var coordinatorDelegate: CitationBibliographyExportCoordinatorDelegate?
@@ -181,13 +184,14 @@ fileprivate struct CiteView: View {
         switch method {
         case .html:
             return L10n.Citation.saveHtml
+
         case .copy:
             return L10n.Citation.copy
         }
     }
 }
 
-fileprivate struct RowView: View {
+private struct RowView: View {
     let title: String
     let enabled: Bool
 
@@ -211,7 +215,7 @@ fileprivate struct RowView: View {
     }
 }
 
-fileprivate struct OutputMethodRow: View {
+private struct OutputMethodRow: View {
     let title: String
     let isSelected: Bool
 
@@ -230,7 +234,7 @@ fileprivate struct OutputMethodRow: View {
     }
 }
 
-fileprivate struct ExportView: View {
+private struct ExportView: View {
     var body: some View {
         Text("Export")
     }

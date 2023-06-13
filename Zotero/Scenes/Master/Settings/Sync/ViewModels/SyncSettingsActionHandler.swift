@@ -201,7 +201,7 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
                            if file.relativeComponents.count == 3 && (file.relativeComponents.last ?? "").count == KeyGenerator.length {
                                // Check whether folder actually contains an attachment to avoid "attachment missing" errors.
                                let contents: [URL] = (try? self.fileStorage.contentsOfDirectory(at: file)) ?? []
-                               return contents.count > 0
+                               return !contents.isEmpty
                            }
                            return false
                        })
@@ -258,4 +258,3 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
         }
     }
 }
-

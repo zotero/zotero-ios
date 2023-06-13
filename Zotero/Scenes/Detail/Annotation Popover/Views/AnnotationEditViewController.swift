@@ -165,7 +165,7 @@ final class AnnotationEditViewController: UIViewController {
         let save = UIBarButtonItem(title: L10n.save, style: .done, target: nil, action: nil)
         save.rx.tap
                .subscribe(onNext: { [weak self] in
-                   guard let `self` = self else { return }
+                   guard let self = self else { return }
                    let state = self.viewModel.state
                    self.saveAction(state.key, state.color, state.lineWidth, state.pageLabel, state.updateSubsequentLabels, state.highlightText)
                    self.cancel()
@@ -197,6 +197,7 @@ extension AnnotationEditViewController: UITableViewDataSource {
         switch self.sections[section] {
         case .properties:
             return self.viewModel.state.type == .ink ? 2 : 1
+
         default:
             return 1
         }
@@ -256,8 +257,10 @@ extension AnnotationEditViewController: UITableViewDelegate {
 
         switch self.sections[indexPath.section] {
         case .properties, .highlight: break
+
         case .actions:
             self.deleteAction(self.viewModel.state.key)
+
         case .pageLabel:
             guard self.viewModel.state.isEditable else { return }
 
@@ -265,7 +268,6 @@ extension AnnotationEditViewController: UITableViewDelegate {
                                                           saveAction: { [weak self] newLabel, shouldUpdateSubsequentPages in
                 self?.viewModel.process(action: .setPageLabel(newLabel, shouldUpdateSubsequentPages))
             })
-        break
         }
     }
 }

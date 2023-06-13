@@ -28,6 +28,7 @@ struct LoadLibraryDataSyncAction: SyncAction {
             switch self.type {
             case .all:
                 request = ReadLibrariesDataDbRequest(identifiers: nil, fetchUpdates: self.fetchUpdates, loadVersions: self.loadVersions, webDavEnabled: self.webDavEnabled)
+
             case .specific(let ids):
                 if ids.isEmpty {
                     subscriber(.success([]))
