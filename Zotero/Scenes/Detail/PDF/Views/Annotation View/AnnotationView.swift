@@ -248,7 +248,7 @@ final class AnnotationView: UIView {
     private func setupObserving() {
         var disposables: [Disposable] = buildDisposables()
         if let doneTap = self.header.doneTap {
-            disposables.append(doneTap.flatMap({ Observable.just(Action.done) }).bind(to: self.actionPublisher))            
+            disposables.append(doneTap.flatMap({ Observable.just(Action.done) }).bind(to: self.actionPublisher))
         }
         disposeBag = CompositeDisposable(disposables: disposables)
     }

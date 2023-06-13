@@ -25,7 +25,6 @@ final class AnnotationPreviewController: NSObject {
         let scale: CGFloat
     }
     
-    
     /// Type of annotation preview
     /// - temporary: Rendered image is returned by `Single<UIImage>` immediately, no caching is performed.
     /// - cachedAndReported: Rendered image is cached and reported through global observable `PublishSubject<AnnotationPreviewUpdate>`.
@@ -241,6 +240,7 @@ extension AnnotationPreviewController {
             case .temporary(let subscriberKey):
                 // Temporary request always needs to return an error if image was not available
                 self.perform(event: .failure(error), subscriberKey: subscriberKey)
+                
             default:
                 break
             }
