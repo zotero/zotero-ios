@@ -18,6 +18,7 @@ extension CollectionDifference {
             switch change {
             case .insert(let offset, _, _):
                 insertions.append(offset)
+
             case .remove(let offset, _, _):
                 deletions.append(offset)
             }

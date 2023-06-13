@@ -506,6 +506,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             case .success(let file):
                 state.exportState = .exported(file)
                 state.changes.insert(.export)
+
             case .failure(let error):
                 state.exportState = .failed(error)
                 state.changes.insert(.export)
@@ -518,10 +519,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             switch tool {
             case .highlight:
                 Defaults.shared.highlightColorHex = hex
+
             case .note:
                 Defaults.shared.noteColorHex = hex
+
             case .square:
                 Defaults.shared.squareColorHex = hex
+
             case .ink:
                 Defaults.shared.inkColorHex = hex
             default: return
@@ -532,6 +536,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             switch tool {
             case .eraser:
                 Defaults.shared.activeEraserSize = Float(size)
+
             case .ink:
                 Defaults.shared.activeLineWidth = Float(size)
             default: break
@@ -549,6 +554,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 case .ink:
                     state.activeLineWidth = size
                     state.changes = .activeLineWidth
+
                 case .eraser:
                     state.activeEraserSize = size
                     state.changes = .activeEraserSize
@@ -1022,10 +1028,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         switch annotationType {
         case .note:
             return .note
+
         case .highlight:
             return .highlight
+
         case .image:
             return .image
+
         case .ink:
             return .ink
         }
@@ -1038,6 +1047,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         switch annotationType {
         case .highlight, .ink: return
+
         case .image:
             let rect = CGRect(origin: origin, size: CGSize(width: 50, height: 50))
             let square = SquareAnnotation()
@@ -1045,6 +1055,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             square.boundingBox = rect
             square.borderColor = color
             pdfAnnotation = square
+
         case .note:
             let rect = CGRect(origin: origin, size: AnnotationsConfig.noteAnnotationSize)
             let note = NoteAnnotation(contents: "")
@@ -1452,6 +1463,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     state.focusSidebarKey = key
                 }
             }
+
         case .failure(let error):
             // TODO: - show error
             break
@@ -1735,6 +1747,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             switch key.type {
             case .document:
                 return viewModel.state.documentAnnotations[key.key]?.sortIndex
+
             case .database:
                 return objects.filter(.key(key.key)).first?.annotationSortIndex
             }
@@ -1817,6 +1830,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .sync:
             // If sync happened and this item changed, always update item
             return true
+
         case .syncResponse:
             // This is a response to local changes being synced to backend, can be ignored
             return false

@@ -216,8 +216,10 @@ extension AnnotationPreviewController {
             switch type {
             case .temporary:
                 self.perform(event: .success(image), key: key, parentKey: parentKey)
+
             case .cachedOnly:
                 self.cache(image: image, key: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark)
+
             case .cachedAndReported:
                 self.cache(image: image, key: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark)
                 self.observable.on(.next((key, parentKey, image)))

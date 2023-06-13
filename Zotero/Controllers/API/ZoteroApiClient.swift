@@ -188,8 +188,10 @@ final class ZoteroApiClient: ApiClient {
         switch endpoint {
         case .zotero:
             return .zotero
+
         case .webDav:
             return .webDav
+
         case .other:
             return .other
         }

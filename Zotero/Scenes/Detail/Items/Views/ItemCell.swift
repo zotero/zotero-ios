@@ -134,6 +134,7 @@ final class ItemCell: UITableViewCell {
             self.fileView.set(state: state, style: .list)
             self.fileView.isHidden = false
             self.accessoryImageView.isHidden = true
+
         case .doi, .url:
             self.fileView.isHidden = true
             self.accessoryImageView.isHidden = false

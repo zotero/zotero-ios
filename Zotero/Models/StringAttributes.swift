@@ -28,6 +28,7 @@ enum StringAttribute: CaseIterable {
             self = .superscript
         case "sub":
             self = .subscript
+
         default:
             return nil
         }

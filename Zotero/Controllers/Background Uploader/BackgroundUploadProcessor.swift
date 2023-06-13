@@ -45,6 +45,7 @@ final class BackgroundUploadProcessor {
         switch upload.type {
         case .zotero(let uploadKey):
             return self.finishZoteroUpload(uploadKey: uploadKey, key: upload.key, libraryId: upload.libraryId, fileUrl: upload.fileUrl, userId: upload.userId, queue: queue, scheduler: scheduler)
+
         case .webdav(let mtime):
             return self.finishWebdavUpload(key: upload.key, libraryId: upload.libraryId, mtime: mtime, md5: upload.md5, userId: upload.userId,
                                            fileUrl: upload.fileUrl, webDavUrl: upload.remoteUrl, queue: queue, scheduler: scheduler)

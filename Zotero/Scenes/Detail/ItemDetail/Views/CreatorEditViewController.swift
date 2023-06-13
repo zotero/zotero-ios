@@ -196,6 +196,7 @@ final class CreatorEditViewController: UIViewController {
                 switch self.viewModel.state.creator.namePresentation {
                 case .full:
                     self.viewModel.process(action: .setFullName(value))
+
                 case .separate:
                     self.viewModel.process(action: .setLastName(value))
                 }

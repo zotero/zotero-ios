@@ -61,8 +61,10 @@ final class ItemDetailFieldCell: UICollectionViewListCell {
             switch configuration.type {
             case .creator(let creator):
                 self.contentView.setup(with: creator, titleWidth: configuration.titleWidth)
+
             case .value(let value, let title):
                 self.contentView.setup(with: value, title: title, titleWidth: configuration.titleWidth)
+
             case .field(let field):
                 self.contentView.setup(with: field, titleWidth: configuration.titleWidth)
             }

@@ -554,6 +554,7 @@ final class WebDavControllerSpec: QuickSpec {
                 switch update.kind {
                 case .failed(let error):
                     errorAction(error)
+
                 case .ready:
                     successAction()
                 default: break

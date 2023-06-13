@@ -162,6 +162,7 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
                     switch result {
                     case .success(let file):
                         state.outputFile = file
+
                     case .failure(let error):
                         DDLogError("CitationBibliographyExportActionHandler: can't finish citation of bibliography - \(error)")
                         state.error = error

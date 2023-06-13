@@ -98,10 +98,13 @@ final class ScannerViewController: UIViewController {
         switch orientation {
         case .portrait:
             self.previewLayer?.connection?.videoOrientation = .portrait
+
         case .portraitUpsideDown:
             self.previewLayer?.connection?.videoOrientation = .portraitUpsideDown
+
         case .landscapeLeft:
             self.previewLayer?.connection?.videoOrientation = .landscapeLeft
+
         case .landscapeRight:
             self.previewLayer?.connection?.videoOrientation = .landscapeRight
         case .unknown: break

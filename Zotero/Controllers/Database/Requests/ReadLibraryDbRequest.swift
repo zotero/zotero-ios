@@ -21,6 +21,7 @@ struct ReadLibraryDbRequest: DbResponseRequest {
         switch self.libraryId {
         case .custom(let type):
             return Library(identifier: self.libraryId, name: type.libraryName, metadataEditable: true, filesEditable: true)
+
         case .group(let identifier):
             guard let group = database.objects(RGroup.self).filter("identifier == %d", identifier).first else {
                 throw DbError.objectNotFound

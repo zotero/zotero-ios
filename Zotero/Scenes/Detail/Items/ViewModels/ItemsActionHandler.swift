@@ -472,6 +472,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         switch viewModel.state.collection.identifier {
         case .collection(let key):
             collectionKey = key
+
         case .custom, .search:
             collectionKey = nil
         }
@@ -536,6 +537,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         switch viewModel.state.collection.identifier {
         case .collection(let key):
             collections = [key]
+
         case .search, .custom:
             collections = []
         }

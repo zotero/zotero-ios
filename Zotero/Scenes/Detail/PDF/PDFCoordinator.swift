@@ -103,10 +103,12 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
             switch sender {
             case .view(let view, _):
                 controller.popoverPresentationController?.sourceView = view
+
             case .item(let item):
                 controller.popoverPresentationController?.barButtonItem = item
             }
             self.navigationController.present(controller, animated: true, completion: nil)
+
         default:
             let navigationController = UINavigationController(rootViewController: controller)
             navigationController.modalPresentationStyle = .formSheet
@@ -190,15 +192,19 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         case .mergeTooBig:
             title = L10n.Errors.Pdf.mergeTooBigTitle
             message = L10n.Errors.Pdf.mergeTooBig
+
         case .cantAddAnnotations:
             title = L10n.error
             message = L10n.Errors.Pdf.cantAddAnnotations
+
         case .cantDeleteAnnotation:
             title = L10n.error
             message = L10n.Errors.Pdf.cantDeleteAnnotations
+
         case .cantUpdateAnnotation:
             title = L10n.error
             message = L10n.Errors.Pdf.cantUpdateAnnotation
+
         case .unknown:
             title = L10n.error
             message = L10n.Errors.unknown

@@ -201,11 +201,13 @@ extension CollectionTree {
         switch collapseState {
         case .expandedAll:
             snapshot.expand(snapshot.items)
+
         case .collapsedAll:
             snapshot.collapse(snapshot.items)
             if let identifier = selectedId {
                 expandParents(identifier, &snapshot)
             }
+
         case .basedOnDb:
             let (collapsed, expanded) = self.separateExpandedFromCollapsed(collections: snapshot.items, collapsedState: self.collapsed)
             snapshot.collapse(collapsed)

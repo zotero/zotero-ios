@@ -225,6 +225,7 @@ final class WebSocketController {
             switch self.connectionState.value {
             case .connecting, .disconnected:
                 self._connect(apiKey: apiKey, completed: nil)
+
             case .subscribing:
                 self.subscribe(apiKey: apiKey, completion: { [weak self] error in
                     self?.processConnectionResponse(with: error, apiKey: apiKey)

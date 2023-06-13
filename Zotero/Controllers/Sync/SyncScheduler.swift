@@ -132,8 +132,10 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
         switch (nextLibrarySyncType, action.librarySyncType) {
         case (.all, .all):
             self.nextAction = (type, .all)
+
         case (.specific, .all):
             self.nextAction = (type, .all)
+
         case (.specific(let nextIds), .specific(let newIds)):
             let unionedIds = Array(Set(nextIds).union(Set(newIds)))
             self.nextAction = (type, .specific(unionedIds))
@@ -177,6 +179,7 @@ extension SyncController.SyncType: Comparable {
              (.normal, .full),
              (.ignoreIndividualDelays, .full):
             return true
+
         default:
             return false
         }

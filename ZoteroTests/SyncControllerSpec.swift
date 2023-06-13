@@ -79,10 +79,13 @@ final class SyncControllerSpec: QuickSpec {
                         switch object {
                         case .collection:
                             versionResponses[object] = ["AAAAAAAA": 1]
+
                         case .search:
                             versionResponses[object] = ["AAAAAAAA": 2]
+
                         case .item:
                             versionResponses[object] = ["AAAAAAAA": 3]
+
                         case .trash:
                             versionResponses[object] = ["BBBBBBBB": 3]
                         case .settings: break
@@ -102,6 +105,7 @@ final class SyncControllerSpec: QuickSpec {
                                                         "version": 1,
                                                         "library": libraryJson,
                                                         "data": ["name": "A"]]]
+
                         case .search:
                             objectResponses[object] = [["key": "AAAAAAAA",
                                                         "version": 2,
@@ -110,12 +114,14 @@ final class SyncControllerSpec: QuickSpec {
                                                                  "conditions": [["condition": "itemType",
                                                                                  "operator": "is",
                                                                                  "value": "thesis"]]]]]
+
                         case .item:
                             objectResponses[object] = [["key": "AAAAAAAA",
                                                         "version": 3,
                                                         "library": libraryJson,
                                                         "data": ["title": "A", "itemType": "thesis",
                                                                  "tags": [["tag": "A"]]]]]
+
                         case .trash:
                             objectResponses[object] = [["key": "BBBBBBBB",
                                                         "version": 4,
@@ -254,10 +260,13 @@ final class SyncControllerSpec: QuickSpec {
                         switch object {
                         case .collection:
                             versionResponses[object] = ["AAAAAAAA": 1]
+
                         case .search:
                             versionResponses[object] = ["AAAAAAAA": 2]
+
                         case .item:
                             versionResponses[object] = ["AAAAAAAA": 3]
+
                         case .trash:
                             versionResponses[object] = ["BBBBBBBB": 3]
                         case .settings: break
@@ -276,6 +285,7 @@ final class SyncControllerSpec: QuickSpec {
                                                         "version": 1,
                                                         "library": ["id": groupId, "type": "group", "name": "A"],
                                                         "data": ["name": "A"]]]
+
                         case .search:
                             objectResponses[object] = [["key": "AAAAAAAA",
                                                         "version": 2,
@@ -284,11 +294,13 @@ final class SyncControllerSpec: QuickSpec {
                                                                  "conditions": [["condition": "itemType",
                                                                                  "operator": "is",
                                                                                  "value": "thesis"]]]]]
+
                         case .item:
                             objectResponses[object] = [["key": "AAAAAAAA",
                                                         "version": 3,
                                                         "library": ["id": groupId, "type": "group", "name": "A"],
                                                         "data": ["title": "A", "itemType": "thesis", "tags": [["tag": "A"]]]]]
+
                         case .trash:
                             objectResponses[object] = [["key": "BBBBBBBB",
                                                         "version": 4,
@@ -643,11 +655,13 @@ final class SyncControllerSpec: QuickSpec {
                                         guard batches.first?.object == .item,
                                             let strKeys = batches.first?.keys else { return false }
                                         return strKeys.contains(unsyncedItemKey) && strKeys.contains(responseItemKey)
+
                                     default:
                                         return false
                                     }
                                 }).first
                                 expect(itemAction).toNot(beNil())
+
                             case .failure:
                                 fail("Sync aborted")
                             }
@@ -738,10 +752,12 @@ final class SyncControllerSpec: QuickSpec {
                             versionResponses[object] = ["AAAAAAAA": 1,
                                                         "BBBBBBBB": 1,
                                                         "CCCCCCCC": 1]
+
                         case .search:
                             versionResponses[object] = ["GGGGGGGG": 1,
                                                         "HHHHHHHH": 1,
                                                         "IIIIIIII": 1]
+
                         case .item:
                             versionResponses[object] = ["DDDDDDDD": 1,
                                                         "EEEEEEEE": 1,
@@ -772,6 +788,7 @@ final class SyncControllerSpec: QuickSpec {
                                                         "version": 1,
                                                         "library": ["id": 0, "type": "user", "name": "A"],
                                                         "data": ["name": "C", "unknownField": 5]]]
+
                         case .search:
                                                        // Unknown condition - should be queued
                             objectResponses[object] = [["key": "GGGGGGGG",
@@ -789,6 +806,7 @@ final class SyncControllerSpec: QuickSpec {
                                                                  "conditions": [["condition": "itemType",
                                                                                  "operator": "unknownOperator",
                                                                                  "value": "thesis"]]]]]
+
                         case .item:
                                                        // Unknown field - should be rejected
                             objectResponses[object] = [["key": "DDDDDDDD",
@@ -1767,6 +1785,7 @@ final class SyncControllerSpec: QuickSpec {
                             switch result {
                             case .success(let data):
                                 expect(data.0).to(equal(expected))
+
                             case .failure(let error):
                                 fail("Failure: \(error)")
                             }
@@ -1963,6 +1982,7 @@ final class SyncControllerSpec: QuickSpec {
                                 let changedItem = realm.objects(RItem.self).filter(.key(changedKey)).first
                                 expect(changedItem).toNot(beNil())
                                 expect(changedItem?.fields.first?.changed).to(beTrue())
+
                             case .failure(let error):
                                 fail("Failure: \(error)")
                             }
@@ -2036,6 +2056,7 @@ final class SyncControllerSpec: QuickSpec {
                             switch result {
                             case .success(let data):
                                 expect(data.0).to(equal(expected))
+
                             case .failure(let error):
                                 fail("Failure: \(error)")
                             }
@@ -2110,6 +2131,7 @@ final class SyncControllerSpec: QuickSpec {
                             switch result {
                             case .success(let data):
                                 expect(data.0).to(equal(expected))
+
                             case .failure(let error):
                                 fail("Failure: \(error)")
                             }
@@ -2230,6 +2252,7 @@ final class SyncControllerSpec: QuickSpec {
                             switch result {
                             case .success(let data):
                                 expect(data.0).to(equal(expected))
+
                             case .failure(let error):
                                 fail("Failure: \(error)")
                             }
@@ -2331,6 +2354,7 @@ final class SyncControllerSpec: QuickSpec {
                             case .success(let data):
                                 expect(data.0).to(equal(expected))
                                 expect(didCreateParent).to(beTrue())
+
                             case .failure(let error):
                                 fail("Failure: \(error)")
                             }
@@ -2401,10 +2425,13 @@ struct TestConflictCoordinator: ConflictReceiver & SyncRequestReceiver {
         case .objectsRemovedRemotely(let libraryId, let collections, let items, let searches, let tags):
             completed(.remoteDeletionOfActiveObject(libraryId: libraryId, toDeleteCollections: collections, toRestoreCollections: [],
                                                     toDeleteItems: items, toRestoreItems: [], searches: searches, tags: tags))
+
         case .removedItemsHaveLocalChanges(let keys, let libraryId):
             completed(.remoteDeletionOfChangedItem(libraryId: libraryId, toDelete: keys.map({ $0.0 }), toRestore: []))
+
         case .groupRemoved(let id, _):
             completed(.deleteGroup(id))
+
         case .groupWriteDenied(let id, _):
             completed(.revertGroupChanges(.group(id)))
         }

@@ -88,6 +88,7 @@ struct ItemResponse {
         case ItemTypes.annotation:
             try self.init(key: key, library: library, links: links, parsedDate: parsedDate, createdBy: createdBy, lastModifiedBy: lastModifiedBy, version: version, annotationData: data,
                           schemaController: schemaController)
+
         default:
             try self.init(key: key, rawType: itemType, library: library, links: links, parsedDate: parsedDate, createdBy: createdBy, lastModifiedBy: lastModifiedBy, version: version, data: data,
                           schemaController: schemaController)
@@ -363,6 +364,7 @@ struct ItemResponse {
                 if !hasRects {
                     throw SchemaError.missingField(key: key, field: FieldKeys.Item.Annotation.Position.rects, itemType: itemType)
                 }
+
             case .ink:
                 if !hasPaths {
                     throw SchemaError.missingField(key: key, field: FieldKeys.Item.Annotation.Position.paths, itemType: itemType)
@@ -420,9 +422,11 @@ struct ItemResponse {
         case ItemTypes.annotation:
             // Annotations don't have some fields that are returned by backend in schema, so we have to filter them out here manually.
             return FieldKeys.Item.Annotation.knownKeys.contains(field)
+
         case ItemTypes.attachment:
             // Attachments don't have some fields that are returned by backend in schema, so we have to filter them out here manually.
             return FieldKeys.Item.Attachment.knownKeys.contains(field)
+
         default:
             // Field not found in schema and is not a special case.
             return false

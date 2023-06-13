@@ -23,6 +23,7 @@ enum SyncError {
             switch syncObject {
             case .item:
                 return ErrorData(itemKeys: keys, libraryId: libraryId)
+
             case .collection, .search, .settings, .trash:
                 return ErrorData(itemKeys: nil, libraryId: libraryId)
             }
@@ -82,6 +83,7 @@ enum SyncError {
             switch self {
             case .versionMismatch:
                 return true
+
             default:
                 return false
             }
@@ -137,6 +139,7 @@ extension SyncError.Fatal: Equatable {
              (.allLibrariesFetchFailed, .allLibrariesFetchFailed),
              (.cancelled, .cancelled):
             return true
+
         default:
             return false
         }
@@ -148,6 +151,7 @@ extension SyncError.NonFatal: Equatable {
         switch (lhs, rhs) {
         case (.versionMismatch, .versionMismatch):
             return true
+
         default:
             return false
         }

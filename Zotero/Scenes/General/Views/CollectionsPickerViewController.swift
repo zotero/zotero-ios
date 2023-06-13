@@ -74,6 +74,7 @@ class CollectionsPickerViewController: UICollectionViewController {
         switch self.titleType {
         case .fixed(let title):
             self.title = title
+
         case .dynamic:
             self.updateTitle(with: self.viewModel.state.selected.count)
         }
@@ -126,8 +127,10 @@ class CollectionsPickerViewController: UICollectionViewController {
         switch selectedCount {
         case 0:
             self.title = L10n.Items.zeroCollectionsSelected
+
         case 1:
             self.title = L10n.Items.oneCollectionsSelected
+
         default:
             self.title = L10n.Items.manyCollectionsSelected(selectedCount)
         }

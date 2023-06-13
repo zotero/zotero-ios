@@ -64,6 +64,7 @@ struct PageIndexResponse {
                 throw Parsing.Error.incompatibleValue("groupId=\(libraryPart)")
             }
             libraryId = .group(groupId)
+
         default:
             throw Parsing.Error.incompatibleValue("libraryPart=\(libraryPart)")
         }

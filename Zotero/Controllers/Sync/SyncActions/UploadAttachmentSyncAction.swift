@@ -64,6 +64,7 @@ class UploadAttachmentSyncAction: SyncAction {
         switch self.libraryId {
         case .custom:
             return self.webDavController.sessionStorage.isEnabled ? self.webDavResult : self.zoteroResult
+
         case .group:
             return self.zoteroResult
         }

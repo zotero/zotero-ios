@@ -83,8 +83,10 @@ final class ItemsTableViewHandler: NSObject {
             switch location {
             case .local:
                 actions.append(ItemAction(type: .removeDownload))
+
             case .remote:
                 actions.append(ItemAction(type: .download))
+
             case .localAndChangedRemotely:
                 actions.append(ItemAction(type: .download))
                 actions.append(ItemAction(type: .removeDownload))
@@ -142,10 +144,13 @@ final class ItemsTableViewHandler: NSObject {
             switch action.type {
             case .delete, .trash:
                 contextualAction.backgroundColor = .systemRed
+
             case .duplicate, .restore:
                 contextualAction.backgroundColor = .systemBlue
+
             case .addToCollection, .createParent:
                 contextualAction.backgroundColor = .systemOrange
+
             case .removeFromCollection:
                 contextualAction.backgroundColor = .systemPurple
             case .sort, .filter, .copyCitation, .copyBibliography, .share, .download, .removeDownload: break
@@ -168,8 +173,10 @@ final class ItemsTableViewHandler: NSObject {
             case .attachment(let attachment):
                 let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
                 return .attachment(.stateFrom(type: attachment.type, progress: progress, error: error))
+
             case .doi:
                 return .doi
+
             case .url:
                 return .url
             }
@@ -351,8 +358,10 @@ extension ItemsTableViewHandler: UITableViewDelegate {
         case .attachment(let attachment):
             let parentKey = item.key == attachment.key ? nil : item.key
             self.viewModel.process(action: .openAttachment(attachment: attachment, parentKey: parentKey))
+
         case .doi(let doi):
             self.tapObserver.on(.next(.doi(doi)))
+
         case .url(let url):
             self.tapObserver.on(.next(.url(url)))
         }

@@ -50,6 +50,7 @@ struct ReadItemsDbRequest: DbResponseRequest {
                 switch filter {
                 case .downloadedFiles:
                     results = results.filter("fileDownloaded = true or any children.fileDownloaded = true")
+
                 case .tags(let tags):
                     var predicates: [NSPredicate] = []
                     for tag in tags {

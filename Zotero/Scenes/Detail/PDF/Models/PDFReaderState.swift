@@ -167,6 +167,7 @@ struct PDFReaderState: ViewModelState {
         switch key.type {
         case .database:
             return self.databaseAnnotations.filter(.key(key.key)).first.flatMap({ DatabaseAnnotation(item: $0) })
+
         case .document:
             return self.documentAnnotations[key.key]
         }

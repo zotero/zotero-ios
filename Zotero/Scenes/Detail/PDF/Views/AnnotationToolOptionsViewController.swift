@@ -88,6 +88,7 @@ class AnnotationToolOptionsViewController: UIViewController {
         switch UIDevice.current.userInterfaceIdiom {
         case .pad:
             return 4
+
         default:
             // Calculate number of circles which fit in whole screen width
             return Int((UIScreen.main.bounds.width - (2 * AnnotationToolOptionsViewController.horizontalInset)) / (AnnotationToolOptionsViewController.circleSize + AnnotationToolOptionsViewController.circleOffset))

@@ -126,6 +126,7 @@ extension RedirectWebViewHandler: WKNavigationDelegate {
             }
             // Don't load web
             decisionHandler(.cancel)
+
         default:
             self.startTimer()
             decisionHandler(.allow)

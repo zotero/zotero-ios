@@ -123,9 +123,11 @@ final class MainViewController: UISplitViewController {
                 case .collection(let key):
                     let rCollection = try coordinator.perform(request: ReadCollectionDbRequest(libraryId: libraryId, key: key))
                     collection = Collection(object: rCollection, itemCount: 0)
+
                 case .search(let key):
                     let rSearch = try coordinator.perform(request: ReadSearchDbRequest(libraryId: libraryId, key: key))
                     collection = Collection(object: rSearch)
+
                 case .custom(let type):
                     collection = Collection(custom: type)
                 }

@@ -411,6 +411,7 @@ final class UserControllers {
                 switch change {
                 case .translators:
                     self?.translatorsAndStylesController.updateFromRepo(type: .notification)
+
                 case .library(let libraryId, _):
                     self?.syncScheduler.webSocketUpdate(libraryId: libraryId)
                 }

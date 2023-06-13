@@ -161,6 +161,7 @@ final class DateParser {
                 day = datePart2.asInt
                 month = datePart1.asInt
                 order = (month > 0 ? "m" : "") + (day > 0 ? "d" : "")
+
             default:
                 day = datePart1.asInt
                 month = datePart2.asInt
@@ -321,10 +322,13 @@ final class DateParser {
         switch part.position {
         case .beginning:
             order = newPart + order
+
         case .ending:
             order += newPart
+
         case .before(let string):
             order = order.replacingOccurrences(of: string, with: (newPart + string))
+
         case .after(let string):
             order = order.replacingOccurrences(of: string, with: (string + newPart))
         }

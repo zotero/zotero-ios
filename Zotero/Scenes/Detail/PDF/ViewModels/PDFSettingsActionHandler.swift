@@ -20,22 +20,27 @@ struct PDFSettingsActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.settings.transition = pageTransition
             }
+
         case .setPageMode(let pageMode):
             self.update(viewModel: viewModel) { state in
                 state.settings.pageMode = pageMode
             }
+
         case .setDirection(let direction):
             self.update(viewModel: viewModel) { state in
                 state.settings.direction = direction
             }
+
         case .setPageFitting(let fitting):
             self.update(viewModel: viewModel) { state in
                 state.settings.pageFitting = fitting
             }
+
         case .setAppearanceMode(let appearanceMode):
             self.update(viewModel: viewModel) { state in
                 state.settings.appearanceMode = appearanceMode
             }
+
         case .setIdleTimerDisabled(let disabled):
             self.update(viewModel: viewModel) { state in
                 state.settings.idleTimerDisabled = disabled

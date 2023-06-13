@@ -219,6 +219,7 @@ class AnnotationToolbarViewController: UIViewController {
         switch rotation {
         case .vertical:
             self.setVerticalLayout(isCompactSize: isCompactSize)
+
         case .horizontal:
             self.setHorizontalLayout(isCompactSize: isCompactSize)
         }

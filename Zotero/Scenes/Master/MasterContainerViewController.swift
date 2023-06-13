@@ -108,6 +108,7 @@ final class MasterContainerViewController: UIViewController {
         case .hidden:
             self.set(bottomPosition: (self.previousBottomPosition ?? .default), containerHeight: visibleHeight)
             self.previousBottomPosition = nil
+
         default:
             self.previousBottomPosition = self.bottomPosition
 
@@ -176,6 +177,7 @@ final class MasterContainerViewController: UIViewController {
             switch newPosition {
             case .custom:
                 self.view.layoutIfNeeded()
+
             case .mostlyVisible, .default, .hidden:
                 UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [.curveEaseOut], animations: {
                     self.view.layoutIfNeeded()

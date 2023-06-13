@@ -69,26 +69,37 @@ final class ItemDetailCollectionViewHandler: NSObject {
             switch (lhs, rhs) {
             case (.addNote, .addNote), (.addCreator, .addCreator), (.addTag, .addTag), (.addAttachment, .addAttachment):
                 return true
+
             case (.abstract, .abstract):
                 return true
+
             case (.attachment(let lAttachment, let lType), .attachment(let rAttachment, let rType)):
                 return lAttachment == rAttachment && lType == rType
+
             case (.creator(let lCreator), .creator(let rCreator)):
                 return lCreator == rCreator
+
             case (.dateAdded(let lDate), .dateAdded(let rDate)):
                 return lDate == rDate
+
             case (.dateModified(let lDate), .dateModified(let rDate)):
                 return lDate == rDate
+
             case (.field(let lKey, let lMultiline), .field(let rKey, let rMultiline)):
                 return lKey == rKey && lMultiline == rMultiline
+
             case (.note(let lNote, let lIsSaving), .note(let rNote, let rIsSaving)):
                 return lNote == rNote && lIsSaving == rIsSaving
+
             case (.tag(let lTag, let lIsProcessing), .tag(let rTag, let rIsProcessing)):
                 return lTag == rTag && lIsProcessing == rIsProcessing
+
             case (.title, .title):
                 return true
+
             case (.type(let lValue), .type(let rValue)):
                 return lValue == rValue
+
             default:
                 return false
             }
@@ -98,42 +109,55 @@ final class ItemDetailCollectionViewHandler: NSObject {
             switch self {
             case .abstract:
                 hasher.combine(1)
+
             case .attachment(let attachment, let type):
                 hasher.combine(2)
                 hasher.combine(attachment)
                 hasher.combine(type)
+
             case .creator(let creator):
                 hasher.combine(3)
                 hasher.combine(creator)
+
             case .dateAdded(let date):
                 hasher.combine(4)
                 hasher.combine(date)
+
             case .dateModified(let date):
                 hasher.combine(5)
                 hasher.combine(date)
+
             case .field(let field, let multiline):
                 hasher.combine(6)
                 hasher.combine(field)
                 hasher.combine(multiline)
+
             case .note(let note, let isSaving):
                 hasher.combine(7)
                 hasher.combine(note)
                 hasher.combine(isSaving)
+
             case .tag(let tag, let isSaving):
                 hasher.combine(8)
                 hasher.combine(tag)
                 hasher.combine(isSaving)
+
             case .title:
                 hasher.combine(9)
+
             case .type(let value):
                 hasher.combine(10)
                 hasher.combine(value)
+
             case .addTag:
                 hasher.combine(11)
+
             case .addNote:
                 hasher.combine(12)
+
             case .addCreator:
                 hasher.combine(13)
+
             case .addAttachment:
                 hasher.combine(14)
             }
@@ -143,6 +167,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             switch self {
             case .attachment(let attachment, _):
                 return attachment.key == key
+
             default:
                 return false
             }
@@ -339,8 +364,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
             switch _row {
             case .note(let note, _) where note.key == itemKey:
                 row = _row
+
             case .attachment(let attachment, _) where attachment.key == itemKey:
                 row = _row
+
             default:
                 continue
             }
@@ -575,6 +602,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             switch data.0 {
             case .creator:
                 cell.accessories = self.viewModel.state.isEditing ? [.disclosureIndicator(), .delete(), .reorder()] : []
+
             default:
                 cell.accessories = []
             }
@@ -692,6 +720,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             let height = ItemDetailLayout.sectionHeaderHeight - ItemDetailLayout.separatorHeight
             return NSCollectionLayoutBoundarySupplementaryItem(layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(height)),
                                                                elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
+
         default:
             return nil
         }
@@ -733,12 +762,16 @@ final class ItemDetailCollectionViewHandler: NSObject {
         switch section {
         case .title:
             return true
+
         case .abstract:
             return false
+
         case .type, .fields, .creators:
             return isEditing
+
         case .attachments, .notes, .tags:
             return !isLastRow
+
         case .dates:
             return isEditing || isLastRow
         }
@@ -748,6 +781,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         switch section {
         case .notes, .attachments, .tags:
             return ItemDetailLayout.iconWidth + ItemDetailLayout.horizontalInset + 17
+
         case .abstract, .creators, .dates, .fields, .title, .type:
             return ItemDetailLayout.horizontalInset
         }
@@ -763,8 +797,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
         switch section {
         case .notes:
             view.setup(with: L10n.ItemDetail.notes)
+
         case .attachments:
             view.setup(with: L10n.ItemDetail.attachments)
+
         case .tags:
             view.setup(with: L10n.ItemDetail.tags)
         default: break
@@ -891,6 +927,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
                         return .insert(offset: offset, element: creator.id, associatedWith: associatedWith)
                     default: return nil
                     }
+
                 case .remove(let offset, let element, let associatedWith):
                     switch element {
                     case .creator(let creator):
@@ -980,6 +1017,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             switch field.key {
             case FieldKeys.Item.Attachment.url:
                 self.observer.on(.next(.openUrl(field.value)))
+
             case FieldKeys.Item.doi:
                 self.observer.on(.next(.openDoi(field.value)))
             default: break

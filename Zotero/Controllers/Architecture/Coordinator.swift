@@ -43,6 +43,7 @@ extension Coordinator {
         switch sourceView {
         case .item(let item):
             controller.popoverPresentationController?.barButtonItem = item
+
         case .view(let sourceView, let sourceRect):
             controller.popoverPresentationController?.sourceView = sourceView
             if let rect = sourceRect {

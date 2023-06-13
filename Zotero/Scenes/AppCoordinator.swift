@@ -408,6 +408,7 @@ final class AppCoordinator: NSObject {
                       case .ready:
                           completion()
                           self.downloadDisposeBag = nil
+
                       case .cancelled, .failed:
                           self.downloadDisposeBag = nil
                       case .progress: break
@@ -520,12 +521,16 @@ extension AppCoordinator: DebugLoggingCoordinator {
         switch error {
         case .start:
             message = L10n.Errors.Logging.start
+
         case .contentReading, .cantCreateData:
             message = L10n.Errors.Logging.contentReading
+
         case .noLogsRecorded:
             message = L10n.Errors.Logging.noLogsRecorded
+
         case .upload:
             message = L10n.Errors.Logging.upload
+
         case .responseParsing:
             message = L10n.Errors.Logging.responseParsing
         }

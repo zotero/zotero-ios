@@ -224,6 +224,7 @@ class AttachmentDownloadOperation: AsynchronousOperation {
             self.request?.cancel()
             self.disposeBag = nil
             self.request = nil
+
         case .unzipping:
             // Request already finished, cancel unzipping action.
             self.zipProgress?.cancel()

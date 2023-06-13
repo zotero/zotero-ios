@@ -29,6 +29,7 @@ final class MasterCoordinator {
         switch UIDevice.current.userInterfaceIdiom {
         case .pad:
             self.startPad()
+
         default:
             self.startPhone()
         }

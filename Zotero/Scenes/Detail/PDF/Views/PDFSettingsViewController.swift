@@ -69,8 +69,10 @@ final class PDFSettingsViewController: UICollectionViewController {
         switch state.settings.appearanceMode {
         case .automatic:
             self.overrideUserInterfaceStyle = .unspecified
+
         case .light:
             self.overrideUserInterfaceStyle = .light
+
         case .dark:
             self.overrideUserInterfaceStyle = .dark
         }
@@ -93,6 +95,7 @@ final class PDFSettingsViewController: UICollectionViewController {
             switch row {
             case .sleep:
                 return collectionView.dequeueConfiguredReusableCell(using: switchRegistration, for: indexPath, item: ())
+
             default:
                 return collectionView.dequeueConfiguredReusableCell(using: segmentedRegistration, for: indexPath, item: row)
             }
@@ -142,6 +145,7 @@ final class PDFSettingsViewController: UICollectionViewController {
                 }
                 actions = [UIAction(title: L10n.Pdf.Settings.PageTransition.jump, handler: { _ in self.viewModel.process(action: .setTransition(.scrollPerSpread)) }),
                            UIAction(title: L10n.Pdf.Settings.PageTransition.continuous, handler: { _ in self.viewModel.process(action: .setTransition(.scrollContinuous)) })]
+
             case .pageMode:
                 title = L10n.Pdf.Settings.PageMode.title
                 getSelectedIndex = { [weak self] in
@@ -151,6 +155,7 @@ final class PDFSettingsViewController: UICollectionViewController {
                 actions = [UIAction(title: L10n.Pdf.Settings.PageMode.single, handler: { _ in self.viewModel.process(action: .setPageMode(.single)) }),
                            UIAction(title: L10n.Pdf.Settings.PageMode.double, handler: { _ in self.viewModel.process(action: .setPageMode(.double)) }),
                            UIAction(title: L10n.Pdf.Settings.PageMode.automatic, handler: { _ in self.viewModel.process(action: .setPageMode(.automatic)) })]
+
             case .scrollDirection:
                 title = L10n.Pdf.Settings.ScrollDirection.title
                 getSelectedIndex = { [weak self] in
@@ -159,6 +164,7 @@ final class PDFSettingsViewController: UICollectionViewController {
                 }
                 actions = [UIAction(title: L10n.Pdf.Settings.ScrollDirection.horizontal, handler: { _ in self.viewModel.process(action: .setDirection(.horizontal)) }),
                            UIAction(title: L10n.Pdf.Settings.ScrollDirection.vertical, handler: { _ in self.viewModel.process(action: .setDirection(.vertical)) })]
+
             case .pageFitting:
                 title = L10n.Pdf.Settings.PageFitting.title
                 getSelectedIndex = { [weak self] in
@@ -168,6 +174,7 @@ final class PDFSettingsViewController: UICollectionViewController {
                 actions = [UIAction(title: L10n.Pdf.Settings.PageFitting.fit, handler: { _ in self.viewModel.process(action: .setPageFitting(.fit)) }),
                            UIAction(title: L10n.Pdf.Settings.PageFitting.fill, handler: { _ in self.viewModel.process(action: .setPageFitting(.fill)) }),
                            UIAction(title: L10n.Pdf.Settings.PageFitting.automatic, handler: { _ in self.viewModel.process(action: .setPageFitting(.adaptive)) })]
+
             case .appearance:
                 title = L10n.Pdf.Settings.Appearance.title
                 getSelectedIndex = { [weak self] in

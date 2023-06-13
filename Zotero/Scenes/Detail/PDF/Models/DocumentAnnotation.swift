@@ -42,6 +42,7 @@ extension DocumentAnnotation: Annotation {
         switch library.identifier {
         case .custom:
             return .editable
+
         case .group:
             if !library.metadataEditable {
                 return .notEditable

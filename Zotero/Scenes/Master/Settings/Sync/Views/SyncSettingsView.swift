@@ -180,6 +180,7 @@ struct WebDavSettings: View {
                 switch nsError.code {
                 case NSURLErrorNotConnectedToInternet:
                     return L10n.Errors.Settings.Webdav.internetConnection
+
                 case NSURLErrorCannotConnectToHost, NSURLErrorTimedOut:
                     return L10n.Errors.Settings.Webdav.hostNotFound
                 default: break
@@ -192,6 +193,7 @@ struct WebDavSettings: View {
                 switch statusCode {
                 case 401:
                     return L10n.Errors.Settings.Webdav.unauthorized
+
                 case 403:
                     return L10n.Errors.Settings.Webdav.forbidden
                 default: return nil

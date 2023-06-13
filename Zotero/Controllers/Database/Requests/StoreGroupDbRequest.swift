@@ -56,6 +56,7 @@ struct StoreGroupDbRequest: DbRequest {
                 canEditFiles = (self.response.data.admins ?? []).contains(self.userId)
             case "members":
                 canEditFiles = true
+
             default:
                 canEditFiles = false
             }

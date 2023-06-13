@@ -35,6 +35,7 @@ struct BackgroundUpload: Codable {
             switch self {
             case .zotero(let uploadKey):
                 try container.encode(uploadKey, forKey: .zoteroUploadKey)
+
             case .webdav(let mtime):
                 try container.encode(mtime, forKey: .webdavMtime)
             }

@@ -75,6 +75,7 @@ final class LibrariesViewController: UIViewController {
         guard let visibleLibraryId = self.coordinatorDelegate?.visibleLibraryId else { return }
         switch visibleLibraryId {
         case .custom: break
+
         case .group(let groupId):
             if state.groupLibraries?.filter(.groupId(groupId)).first == nil {
                 // Currently visible group was recently deleted, show default library
@@ -116,8 +117,10 @@ extension LibrariesViewController: UITableViewDataSource, UITableViewDelegate {
         switch section {
         case LibrariesViewController.customLibrariesSection:
             return self.viewModel.state.customLibraries?.count ?? 0
+
         case LibrariesViewController.groupLibrariesSection:
             return self.viewModel.state.groupLibraries?.count ?? 0
+
         default:
             return 0
         }
@@ -171,6 +174,7 @@ extension LibrariesViewController: UITableViewDataSource, UITableViewDelegate {
         case LibrariesViewController.customLibrariesSection:
             let library = self.viewModel.state.customLibraries?[indexPath.row]
             return library.flatMap({ ($0.type.libraryName, .normal) })
+
         case LibrariesViewController.groupLibrariesSection:
             guard let library = self.viewModel.state.groupLibraries?[indexPath.row] else { return nil }
             let state: LibraryCell.LibraryState
@@ -182,6 +186,7 @@ extension LibrariesViewController: UITableViewDataSource, UITableViewDelegate {
                 state = .normal
             }
             return (library.name, state)
+
         default:
             return nil
         }
@@ -192,9 +197,11 @@ extension LibrariesViewController: UITableViewDataSource, UITableViewDelegate {
         case LibrariesViewController.customLibrariesSection:
             let library = self.viewModel.state.customLibraries?[indexPath.row]
             return library.flatMap({ Library(customLibrary: $0) })
+
         case LibrariesViewController.groupLibrariesSection:
             let library = self.viewModel.state.groupLibraries?[indexPath.row]
             return library.flatMap({ Library(group: $0) })
+
         default:
             return nil
         }

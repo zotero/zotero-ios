@@ -54,8 +54,10 @@ struct FilenameFormatter {
         switch creators.count {
         case 0:
             return nil
+
         case 1:
             return creators.first?.summaryName
+
         case 2:
             return "\(creators.first?.summaryName ?? "") and \(creators.last?.summaryName ?? "")"
         default:

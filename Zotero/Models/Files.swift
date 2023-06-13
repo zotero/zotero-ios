@@ -216,6 +216,7 @@ extension LibraryIdentifier {
             case .myLibrary:
                 return "custom_my_library"
             }
+
         case .group(let identifier):
             return "group_\(identifier)"
         }

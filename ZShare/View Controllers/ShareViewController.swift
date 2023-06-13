@@ -247,12 +247,16 @@ final class ShareViewController: UIViewController {
         switch attachmentState {
         case .decoding:
             DDLogInfo("State: decoding")
+
         case .downloading(let progress):
             DDLogInfo("State: downloading \(progress)")
+
         case .failed(let error):
             DDLogInfo("State: failed with \(error)")
+
         case .processed:
             DDLogInfo("State: processed")
+
         case .translating(let name):
             DDLogInfo("State: translating with \(name)")
         }
@@ -335,6 +339,7 @@ final class ShareViewController: UIViewController {
 
             self.attachmentIcon.alpha = 0.5
             self.attachmentTitleLabel.alpha = 0.5
+
         default:
             if !self.attachmentContainer.isHidden {
                 self.attachmentProgressView.isHidden = true
@@ -429,8 +434,10 @@ final class ShareViewController: UIViewController {
             switch error {
             case .downloadedFileNotPdf, .apiFailure:
                 self.failureLabel.textAlignment = .center
+
             case .quotaLimit:
                 self.failureLabel.textAlignment = .left
+
             default:
                 if !hasItem {
                     message += "\n" + L10n.Errors.Shareext.failedAdditional
@@ -448,39 +455,54 @@ final class ShareViewController: UIViewController {
         switch error {
         case .webDavNotVerified:
             return L10n.Errors.Shareext.webdavNotVerified
+
         case .cantLoadSchema:
             return L10n.Errors.Shareext.cantLoadSchema
+
         case .cantLoadWebData:
             return L10n.Errors.Shareext.cantLoadData
+
         case .downloadFailed:
             return L10n.Errors.Shareext.downloadFailed
+
         case .itemsNotFound:
             return L10n.Errors.Shareext.itemsNotFound
+
         case .parseError:
             return L10n.Errors.Shareext.parsingError
+
         case .schemaError:
             return L10n.Errors.Shareext.schemaError
+
         case .webViewError(let error):
             switch error {
             case .incompatibleItem:
                 return L10n.Errors.Shareext.incompatibleItem
+
             case .javascriptCallMissingResult:
                 return L10n.Errors.Shareext.javascriptFailed
+
             case .noSuccessfulTranslators:
                 return nil
             case .cantFindFile, .webExtractionMissingJs: // should never happen
                 return L10n.Errors.Shareext.missingBaseFiles
+
             case .webExtractionMissingData:
                 return L10n.Errors.Shareext.responseMissingData
             }
+
         case .unknown, .expired:
             return L10n.Errors.Shareext.unknown
+
         case .fileMissing:
             return L10n.Errors.Shareext.missingFile
+
         case .apiFailure:
             return L10n.Errors.Shareext.apiError
+
         case .webDavFailure:
             return L10n.Errors.Shareext.webdavError
+
         case .quotaLimit(let libraryId):
             switch libraryId {
             case .custom:
@@ -491,6 +513,7 @@ final class ShareViewController: UIViewController {
                 let groupName = group?.name ?? "\(groupId)"
                 return L10n.Errors.Shareext.groupQuotaReached(groupName)
             }
+
         case .downloadedFileNotPdf, .md5Missing, .mtimeMissing:
             return nil
         }

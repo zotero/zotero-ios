@@ -196,10 +196,13 @@ struct AnnotationConverter {
         switch zoteroAnnotation.type {
         case .image:
             annotation = self.areaAnnotation(from: zoteroAnnotation, type: type, color: color, boundingBoxConverter: boundingBoxConverter)
+
         case .highlight:
             annotation = self.highlightAnnotation(from: zoteroAnnotation, type: type, color: color, alpha: alpha, boundingBoxConverter: boundingBoxConverter)
+
         case .note:
             annotation = self.noteAnnotation(from: zoteroAnnotation, type: type, color: color, boundingBoxConverter: boundingBoxConverter)
+
         case .ink:
             annotation = self.inkAnnotation(from: zoteroAnnotation, type: type, color: color, boundingBoxConverter: boundingBoxConverter)
         }
@@ -235,6 +238,7 @@ struct AnnotationConverter {
         switch type {
         case .export:
             square = PSPDFKit.SquareAnnotation()
+
         case .zotero:
             square = SquareAnnotation()
         }
@@ -253,6 +257,7 @@ struct AnnotationConverter {
         switch type {
         case .export:
             highlight = PSPDFKit.HighlightAnnotation()
+
         case .zotero:
             highlight = HighlightAnnotation()
         }
@@ -272,6 +277,7 @@ struct AnnotationConverter {
         switch type {
         case .export:
             note = PSPDFKit.NoteAnnotation(contents: annotation.comment)
+
         case .zotero:
             note = NoteAnnotation(contents: annotation.comment)
         }

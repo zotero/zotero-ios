@@ -48,16 +48,21 @@ struct UpdateVersionsDbRequest: DbRequest {
         switch type {
         case .deletions:
             versions.deletions = version
+
         case .object(let object):
             switch object {
             case .collection:
                 versions.collections = version
+
             case .item:
                 versions.items = version
+
             case .trash:
                 versions.trash = version
+
             case .search:
                 versions.searches = version
+
             case .settings:
                 versions.settings = version
             }

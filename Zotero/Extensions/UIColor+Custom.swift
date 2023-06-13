@@ -42,8 +42,10 @@ extension UIColor {
                     return (result ?? "") + "\(char)\(char)"
                 }
             }
+
         case 7 where startsWithHashag, 6:
             return hex
+
         default:
             return nil
         }

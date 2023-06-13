@@ -29,6 +29,7 @@ extension RetryDelay {
         switch self {
         case .constant(let time):
             return time
+
         case .progressive(let initial, let multiplier, let maxDelay):
             let delay = attempt == 1 ? initial : (initial * pow(multiplier, Double(attempt - 1)))
             return min(maxDelay, delay)
@@ -238,6 +239,7 @@ private struct ResponseCreator {
         switch mimeType {
         case "text/plain", "text/html", "application/xml", "application/json":
             return data.flatMap({ String(data: $0, encoding: .utf8) })
+
         default:
             return nil
         }

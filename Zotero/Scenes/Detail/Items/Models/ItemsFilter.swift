@@ -16,8 +16,10 @@ enum ItemsFilter: Equatable {
         switch (lhs, rhs) {
         case (.downloadedFiles, .downloadedFiles):
             return true
+
         case (.tags(let lTags), .tags(let rTags)):
             return lTags == rTags
+
         default:
             return false
         }

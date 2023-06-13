@@ -25,6 +25,7 @@ struct Translator {
                 updatedMetadata["translatorID"] = Translator.value(from: value)
             case "type":
                 updatedMetadata["translatorType"] = Translator.value(from: value)
+
             default:
                 updatedMetadata[key] = Translator.value(from: value)
             }
@@ -40,6 +41,7 @@ struct Translator {
             metadata["translatorID"] = Translator.value(from: value)
         case "type":
             metadata["translatorType"] = Translator.value(from: value)
+
         default:
             metadata[key] = Translator.value(from: value)
         }

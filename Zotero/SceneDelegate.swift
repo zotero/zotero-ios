@@ -94,6 +94,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                                                  switch result {
                                                  case .success(let isLoggedIn):
                                                      self?.coordinator.showMainScreen(isLoggedIn: isLoggedIn)
+
                                                  case .failure:
                                                      self?.coordinator.showMainScreen(isLoggedIn: false)
                                                  }

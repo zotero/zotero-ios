@@ -64,6 +64,7 @@ struct AttributedTagStringGenerator {
                 color = UIColor(dynamicProvider: { traitCollection -> UIColor in
                     return traitCollection.userInterfaceStyle == .dark ? .white : .darkText
                 })
+
             case .filled:
                 color = tagInfo.color
             }

@@ -109,8 +109,10 @@ final class ItemsViewController: UIViewController {
                                 case .metadata(let item):
                                     self.showItemDetail(for: item)
                                     self.resetActiveSearch()
+
                                 case .doi(let doi):
                                     self.coordinatorDelegate?.show(doi: doi)
+
                                 case .url(let url):
                                     self.coordinatorDelegate?.show(url: url)
                                 }
@@ -421,6 +423,7 @@ final class ItemsViewController: UIViewController {
             case .initial(let results):
                 self.tableViewHandler.reloadAll(snapshot: results.freeze())
                 self.updateTagFilter(with: self.viewModel.state)
+
             case .update(let results, let deletions, let insertions, let modifications):
                 let correctedModifications = Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions)
                 self.viewModel.process(action: .updateKeys(items: results, deletions: deletions, insertions: insertions, modifications: correctedModifications))
@@ -428,6 +431,7 @@ final class ItemsViewController: UIViewController {
                     self.updateTagFilter(with: self.viewModel.state)
                 }
                 self.updateEmptyTrashButton(toEnabled: !results.isEmpty)
+
             case .error(let error):
                 DDLogError("ItemsViewController: could not load results - \(error)")
                 self.viewModel.process(action: .observingFailed)
@@ -454,6 +458,7 @@ final class ItemsViewController: UIViewController {
                         // Re-enable batched reloads when items are synced.
                         self.tableViewHandler.enableReloadAnimations()
                     }
+
                 default:
                     // Re-enable batched reloads when items are synced.
                     self.tableViewHandler.enableReloadAnimations()
@@ -585,24 +590,28 @@ final class ItemsViewController: UIViewController {
             action = { [weak self] _ in
                 self?.viewModel.process(action: .toggleSelectionState)
             }
+
         case .selectAll:
             title = L10n.Items.selectAll
             accessibilityLabel = L10n.Accessibility.Items.selectAllItems
             action = { [weak self] _ in
                 self?.viewModel.process(action: .toggleSelectionState)
             }
+
         case .done:
             title = L10n.done
             accessibilityLabel = L10n.done
             action = { [weak self] _ in
                 self?.viewModel.process(action: .stopEditing)
             }
+
         case .select:
             title = L10n.select
             accessibilityLabel = L10n.Accessibility.Items.selectItems
             action = { [weak self] _ in
                 self?.viewModel.process(action: .startEditing)
             }
+
         case .add:
             image = UIImage(systemName: "plus")
             accessibilityLabel = L10n.Items.new

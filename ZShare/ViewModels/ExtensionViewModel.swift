@@ -96,6 +96,7 @@ final class ExtensionViewModel {
                 switch self {
                 case .failed(let error):
                     return error
+
                 default:
                     return nil
                 }
@@ -105,6 +106,7 @@ final class ExtensionViewModel {
                 switch self {
                 case .decoding, .translating, .downloading:
                     return true
+
                 default:
                     return false
                 }
@@ -113,6 +115,7 @@ final class ExtensionViewModel {
             var isSubmittable: Bool {
                 switch self {
                 case .processed: return true
+
                 case .failed(let error):
                     if error.isFatal {
                         return false
@@ -121,6 +124,7 @@ final class ExtensionViewModel {
                     switch error {
                     case .apiFailure, .quotaLimit:
                         return false
+
                     default:
                         return true
                     }
@@ -616,9 +620,11 @@ final class ExtensionViewModel {
                                    case .loadedItems(let data, let cookies, let userAgent, let referrer):
                                        DDLogInfo("ExtensionViewModel: webview action - loaded \(data.count) zotero items")
                                        self?.processItems(data, cookies: cookies, userAgent: userAgent, referrer: referrer)
+
                                    case .selectItem(let data):
                                        DDLogInfo("ExtensionViewModel: webview action - loaded \(data.count) list items")
                                        self?.state.itemPickerState = State.ItemPickerState(items: data, picked: nil)
+
                                    case .reportProgress(let progress):
                                        DDLogInfo("ExtensionViewModel: webview action - progress \(progress)")
                                        self?.state.attachmentState = .translating(progress)
@@ -863,6 +869,7 @@ final class ExtensionViewModel {
         case .picked(let library, let collection):
             libraryId = library.identifier
             collectionKeys = collection?.identifier.key.flatMap({ [$0] }) ?? []
+
         default:
             libraryId = ExtensionViewModel.defaultLibraryId
             collectionKeys = []
@@ -986,9 +993,11 @@ final class ExtensionViewModel {
                     return .quotaLimit(libraryId)
                 }
                 return defaultError
+
             default:
                 return defaultError
             }
+
         default:
             return defaultError
         }
@@ -1153,6 +1162,7 @@ final class ExtensionViewModel {
             DDLogInfo("ExtensionViewModel: prepare upload for local file")
             return self.prepareAndSubmit(attachment: data.attachment, collections: collections, tags: tags, file: data.file, tmpFile: location, libraryId: data.libraryId, userId: data.userId,
                                          apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
+
         case .translated(let item, let location):
             DDLogInfo("ExtensionViewModel: prepare upload for local file")
             return self.prepareAndSubmit(item: item, attachment: data.attachment, file: data.file, tmpFile: location, libraryId: data.libraryId, userId: data.userId, apiClient: apiClient,

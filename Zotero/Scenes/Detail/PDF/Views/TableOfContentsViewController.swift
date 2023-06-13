@@ -125,6 +125,7 @@ class TableOfContentsViewController: UIViewController {
             switch row {
             case .searchBar:
                 return collectionView.dequeueConfiguredReusableCell(using: searchRegistration, for: indexPath, item: (self?.viewModel.state.search ?? ""))
+
             case .outline(let outline):
                 return collectionView.dequeueConfiguredReusableCell(using: outlineRegistration, for: indexPath, item: outline)
             }

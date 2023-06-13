@@ -26,6 +26,7 @@ final class WebDavPropParserDelegate: NSObject, XMLParserDelegate {
             switch element {
             case .mtime:
                 self.mtime = Int(self.currentValue)
+
             case .hash:
                 self.fileHash = self.currentValue
             }

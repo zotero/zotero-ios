@@ -22,6 +22,7 @@ extension ItemAccessory {
                 return .attachment(new)
             }
             return nil
+
         case .doi, .url:
             return nil
         }

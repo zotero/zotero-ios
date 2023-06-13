@@ -31,8 +31,10 @@ class ItemDetailAttachmentContentView: UIView {
             switch type {
             case .default, .disabled:
                 self.fileView.set(state: .ready(attachment.type), style: .detail)
+
             case .inProgress(let progress):
                 self.fileView.set(state: .progress(progress), style: .detail)
+
             case .failed(let error):
                 self.fileView.set(state: .failed(attachment.type, error), style: .detail)
             }

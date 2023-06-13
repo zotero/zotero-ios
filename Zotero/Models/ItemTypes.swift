@@ -99,6 +99,7 @@ extension ItemTypes {
             return Asset.Images.ItemTypes.videoRecording.name
         case "webpage":
             return Asset.Images.ItemTypes.webPage.name
+
         default:
             return Asset.Images.ItemTypes.document.name
         }

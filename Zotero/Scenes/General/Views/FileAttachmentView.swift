@@ -282,6 +282,7 @@ final class FileAttachmentView: UIView {
             case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.detailLinkedUrl
             case .list: return Asset.Images.Attachments.listLink
             }
+
         case .file(_, let contentType, _, let linkType):
             switch linkType {
             case .embeddedImage:
@@ -289,6 +290,7 @@ final class FileAttachmentView: UIView {
                 case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.detailImage
                 case .list: return Asset.Images.Attachments.listImage
                 }
+
             case .linkedFile:
                 switch style {
                 case .detail, .shareExtension, .lookup:
@@ -296,6 +298,7 @@ final class FileAttachmentView: UIView {
                     case "application/pdf": return Asset.Images.Attachments.detailLinkedPdf
                     default: return Asset.Images.Attachments.detailLinkedDocument
                     }
+
                 case .list:
                     return Asset.Images.Attachments.listLink
                 }
@@ -304,6 +307,7 @@ final class FileAttachmentView: UIView {
                 case .list: return Asset.Images.Attachments.listWebPageSnapshot
                 case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.detailWebpageSnapshot
                 }
+
             case .importedFile, .importedUrl:
                 switch contentType {
                 case "image/png", "image/jpeg", "image/gif":
@@ -316,6 +320,7 @@ final class FileAttachmentView: UIView {
                     case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.detailPdf
                     case .list: return Asset.Images.Attachments.listPdf
                     }
+
                 default:
                     switch style {
                     case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.detailDocument

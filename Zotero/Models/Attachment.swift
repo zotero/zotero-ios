@@ -78,6 +78,7 @@ struct Attachment: Identifiable, Equatable {
                               dateAdded: self.dateAdded,
                               key: self.key,
                               libraryId: self.libraryId)
+
         case .url, .file:
             return nil
         }
@@ -92,6 +93,7 @@ struct Attachment: Identifiable, Equatable {
                               dateAdded: self.dateAdded,
                               key: self.key,
                               libraryId: self.libraryId)
+
         case .url, .file:
             return nil
         }

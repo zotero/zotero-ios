@@ -120,12 +120,15 @@ final class AttachmentDownloader {
             for (attachment, parentKey) in attachments {
                 switch attachment.type {
                 case .url: break
+
                 case .file(let filename, let contentType, let location, let linkType):
                     switch linkType {
                     case .linkedFile, .embeddedImage: break
+
                     case .importedFile, .importedUrl:
                         switch location {
                         case .local: break
+
                         case .remote, .remoteMissing, .localAndChangedRemotely:
                             DDLogInfo("AttachmentDownloader: batch download remote\(location == .remoteMissing ? "ly missing" : "") file \(attachment.key)")
                             let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
@@ -152,21 +155,25 @@ final class AttachmentDownloader {
         case .url:
             DDLogInfo("AttachmentDownloader: open url \(attachment.key)")
             self.observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .ready)))
+
         case .file(let filename, let contentType, let location, let linkType):
             switch linkType {
             case .linkedFile, .embeddedImage:
                 DDLogWarn("AttachmentDownloader: tried opening linkedFile or embeddedImage \(attachment.key)")
                 self.observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .failed(Error.incompatibleAttachment))))
+
             case .importedFile, .importedUrl:
                 switch location {
                 case .local:
                     DDLogInfo("AttachmentDownloader: open local file \(attachment.key)")
                     self.observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .ready)))
+
                 case .remote, .remoteMissing:
                     DDLogInfo("AttachmentDownloader: download remote\(location == .remoteMissing ? "ly missing" : "") file \(attachment.key)")
 
                     let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
                     self.download(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, hasLocalCopy: false)
+
                 case .localAndChangedRemotely:
                     let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
 

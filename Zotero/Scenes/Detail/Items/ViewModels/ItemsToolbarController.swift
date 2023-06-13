@@ -89,6 +89,7 @@ final class ItemsToolbarController {
                 case .downloadedFiles: return true
                 }
             })
+
         default:
             return filters
         }
@@ -101,6 +102,7 @@ final class ItemsToolbarController {
             switch item.tag {
             case ItemsToolbarController.barButtonItemEmptyTag:
                 item.isEnabled = !selectedItems.isEmpty
+
             case ItemsToolbarController.barButtonItemSingleTag:
                 item.isEnabled = selectedItems.count == 1
             default: break
@@ -179,14 +181,19 @@ final class ItemsToolbarController {
             switch action.type {
             case .addToCollection:
                 item.accessibilityLabel = L10n.Accessibility.Items.addToCollection
+
             case .trash:
                 item.accessibilityLabel = L10n.Accessibility.Items.trash
+
             case .delete:
                 item.accessibilityLabel = L10n.Accessibility.Items.delete
+
             case .removeFromCollection:
                 item.accessibilityLabel = L10n.Accessibility.Items.removeFromCollection
+
             case .restore:
                 item.accessibilityLabel = L10n.Accessibility.Items.restore
+
             case .share:
                 item.accessibilityLabel = L10n.Accessibility.Items.share
             case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .removeDownload, .download, .duplicate: break

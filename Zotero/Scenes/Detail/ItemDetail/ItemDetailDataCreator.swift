@@ -29,6 +29,7 @@ struct ItemDetailDataCreator {
         switch type {
         case .new(let itemType, let child):
             return try creationData(itemType: itemType, child: child, schemaController: schemaController, dateParser: dateParser, urlDetector: urlDetector, doiDetector: doiDetector)
+
         case .existing(let item, let ignoreChildren):
             return try itemData(item: item, ignoreChildren: ignoreChildren, schemaController: schemaController, dateParser: dateParser, fileStorage: fileStorage, urlDetector: urlDetector, doiDetector: doiDetector)
         }
@@ -88,6 +89,7 @@ struct ItemDetailDataCreator {
             switch field.key {
             case FieldKeys.Item.abstract:
                 abstract = field.value
+
             default:
                 values[field.key] = field.value
             }
@@ -248,8 +250,10 @@ struct ItemDetailDataCreator {
         switch key {
         case FieldKeys.Item.doi:
             return doiDetector(value)
+
         case FieldKeys.Item.Attachment.url:
             return urlDetector.isUrl(string: value)
+
         default:
             return false
         }

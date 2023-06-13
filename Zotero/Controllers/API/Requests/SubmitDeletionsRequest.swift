@@ -32,10 +32,13 @@ struct SubmitDeletionsRequest: ApiRequest {
         switch self.objectType {
         case .collection:
             return ["collectionKey": joinedKeys]
+
         case .item, .trash:
             return ["itemKey": joinedKeys]
+
         case .search:
             return ["searchKey": joinedKeys]
+
         case .settings:
             return nil
         }

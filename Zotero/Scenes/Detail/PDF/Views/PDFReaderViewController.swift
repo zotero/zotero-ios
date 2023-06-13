@@ -352,8 +352,10 @@ class PDFReaderViewController: UIViewController {
         switch settings.appearanceMode {
         case .automatic:
             self.navigationController?.overrideUserInterfaceStyle = .unspecified
+
         case .light:
             self.navigationController?.overrideUserInterfaceStyle = .light
+
         case .dark:
             self.navigationController?.overrideUserInterfaceStyle = .dark
         }
@@ -377,8 +379,10 @@ class PDFReaderViewController: UIViewController {
         switch tool {
         case .ink:
             size = Float(self.viewModel.state.activeLineWidth)
+
         case .eraser:
             size = Float(self.viewModel.state.activeEraserSize)
+
         default:
             size = nil
         }
@@ -646,6 +650,7 @@ class PDFReaderViewController: UIViewController {
         case .top:
             self.documentTop.isActive = false
             self.toolbarToDocument.isActive = true
+
         case .trailing, .leading:
             self.toolbarToDocument.isActive = false
             self.documentTop.isActive = true
@@ -1158,6 +1163,7 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
         switch self.toolbarState.position {
         case .top:
             return self.isCompactWidth ? documentController.view.frame.size.width : (documentController.view.frame.size.width - (2 * PDFReaderViewController.toolbarFullInsetInset))
+
         case .trailing, .leading:
             let window = UIApplication.shared.keyWindow
             let topInset = window?.safeAreaInsets.top ?? 0
@@ -1171,6 +1177,7 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
         switch rotation {
         case .horizontal:
             return self.isCompactWidth
+
         case .vertical:
             return self.view.frame.height <= 400
         }

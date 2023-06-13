@@ -109,6 +109,7 @@ final class ItemDetailViewController: UIViewController {
                                                         deleted: { [weak self] id in
                                                             self?.viewModel.process(action: .deleteCreator(id))
                                                         })
+
         case .openCreatorCreation:
             self.coordinatorDelegate?.showCreatorCreation(for: self.viewModel.state.data.type, saved: { [weak self] creator in
                 self?.viewModel.process(action: .saveCreator(creator))

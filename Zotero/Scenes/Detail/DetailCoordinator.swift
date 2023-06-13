@@ -177,6 +177,7 @@ final class DetailCoordinator: Coordinator {
                 } else {
                   self.share(item: url, sourceView: .view(sourceView, rect))
                 }
+
             default:
                 if AVURLAsset(url: url).isPlayable {
                     self.showVideo(for: url)
@@ -293,6 +294,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             switch viewModel.state.collection.identifier {
             case .collection(let key):
                 collectionKey = key
+
             case .search, .custom:
                 collectionKey = nil
             }
@@ -515,23 +517,31 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         switch error {
         case .dataLoading:
             message = L10n.Errors.Items.loading
+
         case .deletion:
             message = L10n.Errors.Items.deletion
+
         case .deletionFromCollection:
             message = L10n.Errors.Items.deletionFromCollection
+
         case .collectionAssignment:
             message = L10n.Errors.Items.addToCollection
+
         case .itemMove:
             message = L10n.Errors.Items.moveItem
+
         case .noteSaving:
             message = L10n.Errors.Items.saveNote
+
         case .attachmentAdding(let type):
             switch type {
             case .couldNotSave:
                 message = L10n.Errors.Items.addAttachment
+
             case .someFailed(let failed):
                 message = L10n.Errors.Items.addSomeAttachments(failed.joined(separator: ","))
             }
+
         case .duplicationLoading:
             message = L10n.Errors.Items.loadDuplication
         }
@@ -595,8 +605,10 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
             switch error {
             case .incompatibleAttachment:
                 return (L10n.Errors.Attachments.incompatibleAttachment, [])
+
             case .zipDidntContainRequestedFile:
                 return (L10n.Errors.Attachments.cantOpenAttachment, [])
+
             case .cantUnzipSnapshot:
                 return (L10n.Errors.Attachments.cantUnzipSnapshot, [])
             }

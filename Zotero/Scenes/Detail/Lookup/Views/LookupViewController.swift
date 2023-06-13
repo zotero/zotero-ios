@@ -33,6 +33,7 @@ class LookupViewController: UIViewController {
             switch self {
             case .attachment(let attachment, _):
                 return attachment.key == key && attachment.libraryId == libraryId
+
             case .item, .identifier:
                 return false
             }
@@ -221,11 +222,14 @@ class LookupViewController: UIViewController {
                 switch update {
                 case .progress, .failed:
                     return true
+
                 default:
                     return false
                 }
+
             case .identifier:
                 return true
+
             case .item:
                 return false
             }
@@ -267,11 +271,13 @@ class LookupViewController: UIViewController {
                     separatorInset = LookupViewController.iconWidth + LookupItemCell.attachmentToLabelOffset
                     cell.set(title: data.title, type: data.type, hasDarkBackground: self.viewModel.state.hasDarkBackground)
                 }
+
             case .attachment(let attachment, let update):
                 if let cell = cell as? LookupItemCell {
                     cell.set(title: attachment.title, attachmentType: attachment.type, update: update, hasDarkBackground: self.viewModel.state.hasDarkBackground)
                     separatorInset = LookupViewController.iconWidth + LookupItemCell.attachmentToLabelOffset + LookupItemCell.attachmentOffset
                 }
+
             case .identifier(let identifier, let state):
                 if let cell = cell as? LookupIdentifierCell {
                     cell.set(title: identifier, state: state, hasDarkBackground: self.viewModel.state.hasDarkBackground)

@@ -75,6 +75,7 @@ struct TableOfContentsActionHandler: ViewModelActionHandler {
                 switch row {
                 case .outline(let outline):
                     return outline.title == element.title && outline.page == element.pageIndex
+
                 case .searchBar:
                     return false
                 }

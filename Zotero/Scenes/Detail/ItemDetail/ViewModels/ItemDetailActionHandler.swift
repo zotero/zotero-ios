@@ -475,6 +475,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             switch result {
             case .success:
                 finishSave(nil)
+
             case .failure(let error):
                 finishSave(error)
             }
@@ -778,6 +779,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                     state.hideController = true
                 }
             }
+
         case .preview:
             guard let snapshot = viewModel.state.snapshot else { return }
 
@@ -890,6 +892,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             return Date()
         case "yesterday":
             return Calendar.current.date(byAdding: .day, value: -1, to: Date())
+
         default:
             return nil
         }

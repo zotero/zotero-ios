@@ -548,8 +548,10 @@ extension SyncActionError: Equatable {
         switch (lhs, rhs) {
         case (.attachmentItemNotSubmitted, .attachmentItemNotSubmitted), (.attachmentAlreadyUploaded, .attachmentAlreadyUploaded), (.submitUpdateFailures, .submitUpdateFailures):
             return true
+
         case (.attachmentMissing(let lKey, let lLibraryId, let lTitle), .attachmentMissing(let rKey, let rLibraryId, let rTitle)):
             return lKey == rKey && lTitle == rTitle && lLibraryId == rLibraryId
+
         default:
             return false
         }

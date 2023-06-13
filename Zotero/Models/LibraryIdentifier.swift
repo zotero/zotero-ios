@@ -35,6 +35,7 @@ extension LibraryIdentifier: Codable {
         switch self {
         case .custom(let type):
             try container.encode(type, forKey: .custom)
+
         case .group(let id):
             try container.encode(id, forKey: .group)
         }

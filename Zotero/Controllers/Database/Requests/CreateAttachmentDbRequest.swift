@@ -65,28 +65,35 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
             switch fieldKey {
             case FieldKeys.Item.title:
                 value = self.attachment.title
+
             case FieldKeys.Item.Attachment.linkMode:
                 switch self.attachment.type {
                 case .file(_, _, _, let linkType):
                     switch linkType {
                     case .embeddedImage:
                         value = LinkMode.embeddedImage.rawValue
+
                     case .importedFile:
                         value = LinkMode.importedFile.rawValue
+
                     case .importedUrl:
                         value = LinkMode.importedUrl.rawValue
+
                     case .linkedFile:
                         value = LinkMode.linkedFile.rawValue
                     }
+
                 case .url:
                     value = LinkMode.linkedUrl.rawValue
                 }
+
             case FieldKeys.Item.Attachment.contentType:
                 switch self.attachment.type {
                 case .file(_, let contentType, _, _):
                     value = contentType
                 case .url: continue
                 }
+
             case FieldKeys.Item.Attachment.md5:
                 switch self.attachment.type {
                 case .file(let filename, let contentType, _, _):
@@ -102,6 +109,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
                     }
                 case .url: continue
                 }
+
             case FieldKeys.Item.Attachment.mtime:
                 switch self.attachment.type {
                 case .file:
@@ -109,20 +117,24 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
                     value = "\(modificationTime)"
                 case .url: continue
                 }
+
             case FieldKeys.Item.Attachment.filename:
                 switch self.attachment.type {
                 case .file(let filename, _, _, _):
                     value = filename
                 case .url: continue
                 }
+
             case FieldKeys.Item.Attachment.url:
                 switch self.attachment.type {
                 case .url(let url):
                     value = url.absoluteString
+
                 default:
                     guard let url = self.attachment.url else { continue }
                     value = url
                 }
+
             case FieldKeys.Item.Attachment.path:
                 switch self.attachment.type {
                 case .file(let filename, let contentType, _, let linkType) where linkType == .linkedFile:
@@ -130,6 +142,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
                     value = file.createUrl().path
                 default: continue
                 }
+
             case FieldKeys.Item.accessDate:
                 guard self.includeAccessDate else { continue }
                 value = Formatter.iso8601.string(from: self.attachment.dateAdded)

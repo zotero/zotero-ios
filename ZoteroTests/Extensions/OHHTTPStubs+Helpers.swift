@@ -51,22 +51,31 @@ extension ApiRequest {
         switch self.httpMethod {
         case .delete:
             methodCondition = isMethodDELETE()
+
         case .get:
             methodCondition = isMethodGET()
+
         case .post:
             methodCondition = isMethodPOST()
+
         case .put:
             methodCondition = isMethodPUT()
+
         case .head:
             methodCondition = isMethodHEAD()
+
         case .patch:
             methodCondition = isMethodPATCH()
+
         case .options:
             methodCondition = { $0.httpMethod == "OPTIONS" }
+
         case .propfind:
             methodCondition = { $0.httpMethod == "PROPFIND" }
+
         case .mkcol:
             methodCondition = { $0.httpMethod == "MKCOL" }
+
         default:
             methodCondition = isMethodGET()
         }

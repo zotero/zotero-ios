@@ -18,6 +18,7 @@ extension LibraryObject {
         switch self {
         case .custom(let object):
             return .custom(object.type)
+
         case .group(let object):
             return .group(object.identifier)
         }

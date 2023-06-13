@@ -244,12 +244,16 @@ final class PDFDocumentViewController: UIViewController {
         switch annotation.type {
         case .highlight:
             return .highlight
+
         case .note:
             return .note
+
         case .square:
             return .square
+
         case .ink:
             return .ink
+
         default:
             return nil
         }
@@ -284,10 +288,12 @@ final class PDFDocumentViewController: UIViewController {
             self.pdfController?.appearanceModeManager.appearanceMode = self.traitCollection.userInterfaceStyle == .dark ? .night : []
             self.pdfController?.overrideUserInterfaceStyle = .unspecified
             self.unlockController?.overrideUserInterfaceStyle = .unspecified
+
         case .light:
             self.pdfController?.appearanceModeManager.appearanceMode = []
             self.pdfController?.overrideUserInterfaceStyle = .light
             self.unlockController?.overrideUserInterfaceStyle = .light
+
         case .dark:
             self.pdfController?.appearanceModeManager.appearanceMode = .night
             self.pdfController?.overrideUserInterfaceStyle = .dark
@@ -694,10 +700,13 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
         switch pageInfo.savedRotation {
         case .rotation0:
             return pageInfo.size.height - rect.maxY
+
         case .rotation180:
             return rect.minY
+
         case .rotation90:
             return pageInfo.size.width - rect.minX
+
         case .rotation270:
             return rect.minX
         }

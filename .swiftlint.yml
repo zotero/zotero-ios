@@ -78,6 +78,7 @@ only_rules:
   - self_binding
   - unused_capture_list
   - vertical_parameter_alignment_on_call
+  - vertical_whitespace_between_cases
   - vertical_whitespace_closing_braces
   - vertical_whitespace_opening_braces
   - yoda_condition
@@ -267,6 +268,8 @@ vertical_parameter_alignment_on_call: error
 vertical_whitespace:
   severity: error
   max_empty_lines: 1
+
+vertical_whitespace_between_cases: error
 
 vertical_whitespace_closing_braces:
   severity: error

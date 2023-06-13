@@ -197,6 +197,7 @@ extension AnnotationEditViewController: UITableViewDataSource {
         switch self.sections[section] {
         case .properties:
             return self.viewModel.state.type == .ink ? 2 : 1
+
         default:
             return 1
         }
@@ -256,8 +257,10 @@ extension AnnotationEditViewController: UITableViewDelegate {
 
         switch self.sections[indexPath.section] {
         case .properties, .highlight: break
+
         case .actions:
             self.deleteAction(self.viewModel.state.key)
+
         case .pageLabel:
             guard self.viewModel.state.isEditable else { return }
 

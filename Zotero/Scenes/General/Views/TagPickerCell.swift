@@ -25,6 +25,7 @@ final class TagPickerCell: UITableViewCell {
         switch style {
         case .border:
             self.tagView.isHidden = true
+
         case .filled:
             self.tagView.backgroundColor = color
             self.tagView.isHidden = false

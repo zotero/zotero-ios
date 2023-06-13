@@ -101,11 +101,14 @@ struct LoginActionHandler: ViewModelActionHandler {
                 switch reason {
                 case .unacceptableStatusCode(let code):
                     return code == 403 ? .loginFailed : .serverError(afError.response)
+
                 default:
                     return afError.response.isEmpty ? .unknown(error) : .serverError(afError.response)
                 }
+
             case .sessionTaskFailed(let error):
                 return .serverError(error.localizedDescription)
+
             default:
                 return afError.response.isEmpty ? .unknown(error) : .serverError(afError.response)
             }

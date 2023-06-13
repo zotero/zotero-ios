@@ -53,12 +53,15 @@ struct MarkOtherObjectsAsChangedByUser: DbRequest {
         case .collection:
             let objects = database.objects(RCollection.self).filter(.library(with: self.libraryId)).filter(.syncState(.synced))
             self.markAsChanged(notIn: self.versions, objects: objects, database: database)
+
         case .search:
             let objects = database.objects(RSearch.self).filter(.library(with: self.libraryId)).filter(.syncState(.synced))
             self.markAsChanged(notIn: self.versions, objects: objects, database: database)
+
         case .item:
             let objects = database.objects(RItem.self).filter(.library(with: self.libraryId)).filter(.syncState(.synced)).filter(.isTrash(false))
             self.markAsChanged(notIn: self.versions, objects: objects, database: database)
+
         case .trash:
             let objects = database.objects(RItem.self).filter(.library(with: self.libraryId)).filter(.syncState(.synced)).filter(.isTrash(true))
             self.markAsChanged(notIn: self.versions, objects: objects, database: database)

@@ -92,6 +92,7 @@ final class LoginViewController: UIViewController {
             switch error {
             case .invalidUsername, .loginFailed:
                 self.usernameField.becomeFirstResponder()
+
             case .invalidPassword:
                 self.passwordField.becomeFirstResponder()
             case .serverError, .unknown: break

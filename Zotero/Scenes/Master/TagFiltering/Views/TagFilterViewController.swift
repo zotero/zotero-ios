@@ -231,6 +231,7 @@ class TagFilterViewController: UIViewController {
         switch UIDevice.current.userInterfaceIdiom {
         case .phone:
             collectionView.keyboardDismissMode = .onDrag
+
         case .pad:
             collectionView.dropDelegate = self
         default: break

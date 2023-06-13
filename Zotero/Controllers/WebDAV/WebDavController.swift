@@ -34,20 +34,28 @@ enum WebDavError {
             switch self {
             case .fileMissingAfterUpload:
                 return L10n.Errors.Settings.Webdav.fileMissingAfterUpload
+
             case .invalidUrl:
                 return L10n.Errors.Settings.Webdav.invalidUrl
+
             case .noPassword:
                 return L10n.Errors.Settings.Webdav.noPassword
+
             case .noUrl:
                 return L10n.Errors.Settings.Webdav.noUrl
+
             case .noUsername:
                 return L10n.Errors.Settings.Webdav.noUsername
+
             case .nonExistentFileNotMissing:
                 return L10n.Errors.Settings.Webdav.nonExistentFileNotMissing
+
             case .notDav:
                 return L10n.Errors.Settings.Webdav.notDav
+
             case .parentDirNotFound:
                 return L10n.Errors.Settings.Webdav.parentDirNotFound
+
             case .zoteroDirNotFound:
                 return L10n.Errors.Settings.Webdav.zoteroDirNotFound
             }

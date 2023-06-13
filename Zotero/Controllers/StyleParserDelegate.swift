@@ -84,12 +84,16 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
         switch element {
         case .identifier:
             self.identifier = self.currentValue
+
         case .title:
             self.title = self.currentValue
+
         case .updated:
             self.updated = Formatter.iso8601.date(from: self.currentValue)
+
         case .citation:
             self.supportsCitation = true
+
         case .bibliography:
             self.supportsBibliography = true
         case .link, .style: break

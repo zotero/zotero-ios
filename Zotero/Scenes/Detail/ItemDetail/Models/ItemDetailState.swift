@@ -86,6 +86,7 @@ struct ItemDetailState: ViewModelState {
             switch self.namePresentation {
             case .full:
                 return self.fullName
+
             case .separate:
                 if self.lastName.isEmpty {
                     return self.firstName
@@ -101,6 +102,7 @@ struct ItemDetailState: ViewModelState {
             switch self.namePresentation {
             case .full:
                 return self.fullName.isEmpty
+
             case .separate:
                 return self.firstName.isEmpty && self.lastName.isEmpty
             }
@@ -259,6 +261,7 @@ struct ItemDetailState: ViewModelState {
         case .preview(let key):
             self.key = key
             self.isEditing = false
+
         case .creation, .duplication:
             self.key = KeyGenerator.newKey
             self.isEditing = true

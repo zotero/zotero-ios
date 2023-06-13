@@ -30,10 +30,13 @@ struct ObjectsRequest: ApiRequest {
         switch self.objectType {
         case .collection:
             return ["collectionKey": self.keys]
+
         case .item, .trash:
             return ["itemKey": self.keys]
+
         case .search:
             return ["searchKey": self.keys]
+
         case .settings:
             return nil
         }

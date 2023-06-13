@@ -20,6 +20,7 @@ enum CollectionEditError: Error, Identifiable, Hashable {
         switch self {
         case .emptyName:
             hasher.combine(0)
+
         case .saveFailed:
             hasher.combine(1)
         }
@@ -29,6 +30,7 @@ enum CollectionEditError: Error, Identifiable, Hashable {
         switch self {
         case .emptyName:
             return L10n.Errors.Collections.emptyName
+
         case .saveFailed:
             return L10n.Errors.Collections.saveFailed
         }

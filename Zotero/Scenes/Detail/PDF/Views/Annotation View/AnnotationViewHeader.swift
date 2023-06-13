@@ -57,10 +57,13 @@ final class AnnotationViewHeader: UIView {
         switch type {
         case .highlight:
             annotationName = L10n.Accessibility.Pdf.highlightAnnotation
+
         case .image:
             annotationName = L10n.Accessibility.Pdf.imageAnnotation
+
         case .note:
             annotationName = L10n.Accessibility.Pdf.noteAnnotation
+
         case .ink:
             annotationName = L10n.Accessibility.Pdf.inkAnnotation
         }
@@ -93,6 +96,7 @@ final class AnnotationViewHeader: UIView {
         case .view:
             self.pageLabel.accessibilityLabel = self.accessibilityLabel(for: type, pageLabel: pageLabel)
             self.authorLabel.accessibilityLabel = author.isEmpty ? nil : L10n.Accessibility.Pdf.author + ": " + author
+
         case .cell:
             self.pageLabel.isAccessibilityElement = false
             self.authorLabel.isAccessibilityElement = false

@@ -101,6 +101,7 @@ final class CollectionsViewController: UICollectionViewController {
             switch result {
             case .success(let keys):
                 self.coordinatorDelegate?.showCiteExport(for: keys, libraryId: state.libraryId)
+
             case .failure:
                 self.coordinatorDelegate?.showCiteExportError()
             }

@@ -41,6 +41,7 @@ struct CitationBibliographyExportView: View {
             switch error {
             case .invalidItemTypes:
                 return L10n.Errors.Citation.invalidTypes
+
             case .styleOrLocaleMissing:
                 return nil
             default: break
@@ -50,6 +51,7 @@ struct CitationBibliographyExportView: View {
         switch mode {
         case .bibliography:
             return L10n.Errors.Citation.generateBibliography
+
         case .citation:
             return L10n.Errors.Citation.generateCitation
         }
@@ -101,6 +103,7 @@ private struct Overlay: View {
         switch self.type {
         case .loading:
             ActivityIndicatorView(style: .large, color: .white, isAnimating: .constant(true))
+
         case .error(let message):
             VStack(spacing: 12) {
                 Image(systemName: "exclamationmark.circle")
@@ -181,6 +184,7 @@ private struct CiteView: View {
         switch method {
         case .html:
             return L10n.Citation.saveHtml
+
         case .copy:
             return L10n.Citation.copy
         }

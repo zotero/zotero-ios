@@ -48,6 +48,7 @@ class ApiOperation: AsynchronousOperation {
             switch response.logAndCreateResult(logData: logData) {
             case .success(let data):
                 self.completion(.success(data))
+
             case .failure(let error):
                 self.completion(.failure(error))
             }
