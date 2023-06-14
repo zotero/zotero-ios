@@ -658,6 +658,7 @@ class PDFReaderViewController: UIViewController {
             // Position the preview so that the bottom of preview matches actual bottom of toolbar, add offset for dashed border
             let offset = self.annotationToolbarController.size + (statusBarVisible ? 0 : self.annotationToolbarController.size)
             verticalHeight = currentHeight - offset + (DashedView.dashWidth * 2) + 1
+
         case .top, .pinned:
             verticalHeight = min(containerSize.height, AnnotationToolbarViewController.estimatedVerticalHeight)
         }
@@ -958,6 +959,7 @@ class PDFReaderViewController: UIViewController {
         switch position {
         case .leading, .trailing:
             self.annotationToolbarDragHandleLongPressRecognizer.minimumPressDuration = 0.3
+
         case .top, .pinned:
             self.annotationToolbarDragHandleLongPressRecognizer.minimumPressDuration = 0
         }
@@ -1146,7 +1148,7 @@ class PDFReaderViewController: UIViewController {
             trailingPreview.topAnchor.constraint(equalTo: topPreviewContainer.bottomAnchor, constant: PDFReaderViewController.toolbarCompactInset),
             trailingPreviewHeight,
             trailingPreview.widthAnchor.constraint(equalToConstant: annotationToolbar.size),
-            inbetweenTopDash.heightAnchor.constraint(equalToConstant: 2/UIScreen.main.scale)
+            inbetweenTopDash.heightAnchor.constraint(equalToConstant: 2 / UIScreen.main.scale)
         ])
 
         self.documentController = documentController
@@ -1423,6 +1425,7 @@ extension PDFReaderViewController: UIGestureRecognizerDelegate {
         case .pinned, .top:
             currentLocation = location.x
             border = self.annotationToolbarController.view.frame.width - PDFReaderViewController.annotationToolbarDragHandleHeight
+            
         case .leading, .trailing:
             currentLocation = location.y
             border = self.annotationToolbarController.view.frame.height - PDFReaderViewController.annotationToolbarDragHandleHeight

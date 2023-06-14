@@ -91,7 +91,7 @@ class DashedView: UIView {
         switch type {
         case .rounded(let cornerRadius):
             return UIBezierPath(roundedRect: self.bounds, cornerRadius: cornerRadius).cgPath
-            
+
         case .partialStraight(let sides):
             let path = CGMutablePath()
             if sides.contains(.left) {
