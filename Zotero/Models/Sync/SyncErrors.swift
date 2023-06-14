@@ -77,7 +77,6 @@ enum SyncError {
         case webDavDeletionFailed(error: String, library: String)
         case webDavVerification(WebDavError.Verification)
         case webDavDownload(WebDavError.Download)
-        case fileEditingDenied(LibraryIdentifier)
 
         var isVersionMismatch: Bool {
             switch self {

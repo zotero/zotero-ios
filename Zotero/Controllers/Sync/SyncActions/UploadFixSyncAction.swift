@@ -61,6 +61,7 @@ class UploadFixSyncAction: SyncAction {
                 case .failed(let error):
                     self.finishDownload?(.failure(error))
                     self.finishDownload = nil
+
                 case .ready:
                     self.finishDownload?(.success(()))
                     self.finishDownload = nil
@@ -81,7 +82,7 @@ class UploadFixSyncAction: SyncAction {
 
     private func markAsUploaded(attachment: Attachment) -> Single<()> {
         return Single.create { [weak self] subscriber in
-            guard let `self` = self else {
+            guard let self else {
                 subscriber(.failure(Error.expired))
                 return Disposables.create()
             }
@@ -103,7 +104,7 @@ class UploadFixSyncAction: SyncAction {
 
     private func download(attachment: Attachment) -> Single<()> {
         return Single.create { [weak self] subscriber in
-            guard let `self` = self else {
+            guard let self else {
                 subscriber(.failure(Error.expired))
                 return Disposables.create()
             }
@@ -116,7 +117,7 @@ class UploadFixSyncAction: SyncAction {
 
     private func fetchAndValidateAttachment() -> Single<Attachment> {
         return Single.create { [weak self] subscriber in
-            guard let `self` = self else {
+            guard let self else {
                 subscriber(.failure(Error.expired))
                 return Disposables.create()
             }

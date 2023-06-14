@@ -111,6 +111,7 @@ final class SyncToolbarController {
         if let error = error as? SyncError.Fatal {
             switch error {
             case .cancelled: break // should not happen
+                
             case .apiError(let response, let data):
                 return (L10n.Errors.api(response), data)
 
@@ -137,6 +138,7 @@ final class SyncToolbarController {
 
             case .forbidden:
                 return (L10n.Errors.SyncToolbar.forbiddenMessage, nil)
+
             case .cantSubmitAttachmentItem(let data):
                 return (L10n.Errors.db, data)
             }
@@ -194,7 +196,6 @@ final class SyncToolbarController {
 
             case .annotationDidSplit(let string, let keys, let libraryId):
                 return (string, SyncError.ErrorData(itemKeys: Array(keys), libraryId: libraryId))
-            case .fileEditingDenied(let libraryId): break // TODO: - Add appropriate error message
             case .unchanged: break
             }
         }

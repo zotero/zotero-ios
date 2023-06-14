@@ -51,6 +51,8 @@
 "scan_text" = "Scan Text";
 "move_to_trash" = "Move to Trash";
 "size" = "Size";
+"remove" = "Remove";
+"keep" = "Keep";
 
 "beta_wipe_title" = "Resync Required";
 "beta_wipe_message" = "Due to a beta update, your data must be redownloaded from zotero.org.";
@@ -382,6 +384,13 @@
 "errors.collections.empty_name" = "Please enter a collection name";
 "errors.collections.save_failed" = "Unable to save collection";
 "errors.collections.bibliography_failed" = "Could not load items for bibliography.";
+"errors.sync.group_removed" = "Group '%@' is no longer accessible. What would you like to do?";
+"errors.sync.metadata_write_denied" = "You can't write to group '%@' anymore. What would you like to do?";
+"errors.sync.keep_changes" = "Keep changes";
+"errors.sync.revert_to_original" = "Revert to original";
+"errors.sync.file_write_denied" = "You no longer have file-editing access for the group ‘%@’, and files you’ve changed locally cannot be uploaded. If you continue, all group files will be reset to their state on %@.\n\nIf you would like a chance to copy modified files elsewhere or to request file-editing access from a group administrator, you can skip syncing of the group now.";
+"errors.sync.reset_group_files" = "Reset Group Files and Sync";
+"errors.sync.skip_group" = "Skip Group";
 "errors.sync_toolbar.finished_with_errors" = "Finished sync (%@)";
 "errors.sync_toolbar.one_error" = "1 issue";
 "errors.sync_toolbar.multiple_errors" = "%d issues";

@@ -31,12 +31,30 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
                 var failedItems: [String] = []
 
                 try self.dbStorage.perform(on: queue, with: { coordinator in
-                    let collections = try self.loadCachedJsonForObject(of: RCollection.self, objectType: .collection, in: self.libraryId, coordinator: coordinator,
-                                                                       createResponse: { try CollectionResponse(response: $0) })
-                    let searches = try self.loadCachedJsonForObject(of: RSearch.self, objectType: .search, in: self.libraryId, coordinator: coordinator,
-                                                                    createResponse: { try SearchResponse(response: $0) })
-                    let items = try self.loadCachedJsonForObject(of: RItem.self, objectType: .item, in: self.libraryId, coordinator: coordinator,
-                                                                 createResponse: { try ItemResponse(response: $0, schemaController: self.schemaController) })
+                    let collections = try RevertLibraryUpdatesSyncAction.loadCachedJsonForObject(
+                        of: RCollection.self,
+                        objectType: .collection,
+                        in: self.libraryId,
+                        coordinator: coordinator,
+                        fileStorage: self.fileStorage,
+                        createResponse: { try CollectionResponse(response: $0) }
+                    )
+                    let searches = try RevertLibraryUpdatesSyncAction.loadCachedJsonForObject(
+                        of: RSearch.self,
+                        objectType: .search,
+                        in: self.libraryId,
+                        coordinator: coordinator,
+                        fileStorage: self.fileStorage,
+                        createResponse: { try SearchResponse(response: $0) }
+                    )
+                    let items = try RevertLibraryUpdatesSyncAction.loadCachedJsonForObject(
+                        of: RItem.self,
+                        objectType: .item,
+                        in: self.libraryId,
+                        coordinator: coordinator,
+                        fileStorage: self.fileStorage,
+                        createResponse: { try ItemResponse(response: $0, schemaController: self.schemaController) }
+                    )
 
                     let storeCollectionsRequest = StoreCollectionsDbRequest(response: collections.responses)
                     let storeSearchesRequest = StoreSearchesDbRequest(response: searches.responses)
@@ -82,8 +100,14 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
         }
     }
 
-    private func loadCachedJsonForObject<Obj: Syncable&UpdatableObject, Response>(of type: Obj.Type, objectType: SyncObject, in libraryId: LibraryIdentifier, coordinator: DbCoordinator,
-                                                                                  createResponse: ([String: Any]) throws -> Response) throws -> (responses: [Response], failed: [String]) {
+    static func loadCachedJsonForObject<Obj: Syncable&UpdatableObject, Response>(
+        of type: Obj.Type,
+        objectType: SyncObject,
+        in libraryId: LibraryIdentifier,
+        coordinator: DbCoordinator,
+        fileStorage: FileStorage,
+        createResponse: ([String: Any]) throws -> Response
+    ) throws -> (responses: [Response], failed: [String]) {
         let request = ReadAnyChangedObjectsInLibraryDbRequest<Obj>(libraryId: libraryId)
         let objects = try coordinator.perform(request: request)
 
@@ -93,7 +117,7 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
         for object in objects {
             do {
                 let file = Files.jsonCacheFile(for: objectType, libraryId: libraryId, key: object.key)
-                let data = try self.fileStorage.read(file)
+                let data = try fileStorage.read(file)
                 let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
 
                 if let jsonData = jsonObject as? [String: Any] {

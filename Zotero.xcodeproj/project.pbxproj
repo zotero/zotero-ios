@@ -956,6 +956,8 @@
 		B3D58D6725EE280300D8FA31 /* DebugResponseParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D58D6125EE26A600D8FA31 /* DebugResponseParserDelegate.swift */; };
 		B3D58D6B25EE437700D8FA31 /* CircularProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D58D6A25EE437700D8FA31 /* CircularProgressView.swift */; };
 		B3D58D7025EE43E700D8FA31 /* CircularProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D58D6A25EE437700D8FA31 /* CircularProgressView.swift */; };
+		B3D59F132A38A69100F6BB7D /* RevertLibraryFilesSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D59F122A38A69100F6BB7D /* RevertLibraryFilesSyncAction.swift */; };
+		B3D59F142A38A6C100F6BB7D /* RevertLibraryFilesSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D59F122A38A69100F6BB7D /* RevertLibraryFilesSyncAction.swift */; };
 		B3D84BEA27917BE1005DDD7C /* CreatorTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D84BE927917BE1005DDD7C /* CreatorTypes.swift */; };
 		B3D84BEB27917D07005DDD7C /* CreatorTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D84BE927917BE1005DDD7C /* CreatorTypes.swift */; };
 		B3D84BED27917E3D005DDD7C /* UpdateCreatorSummaryFormatDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D84BEC27917E3D005DDD7C /* UpdateCreatorSummaryFormatDbRequest.swift */; };
@@ -1856,6 +1858,7 @@
 		B3D58D5525ED856F00D8FA31 /* DebugLogUploadRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogUploadRequest.swift; sourceTree = "<group>"; };
 		B3D58D6125EE26A600D8FA31 /* DebugResponseParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugResponseParserDelegate.swift; sourceTree = "<group>"; };
 		B3D58D6A25EE437700D8FA31 /* CircularProgressView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CircularProgressView.swift; sourceTree = "<group>"; };
+		B3D59F122A38A69100F6BB7D /* RevertLibraryFilesSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RevertLibraryFilesSyncAction.swift; sourceTree = "<group>"; };
 		B3D84BE927917BE1005DDD7C /* CreatorTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorTypes.swift; sourceTree = "<group>"; };
 		B3D84BEC27917E3D005DDD7C /* UpdateCreatorSummaryFormatDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCreatorSummaryFormatDbRequest.swift; sourceTree = "<group>"; };
 		B3DCDEE02408F5200039ED0D /* MainViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
@@ -2341,6 +2344,7 @@
 				B372CEE82486748500B423AE /* MarkGroupForResyncSyncAction.swift */,
 				B3A081C325D2ADCD0088EC24 /* PerformDeletionsSyncAction.swift */,
 				B340868825D574D6000F4446 /* RestoreDeletionsSyncAction.swift */,
+				B3D59F122A38A69100F6BB7D /* RevertLibraryFilesSyncAction.swift */,
 				B30564B123FC051E003304F2 /* RevertLibraryUpdatesSyncAction.swift */,
 				B30564AE23FC051E003304F2 /* StoreVersionSyncAction.swift */,
 				B30564AD23FC051E003304F2 /* SubmitDeletionSyncAction.swift */,
@@ -4545,6 +4549,7 @@
 				B3C6D552261C9F2E0068B9FE /* PlaceholderTextViewDelegate.swift in Sources */,
 				B357A290285B74DF00E73CA1 /* ScannerActionHandler.swift in Sources */,
 				B3E8FE76271434F200F51458 /* GeneralSettingsView.swift in Sources */,
+				B3D59F132A38A69100F6BB7D /* RevertLibraryFilesSyncAction.swift in Sources */,
 				B30566C323FC051F003304F2 /* SyncObject.swift in Sources */,
 				B325DBAF24375D8D00EFF0F5 /* Conflict.swift in Sources */,
 				B3D84BEA27917BE1005DDD7C /* CreatorTypes.swift in Sources */,
@@ -5439,6 +5444,7 @@
 				B305672D23FC091A003304F2 /* MarkGroupAsLocalOnlySyncAction.swift in Sources */,
 				B3B8800A25FB590900904235 /* DeviceInfoProvider.swift in Sources */,
 				B30566FC23FC0862003304F2 /* MarkCollectionAndItemsAsDeletedDbRequest.swift in Sources */,
+				B3D59F142A38A6C100F6BB7D /* RevertLibraryFilesSyncAction.swift in Sources */,
 				B377F2A02493725E00022943 /* UrlDetector.swift in Sources */,
 				B305670A23FC08B5003304F2 /* ReadCollectionsDbRequest.swift in Sources */,
 				B305672A23FC0914003304F2 /* LoadUploadDataSyncAction.swift in Sources */,

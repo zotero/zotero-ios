@@ -73,7 +73,7 @@ final class SyncController: SynchronizationController {
         /// Loads required libraries, spawns actions for each.
         case createLibraryActions(Libraries, CreateLibraryActionsOptions)
         /// Loads items that need upload, spawns actions for each.
-        case createUploadActions(libraryId: LibraryIdentifier, hadOtherWriteActions: Bool)
+        case createUploadActions(libraryId: LibraryIdentifier, hadOtherWriteActions: Bool, canEditFiles: Bool)
         /// Starts `SyncBatchProcessor` which downloads and stores all batches.
         case syncBatchesToDb([DownloadBatch])
         /// Store new version for given library-object.
@@ -96,10 +96,14 @@ final class SyncController: SynchronizationController {
         case submitDeleteBatch(DeleteBatch)
         /// Handle group that was deleted remotely - (Id, Name).
         case resolveDeletedGroup(Int, String)
-        /// Resolve when group had metadata editing allowed, but it was disabled and we try to upload new data.
-        case resolveGroupMetadataWritePermission(Int, String)
+        /// Resolve when group had metadata editing allowed, but it was disabled and we try to submit new data.
+        case resolveGroupMetadataWritePermission(groupId: Int, name: String)
+        /// Resolve when group had file editing allowed, but it was disabled and we try to upload new files
+        case resolveGroupFileWritePermission(groupId: Int, name: String)
         /// Revert all changes to original cached version of this group.
         case revertLibraryToOriginal(LibraryIdentifier)
+        /// Revert all attachment items to original cached version of this group.
+        case revertLibraryFilesToOriginal(LibraryIdentifier)
         /// Local changes couldn't be written remotely, but we want to keep them locally anyway.
         case markChangesAsResolved(LibraryIdentifier)
         /// Removes group from db.
@@ -112,6 +116,8 @@ final class SyncController: SynchronizationController {
         case performWebDavDeletions(LibraryIdentifier)
         /// Fix for #584 where background upload is processed but main app is not notified and tries to upload the same file again.
         case fixUpload(key: String, libraryId: LibraryIdentifier)
+        /// Removes all actions from queue for given library identifier.
+        case removeActions(libraryId: LibraryIdentifier)
 
         var logString: String {
             switch self {
@@ -144,7 +150,10 @@ final class SyncController: SynchronizationController {
                  .markChangesAsResolved,
                  .resolveDeletedGroup,
                  .resolveGroupMetadataWritePermission,
-                 .performWebDavDeletions:
+                 .performWebDavDeletions,
+                 .resolveGroupFileWritePermission,
+                 .revertLibraryFilesToOriginal,
+                 .removeActions:
                 return "\(self)"
             }
         }
@@ -425,8 +434,7 @@ final class SyncController: SynchronizationController {
                     retryLibraries.append(libraryId)
                 }
 
-            case .unknown, .schema, .parsing, .apiError, .unchanged, .quotaLimit, .attachmentMissing, .insufficientSpace, .webDavDeletion,
-                 .webDavDeletionFailed, .webDavVerification, .webDavDownload, .fileEditingDenied:
+            case .unknown, .schema, .parsing, .apiError, .unchanged, .quotaLimit, .attachmentMissing, .insufficientSpace, .webDavDeletion, .webDavDeletionFailed, .webDavVerification, .webDavDownload:
                 reportErrors.append(error)
             }
         }
@@ -435,8 +443,7 @@ final class SyncController: SynchronizationController {
             return nil
         }
 
-        return (SyncScheduler.Sync(type: self.type, libraries: .specific(retryLibraries), retryAttempt: (self.retryAttempt + 1), retryOnce: retryOnce),
-                reportErrors)
+        return (SyncScheduler.Sync(type: self.type, libraries: .specific(retryLibraries), retryAttempt: (self.retryAttempt + 1), retryOnce: retryOnce), reportErrors)
     }
 
     // MARK: - Queue management
@@ -444,8 +451,7 @@ final class SyncController: SynchronizationController {
     /// Enqueues new actions and starts processing next action.
     /// - parameter actions: Array of actions to be added.
     /// - parameter index: Index in array where actions should be added. If nil, they will be appended.
-    /// - parameter delay: Delay for processing new action.
-    private func enqueue(actions: [Action], at index: Int? = nil, delay: Int? = nil) {
+    private func enqueue(actions: [Action], at index: Int? = nil) {
         if !actions.isEmpty {
             if let index = index {
                 self.queue.insert(contentsOf: actions, at: index)
@@ -454,18 +460,7 @@ final class SyncController: SynchronizationController {
             }
         }
 
-        if let delay = delay, delay > 0 {
-            self.reportDelay?(delay)
-            Single<Int>.timer(.seconds(delay), scheduler: self.workScheduler)
-                       .subscribe(onSuccess: { [weak self] _ in
-                           self?.accessQueue.async(flags: .barrier) {
-                               self?.processNextAction()
-                           }
-                       })
-                       .disposed(by: self.disposeBag)
-        } else {
-            self.processNextAction()
-        }
+        self.processNextAction()
     }
 
     /// Removes all actions for given library from the beginning of the queue.
@@ -527,8 +522,8 @@ final class SyncController: SynchronizationController {
         case .createLibraryActions(let libraries, let options):
             self.processCreateLibraryActions(for: libraries, options: options)
 
-        case .createUploadActions(let libraryId, let hadOtherWriteActions):
-            self.processCreateUploadActions(for: libraryId, hadOtherWriteActions: hadOtherWriteActions)
+        case .createUploadActions(let libraryId, let hadOtherWriteActions, let canWriteFiles):
+            self.processCreateUploadActions(for: libraryId, hadOtherWriteActions: hadOtherWriteActions, canWriteFiles: canWriteFiles)
 
         case .syncGroupVersions:
             self.progressHandler.reportGroupsSync()
@@ -586,15 +581,25 @@ final class SyncController: SynchronizationController {
             self.markChangesAsResolved(in: libraryId)
 
         case .resolveDeletedGroup(let groupId, let name):
-            self.resolve(conflict: .groupRemoved(groupId, name))
+            self.resolve(conflict: .groupRemoved(groupId: groupId, name: name))
 
         case .resolveGroupMetadataWritePermission(let groupId, let name):
-            self.resolve(conflict: .groupWriteDenied(groupId, name))
+            self.resolve(conflict: .groupMetadataWriteDenied(groupId: groupId, name: name))
+
+        case .resolveGroupFileWritePermission(let groupId, let name):
+            self.resolve(conflict: .groupFileWriteDenied(groupId: groupId, name: name))
 
         case .performWebDavDeletions(let libraryId):
             self.performWebDavDeletions(libraryId: libraryId)
+
         case .fixUpload(let key, let libraryId):
             self.processUploadFix(forKey: key, libraryId: libraryId)
+
+        case .removeActions(let libraryId):
+            self.removeAllActions(for: libraryId)
+
+        case .revertLibraryFilesToOriginal(let libraryId):
+            self.revertGroupFiles(in: libraryId)
         }
     }
 
@@ -630,6 +635,12 @@ final class SyncController: SynchronizationController {
 
         case .revertGroupChanges(let id):
             return [.revertLibraryToOriginal(id)]
+
+        case .skipGroup(let libraryId):
+            return [.removeActions(libraryId: libraryId)]
+
+        case .revertGroupFiles(let libraryId):
+            return [.revertLibraryFilesToOriginal(libraryId)]
 
         case .remoteDeletionOfActiveObject(let libraryId, let toDeleteCollections, let toRestoreCollections, let toDeleteItems, let toRestoreItems, let searches, let tags):
             var actions: [Action] = []
@@ -855,20 +866,20 @@ final class SyncController: SynchronizationController {
         switch libraryData.identifier {
         case .custom:
             // We can always write to custom libraries
-            let actions = self.createUpdateActions(updates: libraryData.updates, deletions: libraryData.deletions, libraryId: libraryData.identifier)
+            let actions = self.createUpdateActions(updates: libraryData.updates, deletions: libraryData.deletions, libraryData: libraryData)
             return (actions, actions.count - 1)
 
         case .group(let groupId):
             // We need to check permissions for group
             if !libraryData.canEditMetadata {
-                return ([.resolveGroupMetadataWritePermission(groupId, libraryData.name)], 0)
+                return ([.resolveGroupMetadataWritePermission(groupId: groupId, name: libraryData.name)], 0)
             }
-            let actions = self.createUpdateActions(updates: libraryData.updates, deletions: libraryData.deletions, libraryId: libraryData.identifier)
+            let actions = self.createUpdateActions(updates: libraryData.updates, deletions: libraryData.deletions, libraryData: libraryData)
             return (actions, actions.count - 1)
         }
     }
 
-    private func createUpdateActions(updates: [WriteBatch], deletions: [DeleteBatch], libraryId: LibraryIdentifier) -> [Action] {
+    private func createUpdateActions(updates: [WriteBatch], deletions: [DeleteBatch], libraryData: LibraryData) -> [Action] {
         var actions: [Action] = []
         if !updates.isEmpty {
             actions.append(contentsOf: updates.map({ .submitWriteBatch($0) }))
@@ -876,7 +887,7 @@ final class SyncController: SynchronizationController {
         if !deletions.isEmpty {
             actions.append(contentsOf: deletions.map({ .submitDeleteBatch($0) }))
         }
-        actions.append(.createUploadActions(libraryId: libraryId, hadOtherWriteActions: (!updates.isEmpty || !deletions.isEmpty)))
+        actions.append(.createUploadActions(libraryId: libraryData.identifier, hadOtherWriteActions: (!updates.isEmpty || !deletions.isEmpty), canEditFiles: libraryData.canEditFiles))
         return actions
     }
 
@@ -908,7 +919,7 @@ final class SyncController: SynchronizationController {
         }
     }
 
-    private func processCreateUploadActions(for libraryId: LibraryIdentifier, hadOtherWriteActions: Bool) {
+    private func processCreateUploadActions(for libraryId: LibraryIdentifier, hadOtherWriteActions: Bool, canWriteFiles: Bool) {
         let result = LoadUploadDataSyncAction(
             libraryId: libraryId,
             backgroundUploaderContext: self.backgroundUploaderContext,
@@ -919,7 +930,7 @@ final class SyncController: SynchronizationController {
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] uploads in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.process(uploads: uploads, hadOtherWriteActions: hadOtherWriteActions, libraryId: libraryId)
+                      self?.process(uploads: uploads, hadOtherWriteActions: hadOtherWriteActions, libraryId: libraryId, canWriteFiles: canWriteFiles)
                   }
               }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -931,7 +942,7 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
-    private func process(uploads: [AttachmentUpload], hadOtherWriteActions: Bool, libraryId: LibraryIdentifier) {
+    private func process(uploads: [AttachmentUpload], hadOtherWriteActions: Bool, libraryId: LibraryIdentifier, canWriteFiles: Bool) {
         if uploads.isEmpty {
             // If no uploads were loaded (probably because there are ongoing background uploads) and there were other write actions performed, continue with next actions.
             if hadOtherWriteActions {
@@ -942,6 +953,18 @@ final class SyncController: SynchronizationController {
             // If there were no other actions performed, we need to check for remote changes for this library.
             self.queue.insert(.createLibraryActions(.specific([libraryId]), .onlyDownloads), at: 0)
             self.processNextAction()
+            return
+        }
+
+        if !canWriteFiles {
+            switch libraryId {
+            case .group(let groupId):
+                let name = (try? self.dbStorage.perform(request: ReadGroupDbRequest(identifier: groupId), on: self.accessQueue))?.name ?? ""
+                self.enqueue(actions: [.resolveGroupFileWritePermission(groupId: groupId, name: name)], at: 0)
+
+            // Does not happen for custom library
+            case .custom: break
+            }
             return
         }
 
@@ -1496,7 +1519,7 @@ final class SyncController: SynchronizationController {
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.processNextAction()
                   }
-              }, onFailure: { `self`, error in
+              }, onFailure: { `self`, _ in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.abort(error: .uploadObjectConflict(data: SyncError.ErrorData(itemKeys: [key], libraryId: libraryId)))
                   }
@@ -1561,8 +1584,7 @@ final class SyncController: SynchronizationController {
         if !ignoreWebDav &&
            self.handleZoteroDirectoryMissing(for: error, continue: { [weak self] in
                self?.finishSubmission(error: error, newVersion: newVersion, keys: keys, libraryId: libraryId, object: object, failedBeforeReachingApi: failedBeforeReachingApi, ignoreWebDav: true)
-           })
-        {
+           }) {
             return
         }
 
@@ -1635,8 +1657,17 @@ final class SyncController: SynchronizationController {
 
         switch statusCode {
         case 403:
-            // File editing denied for library. Stop further edits for given library and notify the user.
-            nonFatalError = .fileEditingDenied(libraryId)
+            switch libraryId {
+            case .group(let groupId):
+                // File editing denied for library. Stop further edits for given library and notify the user.
+                let name = (try? self.dbStorage.perform(request: ReadGroupDbRequest(identifier: groupId), on: self.accessQueue))?.name ?? ""
+                self.enqueue(actions: [.resolveGroupFileWritePermission(groupId: groupId, name: name)], at: 0)
+                return
+
+            // Shouldn't happen to "my library".
+            case .custom:
+                nonFatalError = .apiError(response: response, data: .from(syncObject: object, keys: [key], libraryId: libraryId))
+            }
 
         case 413:
             // User reached quota limit for library. Stop further uploads to given library and notify the user.
@@ -1682,7 +1713,7 @@ final class SyncController: SynchronizationController {
 
     private func markItemForUpload(key: String, libraryId: LibraryIdentifier, completion: @escaping (Result<(), Error>) -> Void) {
         self.workQueue.async { [weak self] in
-            guard let `self` = self else { return }
+            guard let self else { return }
 
             let request = MarkObjectsAsChangedByUser(libraryId: libraryId, collections: [], items: [key])
 
@@ -1761,26 +1792,51 @@ final class SyncController: SynchronizationController {
     }
 
     private func revertGroupData(in libraryId: LibraryIdentifier) {
-        let result = RevertLibraryUpdatesSyncAction(
+        RevertLibraryUpdatesSyncAction(
             libraryId: libraryId,
             dbStorage: self.dbStorage,
             fileStorage: self.fileStorage,
             schemaController: self.schemaController,
             dateParser: self.dateParser,
             queue: self.workQueue
-        ).result
-        result.subscribe(on: self.workScheduler)
-              .subscribe(onSuccess: { [weak self] _ in
-                  self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      // TODO: - report failures?
-                      self?.finishCompletableAction(error: nil)
-                  }
-              }, onFailure: { [weak self] _ in
-                  self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishCompletableAction(error: nil)
-                  }
-              })
-              .disposed(by: self.disposeBag)
+        )
+        .result
+        .subscribe(on: self.workScheduler)
+        .subscribe(onSuccess: { [weak self] _ in
+        self?.accessQueue.async(flags: .barrier) { [weak self] in
+            // TODO: - report failures?
+            self?.finishCompletableAction(error: nil)
+        }
+        }, onFailure: { [weak self] error in
+            self?.accessQueue.async(flags: .barrier) { [weak self] in
+                self?.finishCompletableAction(error: (error, .from(libraryId: libraryId)))
+            }
+        })
+        .disposed(by: self.disposeBag)
+    }
+
+    private func revertGroupFiles(in libraryId: LibraryIdentifier) {
+        RevertLibraryFilesSyncAction(
+            libraryId: libraryId,
+            dbStorage: self.dbStorage,
+            fileStorage: self.fileStorage,
+            schemaController: self.schemaController,
+            dateParser: self.dateParser,
+            queue: self.workQueue
+        )
+        .result
+        .subscribe(on: self.workScheduler)
+        .subscribe(onSuccess: { [weak self] _ in
+            self?.accessQueue.async(flags: .barrier) { [weak self] in
+              // TODO: - report failures?
+                self?.finishCompletableAction(error: nil)
+            }
+        }, onFailure: { [weak self] error in
+            self?.accessQueue.async(flags: .barrier) { [weak self] in
+                self?.finishCompletableAction(error: (error, .from(libraryId: libraryId)))
+            }
+        })
+        .disposed(by: self.disposeBag)
     }
 
     private func finishCompletableAction(error errorData: (Error, SyncError.ErrorData)?) {
@@ -2058,7 +2114,7 @@ final class SyncController: SynchronizationController {
                 self.processNextAction()
             }
 
-        case .quotaLimit(let libraryId), .fileEditingDenied(let libraryId):
+        case .quotaLimit(let libraryId):
             self.removeRemainingUploads(for: libraryId, andAppendError: error, additionalAction: additionalAction)
 
         default:
@@ -2178,7 +2234,8 @@ fileprivate extension SyncController.Action {
              .resolveGroupMetadataWritePermission(let groupId, _),
              .deleteGroup(let groupId),
              .markGroupAsLocalOnly(let groupId),
-             .syncGroupToDb(let groupId):
+             .syncGroupToDb(let groupId),
+             .resolveGroupFileWritePermission(let groupId, _):
             return .group(groupId)
         case .syncVersions(let libraryId, _, _, _),
              .storeVersion(_, let libraryId, _),
@@ -2189,16 +2246,18 @@ fileprivate extension SyncController.Action {
              .syncSettings(let libraryId, _),
              .markChangesAsResolved(let libraryId),
              .revertLibraryToOriginal(let libraryId),
-             .createUploadActions(let libraryId, _),
+             .createUploadActions(let libraryId, _, _),
              .performWebDavDeletions(let libraryId),
-             .fixUpload(_, let libraryId):
+             .fixUpload(_, let libraryId),
+             .removeActions(let libraryId),
+             .revertLibraryFilesToOriginal(let libraryId):
             return libraryId
         }
     }
 
     var requiresConflictReceiver: Bool {
         switch self {
-        case .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncDeletions:
+        case .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncDeletions, .resolveGroupFileWritePermission:
             return true
         case .loadKeyPermissions,
              .createLibraryActions,
@@ -2220,7 +2279,9 @@ fileprivate extension SyncController.Action {
              .restoreDeletions,
              .storeDeletionVersion,
              .performWebDavDeletions,
-             .fixUpload:
+             .fixUpload,
+             .removeActions,
+             .revertLibraryFilesToOriginal:
             return false
         }
     }
@@ -2249,7 +2310,10 @@ fileprivate extension SyncController.Action {
              .restoreDeletions,
              .storeDeletionVersion,
              .performWebDavDeletions,
-             .fixUpload:
+             .fixUpload,
+             .resolveGroupFileWritePermission,
+             .removeActions,
+             .revertLibraryFilesToOriginal:
             return false
         }
     }
@@ -2283,7 +2347,10 @@ fileprivate extension SyncController.Action {
              .performDeletions,
              .restoreDeletions,
              .storeDeletionVersion,
-             .performWebDavDeletions:
+             .performWebDavDeletions,
+             .resolveGroupFileWritePermission,
+             .removeActions,
+             .revertLibraryFilesToOriginal:
             return "Unknown action"
         }
     }
