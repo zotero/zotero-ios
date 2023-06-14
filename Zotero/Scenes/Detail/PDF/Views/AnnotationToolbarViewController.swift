@@ -103,11 +103,43 @@ class AnnotationToolbarViewController: UIViewController {
     }
 
     private static func createTools() -> [Tool] {
-        return [Tool(type: .highlight, title: L10n.Pdf.AnnotationToolbar.highlight, accessibilityLabel: L10n.Accessibility.Pdf.highlightAnnotationTool, image: Asset.Images.Annotations.highlighterLarge.image, isHidden: false),
-                Tool(type: .note, title: L10n.Pdf.AnnotationToolbar.note, accessibilityLabel: L10n.Accessibility.Pdf.noteAnnotationTool, image: Asset.Images.Annotations.noteLarge.image, isHidden: false),
-                Tool(type: .square, title: L10n.Pdf.AnnotationToolbar.image, accessibilityLabel: L10n.Accessibility.Pdf.imageAnnotationTool, image: Asset.Images.Annotations.areaLarge.image, isHidden: false),
-                Tool(type: .ink, title: L10n.Pdf.AnnotationToolbar.ink, accessibilityLabel: L10n.Accessibility.Pdf.inkAnnotationTool, image: Asset.Images.Annotations.inkLarge.image, isHidden: false),
-                Tool(type: .eraser, title: L10n.Pdf.AnnotationToolbar.eraser, accessibilityLabel: L10n.Accessibility.Pdf.eraserAnnotationTool, image: Asset.Images.Annotations.eraserLarge.image, isHidden: false)]
+        return [
+            Tool(
+                type: .highlight,
+                title: L10n.Pdf.AnnotationToolbar.highlight,
+                accessibilityLabel: L10n.Accessibility.Pdf.highlightAnnotationTool,
+                image: Asset.Images.Annotations.highlighterLarge.image,
+                isHidden: false
+            ),
+            Tool(
+                type: .note,
+                title: L10n.Pdf.AnnotationToolbar.note,
+                accessibilityLabel: L10n.Accessibility.Pdf.noteAnnotationTool,
+                image: Asset.Images.Annotations.noteLarge.image,
+                isHidden: false
+            ),
+            Tool(
+                type: .square,
+                title: L10n.Pdf.AnnotationToolbar.image,
+                accessibilityLabel: L10n.Accessibility.Pdf.imageAnnotationTool,
+                image: Asset.Images.Annotations.areaLarge.image,
+                isHidden: false
+            ),
+            Tool(
+                type: .ink,
+                title: L10n.Pdf.AnnotationToolbar.ink,
+                accessibilityLabel: L10n.Accessibility.Pdf.inkAnnotationTool,
+                image: Asset.Images.Annotations.inkLarge.image,
+                isHidden: false
+            ),
+            Tool(
+                type: .eraser,
+                title: L10n.Pdf.AnnotationToolbar.eraser,
+                accessibilityLabel: L10n.Accessibility.Pdf.eraserAnnotationTool,
+                image: Asset.Images.Annotations.eraserLarge.image,
+                isHidden: false
+            )
+        ]
     }
 
     override func viewDidLoad() {
@@ -496,8 +528,22 @@ class AnnotationToolbarViewController: UIViewController {
         let hairlineTrailing = hairline.trailingAnchor.constraint(equalTo: self.view.trailingAnchor)
         let hairlineBottom = hairline.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
 
-        NSLayoutConstraint.activate([containerTop, containerLeading, self.containerTrailing, self.containerToPickerVertical, self.colorPickerLeading, self.colorPickerTrailing, additionalBottom,
-                                     self.colorPickerToAdditionalVertical, additionalTrailing, self.additionalLeading, hairlineHeight, hairlineLeading, hairlineTrailing, hairlineBottom])
+        NSLayoutConstraint.activate([
+            containerTop,
+            containerLeading,
+            self.containerTrailing,
+            self.containerToPickerVertical,
+            self.colorPickerLeading,
+            self.colorPickerTrailing,
+            additionalBottom,
+            self.colorPickerToAdditionalVertical,
+            additionalTrailing,
+            self.additionalLeading,
+            hairlineHeight,
+            hairlineLeading,
+            hairlineTrailing,
+            hairlineBottom
+        ])
 
         self.containerTop = containerTop
         self.containerLeading = containerLeading

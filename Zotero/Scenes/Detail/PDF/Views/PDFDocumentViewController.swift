@@ -15,8 +15,12 @@ import RxSwift
 import RealmSwift
 
 protocol PDFDocumentDelegate: AnyObject {
-    func annotationTool(didChangeStateFrom oldState: PSPDFKit.Annotation.Tool?, to newState: PSPDFKit.Annotation.Tool?,
-                        variantFrom oldVariant: PSPDFKit.Annotation.Variant?, to newVariant: PSPDFKit.Annotation.Variant?)
+    func annotationTool(
+        didChangeStateFrom oldState: PSPDFKit.Annotation.Tool?,
+        to newState: PSPDFKit.Annotation.Tool?,
+        variantFrom oldVariant: PSPDFKit.Annotation.Variant?,
+        to newVariant: PSPDFKit.Annotation.Variant?
+    )
     func didChange(undoState undoEnabled: Bool, redoState redoEnabled: Bool)
     func interfaceVisibilityDidChange(to isHidden: Bool)
     func showToolOptions()
@@ -630,11 +634,13 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
 }
 
 extension PDFDocumentViewController: AnnotationStateManagerDelegate {
-    func annotationStateManager(_ manager: AnnotationStateManager,
-                                didChangeState oldState: PSPDFKit.Annotation.Tool?,
-                                to newState: PSPDFKit.Annotation.Tool?,
-                                variant oldVariant: PSPDFKit.Annotation.Variant?,
-                                to newVariant: PSPDFKit.Annotation.Variant?) {
+    func annotationStateManager(
+        _ manager: AnnotationStateManager,
+        didChangeState oldState: PSPDFKit.Annotation.Tool?,
+        to newState: PSPDFKit.Annotation.Tool?,
+        variant oldVariant: PSPDFKit.Annotation.Variant?,
+        to newVariant: PSPDFKit.Annotation.Variant?
+    ) {
         self.parentDelegate?.annotationTool(didChangeStateFrom: oldState, to: newState, variantFrom: oldVariant, to: newVariant)
     }
 
