@@ -30,17 +30,8 @@ protocol PdfReaderCoordinatorDelegate: AnyObject {
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: AnyObject {
-    func createShareAnnotationMenu(
-        state: PDFReaderState,
-        annotation: Annotation,
-        sender: UIButton
-    ) -> UIMenu?
-    func shareAnnotationImage(
-        state: PDFReaderState,
-        annotation: Annotation,
-        scale: CGFloat,
-        sender: UIButton
-    )
+    func createShareAnnotationMenu(state: PDFReaderState, annotation: Annotation, sender: UIButton) -> UIMenu?
+    func shareAnnotationImage(state: PDFReaderState, annotation: Annotation, scale: CGFloat, sender: UIButton )
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void)
     func showCellOptions(for annotation: Annotation, userId: Int, library: Library, sender: UIButton, userInterfaceStyle: UIUserInterfaceStyle, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
     func showFilterPopup(from barButton: UIBarButtonItem, filter: AnnotationsFilter?, availableColors: [String], availableTags: [Tag], userInterfaceStyle: UIUserInterfaceStyle, completed: @escaping (AnnotationsFilter?) -> Void)
@@ -370,11 +361,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         }
     }
         
-    func createShareAnnotationMenu(
-        state: PDFReaderState,
-        annotation: Annotation,
-        sender: UIButton
-    ) -> UIMenu? {
+    func createShareAnnotationMenu(state: PDFReaderState, annotation: Annotation, sender: UIButton) -> UIMenu? {
         guard annotation.type == .image,
               let boundingBoxConverter = self.navigationController.viewControllers.last as? AnnotationBoundingBoxConverter
         else { return nil }
@@ -392,12 +379,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         return UIMenu(children: children)
     }
     
-    func shareAnnotationImage(
-        state: PDFReaderState,
-        annotation: Annotation,
-        scale: CGFloat = 1.0,
-        sender: UIButton
-    ) {
+    func shareAnnotationImage(state: PDFReaderState, annotation: Annotation, scale: CGFloat = 1.0, sender: UIButton) {
         guard annotation.type == .image,
               let pdfReaderViewController = navigationController.viewControllers.last as? PDFReaderViewController
         else { return }
