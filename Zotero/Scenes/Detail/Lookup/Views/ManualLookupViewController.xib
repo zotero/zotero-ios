@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="20037" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="21701" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="20020"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21679"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
@@ -31,7 +31,7 @@
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
                 <wkWebView hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ehk-5k-KTu">
-                    <rect key="frame" x="0.0" y="44" width="414" height="818"/>
+                    <rect key="frame" x="0.0" y="48" width="414" height="814"/>
                     <color key="backgroundColor" red="0.36078431370000003" green="0.38823529410000002" blue="0.4039215686" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                     <wkWebViewConfiguration key="configuration">
                         <audiovisualMediaTypes key="mediaTypesRequiringUserActionForPlayback" none="YES"/>
@@ -39,22 +39,22 @@
                     </wkWebViewConfiguration>
                 </wkWebView>
                 <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="CBC-9R-ZFy">
-                    <rect key="frame" x="15" y="59" width="384" height="788"/>
+                    <rect key="frame" x="15" y="63" width="384" height="784"/>
                     <subviews>
                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4ev-98-hhW">
-                            <rect key="frame" x="0.0" y="0.0" width="384" height="14.5"/>
+                            <rect key="frame" x="0.0" y="0.0" width="384" height="18"/>
                             <fontDescription key="fontDescription" style="UICTFontTextStyleSubhead"/>
                             <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             <nil key="highlightedColor"/>
                         </label>
                         <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="14" translatesAutoresizingMaskIntoConstraints="NO" id="iP0-0A-WQx">
-                            <rect key="frame" x="0.0" y="26.5" width="384" height="761.5"/>
+                            <rect key="frame" x="0.0" y="30" width="384" height="754"/>
                             <subviews>
                                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="0HI-7k-AHa">
-                                    <rect key="frame" x="0.0" y="0.0" width="384" height="618.5"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="384" height="611"/>
                                     <subviews>
                                         <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" verticalHuggingPriority="1" verticalCompressionResistancePriority="1000" textAlignment="natural" translatesAutoresizingMaskIntoConstraints="NO" id="hcG-UE-5Wz">
-                                            <rect key="frame" x="10" y="4" width="364" height="610.5"/>
+                                            <rect key="frame" x="10" y="4" width="364" height="603"/>
                                             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                             <color key="textColor" systemColor="labelColor"/>
                                             <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
@@ -70,7 +70,7 @@
                                     </constraints>
                                 </view>
                                 <button opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="999" horizontalCompressionResistancePriority="1000" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="91w-UZ-Jww">
-                                    <rect key="frame" x="0.0" y="632.5" width="384" height="129"/>
+                                    <rect key="frame" x="0.0" y="625" width="384" height="129"/>
                                     <color key="tintColor" name="zoteroBlueWithDarkMode"/>
                                     <state key="normal" title="Button"/>
                                     <buttonConfiguration key="configuration" style="plain" image="button:91w-UZ-Jww:image" title="Scan Text">
@@ -89,12 +89,12 @@
                 <constraint firstItem="c30-ta-gNc" firstAttribute="trailing" secondItem="ehk-5k-KTu" secondAttribute="trailing" id="Aas-Tb-DLu"/>
                 <constraint firstItem="ehk-5k-KTu" firstAttribute="leading" secondItem="c30-ta-gNc" secondAttribute="leading" id="B6i-Lc-49E"/>
                 <constraint firstItem="c30-ta-gNc" firstAttribute="bottom" secondItem="ehk-5k-KTu" secondAttribute="bottom" id="EsW-Pp-MuX"/>
+                <constraint firstItem="c30-ta-gNc" firstAttribute="trailing" secondItem="CBC-9R-ZFy" secondAttribute="trailing" constant="15" id="GND-9B-MuT"/>
                 <constraint firstItem="ehk-5k-KTu" firstAttribute="top" secondItem="c30-ta-gNc" secondAttribute="top" id="IFs-ev-qY1"/>
                 <constraint firstItem="c30-ta-gNc" firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="CBC-9R-ZFy" secondAttribute="bottom" constant="15" id="JTA-yk-KBy"/>
                 <constraint firstItem="CBC-9R-ZFy" firstAttribute="leading" secondItem="c30-ta-gNc" secondAttribute="leading" constant="15" id="Vbv-dG-rKZ"/>
                 <constraint firstItem="CBC-9R-ZFy" firstAttribute="top" secondItem="c30-ta-gNc" secondAttribute="top" constant="15" id="dMJ-41-9SJ"/>
                 <constraint firstItem="c30-ta-gNc" firstAttribute="bottom" secondItem="CBC-9R-ZFy" secondAttribute="bottom" constant="15" id="jdv-MM-MlB"/>
-                <constraint firstAttribute="trailing" secondItem="CBC-9R-ZFy" secondAttribute="trailing" constant="15" id="y0w-M5-0Pm"/>
             </constraints>
             <point key="canvasLocation" x="-97" y="150"/>
         </view>
@@ -15959,7 +15959,7 @@ gXYADoF7AA6BgwAOgYYADoGLAA6BkwAAAAAAAAQBAAAAAAAAAFYAAAAAAAAAAAAAAAAADoGWA
             <color red="0.25098039215686274" green="0.44313725490196076" blue="0.90196078431372551" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
         <systemColor name="labelColor">
-            <color white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+            <color red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
