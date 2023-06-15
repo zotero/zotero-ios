@@ -28,6 +28,7 @@ final class WebDavControllerSpec: QuickSpec {
     private var downloader: AttachmentDownloader?
     private var disposeBag: DisposeBag = DisposeBag()
     private var syncController: SyncController?
+    private var backgroundUploaderContext: BackgroundUploaderContext?
     // We need to retain realm with memory identifier so that data are not deleted
     private var realm: Realm!
     private var dbStorage: DbStorage!
@@ -70,7 +71,7 @@ final class WebDavControllerSpec: QuickSpec {
             }
 
             it("should show an error for a 403") {
-                createStub(for: WebDavCheckRequest(url: self.webDavUrl), baseUrl: self.apiBaseUrl, statusCode: 403, jsonResponse: [])
+                createStub(for: WebDavCheckRequest(url: self.webDavUrl), baseUrl: self.apiBaseUrl, statusCode: 403, jsonResponse: [] as [String])
 
                 waitUntil(timeout: .seconds(10)) { finished in
                     self.testCheckServer(with: self.unverifiedCredentials) {
@@ -89,9 +90,9 @@ final class WebDavControllerSpec: QuickSpec {
             }
 
             it("should show an error for a 404 for the parent directory") {
-                createStub(for: WebDavCheckRequest(url: self.webDavUrl), baseUrl: self.apiBaseUrl, headers: ["DAV": "1"], statusCode: 200, jsonResponse: [])
-                createStub(for: WebDavPropfindRequest(url: self.webDavUrl), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 404, jsonResponse: [])
-                createStub(for: WebDavPropfindRequest(url: self.webDavUrl.deletingLastPathComponent()), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 404, jsonResponse: [])
+                createStub(for: WebDavCheckRequest(url: self.webDavUrl), baseUrl: self.apiBaseUrl, headers: ["DAV": "1"], statusCode: 200, jsonResponse: [] as [String])
+                createStub(for: WebDavPropfindRequest(url: self.webDavUrl), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 404, jsonResponse: [] as [String])
+                createStub(for: WebDavPropfindRequest(url: self.webDavUrl.deletingLastPathComponent()), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 404, jsonResponse: [] as [String])
 
                 waitUntil(timeout: .seconds(10)) { finished in
                     self.testCheckServer(with: self.unverifiedCredentials) {
@@ -110,9 +111,9 @@ final class WebDavControllerSpec: QuickSpec {
             }
 
             it("should show an error for a 200 for a nonexistent file") {
-                createStub(for: WebDavCheckRequest(url: self.webDavUrl), baseUrl: self.apiBaseUrl, headers: ["DAV": "1"], statusCode: 200, jsonResponse: [])
-                createStub(for: WebDavPropfindRequest(url: self.webDavUrl), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 207, jsonResponse: [])
-                createStub(for: WebDavNonexistentPropRequest(url: self.webDavUrl), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [])
+                createStub(for: WebDavCheckRequest(url: self.webDavUrl), baseUrl: self.apiBaseUrl, headers: ["DAV": "1"], statusCode: 200, jsonResponse: [] as [String])
+                createStub(for: WebDavPropfindRequest(url: self.webDavUrl), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 207, jsonResponse: [] as [String])
+                createStub(for: WebDavNonexistentPropRequest(url: self.webDavUrl), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [] as [String])
 
                 waitUntil(timeout: .seconds(10)) { finished in
                     self.testCheckServer(with: self.unverifiedCredentials) {
@@ -135,7 +136,12 @@ final class WebDavControllerSpec: QuickSpec {
             it("handles missing zip") {
                 let filename = "test"
                 let contentType = "application/pdf"
-                let attachment = Attachment(type: .file(filename: filename, contentType: contentType, location: .remote, linkType: .importedUrl), title: "Test", key: "aaaaaa", libraryId: .custom(.myLibrary))
+                let attachment = Attachment(
+                    type: .file(filename: filename, contentType: contentType, location: .remote, linkType: .importedUrl),
+                    title: "Test",
+                    key: "aaaaaa",
+                    libraryId: .custom(.myLibrary)
+                )
                 let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
                 let request = FileRequest(webDavUrl: self.webDavUrl.appendingPathComponent(attachment.key + ".zip"), destination: file)
 
@@ -155,7 +161,12 @@ final class WebDavControllerSpec: QuickSpec {
                 let filename = "bitcoin"
                 let contentType = "application/pdf"
                 let zipUrl = URL(fileURLWithPath: Bundle(for: WebDavControllerSpec.self).path(forResource: "bitcoin", ofType: "zip")!)
-                let attachment = Attachment(type: .file(filename: filename, contentType: contentType, location: .remote, linkType: .importedUrl), title: "Test", key: "AAAAAA", libraryId: .custom(.myLibrary))
+                let attachment = Attachment(
+                    type: .file(filename: filename, contentType: contentType, location: .remote, linkType: .importedUrl),
+                    title: "Test",
+                    key: "AAAAAA",
+                    libraryId: .custom(.myLibrary)
+                )
                 let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
                 let request = FileRequest(webDavUrl: self.webDavUrl.appendingPathComponent(attachment.key + ".zip"), destination: file)
 
@@ -243,24 +254,54 @@ final class WebDavControllerSpec: QuickSpec {
                 try! TestControllers.fileStorage.write(pdfData, to: file, options: .atomic)
 
                 createStub(for: KeyRequest(), baseUrl: self.apiBaseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
-                createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: self.apiBaseUrl, headers: ["last-modified-version": "\(oldVersion)"], jsonResponse: [:])
-                createStub(for: WebDavDownloadRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200,
-                           xmlResponse: "<properties version=\"1\"><mtime>2</mtime><hash>bbbb</hash></properties>")
-                createStub(for: WebDavDeleteRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [])
-                createStub(for: WebDavWriteRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop"), data: Data()),
-                           ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [])
-                createStub(for: AttachmentUploadRequest(endpoint: .webDav(self.webDavUrl.appendingPathComponent(itemKey + ".zip")), httpMethod: .put), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [])
+                createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: self.apiBaseUrl, headers: ["last-modified-version": "\(oldVersion)"], jsonResponse: [:] as [String: Any])
+                createStub(
+                    for: WebDavDownloadRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")),
+                    ignoreBody: true,
+                    baseUrl: self.apiBaseUrl,
+                    statusCode: 200,
+                    xmlResponse: "<properties version=\"1\"><mtime>2</mtime><hash>bbbb</hash></properties>"
+                )
+                createStub(
+                    for: WebDavDeleteRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")),
+                    ignoreBody: true,
+                    baseUrl: self.apiBaseUrl,
+                    statusCode: 200,
+                    jsonResponse: [] as [String]
+                )
+                createStub(
+                    for: WebDavWriteRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop"), data: Data()),
+                    ignoreBody: true,
+                    baseUrl: self.apiBaseUrl,
+                    statusCode: 200,
+                    jsonResponse: [] as [String]
+                )
+                createStub(
+                    for: AttachmentUploadRequest(endpoint: .webDav(self.webDavUrl.appendingPathComponent(itemKey + ".zip")), httpMethod: .put),
+                    ignoreBody: true,
+                    baseUrl: self.apiBaseUrl,
+                    statusCode: 200,
+                    jsonResponse: [] as [String]
+                )
 
                 let updatesRequest = UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .item, params: [], version: nil)
                 stub(condition: updatesRequest.stubCondition(with: self.apiBaseUrl, ignoreBody: true), response: { request -> HTTPStubsResponse in
                     if request.allHTTPHeaderFields?["If-Unmodified-Since-Version"] != nil {
                         // First request to submit a new item
                         let itemJson = self.itemJson(key: itemKey, version: newVersion, type: "attachment")
-                        return HTTPStubsResponse(jsonObject: ["success": ["0": itemKey], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]], statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
+                        return HTTPStubsResponse(
+                            jsonObject: ["success": ["0": itemKey] as [String: Any], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]],
+                            statusCode: 200,
+                            headers: ["last-modified-version": "\(newVersion)"]
+                        )
                     } else {
                         // Second request to submit new mtime and hash
                         let itemJson = self.itemJson(key: itemKey, version: newVersion + 1, type: "attachment")
-                        return HTTPStubsResponse(jsonObject: ["success": ["0": itemKey], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]], statusCode: 200, headers: ["last-modified-version": "\(newVersion + 1)"])
+                        return HTTPStubsResponse(
+                            jsonObject: ["success": ["0": itemKey] as [String: Any], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]],
+                            statusCode: 200,
+                            headers: ["last-modified-version": "\(newVersion + 1)"]
+                        )
                     }
                 })
 
@@ -345,11 +386,22 @@ final class WebDavControllerSpec: QuickSpec {
                 try! TestControllers.fileStorage.write(pdfData, to: file, options: .atomic)
 
                 createStub(for: KeyRequest(), baseUrl: self.apiBaseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
-                createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: self.apiBaseUrl, headers: ["last-modified-version": "\(oldVersion)"], jsonResponse: [:])
-                createStub(for: WebDavDownloadRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200,
-                           xmlResponse: "<properties version=\"1\"><mtime>2</mtime><hash>aaaa</hash></properties>")
-                createStub(for: UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .item, params: [], version: nil), ignoreBody: true, baseUrl: self.apiBaseUrl,
-                           headers: ["last-modified-version": "\(newVersion)"], statusCode: 200, jsonResponse: ["success": ["0": itemKey], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]])
+                createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: self.apiBaseUrl, headers: ["last-modified-version": "\(oldVersion)"], jsonResponse: [:] as [String: Any])
+                createStub(
+                    for: WebDavDownloadRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")),
+                    ignoreBody: true,
+                    baseUrl: self.apiBaseUrl,
+                    statusCode: 200,
+                    xmlResponse: "<properties version=\"1\"><mtime>2</mtime><hash>aaaa</hash></properties>"
+                )
+                createStub(
+                    for: UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .item, params: [], version: nil),
+                    ignoreBody: true,
+                    baseUrl: self.apiBaseUrl,
+                    headers: ["last-modified-version": "\(newVersion)"],
+                    statusCode: 200,
+                    jsonResponse: ["success": ["0": itemKey] as [String: Any], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]]
+                )
 
                 waitUntil(timeout: .seconds(10)) { doneAction in
                     self.testSync {
@@ -435,12 +487,22 @@ final class WebDavControllerSpec: QuickSpec {
                 try! TestControllers.fileStorage.write(pdfData, to: file, options: .atomic)
 
                 createStub(for: KeyRequest(), baseUrl: self.apiBaseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
-                createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: self.apiBaseUrl, headers: ["last-modified-version": "\(oldVersion)"], jsonResponse: [:])
-                createStub(for: UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .item, params: [], version: oldVersion),
-                           ignoreBody: true, baseUrl: self.apiBaseUrl, headers: ["last-modified-version": "\(newVersion)"], statusCode: 200,
-                           jsonResponse: ["success": ["0": itemKey], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]])
-                createStub(for: WebDavDownloadRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200,
-                           xmlResponse: "<properties version=\"1\"><mtime>1</mtime><hash>aaaa</hash></properties>")
+                createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: self.apiBaseUrl, headers: ["last-modified-version": "\(oldVersion)"], jsonResponse: [:] as [String: Any])
+                createStub(
+                    for: UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .item, params: [], version: oldVersion),
+                    ignoreBody: true,
+                    baseUrl: self.apiBaseUrl,
+                    headers: ["last-modified-version": "\(newVersion)"],
+                    statusCode: 200,
+                    jsonResponse: ["success": ["0": itemKey] as [String: Any], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]]
+                )
+                createStub(
+                    for: WebDavDownloadRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")),
+                    ignoreBody: true,
+                    baseUrl: self.apiBaseUrl,
+                    statusCode: 200,
+                    xmlResponse: "<properties version=\"1\"><mtime>1</mtime><hash>aaaa</hash></properties>"
+                )
 
                 waitUntil(timeout: .seconds(10)) { doneAction in
                     self.testSync {
@@ -499,25 +561,53 @@ final class WebDavControllerSpec: QuickSpec {
                 var deletionCount = 0
 
                 createStub(for: KeyRequest(), baseUrl: self.apiBaseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
-                createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: self.apiBaseUrl, headers: header, jsonResponse: [:])
-                createStub(for: SubmitDeletionsRequest(libraryId: libraryId, userId: self.userId, objectType: .item, keys: [itemKey, itemKey3], version: 0),
-                           baseUrl: self.apiBaseUrl, headers: header, jsonResponse: [:])
-                createStub(for: WebDavDeleteRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [:],
-                           responseAction: {
-                    deletionCount += 1
-                })
-                createStub(for: WebDavDeleteRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".zip")), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [:],
-                           responseAction: {
-                    deletionCount += 1
-                })
-                createStub(for: WebDavDeleteRequest(url: self.webDavUrl.appendingPathComponent(itemKey2 + ".prop")), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [:],
-                           responseAction: {
-                    deletionCount += 1
-                })
-                createStub(for: WebDavDeleteRequest(url: self.webDavUrl.appendingPathComponent(itemKey2 + ".zip")), ignoreBody: true, baseUrl: self.apiBaseUrl, statusCode: 200, jsonResponse: [:],
-                           responseAction: {
-                    deletionCount += 1
-                })
+                createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: self.apiBaseUrl, headers: header, jsonResponse: [:] as [String: Any])
+                createStub(
+                    for: SubmitDeletionsRequest(libraryId: libraryId, userId: self.userId, objectType: .item, keys: [itemKey, itemKey3], version: 0),
+                    baseUrl: self.apiBaseUrl,
+                    headers: header,
+                    jsonResponse: [:] as [String: Any]
+                )
+                createStub(
+                    for: WebDavDeleteRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")),
+                    ignoreBody: true,
+                    baseUrl: self.apiBaseUrl,
+                    statusCode: 200,
+                    jsonResponse: [:] as [String: Any],
+                    responseAction: {
+                        deletionCount += 1
+                    }
+                )
+                createStub(
+                    for: WebDavDeleteRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".zip")),
+                    ignoreBody: true,
+                    baseUrl: self.apiBaseUrl,
+                    statusCode: 200,
+                    jsonResponse: [:] as [String: Any],
+                    responseAction: {
+                        deletionCount += 1
+                    }
+                )
+                createStub(
+                    for: WebDavDeleteRequest(url: self.webDavUrl.appendingPathComponent(itemKey2 + ".prop")),
+                    ignoreBody: true,
+                    baseUrl: self.apiBaseUrl,
+                    statusCode: 200,
+                    jsonResponse: [:] as [String: Any],
+                    responseAction: {
+                        deletionCount += 1
+                    }
+                )
+                createStub(
+                    for: WebDavDeleteRequest(url: self.webDavUrl.appendingPathComponent(itemKey2 + ".zip")),
+                    ignoreBody: true,
+                    baseUrl: self.apiBaseUrl,
+                    statusCode: 200,
+                    jsonResponse: [:] as [String: Any],
+                    responseAction: {
+                        deletionCount += 1
+                    }
+                )
 
                 waitUntil(timeout: .seconds(10)) { doneAction in
                     self.testSync {
@@ -547,7 +637,13 @@ final class WebDavControllerSpec: QuickSpec {
 
     private func testDownload(attachment: Attachment, successAction: @escaping () -> Void, errorAction: @escaping (Error) -> Void) {
         self.webDavController = WebDavControllerImpl(dbStorage: self.dbStorage, fileStorage: TestControllers.fileStorage, sessionStorage: self.verifiedCredentials)
-        self.downloader = AttachmentDownloader(userId: self.userId, apiClient: TestControllers.apiClient, fileStorage: TestControllers.fileStorage, dbStorage: self.dbStorage, webDavController: self.webDavController!)
+        self.downloader = AttachmentDownloader(
+            userId: self.userId,
+            apiClient: TestControllers.apiClient,
+            fileStorage: TestControllers.fileStorage,
+            dbStorage: self.dbStorage,
+            webDavController: self.webDavController!
+        )
 
         self.downloader?.observable
             .subscribe(onNext: { update in
@@ -566,16 +662,33 @@ final class WebDavControllerSpec: QuickSpec {
     }
 
     private func testSync(syncFinishedAction: @escaping () -> Void) {
-        // Create webdav controller
         let webDavController = WebDavControllerImpl(dbStorage: self.dbStorage, fileStorage: TestControllers.fileStorage, sessionStorage: self.verifiedCredentials)
-        // Create sync controller
-        let syncController = SyncController(userId: self.userId, apiClient: TestControllers.apiClient, dbStorage: self.dbStorage, fileStorage: TestControllers.fileStorage,
-                                            schemaController: TestControllers.schemaController, dateParser: TestControllers.dateParser, backgroundUploaderContext: BackgroundUploaderContext(),
-                                            webDavController: webDavController, syncDelayIntervals: [0, 1, 2, 3], conflictDelays: [0, 1, 2, 3])
+        let backgroundUploaderContext = BackgroundUploaderContext()
+        let attachmentDownloader = AttachmentDownloader(
+            userId: self.userId,
+            apiClient: TestControllers.apiClient,
+            fileStorage: TestControllers.fileStorage,
+            dbStorage: self.dbStorage,
+            webDavController: webDavController
+        )
+        let syncController = SyncController(
+            userId: self.userId,
+            apiClient: TestControllers.apiClient,
+            dbStorage: self.dbStorage,
+            fileStorage: TestControllers.fileStorage,
+            schemaController: TestControllers.schemaController,
+            dateParser: TestControllers.dateParser,
+            backgroundUploaderContext: backgroundUploaderContext,
+            webDavController: webDavController,
+            attachmentDownloader: attachmentDownloader,
+            syncDelayIntervals: [0, 1, 2, 3],
+            maxRetryCount: 4
+        )
         syncController.set(coordinator: TestConflictCoordinator(createZoteroDirectory: false))
 
         self.syncController = syncController
         self.webDavController = webDavController
+        self.backgroundUploaderContext = backgroundUploaderContext
 
         self.syncController!.reportFinish = { _ in
             inMainThread {
@@ -583,7 +696,7 @@ final class WebDavControllerSpec: QuickSpec {
             }
         }
 
-        self.syncController!.start(type: .normal, libraries: .all)
+        self.syncController!.start(type: .normal, libraries: .all, retryAttempt: 0)
     }
 
     private func itemJson(key: String, version: Int, type: String) -> [String: Any] {
