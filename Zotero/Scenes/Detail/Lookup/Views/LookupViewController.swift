@@ -181,7 +181,7 @@ class LookupViewController: UIViewController {
 
             self.tableViewHeight.constant = value.height
 
-            if value.height >= self.tableView.frame.height {
+            if value.height >= self.tableView.frame.height, !self.tableView.isScrollEnabled {
                 self.tableView.isScrollEnabled = true
                 self.contentSizeObserver = nil
             }
