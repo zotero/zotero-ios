@@ -129,14 +129,14 @@ final class SyncControllerSpec: QuickSpec {
                                                         "data": ["name": "A",
                                                                  "conditions": [["condition": "itemType",
                                                                                  "operator": "is",
-                                                                                 "value": "thesis"]]]]]
+                                                                                 "value": "thesis"]]] as [String: Any]]]
 
                         case .item:
                             objectResponses[object] = [["key": "AAAAAAAA",
                                                         "version": 3,
                                                         "library": libraryJson,
                                                         "data": ["title": "A", "itemType": "thesis",
-                                                                 "tags": [["tag": "A"]]]]]
+                                                                 "tags": [["tag": "A"]]] as [String: Any]]]
 
                         case .trash:
                             objectResponses[object] = [["key": "BBBBBBBB",
@@ -145,19 +145,19 @@ final class SyncControllerSpec: QuickSpec {
                                                         "data": ["note": "<p>This is a note</p>",
                                                                  "parentItem": "AAAAAAAA",
                                                                  "itemType": "note",
-                                                                 "deleted": 1]]]
+                                                                 "deleted": 1] as [String: Any]]]
 
                         case .settings: break
                         }
                     }
 
-                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:])
+                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:] as [String: Any])
                     objects.forEach { object in
                         createStub(
                             for: VersionsRequest(libraryId: libraryId, userId: self.userId, objectType: object, version: 0),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: versionResponses[object] ?? [:]
+                            jsonResponse: versionResponses[object] ?? [:] as [String: Any]
                         )
                     }
                     objects.forEach { object in
@@ -165,7 +165,7 @@ final class SyncControllerSpec: QuickSpec {
                             for: ObjectsRequest(libraryId: libraryId, userId: self.userId, objectType: object, keys: (objectKeys[object] ?? "")),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: objectResponses[object] ?? [:]
+                            jsonResponse: objectResponses[object] ?? [:] as [String: Any]
                         )
                     }
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
@@ -173,13 +173,13 @@ final class SyncControllerSpec: QuickSpec {
                         for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["tagColors": ["value": [["name": "A", "color": "#CC66CC"]], "version": 2]]
+                        jsonResponse: ["tagColors": ["value": [["name": "A", "color": "#CC66CC"]], "version": 2] as [String: Any]]
                     )
                     createStub(
                         for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []]
+                        jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
                     )
 
                     self.createNewSyncController()
@@ -315,32 +315,32 @@ final class SyncControllerSpec: QuickSpec {
                         case .collection:
                             objectResponses[object] = [["key": "AAAAAAAA",
                                                         "version": 1,
-                                                        "library": ["id": groupId, "type": "group", "name": "A"],
-                                                        "data": ["name": "A"]]]
+                                                        "library": ["id": groupId, "type": "group", "name": "A"] as [String: Any],
+                                                        "data": ["name": "A"]] as [String: Any]]
 
                         case .search:
                             objectResponses[object] = [["key": "AAAAAAAA",
                                                         "version": 2,
-                                                        "library": ["id": groupId, "type": "group", "name": "A"],
+                                                        "library": ["id": groupId, "type": "group", "name": "A"] as [String: Any],
                                                         "data": ["name": "A",
                                                                  "conditions": [["condition": "itemType",
                                                                                  "operator": "is",
-                                                                                 "value": "thesis"]]]]]
+                                                                                 "value": "thesis"]]] as [String: Any]] as [String: Any]]
 
                         case .item:
                             objectResponses[object] = [["key": "AAAAAAAA",
                                                         "version": 3,
-                                                        "library": ["id": groupId, "type": "group", "name": "A"],
-                                                        "data": ["title": "A", "itemType": "thesis", "tags": [["tag": "A"]]]]]
+                                                        "library": ["id": groupId, "type": "group", "name": "A"] as [String: Any],
+                                                        "data": ["title": "A", "itemType": "thesis", "tags": [["tag": "A"]]] as [String: Any]] as [String: Any]]
 
                         case .trash:
                             objectResponses[object] = [["key": "BBBBBBBB",
                                                         "version": 4,
-                                                        "library": ["id": groupId, "type": "group", "name": "A"],
+                                                        "library": ["id": groupId, "type": "group", "name": "A"] as [String: Any],
                                                         "data": ["note": "<p>This is a note</p>",
                                                                  "parentItem": "AAAAAAAA",
                                                                  "itemType": "note",
-                                                                 "deleted": 1]]]
+                                                                 "deleted": 1] as [String: Any]] as [String: Any]]
 
                         case .settings: break
                         }
@@ -355,7 +355,7 @@ final class SyncControllerSpec: QuickSpec {
                                                                        "description": "",
                                                                        "libraryEditing": "members",
                                                                        "libraryReading": "members",
-                                                                       "fileEditing": "members"]]
+                                                                       "fileEditing": "members"] as [String: Any]]
 
                     let myLibrary = self.userLibraryId
 
@@ -363,41 +363,41 @@ final class SyncControllerSpec: QuickSpec {
                                jsonResponse: groupVersionsResponse)
                     objects.forEach { object in
                         createStub(for: VersionsRequest(libraryId: myLibrary, userId: self.userId, objectType: object, version: 0),
-                                   baseUrl: baseUrl, headers: header, jsonResponse: [:])
+                                   baseUrl: baseUrl, headers: header, jsonResponse: [:] as [String: Any])
                     }
                     createStub(for: GroupRequest(identifier: groupId), baseUrl: baseUrl, headers: header, jsonResponse: groupObjectResponse)
                     for object in objects {
                         createStub(for: VersionsRequest(libraryId: libraryId, userId: self.userId, objectType: object, version: 0),
-                                   baseUrl: baseUrl, headers: header, jsonResponse: (versionResponses[object] ?? [:]))
+                                   baseUrl: baseUrl, headers: header, jsonResponse: (versionResponses[object] ?? [:] as [String: Any]))
                     }
                     for object in objects {
                         createStub(for: ObjectsRequest(libraryId: libraryId, userId: self.userId, objectType: object, keys: (objectKeys[object] ?? "")),
-                                   baseUrl: baseUrl, headers: header, jsonResponse: (objectResponses[object] ?? [:]))
+                                   baseUrl: baseUrl, headers: header, jsonResponse: (objectResponses[object] ?? [:] as [String: Any]))
                     }
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(
                         for: SettingsRequest(libraryId: myLibrary, userId: self.userId, version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["tagColors": ["value": [], "version": 2]]
+                        jsonResponse: ["tagColors": ["value": [] as [Any], "version": 2] as [String: Any]]
                     )
                     createStub(
                         for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["tagColors": ["value": [["name": "A", "color": "#CC66CC"]], "version": 2]]
+                        jsonResponse: ["tagColors": ["value": [["name": "A", "color": "#CC66CC"]], "version": 2] as [String: Any]]
                     )
                     createStub(
                         for: DeletionsRequest(libraryId: myLibrary, userId: self.userId, version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []]
+                        jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
                     )
                     createStub(
                         for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []]
+                        jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
                     )
 
                     self.createNewSyncController()
@@ -480,13 +480,13 @@ final class SyncControllerSpec: QuickSpec {
                     let toBeDeletedItem = self.realm.objects(RItem.self).filter(.key(itemToDelete, in: .custom(.myLibrary))).first
                     expect(toBeDeletedItem).toNot(beNil())
 
-                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:])
+                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:] as [String: Any])
                     objects.forEach { object in
                         createStub(
                             for: VersionsRequest(libraryId: libraryId, userId: self.userId, objectType: object, version: 0),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: [:]
+                            jsonResponse: [:] as [String: Any]
                         )
                     }
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
@@ -494,13 +494,13 @@ final class SyncControllerSpec: QuickSpec {
                         for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["tagColors": ["value": [], "version": 2]]
+                        jsonResponse: ["tagColors": ["value": [] as [Any], "version": 2] as [String: Any]]
                     )
                     createStub(
                         for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["collections": [], "searches": [], "items": [itemToDelete], "tags": []]
+                        jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [itemToDelete], "tags": [] as [Any]]
                     )
 
                     waitUntil(timeout: .seconds(10)) { doneAction in
@@ -599,8 +599,8 @@ final class SyncControllerSpec: QuickSpec {
                     let collectionKey = "CCCCCCCC"
                     let itemResponse = [["key": itemKey,
                                          "version": 3,
-                                         "library": ["id": 0, "type": "user", "name": "A"],
-                                         "data": ["title": "A", "itemType": "thesis", "collections": [collectionKey]]]]
+                                         "library": ["id": 0, "type": "user", "name": "A"] as [String: Any],
+                                         "data": ["title": "A", "itemType": "thesis", "collections": [collectionKey]] as [String: Any]] as [String: Any]]
 
                     self.createNewSyncController()
 
@@ -608,7 +608,7 @@ final class SyncControllerSpec: QuickSpec {
                     let collection = realm.objects(RItem.self).filter("key = %@", collectionKey).first
                     expect(collection).to(beNil())
 
-                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:])
+                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:] as [String: Any])
                     objects.forEach { object in
                         if object == .item {
                             createStub(
@@ -622,7 +622,7 @@ final class SyncControllerSpec: QuickSpec {
                                 for: VersionsRequest(libraryId: libraryId, userId: self.userId, objectType: object, version: 0),
                                 baseUrl: baseUrl,
                                 headers: header,
-                                jsonResponse: [:]
+                                jsonResponse: [:] as [String: Any]
                             )
                         }
                     }
@@ -637,13 +637,13 @@ final class SyncControllerSpec: QuickSpec {
                         for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["tagColors": ["value": [], "version": 2]]
+                        jsonResponse: ["tagColors": ["value": [] as [Any], "version": 2] as [String: Any]]
                     )
                     createStub(
                         for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []]
+                        jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
                     )
 
                     waitUntil(timeout: .seconds(10)) { doneAction in
@@ -676,11 +676,11 @@ final class SyncControllerSpec: QuickSpec {
                     let responseItemKey = "BBBBBBBB"
                     let itemResponse = [["key": responseItemKey,
                                          "version": 3,
-                                         "library": ["id": 0, "type": "user", "name": "A"],
-                                         "data": ["title": "A", "itemType": "thesis"]],
+                                         "library": ["id": 0, "type": "user", "name": "A"] as [String: Any],
+                                         "data": ["title": "A", "itemType": "thesis"]] as [String: Any],
                                         ["key": unsyncedItemKey,
                                          "version": 3,
-                                         "library": ["id": 0, "type": "user", "name": "A"],
+                                         "library": ["id": 0, "type": "user", "name": "A"] as [String: Any],
                                          "data": ["title": "B", "itemType": "thesis"]]]
 
                     self.createNewSyncController()
@@ -698,7 +698,7 @@ final class SyncControllerSpec: QuickSpec {
                     expect(unsynced).toNot(beNil())
                     expect(unsynced?.syncState).to(equal(.dirty))
 
-                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:])
+                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:] as [String: Any])
                     objects.forEach { object in
                         if object == .item {
                             createStub(
@@ -712,7 +712,7 @@ final class SyncControllerSpec: QuickSpec {
                                 for: VersionsRequest(libraryId: libraryId, userId: self.userId, objectType: object, version: 0),
                                 baseUrl: baseUrl,
                                 headers: header,
-                                jsonResponse: [:]
+                                jsonResponse: [:] as [String: Any]
                             )
                         }
                     }
@@ -733,13 +733,13 @@ final class SyncControllerSpec: QuickSpec {
                         for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["tagColors": ["value": [], "version": 2]]
+                        jsonResponse: ["tagColors": ["value": [] as [Any], "version": 2] as [String: Any]]
                     )
                     createStub(
                         for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []]
+                        jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
                     )
 
                     waitUntil(timeout: .seconds(10)) { doneAction in
@@ -791,13 +791,13 @@ final class SyncControllerSpec: QuickSpec {
                     let incorrectKey = "BBBBBBBB"
                     let itemResponse = [["key": correctKey,
                                          "version": 3,
-                                         "library": ["id": 0, "type": "user", "name": "A"],
-                                         "data": ["title": "A", "itemType": "thesis"]],
+                                         "library": ["id": 0, "type": "user", "name": "A"] as [String: Any],
+                                         "data": ["title": "A", "itemType": "thesis"]] as [String: Any],
                                         ["key": incorrectKey,
                                          "version": 3,
                                          "data": ["title": "A", "itemType": "thesis"]]]
 
-                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:])
+                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:] as [String: Any])
                     objects.forEach { object in
                         if object == .item {
                             createStub(
@@ -811,7 +811,7 @@ final class SyncControllerSpec: QuickSpec {
                                 for: VersionsRequest(libraryId: libraryId, userId: self.userId, objectType: object, version: 0),
                                 baseUrl: baseUrl,
                                 headers: header,
-                                jsonResponse: [:]
+                                jsonResponse: [:] as [String: Any]
                             )
                         }
                     }
@@ -832,13 +832,13 @@ final class SyncControllerSpec: QuickSpec {
                         for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["tagColors": ["value": [], "version": 2]]
+                        jsonResponse: ["tagColors": ["value": [] as [Any], "version": 2] as [String: Any]]
                     )
                     createStub(
                         for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []]
+                        jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
                     )
 
                     self.createNewSyncController()
@@ -900,66 +900,66 @@ final class SyncControllerSpec: QuickSpec {
                         case .collection:
                             objectResponses[object] = [["key": "AAAAAAAA",
                                                         "version": 1,
-                                                        "library": ["id": 0, "type": "user", "name": "A"],
-                                                        "data": ["name": "A"]],
+                                                        "library": ["id": 0, "type": "user", "name": "A"] as [String: Any],
+                                                        "data": ["name": "A"]] as [String: Any],
                                                        // Missing parent - should be synced, parent queued
                                                        ["key": "BBBBBBBB",
                                                         "version": 1,
-                                                        "library": ["id": 0, "type": "user", "name": "A"],
+                                                        "library": ["id": 0, "type": "user", "name": "A"] as [String: Any],
                                                         "data": ["name": "B",
                                                                  "parentCollection": "ZZZZZZZZ"]],
                                                        // Unknown field - should be rejected
                                                        ["key": "CCCCCCCC",
                                                         "version": 1,
-                                                        "library": ["id": 0, "type": "user", "name": "A"],
-                                                        "data": ["name": "C", "unknownField": 5]]]
+                                                        "library": ["id": 0, "type": "user", "name": "A"] as [String: Any],
+                                                        "data": ["name": "C", "unknownField": 5] as [String: Any]]]
 
                         case .search:
                                                        // Unknown condition - should be queued
                             objectResponses[object] = [["key": "GGGGGGGG",
                                                         "version": 2,
-                                                        "library": ["id": 0, "type": "user", "name": "A"],
+                                                        "library": ["id": 0, "type": "user", "name": "A"] as [String: Any],
                                                         "data": ["name": "G",
                                                                  "conditions": [["condition": "unknownCondition",
                                                                                  "operator": "is",
-                                                                                 "value": "thesis"]]]],
+                                                                                 "value": "thesis"]]] as [String: Any]] as [String: Any],
                                                        // Unknown operator - should be queued
                                                        ["key": "HHHHHHHH",
                                                         "version": 2,
-                                                        "library": ["id": 0, "type": "user", "name": "A"],
+                                                        "library": ["id": 0, "type": "user", "name": "A"] as [String: Any],
                                                         "data": ["name": "H",
                                                                  "conditions": [["condition": "itemType",
                                                                                  "operator": "unknownOperator",
-                                                                                 "value": "thesis"]]]]]
+                                                                                 "value": "thesis"]]] as [String: Any]]]
 
                         case .item:
                                                        // Unknown field - should be rejected
                             objectResponses[object] = [["key": "DDDDDDDD",
                                                         "version": 3,
-                                                        "library": ["id": 0, "type": "user", "name": "A"],
-                                                        "data": ["title": "D", "itemType": "thesis", "tags": [], "unknownField": "B"]],
+                                                        "library": ["id": 0, "type": "user", "name": "A"] as [String: Any],
+                                                        "data": ["title": "D", "itemType": "thesis", "tags": [] as [Any], "unknownField": "B"] as [String: Any]],
                                                        // Unknown item type - should be queued
                                                        ["key": "EEEEEEEE",
                                                         "version": 3,
-                                                        "library": ["id": 0, "type": "user", "name": "A"],
-                                                        "data": ["title": "E", "itemType": "unknownType", "tags": []]],
+                                                        "library": ["id": 0, "type": "user", "name": "A"] as [String: Any],
+                                                        "data": ["title": "E", "itemType": "unknownType", "tags": [] as [Any]] as [String: Any]] as [String: Any],
                                                        // Parent didn't sync, but item is fine - should be synced
                                                        ["key": "FFFFFFFF",
                                                         "version": 3,
-                                                        "library": ["id": 0, "type": "user", "name": "A"],
+                                                        "library": ["id": 0, "type": "user", "name": "A"] as [String: Any],
                                                         "data": ["note": "This is a note", "itemType": "note",
-                                                                 "tags": [], "parentItem": "EEEEEEEE"]]]
+                                                                 "tags": [] as [Any], "parentItem": "EEEEEEEE"] as [String: Any]]]
                         case .trash, .settings: break
                         }
                     }
 
-                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:])
+                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:] as [String: Any])
                     objects.forEach { object in
                         createStub(
                             for: VersionsRequest(libraryId: libraryId, userId: self.userId, objectType: object, version: 0),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: versionResponses[object] ?? [:]
+                            jsonResponse: versionResponses[object] ?? [:] as [String: Any]
                         )
                     }
                     objects.forEach { object in
@@ -967,7 +967,7 @@ final class SyncControllerSpec: QuickSpec {
                             for: ObjectsRequest(libraryId: libraryId, userId: self.userId, objectType: object, keys: (objectKeys[object] ?? "")),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: objectResponses[object] ?? [:]
+                            jsonResponse: objectResponses[object] ?? [:] as [String: Any]
                         )
                     }
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
@@ -975,13 +975,13 @@ final class SyncControllerSpec: QuickSpec {
                         for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["tagColors": ["value": [["name": "A", "color": "#CC66CC"]], "version": 2]]
+                        jsonResponse: ["tagColors": ["value": [["name": "A", "color": "#CC66CC"]], "version": 2] as [String: Any]]
                     )
                     createStub(
                         for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []]
+                        jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
                     )
 
                     self.createNewSyncController()
@@ -1134,15 +1134,15 @@ final class SyncControllerSpec: QuickSpec {
                         baseUrl: baseUrl,
                         headers: header,
                         statusCode: 412,
-                        jsonResponse: [:]
+                        jsonResponse: [:] as [String: Any]
                     )
-                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:])
+                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:] as [String: Any])
                     objects.forEach { object in
                         createStub(
                             for: VersionsRequest(libraryId: libraryId, userId: self.userId, objectType: object, version: 0),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: versionResponses[object] ?? [:]
+                            jsonResponse: versionResponses[object] ?? [:] as [String: Any]
                         )
                     }
                     objects.forEach { object in
@@ -1150,7 +1150,7 @@ final class SyncControllerSpec: QuickSpec {
                             for: ObjectsRequest(libraryId: libraryId, userId: self.userId, objectType: object, keys: (objectKeys[object] ?? "")),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: objectResponses[object] ?? [:]
+                            jsonResponse: objectResponses[object] ?? [:] as [String: Any]
                         )
                     }
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
@@ -1158,55 +1158,64 @@ final class SyncControllerSpec: QuickSpec {
                         for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["tagColors": ["value": [["name": "A", "color": "#CC66CC"]], "version": 1]]
+                        jsonResponse: ["tagColors": ["value": [["name": "A", "color": "#CC66CC"]], "version": 1] as [String: Any]]
                     )
                     createStub(
                         for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []]
+                        jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
                     )
 
                     waitUntil(timeout: .seconds(10)) { doneAction in
                         self.syncController.reportFinish = { result in
                             switch result {
                             case .failure(let error):
-                                DDLogInfo("error: \(error)")
-                                
-                            case .success:
-                                DDLogInfo("success")
+                                fail("Failure: \(error)")
+
+                            case .success(let data):
+                                // precondition error should be reported first time, retry
+                                guard let error = data.1.first as? Zotero.SyncError.NonFatal, case .preconditionFailed(let libraryId) = error else {
+                                    fail("Failure: \(result)")
+                                    return
+                                }
+
+                                self.syncController.reportFinish = { _ in
+                                    let realm = try! Realm(configuration: self.realmConfig)
+                                    realm.refresh()
+
+                                    let library = realm.objects(RCustomLibrary.self).first
+                                    expect(libraryId).toNot(beNil())
+                                    expect(library?.type).to(equal(.myLibrary))
+
+                                    let collections = realm.objects(RCollection.self).filter(.library(with: .custom(.myLibrary)))
+                                    let items = realm.objects(RItem.self).filter(.library(with: .custom(.myLibrary)))
+
+                                    expect(collections.count).to(equal(1))
+                                    expect(items.count).to(equal(2))
+                                    expect(realm.objects(RCollection.self).count).to(equal(1))
+                                    expect(realm.objects(RItem.self).count).to(equal(2))
+
+                                    let item = realm.objects(RItem.self).filter("key = %@", "CCCCCCCC").first
+                                    expect(item).toNot(beNil())
+                                    expect(item?.deleted).to(beFalse())
+                                    expect(item?.trash).to(beFalse())
+
+                                    let collection = realm.objects(RCollection.self).filter("key = %@", collectionKey).first
+                                    expect(collection).toNot(beNil())
+                                    expect(collection?.syncState).to(equal(.synced))
+                                    expect(collection?.version).to(equal(1))
+                                    expect(collection?.deleted).to(beFalse())
+                                    expect(collection?.trash).to(beFalse())
+                                    expect(collection?.customLibraryKey).to(equal(RCustomLibraryType.myLibrary))
+                                    expect(collection?.parentKey).to(beNil())
+                                    expect(collection?.items.count).to(equal(2))
+
+                                    doneAction()
+                                }
+
+                                self.syncController.start(type: .prioritizeDownloads, libraries: .specific([libraryId]), retryAttempt: 4)
                             }
-                            let realm = try! Realm(configuration: self.realmConfig)
-                            realm.refresh()
-
-                            let library = realm.objects(RCustomLibrary.self).first
-                            expect(libraryId).toNot(beNil())
-                            expect(library?.type).to(equal(.myLibrary))
-
-                            let collections = realm.objects(RCollection.self).filter(.library(with: .custom(.myLibrary)))
-                            let items = realm.objects(RItem.self).filter(.library(with: .custom(.myLibrary)))
-
-                            expect(collections.count).to(equal(1))
-                            expect(items.count).to(equal(2))
-                            expect(realm.objects(RCollection.self).count).to(equal(1))
-                            expect(realm.objects(RItem.self).count).to(equal(2))
-
-                            let item = realm.objects(RItem.self).filter("key = %@", "CCCCCCCC").first
-                            expect(item).toNot(beNil())
-                            expect(item?.deleted).to(beFalse())
-                            expect(item?.trash).to(beFalse())
-
-                            let collection = realm.objects(RCollection.self).filter("key = %@", collectionKey).first
-                            expect(collection).toNot(beNil())
-                            expect(collection?.syncState).to(equal(.synced))
-                            expect(collection?.version).to(equal(1))
-                            expect(collection?.deleted).to(beFalse())
-                            expect(collection?.trash).to(beFalse())
-                            expect(collection?.customLibraryKey).to(equal(RCustomLibraryType.myLibrary))
-                            expect(collection?.parentKey).to(beNil())
-                            expect(collection?.items.count).to(equal(2))
-
-                            doneAction()
                         }
 
                         self.syncController.start(type: .normal, libraries: .all, retryAttempt: 0)
@@ -1275,22 +1284,22 @@ final class SyncControllerSpec: QuickSpec {
                         baseUrl: baseUrl,
                         headers: header,
                         statusCode: 412,
-                        jsonResponse: [:]
+                        jsonResponse: [:] as [String: Any]
                     )
                     createStub(
                         for: SubmitDeletionsRequest(libraryId: libraryId, userId: self.userId, objectType: .item, keys: [deletedItemKey], version: 1),
                         baseUrl: baseUrl,
                         headers: header,
                         statusCode: 412,
-                        jsonResponse: [:]
+                        jsonResponse: [:] as [String: Any]
                     )
-                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:])
+                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:] as [String: Any])
                     objects.forEach { object in
                         createStub(
                             for: VersionsRequest(libraryId: libraryId, userId: self.userId, objectType: object, version: 1),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: versionResponses[object] ?? [:]
+                            jsonResponse: versionResponses[object] ?? [:] as [String: Any]
                         )
                     }
                     objects.forEach { object in
@@ -1298,57 +1307,73 @@ final class SyncControllerSpec: QuickSpec {
                             for: ObjectsRequest(libraryId: libraryId, userId: self.userId, objectType: object, keys: (objectKeys[object] ?? "")),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: objectResponses[object] ?? [:]
+                            jsonResponse: objectResponses[object] ?? [:] as [String: Any]
                         )
                     }
                     createStub(
                         for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 1),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["tagColors": ["value": [["name": "A", "color": "#CC66CC"]], "version": 1]]
+                        jsonResponse: ["tagColors": ["value": [["name": "A", "color": "#CC66CC"]], "version": 1] as [String: Any]]
                     )
                     createStub(
                         for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 1),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []]
+                        jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
                     )
 
                     waitUntil(timeout: .seconds(10)) { doneAction in
-                        self.syncController.reportFinish = { _ in
-                            let realm = try! Realm(configuration: self.realmConfig)
-                            realm.refresh()
+                        self.syncController.reportFinish = { result in
+                            switch result {
+                            case .failure(let error):
+                                fail("Failure: \(error)")
 
-                            let library = realm.objects(RCustomLibrary.self).first
-                            expect(library?.type).to(equal(.myLibrary))
+                            case .success(let data):
+                                // precondition error should be reported first time, retry
+                                guard let error = data.1.first as? Zotero.SyncError.NonFatal, case .preconditionFailed(let libraryId) = error else {
+                                    fail("Failure: \(result)")
+                                    return
+                                }
 
-                            let collections = realm.objects(RCollection.self).filter(.library(with: .custom(.myLibrary)))
-                            let items = realm.objects(RItem.self).filter(.library(with: .custom(.myLibrary)))
+                                self.syncController.reportFinish = { _ in
+                                    let realm = try! Realm(configuration: self.realmConfig)
+                                    realm.refresh()
 
-                            expect(collections.count).to(equal(1))
-                            expect(items.count).to(equal(2))
-                            expect(realm.objects(RCollection.self).count).to(equal(1))
-                            expect(realm.objects(RItem.self).count).to(equal(2))
+                                    let library = realm.objects(RCustomLibrary.self).first
+                                    expect(library?.type).to(equal(.myLibrary))
 
-                            let collection = realm.objects(RCollection.self).filter("key = %@", collectionKey).first
-                            expect(collection).toNot(beNil())
-                            expect(collection?.syncState).to(equal(.synced))
-                            expect(collection?.version).to(equal(2))
-                            expect(collection?.deleted).to(beFalse())
-                            expect(collection?.trash).to(beFalse())
-                            expect(collection?.customLibraryKey?.rawValue).to(equal(RCustomLibraryType.myLibrary.rawValue))
-                            expect(collection?.parentKey).to(beNil())
-                            expect(collection?.items.count).to(equal(2))
-                            if let collection = collection {
-                                expect(collection.items.map({ $0.key })).to(contain(["BBBBBBBB", "CCCCCCCC"]))
+                                    let collections = realm.objects(RCollection.self).filter(.library(with: .custom(.myLibrary)))
+                                    let items = realm.objects(RItem.self).filter(.library(with: .custom(.myLibrary)))
+
+                                    expect(collections.count).to(equal(1))
+                                    expect(items.count).to(equal(2))
+                                    expect(realm.objects(RCollection.self).count).to(equal(1))
+                                    expect(realm.objects(RItem.self).count).to(equal(2))
+
+                                    let collection = realm.objects(RCollection.self).filter("key = %@", collectionKey).first
+                                    expect(collection).toNot(beNil())
+                                    expect(collection?.syncState).to(equal(.synced))
+                                    expect(collection?.version).to(equal(2))
+                                    expect(collection?.deleted).to(beFalse())
+                                    expect(collection?.trash).to(beFalse())
+                                    expect(collection?.customLibraryKey?.rawValue).to(equal(RCustomLibraryType.myLibrary.rawValue))
+                                    expect(collection?.parentKey).to(beNil())
+                                    expect(collection?.items.count).to(equal(2))
+                                    if let collection = collection {
+                                        expect(collection.items.map({ $0.key })).to(contain(["BBBBBBBB", "CCCCCCCC"]))
+                                    }
+
+                                    let item = realm.objects(RItem.self).filter("key = %@", "CCCCCCCC").first
+                                    expect(item).toNot(beNil())
+                                    expect(item?.deleted).to(beFalse())
+                                    expect(item?.trash).to(beFalse())
+
+                                    doneAction()
+                                }
+
+                                self.syncController.start(type: .prioritizeDownloads, libraries: .specific([libraryId]), retryAttempt: 4)
                             }
-
-                            let item = realm.objects(RItem.self).filter("key = %@", "CCCCCCCC").first
-                            expect(item).toNot(beNil())
-                            expect(item?.deleted).to(beFalse())
-                            expect(item?.trash).to(beFalse())
-
-                            doneAction()
                         }
 
                         self.syncController.start(type: .normal, libraries: .all, retryAttempt: 0)
@@ -1366,23 +1391,32 @@ final class SyncControllerSpec: QuickSpec {
                     let objectKeys: [SyncObject: String] = [.item: itemKey]
                     let versionResponses: [SyncObject: Any] = [.item: [itemKey: 3]]
                     let libraryJson: [String: Any] = ["id": 0, "type": "user", "name": "A"]
-                    let objectResponses: [SyncObject: Any] = [.item: [["key": itemKey, "version": 3, "library": libraryJson,
-                                                                       "data": ["title": "New title", "filename": newFilename, "contentType": contentType, "itemType": "attachment", "linkMode": LinkMode.importedFile.rawValue]]]]
+                    let objectResponses: [SyncObject: Any] = [
+                        .item:
+                            [
+                                [
+                                    "key": itemKey,
+                                    "version": 3,
+                                    "library": libraryJson,
+                                    "data": ["title": "New title", "filename": newFilename, "contentType": contentType, "itemType": "attachment", "linkMode": LinkMode.importedFile.rawValue]
+                                ] as [String: Any]
+                            ]
+                    ]
 
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(
                         for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["tagColors": ["value": [], "version": 3]]
+                        jsonResponse: ["tagColors": ["value": [] as [Any], "version": 3] as [String: Any]]
                     )
-                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:])
+                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:] as [String: Any])
                     objects.forEach { object in
                         createStub(
                             for: VersionsRequest(libraryId: libraryId, userId: self.userId, objectType: object, version: 0),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: versionResponses[object] ?? [:]
+                            jsonResponse: versionResponses[object] ?? [:] as [String: Any]
                         )
                     }
                     objects.forEach { object in
@@ -1390,14 +1424,14 @@ final class SyncControllerSpec: QuickSpec {
                             for: ObjectsRequest(libraryId: libraryId, userId: self.userId, objectType: object, keys: (objectKeys[object] ?? "")),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: objectResponses[object] ?? [:]
+                            jsonResponse: objectResponses[object] ?? [:] as [String: Any]
                         )
                     }
                     createStub(
                         for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []]
+                        jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
                     )
 
                     let file = Files.attachmentFile(in: libraryId, key: itemKey, filename: oldFilename, contentType: contentType)
@@ -1517,8 +1551,8 @@ final class SyncControllerSpec: QuickSpec {
                         let collectionResponseJson: [String: Any] = [
                             "key": collectionKey,
                             "version": newVersion,
-                            "library": ["library": "user", "id": 123, "name": ""],
-                            "data": ["name": "New name", "isTrash": false]
+                            "library": ["library": "user", "id": 123, "name": ""] as [String: Any],
+                            "data": ["name": "New name", "isTrash": false] as [String: Any]
                         ]
 
                         let params = request.httpBodyStream.flatMap({ self.jsonParameters(from: $0) })
@@ -1528,7 +1562,7 @@ final class SyncControllerSpec: QuickSpec {
                         expect(firstParams["version"] as? Int).to(equal(oldVersion))
                         expect(firstParams["name"] as? String).to(equal("New name"))
                         return HTTPStubsResponse(
-                            jsonObject: ["success": ["0": collectionKey], "successful": ["0": collectionResponseJson], "unchanged": [:], "failed": [:]],
+                            jsonObject: ["success": ["0": collectionKey], "successful": ["0": collectionResponseJson], "unchanged": [:] as [String: Any], "failed": [:] as [String: Any]],
                             statusCode: 200,
                             headers: ["last-modified-version": "\(newVersion)"]
                         )
@@ -1548,7 +1582,7 @@ final class SyncControllerSpec: QuickSpec {
                         expect(firstParams["numPages"] as? String).to(equal("1"))
                         expect(firstParams["callNumber"]).to(beNil())
                         return HTTPStubsResponse(
-                            jsonObject: ["success": ["0": itemKey], "successful": ["0": itemResponseJson], "unchanged": [:], "failed": [:]],
+                            jsonObject: ["success": ["0": itemKey] as [String: Any], "successful": ["0": itemResponseJson], "unchanged": [:] as [String: Any], "failed": [:] as [String: Any]],
                             statusCode: 200,
                             headers: ["last-modified-version": "\(newVersion)"]
                         )
@@ -1657,7 +1691,11 @@ final class SyncControllerSpec: QuickSpec {
                         expect(childPos).toNot(equal(-1))
                         expect(parentPos).to(beLessThan(childPos))
 
-                        return HTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []], statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
+                        return HTTPStubsResponse(
+                            jsonObject: ["success": ["0": [:] as [String: Any]], "unchanged": [] as [Any], "failed": [] as [Any]] as [String: Any],
+                            statusCode: 200,
+                            headers: ["last-modified-version": "\(newVersion)"]
+                        )
                     })
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
 
@@ -1738,7 +1776,11 @@ final class SyncControllerSpec: QuickSpec {
                         expect(params[1]["key"] as? String).to(equal(secondKey))
                         expect(params[2]["key"] as? String).to(equal(thirdKey))
 
-                        return HTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []], statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
+                        return HTTPStubsResponse(
+                            jsonObject: ["success": ["0": [:] as [String: Any]], "unchanged": [] as [Any], "failed": [] as [Any]] as [String: Any],
+                            statusCode: 200,
+                            headers: ["last-modified-version": "\(newVersion)"]
+                        )
                     })
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
 
@@ -1788,7 +1830,7 @@ final class SyncControllerSpec: QuickSpec {
                         baseUrl: baseUrl,
                         headers: ["last-modified-version": "\(newVersion)"],
                         statusCode: 200,
-                        jsonResponse: ["success": ["0": [:]], "unchanged": [], "failed": []]
+                        jsonResponse: ["success": ["0": [:] as [String: Any]], "unchanged": [] as [Any], "failed": [] as [Any]] as [String: Any]
                     )
 
                     waitUntil(timeout: .seconds(10)) { doneAction in
@@ -1818,28 +1860,28 @@ final class SyncControllerSpec: QuickSpec {
                     stub(condition: request.stubCondition(with: baseUrl), response: { _ -> HTTPStubsResponse in
                         let code = statusCode
                         statusCode = 200
-                        return HTTPStubsResponse(jsonObject: [:], statusCode: code, headers: header)
+                        return HTTPStubsResponse(jsonObject: [:] as [String: Any], statusCode: code, headers: header)
                     })
-                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:])
+                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:] as [String: Any])
                     objects.forEach { object in
                         createStub(
                             for: VersionsRequest(libraryId: libraryId, userId: self.userId, objectType: object, version: 0),
                             baseUrl: baseUrl,
                             headers: header,
-                            jsonResponse: [:]
+                            jsonResponse: [:] as [String: Any]
                         )
                     }
                     stub(condition: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0).stubCondition(with: baseUrl),
                          response: { _ -> HTTPStubsResponse in
                         downloadCalled = true
-                        return HTTPStubsResponse(jsonObject: [:], statusCode: 200, headers: header)
+                        return HTTPStubsResponse(jsonObject: [:] as [String: Any], statusCode: 200, headers: header)
                     })
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(
                         for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []]
+                        jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
                     )
 
                     self.createNewSyncController()
@@ -1895,24 +1937,24 @@ final class SyncControllerSpec: QuickSpec {
                     }
 
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
-                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:])
+                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:] as [String: Any])
                     createStub(
                         for: SubmitDeletionsRequest(libraryId: libraryId, userId: self.userId, objectType: .collection, keys: [collectionKey], version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: [:]
+                        jsonResponse: [:] as [String: Any]
                     )
                     createStub(
                         for: SubmitDeletionsRequest(libraryId: libraryId, userId: self.userId, objectType: .search, keys: [searchKey], version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: [:]
+                        jsonResponse: [:] as [String: Any]
                     )
                     createStub(
                         for: SubmitDeletionsRequest(libraryId: libraryId, userId: self.userId, objectType: .item, keys: [itemKey], version: 0),
                         baseUrl: baseUrl,
                         headers: header,
-                        jsonResponse: [:]
+                        jsonResponse: [:] as [String: Any]
                     )
 
                     waitUntil(timeout: .seconds(10)) { doneAction in
@@ -2025,8 +2067,8 @@ final class SyncControllerSpec: QuickSpec {
                     ]
 
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
-                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: nil, statusCode: 200, jsonResponse: [:])
-                    createStub(for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0), baseUrl: baseUrl, statusCode: 304, jsonResponse: [:])
+                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: nil, statusCode: 200, jsonResponse: [:] as [String: Any])
+                    createStub(for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0), baseUrl: baseUrl, statusCode: 304, jsonResponse: [:] as [String: Any])
 
                     self.createNewSyncController()
 

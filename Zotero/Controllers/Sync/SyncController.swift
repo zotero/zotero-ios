@@ -223,7 +223,6 @@ final class SyncController: SynchronizationController {
     // MARK: - Testing
 
     var reportFinish: ((Result<([Action], [Error]), Error>) -> Void)?
-    var reportDelay: ((Int) -> Void)?
     private var allActions: [Action] = []
 
     // MARK: - Lifecycle
@@ -332,9 +331,10 @@ final class SyncController: SynchronizationController {
             DDLogInfo("Errors: \(self.nonFatalErrors)")
         }
 
-        self.reportFinish?(.success((self.allActions, self.nonFatalErrors)))
+        // Call finishAction after clearing `reportFinish` because tests may want to re-try through this closure when testing only `SyncController`
+        let finishAction = self.reportFinish
         self.reportFinish = nil
-        self.reportDelay = nil
+        finishAction?(.success((self.allActions, self.nonFatalErrors)))
 
         self.reportFinish(nonFatalErrors: self.nonFatalErrors)
         self.cleanup()
@@ -346,9 +346,10 @@ final class SyncController: SynchronizationController {
         DDLogInfo("Sync: aborted")
         DDLogInfo("Error: \(error)")
 
-        self.reportFinish?(.failure(error))
+        // Call finishAction after clearing `reportFinish` because tests may want to re-try through this closure when testing only `SyncController`
+        let finishAction = self.reportFinish
         self.reportFinish = nil
-        self.reportDelay = nil
+        finishAction?(.failure(error))
 
         self.report(fatalError: error)
         self.cleanup()
