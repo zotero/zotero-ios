@@ -42,6 +42,8 @@ final class SyncController: SynchronizationController {
         case collectionsOnly
         /// Only call the `/keys` request to check whether user is still logged in.
         case keysOnly
+        /// Perform all downloads first, then try writing again
+        case prioritizeDownloads
     }
 
     /// Specifies which libraries need to be synced.
@@ -418,15 +420,17 @@ final class SyncController: SynchronizationController {
         var retryLibraries: [LibraryIdentifier] = []
         var reportErrors: [SyncError.NonFatal] = []
         var retryOnce = false
+        var type = self.type
 
         for error in errors {
             switch error {
-            case .versionMismatch(let libraryId):
-                // Retry on version-mismatched libraries (remote version increased during sync).
+            case .versionMismatch(let libraryId), .preconditionFailed(let libraryId):
+                // Retry on conflict (either library version changed during fetching remote changes or submission received 412).
                 if !retryLibraries.contains(libraryId) {
                     retryLibraries.append(libraryId)
                 }
                 retryOnce = true
+                type = .prioritizeDownloads
 
             case .annotationDidSplit(_, _, let libraryId):
                 // Retry so that split annotations are synced.
@@ -443,7 +447,7 @@ final class SyncController: SynchronizationController {
             return nil
         }
 
-        return (SyncScheduler.Sync(type: self.type, libraries: .specific(retryLibraries), retryAttempt: (self.retryAttempt + 1), retryOnce: retryOnce), reportErrors)
+        return (SyncScheduler.Sync(type: type, libraries: .specific(retryLibraries), retryAttempt: (self.retryAttempt + 1), retryOnce: retryOnce), reportErrors)
     }
 
     // MARK: - Queue management
@@ -685,17 +689,20 @@ final class SyncController: SynchronizationController {
             }
             // Otherwise skip group metadata sync
             let options = self.libraryActionsOptions(from: syncType)
-            return [.loadKeyPermissions, .createLibraryActions(libraries, options)]
+            return [.loadKeyPermissions] + options.map({ .createLibraryActions(libraries, $0) })
         }
     }
 
-    private func libraryActionsOptions(from syncType: Kind) -> CreateLibraryActionsOptions {
+    private func libraryActionsOptions(from syncType: Kind) -> [CreateLibraryActionsOptions] {
         switch syncType {
         case .full, .collectionsOnly:
-            return .onlyDownloads
+            return [.onlyDownloads]
 
         case .ignoreIndividualDelays, .normal, .keysOnly:
-            return .automatic
+            return [.automatic]
+
+        case .prioritizeDownloads:
+            return [.onlyDownloads, .onlyWrites]
         }
     }
 
@@ -908,7 +915,7 @@ final class SyncController: SynchronizationController {
                     .syncVersions(libraryId: libraryId, object: .item, version: versions.items, checkRemote: true),
                     .syncVersions(libraryId: libraryId, object: .trash, version: versions.trash, checkRemote: true)]
 
-        case .ignoreIndividualDelays, .normal:
+        case .ignoreIndividualDelays, .normal, .prioritizeDownloads:
             return [.syncSettings(libraryId, versions.settings),
                     .syncVersions(libraryId: libraryId, object: .collection, version: versions.collections, checkRemote: true),
                     .syncVersions(libraryId: libraryId, object: .search, version: versions.searches, checkRemote: true),
@@ -1019,7 +1026,7 @@ final class SyncController: SynchronizationController {
         var actions: [Action] = deleteGroups.map({ .resolveDeletedGroup($0.0, $0.1) })
         actions.append(contentsOf: idsToSync.map({ .syncGroupToDb($0) }))
         let options = self.libraryActionsOptions(from: syncType)
-        actions.append(.createLibraryActions(self.libraryType, options))
+        actions.append(contentsOf: options.map({ .createLibraryActions(self.libraryType, $0) }))
         return actions
     }
 
@@ -1307,7 +1314,7 @@ final class SyncController: SynchronizationController {
                 self?.performDeletions(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, conflictMode: .restoreConflicts)
             }
 
-        case .collectionsOnly, .ignoreIndividualDelays, .normal, .keysOnly:
+        case .collectionsOnly, .ignoreIndividualDelays, .normal, .keysOnly, .prioritizeDownloads:
             // Find conflicting objects and perform related actions.
             self.resolve(conflict: .objectsRemovedRemotely(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags))
         }
@@ -2017,6 +2024,9 @@ final class SyncController: SynchronizationController {
                 case 403:
                     return .fatal(.forbidden)
 
+                case 412:
+                    return .nonFatal(.preconditionFailed(data.libraryId))
+
                 default:
                     return (code >= 400 && code <= 499) ? .fatal(.apiError(response: responseMessage(), data: data)) : .nonFatal(.apiError(response: responseMessage(), data: data))
                 }
@@ -2100,9 +2110,9 @@ final class SyncController: SynchronizationController {
         }
 
         switch error {
-        case .versionMismatch:
-            // If the backend received higher version in response than from previous responses, there was a change on backend and we'll probably
-            // have conflicts. Abort this library and continue with sync.
+        case .versionMismatch, .preconditionFailed:
+            // If the backend received higher version in response than from previous responses or a 412 on submission, there was a change on backend and we have conflicts.
+            // Abort this library and continue with sync. This library will be retried.
             self.removeAllActions(for: libraryId)
             appendAndContinue()
 

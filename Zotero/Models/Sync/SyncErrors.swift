@@ -77,6 +77,7 @@ enum SyncError {
         case webDavDeletionFailed(error: String, library: String)
         case webDavVerification(WebDavError.Verification)
         case webDavDownload(WebDavError.Download)
+        case preconditionFailed(LibraryIdentifier)
 
         var isVersionMismatch: Bool {
             switch self {
@@ -97,6 +98,7 @@ enum SyncError {
 /// - attachmentMissing: Attachment upload can't start because a file is missing.
 /// - authorizationFailed: File upload authorization failed. Most cases require special handling.
 /// - objectPreconditionError: 412 of individual object when submitted to backend.
+/// - preconditionError: 412 from request whole submission request (for example when submitting deletions)
 /// - submitUpdateFailures: Failures of individual objects when submitting changes to backend
 enum SyncActionError: Error {
     case annotationNeededSplitting(message: String, keys: Set<String>, libraryId: LibraryIdentifier)

@@ -196,7 +196,12 @@ final class SyncToolbarController {
 
             case .annotationDidSplit(let string, let keys, let libraryId):
                 return (string, SyncError.ErrorData(itemKeys: Array(keys), libraryId: libraryId))
-            case .unchanged: break
+
+            case .unchanged:
+                break
+
+            case .preconditionFailed(let libraryId):
+                return (L10n.Errors.SyncToolbar.conflictRetryLimit, SyncError.ErrorData(itemKeys: nil, libraryId: libraryId))
             }
         }
 

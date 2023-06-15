@@ -87,7 +87,7 @@ struct SyncVersionsSyncAction: SyncAction {
                     switch syncType {
                     case .full:
                         try coordinator.perform(request: MarkOtherObjectsAsChangedByUser(syncObject: object, versions: response, libraryId: libraryId))
-                    case .collectionsOnly, .ignoreIndividualDelays, .normal, .keysOnly: break
+                    case .collectionsOnly, .ignoreIndividualDelays, .normal, .keysOnly, .prioritizeDownloads: break
                     }
 
                     let request = SyncVersionsDbRequest(versions: response, libraryId: libraryId, syncObject: object, syncType: syncType, delayIntervals: delayIntervals)
