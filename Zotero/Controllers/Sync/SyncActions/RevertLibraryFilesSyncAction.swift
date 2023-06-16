@@ -95,6 +95,7 @@ struct RevertLibraryFilesSyncAction: SyncAction {
                 DDLogWarn("RevertLibraryFilesSyncAction: can't rename file - \(error)")
                 // If it can't be moved, at least delete the old one. It'll have to be re-downloaded anyway.
                 try? self.fileStorage.remove(oldFile)
+                try? self.fileStorage.remove(newFile)
             }
         }
     }
