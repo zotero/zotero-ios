@@ -60,6 +60,8 @@ class AnnotationToolbarViewController: UIViewController {
     static let estimatedVerticalHeight: CGFloat = 500
     private static let buttonSpacing: CGFloat = UIDevice.current.userInterfaceIdiom == .phone ? 8 : 12
     private static let buttonCompactSpacing: CGFloat = 4
+    private static let buttonEdgeInsets: UIEdgeInsets = UIDevice.current.userInterfaceIdiom == .pad ? UIEdgeInsets(top: 4, left: 4, bottom: 4, right: 4) :
+                                                                                                      UIEdgeInsets(top: 2, left: 2, bottom: 2, right: 2)
     private static let toolsToAdditionalFullOffset: CGFloat = 70
     private static let toolsToAdditionalCompactOffset: CGFloat = 20
     private let disposeBag: DisposeBag
@@ -353,6 +355,7 @@ class AnnotationToolbarViewController: UIViewController {
 
     private func createToolButtons(from tools: [Tool]) -> [UIView] {
         let showMoreButton = UIButton(type: .custom)
+        showMoreButton.contentEdgeInsets = AnnotationToolbarViewController.buttonEdgeInsets
         showMoreButton.translatesAutoresizingMaskIntoConstraints = false
         showMoreButton.showsLargeContentViewer = true
         showMoreButton.accessibilityLabel = L10n.Accessibility.Pdf.showMoreTools
@@ -366,7 +369,7 @@ class AnnotationToolbarViewController: UIViewController {
 
         return tools.map { tool in
             let button = CheckboxButton(type: .custom)
-            button.contentEdgeInsets = UIEdgeInsets(top: 4, left: 4, bottom: 4, right: 4)
+            button.contentEdgeInsets = AnnotationToolbarViewController.buttonEdgeInsets
             button.translatesAutoresizingMaskIntoConstraints = false
             button.showsLargeContentViewer = true
             button.accessibilityLabel = tool.accessibilityLabel
@@ -395,6 +398,7 @@ class AnnotationToolbarViewController: UIViewController {
     private func createAdditionalItems() -> [UIView] {
         let undo = UIButton(type: .custom)
         undo.isEnabled = self.delegate?.canUndo ?? false
+        undo.contentEdgeInsets = AnnotationToolbarViewController.buttonEdgeInsets
         undo.showsLargeContentViewer = true
         undo.accessibilityLabel = L10n.Accessibility.Pdf.undo
         undo.largeContentTitle = L10n.Accessibility.Pdf.undo
@@ -409,6 +413,7 @@ class AnnotationToolbarViewController: UIViewController {
 
         let redo = UIButton(type: .custom)
         redo.isEnabled = self.delegate?.canRedo ?? false
+        redo.contentEdgeInsets = AnnotationToolbarViewController.buttonEdgeInsets
         redo.showsLargeContentViewer = true
         redo.accessibilityLabel = L10n.Accessibility.Pdf.redo
         redo.largeContentTitle = L10n.Accessibility.Pdf.redo
@@ -422,6 +427,7 @@ class AnnotationToolbarViewController: UIViewController {
         self.redoButton = redo
 
         let close = UIButton(type: .custom)
+        close.contentEdgeInsets = AnnotationToolbarViewController.buttonEdgeInsets
         close.showsLargeContentViewer = true
         close.accessibilityLabel = L10n.close
         close.largeContentTitle = L10n.close
@@ -449,6 +455,7 @@ class AnnotationToolbarViewController: UIViewController {
 
     private func createColorPickerButton() -> UIButton {
         let picker = UIButton()
+        picker.contentEdgeInsets = AnnotationToolbarViewController.buttonEdgeInsets
         picker.showsLargeContentViewer = true
         picker.translatesAutoresizingMaskIntoConstraints = false
         picker.setContentCompressionResistancePriority(.required, for: .horizontal)
