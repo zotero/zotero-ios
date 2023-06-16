@@ -622,7 +622,7 @@ class PDFReaderViewController: UIViewController {
                 fromTouch: location,
                 frame: self.annotationToolbarController.view.frame,
                 containerFrame: self.documentController.view.frame,
-                velocity:velocity,
+                velocity: velocity,
                 statusBarVisible: self.statusBarVisible
             )
             let newState = ToolbarState(position: position, visible: true)

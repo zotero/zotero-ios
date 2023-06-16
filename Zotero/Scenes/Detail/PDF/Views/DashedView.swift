@@ -54,7 +54,9 @@ class DashedView: UIView {
         switch type {
         case .rounded(let cornerRadius):
             self.layer.cornerRadius = cornerRadius
-        case .partialStraight: break
+            
+        case .partialStraight:
+            break
         }
         self.addDashedBorder(color: .black)
     }
