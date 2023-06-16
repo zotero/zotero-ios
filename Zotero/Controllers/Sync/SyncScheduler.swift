@@ -25,7 +25,7 @@ protocol WebSocketScheduler: AnyObject {
 }
 
 /// Controller that schedules synchronisation of local and remote data. All syncs are requested through this controller and it decides if/when next sync should be started.
-/// If a sync fails this controller can also retry it with to resolve issues.
+/// If a sync fails this controller can also retry it with increasing interval to resolve issues.
 final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
     /// Specifies synchronisation parameters
     struct Sync {
@@ -111,7 +111,7 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
         self.enqueueAndStart(sync: Sync(type: type, libraries: libraries))
     }
 
-    /// Requests a sync based on websocked reported changes in given library.
+    /// Requests a sync based on websocket reported changes in given library.
     /// - parameter libraryId: Library to sync
     func webSocketUpdate(libraryId: LibraryIdentifier) {
         DDLogInfo("SyncScheduler: websocket sync for \(libraryId)")
@@ -169,12 +169,12 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
 
     /// Start next sync in queue. In case of normal/external syncs wait at least `syncTimeout` between syncs. In case of retry syncs wait for specified delay based on current retry attempt count.
     private func startNextSync() {
-        // Ignore this if there is a sync in progress. Otherwise pick next sync in queue.
-        guard self.syncInProgress == nil, let nextSync = self.syncQueue.first else {
-            if self.syncInProgress == nil && self.syncQueue.isEmpty {
-                // Report finished queue
-                self.inProgress.accept(false)
-            }
+        // Ignore this if there is a sync in progress.
+        guard self.syncInProgress == nil else { return }
+        // Otherwise pick next sync in queue.
+        guard let nextSync = self.syncQueue.first else {
+            // Report finished queue
+            self.inProgress.accept(false)
             return
         }
 

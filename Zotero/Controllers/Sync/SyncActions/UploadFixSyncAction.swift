@@ -65,7 +65,9 @@ class UploadFixSyncAction: SyncAction {
                 case .ready:
                     self.finishDownload?(.success(()))
                     self.finishDownload = nil
-                case .progress, .cancelled: break
+                    
+                case .progress, .cancelled:
+                    break
                 }
             })
             .disposed(by: self.downloadDisposeBag)
@@ -147,15 +149,17 @@ class UploadFixSyncAction: SyncAction {
                         case .remoteMissing:
                             DDLogError("UploadFixSyncAction: attachment missing remotely")
                             subscriber(.failure(Error.attachmentMissingRemotely))
-                            return Disposables.create()
 
-                        case .local, .localAndChangedRemotely, .remote: break
+                        case .local, .localAndChangedRemotely, .remote:
+                            // Create new attachment model with updated location so that `AttachmentDownloader` doesn't ignore it
+                            let newAttachment = Attachment(
+                                type: .file(filename: filename, contentType: contentType, location: .remote, linkType: linkType),
+                                title: attachment.title,
+                                key: attachment.key,
+                                libraryId: attachment.libraryId
+                            )
+                            subscriber(.success(newAttachment))
                         }
-
-                        // Create new attachment model with updated location so that `AttachmentDownloader` doesn't ignore it
-                        let newAttachment = Attachment(type: .file(filename: filename, contentType: contentType, location: .remote, linkType: linkType),
-                                                       title: attachment.title, key: attachment.key, libraryId: attachment.libraryId)
-                        subscriber(.success(newAttachment))
                     }
                 }
             } catch let error {
