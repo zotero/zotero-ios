@@ -83,37 +83,55 @@ final class SyncActionsSpec: QuickSpec {
                 let itemResponse = try! ItemResponse(response: itemJson, schemaController: TestControllers.schemaController)
 
                 // Store original objects to db
-                _ = try! self.dbStorage.perform(request: StoreItemsDbResponseRequest(responses: [itemResponse], schemaController: TestControllers.schemaController, dateParser: TestControllers.dateParser, preferResponseData: true), on: .main)
+                _ = try! self.dbStorage.perform(
+                    request: StoreItemsDbResponseRequest(
+                        responses: [itemResponse],
+                        schemaController: TestControllers.schemaController,
+                        dateParser: TestControllers.dateParser,
+                        preferResponseData: true
+                    ),
+                    on: .main
+                )
                 try! self.dbStorage.perform(request: StoreCollectionsDbRequest(response: [collectionResponse]), on: .main)
                 try! self.dbStorage.perform(request: StoreSearchesDbRequest(response: [searchResponse]), on: .main)
 
                 // Change some objects so that they are updated locally
                 try! self.dbStorage.perform(request: EditCollectionDbRequest(libraryId: .group(1234123), key: "BBBBBBBB", name: "New name", parentKey: nil), on: .main)
-                let data = ItemDetailState.Data(title: "New title",
-                                                type: "magazineArticle",
-                                                isAttachment: false,
-                                                localizedType: "Magazine Article",
-                                                creators: [:],
-                                                creatorIds: [],
-                                                fields: [:],
-                                                fieldIds: [],
-                                                abstract: "New abstract",
-                                                dateModified: Date(),
-                                                dateAdded: Date())
-                let snapshot = ItemDetailState.Data(title: "Bachelor thesis",
-                                                    type: "thesis",
-                                                    isAttachment: false,
-                                                    localizedType: "Thesis",
-                                                    creators: [:],
-                                                    creatorIds: [],
-                                                    fields: [:],
-                                                    fieldIds: [],
-                                                    abstract: "Some note",
-                                                    dateModified: Date(),
-                                                    dateAdded: Date())
+                let data = ItemDetailState.Data(
+                    title: "New title",
+                    type: "magazineArticle",
+                    isAttachment: false,
+                    localizedType: "Magazine Article",
+                    creators: [:],
+                    creatorIds: [],
+                    fields: [:],
+                    fieldIds: [],
+                    abstract: "New abstract",
+                    dateModified: Date(),
+                    dateAdded: Date()
+                )
+                let snapshot = ItemDetailState.Data(
+                    title: "Bachelor thesis",
+                    type: "thesis",
+                    isAttachment: false,
+                    localizedType: "Thesis",
+                    creators: [:],
+                    creatorIds: [],
+                    fields: [:],
+                    fieldIds: [],
+                    abstract: "Some note",
+                    dateModified: Date(),
+                    dateAdded: Date()
+                )
 
-                let changeRequest = EditItemFromDetailDbRequest(libraryId: .custom(.myLibrary), itemKey: "AAAAAAAA", data: data, snapshot: snapshot, schemaController: TestControllers.schemaController,
-                                                                dateParser: TestControllers.dateParser)
+                let changeRequest = EditItemFromDetailDbRequest(
+                    libraryId: .custom(.myLibrary),
+                    itemKey: "AAAAAAAA",
+                    data: data,
+                    snapshot: snapshot,
+                    schemaController: TestControllers.schemaController,
+                    dateParser: TestControllers.dateParser
+                )
                 try! self.dbStorage.perform(request: changeRequest, on: .main)
 
                 self.realm.refresh()
@@ -129,49 +147,63 @@ final class SyncActionsSpec: QuickSpec {
                 expect(collection?.parentKey).to(beNil())
 
                 waitUntil(timeout: .seconds(10), action: { doneAction in
-                    RevertLibraryUpdatesSyncAction(libraryId: .custom(.myLibrary), dbStorage: self.dbStorage, fileStorage: TestControllers.fileStorage,
-                                                   schemaController: TestControllers.schemaController, dateParser: TestControllers.dateParser, queue: .main).result
-                                         .subscribe(onSuccess: { failures in
-                                             expect(failures[.item]).to(beEmpty())
-                                             expect(failures[.collection]).to(beEmpty())
-                                             expect(failures[.search]).to(beEmpty())
+                    RevertLibraryUpdatesSyncAction(
+                        libraryId: .custom(.myLibrary),
+                        dbStorage: self.dbStorage,
+                        fileStorage: TestControllers.fileStorage,
+                        schemaController: TestControllers.schemaController,
+                        dateParser: TestControllers.dateParser,
+                        queue: .main
+                    )
+                    .result
+                    .subscribe(onSuccess: { failures in
+                        expect(failures[.item]).to(beEmpty())
+                        expect(failures[.collection]).to(beEmpty())
+                        expect(failures[.search]).to(beEmpty())
 
-                                             self.realm.refresh()
+                        self.realm.refresh()
 
-                                             let item = self.realm.objects(RItem.self).filter(.key("AAAAAAAA")).first
-                                             expect(item?.rawType).to(equal("thesis"))
-                                             expect(item?.baseTitle).to(equal("Bachelor thesis"))
-                                             expect(item?.fields.filter("key =  %@", FieldKeys.Item.abstract).first?.value).to(equal("Some note"))
-                                             expect(item?.changedFields.rawValue).to(equal(0))
+                        let item = self.realm.objects(RItem.self).filter(.key("AAAAAAAA")).first
+                        expect(item?.rawType).to(equal("thesis"))
+                        expect(item?.baseTitle).to(equal("Bachelor thesis"))
+                        expect(item?.fields.filter("key =  %@", FieldKeys.Item.abstract).first?.value).to(equal("Some note"))
+                        expect(item?.changedFields.rawValue).to(equal(0))
 
-                                             doneAction()
-                                         }, onFailure: { error in
-                                             fail("Could not revert user library: \(error)")
-                                             doneAction()
-                                         })
-                                         .disposed(by: self.disposeBag)
+                        doneAction()
+                    }, onFailure: { error in
+                        fail("Could not revert user library: \(error)")
+                        doneAction()
+                    })
+                    .disposed(by: self.disposeBag)
                 })
 
                 waitUntil(timeout: .seconds(10), action: { doneAction in
-                    RevertLibraryUpdatesSyncAction(libraryId: .group(1234123), dbStorage: self.dbStorage, fileStorage: TestControllers.fileStorage, schemaController: TestControllers.schemaController,
-                                                   dateParser: TestControllers.dateParser, queue: .main).result
-                                         .subscribe(onSuccess: { failures in
-                                             expect(failures[.item]).to(beEmpty())
-                                             expect(failures[.collection]).to(beEmpty())
-                                             expect(failures[.search]).to(beEmpty())
+                    RevertLibraryUpdatesSyncAction(
+                        libraryId: .group(1234123),
+                        dbStorage: self.dbStorage,
+                        fileStorage: TestControllers.fileStorage,
+                        schemaController: TestControllers.schemaController,
+                        dateParser: TestControllers.dateParser,
+                        queue: .main
+                    )
+                    .result
+                    .subscribe(onSuccess: { failures in
+                        expect(failures[.item]).to(beEmpty())
+                        expect(failures[.collection]).to(beEmpty())
+                        expect(failures[.search]).to(beEmpty())
 
-                                             self.realm.refresh()
+                        self.realm.refresh()
 
-                                             let collection = self.realm.objects(RCollection.self).filter(.key("BBBBBBBB")).first
-                                             expect(collection?.name).to(equal("Bachelor sources"))
-                                             expect(collection?.parentKey).to(beNil())
+                        let collection = self.realm.objects(RCollection.self).filter(.key("BBBBBBBB")).first
+                        expect(collection?.name).to(equal("Bachelor sources"))
+                        expect(collection?.parentKey).to(beNil())
 
-                                             doneAction()
-                                         }, onFailure: { error in
-                                             fail("Could not revert group library: \(error)")
-                                             doneAction()
-                                         })
-                                         .disposed(by: self.disposeBag)
+                        doneAction()
+                    }, onFailure: { error in
+                        fail("Could not revert group library: \(error)")
+                        doneAction()
+                    })
+                    .disposed(by: self.disposeBag)
                 })
             }
 
@@ -194,36 +226,53 @@ final class SyncActionsSpec: QuickSpec {
                 let itemResponse = try! ItemResponse(response: itemJson, schemaController: TestControllers.schemaController)
 
                 // Store original objects to db
-                _ = try! self.dbStorage.perform(request: StoreItemsDbResponseRequest(responses: [itemResponse], schemaController: TestControllers.schemaController,
-                                                                                     dateParser: TestControllers.dateParser, preferResponseData: true), on: .main)
+                _ = try! self.dbStorage.perform(
+                    request: StoreItemsDbResponseRequest(
+                        responses: [itemResponse],
+                        schemaController: TestControllers.schemaController,
+                        dateParser: TestControllers.dateParser,
+                        preferResponseData: true
+                    ),
+                    on: .main
+                )
                 try! self.dbStorage.perform(request: StoreCollectionsDbRequest(response: [collectionResponse]), on: .main)
 
                 // Change some objects so that they are updated locally
                 try! self.dbStorage.perform(request: EditCollectionDbRequest(libraryId: .group(1234123), key: "BBBBBBBB", name: "New name", parentKey: nil), on: .main)
-                let data = ItemDetailState.Data(title: "New title",
-                                                type: "magazineArticle",
-                                                isAttachment: false,
-                                                localizedType: "Magazine Article",
-                                                creators: [:],
-                                                creatorIds: [],
-                                                fields: [:],
-                                                fieldIds: [],
-                                                abstract: "New abstract",
-                                                dateModified: Date(),
-                                                dateAdded: Date())
-                let snapshot = ItemDetailState.Data(title: "Bachelor thesis",
-                                                    type: "thesis",
-                                                    isAttachment: false,
-                                                    localizedType: "Thesis",
-                                                    creators: [:],
-                                                    creatorIds: [],
-                                                    fields: [:],
-                                                    fieldIds: [],
-                                                    abstract: "Some note",
-                                                    dateModified: Date(),
-                                                    dateAdded: Date())
-                let changeRequest = EditItemFromDetailDbRequest(libraryId: .custom(.myLibrary), itemKey: "AAAAAAAA", data: data, snapshot: snapshot, schemaController: TestControllers.schemaController,
-                                                                dateParser: TestControllers.dateParser)
+                let data = ItemDetailState.Data(
+                    title: "New title",
+                    type: "magazineArticle",
+                    isAttachment: false,
+                    localizedType: "Magazine Article",
+                    creators: [:],
+                    creatorIds: [],
+                    fields: [:],
+                    fieldIds: [],
+                    abstract: "New abstract",
+                    dateModified: Date(),
+                    dateAdded: Date()
+                )
+                let snapshot = ItemDetailState.Data(
+                    title: "Bachelor thesis",
+                    type: "thesis",
+                    isAttachment: false,
+                    localizedType: "Thesis",
+                    creators: [:],
+                    creatorIds: [],
+                    fields: [:],
+                    fieldIds: [],
+                    abstract: "Some note",
+                    dateModified: Date(),
+                    dateAdded: Date()
+                )
+                let changeRequest = EditItemFromDetailDbRequest(
+                    libraryId: .custom(.myLibrary),
+                    itemKey: "AAAAAAAA",
+                    data: data,
+                    snapshot: snapshot,
+                    schemaController: TestControllers.schemaController,
+                    dateParser: TestControllers.dateParser
+                )
                 try! self.dbStorage.perform(request: changeRequest, on: .main)
 
                 self.realm.refresh()
@@ -241,40 +290,42 @@ final class SyncActionsSpec: QuickSpec {
                 expect(collection?.changedFields.rawValue).toNot(equal(0))
 
                 waitUntil(timeout: .seconds(10), action: { doneAction in
-                    MarkChangesAsResolvedSyncAction(libraryId: .custom(.myLibrary), dbStorage: self.dbStorage, queue: .main).result
-                                         .subscribe(onSuccess: { _ in
-                                             self.realm.refresh()
+                    MarkChangesAsResolvedSyncAction(libraryId: .custom(.myLibrary), dbStorage: self.dbStorage, queue: .main)
+                    .result
+                    .subscribe(onSuccess: { _ in
+                        self.realm.refresh()
 
-                                             let item = self.realm.objects(RItem.self).filter(.key("AAAAAAAA")).first
-                                             expect(item?.rawType).to(equal("magazineArticle"))
-                                             expect(item?.baseTitle).to(equal("New title"))
-                                             expect(item?.fields.filter("key =  %@", FieldKeys.Item.abstract).first?.value).to(equal("New abstract"))
-                                             expect(item?.changedFields.rawValue).to(equal(0))
+                        let item = self.realm.objects(RItem.self).filter(.key("AAAAAAAA")).first
+                        expect(item?.rawType).to(equal("magazineArticle"))
+                        expect(item?.baseTitle).to(equal("New title"))
+                        expect(item?.fields.filter("key =  %@", FieldKeys.Item.abstract).first?.value).to(equal("New abstract"))
+                        expect(item?.changedFields.rawValue).to(equal(0))
 
-                                             doneAction()
-                                        }, onFailure: { error in
-                                            fail("Could not sync user library: \(error)")
-                                            doneAction()
-                                        })
-                                        .disposed(by: self.disposeBag)
+                        doneAction()
+                    }, onFailure: { error in
+                        fail("Could not sync user library: \(error)")
+                        doneAction()
+                    })
+                    .disposed(by: self.disposeBag)
                 })
 
                 waitUntil(timeout: .seconds(10), action: { doneAction in
-                    MarkChangesAsResolvedSyncAction(libraryId: .group(1234123), dbStorage: self.dbStorage, queue: .main).result
-                                         .subscribe(onSuccess: { _ in
-                                             self.realm.refresh()
+                    MarkChangesAsResolvedSyncAction(libraryId: .group(1234123), dbStorage: self.dbStorage, queue: .main)
+                    .result
+                    .subscribe(onSuccess: { _ in
+                         self.realm.refresh()
 
-                                             let collection = self.realm.objects(RCollection.self).filter(.key("BBBBBBBB")).first
-                                             expect(collection?.name).to(equal("New name"))
-                                             expect(collection?.parentKey).to(beNil())
-                                             expect(collection?.changedFields.rawValue).to(equal(0))
+                         let collection = self.realm.objects(RCollection.self).filter(.key("BBBBBBBB")).first
+                         expect(collection?.name).to(equal("New name"))
+                         expect(collection?.parentKey).to(beNil())
+                         expect(collection?.changedFields.rawValue).to(equal(0))
 
-                                             doneAction()
-                                         }, onFailure: { error in
-                                             fail("Could not sync group library: \(error)")
-                                             doneAction()
-                                         })
-                                         .disposed(by: self.disposeBag)
+                         doneAction()
+                    }, onFailure: { error in
+                         fail("Could not sync group library: \(error)")
+                         doneAction()
+                    })
+                    .disposed(by: self.disposeBag)
                 })
             }
         }
@@ -303,34 +354,37 @@ final class SyncActionsSpec: QuickSpec {
                 }
 
                 waitUntil(timeout: .seconds(10), action: { doneAction in
-                    UploadAttachmentSyncAction(key: key,
-                                               file: file,
-                                               filename: "doc.pdf",
-                                               md5: "aaaaaaaa", mtime: 0,
-                                               libraryId: libraryId,
-                                               userId: self.userId,
-                                               oldMd5: nil,
-                                               apiClient: TestControllers.apiClient,
-                                               dbStorage: self.dbStorage,
-                                               fileStorage: TestControllers.fileStorage,
-                                               webDavController: self.webDavController,
-                                               schemaController: TestControllers.schemaController,
-                                               dateParser: TestControllers.dateParser,
-                                               queue: DispatchQueue.main,
-                                               scheduler: MainScheduler.instance,
-                                               disposeBag: self.disposeBag).result
-                                         .subscribe(onSuccess: { _ in
-                                             fail("Upload didn't fail with unsubmitted item")
-                                             doneAction()
-                                         }, onFailure: { error in
-                                             if let handlerError = error as? SyncActionError {
-                                                 expect(handlerError).to(equal(.attachmentItemNotSubmitted))
-                                             } else {
-                                                 fail("Unknown error: \(error.localizedDescription)")
-                                             }
-                                             doneAction()
-                                         })
-                                         .disposed(by: self.disposeBag)
+                    UploadAttachmentSyncAction(
+                        key: key,
+                        file: file,
+                        filename: "doc.pdf",
+                        md5: "aaaaaaaa", mtime: 0,
+                        libraryId: libraryId,
+                        userId: self.userId,
+                        oldMd5: nil,
+                        apiClient: TestControllers.apiClient,
+                        dbStorage: self.dbStorage,
+                        fileStorage: TestControllers.fileStorage,
+                        webDavController: self.webDavController,
+                        schemaController: TestControllers.schemaController,
+                        dateParser: TestControllers.dateParser,
+                        queue: DispatchQueue.main,
+                        scheduler: MainScheduler.instance,
+                        disposeBag: self.disposeBag
+                    )
+                    .result
+                    .subscribe(onSuccess: { _ in
+                        fail("Upload didn't fail with unsubmitted item")
+                        doneAction()
+                    }, onFailure: { error in
+                        if let handlerError = error as? SyncActionError {
+                            expect(handlerError).to(equal(.attachmentItemNotSubmitted))
+                        } else {
+                            fail("Unknown error: \(error.localizedDescription)")
+                        }
+                        doneAction()
+                    })
+                    .disposed(by: self.disposeBag)
                 })
             }
 
@@ -355,34 +409,37 @@ final class SyncActionsSpec: QuickSpec {
                 }
 
                 waitUntil(timeout: .seconds(10), action: { doneAction in
-                    UploadAttachmentSyncAction(key: key,
-                                               file: file,
-                                               filename: filename,
-                                               md5: "aaaaaaaa", mtime: 0,
-                                               libraryId: libraryId,
-                                               userId: self.userId,
-                                               oldMd5: nil,
-                                               apiClient: TestControllers.apiClient,
-                                               dbStorage: self.dbStorage,
-                                               fileStorage: TestControllers.fileStorage,
-                                               webDavController: self.webDavController,
-                                               schemaController: TestControllers.schemaController,
-                                               dateParser: TestControllers.dateParser,
-                                               queue: DispatchQueue.main,
-                                               scheduler: MainScheduler.instance,
-                                               disposeBag: self.disposeBag).result
-                                         .subscribe(onSuccess: { _ in
-                                             fail("Upload didn't fail with unsubmitted item")
-                                             doneAction()
-                                         }, onFailure: { error in
-                                             if let handlerError = error as? SyncActionError {
-                                                 expect(handlerError).to(equal(.attachmentMissing(key: key, libraryId: libraryId, title: "")))
-                                             } else {
-                                                 fail("Unknown error: \(error.localizedDescription)")
-                                             }
-                                             doneAction()
-                                         })
-                                         .disposed(by: self.disposeBag)
+                    UploadAttachmentSyncAction(
+                        key: key,
+                        file: file,
+                        filename: filename,
+                        md5: "aaaaaaaa", mtime: 0,
+                        libraryId: libraryId,
+                        userId: self.userId,
+                        oldMd5: nil,
+                        apiClient: TestControllers.apiClient,
+                        dbStorage: self.dbStorage,
+                        fileStorage: TestControllers.fileStorage,
+                        webDavController: self.webDavController,
+                        schemaController: TestControllers.schemaController,
+                        dateParser: TestControllers.dateParser,
+                        queue: DispatchQueue.main,
+                        scheduler: MainScheduler.instance,
+                        disposeBag: self.disposeBag
+                    )
+                    .result
+                    .subscribe(onSuccess: { _ in
+                        fail("Upload didn't fail with unsubmitted item")
+                        doneAction()
+                    }, onFailure: { error in
+                        if let handlerError = error as? SyncActionError {
+                            expect(handlerError).to(equal(.attachmentMissing(key: key, libraryId: libraryId, title: "")))
+                        } else {
+                            fail("Unknown error: \(error.localizedDescription)")
+                        }
+                        doneAction()
+                    })
+                    .disposed(by: self.disposeBag)
                 })
             }
 
@@ -421,44 +478,60 @@ final class SyncActionsSpec: QuickSpec {
                     self.realm.add(item)
                 }
 
-                createStub(for: AuthorizeUploadRequest(libraryId: libraryId, userId: self.userId, key: key,
-                                                       filename: filename, filesize: UInt64(data.count), md5: fileMd5, mtime: 123,
-                                                       oldMd5: nil),
-                           baseUrl: baseUrl, jsonResponse: ["exists": 1])
+                createStub(
+                    for: AuthorizeUploadRequest(
+                        libraryId: libraryId,
+                        userId: self.userId,
+                        key: key,
+                        filename: filename,
+                        filesize: UInt64(data.count),
+                        md5: fileMd5,
+                        mtime: 123,
+                        oldMd5: nil
+                    ),
+                    baseUrl: baseUrl,
+                    jsonResponse: ["exists": 1]
+                )
 
                 waitUntil(timeout: .seconds(10), action: { doneAction in
-                    UploadAttachmentSyncAction(key: key,
-                                               file: file,
-                                               filename: filename,
-                                               md5: fileMd5,
-                                               mtime: 123,
-                                               libraryId: libraryId,
-                                               userId: self.userId,
-                                               oldMd5: nil,
-                                               apiClient: TestControllers.apiClient,
-                                               dbStorage: self.dbStorage,
-                                               fileStorage: TestControllers.fileStorage,
-                                               webDavController: self.webDavController,
-                                               schemaController: TestControllers.schemaController,
-                                               dateParser: TestControllers.dateParser,
-                                               queue: DispatchQueue.main,
-                                               scheduler: MainScheduler.instance,
-                                               disposeBag: self.disposeBag).result
-                                         .subscribe(onSuccess: { _ in
-                                             doneAction()
-                                         }, onFailure: { error in
-                                             if let error = error as? SyncActionError {
-                                                 switch error {
-                                                 case .attachmentAlreadyUploaded:
-                                                     doneAction()
-                                                     return
-                                                 default: break
-                                                 }
-                                             }
-                                             fail("Unknown error: \(error.localizedDescription)")
-                                             doneAction()
-                                         })
-                                         .disposed(by: self.disposeBag)
+                    UploadAttachmentSyncAction(
+                        key: key,
+                        file: file,
+                        filename: filename,
+                        md5: fileMd5,
+                        mtime: 123,
+                        libraryId: libraryId,
+                        userId: self.userId,
+                        oldMd5: nil,
+                        apiClient: TestControllers.apiClient,
+                        dbStorage: self.dbStorage,
+                        fileStorage: TestControllers.fileStorage,
+                        webDavController: self.webDavController,
+                        schemaController: TestControllers.schemaController,
+                        dateParser: TestControllers.dateParser,
+                        queue: DispatchQueue.main,
+                        scheduler: MainScheduler.instance,
+                        disposeBag: self.disposeBag
+                    )
+                    .result
+                    .subscribe(onSuccess: { _ in
+                        doneAction()
+                    }, onFailure: { error in
+                        if let error = error as? SyncActionError {
+                            switch error {
+                            case .attachmentAlreadyUploaded:
+                                doneAction()
+                                return
+
+                            default:
+                                break
+                            }
+                        }
+
+                        fail("Unknown error: \(error.localizedDescription)")
+                        doneAction()
+                    })
+                    .disposed(by: self.disposeBag)
                 })
             }
 
@@ -498,45 +571,54 @@ final class SyncActionsSpec: QuickSpec {
                 }
 
                 createStub(for: AuthorizeUploadRequest(libraryId: libraryId, userId: self.userId, key: key, filename: filename, filesize: UInt64(data.count), md5: fileMd5, mtime: 123, oldMd5: nil),
-                           baseUrl: baseUrl, jsonResponse: ["url": "https://www.upload-test.org/", "uploadKey": "key", "params": ["key": "key"]])
+                           baseUrl: baseUrl,
+                           jsonResponse: ["url": "https://www.upload-test.org/", "uploadKey": "key", "params": ["key": "key"]] as [String: Any]
+                )
                 createStub(for: RegisterUploadRequest(libraryId: libraryId, userId: self.userId, key: key, uploadKey: "key", oldMd5: nil),
-                           baseUrl: baseUrl, headers: nil, statusCode: 204, jsonResponse: [:])
+                           baseUrl: baseUrl,
+                           headers: nil,
+                           statusCode: 204,
+                           jsonResponse: [:] as [String: Any]
+                )
                 stub(condition: { request -> Bool in
                     return request.url?.absoluteString == "https://www.upload-test.org/"
                 }, response: { _ -> HTTPStubsResponse in
-                    return HTTPStubsResponse(jsonObject: [:], statusCode: 201, headers: nil)
+                    return HTTPStubsResponse(jsonObject: [:] as [String: Any], statusCode: 201, headers: nil)
                 })
 
                 waitUntil(timeout: .seconds(10), action: { doneAction in
-                    UploadAttachmentSyncAction(key: key,
-                                               file: file,
-                                               filename: filename,
-                                               md5: fileMd5,
-                                               mtime: 123,
-                                               libraryId: libraryId,
-                                               userId: self.userId,
-                                               oldMd5: nil,
-                                               apiClient: TestControllers.apiClient,
-                                               dbStorage: self.dbStorage,
-                                               fileStorage: TestControllers.fileStorage,
-                                               webDavController: self.webDavController,
-                                               schemaController: TestControllers.schemaController,
-                                               dateParser: TestControllers.dateParser,
-                                               queue: DispatchQueue.main,
-                                               scheduler: MainScheduler.instance,
-                                               disposeBag: self.disposeBag).result
-                                         .subscribe(onSuccess: { _ in
-                                             self.realm.refresh()
+                    UploadAttachmentSyncAction(
+                        key: key,
+                        file: file,
+                        filename: filename,
+                        md5: fileMd5,
+                        mtime: 123,
+                        libraryId: libraryId,
+                        userId: self.userId,
+                        oldMd5: nil,
+                        apiClient: TestControllers.apiClient,
+                        dbStorage: self.dbStorage,
+                        fileStorage: TestControllers.fileStorage,
+                        webDavController: self.webDavController,
+                        schemaController: TestControllers.schemaController,
+                        dateParser: TestControllers.dateParser,
+                        queue: DispatchQueue.main,
+                        scheduler: MainScheduler.instance,
+                        disposeBag: self.disposeBag
+                    )
+                    .result
+                    .subscribe(onSuccess: { _ in
+                        self.realm.refresh()
 
-                                             let item = self.realm.objects(RItem.self).filter(.key(key)).first
-                                             expect(item?.attachmentNeedsSync).to(beFalse())
+                        let item = self.realm.objects(RItem.self).filter(.key(key)).first
+                        expect(item?.attachmentNeedsSync).to(beFalse())
 
-                                             doneAction()
-                                         }, onFailure: { error in
-                                             fail("Unknown error: \(error.localizedDescription)")
-                                             doneAction()
-                                         })
-                                         .disposed(by: self.disposeBag)
+                        doneAction()
+                    }, onFailure: { error in
+                        fail("Unknown error: \(error.localizedDescription)")
+                        doneAction()
+                    })
+                    .disposed(by: self.disposeBag)
                 })
             }
         }
