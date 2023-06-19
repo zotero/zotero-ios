@@ -1,0 +1,58 @@
+{
+    "key": "AAAAAAAA",
+    "version": 182,
+    "library": {
+      "type": "user",
+      "id": 1234123,
+      "name": "someuser",
+      "links": {
+        "alternate": {
+          "href": "https://www.zotero.org/someuser",
+          "type": "text/html"
+        }
+      }
+    },
+    "links": {
+      "self": {
+        "href": "https://api.zotero.org/users/1234123/items/AAAAAAAA",
+        "type": "application/json"
+      },
+      "alternate": {
+        "href": "https://www.zotero.org/someuser/items/AAAAAAAA",
+        "type": "text/html"
+      }
+    },
+    "meta": {
+      "creatorSummary": "Author",
+      "parsedDate": "2014",
+      "numChildren": 1
+    },
+    "data": {
+      "key": "AAAAAAAA",
+      "version": 182,
+      "itemType": "attachment",
+      "title": "Bachelor thesis",
+      "filename": "bachelor_thesis.txt",
+      "linkMode": "imported_file",
+      "mtime": 1000,
+      "md5": "abcdef",
+      "contentType": "plain/text",
+      "creators": [],
+      "tags": [
+        {
+          "tag": "High priority"
+        },
+        {
+          "tag": "Others"
+        }
+      ],
+      "collections": [
+        "2PDUK4DH"
+      ],
+      "relations": {
+        "dc:relation": "http://zotero.org/users/1234123/items/BBBBBBBB"
+      },
+      "dateAdded": "2019-02-11T19:10:55Z",
+      "dateModified": "2019-03-28T15:48:48Z"
+    }
+  }

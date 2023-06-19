@@ -12,7 +12,7 @@ import CocoaLumberjackSwift
 import RxSwift
 
 struct RevertLibraryFilesSyncAction: SyncAction {
-    typealias Result = [String]
+    typealias Result = ()
 
     let libraryId: LibraryIdentifier
 
@@ -22,7 +22,7 @@ struct RevertLibraryFilesSyncAction: SyncAction {
     unowned let dateParser: DateParser
     let queue: DispatchQueue
 
-    var result: Single<[String]> {
+    var result: Single<()> {
         return Single.create { subscriber -> Disposable in
             DDLogInfo("RevertLibraryFilesSyncAction: revert files to upload")
 
@@ -72,7 +72,7 @@ struct RevertLibraryFilesSyncAction: SyncAction {
                 DDLogError("RevertLibraryFilesSyncAction: rename local files to match file names")
                 self.renameExistingFiles(changes: changedFilenames, libraryId: self.libraryId)
 
-                subscriber(.success(failedKeys))
+                subscriber(.success(()))
             } catch let error {
                 subscriber(.failure(error))
             }

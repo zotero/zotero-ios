@@ -1886,9 +1886,142 @@ final class SyncControllerSpec: QuickSpec {
 
                     self.createNewSyncController()
 
+                    try! self.realm.write {
+                        let item = RItem()
+                        self.realm.add(item)
+
+                        item.key = "AAAAAAAA"
+                        item.syncState = .synced
+                        item.version = 2
+                        item.trash = true
+                        item.changes.append(RObjectChange.create(changes: RItemChanges.trash))
+                        item.dateModified = Date()
+                        item.libraryId = .custom(.myLibrary)
+                    }
+
+                    waitUntil(timeout: .seconds(1000)) { doneAction in
+                        self.syncController.reportFinish = { result in
+                            switch result {
+                            case .failure(let error):
+                                fail("Failure: \(error)")
+
+                            case .success(let data):
+                                // precondition error should be reported first time, retry
+                                guard let error = data.1.first as? Zotero.SyncError.NonFatal, case .preconditionFailed(let libraryId) = error else {
+                                    fail("Failure: \(result)")
+                                    return
+                                }
+
+                                self.syncController.reportFinish = { _ in
+                                    expect(downloadCalled).to(beTrue())
+                                    doneAction()
+                                }
+
+                                self.syncController.start(type: .prioritizeDownloads, libraries: .specific([libraryId]), retryAttempt: 4)
+                            }
+                        }
+
+                        self.syncController.start(type: .normal, libraries: .all, retryAttempt: 0)
+                    }
+                }
+
+                it("should download remote file after file upload failure") {
+                    let header = ["last-modified-version": "3"]
+                    let libraryId = self.userLibraryId
+                    let objects = SyncObject.allCases
+                    let key = "AAAAAAAA"
+                    let filename = "doc.txt"
+                    let data = "test string".data(using: .utf8)!
+                    let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: "text/plain")
+                    try! FileStorageController().write(data, to: file, options: .atomicWrite)
+                    let fileMd5 = md5(from: file.createUrl())!
+
+                    var didCallDownload = false
+
+                    createStub(
+                        for: AuthorizeUploadRequest(libraryId: libraryId, userId: self.userId, key: key, filename: filename, filesize: UInt64(data.count), md5: fileMd5, mtime: 123, oldMd5: nil),
+                        ignoreBody: true,
+                        baseUrl: baseUrl,
+                        statusCode: 412,
+                        jsonResponse: [:] as [String: Any]
+                    )
+                    createStub(
+                        for: UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .item, params: [], version: 0),
+                        baseUrl: baseUrl,
+                        headers: header,
+                        jsonResponse: [:] as [String: Any]
+                    )
+                    createStub(for: GroupVersionsRequest(userId: self.userId), baseUrl: baseUrl, headers: header, jsonResponse: [:] as [String: Any])
+                    objects.forEach { object in
+                        createStub(
+                            for: VersionsRequest(libraryId: libraryId, userId: self.userId, objectType: object, version: 0),
+                            baseUrl: baseUrl,
+                            headers: header,
+                            jsonResponse: [:] as [String: Any]
+                        )
+                    }
+                    createStub(for: SettingsRequest(libraryId: libraryId, userId: self.userId, version: 0), baseUrl: baseUrl, headers: header, jsonResponse: [:] as [String: Any])
+                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
+                    createStub(
+                        for: DeletionsRequest(libraryId: libraryId, userId: self.userId, version: 0),
+                        baseUrl: baseUrl,
+                        headers: header,
+                        jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
+                    )
+                    stub(condition: FileRequest(libraryId: libraryId, userId: self.userId, key: key, destination: file).stubCondition(with: baseUrl), response: { _ -> HTTPStubsResponse in
+                        didCallDownload = true
+                        return HTTPStubsResponse(data: data, statusCode: 200, headers: header)
+                    })
+
+                    self.createNewSyncController()
+
+                    try! self.realm.write {
+                        let item = RItem()
+                        item.key = key
+                        item.rawType = "attachment"
+                        item.customLibraryKey = .myLibrary
+                        item.attachmentNeedsSync = true
+
+                        let contentField = RItemField()
+                        contentField.key = FieldKeys.Item.Attachment.contentType
+                        contentField.value = "text/plain"
+                        item.fields.append(contentField)
+
+                        let filenameField = RItemField()
+                        filenameField.key = FieldKeys.Item.Attachment.filename
+                        filenameField.value = filename
+                        item.fields.append(filenameField)
+
+                        let linkModeField = RItemField()
+                        linkModeField.key = FieldKeys.Item.Attachment.linkMode
+                        linkModeField.value = LinkMode.importedFile.rawValue
+                        item.fields.append(linkModeField)
+
+                        let md5Field = RItemField()
+                        md5Field.key = FieldKeys.Item.Attachment.md5
+                        md5Field.value = "md5hash1"
+                        item.fields.append(md5Field)
+
+                        let mtimeField = RItemField()
+                        mtimeField.key = FieldKeys.Item.Attachment.mtime
+                        mtimeField.value = "100"
+                        item.fields.append(mtimeField)
+
+                        self.realm.add(item)
+                    }
+
                     waitUntil(timeout: .seconds(10)) { doneAction in
                         self.syncController.reportFinish = { _ in
-                            expect(downloadCalled).to(beTrue())
+                            expect(didCallDownload).to(beTrue())
+
+                            let realm = try! Realm(configuration: self.realmConfig)
+                            realm.refresh()
+
+                            let item = realm.objects(RItem.self).filter(.key(key, in: libraryId)).first
+                            expect(item?.attachmentNeedsSync).to(beFalse())
+                            
+                            try? FileStorageController().remove(file)
+
                             doneAction()
                         }
 

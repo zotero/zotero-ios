@@ -207,6 +207,123 @@ final class SyncActionsSpec: QuickSpec {
                 })
             }
 
+            it("reverts file uploads") {
+                // Load urls for bundled files
+                guard let itemUrl = Bundle(for: type(of: self)).url(forResource: "test_item_attachment", withExtension: "json") else {
+                    fail("Could not find json files")
+                    return
+                }
+
+                // Load their data
+                let itemData = try! Data(contentsOf: itemUrl)
+                let itemJson = (try! JSONSerialization.jsonObject(with: itemData, options: .allowFragments)) as! [String: Any]
+
+                // Write original json files to directory folder for SyncActionHandler to use when reverting
+                let itemFile = Files.jsonCacheFile(for: .item, libraryId: .custom(.myLibrary), key: "AAAAAAAA")
+                try! itemData.write(to: itemFile.createUrl())
+
+                // Create response models
+                let itemResponse = try! ItemResponse(response: itemJson, schemaController: TestControllers.schemaController)
+
+                // Store original object to db
+                _ = try! self.dbStorage.perform(
+                    request: StoreItemsDbResponseRequest(
+                        responses: [itemResponse],
+                        schemaController: TestControllers.schemaController,
+                        dateParser: TestControllers.dateParser,
+                        preferResponseData: true
+                    ),
+                    on: .main
+                )
+
+                // Store attachment file
+                let data = "test string".data(using: .utf8)!
+                let oldFile = Files.attachmentFile(in: .custom(.myLibrary), key: "AAAAAAAA", filename: "bachelor_thesis.txt", contentType: "text/plain")
+                let newFile = Files.attachmentFile(in: .custom(.myLibrary), key: "AAAAAAAA", filename: "test_name.txt", contentType: "text/plain")
+                try! FileStorageController().write(data, to: oldFile, options: .atomicWrite)
+
+                let file2 = Files.attachmentFile(in: .custom(.myLibrary), key: "BBBBBBBB", filename: "test.txt", contentType: "text/plain")
+                try! FileStorageController().write(data, to: file2, options: .atomicWrite)
+
+                try! self.realm.write {
+                    // Edit attachment created from json to test whether file name changes properly
+                    let attachment1 = self.realm.objects(RItem.self).filter(.key("AAAAAAAA", in: .custom(.myLibrary))).first
+                    attachment1?.attachmentNeedsSync = true
+                    attachment1?.fields.filter(.key(FieldKeys.Item.Attachment.filename)).first?.value = "test_name.txt"
+                    attachment1?.set(title: "Test name")
+                    attachment1?.changes.append(RObjectChange.create(changes: RItemChanges.fields))
+
+                    // Create new attachment which hasn't been uploaded yet
+                    let attachment2 = RItem()
+                    attachment2.key = "BBBBBBBB"
+                    attachment2.rawType = "attachment"
+                    attachment2.set(title: "test")
+                    attachment2.customLibraryKey = .myLibrary
+                    attachment2.attachmentNeedsSync = true
+
+                    let contentField = RItemField()
+                    contentField.key = FieldKeys.Item.Attachment.contentType
+                    contentField.value = "text/plain"
+                    attachment2.fields.append(contentField)
+
+                    let filenameField = RItemField()
+                    filenameField.key = FieldKeys.Item.Attachment.filename
+                    filenameField.value = "test.txt"
+                    attachment2.fields.append(filenameField)
+
+                    let linkModeField = RItemField()
+                    linkModeField.key = FieldKeys.Item.Attachment.linkMode
+                    linkModeField.value = LinkMode.importedFile.rawValue
+                    attachment2.fields.append(linkModeField)
+
+                    let mtimeField = RItemField()
+                    mtimeField.key = FieldKeys.Item.Attachment.mtime
+                    mtimeField.value = "1000"
+                    attachment2.fields.append(mtimeField)
+
+                    let md5Field = RItemField()
+                    md5Field.key = FieldKeys.Item.Attachment.md5
+                    md5Field.value = "somemd5hash"
+                    attachment2.fields.append(md5Field)
+
+                    self.realm.add(attachment2)
+                }
+
+                self.realm.refresh()
+
+                waitUntil(timeout: .seconds(10), action: { doneAction in
+                    RevertLibraryFilesSyncAction(
+                        libraryId: .custom(.myLibrary),
+                        dbStorage: self.dbStorage,
+                        fileStorage: TestControllers.fileStorage,
+                        schemaController: TestControllers.schemaController,
+                        dateParser: TestControllers.dateParser,
+                        queue: .main
+                    )
+                    .result
+                    .subscribe(onSuccess: {
+                        self.realm.refresh()
+
+                        let item = self.realm.objects(RItem.self).filter(.key("AAAAAAAA")).first
+                        expect(item?.baseTitle).to(equal("Bachelor thesis"))
+                        expect(item?.fields.filter("key =  %@", FieldKeys.Item.Attachment.filename).first?.value).to(equal("bachelor_thesis.txt"))
+                        expect(item?.changedFields.rawValue).to(equal(0))
+
+                        expect(TestControllers.fileStorage.has(oldFile)).to(beTrue())
+                        expect(TestControllers.fileStorage.has(newFile)).to(beFalse())
+                        expect(TestControllers.fileStorage.has(file2)).to(beFalse())
+
+                        expect(self.realm.objects(RItem.self).filter(.key("BBBBBBBB")).first).to(beNil())
+
+                        doneAction()
+                    }, onFailure: { error in
+                        fail("Could not revert user library: \(error)")
+                        doneAction()
+                    })
+                    .disposed(by: self.disposeBag)
+                })
+            }
+
             it("marks local changes as synced") {
                 // Load urls for bundled files
                 guard let collectionUrl = Bundle(for: type(of: self)).url(forResource: "test_collection", withExtension: "json"),
