@@ -58,8 +58,8 @@ class AnnotationToolbarViewController: UIViewController {
 
     let size: CGFloat
     static let estimatedVerticalHeight: CGFloat = 500
-    private static let buttonSpacing: CGFloat = UIDevice.current.userInterfaceIdiom == .phone ? 8 : 12
-    private static let buttonCompactSpacing: CGFloat = 4
+    private static let buttonSpacing: CGFloat = UIDevice.current.userInterfaceIdiom == .phone ? 12 : 12
+    private static let buttonCompactSpacing: CGFloat = 8
     private static let buttonEdgeInsets: UIEdgeInsets = UIDevice.current.userInterfaceIdiom == .pad ? UIEdgeInsets(top: 4, left: 4, bottom: 4, right: 4) :
                                                                                                       UIEdgeInsets(top: 2, left: 2, bottom: 2, right: 2)
     private static let toolsToAdditionalFullOffset: CGFloat = 70
@@ -527,9 +527,9 @@ class AnnotationToolbarViewController: UIViewController {
         self.colorPickerLeading = picker.leadingAnchor.constraint(equalTo: self.view.leadingAnchor)
         self.colorPickerTrailing = self.view.trailingAnchor.constraint(equalTo: picker.trailingAnchor)
         let containerTop = stackView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: 15)
-        let containerLeading = stackView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 15)
+        let containerLeading = stackView.leadingAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.leadingAnchor, constant: 15)
         let additionalBottom = self.view.bottomAnchor.constraint(equalTo: additionalStackView.bottomAnchor, constant: 8)
-        let additionalTrailing = self.view.trailingAnchor.constraint(equalTo: additionalStackView.trailingAnchor, constant: 8)
+        let additionalTrailing = self.view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: additionalStackView.trailingAnchor, constant: 8)
         let hairlineHeight = hairline.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale)
         let hairlineLeading = hairline.leadingAnchor.constraint(equalTo: self.view.leadingAnchor)
         let hairlineTrailing = hairline.trailingAnchor.constraint(equalTo: self.view.trailingAnchor)
