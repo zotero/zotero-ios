@@ -1899,7 +1899,7 @@ final class SyncControllerSpec: QuickSpec {
                         item.libraryId = .custom(.myLibrary)
                     }
 
-                    waitUntil(timeout: .seconds(1000)) { doneAction in
+                    waitUntil(timeout: .seconds(10)) { doneAction in
                         self.syncController.reportFinish = { result in
                             switch result {
                             case .failure(let error):

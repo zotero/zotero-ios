@@ -54,7 +54,7 @@ final class TranslatorsControllerSpec: QuickSpec {
             self.controller.setupTest(timestamp: 0, hash: "", deleted: 0)
 
             // Perform update and wait for results
-            waitUntil(timeout: .seconds(1000000)) { doneAction in
+            waitUntil(timeout: .seconds(10)) { doneAction in
                 self.controller.isLoading.skip(1).filter({ !$0 }).first()
                     .observe(on: MainScheduler.instance)
                     .subscribe(onSuccess: { _ in
