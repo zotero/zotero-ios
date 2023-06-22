@@ -47,7 +47,7 @@ final class AnnotationView: UIView {
     private var tags: AnnotationViewText!
     private var scrollView: UIScrollView?
     private var scrollViewContent: UIView?
-    private(set) var disposeBag: DisposeBag!
+    private(set) var disposeBag: CompositeDisposable!
 
     var tagString: String? {
         return self.tags.textLabel.text
@@ -97,14 +97,27 @@ final class AnnotationView: UIView {
     /// - parameter selected: If true, selected state style is applied.
     /// - parameter availableWidth: Available width for view.
     /// - parameter library: Library of given annotation
+    /// - parameter pdfAnnotationsCoordinatorDelegate: Delegate for getting share menu.
+    /// - parameter state: State required for setting up share menu.
     func setup(with annotation: Annotation, comment: Comment?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, library: Library, currentUserId: Int, displayName: String, username: String,
-               boundingBoxConverter: AnnotationBoundingBoxConverter) {
+               boundingBoxConverter: AnnotationBoundingBoxConverter, pdfAnnotationsCoordinatorDelegate: PdfAnnotationsCoordinatorDelegate, state: PDFReaderState) {
         let editability = annotation.editability(currentUserId: currentUserId, library: library)
         let color = UIColor(hex: annotation.color)
         let canEdit = editability == .editable && selected
 
-        self.header.setup(with: annotation, libraryId: library.identifier, isEditable: (editability != .notEditable && selected), showsLock: editability != .editable,
-                          showDoneButton: self.layout.showDoneButton, accessibilityType: .cell, displayName: displayName, username: username)
+        self.header.setup(
+            with: annotation,
+            libraryId: library.identifier,
+            shareMenuProvider: { button in
+                pdfAnnotationsCoordinatorDelegate.createShareAnnotationMenu(state: state, annotation: annotation, sender: button)
+            },
+            isEditable: (editability != .notEditable && selected),
+            showsLock: editability != .editable,
+            showDoneButton: self.layout.showDoneButton,
+            accessibilityType: .cell,
+            displayName: displayName,
+            username: username
+        )
         self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth, accessibilityType: .cell, boundingBoxConverter: boundingBoxConverter)
         self.setup(comment: comment, canEdit: canEdit)
         self.setupTags(for: annotation, canEdit: canEdit, accessibilityEnabled: selected)
@@ -213,31 +226,31 @@ final class AnnotationView: UIView {
         }
     }
 
-    private func setupObserving() {
-        self.disposeBag = DisposeBag()
-
+    @DisposeBag.DisposableBuilder
+    private func buildDisposables() -> [Disposable] {
         self.commentTextView.didBecomeActive.subscribe(onNext: { [weak self] _ in
             self?.actionPublisher.on(.next(.setCommentActive(true)))
         })
-        .disposed(by: self.disposeBag)
-
         self.commentTextView.textObservable
-                            .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
-                            .subscribe(onNext: { text, needsHeightReload in
-                                self.actionPublisher.on(.next(.setComment(text)))
-                                if needsHeightReload {
-                                    self.actionPublisher.on(.next(.reloadHeight))
-                                    self.scrollToBottomIfNeeded()
-                                }
-                            })
-                            .disposed(by: self.disposeBag)
-
-        self.tags.tap.flatMap({ _ in Observable.just(Action.tags) }).bind(to: self.actionPublisher).disposed(by: self.disposeBag)
-        self.tagsButton.rx.tap.flatMap({ Observable.just(Action.tags) }).bind(to: self.actionPublisher).disposed(by: self.disposeBag)
-        self.header.menuTap.flatMap({ Observable.just(Action.options($0)) }).bind(to: self.actionPublisher).disposed(by: self.disposeBag)
+            .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
+            .subscribe(onNext: { text, needsHeightReload in
+                self.actionPublisher.on(.next(.setComment(text)))
+                if needsHeightReload {
+                    self.actionPublisher.on(.next(.reloadHeight))
+                    self.scrollToBottomIfNeeded()
+                }
+            })
+        self.tags.tap.flatMap({ _ in Observable.just(Action.tags) }).bind(to: self.actionPublisher)
+        self.tagsButton.rx.tap.flatMap({ Observable.just(Action.tags) }).bind(to: self.actionPublisher)
+        self.header.menuTap.flatMap({ Observable.just(Action.options($0)) }).bind(to: self.actionPublisher)
+    }
+    
+    private func setupObserving() {
+        var disposables: [Disposable] = buildDisposables()
         if let doneTap = self.header.doneTap {
-            doneTap.flatMap({ Observable.just(Action.done) }).bind(to: self.actionPublisher).disposed(by: self.disposeBag)
+            disposables.append(doneTap.flatMap({ Observable.just(Action.done) }).bind(to: self.actionPublisher))
         }
+        disposeBag = CompositeDisposable(disposables: disposables)
     }
 
     private func setupView(commentPlaceholder: String) {

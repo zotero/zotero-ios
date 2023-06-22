@@ -13,35 +13,37 @@ import RxSwift
 
 typealias AnnotationPreviewUpdate = (annotationKey: String, pdfKey: String, image: UIImage)
 
-private struct SubscriberKey: Hashable {
-    let key: String
-    let parentKey: String
-}
-
 final class AnnotationPreviewController: NSObject {
     enum Error: Swift.Error {
         case imageNotAvailable
     }
 
+    struct SubscriberKey: Hashable {
+        let key: String
+        let parentKey: String
+        let size: CGSize
+        let scale: CGFloat
+    }
+    
     /// Type of annotation preview
     /// - temporary: Rendered image is returned by `Single<UIImage>` immediately, no caching is performed.
     /// - cachedAndReported: Rendered image is cached and reported through global observable `PublishSubject<AnnotationPreviewUpdate>`.
     /// - cachedOnly: Rendered image is only cached for later use.
-    enum PreviewType: Int {
-        case temporary
+    enum PreviewType {
+        case temporary(subscriberKey: SubscriberKey)
         case cachedAndReported
         case cachedOnly
     }
 
     let observable: PublishSubject<AnnotationPreviewUpdate>
-    private let size: CGSize
+    private let previewSize: CGSize
     private let queue: DispatchQueue
     private let fileStorage: FileStorage
 
     private var subscribers: [SubscriberKey: (SingleEvent<UIImage>) -> Void]
 
     init(previewSize: CGSize, fileStorage: FileStorage) {
-        self.size = previewSize
+        self.previewSize = previewSize
         self.fileStorage = fileStorage
         self.subscribers = [:]
         self.observable = PublishSubject()
@@ -59,19 +61,22 @@ extension AnnotationPreviewController {
     /// - parameter document: Document to render.
     /// - parameter page: Page of document to render.
     /// - parameter rect: Part of page of document to render.
+    /// - parameter imageSize: Size of rendered image.
+    /// - parameter imageScale: Scale factor of rendering. 0.0 will result to the PSPDFkit default.
     /// - parameter key: Key of annotation.
     /// - parameter parentKey: Key of parent of annotation.
     /// - parameter libraryId: Library identifier of item.
     /// - returns: `Single` with rendered image.
-    func render(document: Document, page: PageIndex, rect: CGRect, key: String, parentKey: String, libraryId: LibraryIdentifier) -> Single<UIImage> {
+    func render(document: Document, page: PageIndex, rect: CGRect, imageSize: CGSize, imageScale: CGFloat, key: String, parentKey: String, libraryId: LibraryIdentifier) -> Single<UIImage> {
         return Single.create { [weak self] subscriber -> Disposable in
             guard let self = self else { return Disposables.create() }
 
+            let subscriberKey = SubscriberKey(key: key, parentKey: parentKey, size: imageSize, scale: imageScale)
             self.queue.async(flags: .barrier) {
-                self.subscribers[SubscriberKey(key: key, parentKey: parentKey)] = subscriber
+                self.subscribers[subscriberKey] = subscriber
             }
 
-            self.enqueue(key: key, parentKey: parentKey, libraryId: libraryId, document: document, pageIndex: page, rect: rect, type: .temporary)
+            self.enqueue(key: key, parentKey: parentKey, libraryId: libraryId, document: document, pageIndex: page, rect: rect, imageSize: imageSize, imageScale: imageScale, type: .temporary(subscriberKey: subscriberKey))
 
             return Disposables.create()
         }
@@ -88,11 +93,11 @@ extension AnnotationPreviewController {
         // Cache and report original color
         let rect = annotation.previewBoundingBox
         self.enqueue(key: annotation.previewId, parentKey: parentKey, libraryId: libraryId, document: document, pageIndex: annotation.pageIndex,
-                     rect: rect, includeAnnotation: (annotation is PSPDFKit.InkAnnotation), invertColors: false, isDark: isDark, type: .cachedAndReported)
+                     rect: rect, imageSize: previewSize, imageScale: 0.0, includeAnnotation: (annotation is PSPDFKit.InkAnnotation), invertColors: false, isDark: isDark, type: .cachedAndReported)
 //        // If in dark mode, only cache light mode version, which is required for backend upload
 //        if isDark {
 //            self.enqueue(key: key, parentKey: parentKey, document: document, pageIndex: annotation.pageIndex, rect: rect,
-//                         invertColors: true, isDark: !isDark, type: .cachedOnly)
+//                         invertColors: true, imageSize: previewSize, imageScale: 0.0, isDark: !isDark, type: .cachedOnly)
 //        }
     }
 
@@ -158,12 +163,14 @@ extension AnnotationPreviewController {
     /// - parameter document: Document to render.
     /// - parameter pageIndex: Page to render.
     /// - parameter rect: Part of page to render.
+    /// - parameter imageSize: Size of rendered image.
+    /// - parameter imageScale: Scale factor of rendering. 0.0 will result to the PSPDFkit default. Unsupported values will also result to default.
     /// - parameter includeAnnotation: If true, render annotation as well, otherwise render PDF only.
     /// - parameter invertColors: `true` if colors should be inverted, false otherwise.
     /// - parameter isDark: `true` if rendered image is in dark mode, `false` otherwise.
     /// - parameter type: Type of preview image. If `temporary`, requested image is temporary and is returned as `Single<UIImage>`. Otherwise image is
     ///                   cached locally and reported through `PublishSubject`.
-    private func enqueue(key: String, parentKey: String, libraryId: LibraryIdentifier, document: Document, pageIndex: PageIndex, rect: CGRect, includeAnnotation: Bool = false, invertColors: Bool = false, isDark: Bool = false, type: PreviewType) {
+    private func enqueue(key: String, parentKey: String, libraryId: LibraryIdentifier, document: Document, pageIndex: PageIndex, rect: CGRect, imageSize: CGSize, imageScale: CGFloat, includeAnnotation: Bool = false, invertColors: Bool = false, isDark: Bool = false, type: PreviewType) {
         /*
          Workaround for PSPDFKit issue.
 
@@ -189,9 +196,10 @@ extension AnnotationPreviewController {
 //        options.invertRenderColor = !invertColors && isDark
 
         let request = MutableRenderRequest(document: document)
-        request.imageSize = self.size
         request.pageIndex = pageIndex
         request.pdfRect = rect
+        request.imageSize = imageSize
+        request.imageScale = [1.0, 2.0, 3.0].contains(imageScale) ? imageScale : 0.0
         request.options = options
 
         do {
@@ -214,8 +222,8 @@ extension AnnotationPreviewController {
         switch result {
         case .success(let image):
             switch type {
-            case .temporary:
-                self.perform(event: .success(image), key: key, parentKey: parentKey)
+            case .temporary(let subscriberKey):
+                self.perform(event: .success(image), subscriberKey: subscriberKey)
 
             case .cachedOnly:
                 self.cache(image: image, key: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark)
@@ -228,17 +236,20 @@ extension AnnotationPreviewController {
         case .failure(let error):
             DDLogError("AnnotationPreviewController: could not generate image - \(error)")
 
-            if type == .temporary {
+            switch type {
+            case .temporary(let subscriberKey):
                 // Temporary request always needs to return an error if image was not available
-                self.perform(event: .failure(error), key: key, parentKey: parentKey)
+                self.perform(event: .failure(error), subscriberKey: subscriberKey)
+                
+            default:
+                break
             }
         }
     }
 
-    private func perform(event: SingleEvent<UIImage>, key: String, parentKey: String) {
-        let key = SubscriberKey(key: key, parentKey: parentKey)
-        self.subscribers[key]?(event)
-        self.subscribers[key] = nil
+    private func perform(event: SingleEvent<UIImage>, subscriberKey: SubscriberKey) {
+        self.subscribers[subscriberKey]?(event)
+        self.subscribers[subscriberKey] = nil
     }
 
     private func cache(image: UIImage, key: String, pdfKey: String, libraryId: LibraryIdentifier, isDark: Bool) {

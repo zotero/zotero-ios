@@ -215,6 +215,10 @@ internal enum L10n {
       internal static let selected = L10n.tr("Localizable", "accessibility.pdf.selected")
       /// Settings
       internal static let settings = L10n.tr("Localizable", "accessibility.pdf.settings")
+      /// Share annotation
+      internal static let shareAnnotation = L10n.tr("Localizable", "accessibility.pdf.share_annotation")
+      /// Share annotation image
+      internal static let shareAnnotationImage = L10n.tr("Localizable", "accessibility.pdf.share_annotation_image")
       /// Show more
       internal static let showMoreTools = L10n.tr("Localizable", "accessibility.pdf.show_more_tools")
       /// Close sidebar
@@ -854,6 +858,16 @@ internal enum L10n {
       internal static let title = L10n.tr("Localizable", "pdf.annotation_popover.title")
       /// Update subsequent pages
       internal static let updateSubsequentPages = L10n.tr("Localizable", "pdf.annotation_popover.update_subsequent_pages")
+    }
+    internal enum AnnotationShare {
+      internal enum Image {
+        /// Large
+        internal static let large = L10n.tr("Localizable", "pdf.annotation_share.image.large")
+        /// Medium
+        internal static let medium = L10n.tr("Localizable", "pdf.annotation_share.image.medium")
+        /// Share image
+        internal static let share = L10n.tr("Localizable", "pdf.annotation_share.image.share")
+      }
     }
     internal enum AnnotationToolbar {
       /// Eraser

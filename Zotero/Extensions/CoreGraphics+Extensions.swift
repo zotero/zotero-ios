@@ -58,3 +58,10 @@ extension CGPoint {
         return CGPoint(x: self.x.rounded(to: places), y: self.y.rounded(to: places))
     }
 }
+
+extension CGSize: Hashable {
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(width)
+        hasher.combine(height)
+    }
+}

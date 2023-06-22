@@ -30,6 +30,8 @@ protocol PdfReaderCoordinatorDelegate: AnyObject {
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: AnyObject {
+    func createShareAnnotationMenu(state: PDFReaderState, annotation: Annotation, sender: UIButton) -> UIMenu?
+    func shareAnnotationImage(state: PDFReaderState, annotation: Annotation, scale: CGFloat, sender: UIButton )
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void)
     func showCellOptions(for annotation: Annotation, userId: Int, library: Library, sender: UIButton, userInterfaceStyle: UIUserInterfaceStyle, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
     func showFilterPopup(from barButton: UIBarButtonItem, filter: AnnotationsFilter?, availableColors: [String], availableTags: [Tag], userInterfaceStyle: UIUserInterfaceStyle, completed: @escaping (AnnotationsFilter?) -> Void)
@@ -291,6 +293,127 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
 }
 
 extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
+    private func deferredShareImageMenuElement(
+        state: PDFReaderState,
+        annotation: Annotation,
+        sender: UIButton,
+        boundingBoxConverter: AnnotationBoundingBoxConverter,
+        scale: CGFloat,
+        title: String
+    ) -> UIDeferredMenuElement {
+        UIDeferredMenuElement { [weak self] elementProvider in
+            guard let self else {
+                elementProvider([])
+                return
+            }
+            let annotationPreviewController = self.controllers.annotationPreviewController
+            let pageIndex: PageIndex = UInt(annotation.page)
+            let rect = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter)
+            var size = rect.size
+            size.width *= scale
+            size.height *= scale
+            annotationPreviewController.render(
+                document: state.document,
+                page: pageIndex,
+                rect: rect,
+                imageSize: size,
+                imageScale: 1.0,
+                key: annotation.key,
+                parentKey: state.key,
+                libraryId: state.library.id
+            )
+            .observe(on: MainScheduler.instance)
+            .subscribe { [weak self] image in
+                var menuTitle = title
+                // By default UIActivityViewController shares a JPEG image with 0.8 compression quality,
+                // so we compute the image size as such. Actual image produced can be overriden if we need to.
+                if let imageData = image.jpegData(compressionQuality: 0.8) {
+                    let sizeInBytes = imageData.count
+                    let sizeInKB = Double(sizeInBytes) / 1024.0
+                    if sizeInKB < 1024.0 {
+                        menuTitle += " (\(String(format: "%.0f", sizeInKB)) KB)"
+                    } else {
+                        let sizeInMB = sizeInKB / 1024.0
+                        menuTitle += " (\(String(format: "%.2f", sizeInMB)) MB)"
+                    }
+                }
+                let action = UIAction(title: menuTitle) { [weak self] (_: UIAction) in
+                    guard let self else { return }
+                    DDLogInfo("PDFCoordinator: share pdf annotation image - \(title)")
+                    let completion = { (activityType: UIActivity.ActivityType?, completed: Bool, _: [Any]?, error: Error?) in
+                        DDLogInfo("PDFCoordinator: share pdf annotation image - activity type: \(String(describing: activityType)) completed: \(completed) error: \(String(describing: error))")
+                    }
+                    
+                    if let coordinator = self.childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
+                        coordinator.share(item: image, sourceView: .view(sender, nil), completionWithItemsHandler: completion)
+                    } else {
+                        (self as Coordinator).share(item: image, sourceView: .view(sender, nil), completionWithItemsHandler: completion)
+                    }
+                }
+                action.accessibilityLabel = L10n.Accessibility.Pdf.shareAnnotationImage + " " + title
+                action.isAccessibilityElement = true
+                elementProvider([action])
+            } onFailure: { (error: Error) in
+                DDLogError("PDFCoordinator: can't render annotation image - \(error)")
+                elementProvider([])
+            }
+            .disposed(by: disposeBag)
+        }
+    }
+        
+    func createShareAnnotationMenu(state: PDFReaderState, annotation: Annotation, sender: UIButton) -> UIMenu? {
+        guard annotation.type == .image,
+              let boundingBoxConverter = self.navigationController.viewControllers.last as? AnnotationBoundingBoxConverter
+        else { return nil }
+        var children: [UIMenuElement] = []
+        var shareImageMenuChildren: [UIMenuElement] = []
+        for (scale, title) in [
+            (300.0 / 72.0, L10n.Pdf.AnnotationShare.Image.medium),
+            (600.0 / 72.0, L10n.Pdf.AnnotationShare.Image.large)
+        ] {
+            let menuElement = deferredShareImageMenuElement(state: state, annotation: annotation, sender: sender, boundingBoxConverter: boundingBoxConverter, scale: scale, title: title)
+            shareImageMenuChildren.append(menuElement)
+        }
+        let shareImageMenu = UIMenu(title: L10n.Pdf.AnnotationShare.Image.share, options: [.displayInline], children: shareImageMenuChildren)
+        children.append(shareImageMenu)
+        return UIMenu(children: children)
+    }
+    
+    func shareAnnotationImage(state: PDFReaderState, annotation: Annotation, scale: CGFloat = 1.0, sender: UIButton) {
+        guard annotation.type == .image,
+              let pdfReaderViewController = navigationController.viewControllers.last as? PDFReaderViewController
+        else { return }
+        let annotationPreviewController = controllers.annotationPreviewController
+        let pageIndex: PageIndex = UInt(annotation.page)
+        let rect = annotation.boundingBox(boundingBoxConverter: pdfReaderViewController)
+        var size = rect.size
+        size.width *= scale
+        size.height *= scale
+        annotationPreviewController.render(
+            document: state.document,
+            page: pageIndex,
+            rect: rect,
+            imageSize: size,
+            imageScale: 1.0,
+            key: annotation.key,
+            parentKey: state.key,
+            libraryId: state.library.id
+        )
+        .observe(on: MainScheduler.instance)
+        .subscribe { [weak self] (image: UIImage) in
+            guard let self else { return }
+            if let coordinator = self.childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
+                coordinator.share(item: image, sourceView: .view(sender, nil))
+            } else {
+                (self as Coordinator).share(item: image, sourceView: .view(sender, nil))
+            }
+        } onFailure: { (error: Error) in
+            DDLogError("PDFCoordinator: can't render annotation image - \(error)")
+            // TODO: show error?
+        }
+        .disposed(by: disposeBag)
+    }
+    
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void) {
         (self.parentCoordinator as? DetailCoordinator)?.showTagPicker(libraryId: libraryId, selected: selected, userInterfaceStyle: userInterfaceStyle, navigationController: self.navigationController, picked: picked)
     }

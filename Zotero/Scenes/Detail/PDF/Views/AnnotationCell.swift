@@ -18,7 +18,7 @@ final class AnnotationCell: UITableViewCell {
     var actionPublisher: PublishSubject<AnnotationView.Action> {
         return self.annotationView.actionPublisher
     }
-    var disposeBag: DisposeBag {
+    var disposeBag: CompositeDisposable {
         return self.annotationView.disposeBag
     }
 
@@ -37,6 +37,7 @@ final class AnnotationCell: UITableViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         self.key = ""
+        disposeBag.dispose()
     }
 
     // MARK: - Actions
@@ -83,7 +84,7 @@ final class AnnotationCell: UITableViewCell {
     }
 
     func setup(with annotation: Annotation, comment: AnnotationView.Comment?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, library: Library, isEditing: Bool, currentUserId: Int,
-               displayName: String, username: String, boundingBoxConverter: AnnotationBoundingBoxConverter) {
+               displayName: String, username: String, boundingBoxConverter: AnnotationBoundingBoxConverter, pdfAnnotationsCoordinatorDelegate: PdfAnnotationsCoordinatorDelegate, state: PDFReaderState) {
         if !selected {
             self.annotationView.resignFirstResponder()
         }
@@ -92,7 +93,8 @@ final class AnnotationCell: UITableViewCell {
         self.selectionView.layer.borderWidth = selected ? PDFReaderLayout.cellSelectionLineWidth : 0
         let availableWidth = availableWidth - (PDFReaderLayout.annotationLayout.horizontalInset * 2)
         self.annotationView.setup(with: annotation, comment: comment, preview: preview, selected: selected, availableWidth: availableWidth, library: library, currentUserId: currentUserId,
-                                  displayName: displayName, username: username, boundingBoxConverter: boundingBoxConverter)
+                                  displayName: displayName, username: username, boundingBoxConverter: boundingBoxConverter,
+                                  pdfAnnotationsCoordinatorDelegate: pdfAnnotationsCoordinatorDelegate, state: state)
 
         self.setupAccessibility(for: annotation, selected: selected, currentUserId: currentUserId, displayName: displayName, username: username)
     }

@@ -15,6 +15,7 @@ final class AnnotationViewHeader: UIView {
     private weak var typeImageView: UIImageView!
     private weak var pageLabel: UILabel!
     private weak var authorLabel: UILabel!
+    private weak var shareButton: UIButton!
     private weak var menuButton: UIButton!
     private weak var doneButton: UIButton?
     private weak var lockIcon: UIImageView?
@@ -23,6 +24,10 @@ final class AnnotationViewHeader: UIView {
     private var authorTrailingToContainer: NSLayoutConstraint!
     private var authorTrailingToButton: NSLayoutConstraint!
 
+    var shareTap: Observable<UIButton> {
+        return self.shareButton.rx.tap.flatMap({ Observable.just(self.shareButton) })
+    }
+    
     var menuTap: Observable<UIButton> {
         return self.menuButton.rx.tap.flatMap({ Observable.just(self.menuButton) })
     }
@@ -70,11 +75,31 @@ final class AnnotationViewHeader: UIView {
         return annotationName + ", " + L10n.page + " " + pageLabel
     }
 
-    private func setup(type: AnnotationType, color: UIColor, pageLabel: String, author: String, showsMenuButton: Bool, showsDoneButton: Bool, showsLock: Bool, accessibilityType: AnnotationView.AccessibilityType) {
+    private func setup(
+        type: AnnotationType,
+        color: UIColor,
+        pageLabel: String,
+        author: String,
+        shareMenu: UIMenu?,
+        showsMenuButton: Bool,
+        showsDoneButton: Bool,
+        showsLock: Bool,
+        accessibilityType: AnnotationView.AccessibilityType
+    ) {
         self.typeImageView.image = self.image(for: type)?.withRenderingMode(.alwaysTemplate)
         self.typeImageView.tintColor = color
         self.pageLabel.text = L10n.page + " " + pageLabel
         self.authorLabel.text = author
+        
+        if let shareMenu {
+            shareButton.isHidden = false
+            shareButton.showsMenuAsPrimaryAction = true
+            shareButton.menu = shareMenu
+        } else {
+            shareButton.isHidden = true
+            shareButton.showsMenuAsPrimaryAction = false
+            shareButton.menu = nil
+        }
         self.menuButton.isHidden = !showsMenuButton
         self.lockIcon?.isHidden = !showsLock
 
@@ -85,10 +110,30 @@ final class AnnotationViewHeader: UIView {
         self.setupAccessibility(type: type, pageLabel: pageLabel, author: author, accessibilityType: accessibilityType)
     }
 
-    func setup(with annotation: Annotation, libraryId: LibraryIdentifier, isEditable: Bool, showsLock: Bool, showDoneButton: Bool, accessibilityType: AnnotationView.AccessibilityType, displayName: String, username: String) {
+    func setup(
+        with annotation: Annotation,
+        libraryId: LibraryIdentifier,
+        shareMenuProvider: @escaping ((UIButton) -> UIMenu?),
+        isEditable: Bool,
+        showsLock: Bool,
+        showDoneButton: Bool,
+        accessibilityType: AnnotationView.AccessibilityType,
+        displayName: String,
+        username: String
+    ) {
         let color = UIColor(hex: annotation.color)
         let author = libraryId == .custom(.myLibrary) ? "" : annotation.author(displayName: displayName, username: username)
-        self.setup(type: annotation.type, color: color, pageLabel: annotation.pageLabel, author: author, showsMenuButton: isEditable, showsDoneButton: showDoneButton, showsLock: showsLock, accessibilityType: accessibilityType)
+        self.setup(
+            type: annotation.type,
+            color: color,
+            pageLabel: annotation.pageLabel,
+            author: author,
+            shareMenu: shareMenuProvider(shareButton),
+            showsMenuButton: isEditable,
+            showsDoneButton: showDoneButton,
+            showsLock: showsLock,
+            accessibilityType: accessibilityType
+        )
     }
 
     private func setupAccessibility(type: AnnotationType, pageLabel: String, author: String, accessibilityType: AnnotationView.AccessibilityType) {
@@ -104,6 +149,8 @@ final class AnnotationViewHeader: UIView {
 
         self.menuButton.accessibilityLabel = L10n.Accessibility.Pdf.editAnnotation
         self.menuButton.isAccessibilityElement = true
+        self.shareButton.accessibilityLabel = L10n.Accessibility.Pdf.shareAnnotation
+        self.shareButton.isAccessibilityElement = true
     }
 
     private func setupView(with layout: AnnotationViewLayout) {
@@ -128,14 +175,21 @@ final class AnnotationViewHeader: UIView {
         authorLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
         authorLabel.translatesAutoresizingMaskIntoConstraints = false
 
+        let shareButton = UIButton()
+        shareButton.setImage(UIImage(systemName: "square.and.arrow.up"), for: .normal)
+        shareButton.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
+        shareButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: layout.horizontalInset, bottom: 0, right: (layout.horizontalInset / 2))
+        shareButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        shareButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        
         let menuButton = UIButton()
         menuButton.setImage(UIImage(systemName: "ellipsis"), for: .normal)
         menuButton.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        menuButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: layout.horizontalInset, bottom: 0, right: (layout.horizontalInset / 2))
+        menuButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: (layout.horizontalInset / 2), bottom: 0, right: (layout.horizontalInset / 2))
         menuButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         menuButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
 
-        var rightButtons: [UIView] = [menuButton]
+        var rightButtons: [UIView] = [shareButton, menuButton]
 
         if layout.showDoneButton {
             let doneButton = UIButton()
@@ -165,6 +219,7 @@ final class AnnotationViewHeader: UIView {
         self.typeImageView = typeImageView
         self.pageLabel = pageLabel
         self.authorLabel = authorLabel
+        self.shareButton = shareButton
         self.menuButton = menuButton
         self.lockIcon = lock
         self.rightBarButtonsStackView = rightBarButtons
