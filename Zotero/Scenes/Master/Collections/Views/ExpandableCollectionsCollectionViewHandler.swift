@@ -59,12 +59,12 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
 
         let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
 
-        if snapshot.items.contains(where: { $0.identifier == collectionId }) {
+        if !snapshot.items.contains(where: { $0.identifier == collectionId }) {
             // Collection is not stored in this snapshot, nothing to select.
             return
         }
 
-        if snapshot.visibleItems.contains(where: { $0.identifier == collectionId }) {
+        if !snapshot.visibleItems.contains(where: { $0.identifier == collectionId }) {
             // Selection is collapsed, we need to expand and select it then
             self.update(with: tree, selectedId: collectionId, animated: false) { [weak self] in
                 self?.selectIfNeeded(collectionId: collectionId, tree: tree, scrollToPosition: scrollToPosition)

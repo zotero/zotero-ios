@@ -129,7 +129,7 @@ class ManualLookupViewController: UIViewController {
             self.setupCloseBarButton(title: L10n.cancel)
 
         case .lookup(let data):
-            let didTranslateAll = data.contains(where: { data in
+            let didTranslateAll = !data.contains(where: { data in
                 switch data.state {
                 case .enqueued, .inProgress: return true
                 case .failed, .translated: return false
