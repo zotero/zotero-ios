@@ -17,7 +17,7 @@ struct SyncVersionsSyncAction: SyncAction {
     let object: SyncObject
     let sinceVersion: Int?
     let currentVersion: Int?
-    let syncType: SyncController.SyncType
+    let syncType: SyncController.Kind
     let libraryId: LibraryIdentifier
     let userId: Int
     let syncDelayIntervals: [Double]
@@ -52,7 +52,7 @@ struct SyncVersionsSyncAction: SyncAction {
     }
 
     private func synchronizeVersions<Obj: SyncableObject & Deletable & Updatable>(for type: Obj.Type, libraryId: LibraryIdentifier, userId: Int, object: SyncObject, since sinceVersion: Int?,
-                                                                                  current currentVersion: Int?, syncType: SyncController.SyncType) -> Single<(Int, [String])> {
+                                                                                  current currentVersion: Int?, syncType: SyncController.Kind) -> Single<(Int, [String])> {
         if !self.checkRemote && self.syncType != .full {
             return self.loadChangedObjects(for: object, from: [:], in: libraryId, syncType: syncType, newVersion: (currentVersion ?? 0), delayIntervals: self.syncDelayIntervals)
                        .observe(on: self.scheduler)
@@ -71,13 +71,13 @@ struct SyncVersionsSyncAction: SyncAction {
                    }
     }
 
-    private func loadRemoteVersions(for object: SyncObject, in libraryId: LibraryIdentifier, userId: Int, since sinceVersion: Int?, syncType: SyncController.SyncType)
+    private func loadRemoteVersions(for object: SyncObject, in libraryId: LibraryIdentifier, userId: Int, since sinceVersion: Int?, syncType: SyncController.Kind)
                                                                                                                                                            -> Single<([String: Int], HTTPURLResponse)> {
         let request = VersionsRequest(libraryId: libraryId, userId: userId, objectType: object, version: sinceVersion)
         return self.apiClient.send(request: request, queue: self.queue)
     }
 
-    private func loadChangedObjects(for object: SyncObject, from response: [String: Int], in libraryId: LibraryIdentifier, syncType: SyncController.SyncType, newVersion: Int, delayIntervals: [Double])
+    private func loadChangedObjects(for object: SyncObject, from response: [String: Int], in libraryId: LibraryIdentifier, syncType: SyncController.Kind, newVersion: Int, delayIntervals: [Double])
                                                                                                                                                                             -> Single<(Int, [String])> {
         return Single.create { subscriber -> Disposable in
             do {
@@ -87,7 +87,7 @@ struct SyncVersionsSyncAction: SyncAction {
                     switch syncType {
                     case .full:
                         try coordinator.perform(request: MarkOtherObjectsAsChangedByUser(syncObject: object, versions: response, libraryId: libraryId))
-                    case .collectionsOnly, .ignoreIndividualDelays, .normal, .keysOnly: break
+                    case .collectionsOnly, .ignoreIndividualDelays, .normal, .keysOnly, .prioritizeDownloads: break
                     }
 
                     let request = SyncVersionsDbRequest(versions: response, libraryId: libraryId, syncObject: object, syncType: syncType, delayIntervals: delayIntervals)

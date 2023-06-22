@@ -23,8 +23,8 @@ final class TranslatorsControllerSpec: QuickSpec {
     private let bundledTimestamp = 1585834479
     private let translatorId = "bbf1617b-d836-4665-9aae-45f223264460"
     private let translatorUrl = "https://acontracorriente.chass.ncsu.edu/index.php/acontracorriente/article/view/1956"
-    private let bundledTranslatorTimestamp = 1471546264 // 2016-08-18 20:51:04
-    private let remoteTranslatorTimestamp = 1586181600 // 2020-04-06 16:00:00
+    private let bundledTranslatorTimestamp = 1471553464 // 2016-08-18 20:51:04
+    private let remoteTranslatorTimestamp = 1586188800 // 2020-04-06 16:00:00
     private let remoteTimestamp = 1586182261 // 2020-04-06 16:00:00
     // We need to retain realm with memory identifier so that data are not deleted
     private var realm: Realm!

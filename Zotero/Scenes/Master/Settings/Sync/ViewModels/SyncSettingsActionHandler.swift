@@ -80,6 +80,9 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
         case .cancelZoteroDirectoryCreation: break
 
         case .recheckKeys:
+            if self.syncScheduler.inProgress.value {
+                self.syncScheduler.cancelSync()
+            }
             self.observeSyncIssues(in: viewModel)
             self.syncScheduler.request(sync: .keysOnly, libraries: .all)
         }
@@ -163,6 +166,9 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
             self.webDavController.sessionStorage.isEnabled = type == .webDav
 
             if type == .zotero {
+                if self.syncScheduler.inProgress.value {
+                    self.syncScheduler.cancelSync()
+                }
                 self.syncScheduler.request(sync: .normal, libraries: .all)
             }
         }
@@ -229,6 +235,9 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
                    self.update(viewModel: viewModel) { state in
                        state.isVerifyingWebDav = false
                        state.webDavVerificationResult = .success(())
+                   }
+                   if self.syncScheduler.inProgress.value {
+                       self.syncScheduler.cancelSync()
                    }
                    self.syncScheduler.request(sync: .normal, libraries: .all)
                }, onFailure: { viewModel, error in

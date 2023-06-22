@@ -8,6 +8,7 @@
 
 import Foundation
 
+import Alamofire
 import CocoaLumberjackSwift
 import RxSwift
 
@@ -34,6 +35,15 @@ struct AuthorizeUploadSyncAction: SyncAction {
         return self.apiClient.send(request: request, queue: self.queue)
                              .mapData(httpMethod: request.httpMethod.rawValue)
                              .observe(on: self.scheduler)
+                             .catch({ error in
+                                 if let responseError = error as? AFResponseError, let statusCode = responseError.error.responseCode {
+                                     throw SyncActionError.authorizationFailed(statusCode: statusCode, response: responseError.response, hadIfMatchHeader: (self.oldMd5 != nil))
+                                 }
+                                 if let error = error as? AFError, let statusCode = error.responseCode {
+                                     throw SyncActionError.authorizationFailed(statusCode: statusCode, response: "", hadIfMatchHeader: (self.oldMd5 != nil))
+                                 }
+                                 throw error
+                             })
                              .flatMap { (data, response) -> Single<AuthorizeUploadResponse> in
                                 do {
                                     let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)

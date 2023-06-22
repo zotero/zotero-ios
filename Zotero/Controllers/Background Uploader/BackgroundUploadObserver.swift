@@ -40,7 +40,7 @@ final class BackgroundUploadObserver: NSObject {
         self.sessions = [:]
         self.finishedTasks = [:]
         self.completionHandlers = [:]
-        self.context = BackgroundUploaderContext()
+        self.context = context
         self.disposeBag = DisposeBag()
         self.shareExtensionSessionIdDisposeBag = DisposeBag()
         self.backgroundProcessingDisposeBag = DisposeBag()

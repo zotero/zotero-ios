@@ -110,7 +110,8 @@ final class SyncToolbarController {
     private func alertMessage(from error: Error) -> (message: String, additionalData: SyncError.ErrorData?) {
         if let error = error as? SyncError.Fatal {
             switch error {
-            case .cancelled, .uploadObjectConflict: break // should not happen
+            case .cancelled: break // should not happen
+                
             case .apiError(let response, let data):
                 return (L10n.Errors.api(response), data)
 
@@ -120,7 +121,7 @@ final class SyncToolbarController {
             case .allLibrariesFetchFailed:
                 return (L10n.Errors.SyncToolbar.librariesMissing, nil)
 
-            case .cantResolveConflict, .preconditionErrorCantBeResolved:
+            case .uploadObjectConflict:
                 return (L10n.Errors.SyncToolbar.conflictRetryLimit, nil)
 
             case .groupSyncFailed:
@@ -137,6 +138,9 @@ final class SyncToolbarController {
 
             case .forbidden:
                 return (L10n.Errors.SyncToolbar.forbiddenMessage, nil)
+
+            case .cantSubmitAttachmentItem(let data):
+                return (L10n.Errors.db, data)
             }
         }
 
@@ -192,7 +196,12 @@ final class SyncToolbarController {
 
             case .annotationDidSplit(let string, let keys, let libraryId):
                 return (string, SyncError.ErrorData(itemKeys: Array(keys), libraryId: libraryId))
-            case .unchanged: break
+
+            case .unchanged:
+                break
+
+            case .preconditionFailed(let libraryId):
+                return (L10n.Errors.SyncToolbar.conflictRetryLimit, SyncError.ErrorData(itemKeys: nil, libraryId: libraryId))
             }
         }
 

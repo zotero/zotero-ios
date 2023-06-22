@@ -13,6 +13,8 @@ enum ConflictResolution {
     case markGroupAsLocalOnly(Int)
     case revertGroupChanges(LibraryIdentifier)
     case keepGroupChanges(LibraryIdentifier)
+    case revertGroupFiles(LibraryIdentifier)
+    case skipGroup(LibraryIdentifier)
     case remoteDeletionOfActiveObject(libraryId: LibraryIdentifier, toDeleteCollections: [String], toRestoreCollections: [String],
                                       toDeleteItems: [String], toRestoreItems: [String], searches: [String], tags: [String])
     case remoteDeletionOfChangedItem(libraryId: LibraryIdentifier, toDelete: [String], toRestore: [String])

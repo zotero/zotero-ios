@@ -50,6 +50,8 @@ internal enum L10n {
   internal static let error = L10n.tr("Localizable", "error")
   /// Item Type
   internal static let itemType = L10n.tr("Localizable", "item_type")
+  /// Keep
+  internal static let keep = L10n.tr("Localizable", "keep")
   /// Last Updated
   internal static let lastUpdated = L10n.tr("Localizable", "last_updated")
   /// App failed to log in. Please log in again and report Debug ID %@ in the Zotero Forums.
@@ -84,6 +86,8 @@ internal enum L10n {
   internal static let publisher = L10n.tr("Localizable", "publisher")
   /// Recents
   internal static let recent = L10n.tr("Localizable", "recent")
+  /// Remove
+  internal static let remove = L10n.tr("Localizable", "remove")
   /// Report
   internal static let report = L10n.tr("Localizable", "report")
   /// Restore
@@ -593,6 +597,28 @@ internal enum L10n {
     internal enum StylesSearch {
       /// Could not load styles. Do you want to try again?
       internal static let loading = L10n.tr("Localizable", "errors.styles_search.loading")
+    }
+    internal enum Sync {
+      /// You no longer have file-editing access for the group ‘%@’, and files you’ve changed locally cannot be uploaded. If you continue, all group files will be reset to their state on %@.\n\nIf you would like a chance to copy modified files elsewhere or to request file-editing access from a group administrator, you can skip syncing of the group now.
+      internal static func fileWriteDenied(_ p1: Any, _ p2: Any) -> String {
+        return L10n.tr("Localizable", "errors.sync.file_write_denied", String(describing: p1), String(describing: p2))
+      }
+      /// Group '%@' is no longer accessible. What would you like to do?
+      internal static func groupRemoved(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "errors.sync.group_removed", String(describing: p1))
+      }
+      /// Keep changes
+      internal static let keepChanges = L10n.tr("Localizable", "errors.sync.keep_changes")
+      /// You can't write to group '%@' anymore. What would you like to do?
+      internal static func metadataWriteDenied(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "errors.sync.metadata_write_denied", String(describing: p1))
+      }
+      /// Reset Group Files and Sync
+      internal static let resetGroupFiles = L10n.tr("Localizable", "errors.sync.reset_group_files")
+      /// Revert to original
+      internal static let revertToOriginal = L10n.tr("Localizable", "errors.sync.revert_to_original")
+      /// Skip Group
+      internal static let skipGroup = L10n.tr("Localizable", "errors.sync.skip_group")
     }
     internal enum SyncToolbar {
       /// Unable to upload attachment: %@. Please try removing and re-adding the attachment.

@@ -266,6 +266,7 @@ final class ExtensionViewModel {
 
     private let syncController: SyncController
     private let apiClient: ApiClient
+    private let attachmentDownloader: AttachmentDownloader
     private let dbStorage: DbStorage
     private let fileStorage: FileStorage
     private let schemaController: SchemaController
@@ -286,7 +287,7 @@ final class ExtensionViewModel {
         let mtime: Int
     }
 
-    init(webView: WKWebView, apiClient: ApiClient, backgroundUploader: BackgroundUploader, backgroundUploadObserver: BackgroundUploadObserver, dbStorage: DbStorage, schemaController: SchemaController,
+    init(webView: WKWebView, apiClient: ApiClient, attachmentDownloader: AttachmentDownloader, backgroundUploader: BackgroundUploader, backgroundUploadObserver: BackgroundUploadObserver, dbStorage: DbStorage, schemaController: SchemaController,
          webDavController: WebDavController, dateParser: DateParser, fileStorage: FileStorage, syncController: SyncController, translatorsController: TranslatorsAndStylesController) {
         let queue = DispatchQueue(label: "org.zotero.ZShare.BackgroundQueue", qos: .userInteractive)
 
@@ -305,6 +306,7 @@ final class ExtensionViewModel {
         self.webView = webView
         self.syncController = syncController
         self.apiClient = apiClient
+        self.attachmentDownloader = attachmentDownloader
         self.backgroundUploader = backgroundUploader
         self.backgroundUploadObserver = backgroundUploadObserver
         self.dbStorage = dbStorage
@@ -327,7 +329,7 @@ final class ExtensionViewModel {
     func start(with extensionItem: NSExtensionItem) {
         // Start sync in background, so that collections are available for user to pick
         DDLogInfo("ExtensionViewModel: start sync")
-        self.syncController.start(type: .collectionsOnly, libraries: .all)
+        self.syncController.start(type: .collectionsOnly, libraries: .all, retryAttempt: 0)
         DDLogInfo("ExtensionViewModel: load extension item")
         self.loadAttachment(from: extensionItem)
             .subscribe(onSuccess: { [weak self] attachment in
@@ -1432,8 +1434,6 @@ final class ExtensionViewModel {
                            .observe(on: MainScheduler.instance)
                            .subscribe(onNext: { [weak self] data in
                                self?.finishSync(successful: (data == nil))
-                           }, onError: { [weak self] _ in
-                               self?.finishSync(successful: false)
                            })
                            .disposed(by: self.disposeBag)
     }

@@ -745,7 +745,7 @@ extension AppCoordinator: ConflictReceiver {
             }
             controller.start(with: handler)
 
-        case .groupRemoved, .groupWriteDenied:
+        case .groupRemoved, .groupMetadataWriteDenied, .groupFileWriteDenied:
             self.presentAlert(for: conflict, completed: completed)
         }
     }
@@ -763,26 +763,45 @@ extension AppCoordinator: ConflictReceiver {
     private func createAlert(for conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void) -> (title: String, message: String, actions: [UIAlertAction]) {
         switch conflict {
         case .groupRemoved(let groupId, let groupName):
-            let actions = [UIAlertAction(title: "Remove", style: .destructive, handler: { _ in
+            let actions = [UIAlertAction(title: L10n.remove, style: .destructive, handler: { _ in
                                completed(.deleteGroup(groupId))
                            }),
-                           UIAlertAction(title: "Keep", style: .default, handler: { _ in
+                           UIAlertAction(title: L10n.keep, style: .default, handler: { _ in
                                completed(.markGroupAsLocalOnly(groupId))
                            })]
-            return ("Warning",
-                    "Group '\(groupName)' is no longer accessible. What would you like to do?",
-                    actions)
+            return (L10n.warning, L10n.Errors.Sync.groupRemoved(groupName), actions)
 
-        case .groupWriteDenied(let groupId, let groupName):
-            let actions = [UIAlertAction(title: "Revert to original", style: .cancel, handler: { _ in
+        case .groupMetadataWriteDenied(let groupId, let groupName):
+            let actions = [UIAlertAction(title: L10n.Errors.Sync.revertToOriginal, style: .cancel, handler: { _ in
                                completed(.revertGroupChanges(.group(groupId)))
                            }),
-                           UIAlertAction(title: "Keep changes", style: .default, handler: { _ in
+                           UIAlertAction(title: L10n.Errors.Sync.keepChanges, style: .default, handler: { _ in
                                completed(.keepGroupChanges(.group(groupId)))
                            })]
-            return ("Warning",
-                    "You can't write to group '\(groupName)' anymore. What would you like to do?",
-                    actions)
+            return (L10n.warning, L10n.Errors.Sync.metadataWriteDenied(groupName), actions)
+
+        case .groupFileWriteDenied(let groupId, let groupName):
+            guard let webDavController = self.controllers.userControllers?.webDavController else { return ("", "", []) }
+
+            let domainName: String
+            if !webDavController.sessionStorage.isEnabled {
+                domainName = "zotero.org"
+            } else {
+                let url = URL(string: webDavController.sessionStorage.url)
+                if #available(iOS 16.0, *) {
+                    domainName = url?.host() ?? ""
+                } else {
+                    domainName = url?.host ?? ""
+                }
+            }
+
+            let actions = [UIAlertAction(title: L10n.Errors.Sync.resetGroupFiles, style: .cancel, handler: { _ in
+                               completed(.revertGroupFiles(.group(groupId)))
+                           }),
+                           UIAlertAction(title: L10n.Errors.Sync.skipGroup, style: .default, handler: { _ in
+                               completed(.skipGroup(.group(groupId)))
+                           })]
+            return (L10n.warning, L10n.Errors.Sync.fileWriteDenied(groupName, domainName), actions)
 
         case .objectsRemovedRemotely, .removedItemsHaveLocalChanges:
             return ("", "", [])

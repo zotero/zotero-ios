@@ -16,7 +16,7 @@ struct SyncVersionsDbRequest: DbResponseRequest {
     let versions: [String: Int]
     let libraryId: LibraryIdentifier
     let syncObject: SyncObject
-    let syncType: SyncController.SyncType
+    let syncType: SyncController.Kind
     let delayIntervals: [Double]
 
     var needsWrite: Bool { return false }
@@ -60,7 +60,7 @@ struct SyncVersionsDbRequest: DbResponseRequest {
                 guard !toUpdate.contains(object.key) else { continue }
                 toUpdate.append(object.key)
 
-            case .collectionsOnly, .normal, .keysOnly:
+            case .collectionsOnly, .normal, .keysOnly, .prioritizeDownloads:
                 // Check backoff schedule to see whether object can be synced again
                 let delayIdx = min(object.syncRetries, (self.delayIntervals.count - 1))
                 let delay = self.delayIntervals[delayIdx]
