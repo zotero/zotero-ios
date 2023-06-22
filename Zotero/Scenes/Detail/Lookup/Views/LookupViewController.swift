@@ -216,7 +216,9 @@ class LookupViewController: UIViewController {
     }
 
     private func closeAfterUpdateIfNeeded() {
-        let activeDownload = self.dataSource.snapshot().itemIdentifiers.first(where: { row in
+        let itemIdentifiers = dataSource.snapshot().itemIdentifiers
+        guard !itemIdentifiers.isEmpty else { return }
+        let activeDownload = itemIdentifiers.first(where: { row in
             switch row {
             case .attachment(_, let update):
                 switch update {

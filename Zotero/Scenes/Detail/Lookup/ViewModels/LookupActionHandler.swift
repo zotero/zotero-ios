@@ -11,29 +11,23 @@ import Foundation
 import CocoaLumberjackSwift
 import RxSwift
 
-final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionHandler {
+final class LookupActionHandler: ViewModelActionHandler {
     typealias State = LookupState
     typealias Action = LookupAction
 
-    unowned let dbStorage: DbStorage
-    let backgroundQueue: DispatchQueue
-    private unowned let fileStorage: FileStorage
+    private unowned let identifierLookupController: IdentifierLookupController
     private unowned let translatorsController: TranslatorsAndStylesController
     private unowned let schemaController: SchemaController
     private unowned let dateParser: DateParser
-    private unowned let remoteFileDownloader: RemoteAttachmentDownloader
     private let disposeBag: DisposeBag
 
     private var lookupWebViewHandler: LookupWebViewHandler?
 
-    init(dbStorage: DbStorage, fileStorage: FileStorage, translatorsController: TranslatorsAndStylesController, schemaController: SchemaController, dateParser: DateParser, remoteFileDownloader: RemoteAttachmentDownloader) {
-        self.backgroundQueue = DispatchQueue(label: "org.zotero.ItemsActionHandler.backgroundProcessing", qos: .userInitiated)
-        self.fileStorage = fileStorage
-        self.dbStorage = dbStorage
+    init(identifierLookupController: IdentifierLookupController, translatorsController: TranslatorsAndStylesController, schemaController: SchemaController, dateParser: DateParser) {
+        self.identifierLookupController = identifierLookupController
         self.translatorsController = translatorsController
         self.schemaController = schemaController
         self.dateParser = dateParser
-        self.remoteFileDownloader = remoteFileDownloader
         self.disposeBag = DisposeBag()
     }
 
@@ -50,39 +44,27 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                    })
                    .disposed(by: self.disposeBag)
 
-            self.remoteFileDownloader.observable
+            identifierLookupController.observable
                 .observe(on: MainScheduler.instance)
-                .subscribe(with: viewModel, onNext: { [weak self] viewModel, update in
+                .subscribe(with: viewModel) { [weak self] viewModel, update in
+                    guard let self else { return }
                     switch update.kind {
-                    case .ready(let attachment):
-                        self?.finish(download: update.download, attachment: attachment, in: viewModel)
-                    case .cancelled, .failed, .progress: break
+                    case .itemStored:
+                        break
+                        
+                    case .pendingAttachments:
+                        let translatedData = LookupState.LookupData(identifier: update.identifier, state: .translated(update.parsedData))
+                        self.update(lookupData: translatedData, in: viewModel)
+                        
+                    case .itemCreationFailed:
+                        let failedData = LookupState.LookupData(identifier: update.identifier, state: .failed)
+                        self.update(lookupData: failedData, in: viewModel)
                     }
-                })
+                }
                 .disposed(by: self.disposeBag)
 
         case .lookUp(let identifier):
             self.lookUp(identifier: identifier, in: viewModel)
-        }
-    }
-
-    private func finish(download: RemoteAttachmentDownloader.Download, attachment: Attachment, in viewModel: ViewModel<LookupActionHandler>) {
-        let localizedType = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ItemTypes.attachment
-
-        self.backgroundQueue.async { [weak self] in
-            guard let self = self else { return }
-
-            do {
-                let request = CreateAttachmentDbRequest(attachment: attachment, parentKey: download.parentKey, localizedType: localizedType, includeAccessDate: attachment.hasUrl, collections: [], tags: [])
-                _ = try self.dbStorage.perform(request: request, on: self.backgroundQueue)
-            } catch let error {
-                DDLogError("RemoteAttachmentDownloader: can't store attachment after download - \(error)")
-
-                // Storing item failed, remove downloaded file
-                guard case .file(let filename, let contentType, _, _) = attachment.type else { return }
-                let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
-                try? self.fileStorage.remove(file)
-            }
         }
     }
 
@@ -161,27 +143,7 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                 return
             }
 
-            self.backgroundQueue.async { [weak self, weak viewModel] in
-                guard let self = self else { return }
-
-                do {
-                    try self.storeDataAndDownloadAttachmentIfNecessary(parsedData)
-
-                    inMainThread { [weak self] in
-                        guard let self = self, let viewModel = viewModel else { return }
-                        let translatedData = LookupState.LookupData(identifier: identifier, state: .translated(parsedData))
-                        self.update(lookupData: translatedData, in: viewModel)
-                    }
-                } catch let error {
-                    DDLogError("LookupActionHandler: can't create item(s) - \(error)")
-
-                    inMainThread { [weak self] in
-                        guard let self = self, let viewModel = viewModel else { return }
-                        let failedData = LookupState.LookupData(identifier: identifier, state: .failed)
-                        self.update(lookupData: failedData, in: viewModel)
-                    }
-                }
-            }
+            identifierLookupController.process(identifier: identifier, response: parsedData.response, attachments: parsedData.attachments)
         }
     }
 
@@ -205,16 +167,6 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
             result += key + ":" + value
         }
         return result
-    }
-
-    private func storeDataAndDownloadAttachmentIfNecessary(_ data: LookupState.TranslatedLookupData) throws {
-        let request = CreateTranslatedItemsDbRequest(responses: [data.response], schemaController: self.schemaController, dateParser: self.dateParser)
-        try self.dbStorage.perform(request: request, on: self.backgroundQueue)
-
-        guard Defaults.shared.shareExtensionIncludeAttachment else { return }
-
-        let downloadData = data.attachments.map({ ($0, $1, data.response.key) })
-        self.remoteFileDownloader.download(data: downloadData)
     }
 
     /// Tries to parse `ItemResponse` from data returned by translation server. It prioritizes items with attachments if there are multiple items.
@@ -245,5 +197,11 @@ final class LookupActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
             DDLogError("LookupActionHandler: can't parse data - \(error)")
             return nil
         }
+    }
+}
+
+extension IdentifierLookupController.Update {
+    var parsedData: LookupState.TranslatedLookupData {
+        .init(response: response, attachments: attachments)
     }
 }
