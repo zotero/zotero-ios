@@ -1517,6 +1517,7 @@ final class SyncControllerSpec: QuickSpec {
 
                         let item = RItem()
                         item.key = itemKey
+                        item.rawType = "thesis"
                         item.syncState = .synced
                         item.version = oldVersion
                         item.changes.append(RObjectChange.create(changes: RItemChanges.fields))
@@ -1572,7 +1573,7 @@ final class SyncControllerSpec: QuickSpec {
                     // We don't care about specific params, we just want to catch update for all objecfts of this type
                     let itemConditions = itemUpdate.stubCondition(with: baseUrl, ignoreBody: true)
                     stub(condition: itemConditions, response: { request -> HTTPStubsResponse in
-                        let itemResponseJson = self.itemJson(key: itemKey, version: newVersion, type: "attachment")
+                        let itemResponseJson = self.itemJson(key: itemKey, version: newVersion, type: "thesis")
                         let params = request.httpBodyStream.flatMap({ self.jsonParameters(from: $0) })
                         expect(params?.count).to(equal(1))
                         let firstParams = params?.first ?? [:]
@@ -2889,12 +2890,24 @@ final class SyncControllerSpec: QuickSpec {
     }
 
     private func itemJson(key: String, version: Int, type: String) -> [String: Any] {
-        let itemUrl = Bundle(for: SyncControllerSpec.self).url(forResource: "test_item", withExtension: "json")!
+        let itemUrl = Bundle(for: SyncControllerSpec.self).url(forResource: "test_thesis_item", withExtension: "json")!
         var itemJson = (try! JSONSerialization.jsonObject(with: (try! Data(contentsOf: itemUrl)), options: .allowFragments)) as! [String: Any]
         itemJson["key"] = key
         itemJson["version"] = version
         var itemData = itemJson["data"] as! [String: Any]
         itemData["itemType"] = type
+        itemJson["data"] = itemData
+        return itemJson
+    }
+
+    private func attachmentItemJson(key: String, version: Int, filename: String, contentType: String) -> [String: Any] {
+        let itemUrl = Bundle(for: SyncControllerSpec.self).url(forResource: "test_item_attachment", withExtension: "json")!
+        var itemJson = (try! JSONSerialization.jsonObject(with: (try! Data(contentsOf: itemUrl)), options: .allowFragments)) as! [String: Any]
+        itemJson["key"] = key
+        itemJson["version"] = version
+        var itemData = itemJson["data"] as! [String: Any]
+        itemData["filename"] = filename
+        itemData["contentType"] = contentType
         itemJson["data"] = itemData
         return itemJson
     }

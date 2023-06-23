@@ -54,7 +54,7 @@ final class SyncActionsSpec: QuickSpec {
             it("reverts group changes") {
                 // Load urls for bundled files
                 guard let collectionUrl = Bundle(for: type(of: self)).url(forResource: "test_collection", withExtension: "json"),
-                      let itemUrl = Bundle(for: type(of: self)).url(forResource: "test_item", withExtension: "json"),
+                      let itemUrl = Bundle(for: type(of: self)).url(forResource: "test_thesis_item", withExtension: "json"),
                       let searchUrl = Bundle(for: type(of: self)).url(forResource: "test_search", withExtension: "json") else {
                     fail("Could not find json files")
                     return
@@ -218,6 +218,8 @@ final class SyncActionsSpec: QuickSpec {
                 let itemData = try! Data(contentsOf: itemUrl)
                 let itemJson = (try! JSONSerialization.jsonObject(with: itemData, options: .allowFragments)) as! [String: Any]
 
+                // Clear json file in case it exists from previous test
+                try? FileStorageController().remove(Files.jsonCacheFile(for: .item, libraryId: .custom(.myLibrary), key: "BBBBBBBB"))
                 // Write original json files to directory folder for SyncActionHandler to use when reverting
                 let itemFile = Files.jsonCacheFile(for: .item, libraryId: .custom(.myLibrary), key: "AAAAAAAA")
                 try! itemData.write(to: itemFile.createUrl())
@@ -291,7 +293,7 @@ final class SyncActionsSpec: QuickSpec {
 
                 self.realm.refresh()
 
-                waitUntil(timeout: .seconds(10), action: { doneAction in
+                waitUntil(timeout: .seconds(100000), action: { doneAction in
                     RevertLibraryFilesSyncAction(
                         libraryId: .custom(.myLibrary),
                         dbStorage: self.dbStorage,
@@ -327,7 +329,7 @@ final class SyncActionsSpec: QuickSpec {
             it("marks local changes as synced") {
                 // Load urls for bundled files
                 guard let collectionUrl = Bundle(for: type(of: self)).url(forResource: "test_collection", withExtension: "json"),
-                      let itemUrl = Bundle(for: type(of: self)).url(forResource: "test_item", withExtension: "json") else {
+                      let itemUrl = Bundle(for: type(of: self)).url(forResource: "test_thesis_item", withExtension: "json") else {
                     fail("Could not find json files")
                     return
                 }

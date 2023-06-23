@@ -258,28 +258,28 @@ final class WebDavControllerSpec: QuickSpec {
                 createStub(
                     for: WebDavDownloadRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")),
                     ignoreBody: true,
-                    baseUrl: self.apiBaseUrl,
+                    baseUrl: self.webDavUrl,
                     statusCode: 200,
                     xmlResponse: "<properties version=\"1\"><mtime>2</mtime><hash>bbbb</hash></properties>"
                 )
                 createStub(
                     for: WebDavDeleteRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")),
                     ignoreBody: true,
-                    baseUrl: self.apiBaseUrl,
+                    baseUrl: self.webDavUrl,
                     statusCode: 200,
                     jsonResponse: [] as [String]
                 )
                 createStub(
                     for: WebDavWriteRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop"), data: Data()),
                     ignoreBody: true,
-                    baseUrl: self.apiBaseUrl,
+                    baseUrl: self.webDavUrl,
                     statusCode: 200,
                     jsonResponse: [] as [String]
                 )
                 createStub(
                     for: AttachmentUploadRequest(endpoint: .webDav(self.webDavUrl.appendingPathComponent(itemKey + ".zip")), httpMethod: .put),
                     ignoreBody: true,
-                    baseUrl: self.apiBaseUrl,
+                    baseUrl: self.webDavUrl,
                     statusCode: 200,
                     jsonResponse: [] as [String]
                 )
@@ -288,7 +288,7 @@ final class WebDavControllerSpec: QuickSpec {
                 stub(condition: updatesRequest.stubCondition(with: self.apiBaseUrl, ignoreBody: true), response: { request -> HTTPStubsResponse in
                     if request.allHTTPHeaderFields?["If-Unmodified-Since-Version"] != nil {
                         // First request to submit a new item
-                        let itemJson = self.itemJson(key: itemKey, version: newVersion, type: "attachment")
+                        let itemJson = self.attachmentItemJson(key: itemKey, version: newVersion, filename: filename, contentType: contentType)
                         return HTTPStubsResponse(
                             jsonObject: ["success": ["0": itemKey] as [String: Any], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]],
                             statusCode: 200,
@@ -296,7 +296,7 @@ final class WebDavControllerSpec: QuickSpec {
                         )
                     } else {
                         // Second request to submit new mtime and hash
-                        let itemJson = self.itemJson(key: itemKey, version: newVersion + 1, type: "attachment")
+                        let itemJson = self.attachmentItemJson(key: itemKey, version: newVersion + 1, filename: filename, contentType: contentType)
                         return HTTPStubsResponse(
                             jsonObject: ["success": ["0": itemKey] as [String: Any], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]],
                             statusCode: 200,
@@ -324,8 +324,9 @@ final class WebDavControllerSpec: QuickSpec {
                 let contentType = "application/pdf"
                 let oldVersion = 2
                 let newVersion = 3
+                let md5 = "abcdef"
 
-                let itemJson = self.itemJson(key: itemKey, version: 2, type: "attachment")
+                let itemJson = self.attachmentItemJson(key: itemKey, version: 2, filename: filename, contentType: contentType)
 
                 // Setup DB state
                 try! self.realm.write {
@@ -366,7 +367,7 @@ final class WebDavControllerSpec: QuickSpec {
 
                     let field4 = RItemField()
                     field4.key = FieldKeys.Item.Attachment.md5
-                    field4.value = "aaaa"
+                    field4.value = md5
                     field4.changed = true
                     item.fields.append(field4)
 
@@ -392,7 +393,7 @@ final class WebDavControllerSpec: QuickSpec {
                     ignoreBody: true,
                     baseUrl: self.apiBaseUrl,
                     statusCode: 200,
-                    xmlResponse: "<properties version=\"1\"><mtime>2</mtime><hash>aaaa</hash></properties>"
+                    xmlResponse: "<properties version=\"1\"><mtime>2</mtime><hash>\(md5)</hash></properties>"
                 )
                 createStub(
                     for: UpdatesRequest(libraryId: libraryId, userId: self.userId, objectType: .item, params: [], version: nil),
@@ -425,8 +426,10 @@ final class WebDavControllerSpec: QuickSpec {
                 let contentType = "application/pdf"
                 let oldVersion = 2
                 let newVersion = 3
+                let md5 = "abcdef"
 
-                let itemJson = self.itemJson(key: itemKey, version: 2, type: "attachment")
+                var itemJson = self.attachmentItemJson(key: itemKey, version: 2, filename: filename, contentType: contentType)
+                itemJson["version"] = newVersion
 
                 // Setup DB state
                 try! self.realm.write {
@@ -467,7 +470,7 @@ final class WebDavControllerSpec: QuickSpec {
 
                     let field4 = RItemField()
                     field4.key = FieldKeys.Item.Attachment.md5
-                    field4.value = "aaaa"
+                    field4.value = md5
                     field4.changed = true
                     item.fields.append(field4)
 
@@ -499,9 +502,9 @@ final class WebDavControllerSpec: QuickSpec {
                 createStub(
                     for: WebDavDownloadRequest(url: self.webDavUrl.appendingPathComponent(itemKey + ".prop")),
                     ignoreBody: true,
-                    baseUrl: self.apiBaseUrl,
+                    baseUrl: self.webDavUrl,
                     statusCode: 200,
-                    xmlResponse: "<properties version=\"1\"><mtime>1</mtime><hash>aaaa</hash></properties>"
+                    xmlResponse: "<properties version=\"1\"><mtime>1</mtime><hash>\(md5)</hash></properties>"
                 )
 
                 waitUntil(timeout: .seconds(10)) { doneAction in
@@ -699,13 +702,14 @@ final class WebDavControllerSpec: QuickSpec {
         self.syncController!.start(type: .normal, libraries: .all, retryAttempt: 0)
     }
 
-    private func itemJson(key: String, version: Int, type: String) -> [String: Any] {
-        let itemUrl = Bundle(for: WebDavControllerSpec.self).url(forResource: "test_item", withExtension: "json")!
+    private func attachmentItemJson(key: String, version: Int, filename: String, contentType: String) -> [String: Any] {
+        let itemUrl = Bundle(for: SyncControllerSpec.self).url(forResource: "test_item_attachment", withExtension: "json")!
         var itemJson = (try! JSONSerialization.jsonObject(with: (try! Data(contentsOf: itemUrl)), options: .allowFragments)) as! [String: Any]
         itemJson["key"] = key
         itemJson["version"] = version
         var itemData = itemJson["data"] as! [String: Any]
-        itemData["itemType"] = type
+        itemData["filename"] = filename
+        itemData["contentType"] = contentType
         itemJson["data"] = itemData
         return itemJson
     }

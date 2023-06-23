@@ -422,7 +422,7 @@
 		B32A3C8B248008A2009E2C5D /* test_keys.json in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C84248008A2009E2C5D /* test_keys.json */; };
 		B32A3C8C248008A2009E2C5D /* test_collection.json in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C85248008A2009E2C5D /* test_collection.json */; };
 		B32A3C8D248008A2009E2C5D /* test_search.json in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C86248008A2009E2C5D /* test_search.json */; };
-		B32A3C8E248008A2009E2C5D /* test_item.json in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C87248008A2009E2C5D /* test_item.json */; };
+		B32A3C8E248008A2009E2C5D /* test_thesis_item.json in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C87248008A2009E2C5D /* test_thesis_item.json */; };
 		B32A3C8F248008A2009E2C5D /* translators_delete.xml in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C89248008A2009E2C5D /* translators_delete.xml */; };
 		B32A3C90248008A2009E2C5D /* translators.xml in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C8A248008A2009E2C5D /* translators.xml */; };
 		B32A495B2A44730D00080945 /* licenses in Resources */ = {isa = PBXBuildFile; fileRef = B32A495A2A44730C00080945 /* licenses */; };
@@ -1442,7 +1442,7 @@
 		B32A3C84248008A2009E2C5D /* test_keys.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_keys.json; sourceTree = "<group>"; };
 		B32A3C85248008A2009E2C5D /* test_collection.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_collection.json; sourceTree = "<group>"; };
 		B32A3C86248008A2009E2C5D /* test_search.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_search.json; sourceTree = "<group>"; };
-		B32A3C87248008A2009E2C5D /* test_item.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_item.json; sourceTree = "<group>"; };
+		B32A3C87248008A2009E2C5D /* test_thesis_item.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_thesis_item.json; sourceTree = "<group>"; };
 		B32A3C89248008A2009E2C5D /* translators_delete.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = translators_delete.xml; sourceTree = "<group>"; };
 		B32A3C8A248008A2009E2C5D /* translators.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = translators.xml; sourceTree = "<group>"; };
 		B32A495A2A44730C00080945 /* licenses */ = {isa = PBXFileReference; lastKnownFileType = folder; path = licenses; sourceTree = "<group>"; };
@@ -2769,9 +2769,9 @@
 				B3AAABD52502A40600031065 /* searchresponse_unknownfields.json */,
 				B32A3C85248008A2009E2C5D /* test_collection.json */,
 				B3DF44112A408339005AF766 /* test_item_attachment.json */,
-				B32A3C87248008A2009E2C5D /* test_item.json */,
 				B32A3C84248008A2009E2C5D /* test_keys.json */,
 				B32A3C86248008A2009E2C5D /* test_search.json */,
+				B32A3C87248008A2009E2C5D /* test_thesis_item.json */,
 			);
 			path = JSONs;
 			sourceTree = "<group>";
@@ -4236,7 +4236,7 @@
 				B3B1EDF42502456000D8BC1E /* itemresponse_unknownfields.json in Resources */,
 				B32A3C8F248008A2009E2C5D /* translators_delete.xml in Resources */,
 				B3DF44122A408339005AF766 /* test_item_attachment.json in Resources */,
-				B32A3C8E248008A2009E2C5D /* test_item.json in Resources */,
+				B32A3C8E248008A2009E2C5D /* test_thesis_item.json in Resources */,
 				B3B1EDFA2502493700D8BC1E /* Bundled in Resources */,
 				B3AAABD72502A40900031065 /* searchresponse_unknownfields.json in Resources */,
 				B32A3C8B248008A2009E2C5D /* test_keys.json in Resources */,
