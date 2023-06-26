@@ -15,492 +15,354 @@ import RealmSwift
 import Quick
 
 final class ItemTitleFormatterSpec: QuickSpec {
-    // Retain realm with inMemoryIdentifier so that data are not deleted
-    private let realm: Realm
-
-    required init() {
-        let config = Realm.Configuration(inMemoryIdentifier: "TestsRealmConfig")
-        self.realm = try! Realm(configuration: config)
-    }
-
-    override func spec() {
-        beforeEach {
-            try? self.realm.write {
-                self.realm.deleteAll()
+    override class func spec() {
+        describe("an item title formatter") {
+            // Retain realm with inMemoryIdentifier so that data are not deleted
+            var realm: Realm!
+            var itemRawType: String!
+            var itemBaseTitle: String!
+            var creators: [(String, ItemDetailState.Creator.NamePresentation, Bool)]!
+            var fields: [(String, String)]!
+            var title: String!
+            
+            beforeSuite {
+                let config = Realm.Configuration(inMemoryIdentifier: "TestsRealmConfig")
+                realm = try! Realm(configuration: config)
             }
-            self.realm.refresh()
-        }
-
-        describe("letter") {
-            describe("baseTitle exists") {
-                it("title is same as baseTitle") {
-                    let item = RItem()
-                    item.rawType = "letter"
-                    item.baseTitle = "Some item title"
-
-                    let creator = RCreator()
-                    creator.rawType = "recipient"
-                    creator.name = "Name Surname"
-                    item.creators.append(creator)
-
-                    try? self.realm.write {
-                        self.realm.add(item)
-                    }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("Some item title"))
+            
+            beforeEach {
+                try? realm.write {
+                    realm.deleteAll()
                 }
+                realm.refresh()
+                creators = []
+                fields = []
             }
-
-            describe("baseTitle is empty") {
-                it("creates derived title from 0 creators") {
-                    let item = RItem()
-                    item.rawType = "letter"
-
-                    try? self.realm.write {
-                        self.realm.add(item)
-                    }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("[Letter]"))
+            
+            justBeforeEach {
+                let item = RItem()
+                item.rawType = itemRawType
+                item.baseTitle = itemBaseTitle
+                createCreators(creators, in: item)
+                createFields(fields, in: item)
+                
+                try? realm.write {
+                    realm.add(item)
                 }
-
-                it("creates derived title from 1 creator") {
-                    let item = RItem()
-                    item.rawType = "letter"
-                    self.createCreators(type: "recipient", namePresentation: .separate, count: 1, in: item)
-
-                    try? self.realm.write {
-                        self.realm.add(item)
-                    }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("[Letter to Surname0]"))
-
-                    let item2 = RItem()
-                    item2.rawType = "letter"
-                    self.createCreators(type: "recipient", namePresentation: .full, count: 1, in: item2)
-
-                    try? self.realm.write {
-                        self.realm.add(item2)
-                    }
-
-                    let title2 = ItemTitleFormatter.displayTitle(for: item2)
-                    expect(title2).to(equal("[Letter to Name0 Surname0]"))
+                
+                title = ItemTitleFormatter.displayTitle(for: item)
+            }
+            
+            context("with a letter") {
+                beforeEach {
+                    itemRawType = "letter"
                 }
-
-                it("creates derived title from 2 creators") {
-                    let item = RItem()
-                    item.rawType = "letter"
-                    self.createCreators(type: "recipient", namePresentation: .separate, count: 2, in: item)
-
-                    try? self.realm.write {
-                        self.realm.add(item)
+                
+                context("where baseTitle exists") {
+                    beforeEach {
+                        itemBaseTitle = "Some item title"
+                        creators = [("recipient", .full, false)]
                     }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("[Letter to Surname1 and Surname0]"))
-
-                    let item2 = RItem()
-                    item2.rawType = "letter"
-                    self.createCreators(type: "recipient", namePresentation: .separate, count: 1, in: item2)
-                    let creator = item2.creators.first!
-                    creator.orderId = 2
-                    self.createCreators(type: "recipient", namePresentation: .full, count: 1, in: item2)
-
-                    try? self.realm.write {
-                        self.realm.add(item2)
+                    
+                    it("title is same as baseTitle") {
+                        expect(title).to(equal(itemBaseTitle))
                     }
-
-                    let title2 = ItemTitleFormatter.displayTitle(for: item2)
-                    expect(title2).to(equal("[Letter to Name0 Surname0 and Surname0]"))
                 }
-
-                it("creates derived title from 3 creators") {
-                    let item = RItem()
-                    item.rawType = "letter"
-                    self.createCreators(type: "recipient", namePresentation: .separate, count: 3, in: item)
-
-                    try? self.realm.write {
-                        self.realm.add(item)
+                
+                context("where baseTitle is empty") {
+                    beforeEach {
+                        itemBaseTitle = ""
                     }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("[Letter to Surname2, Surname1 and Surname0]"))
-                }
-
-                it("creates derived title from 4 and more creators") {
-                    let item = RItem()
-                    item.rawType = "letter"
-                    self.createCreators(type: "recipient", namePresentation: .separate, count: 4, in: item)
-
-                    try? self.realm.write {
-                        self.realm.add(item)
+                    
+                    context("with 0 creators") {
+                        it("creates title with item type") {
+                            expect(title).to(equal("[Letter]"))
+                        }
                     }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("[Letter to Surname3 et al.]"))
-
-                    let item2 = RItem()
-                    item2.rawType = "letter"
-                    self.createCreators(type: "recipient", namePresentation: .separate, count: 15, in: item2)
-
-                    try? self.realm.write {
-                        self.realm.add(item2)
+                    
+                    context("with 1 recipient and separate name presentation") {
+                        beforeEach {
+                            creators = [("recipient", .separate, false)]
+                        }
+                        
+                        it("creates title with recipient last name") {
+                            expect(title).to(equal("[Letter to Surname0]"))
+                        }
                     }
-
-                    let title2 = ItemTitleFormatter.displayTitle(for: item2)
-                    expect(title2).to(equal("[Letter to Surname14 et al.]"))
-                }
-
-                it("creates derived title from creators and ignores non-recipient creators") {
-                    let item = RItem()
-                    item.rawType = "letter"
-                    self.createCreators(type: "author", namePresentation: .separate, count: 1, in: item)
-                    self.createCreators(type: "contributor", namePresentation: .separate, count: 1, in: item)
-                    self.createCreators(type: "recipient", namePresentation: .separate, count: 1, in: item)
-                    let recipient = item.creators.first(where: { $0.rawType == "recipient" })!
-                    recipient.lastName = "Surname2"
-
-                    try? self.realm.write {
-                        self.realm.add(item)
+                    
+                    context("with 1 recipient and full name presentation") {
+                        beforeEach {
+                            creators = [("recipient", .full, false)]
+                        }
+                        
+                        it("creates title with recipient full name") {
+                            expect(title).to(equal("[Letter to Name0 Surname0]"))
+                        }
                     }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("[Letter to Surname2]"))
+                    
+                    context("with 2 recipients and separate name presentation") {
+                        beforeEach {
+                            creators = .init(repeating: ("recipient", .separate, false), count: 2)
+                        }
+                        
+                        it("creates title with recipient last names") {
+                            expect(title).to(equal("[Letter to Surname1 and Surname0]"))
+                        }
+                    }
+                    
+                    context("with 2 recipients and mixed name presentation") {
+                        beforeEach {
+                            creators = [("recipient", .separate, false), ("recipient", .full, false)]
+                        }
+                        
+                        it("creates title with recipient 1 full name and recipient 0 last name") {
+                            expect(title).to(equal("[Letter to Name1 Surname1 and Surname0]"))
+                        }
+                    }
+                    
+                    context("with 3 recipients and separate name presentation") {
+                        beforeEach {
+                            creators = .init(repeating: ("recipient", .separate, false), count: 3)
+                        }
+                        
+                        it("creates title with recipient last names") {
+                            expect(title).to(equal("[Letter to Surname2, Surname1 and Surname0]"))
+                        }
+                    }
+                    
+                    context("with 4 or more recipients and separate name presentation") {
+                        beforeEach {
+                            creators = .init(repeating: ("recipient", .separate, false), count: .random(in: 4...15))
+                        }
+                        
+                        it("creates title with last name et al") {
+                            let count = creators.count
+                            expect(title).to(equal("[Letter to Surname\(count - 1) et al.]"))
+                        }
+                    }
+                    
+                    context("with mixed creators and separate name presentation") {
+                        beforeEach {
+                            creators = [("author", .separate, false), ("contributor", .separate, false), ("recipient", .separate, false)]
+                        }
+                        
+                        it("creates title with only recipient last name") {
+                            expect(title).to(equal("[Letter to Surname2]"))
+                        }
+                    }
                 }
             }
-        }
-
-        describe("interview") {
-            describe("baseTitle exists") {
-                it("title is same as baseTitle") {
-                    let item = RItem()
-                    item.rawType = "interview"
-                    item.baseTitle = "Some item title"
-
-                    let creator = RCreator()
-                    creator.rawType = "interviewer"
-                    creator.name = "Name Surname"
-                    item.creators.append(creator)
-
-                    try? self.realm.write {
-                        self.realm.add(item)
+            
+            context("with an interview") {
+                beforeEach {
+                    itemRawType = "interview"
+                }
+                
+                context("where baseTitle exists") {
+                    beforeEach {
+                        itemBaseTitle = "Some item title"
+                        creators = [("interviewer", .full, false)]
                     }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("Some item title"))
+                    
+                    it("title is same as baseTitle") {
+                        expect(title).to(equal(itemBaseTitle))
+                    }
+                }
+                
+                context("where baseTitle is empty") {
+                    beforeEach {
+                        itemBaseTitle = ""
+                    }
+                    
+                    context("with 0 creators") {
+                        it("creates title with item type") {
+                            expect(title).to(equal("[Interview]"))
+                        }
+                    }
+                    
+                    context("with 1 interviewer and separate name presentation") {
+                        beforeEach {
+                            creators = [("interviewer", .separate, false)]
+                        }
+                        
+                        it("creates title with interviewer last name") {
+                            expect(title).to(equal("[Interview by Surname0]"))
+                        }
+                    }
+                    
+                    context("with 1 interviewer and full name presentation") {
+                        beforeEach {
+                            creators = [("interviewer", .full, false)]
+                        }
+                        
+                        it("creates title with interviewer full name") {
+                            expect(title).to(equal("[Interview by Name0 Surname0]"))
+                        }
+                    }
+                    
+                    context("with 2 interviewers and separate name presentation") {
+                        beforeEach {
+                            creators = .init(repeating: ("interviewer", .separate, false), count: 2)
+                        }
+                        
+                        it("creates title with interviewer last names") {
+                            expect(title).to(equal("[Interview by Surname1 and Surname0]"))
+                        }
+                    }
+                    
+                    context("with 2 interviewers and mixed name presentation") {
+                        beforeEach {
+                            creators = [("interviewer", .separate, false), ("interviewer", .full, false)]
+                        }
+                        
+                        it("creates title with interviewer 1 full name and interviewer 0 last name") {
+                            expect(title).to(equal("[Interview by Name1 Surname1 and Surname0]"))
+                        }
+                    }
+                    
+                    context("with 3 interviewers and separate name presentation") {
+                        beforeEach {
+                            creators = .init(repeating: ("interviewer", .separate, false), count: 3)
+                        }
+                        
+                        it("creates title with interviewer last names") {
+                            expect(title).to(equal("[Interview by Surname2, Surname1 and Surname0]"))
+                        }
+                    }
+                    
+                    context("with 4 or more interviewers and separate name presentation") {
+                        beforeEach {
+                            creators = .init(repeating: ("interviewer", .separate, false), count: .random(in: 4...15))
+                        }
+                        
+                        it("creates title with last name et al") {
+                            let count = creators.count
+                            expect(title).to(equal("[Interview by Surname\(count - 1) et al.]"))
+                        }
+                    }
+                    
+                    context("with mixed creators and separate name presentation") {
+                        beforeEach {
+                            creators = [("interviewee", .separate, false), ("translator", .separate, false), ("interviewer", .separate, false)]
+                        }
+                        
+                        it("creates title with only interviewer last name") {
+                            expect(title).to(equal("[Interview by Surname2]"))
+                        }
+                    }
                 }
             }
-
-            describe("baseTitle is empty") {
-                it("creates derived title from 0 creators") {
-                    let item = RItem()
-                    item.rawType = "interview"
-
-                    try? self.realm.write {
-                        self.realm.add(item)
-                    }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("[Interview]"))
+            
+            context("with a case") {
+                beforeEach {
+                    itemRawType = "case"
                 }
-
-                it("creates derived title from 1 creator") {
-                    let item = RItem()
-                    item.rawType = "interview"
-                    self.createCreators(type: "interviewer", namePresentation: .separate, count: 1, in: item)
-
-                    try? self.realm.write {
-                        self.realm.add(item)
+                
+                context("where baseTitle exists") {
+                    beforeEach {
+                        itemBaseTitle = "Some case"
                     }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("[Interview by Surname0]"))
-
-                    let item2 = RItem()
-                    item2.rawType = "interview"
-                    self.createCreators(type: "interviewer", namePresentation: .full, count: 1, in: item2)
-
-                    try? self.realm.write {
-                        self.realm.add(item2)
+                    
+                    context("with no other fields") {
+                        it("title is same as baseTitle") {
+                            expect(title).to(equal(itemBaseTitle))
+                        }
                     }
-
-                    let title2 = ItemTitleFormatter.displayTitle(for: item2)
-                    expect(title2).to(equal("[Interview by Name0 Surname0]"))
+                    
+                    context("with reporter field") {
+                        beforeEach {
+                            fields = [("reporter", "Reporter")]
+                        }
+                        
+                        it("title is derived from baseTitle and reporter") {
+                            expect(title).to(equal(itemBaseTitle + " (Reporter)"))
+                        }
+                    }
+                    
+                    context("with court field") {
+                        beforeEach {
+                            fields = [("court", "Court")]
+                        }
+                        
+                        it("title is derived from baseTitle and court") {
+                            expect(title).to(equal(itemBaseTitle + " (Court)"))
+                        }
+                    }
+                    
+                    context("with reporter and court fields") {
+                        beforeEach {
+                            fields = [("reporter", "Reporter"), ("court", "Court")]
+                        }
+                        
+                        it("title is derived from baseTitle and reporter") {
+                            expect(title).to(equal(itemBaseTitle + " (Reporter)"))
+                        }
+                    }
                 }
-
-                it("creates derived title from 2 creators") {
-                    let item = RItem()
-                    item.rawType = "interview"
-                    self.createCreators(type: "interviewer", namePresentation: .separate, count: 2, in: item)
-
-                    try? self.realm.write {
-                        self.realm.add(item)
+                
+                context("where baseTitle is empty") {
+                    beforeEach {
+                        itemBaseTitle = ""
+                    }
+                    
+                    context("with 0 creators and no fields ") {
+                        it("creates empty title") {
+                            expect(title).to(equal("[]"))
+                        }
+                    }
+                    
+                    context("with court field") {
+                        beforeEach {
+                            fields = [("court", "Court")]
+                        }
+                        
+                        it("title is derived from court") {
+                            expect(title).to(equal("[Court]"))
+                        }
                     }
 
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("[Interview by Surname1 and Surname0]"))
-
-                    let item2 = RItem()
-                    item2.rawType = "interview"
-                    self.createCreators(type: "interviewer", namePresentation: .separate, count: 1, in: item2)
-                    let creator = item2.creators.first!
-                    creator.orderId = 2
-                    self.createCreators(type: "interviewer", namePresentation: .full, count: 1, in: item2)
-
-                    try? self.realm.write {
-                        self.realm.add(item2)
+                    context("with date field") {
+                        beforeEach {
+                            fields = [("date", "2019-01-01")]
+                        }
+                        
+                        it("title is derived from court") {
+                            expect(title).to(equal("[2019-01-01]"))
+                        }
                     }
-
-                    let title2 = ItemTitleFormatter.displayTitle(for: item2)
-                    expect(title2).to(equal("[Interview by Name0 Surname0 and Surname0]"))
-                }
-
-                it("creates derived title from 3 creators") {
-                    let item = RItem()
-                    item.rawType = "interview"
-                    self.createCreators(type: "interviewer", namePresentation: .separate, count: 3, in: item)
-
-                    try? self.realm.write {
-                        self.realm.add(item)
+                    
+                    context("with 2 primary authors") {
+                        beforeEach {
+                            creators = .init(repeating: ("author", .separate, true), count: 2)
+                        }
+                        
+                        it("title is derived from first primary author") {
+                            expect(title).to(equal("[Surname1]"))
+                        }
                     }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("[Interview by Surname2, Surname1 and Surname0]"))
-                }
-
-                it("creates derived title from 4 and more creators") {
-                    let item = RItem()
-                    item.rawType = "interview"
-                    self.createCreators(type: "interviewer", namePresentation: .separate, count: 4, in: item)
-
-                    try? self.realm.write {
-                        self.realm.add(item)
+                    
+                    context("with 1 primary author and court and date fields") {
+                        beforeEach {
+                            creators = [("author", .separate, true)]
+                            fields = [("court", "Court"), ("date", "2019-01-01")]
+                        }
+                        
+                        it("title is derived from court, date, and author") {
+                            expect(title).to(equal("[Court, 2019-01-01, Surname0]"))
+                        }
                     }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("[Interview by Surname3 et al.]"))
-
-                    let item2 = RItem()
-                    item2.rawType = "interview"
-                    self.createCreators(type: "interviewer", namePresentation: .separate, count: 15, in: item2)
-
-                    try? self.realm.write {
-                        self.realm.add(item2)
-                    }
-
-                    let title2 = ItemTitleFormatter.displayTitle(for: item2)
-                    expect(title2).to(equal("[Interview by Surname14 et al.]"))
-                }
-
-                it("creates derived title from creators and ignores non-interviewer creators") {
-                    let item = RItem()
-                    item.rawType = "interview"
-                    self.createCreators(type: "interviewee", namePresentation: .separate, count: 1, in: item)
-                    self.createCreators(type: "translator", namePresentation: .separate, count: 1, in: item)
-                    self.createCreators(type: "interviewer", namePresentation: .separate, count: 1, in: item)
-                    let recipient = item.creators.first(where: { $0.rawType == "interviewer" })!
-                    recipient.lastName = "Surname2"
-
-                    try? self.realm.write {
-                        self.realm.add(item)
-                    }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("[Interview by Surname2]"))
-                }
-            }
-        }
-
-        describe("case") {
-            describe("baseTitle exists") {
-                it("doesn't change baseTitle when other fields are not available") {
-                    let item = RItem()
-                    item.baseTitle = "Some case"
-                    item.rawType = "case"
-
-                    try? self.realm.write {
-                        self.realm.add(item)
-                    }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("Some case"))
-                }
-
-                it("creates derived baseTitle and reporter") {
-                    let item = RItem()
-                    item.baseTitle = "Some case"
-                    item.rawType = "case"
-
-                    let field = RItemField()
-                    field.key = "reporter"
-                    field.value = "Reporter"
-                    item.fields.append(field)
-
-                    try? self.realm.write {
-                        self.realm.add(item)
-                    }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("Some case (Reporter)"))
-                }
-
-                it("creates derived baseTitle and court") {
-                    let item = RItem()
-                    item.baseTitle = "Some case"
-                    item.rawType = "case"
-
-                    let field = RItemField()
-                    field.key = "court"
-                    field.value = "Court"
-                    item.fields.append(field)
-
-                    try? self.realm.write {
-                        self.realm.add(item)
-                    }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("Some case (Court)"))
-                }
-
-                it("creates derived baseTitle and reporter, ignores court when both available") {
-                    let item = RItem()
-                    item.baseTitle = "Some case"
-                    item.rawType = "case"
-
-                    let field = RItemField()
-                    field.key = "reporter"
-                    field.value = "Reporter"
-                    item.fields.append(field)
-
-                    let field2 = RItemField()
-                    field2.key = "court"
-                    field2.value = "Court"
-                    item.fields.append(field2)
-
-                    try? self.realm.write {
-                        self.realm.add(item)
-                    }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("Some case (Reporter)"))
-                }
-            }
-
-            describe("baseTitle is empty") {
-                it("shows [] if nothing is available") {
-                    let item = RItem()
-                    item.rawType = "case"
-
-                    try? self.realm.write {
-                        self.realm.add(item)
-                    }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("[]"))
-                }
-
-                it("shows court if available") {
-                    let item = RItem()
-                    item.rawType = "case"
-
-                    let field = RItemField()
-                    field.key = "court"
-                    field.value = "Court"
-                    item.fields.append(field)
-
-                    try? self.realm.write {
-                        self.realm.add(item)
-                    }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("[Court]"))
-                }
-
-                it("shows date if available") {
-                    let item = RItem()
-                    item.rawType = "case"
-
-                    let field = RItemField()
-                    field.key = "date"
-                    field.value = "2019-01-01"
-                    item.fields.append(field)
-
-                    try? self.realm.write {
-                        self.realm.add(item)
-                    }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("[2019-01-01]"))
-                }
-
-                it("shows first primary creator if available") {
-                    let item = RItem()
-                    item.rawType = "case"
-
-                    let creator = RCreator()
-                    creator.rawType = "author"
-                    creator.primary = true
-                    creator.firstName = "Name0"
-                    creator.lastName = "Surname0"
-                    creator.orderId = 1
-                    item.creators.append(creator)
-
-                    let creator2 = RCreator()
-                    creator2.rawType = "author"
-                    creator2.primary = true
-                    creator2.firstName = "Name1"
-                    creator2.lastName = "Surname1"
-                    creator2.orderId = 0
-                    item.creators.append(creator2)
-
-                    try? self.realm.write {
-                        self.realm.add(item)
-                    }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("[Surname1]"))
-                }
-
-                it("shows court, date and creator if available") {
-                    let item = RItem()
-                    item.rawType = "case"
-
-                    let field = RItemField()
-                    field.key = "court"
-                    field.value = "Court"
-                    item.fields.append(field)
-
-                    let field2 = RItemField()
-                    field2.key = "date"
-                    field2.value = "2019-01-01"
-                    item.fields.append(field2)
-
-                    let creator = RCreator()
-                    creator.rawType = "author"
-                    creator.primary = true
-                    creator.firstName = "Name"
-                    creator.lastName = "Surname"
-                    creator.orderId = 0
-                    item.creators.append(creator)
-
-                    try? self.realm.write {
-                        self.realm.add(item)
-                    }
-
-                    let title = ItemTitleFormatter.displayTitle(for: item)
-                    expect(title).to(equal("[Court, 2019-01-01, Surname]"))
                 }
             }
         }
     }
-
-    private func createCreators(type: String, namePresentation: ItemDetailState.Creator.NamePresentation, count: Int, in item: RItem) {
+    
+    private class func createCreators(_ creators: [(type: String, namePresentation: ItemDetailState.Creator.NamePresentation, isPrimary: Bool)], in item: RItem) {
+        let count = creators.count
         for index in (0..<count) {
             let creator = RCreator()
-            creator.rawType = type
-            switch namePresentation {
+            creator.rawType = creators[index].type
+            creator.primary = creators[index].isPrimary
+            switch creators[index].namePresentation {
             case .full:
                 creator.name = "Name\(index) Surname\(index)"
             case .separate:
@@ -509,6 +371,15 @@ final class ItemTitleFormatterSpec: QuickSpec {
             }
             creator.orderId = count - index
             item.creators.append(creator)
+        }
+    }
+    
+    private class func createFields(_ fields: [(key: String, value: String)], in item: RItem) {
+        for (key, value) in fields {
+            let field = RItemField()
+            field.key = key
+            field.value = value
+            item.fields.append(field)
         }
     }
 }

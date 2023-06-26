@@ -7,6 +7,20 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6144B5D42A4ADCDE00914B3C /* CreatorSummaryFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */; };
+		6144B5D52A4ADD3C00914B3C /* DateParserSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32A3C79247FFF14009E2C5D /* DateParserSpec.swift */; };
+		6144B5D62A4ADD7E00914B3C /* ItemResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDEC250242DB00D8BC1E /* ItemResponseSpec.swift */; };
+		6144B5D72A4ADD8400914B3C /* TestControllers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3202C6427103DEE00485BE4 /* TestControllers.swift */; };
+		6144B5D82A4ADDC400914B3C /* ItemTitleFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */; };
+		6144B5D92A4ADEB500914B3C /* ReadUpdatedItemUpdateParametersSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39C7BDD251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersSpec.swift */; };
+		6144B5DA2A4ADEBD00914B3C /* WebDavCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31DDAA02729A7DC002CFA05 /* WebDavCredentials.swift */; };
+		6144B5DB2A4ADEEB00914B3C /* SearchResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDF0250242F700D8BC1E /* SearchResponseSpec.swift */; };
+		6144B5DC2A4ADF1F00914B3C /* StorageSettingsActionHandlerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1C58526651E2A00883597 /* StorageSettingsActionHandlerSpec.swift */; };
+		6144B5DD2A4AE0F200914B3C /* SyncActionsSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B307E55D22D4A87B00592B3C /* SyncActionsSpec.swift */; };
+		6144B5DF2A4AE48F00914B3C /* SyncControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */; };
+		6144B5E02A4AE49800914B3C /* TranslatorsControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */; };
+		6144B5E12A4AE95E00914B3C /* WebDavControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3202C6B271048FF00485BE4 /* WebDavControllerSpec.swift */; };
+		61C817F22A49B5D30085B1E6 /* CollectionResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDEE250242E700D8BC1E /* CollectionResponseSpec.swift */; };
 		B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */; };
 		B300B3352429222B00C1FE1E /* TranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */; };
 		B300B3362429234C00C1FE1E /* TranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */; };
@@ -320,7 +334,6 @@
 		B305679023FC1D9B003304F2 /* CollectionDifference+Separated.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305678F23FC1D9B003304F2 /* CollectionDifference+Separated.swift */; };
 		B305CEBB29E6E67600B9E2B4 /* AssignItemsToTagDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305CEBA29E6E67600B9E2B4 /* AssignItemsToTagDbRequest.swift */; };
 		B307A2732704A87D005986B3 /* IdleTimerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B307A2722704A87D005986B3 /* IdleTimerController.swift */; };
-		B307E55E22D4A87B00592B3C /* SyncActionsSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B307E55D22D4A87B00592B3C /* SyncActionsSpec.swift */; };
 		B30A44A629B8799600332B4E /* MasterContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30A44A529B8799600332B4E /* MasterContainerViewController.swift */; };
 		B30A44A829B882EB00332B4E /* MasterCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30A44A729B882EB00332B4E /* MasterCoordinator.swift */; };
 		B30A44AE29B88E7200332B4E /* TagFilterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30A44AD29B88E7200332B4E /* TagFilterViewController.swift */; };
@@ -379,7 +392,6 @@
 		B31D973C27F5E51100ED3DA2 /* ItemsToolbarDownloadProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31D973B27F5E51100ED3DA2 /* ItemsToolbarDownloadProgressView.swift */; };
 		B31DDA9E27299BD1002CFA05 /* StoreMtimeForAttachmentDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31DDA9D27299BD1002CFA05 /* StoreMtimeForAttachmentDbRequest.swift */; };
 		B31DDA9F27299DF9002CFA05 /* StoreMtimeForAttachmentDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31DDA9D27299BD1002CFA05 /* StoreMtimeForAttachmentDbRequest.swift */; };
-		B31DDAA12729A7DC002CFA05 /* WebDavCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31DDAA02729A7DC002CFA05 /* WebDavCredentials.swift */; };
 		B31DFE7D2746917A005CD69B /* FileRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31DFE7C2746917A005CD69B /* FileRequest.swift */; };
 		B31DFE7E274692C7005CD69B /* FileRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31DFE7C2746917A005CD69B /* FileRequest.swift */; };
 		B31EEE5724EBCAF100E3B3AD /* RRect.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5624EBCAF100E3B3AD /* RRect.swift */; };
@@ -388,10 +400,8 @@
 		B31FACC625DBC6F800DD5F14 /* ConflictReceiverAlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31FACC525DBC6F800DD5F14 /* ConflictReceiverAlertController.swift */; };
 		B31FACCA25DBC71200DD5F14 /* ConflictReceiverAlertHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31FACC925DBC71200DD5F14 /* ConflictReceiverAlertHandler.swift */; };
 		B31FACD225DBC7E900DD5F14 /* ActiveObjectDeletedConflictReceiverHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31FACD125DBC7E900DD5F14 /* ActiveObjectDeletedConflictReceiverHandler.swift */; };
-		B3202C6527103DEE00485BE4 /* TestControllers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3202C6427103DEE00485BE4 /* TestControllers.swift */; };
 		B3202C692710488200485BE4 /* OHHTTPStubs+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3202C672710488200485BE4 /* OHHTTPStubs+Helpers.swift */; };
 		B3202C6A2710488200485BE4 /* SyncControllerAction+Equatable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3202C682710488200485BE4 /* SyncControllerAction+Equatable.swift */; };
-		B3202C6C271048FF00485BE4 /* WebDavControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3202C6B271048FF00485BE4 /* WebDavControllerSpec.swift */; };
 		B32259A227070EBA0047598D /* PDFPlainReaderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32259A127070EBA0047598D /* PDFPlainReaderViewController.swift */; };
 		B3229FD128C0A07500DAF3B7 /* EditAnnotationRectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3229FD028C0A07500DAF3B7 /* EditAnnotationRectsDbRequest.swift */; };
 		B3229FD328C0A09200DAF3B7 /* EditAnnotationPathsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3229FD228C0A09200DAF3B7 /* EditAnnotationPathsDbRequest.swift */; };
@@ -418,7 +428,6 @@
 		B32A273C254841B80081E061 /* CreatorEditViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32A273A254841B80081E061 /* CreatorEditViewController.swift */; };
 		B32A273D254841B80081E061 /* CreatorEditViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B32A273B254841B80081E061 /* CreatorEditViewController.xib */; };
 		B32A3C78247FB62B009E2C5D /* ComponentDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32A3C77247FB62B009E2C5D /* ComponentDate.swift */; };
-		B32A3C7A247FFF14009E2C5D /* DateParserSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32A3C79247FFF14009E2C5D /* DateParserSpec.swift */; };
 		B32A3C8B248008A2009E2C5D /* test_keys.json in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C84248008A2009E2C5D /* test_keys.json */; };
 		B32A3C8C248008A2009E2C5D /* test_collection.json in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C85248008A2009E2C5D /* test_collection.json */; };
 		B32A3C8D248008A2009E2C5D /* test_search.json in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C86248008A2009E2C5D /* test_search.json */; };
@@ -536,10 +545,7 @@
 		B34DF1BE2576956F0019CCD1 /* SwitchCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B34DF1BC2576956F0019CCD1 /* SwitchCell.xib */; };
 		B34E3DE628CF374000B747AE /* PDFExportSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34E3DE528CF374000B747AE /* PDFExportSettings.swift */; };
 		B34E3DEC28CF490700B747AE /* PDFExportSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34E3DEB28CF490700B747AE /* PDFExportSettingsView.swift */; };
-		B34F274F220E20370038B3B1 /* SyncControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */; };
 		B34F3566275A46BC008B9C76 /* RedirectWebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F3565275A46BC008B9C76 /* RedirectWebViewHandler.swift */; };
-		B34F9FA323743C36004ED34C /* CreatorSummaryFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */; };
-		B34F9FA523743C42004ED34C /* ItemTitleFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */; };
 		B3501F5425139B40007961DB /* Rounding+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340692124A60D6A009ECE48 /* Rounding+Extensions.swift */; };
 		B351BD0E25EF7E78000451E2 /* ItemAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B351BD0D25EF7E78000451E2 /* ItemAction.swift */; };
 		B353F1FB242E21880062EE24 /* ResetTranslatorsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353F1FA242E21880062EE24 /* ResetTranslatorsDbRequest.swift */; };
@@ -791,7 +797,6 @@
 		B398A917270C6A5B00968EE8 /* WebDavSessionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398A916270C6A5B00968EE8 /* WebDavSessionStorage.swift */; };
 		B39AF554290033CD001F400F /* TableOfContentsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39AF553290033CD001F400F /* TableOfContentsViewController.swift */; };
 		B39B18E8223947050019F467 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E7223947050019F467 /* main.swift */; };
-		B39C7BDE251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39C7BDD251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersSpec.swift */; };
 		B39C9AB7252B589F00462D27 /* Threading+Extras.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650423FC051E003304F2 /* Threading+Extras.swift */; };
 		B39D336823FFD96C00EF2ACB /* Note.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D336723FFD96C00EF2ACB /* Note.swift */; };
 		B39D33712400150B00EF2ACB /* CreateAttachmentsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D33702400150B00EF2ACB /* CreateAttachmentsDbRequest.swift */; };
@@ -861,11 +866,7 @@
 		B3AFB83C2A0CE82C008C2374 /* EmptyDecodable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AFB83B2A0CE82C008C2374 /* EmptyDecodable.swift */; };
 		B3AFB83D2A0CF1EE008C2374 /* EmptyDecodable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AFB83B2A0CE82C008C2374 /* EmptyDecodable.swift */; };
 		B3B1C5842664E23A00883597 /* ReadItemsForUploadDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1C5832664E23A00883597 /* ReadItemsForUploadDbRequest.swift */; };
-		B3B1C58626651E2A00883597 /* StorageSettingsActionHandlerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1C58526651E2A00883597 /* StorageSettingsActionHandlerSpec.swift */; };
 		B3B1C5892665258400883597 /* bitcoin.pdf in Resources */ = {isa = PBXBuildFile; fileRef = B3B1C5882665258400883597 /* bitcoin.pdf */; };
-		B3B1EDED250242DB00D8BC1E /* ItemResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDEC250242DB00D8BC1E /* ItemResponseSpec.swift */; };
-		B3B1EDEF250242E700D8BC1E /* CollectionResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDEE250242E700D8BC1E /* CollectionResponseSpec.swift */; };
-		B3B1EDF1250242F700D8BC1E /* SearchResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDF0250242F700D8BC1E /* SearchResponseSpec.swift */; };
 		B3B1EDF42502456000D8BC1E /* itemresponse_unknownfields.json in Resources */ = {isa = PBXBuildFile; fileRef = B3B1EDF22502455F00D8BC1E /* itemresponse_unknownfields.json */; };
 		B3B1EDF52502456000D8BC1E /* itemresponse_knownfields.json in Resources */ = {isa = PBXBuildFile; fileRef = B3B1EDF32502456000D8BC1E /* itemresponse_knownfields.json */; };
 		B3B1EDFA2502493700D8BC1E /* Bundled in Resources */ = {isa = PBXBuildFile; fileRef = B3F47C04243B4BC0004F8B1E /* Bundled */; };
@@ -1087,7 +1088,6 @@
 		B3F3D63C255EC98600F310C2 /* AnnotationViewButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D63B255EC98600F310C2 /* AnnotationViewButton.swift */; };
 		B3F3D640255ECA4700F310C2 /* AnnotationViewText.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D63F255ECA4700F310C2 /* AnnotationViewText.swift */; };
 		B3F3D644255ECF3500F310C2 /* AnnotationViewSeparator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D643255ECF3500F310C2 /* AnnotationViewSeparator.swift */; };
-		B3F47C01243B339F004F8B1E /* TranslatorsControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */; };
 		B3F47E0025B5F550006FA96F /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B30B550424B85A6200F94B59 /* Images.xcassets */; };
 		B3F49FB228B8C3CB00A1F3E8 /* DocumentAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F49FB128B8C3CB00A1F3E8 /* DocumentAnnotation.swift */; };
 		B3F49FB428B8C3D900A1F3E8 /* DatabaseAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F49FB328B8C3D900A1F3E8 /* DatabaseAnnotation.swift */; };
@@ -2769,6 +2769,7 @@
 				B3AAABD52502A40600031065 /* searchresponse_unknownfields.json */,
 				B32A3C85248008A2009E2C5D /* test_collection.json */,
 				B3DF44112A408339005AF766 /* test_item_attachment.json */,
+				B32A3C87248008A2009E2C5D /* test_thesis_item.json */,
 				B32A3C84248008A2009E2C5D /* test_keys.json */,
 				B32A3C86248008A2009E2C5D /* test_search.json */,
 				B32A3C87248008A2009E2C5D /* test_thesis_item.json */,
@@ -5122,22 +5123,22 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B32A3C7A247FFF14009E2C5D /* DateParserSpec.swift in Sources */,
-				B34F9FA523743C42004ED34C /* ItemTitleFormatterSpec.swift in Sources */,
-				B3202C6C271048FF00485BE4 /* WebDavControllerSpec.swift in Sources */,
-				B39C7BDE251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersSpec.swift in Sources */,
-				B3B1EDED250242DB00D8BC1E /* ItemResponseSpec.swift in Sources */,
-				B3202C6527103DEE00485BE4 /* TestControllers.swift in Sources */,
+				6144B5E02A4AE49800914B3C /* TranslatorsControllerSpec.swift in Sources */,
+				6144B5D92A4ADEB500914B3C /* ReadUpdatedItemUpdateParametersSpec.swift in Sources */,
+				61C817F22A49B5D30085B1E6 /* CollectionResponseSpec.swift in Sources */,
+				6144B5D52A4ADD3C00914B3C /* DateParserSpec.swift in Sources */,
 				B3202C6A2710488200485BE4 /* SyncControllerAction+Equatable.swift in Sources */,
-				B3B1C58626651E2A00883597 /* StorageSettingsActionHandlerSpec.swift in Sources */,
-				B34F9FA323743C36004ED34C /* CreatorSummaryFormatterSpec.swift in Sources */,
-				B31DDAA12729A7DC002CFA05 /* WebDavCredentials.swift in Sources */,
 				B3202C692710488200485BE4 /* OHHTTPStubs+Helpers.swift in Sources */,
-				B307E55E22D4A87B00592B3C /* SyncActionsSpec.swift in Sources */,
-				B3B1EDEF250242E700D8BC1E /* CollectionResponseSpec.swift in Sources */,
-				B3F47C01243B339F004F8B1E /* TranslatorsControllerSpec.swift in Sources */,
-				B3B1EDF1250242F700D8BC1E /* SearchResponseSpec.swift in Sources */,
-				B34F274F220E20370038B3B1 /* SyncControllerSpec.swift in Sources */,
+				6144B5DA2A4ADEBD00914B3C /* WebDavCredentials.swift in Sources */,
+				6144B5DC2A4ADF1F00914B3C /* StorageSettingsActionHandlerSpec.swift in Sources */,
+				6144B5D72A4ADD8400914B3C /* TestControllers.swift in Sources */,
+				6144B5DD2A4AE0F200914B3C /* SyncActionsSpec.swift in Sources */,
+				6144B5DB2A4ADEEB00914B3C /* SearchResponseSpec.swift in Sources */,
+				6144B5D62A4ADD7E00914B3C /* ItemResponseSpec.swift in Sources */,
+				6144B5D42A4ADCDE00914B3C /* CreatorSummaryFormatterSpec.swift in Sources */,
+				6144B5E12A4AE95E00914B3C /* WebDavControllerSpec.swift in Sources */,
+				6144B5D82A4ADDC400914B3C /* ItemTitleFormatterSpec.swift in Sources */,
+				6144B5DF2A4AE48F00914B3C /* SyncControllerSpec.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -5978,7 +5979,7 @@
 			repositoryURL = "https://github.com/Quick/Nimble";
 			requirement = {
 				kind = exactVersion;
-				version = 9.2.1;
+				version = 12.0.1;
 			};
 		};
 		B356A38E2524A6BA003F1943 /* XCRemoteSwiftPackageReference "Quick" */ = {
@@ -5986,7 +5987,7 @@
 			repositoryURL = "https://github.com/Quick/Quick";
 			requirement = {
 				kind = exactVersion;
-				version = 4.0.0;
+				version = 7.0.2;
 			};
 		};
 		B356A3942524A6D5003F1943 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */ = {

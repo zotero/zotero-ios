@@ -14,33 +14,45 @@ import Nimble
 import Quick
 
 final class CollectionResponseSpec: QuickSpec {
-    override func spec() {
-        it("parses collection with all known fields") {
-            let url = Bundle(for: type(of: self)).url(forResource: "collectionresponse_knownfields", withExtension: "json")!
-            let data = try! Data(contentsOf: url)
-            let jsonData = try! JSONSerialization.jsonObject(with: data, options: .allowFragments) as! [String: Any]
-
-            do {
-                _ = try CollectionResponse(response: jsonData)
-            } catch let error {
-                fail("Exception thrown during parsing: \(error)")
+    override class func spec() {
+        describe("a JSON collection response") {
+            var resourceName: String!
+            var jsonData: [String: Any]!
+            
+            justBeforeEach {
+                let url = Bundle(for: Self.self).url(forResource: resourceName, withExtension: "json")!
+                let data = try! Data(contentsOf: url)
+                jsonData = try! JSONSerialization.jsonObject(with: data, options: .allowFragments) as! [String: Any]
             }
-        }
+            
+            context("with all known fields") {
+                beforeEach {
+                    resourceName = "collectionresponse_knownfields"
+                }
+                
+                it("is parsed succesfully") {
+                    expect(try CollectionResponse(response: jsonData)).toNot(throwError())
+                }
+            }
+            
+            context("with unknown field") {
+                beforeEach {
+                    resourceName = "collectionresponse_unknownfields"
+                }
 
-        it("throws exception for collection with unknown field") {
-            let url = Bundle(for: type(of: self)).url(forResource: "collectionresponse_unknownfields", withExtension: "json")!
-            let data = try! Data(contentsOf: url)
-            let jsonData = try! JSONSerialization.jsonObject(with: data, options: .allowFragments) as! [String: Any]
-
-            do {
-                _ = try CollectionResponse(response: jsonData)
-                fail("No exception thrown for unknown fields")
-            } catch let error {
-                if let error = error as? SchemaError,
-                    case .unknownField(_, let fieldName) = error,
-                    fieldName == "unknownField" {
-                } else {
-                    fail("Wrong exception thrown for unknown field: \(error)")
+                it("throws exception") {
+                    expect(try CollectionResponse(response: jsonData)).to(throwError { (error: Error) in
+                        expect {
+                            guard let error = error as? SchemaError,
+                                  case .unknownField(_, let fieldName) = error,
+                                  fieldName == "unknownField"
+                            else {
+                                return .failed(reason: "Wrong exception thrown for unknown field: \(error)")
+                            }
+                            return .succeeded
+                        }
+                        .to(succeed())
+                    })
                 }
             }
         }
