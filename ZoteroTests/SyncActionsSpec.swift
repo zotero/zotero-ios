@@ -291,7 +291,7 @@ final class SyncActionsSpec: QuickSpec {
                     self.realm.add(attachment2)
                 }
 
-                self.realm.refresh()
+                self.realm.refrsh()
 
                 waitUntil(timeout: .seconds(100), action: { doneAction in
                     RevertLibraryFilesSyncAction(
