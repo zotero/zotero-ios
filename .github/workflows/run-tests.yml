@@ -3,22 +3,30 @@ name: Run tests
 on: push
 
 jobs:
-  build:
-    name: Build and Test
+  tests:
+    name: Run Xcode Tests
     runs-on: macos-latest
+    strategy:
+      matrix:
+        xcode: ["14.3.1"]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           submodules: recursive
-      - name: Cache
+
+      - name: Select Xcode ${{ matrix.xcode }}
+        run: sudo xcode-select --switch /Applications/Xcode_${{ matrix.xcode }}.app 
+
+      - name: Cache DerivedData
         uses: actions/cache@v3
         with:
-          path: .build
-          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          path: ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-iOS_derived_data-xcode_${{ matrix.xcode }}
           restore-keys: |
-            ${{ runner.os }}-spm-
+            ${{ runner.os }}-iOS_derived_data
+
       - name: Build & Test
         run: |
           file_to_build="`ls -A | grep -i \\.xcodeproj\$`"
