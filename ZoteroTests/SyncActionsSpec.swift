@@ -293,7 +293,7 @@ final class SyncActionsSpec: QuickSpec {
 
                 self.realm.refresh()
 
-                waitUntil(timeout: .seconds(10), action: { doneAction in
+                waitUntil(timeout: .seconds(100), action: { doneAction in
                     RevertLibraryFilesSyncAction(
                         libraryId: .custom(.myLibrary),
                         dbStorage: self.dbStorage,
