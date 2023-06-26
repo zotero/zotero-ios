@@ -30,6 +30,9 @@ jobs:
             ${{ runner.os }}-iOS_derived_data
 
       - name: Build & Test
-        run: |
-          file_to_build="`ls -A | grep -i \\.xcodeproj\$`"
-          xcodebuild -project "$file_to_build" -scheme Zotero -destination "platform=iOS Simulator,name=iPhone 14" test | xcpretty --color
+        uses: sersoft-gmbh/xcodebuild-action@v2
+        with:
+          project: Zotero.xcodeproj
+          scheme: Zotero
+          destination: platform=iOS Simulator,name=iPhone 14
+          action: test
