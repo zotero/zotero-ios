@@ -357,7 +357,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
                 DDLogError("PDFCoordinator: can't render annotation image - \(error)")
                 elementProvider([])
             }
-            .disposed(by: disposeBag)
+            .disposed(by: self.disposeBag)
         }
     }
         

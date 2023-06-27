@@ -422,9 +422,10 @@
 		B32A3C8B248008A2009E2C5D /* test_keys.json in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C84248008A2009E2C5D /* test_keys.json */; };
 		B32A3C8C248008A2009E2C5D /* test_collection.json in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C85248008A2009E2C5D /* test_collection.json */; };
 		B32A3C8D248008A2009E2C5D /* test_search.json in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C86248008A2009E2C5D /* test_search.json */; };
-		B32A3C8E248008A2009E2C5D /* test_item.json in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C87248008A2009E2C5D /* test_item.json */; };
+		B32A3C8E248008A2009E2C5D /* test_thesis_item.json in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C87248008A2009E2C5D /* test_thesis_item.json */; };
 		B32A3C8F248008A2009E2C5D /* translators_delete.xml in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C89248008A2009E2C5D /* translators_delete.xml */; };
 		B32A3C90248008A2009E2C5D /* translators.xml in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C8A248008A2009E2C5D /* translators.xml */; };
+		B32A495B2A44730D00080945 /* licenses in Resources */ = {isa = PBXBuildFile; fileRef = B32A495A2A44730C00080945 /* licenses */; };
 		B32AB57B25ADB891003CF0C6 /* CommentIconDrawingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32AB57A25ADB891003CF0C6 /* CommentIconDrawingController.swift */; };
 		B32AB57E25ADCEED003CF0C6 /* Bundled in Resources */ = {isa = PBXBuildFile; fileRef = B30BA8C3255D415600361D25 /* Bundled */; };
 		B32B4F952475544700F78A05 /* SyncToolbarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32B4F942475544700F78A05 /* SyncToolbarController.swift */; };
@@ -1065,7 +1066,6 @@
 		B3EBC9B1283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EBC9B0283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift */; };
 		B3EBC9B2283E39AD00286A9E /* ReadBaseTagsToDeleteDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EBC9B0283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift */; };
 		B3EC44612718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EC44602718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift */; };
-		B3EFA1B82A28DE9D0011A32F /* licenses.plist in Resources */ = {isa = PBXBuildFile; fileRef = B3EFA1B72A28DE9D0011A32F /* licenses.plist */; };
 		B3F09AE629CAFF860084E4D8 /* TagFilterActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F09AE529CAFF860084E4D8 /* TagFilterActionHandler.swift */; };
 		B3F09AE829CAFF8D0084E4D8 /* TagFilterState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F09AE729CAFF8D0084E4D8 /* TagFilterState.swift */; };
 		B3F09AEA29CAFF9E0084E4D8 /* TagFilterAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F09AE929CAFF9E0084E4D8 /* TagFilterAction.swift */; };
@@ -1442,9 +1442,10 @@
 		B32A3C84248008A2009E2C5D /* test_keys.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_keys.json; sourceTree = "<group>"; };
 		B32A3C85248008A2009E2C5D /* test_collection.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_collection.json; sourceTree = "<group>"; };
 		B32A3C86248008A2009E2C5D /* test_search.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_search.json; sourceTree = "<group>"; };
-		B32A3C87248008A2009E2C5D /* test_item.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_item.json; sourceTree = "<group>"; };
+		B32A3C87248008A2009E2C5D /* test_thesis_item.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_thesis_item.json; sourceTree = "<group>"; };
 		B32A3C89248008A2009E2C5D /* translators_delete.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = translators_delete.xml; sourceTree = "<group>"; };
 		B32A3C8A248008A2009E2C5D /* translators.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = translators.xml; sourceTree = "<group>"; };
+		B32A495A2A44730C00080945 /* licenses */ = {isa = PBXFileReference; lastKnownFileType = folder; path = licenses; sourceTree = "<group>"; };
 		B32AB57A25ADB891003CF0C6 /* CommentIconDrawingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentIconDrawingController.swift; sourceTree = "<group>"; };
 		B32B4F942475544700F78A05 /* SyncToolbarController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncToolbarController.swift; sourceTree = "<group>"; };
 		B32B4F962475636600F78A05 /* RxTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RxTableViewCell.swift; sourceTree = "<group>"; };
@@ -1951,7 +1952,6 @@
 		B3E9180B25ECE30A002B77AF /* CoreGraphics+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CoreGraphics+Extensions.swift"; sourceTree = "<group>"; };
 		B3EBC9B0283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadBaseTagsToDeleteDbRequest.swift; sourceTree = "<group>"; };
 		B3EC44602718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPreviewBoundingBoxCalculator.swift; sourceTree = "<group>"; };
-		B3EFA1B72A28DE9D0011A32F /* licenses.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; name = licenses.plist; path = licenses/licenses.plist; sourceTree = SOURCE_ROOT; };
 		B3F09AE529CAFF860084E4D8 /* TagFilterActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagFilterActionHandler.swift; sourceTree = "<group>"; };
 		B3F09AE729CAFF8D0084E4D8 /* TagFilterState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagFilterState.swift; sourceTree = "<group>"; };
 		B3F09AE929CAFF9E0084E4D8 /* TagFilterAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagFilterAction.swift; sourceTree = "<group>"; };
@@ -2580,6 +2580,7 @@
 			children = (
 				B3F6415E2A28B1EF00A78CB0 /* ci_scripts */,
 				B30BA8C3255D415600361D25 /* Bundled */,
+				B32A495A2A44730C00080945 /* licenses */,
 				B30D59572206F60400884C4A /* Zotero */,
 				B30D596E2206F60500884C4A /* ZoteroTests */,
 				B30D59792206F60500884C4A /* ZoteroUITests */,
@@ -2609,7 +2610,6 @@
 				B305652B23FC051E003304F2 /* Models */,
 				B305651323FC051E003304F2 /* Scenes */,
 				B30D59582206F60400884C4A /* AppDelegate.swift */,
-				B3EFA1B72A28DE9D0011A32F /* licenses.plist */,
 				B30D59662206F60500884C4A /* Info.plist */,
 				B30D59632206F60500884C4A /* LaunchScreen.storyboard */,
 				B39B18E7223947050019F467 /* main.swift */,
@@ -2769,9 +2769,9 @@
 				B3AAABD52502A40600031065 /* searchresponse_unknownfields.json */,
 				B32A3C85248008A2009E2C5D /* test_collection.json */,
 				B3DF44112A408339005AF766 /* test_item_attachment.json */,
-				B32A3C87248008A2009E2C5D /* test_item.json */,
 				B32A3C84248008A2009E2C5D /* test_keys.json */,
 				B32A3C86248008A2009E2C5D /* test_search.json */,
+				B32A3C87248008A2009E2C5D /* test_thesis_item.json */,
 			);
 			path = JSONs;
 			sourceTree = "<group>";
@@ -3970,7 +3970,7 @@
 			buildConfigurationList = B30D597F2206F60500884C4A /* Build configuration list for PBXNativeTarget "Zotero" */;
 			buildPhases = (
 				B3CF8840266E0FE6009CFC20 /* ShellScript */,
-				B3593F142668D37900FA4BB2 /* ShellScript */,
+				B3593F142668D37900FA4BB2 /* Run Script */,
 				B34A85AC243CB1E4003D5638 /* ShellScript */,
 				B337A5AD244F229400AFD13D /* ShellScript */,
 				B30D59512206F60400884C4A /* Sources */,
@@ -4173,7 +4173,6 @@
 				B3593F21241A61C700760E20 /* ItemDetailAttachmentContentView.xib in Resources */,
 				B3ADAE3F28339F2700D46271 /* translation in Resources */,
 				B361820324C9A7C000B30D56 /* OnboardingViewController.xib in Resources */,
-				B3EFA1B82A28DE9D0011A32F /* licenses.plist in Resources */,
 				B361820424C9A7C000B30D56 /* OnboardingPageView.xib in Resources */,
 				B3F0C3FA250A1BD8002D557A /* LibrariesViewController.xib in Resources */,
 				B3E8FE1D2714297200F51458 /* CiteSearchViewController.xib in Resources */,
@@ -4204,6 +4203,7 @@
 				B30B405F2490CAFC00FAAF6D /* ItemCell.xib in Resources */,
 				B3E02C0D26848CA900FFB419 /* AnnotationViewController.xib in Resources */,
 				B31A5E52286308960026589F /* LookupIdentifierCell.xib in Resources */,
+				B32A495B2A44730D00080945 /* licenses in Resources */,
 				B34C40F625710B430057D5F5 /* AnnotationEditViewController.xib in Resources */,
 				B3F5B08127D1001B00AA81C0 /* PDFSettingsSegmentedCellContentView.xib in Resources */,
 				B3B41F122848E59D0017CA4B /* AnnotationsFilterViewController.xib in Resources */,
@@ -4236,7 +4236,7 @@
 				B3B1EDF42502456000D8BC1E /* itemresponse_unknownfields.json in Resources */,
 				B32A3C8F248008A2009E2C5D /* translators_delete.xml in Resources */,
 				B3DF44122A408339005AF766 /* test_item_attachment.json in Resources */,
-				B32A3C8E248008A2009E2C5D /* test_item.json in Resources */,
+				B32A3C8E248008A2009E2C5D /* test_thesis_item.json in Resources */,
 				B3B1EDFA2502493700D8BC1E /* Bundled in Resources */,
 				B3AAABD72502A40900031065 /* searchresponse_unknownfields.json in Resources */,
 				B32A3C8B248008A2009E2C5D /* test_keys.json in Resources */,
@@ -4354,7 +4354,7 @@
 			shellPath = /bin/sh;
 			shellScript = "python3 \"$SCRIPT_INPUT_FILE_0\"\n";
 		};
-		B3593F142668D37900FA4BB2 /* ShellScript */ = {
+		B3593F142668D37900FA4BB2 /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -4365,6 +4365,7 @@
 			inputPaths = (
 				"$(SRCROOT)/scripts/bundle_styles.py",
 			);
+			name = "Run Script";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -4376,7 +4377,7 @@
 		B3CF8840266E0FE6009CFC20 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
+			buildActionMask = 12;
 			files = (
 			);
 			inputFileListPaths = (
