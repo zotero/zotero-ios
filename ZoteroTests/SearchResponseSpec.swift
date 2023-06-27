@@ -14,33 +14,45 @@ import Nimble
 import Quick
 
 final class SearchResponseSpec: QuickSpec {
-    override func spec() {
-        it("parses search with all known fields") {
-            let url = Bundle(for: type(of: self)).url(forResource: "searchresponse_knownfields", withExtension: "json")!
-            let data = try! Data(contentsOf: url)
-            let jsonData = try! JSONSerialization.jsonObject(with: data, options: .allowFragments) as! [String: Any]
-
-            do {
-                _ = try SearchResponse(response: jsonData)
-            } catch let error {
-                fail("Exception thrown during parsing: \(error)")
+    override class func spec() {
+        describe("a JSON search response") {
+            var resourceName: String!
+            var jsonData: [String: Any]!
+            
+            justBeforeEach {
+                let url = Bundle(for: Self.self).url(forResource: resourceName, withExtension: "json")!
+                let data = try! Data(contentsOf: url)
+                jsonData = try! JSONSerialization.jsonObject(with: data, options: .allowFragments) as! [String: Any]
             }
-        }
+            
+            context("with all known fields") {
+                beforeEach {
+                    resourceName = "searchresponse_knownfields"
+                }
+                
+                it("is parsed succesfully") {
+                    expect(try SearchResponse(response: jsonData)).toNot(throwError())
+                }
+            }
+            
+            context("with unknown field") {
+                beforeEach {
+                    resourceName = "searchresponse_unknownfields"
+                }
 
-        it("throws exception for search with unknown field") {
-            let url = Bundle(for: type(of: self)).url(forResource: "searchresponse_unknownfields", withExtension: "json")!
-            let data = try! Data(contentsOf: url)
-            let jsonData = try! JSONSerialization.jsonObject(with: data, options: .allowFragments) as! [String: Any]
-
-            do {
-                _ = try SearchResponse(response: jsonData)
-                fail("No exception thrown for unknown fields")
-            } catch let error {
-                if let error = error as? SchemaError,
-                    case .unknownField(_, let fieldName) = error,
-                    fieldName == "unknownField" {
-                } else {
-                    fail("Wrong exception thrown for unknown field: \(error)")
+                it("throws exception") {
+                    expect(try SearchResponse(response: jsonData)).to(throwError { (error: Error) in
+                        expect {
+                            guard let error = error as? SchemaError,
+                                  case .unknownField(_, let fieldName) = error,
+                                  fieldName == "unknownField"
+                            else {
+                                return .failed(reason: "Wrong exception thrown for unknown field: \(error)")
+                            }
+                            return .succeeded
+                        }
+                        .to(succeed())
+                    })
                 }
             }
         }
