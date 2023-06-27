@@ -208,8 +208,6 @@ final class SyncActionsSpec: QuickSpec {
             }
 
             it("reverts file uploads") {
-                fail("Testing failure")
-                return
                 // Load urls for bundled files
                 guard let itemUrl = Bundle(for: type(of: self)).url(forResource: "test_item_attachment", withExtension: "json") else {
                     fail("Could not find json files")
@@ -295,7 +293,7 @@ final class SyncActionsSpec: QuickSpec {
 
                 self.realm.refresh()
 
-                waitUntil(timeout: .seconds(100), action: { doneAction in
+                waitUntil(timeout: .seconds(10), action: { doneAction in
                     RevertLibraryFilesSyncAction(
                         libraryId: .custom(.myLibrary),
                         dbStorage: self.dbStorage,
