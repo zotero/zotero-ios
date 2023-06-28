@@ -14,7 +14,7 @@ final class Licenses {
     let pspdfkitKey: String?
 
     init() {
-        guard let path = Bundle.main.path(forResource: "licenses", ofType: "plist"),
+        guard let path = Bundle.main.path(forResource: "licenses", ofType: "plist", inDirectory: "licenses"),
               let data = NSDictionary(contentsOfFile: path) else {
             self.pspdfkitKey = nil
             return
