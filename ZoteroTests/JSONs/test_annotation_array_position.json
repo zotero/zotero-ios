@@ -1,0 +1,37 @@
+{
+    "key": "AAAAAAAA",
+    "version": 182,
+    "library": {
+      "type": "user",
+      "id": 1234123,
+      "name": "someuser",
+      "links": {
+        "alternate": {
+          "href": "https://www.zotero.org/someuser",
+          "type": "text/html"
+        }
+      }
+    },
+    "links": {},
+    "meta": {},
+    "data": {
+      "key": "AAAAAAAA",
+      "version": 182,
+      "itemType": "annotation",
+      "parentItem": "BBBBBBBB",
+      "annotationType": "highlight",
+      "annotationComment": "",
+      "annotationColor": "#ffffff",
+      "annotationPageLabel": "1",
+      "annotationText": "",
+      "annotationSortIndex": "00000|000000|00000",
+      "tags": [
+        {
+          "tag": "High priority"
+        }
+      ],
+      "annotationPosition": "{\"pageIndex\": 2, \"rects\": [[317.014,80.942,556.121,88.716], [317.014,70.76,399.423,79.04]], \"nextPageRects\": [[65.955,709.874,293.106,718.217], [54,700.077,269.333,707.904]]}",
+      "dateAdded": "2019-02-11T19:10:55Z",
+      "dateModified": "2019-03-28T15:48:48Z"
+    }
+  }

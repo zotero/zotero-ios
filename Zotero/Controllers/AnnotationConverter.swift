@@ -63,7 +63,14 @@ struct AnnotationConverter {
     /// - parameter displayName: Display name of current user.
     /// - parameter boundingBoxConverter: Converts rects from pdf coordinate space.
     /// - returns: Matching Zotero annotation.
-    static func annotation(from annotation: PSPDFKit.Annotation, color: String, library: Library, username: String, displayName: String, boundingBoxConverter: AnnotationBoundingBoxConverter?) -> DocumentAnnotation? {
+    static func annotation(
+        from annotation: PSPDFKit.Annotation,
+        color: String,
+        library: Library,
+        username: String,
+        displayName: String,
+        boundingBoxConverter: AnnotationBoundingBoxConverter?
+    ) -> DocumentAnnotation? {
         guard let document = annotation.document, AnnotationsConfig.supported.contains(annotation.type) else { return nil }
 
         let key = annotation.key ?? annotation.uuid
@@ -115,8 +122,22 @@ struct AnnotationConverter {
             return nil
         }
 
-        return DocumentAnnotation(key: key, type: type, page: page, pageLabel: pageLabel, rects: rects, paths: paths, lineWidth: lineWidth, author: author, isAuthor: isAuthor, color: color,
-                                  comment: comment, text: text, sortIndex: sortIndex, dateModified: date)
+        return DocumentAnnotation(
+            key: key,
+            type: type,
+            page: page,
+            pageLabel: pageLabel,
+            rects: rects,
+            paths: paths,
+            lineWidth: lineWidth,
+            author: author,
+            isAuthor: isAuthor,
+            color: color,
+            comment: comment,
+            text: text,
+            sortIndex: sortIndex,
+            dateModified: date
+        )
     }
 
     static func removeNewlines(from string: String) -> String {
@@ -180,17 +201,45 @@ struct AnnotationConverter {
     /// Converts Zotero annotations to actual document (PSPDFKit) annotations with custom flags.
     /// - parameter zoteroAnnotations: Annotations to convert.
     /// - returns: Array of PSPDFKit annotations that can be added to document.
-    static func annotations(from items: Results<RItem>, type: Kind = .zotero, interfaceStyle: UIUserInterfaceStyle, currentUserId: Int, library: Library, displayName: String, username: String,
-                            boundingBoxConverter: AnnotationBoundingBoxConverter) -> [PSPDFKit.Annotation] {
-        return items.map({ item in
-            return self.annotation(from: DatabaseAnnotation(item: item), type: type, interfaceStyle: interfaceStyle, currentUserId: currentUserId, library: library, displayName: displayName,
-                                   username: username, boundingBoxConverter: boundingBoxConverter)
+    static func annotations(
+        from items: Results<RItem>,
+        type: Kind = .zotero,
+        interfaceStyle: UIUserInterfaceStyle,
+        currentUserId: Int,
+        library: Library,
+        displayName: String,
+        username: String,
+        boundingBoxConverter: AnnotationBoundingBoxConverter
+    ) -> [PSPDFKit.Annotation] {
+        return items.compactMap({ item in
+            return self.annotation(
+                from: DatabaseAnnotation(item: item),
+                type: type,
+                interfaceStyle: interfaceStyle,
+                currentUserId: currentUserId,
+                library: library,
+                displayName: displayName,
+                username: username,
+                boundingBoxConverter: boundingBoxConverter
+            )
         })
     }
 
-    static func annotation(from zoteroAnnotation: DatabaseAnnotation, type: Kind, interfaceStyle: UIUserInterfaceStyle, currentUserId: Int, library: Library, displayName: String, username: String,
-                           boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.Annotation {
-        let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: zoteroAnnotation.color), isHighlight: (zoteroAnnotation.type == .highlight), userInterfaceStyle: interfaceStyle)
+    static func annotation(
+        from zoteroAnnotation: DatabaseAnnotation,
+        type: Kind,
+        interfaceStyle: UIUserInterfaceStyle,
+        currentUserId: Int,
+        library: Library,
+        displayName: String,
+        username: String,
+        boundingBoxConverter: AnnotationBoundingBoxConverter
+    ) -> PSPDFKit.Annotation {
+        let (color, alpha, blendMode) = AnnotationColorGenerator.color(
+            from: UIColor(hex: zoteroAnnotation.color),
+            isHighlight: (zoteroAnnotation.type == .highlight),
+            userInterfaceStyle: interfaceStyle
+        )
         let annotation: PSPDFKit.Annotation
 
         switch zoteroAnnotation.type {
@@ -252,7 +301,13 @@ struct AnnotationConverter {
 
     /// Creates corresponding `HighlightAnnotation`.
     /// - parameter annotation: Zotero annotation.
-    private static func highlightAnnotation(from annotation: Annotation, type: Kind, color: UIColor, alpha: CGFloat, boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.HighlightAnnotation {
+    private static func highlightAnnotation(
+        from annotation: Annotation,
+        type: Kind,
+        color: UIColor,
+        alpha: CGFloat,
+        boundingBoxConverter: AnnotationBoundingBoxConverter
+    ) -> PSPDFKit.HighlightAnnotation {
         let highlight: PSPDFKit.HighlightAnnotation
         switch type {
         case .export:

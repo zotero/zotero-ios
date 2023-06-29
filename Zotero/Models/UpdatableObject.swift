@@ -228,6 +228,8 @@ extension RItem: Updatable {
                 jsonData[field.key] = value
             } else if let value = Double(field.value) {
                 jsonData[field.key] = value
+            } else if let data = field.value.data(using: .utf8), let json = try? JSONSerialization.jsonObject(with: data, options: .allowFragments) {
+                jsonData[field.key] = json
             } else {
                 jsonData[field.key] = field.value
             }
@@ -235,21 +237,21 @@ extension RItem: Updatable {
 
         switch type {
         case .ink:
-            var apiPaths: [[Decimal]] = []
+            var apiPaths: [[Double]] = []
             for path in self.paths.sorted(byKeyPath: "sortIndex") {
-                apiPaths.append(path.coordinates.sorted(byKeyPath: "sortIndex").map({ Decimal($0.value).rounded(to: 3) }))
+                apiPaths.append(path.coordinates.sorted(byKeyPath: "sortIndex").map({ $0.value }))
             }
             jsonData[FieldKeys.Item.Annotation.Position.paths] = apiPaths
             
         case .highlight, .image, .note:
-            var rectArray: [[Decimal]] = []
+            var rectArray: [[Double]] = []
             self.rects.forEach { rRect in
-                rectArray.append([Decimal(rRect.minX).rounded(to: 3), Decimal(rRect.minY).rounded(to: 3), Decimal(rRect.maxX).rounded(to: 3), Decimal(rRect.maxY).rounded(to: 3)])
+                rectArray.append([rRect.minX, rRect.minY, rRect.maxX, rRect.maxY])
             }
             jsonData[FieldKeys.Item.Annotation.Position.rects] = rectArray
         }
 
-        return (try? JSONSerialization.data(withJSONObject: jsonData, options: [])).flatMap({ String(data: $0, encoding: .utf8) }) ?? ""
+        return (try? JSONSerialization.dataWithRoundedDecimals(withJSONObject: jsonData)).flatMap({ String(data: $0, encoding: .utf8) }) ?? ""
     }
 
     func deleteChanges(uuids: [String], database: Realm) {
