@@ -211,7 +211,7 @@ struct AnnotationConverter {
         username: String,
         boundingBoxConverter: AnnotationBoundingBoxConverter
     ) -> [PSPDFKit.Annotation] {
-        return items.compactMap({ item in
+        return items.map({ item in
             return self.annotation(
                 from: DatabaseAnnotation(item: item),
                 type: type,
