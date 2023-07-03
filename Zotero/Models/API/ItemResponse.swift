@@ -331,13 +331,18 @@ struct ItemResponse {
             default: break
             }
 
-            var value: String
+            let value: String
             if let _value = object.value as? String {
                 value = _value
             } else if let _value = object.value as? Int {
                 value = "\(_value)"
             } else if let _value = object.value as? Double {
                 value = "\(_value.rounded(to: 3))"
+            } else if let _value = object.value as? Bool {
+                value = "\(_value)"
+            } else if let data = try? JSONSerialization.dataWithRoundedDecimals(withJSONObject: object.value), let _value = String(data: data, encoding: .utf8) {
+                // If `object.value` is not a basic type (string or number) convert it to JSON and store JSON string
+                value = _value
             } else {
                 value = "\(object.value)"
             }
@@ -358,19 +363,6 @@ struct ItemResponse {
                 throw SchemaError.invalidValue(value: rawType, field: FieldKeys.Item.Annotation.type, key: key)
             }
 
-            // `rects` and `paths` are not checked in `mandatoryFields` because rects and paths are processed separately and not stored in `RItemField` as an actual field.
-            switch type {
-            case .note, .image, .highlight:
-                if !hasRects {
-                    throw SchemaError.missingField(key: key, field: FieldKeys.Item.Annotation.Position.rects, itemType: itemType)
-                }
-
-            case .ink:
-                if !hasPaths {
-                    throw SchemaError.missingField(key: key, field: FieldKeys.Item.Annotation.Position.paths, itemType: itemType)
-                }
-            }
-
             let mandatoryFields = FieldKeys.Item.Annotation.fields(for: type)
             for field in mandatoryFields {
                 guard let value = fields[field] else {
@@ -380,16 +372,6 @@ struct ItemResponse {
                 switch field.key {
                 case FieldKeys.Item.Annotation.color:
                     if !value.starts(with: "#") {
-                        throw SchemaError.invalidValue(value: value, field: field.key, key: key)
-                    }
-
-                case FieldKeys.Item.Annotation.sortIndex:
-                    // Sort index consists of 3 parts separated by "|":
-                    // - 1. page index (5 characters)
-                    // - 2. character offset (6 characters)
-                    // - 3. y position from top (5 characters)
-                    let parts = value.split(separator: "|")
-                    if parts.count != 3 || parts[0].count != 5 || parts[1].count != 6 || parts[2].count != 5 {
                         throw SchemaError.invalidValue(value: value, field: field.key, key: key)
                     }
 

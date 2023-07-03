@@ -1,0 +1,37 @@
+{
+    "key": "AAAAAAAA",
+    "version": 182,
+    "library": {
+      "type": "user",
+      "id": 1234123,
+      "name": "someuser",
+      "links": {
+        "alternate": {
+          "href": "https://www.zotero.org/someuser",
+          "type": "text/html"
+        }
+      }
+    },
+    "links": {},
+    "meta": {},
+    "data": {
+      "key": "AAAAAAAA",
+      "version": 182,
+      "itemType": "annotation",
+      "parentItem": "BBBBBBBB",
+      "annotationType": "highlight",
+      "annotationComment": "",
+      "annotationColor": "#ffffff",
+      "annotationPageLabel": "1",
+      "annotationText": "",
+      "annotationSortIndex": "00000|000000|00000",
+      "tags": [
+        {
+          "tag": "High priority"
+        }
+      ],
+      "annotationPosition": "{\"type\": \"FragmentSelector\", \"conformsTo\": \"http://www.idpf.org/epub/linking/cfi/epub-cfi.html\", \"value\": \"epubcfi(/6/102!/4/2[chapter-45]/26,/1:0,/3:254)\"}",
+      "dateAdded": "2019-02-11T19:10:55Z",
+      "dateModified": "2019-03-28T15:48:48Z"
+    }
+  }

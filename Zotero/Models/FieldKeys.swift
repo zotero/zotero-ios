@@ -77,19 +77,23 @@ struct FieldKeys {
             static func fields(for type: AnnotationType) -> [KeyBaseKeyPair] {
                 switch type {
                 case .highlight:
-                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil), KeyBaseKeyPair(key: Annotation.comment, baseKey: nil), KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil), KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil), KeyBaseKeyPair(key: Annotation.text, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.Position.pageIndex, baseKey: Annotation.position)]
+                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.text, baseKey: nil)]
 
                 case .ink:
-                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil), KeyBaseKeyPair(key: Annotation.comment, baseKey: nil), KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil), KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.Position.pageIndex, baseKey: Annotation.position), KeyBaseKeyPair(key: Annotation.Position.lineWidth, baseKey: Annotation.position)]
+                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil)]
 
                 case .note, .image:
-                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil), KeyBaseKeyPair(key: Annotation.comment, baseKey: nil), KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil), KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.Position.pageIndex, baseKey: Annotation.position)]
+                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil)]
                 }
             }
         }

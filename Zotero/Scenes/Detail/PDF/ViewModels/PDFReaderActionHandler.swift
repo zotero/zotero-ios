@@ -1560,6 +1560,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private func createSortedKeys(fromDatabaseAnnotations databaseAnnotations: Results<RItem>, documentAnnotations: [String: DocumentAnnotation]) -> [PDFReaderState.AnnotationKey] {
         var keys: [(PDFReaderState.AnnotationKey, String)] = []
         for item in databaseAnnotations {
+            guard self.validate(databaseAnnotation: DatabaseAnnotation(item: item)) else { continue }
             keys.append((PDFReaderState.AnnotationKey(key: item.key, type: .database), item.annotationSortIndex))
         }
         for annotation in documentAnnotations.values {
@@ -1570,6 +1571,39 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             keys.insert((key, annotation.sortIndex), at: index)
         }
         return keys.map({ $0.0 })
+    }
+
+    private func validate(databaseAnnotation: DatabaseAnnotation) -> Bool {
+        if databaseAnnotation._page == nil {
+            return false
+        }
+
+        switch databaseAnnotation.type {
+        case .ink:
+            if databaseAnnotation.item.paths.isEmpty {
+                DDLogInfo("PDFReaderActionHandler: ink annotation \(databaseAnnotation.key) missing paths")
+                return false
+            }
+
+        case .highlight, .image, .note:
+            if databaseAnnotation.item.rects.isEmpty {
+                DDLogInfo("PDFReaderActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing rects")
+                return false
+            }
+        }
+
+        // Sort index consists of 3 parts separated by "|":
+        // - 1. page index (5 characters)
+        // - 2. character offset (6 characters)
+        // - 3. y position from top (5 characters)
+        let sortIndex = databaseAnnotation.sortIndex
+        let parts = sortIndex.split(separator: "|")
+        if parts.count != 3 || parts[0].count != 5 || parts[1].count != 6 || parts[2].count != 5 {
+            DDLogInfo("PDFReaderActionHandler: invalid sort index (\(sortIndex)) for \(databaseAnnotation.key)")
+            return false
+        }
+
+        return true
     }
 
     private func loadAnnotationsAndPage(for key: String, library: Library) -> Result<(Results<RItem>, Int), Error> {

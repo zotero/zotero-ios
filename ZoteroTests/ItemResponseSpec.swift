@@ -55,6 +55,67 @@ final class ItemResponseSpec: QuickSpec {
                     })
                 }
             }
+
+            context("with unknown basic position fields") {
+                beforeEach {
+                    resourceName = "test_annotation_basic_position"
+                }
+
+                it("preserves fields") {
+                    do {
+                        let response = try ItemResponse(response: jsonData, schemaController: TestControllers.schemaController)
+                        expect(response.fields[KeyBaseKeyPair(key: "type", baseKey: FieldKeys.Item.Annotation.position)]).to(equal("FragmentSelector"))
+                        expect(response.fields[KeyBaseKeyPair(key: "conformsTo", baseKey: FieldKeys.Item.Annotation.position)]).to(equal("http://www.idpf.org/epub/linking/cfi/epub-cfi.html"))
+                        expect(response.fields[KeyBaseKeyPair(key: "value", baseKey: FieldKeys.Item.Annotation.position)]).to(equal("epubcfi(/6/102!/4/2[chapter-45]/26,/1:0,/3:254)"))
+                    } catch let error {
+                        fail("\(error)")
+                    }
+                }
+            }
+
+            context("with unknown array position fields") {
+                beforeEach {
+                    resourceName = "test_annotation_array_position"
+                }
+
+                it("preserves fields") {
+                    do {
+                        let response = try ItemResponse(response: jsonData, schemaController: TestControllers.schemaController)
+                        let nextPageRects = response.fields[KeyBaseKeyPair(key: "nextPageRects", baseKey: FieldKeys.Item.Annotation.position)]
+                        expect(nextPageRects).to(equal("[[65.955,709.874,293.106,718.217],[54,700.077,269.333,707.904]]"))
+                    } catch let error {
+                        fail("\(error)")
+                    }
+                }
+            }
+
+            context("with unknown dictionary position fields") {
+                beforeEach {
+                    resourceName = "test_annotation_dictionary_position"
+                }
+
+                it("preserves fields") {
+                    do {
+                        let response = try ItemResponse(response: jsonData, schemaController: TestControllers.schemaController)
+
+                        guard let rawRefinedBy = response.fields[KeyBaseKeyPair(key: "refinedBy", baseKey: FieldKeys.Item.Annotation.position)] else {
+                            fail("refinedBy missing")
+                            return
+                        }
+
+                        guard let refinedBy = try? JSONSerialization.jsonObject(with: rawRefinedBy.data(using: .utf8)!, options: .allowFragments) as? [String: Any] else {
+                            fail("refinedBy invalid json \(rawRefinedBy)")
+                            return
+                        }
+
+                        expect(refinedBy["type"] as? String).to(equal("TextPositionSelector"))
+                        expect(refinedBy["start"] as? Int).to(equal(1536))
+                        expect(refinedBy["end"] as? Int).to(equal(1705))
+                    } catch let error {
+                        fail("\(error)")
+                    }
+                }
+            }
         }
     }
 }

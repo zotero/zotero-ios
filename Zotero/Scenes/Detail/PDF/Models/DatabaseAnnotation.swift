@@ -13,7 +13,7 @@ import PSPDFKit
 import RxSwift
 
 struct DatabaseAnnotation {
-    private let item: RItem
+    let item: RItem
 
     var key: String {
         return self.item.key
