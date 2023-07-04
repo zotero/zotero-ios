@@ -241,7 +241,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: baseColor), isHighlight: (annotation is PSPDFKit.HighlightAnnotation), userInterfaceStyle: interfaceStyle)
                     annotation.color = color
                     annotation.alpha = alpha
-                    if let blendMode = blendMode {
+                    if let blendMode {
                         annotation.blendMode = blendMode
                     }
                 }
@@ -1087,7 +1087,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         highlight.boundingBox = AnnotationBoundingBoxCalculator.boundingBox(from: rects)
         highlight.alpha = alpha
         highlight.color = color
-        if let blendMode = blendMode {
+        if let blendMode {
             highlight.blendMode = blendMode
         }
         highlight.pageIndex = pageIndex
@@ -1237,7 +1237,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 let (_color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: color), isHighlight: (annotation.type == .highlight), userInterfaceStyle: interfaceStyle)
                 pdfAnnotation.color = _color
                 pdfAnnotation.alpha = alpha
-                if let blendMode = blendMode {
+                if let blendMode {
                     pdfAnnotation.blendMode = blendMode
                 }
             }
@@ -1933,7 +1933,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: hexColor), isHighlight: (annotation.type == .highlight), userInterfaceStyle: interfaceStyle)
             pdfAnnotation.color = color
             pdfAnnotation.alpha = alpha
-            if let blendMode = blendMode {
+            if let blendMode {
                 pdfAnnotation.blendMode = blendMode
             }
 
