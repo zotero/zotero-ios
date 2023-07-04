@@ -132,7 +132,7 @@ final class PDFDocumentViewController: UIViewController {
 
     func toggle(annotationTool: PSPDFKit.Annotation.Tool, color: UIColor?, tappedWithStylus: Bool, resetPencilManager: Bool = true) {
         guard let stateManager = self.pdfController?.annotationStateManager else { return }
-        
+
         stateManager.stylusMode = .fromStylusManager
 
         if let tool = stateManager.state, tool != .eraser && tool != PDFDocumentViewController.toolHistory.last {
@@ -474,9 +474,15 @@ final class PDFDocumentViewController: UIViewController {
             builder.spreadFitting = settings.pageFitting
             builder.documentLabelEnabled = .NO
             builder.allowedAppearanceModes = [.night]
-            builder.isCreateAnnotationMenuEnabled = true
+            builder.isCreateAnnotationMenuEnabled = self.viewModel.state.library.metadataEditable
             builder.createAnnotationMenuGroups = self.createAnnotationCreationMenuGroups()
-            builder.allowedMenuActions = [.copy, .search, .speak, .share, .annotationCreation, .define]
+            builder.isTextSelectionEnabled = true
+            builder.isImageSelectionEnabled = true
+            builder.contentMenuConfiguration = ContentMenuConfiguration {
+                $0.annotationToolChoices = { _, _, _, _ in
+                    return [.highlight]
+                }
+            }
             builder.scrubberBarType = .horizontal
 //            builder.thumbnailBarMode = .scrubberBar
             builder.markupAnnotationMergeBehavior = .never
@@ -500,10 +506,8 @@ final class PDFDocumentViewController: UIViewController {
 
     private func createAnnotationCreationMenuGroups() -> [AnnotationToolConfiguration.ToolGroup] {
         return [AnnotationToolConfiguration.ToolGroup(items: [
-                AnnotationToolConfiguration.ToolItem(type: .highlight),
                 AnnotationToolConfiguration.ToolItem(type: .note),
-                AnnotationToolConfiguration.ToolItem(type: .square),
-                AnnotationToolConfiguration.ToolItem(type: .ink, variant: .inkPen)
+                AnnotationToolConfiguration.ToolItem(type: .square)
         ])]
     }
 
@@ -567,69 +571,86 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
         return false
     }
 
-    func pdfViewController(_ pdfController: PDFViewController, shouldShow menuItems: [MenuItem], atSuggestedTargetRect rect: CGRect, for annotations: [PSPDFKit.Annotation]?, in annotationRect: CGRect,
-                           on pageView: PDFPageView) -> [MenuItem] {
-        guard annotations == nil && self.viewModel.state.library.metadataEditable else { return [] }
-
-        let pageRect = pageView.convert(rect, to: pageView.pdfCoordinateSpace)
-
-        return [MenuItem(title: "Note", block: { [weak self] in
-                    self?.viewModel.process(action: .create(annotation: .note, pageIndex: pageView.pageIndex, origin: pageRect.origin))
-                }),
-                MenuItem(title: "Image", block: { [weak self] in
-                    self?.viewModel.process(action: .create(annotation: .image, pageIndex: pageView.pageIndex, origin: pageRect.origin))
-                })]
-    }
-
-    func pdfViewController(_ pdfController: PDFViewController, shouldShow menuItems: [MenuItem], atSuggestedTargetRect rect: CGRect,
-                           forSelectedText selectedText: String, in textRect: CGRect, on pageView: PDFPageView) -> [MenuItem] {
-        let identifiers: [String]
-        if self.viewModel.state.library.metadataEditable {
-            identifiers = [TextMenu.copy.rawValue, TextMenu.annotationMenuHighlight.rawValue, TextMenu.define.rawValue, TextMenu.search.rawValue, TextMenu.speak.rawValue, TextMenu.share.rawValue]
-        } else {
-            identifiers = [TextMenu.copy.rawValue, TextMenu.define.rawValue, TextMenu.search.rawValue, TextMenu.speak.rawValue, TextMenu.share.rawValue]
-        }
-
-        // Filter unwanted items
-        let filtered = menuItems.filter({ item in
-            guard let identifier = item.identifier else { return false }
-            return identifiers.contains(identifier)
-        })
-
-        // Overwrite highlight title
-        if let idx = filtered.firstIndex(where: { $0.identifier == TextMenu.annotationMenuHighlight.rawValue }) {
-            filtered[idx].title = L10n.Pdf.highlight
-        }
-
-        // Overwrite share action, because the original one reports "[ShareSheet] connection invalidated".
-        if let idx = filtered.firstIndex(where: { $0.identifier == TextMenu.share.rawValue }) {
-            filtered[idx].actionBlock = { [weak self] in
-                guard let view = self?.pdfController?.view else { return }
-                self?.coordinatorDelegate?.share(text: selectedText, rect: rect, view: view)
-            }
-        }
-
-        // Overwrite define action, because the original one doesn't show anything.
-        if let idx = filtered.firstIndex(where: { $0.identifier == TextMenu.define.rawValue }) {
-            filtered[idx].title = L10n.lookUp
-            filtered[idx].actionBlock = { [weak self] in
-                guard let self = self, let view = self.pdfController?.view else { return }
-                self.coordinatorDelegate?.lookup(text: selectedText, rect: rect, view: view, userInterfaceStyle: self.viewModel.state.interfaceStyle)
-            }
-        }
-
-        if let idx = filtered.firstIndex(where: { $0.identifier == TextMenu.search.rawValue }) {
-            filtered[idx].actionBlock = { [weak self] in
-                guard let self = self, let pdfController = self.pdfController else { return }
-                self.parentDelegate?.showSearch(pdfController: pdfController, text: selectedText)
-            }
-        }
-
-        return filtered
-    }
-
     func pdfViewController(_ pdfController: PDFViewController, shouldSave document: PSPDFKit.Document, withOptions options: AutoreleasingUnsafeMutablePointer<NSDictionary>) -> Bool {
         return false
+    }
+
+    func pdfViewController(_ sender: PDFViewController, menuForAnnotations annotations: [PSPDFKit.Annotation], onPageView pageView: PDFPageView, appearance: EditMenuAppearance, suggestedMenu: UIMenu) -> UIMenu {
+        return UIMenu(children: [])
+    }
+
+    func pdfViewController(_ sender: PDFViewController, menuForCreatingAnnotationAt point: CGPoint, onPageView pageView: PDFPageView, appearance: EditMenuAppearance, suggestedMenu: UIMenu) -> UIMenu {
+        let origin = pageView.convert(point, to: pageView.pdfCoordinateSpace)
+        let children: [UIMenuElement] = [
+            UIAction(title: L10n.Pdf.AnnotationToolbar.note, handler: { [weak self] _ in
+                self?.viewModel.process(action: .createNote(pageIndex: pageView.pageIndex, origin: origin))
+            }),
+            UIAction(title: L10n.Pdf.AnnotationToolbar.image, handler: { [weak self] _ in
+                self?.viewModel.process(action: .createImage(pageIndex: pageView.pageIndex, origin: origin))
+            })
+        ]
+        return UIMenu(children: children)
+    }
+
+    func pdfViewController(_ sender: PDFViewController, menuForText glyphs: GlyphSequence, onPageView pageView: PDFPageView, appearance: EditMenuAppearance, suggestedMenu: UIMenu) -> UIMenu {
+        return self.filterActions(forMenu: suggestedMenu) { menuId, action -> UIAction? in
+            switch menuId {
+            case .standardEdit, .PSPDFKit.accessibility:
+                return action
+
+            case .share:
+                guard action.identifier == .PSPDFKit.share else { return nil }
+                return action.replacing(handler: { [weak self] _ in
+                    guard let view = self?.pdfController?.view else { return }
+                    self?.coordinatorDelegate?.share(text: glyphs.text, rect: glyphs.boundingBox, view: view)
+                })
+
+            case .pspdfkitActions:
+                switch action.identifier {
+                case .PSPDFKit.define:
+                    return action.replacing(title: L10n.lookUp, handler: { [weak self] _ in
+                        guard let self, let view = self.pdfController?.view else { return }
+                        self.coordinatorDelegate?.lookup(text: glyphs.text, rect: glyphs.boundingBox, view: view, userInterfaceStyle: self.viewModel.state.interfaceStyle)
+                    })
+
+                case .PSPDFKit.searchDocument:
+                    return action.replacing(handler: { [weak self] _ in
+                        guard let self, let pdfController = self.pdfController else { return }
+                        self.parentDelegate?.showSearch(pdfController: pdfController, text: glyphs.text)
+                    })
+
+                default:
+                    return action
+                }
+
+            case .PSPDFKit.annotate:
+                let rects = pageView.selectionView.selectionRects.map({ pageView.convert($0.cgRectValue, to: pageView.pdfCoordinateSpace) })
+                return action.replacing(handler: { [weak self] _ in
+                    guard let self else { return }
+                    self.viewModel.process(action: .createHighlight(pageIndex: pageView.pageIndex, rects: rects))
+                })
+
+            default:
+                return action
+            }
+        }
+    }
+
+    private func filterActions(forMenu menu: UIMenu, predicate: (UIMenu.Identifier, UIAction) -> UIAction?) -> UIMenu {
+        return menu.replacingChildren(menu.children.compactMap { element in
+            if let action = element as? UIAction {
+                if let action = predicate(menu.identifier, action) {
+                    return action
+                } else {
+                    return nil
+                }
+            } else if let menu = element as? UIMenu {
+                // Filter children of submenus recursively.
+                return self.filterActions(forMenu: menu, predicate: predicate)
+            } else {
+                return element
+            }
+        })
     }
 }
 
@@ -776,5 +797,36 @@ final class SelectionView: UIView {
         self.layer.borderWidth = 2.5
         self.layer.cornerRadius = 2.5
         self.layer.masksToBounds = true
+    }
+}
+
+extension UIMenu.Identifier {
+    fileprivate static let pspdfkitActions = UIMenu.Identifier(rawValue: "com.pspdfkit.menu.actions")
+}
+
+extension UIAction {
+    fileprivate func replacing(title: String? = nil, handler: @escaping UIActionHandler) -> UIAction {
+        if #available(iOS 15.0, *) {
+            return UIAction(
+                title: self.title,
+                subtitle: self.subtitle,
+                image: self.image,
+                identifier: self.identifier,
+                discoverabilityTitle: self.discoverabilityTitle,
+                attributes: self.attributes,
+                state: self.state,
+                handler: handler
+            )
+        } else {
+            return UIAction(
+                title: self.title,
+                image: self.image,
+                identifier: self.identifier,
+                discoverabilityTitle: self.discoverabilityTitle,
+                attributes: self.attributes,
+                state: self.state,
+                handler: handler
+            )
+        }
     }
 }

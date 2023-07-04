@@ -363,7 +363,7 @@ struct ItemResponse {
                 throw SchemaError.invalidValue(value: rawType, field: FieldKeys.Item.Annotation.type, key: key)
             }
 
-            let mandatoryFields = FieldKeys.Item.Annotation.fields(for: type)
+            let mandatoryFields = FieldKeys.Item.Annotation.mandatoryApiFields(for: type)
             for field in mandatoryFields {
                 guard let value = fields[field] else {
                     throw SchemaError.missingField(key: key, field: field.key, itemType: itemType)

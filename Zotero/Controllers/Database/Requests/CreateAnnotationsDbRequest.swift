@@ -70,7 +70,7 @@ struct CreateAnnotationsDbRequest: DbRequest {
     }
 
     private func addFields(for annotation: Annotation, to item: RItem, database: Realm) {
-        for field in FieldKeys.Item.Annotation.fields(for: annotation.type) {
+        for field in FieldKeys.Item.Annotation.allFields(for: annotation.type) {
             let rField = RItemField()
             rField.key = field.key
             rField.baseKey = field.baseKey

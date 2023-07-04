@@ -178,8 +178,14 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .setToolOptions(let hex, let size, let tool):
             self.setToolOptions(hex: hex, size: size, tool: tool, in: viewModel)
 
-        case .create(let annotation, let pageIndex, let origin):
-            self.add(annotationType: annotation, pageIndex: pageIndex, origin: origin, in: viewModel)
+        case .createImage(let pageIndex, let origin):
+            self.addImage(onPage: pageIndex, origin: origin, in: viewModel)
+
+        case .createNote(let pageIndex, let origin):
+            self.addNote(onPage: pageIndex, origin: origin, in: viewModel)
+
+        case .createHighlight(let pageIndex, let rects):
+            self.addHighlight(onPage: pageIndex, rects: rects, in: viewModel)
 
         case .setVisiblePage(let page):
             self.set(page: page, in: viewModel)
@@ -1033,41 +1039,61 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             return .highlight
 
         case .image:
-            return .image
+            return .square
 
         case .ink:
             return .ink
         }
     }
 
-    private func add(annotationType: AnnotationType, pageIndex: PageIndex, origin: CGPoint, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard let activeColor = viewModel.state.toolColors[self.tool(from: annotationType)] else { return }
+    private func addImage(onPage pageIndex: PageIndex, origin: CGPoint, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard let activeColor = viewModel.state.toolColors[self.tool(from: .image)] else { return }
         let color = AnnotationColorGenerator.color(from: activeColor, isHighlight: false, userInterfaceStyle: viewModel.state.interfaceStyle).color
-        let pdfAnnotation: PSPDFKit.Annotation
+        let rect = CGRect(origin: origin, size: CGSize(width: 100, height: 100))
 
-        switch annotationType {
-        case .highlight, .ink: return
+        let square = SquareAnnotation()
+        square.pageIndex = pageIndex
+        square.boundingBox = rect
+        square.borderColor = color
+        square.lineWidth = AnnotationsConfig.imageAnnotationLineWidth
 
-        case .image:
-            let rect = CGRect(origin: origin, size: CGSize(width: 50, height: 50))
-            let square = SquareAnnotation()
-            square.pageIndex = pageIndex
-            square.boundingBox = rect
-            square.borderColor = color
-            pdfAnnotation = square
-
-        case .note:
-            let rect = CGRect(origin: origin, size: AnnotationsConfig.noteAnnotationSize)
-            let note = NoteAnnotation(contents: "")
-            note.pageIndex = pageIndex
-            note.boundingBox = rect
-            note.borderStyle = .dashed
-            note.color = color
-            pdfAnnotation = note
+        viewModel.state.document.undoController.recordCommand(named: nil, adding: [square]) {
+            viewModel.state.document.add(annotations: [square], options: nil)
         }
+    }
 
-        viewModel.state.document.undoController.recordCommand(named: nil, adding: [pdfAnnotation]) {
-            viewModel.state.document.add(annotations: [pdfAnnotation], options: nil)
+    private func addNote(onPage pageIndex: PageIndex, origin: CGPoint, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard let activeColor = viewModel.state.toolColors[self.tool(from: .note)] else { return }
+        let color = AnnotationColorGenerator.color(from: activeColor, isHighlight: false, userInterfaceStyle: viewModel.state.interfaceStyle).color
+        let rect = CGRect(origin: origin, size: AnnotationsConfig.noteAnnotationSize)
+
+        let note = NoteAnnotation(contents: "")
+        note.pageIndex = pageIndex
+        note.boundingBox = rect
+        note.borderStyle = .dashed
+        note.color = color
+
+        viewModel.state.document.undoController.recordCommand(named: nil, adding: [note]) {
+            viewModel.state.document.add(annotations: [note], options: nil)
+        }
+    }
+
+    private func addHighlight(onPage pageIndex: PageIndex, rects: [CGRect], in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard let activeColor = viewModel.state.toolColors[self.tool(from: .highlight)] else { return }
+        let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: activeColor, isHighlight: true, userInterfaceStyle: viewModel.state.interfaceStyle)
+
+        let highlight = HighlightAnnotation()
+        highlight.rects = rects
+        highlight.boundingBox = AnnotationBoundingBoxCalculator.boundingBox(from: rects)
+        highlight.alpha = alpha
+        highlight.color = color
+        if let blendMode = blendMode {
+            highlight.blendMode = blendMode
+        }
+        highlight.pageIndex = pageIndex
+
+        viewModel.state.document.undoController.recordCommand(named: nil, adding: [highlight]) {
+            viewModel.state.document.add(annotations: [highlight], options: nil)
         }
     }
 
@@ -1235,8 +1261,14 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         guard !finalAnnotations.isEmpty else { return }
 
-        let request = CreateAnnotationsDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, annotations: finalAnnotations, userId: viewModel.state.userId,
-                                                 schemaController: self.schemaController, boundingBoxConverter: boundingBoxConverter)
+        let request = CreateAnnotationsDbRequest(
+            attachmentKey: viewModel.state.key,
+            libraryId: viewModel.state.library.identifier,
+            annotations: finalAnnotations,
+            userId: viewModel.state.userId,
+            schemaController: self.schemaController,
+            boundingBoxConverter: boundingBoxConverter
+        )
         self.perform(request: request) { [weak self, weak viewModel] error in
             guard let error = error, let self = self, let viewModel = viewModel else { return }
 
@@ -1349,8 +1381,18 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 toAdd.append(contentsOf: splitAnnotations)
             }
 
-            documentAnnotations.append(contentsOf: splitAnnotations.compactMap({ AnnotationConverter.annotation(from: $0, color: activeColorString, library: state.library, username: state.username,
-                                                                                                                displayName: state.displayName, boundingBoxConverter: self.delegate) }))
+            documentAnnotations.append(contentsOf:
+                splitAnnotations.compactMap({
+                    AnnotationConverter.annotation(
+                        from: $0,
+                        color: activeColorString,
+                        library: state.library,
+                        username: state.username,
+                        displayName: state.displayName,
+                        boundingBoxConverter: self.delegate
+                    )
+                })
+            )
 
             for pdfAnnotation in splitAnnotations {
                 self.annotationPreviewController.store(for: pdfAnnotation, parentKey: state.key, libraryId: state.library.identifier, isDark: (state.interfaceStyle == .dark))
