@@ -1506,7 +1506,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 }
             }
 
-        case .failure(let error):
+        case .failure:
             // TODO: - show error
             break
         }
