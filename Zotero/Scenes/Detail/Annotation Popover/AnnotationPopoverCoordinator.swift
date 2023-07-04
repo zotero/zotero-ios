@@ -28,8 +28,8 @@ protocol AnnotationEditCoordinatorDelegate: AnyObject {
 final class AnnotationPopoverCoordinator: NSObject, Coordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
+    weak var navigationController: UINavigationController?
 
-    unowned let navigationController: UINavigationController
     private unowned let viewModel: ViewModel<PDFReaderActionHandler>
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
@@ -52,8 +52,8 @@ final class AnnotationPopoverCoordinator: NSObject, Coordinator {
     func start(animated: Bool) {
         let controller = AnnotationViewController(viewModel: self.viewModel, attributedStringConverter: self.controllers.htmlAttributedStringConverter)
         controller.coordinatorDelegate = self
-        self.navigationController.isNavigationBarHidden = true
-        self.navigationController.setViewControllers([controller], animated: animated)
+        self.navigationController?.isNavigationBarHidden = true
+        self.navigationController?.setViewControllers([controller], animated: animated)
     }
 }
 
@@ -75,7 +75,7 @@ extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDe
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = AnnotationEditViewController(viewModel: viewModel, includeColorPicker: false, saveAction: saveAction, deleteAction: deleteAction)
         controller.coordinatorDelegate = self
-        self.navigationController.pushViewController(controller, animated: true)
+        self.navigationController?.pushViewController(controller, animated: true)
     }
 
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void) {
@@ -86,8 +86,8 @@ extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDe
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = TagPickerViewController(viewModel: viewModel, saveAction: picked)
         controller.preferredContentSize = AnnotationPopoverLayout.tagPickerPreferredSize
-        self.navigationController.preferredContentSize = controller.preferredContentSize
-        self.navigationController.pushViewController(controller, animated: true)
+        self.navigationController?.preferredContentSize = controller.preferredContentSize
+        self.navigationController?.pushViewController(controller, animated: true)
     }
 
     func didFinish() {
@@ -101,7 +101,7 @@ extension AnnotationPopoverCoordinator: AnnotationEditCoordinatorDelegate {
         let handler = AnnotationPageLabelActionHandler()
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = AnnotationPageLabelViewController(viewModel: viewModel, saveAction: saveAction)
-        self.navigationController.pushViewController(controller, animated: true)
+        self.navigationController?.pushViewController(controller, animated: true)
     }
 }
 

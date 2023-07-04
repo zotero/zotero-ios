@@ -22,11 +22,11 @@ protocol CitationBibliographyExportCoordinatorDelegate: AnyObject {
 final class CitationBibliographyExportCoordinator: NSObject, Coordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
+    weak var navigationController: UINavigationController?
 
     private static let defaultSize: CGSize = CGSize(width: 600, height: 504)
     private let itemIds: Set<String>
     private let libraryId: LibraryIdentifier
-    unowned let navigationController: UINavigationController
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
@@ -89,20 +89,21 @@ final class CitationBibliographyExportCoordinator: NSObject, Coordinator {
         let controller = UIHostingController(rootView: view.environmentObject(viewModel))
         controller.preferredContentSize = CitationBibliographyExportCoordinator.defaultSize
 
-        self.navigationController.setViewControllers([controller], animated: animated)
-        self.navigationController.view.insertSubview(webView, at: 0)
+        self.navigationController?.setViewControllers([controller], animated: animated)
+        self.navigationController?.view.insertSubview(webView, at: 0)
     }
 
     private func share(file: File) {
+        guard let navigationController else { return }
         let controller = UIActivityViewController(activityItems: [file.createUrl()], applicationActivities: nil)
         controller.modalPresentationStyle = .pageSheet
-        controller.popoverPresentationController?.sourceView = self.navigationController.viewControllers.first?.view
+        controller.popoverPresentationController?.sourceView = navigationController.viewControllers.first?.view
         controller.completionWithItemsHandler = { [weak self] _, finished, _, _ in
             if finished {
                 self?.cancel()
             }
         }
-        self.navigationController.present(controller, animated: true, completion: nil)
+        navigationController.present(controller, animated: true, completion: nil)
     }
 }
 
@@ -115,7 +116,7 @@ extension CitationBibliographyExportCoordinator: CitationBibliographyExportCoord
         let view = StylePickerView(picked: picked)
         let controller = UIHostingController(rootView: view.environmentObject(viewModel))
         controller.preferredContentSize = CGSize(width: CitationBibliographyExportCoordinator.defaultSize.width, height: UIScreen.main.bounds.size.height)
-        self.navigationController.pushViewController(controller, animated: true)
+        self.navigationController?.pushViewController(controller, animated: true)
     }
 
     func showLanguagePicker(picked: @escaping (ExportLocale) -> Void) {
@@ -126,11 +127,11 @@ extension CitationBibliographyExportCoordinator: CitationBibliographyExportCoord
         let view = ExportLocalePickerView(picked: picked)
         let controller = UIHostingController(rootView: view.environmentObject(viewModel))
         controller.preferredContentSize = CGSize(width: CitationBibliographyExportCoordinator.defaultSize.width, height: UIScreen.main.bounds.size.height)
-        self.navigationController.pushViewController(controller, animated: true)
+        self.navigationController?.pushViewController(controller, animated: true)
     }
 
     func cancel() {
-        self.navigationController.parent?.presentingViewController?.dismiss(animated: true, completion: nil)
+        self.navigationController?.parent?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 }
 

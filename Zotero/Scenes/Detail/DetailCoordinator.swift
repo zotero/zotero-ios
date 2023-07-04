@@ -88,12 +88,12 @@ final class DetailCoordinator: Coordinator {
     var childCoordinators: [Coordinator]
     private var transitionDelegate: EmptyTransitioningDelegate?
     weak var itemsTagFilterDelegate: ItemsTagFilterDelegate?
+    weak var navigationController: UINavigationController?
 
     let collection: Collection
     let library: Library
     let searchItemKeys: [String]?
     private unowned let controllers: Controllers
-    unowned let navigationController: UINavigationController
     private let disposeBag: DisposeBag
 
     private weak var citationNavigationController: UINavigationController?
@@ -115,9 +115,17 @@ final class DetailCoordinator: Coordinator {
 
     func start(animated: Bool) {
         guard let userControllers = self.controllers.userControllers else { return }
-        let controller = self.createItemsViewController(collection: self.collection, library: self.library, dbStorage: userControllers.dbStorage, fileDownloader: userControllers.fileDownloader,
-                                                        syncScheduler: userControllers.syncScheduler, citationController: userControllers.citationController, fileCleanupController: userControllers.fileCleanupController, itemsTagFilterDelegate: self.itemsTagFilterDelegate)
-        self.navigationController.setViewControllers([controller], animated: animated)
+        let controller = self.createItemsViewController(
+            collection: self.collection,
+            library: self.library,
+            dbStorage: userControllers.dbStorage,
+            fileDownloader: userControllers.fileDownloader,
+            syncScheduler: userControllers.syncScheduler,
+            citationController: userControllers.citationController,
+            fileCleanupController: userControllers.fileCleanupController,
+            itemsTagFilterDelegate: self.itemsTagFilterDelegate
+        )
+        self.navigationController?.setViewControllers([controller], animated: animated)
     }
 
     private func createItemsViewController(collection: Collection, library: Library, dbStorage: DbStorage, fileDownloader: AttachmentDownloader, syncScheduler: SynchronizationScheduler,
@@ -141,7 +149,7 @@ final class DetailCoordinator: Coordinator {
     }
 
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier) {
-        guard let (attachment, library, sourceView, sourceRect) = self.navigationController.viewControllers.reversed()
+        guard let (attachment, library, sourceView, sourceRect) = self.navigationController?.viewControllers.reversed()
                                                                       .compactMap({ ($0 as? DetailCoordinatorAttachmentProvider)?.attachment(for: key, parentKey: parentKey, libraryId: libraryId) })
                                                                       .first else { return }
         self.show(attachment: attachment, library: library, sourceView: sourceView, sourceRect: sourceRect)
@@ -192,21 +200,21 @@ final class DetailCoordinator: Coordinator {
         let controller = TextPreviewViewController(text: text, title: title)
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .fullScreen
-        self.navigationController.present(navigationController, animated: true, completion: nil)
+        self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
 
     private func show(image: UIImage, title: String) {
         let controller = ImagePreviewViewController(image: image, title: title)
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .fullScreen
-        self.navigationController.present(navigationController, animated: true, completion: nil)
+        self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
 
     private func showVideo(for url: URL) {
         let player = AVPlayer(url: url)
         let controller = AVPlayerViewController()
         controller.player = player
-        self.navigationController.present(controller, animated: true) {
+        self.navigationController?.present(controller, animated: true) {
             player.play()
         }
     }
@@ -215,8 +223,8 @@ final class DetailCoordinator: Coordinator {
         self.showTagPicker(libraryId: libraryId, selected: selected, userInterfaceStyle: nil, navigationController: self.navigationController, picked: picked)
     }
 
-    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, navigationController: UINavigationController, picked: @escaping ([Tag]) -> Void) {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, navigationController: UINavigationController?, picked: @escaping ([Tag]) -> Void) {
+        guard let navigationController, let dbStorage = self.controllers.userControllers?.dbStorage else { return }
 
         let state = TagPickerState(libraryId: libraryId, selectedTags: selected)
         let handler = TagPickerActionHandler(dbStorage: dbStorage)
@@ -241,14 +249,14 @@ final class DetailCoordinator: Coordinator {
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)
 
-        self.navigationController.present(navigationController, animated: true, completion: nil)
+        self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
 
     private func showWebView(for url: URL) {
         let controller = WebViewController(url: url)
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .fullScreen
-        self.navigationController.present(navigationController, animated: true, completion: nil)
+        self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
 
     func show(doi: String) {
@@ -271,7 +279,7 @@ final class DetailCoordinator: Coordinator {
         self.transitionDelegate = EmptyTransitioningDelegate()
         controller.transitioningDelegate = self.transitionDelegate
         self.transitionDelegate = nil
-        self.navigationController.present(controller, animated: true, completion: nil)
+        self.navigationController?.present(controller, animated: true, completion: nil)
     }
 }
 
@@ -317,7 +325,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
 
-        self.navigationController.present(controller, animated: true, completion: nil)
+        self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
     func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem) {
@@ -348,7 +356,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
                 guard let self = self else { return }
                 let doneButton = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
                 doneButton.rx.tap.subscribe({ [weak self] _ in
-                    self?.navigationController.dismiss(animated: true)
+                    self?.navigationController?.dismiss(animated: true)
                 }).disposed(by: self.disposeBag)
                 viewController.navigationItem.rightBarButtonItem = doneButton
             }
@@ -356,7 +364,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
         navigationController.setViewControllers([controller], animated: false)
 
-        self.navigationController.present(navigationController, animated: true, completion: nil)
+        self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
 
     func showSortTypePicker(sortBy: Binding<ItemsSortType.Field>, in navigationController: UINavigationController) {
@@ -386,7 +394,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)
 
-        self.navigationController.present(navigationController, animated: true, completion: nil)
+        self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
 
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library, scrolledToKey childKey: String?, animated: Bool) {
@@ -407,7 +415,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
         let controller = ItemDetailViewController(viewModel: viewModel, controllers: self.controllers)
         controller.coordinatorDelegate = self
-        self.navigationController.pushViewController(controller, animated: animated)
+        self.navigationController?.pushViewController(controller, animated: animated)
     }
 
     func showCollectionsPicker(in library: Library, completed: @escaping (Set<String>) -> Void) {
@@ -421,7 +429,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.isModalInPresentation = true
         navigationController.modalPresentationStyle = .formSheet
-        self.navigationController.present(navigationController, animated: true, completion: nil)
+        self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
 
     func showFilters(viewModel: ViewModel<ItemsActionHandler>, itemsController: ItemsViewController, button: UIBarButtonItem) {
@@ -434,7 +442,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)
 
-        self.navigationController.present(navigationController, animated: true, completion: nil)
+        self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
 
     func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void, cancelAction: @escaping () -> Void) {
@@ -455,7 +463,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: { _ in
             cancel?()
         }))
-        self.navigationController.present(controller, animated: true, completion: nil)
+        self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
     func showCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
@@ -471,7 +479,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let navigationController = UINavigationController(rootViewController: controller)
         self.citationNavigationController = navigationController
         let containerController = ContainerViewController(rootViewController: navigationController)
-        self.navigationController.present(containerController, animated: true, completion: nil)
+        self.navigationController?.present(containerController, animated: true, completion: nil)
     }
 
     func showMissingStyleError() {
@@ -481,11 +489,11 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             self?.openExportSettings()
         }))
 
-        if self.navigationController.presentedViewController == nil {
-            self.navigationController.present(controller, animated: true, completion: nil)
+        if self.navigationController?.presentedViewController == nil {
+            self.navigationController?.present(controller, animated: true, completion: nil)
         } else {
-            self.navigationController.dismiss(animated: true) {
-                self.navigationController.present(controller, animated: true, completion: nil)
+            self.navigationController?.dismiss(animated: true) {
+                self.navigationController?.present(controller, animated: true, completion: nil)
             }
         }
     }
@@ -498,7 +506,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)
 
-        self.navigationController.present(containerController, animated: true, completion: nil)
+        self.navigationController?.present(containerController, animated: true, completion: nil)
     }
 
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
@@ -509,7 +517,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)
 
-        self.navigationController.present(containerController, animated: true, completion: nil)
+        self.navigationController?.present(containerController, animated: true, completion: nil)
     }
 
     func show(error: ItemsError) {
@@ -548,7 +556,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
         let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
-        self.navigationController.present(controller, animated: true, completion: nil)
+        self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
     private func showLookup(startWith: LookupStartingView) {
@@ -561,7 +569,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)
 
-        self.navigationController.present(navigationController, animated: true, completion: nil)
+        self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
 }
 
@@ -571,15 +579,16 @@ extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
     }
 
     func showAttachmentPicker(save: @escaping ([URL]) -> Void) {
+        guard let navigationController else { return }
         let controller = DocumentPickerViewController(forOpeningContentTypes: [.pdf, .png, .jpeg], asCopy: true)
-        controller.popoverPresentationController?.sourceView = self.navigationController.visibleViewController?.view
+        controller.popoverPresentationController?.sourceView = navigationController.visibleViewController?.view
         controller.observable
                   .observe(on: MainScheduler.instance)
                   .subscribe(onNext: { urls in
                       save(urls)
                   })
                   .disposed(by: self.disposeBag)
-        self.navigationController.present(controller, animated: true, completion: nil)
+        navigationController.present(controller, animated: true, completion: nil)
     }
 
     func showItemCreation(library: Library, collectionKey: String?) {
@@ -597,7 +606,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         for action in additionalActions {
             controller.addAction(action)
         }
-        self.navigationController.present(controller, animated: true, completion: nil)
+        self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
     private func attachmentMessageAndActions(for error: Error) -> (String, [UIAlertAction]) {
@@ -665,7 +674,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)
 
-        self.navigationController.present(navigationController, animated: true, completion: nil)
+        self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
 
     func showTypePicker(selected: String, picked: @escaping (String) -> Void) {
@@ -675,7 +684,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 
     private func presentPicker(viewModel: ViewModel<SinglePickerActionHandler>, requiresSaveButton: Bool, saveAction: @escaping (String) -> Void) {
         let view = SinglePickerView(requiresSaveButton: requiresSaveButton, requiresCancelButton: true, saveAction: saveAction) { [weak self] completion in
-            self?.navigationController.dismiss(animated: true, completion: {
+            self?.navigationController?.dismiss(animated: true, completion: {
                 completion?()
             })
         }
@@ -684,17 +693,18 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         let controller = UINavigationController(rootViewController: UIHostingController(rootView: view))
         controller.isModalInPresentation = true
         controller.modalPresentationStyle = .formSheet
-        self.navigationController.present(controller, animated: true, completion: nil)
+        self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
     func showDeletedAlertForItem(completion: @escaping (Bool) -> Void) {
-        let popAction: () -> Void = {
-            if self.navigationController.presentedViewController != nil {
-                self.navigationController.dismiss(animated: true, completion: {
-                    self.navigationController.popViewController(animated: true)
+        let popAction: () -> Void = { [weak self] in
+            guard let navigationController = self?.navigationController else { return }
+            if navigationController.presentedViewController != nil {
+                navigationController.dismiss(animated: true, completion: {
+                    navigationController.popViewController(animated: true)
                 })
             } else {
-                self.navigationController.popViewController(animated: true)
+                navigationController.popViewController(animated: true)
             }
         }
 
@@ -706,7 +716,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
             completion(true)
             popAction()
         }))
-        self.navigationController.present(controller, animated: true, completion: nil)
+        self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
     func show(error: ItemDetailError, viewModel: ViewModel<ItemDetailActionHandler>) {
@@ -729,7 +739,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
             title = L10n.error
             message = L10n.Errors.ItemDetail.cantLoadData
             actions.append(UIAlertAction(title: L10n.ok, style: .cancel, handler: { [weak self] _ in
-                self?.navigationController.popViewController(animated: true)
+                self?.navigationController?.popViewController(animated: true)
             }))
 
         case .cantAddAttachments(let error):
@@ -770,7 +780,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 
         let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)
         actions.forEach({ controller.addAction($0) })
-        self.navigationController.present(controller, animated: true, completion: nil)
+        self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
     /// Message for `ItemDetailError.droppedFields` error.
@@ -786,7 +796,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in
             completion()
         }))
-        self.navigationController.present(controller, animated: true, completion: nil)
+        self.navigationController?.present(controller, animated: true, completion: nil)
     }
 }
 
@@ -799,8 +809,8 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = TagPickerViewController(viewModel: viewModel, saveAction: picked)
 
-        let navigationController = (self.navigationController.presentedViewController as? UINavigationController) ?? self.navigationController
-        navigationController.pushViewController(controller, animated: true)
+        let navigationController = (self.navigationController?.presentedViewController as? UINavigationController) ?? self.navigationController
+        navigationController?.pushViewController(controller, animated: true)
     }
 }
 

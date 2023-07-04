@@ -15,9 +15,9 @@ protocol ItemsFilterCoordinatorDelegate: AnyObject {
 final class ItemsFilterCoordinator: NSObject, Coordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
+    weak var navigationController: UINavigationController?
 
     private unowned let viewModel: ViewModel<ItemsActionHandler>
-    unowned let navigationController: UINavigationController
     private unowned let controllers: Controllers
     private weak var itemsController: ItemsViewController?
 
@@ -49,7 +49,7 @@ final class ItemsFilterCoordinator: NSObject, Coordinator {
 
         let controller = ItemsFilterViewController(viewModel: self.viewModel, tagFilterController: tagController)
         controller.coordinatorDelegate = self
-        self.navigationController.setViewControllers([controller], animated: animated)
+        self.navigationController?.setViewControllers([controller], animated: animated)
     }
 }
 
@@ -61,6 +61,6 @@ extension ItemsFilterCoordinator: ItemsFilterCoordinatorDelegate {
         let handler = TagPickerActionHandler(dbStorage: dbStorage)
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = TagPickerViewController(viewModel: viewModel, saveAction: picked)
-        self.navigationController.pushViewController(controller, animated: true)
+        self.navigationController?.pushViewController(controller, animated: true)
     }
 }

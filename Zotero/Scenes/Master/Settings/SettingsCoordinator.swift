@@ -54,8 +54,8 @@ protocol DebuggingSettingsSettingsCoordinatorDelegate: AnyObject {
 final class SettingsCoordinator: NSObject, Coordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
+    weak var navigationController: UINavigationController?
 
-    unowned let navigationController: UINavigationController
     private unowned let controllers: Controllers
     private let startsWithExport: Bool
     private let disposeBag: DisposeBag
@@ -87,7 +87,7 @@ final class SettingsCoordinator: NSObject, Coordinator {
         if self.startsWithExport {
             controllers.append(self.createExportController())
         }
-        self.navigationController.setViewControllers(controllers, animated: animated)
+        self.navigationController?.setViewControllers(controllers, animated: animated)
     }
 
     private func createListController() -> UIViewController? {
@@ -149,7 +149,7 @@ extension SettingsCoordinator: StorageSettingsSettingsCoordinatorDelegate {
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
 
         // Settings are already presented, so present over them
-        self.navigationController.present(controller, animated: true, completion: nil)
+        self.navigationController?.present(controller, animated: true, completion: nil)
     }
 }
 
@@ -181,7 +181,7 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
         controller.preferredContentSize = SettingsCoordinator.defaultSize
-        self.navigationController.pushViewController(controller, animated: true)
+        self.navigationController?.pushViewController(controller, animated: true)
     }
 
     func showSupport() {
@@ -194,7 +194,7 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
 
     private func showSafari(with url: URL) {
         let controller = SFSafariViewController(url: url)
-        self.navigationController.present(controller, animated: true, completion: nil)
+        self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
     func showCitationSettings() {
@@ -227,7 +227,7 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
 
         let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
-        self.navigationController.present(controller, animated: true, completion: nil)
+        self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
     func showCitationStyleManagement(viewModel: ViewModel<CiteActionHandler>) {
@@ -245,12 +245,12 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         }
         controller.coordinatorDelegate = self
         controller.preferredContentSize = UIScreen.main.bounds.size
-        self.navigationController.pushViewController(controller, animated: true)
+        self.navigationController?.pushViewController(controller, animated: true)
     }
 
     func showExportSettings() {
         let controller = self.createExportController()
-        self.navigationController.pushViewController(controller, animated: true)
+        self.navigationController?.pushViewController(controller, animated: true)
     }
 
     func showStorageSettings() {
@@ -285,7 +285,7 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
             viewModel?.process(action: .logout)
         }))
         controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: nil))
-        self.navigationController.present(controller, animated: true, completion: nil)
+        self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
     func showGeneralSettings() {
@@ -295,13 +295,13 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
     }
 
     func dismiss() {
-        self.navigationController.dismiss(animated: true, completion: nil)
+        self.navigationController?.dismiss(animated: true, completion: nil)
     }
 
     private func pushDefaultSize<V: View>(view: V) {
         let controller = UIHostingController(rootView: view)
         controller.preferredContentSize = SettingsCoordinator.defaultSize
-        self.navigationController.pushViewController(controller, animated: true)
+        self.navigationController?.pushViewController(controller, animated: true)
     }
 
     func showSchemePicker(viewModel: ViewModel<SyncSettingsActionHandler>) {
@@ -314,19 +314,19 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
             guard let scheme = WebDavScheme(rawValue: value) else { return }
             viewModel?.process(action: .setScheme(scheme))
         }, closeAction: { [weak self] completion in
-            self?.navigationController.popViewController(animated: true)
+            self?.navigationController?.popViewController(animated: true)
             completion?()
         })
 
         let controller = UIHostingController(rootView: view.environmentObject(ViewModel(initialState: state, handler: handler)))
-        self.navigationController.pushViewController(controller, animated: true)
+        self.navigationController?.pushViewController(controller, animated: true)
     }
 
     func promptZoteroDirCreation(url: String, create: @escaping () -> Void, cancel: @escaping () -> Void) {
         let controller = UIAlertController(title: L10n.Settings.Sync.DirectoryNotFound.title, message: L10n.Settings.Sync.DirectoryNotFound.message(url), preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: { _ in cancel() }))
         controller.addAction(UIAlertAction(title: L10n.create, style: .default, handler: { _ in create() }))
-        self.navigationController.present(controller, animated: true, completion: nil)
+        self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
     func showWeb(url: URL, completion: @escaping () -> Void) {
@@ -338,7 +338,7 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         self.transitionDelegate = EmptyTransitioningDelegate()
         controller.transitioningDelegate = self.transitionDelegate
         self.transitionDelegate = nil
-        self.navigationController.present(controller, animated: true, completion: nil)
+        self.navigationController?.present(controller, animated: true, completion: nil)
     }
 }
 
@@ -358,7 +358,7 @@ extension SettingsCoordinator: CitationStyleSearchSettingsCoordinatorDelegate {
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: { _ in
             cancelAction()
         }))
-        self.navigationController.present(controller, animated: true, completion: nil)
+        self.navigationController?.present(controller, animated: true, completion: nil)
     }
 }
 
@@ -371,7 +371,7 @@ extension SettingsCoordinator: ExportSettingsCoordinatorDelegate {
         let view = StylePickerView(picked: picked)
         let controller = UIHostingController(rootView: view.environmentObject(viewModel))
         controller.preferredContentSize = SettingsCoordinator.defaultSize
-        self.navigationController.pushViewController(controller, animated: true)
+        self.navigationController?.pushViewController(controller, animated: true)
     }
 
     func showLocalePicker(picked: @escaping (ExportLocale) -> Void) {
@@ -382,26 +382,26 @@ extension SettingsCoordinator: ExportSettingsCoordinatorDelegate {
         let view = ExportLocalePickerView(picked: picked)
         let controller = UIHostingController(rootView: view.environmentObject(viewModel))
         controller.preferredContentSize = SettingsCoordinator.defaultSize
-        self.navigationController.pushViewController(controller, animated: true)
+        self.navigationController?.pushViewController(controller, animated: true)
     }
 }
 
 extension SettingsCoordinator: DebuggingSettingsSettingsCoordinatorDelegate {
     func exportDb() {
-        guard let userId = self.controllers.sessionController.sessionData?.userId else { return }
+        guard let navigationController, let userId = self.controllers.sessionController.sessionData?.userId else { return }
 
         let mainUrl = Files.dbFile(for: userId).createUrl()
         let bundledUrl = Files.bundledDataDbFile.createUrl()
 
         let controller = UIActivityViewController(activityItems: [mainUrl, bundledUrl], applicationActivities: nil)
         controller.modalPresentationStyle = .pageSheet
-        controller.popoverPresentationController?.sourceView = self.navigationController.view
-        self.navigationController.present(controller, animated: true, completion: nil)
+        controller.popoverPresentationController?.sourceView = navigationController.view
+        navigationController.present(controller, animated: true, completion: nil)
     }
 
     func showLogs(string: BehaviorRelay<String>) {
         let controller = LogsViewController(logs: self.controllers.debugLogging.logString, lines: self.controllers.debugLogging.logLines)
-        self.navigationController.pushViewController(controller, animated: true)
+        self.navigationController?.pushViewController(controller, animated: true)
     }
 }
 

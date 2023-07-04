@@ -22,9 +22,9 @@ protocol LookupCoordinatorDelegate: AnyObject {
 final class LookupCoordinator: NSObject, Coordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
+    weak var navigationController: UINavigationController?
 
     private let startingView: LookupStartingView
-    unowned let navigationController: UINavigationController
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
@@ -44,7 +44,7 @@ final class LookupCoordinator: NSObject, Coordinator {
 
     func start(animated: Bool) {
         let controller = self.startingView == .manual ? self.manualController : self.scannerController
-        self.navigationController.setViewControllers([controller], animated: animated)
+        self.navigationController?.setViewControllers([controller], animated: animated)
     }
 
     private func lookupController(multiLookupEnabled: Bool, hasDarkBackground: Bool, userControllers: UserControllers) -> LookupViewController {
