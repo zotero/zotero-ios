@@ -268,7 +268,7 @@ struct AnnotationConverter {
             }
         }
 
-        if let blendMode = blendMode {
+        if let blendMode {
             annotation.blendMode = blendMode
         }
 

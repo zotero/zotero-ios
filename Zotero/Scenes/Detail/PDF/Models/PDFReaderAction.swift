@@ -33,7 +33,9 @@ enum PDFReaderAction {
     case userInterfaceStyleChanged(UIUserInterfaceStyle)
     case updateAnnotationPreviews
     case setToolOptions(color: String?, size: CGFloat?, tool: PSPDFKit.Annotation.Tool)
-    case create(annotation: AnnotationType, pageIndex: PageIndex, origin: CGPoint)
+    case createNote(pageIndex: PageIndex, origin: CGPoint)
+    case createImage(pageIndex: PageIndex, origin: CGPoint)
+    case createHighlight(pageIndex: PageIndex, rects: [CGRect])
     case parseAndCacheComment(key: String, comment: String)
     case setComment(key: String, comment: NSAttributedString)
     case setCommentActive(Bool)
