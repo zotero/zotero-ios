@@ -19,13 +19,13 @@ protocol CreatorEditCoordinatorDelegate: AnyObject {
 final class CreatorEditCoordinator: Coordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
+    weak var navigationController: UINavigationController?
 
     let creator: ItemDetailState.Creator
     let itemType: String
     let saved: CreatorEditSaveAction
     let deleted: CreatorEditDeleteAction?
     private unowned let controllers: Controllers
-    unowned let navigationController: UINavigationController
     private let disposeBag: DisposeBag
 
     init(creator: ItemDetailState.Creator, itemType: String, saved: @escaping CreatorEditSaveAction, deleted: CreatorEditDeleteAction?,
@@ -58,7 +58,7 @@ final class CreatorEditCoordinator: Coordinator {
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.isModalInPresentation = true
         navigationController.modalPresentationStyle = .formSheet
-        self.navigationController.setViewControllers([controller], animated: animated)
+        self.navigationController?.setViewControllers([controller], animated: animated)
     }
 }
 
@@ -73,6 +73,6 @@ extension CreatorEditCoordinator: CreatorEditCoordinatorDelegate {
         .environmentObject(viewModel)
 
         let controller = UIHostingController(rootView: view)
-        self.navigationController.pushViewController(controller, animated: true)
+        self.navigationController?.pushViewController(controller, animated: true)
     }
 }

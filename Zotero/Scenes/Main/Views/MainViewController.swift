@@ -155,8 +155,9 @@ final class MainViewController: UISplitViewController {
         self.masterCoordinator = masterCoordinator
 
         if let progressObservable = self.controllers.userControllers?.syncScheduler.syncController.progressObservable,
-           let dbStorage = self.controllers.userControllers?.dbStorage {
-            self.syncToolbarController = SyncToolbarController(parent: masterCoordinator.topCoordinator.navigationController, progressObservable: progressObservable, dbStorage: dbStorage)
+           let dbStorage = self.controllers.userControllers?.dbStorage,
+           let navigationController = masterCoordinator.topCoordinator.navigationController {
+            self.syncToolbarController = SyncToolbarController(parent: navigationController, progressObservable: progressObservable, dbStorage: dbStorage)
             self.syncToolbarController?.coordinatorDelegate = self
         }
     }

@@ -180,13 +180,13 @@ final class AppCoordinator: NSObject {
 
         // Show "All" collection in given library/group
         if mainController.masterCoordinator?.topCoordinator.visibleLibraryId != library.identifier ||
-           (mainController.masterCoordinator?.topCoordinator.navigationController.visibleViewController as? CollectionsViewController)?.selectedIdentifier != .custom(.all) {
+           (mainController.masterCoordinator?.topCoordinator.navigationController?.visibleViewController as? CollectionsViewController)?.selectedIdentifier != .custom(.all) {
             mainController.masterCoordinator?.topCoordinator.showCollections(for: library.identifier, preselectedCollection: .custom(.all), animated: animated)
         }
 
         // Show item detail of given key
         mainController.getDetailCoordinator { coordinator in
-            if (coordinator.navigationController.visibleViewController as? ItemDetailViewController)?.key != key {
+            if (coordinator.navigationController?.visibleViewController as? ItemDetailViewController)?.key != key {
                 coordinator.showItemDetail(for: .preview(key: key), library: library, scrolledToKey: childKey, animated: animated)
             }
         }
@@ -196,7 +196,7 @@ final class AppCoordinator: NSObject {
         guard let window = self.window, let mainController = window.rootViewController as? MainViewController else { return }
 
         mainController.getDetailCoordinator { [weak self] coordinator in
-            guard let self = self, (coordinator.navigationController.presentedViewController as? PDFReaderViewController)?.key != attachment.key else { return }
+            guard let self = self, (coordinator.navigationController?.presentedViewController as? PDFReaderViewController)?.key != attachment.key else { return }
             self._open(attachment: attachment, library: library, on: page, annotation: annotation, window: window, detailCoordinator: coordinator, animated: animated) {
                 self._showItemDetail(key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated)
             }

@@ -19,6 +19,7 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
     private var transitionDelegate: EmptyTransitioningDelegate?
+    weak var navigationController: UINavigationController?
 
     private let initialText: String
     private let initialTags: [Tag]
@@ -26,7 +27,6 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
     private let libraryId: LibraryIdentifier
     private let readOnly: Bool
     private let saveAction: (String, [Tag]) -> Void
-    unowned let navigationController: UINavigationController
     private unowned let controllers: Controllers
 
     init(text: String, tags: [Tag], title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void, navigationController: NavigationViewController, controllers: Controllers) {
@@ -54,7 +54,7 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = NoteEditorViewController(viewModel: viewModel)
         controller.coordinatorDelegate = self
-        self.navigationController.setViewControllers([controller], animated: animated)
+        self.navigationController?.setViewControllers([controller], animated: animated)
     }
 }
 
@@ -67,7 +67,7 @@ extension NoteEditorCoordinator: NoteEditorCoordinatorDelegate {
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = TagPickerViewController(viewModel: viewModel, saveAction: picked)
 
-        self.navigationController.pushViewController(controller, animated: true)
+        self.navigationController?.pushViewController(controller, animated: true)
     }
 
     func show(url: URL) {
@@ -85,6 +85,6 @@ extension NoteEditorCoordinator: NoteEditorCoordinatorDelegate {
         self.transitionDelegate = EmptyTransitioningDelegate()
         controller.transitioningDelegate = self.transitionDelegate
         self.transitionDelegate = nil
-        self.navigationController.present(controller, animated: true, completion: nil)
+        self.navigationController?.present(controller, animated: true, completion: nil)
     }
 }

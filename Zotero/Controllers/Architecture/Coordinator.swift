@@ -16,7 +16,7 @@ enum SourceView {
 protocol Coordinator: AnyObject {
     var parentCoordinator: Coordinator? { get }
     var childCoordinators: [Coordinator] { get set }
-    var navigationController: UINavigationController { get }
+    var navigationController: UINavigationController? { get }
 
     func start(animated: Bool)
     func childDidFinish(_ child: Coordinator)
@@ -30,9 +30,9 @@ extension Coordinator {
         }
 
         // Take navigation controller delegate back from child if needed
-        if self.navigationController.delegate === child,
+        if self.navigationController?.delegate === child,
            let delegate = self as? UINavigationControllerDelegate {
-            self.navigationController.delegate = delegate
+            self.navigationController?.delegate = delegate
         }
     }
 
@@ -52,6 +52,6 @@ extension Coordinator {
             }
         }
 
-        (presenter ?? navigationController).present(controller, animated: true, completion: nil)
+        (presenter ?? navigationController)?.present(controller, animated: true, completion: nil)
     }
 }

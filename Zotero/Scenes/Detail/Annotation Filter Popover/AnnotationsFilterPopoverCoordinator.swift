@@ -15,12 +15,11 @@ protocol AnnotationsFilterPopoverToAnnotationsFilterCoordinatorDelegate: AnyObje
 final class AnnotationsFilterPopoverCoordinator: NSObject, Coordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
+    weak var navigationController: UINavigationController?
 
     private let initialFilter: AnnotationsFilter?
     private let availableColors: [String]
     private let availableTags: [Tag]
-
-    unowned let navigationController: UINavigationController
     private unowned let controllers: Controllers
     private let completionHandler: (AnnotationsFilter?) -> Void
 
@@ -48,7 +47,7 @@ final class AnnotationsFilterPopoverCoordinator: NSObject, Coordinator {
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = AnnotationsFilterViewController(viewModel: viewModel, completion: self.completionHandler)
         controller.coordinatorDelegate = self
-        self.navigationController.setViewControllers([controller], animated: animated)
+        self.navigationController?.setViewControllers([controller], animated: animated)
     }
 }
 
@@ -65,7 +64,7 @@ extension AnnotationsFilterPopoverCoordinator: AnnotationsFilterPopoverToAnnotat
             completed(tagNames)
         })
         controller.preferredContentSize = CGSize(width: 300, height: 500)
-        self.navigationController.pushViewController(controller, animated: true)
+        self.navigationController?.pushViewController(controller, animated: true)
     }
 }
 

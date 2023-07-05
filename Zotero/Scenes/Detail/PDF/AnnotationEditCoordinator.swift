@@ -14,6 +14,7 @@ import RxSwift
 final class AnnotationEditCoordinator: Coordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
+    weak var navigationController: UINavigationController?
 
     private let annotation: Annotation
     private let userId: Int
@@ -21,7 +22,6 @@ final class AnnotationEditCoordinator: Coordinator {
     private let saveAction: AnnotationEditSaveAction
     private let deleteAction: AnnotationEditDeleteAction
     private unowned let controllers: Controllers
-    unowned let navigationController: UINavigationController
     private let disposeBag: DisposeBag
 
     init(annotation: Annotation, userId: Int, library: Library, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction,
@@ -51,7 +51,7 @@ final class AnnotationEditCoordinator: Coordinator {
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = AnnotationEditViewController(viewModel: viewModel, includeColorPicker: true, saveAction: self.saveAction, deleteAction: self.deleteAction)
         controller.coordinatorDelegate = self
-        self.navigationController.setViewControllers([controller], animated: false)
+        self.navigationController?.setViewControllers([controller], animated: false)
     }
 }
 
@@ -61,6 +61,6 @@ extension AnnotationEditCoordinator: AnnotationEditCoordinatorDelegate {
         let handler = AnnotationPageLabelActionHandler()
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = AnnotationPageLabelViewController(viewModel: viewModel, saveAction: saveAction)
-        self.navigationController.pushViewController(controller, animated: true)
+        self.navigationController?.pushViewController(controller, animated: true)
     }
 }

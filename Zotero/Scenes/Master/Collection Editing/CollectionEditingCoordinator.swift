@@ -18,11 +18,11 @@ protocol CollectionEditingCoordinatorDelegate: AnyObject {
 final class CollectionEditingCoordinator: Coordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
+    weak var navigationController: UINavigationController?
 
     private let library: Library
     private let data: CollectionStateEditingData
     private unowned let controllers: Controllers
-    unowned let navigationController: UINavigationController
 
     init(data: CollectionStateEditingData, library: Library, navigationController: UINavigationController, controllers: Controllers) {
         self.data = data
@@ -36,7 +36,7 @@ final class CollectionEditingCoordinator: Coordinator {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
 
         let controller = self.createEditViewController(dbStorage: dbStorage)
-        self.navigationController.setViewControllers([controller], animated: false)
+        self.navigationController?.setViewControllers([controller], animated: false)
     }
 
     private func createEditViewController(dbStorage: DbStorage) -> UIViewController {
@@ -59,9 +59,9 @@ extension CollectionEditingCoordinator: CollectionEditingCoordinatorDelegate {
         }))
         controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { _ in
             completion(true)
-            self.navigationController.dismiss(animated: true, completion: nil)
+            self.navigationController?.dismiss(animated: true, completion: nil)
         }))
-        self.navigationController.present(controller, animated: true, completion: nil)
+        self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
     func showCollectionPicker(viewModel: ViewModel<CollectionEditActionHandler>) {
@@ -76,7 +76,7 @@ extension CollectionEditingCoordinator: CollectionEditingCoordinatorDelegate {
                                                                    excludedKeys: excludedKeys,
                                                                    dbStorage: dbStorage,
                                                                    collectionEditViewModel: viewModel)
-        self.navigationController.pushViewController(controller, animated: true)
+        self.navigationController?.pushViewController(controller, animated: true)
     }
 
     private func createCollectionPickerViewController(library: Library, selected: String, excludedKeys: Set<String>, dbStorage: DbStorage,
@@ -91,7 +91,7 @@ extension CollectionEditingCoordinator: CollectionEditingCoordinatorDelegate {
     }
 
     func dismiss() {
-        self.navigationController.dismiss(animated: true, completion: { [weak self] in
+        self.navigationController?.dismiss(animated: true, completion: { [weak self] in
             guard let self = self else { return }
             self.parentCoordinator?.childDidFinish(self)
         })
