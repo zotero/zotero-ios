@@ -127,9 +127,7 @@ final class AppCoordinator: NSObject {
         // If scene had state stored, check if defaults need to be updated first
         DDLogInfo("AppCoordinator: Preprocessing restored state - \(data)")
         Defaults.shared.selectedLibrary = data.libraryId
-        if let collectionId = data.collectionId {
-            Defaults.shared.selectedCollectionId = collectionId
-        }
+        Defaults.shared.selectedCollectionId = data.collectionId
     }
     
     private func process(connectionOptions: UIScene.ConnectionOptions, session: UISceneSession) {
@@ -230,8 +228,8 @@ final class AppCoordinator: NSObject {
     private func showRestoredState(for data: RestoredStateData) {
         guard let mainController = self.window?.rootViewController as? MainViewController,
               let (url, library, collection) = self.loadRestoredStateData(forKey: data.key, libraryId: data.libraryId, collectionId: data.collectionId) else { return }
-        if let collectionId = data.collectionId, let collection {
-            DDLogInfo("AppCoordinator: show restored state - \(data.key); \(data.libraryId); \(collectionId); \(url.relativePath)")
+        if let collection {
+            DDLogInfo("AppCoordinator: show restored state - \(data.key); \(data.libraryId); \(data.collectionId); \(url.relativePath)")
             mainController.showItems(for: collection, in: library, isInitial: false)
         } else {
             DDLogInfo("AppCoordinator: show restored state - \(data.key); \(data.libraryId); \(url.relativePath)")
@@ -256,7 +254,7 @@ final class AppCoordinator: NSObject {
         return navigationController
     }
 
-    private func loadRestoredStateData(forKey key: String, libraryId: LibraryIdentifier, collectionId: CollectionIdentifier?) -> (URL, Library, Collection?)? {
+    private func loadRestoredStateData(forKey key: String, libraryId: LibraryIdentifier, collectionId: CollectionIdentifier) -> (URL, Library, Collection?)? {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return nil }
 
         var url: URL?
@@ -275,13 +273,9 @@ final class AppCoordinator: NSObject {
                     case .local, .localAndChangedRemotely:
                         let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
                         url = file.createUrl()
-                        if let collectionId {
-                            let (_collection, _library) = try coordinator.perform(request: ReadCollectionAndLibraryDbRequest(collectionId: collectionId, libraryId: libraryId))
-                            collection = _collection
-                            library = _library
-                        } else {
-                            library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
-                        }
+                        let (_collection, _library) = try coordinator.perform(request: ReadCollectionAndLibraryDbRequest(collectionId: collectionId, libraryId: libraryId))
+                        collection = _collection
+                        library = _library
 
                     case .remote, .remoteMissing: break
                     }
