@@ -11,7 +11,7 @@ import Foundation
 struct RestoredStateData {
     let key: String
     let libraryId: LibraryIdentifier
-    let collectionId: CollectionIdentifier?
+    let collectionId: CollectionIdentifier
 }
 
 extension NSUserActivity {
@@ -64,9 +64,12 @@ extension NSUserActivity {
               let libraryString = userInfo["libraryId"] as? String,
               let libraryId = stringToLibraryId(libraryString)
         else { return nil }
-        var collectionId: CollectionIdentifier?
-        if let collectionIdData = userInfo["collectionId"] as? Data {
-            collectionId = try? JSONDecoder().decode(CollectionIdentifier.self, from: collectionIdData)
+        var collectionId: CollectionIdentifier
+        if let collectionIdData = userInfo["collectionId"] as? Data,
+           let decodedCollectionId = try? JSONDecoder().decode(CollectionIdentifier.self, from: collectionIdData) {
+            collectionId = decodedCollectionId
+        } else {
+            collectionId = Defaults.shared.selectedCollectionId
         }
         return RestoredStateData(key: key, libraryId: libraryId, collectionId: collectionId)
     }
