@@ -253,10 +253,11 @@ final class DetailCoordinator: Coordinator {
     }
 
     private func showWebView(for url: URL) {
+        guard let currentNavigationController = self.navigationController else { return }
         let controller = WebViewController(url: url)
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .fullScreen
-        self.navigationController?.present(navigationController, animated: true, completion: nil)
+        currentNavigationController.present(navigationController, animated: true, completion: nil)
     }
 
     func show(doi: String) {
