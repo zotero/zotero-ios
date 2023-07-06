@@ -206,7 +206,7 @@ class PDFReaderViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.set(userActivity: .pdfActivity(for: self.viewModel.state.key, libraryId: self.viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId))
+        self.set(userActivity: .pdfActivity(for: self.viewModel.state.key, libraryId: self.viewModel.state.library.identifier))
 
         self.view.backgroundColor = .systemGray6
         self.setupViews()

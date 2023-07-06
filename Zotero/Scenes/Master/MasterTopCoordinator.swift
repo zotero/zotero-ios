@@ -197,6 +197,9 @@ extension MasterTopCoordinator: MasterCollectionsCoordinatorDelegate {
 
     func showItems(for collection: Collection, in library: Library, isInitial: Bool) {
         self.visibleLibraryId = library.identifier
+        if !isInitial {
+            Defaults.shared.selectedCollectionId = collection.identifier
+        }
         self.mainCoordinatorDelegate.showItems(for: collection, in: library, isInitial: isInitial)
     }
 

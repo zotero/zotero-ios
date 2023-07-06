@@ -178,9 +178,6 @@ extension MainViewController: UISplitViewControllerDelegate {
 
 extension MainViewController: MainCoordinatorDelegate {
     func showItems(for collection: Collection, in library: Library, isInitial: Bool) {
-        if !isInitial {
-            Defaults.shared.selectedCollectionId = collection.identifier
-        }
         guard !self.isSplit || self.detailCoordinator?.library != library || self.detailCoordinator?.collection.identifier != collection.identifier else { return }
         self.showItems(for: collection, in: library, searchItemKeys: nil)
     }

@@ -11,7 +11,6 @@ import Foundation
 struct RestoredStateData {
     let key: String
     let libraryId: LibraryIdentifier
-    let collectionId: CollectionIdentifier?
 }
 
 extension NSUserActivity {
@@ -22,13 +21,9 @@ extension NSUserActivity {
         return NSUserActivity(activityType: self.mainId)
     }
 
-    static func pdfActivity(for key: String, libraryId: LibraryIdentifier, collectionId: CollectionIdentifier) -> NSUserActivity {
+    static func pdfActivity(for key: String, libraryId: LibraryIdentifier) -> NSUserActivity {
         let activity = NSUserActivity(activityType: self.pdfId)
-        var pdfUserInfo: [AnyHashable: Any] = ["key": key, "libraryId": libraryIdToString(libraryId)]
-        if let collectionIdData = try? JSONEncoder().encode(collectionId) {
-            pdfUserInfo["collectionId"] = collectionIdData
-        }
-        activity.addUserInfoEntries(from: pdfUserInfo)
+        activity.addUserInfoEntries(from: ["key": key, "libraryId": self.libraryIdToString(libraryId)])
         return activity
     }
 
@@ -59,15 +54,7 @@ extension NSUserActivity {
 
     var restoredStateData: RestoredStateData? {
         guard self.activityType == NSUserActivity.pdfId,
-              let userInfo,
-              let key = userInfo["key"] as? String,
-              let libraryString = userInfo["libraryId"] as? String,
-              let libraryId = stringToLibraryId(libraryString)
-        else { return nil }
-        var collectionId: CollectionIdentifier?
-        if let collectionIdData = userInfo["collectionId"] as? Data {
-            collectionId = try? JSONDecoder().decode(CollectionIdentifier.self, from: collectionIdData)
-        }
-        return RestoredStateData(key: key, libraryId: libraryId, collectionId: collectionId)
+              let key = self.userInfo?["key"] as? String, let libraryString = self.userInfo?["libraryId"] as? String, let libraryId = self.stringToLibraryId(libraryString) else { return nil }
+        return RestoredStateData(key: key, libraryId: libraryId)
     }
 }
