@@ -98,8 +98,6 @@ final class AppCoordinator: NSObject {
         guard let window = self.window else { return }
 
         let viewController: UIViewController
-        var urlContext: UIOpenURLContext?
-        var data: RestoredStateData?
         if !isLogged {
             let controller = OnboardingViewController(size: window.frame.size, htmlConverter: self.controllers.htmlAttributedStringConverter)
             controller.coordinatorDelegate = self
@@ -109,7 +107,7 @@ final class AppCoordinator: NSObject {
             self.conflictAlertQueueController = nil
             self.controllers.userControllers?.syncScheduler.syncController.set(coordinator: nil)
         } else {
-            (urlContext, data) = preprocess(connectionOptions: connectionOptions, session: session)
+            preprocess(connectionOptions: connectionOptions, session: session)
             let controller = MainViewController(controllers: self.controllers)
             viewController = controller
 
@@ -120,24 +118,20 @@ final class AppCoordinator: NSObject {
 
         DDLogInfo("AppCoordinator: show main screen logged \(isLogged ? "in" : "out"); animated=\(animated)")
         self.show(viewController: viewController, in: window, animated: animated)
-        process(urlContext: urlContext, data: data)
+        guard let options = connectionOptions, let session = session else { return }
+        self.process(connectionOptions: options, session: session)
     }
 
-    private func preprocess(connectionOptions: UIScene.ConnectionOptions?, session: UISceneSession?) -> (UIOpenURLContext?, RestoredStateData?) {
-        let urlContext = connectionOptions?.urlContexts.first
-        let userActivity = connectionOptions?.userActivities.first ?? session?.stateRestorationActivity
-        let data = userActivity?.restoredStateData
-        if let data {
-            // If scene had state stored, check if defaults need to be updated first
-            DDLogInfo("AppCoordinator: Preprocessing restored state - \(data)")
-            Defaults.shared.selectedLibrary = data.libraryId
-            Defaults.shared.selectedCollectionId = data.collectionId
-        }
-        return (urlContext, data)
+    private func preprocess(connectionOptions: UIScene.ConnectionOptions?, session: UISceneSession?) {
+        guard let userActivity = connectionOptions?.userActivities.first ?? session?.stateRestorationActivity, let data = userActivity.restoredStateData else { return }
+        // If scene had state stored, check if defaults need to be updated first
+        DDLogInfo("AppCoordinator: Preprocessing restored state - \(data)")
+        Defaults.shared.selectedLibrary = data.libraryId
+        Defaults.shared.selectedCollectionId = data.collectionId
     }
     
-    private func process(urlContext: UIOpenURLContext?, data: RestoredStateData?) {
-        if let urlContext, let urlController = self.controllers.userControllers?.customUrlController {
+    private func process(connectionOptions: UIScene.ConnectionOptions, session: UISceneSession) {
+        if let urlContext = connectionOptions.urlContexts.first, let urlController = self.controllers.userControllers?.customUrlController {
             // If scene was started from custom URL
             let sourceApp = urlContext.options.sourceApplication ?? "unknown"
             DDLogInfo("AppCoordinator: App launched by \(urlContext.url.absoluteString) from \(sourceApp)")
@@ -148,7 +142,7 @@ final class AppCoordinator: NSObject {
             }
         }
 
-        if let data {
+        if let userActivity = connectionOptions.userActivities.first ?? session.stateRestorationActivity, let data = userActivity.restoredStateData {
             DDLogInfo("AppCoordinator: Processing restored state - \(data)")
             // If scene had state stored, restore state
             self.showRestoredState(for: data)
