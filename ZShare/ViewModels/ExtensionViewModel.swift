@@ -1457,7 +1457,13 @@ final class ExtensionViewModel {
 
                 recents = recentCollections
                 library = _library
-                collection = _collection
+                switch self.state.selectedCollectionId {
+                case .collection:
+                    collection = _collection
+                    
+                default:
+                    break
+                }
             })
 
             guard let library = library else { return }
