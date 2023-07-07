@@ -30,7 +30,7 @@ final class ItemsToolbarController {
     init(viewController: UIViewController, initialState: ItemsState, delegate: ItemsToolbarControllerDelegate) {
         self.viewController = viewController
         self.delegate = delegate
-        self.editingActions = ItemsToolbarController.editingActions(for: initialState)
+        self.editingActions = Self.editingActions(for: initialState)
         self.disposeBag = DisposeBag()
 
         self.createToolbarItems(for: initialState)
@@ -99,10 +99,10 @@ final class ItemsToolbarController {
     private func updateEditingToolbarItems(for selectedItems: Set<String>, results: Results<RItem>?) {
         self.viewController.toolbarItems?.forEach({ item in
             switch item.tag {
-            case ItemsToolbarController.barButtonItemEmptyTag:
+            case Self.barButtonItemEmptyTag:
                 item.isEnabled = !selectedItems.isEmpty
 
-            case ItemsToolbarController.barButtonItemSingleTag:
+            case Self.barButtonItemSingleTag:
                 item.isEnabled = selectedItems.count == 1
             default: break
             }
@@ -110,12 +110,12 @@ final class ItemsToolbarController {
     }
 
     private func updateNormalToolbarItems(for filters: [ItemsFilter], downloadBatchData: ItemsState.DownloadBatchData?, results: Results<RItem>?) {
-        if let item = self.viewController.toolbarItems?.first(where: { $0.tag == ItemsToolbarController.barButtonItemFilterTag }) {
+        if let item = self.viewController.toolbarItems?.first(where: { $0.tag == Self.barButtonItemFilterTag }) {
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
             item.image = UIImage(systemName: filterImageName)
         }
 
-        if let item = self.viewController.toolbarItems?.first(where: { $0.tag == ItemsToolbarController.barButtonItemTitleTag }),
+        if let item = self.viewController.toolbarItems?.first(where: { $0.tag == Self.barButtonItemTitleTag }),
            let stackView = item.customView as? UIStackView {
             if let filterLabel = stackView.subviews.first as? UILabel {
                 let itemCount = results?.count ?? 0
@@ -147,7 +147,7 @@ final class ItemsToolbarController {
 
         let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
         let filterButton = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
-        filterButton.tag = ItemsToolbarController.barButtonItemFilterTag
+        filterButton.tag = Self.barButtonItemFilterTag
         filterButton.accessibilityLabel = L10n.Accessibility.Items.filterItems
         filterButton.rx.tap.subscribe(onNext: { [weak self] _ in
             self?.delegate?.process(action: .filter, button: filterButton)
@@ -163,7 +163,7 @@ final class ItemsToolbarController {
         .disposed(by: self.disposeBag)
 
         let titleButton = UIBarButtonItem(customView: self.createTitleView())
-        titleButton.tag = ItemsToolbarController.barButtonItemTitleTag
+        titleButton.tag = Self.barButtonItemTitleTag
 
         return [fixedSpacer, filterButton, flexibleSpacer, titleButton, flexibleSpacer, sortButton, fixedSpacer]
     }
@@ -174,7 +174,7 @@ final class ItemsToolbarController {
             let item = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
             switch action.type {
             case .addToCollection, .trash, .delete, .removeFromCollection, .restore:
-                item.tag = ItemsToolbarController.barButtonItemEmptyTag
+                item.tag = Self.barButtonItemEmptyTag
             case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .share, .removeDownload, .download, .duplicate: break
             }
             switch action.type {
