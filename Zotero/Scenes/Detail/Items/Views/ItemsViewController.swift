@@ -492,32 +492,42 @@ final class ItemsViewController: UIViewController {
             })
             .disposed(by: self.disposeBag)
 
-        guard let downloader = self.controllers.userControllers?.fileDownloader else { return }
-
-        downloader.observable
+        let downloader = controllers.userControllers?.fileDownloader
+        downloader?.observable
             .observe(on: MainScheduler.instance)
             .subscribe(with: self, onNext: { [weak downloader] `self`, update in
-                if let downloader = downloader {
+                if let downloader {
                     let (progress, remainingCount, totalCount) = downloader.batchData
                     let batchData = progress.flatMap({ ItemsState.DownloadBatchData(progress: $0, remaining: remainingCount, total: totalCount) })
                     self.viewModel.process(action: .updateDownload(update: update, batchData: batchData))
                 }
-
+                
                 if case .progress = update.kind { return }
-
+                
                 guard self.viewModel.state.attachmentToOpen == update.key else { return }
-
+                
                 self.viewModel.process(action: .attachmentOpened(update.key))
-
+                
                 switch update.kind {
                 case .ready:
                     self.coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
-
+                    
                 case .failed(let error):
                     self.coordinatorDelegate?.showAttachmentError(error)
-
+                    
                 default: break
                 }
+            })
+            .disposed(by: self.disposeBag)
+        
+        let remoteDownloader = self.controllers.userControllers?.remoteFileDownloader
+        remoteDownloader?.observable
+            .observe(on: MainScheduler.instance)
+            .subscribe(with: self, onNext: { [weak remoteDownloader] `self`, update in
+                guard let remoteDownloader else { return }
+                let (progress, remainingCount, totalCount) = remoteDownloader.batchData
+                let batchData = progress.flatMap({ ItemsState.DownloadBatchData(progress: $0, remaining: remainingCount, total: totalCount) })
+                self.viewModel.process(action: .updateRemoteDownload(update: update, batchData: batchData))
             })
             .disposed(by: self.disposeBag)
     }

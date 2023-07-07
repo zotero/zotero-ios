@@ -24,6 +24,7 @@ class RemoteAttachmentDownloadOperation: AsynchronousOperation {
 
     private let url: URL
     private let file: File
+    let progress: Progress?
     private let queue: DispatchQueue
     private unowned let apiClient: ApiClient
     private unowned let fileStorage: FileStorage
@@ -31,14 +32,14 @@ class RemoteAttachmentDownloadOperation: AsynchronousOperation {
     private var request: DownloadRequest?
     private var state: State?
     private var disposeBag: DisposeBag?
-    private(set) var progress: Progress?
 
     var progressHandler: ((Progress) -> Void)?
     var finishedDownload: ((Result<(), Swift.Error>) -> Void)?
 
-    init(url: URL, file: File, apiClient: ApiClient, fileStorage: FileStorage, queue: DispatchQueue) {
+    init(url: URL, file: File, progress: Progress, apiClient: ApiClient, fileStorage: FileStorage, queue: DispatchQueue) {
         self.url = url
         self.file = file
+        self.progress = progress
         self.apiClient = apiClient
         self.fileStorage = fileStorage
         self.queue = queue
@@ -66,7 +67,7 @@ class RemoteAttachmentDownloadOperation: AsynchronousOperation {
         self.apiClient.download(request: request, queue: self.queue)
             .subscribe(onNext: { [weak self] request in
                 // Store download request so that it can be cancelled
-                self?.progress = request.downloadProgress
+                self?.progress?.addChild(request.downloadProgress, withPendingUnitCount: 100)
                 self?.progressHandler?(request.downloadProgress)
                 self?.request = request
                 // Start request

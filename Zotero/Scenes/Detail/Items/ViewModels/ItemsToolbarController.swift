@@ -64,7 +64,7 @@ final class ItemsToolbarController {
         } else {
             let filters = self.sizeClassSpecificFilters(from: state.filters)
             self.viewController.toolbarItems = self.createNormalToolbarItems(for: filters)
-            self.updateNormalToolbarItems(for: filters, downloadBatchData: state.downloadBatchData, results: state.results)
+            self.updateNormalToolbarItems(for: filters, downloadBatchData: state.combinedDownloadBatchData, results: state.results)
         }
     }
 
@@ -72,7 +72,7 @@ final class ItemsToolbarController {
         if state.isEditing {
             self.updateEditingToolbarItems(for: state.selectedItems, results: state.results)
         } else {
-            self.updateNormalToolbarItems(for: self.sizeClassSpecificFilters(from: state.filters), downloadBatchData: state.downloadBatchData, results: state.results)
+            self.updateNormalToolbarItems(for: self.sizeClassSpecificFilters(from: state.filters), downloadBatchData: state.combinedDownloadBatchData, results: state.results)
         }
     }
 

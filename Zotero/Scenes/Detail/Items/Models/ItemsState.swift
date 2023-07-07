@@ -31,11 +31,24 @@ struct ItemsState: ViewModelState {
         let downloaded: Int
         let total: Int
 
+        init(fraction: Double, downloaded: Int, total: Int) {
+            self.fraction = fraction
+            self.downloaded = downloaded
+            self.total = total
+        }
+        
         init?(progress: Progress, remaining: Int, total: Int) {
             guard total > 1 else { return nil }
             self.fraction = progress.fractionCompleted
             self.downloaded = total - remaining
             self.total = total
+        }
+        
+        static func + (lhs: DownloadBatchData, rhs: DownloadBatchData) -> DownloadBatchData {
+            let fraction = (lhs.fraction + rhs.fraction) / 2.0
+            let downloaded = lhs.downloaded + rhs.downloaded
+            let total = lhs.total + rhs.total
+            return .init(fraction: fraction, downloaded: downloaded, total: total)
         }
     }
 
@@ -63,6 +76,13 @@ struct ItemsState: ViewModelState {
     var bibliographyError: Error?
     var attachmentToOpen: String?
     var downloadBatchData: DownloadBatchData?
+    var remoteDownloadBatchData: DownloadBatchData?
+    var combinedDownloadBatchData: DownloadBatchData? {
+        let data = [downloadBatchData, remoteDownloadBatchData].compactMap { $0 }
+        guard let firstData = data.first else { return nil }
+        guard data.count > 1 else { return firstData }
+        return data[1..<data.endIndex].reduce(firstData) { $0 + $1 }
+    }
     var itemTitleFont: UIFont {
         return UIFont.preferredFont(for: .headline, weight: .regular)
     }
