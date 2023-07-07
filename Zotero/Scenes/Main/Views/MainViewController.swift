@@ -15,7 +15,7 @@ import CocoaLumberjackSwift
 import RxSwift
 
 protocol MainCoordinatorDelegate: SplitControllerDelegate {
-    func showItems(for collection: Collection, in library: Library, isInitial: Bool)
+    func showItems(for collection: Collection, in library: Library, saveCollectionToDefaults: Bool)
 }
 
 protocol SplitControllerDelegate: AnyObject {
@@ -132,8 +132,8 @@ extension MainViewController: UISplitViewControllerDelegate {
 }
 
 extension MainViewController: MainCoordinatorDelegate {
-    func showItems(for collection: Collection, in library: Library, isInitial: Bool) {
-        if !isInitial {
+    func showItems(for collection: Collection, in library: Library, saveCollectionToDefaults: Bool) {
+        if saveCollectionToDefaults {
             Defaults.shared.selectedCollectionId = collection.identifier
         }
         guard !self.isSplit || self.detailCoordinator?.library != library || self.detailCoordinator?.collection.identifier != collection.identifier else { return }

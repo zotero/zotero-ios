@@ -195,9 +195,9 @@ extension MasterTopCoordinator: MasterCollectionsCoordinatorDelegate {
         self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
 
-    func showItems(for collection: Collection, in library: Library, isInitial: Bool) {
+    func showItems(for collection: Collection, in library: Library, saveCollectionToDefaults: Bool) {
         self.visibleLibraryId = library.identifier
-        self.mainCoordinatorDelegate.showItems(for: collection, in: library, isInitial: isInitial)
+        self.mainCoordinatorDelegate.showItems(for: collection, in: library, saveCollectionToDefaults: saveCollectionToDefaults)
     }
 
     var isSplit: Bool {

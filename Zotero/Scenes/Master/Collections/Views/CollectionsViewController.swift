@@ -44,7 +44,7 @@ final class CollectionsViewController: UICollectionViewController {
 
         if self.coordinatorDelegate?.isSplit == true {
             if let collection = self.viewModel.state.collectionTree.collection(for: self.viewModel.state.selectedCollectionId) {
-                self.coordinatorDelegate?.showItems(for: collection, in: self.viewModel.state.library, isInitial: true)
+                self.coordinatorDelegate?.showItems(for: collection, in: self.viewModel.state.library, saveCollectionToDefaults: false)
             } else {
                 self.viewModel.process(action: .select(.custom(.all)))
             }
@@ -86,7 +86,7 @@ final class CollectionsViewController: UICollectionViewController {
         }
 
         if state.changes.contains(.selection), let collection = state.collectionTree.collection(for: state.selectedCollectionId) {
-            self.coordinatorDelegate?.showItems(for: collection, in: state.library, isInitial: false)
+            self.coordinatorDelegate?.showItems(for: collection, in: state.library, saveCollectionToDefaults: true)
 
             if !requiresUpdate {
                 self.selectIfNeeded(collectionId: state.selectedCollectionId, tree: state.collectionTree, scrollToPosition: false)
