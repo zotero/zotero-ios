@@ -20,7 +20,6 @@ final class ItemsToolbarController {
     private static let barButtonItemSingleTag = 2
     private static let barButtonItemFilterTag = 3
     private static let barButtonItemTitleTag = 4
-    private static let finishVisibilityTime: RxTimeInterval = .seconds(2)
 
     private unowned let viewController: UIViewController
     private let editingActions: [ItemAction]
