@@ -98,6 +98,8 @@ final class AppCoordinator: NSObject {
         guard let window = self.window else { return }
 
         let viewController: UIViewController
+        var urlContext: UIOpenURLContext?
+        var data: RestoredStateData?
         if !isLogged {
             let controller = OnboardingViewController(size: window.frame.size, htmlConverter: self.controllers.htmlAttributedStringConverter)
             controller.coordinatorDelegate = self
@@ -107,6 +109,7 @@ final class AppCoordinator: NSObject {
             self.conflictAlertQueueController = nil
             self.controllers.userControllers?.syncScheduler.syncController.set(coordinator: nil)
         } else {
+            (urlContext, data) = preprocess(connectionOptions: connectionOptions, session: session)
             let controller = MainViewController(controllers: self.controllers)
             viewController = controller
 
@@ -117,12 +120,24 @@ final class AppCoordinator: NSObject {
 
         DDLogInfo("AppCoordinator: show main screen logged \(isLogged ? "in" : "out"); animated=\(animated)")
         self.show(viewController: viewController, in: window, animated: animated)
-        guard let options = connectionOptions, let session = session else { return }
-        self.process(connectionOptions: options, session: session)
+        process(urlContext: urlContext, data: data)
     }
 
-    private func process(connectionOptions: UIScene.ConnectionOptions, session: UISceneSession) {
-        if let urlContext = connectionOptions.urlContexts.first, let urlController = self.controllers.userControllers?.customUrlController {
+    private func preprocess(connectionOptions: UIScene.ConnectionOptions?, session: UISceneSession?) -> (UIOpenURLContext?, RestoredStateData?) {
+        let urlContext = connectionOptions?.urlContexts.first
+        let userActivity = connectionOptions?.userActivities.first ?? session?.stateRestorationActivity
+        let data = userActivity?.restoredStateData
+        if let data {
+            // If scene had state stored, check if defaults need to be updated first
+            DDLogInfo("AppCoordinator: Preprocessing restored state - \(data)")
+            Defaults.shared.selectedLibrary = data.libraryId
+            Defaults.shared.selectedCollectionId = data.collectionId
+        }
+        return (urlContext, data)
+    }
+    
+    private func process(urlContext: UIOpenURLContext?, data: RestoredStateData?) {
+        if let urlContext, let urlController = self.controllers.userControllers?.customUrlController {
             // If scene was started from custom URL
             let sourceApp = urlContext.options.sourceApplication ?? "unknown"
             DDLogInfo("AppCoordinator: App launched by \(urlContext.url.absoluteString) from \(sourceApp)")
@@ -133,8 +148,8 @@ final class AppCoordinator: NSObject {
             }
         }
 
-        if let userActivity = connectionOptions.userActivities.first ?? session.stateRestorationActivity, let data = userActivity.restoredStateData {
-            DDLogInfo("AppCoordinator: Restored state - \(data)")
+        if let data {
+            DDLogInfo("AppCoordinator: Processing restored state - \(data)")
             // If scene had state stored, restore state
             self.showRestoredState(for: data)
         }
@@ -218,9 +233,17 @@ final class AppCoordinator: NSObject {
 
     private func showRestoredState(for data: RestoredStateData) {
         guard let mainController = self.window?.rootViewController as? MainViewController,
-              let (url, library) = self.loadRestoredStateData(forKey: data.key, libraryId: data.libraryId) else { return }
-        DDLogInfo("AppCoordinator: show restored state - \(data.key); \(data.libraryId); \(url.relativePath)")
-
+              let (url, library, collection) = self.loadRestoredStateData(forKey: data.key, libraryId: data.libraryId, collectionId: data.collectionId) else { return }
+        if let collection {
+            DDLogInfo("AppCoordinator: show restored state - \(data.key); \(data.libraryId); \(data.collectionId); \(url.relativePath)")
+            mainController.showItems(for: collection, in: library, saveCollectionToDefaults: true)
+        } else {
+            DDLogWarn("AppCoordinator: show restored state using all items collection - \(data.key); \(data.libraryId); \(url.relativePath)")
+            // Collection is missing, show all items instead
+            let collection = Collection(custom: .all)
+            mainController.showItems(for: collection, in: library, saveCollectionToDefaults: false)
+        }
+            
         mainController.getDetailCoordinator { [weak self] coordinator in
             guard let self = self, let window = self.window else { return }
             let controller = self.pdfController(key: data.key, library: library, url: url, page: nil, preselectedAnnotationKey: nil, detailCoordinator: coordinator)
@@ -240,11 +263,12 @@ final class AppCoordinator: NSObject {
         return navigationController
     }
 
-    private func loadRestoredStateData(forKey key: String, libraryId: LibraryIdentifier) -> (URL, Library)? {
+    private func loadRestoredStateData(forKey key: String, libraryId: LibraryIdentifier, collectionId: CollectionIdentifier) -> (URL, Library, Collection?)? {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return nil }
 
         var url: URL?
         var library: Library?
+        var collection: Collection?
 
         do {
             try dbStorage.perform(on: .main, with: { coordinator in
@@ -258,7 +282,9 @@ final class AppCoordinator: NSObject {
                     case .local, .localAndChangedRemotely:
                         let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
                         url = file.createUrl()
-                        library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
+                        let (_collection, _library) = try coordinator.perform(request: ReadCollectionAndLibraryDbRequest(collectionId: collectionId, libraryId: libraryId))
+                        collection = _collection
+                        library = _library
 
                     case .remote, .remoteMissing: break
                     }
@@ -272,7 +298,7 @@ final class AppCoordinator: NSObject {
         }
 
         if let url = url, let library = library {
-            return (url, library)
+            return (url, library, collection)
         }
         return nil
     }

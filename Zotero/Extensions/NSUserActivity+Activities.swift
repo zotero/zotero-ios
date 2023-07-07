@@ -11,6 +11,7 @@ import Foundation
 struct RestoredStateData {
     let key: String
     let libraryId: LibraryIdentifier
+    let collectionId: CollectionIdentifier
 }
 
 extension NSUserActivity {
@@ -21,9 +22,13 @@ extension NSUserActivity {
         return NSUserActivity(activityType: self.mainId)
     }
 
-    static func pdfActivity(for key: String, libraryId: LibraryIdentifier) -> NSUserActivity {
+    static func pdfActivity(for key: String, libraryId: LibraryIdentifier, collectionId: CollectionIdentifier) -> NSUserActivity {
         let activity = NSUserActivity(activityType: self.pdfId)
-        activity.addUserInfoEntries(from: ["key": key, "libraryId": self.libraryIdToString(libraryId)])
+        var pdfUserInfo: [AnyHashable: Any] = ["key": key, "libraryId": libraryIdToString(libraryId)]
+        if let collectionIdData = try? JSONEncoder().encode(collectionId) {
+            pdfUserInfo["collectionId"] = collectionIdData
+        }
+        activity.addUserInfoEntries(from: pdfUserInfo)
         return activity
     }
 
@@ -54,7 +59,18 @@ extension NSUserActivity {
 
     var restoredStateData: RestoredStateData? {
         guard self.activityType == NSUserActivity.pdfId,
-              let key = self.userInfo?["key"] as? String, let libraryString = self.userInfo?["libraryId"] as? String, let libraryId = self.stringToLibraryId(libraryString) else { return nil }
-        return RestoredStateData(key: key, libraryId: libraryId)
+              let userInfo,
+              let key = userInfo["key"] as? String,
+              let libraryString = userInfo["libraryId"] as? String,
+              let libraryId = stringToLibraryId(libraryString)
+        else { return nil }
+        var collectionId: CollectionIdentifier
+        if let collectionIdData = userInfo["collectionId"] as? Data,
+           let decodedCollectionId = try? JSONDecoder().decode(CollectionIdentifier.self, from: collectionIdData) {
+            collectionId = decodedCollectionId
+        } else {
+            collectionId = Defaults.shared.selectedCollectionId
+        }
+        return RestoredStateData(key: key, libraryId: libraryId, collectionId: collectionId)
     }
 }

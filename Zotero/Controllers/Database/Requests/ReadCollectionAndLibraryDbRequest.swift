@@ -26,7 +26,11 @@ struct ReadCollectionAndLibraryDbRequest: DbResponseRequest {
             let rCollection = try ReadCollectionDbRequest(libraryId: self.libraryId, key: key).process(in: database)
             let collection = Collection(object: rCollection, itemCount: 0)
             return (collection, library)
-            
+
+        case .custom(let type):
+            let collection = Collection(custom: type)
+            return (collection, library)
+
         default:
             return (nil, library)
         }
