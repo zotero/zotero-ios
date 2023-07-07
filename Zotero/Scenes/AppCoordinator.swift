@@ -239,6 +239,9 @@ final class AppCoordinator: NSObject {
             mainController.showItems(for: collection, in: library, isInitial: false)
         } else {
             DDLogInfo("AppCoordinator: show restored state - \(data.key); \(data.libraryId); \(url.relativePath)")
+            // Collection is missing, show all items instead
+            let collection = Collection(custom: .all)
+            mainController.showItems(for: collection, in: library, isInitial: true)
         }
             
         mainController.getDetailCoordinator { [weak self] coordinator in
