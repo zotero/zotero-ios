@@ -46,6 +46,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         static let rects = PdfAnnotationChanges(rawValue: 1 << 2)
         static let lineWidth = PdfAnnotationChanges(rawValue: 1 << 3)
         static let paths = PdfAnnotationChanges(rawValue: 1 << 4)
+        static let contents = PdfAnnotationChanges(rawValue: 1 << 5)
 
         static func stringValues(from changes: PdfAnnotationChanges) -> [String] {
             var rawChanges: [String] = []
@@ -63,6 +64,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
             if changes.contains(.paths) {
                 rawChanges.append(contentsOf: ["lines", "lineArray"])
+            }
+            if changes.contains(.contents) {
+                rawChanges.append("contents")
             }
             return rawChanges
         }
@@ -1136,35 +1140,25 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     }
 
     private func set(lineWidth: CGFloat, key: String, viewModel: ViewModel<PDFReaderActionHandler>) {
-        let annotation = viewModel.state.annotation(for: PDFReaderState.AnnotationKey(key: key, type: .database))
-        self.update(annotation: annotation, color: nil, lineWidth: lineWidth, interfaceStyle: viewModel.state.interfaceStyle, document: viewModel.state.document)
+        guard let annotation = viewModel.state.annotation(for: PDFReaderState.AnnotationKey(key: key, type: .database)) else { return }
+        self.update(annotation: annotation, lineWidth: lineWidth, in: viewModel.state.document)
     }
 
     private func set(color: String, key: String, viewModel: ViewModel<PDFReaderActionHandler>) {
-        let annotation = viewModel.state.annotation(for: PDFReaderState.AnnotationKey(key: key, type: .database))
-        self.update(annotation: annotation, color: color, lineWidth: nil, interfaceStyle: viewModel.state.interfaceStyle, document: viewModel.state.document)
+        guard let annotation = viewModel.state.annotation(for: PDFReaderState.AnnotationKey(key: key, type: .database)) else { return }
+        self.update(annotation: annotation, color: (color, viewModel.state.interfaceStyle), in: viewModel.state.document)
     }
 
     private func set(comment: NSAttributedString, key: String, viewModel: ViewModel<PDFReaderActionHandler>) {
-        let oldComment = viewModel.state.comments[key]
+        guard let annotation = viewModel.state.annotation(for: PDFReaderState.AnnotationKey(key: key, type: .database)) else { return }
+
         let htmlComment = self.htmlAttributedStringConverter.convert(attributedString: comment)
 
         self.update(viewModel: viewModel) { state in
             state.comments[key] = comment
         }
 
-        let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.comment, baseKey: nil): htmlComment]
-        let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values)
-        self.perform(request: request) { [weak self, weak viewModel] error in
-            guard let error = error, let self = self, let viewModel = viewModel else { return }
-
-            DDLogError("PDFReaderActionHandler: can't update annotation \(key) - \(error)")
-
-            self.update(viewModel: viewModel) { state in
-                state.comments[key] = oldComment
-                state.error = .cantUpdateAnnotation
-            }
-        }
+        self.update(annotation: annotation, contents: htmlComment, in: viewModel.state.document)
     }
 
     private func set(highlightText: String, key: String, viewModel: ViewModel<PDFReaderActionHandler>) {
@@ -1196,12 +1190,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func set(color: String, lineWidth: CGFloat, pageLabel: String, updateSubsequentLabels: Bool, highlightText: String, key: String, viewModel: ViewModel<PDFReaderActionHandler>) {
         // `lineWidth` and `color` is stored in `Document`, update document, which will trigger a notification wich will update the DB
-        let annotation = viewModel.state.annotation(for: PDFReaderState.AnnotationKey(key: key, type: .database))
-        self.update(annotation: annotation, color: color, lineWidth: lineWidth, interfaceStyle: viewModel.state.interfaceStyle, document: viewModel.state.document)
+        guard let annotation = viewModel.state.annotation(for: PDFReaderState.AnnotationKey(key: key, type: .database)) else { return }
+        self.update(annotation: annotation, color: (color, viewModel.state.interfaceStyle), lineWidth: lineWidth, in: viewModel.state.document)
 
         // Update remaining values directly
-        let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.pageLabel, baseKey: nil): pageLabel,
-                      KeyBaseKeyPair(key: FieldKeys.Item.Annotation.text, baseKey: nil): highlightText]
+        let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.pageLabel, baseKey: nil): pageLabel, KeyBaseKeyPair(key: FieldKeys.Item.Annotation.text, baseKey: nil): highlightText]
         let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values)
         self.perform(request: request) { [weak self, weak viewModel] error in
             guard let error = error, let self = self, let viewModel = viewModel else { return }
@@ -1214,26 +1207,29 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func update(annotation: Annotation?, color: String?, lineWidth: CGFloat?, interfaceStyle: UIUserInterfaceStyle, document: PSPDFKit.Document) {
-        guard let annotation = annotation, let pdfAnnotation = document.annotations(at: PageIndex(annotation.page)).first(where: { $0.key == annotation.key }) else { return }
+    private func update(annotation: Annotation, color: (String, UIUserInterfaceStyle)? = nil, lineWidth: CGFloat? = nil, contents: String? = nil, in document: PSPDFKit.Document) {
+        guard let pdfAnnotation = document.annotations(at: PageIndex(annotation.page)).first(where: { $0.key == annotation.key }) else { return }
 
         var changes: PdfAnnotationChanges = []
 
-        if let lineWidth = lineWidth, lineWidth.rounded(to: 3) != annotation.lineWidth {
+        if let lineWidth, lineWidth.rounded(to: 3) != annotation.lineWidth {
             changes.insert(.lineWidth)
         }
-        if let color = color, color != annotation.color {
+        if let (color, _) = color, color != annotation.color {
             changes.insert(.color)
+        }
+        if let contents, contents != annotation.comment {
+            changes.insert(.contents)
         }
 
         guard !changes.isEmpty else { return }
 
         document.undoController.recordCommand(named: nil, changing: [pdfAnnotation]) {
-            if changes.contains(.lineWidth), let lineWidth = lineWidth?.rounded(to: 3), let inkAnnotation = pdfAnnotation as? PSPDFKit.InkAnnotation {
-                inkAnnotation.lineWidth = lineWidth
+            if changes.contains(.lineWidth), let inkAnnotation = pdfAnnotation as? PSPDFKit.InkAnnotation, let lineWidth {
+                inkAnnotation.lineWidth = lineWidth.rounded(to: 3)
             }
 
-            if changes.contains(.color), let color = color {
+            if changes.contains(.color), let (color, interfaceStyle) = color {
                 let (_color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: color), isHighlight: (annotation.type == .highlight), userInterfaceStyle: interfaceStyle)
                 pdfAnnotation.color = _color
                 pdfAnnotation.alpha = alpha
@@ -1242,8 +1238,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 }
             }
 
-            NotificationCenter.default.post(name: NSNotification.Name.PSPDFAnnotationChanged, object: pdfAnnotation,
-                                            userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: PdfAnnotationChanges.stringValues(from: changes)])
+            if changes.contains(.contents), let contents {
+                pdfAnnotation.contents = contents
+            }
+
+            NotificationCenter.default.post(
+                name: NSNotification.Name.PSPDFAnnotationChanged,
+                object: pdfAnnotation,
+                userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: PdfAnnotationChanges.stringValues(from: changes)]
+            )
         }
     }
 
@@ -1316,6 +1319,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         if hasChanges(.color) {
             let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.color, baseKey: nil): annotation.baseColor]
+            let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values)
+            requests.append(request)
+        }
+
+        if hasChanges(.contents) {
+            let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.comment, baseKey: nil): annotation.contents ?? ""]
             let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values)
             requests.append(request)
         }
