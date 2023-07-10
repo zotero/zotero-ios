@@ -104,9 +104,6 @@ final class AnnotationViewTextView: UIView {
         textView.isScrollEnabled = false
         textView.translatesAutoresizingMaskIntoConstraints = false
         textView.font = self.layout.font
-        // Accessing textView layoutManager to force use of TextKit 1,
-        // to avoid scribble insert crash per https://developer.apple.com/forums/thread/724216
-        _ = textView.layoutManager
 
         self.addSubview(textView)
 
@@ -141,7 +138,7 @@ final class AnnotationViewTextView: UIView {
     }
 }
 
-private final class AnnotationTextView: UITextView {
+private final class AnnotationTextView: TextKit1TextView {
     private static let allowedActions: [String] = ["cut:", "copy:", "paste:", "toggleBoldface:", "toggleItalics:", "toggleSuperscript", "toggleSubscript", "replace:"]
 
     private let defaultFont: UIFont

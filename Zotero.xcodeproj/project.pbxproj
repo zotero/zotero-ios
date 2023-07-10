@@ -20,6 +20,7 @@
 		6144B5DF2A4AE48F00914B3C /* SyncControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */; };
 		6144B5E02A4AE49800914B3C /* TranslatorsControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */; };
 		6144B5E12A4AE95E00914B3C /* WebDavControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3202C6B271048FF00485BE4 /* WebDavControllerSpec.swift */; };
+		61BD13952A5831EF008A0704 /* TextKit1TextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61BD13942A5831EF008A0704 /* TextKit1TextView.swift */; };
 		61C817F22A49B5D30085B1E6 /* CollectionResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDEE250242E700D8BC1E /* CollectionResponseSpec.swift */; };
 		B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */; };
 		B300B3352429222B00C1FE1E /* TranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */; };
@@ -1187,6 +1188,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		61BD13942A5831EF008A0704 /* TextKit1TextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextKit1TextView.swift; sourceTree = "<group>"; };
 		B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTranslatorMetadata.swift; sourceTree = "<group>"; };
 		B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorMetadata.swift; sourceTree = "<group>"; };
 		B300B3372429254900C1FE1E /* SyncTranslatorsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTranslatorsDbRequest.swift; sourceTree = "<group>"; };
@@ -3600,6 +3602,7 @@
 				B35EDEC9263ADD0C003574AC /* TextPreviewViewController.swift */,
 				B35EDECA263ADD0C003574AC /* TextPreviewViewController.xib */,
 				B3F184A3253F067100498F32 /* WebViewController.swift */,
+				61BD13942A5831EF008A0704 /* TextKit1TextView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -4730,6 +4733,7 @@
 				B37ACB932730338A002EF4E1 /* DeleteAllWebDavDeletionsDbRequest.swift in Sources */,
 				B3451B55264ECBA9000EDF16 /* ReadGroupDbRequest.swift in Sources */,
 				B3593F30241A61C700760E20 /* ItemDetailAddCell.swift in Sources */,
+				61BD13952A5831EF008A0704 /* TextKit1TextView.swift in Sources */,
 				B3B8800525FB546300904235 /* DeviceInfoProvider.swift in Sources */,
 				B3B41F192848E5A90017CA4B /* AnnotationsFilterState.swift in Sources */,
 				B36E9D4925E51B0E00CD1109 /* AnnotationPosition.swift in Sources */,
