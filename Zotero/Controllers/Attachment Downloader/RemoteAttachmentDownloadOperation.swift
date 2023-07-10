@@ -137,7 +137,9 @@ class RemoteAttachmentDownloadOperation: AsynchronousOperation {
             self.request?.cancel()
             self.disposeBag = nil
             self.request = nil
-        case .done: break
+            
+        case .done:
+            break
         }
 
         self.finishedDownload?(.failure(Error.cancelled))

@@ -37,7 +37,16 @@ class AttachmentDownloadOperation: AsynchronousOperation {
 
     var finishedDownload: ((Result<(), Swift.Error>) -> Void)?
 
-    init(file: File, download: AttachmentDownloader.Download, progress: Progress, userId: Int, apiClient: ApiClient, webDavController: WebDavController, fileStorage: FileStorage, queue: DispatchQueue) {
+    init(
+        file: File,
+        download: AttachmentDownloader.Download,
+        progress: Progress,
+        userId: Int,
+        apiClient: ApiClient,
+        webDavController: WebDavController,
+        fileStorage: FileStorage,
+        queue: DispatchQueue
+    ) {
         self.file = file
         self.download = download
         self.progress = progress
@@ -231,7 +240,9 @@ class AttachmentDownloadOperation: AsynchronousOperation {
             self.zipProgress = nil
             // Try removing downloaded file.
             try? self.fileStorage.remove(Files.attachmentDirectory(in: self.download.libraryId, key: self.download.key))
-        case .done: break
+            
+        case .done:
+            break
         }
 
         self.finishedDownload?(.failure(Error.cancelled))
