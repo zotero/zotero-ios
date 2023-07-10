@@ -30,6 +30,7 @@ struct EditNoteDbRequest: DbRequest {
 
         if let field = item.fields.filter(.key(FieldKeys.Item.note)).first, field.value != self.note.text {
             item.set(title: self.note.title)
+            item.htmlFreeContent = self.note.text.isEmpty ? nil : self.note.text.strippedHtmlTags
             changes.insert(.fields)
 
             field.value = self.note.text

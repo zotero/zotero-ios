@@ -30,6 +30,14 @@ struct EditItemFieldsDbRequest: DbRequest {
             field.value = data.value
             field.changed = true
             didChange = true
+
+            switch field.key {
+            case FieldKeys.Item.note, FieldKeys.Item.Annotation.comment:
+                item.htmlFreeContent = data.value.isEmpty ? nil : data.value.strippedHtmlTags
+
+            default:
+                break
+            }
         }
 
         if didChange {

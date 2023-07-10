@@ -118,6 +118,8 @@ final class RItem: Object {
     @Persisted var changeType: UpdatableChangeType
     /// Indicates whether the object is deleted locally and needs to be synced with backend
     @Persisted var deleted: Bool
+    /// Comment (for annotations) or note (for notes) text without HTML tags
+    @Persisted var htmlFreeContent: String?
 
     var doi: String? {
         return self.fields.filter(.key(FieldKeys.Item.doi)).first.flatMap({ field -> String? in

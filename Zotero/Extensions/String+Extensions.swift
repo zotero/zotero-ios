@@ -41,4 +41,9 @@ extension String {
         else { return nil }
         return ext.takeRetainedValue() as String
     }
+
+    var strippedHtmlTags: String {
+        guard !self.isEmpty else { return self }
+        return self.replacingOccurrences(of: "<[^>]*>", with: "", options: .regularExpression, range: nil)
+    }
 }

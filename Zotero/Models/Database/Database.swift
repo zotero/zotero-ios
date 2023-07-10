@@ -13,7 +13,7 @@ import RealmSwift
 import Network
 
 struct Database {
-    private static let schemaVersion: UInt64 = 36
+    private static let schemaVersion: UInt64 = 37
 
     static func mainConfiguration(url: URL, fileStorage: FileStorage) -> Realm.Configuration {
         var config = Realm.Configuration(fileURL: url,
@@ -44,6 +44,32 @@ struct Database {
             if schemaVersion < 36 {
                 self.migrateTagNames(migration: migration)
             }
+            if schemaVersion < 37 {
+                self.extractItemHtmlFreeContent(migration: migration)
+            }
+        }
+    }
+
+    private static func extractItemHtmlFreeContent(migration: Migration) {
+        migration.enumerateObjects(ofType: RItem.className()) { oldObject, newObject in
+            guard let rawType = oldObject?["rawType"] as? String, let fields = oldObject?["fields"] as? List<MigrationObject> else { return }
+
+            let content: String
+
+            switch rawType {
+            case ItemTypes.note:
+                guard let _content = fields.first(where: { $0["key"] as? String == FieldKeys.Item.note })?["value"] as? String, !_content.isEmpty else { return }
+                content = _content.strippedHtmlTags
+
+            case ItemTypes.annotation:
+                guard let _content = fields.first(where: { $0["key"] as? String == FieldKeys.Item.Annotation.comment })?["value"] as? String, !_content.isEmpty else { return }
+                content = _content.strippedHtmlTags
+
+            default:
+                return
+            }
+
+            newObject?["htmlFreeContent"] = content
         }
     }
 
