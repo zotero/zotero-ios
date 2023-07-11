@@ -48,26 +48,28 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
         self.observable = PublishSubject()
         self.disposeBag = DisposeBag()
         
-        remoteFileDownloader.observable
-            .subscribe { [weak self] update in
-                guard let self else { return }
-                switch update.kind {
-                case .ready(let attachment):
-                    self.finish(download: update.download, attachment: attachment)
-                    
-                case .cancelled, .failed, .progress:
-                    break
-                }
-            }
-            .disposed(by: self.disposeBag)
+        setupObservers()
     }
     
     // MARK: Actions
     func process(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)]) {
+        func storeDataAndDownloadAttachmentIfNecessary(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)]) throws {
+            let request = CreateTranslatedItemsDbRequest(responses: [response], schemaController: schemaController, dateParser: dateParser)
+            try dbStorage.perform(request: request, on: backgroundQueue)
+            observable.on(.next(Update(identifier: identifier, response: response, attachments: attachments, kind: .itemStored)))
+            
+            guard Defaults.shared.shareExtensionIncludeAttachment else { return }
+
+            let downloadData = attachments.map({ ($0, $1, response.key) })
+            guard !downloadData.isEmpty else { return }
+            remoteFileDownloader.download(data: downloadData)
+            observable.on(.next(Update(identifier: identifier, response: response, attachments: attachments, kind: .pendingAttachments)))
+        }
+
         backgroundQueue.async { [weak self] in
             guard let self = self else { return }
             do {
-                try self.storeDataAndDownloadAttachmentIfNecessary(identifier: identifier, response: response, attachments: attachments)
+                try storeDataAndDownloadAttachmentIfNecessary(identifier: identifier, response: response, attachments: attachments)
             } catch let error {
                 DDLogError("IdentifierLookupController: can't create item(s) - \(error)")
                 self.observable.on(.next(Update(identifier: identifier, response: response, attachments: attachments, kind: .itemCreationFailed)))
@@ -75,44 +77,45 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
         }
     }
     
-    // MARK: Helper Methods
-    private func storeDataAndDownloadAttachmentIfNecessary(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)]) throws {
-        let request = CreateTranslatedItemsDbRequest(responses: [response], schemaController: schemaController, dateParser: dateParser)
-        try dbStorage.perform(request: request, on: backgroundQueue)
-        observable.on(.next(Update(identifier: identifier, response: response, attachments: attachments, kind: .itemStored)))
-        
-        guard Defaults.shared.shareExtensionIncludeAttachment else { return }
-
-        let downloadData = attachments.map({ ($0, $1, response.key) })
-        guard !downloadData.isEmpty else { return }
-        remoteFileDownloader.download(data: downloadData)
-        observable.on(.next(Update(identifier: identifier, response: response, attachments: attachments, kind: .pendingAttachments)))
-    }
-    
-    private func finish(download: RemoteAttachmentDownloader.Download, attachment: Attachment) {
-        let localizedType = schemaController.localized(itemType: ItemTypes.attachment) ?? ItemTypes.attachment
-        
-        backgroundQueue.async { [weak self] in
-            guard let self else { return }
+    // MARK: Setups
+    private func setupObservers() {
+        func finish(download: RemoteAttachmentDownloader.Download, attachment: Attachment) {
+            let localizedType = schemaController.localized(itemType: ItemTypes.attachment) ?? ItemTypes.attachment
             
-            do {
-                let request = CreateAttachmentDbRequest(
-                    attachment: attachment,
-                    parentKey: download.parentKey,
-                    localizedType: localizedType,
-                    includeAccessDate: attachment.hasUrl,
-                    collections: [],
-                    tags: []
-                )
-                _ = try self.dbStorage.perform(request: request, on: self.backgroundQueue)
-            } catch let error {
-                DDLogError("IdentifierLookupController: can't store attachment after download - \(error)")
+            backgroundQueue.async { [weak self] in
+                guard let self else { return }
                 
-                // Storing item failed, remove downloaded file
-                guard case .file(let filename, let contentType, _, _) = attachment.type else { return }
-                let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
-                try? self.fileStorage.remove(file)
+                do {
+                    let request = CreateAttachmentDbRequest(
+                        attachment: attachment,
+                        parentKey: download.parentKey,
+                        localizedType: localizedType,
+                        includeAccessDate: attachment.hasUrl,
+                        collections: [],
+                        tags: []
+                    )
+                    _ = try self.dbStorage.perform(request: request, on: self.backgroundQueue)
+                } catch let error {
+                    DDLogError("IdentifierLookupController: can't store attachment after download - \(error)")
+                    
+                    // Storing item failed, remove downloaded file
+                    guard case .file(let filename, let contentType, _, _) = attachment.type else { return }
+                    let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
+                    try? self.fileStorage.remove(file)
+                }
             }
         }
+        
+        remoteFileDownloader.observable
+            .subscribe { update in
+                switch update.kind {
+                case .ready(let attachment):
+                    finish(download: update.download, attachment: attachment)
+                    
+                case .cancelled, .failed, .progress:
+                    break
+                }
+            }
+            .disposed(by: self.disposeBag)
     }
 }
