@@ -38,7 +38,7 @@ struct ItemsState: ViewModelState {
         }
         
         init?(progress: Progress, remaining: Int, total: Int) {
-            guard total > 1 else { return nil }
+            guard total > 0 else { return nil }
             self.fraction = progress.fractionCompleted
             self.downloaded = total - remaining
             self.total = total

@@ -104,12 +104,18 @@ final class RemoteAttachmentDownloader {
 
             DDLogInfo("RemoteAttachmentDownloader: enqueue \(data.count) attachments")
 
-            let operations = data.compactMap({ self.createDownload(url: $0.1, attachment: $0.0, parentKey: $0.2) })
+            let downloadAndOperations = data.compactMap({ self.createDownload(url: $0.1, attachment: $0.0, parentKey: $0.2) })
+            let downloads = downloadAndOperations.map({ $0.0 })
+            let operations = downloadAndOperations.map({ $0.1 })
+            downloads.forEach {
+                // Send first update to immediately reflect new state
+                self.observable.on(.next(Update(download: $0, kind: .progress(0))))
+            }
             self.operationQueue.addOperations(operations, waitUntilFinished: false)
         }
     }
 
-    private func createDownload(url: URL, attachment: Attachment, parentKey: String) -> RemoteAttachmentDownloadOperation? {
+    private func createDownload(url: URL, attachment: Attachment, parentKey: String) -> (Download, RemoteAttachmentDownloadOperation)? {
         let download = Download(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
 
         guard self.operations[download] == nil, let file = self.file(for: attachment) else { return nil }
@@ -141,7 +147,7 @@ final class RemoteAttachmentDownloader {
             self.batchProgress = batchProgress
         }
 
-        return operation
+        return (download, operation)
     }
 
     private func observe(progress: Progress, attachment: Attachment, download: Download) {
