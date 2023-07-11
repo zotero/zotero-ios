@@ -70,7 +70,7 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                 try self.storeDataAndDownloadAttachmentIfNecessary(identifier: identifier, response: response, attachments: attachments)
             } catch let error {
                 DDLogError("IdentifierLookupController: can't create item(s) - \(error)")
-                observable.on(.next(Update(identifier: identifier, response: response, attachments: attachments, kind: .itemCreationFailed)))
+                self.observable.on(.next(Update(identifier: identifier, response: response, attachments: attachments, kind: .itemCreationFailed)))
             }
         }
     }
