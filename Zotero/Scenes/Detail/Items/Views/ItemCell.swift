@@ -43,8 +43,6 @@ final class ItemCell: UITableViewCell {
 
         self.accessoryType = .detailButton
 
-        let font = UIFont.preferredFont(for: .headline, weight: .regular)
-        self.titleLabel.font = font
         self.titleLabelsToContainerBottom.constant = 12 + ItemDetailLayout.separatorHeight // + bottom separator
         self.fileView.contentInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
         self.tagCircles.borderColor = self.tagBorderColor
@@ -99,7 +97,11 @@ final class ItemCell: UITableViewCell {
         self.key = item.key
 
         self.typeImageView.image = UIImage(named: item.typeIconName)
-        self.titleLabel.text = item.title.isEmpty ? " " : item.title
+        if item.title.string.isEmpty {
+            self.titleLabel.text = " "
+        } else {
+            self.titleLabel.attributedText = item.title
+        }
         self.titleLabel.accessibilityLabel = self.titleAccessibilityLabel(for: item)
         self.subtitleLabel.text = item.subtitle.isEmpty ? " " : item.subtitle
         self.subtitleLabel.accessibilityLabel = item.subtitle
@@ -143,7 +145,7 @@ final class ItemCell: UITableViewCell {
     }
 
     private func titleAccessibilityLabel(for item: ItemCellModel) -> String {
-        let title = item.title.isEmpty ? L10n.Accessibility.untitled : item.title
+        let title = item.title.string.isEmpty ? L10n.Accessibility.untitled : item.title.string
         return item.typeName + ", " + title
     }
 }

@@ -54,7 +54,7 @@ struct CreateAnnotationsDbRequest: DbRequest {
 
         item.syncState = .synced
         item.changeType = .user
-        item.htmlFreeContent = annotation.comment.isEmpty ? nil : annotation.comment.strippedHtmlTags
+        item.htmlFreeContent = annotation.comment.isEmpty ? nil : annotation.comment.strippedRichTextTags
         item.dateModified = annotation.dateModified
         item.parent = parent
 

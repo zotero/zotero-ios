@@ -123,25 +123,38 @@ final class DetailCoordinator: Coordinator {
             syncScheduler: userControllers.syncScheduler,
             citationController: userControllers.citationController,
             fileCleanupController: userControllers.fileCleanupController,
-            itemsTagFilterDelegate: self.itemsTagFilterDelegate
+            itemsTagFilterDelegate: self.itemsTagFilterDelegate,
+            htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter
         )
         self.navigationController?.setViewControllers([controller], animated: animated)
     }
 
-    private func createItemsViewController(collection: Collection, library: Library, dbStorage: DbStorage, fileDownloader: AttachmentDownloader, syncScheduler: SynchronizationScheduler,
-                                           citationController: CitationController, fileCleanupController: AttachmentFileCleanupController, itemsTagFilterDelegate: ItemsTagFilterDelegate?) -> ItemsViewController {
+    private func createItemsViewController(
+        collection: Collection,
+        library: Library,
+        dbStorage: DbStorage,
+        fileDownloader: AttachmentDownloader,
+        syncScheduler: SynchronizationScheduler,
+        citationController: CitationController,
+        fileCleanupController: AttachmentFileCleanupController,
+        itemsTagFilterDelegate: ItemsTagFilterDelegate?,
+        htmlAttributedStringConverter: HtmlAttributedStringConverter
+    ) -> ItemsViewController {
         itemsTagFilterDelegate?.clearSelection()
 
         let searchTerm = self.searchItemKeys?.joined(separator: " ")
         let state = ItemsState(collection: collection, library: library, sortType: .default, searchTerm: searchTerm, filters: [], error: nil)
-        let handler = ItemsActionHandler(dbStorage: dbStorage,
-                                         fileStorage: self.controllers.fileStorage,
-                                         schemaController: self.controllers.schemaController,
-                                         urlDetector: self.controllers.urlDetector,
-                                         fileDownloader: fileDownloader,
-                                         citationController: citationController,
-                                         fileCleanupController: fileCleanupController,
-                                         syncScheduler: syncScheduler)
+        let handler = ItemsActionHandler(
+            dbStorage: dbStorage,
+            fileStorage: self.controllers.fileStorage,
+            schemaController: self.controllers.schemaController,
+            urlDetector: self.controllers.urlDetector,
+            fileDownloader: fileDownloader,
+            citationController: citationController,
+            fileCleanupController: fileCleanupController,
+            syncScheduler: syncScheduler,
+            htmlAttributedStringConverter: htmlAttributedStringConverter
+        )
         let controller = ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: self.controllers, coordinatorDelegate: self)
         controller.tagFilterDelegate = itemsTagFilterDelegate
         itemsTagFilterDelegate?.delegate = controller

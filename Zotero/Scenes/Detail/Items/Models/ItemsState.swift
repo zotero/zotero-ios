@@ -6,7 +6,7 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
-import Foundation
+import UIKit
 
 import RealmSwift
 
@@ -41,6 +41,7 @@ struct ItemsState: ViewModelState {
 
     let collection: Collection
     let library: Library
+    let itemTitleFont: UIFont
 
     var sortType: ItemsSortType
     var searchTerm: String?
@@ -50,6 +51,8 @@ struct ItemsState: ViewModelState {
     var keys: [String]
     // Cache of item accessories (attachment, doi, url) so that they don't need to be re-fetched in tableView. The key is key of parent item, or item if it's a standalone attachment.
     var itemAccessories: [String: ItemAccessory]
+    // Cache of attributed item titles
+    var itemTitles: [String: NSAttributedString]
     var selectedItems: Set<String>
     var isEditing: Bool
     var changes: Changes
@@ -88,6 +91,8 @@ struct ItemsState: ViewModelState {
         self.filters = filters
         self.searchTerm = searchTerm
         self.processingBibliography = false
+        self.itemTitles = [:]
+        self.itemTitleFont = UIFont.preferredFont(for: .headline, weight: .regular)
     }
 
     mutating func cleanup() {

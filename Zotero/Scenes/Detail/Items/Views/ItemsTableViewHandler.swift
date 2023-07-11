@@ -322,9 +322,17 @@ extension ItemsTableViewHandler: UITableViewDataSource {
             // Create and cache attachment if needed
             self.viewModel.process(action: .cacheItemAccessory(item: item))
 
+            let title: NSAttributedString
+            if let _title = self.viewModel.state.itemTitles[item.key] {
+                title = _title
+            } else {
+                self.viewModel.process(action: .cacheItemTitle(key: item.key, title: item.displayTitle))
+                title = self.viewModel.state.itemTitles[item.key] ?? NSAttributedString()
+            }
+
             let accessory = self.viewModel.state.itemAccessories[item.key]
             let typeName = self.schemaController?.localized(itemType: item.rawType) ?? item.rawType
-            cell.set(item: ItemCellModel(item: item, typeName: typeName, accessory: self.cellAccessory(from: accessory)))
+            cell.set(item: ItemCellModel(item: item, typeName: typeName, title: title, accessory: self.cellAccessory(from: accessory)))
 
             let openInfoAction = UIAccessibilityCustomAction(name: L10n.Accessibility.Items.openItem, actionHandler: { [weak self, weak tableView] _ in
                 guard let self = self, let tableView = tableView else { return false }

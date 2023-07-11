@@ -193,6 +193,9 @@ struct StoreItemDbRequest: DbResponseRequest {
                 item.baseTitle = NotePreviewGenerator.preview(from: value) ?? value
                 item.htmlFreeContent = value.isEmpty ? nil : value.strippedHtmlTags
 
+            case (FieldKeys.Item.Annotation.comment, _) where item.rawType == ItemTypes.annotation:
+                item.htmlFreeContent = value.isEmpty ? nil : value.strippedRichTextTags
+
             case (FieldKeys.Item.date, _):
                 date = value
 

@@ -46,4 +46,9 @@ extension String {
         guard !self.isEmpty else { return self }
         return self.replacingOccurrences(of: "<[^>]*>", with: "", options: .regularExpression, range: nil)
     }
+
+    var strippedRichTextTags: String {
+        guard !self.isEmpty else { return self }
+        return self.replacingOccurrences(of: #"<\/?[b|i|span|sub|sup][^>]*>"#, with: "", options: .regularExpression, range: nil)
+    }
 }
