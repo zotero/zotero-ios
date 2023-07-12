@@ -190,7 +190,7 @@ struct StoreItemDbRequest: DbResponseRequest {
                 item.baseTitle = value
 
             case (FieldKeys.Item.note, _) where item.rawType == ItemTypes.note:
-                item.baseTitle = NotePreviewGenerator.preview(from: value) ?? value
+                item.baseTitle = NotePreviewGenerator.preview(from: value) ?? ""
                 item.htmlFreeContent = value.isEmpty ? nil : value
 
             case (FieldKeys.Item.Annotation.comment, _) where item.rawType == ItemTypes.annotation:
