@@ -63,7 +63,7 @@ struct Database {
 
             case ItemTypes.annotation:
                 guard let _content = fields.first(where: { $0["key"] as? String == FieldKeys.Item.Annotation.comment })?["value"] as? String, !_content.isEmpty else { return }
-                content = _content.strippedHtmlTags
+                content = _content.strippedRichTextTags
 
             default:
                 return
