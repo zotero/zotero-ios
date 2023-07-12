@@ -16,7 +16,7 @@ struct NotePreviewGenerator {
     static func preview(from note: String) -> String? {
         guard !note.isEmpty else { return nil }
         
-        var stripped = note.strippedHtmlTags
+        var stripped = note.strippedHtmlTags.basicUnescape
         stripped = stripped.replacingOccurrences(of: "\t", with: "")
         stripped = stripped.trimmingCharacters(in: .newlines)
         stripped = stripped.components(separatedBy: .newlines).first ?? stripped
