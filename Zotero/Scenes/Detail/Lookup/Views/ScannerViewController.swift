@@ -8,7 +8,6 @@
 
 import AVFoundation
 import UIKit
-import WebKit
 
 import CocoaLumberjackSwift
 import RxSwift
@@ -18,7 +17,6 @@ final class ScannerViewController: UIViewController {
     private let sessionQueue: DispatchQueue
     private let disposeBag: DisposeBag
 
-    @IBOutlet private weak var webView: WKWebView!
     @IBOutlet private weak var barcodeContainer: UIView!
     @IBOutlet private weak var barcodeStackContainer: UIStackView!
     @IBOutlet private weak var barcodeTitleLabel: UILabel!
@@ -116,7 +114,6 @@ final class ScannerViewController: UIViewController {
 
     private func setupLookupController() {
         guard let controller = self.coordinatorDelegate?.lookupController(multiLookupEnabled: true, hasDarkBackground: true) else { return }
-        controller.webView = self.webView
         controller.view.backgroundColor = .clear
         controller.view.isHidden = true
         self.lookupController = controller

@@ -7,7 +7,6 @@
 //
 
 import UIKit
-import WebKit
 
 import CocoaLumberjackSwift
 import RxSwift
@@ -45,7 +44,6 @@ class LookupViewController: UIViewController {
     @IBOutlet private weak var tableViewHeight: NSLayoutConstraint!
     @IBOutlet private weak var errorLabel: UILabel!
 
-    weak var webView: WKWebView?
     private var dataSource: UITableViewDiffableDataSource<Int, Row>!
     private var contentSizeObserver: NSKeyValueObservation?
     var dataReloaded: (() -> Void)?

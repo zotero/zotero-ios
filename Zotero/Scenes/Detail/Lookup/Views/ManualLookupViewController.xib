@@ -22,7 +22,6 @@
                 <outlet property="titleLabel" destination="4ev-98-hhW" id="Kf6-ey-mRe"/>
                 <outlet property="topConstraint" destination="dMJ-41-9SJ" id="UKJ-i8-2JE"/>
                 <outlet property="view" destination="5Zg-jR-lrP" id="ZRe-Ca-sVd"/>
-                <outlet property="webView" destination="ehk-5k-KTu" id="xXa-HA-LzF"/>
             </connections>
         </placeholder>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
@@ -30,14 +29,6 @@
             <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
-                <wkWebView hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ehk-5k-KTu">
-                    <rect key="frame" x="0.0" y="48" width="414" height="814"/>
-                    <color key="backgroundColor" red="0.36078431370000003" green="0.38823529410000002" blue="0.4039215686" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                    <wkWebViewConfiguration key="configuration">
-                        <audiovisualMediaTypes key="mediaTypesRequiringUserActionForPlayback" none="YES"/>
-                        <wkPreferences key="preferences"/>
-                    </wkWebViewConfiguration>
-                </wkWebView>
                 <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="CBC-9R-ZFy">
                     <rect key="frame" x="15" y="63" width="384" height="784"/>
                     <subviews>
@@ -86,11 +77,7 @@
             <viewLayoutGuide key="safeArea" id="c30-ta-gNc"/>
             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
             <constraints>
-                <constraint firstItem="c30-ta-gNc" firstAttribute="trailing" secondItem="ehk-5k-KTu" secondAttribute="trailing" id="Aas-Tb-DLu"/>
-                <constraint firstItem="ehk-5k-KTu" firstAttribute="leading" secondItem="c30-ta-gNc" secondAttribute="leading" id="B6i-Lc-49E"/>
-                <constraint firstItem="c30-ta-gNc" firstAttribute="bottom" secondItem="ehk-5k-KTu" secondAttribute="bottom" id="EsW-Pp-MuX"/>
                 <constraint firstItem="c30-ta-gNc" firstAttribute="trailing" secondItem="CBC-9R-ZFy" secondAttribute="trailing" constant="15" id="GND-9B-MuT"/>
-                <constraint firstItem="ehk-5k-KTu" firstAttribute="top" secondItem="c30-ta-gNc" secondAttribute="top" id="IFs-ev-qY1"/>
                 <constraint firstItem="c30-ta-gNc" firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="CBC-9R-ZFy" secondAttribute="bottom" constant="15" id="JTA-yk-KBy"/>
                 <constraint firstItem="CBC-9R-ZFy" firstAttribute="leading" secondItem="c30-ta-gNc" secondAttribute="leading" constant="15" id="Vbv-dG-rKZ"/>
                 <constraint firstItem="CBC-9R-ZFy" firstAttribute="top" secondItem="c30-ta-gNc" secondAttribute="top" constant="15" id="dMJ-41-9SJ"/>

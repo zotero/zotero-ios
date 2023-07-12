@@ -7,13 +7,11 @@
 //
 
 import UIKit
-import WebKit
 
 import CocoaLumberjackSwift
 import RxSwift
 
 class ManualLookupViewController: UIViewController {
-    @IBOutlet private weak var webView: WKWebView!
     @IBOutlet private weak var container: UIStackView!
     @IBOutlet private weak var roundedContainer: UIView!
     @IBOutlet private weak var titleLabel: UILabel!
@@ -209,7 +207,6 @@ class ManualLookupViewController: UIViewController {
 
     private func setupLookupController() {
         guard let controller = self.coordinatorDelegate?.lookupController(multiLookupEnabled: false, hasDarkBackground: false) else { return }
-        controller.webView = self.webView
         controller.view.isHidden = true
         self.lookupController = controller
 
