@@ -366,6 +366,7 @@ final class UserControllers {
         self.identifierLookupController = IdentifierLookupController(
             dbStorage: dbStorage,
             fileStorage: controllers.fileStorage,
+            translatorsController: controllers.translatorsAndStylesController,
             schemaController: controllers.schemaController,
             dateParser: controllers.dateParser,
             remoteFileDownloader: remoteFileDownloader

@@ -16,16 +16,12 @@ final class LookupActionHandler: ViewModelActionHandler {
     typealias Action = LookupAction
 
     private unowned let identifierLookupController: IdentifierLookupController
-    private unowned let translatorsController: TranslatorsAndStylesController
     private unowned let schemaController: SchemaController
     private unowned let dateParser: DateParser
     private let disposeBag: DisposeBag
 
-    private var lookupWebViewHandler: LookupWebViewHandler?
-
-    init(identifierLookupController: IdentifierLookupController, translatorsController: TranslatorsAndStylesController, schemaController: SchemaController, dateParser: DateParser) {
+    init(identifierLookupController: IdentifierLookupController, schemaController: SchemaController, dateParser: DateParser) {
         self.identifierLookupController = identifierLookupController
-        self.translatorsController = translatorsController
         self.schemaController = schemaController
         self.dateParser = dateParser
         self.disposeBag = DisposeBag()
@@ -33,35 +29,36 @@ final class LookupActionHandler: ViewModelActionHandler {
 
     func process(action: LookupAction, in viewModel: ViewModel<LookupActionHandler>) {
         switch action {
-        case .initialize(let webView):
-            let handler = LookupWebViewHandler(webView: webView, translatorsController: self.translatorsController)
-            self.lookupWebViewHandler = handler
-
-            handler.observable
-                   .observe(on: MainScheduler.instance)
-                   .subscribe(with: viewModel, onNext: { [weak self] viewModel, result in
-                       self?.process(result: result, in: viewModel)
-                   })
-                   .disposed(by: self.disposeBag)
-
-            identifierLookupController.observable
-                .observe(on: MainScheduler.instance)
-                .subscribe(with: viewModel) { [weak self] viewModel, update in
-                    guard let self else { return }
-                    switch update.kind {
-                    case .itemStored:
-                        break
-                        
-                    case .pendingAttachments:
-                        let translatedData = LookupState.LookupData(identifier: update.identifier, state: .translated(update.parsedData))
-                        self.update(lookupData: translatedData, in: viewModel)
-                        
-                    case .itemCreationFailed:
-                        let failedData = LookupState.LookupData(identifier: update.identifier, state: .failed)
-                        self.update(lookupData: failedData, in: viewModel)
+        case .initialize:
+            identifierLookupController.initialize { [weak self] lookupWebViewHandler in
+                guard let self, let lookupWebViewHandler else { return }
+                
+                lookupWebViewHandler.observable
+                    .observe(on: MainScheduler.instance)
+                    .subscribe(with: viewModel, onNext: { [weak self] viewModel, result in
+                        self?.process(result: result, in: viewModel)
+                    })
+                    .disposed(by: self.disposeBag)
+                
+                self.identifierLookupController.observable
+                    .observe(on: MainScheduler.instance)
+                    .subscribe(with: viewModel) { [weak self] viewModel, update in
+                        guard let self else { return }
+                        switch update.kind {
+                        case .itemStored:
+                            break
+                            
+                        case .pendingAttachments:
+                            let translatedData = LookupState.LookupData(identifier: update.identifier, state: .translated(update.parsedData))
+                            self.update(lookupData: translatedData, in: viewModel)
+                            
+                        case .itemCreationFailed:
+                            let failedData = LookupState.LookupData(identifier: update.identifier, state: .failed)
+                            self.update(lookupData: failedData, in: viewModel)
+                        }
                     }
-                }
-                .disposed(by: self.disposeBag)
+                    .disposed(by: self.disposeBag)
+            }
 
         case .lookUp(let identifier):
             self.lookUp(identifier: identifier, in: viewModel)
@@ -94,7 +91,7 @@ final class LookupActionHandler: ViewModelActionHandler {
             }
         }
 
-        self.lookupWebViewHandler?.lookUp(identifier: newIdentifier)
+        self.identifierLookupController.lookUp(identifier: newIdentifier)
     }
 
     private func process(data: LookupWebViewHandler.LookupData, in viewModel: ViewModel<LookupActionHandler>) {

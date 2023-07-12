@@ -57,7 +57,12 @@ class LookupViewController: UIViewController {
     private unowned let schemaController: SchemaController
     private let disposeBag: DisposeBag
 
-    init(viewModel: ViewModel<LookupActionHandler>, remoteDownloadObserver: PublishSubject<RemoteAttachmentDownloader.Update>, remoteFileDownloader: RemoteAttachmentDownloader, schemaController: SchemaController) {
+    init(
+        viewModel: ViewModel<LookupActionHandler>,
+        remoteDownloadObserver: PublishSubject<RemoteAttachmentDownloader.Update>,
+        remoteFileDownloader: RemoteAttachmentDownloader,
+        schemaController: SchemaController
+    ) {
         self.viewModel = viewModel
         self.remoteFileDownloader = remoteFileDownloader
         self.schemaController = schemaController
@@ -85,9 +90,7 @@ class LookupViewController: UIViewController {
                       })
                       .disposed(by: self.disposeBag)
 
-        if let webView = self.webView {
-            self.viewModel.process(action: .initialize(webView))
-        }
+        self.viewModel.process(action: .initialize)
     }
 
     deinit {

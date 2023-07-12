@@ -7,9 +7,15 @@
 //
 
 import Foundation
+import WebKit
 
 import CocoaLumberjackSwift
 import RxSwift
+
+protocol IdentifierLookupWebViewProvider: AnyObject {
+    func addWebView() -> WKWebView
+    func removeWebView(_ webView: WKWebView)
+}
 
 final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
     // MARK: Types
@@ -31,15 +37,28 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
     internal let backgroundQueue: DispatchQueue
     internal unowned let dbStorage: DbStorage
     private unowned let fileStorage: FileStorage
+    private unowned let translatorsController: TranslatorsAndStylesController
     private unowned let schemaController: SchemaController
     private unowned let dateParser: DateParser
     private unowned let remoteFileDownloader: RemoteAttachmentDownloader
     private let disposeBag: DisposeBag
     
+    internal weak var webViewProvider: IdentifierLookupWebViewProvider?
+    private var webView: WKWebView?
+    private var lookupWebViewHandler: LookupWebViewHandler?
+    
     // MARK: Object Lifecycle
-    init(dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, dateParser: DateParser, remoteFileDownloader: RemoteAttachmentDownloader) {
+    init(
+        dbStorage: DbStorage,
+        fileStorage: FileStorage,
+        translatorsController: TranslatorsAndStylesController,
+        schemaController: SchemaController,
+        dateParser: DateParser,
+        remoteFileDownloader: RemoteAttachmentDownloader
+    ) {
         self.fileStorage = fileStorage
         self.dbStorage = dbStorage
+        self.translatorsController = translatorsController
         self.schemaController = schemaController
         self.dateParser = dateParser
         self.remoteFileDownloader = remoteFileDownloader
@@ -52,6 +71,33 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
     }
     
     // MARK: Actions
+    func initialize(completion: @escaping (LookupWebViewHandler?) -> Void) {
+        backgroundQueue.async { [weak self] in
+            var lookupWebViewHandler: LookupWebViewHandler?
+            defer {
+                completion(lookupWebViewHandler)
+            }
+            guard let self = self else { return }
+            
+            if self.lookupWebViewHandler == nil {
+                inMainThread(sync: true) {
+                    if let webView = self.webViewProvider?.addWebView() {
+                        self.webView = webView
+                        self.lookupWebViewHandler = .init(webView: webView, translatorsController: self.translatorsController)
+                    }
+                }
+            }
+            lookupWebViewHandler = self.lookupWebViewHandler
+            guard lookupWebViewHandler != nil else {
+                return
+            }
+        }
+    }
+    
+    func lookUp(identifier: String) {
+        lookupWebViewHandler?.lookUp(identifier: identifier)
+    }
+    
     func process(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)]) {
         func storeDataAndDownloadAttachmentIfNecessary(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)]) throws {
             let request = CreateTranslatedItemsDbRequest(responses: [response], schemaController: schemaController, dateParser: dateParser)
