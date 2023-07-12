@@ -327,7 +327,7 @@ extension ItemsTableViewHandler: UITableViewDataSource {
                 title = _title
             } else {
                 self.viewModel.process(action: .cacheItemTitle(key: item.key, title: item.displayTitle))
-                title = self.viewModel.state.itemTitles[item.key] ?? NSAttributedString()
+                title = self.viewModel.state.itemTitles[item.key, default: NSAttributedString()]
             }
 
             let accessory = self.viewModel.state.itemAccessories[item.key]
