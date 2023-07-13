@@ -306,20 +306,46 @@ extension NSPredicate {
 
     private static func itemSearchSubpredicates(for text: String) -> NSPredicate {
         let keyPredicate = NSPredicate(format: "key == %@", text)
-        let childrenPredicate = NSPredicate(format: "any children.key == %@", text)
-        let titlePredicate = NSPredicate(format: "displayTitle contains[c] %@", text)
-        let tagPredicate = NSPredicate(format: "any tags.tag.name contains[c] %@", text)
-        let childTagPredicate = NSPredicate(format: "any children.tags.tag.name contains[c] %@", text)
-        let childChildTagPredicate = NSPredicate(format: "any children.children.tags.tag.name contains[c] %@", text)
+        let childrenKeyPredicate = NSPredicate(format: "any children.key == %@", text)
+        let childrenChildrenKeyPredicate = NSPredicate(format: "any children.children.key == %@", text)
+        let contentPredicate = NSPredicate(format: "htmlFreeContent contains[c] %@", text)
+        let childrenContentPredicate = NSPredicate(format: "any children.htmlFreeContent contains[c] %@", text)
+        let childrenChildrenContentPredicate = NSPredicate(format: "any children.children.htmlFreeContent contains[c] %@", text)
+        let titlePredicate = NSPredicate(format: "sortTitle contains[c] %@", text)
+        let childrenTitlePredicate = NSPredicate(format: "any children.sortTitle contains[c] %@", text)
         let creatorFullNamePredicate = NSPredicate(format: "any creators.name contains[c] %@", text)
         let creatorFirstNamePredicate = NSPredicate(format: "any creators.firstName contains[c] %@", text)
         let creatorLastNamePredicate = NSPredicate(format: "any creators.lastName contains[c] %@", text)
+        let tagPredicate = NSPredicate(format: "any tags.tag.name contains[c] %@", text)
+        let childrenTagPredicate = NSPredicate(format: "any children.tags.tag.name contains[c] %@", text)
+        let childrenChildrenTagPredicate = NSPredicate(format: "any children.children.tags.tag.name contains[c] %@", text)
+        let fieldsPredicate = NSPredicate(format: "any fields.value contains[c] %@", text)
+        let childrenFieldsPredicate = NSPredicate(format: "any children.fields.value contains[c] %@", text)
+        let childrenChildrenFieldsPredicate = NSPredicate(format: "any children.children.fields.value contains[c] %@", text)
 
-        var predicates = [keyPredicate, childrenPredicate, titlePredicate, creatorFullNamePredicate, creatorFirstNamePredicate, creatorLastNamePredicate, tagPredicate, childTagPredicate,
-                          childChildTagPredicate]
+        var predicates = [
+            keyPredicate,
+            titlePredicate,
+            contentPredicate,
+            creatorFullNamePredicate,
+            creatorFirstNamePredicate,
+            creatorLastNamePredicate,
+            tagPredicate,
+            childrenKeyPredicate,
+            childrenTitlePredicate,
+            childrenContentPredicate,
+            childrenTagPredicate,
+            childrenChildrenKeyPredicate,
+            childrenChildrenContentPredicate,
+            childrenChildrenTagPredicate,
+            fieldsPredicate,
+            childrenFieldsPredicate,
+            childrenChildrenFieldsPredicate
+        ]
+
         if let int = Int(text) {
             let yearPredicate = NSPredicate(format: "parsedYear == %d", int)
-            predicates.append(yearPredicate)
+            predicates.insert(yearPredicate, at: 3)
         }
 
         return NSCompoundPredicate(orPredicateWithSubpredicates: predicates)

@@ -26,12 +26,22 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     private unowned let citationController: CitationController
     private unowned let fileCleanupController: AttachmentFileCleanupController
     private unowned let syncScheduler: SynchronizationScheduler
+    private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
     let backgroundQueue: DispatchQueue
     private let disposeBag: DisposeBag
     private let quotationExpression: NSRegularExpression?
 
-    init(dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, urlDetector: UrlDetector, fileDownloader: AttachmentDownloader, citationController: CitationController,
-         fileCleanupController: AttachmentFileCleanupController, syncScheduler: SynchronizationScheduler) {
+    init(
+        dbStorage: DbStorage,
+        fileStorage: FileStorage,
+        schemaController: SchemaController,
+        urlDetector: UrlDetector,
+        fileDownloader: AttachmentDownloader,
+        citationController: CitationController,
+        fileCleanupController: AttachmentFileCleanupController,
+        syncScheduler: SynchronizationScheduler,
+        htmlAttributedStringConverter: HtmlAttributedStringConverter
+    ) {
         self.backgroundQueue = DispatchQueue(label: "org.zotero.ItemsActionHandler.backgroundProcessing", qos: .userInitiated)
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
@@ -41,6 +51,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         self.citationController = citationController
         self.fileCleanupController = fileCleanupController
         self.syncScheduler = syncScheduler
+        self.htmlAttributedStringConverter = htmlAttributedStringConverter
         self.disposeBag = DisposeBag()
 
         do {
@@ -176,6 +187,11 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
 
         case .tagItem(let itemKey, let libraryId, let tagNames):
             self.tagItem(key: itemKey, libraryId: libraryId, with: tagNames, in: viewModel)
+
+        case .cacheItemTitle(let key, let title):
+            self.update(viewModel: viewModel) { state in
+                state.itemTitles[key] = self.htmlAttributedStringConverter.convert(text: title, baseAttributes: [.font: state.itemTitleFont])
+            }
         }
     }
 
@@ -701,6 +717,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
             modifications.forEach { idx in
                 let item = items[idx]
                 state.itemAccessories[item.key] = self.accessory(for: item)
+                state.itemTitles[item.key] = self.htmlAttributedStringConverter.convert(text: item.displayTitle, baseAttributes: [.font: state.itemTitleFont])
             }
 
             insertions.forEach { idx in
@@ -709,6 +726,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
                     state.keys.insert(item.key, at: idx)
                 }
                 state.itemAccessories[item.key] = self.accessory(for: item)
+                state.itemTitles[item.key] = self.htmlAttributedStringConverter.convert(text: item.displayTitle, baseAttributes: [.font: state.itemTitleFont])
             }
         }
     }

@@ -14,6 +14,7 @@ import RealmSwift
 enum ItemsAction {
     case addAttachments([URL])
     case assignItemsToCollections(items: Set<String>, collections: Set<String>)
+    case cacheItemTitle(key: String, title: String)
     case deleteItemsFromCollection(Set<String>)
     case deleteItems(Set<String>)
     case deselectItem(String)

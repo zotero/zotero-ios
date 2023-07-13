@@ -20,18 +20,18 @@ struct ItemCellModel {
     let key: String
     let typeIconName: String
     let typeName: String
-    let title: String
+    let title: NSAttributedString
     let subtitle: String
     let hasNote: Bool
     let tagColors: [UIColor]
     let accessory: Accessory?
 
-    init(item: RItem, typeName: String, accessory: Accessory?) {
+    init(item: RItem, typeName: String, title: NSAttributedString, accessory: Accessory?) {
         self.key = item.key
         let contentType: String? = item.rawType == ItemTypes.attachment ? item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value : nil
         self.typeIconName = ItemTypes.iconName(for: item.rawType, contentType: contentType)
         self.typeName = typeName
-        self.title = item.displayTitle
+        self.title = title
         self.subtitle = ItemCellModel.subtitle(for: item)
         self.hasNote = ItemCellModel.hasNote(item: item)
         self.tagColors = ItemCellModel.tagColors(item: item)

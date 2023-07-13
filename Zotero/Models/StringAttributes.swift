@@ -13,6 +13,7 @@ enum StringAttribute: CaseIterable {
     case italic
     case superscript
     case `subscript`
+    case smallcaps
 
     static let subscriptFontOffset: CGFloat = 0.2
     static let superscriptFontOffset: CGFloat = 0.4
@@ -22,12 +23,18 @@ enum StringAttribute: CaseIterable {
         switch tag {
         case "b":
             self = .bold
+
         case "i":
             self = .italic
+
         case "sup":
             self = .superscript
+
         case "sub":
             self = .subscript
+
+        case #"span style="font-variant:small-caps;""#, "span":
+            self = .smallcaps
 
         default:
             return nil
@@ -39,12 +46,18 @@ enum StringAttribute: CaseIterable {
         switch self {
         case .bold:
             tag = "b"
+
         case .italic:
             tag = "i"
+
         case .subscript:
             tag = "sub"
+
         case .superscript:
             tag = "sup"
+
+        case .smallcaps:
+            tag = isClosing ? "span" : #"span style="font-variant:small-caps;""#
         }
         return "<\(isClosing ? "/" : "")\(tag)>"
     }
@@ -52,12 +65,15 @@ enum StringAttribute: CaseIterable {
     static func attributes(from nsStringAttributes: [NSAttributedString.Key: Any]) -> [StringAttribute] {
         var actions: [StringAttribute] = []
 
-        if let traits = (nsStringAttributes[.font] as? UIFont)?.fontDescriptor.symbolicTraits {
-            if traits.contains(.traitBold) {
+        if let fontDescriptor = (nsStringAttributes[.font] as? UIFont)?.fontDescriptor {
+            if fontDescriptor.symbolicTraits.contains(.traitBold) {
                 actions.append(.bold)
             }
-            if traits.contains(.traitItalic) {
+            if fontDescriptor.symbolicTraits.contains(.traitItalic) {
                 actions.append(.italic)
+            }
+            if let settings = fontDescriptor.fontAttributes[UIFontDescriptor.AttributeName.featureSettings] as? [[UIFontDescriptor.FeatureKey: Int]], !settings.isEmpty {
+                actions.append(.smallcaps)
             }
         }
 
@@ -78,6 +94,7 @@ enum StringAttribute: CaseIterable {
         var allKeys: [NSAttributedString.Key: Any] = [:]
         var font = baseFont
         var traits: UIFontDescriptor.SymbolicTraits = []
+        var descriptorAttributes: [UIFontDescriptor.AttributeName: Any] = [:]
 
         for attribute in attributes {
             switch attribute {
@@ -102,14 +119,16 @@ enum StringAttribute: CaseIterable {
                 font = font.size(font.pointSize * StringAttribute.subOrSuperScriptFontSizeRatio)
                 let baseline = (allKeys[.baselineOffset] as? CGFloat) ?? 0
                 allKeys[.baselineOffset] = baseline + offset
+
+            case .smallcaps:
+                descriptorAttributes[.featureSettings] = [
+                    [UIFontDescriptor.FeatureKey.featureIdentifier: kLowerCaseType, UIFontDescriptor.FeatureKey.typeIdentifier: kLowerCaseSmallCapsSelector],
+                    [UIFontDescriptor.FeatureKey.featureIdentifier: kUpperCaseType, UIFontDescriptor.FeatureKey.typeIdentifier: kUpperCaseSmallCapsSelector]
+                ]
             }
         }
 
-        if traits.isEmpty {
-            allKeys[.font] = font
-        } else {
-            allKeys[.font] = font.withTraits(traits)
-        }
+        allKeys[.font] = font.with(traits: traits, attributes: descriptorAttributes)
 
         return allKeys
     }

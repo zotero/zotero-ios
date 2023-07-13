@@ -34,8 +34,25 @@ extension RItemChanges {
 }
 
 final class RItem: Object {
-    static let observableKeypathsForItemList: [String] = ["rawType", "baseTitle", "displayTitle", "sortTitle", "creatorSummary", "sortCreatorSummary", "hasCreatorSummary", "parsedDate", "hasParsedDate",
-                                                          "parsedYear", "hasParsedYear", "publisher", "hasPublisher", "publicationTitle", "hasPublicationTitle", "children.backendMd5", "tags"]
+    static let observableKeypathsForItemList: [String] = [
+        "rawType",
+        "baseTitle",
+        "displayTitle",
+        "sortTitle",
+        "creatorSummary",
+        "sortCreatorSummary",
+        "hasCreatorSummary",
+        "parsedDate",
+        "hasParsedDate",
+        "parsedYear",
+        "hasParsedYear",
+        "publisher",
+        "hasPublisher",
+        "publicationTitle",
+        "hasPublicationTitle",
+        "children.backendMd5",
+        "tags"
+    ]
     static let observableKeypathsForItemDetail: [String] = ["version", "changeType", "children.version"]
 
     @Persisted(indexed: true) var key: String
@@ -118,6 +135,8 @@ final class RItem: Object {
     @Persisted var changeType: UpdatableChangeType
     /// Indicates whether the object is deleted locally and needs to be synced with backend
     @Persisted var deleted: Bool
+    /// Comment (for annotations) or note (for notes) text without HTML tags
+    @Persisted var htmlFreeContent: String?
 
     var doi: String? {
         return self.fields.filter(.key(FieldKeys.Item.doi)).first.flatMap({ field -> String? in
@@ -166,7 +185,7 @@ final class RItem: Object {
     }
 
     private func updateSortTitle() {
-        let newTitle = self.displayTitle.trimmingCharacters(in: CharacterSet(charactersIn: "[]'\"")).lowercased()
+        let newTitle = self.displayTitle.strippedRichTextTags.trimmingCharacters(in: CharacterSet(charactersIn: "[]'\"")).lowercased()
         if newTitle != self.sortTitle {
             self.sortTitle = newTitle
         }

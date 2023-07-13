@@ -41,4 +41,29 @@ extension String {
         else { return nil }
         return ext.takeRetainedValue() as String
     }
+
+    var strippedHtmlTags: String {
+        guard !self.isEmpty else { return self }
+        return self.replacingOccurrences(of: "<[^>]*>", with: "", options: .regularExpression, range: nil)
+    }
+
+    var strippedRichTextTags: String {
+        guard !self.isEmpty else { return self }
+        return self.replacingOccurrences(of: #"<\/?[b|i|span|sub|sup][^>]*>"#, with: "", options: .regularExpression, range: nil)
+    }
+
+    var basicUnescape: String {
+        let characters = [
+            "&amp;": "&",
+            "&lt;": "<",
+            "&gt;": ">",
+            "&quot;": "\"",
+            "&apos;": "'"
+        ]
+        var str = self
+        for (escaped, unescaped) in characters {
+            str = str.replacingOccurrences(of: escaped, with: unescaped, options: NSString.CompareOptions.literal, range: nil)
+        }
+        return str
+    }
 }

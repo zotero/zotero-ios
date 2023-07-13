@@ -45,6 +45,7 @@ struct CreateNoteDbRequest: DbResponseRequest {
         item.dateAdded = Date()
         item.dateModified = Date()
         item.libraryId = libraryId
+        item.htmlFreeContent = self.note.text.isEmpty ? nil : self.note.text.strippedHtmlTags
         database.add(item)
 
         // Assign parent

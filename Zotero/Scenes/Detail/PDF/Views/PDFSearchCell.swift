@@ -17,10 +17,8 @@ final class PDFSearchCell: UITableViewCell {
 
     func setup(with searchResult: SearchResult) {
         self.pageLabel.text = L10n.page + " \(searchResult.pageIndex + 1)"
-
         let font = UIFont.preferredFont(forTextStyle: .body)
-        let highlightAttributes: [NSAttributedString.Key: Any] = [.backgroundColor: UIColor.yellow,
-                                                                  .font: font.withTraits(.traitBold)]
+        let highlightAttributes: [NSAttributedString.Key: Any] = [.backgroundColor: UIColor.yellow, .font: font.with(traits: .traitBold, attributes: [:])]
         let attributedString = NSMutableAttributedString(string: searchResult.previewText, attributes: [.font: font])
         attributedString.addAttributes(highlightAttributes, range: searchResult.rangeInPreviewText)
         self.contentLabel.attributedText = attributedString

@@ -48,8 +48,7 @@ final class HtmlAttributedStringConverter {
         // Generate new string with html tags
         var newString = attributedString.string
         for attribute in attributes {
-            newString.insert(contentsOf: attribute.type.htmlTag(isClosing: attribute.isClosing),
-                             at: newString.index(newString.startIndex, offsetBy: attribute.index))
+            newString.insert(contentsOf: attribute.type.htmlTag(isClosing: attribute.isClosing), at: newString.index(newString.startIndex, offsetBy: attribute.index))
         }
         return newString
     }
@@ -108,11 +107,7 @@ final class HtmlAttributedStringConverter {
             }
 
             // Tag recognized, store tag type and position.
-            if strippedTag != nil {
-                attributes.append(Attribute(type: type, index: (start - deletedCharacters), isClosing: true))
-            } else {
-                attributes.append(Attribute(type: type, index: (start - deletedCharacters), isClosing: false))
-            }
+            attributes.append(Attribute(type: type, index: (start - deletedCharacters), isClosing: strippedTag != nil))
 
             // Strip tag from original string.
             let tagLength = tag.count + 2 // + '<', '>'
