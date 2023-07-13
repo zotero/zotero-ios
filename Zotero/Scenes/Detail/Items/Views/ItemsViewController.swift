@@ -163,6 +163,14 @@ final class ItemsViewController: UIViewController {
         }
     }
 
+    override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+        guard let key = presses.first?.key, key.characters == "f", key.modifierFlags.contains(.command) else {
+            super.pressesBegan(presses, with: event)
+            return
+        }
+        self.searchBarContainer?.searchBar.becomeFirstResponder()
+    }
+
     deinit {
         DDLogInfo("ItemsViewController deinitialized")
     }
