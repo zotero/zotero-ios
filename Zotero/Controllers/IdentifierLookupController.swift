@@ -47,10 +47,7 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
     private let disposeBag: DisposeBag
     
     internal weak var webViewProvider: IdentifierLookupWebViewProvider?
-    private var webView: WKWebView?
-    private var lookupWebViewHandler: LookupWebViewHandler?
-    private var libraryId: LibraryIdentifier?
-    private var collectionKeys: Set<String>?
+    private var lookupWebViewHandlersByLookupSettings: [LookupWebViewHandler.LookupSettings: LookupWebViewHandler] = [:]
     
     // MARK: Object Lifecycle
     init(
@@ -83,28 +80,29 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                 completion(observable)
             }
             guard let self = self else { return }
-            self.libraryId = libraryId
-            self.collectionKeys = collectionKeys
-            if self.lookupWebViewHandler == nil {
-                inMainThread(sync: true) {
-                    if let webView = self.webViewProvider?.addWebView() {
-                        self.webView = webView
-                        self.lookupWebViewHandler = .init(webView: webView, translatorsController: self.translatorsController)
-                    }
-                }
-                if let lookupWebViewHandler = self.lookupWebViewHandler {
-                    self.setupObserver(for: lookupWebViewHandler)
-                } else {
-                    DDLogError("IdentifierLookupController: can't create LookupWebViewHandler instance")
+            let lookupSettings = LookupWebViewHandler.LookupSettings(libraryIdentifier: libraryId, collectionKeys: collectionKeys)
+            if self.lookupWebViewHandlersByLookupSettings[lookupSettings] != nil {
+                observable = self.observable
+                return
+            }
+            inMainThread(sync: true) {
+                if let webView = self.webViewProvider?.addWebView() {
+                    let lookupWebViewHandler = LookupWebViewHandler(lookupSettings: lookupSettings, webView: webView, translatorsController: self.translatorsController)
+                    self.lookupWebViewHandlersByLookupSettings[lookupSettings] = lookupWebViewHandler
                 }
             }
-            guard self.lookupWebViewHandler != nil else { return }
+            guard let lookupWebViewHandler = self.lookupWebViewHandlersByLookupSettings[lookupSettings] else {
+                DDLogError("IdentifierLookupController: can't create LookupWebViewHandler instance")
+                return
+            }
+            self.setupObserver(for: lookupWebViewHandler)
             observable = self.observable
         }
     }
     
-    func lookUp(identifier: String) {
-        lookupWebViewHandler?.lookUp(identifier: identifier)
+    func lookUp(libraryId: LibraryIdentifier, collectionKeys: Set<String>, identifier: String) {
+        let lookupSettings = LookupWebViewHandler.LookupSettings(libraryIdentifier: libraryId, collectionKeys: collectionKeys)
+        lookupWebViewHandlersByLookupSettings[lookupSettings]?.lookUp(identifier: identifier)
     }
     
     // MARK: Setups
@@ -165,7 +163,8 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                 /// - parameter schemaController: SchemaController which is used for validating item type and field types
                 /// - returns: `ItemResponse` of parsed item and optional attachment dictionary with title and url.
                 func parse(_ itemData: [String: Any]) -> (ItemResponse, [(Attachment, URL)])? {
-                    guard let libraryId, let collectionKeys else { return nil }
+                    let libraryId = lookupWebViewHandler.lookupSettings.libraryIdentifier
+                    let collectionKeys = lookupWebViewHandler.lookupSettings.collectionKeys
                     do {
                         let item = try ItemResponse(translatorResponse: itemData, schemaController: schemaController).copy(libraryId: libraryId, collectionKeys: collectionKeys, tags: [])
 

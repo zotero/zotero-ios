@@ -101,7 +101,9 @@ final class LookupActionHandler: ViewModelActionHandler {
             }
         }
 
-        self.identifierLookupController.lookUp(identifier: newIdentifier)
+        let collectionKeys = viewModel.state.collectionKeys
+        let libraryId = viewModel.state.libraryId
+        self.identifierLookupController.lookUp(libraryId: libraryId, collectionKeys: collectionKeys, identifier: newIdentifier)
     }
 
     private func update(lookupData: LookupState.LookupData, in viewModel: ViewModel<LookupActionHandler>) {
