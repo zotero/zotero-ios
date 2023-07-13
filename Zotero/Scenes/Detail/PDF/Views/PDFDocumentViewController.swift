@@ -112,6 +112,14 @@ final class PDFDocumentViewController: UIViewController {
         self.updatePencilSettingsIfNeeded()
     }
 
+    override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+        guard let controller = self.pdfController, let key = presses.first?.key, key.characters == "f", key.modifierFlags.contains(.command) else {
+            super.pressesBegan(presses, with: event)
+            return
+        }
+        self.parentDelegate?.showSearch(pdfController: controller, text: nil)
+    }
+
     // MARK: - Actions
 
     func focus(page: UInt) {

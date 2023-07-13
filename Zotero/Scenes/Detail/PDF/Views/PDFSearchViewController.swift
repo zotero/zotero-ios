@@ -51,6 +51,11 @@ final class PDFSearchViewController: UIViewController {
         super.viewDidLoad()
 
         self.setupViews()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
         self.searchBar.becomeFirstResponder()
 
         if let text = self.text {
@@ -66,6 +71,14 @@ final class PDFSearchViewController: UIViewController {
 
     deinit {
         DDLogInfo("PDFSearchViewController deinitialized")
+    }
+
+    override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+        guard let key = presses.first?.key, key.keyCode == .keyboardEscape else {
+            super.pressesBegan(presses, with: event)
+            return
+        }
+        self.dismiss(animated: true, completion: nil)
     }
 
     // MARK: - Actions
