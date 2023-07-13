@@ -60,11 +60,7 @@ final class LookupCoordinator: NSObject, Coordinator {
     private func lookupController(multiLookupEnabled: Bool, hasDarkBackground: Bool, userControllers: UserControllers) -> LookupViewController {
         let collectionKeys = Defaults.shared.selectedCollectionId.key.flatMap({ Set([$0]) }) ?? []
         let state = LookupState(multiLookupEnabled: multiLookupEnabled, hasDarkBackground: hasDarkBackground, collectionKeys: collectionKeys, libraryId: Defaults.shared.selectedLibrary)
-        let handler = LookupActionHandler(
-            identifierLookupController: userControllers.identifierLookupController,
-            schemaController: controllers.schemaController,
-            dateParser: controllers.dateParser
-        )
+        let handler = LookupActionHandler(identifierLookupController: userControllers.identifierLookupController)
         let viewModel = ViewModel(initialState: state, handler: handler)
 
         return LookupViewController(
