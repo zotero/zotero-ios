@@ -120,6 +120,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         userInterfaceStyle: UIUserInterfaceStyle,
         valueChanged: @escaping (String?, Float?) -> Void
     ) {
+        DDLogInfo("PDFCoordinator: show tool settings for \(tool)")
         let state = AnnotationToolOptionsState(tool: tool, colorHex: colorHex, size: sizeValue)
         let handler = AnnotationToolOptionsActionHandler()
         let controller = AnnotationToolOptionsViewController(viewModel: ViewModel(initialState: state, handler: handler), valueChanged: valueChanged)
@@ -148,6 +149,8 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
     func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate, userInterfaceStyle: UIUserInterfaceStyle) {
         guard let currentNavigationController = self.navigationController else { return }
 
+        DDLogInfo("PDFCoordinator: show annotation popover")
+
         if let coordinator = self.childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
             return
         }
@@ -172,6 +175,8 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
     }
 
     func showSearch(pdfController: PDFViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, result: @escaping (SearchResult) -> Void) {
+        DDLogInfo("PDFCoordinator: show search")
+
         if let existing = self.pdfSearchController {
             if let controller = existing.presentingViewController {
                 controller.dismiss(animated: true) { [weak self] in
@@ -206,6 +211,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
     }
 
     func lookup(text: String, rect: CGRect, view: UIView, userInterfaceStyle: UIUserInterfaceStyle) {
+        DDLogInfo("PDFCoordinator: show lookup")
         let controller = UIReferenceLibraryViewController(term: text)
         controller.overrideUserInterfaceStyle = userInterfaceStyle
         controller.modalPresentationStyle = .popover
@@ -275,6 +281,8 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
     }
 
     func showSettings(with settings: PDFSettings, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (PDFSettings) -> Void) {
+        DDLogInfo("PDFCoordinator: show settings")
+
         let state = PDFSettingsState(settings: settings)
         let viewModel = ViewModel(initialState: state, handler: PDFSettingsActionHandler())
 
@@ -298,6 +306,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
     }
 
     func showReader(document: Document, userInterfaceStyle: UIUserInterfaceStyle) {
+        DDLogInfo("PDFCoordinator: show plain text reader")
         let controller = PDFPlainReaderViewController(document: document)
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.overrideUserInterfaceStyle = userInterfaceStyle
@@ -306,6 +315,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
     }
 
     func showPdfExportSettings(sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, completed: @escaping (PDFExportSettings) -> Void) {
+        DDLogInfo("PDFCoordinator: show PDF export")
         let view = PDFExportSettingsView(settings: PDFExportSettings(includeAnnotations: true), exportHandler: { [weak self] settings in
             self?.navigationController?.dismiss(animated: true, completion: {
                 completed(settings)
@@ -457,6 +467,8 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         userInterfaceStyle: UIUserInterfaceStyle,
         completed: @escaping (AnnotationsFilter?) -> Void
     ) {
+        DDLogInfo("PDFCoordinator: show annotations filter popup")
+
         let navigationController = NavigationViewController()
         navigationController.overrideUserInterfaceStyle = userInterfaceStyle
 
