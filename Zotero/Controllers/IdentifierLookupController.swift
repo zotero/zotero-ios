@@ -20,15 +20,12 @@ protocol IdentifierLookupWebViewProvider: AnyObject {
 final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
     // MARK: Types
     struct Update {
-        enum Kind: Hashable {
-            case itemStored
-            case pendingAttachments
-            case itemCreationFailed
+        enum Kind {
+            case itemStored(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)])
+            case pendingAttachments(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)])
+            case itemCreationFailed(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)])
         }
 
-        let identifier: String
-        let response: ItemResponse
-        let attachments: [(Attachment, URL)]
         let kind: Kind
     }
     
@@ -102,14 +99,14 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
         func storeDataAndDownloadAttachmentIfNecessary(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)]) throws {
             let request = CreateTranslatedItemsDbRequest(responses: [response], schemaController: schemaController, dateParser: dateParser)
             try dbStorage.perform(request: request, on: backgroundQueue)
-            observable.on(.next(Update(identifier: identifier, response: response, attachments: attachments, kind: .itemStored)))
+            observable.on(.next(Update(kind: .itemStored(identifier: identifier, response: response, attachments: attachments))))
             
             guard Defaults.shared.shareExtensionIncludeAttachment else { return }
 
             let downloadData = attachments.map({ ($0, $1, response.key) })
             guard !downloadData.isEmpty else { return }
             remoteFileDownloader.download(data: downloadData)
-            observable.on(.next(Update(identifier: identifier, response: response, attachments: attachments, kind: .pendingAttachments)))
+            observable.on(.next(Update(kind: .pendingAttachments(identifier: identifier, response: response, attachments: attachments))))
         }
 
         backgroundQueue.async { [weak self] in
@@ -118,7 +115,7 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                 try storeDataAndDownloadAttachmentIfNecessary(identifier: identifier, response: response, attachments: attachments)
             } catch let error {
                 DDLogError("IdentifierLookupController: can't create item(s) - \(error)")
-                self.observable.on(.next(Update(identifier: identifier, response: response, attachments: attachments, kind: .itemCreationFailed)))
+                self.observable.on(.next(Update(kind: .itemCreationFailed(identifier: identifier, response: response, attachments: attachments))))
             }
         }
     }

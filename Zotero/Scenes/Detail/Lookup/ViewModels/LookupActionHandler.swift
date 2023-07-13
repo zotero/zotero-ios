@@ -48,12 +48,13 @@ final class LookupActionHandler: ViewModelActionHandler {
                         case .itemStored:
                             break
                             
-                        case .pendingAttachments:
-                            let translatedData = LookupState.LookupData(identifier: update.identifier, state: .translated(update.parsedData))
+                        case .pendingAttachments(let identifier, let response, let attachments):
+                            let parsedData = LookupState.TranslatedLookupData(response: response, attachments: attachments)
+                            let translatedData = LookupState.LookupData(identifier: identifier, state: .translated(parsedData))
                             self.update(lookupData: translatedData, in: viewModel)
                             
-                        case .itemCreationFailed:
-                            let failedData = LookupState.LookupData(identifier: update.identifier, state: .failed)
+                        case .itemCreationFailed(let identifier, _, _):
+                            let failedData = LookupState.LookupData(identifier: identifier, state: .failed)
                             self.update(lookupData: failedData, in: viewModel)
                         }
                     }
@@ -194,11 +195,5 @@ final class LookupActionHandler: ViewModelActionHandler {
             DDLogError("LookupActionHandler: can't parse data - \(error)")
             return nil
         }
-    }
-}
-
-extension IdentifierLookupController.Update {
-    var parsedData: LookupState.TranslatedLookupData {
-        .init(response: response, attachments: attachments)
     }
 }
