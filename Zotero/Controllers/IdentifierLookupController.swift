@@ -107,6 +107,18 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
     
     // MARK: Setups
     private func setupObservers() {
+        remoteFileDownloader.observable
+            .subscribe { update in
+                switch update.kind {
+                case .ready(let attachment):
+                    finish(download: update.download, attachment: attachment)
+                    
+                case .cancelled, .failed, .progress:
+                    break
+                }
+            }
+            .disposed(by: self.disposeBag)
+        
         func finish(download: RemoteAttachmentDownloader.Download, attachment: Attachment) {
             let localizedType = schemaController.localized(itemType: ItemTypes.attachment) ?? ItemTypes.attachment
             
@@ -133,23 +145,60 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                 }
             }
         }
-        
-        remoteFileDownloader.observable
-            .subscribe { update in
-                switch update.kind {
-                case .ready(let attachment):
-                    finish(download: update.download, attachment: attachment)
-                    
-                case .cancelled, .failed, .progress:
-                    break
-                }
-            }
-            .disposed(by: self.disposeBag)
     }
     
     private func setupObserver(for lookupWebViewHandler: LookupWebViewHandler) {
+        lookupWebViewHandler.observable
+            .subscribe { result in
+                process(result: result)
+            }
+            .disposed(by: self.disposeBag)
+        
         func process(result: Result<LookupWebViewHandler.LookupData, Error>) {
+            switch result {
+            case .success(let data):
+                process(data: data)
+                
+            case .failure(let error):
+                DDLogError("IdentifierLookupController: lookup failed - \(error)")
+                observable.on(.next(Update(kind: .lookupError(error: error))))
+            }
+            
             func process(data: LookupWebViewHandler.LookupData) {
+                switch data {
+                case .identifiers(let identifiers):
+                    if identifiers.isEmpty {
+                        observable.on(.next(Update(kind: .noIdentifiersDetected)))
+                    } else {
+                        observable.on(.next(Update(kind: .identifiersDetected(identifiers: identifiers.map({ identifier(from: $0) })))))
+                    }
+                    
+                case .item(let data):
+                    guard let lookupId = data["identifier"] as? [String: String] else { return }
+                    let identifier = identifier(from: lookupId)
+
+                    if data.keys.count == 1 {
+                        observable.on(.next(Update(kind: .lookupInProgress(identifier: identifier))))
+                        return
+                    }
+
+                    if let error = data["error"] {
+                        DDLogError("IdentifierLookupController: \(identifier) lookup failed - \(error)")
+                        observable.on(.next(Update(kind: .lookupFailed(identifier: identifier))))
+                        return
+                    }
+
+                    guard let itemData = data["data"] as? [[String: Any]],
+                          let item = itemData.first,
+                          let (response, attachments) = parse(item)
+                    else {
+                        observable.on(.next(Update(kind: .parseFailed(identifier: identifier))))
+                        return
+                    }
+
+                    process(identifier: identifier, response: response, attachments: attachments)
+                }
+                
                 func identifier(from data: [String: String]) -> String {
                     var result = ""
                     for (key, value) in data {
@@ -194,6 +243,16 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                 }
                 
                 func process(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)]) {
+                    backgroundQueue.async { [weak self] in
+                        guard let self = self else { return }
+                        do {
+                            try storeDataAndDownloadAttachmentIfNecessary(identifier: identifier, response: response, attachments: attachments)
+                        } catch let error {
+                            DDLogError("IdentifierLookupController: can't create item(s) - \(error)")
+                            self.observable.on(.next(Update(kind: .itemCreationFailed(identifier: identifier, response: response, attachments: attachments))))
+                        }
+                    }
+                    
                     func storeDataAndDownloadAttachmentIfNecessary(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)]) throws {
                         let request = CreateTranslatedItemsDbRequest(responses: [response], schemaController: schemaController, dateParser: dateParser)
                         try dbStorage.perform(request: request, on: backgroundQueue)
@@ -206,67 +265,8 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                         remoteFileDownloader.download(data: downloadData)
                         observable.on(.next(Update(kind: .pendingAttachments(identifier: identifier, response: response, attachments: attachments))))
                     }
-
-                    backgroundQueue.async { [weak self] in
-                        guard let self = self else { return }
-                        do {
-                            try storeDataAndDownloadAttachmentIfNecessary(identifier: identifier, response: response, attachments: attachments)
-                        } catch let error {
-                            DDLogError("IdentifierLookupController: can't create item(s) - \(error)")
-                            self.observable.on(.next(Update(kind: .itemCreationFailed(identifier: identifier, response: response, attachments: attachments))))
-                        }
-                    }
                 }
-                
-                switch data {
-                case .identifiers(let identifiers):
-                    if identifiers.isEmpty {
-                        observable.on(.next(Update(kind: .noIdentifiersDetected)))
-                    } else {
-                        observable.on(.next(Update(kind: .identifiersDetected(identifiers: identifiers.map({ identifier(from: $0) })))))
-                    }
-                    
-                case .item(let data):
-                    guard let lookupId = data["identifier"] as? [String: String] else { return }
-                    let identifier = identifier(from: lookupId)
-
-                    if data.keys.count == 1 {
-                        observable.on(.next(Update(kind: .lookupInProgress(identifier: identifier))))
-                        return
-                    }
-
-                    if let error = data["error"] {
-                        DDLogError("IdentifierLookupController: \(identifier) lookup failed - \(error)")
-                        observable.on(.next(Update(kind: .lookupFailed(identifier: identifier))))
-                        return
-                    }
-
-                    guard let itemData = data["data"] as? [[String: Any]],
-                          let item = itemData.first,
-                          let (response, attachments) = parse(item)
-                    else {
-                        observable.on(.next(Update(kind: .parseFailed(identifier: identifier))))
-                        return
-                    }
-
-                    process(identifier: identifier, response: response, attachments: attachments)
-                }
-            }
-            
-            switch result {
-            case .success(let data):
-                process(data: data)
-                
-            case .failure(let error):
-                DDLogError("IdentifierLookupController: lookup failed - \(error)")
-                observable.on(.next(Update(kind: .lookupError(error: error))))
             }
         }
-        
-        lookupWebViewHandler.observable
-            .subscribe { result in
-                process(result: result)
-            }
-            .disposed(by: self.disposeBag)
     }
 }
