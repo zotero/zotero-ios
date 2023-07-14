@@ -362,20 +362,8 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
             )
             .observe(on: MainScheduler.instance)
             .subscribe { [weak self] image in
-                var menuTitle = title
-                // By default UIActivityViewController shares a JPEG image with 0.8 compression quality,
-                // so we compute the image size as such. Actual image produced can be overriden if we need to.
-                if let imageData = image.jpegData(compressionQuality: 0.8) {
-                    let sizeInBytes = imageData.count
-                    let sizeInKB = Double(sizeInBytes) / 1024.0
-                    if sizeInKB < 1024.0 {
-                        menuTitle += " (\(String(format: "%.0f", sizeInKB)) KB)"
-                    } else {
-                        let sizeInMB = sizeInKB / 1024.0
-                        menuTitle += " (\(String(format: "%.2f", sizeInMB)) MB)"
-                    }
-                }
-                let action = UIAction(title: menuTitle) { [weak self] (_: UIAction) in
+                let shareableImage = ShareableImage(image: image, title: title)
+                let action = UIAction(title: shareableImage.titleWithSize) { [weak self] (_: UIAction) in
                     guard let self else { return }
                     DDLogInfo("PDFCoordinator: share pdf annotation image - \(title)")
                     let completion = { (activityType: UIActivity.ActivityType?, completed: Bool, _: [Any]?, error: Error?) in
@@ -383,9 +371,9 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
                     }
                     
                     if let coordinator = self.childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
-                        coordinator.share(item: image, sourceView: .view(sender, nil), completionWithItemsHandler: completion)
+                        coordinator.share(item: shareableImage, sourceView: .view(sender, nil), completionWithItemsHandler: completion)
                     } else {
-                        (self as Coordinator).share(item: image, sourceView: .view(sender, nil), completionWithItemsHandler: completion)
+                        (self as Coordinator).share(item: shareableImage, sourceView: .view(sender, nil), completionWithItemsHandler: completion)
                     }
                 }
                 action.accessibilityLabel = L10n.Accessibility.Pdf.shareAnnotationImage + " " + title

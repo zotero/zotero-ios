@@ -20,6 +20,7 @@
 		6144B5DF2A4AE48F00914B3C /* SyncControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */; };
 		6144B5E02A4AE49800914B3C /* TranslatorsControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */; };
 		6144B5E12A4AE95E00914B3C /* WebDavControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3202C6B271048FF00485BE4 /* WebDavControllerSpec.swift */; };
+		61ABA7512A6137D1002A4219 /* ShareableImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61ABA7502A6137D1002A4219 /* ShareableImage.swift */; };
 		61BD13952A5831EF008A0704 /* TextKit1TextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61BD13942A5831EF008A0704 /* TextKit1TextView.swift */; };
 		61C817F22A49B5D30085B1E6 /* CollectionResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDEE250242E700D8BC1E /* CollectionResponseSpec.swift */; };
 		B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */; };
@@ -1189,6 +1190,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		61ABA7502A6137D1002A4219 /* ShareableImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareableImage.swift; sourceTree = "<group>"; };
 		61BD13942A5831EF008A0704 /* TextKit1TextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextKit1TextView.swift; sourceTree = "<group>"; };
 		B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTranslatorMetadata.swift; sourceTree = "<group>"; };
 		B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorMetadata.swift; sourceTree = "<group>"; };
@@ -2139,6 +2141,7 @@
 				B305646B23FC051E003304F2 /* SchemaController.swift */,
 				B305646F23FC051E003304F2 /* SecureStorage.swift */,
 				B305646E23FC051E003304F2 /* SessionController.swift */,
+				61ABA7502A6137D1002A4219 /* ShareableImage.swift */,
 				B3593F172668E6A700FA4BB2 /* StyleParserDelegate.swift */,
 				B355B12B2850B6C400BAE2C5 /* TableViewDiffableDataSource.swift */,
 				B36BEC7224485FC700A60552 /* TagColorGenerator.swift */,
@@ -5128,6 +5131,7 @@
 				B341C8CB25CBFAD3005562E5 /* LibraryIdentifier.swift in Sources */,
 				B3A351DB2715761D002E597A /* WebDavPropfindRequest.swift in Sources */,
 				B34C410C257132730057D5F5 /* AnnotationPopoverLayout.swift in Sources */,
+				61ABA7512A6137D1002A4219 /* ShareableImage.swift in Sources */,
 				B30565D923FC051E003304F2 /* ReadCollectionDbRequest.swift in Sources */,
 				B3FE4B98268DDE4900CE123F /* CitationBibliographyExportAction.swift in Sources */,
 				B343419E260A093400093E63 /* CollectionIdentifier.swift in Sources */,
