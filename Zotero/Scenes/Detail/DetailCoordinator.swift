@@ -25,7 +25,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showCollectionsPicker(in library: Library, completed: @escaping (Set<String>) -> Void)
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library, scrolledToKey childKey: String?, animated: Bool)
     func showAttachmentError(_ error: Error)
-    func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
+    func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, key: String?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func show(url: URL)
@@ -41,7 +41,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
 }
 
 protocol DetailItemDetailCoordinatorDelegate: AnyObject {
-    func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
+    func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, key: String?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
     func showAttachmentPicker(save: @escaping ([URL]) -> Void)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func showTypePicker(selected: String, picked: @escaping (String) -> Void)
@@ -115,6 +115,7 @@ final class DetailCoordinator: Coordinator {
 
     func start(animated: Bool) {
         guard let userControllers = self.controllers.userControllers else { return }
+        DDLogInfo("DetailCoordinator: show items for \(self.collection.id); \(self.library.id)")
         let controller = self.createItemsViewController(
             collection: self.collection,
             library: self.library,
@@ -180,29 +181,39 @@ final class DetailCoordinator: Coordinator {
 
             switch contentType {
             case "application/pdf":
+                DDLogInfo("DetailCoordinator: show PDF \(attachment.key)")
                 self.showPdf(at: url, key: attachment.key, library: library)
+
             case "text/html":
+                DDLogInfo("DetailCoordinator: show HTML \(attachment.key)")
                 self.showWebView(for: url)
+
             case "text/plain":
                 let text = try? String(contentsOf: url, encoding: .utf8)
                 if let text = text {
+                    DDLogInfo("DetailCoordinator: show plain text \(attachment.key)")
                     self.show(text: text, title: filename)
                 } else {
+                    DDLogInfo("DetailCoordinator: share plain text \(attachment.key)")
                     self.share(item: url, sourceView: .view(sourceView, rect))
                 }
+
             case _ where contentType.contains("image"):
-                let image = (contentType == "image/gif") ? (try? Data(contentsOf: url)).flatMap({ try? UIImage(gifData: $0) }) :
-                                                             UIImage(contentsOfFile: url.path)
+                let image = (contentType == "image/gif") ? (try? Data(contentsOf: url)).flatMap({ try? UIImage(gifData: $0) }) : UIImage(contentsOfFile: url.path)
                 if let image = image {
+                    DDLogInfo("DetailCoordinator: show image \(attachment.key)")
                     self.show(image: image, title: filename)
                 } else {
-                  self.share(item: url, sourceView: .view(sourceView, rect))
+                    DDLogInfo("DetailCoordinator: share image \(attachment.key)")
+                    self.share(item: url, sourceView: .view(sourceView, rect))
                 }
 
             default:
                 if AVURLAsset(url: url).isPlayable {
+                    DDLogInfo("DetailCoordinator: show video \(attachment.key)")
                     self.showVideo(for: url)
                 } else {
+                    DDLogInfo("DetailCoordinator: share attachment \(attachment.key)")
                     self.share(item: file.createUrl(), sourceView: .view(sourceView, rect))
                 }
             }
@@ -238,6 +249,8 @@ final class DetailCoordinator: Coordinator {
 
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, navigationController: UINavigationController?, picked: @escaping ([Tag]) -> Void) {
         guard let navigationController, let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+
+        DDLogInfo("DetailCoordinator: show tag picker for \(libraryId)")
 
         let state = TagPickerState(libraryId: libraryId, selectedTags: selected)
         let handler = TagPickerActionHandler(dbStorage: dbStorage)
@@ -275,10 +288,13 @@ final class DetailCoordinator: Coordinator {
 
     func show(doi: String) {
         guard let url = URL(string: "https://doi.org/\(doi)") else { return }
+        DDLogInfo("DetailCoordinator: show DOI \(doi)")
         self.showWeb(url: url)
     }
 
     func show(url: URL) {
+        DDLogInfo("DetailCoordinator: show url \(url.absoluteString)")
+
         if let scheme = url.scheme, scheme != "http" && scheme != "https" {
             UIApplication.shared.open(url)
         } else {
@@ -343,6 +359,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     }
 
     func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem) {
+        DDLogInfo("DetailCoordinator: show item sort popup")
+
         let navigationController = UINavigationController()
         navigationController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         navigationController.popoverPresentationController?.barButtonItem = button
@@ -394,16 +412,30 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
     private func sortButtonTitles(for sortType: ItemsSortType) -> (field: String, order: String) {
         let sortOrderTitle = sortType.ascending ? L10n.Items.ascending : L10n.Items.descending
-        return ("\(L10n.Items.sortBy): \(sortType.field.title)",
-                "\(L10n.Items.sortOrder): \(sortOrderTitle)")
+        return ("\(L10n.Items.sortBy): \(sortType.field.title)", "\(L10n.Items.sortOrder): \(sortOrderTitle)")
     }
 
-    func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void) {
+    func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, key: String?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void) {
+        if let key = key {
+            DDLogInfo("DetailCoordinator: show note \(key)")
+        } else {
+            DDLogInfo("DetailCoordinator: show note creation")
+        }
+
         let navigationController = NavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
         navigationController.isModalInPresentation = true
 
-        let coordinator = NoteEditorCoordinator(text: text, tags: tags, title: title, libraryId: libraryId, readOnly: readOnly, save: save, navigationController: navigationController, controllers: self.controllers)
+        let coordinator = NoteEditorCoordinator(
+            text: text,
+            tags: tags,
+            title: title,
+            libraryId: libraryId,
+            readOnly: readOnly,
+            save: save,
+            navigationController: navigationController,
+            controllers: self.controllers
+        )
         coordinator.parentCoordinator = self
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)
@@ -414,17 +446,31 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library, scrolledToKey childKey: String?, animated: Bool) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage,
               let fileDownloader = self.controllers.userControllers?.fileDownloader,
-              let fileCleanupController = self.controllers.userControllers?.fileCleanupController else { return }
+              let fileCleanupController = self.controllers.userControllers?.fileCleanupController
+        else { return }
+
+        switch type {
+        case .preview(let key):
+            DDLogInfo("DetailCoordinator: show item detail \(key)")
+
+        case .duplication(let itemKey, let collectionKey):
+            DDLogInfo("DetailCoordinator: show item duplication for \(itemKey); \(String(describing: collectionKey))")
+
+        case .creation:
+            DDLogInfo("DetailCoordinator: show item creation")
+        }
 
         let state = ItemDetailState(type: type, library: library, preScrolledChildKey: childKey, userId: Defaults.shared.userId)
-        let handler = ItemDetailActionHandler(apiClient: self.controllers.apiClient,
-                                              fileStorage: self.controllers.fileStorage,
-                                              dbStorage: dbStorage,
-                                              schemaController: self.controllers.schemaController,
-                                              dateParser: self.controllers.dateParser,
-                                              urlDetector: self.controllers.urlDetector,
-                                              fileDownloader: fileDownloader,
-                                              fileCleanupController: fileCleanupController)
+        let handler = ItemDetailActionHandler(
+            apiClient: self.controllers.apiClient,
+            fileStorage: self.controllers.fileStorage,
+            dbStorage: dbStorage,
+            schemaController: self.controllers.schemaController,
+            dateParser: self.controllers.dateParser,
+            urlDetector: self.controllers.urlDetector,
+            fileDownloader: fileDownloader,
+            fileCleanupController: fileCleanupController
+        )
         let viewModel = ViewModel(initialState: state, handler: handler)
 
         let controller = ItemDetailViewController(viewModel: viewModel, controllers: self.controllers)
@@ -434,6 +480,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
     func showCollectionsPicker(in library: Library, completed: @escaping (Set<String>) -> Void) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+
+        DDLogInfo("DetailCoordinator: show collection picker")
 
         let state = CollectionsPickerState(library: library, excludedKeys: [], selected: [])
         let handler = CollectionsPickerActionHandler(dbStorage: dbStorage)
@@ -447,6 +495,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     }
 
     func showFilters(viewModel: ViewModel<ItemsActionHandler>, itemsController: ItemsViewController, button: UIBarButtonItem) {
+        DDLogInfo("DetailCoordinator: show item filters")
+
         let navigationController = NavigationViewController()
         navigationController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         navigationController.popoverPresentationController?.barButtonItem = button
@@ -483,8 +533,15 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     func showCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
         guard let citationController = self.controllers.userControllers?.citationController else { return }
 
-        let state = SingleCitationState(itemIds: itemIds, libraryId: libraryId, styleId: Defaults.shared.quickCopyStyleId,
-                                        localeId: Defaults.shared.quickCopyLocaleId, exportAsHtml: Defaults.shared.quickCopyAsHtml)
+        DDLogInfo("DetailCoordinator: show citation popup for \(itemIds)")
+
+        let state = SingleCitationState(
+            itemIds: itemIds,
+            libraryId: libraryId,
+            styleId: Defaults.shared.quickCopyStyleId,
+            localeId: Defaults.shared.quickCopyLocaleId,
+            exportAsHtml: Defaults.shared.quickCopyAsHtml
+        )
         let handler = SingleCitationActionHandler(citationController: citationController)
         let viewModel = ViewModel(initialState: state, handler: handler)
 
@@ -519,18 +576,18 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         coordinator.parentCoordinator = self
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)
-
         self.navigationController?.present(containerController, animated: true, completion: nil)
     }
 
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
+        DDLogInfo("DetailCoordinator: show citation/bibliography export for \(itemIds)")
+
         let navigationController = NavigationViewController()
         let containerController = ContainerViewController(rootViewController: navigationController)
         let coordinator = CitationBibliographyExportCoordinator(itemIds: itemIds, libraryId: libraryId, navigationController: navigationController, controllers: self.controllers)
         coordinator.parentCoordinator = self
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)
-
         self.navigationController?.present(containerController, animated: true, completion: nil)
     }
 
@@ -589,7 +646,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
 extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
     func showNoteCreation(title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, save: @escaping (String, [Tag]) -> Void) {
-        self.showNote(with: "", tags: [], title: title, libraryId: libraryId, readOnly: false, save: save)
+        self.showNote(with: "", tags: [], title: title, key: nil, libraryId: libraryId, readOnly: false, save: save)
     }
 
     func showAttachmentPicker(save: @escaping ([URL]) -> Void) {
@@ -679,6 +736,8 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
     }
 
     private func _showCreatorEditor(for creator: ItemDetailState.Creator, itemType: String, saved: @escaping CreatorEditSaveAction, deleted: CreatorEditDeleteAction?) {
+        DDLogInfo("DetailCoordinator: show item detail creator editor for \(creator.type)")
+
         let navigationController = NavigationViewController()
         navigationController.isModalInPresentation = true
         navigationController.modalPresentationStyle = .formSheet
@@ -692,6 +751,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
     }
 
     func showTypePicker(selected: String, picked: @escaping (String) -> Void) {
+        DDLogInfo("DetailCoordinator: show item type picker")
         let viewModel = ItemTypePickerViewModelCreator.create(selected: selected, schemaController: self.controllers.schemaController)
         self.presentPicker(viewModel: viewModel, requiresSaveButton: false, saveAction: picked)
     }
@@ -817,6 +877,8 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
     func pushTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+
+        DDLogInfo("DetailCoordinator: push tag picker for \(libraryId)")
 
         let state = TagPickerState(libraryId: libraryId, selectedTags: selected)
         let handler = TagPickerActionHandler(dbStorage: dbStorage)

@@ -8,6 +8,7 @@
 
 import UIKit
 
+import CocoaLumberjackSwift
 import RxSwift
 
 enum LookupStartingView {
@@ -43,19 +44,38 @@ final class LookupCoordinator: NSObject, Coordinator {
     }
 
     func start(animated: Bool) {
-        let controller = self.startingView == .manual ? self.manualController : self.scannerController
+        let controller: UIViewController
+        switch self.startingView {
+        case .manual:
+            DDLogInfo("LookupCoordinator: show manual lookup")
+            controller = self.manualController
+
+        case .scanner:
+            DDLogInfo("LookupCoordinator: show scanner lookup")
+            controller = self.scannerController
+        }
         self.navigationController?.setViewControllers([controller], animated: animated)
     }
 
     private func lookupController(multiLookupEnabled: Bool, hasDarkBackground: Bool, userControllers: UserControllers) -> LookupViewController {
         let collectionKeys = Defaults.shared.selectedCollectionId.key.flatMap({ Set([$0]) }) ?? []
         let state = LookupState(multiLookupEnabled: multiLookupEnabled, hasDarkBackground: hasDarkBackground, collectionKeys: collectionKeys, libraryId: Defaults.shared.selectedLibrary)
-        let handler = LookupActionHandler(dbStorage: userControllers.dbStorage, fileStorage: self.controllers.fileStorage, translatorsController: self.controllers.translatorsAndStylesController,
-                                          schemaController: self.controllers.schemaController, dateParser: self.controllers.dateParser, remoteFileDownloader: userControllers.remoteFileDownloader)
+        let handler = LookupActionHandler(
+            dbStorage: userControllers.dbStorage,
+            fileStorage: self.controllers.fileStorage,
+            translatorsController: self.controllers.translatorsAndStylesController,
+            schemaController: self.controllers.schemaController,
+            dateParser: self.controllers.dateParser,
+            remoteFileDownloader: userControllers.remoteFileDownloader
+        )
         let viewModel = ViewModel(initialState: state, handler: handler)
 
-        return LookupViewController(viewModel: viewModel, remoteDownloadObserver: userControllers.remoteFileDownloader.observable, remoteFileDownloader: userControllers.remoteFileDownloader,
-                                    schemaController: self.controllers.schemaController)
+        return LookupViewController(
+            viewModel: viewModel,
+            remoteDownloadObserver: userControllers.remoteFileDownloader.observable,
+            remoteFileDownloader: userControllers.remoteFileDownloader,
+            schemaController: self.controllers.schemaController
+        )
     }
 
     private var scannerController: UIViewController {

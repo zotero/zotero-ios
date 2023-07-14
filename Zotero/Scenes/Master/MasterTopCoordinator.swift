@@ -9,6 +9,7 @@
 import UIKit
 import SwiftUI
 
+import CocoaLumberjackSwift
 import RxSwift
 
 protocol MasterLibrariesCoordinatorDelegate: AnyObject {
@@ -50,8 +51,12 @@ final class MasterTopCoordinator: NSObject, Coordinator {
     func start(animated: Bool) {
         guard let userControllers = self.controllers.userControllers else { return }
         let librariesController = self.createLibrariesViewController(dbStorage: userControllers.dbStorage)
-        let collectionsController = self.createCollectionsViewController(libraryId: self.visibleLibraryId, selectedCollectionId: Defaults.shared.selectedCollectionId,
-                                                                         dbStorage: userControllers.dbStorage, attachmentDownloader: userControllers.fileDownloader)
+        let collectionsController = self.createCollectionsViewController(
+            libraryId: self.visibleLibraryId,
+            selectedCollectionId: Defaults.shared.selectedCollectionId,
+            dbStorage: userControllers.dbStorage,
+            attachmentDownloader: userControllers.fileDownloader
+        )
         self.navigationController?.setViewControllers([librariesController, collectionsController], animated: animated)
     }
 
@@ -62,7 +67,13 @@ final class MasterTopCoordinator: NSObject, Coordinator {
         return controller
     }
 
-    private func createCollectionsViewController(libraryId: LibraryIdentifier, selectedCollectionId: CollectionIdentifier, dbStorage: DbStorage, attachmentDownloader: AttachmentDownloader) -> CollectionsViewController {
+    private func createCollectionsViewController(
+        libraryId: LibraryIdentifier,
+        selectedCollectionId: CollectionIdentifier,
+        dbStorage: DbStorage,
+        attachmentDownloader: AttachmentDownloader
+    ) -> CollectionsViewController {
+        DDLogInfo("MasterTopCoordinator: show collections for \(selectedCollectionId.id); \(libraryId)")
         let handler = CollectionsActionHandler(dbStorage: dbStorage, fileStorage: self.controllers.fileStorage, attachmentDownloader: attachmentDownloader)
         let state = CollectionsState(libraryId: libraryId, selectedCollectionId: selectedCollectionId)
         return CollectionsViewController(viewModel: ViewModel(initialState: state, handler: handler), dragDropController: self.controllers.dragDropController, coordinatorDelegate: self)
@@ -91,7 +102,12 @@ extension MasterTopCoordinator: MasterLibrariesCoordinatorDelegate {
         let libraryId = LibraryIdentifier.custom(.myLibrary)
         let collectionId = self.storeIfNeeded(libraryId: libraryId)
 
-        let controller = self.createCollectionsViewController(libraryId: libraryId, selectedCollectionId: collectionId, dbStorage: userControllers.dbStorage, attachmentDownloader: userControllers.fileDownloader)
+        let controller = self.createCollectionsViewController(
+            libraryId: libraryId,
+            selectedCollectionId: collectionId,
+            dbStorage: userControllers.dbStorage,
+            attachmentDownloader: userControllers.fileDownloader
+        )
 
         let animated: Bool
         var viewControllers = self.navigationController?.viewControllers ?? []
@@ -138,7 +154,12 @@ extension MasterTopCoordinator: MasterLibrariesCoordinatorDelegate {
 
         let collectionId = self.storeIfNeeded(libraryId: libraryId)
 
-        let controller = self.createCollectionsViewController(libraryId: libraryId, selectedCollectionId: collectionId, dbStorage: userControllers.dbStorage, attachmentDownloader: userControllers.fileDownloader)
+        let controller = self.createCollectionsViewController(
+            libraryId: libraryId,
+            selectedCollectionId: collectionId,
+            dbStorage: userControllers.dbStorage,
+            attachmentDownloader: userControllers.fileDownloader
+        )
         self.navigationController?.pushViewController(controller, animated: true)
     }
 
@@ -149,11 +170,21 @@ extension MasterTopCoordinator: MasterLibrariesCoordinatorDelegate {
 
         if navigationController.viewControllers.count == 1 {
             // If only "Libraries" screen is visible, push collections
-            let controller = self.createCollectionsViewController(libraryId: libraryId, selectedCollectionId: collectionId, dbStorage: userControllers.dbStorage, attachmentDownloader: userControllers.fileDownloader)
+            let controller = self.createCollectionsViewController(
+                libraryId: libraryId,
+                selectedCollectionId: collectionId,
+                dbStorage: userControllers.dbStorage,
+                attachmentDownloader: userControllers.fileDownloader
+            )
             navigationController.pushViewController(controller, animated: animated)
         } else if libraryId != self.visibleLibraryId {
             // If Collections screen is visible, but for different library, switch controllers
-            let controller = self.createCollectionsViewController(libraryId: libraryId, selectedCollectionId: collectionId, dbStorage: userControllers.dbStorage, attachmentDownloader: userControllers.fileDownloader)
+            let controller = self.createCollectionsViewController(
+                libraryId: libraryId,
+                selectedCollectionId: collectionId,
+                dbStorage: userControllers.dbStorage,
+                attachmentDownloader: userControllers.fileDownloader
+            )
 
             var viewControllers = navigationController.viewControllers
             _ = viewControllers.popLast()
@@ -184,10 +215,7 @@ extension MasterTopCoordinator: MasterCollectionsCoordinatorDelegate {
         navigationController.isModalInPresentation = true
         navigationController.modalPresentationStyle = .formSheet
 
-        let coordinator = CollectionEditingCoordinator(data: data,
-                                                       library: library,
-                                                       navigationController: navigationController,
-                                                       controllers: self.controllers)
+        let coordinator = CollectionEditingCoordinator(data: data, library: library, navigationController: navigationController, controllers: self.controllers)
         coordinator.parentCoordinator = self
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)

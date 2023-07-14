@@ -124,10 +124,17 @@ final class ItemDetailViewController: UIViewController {
             let library = self.viewModel.state.library
             let key = note?.key ?? KeyGenerator.newKey
             let title = NoteEditorState.TitleData(type: self.viewModel.state.data.type, title: self.viewModel.state.data.title)
-            self.coordinatorDelegate?.showNote(with: (note?.text ?? ""), tags: (note?.tags ?? []), title: title,
-                                               libraryId: library.identifier, readOnly: !library.metadataEditable, save: { [weak self] text, tags in
-                self?.viewModel.process(action: .saveNote(key: key, text: text, tags: tags))
-            })
+            self.coordinatorDelegate?.showNote(
+                with: (note?.text ?? ""),
+                tags: (note?.tags ?? []),
+                title: title,
+                key: note?.key,
+                libraryId: library.identifier,
+                readOnly: !library.metadataEditable,
+                save: { [weak self] text, tags in
+                    self?.viewModel.process(action: .saveNote(key: key, text: text, tags: tags))
+                }
+            )
 
         case .openTagPicker:
             self.coordinatorDelegate?.showTagPicker(libraryId: self.viewModel.state.library.identifier,
@@ -195,6 +202,7 @@ final class ItemDetailViewController: UIViewController {
 
         if state.changes.contains(.editing) || state.changes.contains(.type) {
             if state.changes.contains(.editing) {
+                DDLogInfo("ItemDetailViewController: editing changed to \(state.isEditing)")
                 self.setNavigationBarButtons(to: state)
             }
             if state.changes.contains(.type) {
