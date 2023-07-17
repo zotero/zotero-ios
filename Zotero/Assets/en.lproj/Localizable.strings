@@ -134,6 +134,7 @@
 "items.filters.title" = "Filters";
 "items.filters.downloads" = "Downloaded Files";
 "items.filters.tags" = "Tags";
+"items.toolbar_saved" = "Saved %d / %d";
 "items.toolbar_downloaded" = "Downloaded %d / %d";
 "items.generating_bib" = "Generating Bibliography";
 "items.creator_summary.and" = "%@ and %@";

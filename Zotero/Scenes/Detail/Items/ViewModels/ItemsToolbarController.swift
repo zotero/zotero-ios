@@ -64,7 +64,7 @@ final class ItemsToolbarController {
         } else {
             let filters = self.sizeClassSpecificFilters(from: state.filters)
             self.viewController.toolbarItems = self.createNormalToolbarItems(for: filters)
-            self.updateNormalToolbarItems(for: filters, downloadBatchData: state.combinedDownloadBatchData, results: state.results)
+            self.updateNormalToolbarItems(for: filters, identifierLookupBatchData: state.identifierLookupBatchData, downloadBatchData: state.combinedDownloadBatchData, results: state.results)
         }
     }
 
@@ -72,7 +72,12 @@ final class ItemsToolbarController {
         if state.isEditing {
             self.updateEditingToolbarItems(for: state.selectedItems, results: state.results)
         } else {
-            self.updateNormalToolbarItems(for: self.sizeClassSpecificFilters(from: state.filters), downloadBatchData: state.combinedDownloadBatchData, results: state.results)
+            self.updateNormalToolbarItems(
+                for: self.sizeClassSpecificFilters(from: state.filters),
+                identifierLookupBatchData: state.identifierLookupBatchData,
+                downloadBatchData: state.combinedDownloadBatchData,
+                results: state.results
+            )
         }
     }
 
@@ -109,7 +114,12 @@ final class ItemsToolbarController {
         })
     }
 
-    private func updateNormalToolbarItems(for filters: [ItemsFilter], downloadBatchData: ItemsState.DownloadBatchData?, results: Results<RItem>?) {
+    private func updateNormalToolbarItems(
+        for filters: [ItemsFilter],
+        identifierLookupBatchData: ItemsState.IdentifierLookupBatchData,
+        downloadBatchData: ItemsState.DownloadBatchData?,
+        results: Results<RItem>?
+    ) {
         if let item = self.viewController.toolbarItems?.first(where: { $0.tag == Self.barButtonItemFilterTag }) {
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
             item.image = UIImage(systemName: filterImageName)
@@ -128,10 +138,23 @@ final class ItemsToolbarController {
             }
 
             if let progressView = stackView.subviews.last as? ItemsToolbarDownloadProgressView {
-                progressView.isHidden = !filters.isEmpty || downloadBatchData == nil
+                var texts: [String] = []
+                var progress: Float?
+                if let downloadBatchData {
+                    texts.append(L10n.Items.toolbarDownloaded(downloadBatchData.downloaded, downloadBatchData.total))
+                    progress = Float(downloadBatchData.fraction)
+                }
+                if (identifierLookupBatchData != .zero) && (!identifierLookupBatchData.isFinished || !texts.isEmpty) {
+                    // Show "Saved x / y" only if lookup hasn't finished, or there are also ongoing downloads
+                    texts.insert(L10n.Items.toolbarSaved(identifierLookupBatchData.saved, identifierLookupBatchData.total), at: 0)
+                }
 
-                if let data = downloadBatchData {
-                    progressView.set(downloaded: data.downloaded, total: data.total, progress: Float(data.fraction))
+                let text = texts.joined(separator: " - ")
+                if !filters.isEmpty || text.isEmpty {
+                    progressView.isHidden = true
+                } else {
+                    progressView.set(text: text, progress: progress)
+                    progressView.isHidden = false
                     progressView.sizeToFit()
                 }
             }

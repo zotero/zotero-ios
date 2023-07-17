@@ -519,6 +519,17 @@ final class ItemsViewController: UIViewController {
                 }
             })
             .disposed(by: self.disposeBag)
+
+        let identifierLookupController = self.controllers.userControllers?.identifierLookupController
+        identifierLookupController?.observable
+            .observe(on: MainScheduler.instance)
+            .subscribe(with: self, onNext: { [weak identifierLookupController] `self`, update in
+                guard let identifierLookupController else { return }
+                let (saved, total) = identifierLookupController.processingIdentifiersCount
+                let batchData = ItemsState.IdentifierLookupBatchData(saved: saved, total: total)
+                self.viewModel.process(action: .updateIdentifierLookup(update: update, batchData: batchData))
+            })
+            .disposed(by: self.disposeBag)
         
         let remoteDownloader = self.controllers.userControllers?.remoteFileDownloader
         remoteDownloader?.observable

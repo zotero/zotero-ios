@@ -151,7 +151,10 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
 
         case .updateDownload(let update, let batchData):
             self.process(downloadUpdate: update, batchData: batchData, in: viewModel)
-            
+
+        case .updateIdentifierLookup(let update, let batchData):
+            self.process(identifierLookupUpdate: update, batchData: batchData, in: viewModel)
+
         case .updateRemoteDownload(let update, let batchData):
             self.process(remoteDownloadUpdate: update, batchData: batchData, in: viewModel)
 
@@ -381,6 +384,15 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
                     state.downloadBatchData = batchData
                     state.changes = .batchData
                 }
+            }
+        }
+    }
+    
+    private func process(identifierLookupUpdate update: IdentifierLookupController.Update, batchData: ItemsState.IdentifierLookupBatchData, in viewModel: ViewModel<ItemsActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            if state.identifierLookupBatchData != batchData {
+                state.identifierLookupBatchData = batchData
+                state.changes = .batchData
             }
         }
     }

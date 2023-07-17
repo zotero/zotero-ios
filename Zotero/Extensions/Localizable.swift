@@ -795,6 +795,10 @@ internal enum L10n {
     internal static func toolbarFilter(_ p1: Int) -> String {
       return L10n.tr("Localizable", "items.toolbar_filter", p1, fallback: "Plural format key: \"%#@toolbar_filter@\"")
     }
+    /// Saved %d / %d
+    internal static func toolbarSaved(_ p1: Int, _ p2: Int) -> String {
+      return L10n.tr("Localizable", "items.toolbar_saved", p1, p2, fallback: "Saved %d / %d")
+    }
     internal enum Action {
       /// Add to Collection
       internal static let addToCollection = L10n.tr("Localizable", "items.action.add_to_collection", fallback: "Add to Collection")

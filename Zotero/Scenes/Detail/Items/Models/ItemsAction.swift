@@ -41,6 +41,7 @@ enum ItemsAction {
     case cacheItemAccessory(item: RItem)
     case updateAttachments(AttachmentFileDeletedNotification)
     case updateDownload(update: AttachmentDownloader.Update, batchData: ItemsState.DownloadBatchData?)
+    case updateIdentifierLookup(update: IdentifierLookupController.Update, batchData: ItemsState.IdentifierLookupBatchData)
     case updateRemoteDownload(update: RemoteAttachmentDownloader.Update, batchData: ItemsState.DownloadBatchData?)
     case openAttachment(attachment: Attachment, parentKey: String?)
     case attachmentOpened(String)

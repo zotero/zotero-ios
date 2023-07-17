@@ -51,6 +51,17 @@ struct ItemsState: ViewModelState {
             return .init(fraction: fraction, downloaded: downloaded, total: total)
         }
     }
+    
+    struct IdentifierLookupBatchData: Equatable {
+        static let zero: Self = .init(saved: 0, total: 0)
+        
+        let saved: Int
+        let total: Int
+        
+        var isFinished: Bool {
+            saved == total
+        }
+    }
 
     let collection: Collection
     let library: Library
@@ -83,6 +94,7 @@ struct ItemsState: ViewModelState {
         guard data.count > 1 else { return firstData }
         return data[1..<data.endIndex].reduce(firstData) { $0 + $1 }
     }
+    var identifierLookupBatchData: IdentifierLookupBatchData = .zero
     var itemTitleFont: UIFont {
         return UIFont.preferredFont(for: .headline, weight: .regular)
     }

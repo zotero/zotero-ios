@@ -28,12 +28,12 @@ final class LookupActionHandler: ViewModelActionHandler {
         case .initialize:
             let collectionKeys = viewModel.state.collectionKeys
             let libraryId = viewModel.state.libraryId
-            identifierLookupController.initialize(libraryId: libraryId, collectionKeys: collectionKeys) { [weak self] observable in
-                guard let self, let observable else {
+            identifierLookupController.initialize(libraryId: libraryId, collectionKeys: collectionKeys) { [weak self] initialized in
+                guard let self, initialized else {
                     DDLogError("LookupActionHandler: can't create observer")
                     return
                 }
-                observable
+                self.identifierLookupController.observable
                     .observe(on: MainScheduler.instance)
                     .subscribe(with: viewModel) { [weak self] viewModel, update in
                         guard let self else { return }

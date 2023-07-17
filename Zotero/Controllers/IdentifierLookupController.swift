@@ -36,7 +36,8 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
     }
     
     // MARK: Properties
-    private let observable: PublishSubject<Update>
+    let observable: PublishSubject<Update>
+    private let accessQueue: DispatchQueue
     internal let backgroundQueue: DispatchQueue
     internal unowned let dbStorage: DbStorage
     private unowned let fileStorage: FileStorage
@@ -45,6 +46,21 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
     private unowned let dateParser: DateParser
     private unowned let remoteFileDownloader: RemoteAttachmentDownloader
     private let disposeBag: DisposeBag
+    
+    private var processingIdentifiers: [String] = []
+    private var savedIdentifiers: [String] = []
+    var processingIdentifiersCount: (saved: Int, total: Int) {
+        var savedCount = 0
+        var totalCount = 0
+
+        self.accessQueue.sync { [weak self] in
+            guard let self else { return }
+            savedCount = self.savedIdentifiers.count
+            totalCount = savedCount + self.processingIdentifiers.count
+        }
+
+        return (savedCount, totalCount)
+    }
     
     internal weak var webViewProvider: IdentifierLookupWebViewProvider?
     private var lookupWebViewHandlersByLookupSettings: [LookupWebViewHandler.LookupSettings: LookupWebViewHandler] = [:]
@@ -65,6 +81,7 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
         self.dateParser = dateParser
         self.remoteFileDownloader = remoteFileDownloader
         
+        self.accessQueue = DispatchQueue(label: "org.zotero.IdentifierLookupController.accessQueue", qos: .userInteractive, attributes: .concurrent)
         self.backgroundQueue = DispatchQueue(label: "org.zotero.IdentifierLookupController.backgroundProcessing", qos: .userInitiated)
         self.observable = PublishSubject()
         self.disposeBag = DisposeBag()
@@ -73,16 +90,16 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
     }
     
     // MARK: Actions
-    func initialize(libraryId: LibraryIdentifier, collectionKeys: Set<String>, completion: @escaping (PublishSubject<Update>?) -> Void) {
-        backgroundQueue.async { [weak self] in
-            var observable: PublishSubject<Update>?
+    func initialize(libraryId: LibraryIdentifier, collectionKeys: Set<String>, completion: @escaping (Bool) -> Void) {
+        accessQueue.async(flags: .barrier) { [weak self] in
+            var initialized = false
             defer {
-                completion(observable)
+                completion(initialized)
             }
             guard let self = self else { return }
             let lookupSettings = LookupWebViewHandler.LookupSettings(libraryIdentifier: libraryId, collectionKeys: collectionKeys)
             if self.lookupWebViewHandlersByLookupSettings[lookupSettings] != nil {
-                observable = self.observable
+                initialized = true
                 return
             }
             inMainThread(sync: true) {
@@ -96,7 +113,7 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                 return
             }
             self.setupObserver(for: lookupWebViewHandler)
-            observable = self.observable
+            initialized = true
         }
     }
     
@@ -170,7 +187,9 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                     if identifiers.isEmpty {
                         observable.on(.next(Update(kind: .noIdentifiersDetected)))
                     } else {
-                        observable.on(.next(Update(kind: .identifiersDetected(identifiers: identifiers.map({ identifier(from: $0) })))))
+                        let processingIdentifiers = identifiers.map({ identifier(from: $0) })
+                        addProcessingIdentifiers(processingIdentifiers)
+                        observable.on(.next(Update(kind: .identifiersDetected(identifiers: processingIdentifiers))))
                     }
                     
                 case .item(let data):
@@ -184,6 +203,7 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
 
                     if let error = data["error"] {
                         DDLogError("IdentifierLookupController: \(identifier) lookup failed - \(error)")
+                        removeProcessingIdentifier(identifier)
                         observable.on(.next(Update(kind: .lookupFailed(identifier: identifier))))
                         return
                     }
@@ -192,6 +212,7 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                           let item = itemData.first,
                           let (response, attachments) = parse(item)
                     else {
+                        removeProcessingIdentifier(identifier)
                         observable.on(.next(Update(kind: .parseFailed(identifier: identifier))))
                         return
                     }
@@ -249,6 +270,7 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                             try storeDataAndDownloadAttachmentIfNecessary(identifier: identifier, response: response, attachments: attachments)
                         } catch let error {
                             DDLogError("IdentifierLookupController: can't create item(s) - \(error)")
+                            removeProcessingIdentifier(identifier)
                             self.observable.on(.next(Update(kind: .itemCreationFailed(identifier: identifier, response: response, attachments: attachments))))
                         }
                     }
@@ -256,6 +278,7 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                     func storeDataAndDownloadAttachmentIfNecessary(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)]) throws {
                         let request = CreateTranslatedItemsDbRequest(responses: [response], schemaController: schemaController, dateParser: dateParser)
                         try dbStorage.perform(request: request, on: backgroundQueue)
+                        finishProcessingIdentifier(identifier)
                         observable.on(.next(Update(kind: .itemStored(identifier: identifier, response: response, attachments: attachments))))
                         
                         guard Defaults.shared.shareExtensionIncludeAttachment else { return }
@@ -264,6 +287,30 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                         guard !downloadData.isEmpty else { return }
                         remoteFileDownloader.download(data: downloadData)
                         observable.on(.next(Update(kind: .pendingAttachments(identifier: identifier, response: response, attachments: attachments))))
+                    }
+                }
+                
+                func addProcessingIdentifiers(_ identifiers: [String]) {
+                    accessQueue.async(flags: .barrier) { [weak self] in
+                        guard let self else { return }
+                        self.processingIdentifiers += identifiers
+                    }
+                }
+                
+                func removeProcessingIdentifier(_ identifier: String) {
+                    accessQueue.async(flags: .barrier) { [weak self] in
+                        guard let self, let index = self.processingIdentifiers.firstIndex(of: identifier) else { return }
+                        self.processingIdentifiers.remove(at: index)
+                        // TODO: Determine when to cleanup saved identifiers when processing is finished
+                    }
+                }
+
+                func finishProcessingIdentifier(_ identifier: String) {
+                    accessQueue.async(flags: .barrier) { [weak self] in
+                        guard let self, let index = self.processingIdentifiers.firstIndex(of: identifier) else { return }
+                        self.processingIdentifiers.remove(at: index)
+                        self.savedIdentifiers.append(identifier)
+                        // TODO: Determine when to cleanup saved identifiers when processing is finished
                     }
                 }
             }

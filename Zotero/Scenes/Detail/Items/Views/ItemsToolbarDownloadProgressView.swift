@@ -22,9 +22,18 @@ final class ItemsToolbarDownloadProgressView: UIView {
         self.createViews()
     }
 
+    func set(text: String, progress: Float?) {
+        label.text = text
+        if let progress {
+            progressView.progress = progress
+            progressView.isHidden = false
+        } else {
+            progressView.isHidden = true
+        }
+    }
+
     func set(downloaded: Int, total: Int, progress: Float) {
-        self.label.text = L10n.Items.toolbarDownloaded(downloaded, total)
-        self.progressView.progress = progress
+        set(text: L10n.Items.toolbarDownloaded(downloaded, total), progress: progress)
     }
 
     private func createViews() {
