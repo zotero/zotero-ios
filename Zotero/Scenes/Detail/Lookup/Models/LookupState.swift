@@ -9,22 +9,8 @@
 import Foundation
 
 struct LookupState: ViewModelState {
-    struct LookupData {
-        enum State {
-            case enqueued
-            case inProgress
-            case failed
-            case translated(TranslatedLookupData)
-        }
-
-        let identifier: String
-        let state: State
-    }
-
-    struct TranslatedLookupData {
-        let response: ItemResponse
-        let attachments: [(Attachment, URL)]
-    }
+    typealias LookupData = IdentifierLookupController.LookupData
+    typealias TranslatedLookupData = LookupData.State.TranslatedLookupData
 
     enum State {
         case failed(Swift.Error)

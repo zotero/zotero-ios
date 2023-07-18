@@ -195,3 +195,9 @@ extension ScannerViewController: AVCaptureMetadataOutputObjectsDelegate {
         self.lookupController?.view.isHidden = false
     }
 }
+
+extension ScannerViewController: IdentifierLookupPresenter {
+    func isPresenting() -> Bool {
+        lookupController?.view.isHidden == false
+    }
+}

@@ -39,6 +39,7 @@ final class LookupCoordinator: NSObject, Coordinator {
         super.init()
 
         navigationController.dismissHandler = {
+            self.controllers.userControllers?.identifierLookupController.presenter = nil
             self.parentCoordinator?.childDidFinish(self)
         }
     }
@@ -76,6 +77,7 @@ final class LookupCoordinator: NSObject, Coordinator {
         let handler = ScannerActionHandler()
         let controller = ScannerViewController(viewModel: ViewModel(initialState: state, handler: handler))
         controller.coordinatorDelegate = self
+        controllers.userControllers?.identifierLookupController.presenter = controller
         return controller
     }
 
@@ -84,6 +86,7 @@ final class LookupCoordinator: NSObject, Coordinator {
         let handler = ManualLookupActionHandler()
         let controller = ManualLookupViewController(viewModel: ViewModel(initialState: state, handler: handler))
         controller.coordinatorDelegate = self
+        controllers.userControllers?.identifierLookupController.presenter = controller
         return controller
     }
 }

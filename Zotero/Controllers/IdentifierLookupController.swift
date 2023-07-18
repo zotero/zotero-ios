@@ -17,6 +17,10 @@ protocol IdentifierLookupWebViewProvider: AnyObject {
     func removeWebView(_ webView: WKWebView)
 }
 
+protocol IdentifierLookupPresenter: AnyObject {
+    func isPresenting() -> Bool
+}
+
 final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
     // MARK: Types
     struct Update {
@@ -35,6 +39,23 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
         let kind: Kind
     }
     
+    struct LookupData {
+        enum State {
+            case enqueued
+            case inProgress
+            case failed
+            case translated(TranslatedLookupData)
+            
+            struct TranslatedLookupData {
+                let response: ItemResponse
+                let attachments: [(Attachment, URL)]
+            }
+        }
+        
+        let identifier: String
+        let state: State
+    }
+    
     // MARK: Properties
     let observable: PublishSubject<Update>
     private let accessQueue: DispatchQueue
@@ -47,22 +68,23 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
     private unowned let remoteFileDownloader: RemoteAttachmentDownloader
     private let disposeBag: DisposeBag
     
-    private var processingIdentifiers: [String] = []
-    private var savedIdentifiers: [String] = []
-    var processingIdentifiersCount: (saved: Int, total: Int) {
-        var savedCount = 0
-        var totalCount = 0
-
-        self.accessQueue.sync { [weak self] in
-            guard let self else { return }
-            savedCount = self.savedIdentifiers.count
-            totalCount = savedCount + self.processingIdentifiers.count
-        }
-
-        return (savedCount, totalCount)
+    private var lookupData: [LookupData] = []
+    private var lookupSavedCount = 0
+    private var lookupFailedCount = 0
+    private var lookupTotalCount: Int {
+        lookupData.count
+    }
+    private var lookupRemainingCount: Int {
+        lookupTotalCount - lookupSavedCount - lookupFailedCount
     }
     
     internal weak var webViewProvider: IdentifierLookupWebViewProvider?
+    internal weak var presenter: IdentifierLookupPresenter? {
+        didSet {
+            guard presenter == nil, oldValue != nil else { return }
+            cleanupLookup(force: false, alreadyInQueue: false)
+        }
+    }
     private var lookupWebViewHandlersByLookupSettings: [LookupWebViewHandler.LookupSettings: LookupWebViewHandler] = [:]
     
     // MARK: Object Lifecycle
@@ -122,6 +144,21 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
         lookupWebViewHandlersByLookupSettings[lookupSettings]?.lookUp(identifier: identifier)
     }
     
+    func getIdentifiersLookupCount(callback: @escaping (Int, Int, Int) -> Void) {
+        accessQueue.async { [weak self] in
+            var savedCount = 0
+            var failedCount = 0
+            var totalCount = 0
+            defer {
+                callback(savedCount, failedCount, totalCount)
+            }
+            guard let self else { return }
+            savedCount = self.lookupSavedCount
+            failedCount = self.lookupFailedCount
+            totalCount = self.lookupTotalCount
+        }
+    }
+
     // MARK: Setups
     private func setupObservers() {
         remoteFileDownloader.observable
@@ -178,6 +215,7 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                 
             case .failure(let error):
                 DDLogError("IdentifierLookupController: lookup failed - \(error)")
+                cleanupLookup(force: true, alreadyInQueue: false)
                 observable.on(.next(Update(kind: .lookupError(error: error))))
             }
             
@@ -185,11 +223,12 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                 switch data {
                 case .identifiers(let identifiers):
                     if identifiers.isEmpty {
+                        cleanupLookup(force: true, alreadyInQueue: false)
                         observable.on(.next(Update(kind: .noIdentifiersDetected)))
                     } else {
-                        let processingIdentifiers = identifiers.map({ identifier(from: $0) })
-                        addProcessingIdentifiers(processingIdentifiers)
-                        observable.on(.next(Update(kind: .identifiersDetected(identifiers: processingIdentifiers))))
+                        let enqueuedIdentifiers = identifiers.map({ identifier(from: $0) })
+                        enqueueLookup(for: enqueuedIdentifiers)
+                        observable.on(.next(Update(kind: .identifiersDetected(identifiers: enqueuedIdentifiers))))
                     }
                     
                 case .item(let data):
@@ -197,13 +236,14 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                     let identifier = identifier(from: lookupId)
 
                     if data.keys.count == 1 {
+                        changeLookup(for: identifier, to: .inProgress)
                         observable.on(.next(Update(kind: .lookupInProgress(identifier: identifier))))
                         return
                     }
 
                     if let error = data["error"] {
                         DDLogError("IdentifierLookupController: \(identifier) lookup failed - \(error)")
-                        removeProcessingIdentifier(identifier)
+                        changeLookup(for: identifier, to: .failed)
                         observable.on(.next(Update(kind: .lookupFailed(identifier: identifier))))
                         return
                     }
@@ -212,7 +252,7 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                           let item = itemData.first,
                           let (response, attachments) = parse(item)
                     else {
-                        removeProcessingIdentifier(identifier)
+                        changeLookup(for: identifier, to: .failed)
                         observable.on(.next(Update(kind: .parseFailed(identifier: identifier))))
                         return
                     }
@@ -270,7 +310,7 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                             try storeDataAndDownloadAttachmentIfNecessary(identifier: identifier, response: response, attachments: attachments)
                         } catch let error {
                             DDLogError("IdentifierLookupController: can't create item(s) - \(error)")
-                            removeProcessingIdentifier(identifier)
+                            self.changeLookup(for: identifier, to: .failed)
                             self.observable.on(.next(Update(kind: .itemCreationFailed(identifier: identifier, response: response, attachments: attachments))))
                         }
                     }
@@ -278,7 +318,7 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                     func storeDataAndDownloadAttachmentIfNecessary(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)]) throws {
                         let request = CreateTranslatedItemsDbRequest(responses: [response], schemaController: schemaController, dateParser: dateParser)
                         try dbStorage.perform(request: request, on: backgroundQueue)
-                        finishProcessingIdentifier(identifier)
+                        changeLookup(for: identifier, to: .translated(.init(response: response, attachments: attachments)))
                         observable.on(.next(Update(kind: .itemStored(identifier: identifier, response: response, attachments: attachments))))
                         
                         guard Defaults.shared.shareExtensionIncludeAttachment else { return }
@@ -289,31 +329,68 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                         observable.on(.next(Update(kind: .pendingAttachments(identifier: identifier, response: response, attachments: attachments))))
                     }
                 }
-                
-                func addProcessingIdentifiers(_ identifiers: [String]) {
-                    accessQueue.async(flags: .barrier) { [weak self] in
-                        guard let self else { return }
-                        self.processingIdentifiers += identifiers
+            }
+        }
+    }
+    
+    // MARK: Lookup Data
+    func cleanupLookup(force: Bool, alreadyInQueue: Bool) {
+        if alreadyInQueue {
+            _cleanupLookup(force: force)
+        } else {
+            accessQueue.async(flags: .barrier) {
+                _cleanupLookup(force: force)
+            }
+        }
+        
+        func _cleanupLookup(force: Bool) {
+            var cleanup = false
+            if force {
+                cleanup = true
+            } else if lookupRemainingCount == 0, remoteFileDownloader.batchData.2 == 0 {
+                if let presenter {
+                    inMainThread(sync: true) {
+                        cleanup = !presenter.isPresenting()
                     }
-                }
-                
-                func removeProcessingIdentifier(_ identifier: String) {
-                    accessQueue.async(flags: .barrier) { [weak self] in
-                        guard let self, let index = self.processingIdentifiers.firstIndex(of: identifier) else { return }
-                        self.processingIdentifiers.remove(at: index)
-                        // TODO: Determine when to cleanup saved identifiers when processing is finished
-                    }
-                }
-
-                func finishProcessingIdentifier(_ identifier: String) {
-                    accessQueue.async(flags: .barrier) { [weak self] in
-                        guard let self, let index = self.processingIdentifiers.firstIndex(of: identifier) else { return }
-                        self.processingIdentifiers.remove(at: index)
-                        self.savedIdentifiers.append(identifier)
-                        // TODO: Determine when to cleanup saved identifiers when processing is finished
-                    }
+                } else {
+                    cleanup = true
                 }
             }
+            guard cleanup else { return }
+            // If forced,
+            // or all lookups have been saved or failed, all attachments have finished, and either no presenter is assigned, or it doesn't present currently,
+            // then cleanup.
+            lookupData = []
+            lookupSavedCount = 0
+            lookupFailedCount = 0
+            DDLogInfo("IdentifierLookupController: cleaned up lookup data")
+        }
+    }
+    
+    func enqueueLookup(for identifiers: [String]) {
+        accessQueue.async(flags: .barrier) { [weak self] in
+            guard let self else { return }
+            self.lookupData.append(contentsOf: identifiers.map({ .init(identifier: $0, state: .enqueued) }))
+        }
+    }
+    
+    func changeLookup(for identifier: String, to state: LookupData.State) {
+        accessQueue.async(flags: .barrier) { [weak self] in
+            guard let self else { return }
+            if let index = self.lookupData.firstIndex(where: { $0.identifier == identifier }) {
+                self.lookupData[index] = .init(identifier: identifier, state: state)
+            }
+            switch state {
+            case .failed:
+                self.lookupFailedCount += 1
+                
+            case .translated:
+                self.lookupSavedCount += 1
+                
+            default:
+                break
+            }
+            self.cleanupLookup(force: false, alreadyInQueue: true)
         }
     }
 }

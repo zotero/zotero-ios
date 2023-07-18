@@ -254,6 +254,12 @@ class ManualLookupViewController: UIViewController {
     }
 }
 
+extension ManualLookupViewController: IdentifierLookupPresenter {
+    func isPresenting() -> Bool {
+        lookupController?.view.isHidden == false
+    }
+}
+
 private final class LiveTextResponder: UIResponder, UIKeyInput {
     private weak var viewModel: ViewModel<ManualLookupActionHandler>?
 

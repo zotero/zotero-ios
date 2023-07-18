@@ -52,17 +52,17 @@ final class LookupActionHandler: ViewModelActionHandler {
                             var lookupData = identifiers.map({ LookupState.LookupData(identifier: $0, state: .enqueued) })
 
                             self.update(viewModel: viewModel) { state in
-                                if !state.multiLookupEnabled {
-                                    state.lookupState = .lookup(lookupData)
-                                } else {
+                                if state.multiLookupEnabled {
                                     switch state.lookupState {
                                     case .lookup(let data):
                                         lookupData.append(contentsOf: data)
-                                    default: break
+                                        
+                                    default:
+                                        break
                                     }
-
-                                    state.lookupState = .lookup(lookupData)
                                 }
+
+                                state.lookupState = .lookup(lookupData)
                             }
                             
                         case .lookupInProgress(let identifier):
