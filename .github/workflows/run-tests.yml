@@ -11,10 +11,10 @@ on:
 jobs:
   tests:
     name: Run Xcode Tests
-    runs-on: macos-latest
+    runs-on: macos-13
     strategy:
       matrix:
-        xcode: ["14.2.0"]
+        xcode: ["14.3.1"]
 
     steps:
       - name: Checkout
