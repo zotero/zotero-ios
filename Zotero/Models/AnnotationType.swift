@@ -13,4 +13,6 @@ enum AnnotationType: String {
     case highlight
     case image
     case ink
+    case underline
+    case freeText = "text"
 }

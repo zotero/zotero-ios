@@ -234,8 +234,8 @@ final class AnnotationViewController: UIViewController {
             self.containerStackView.addArrangedSubview(AnnotationViewSeparator())
         }
 
-        // Setup color picker
         if editability == .editable {
+            // Setup color picker
             let colorPickerContainer = UIView()
             colorPickerContainer.backgroundColor = Asset.Colors.defaultCellBackground.color
             colorPickerContainer.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
@@ -248,10 +248,10 @@ final class AnnotationViewController: UIViewController {
                 circleView.backgroundColor = .clear
                 circleView.isSelected = circleView.hexColor == self.viewModel.state.selectedAnnotation?.color
                 circleView.tap
-                          .subscribe(with: self, onNext: { `self`, color in
-                              self.set(color: color)
-                          })
-                          .disposed(by: self.disposeBag)
+                    .subscribe(with: self, onNext: { `self`, color in
+                        self.set(color: color)
+                    })
+                    .disposed(by: self.disposeBag)
                 circleView.isAccessibilityElement = true
                 circleView.accessibilityLabel = self.name(for: circleView.hexColor, isSelected: circleView.isSelected)
                 circleView.backgroundColor = Asset.Colors.defaultCellBackground.color

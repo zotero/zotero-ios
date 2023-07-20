@@ -129,7 +129,18 @@ struct PDFReaderState: ViewModelState {
     var initialPage: Int?
     var unlockSuccessful: Bool?
 
-    init(url: URL, key: String, library: Library, initialPage: Int?, preselectedAnnotationKey: String?, settings: PDFSettings, userId: Int, username: String, displayName: String, interfaceStyle: UIUserInterfaceStyle) {
+    init(
+        url: URL,
+        key: String,
+        library: Library,
+        initialPage: Int?,
+        preselectedAnnotationKey: String?,
+        settings: PDFSettings,
+        userId: Int,
+        username: String,
+        displayName: String,
+        interfaceStyle: UIUserInterfaceStyle
+    ) {
         self.key = key
         self.library = library
         self.document = Document(url: url)
@@ -150,10 +161,14 @@ struct PDFReaderState: ViewModelState {
         self.selectedAnnotationsDuringEditing = []
         self.interfaceStyle = interfaceStyle
         self.sidebarEditingEnabled = false
-        self.toolColors = [.highlight: UIColor(hex: Defaults.shared.highlightColorHex),
-                           .square: UIColor(hex: Defaults.shared.squareColorHex),
-                           .note: UIColor(hex: Defaults.shared.noteColorHex),
-                           .ink: UIColor(hex: Defaults.shared.inkColorHex)]
+        self.toolColors = [
+            .highlight: UIColor(hex: Defaults.shared.highlightColorHex),
+            .square: UIColor(hex: Defaults.shared.squareColorHex),
+            .note: UIColor(hex: Defaults.shared.noteColorHex),
+            .ink: UIColor(hex: Defaults.shared.inkColorHex),
+            .underline: UIColor(hex: Defaults.shared.underlineColorHex),
+            .freeText: UIColor(hex: Defaults.shared.textColorHex)
+        ]
         self.activeLineWidth = CGFloat(Defaults.shared.activeLineWidth)
         self.activeEraserSize = CGFloat(Defaults.shared.activeEraserSize)
         self.deletionEnabled = false

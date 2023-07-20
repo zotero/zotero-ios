@@ -59,6 +59,8 @@ struct FieldKeys {
                 static let rects = "rects"
                 static let paths = "paths"
                 static let lineWidth = "width"
+                static let rotation = "rotation"
+                static let fontSize = "fontSize"
             }
 
             static let type = "annotationType"
@@ -76,30 +78,44 @@ struct FieldKeys {
 
             static func mandatoryApiFields(for type: AnnotationType) -> [KeyBaseKeyPair] {
                 switch type {
-                case .highlight:
-                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.text, baseKey: nil)]
+                case .highlight, .underline:
+                    return [
+                        KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
+                        KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
+                        KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
+                        KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil),
+                        KeyBaseKeyPair(key: Annotation.text, baseKey: nil)
+                    ]
 
                 case .ink:
-                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil)]
+                    return [
+                        KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
+                        KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
+                        KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
+                        KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil)
+                    ]
 
                 case .note, .image:
-                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil)]
+                    return [
+                        KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
+                        KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
+                        KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
+                        KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil)
+                    ]
+
+                case .freeText:
+                    return [
+                        KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
+                        KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
+                        KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
+                        KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil)
+                    ]
                 }
             }
 
             static func allFields(for type: AnnotationType) -> [KeyBaseKeyPair] {
                 switch type {
-                case .highlight:
+                case .highlight, .underline:
                     return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
                             KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
                             KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
@@ -124,6 +140,16 @@ struct FieldKeys {
                             KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil),
                             KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil),
                             KeyBaseKeyPair(key: Annotation.Position.pageIndex, baseKey: Annotation.position)]
+
+                case .freeText:
+                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.Position.pageIndex, baseKey: Annotation.position),
+                            KeyBaseKeyPair(key: Annotation.Position.fontSize, baseKey: Annotation.position),
+                            KeyBaseKeyPair(key: Annotation.Position.rotation, baseKey: Annotation.position)]
                 }
             }
         }

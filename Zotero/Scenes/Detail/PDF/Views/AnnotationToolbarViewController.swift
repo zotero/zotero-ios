@@ -140,6 +140,20 @@ class AnnotationToolbarViewController: UIViewController {
                 accessibilityLabel: L10n.Accessibility.Pdf.eraserAnnotationTool,
                 image: Asset.Images.Annotations.eraserLarge.image,
                 isHidden: false
+            ),
+            Tool(
+                type: .underline,
+                title: L10n.Pdf.AnnotationToolbar.underline,
+                accessibilityLabel: L10n.Accessibility.Pdf.underlineAnnotationTool,
+                image: UIImage(systemName: "underline")!,
+                isHidden: false
+            ),
+            Tool(
+                type: .freeText,
+                title: L10n.Pdf.AnnotationToolbar.text,
+                accessibilityLabel: L10n.Accessibility.Pdf.textAnnotationTool,
+                image: UIImage(systemName: "character")!,
+                isHidden: false
             )
         ]
     }

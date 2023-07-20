@@ -243,7 +243,7 @@ extension RItem: Updatable {
             }
             jsonData[FieldKeys.Item.Annotation.Position.paths] = apiPaths
             
-        case .highlight, .image, .note:
+        case .highlight, .image, .note, .underline, .freeText:
             var rectArray: [[Double]] = []
             self.rects.forEach { rRect in
                 rectArray.append([rRect.minX, rRect.minY, rRect.maxX, rRect.maxY])

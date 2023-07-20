@@ -21,6 +21,8 @@ struct DocumentAnnotation {
     let color: String
     let comment: String
     let text: String?
+    var fontSize: CGFloat?
+    var rotation: UInt?
     let sortIndex: String
     let dateModified: Date
 }

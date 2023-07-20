@@ -276,28 +276,19 @@ final class AnnotationsViewController: UIViewController {
 
     private func setup(cell: AnnotationCell, with annotation: Annotation, state: PDFReaderState) {
         let selected = annotation.key == state.selectedAnnotationKey?.key
-
-        let loadPreview: () -> UIImage? = {
-            let preview = state.previewCache.object(forKey: (annotation.key as NSString))
-            if preview == nil {
-                self.viewModel.process(action: .requestPreviews(keys: [annotation.key], notify: true))
-            }
-            return preview
-        }
-
         let preview: UIImage?
         let comment: AnnotationView.Comment?
 
         switch annotation.type {
         case .image:
             comment = .init(attributedString: self.loadAttributedComment(for: annotation), isActive: state.selectedAnnotationCommentActive)
-            preview = loadPreview()
+            preview = loadPreview(for: annotation, state: state)
 
-        case .ink:
+        case .ink, .freeText:
             comment = nil
-            preview = loadPreview()
+            preview = loadPreview(for: annotation, state: state)
 
-        case .note, .highlight:
+        case .note, .highlight, .underline:
             comment = .init(attributedString: self.loadAttributedComment(for: annotation), isActive: state.selectedAnnotationCommentActive)
             preview = nil
         }
@@ -323,6 +314,14 @@ final class AnnotationsViewController: UIViewController {
             self?.perform(action: action, annotation: annotation)
         })
         _ = cell.disposeBag.insert(actionSubscription)
+
+        func loadPreview(for annotation: Annotation, state: PDFReaderState) -> UIImage? {
+            let preview = state.previewCache.object(forKey: (annotation.key as NSString))
+            if preview == nil {
+                self.viewModel.process(action: .requestPreviews(keys: [annotation.key], notify: true))
+            }
+            return preview
+        }
     }
 
     private func loadAttributedComment(for annotation: Annotation) -> NSAttributedString? {
@@ -460,7 +459,7 @@ final class AnnotationsViewController: UIViewController {
         self.dataSource = TableViewDiffableDataSource(tableView: self.tableView, cellProvider: { [weak self] tableView, indexPath, key in
             let cell = tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
 
-            if let self = self, let cell = cell as? AnnotationCell, let annotation = self.viewModel.state.annotation(for: key) {
+            if let self, let cell = cell as? AnnotationCell, let annotation = self.viewModel.state.annotation(for: key) {
                 cell.contentView.backgroundColor = self.view.backgroundColor
                 self.setup(cell: cell, with: annotation, state: self.viewModel.state)
             }
@@ -606,8 +605,8 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSourceP
             .filter({ key in
                 guard let annotation = self.viewModel.state.annotation(for: key) else { return false }
                 switch annotation.type {
-                case .image, .ink: return true
-                case .note, .highlight: return false
+                case .image, .ink, .freeText: return true
+                case .note, .highlight, .underline: return false
                 }
             })
             .map({ $0.key })
