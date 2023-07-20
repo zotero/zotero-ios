@@ -105,6 +105,12 @@ final class Defaults {
     @UserDefault(key: "PDFReaderState.inkColor", defaultValue: AnnotationsConfig.defaultActiveColor)
     var inkColorHex: String
 
+    @UserDefault(key: "PDFReaderState.underlineColor", defaultValue: AnnotationsConfig.defaultActiveColor)
+    var underlineColorHex: String
+
+    @UserDefault(key: "PDFReaderState.textColor", defaultValue: AnnotationsConfig.defaultActiveColor)
+    var textColorHex: String
+
     @CodableUserDefault(key: "PDFReaderSettings", defaultValue: PDFSettings.default, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder, defaults: .standard)
     var pdfSettings: PDFSettings
     #endif

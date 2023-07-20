@@ -157,7 +157,9 @@ struct PDFReaderState: ViewModelState {
             .highlight: UIColor(hex: Defaults.shared.highlightColorHex),
             .square: UIColor(hex: Defaults.shared.squareColorHex),
             .note: UIColor(hex: Defaults.shared.noteColorHex),
-            .ink: UIColor(hex: Defaults.shared.inkColorHex)
+            .ink: UIColor(hex: Defaults.shared.inkColorHex),
+            .underline: UIColor(hex: Defaults.shared.underlineColorHex),
+            .freeText: UIColor(hex: Defaults.shared.textColorHex)
         ]
         self.activeLineWidth = CGFloat(Defaults.shared.activeLineWidth)
         self.activeEraserSize = CGFloat(Defaults.shared.activeEraserSize)

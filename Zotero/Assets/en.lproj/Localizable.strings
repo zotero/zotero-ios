@@ -241,6 +241,8 @@
 "pdf.annotation_toolbar.note" = "Note";
 "pdf.annotation_toolbar.image" = "Image";
 "pdf.annotation_toolbar.ink" = "Ink";
+"pdf.annotation_toolbar.underline" = "Underline";
+"pdf.annotation_toolbar.text" = "Text";
 "pdf.locked.locked" = "Locked";
 "pdf.locked.enter_password" = "Please enter the password to open this PDF.";
 "pdf.locked.failed" = "Incorrect password. Please try again.";
@@ -520,11 +522,15 @@
 "accessibility.pdf.note_annotation_tool" = "Create note annotation";
 "accessibility.pdf.image_annotation_tool" = "Create image annotation";
 "accessibility.pdf.ink_annotation_tool" = "Create ink annotation";
+"accessibility.pdf.underline_annotation_tool" = "Create underline annotation";
+"accessibility.pdf.text_annotation_tool" = "Create text annotation";
 "accessibility.pdf.eraser_annotation_tool" = "Eraser";
 "accessibility.pdf.highlight_annotation" = "Highlight annotation";
 "accessibility.pdf.note_annotation" = "Note annotation";
 "accessibility.pdf.image_annotation" = "Image annotation";
 "accessibility.pdf.ink_annotation" = "Ink annotation";
+"accessibility.pdf.underline_annotation" = "Underline annotation";
+"accessibility.pdf.text_annotation" = "Text annotation";
 "accessibility.pdf.edit_annotation" = "Edit annotation";
 "accessibility.pdf.share_annotation" = "Share annotation";
 "accessibility.pdf.share_annotation_image" = "Share annotation image";

@@ -242,8 +242,8 @@ final class AnnotationViewController: UIViewController {
             self.containerStackView.addArrangedSubview(AnnotationViewSeparator())
         }
 
-        // Setup color picker
         if editability == .editable {
+            // Setup color picker
             let colorPickerContainer = UIView()
             colorPickerContainer.backgroundColor = Asset.Colors.defaultCellBackground.color
             colorPickerContainer.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker

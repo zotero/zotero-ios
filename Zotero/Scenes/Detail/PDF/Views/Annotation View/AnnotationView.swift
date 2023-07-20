@@ -154,23 +154,6 @@ final class AnnotationView: UIView {
         bottomSeparator.isHidden = (tags.isHidden && tagsButton.isHidden) || (commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden)
     }
 
-    private func setupContent(type: AnnotationType, comment: String, text: String?, color: UIColor, canEdit: Bool, selected: Bool, availableWidth: CGFloat, accessibilityType: AccessibilityType) {
-        guard let highlightContent else { return }
-
-        highlightContent.isUserInteractionEnabled = false
-        highlightContent.isHidden = type != .highlight
-        imageContent?.isHidden = true
-
-        switch type {
-        case .highlight:
-            let bottomInset = inset(from: layout.highlightLineVerticalInsets, hasComment: !comment.isEmpty, selected: selected, canEdit: canEdit)
-            highlightContent.setup(with: color, text: (text ?? ""), bottomInset: bottomInset, accessibilityType: accessibilityType)
-
-        case .image, .ink, .note:
-            break
-        }
-    }
-
     private func setupContent(
         for annotation: PDFAnnotation,
         preview: UIImage?,
@@ -184,17 +167,18 @@ final class AnnotationView: UIView {
         guard let highlightContent, let imageContent else { return }
 
         highlightContent.isUserInteractionEnabled = false
-        highlightContent.isHidden = annotation.type != .highlight
+        highlightContent.isHidden = annotation.type != .highlight && annotation.type != .underline
         imageContent.isHidden = annotation.type != .image && annotation.type != .ink
 
         switch annotation.type {
-        case .note: break
+        case .note:
+            break
 
-        case .highlight:
+        case .highlight, .underline:
             let bottomInset = inset(from: layout.highlightLineVerticalInsets, hasComment: !annotation.comment.isEmpty, selected: selected, canEdit: canEdit)
             highlightContent.setup(with: color, text: (annotation.text ?? ""), bottomInset: bottomInset, accessibilityType: accessibilityType)
 
-        case .image, .ink:
+        case .image, .ink, .freeText:
             let size = annotation.previewBoundingBox(boundingBoxConverter: boundingBoxConverter).size
             let maxWidth = availableWidth - (layout.horizontalInset * 2)
             var maxHeight = ceil((size.height / size.width) * maxWidth)

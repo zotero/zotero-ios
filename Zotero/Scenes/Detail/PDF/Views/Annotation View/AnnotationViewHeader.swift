@@ -50,10 +50,23 @@ final class AnnotationViewHeader: UIView {
 
     private func image(for type: AnnotationType) -> UIImage? {
         switch type {
-        case .image: return Asset.Images.Annotations.areaMedium.image
-        case .highlight: return Asset.Images.Annotations.highlighterMedium.image
-        case .note: return Asset.Images.Annotations.noteMedium.image
-        case .ink: return Asset.Images.Annotations.inkMedium.image
+        case .image:
+            return Asset.Images.Annotations.areaMedium.image
+
+        case .highlight:
+            return Asset.Images.Annotations.highlighterMedium.image
+
+        case .note:
+            return Asset.Images.Annotations.noteMedium.image
+
+        case .ink:
+            return Asset.Images.Annotations.inkMedium.image
+
+        case .underline:
+            return UIImage(systemName: "underline")
+
+        case .freeText:
+            return UIImage(systemName: "character")
         }
     }
 
@@ -71,6 +84,12 @@ final class AnnotationViewHeader: UIView {
 
         case .ink:
             annotationName = L10n.Accessibility.Pdf.inkAnnotation
+
+        case .underline:
+            annotationName = L10n.Accessibility.Pdf.underlineAnnotation
+
+        case .freeText:
+            annotationName = L10n.Accessibility.Pdf.textAnnotation
         }
         return annotationName + ", " + L10n.page + " " + pageLabel
     }

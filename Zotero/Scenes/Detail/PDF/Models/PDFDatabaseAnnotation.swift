@@ -102,6 +102,14 @@ struct PDFDatabaseAnnotation {
         return self.item.fields.filter(.key(FieldKeys.Item.Annotation.text)).first?.value
     }
 
+    var fontSize: CGFloat? {
+        return (self.item.fields.filter(.key(FieldKeys.Item.Annotation.Position.fontSize)).first?.value).flatMap(Double.init).flatMap(CGFloat.init)
+    }
+
+    var rotation: UInt? {
+        return (self.item.fields.filter(.key(FieldKeys.Item.Annotation.Position.rotation)).first?.value).flatMap(UInt.init)
+    }
+
     var sortIndex: String {
         return self.item.annotationSortIndex
     }

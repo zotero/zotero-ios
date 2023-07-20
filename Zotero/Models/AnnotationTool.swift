@@ -14,4 +14,6 @@ enum AnnotationTool {
     case note
     case highlight
     case eraser
+    case underline
+    case freeText
 }

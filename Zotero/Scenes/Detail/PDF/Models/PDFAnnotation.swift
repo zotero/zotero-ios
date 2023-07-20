@@ -18,6 +18,8 @@ protocol PDFAnnotation {
     var color: String { get }
     var comment: String { get }
     var text: String? { get }
+    var fontSize: CGFloat? { get }
+    var rotation: UInt? { get }
     var sortIndex: String { get }
     var dateModified: Date { get }
     var isSyncable: Bool { get }
@@ -40,7 +42,7 @@ extension PDFAnnotation {
         case .ink:
             return AnnotationPreviewBoundingBoxCalculator.inkPreviewRect(from: boundingBox)
 
-        case .note, .highlight:
+        case .note, .highlight, .underline, .freeText:
             return boundingBox.rounded(to: 3)
         }
     }
@@ -52,7 +54,7 @@ extension PDFAnnotation {
             let lineWidth = self.lineWidth ?? 1
             return AnnotationBoundingBoxCalculator.boundingBox(from: paths, lineWidth: lineWidth).rounded(to: 3)
 
-        case .note, .image, .highlight:
+        case .note, .image, .highlight, .underline, .freeText:
             let rects = self.rects(boundingBoxConverter: boundingBoxConverter)
             if rects.count == 1 {
                 return rects[0].rounded(to: 3)
