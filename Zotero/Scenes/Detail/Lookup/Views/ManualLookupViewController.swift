@@ -96,18 +96,34 @@ class ManualLookupViewController: UIViewController {
     }
 
     private func update(state: LookupState) {
-        self.lookupController?.view.isHidden = false
-
         switch state.lookupState {
         case .failed:
+            // Similar to state for user input, but with error message displayed.
+            self.lookupController?.view.isHidden = false
+            
             self.titleLabel.isHidden = false
             self.inputContainer.isHidden = false
 
             self.textView.isUserInteractionEnabled = true
             self.scanButton.isEnabled = true
             self.textView.becomeFirstResponder()
+            
+            self.setupCancelDoneBarButtons()
 
-        case .loadingIdentifiers, .lookup:
+        case .loadingIdentifiers:
+            // Initial state for user input, when no lookup state has been restored.
+            self.titleLabel.isHidden = false
+            self.inputContainer.isHidden = false
+
+            self.textView.isUserInteractionEnabled = true
+            self.scanButton.isEnabled = true
+            self.textView.becomeFirstResponder()
+            
+            self.setupCancelDoneBarButtons()
+
+        case .lookup(let data):
+            self.lookupController?.view.isHidden = false
+            
             self.titleLabel.isHidden = true
             self.inputContainer.isHidden = true
 
@@ -117,16 +133,7 @@ class ManualLookupViewController: UIViewController {
             if self.textView.isFirstResponder {
                 self.textView.resignFirstResponder()
             }
-        }
-
-        switch state.lookupState {
-        case .failed:
-            self.setupCancelDoneBarButtons()
-
-        case .loadingIdentifiers:
-            self.setupCloseBarButton(title: L10n.cancel)
-
-        case .lookup(let data):
+            
             let didTranslateAll = !data.contains(where: { data in
                 switch data.state {
                 case .enqueued, .inProgress: return true
@@ -206,7 +213,8 @@ class ManualLookupViewController: UIViewController {
     }
 
     private func setupLookupController() {
-        guard let controller = self.coordinatorDelegate?.lookupController(multiLookupEnabled: false, hasDarkBackground: false) else { return }
+        let restoreLookupState = self.viewModel.state.restoreLookupState
+        guard let controller = self.coordinatorDelegate?.lookupController(restoreLookupState: restoreLookupState, hasDarkBackground: false) else { return }
         controller.view.isHidden = true
         self.lookupController = controller
 

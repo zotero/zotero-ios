@@ -525,7 +525,7 @@ final class ItemsViewController: UIViewController {
             .observe(on: MainScheduler.instance)
             .subscribe(with: self, onNext: { [weak identifierLookupController] `self`, update in
                 guard let identifierLookupController else { return }
-                identifierLookupController.getIdentifiersLookupCount { saved, failed, total in
+                identifierLookupController.getIdentifiersLookupCount { saved, failed, total, _ in
                     inMainThread {
                         let batchData = ItemsState.IdentifierLookupBatchData(saved: saved, total: total - failed)
                         self.viewModel.process(action: .updateIdentifierLookup(update: update, batchData: batchData))

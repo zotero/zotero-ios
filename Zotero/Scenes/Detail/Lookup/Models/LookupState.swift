@@ -24,14 +24,13 @@ struct LookupState: ViewModelState {
 
     let collectionKeys: Set<String>
     let libraryId: LibraryIdentifier
-    // If enabled, when `lookup(identifier:)` is called, previous identifiers won't be removed.
-    let multiLookupEnabled: Bool
+    let restoreLookupState: Bool
     let hasDarkBackground: Bool
 
     var lookupState: State
 
-    init(multiLookupEnabled: Bool, hasDarkBackground: Bool, collectionKeys: Set<String>, libraryId: LibraryIdentifier) {
-        self.multiLookupEnabled = multiLookupEnabled
+    init(restoreLookupState: Bool, hasDarkBackground: Bool, collectionKeys: Set<String>, libraryId: LibraryIdentifier) {
+        self.restoreLookupState = restoreLookupState
         self.collectionKeys = collectionKeys
         self.libraryId = libraryId
         self.lookupState = .loadingIdentifiers

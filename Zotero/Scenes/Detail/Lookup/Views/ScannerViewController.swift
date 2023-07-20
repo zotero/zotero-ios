@@ -113,7 +113,7 @@ final class ScannerViewController: UIViewController {
     // MARK: - Setups
 
     private func setupLookupController() {
-        guard let controller = self.coordinatorDelegate?.lookupController(multiLookupEnabled: true, hasDarkBackground: true) else { return }
+        guard let controller = self.coordinatorDelegate?.lookupController(restoreLookupState: true, hasDarkBackground: true) else { return }
         controller.view.backgroundColor = .clear
         controller.view.isHidden = true
         self.lookupController = controller

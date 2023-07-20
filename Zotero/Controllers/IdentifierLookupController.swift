@@ -112,16 +112,16 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
     }
     
     // MARK: Actions
-    func initialize(libraryId: LibraryIdentifier, collectionKeys: Set<String>, completion: @escaping (Bool) -> Void) {
+    func initialize(libraryId: LibraryIdentifier, collectionKeys: Set<String>, completion: @escaping ([LookupData]?) -> Void) {
         accessQueue.async(flags: .barrier) { [weak self] in
-            var initialized = false
+            var lookupData: [LookupData]?
             defer {
-                completion(initialized)
+                completion(lookupData)
             }
             guard let self = self else { return }
             let lookupSettings = LookupWebViewHandler.LookupSettings(libraryIdentifier: libraryId, collectionKeys: collectionKeys)
             if self.lookupWebViewHandlersByLookupSettings[lookupSettings] != nil {
-                initialized = true
+                lookupData = self.lookupData
                 return
             }
             inMainThread(sync: true) {
@@ -135,7 +135,7 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                 return
             }
             self.setupObserver(for: lookupWebViewHandler)
-            initialized = true
+            lookupData = self.lookupData
         }
     }
     
@@ -144,18 +144,20 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
         lookupWebViewHandlersByLookupSettings[lookupSettings]?.lookUp(identifier: identifier)
     }
     
-    func getIdentifiersLookupCount(callback: @escaping (Int, Int, Int) -> Void) {
+    func getIdentifiersLookupCount(callback: @escaping (Int, Int, Int, [LookupData]) -> Void) {
         accessQueue.async { [weak self] in
             var savedCount = 0
             var failedCount = 0
             var totalCount = 0
+            var data: [LookupData] = []
             defer {
-                callback(savedCount, failedCount, totalCount)
+                callback(savedCount, failedCount, totalCount, data)
             }
             guard let self else { return }
             savedCount = self.lookupSavedCount
             failedCount = self.lookupFailedCount
             totalCount = self.lookupTotalCount
+            data = self.lookupData
         }
     }
 

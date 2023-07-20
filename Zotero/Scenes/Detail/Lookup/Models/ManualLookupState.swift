@@ -10,8 +10,10 @@ import Foundation
 
 struct ManualLookupState: ViewModelState {
     var scannedText: String?
+    let restoreLookupState: Bool
 
-    init() {
+    init(restoreLookupState: Bool) {
+        self.restoreLookupState = restoreLookupState
     }
 
     mutating func cleanup() {

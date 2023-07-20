@@ -28,10 +28,16 @@ final class LookupActionHandler: ViewModelActionHandler {
         case .initialize:
             let collectionKeys = viewModel.state.collectionKeys
             let libraryId = viewModel.state.libraryId
-            identifierLookupController.initialize(libraryId: libraryId, collectionKeys: collectionKeys) { [weak self] initialized in
-                guard let self, initialized else {
+            identifierLookupController.initialize(libraryId: libraryId, collectionKeys: collectionKeys) { [weak self] lookupData in
+                guard let self, let lookupData else {
                     DDLogError("LookupActionHandler: can't create observer")
                     return
+                }
+                if viewModel.state.restoreLookupState, !lookupData.isEmpty {
+                    DDLogInfo("LookupActionHandler: restoring lookup state")
+                    self.update(viewModel: viewModel) { state in
+                        state.lookupState = .lookup(lookupData)
+                    }
                 }
                 self.identifierLookupController.observable
                     .observe(on: MainScheduler.instance)
@@ -52,14 +58,12 @@ final class LookupActionHandler: ViewModelActionHandler {
                             var lookupData = identifiers.map({ LookupState.LookupData(identifier: $0, state: .enqueued) })
 
                             self.update(viewModel: viewModel) { state in
-                                if state.multiLookupEnabled {
-                                    switch state.lookupState {
-                                    case .lookup(let data):
-                                        lookupData.append(contentsOf: data)
-                                        
-                                    default:
-                                        break
-                                    }
+                                switch state.lookupState {
+                                case .lookup(let data):
+                                    lookupData.append(contentsOf: data)
+                                    
+                                default:
+                                    break
                                 }
 
                                 state.lookupState = .lookup(lookupData)
@@ -95,15 +99,23 @@ final class LookupActionHandler: ViewModelActionHandler {
 
         guard !newIdentifier.isEmpty else { return }
 
-        if !viewModel.state.multiLookupEnabled {
-            self.update(viewModel: viewModel) { state in
-                state.lookupState = .loadingIdentifiers
+        switch viewModel.state.lookupState {
+        case .loadingIdentifiers, .failed:
+            identifierLookupController.getIdentifiersLookupCount { [weak self] _, _, _, data in
+                guard let self else { return }
+                self.update(viewModel: viewModel) { state in
+                    state.lookupState = .lookup(data)
+                    let collectionKeys = viewModel.state.collectionKeys
+                    let libraryId = viewModel.state.libraryId
+                    self.identifierLookupController.lookUp(libraryId: libraryId, collectionKeys: collectionKeys, identifier: newIdentifier)
+                }
             }
+            
+        case .lookup:
+            let collectionKeys = viewModel.state.collectionKeys
+            let libraryId = viewModel.state.libraryId
+            identifierLookupController.lookUp(libraryId: libraryId, collectionKeys: collectionKeys, identifier: newIdentifier)
         }
-
-        let collectionKeys = viewModel.state.collectionKeys
-        let libraryId = viewModel.state.libraryId
-        self.identifierLookupController.lookUp(libraryId: libraryId, collectionKeys: collectionKeys, identifier: newIdentifier)
     }
 
     private func update(lookupData: LookupState.LookupData, in viewModel: ViewModel<LookupActionHandler>) {
