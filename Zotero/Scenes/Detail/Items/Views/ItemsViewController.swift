@@ -720,6 +720,10 @@ extension ItemsViewController: ItemsToolbarControllerDelegate {
     func process(action: ItemAction.Kind, button: UIBarButtonItem) {
         self.process(action: action, for: self.viewModel.state.selectedItems, button: button, completionAction: nil)
     }
+    
+    func showLookup() {
+        coordinatorDelegate?.showLookup()
+    }
 }
 
 extension ItemsViewController: TagFilterDelegate {

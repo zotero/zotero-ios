@@ -38,6 +38,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showMissingStyleError()
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
     func show(error: ItemsError)
+    func showLookup()
 }
 
 protocol DetailItemDetailCoordinatorDelegate: AnyObject {
@@ -641,6 +642,10 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         coordinator.start(animated: false)
 
         self.navigationController?.present(navigationController, animated: true, completion: nil)
+    }
+    
+    func showLookup() {
+        showLookup(startWith: .manual(restoreLookupState: true))
     }
 }
 

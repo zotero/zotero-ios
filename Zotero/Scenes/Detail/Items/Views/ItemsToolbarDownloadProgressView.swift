@@ -24,6 +24,15 @@ final class ItemsToolbarDownloadProgressView: UIView {
 
     func set(text: String, progress: Float?) {
         label.text = text
+        set(progress: progress)
+    }
+
+    func set(attributedText: NSAttributedString, progress: Float?) {
+        label.attributedText = attributedText
+        set(progress: progress)
+    }
+
+    private func set(progress: Float?) {
         if let progress {
             progressView.progress = progress
             progressView.isHidden = false
@@ -31,7 +40,7 @@ final class ItemsToolbarDownloadProgressView: UIView {
             progressView.isHidden = true
         }
     }
-
+    
     func set(downloaded: Int, total: Int, progress: Float) {
         set(text: L10n.Items.toolbarDownloaded(downloaded, total), progress: progress)
     }
