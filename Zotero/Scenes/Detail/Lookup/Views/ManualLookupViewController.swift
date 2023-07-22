@@ -121,7 +121,7 @@ class ManualLookupViewController: UIViewController {
             
             self.setupCancelDoneBarButtons()
 
-        case .lookup(let data):
+        case .lookup:
             self.lookupController?.view.isHidden = false
             
             self.titleLabel.isHidden = true
@@ -134,13 +134,7 @@ class ManualLookupViewController: UIViewController {
                 self.textView.resignFirstResponder()
             }
             
-            let didTranslateAll = !data.contains(where: { data in
-                switch data.state {
-                case .enqueued, .inProgress: return true
-                case .failed, .translated: return false
-                }
-            })
-            self.setupCloseBarButton(title: didTranslateAll ? L10n.close : L10n.cancel)
+            self.setupCloseBarButton(title: L10n.close)
         }
     }
 
