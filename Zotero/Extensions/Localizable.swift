@@ -22,6 +22,8 @@ internal enum L10n {
   internal static let betaWipeTitle = L10n.tr("Localizable", "beta_wipe_title", fallback: "Resync Required")
   /// Cancel
   internal static let cancel = L10n.tr("Localizable", "cancel", fallback: "Cancel")
+  /// Cancel All
+  internal static let cancelAll = L10n.tr("Localizable", "cancel_all", fallback: "Cancel All")
   /// Clear
   internal static let clear = L10n.tr("Localizable", "clear", fallback: "Clear")
   /// Localizable.strings

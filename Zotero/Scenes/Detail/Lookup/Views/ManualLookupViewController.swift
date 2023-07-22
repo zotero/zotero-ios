@@ -112,6 +112,9 @@ class ManualLookupViewController: UIViewController {
 
         case .loadingIdentifiers:
             // Initial state for user input, when no lookup state has been restored.
+            self.lookupController?.view.isHidden = true
+            self.topConstraint.constant = 15
+            
             self.titleLabel.isHidden = false
             self.inputContainer.isHidden = false
 
@@ -134,18 +137,24 @@ class ManualLookupViewController: UIViewController {
                 self.textView.resignFirstResponder()
             }
             
-            self.setupCloseBarButton(title: L10n.close)
+            self.setupCloseCancelAllBarButtons()
         }
     }
 
-    private func setupCloseBarButton(title: String) {
-        self.navigationItem.rightBarButtonItem = nil
+    private func setupCloseCancelAllBarButtons() {
+        navigationItem.rightBarButtonItem = nil
 
-        let cancelItem = UIBarButtonItem(title: title, style: .plain, target: nil, action: nil)
-        cancelItem.rx.tap.subscribe(onNext: { [weak self] in
+        let closeItem = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
+        closeItem.rx.tap.subscribe(onNext: { [weak self] in
             self?.close()
         }).disposed(by: self.disposeBag)
-        self.navigationItem.leftBarButtonItem = cancelItem
+        
+        let cancelAllItem = UIBarButtonItem(title: L10n.cancelAll, style: .plain, target: nil, action: nil)
+        cancelAllItem.rx.tap.subscribe(onNext: { [weak self] in
+            self?.lookupController?.viewModel.process(action: .cancelAllLookups)
+        }).disposed(by: self.disposeBag)
+
+        navigationItem.leftBarButtonItems = [closeItem, cancelAllItem]
     }
 
     private func setupCancelDoneBarButtons() {
@@ -159,7 +168,7 @@ class ManualLookupViewController: UIViewController {
         cancelItem.rx.tap.subscribe(onNext: { [weak self] in
             self?.close()
         }).disposed(by: self.disposeBag)
-        self.navigationItem.leftBarButtonItem = cancelItem
+        self.navigationItem.leftBarButtonItems = [cancelItem]
     }
 
     private func updatePreferredContentSize() {

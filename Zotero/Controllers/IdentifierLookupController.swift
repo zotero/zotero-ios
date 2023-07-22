@@ -34,6 +34,7 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
             case itemCreationFailed(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)])
             case itemStored(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)])
             case pendingAttachments(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)])
+            case finishedAllLookups
         }
 
         let kind: Kind
@@ -49,6 +50,8 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
             struct TranslatedLookupData {
                 let response: ItemResponse
                 let attachments: [(Attachment, URL)]
+                let libraryId: LibraryIdentifier
+                let collectionKeys: Set<String>
             }
         }
         
@@ -82,7 +85,7 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
     internal weak var presenter: IdentifierLookupPresenter? {
         didSet {
             guard presenter == nil, oldValue != nil else { return }
-            cleanupLookup(force: false, alreadyInQueue: false)
+            cleanupLookup(force: false, alreadyInQueue: false, update: Update(kind: .finishedAllLookups))
         }
     }
     private var lookupWebViewHandlersByLookupSettings: [LookupWebViewHandler.LookupSettings: LookupWebViewHandler] = [:]
@@ -142,6 +145,44 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
     func lookUp(libraryId: LibraryIdentifier, collectionKeys: Set<String>, identifier: String) {
         let lookupSettings = LookupWebViewHandler.LookupSettings(libraryIdentifier: libraryId, collectionKeys: collectionKeys)
         lookupWebViewHandlersByLookupSettings[lookupSettings]?.lookUp(identifier: identifier)
+    }
+    
+    func cancelAllLookups() {
+        accessQueue.async(flags: .barrier) { [weak self] in
+            guard let self else { return }
+            DDLogInfo("IdentifierLookupController: cancel all lookups")
+            let keys = self.lookupWebViewHandlersByLookupSettings.keys
+            for key in keys {
+                if let webView = self.lookupWebViewHandlersByLookupSettings.removeValue(forKey: key)?.webViewHandler.webView {
+                    inMainThread {
+                        self.webViewProvider?.removeWebView(webView)
+                    }
+                }
+            }
+            self.remoteFileDownloader.stop()
+            let lookupData = self.lookupData
+            cleanupLookup(force: true, alreadyInQueue: true, update: Update(kind: .finishedAllLookups))
+            let storedItemResponses: [(ItemResponse, LibraryIdentifier)] = lookupData.compactMap {
+                switch $0.state {
+                case .translated(let translatedLookupData):
+                    return (translatedLookupData.response, translatedLookupData.libraryId)
+                    
+                default:
+                    return nil
+                }
+            }
+            for (response, libraryId) in storedItemResponses {
+                self.backgroundQueue.async { [weak self] in
+                    guard let self else { return }
+                    do {
+                        let request = MarkItemsAsTrashedDbRequest(keys: [response.key], libraryId: libraryId, trashed: true)
+                        try dbStorage.perform(request: request, on: backgroundQueue)
+                    } catch let error {
+                        DDLogError("IdentifierLookupController: can't trash item(s) - \(error)")
+                    }
+                }
+            }
+        }
     }
     
     func getIdentifiersLookupCount(callback: @escaping (Int, Int, Int, [LookupData]) -> Void) {
@@ -217,16 +258,14 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                 
             case .failure(let error):
                 DDLogError("IdentifierLookupController: lookup failed - \(error)")
-                cleanupLookup(force: true, alreadyInQueue: false)
-                observable.on(.next(Update(kind: .lookupError(error: error))))
+                cleanupLookup(force: true, alreadyInQueue: false, update: Update(kind: .lookupError(error: error)))
             }
             
             func process(data: LookupWebViewHandler.LookupData) {
                 switch data {
                 case .identifiers(let identifiers):
                     if identifiers.isEmpty {
-                        cleanupLookup(force: true, alreadyInQueue: false)
-                        observable.on(.next(Update(kind: .noIdentifiersDetected)))
+                        cleanupLookup(force: true, alreadyInQueue: false, update: Update(kind: .noIdentifiersDetected))
                     } else {
                         let enqueuedIdentifiers = identifiers.map({ identifier(from: $0) })
                         enqueueLookup(for: enqueuedIdentifiers)
@@ -250,16 +289,18 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                         return
                     }
 
+                    let libraryId = lookupWebViewHandler.lookupSettings.libraryIdentifier
+                    let collectionKeys = lookupWebViewHandler.lookupSettings.collectionKeys
                     guard let itemData = data["data"] as? [[String: Any]],
                           let item = itemData.first,
-                          let (response, attachments) = parse(item)
+                          let (response, attachments) = parse(item, libraryId: libraryId, collectionKeys: collectionKeys, schemaController: schemaController, dateParser: dateParser)
                     else {
                         changeLookup(for: identifier, to: .failed)
                         observable.on(.next(Update(kind: .parseFailed(identifier: identifier))))
                         return
                     }
 
-                    process(identifier: identifier, response: response, attachments: attachments)
+                    process(identifier: identifier, response: response, attachments: attachments, libraryId: libraryId, collectionKeys: collectionKeys)
                 }
                 
                 func identifier(from data: [String: String]) -> String {
@@ -274,9 +315,13 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                 /// - parameter itemData: Data to parse
                 /// - parameter schemaController: SchemaController which is used for validating item type and field types
                 /// - returns: `ItemResponse` of parsed item and optional attachment dictionary with title and url.
-                func parse(_ itemData: [String: Any]) -> (ItemResponse, [(Attachment, URL)])? {
-                    let libraryId = lookupWebViewHandler.lookupSettings.libraryIdentifier
-                    let collectionKeys = lookupWebViewHandler.lookupSettings.collectionKeys
+                func parse(
+                    _ itemData: [String: Any],
+                    libraryId: LibraryIdentifier,
+                    collectionKeys: Set<String>,
+                    schemaController: SchemaController,
+                    dateParser: DateParser
+                ) -> (ItemResponse, [(Attachment, URL)])? {
                     do {
                         let item = try ItemResponse(translatorResponse: itemData, schemaController: schemaController).copy(libraryId: libraryId, collectionKeys: collectionKeys, tags: [])
 
@@ -305,7 +350,7 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                     }
                 }
                 
-                func process(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)]) {
+                func process(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)], libraryId: LibraryIdentifier, collectionKeys: Set<String>) {
                     backgroundQueue.async { [weak self] in
                         guard let self = self else { return }
                         do {
@@ -320,7 +365,7 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
                     func storeDataAndDownloadAttachmentIfNecessary(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)]) throws {
                         let request = CreateTranslatedItemsDbRequest(responses: [response], schemaController: schemaController, dateParser: dateParser)
                         try dbStorage.perform(request: request, on: backgroundQueue)
-                        changeLookup(for: identifier, to: .translated(.init(response: response, attachments: attachments)))
+                        changeLookup(for: identifier, to: .translated(.init(response: response, attachments: attachments, libraryId: libraryId, collectionKeys: collectionKeys)))
                         observable.on(.next(Update(kind: .itemStored(identifier: identifier, response: response, attachments: attachments))))
                         
                         guard Defaults.shared.shareExtensionIncludeAttachment else { return }
@@ -336,16 +381,16 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
     }
     
     // MARK: Lookup Data
-    func cleanupLookup(force: Bool, alreadyInQueue: Bool) {
+    func cleanupLookup(force: Bool, alreadyInQueue: Bool, update: Update?) {
         if alreadyInQueue {
-            _cleanupLookup(force: force)
+            _cleanupLookup(force: force, update: update)
         } else {
             accessQueue.async(flags: .barrier) {
-                _cleanupLookup(force: force)
+                _cleanupLookup(force: force, update: update)
             }
         }
         
-        func _cleanupLookup(force: Bool) {
+        func _cleanupLookup(force: Bool, update: Update?) {
             var cleanup = false
             if force {
                 cleanup = true
@@ -366,6 +411,8 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
             lookupSavedCount = 0
             lookupFailedCount = 0
             DDLogInfo("IdentifierLookupController: cleaned up lookup data")
+            guard let update else { return }
+            observable.on(.next(update))
         }
     }
     
@@ -392,7 +439,7 @@ final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
             default:
                 break
             }
-            self.cleanupLookup(force: false, alreadyInQueue: true)
+            self.cleanupLookup(force: false, alreadyInQueue: true, update: Update(kind: .finishedAllLookups))
         }
     }
 }

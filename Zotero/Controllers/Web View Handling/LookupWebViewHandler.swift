@@ -52,7 +52,7 @@ final class LookupWebViewHandler {
     }
 
     let lookupSettings: LookupSettings
-    private let webViewHandler: WebViewHandler
+    let webViewHandler: WebViewHandler
     private let translatorsController: TranslatorsAndStylesController
     private let disposeBag: DisposeBag
     let observable: PublishSubject<Result<LookupData, Swift.Error>>

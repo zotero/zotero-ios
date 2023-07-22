@@ -264,6 +264,10 @@ final class Controllers {
         controllers?.disableSync(apiKey: self.apiKey)
         // Cancel all downloads
         controllers?.fileDownloader.stop()
+        // Cancel all identifier lookups
+        controllers?.identifierLookupController.cancelAllLookups()
+        // Cancel all remote downloads
+        controllers?.remoteFileDownloader.stop()
         // Cancel all background uploads
         controllers?.backgroundUploadObserver.cancelAllUploads()
         // Clear user controllers

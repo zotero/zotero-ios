@@ -24,10 +24,10 @@ final class LookupActionHandler: ViewModelActionHandler {
     }
 
     func process(action: LookupAction, in viewModel: ViewModel<LookupActionHandler>) {
+        let collectionKeys = viewModel.state.collectionKeys
+        let libraryId = viewModel.state.libraryId
         switch action {
         case .initialize:
-            let collectionKeys = viewModel.state.collectionKeys
-            let libraryId = viewModel.state.libraryId
             identifierLookupController.initialize(libraryId: libraryId, collectionKeys: collectionKeys) { [weak self] lookupData in
                 guard let self, let lookupData else {
                     DDLogError("LookupActionHandler: can't create observer")
@@ -79,9 +79,14 @@ final class LookupActionHandler: ViewModelActionHandler {
                             break
                             
                         case .pendingAttachments(let identifier, let response, let attachments):
-                            let parsedData = LookupState.TranslatedLookupData(response: response, attachments: attachments)
+                            let parsedData = LookupState.TranslatedLookupData(response: response, attachments: attachments, libraryId: libraryId, collectionKeys: collectionKeys)
                             let translatedData = LookupState.LookupData(identifier: identifier, state: .translated(parsedData))
                             self.update(lookupData: translatedData, in: viewModel)
+                            
+                        case .finishedAllLookups:
+                            self.update(viewModel: viewModel) { state in
+                                state.lookupState = .loadingIdentifiers
+                            }
                         }
                     }
                     .disposed(by: self.disposeBag)
@@ -89,6 +94,12 @@ final class LookupActionHandler: ViewModelActionHandler {
 
         case .lookUp(let identifier):
             self.lookUp(identifier: identifier, in: viewModel)
+            
+        case .cancelAllLookups:
+            identifierLookupController.cancelAllLookups()
+            self.update(viewModel: viewModel) { state in
+                state.lookupState = .loadingIdentifiers
+            }
         }
     }
 

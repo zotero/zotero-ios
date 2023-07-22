@@ -12,4 +12,5 @@ import WebKit
 enum LookupAction {
     case initialize
     case lookUp(String)
+    case cancelAllLookups
 }

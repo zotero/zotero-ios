@@ -114,6 +114,17 @@ final class RemoteAttachmentDownloader {
             self.operationQueue.addOperations(operations, waitUntilFinished: false)
         }
     }
+    
+    private func resetBatchDataIfNeeded() {
+        guard operations.isEmpty else { return }
+        totalBatchCount = 0
+        batchProgress = nil
+    }
+
+    func stop() {
+        DDLogInfo("RemoteAttachmentDownloader: stop")
+        self.operationQueue.cancelAllOperations()
+    }
 
     private func createDownload(url: URL, attachment: Attachment, parentKey: String) -> (Download, RemoteAttachmentDownloadOperation)? {
         let download = Download(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
@@ -170,10 +181,7 @@ final class RemoteAttachmentDownloader {
     private func finish(download: Download, file: File, attachment: Attachment, parentKey: String, result: Result<(), Swift.Error>) {
         self.operations[download] = nil
         progressObservers[download] = nil
-        if operations.isEmpty {
-            totalBatchCount = 0
-            batchProgress = nil
-        }
+        resetBatchDataIfNeeded()
 
         switch result {
         case .success:
@@ -184,7 +192,7 @@ final class RemoteAttachmentDownloader {
         case .failure(let error):
             DDLogError("RemoteAttachmentDownloader: failed to download attachment \(download.key), \(download.libraryId) - \(error)")
 
-            let isCancelError = (error as? AttachmentDownloadOperation.Error) == .cancelled
+            let isCancelError = (error as? RemoteAttachmentDownloadOperation.Error) == .cancelled
             self.errors[download] = isCancelError ? nil : error
 
             if isCancelError {
