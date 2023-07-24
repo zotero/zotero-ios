@@ -24,10 +24,23 @@ final class LookupActionHandler: ViewModelActionHandler {
     }
 
     func process(action: LookupAction, in viewModel: ViewModel<LookupActionHandler>) {
-        let collectionKeys = viewModel.state.collectionKeys
-        let libraryId = viewModel.state.libraryId
         switch action {
         case .initialize:
+            let collectionKeys = viewModel.state.collectionKeys
+            let libraryId = viewModel.state.libraryId
+            initialize(with: collectionKeys, in: libraryId)
+
+        case .lookUp(let identifier):
+            self.lookUp(identifier: identifier, in: viewModel)
+            
+        case .cancelAllLookups:
+            identifierLookupController.cancelAllLookups()
+            self.update(viewModel: viewModel) { state in
+                state.lookupState = .loadingIdentifiers
+            }
+        }
+        
+        func initialize(with collectionKeys: Set<String>, in libraryId: LibraryIdentifier) {
             identifierLookupController.initialize(libraryId: libraryId, collectionKeys: collectionKeys) { [weak self] lookupData in
                 guard let self, let lookupData else {
                     DDLogError("LookupActionHandler: can't create observer")
@@ -90,15 +103,6 @@ final class LookupActionHandler: ViewModelActionHandler {
                         }
                     }
                     .disposed(by: self.disposeBag)
-            }
-
-        case .lookUp(let identifier):
-            self.lookUp(identifier: identifier, in: viewModel)
-            
-        case .cancelAllLookups:
-            identifierLookupController.cancelAllLookups()
-            self.update(viewModel: viewModel) { state in
-                state.lookupState = .loadingIdentifiers
             }
         }
     }
