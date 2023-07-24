@@ -397,28 +397,38 @@ final class IdentifierLookupController {
         }
         
         func cleanupLookup(force: Bool, update: Update?) {
-            var cleanup = false
             if force {
-                cleanup = true
-            } else if lookupRemainingCount == 0, remoteFileDownloader.batchData.2 == 0 {
-                if let presenter {
-                    inMainThread(sync: true) {
-                        cleanup = !presenter.isPresenting()
-                    }
-                } else {
-                    cleanup = true
-                }
+                // If forced, cleanup and return
+                cleanup(update: update)
+                return
             }
-            guard cleanup else { return }
-            // If forced,
-            // or all lookups have been saved or failed, all attachments have finished, and either no presenter is assigned, or it doesn't present currently,
-            // then cleanup.
-            lookupData = []
-            lookupSavedCount = 0
-            lookupFailedCount = 0
-            DDLogInfo("IdentifierLookupController: cleaned up lookup data")
-            guard let update else { return }
-            observable.on(.next(update))
+            guard lookupRemainingCount == 0, remoteFileDownloader.batchData.2 == 0 else {
+                // If there are remaining lookups, or downloading attachments, then just return
+                return
+            }
+            guard let presenter else {
+                // If no presenter is assigned, then cleanup and return
+                cleanup(update: update)
+                return
+            }
+            // Presenter is assigned ...
+            var isPresenting = false
+            inMainThread(sync: true) {
+                isPresenting = presenter.isPresenting()
+            }
+            if !isPresenting {
+                // ... but is not presenting, then cleanup
+                cleanup(update: update)
+            }
+
+            func cleanup(update: Update?) {
+                lookupData = []
+                lookupSavedCount = 0
+                lookupFailedCount = 0
+                DDLogInfo("IdentifierLookupController: cleaned up lookup data")
+                guard let update else { return }
+                observable.on(.next(update))
+            }
         }
     }
     
