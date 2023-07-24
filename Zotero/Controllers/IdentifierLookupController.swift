@@ -21,7 +21,7 @@ protocol IdentifierLookupPresenter: AnyObject {
     func isPresenting() -> Bool
 }
 
-final class IdentifierLookupController: BackgroundDbProcessingActionHandler {
+final class IdentifierLookupController {
     // MARK: Types
     struct Update {
         enum Kind {
