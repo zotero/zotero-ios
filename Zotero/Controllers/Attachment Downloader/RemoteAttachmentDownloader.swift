@@ -122,13 +122,13 @@ final class RemoteAttachmentDownloader {
             let progress = Progress(totalUnitCount: 100)
             let operation = RemoteAttachmentDownloadOperation(url: url, file: file, progress: progress, apiClient: apiClient, fileStorage: fileStorage, queue: processingQueue)
             operation.finishedDownload = { [weak self] result in
-                self?.processingQueue.async(flags: .barrier) {
+                self?.accessQueue.async(flags: .barrier) {
                     guard let self else { return }
                     self.finish(download: download, file: file, attachment: attachment, parentKey: parentKey, result: result)
                 }
             }
             operation.progressHandler = { [weak self] progress in
-                self?.processingQueue.async(flags: .barrier) {
+                self?.accessQueue.async(flags: .barrier) {
                     guard let self else { return }
                     self.observe(progress: progress, attachment: attachment, download: download)
                 }
