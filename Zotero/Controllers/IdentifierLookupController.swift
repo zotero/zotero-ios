@@ -271,7 +271,10 @@ final class IdentifierLookupController {
                     }
                     
                 case .item(let data):
-                    guard let lookupId = data["identifier"] as? [String: String] else { return }
+                    guard let lookupId = data["identifier"] as? [String: String] else {
+                        DDLogWarn("IdentifierLookupController: lookup item data don't contain identifier")
+                        return
+                    }
                     let identifier = identifier(from: lookupId)
 
                     if data.keys.count == 1 {
