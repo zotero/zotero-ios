@@ -146,7 +146,11 @@ final class IdentifierLookupController {
     
     func lookUp(libraryId: LibraryIdentifier, collectionKeys: Set<String>, identifier: String) {
         let lookupSettings = LookupWebViewHandler.LookupSettings(libraryIdentifier: libraryId, collectionKeys: collectionKeys)
-        lookupWebViewHandlersByLookupSettings[lookupSettings]?.lookUp(identifier: identifier)
+        guard let lookupWebViewHandler = lookupWebViewHandlersByLookupSettings[lookupSettings] else {
+            DDLogError("IdentifierLookupController: can't find lookup web view handler for settings - \(lookupSettings)")
+            return
+        }
+        lookupWebViewHandler.lookUp(identifier: identifier)
     }
     
     func cancelAllLookups() {
