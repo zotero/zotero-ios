@@ -158,10 +158,9 @@ final class IdentifierLookupController {
             DDLogInfo("IdentifierLookupController: cancel all lookups")
             let keys = self.lookupWebViewHandlersByLookupSettings.keys
             for key in keys {
-                if let webView = self.lookupWebViewHandlersByLookupSettings.removeValue(forKey: key)?.webViewHandler.webView {
-                    inMainThread {
-                        webView.removeFromSuperview()
-                    }
+                guard let webView = self.lookupWebViewHandlersByLookupSettings.removeValue(forKey: key)?.webViewHandler.webView else { continue }
+                inMainThread {
+                    webView.removeFromSuperview()
                 }
             }
             self.remoteFileDownloader.stop()
