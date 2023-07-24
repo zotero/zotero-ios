@@ -62,8 +62,9 @@ final class IdentifierLookupController {
     // MARK: Properties
     let observable: PublishSubject<Update>
     private let accessQueue: DispatchQueue
-    internal let backgroundQueue: DispatchQueue
-    internal unowned let dbStorage: DbStorage
+    private let backgroundQueue: DispatchQueue
+    private let backgroundScheduler: SerialDispatchQueueScheduler
+    private unowned let dbStorage: DbStorage
     private unowned let fileStorage: FileStorage
     private unowned let translatorsController: TranslatorsAndStylesController
     private unowned let schemaController: SchemaController
@@ -108,6 +109,7 @@ final class IdentifierLookupController {
         
         self.accessQueue = DispatchQueue(label: "org.zotero.IdentifierLookupController.accessQueue", qos: .userInteractive, attributes: .concurrent)
         self.backgroundQueue = DispatchQueue(label: "org.zotero.IdentifierLookupController.backgroundProcessing", qos: .userInitiated)
+        self.backgroundScheduler = SerialDispatchQueueScheduler(queue: backgroundQueue, internalSerialQueueName: "org.zotero.IdentifierLookupController.backgroundScheduler")
         self.observable = PublishSubject()
         self.disposeBag = DisposeBag()
         
@@ -205,6 +207,7 @@ final class IdentifierLookupController {
     // MARK: Setups
     private func setupObservers() {
         remoteFileDownloader.observable
+            .observe(on: backgroundScheduler)
             .subscribe { update in
                 switch update.kind {
                 case .ready(let attachment):
@@ -218,28 +221,23 @@ final class IdentifierLookupController {
         
         func finish(download: RemoteAttachmentDownloader.Download, attachment: Attachment) {
             let localizedType = schemaController.localized(itemType: ItemTypes.attachment) ?? ItemTypes.attachment
-            
-            backgroundQueue.async { [weak self] in
-                guard let self else { return }
+            do {
+                let request = CreateAttachmentDbRequest(
+                    attachment: attachment,
+                    parentKey: download.parentKey,
+                    localizedType: localizedType,
+                    includeAccessDate: attachment.hasUrl,
+                    collections: [],
+                    tags: []
+                )
+                _ = try self.dbStorage.perform(request: request, on: self.backgroundQueue)
+            } catch let error {
+                DDLogError("IdentifierLookupController: can't store attachment after download - \(error)")
                 
-                do {
-                    let request = CreateAttachmentDbRequest(
-                        attachment: attachment,
-                        parentKey: download.parentKey,
-                        localizedType: localizedType,
-                        includeAccessDate: attachment.hasUrl,
-                        collections: [],
-                        tags: []
-                    )
-                    _ = try self.dbStorage.perform(request: request, on: self.backgroundQueue)
-                } catch let error {
-                    DDLogError("IdentifierLookupController: can't store attachment after download - \(error)")
-                    
-                    // Storing item failed, remove downloaded file
-                    guard case .file(let filename, let contentType, _, _) = attachment.type else { return }
-                    let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
-                    try? self.fileStorage.remove(file)
-                }
+                // Storing item failed, remove downloaded file
+                guard case .file(let filename, let contentType, _, _) = attachment.type else { return }
+                let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
+                try? self.fileStorage.remove(file)
             }
         }
     }
