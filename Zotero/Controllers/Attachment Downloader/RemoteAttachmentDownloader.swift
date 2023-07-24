@@ -123,14 +123,12 @@ final class RemoteAttachmentDownloader {
             let operation = RemoteAttachmentDownloadOperation(url: url, file: file, progress: progress, apiClient: apiClient, fileStorage: fileStorage, queue: processingQueue)
             operation.finishedDownload = { [weak self] result in
                 self?.accessQueue.async(flags: .barrier) {
-                    guard let self else { return }
-                    self.finish(download: download, file: file, attachment: attachment, parentKey: parentKey, result: result)
+                    finish(download: download, file: file, attachment: attachment, parentKey: parentKey, result: result)
                 }
             }
             operation.progressHandler = { [weak self] progress in
                 self?.accessQueue.async(flags: .barrier) {
-                    guard let self else { return }
-                    self.observe(progress: progress, attachment: attachment, download: download)
+                    observe(progress: progress, attachment: attachment, download: download)
                 }
             }
 
@@ -157,6 +155,38 @@ final class RemoteAttachmentDownloader {
                     return nil
                 }
             }
+            
+            func finish(download: Download, file: File, attachment: Attachment, parentKey: String, result: Result<(), Swift.Error>) {
+                operations[download] = nil
+                progressObservers[download] = nil
+                resetBatchDataIfNeeded()
+
+                switch result {
+                case .success:
+                    DDLogInfo("RemoteAttachmentDownloader: finished downloading \(download.key)")
+                    observable.on(.next(Update(download: download, kind: .ready(attachment))))
+                    errors[download] = nil
+
+                case .failure(let error):
+                    DDLogError("RemoteAttachmentDownloader: failed to download attachment \(download.key), \(download.libraryId) - \(error)")
+
+                    let isCancelError = (error as? RemoteAttachmentDownloadOperation.Error) == .cancelled
+                    errors[download] = isCancelError ? nil : error
+
+                    if isCancelError {
+                        observable.on(.next(Update(download: download, kind: .cancelled)))
+                    } else {
+                        observable.on(.next(Update(download: download, kind: .failed)))
+                    }
+                }
+            }
+            
+            func observe(progress: Progress, attachment: Attachment, download: Download) {
+                let observer = progress.observe(\.fractionCompleted) { [weak self] progress, _ in
+                    self?.observable.on(.next(Update(download: download, kind: .progress(CGFloat(progress.fractionCompleted)))))
+                }
+                progressObservers[download] = observer
+            }
         }
     }
     
@@ -169,37 +199,5 @@ final class RemoteAttachmentDownloader {
     func stop() {
         DDLogInfo("RemoteAttachmentDownloader: stop")
         self.operationQueue.cancelAllOperations()
-    }
-
-    private func observe(progress: Progress, attachment: Attachment, download: Download) {
-        let observer = progress.observe(\.fractionCompleted) { [weak self] progress, _ in
-            self?.observable.on(.next(Update(download: download, kind: .progress(CGFloat(progress.fractionCompleted)))))
-        }
-        self.progressObservers[download] = observer
-    }
-
-    private func finish(download: Download, file: File, attachment: Attachment, parentKey: String, result: Result<(), Swift.Error>) {
-        self.operations[download] = nil
-        progressObservers[download] = nil
-        resetBatchDataIfNeeded()
-
-        switch result {
-        case .success:
-            DDLogInfo("RemoteAttachmentDownloader: finished downloading \(download.key)")
-            self.observable.on(.next(Update(download: download, kind: .ready(attachment))))
-            self.errors[download] = nil
-
-        case .failure(let error):
-            DDLogError("RemoteAttachmentDownloader: failed to download attachment \(download.key), \(download.libraryId) - \(error)")
-
-            let isCancelError = (error as? RemoteAttachmentDownloadOperation.Error) == .cancelled
-            self.errors[download] = isCancelError ? nil : error
-
-            if isCancelError {
-                self.observable.on(.next(Update(download: download, kind: .cancelled)))
-            } else {
-                self.observable.on(.next(Update(download: download, kind: .failed)))
-            }
-        }
     }
 }
