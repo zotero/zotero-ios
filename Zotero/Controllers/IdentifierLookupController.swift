@@ -175,15 +175,13 @@ final class IdentifierLookupController {
                     return nil
                 }
             }
-            for (response, libraryId) in storedItemResponses {
-                self.backgroundQueue.async { [weak self] in
-                    guard let self else { return }
-                    do {
-                        let request = MarkItemsAsTrashedDbRequest(keys: [response.key], libraryId: libraryId, trashed: true)
-                        try dbStorage.perform(request: request, on: backgroundQueue)
-                    } catch let error {
-                        DDLogError("IdentifierLookupController: can't trash item(s) - \(error)")
-                    }
+            self.backgroundQueue.async { [weak self] in
+                guard let self else { return }
+                do {
+                    let requests = storedItemResponses.map({ MarkItemsAsTrashedDbRequest(keys: [$0.0.key], libraryId: $0.1, trashed: true) })
+                    try dbStorage.perform(writeRequests: requests, on: backgroundQueue)
+                } catch let error {
+                    DDLogError("IdentifierLookupController: can't trash item(s) - \(error)")
                 }
             }
         }
