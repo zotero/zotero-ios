@@ -222,10 +222,4 @@ extension LibrariesViewController: IdentifierLookupWebViewProvider {
         view.insertSubview(webView, at: 0)
         return webView
     }
-    
-    func removeWebView(_ webView: WKWebView) {
-        if view.subviews.contains(where: { $0 == webView }) {
-            webView.removeFromSuperview()
-        }
-    }
 }

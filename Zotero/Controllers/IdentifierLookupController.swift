@@ -14,7 +14,6 @@ import RxSwift
 
 protocol IdentifierLookupWebViewProvider: AnyObject {
     func addWebView() -> WKWebView
-    func removeWebView(_ webView: WKWebView)
 }
 
 protocol IdentifierLookupPresenter: AnyObject {
@@ -161,7 +160,7 @@ final class IdentifierLookupController {
             for key in keys {
                 if let webView = self.lookupWebViewHandlersByLookupSettings.removeValue(forKey: key)?.webViewHandler.webView {
                     inMainThread {
-                        self.webViewProvider?.removeWebView(webView)
+                        webView.removeFromSuperview()
                     }
                 }
             }
