@@ -60,6 +60,8 @@ final class IdentifierLookupController {
     
     // MARK: Properties
     let observable: PublishSubject<Update>
+    private let dispatchSpecificKey: DispatchSpecificKey<String>
+    private let accessQueueLabel: String
     private let accessQueue: DispatchQueue
     private let backgroundQueue: DispatchQueue
     private let backgroundScheduler: SerialDispatchQueueScheduler
@@ -85,7 +87,7 @@ final class IdentifierLookupController {
     internal weak var presenter: IdentifierLookupPresenter? {
         didSet {
             guard presenter == nil, oldValue != nil else { return }
-            cleanupLookup(force: false, alreadyInQueue: false, update: Update(kind: .finishedAllLookups))
+            cleanupLookupIfNeeded(force: false, update: Update(kind: .finishedAllLookups))
         }
     }
     private var lookupWebViewHandlersByLookupSettings: [LookupWebViewHandler.LookupSettings: LookupWebViewHandler] = [:]
@@ -106,7 +108,10 @@ final class IdentifierLookupController {
         self.dateParser = dateParser
         self.remoteFileDownloader = remoteFileDownloader
         
-        self.accessQueue = DispatchQueue(label: "org.zotero.IdentifierLookupController.accessQueue", qos: .userInteractive, attributes: .concurrent)
+        self.dispatchSpecificKey = DispatchSpecificKey<String>()
+        self.accessQueueLabel = "org.zotero.IdentifierLookupController.accessQueue"
+        self.accessQueue = DispatchQueue(label: accessQueueLabel, qos: .userInteractive, attributes: .concurrent)
+        accessQueue.setSpecific(key: dispatchSpecificKey, value: accessQueueLabel)
         self.backgroundQueue = DispatchQueue(label: "org.zotero.IdentifierLookupController.backgroundProcessing", qos: .userInitiated)
         self.backgroundScheduler = SerialDispatchQueueScheduler(queue: backgroundQueue, internalSerialQueueName: "org.zotero.IdentifierLookupController.backgroundScheduler")
         self.observable = PublishSubject()
@@ -165,7 +170,7 @@ final class IdentifierLookupController {
             }
             self.remoteFileDownloader.stop()
             let lookupData = self.lookupData
-            cleanupLookup(force: true, alreadyInQueue: true, update: Update(kind: .finishedAllLookups))
+            cleanupLookupIfNeeded(force: true, update: Update(kind: .finishedAllLookups))
             let storedItemResponses: [(ItemResponse, LibraryIdentifier)] = lookupData.compactMap {
                 switch $0.state {
                 case .translated(let translatedLookupData):
@@ -256,14 +261,14 @@ final class IdentifierLookupController {
                 
             case .failure(let error):
                 DDLogError("IdentifierLookupController: lookup failed - \(error)")
-                cleanupLookup(force: true, alreadyInQueue: false, update: Update(kind: .lookupError(error: error)))
+                cleanupLookupIfNeeded(force: true, update: Update(kind: .lookupError(error: error)))
             }
             
             func process(data: LookupWebViewHandler.LookupData) {
                 switch data {
                 case .identifiers(let identifiers):
                     if identifiers.isEmpty {
-                        cleanupLookup(force: true, alreadyInQueue: false, update: Update(kind: .noIdentifiersDetected))
+                        cleanupLookupIfNeeded(force: true, update: Update(kind: .noIdentifiersDetected))
                     } else {
                         let enqueuedIdentifiers = identifiers.map({ identifier(from: $0) })
                         enqueueLookup(for: enqueuedIdentifiers)
@@ -382,16 +387,16 @@ final class IdentifierLookupController {
     }
     
     // MARK: Lookup Data
-    func cleanupLookup(force: Bool, alreadyInQueue: Bool, update: Update?) {
-        if alreadyInQueue {
-            _cleanupLookup(force: force, update: update)
+    func cleanupLookupIfNeeded(force: Bool, update: Update?) {
+        if DispatchQueue.getSpecific(key: dispatchSpecificKey) == accessQueueLabel {
+            cleanupLookup(force: force, update: update)
         } else {
             accessQueue.async(flags: .barrier) {
-                _cleanupLookup(force: force, update: update)
+                cleanupLookup(force: force, update: update)
             }
         }
         
-        func _cleanupLookup(force: Bool, update: Update?) {
+        func cleanupLookup(force: Bool, update: Update?) {
             var cleanup = false
             if force {
                 cleanup = true
@@ -440,7 +445,7 @@ final class IdentifierLookupController {
             default:
                 break
             }
-            self.cleanupLookup(force: false, alreadyInQueue: true, update: Update(kind: .finishedAllLookups))
+            self.cleanupLookupIfNeeded(force: false, update: Update(kind: .finishedAllLookups))
         }
     }
 }
