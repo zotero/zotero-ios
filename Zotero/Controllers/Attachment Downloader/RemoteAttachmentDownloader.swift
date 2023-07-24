@@ -104,14 +104,59 @@ final class RemoteAttachmentDownloader {
 
             DDLogInfo("RemoteAttachmentDownloader: enqueue \(data.count) attachments")
 
-            let downloadAndOperations = data.compactMap({ self.createDownload(url: $0.1, attachment: $0.0, parentKey: $0.2) })
+            let downloadAndOperations = data.compactMap({ createDownload(url: $0.1, attachment: $0.0, parentKey: $0.2) })
             let downloads = downloadAndOperations.map({ $0.0 })
             let operations = downloadAndOperations.map({ $0.1 })
             downloads.forEach {
                 // Send first update to immediately reflect new state
                 self.observable.on(.next(Update(download: $0, kind: .progress(0))))
             }
-            self.operationQueue.addOperations(operations, waitUntilFinished: false)
+            operationQueue.addOperations(operations, waitUntilFinished: false)
+        }
+        
+        func createDownload(url: URL, attachment: Attachment, parentKey: String) -> (Download, RemoteAttachmentDownloadOperation)? {
+            let download = Download(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
+
+            guard operations[download] == nil, let file = file(for: attachment) else { return nil }
+
+            let progress = Progress(totalUnitCount: 100)
+            let operation = RemoteAttachmentDownloadOperation(url: url, file: file, progress: progress, apiClient: apiClient, fileStorage: fileStorage, queue: processingQueue)
+            operation.finishedDownload = { [weak self] result in
+                self?.processingQueue.async(flags: .barrier) {
+                    guard let self else { return }
+                    self.finish(download: download, file: file, attachment: attachment, parentKey: parentKey, result: result)
+                }
+            }
+            operation.progressHandler = { [weak self] progress in
+                self?.processingQueue.async(flags: .barrier) {
+                    guard let self else { return }
+                    self.observe(progress: progress, attachment: attachment, download: download)
+                }
+            }
+
+            operations[download] = operation
+            totalBatchCount += 1
+            
+            if let batchProgress {
+                batchProgress.addChild(progress, withPendingUnitCount: 100)
+                batchProgress.totalUnitCount += 100
+            } else {
+                let batchProgress = Progress(totalUnitCount: 100)
+                batchProgress.addChild(progress, withPendingUnitCount: 100)
+                self.batchProgress = batchProgress
+            }
+
+            return (download, operation)
+            
+            func file(for attachment: Attachment) -> File? {
+                switch attachment.type {
+                case .file(let filename, let contentType, _, _):
+                    return Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
+
+                case .url:
+                    return nil
+                }
+            }
         }
     }
     
@@ -126,56 +171,11 @@ final class RemoteAttachmentDownloader {
         self.operationQueue.cancelAllOperations()
     }
 
-    private func createDownload(url: URL, attachment: Attachment, parentKey: String) -> (Download, RemoteAttachmentDownloadOperation)? {
-        let download = Download(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
-
-        guard self.operations[download] == nil, let file = self.file(for: attachment) else { return nil }
-
-        let progress = Progress(totalUnitCount: 100)
-        let operation = RemoteAttachmentDownloadOperation(url: url, file: file, progress: progress, apiClient: self.apiClient, fileStorage: self.fileStorage, queue: self.processingQueue)
-        operation.finishedDownload = { [weak self] result in
-            self?.processingQueue.async(flags: .barrier) {
-                guard let self else { return }
-                self.finish(download: download, file: file, attachment: attachment, parentKey: parentKey, result: result)
-            }
-        }
-        operation.progressHandler = { [weak self] progress in
-            self?.processingQueue.async(flags: .barrier) {
-                guard let self else { return }
-                self.observe(progress: progress, attachment: attachment, download: download)
-            }
-        }
-
-        self.operations[download] = operation
-        totalBatchCount += 1
-        
-        if let batchProgress {
-            batchProgress.addChild(progress, withPendingUnitCount: 100)
-            batchProgress.totalUnitCount += 100
-        } else {
-            let batchProgress = Progress(totalUnitCount: 100)
-            batchProgress.addChild(progress, withPendingUnitCount: 100)
-            self.batchProgress = batchProgress
-        }
-
-        return (download, operation)
-    }
-
     private func observe(progress: Progress, attachment: Attachment, download: Download) {
         let observer = progress.observe(\.fractionCompleted) { [weak self] progress, _ in
             self?.observable.on(.next(Update(download: download, kind: .progress(CGFloat(progress.fractionCompleted)))))
         }
         self.progressObservers[download] = observer
-    }
-
-    private func file(for attachment: Attachment) -> File? {
-        switch attachment.type {
-        case .file(let filename, let contentType, _, _):
-            return Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
-
-        case .url:
-            return nil
-        }
     }
 
     private func finish(download: Download, file: File, attachment: Attachment, parentKey: String, result: Result<(), Swift.Error>) {
