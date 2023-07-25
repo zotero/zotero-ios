@@ -1402,6 +1402,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
         } else if hasChanges([.boundingBox, .rects]), let rects = AnnotationConverter.rects(from: annotation) {
             requests.append(EditAnnotationRectsDbRequest(key: key, libraryId: viewModel.state.library.identifier, rects: rects, boundingBoxConverter: boundingBoxConverter))
+        } else if hasChanges([.boundingBox]) {
+            // FreeTextAnnotation has only `boundingBox` change, not paired with paths or rects.
+            requests.append(EditAnnotationRectsDbRequest(key: key, libraryId: viewModel.state.library.identifier, rects: [annotation.boundingBox], boundingBoxConverter: boundingBoxConverter))
         }
 
         if hasChanges(.color) {
