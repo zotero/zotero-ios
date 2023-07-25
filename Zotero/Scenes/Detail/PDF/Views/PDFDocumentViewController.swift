@@ -491,6 +491,7 @@ final class PDFDocumentViewController: UIViewController {
                     return [.highlight]
                 }
             }
+            builder.freeTextAccessoryViewEnabled = false
             builder.scrubberBarType = .horizontal
 //            builder.thumbnailBarMode = .scrubberBar
             builder.markupAnnotationMergeBehavior = .never
@@ -584,7 +585,22 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
         return false
     }
 
-    func pdfViewController(_ sender: PDFViewController, menuForAnnotations annotations: [PSPDFKit.Annotation], onPageView pageView: PDFPageView, appearance: EditMenuAppearance, suggestedMenu: UIMenu) -> UIMenu {
+    func pdfViewController(
+        _ sender: PDFViewController,
+        menuForAnnotations annotations: [PSPDFKit.Annotation],
+        onPageView pageView: PDFPageView,
+        appearance: EditMenuAppearance,
+        suggestedMenu: UIMenu
+    ) -> UIMenu {
+        if let annotation = annotations.first,
+           annotation.type == .freeText,
+           let annotationView = pageView.visibleAnnotationViews.first(where: { $0.annotation == annotation }) as? FreeTextAnnotationView {
+            // Free text annotation is being selected, check whether we should focus text view
+            guard annotation.key != nil, // don't focus new annotations, they are already focused
+                  self.presentedViewController == nil // don't focus if annotation popup is visible
+            else { return UIMenu(children: []) }
+            annotationView.beginEditing()
+        }
         return UIMenu(children: [])
     }
 
