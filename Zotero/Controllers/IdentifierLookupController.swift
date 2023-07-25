@@ -127,23 +127,24 @@ final class IdentifierLookupController {
             defer {
                 completion(lookupData)
             }
-            guard let self = self else { return }
+            guard let self else { return }
             let lookupSettings = LookupWebViewHandler.LookupSettings(libraryIdentifier: libraryId, collectionKeys: collectionKeys)
-            if self.lookupWebViewHandlersByLookupSettings[lookupSettings] != nil {
+            if lookupWebViewHandlersByLookupSettings[lookupSettings] != nil {
                 lookupData = self.lookupData
                 return
             }
+            var lookupWebViewHandler: LookupWebViewHandler?
             inMainThread(sync: true) {
                 if let webView = self.webViewProvider?.addWebView() {
-                    let lookupWebViewHandler = LookupWebViewHandler(lookupSettings: lookupSettings, webView: webView, translatorsController: self.translatorsController)
-                    self.lookupWebViewHandlersByLookupSettings[lookupSettings] = lookupWebViewHandler
+                    lookupWebViewHandler = LookupWebViewHandler(lookupSettings: lookupSettings, webView: webView, translatorsController: self.translatorsController)
                 }
             }
-            guard let lookupWebViewHandler = self.lookupWebViewHandlersByLookupSettings[lookupSettings] else {
+            guard let lookupWebViewHandler else {
                 DDLogError("IdentifierLookupController: can't create LookupWebViewHandler instance")
                 return
             }
-            self.setupObserver(for: lookupWebViewHandler)
+            lookupWebViewHandlersByLookupSettings[lookupSettings] = lookupWebViewHandler
+            setupObserver(for: lookupWebViewHandler)
             lookupData = self.lookupData
         }
     }
