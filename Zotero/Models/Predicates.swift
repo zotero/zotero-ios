@@ -307,7 +307,8 @@ extension NSPredicate {
     private static func itemSearchSubpredicates(for text: String) -> NSPredicate {
         let keyPredicate = NSPredicate(format: "key == %@", text)
         let childrenKeyPredicate = NSPredicate(format: "any children.key == %@", text)
-        let childrenChildrenKeyPredicate = NSPredicate(format: "any children.children.key == %@", text)
+        // TODO: - ideally change back to "==" if Realm issue is fixed
+        let childrenChildrenKeyPredicate = NSPredicate(format: "any children.children.key contains %@", text)
         let contentPredicate = NSPredicate(format: "htmlFreeContent contains[c] %@", text)
         let childrenContentPredicate = NSPredicate(format: "any children.htmlFreeContent contains[c] %@", text)
         let childrenChildrenContentPredicate = NSPredicate(format: "any children.children.htmlFreeContent contains[c] %@", text)
