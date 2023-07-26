@@ -116,14 +116,12 @@ final class LookupActionHandler: ViewModelActionHandler {
 
         switch viewModel.state.lookupState {
         case .loadingIdentifiers, .failed:
-            identifierLookupController.getIdentifiersLookupCount { [weak self] _, _, _, data in
-                guard let self else { return }
-                self.update(viewModel: viewModel) { state in
-                    state.lookupState = .lookup(data)
-                    let collectionKeys = viewModel.state.collectionKeys
-                    let libraryId = viewModel.state.libraryId
-                    self.identifierLookupController.lookUp(libraryId: libraryId, collectionKeys: collectionKeys, identifier: newIdentifier)
-                }
+            let data = identifierLookupController.currentLookupData
+            self.update(viewModel: viewModel) { state in
+                state.lookupState = .lookup(data)
+                let collectionKeys = viewModel.state.collectionKeys
+                let libraryId = viewModel.state.libraryId
+                self.identifierLookupController.lookUp(libraryId: libraryId, collectionKeys: collectionKeys, identifier: newIdentifier)
             }
             
         case .lookup:

@@ -82,7 +82,31 @@ final class IdentifierLookupController {
     private var lookupRemainingCount: Int {
         lookupTotalCount - lookupSavedCount - lookupFailedCount
     }
-    
+    var batchData: (savedCount: Int, failedCount: Int, totalCount: Int) {
+        var savedCount = 0
+        var failedCount = 0
+        var totalCount = 0
+
+        accessQueue.sync { [weak self] in
+            guard let self else { return }
+            savedCount = self.lookupSavedCount
+            failedCount = self.lookupFailedCount
+            totalCount = self.lookupTotalCount
+        }
+        
+        return (savedCount, failedCount, totalCount)
+    }
+    var currentLookupData: [LookupData] {
+        var lookupData: [LookupData] = []
+
+        accessQueue.sync { [weak self] in
+            guard let self else { return }
+            lookupData = self.lookupData
+        }
+
+        return lookupData
+    }
+
     internal weak var webViewProvider: IdentifierLookupWebViewProvider?
     internal weak var presenter: IdentifierLookupPresenter? {
         didSet {
@@ -193,23 +217,6 @@ final class IdentifierLookupController {
         }
     }
     
-    func getIdentifiersLookupCount(callback: @escaping (Int, Int, Int, [LookupData]) -> Void) {
-        accessQueue.async { [weak self] in
-            var savedCount = 0
-            var failedCount = 0
-            var totalCount = 0
-            var data: [LookupData] = []
-            defer {
-                callback(savedCount, failedCount, totalCount, data)
-            }
-            guard let self else { return }
-            savedCount = self.lookupSavedCount
-            failedCount = self.lookupFailedCount
-            totalCount = self.lookupTotalCount
-            data = self.lookupData
-        }
-    }
-
     // MARK: Setups
     private func setupObservers() {
         remoteFileDownloader.observable
@@ -412,14 +419,15 @@ final class IdentifierLookupController {
                 cleanup(update: update)
                 return
             }
-            // Presenter is assigned ...
-            var isPresenting = false
-            inMainThread(sync: true) {
-                isPresenting = presenter.isPresenting()
-            }
-            if !isPresenting {
-                // ... but is not presenting, then cleanup
-                cleanup(update: update)
+            // Presenter is assigned
+            DispatchQueue.main.async { [weak self] in
+                // Checking if it is presenting in main queue.
+                // Doing so asynchronously, to not cause a deadlock if cleanupLookupIfNeeded is already called from the main thread.
+                guard !presenter.isPresenting() else { return }
+                // It is not presenting, then cleanup
+                self?.accessQueue.async(flags: .barrier) {
+                    cleanup(update: update)
+                }
             }
 
             func cleanup(update: Update?) {
