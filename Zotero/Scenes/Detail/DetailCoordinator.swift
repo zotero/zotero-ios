@@ -122,6 +122,8 @@ final class DetailCoordinator: Coordinator {
             library: self.library,
             dbStorage: userControllers.dbStorage,
             fileDownloader: userControllers.fileDownloader,
+            remoteFileDownloader: userControllers.remoteFileDownloader,
+            identifierLookupController: userControllers.identifierLookupController,
             syncScheduler: userControllers.syncScheduler,
             citationController: userControllers.citationController,
             fileCleanupController: userControllers.fileCleanupController,
@@ -136,6 +138,8 @@ final class DetailCoordinator: Coordinator {
         library: Library,
         dbStorage: DbStorage,
         fileDownloader: AttachmentDownloader,
+        remoteFileDownloader: RemoteAttachmentDownloader,
+        identifierLookupController: IdentifierLookupController,
         syncScheduler: SynchronizationScheduler,
         citationController: CitationController,
         fileCleanupController: AttachmentFileCleanupController,
@@ -145,7 +149,20 @@ final class DetailCoordinator: Coordinator {
         itemsTagFilterDelegate?.clearSelection()
 
         let searchTerm = self.searchItemKeys?.joined(separator: " ")
-        let state = ItemsState(collection: collection, library: library, sortType: .default, searchTerm: searchTerm, filters: [], error: nil)
+        let downloadBatchData = ItemsState.DownloadBatchData(batchData: fileDownloader.batchData)
+        let remoteDownloadBatchData = ItemsState.DownloadBatchData(batchData: remoteFileDownloader.batchData)
+        let identifierLookupBatchData = ItemsState.IdentifierLookupBatchData(batchData: identifierLookupController.batchData)
+        let state = ItemsState(
+            collection: collection,
+            library: library,
+            sortType: .default,
+            searchTerm: searchTerm,
+            filters: [],
+            downloadBatchData: downloadBatchData,
+            remoteDownloadBatchData: remoteDownloadBatchData,
+            identifierLookupBatchData: identifierLookupBatchData,
+            error: nil
+        )
         let handler = ItemsActionHandler(
             dbStorage: dbStorage,
             fileStorage: self.controllers.fileStorage,

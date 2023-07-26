@@ -71,7 +71,13 @@ final class ItemsToolbarController {
         } else {
             let filters = self.sizeClassSpecificFilters(from: state.filters)
             self.viewController.toolbarItems = self.createNormalToolbarItems(for: filters)
-            self.updateNormalToolbarItems(for: filters, identifierLookupBatchData: state.identifierLookupBatchData, downloadBatchData: state.combinedDownloadBatchData, results: state.results)
+            self.updateNormalToolbarItems(
+                for: filters,
+                downloadBatchData: state.downloadBatchData,
+                remoteDownloadBatchData: state.remoteDownloadBatchData,
+                identifierLookupBatchData: state.identifierLookupBatchData,
+                results: state.results
+            )
         }
     }
 
@@ -81,8 +87,9 @@ final class ItemsToolbarController {
         } else {
             self.updateNormalToolbarItems(
                 for: self.sizeClassSpecificFilters(from: state.filters),
+                downloadBatchData: state.downloadBatchData,
+                remoteDownloadBatchData: state.remoteDownloadBatchData,
                 identifierLookupBatchData: state.identifierLookupBatchData,
-                downloadBatchData: state.combinedDownloadBatchData,
                 results: state.results
             )
         }
@@ -125,8 +132,9 @@ final class ItemsToolbarController {
 
     private func updateNormalToolbarItems(
         for filters: [ItemsFilter],
-        identifierLookupBatchData: ItemsState.IdentifierLookupBatchData,
         downloadBatchData: ItemsState.DownloadBatchData?,
+        remoteDownloadBatchData: ItemsState.DownloadBatchData?,
+        identifierLookupBatchData: ItemsState.IdentifierLookupBatchData,
         results: Results<RItem>?
     ) {
         if let item = self.viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.filter.tag }) {
@@ -148,24 +156,24 @@ final class ItemsToolbarController {
 
             if let progressView = stackView.subviews.last as? ItemsToolbarDownloadProgressView {
                 var isUserInteractionEnabled = false
-                var attributedText = NSMutableAttributedString()
+                let attributedText = NSMutableAttributedString()
                 var progress: Float?
-                let downloading = downloadBatchData != nil
+                let remoteDownloading = remoteDownloadBatchData != nil
                 let defaultAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: UIColor.label, .font: UIFont.preferredFont(forTextStyle: .footnote)]
-                if (identifierLookupBatchData != .zero) && (!identifierLookupBatchData.isFinished || downloading) {
-                    // Show "Saved x / y" only if lookup hasn't finished, or there are also ongoing downloads
+                if identifierLookupBatchData != .zero, (!identifierLookupBatchData.isFinished || remoteDownloading) {
+                    // Show "Saved x / y" only if lookup hasn't finished, or there are also ongoing remote downloads
                     isUserInteractionEnabled = true
                     let identifierLookupText = L10n.Items.toolbarSaved(identifierLookupBatchData.saved, identifierLookupBatchData.total)
                     let identifierLookupAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: Asset.Colors.zoteroBlueWithDarkMode.color, .font: UIFont.preferredFont(forTextStyle: .callout)]
                     attributedText.append(.init(string: identifierLookupText, attributes: identifierLookupAttributes))
                 }
-                if let downloadBatchData {
+                if let combinedDownloadBatchData = ItemsState.DownloadBatchData.combineDownloadBatchData([downloadBatchData, remoteDownloadBatchData]) {
                     if attributedText.length > 0 {
                         attributedText.append(.init(string: " / ", attributes: defaultAttributes))
                     }
-                    let downloadText = L10n.Items.toolbarDownloaded(downloadBatchData.downloaded, downloadBatchData.total)
+                    let downloadText = L10n.Items.toolbarDownloaded(combinedDownloadBatchData.downloaded, combinedDownloadBatchData.total)
                     attributedText.append(.init(string: downloadText, attributes: defaultAttributes))
-                    progress = Float(downloadBatchData.fraction)
+                    progress = Float(combinedDownloadBatchData.fraction)
                 }
                 progressView.isUserInteractionEnabled = isUserInteractionEnabled
 

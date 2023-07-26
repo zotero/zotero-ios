@@ -497,8 +497,7 @@ final class ItemsViewController: UIViewController {
             .observe(on: MainScheduler.instance)
             .subscribe(with: self, onNext: { [weak downloader] `self`, update in
                 if let downloader {
-                    let (progress, remainingCount, totalCount) = downloader.batchData
-                    let batchData = progress.flatMap({ ItemsState.DownloadBatchData(progress: $0, remaining: remainingCount, total: totalCount) })
+                    let batchData = ItemsState.DownloadBatchData(batchData: downloader.batchData)
                     self.viewModel.process(action: .updateDownload(update: update, batchData: batchData))
                 }
                 
@@ -525,8 +524,7 @@ final class ItemsViewController: UIViewController {
             .observe(on: MainScheduler.instance)
             .subscribe(with: self, onNext: { [weak identifierLookupController] `self`, update in
                 guard let identifierLookupController else { return }
-                 let identifierLookupBatchData = identifierLookupController.batchData
-                let batchData = ItemsState.IdentifierLookupBatchData(saved: identifierLookupBatchData.savedCount, total: identifierLookupBatchData.totalCount - identifierLookupBatchData.failedCount)
+                let batchData = ItemsState.IdentifierLookupBatchData(batchData: identifierLookupController.batchData)
                 self.viewModel.process(action: .updateIdentifierLookup(update: update, batchData: batchData))
             })
             .disposed(by: self.disposeBag)
@@ -536,8 +534,7 @@ final class ItemsViewController: UIViewController {
             .observe(on: MainScheduler.instance)
             .subscribe(with: self, onNext: { [weak remoteDownloader] `self`, update in
                 guard let remoteDownloader else { return }
-                let (progress, remainingCount, totalCount) = remoteDownloader.batchData
-                let batchData = progress.flatMap({ ItemsState.DownloadBatchData(progress: $0, remaining: remainingCount, total: totalCount) })
+                let batchData = ItemsState.DownloadBatchData(batchData: remoteDownloader.batchData)
                 self.viewModel.process(action: .updateRemoteDownload(update: update, batchData: batchData))
             })
             .disposed(by: self.disposeBag)
