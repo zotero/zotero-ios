@@ -14,6 +14,7 @@ struct LookupState: ViewModelState {
 
     enum State {
         case failed(Swift.Error)
+        case waitingInput
         case loadingIdentifiers
         case lookup([LookupData])
     }
@@ -33,7 +34,7 @@ struct LookupState: ViewModelState {
         self.restoreLookupState = restoreLookupState
         self.collectionKeys = collectionKeys
         self.libraryId = libraryId
-        self.lookupState = .loadingIdentifiers
+        self.lookupState = .waitingInput
         self.hasDarkBackground = hasDarkBackground
     }
 

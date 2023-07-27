@@ -98,7 +98,7 @@ class ManualLookupViewController: UIViewController {
     private func update(state: LookupState) {
         switch state.lookupState {
         case .failed:
-            // Similar to state for user input, but with error message displayed.
+            // Similar to initial state for user input, but with error message displayed.
             self.lookupController?.view.isHidden = false
             
             self.titleLabel.isHidden = false
@@ -110,7 +110,7 @@ class ManualLookupViewController: UIViewController {
             
             self.setupCancelDoneBarButtons()
 
-        case .loadingIdentifiers:
+        case .waitingInput:
             // Initial state for user input, when no lookup state has been restored.
             self.lookupController?.view.isHidden = true
             self.topConstraint.constant = 15
@@ -124,7 +124,7 @@ class ManualLookupViewController: UIViewController {
             
             self.setupCancelDoneBarButtons()
 
-        case .lookup:
+        case .loadingIdentifiers, .lookup:
             self.lookupController?.view.isHidden = false
             
             self.titleLabel.isHidden = true
@@ -144,6 +144,9 @@ class ManualLookupViewController: UIViewController {
     private func setupCloseCancelAllBarButtons() {
         navigationItem.rightBarButtonItem = nil
 
+        let fixedSpacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
+        fixedSpacer.width = 16
+
         let closeItem = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
         closeItem.rx.tap.subscribe(onNext: { [weak self] in
             self?.close()
@@ -154,7 +157,7 @@ class ManualLookupViewController: UIViewController {
             self?.lookupController?.viewModel.process(action: .cancelAllLookups)
         }).disposed(by: self.disposeBag)
 
-        navigationItem.leftBarButtonItems = [closeItem, cancelAllItem]
+        navigationItem.leftBarButtonItems = [closeItem, fixedSpacer, cancelAllItem]
     }
 
     private func setupCancelDoneBarButtons() {

@@ -106,20 +106,19 @@ class LookupViewController: UIViewController {
             self.errorLabel.text = L10n.Errors.lookup
             self.errorLabel.isHidden = false
 
-        case .loadingIdentifiers:
+        case .waitingInput:
             self.tableView.isHidden = true
             self.errorLabel.isHidden = true
             self.activityIndicator.stopAnimating()
             self.activityIndicator.isHidden = true
 
+        case .loadingIdentifiers:
+            self.tableView.isHidden = true
+            self.errorLabel.isHidden = true
+            self.activityIndicator.isHidden = false
+            self.activityIndicator.startAnimating()
+
         case .lookup(let data):
-            guard !data.isEmpty else {
-                self.tableView.isHidden = true
-                self.errorLabel.isHidden = true
-                self.activityIndicator.isHidden = false
-                self.activityIndicator.startAnimating()
-                return
-            }
             // It takes a little while for the `contentSize` observer notification to come, so all the content is hidden after the notification arrives, so that there is not an empty screen while
             // waiting for it.
             self.show(data: data) { [weak self] in
