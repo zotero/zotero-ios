@@ -47,6 +47,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         static let lineWidth = PdfAnnotationChanges(rawValue: 1 << 3)
         static let paths = PdfAnnotationChanges(rawValue: 1 << 4)
         static let contents = PdfAnnotationChanges(rawValue: 1 << 5)
+        static let rotation = PdfAnnotationChanges(rawValue: 1 << 6)
 
         static func stringValues(from changes: PdfAnnotationChanges) -> [String] {
             var rawChanges: [String] = []
@@ -67,6 +68,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
             if changes.contains(.contents) {
                 rawChanges.append("contents")
+            }
+            if changes.contains(.rotation) {
+                rawChanges.append("rotation")
             }
             return rawChanges
         }
@@ -1369,6 +1373,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         } else if hasChanges([.boundingBox]) {
             // FreeTextAnnotation has only `boundingBox` change, not paired with paths or rects.
             requests.append(EditAnnotationRectsDbRequest(key: key, libraryId: viewModel.state.library.identifier, rects: [annotation.boundingBox], boundingBoxConverter: boundingBoxConverter))
+        }
+
+        if hasChanges([.rotation]), let textAnnotation = annotation as? PSPDFKit.FreeTextAnnotation {
+            requests.append(EditAnnotationRotationDbRequest(key: key, libraryId: viewModel.state.library.identifier, rotation: textAnnotation.rotation))
         }
 
         if hasChanges(.color) {

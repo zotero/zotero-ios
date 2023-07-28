@@ -89,8 +89,10 @@ struct CreateAnnotationsDbRequest: DbRequest {
 
             case FieldKeys.Item.Annotation.Position.pageIndex where field.baseKey == FieldKeys.Item.Annotation.position:
                 rField.value = "\(annotation.page)"
+
             case FieldKeys.Item.Annotation.Position.lineWidth where field.baseKey == FieldKeys.Item.Annotation.position:
                 rField.value = annotation.lineWidth.flatMap({ "\(Decimal($0).rounded(to: 3))" }) ?? ""
+
             case FieldKeys.Item.Annotation.pageLabel:
                 rField.value = annotation.pageLabel
 
@@ -100,6 +102,13 @@ struct CreateAnnotationsDbRequest: DbRequest {
 
             case FieldKeys.Item.Annotation.text:
                 rField.value = annotation.text ?? ""
+
+            case FieldKeys.Item.Annotation.Position.rotation where field.baseKey == FieldKeys.Item.Annotation.position:
+                rField.value = "\(annotation.rotation ?? 0)"
+
+            case FieldKeys.Item.Annotation.Position.fontSize where field.baseKey == FieldKeys.Item.Annotation.position:
+                rField.value = "\(annotation.fontSize ?? 0)"
+
             default: break
             }
 

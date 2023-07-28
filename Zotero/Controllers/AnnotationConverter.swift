@@ -272,7 +272,7 @@ struct AnnotationConverter {
             annotation = self.underlineAnnotation(from: zoteroAnnotation, type: type, boundingBoxConverter: boundingBoxConverter)
 
         case .freeText:
-            annotation = self.freeTextAnnotation(from: zoteroAnnotation, type: type, boundingBoxConverter: boundingBoxConverter)
+            annotation = self.freeTextAnnotation(from: zoteroAnnotation, color: color, boundingBoxConverter: boundingBoxConverter)
         }
 
         switch type {
@@ -390,12 +390,13 @@ struct AnnotationConverter {
         return underline
     }
 
-    private static func freeTextAnnotation(from annotation: Annotation, type: Kind, boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.FreeTextAnnotation {
-        let text = PSPDFKit.FreeTextAnnotation()
-        text.boundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter).rounded(to: 3)
+    private static func freeTextAnnotation(from annotation: Annotation, color: UIColor, boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.FreeTextAnnotation {
+        let text = PSPDFKit.FreeTextAnnotation(contents: annotation.comment)
         text.fontName = "Helvetica"
+        text.color = color
         text.fontSize = annotation.fontSize ?? 0
         text.setRotation(annotation.rotation ?? 0, updateBoundingBox: false)
+        text.setBoundingBox(annotation.boundingBox(boundingBoxConverter: boundingBoxConverter).rounded(to: 3), transformSize: true)
         return text
     }
 }
