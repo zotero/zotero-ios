@@ -791,6 +791,7 @@
 		B37D8E6A24DC2BF300F526C5 /* CollectionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37D8E6824DC2BEE00F526C5 /* CollectionRow.swift */; };
 		B37DD576272AAF500038537D /* FilterAttachmentsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37DD575272AAF500038537D /* FilterAttachmentsDbRequest.swift */; };
 		B37DD577272AB0930038537D /* FilterAttachmentsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37DD575272AAF500038537D /* FilterAttachmentsDbRequest.swift */; };
+		B37EFDBC2A73EEA8008507C5 /* EditAnnotationRotationDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37EFDBB2A73EEA8008507C5 /* EditAnnotationRotationDbRequest.swift */; };
 		B37F58662672229D00C4089B /* InstallStyleDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37F58652672229D00C4089B /* InstallStyleDbRequest.swift */; };
 		B37F7ABC23955031008A51B4 /* CreateItemRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */; };
 		B3830CDB255451AB00910FE0 /* TagPickerAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CD8255451AA00910FE0 /* TagPickerAction.swift */; };
@@ -1773,6 +1774,7 @@
 		B37D8E6324DC21D300F526C5 /* CollectionCellContentView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CollectionCellContentView.xib; sourceTree = "<group>"; };
 		B37D8E6824DC2BEE00F526C5 /* CollectionRow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionRow.swift; sourceTree = "<group>"; };
 		B37DD575272AAF500038537D /* FilterAttachmentsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterAttachmentsDbRequest.swift; sourceTree = "<group>"; };
+		B37EFDBB2A73EEA8008507C5 /* EditAnnotationRotationDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditAnnotationRotationDbRequest.swift; sourceTree = "<group>"; };
 		B37F58652672229D00C4089B /* InstallStyleDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallStyleDbRequest.swift; sourceTree = "<group>"; };
 		B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateItemRequest.swift; sourceTree = "<group>"; };
 		B3830CD8255451AA00910FE0 /* TagPickerAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagPickerAction.swift; sourceTree = "<group>"; };
@@ -2320,6 +2322,7 @@
 				B310091C272C0126003FC743 /* DeleteWebDavDeletionsDbRequest.swift */,
 				B3229FD228C0A09200DAF3B7 /* EditAnnotationPathsDbRequest.swift */,
 				B3229FD028C0A07500DAF3B7 /* EditAnnotationRectsDbRequest.swift */,
+				B37EFDBB2A73EEA8008507C5 /* EditAnnotationRotationDbRequest.swift */,
 				B305643F23FC051E003304F2 /* EditCollectionDbRequest.swift */,
 				B3863FCB2AD830F0005082F0 /* EditCreatorItemDetailDbRequest.swift */,
 				B32861E528BFACD4007B5A5C /* EditItemFieldsDbRequest.swift */,
@@ -5034,6 +5037,7 @@
 				B305660823FC051E003304F2 /* KeyRequest.swift in Sources */,
 				B32A273C254841B80081E061 /* CreatorEditViewController.swift in Sources */,
 				B31D4A722767840800E22DCC /* BackgroundTaskController.swift in Sources */,
+				B37EFDBC2A73EEA8008507C5 /* EditAnnotationRotationDbRequest.swift in Sources */,
 				B3593AD724B601AB00CA0B57 /* PDFSearchCell.swift in Sources */,
 				B30566AC23FC051F003304F2 /* Predicates.swift in Sources */,
 				B30566A023FC051F003304F2 /* KeyedResponse.swift in Sources */,
