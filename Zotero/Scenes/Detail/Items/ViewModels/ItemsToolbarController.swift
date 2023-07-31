@@ -164,7 +164,7 @@ final class ItemsToolbarController {
                     // Show "Saved x / y" only if lookup hasn't finished, or there are also ongoing remote downloads
                     isUserInteractionEnabled = true
                     let identifierLookupText = L10n.Items.toolbarSaved(identifierLookupBatchData.saved, identifierLookupBatchData.total)
-                    let identifierLookupAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: Asset.Colors.zoteroBlueWithDarkMode.color, .font: UIFont.preferredFont(forTextStyle: .callout)]
+                    let identifierLookupAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: Asset.Colors.zoteroBlueWithDarkMode.color, .font: UIFont.preferredFont(forTextStyle: .footnote)]
                     attributedText.append(.init(string: identifierLookupText, attributes: identifierLookupAttributes))
                 }
                 if let combinedDownloadBatchData = ItemsState.DownloadBatchData.combineDownloadBatchData([downloadBatchData, remoteDownloadBatchData]) {
