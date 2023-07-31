@@ -25,8 +25,8 @@ protocol ViewModelActionHandler {
 }
 
 extension ViewModelActionHandler {
-    func update(viewModel: ViewModel<Self>, action: (inout State) -> Void) {
-        viewModel.update(action: action)
+    func update(viewModel: ViewModel<Self>, notifyListeners: Bool = true, action: (inout State) -> Void) {
+        viewModel.update(notifyListeners: notifyListeners, action: action)
     }
 }
 
@@ -136,10 +136,13 @@ final class ViewModel<Handler: ViewModelActionHandler>: ObservableObject {
         })
     }
 
-    fileprivate func update(action: (inout Handler.State) -> Void) {
+    fileprivate func update(notifyListeners: Bool, action: (inout Handler.State) -> Void) {
         var state = self.state
         state.cleanup()
         action(&state)
+
+        guard notifyListeners else { return }
+
         inMainThread {
             self.stateObservable.accept(state)
             self.objectWillChange.send()

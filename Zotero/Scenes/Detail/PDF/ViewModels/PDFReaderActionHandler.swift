@@ -147,7 +147,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             self.set(highlightText: highlight, key: key, viewModel: viewModel)
 
         case .parseAndCacheComment(let key, let comment):
-            self.update(viewModel: viewModel) { state in
+            self.update(viewModel: viewModel, notifyListeners: false) { state in
                 state.comments[key] = self.htmlAttributedStringConverter.convert(text: comment, baseAttributes: [.font: viewModel.state.commentFont])
             }
 

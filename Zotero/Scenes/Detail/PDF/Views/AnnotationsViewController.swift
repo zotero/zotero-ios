@@ -109,14 +109,28 @@ final class AnnotationsViewController: UIViewController {
             })
 
         case .options(let sender):
-            self.coordinatorDelegate?.showCellOptions(for: annotation, userId: self.viewModel.state.userId, library: self.viewModel.state.library, sender: sender, userInterfaceStyle: self.viewModel.state.interfaceStyle,
-                                                      saveAction: { [weak self] key, color, lineWidth, pageLabel, updateSubsequentLabels, highlightText in
-                                                          self?.viewModel.process(action: .updateAnnotationProperties(key: key.key, color: color, lineWidth: lineWidth, pageLabel: pageLabel,
-                                                                                                                      updateSubsequentLabels: updateSubsequentLabels, highlightText: highlightText))
-                                                      },
-                                                      deleteAction: { [weak self] key in
-                                                          self?.viewModel.process(action: .removeAnnotation(key))
-                                                      })
+            self.coordinatorDelegate?.showCellOptions(
+                for: annotation,
+                userId: self.viewModel.state.userId,
+                library: self.viewModel.state.library,
+                sender: sender,
+                userInterfaceStyle: self.viewModel.state.interfaceStyle,
+                saveAction: { [weak self] key, color, lineWidth, pageLabel, updateSubsequentLabels, highlightText in
+                    self?.viewModel.process(
+                        action: .updateAnnotationProperties(
+                            key: key.key,
+                            color: color,
+                            lineWidth: lineWidth,
+                            pageLabel: pageLabel,
+                            updateSubsequentLabels: updateSubsequentLabels,
+                            highlightText: highlightText
+                        )
+                    )
+                },
+                deleteAction: { [weak self] key in
+                    self?.viewModel.process(action: .removeAnnotation(key))
+                }
+            )
 
         case .setComment(let comment):
             self.viewModel.process(action: .setComment(key: annotation.key, comment: comment))
@@ -284,14 +298,26 @@ final class AnnotationsViewController: UIViewController {
             preview = loadPreview()
 
         case .note, .highlight:
-            preview = nil
             comment = .init(attributedString: self.loadAttributedComment(for: annotation), isActive: state.selectedAnnotationCommentActive)
+            preview = nil
         }
 
         if let boundingBoxConverter = self.boundingBoxConverter, let pdfAnnotationsCoordinatorDelegate = coordinatorDelegate {
-            cell.setup(with: annotation, comment: comment, preview: preview, selected: selected, availableWidth: PDFReaderLayout.sidebarWidth, library: state.library,
-                       isEditing: state.sidebarEditingEnabled, currentUserId: self.viewModel.state.userId, displayName: self.viewModel.state.displayName, username: self.viewModel.state.username,
-                       boundingBoxConverter: boundingBoxConverter, pdfAnnotationsCoordinatorDelegate: pdfAnnotationsCoordinatorDelegate, state: state)
+            cell.setup(
+                with: annotation,
+                comment: comment,
+                preview: preview,
+                selected: selected,
+                availableWidth: PDFReaderLayout.sidebarWidth,
+                library: state.library,
+                isEditing: state.sidebarEditingEnabled,
+                currentUserId: self.viewModel.state.userId,
+                displayName: self.viewModel.state.displayName,
+                username: self.viewModel.state.username,
+                boundingBoxConverter: boundingBoxConverter,
+                pdfAnnotationsCoordinatorDelegate: pdfAnnotationsCoordinatorDelegate,
+                state: state
+            )
         }
         let actionSubscription = cell.actionPublisher.subscribe(onNext: { [weak self] action in
             self?.perform(action: action, annotation: annotation)
@@ -346,10 +372,16 @@ final class AnnotationsViewController: UIViewController {
             }
         }
 
-        self.coordinatorDelegate?.showFilterPopup(from: barButton, filter: self.viewModel.state.filter, availableColors: sortedColors, availableTags: sortedTags,
-                                                  userInterfaceStyle: self.viewModel.state.interfaceStyle, completed: { [weak self] filter in
-            self?.viewModel.process(action: .changeFilter(filter))
-        })
+        self.coordinatorDelegate?.showFilterPopup(
+            from: barButton,
+            filter: self.viewModel.state.filter,
+            availableColors: sortedColors,
+            availableTags: sortedTags,
+            userInterfaceStyle: self.viewModel.state.interfaceStyle,
+            completed: { [weak self] filter in
+                self?.viewModel.process(action: .changeFilter(filter))
+            }
+        )
     }
 
     // MARK: - Setups
@@ -445,28 +477,34 @@ final class AnnotationsViewController: UIViewController {
         }
 
         self.dataSource.commitEditingStyle = { [weak self] editingStyle, indexPath in
-            guard let self = self, !self.viewModel.state.sidebarEditingEnabled && editingStyle == .delete,
-                  let key = self.dataSource.itemIdentifier(for: indexPath), key.type == .database else { return }
+            guard let self,
+                  !self.viewModel.state.sidebarEditingEnabled && editingStyle == .delete,
+                  let key = self.dataSource.itemIdentifier(for: indexPath),
+                  key.type == .database
+            else { return }
             self.viewModel.process(action: .removeAnnotation(key))
         }
     }
 
     private func setupSearchController() {
-        let insets = UIEdgeInsets(top: PDFReaderLayout.searchBarVerticalInset,
-                                  left: PDFReaderLayout.annotationLayout.horizontalInset,
-                                  bottom: PDFReaderLayout.searchBarVerticalInset - PDFReaderLayout.cellSelectionLineWidth,
-                                  right: PDFReaderLayout.annotationLayout.horizontalInset)
+        let insets = UIEdgeInsets(
+            top: PDFReaderLayout.searchBarVerticalInset,
+            left: PDFReaderLayout.annotationLayout.horizontalInset,
+            bottom: PDFReaderLayout.searchBarVerticalInset - PDFReaderLayout.cellSelectionLineWidth,
+            right: PDFReaderLayout.annotationLayout.horizontalInset
+        )
 
         var frame = self.tableView.frame
         frame.size.height = 65
 
         let searchBar = SearchBar(frame: frame, insets: insets, cornerRadius: 10)
-        searchBar.text.observe(on: MainScheduler.instance)
-                                .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
-                                .subscribe(with: self, onNext: { `self`, text in
-                                    self.viewModel.process(action: .searchAnnotations(text))
-                                })
-                                .disposed(by: self.disposeBag)
+        searchBar.text
+            .observe(on: MainScheduler.instance)
+            .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+            .subscribe(with: self, onNext: { `self`, text in
+                self.viewModel.process(action: .searchAnnotations(text))
+            })
+            .disposed(by: self.disposeBag)
         self.tableView.tableHeaderView = searchBar
     }
 
@@ -478,29 +516,34 @@ final class AnnotationsViewController: UIViewController {
 
     private func setupKeyboardObserving() {
         NotificationCenter.default
-                          .keyboardWillShow
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(with: self, onNext: { `self`, notification in
-                              if let data = notification.keyboardData {
-                                  self.setupTableView(with: data)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
+            .keyboardWillShow
+            .observe(on: MainScheduler.instance)
+            .subscribe(with: self, onNext: { `self`, notification in
+                if let data = notification.keyboardData {
+                    self.setupTableView(with: data)
+                }
+            })
+            .disposed(by: self.disposeBag)
 
         NotificationCenter.default
-                          .keyboardWillHide
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(with: self, onNext: { `self`, notification in
-                              if let data = notification.keyboardData {
-                                  self.setupTableView(with: data)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
+            .keyboardWillHide
+            .observe(on: MainScheduler.instance)
+            .subscribe(with: self, onNext: { `self`, notification in
+                if let data = notification.keyboardData {
+                    self.setupTableView(with: data)
+                }
+            })
+            .disposed(by: self.disposeBag)
     }
 
     private func setupToolbar(to state: PDFReaderState) {
-        self.setupToolbar(filterEnabled: (state.databaseAnnotations?.count ?? 0) > 1, filterOn: (state.filter != nil), editingEnabled: state.sidebarEditingEnabled,
-                          deletionEnabled: state.deletionEnabled, mergingEnabled: state.mergingEnabled)
+        self.setupToolbar(
+            filterEnabled: (state.databaseAnnotations?.count ?? 0) > 1,
+            filterOn: (state.filter != nil),
+            editingEnabled: state.sidebarEditingEnabled,
+            deletionEnabled: state.deletionEnabled,
+            mergingEnabled: state.mergingEnabled
+        )
     }
 
     private func setupToolbar(filterEnabled: Bool, filterOn: Bool, editingEnabled: Bool, deletionEnabled: Bool, mergingEnabled: Bool) {
@@ -524,11 +567,11 @@ final class AnnotationsViewController: UIViewController {
             let delete = UIBarButtonItem(title: L10n.delete, style: .plain, target: nil, action: nil)
             delete.isEnabled = deletionEnabled
             delete.rx.tap
-                  .subscribe(with: self, onNext: { `self`, _ in
-                      guard self.viewModel.state.sidebarEditingEnabled else { return }
-                      self.viewModel.process(action: .removeSelectedAnnotations)
-                  })
-                  .disposed(by: self.disposeBag)
+                .subscribe(with: self, onNext: { `self`, _ in
+                    guard self.viewModel.state.sidebarEditingEnabled else { return }
+                    self.viewModel.process(action: .removeSelectedAnnotations)
+                })
+                .disposed(by: self.disposeBag)
             items.append(delete)
             self.deleteBarButton = delete
         } else if filterEnabled {
@@ -539,18 +582,18 @@ final class AnnotationsViewController: UIViewController {
             let filter = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
             filter.rx.tap
                 .subscribe(with: self, onNext: { `self`, _ in
-                      self.showFilterPopup(from: filter)
-                  })
-                  .disposed(by: self.disposeBag)
+                    self.showFilterPopup(from: filter)
+                })
+                .disposed(by: self.disposeBag)
             items.insert(filter, at: 0)
         }
 
         let select = UIBarButtonItem(title: (editingEnabled ? L10n.done : L10n.select), style: .plain, target: nil, action: nil)
         select.rx.tap
-              .subscribe(with: self, onNext: { `self`, _ in
-                  self.viewModel.process(action: .setSidebarEditingEnabled(!editingEnabled))
-              })
-              .disposed(by: self.disposeBag)
+            .subscribe(with: self, onNext: { `self`, _ in
+                self.viewModel.process(action: .setSidebarEditingEnabled(!editingEnabled))
+            })
+            .disposed(by: self.disposeBag)
         items.append(select)
         
         self.toolbar.items = items
@@ -560,20 +603,19 @@ final class AnnotationsViewController: UIViewController {
 extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSourcePrefetching {
     func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
         let keys = indexPaths.compactMap({ self.dataSource.itemIdentifier(for: $0) })
-                             .filter({ key in
-                                 guard let annotation = self.viewModel.state.annotation(for: key) else { return false }
-                                 switch annotation.type {
-                                 case .image, .ink: return true
-                                 case .note, .highlight: return false
-                                 }
-                             })
-                             .map({ $0.key })
+            .filter({ key in
+                guard let annotation = self.viewModel.state.annotation(for: key) else { return false }
+                switch annotation.type {
+                case .image, .ink: return true
+                case .note, .highlight: return false
+                }
+            })
+            .map({ $0.key })
         self.viewModel.process(action: .requestPreviews(keys: keys, notify: false))
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         guard let key = self.dataSource.itemIdentifier(for: indexPath) else { return }
-
         if self.viewModel.state.sidebarEditingEnabled {
             self.viewModel.process(action: .selectAnnotationDuringEditing(key))
         } else {
