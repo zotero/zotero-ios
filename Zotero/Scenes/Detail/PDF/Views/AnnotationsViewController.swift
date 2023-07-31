@@ -516,14 +516,14 @@ final class AnnotationsViewController: UIViewController {
 
     private func setupKeyboardObserving() {
         NotificationCenter.default
-        .keyboardWillShow
-        .observe(on: MainScheduler.instance)
-        .subscribe(with: self, onNext: { `self`, notification in
-            if let data = notification.keyboardData {
-                self.setupTableView(with: data)
-            }
-        })
-        .disposed(by: self.disposeBag)
+            .keyboardWillShow
+            .observe(on: MainScheduler.instance)
+            .subscribe(with: self, onNext: { `self`, notification in
+                if let data = notification.keyboardData {
+                    self.setupTableView(with: data)
+                }
+            })
+            .disposed(by: self.disposeBag)
 
         NotificationCenter.default
             .keyboardWillHide
