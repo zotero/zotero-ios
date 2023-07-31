@@ -43,7 +43,7 @@ extension PSPDFKit.Annotation {
     }
 
     var shouldRenderPreview: Bool {
-        return (self is PSPDFKit.SquareAnnotation) || (self is PSPDFKit.InkAnnotation)
+        return (self is PSPDFKit.SquareAnnotation) || (self is PSPDFKit.InkAnnotation) || (self is PSPDFKit.FreeTextAnnotation)
     }
 
     var previewId: String {
@@ -60,5 +60,11 @@ extension PSPDFKit.SquareAnnotation {
 extension PSPDFKit.InkAnnotation {
     override var previewBoundingBox: CGRect {
         return AnnotationPreviewBoundingBoxCalculator.inkPreviewRect(from: self.boundingBox)
+    }
+}
+
+extension PSPDFKit.FreeTextAnnotation {
+    override var previewBoundingBox: CGRect {
+        return self.boundingBox
     }
 }

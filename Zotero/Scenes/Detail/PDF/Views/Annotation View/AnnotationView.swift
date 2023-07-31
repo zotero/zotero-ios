@@ -167,18 +167,21 @@ final class AnnotationView: UIView {
         guard let highlightContent = self.highlightContent, let imageContent = self.imageContent else { return }
 
         highlightContent.isUserInteractionEnabled = false
-        highlightContent.isHidden = annotation.type != .highlight && annotation.type != .underline
-        imageContent.isHidden = annotation.type != .image && annotation.type != .ink
 
         switch annotation.type {
         case .note:
-            break
+            highlightContent.isHidden = true
+            imageContent.isHidden = true
 
         case .highlight, .underline:
+            highlightContent.isHidden = false
+            imageContent.isHidden = true
             let bottomInset = self.inset(from: self.layout.highlightLineVerticalInsets, hasComment: !annotation.comment.isEmpty, selected: selected, canEdit: canEdit)
             highlightContent.setup(with: color, text: (annotation.text ?? ""), bottomInset: bottomInset, accessibilityType: accessibilityType)
 
         case .image, .ink, .freeText:
+            highlightContent.isHidden = true
+            imageContent.isHidden = false
             let size = annotation.previewBoundingBox(boundingBoxConverter: boundingBoxConverter).size
             let maxWidth = availableWidth - (self.layout.horizontalInset * 2)
             var maxHeight = ceil((size.height / size.width) * maxWidth)
