@@ -183,7 +183,7 @@ class ManualLookupViewController: UIViewController {
 
     private func updateKeyboardSize(_ data: KeyboardData) {
         guard UIDevice.current.userInterfaceIdiom == .phone else { return }
-        self.additionalSafeAreaInsets = UIEdgeInsets(top: 0, left: 0, bottom: data.endFrame.height, right: 0)
+        self.additionalSafeAreaInsets = UIEdgeInsets(top: 0, left: 0, bottom: data.visibleHeight, right: 0)
     }
 
     // MARK: - Setups
