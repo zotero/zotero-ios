@@ -181,7 +181,10 @@ class LookupViewController: UIViewController {
         self.tableView.isHidden = false
         self.dataSource.apply(snapshot, animatingDifferences: false)
 
-        var isFirstCall = true
+        guard self.contentSizeObserver == nil else {
+            completion()
+            return
+        }
         // For some reason, the observer subscription has to be here, doesn't work if it's in `viewDidLoad`.
         self.contentSizeObserver = self.tableView.observe(\.contentSize, options: [.new]) { [weak self] _, change in
             guard let self = self, let value = change.newValue, value.height != self.tableViewHeight.constant else { return }
@@ -190,14 +193,9 @@ class LookupViewController: UIViewController {
 
             if value.height >= self.tableView.frame.height, !self.tableView.isScrollEnabled {
                 self.tableView.isScrollEnabled = true
-                self.contentSizeObserver = nil
             }
 
-            if isFirstCall {
-                completion()
-            } else {
-                isFirstCall = false
-            }
+            completion()
         }
     }
 
