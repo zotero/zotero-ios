@@ -1178,12 +1178,10 @@ internal enum L10n {
       internal static func deleteLibraryQuestion(_ p1: Any) -> String {
         return L10n.tr("Localizable", "settings.storage.delete_library_question", String(describing: p1), fallback: "Are you sure you want to delete all attachment files in %@ from this device?\n\nOther synced devices will not be affected.")
       }
-      /// %d files
-      internal static func multipleFiles(_ p1: Int) -> String {
-        return L10n.tr("Localizable", "settings.storage.multiple_files", p1, fallback: "%d files")
+      /// Plural format key: "%#@files@"
+      internal static func files(_ p1: Int) -> String {
+        return L10n.tr("Localizable", "settings.storage.files", p1, fallback: "Plural format key: \"%#@files@\"")
       }
-      /// 1 file
-      internal static let oneFile = L10n.tr("Localizable", "settings.storage.one_file", fallback: "1 file")
     }
     internal enum Sync {
       /// Account
