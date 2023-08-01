@@ -642,6 +642,10 @@ internal enum L10n {
       }
       /// Remote sync in progress. Please try again in a few minutes.
       internal static let conflictRetryLimit = L10n.tr("Localizable", "errors.sync_toolbar.conflict_retry_limit", fallback: "Remote sync in progress. Please try again in a few minutes.")
+      /// Plural format key: "%#@errors@"
+      internal static func errors(_ p1: Int) -> String {
+        return L10n.tr("Localizable", "errors.sync_toolbar.errors", p1, fallback: "Plural format key: \"%#@errors@\"")
+      }
       /// Finished sync (%@)
       internal static func finishedWithErrors(_ p1: Any) -> String {
         return L10n.tr("Localizable", "errors.sync_toolbar.finished_with_errors", String(describing: p1), fallback: "Finished sync (%@)")
@@ -667,12 +671,6 @@ internal enum L10n {
       internal static let internetConnection = L10n.tr("Localizable", "errors.sync_toolbar.internet_connection", fallback: "Unable to connect to the network. Please try again.")
       /// No libraries found. Please sign out and back in again.
       internal static let librariesMissing = L10n.tr("Localizable", "errors.sync_toolbar.libraries_missing", fallback: "No libraries found. Please sign out and back in again.")
-      /// %d issues
-      internal static func multipleErrors(_ p1: Int) -> String {
-        return L10n.tr("Localizable", "errors.sync_toolbar.multiple_errors", p1, fallback: "%d issues")
-      }
-      /// 1 issue
-      internal static let oneError = L10n.tr("Localizable", "errors.sync_toolbar.one_error", fallback: "1 issue")
       /// You have reached your Zotero File Storage quota. Some files were not uploaded. Other Zotero data will continue to sync to the server.
       /// See your zotero.org account settings for additional storage options.
       internal static let personalQuotaReached = L10n.tr("Localizable", "errors.sync_toolbar.personal_quota_reached", fallback: "You have reached your Zotero File Storage quota. Some files were not uploaded. Other Zotero data will continue to sync to the server.\nSee your zotero.org account settings for additional storage options.")

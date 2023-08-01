@@ -277,7 +277,7 @@ final class SyncToolbarController {
             if errors.isEmpty {
                 return L10n.SyncToolbar.finished
             }
-            let issues = errors.count == 1 ? L10n.Errors.SyncToolbar.oneError : L10n.Errors.SyncToolbar.multipleErrors(errors.count)
+            let issues = L10n.Errors.SyncToolbar.errors(errors.count)
             return L10n.Errors.SyncToolbar.finishedWithErrors(issues)
 
         case .deletions(let name):

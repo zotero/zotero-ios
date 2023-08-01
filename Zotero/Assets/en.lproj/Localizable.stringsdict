@@ -99,5 +99,21 @@
             <string>%d files</string>
         </dict>
     </dict>
+    <key>errors.sync_toolbar.errors</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@errors@</string>
+        <key>errors</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>1 issue</string>
+            <key>other</key>
+            <string>%d issues</string>
+        </dict>
+    </dict>
   </dict>
 </plist>
