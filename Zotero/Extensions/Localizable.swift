@@ -769,9 +769,9 @@ internal enum L10n {
     internal static let newFile = L10n.tr("Localizable", "items.new_file", fallback: "Add File")
     /// New Standalone Note
     internal static let newNote = L10n.tr("Localizable", "items.new_note", fallback: "New Standalone Note")
-    /// Plural format key: "%#@delete_question@"
+    /// Plural format key: "%#@remove_from_collection_question@"
     internal static func removeFromCollectionQuestion(_ p1: Int) -> String {
-      return L10n.tr("Localizable", "items.remove_from_collection_question", p1, fallback: "Plural format key: \"%#@delete_question@\"")
+      return L10n.tr("Localizable", "items.remove_from_collection_question", p1, fallback: "Plural format key: \"%#@remove_from_collection_question@\"")
     }
     /// Remove from Collection
     internal static let removeFromCollectionTitle = L10n.tr("Localizable", "items.remove_from_collection_title", fallback: "Remove from Collection")
@@ -787,12 +787,10 @@ internal enum L10n {
     internal static func toolbarDownloaded(_ p1: Int, _ p2: Int) -> String {
       return L10n.tr("Localizable", "items.toolbar_downloaded", p1, p2, fallback: "Downloaded %d / %d")
     }
-    /// Filter: %d items
-    internal static func toolbarFilterMultiple(_ p1: Int) -> String {
-      return L10n.tr("Localizable", "items.toolbar_filter_multiple", p1, fallback: "Filter: %d items")
+    /// Plural format key: "%#@toolbar_filter@"
+    internal static func toolbarFilter(_ p1: Int) -> String {
+      return L10n.tr("Localizable", "items.toolbar_filter", p1, fallback: "Plural format key: \"%#@toolbar_filter@\"")
     }
-    /// Filter: 1 item
-    internal static let toolbarFilterSingle = L10n.tr("Localizable", "items.toolbar_filter_single", fallback: "Filter: 1 item")
     internal enum Action {
       /// Add to Collection
       internal static let addToCollection = L10n.tr("Localizable", "items.action.add_to_collection", fallback: "Add to Collection")
