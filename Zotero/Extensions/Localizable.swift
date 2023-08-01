@@ -747,6 +747,10 @@ internal enum L10n {
     internal static let ascending = L10n.tr("Localizable", "items.ascending", fallback: "Ascending")
     /// Scan Barcode
     internal static let barcode = L10n.tr("Localizable", "items.barcode", fallback: "Scan Barcode")
+    /// Plural format key: "%#@collections_selected@"
+    internal static func collectionsSelected(_ p1: Int) -> String {
+      return L10n.tr("Localizable", "items.collections_selected", p1, fallback: "Plural format key: \"%#@collections_selected@\"")
+    }
     /// Are you sure you want to delete selected items?
     internal static let deleteMultipleQuestion = L10n.tr("Localizable", "items.delete_multiple_question", fallback: "Are you sure you want to delete selected items?")
     /// Are you sure you want to delete the selected item?
@@ -759,18 +763,12 @@ internal enum L10n {
     internal static let generatingBib = L10n.tr("Localizable", "items.generating_bib", fallback: "Generating Bibliography")
     /// Add by Identifier
     internal static let lookup = L10n.tr("Localizable", "items.lookup", fallback: "Add by Identifier")
-    /// %d Collections Selected
-    internal static func manyCollectionsSelected(_ p1: Int) -> String {
-      return L10n.tr("Localizable", "items.many_collections_selected", p1, fallback: "%d Collections Selected")
-    }
     /// Add Manually
     internal static let new = L10n.tr("Localizable", "items.new", fallback: "Add Manually")
     /// Add File
     internal static let newFile = L10n.tr("Localizable", "items.new_file", fallback: "Add File")
     /// New Standalone Note
     internal static let newNote = L10n.tr("Localizable", "items.new_note", fallback: "New Standalone Note")
-    /// 1 Collection Selected
-    internal static let oneCollectionsSelected = L10n.tr("Localizable", "items.one_collections_selected", fallback: "1 Collection Selected")
     /// Are you sure you want to remove selected items from this collection?
     internal static let removeFromCollectionMultipleQuestion = L10n.tr("Localizable", "items.remove_from_collection_multiple_question", fallback: "Are you sure you want to remove selected items from this collection?")
     /// Are you sure you want to remove the selected item from this collection?
@@ -795,8 +793,6 @@ internal enum L10n {
     }
     /// Filter: 1 item
     internal static let toolbarFilterSingle = L10n.tr("Localizable", "items.toolbar_filter_single", fallback: "Filter: 1 item")
-    /// Select a Collection
-    internal static let zeroCollectionsSelected = L10n.tr("Localizable", "items.zero_collections_selected", fallback: "Select a Collection")
     internal enum Action {
       /// Add to Collection
       internal static let addToCollection = L10n.tr("Localizable", "items.action.add_to_collection", fallback: "Add to Collection")

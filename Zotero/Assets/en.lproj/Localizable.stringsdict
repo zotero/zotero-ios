@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+  <dict>
+    <key>items.collections_selected</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@collections_selected@</string>
+        <key>collections_selected</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>zero</key>
+            <string>Select a Collection</string>
+            <key>one</key>
+            <string>1 Collection Selected</string>
+            <key>other</key>
+            <string>%d Collections Selected</string>
+        </dict>
+    </dict>
+  </dict>
+</plist>
