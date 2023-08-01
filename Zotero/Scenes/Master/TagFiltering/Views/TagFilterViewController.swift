@@ -159,7 +159,7 @@ class TagFilterViewController: UIViewController {
         let deselectAction = UIAction(title: L10n.TagPicker.deselectAll, attributes: (state.selectedTags.isEmpty ? .disabled : []), handler: { [weak self] _ in
             self?.viewModel.process(action: .deselectAll)
         })
-        let selectionTitle = state.selectedTags.count == 1 ? L10n.TagPicker.oneTagSelected : L10n.TagPicker.xTagsSelected(state.selectedTags.count)
+        let selectionTitle = L10n.TagPicker.tagsSelected(state.selectedTags.count)
         let selectionCount = UIAction(title: selectionTitle, attributes: .disabled, handler: { _ in })
         let deselectMenu = UIMenu(options: .displayInline, children: [selectionCount, deselectAction].orderedMenuChildrenBasedOnDevice())
 

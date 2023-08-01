@@ -1317,8 +1317,6 @@ internal enum L10n {
     internal static let deleteAutomatic = L10n.tr("Localizable", "tag_picker.delete_automatic", fallback: "Delete Automatic Tags in This Library")
     /// Deselect All
     internal static let deselectAll = L10n.tr("Localizable", "tag_picker.deselect_all", fallback: "Deselect All")
-    /// 1 tag selected
-    internal static let oneTagSelected = L10n.tr("Localizable", "tag_picker.one_tag_selected", fallback: "1 tag selected")
     /// Tag name
     internal static let placeholder = L10n.tr("Localizable", "tag_picker.placeholder", fallback: "Tag name")
     /// Search Tags
@@ -1327,13 +1325,13 @@ internal enum L10n {
     internal static let showAll = L10n.tr("Localizable", "tag_picker.show_all", fallback: "Display All Tags in This Library")
     /// Show Automatic Tags
     internal static let showAuto = L10n.tr("Localizable", "tag_picker.show_auto", fallback: "Show Automatic Tags")
+    /// Plural format key: "%#@tags_selected@"
+    internal static func tagsSelected(_ p1: Int) -> String {
+      return L10n.tr("Localizable", "tag_picker.tags_selected", p1, fallback: "Plural format key: \"%#@tags_selected@\"")
+    }
     /// %d selected
     internal static func title(_ p1: Int) -> String {
       return L10n.tr("Localizable", "tag_picker.title", p1, fallback: "%d selected")
-    }
-    /// %d tags selected
-    internal static func xTagsSelected(_ p1: Int) -> String {
-      return L10n.tr("Localizable", "tag_picker.x_tags_selected", p1, fallback: "%d tags selected")
     }
   }
 }

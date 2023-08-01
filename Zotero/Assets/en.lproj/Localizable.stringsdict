@@ -115,5 +115,21 @@
             <string>%d issues</string>
         </dict>
     </dict>
+    <key>tag_picker.tags_selected</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@tags_selected@</string>
+        <key>tags_selected</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>1 tag selected</string>
+            <key>other</key>
+            <string>%d tags selected</string>
+        </dict>
+    </dict>
   </dict>
 </plist>
