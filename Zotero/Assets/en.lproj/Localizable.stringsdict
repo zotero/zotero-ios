@@ -35,5 +35,21 @@
             <string>Are you sure you want to delete selected items?</string>
         </dict>
     </dict>
+    <key>items.remove_from_collection_question</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@remove_from_collection_question@</string>
+        <key>remove_from_collection_question</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>Are you sure you want to remove the selected item from this collection?</string>
+            <key>other</key>
+            <string>Are you sure you want to remove selected items from this collection?</string>
+        </dict>
+    </dict>
   </dict>
 </plist>

@@ -769,10 +769,10 @@ internal enum L10n {
     internal static let newFile = L10n.tr("Localizable", "items.new_file", fallback: "Add File")
     /// New Standalone Note
     internal static let newNote = L10n.tr("Localizable", "items.new_note", fallback: "New Standalone Note")
-    /// Are you sure you want to remove selected items from this collection?
-    internal static let removeFromCollectionMultipleQuestion = L10n.tr("Localizable", "items.remove_from_collection_multiple_question", fallback: "Are you sure you want to remove selected items from this collection?")
-    /// Are you sure you want to remove the selected item from this collection?
-    internal static let removeFromCollectionQuestion = L10n.tr("Localizable", "items.remove_from_collection_question", fallback: "Are you sure you want to remove the selected item from this collection?")
+    /// Plural format key: "%#@delete_question@"
+    internal static func removeFromCollectionQuestion(_ p1: Int) -> String {
+      return L10n.tr("Localizable", "items.remove_from_collection_question", p1, fallback: "Plural format key: \"%#@delete_question@\"")
+    }
     /// Remove from Collection
     internal static let removeFromCollectionTitle = L10n.tr("Localizable", "items.remove_from_collection_title", fallback: "Remove from Collection")
     /// Search Items

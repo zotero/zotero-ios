@@ -515,7 +515,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     }
 
     func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void) {
-        let question = count == 1 ? L10n.Items.removeFromCollectionQuestion : L10n.Items.removeFromCollectionMultipleQuestion
+        let question = L10n.Items.removeFromCollectionQuestion(count)
         self.ask(question: question, title: L10n.Items.removeFromCollectionTitle, isDestructive: false, confirm: confirmAction)
     }
 
