@@ -751,10 +751,10 @@ internal enum L10n {
     internal static func collectionsSelected(_ p1: Int) -> String {
       return L10n.tr("Localizable", "items.collections_selected", p1, fallback: "Plural format key: \"%#@collections_selected@\"")
     }
-    /// Are you sure you want to delete selected items?
-    internal static let deleteMultipleQuestion = L10n.tr("Localizable", "items.delete_multiple_question", fallback: "Are you sure you want to delete selected items?")
-    /// Are you sure you want to delete the selected item?
-    internal static let deleteQuestion = L10n.tr("Localizable", "items.delete_question", fallback: "Are you sure you want to delete the selected item?")
+    /// Plural format key: "%#@delete_question@"
+    internal static func deleteQuestion(_ p1: Int) -> String {
+      return L10n.tr("Localizable", "items.delete_question", p1, fallback: "Plural format key: \"%#@delete_question@\"")
+    }
     /// Descending
     internal static let descending = L10n.tr("Localizable", "items.descending", fallback: "Descending")
     /// Deselect All
