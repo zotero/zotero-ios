@@ -61,7 +61,7 @@
 
 "day_suffixes" = "st,nd,rd,th";
 
-"onboarding.access" = "<b>Zotero organizes research</b> however you want. Sort your items into collections and tag them with keywords.";
+"onboarding.access" = "<b>Zotero organizes research</b> however you want. Sort your items into collections and tag them with keywords.";
 "onboarding.sync" = "<b>Synchronize and collaborate</b> across devices, keeping your reading and notes seamlessly up to date.";
 "onboarding.annotate" = "<b>Highlight and take notes</b> directly in your PDFs as you read them.";
 "onboarding.share" = "<b>Tap to collect</b> articles and books directly from the web, including their PDFs and full metadata.";
