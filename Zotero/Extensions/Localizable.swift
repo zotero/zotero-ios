@@ -946,12 +946,10 @@ internal enum L10n {
     internal enum Search {
       /// Search failed
       internal static let failed = L10n.tr("Localizable", "pdf.search.failed", fallback: "Search failed")
-      /// Found %d matches
-      internal static func multipleMatches(_ p1: Int) -> String {
-        return L10n.tr("Localizable", "pdf.search.multiple_matches", p1, fallback: "Found %d matches")
+      /// Plural format key: "%#@matches@"
+      internal static func matches(_ p1: Int) -> String {
+        return L10n.tr("Localizable", "pdf.search.matches", p1, fallback: "Plural format key: \"%#@matches@\"")
       }
-      /// Found 1 match
-      internal static let oneMatch = L10n.tr("Localizable", "pdf.search.one_match", fallback: "Found 1 match")
       /// Search in Document
       internal static let title = L10n.tr("Localizable", "pdf.search.title", fallback: "Search in Document")
     }
