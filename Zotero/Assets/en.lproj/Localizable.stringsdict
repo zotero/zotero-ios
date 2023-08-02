@@ -147,5 +147,21 @@
             <string>Are you sure you want to delete %d automatic tags in this library?\n\nThis action cannot be undone.</string>
         </dict>
     </dict>
+    <key>settings.lines_logged</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@lines_logged@</string>
+        <key>lines_logged</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>1 line logged</string>
+            <key>other</key>
+            <string>%d lines logged</string>
+        </dict>
+    </dict>
   </dict>
 </plist>

@@ -1033,9 +1033,9 @@ internal enum L10n {
     internal static func lines(_ p1: Int) -> String {
       return L10n.tr("Localizable", "settings.lines", p1, fallback: "%d lines")
     }
-    /// %d lines logged
+    /// Plural format key: "%#@lines_logged@"
     internal static func linesLogged(_ p1: Int) -> String {
-      return L10n.tr("Localizable", "settings.lines_logged", p1, fallback: "%d lines logged")
+      return L10n.tr("Localizable", "settings.lines_logged", p1, fallback: "Plural format key: \"%#@lines_logged@\"")
     }
     /// To debug a startup issue, force-quit the app and start it again.
     internal static let loggingDesc1 = L10n.tr("Localizable", "settings.logging_desc1", fallback: "To debug a startup issue, force-quit the app and start it again.")
