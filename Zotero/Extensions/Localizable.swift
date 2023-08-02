@@ -1301,11 +1301,9 @@ internal enum L10n {
     }
   }
   internal enum TagPicker {
-    /// Are you sure you want to delete %d automatic tags in this library?
-    /// 
-    /// This action cannot be undone.
+    /// Plural format key: "%#@confirm_deletion@"
     internal static func confirmDeletion(_ p1: Int) -> String {
-      return L10n.tr("Localizable", "tag_picker.confirm_deletion", p1, fallback: "Are you sure you want to delete %d automatic tags in this library?\n\nThis action cannot be undone.")
+      return L10n.tr("Localizable", "tag_picker.confirm_deletion", p1, fallback: "Plural format key: \"%#@confirm_deletion@\"")
     }
     /// Delete Automatic Tags
     internal static let confirmDeletionQuestion = L10n.tr("Localizable", "tag_picker.confirm_deletion_question", fallback: "Delete Automatic Tags")

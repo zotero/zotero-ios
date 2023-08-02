@@ -131,5 +131,21 @@
             <string>%d tags selected</string>
         </dict>
     </dict>
+    <key>tag_picker.confirm_deletion</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@confirm_deletion@</string>
+        <key>confirm_deletion</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>Are you sure you want to delete 1 automatic tag in this library?\n\nThis action cannot be undone.</string>
+            <key>other</key>
+            <string>Are you sure you want to delete %d automatic tags in this library?\n\nThis action cannot be undone.</string>
+        </dict>
+    </dict>
   </dict>
 </plist>
