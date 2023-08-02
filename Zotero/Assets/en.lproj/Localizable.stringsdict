@@ -179,5 +179,21 @@
             <string>%d lines</string>
         </dict>
     </dict>
+    <key>errors.sync_toolbar.webdav_error2</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@webdav_error2@</string>
+        <key>webdav_error2</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>Could not delete 1 file from your WebDAV server.</string>
+            <key>other</key>
+            <string>Could not delete %d files from your WebDAV server.</string>
+        </dict>
+    </dict>
   </dict>
 </plist>

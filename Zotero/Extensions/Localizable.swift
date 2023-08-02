@@ -686,9 +686,9 @@ internal enum L10n {
       internal static func webdavError(_ p1: Any) -> String {
         return L10n.tr("Localizable", "errors.sync_toolbar.webdav_error", String(describing: p1), fallback: "Could not delete files from your WebDAV server: \"%@\".")
       }
-      /// Could not delete %d file(s) from your WebDAV server.
+      /// Plural format key: "%#@webdav_error2@"
       internal static func webdavError2(_ p1: Int) -> String {
-        return L10n.tr("Localizable", "errors.sync_toolbar.webdav_error2", p1, fallback: "Could not delete %d file(s) from your WebDAV server.")
+        return L10n.tr("Localizable", "errors.sync_toolbar.webdav_error2", p1, fallback: "Plural format key: \"%#@webdav_error2@\"")
       }
       /// Invalid prop file: %@
       internal static func webdavItemProp(_ p1: Any) -> String {
