@@ -1029,9 +1029,9 @@ internal enum L10n {
     internal static let itemCount = L10n.tr("Localizable", "settings.item_count", fallback: "Item count")
     /// Show item count for all collections.
     internal static let itemCountSubtitle = L10n.tr("Localizable", "settings.item_count_subtitle", fallback: "Show item count for all collections.")
-    /// %d lines
+    /// Plural format key: "%#@lines@"
     internal static func lines(_ p1: Int) -> String {
-      return L10n.tr("Localizable", "settings.lines", p1, fallback: "%d lines")
+      return L10n.tr("Localizable", "settings.lines", p1, fallback: "Plural format key: \"%#@lines@\"")
     }
     /// Plural format key: "%#@lines_logged@"
     internal static func linesLogged(_ p1: Int) -> String {
