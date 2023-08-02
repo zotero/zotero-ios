@@ -19,7 +19,7 @@ struct Convertible {
     private let headers: [String: String]
     private let timeout: Double
 
-    init(request: ApiRequest, baseUrl: URL, token: String?) {
+    init(request: ApiRequest, baseUrl: URL, token: String?, additionalHeaders: [AnyHashable: Any]?) {
         switch request.endpoint {
         case .zotero(let path):
             self.url = baseUrl.appendingPathComponent(path)
@@ -31,8 +31,23 @@ struct Convertible {
         self.httpMethod = request.httpMethod
         self.encoding = request.encoding.alamoEncoding
         self.parameters = request.parameters
-        self.headers = request.headers ?? [:]
+        self.headers = Convertible.merge(headers: request.headers ?? [:], with: additionalHeaders)
         self.timeout = request.timeout
+    }
+
+    private static func merge(headers: [String: String], with additional: [AnyHashable: Any]?) -> [String: String] {
+        guard let additional, !additional.isEmpty else { return headers }
+
+        let mappedToString = Dictionary(
+            additional.map({ key, value -> (String, String) in
+                let stringKey = (key as? String) ?? "\(key)"
+                let stringValue = (value as? String) ?? "\(value)"
+                return (stringKey, stringValue)
+            }),
+            uniquingKeysWith: { left, _ in left }
+        )
+
+        return headers.merging(mappedToString, uniquingKeysWith: { left, _ in left })
     }
 
     var allHeaders: [String: String] {

@@ -1524,11 +1524,11 @@ final class SyncController: SynchronizationController {
         action.result
               .subscribe(on: self.workScheduler)
               .subscribe(with: self, onSuccess: { `self`, _ in
-                  self?.accessQueue.async(flags: .barrier) { [weak self] in
+                  self.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.processNextAction()
                   }
               }, onFailure: { `self`, _ in
-                  self?.accessQueue.async(flags: .barrier) { [weak self] in
+                  self.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.abort(error: .uploadObjectConflict(data: SyncError.ErrorData(itemKeys: [key], libraryId: libraryId)))
                   }
               })
