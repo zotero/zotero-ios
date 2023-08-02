@@ -740,8 +740,10 @@
 		B36E4F682751242C001FB99D /* WebDavCreateZoteroDirectoryRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36E4F65275123F4001FB99D /* WebDavCreateZoteroDirectoryRequest.swift */; };
 		B36E9D4925E51B0E00CD1109 /* AnnotationPosition.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36E9D4825E51B0E00CD1109 /* AnnotationPosition.swift */; };
 		B36EBFF5273162DD00CD788D /* bitcoin.zip in Resources */ = {isa = PBXBuildFile; fileRef = B36EBFF4273162DD00CD788D /* bitcoin.zip */; };
-		B37080522AA72135006F56B9 /* Localizable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37080512AA72135006F56B9 /* Localizable.swift */; };
 		B37080532AA7216E006F56B9 /* Localizable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37080512AA72135006F56B9 /* Localizable.swift */; };
+		B36FD9AF2A78FB13002D77E8 /* EditAnnotationFontSizeDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36FD9AE2A78FB13002D77E8 /* EditAnnotationFontSizeDbRequest.swift */; };
+		B36FD9B12A7924CB002D77E8 /* FontSizePickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36FD9B02A7924CB002D77E8 /* FontSizePickerViewController.swift */; };
+		B36FD9B32A7929C8002D77E8 /* FontSizeCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36FD9B22A7929C8002D77E8 /* FontSizeCell.swift */; };
 		B371494C25D585EA00D6391E /* RestoreDeletionsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340868825D574D6000F4446 /* RestoreDeletionsSyncAction.swift */; };
 		B371494F25D585EF00D6391E /* MarkObjectsAsChangedByUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340868C25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift */; };
 		B372CEE02486504600B423AE /* GroupVersionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372CEDF2486504600B423AE /* GroupVersionsRequest.swift */; };
@@ -837,6 +839,7 @@
 		B3981B76258399AA00F8D15A /* NoteAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3981B75258399AA00F8D15A /* NoteAnnotation.swift */; };
 		B398A915270C6A4300968EE8 /* WebDavController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398A914270C6A4300968EE8 /* WebDavController.swift */; };
 		B398A917270C6A5B00968EE8 /* WebDavSessionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398A916270C6A5B00968EE8 /* WebDavSessionStorage.swift */; };
+		B398D6C02A77F9C60049A296 /* FontSizeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398D6BF2A77F9C60049A296 /* FontSizeView.swift */; };
 		B39AF554290033CD001F400F /* TableOfContentsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39AF553290033CD001F400F /* TableOfContentsViewController.swift */; };
 		B39B18E8223947050019F467 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E7223947050019F467 /* main.swift */; };
 		B39C9AB7252B589F00462D27 /* Threading+Extras.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650423FC051E003304F2 /* Threading+Extras.swift */; };
@@ -1739,6 +1742,9 @@
 		B36E9D4825E51B0E00CD1109 /* AnnotationPosition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPosition.swift; sourceTree = "<group>"; };
 		B36EBFF4273162DD00CD788D /* bitcoin.zip */ = {isa = PBXFileReference; lastKnownFileType = archive.zip; path = bitcoin.zip; sourceTree = "<group>"; };
 		B37080512AA72135006F56B9 /* Localizable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localizable.swift; sourceTree = "<group>"; };
+		B36FD9AE2A78FB13002D77E8 /* EditAnnotationFontSizeDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditAnnotationFontSizeDbRequest.swift; sourceTree = "<group>"; };
+		B36FD9B02A7924CB002D77E8 /* FontSizePickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSizePickerViewController.swift; sourceTree = "<group>"; };
+		B36FD9B22A7929C8002D77E8 /* FontSizeCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSizeCell.swift; sourceTree = "<group>"; };
 		B372CEDF2486504600B423AE /* GroupVersionsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupVersionsRequest.swift; sourceTree = "<group>"; };
 		B372CEE22486512500B423AE /* GroupRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupRequest.swift; sourceTree = "<group>"; };
 		B372CEE4248670AF00B423AE /* FetchAndStoreGroupSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchAndStoreGroupSyncAction.swift; sourceTree = "<group>"; };
@@ -1813,6 +1819,7 @@
 		B3981B75258399AA00F8D15A /* NoteAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteAnnotation.swift; sourceTree = "<group>"; };
 		B398A914270C6A4300968EE8 /* WebDavController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebDavController.swift; sourceTree = "<group>"; };
 		B398A916270C6A5B00968EE8 /* WebDavSessionStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavSessionStorage.swift; sourceTree = "<group>"; };
+		B398D6BF2A77F9C60049A296 /* FontSizeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSizeView.swift; sourceTree = "<group>"; };
 		B39AF553290033CD001F400F /* TableOfContentsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableOfContentsViewController.swift; sourceTree = "<group>"; };
 		B39B18E7223947050019F467 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		B39C7BDD251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadUpdatedItemUpdateParametersSpec.swift; sourceTree = "<group>"; };
@@ -2320,6 +2327,7 @@
 				B305643823FC051E003304F2 /* DeleteObjectsDbRequest.swift */,
 				B3BF7EE628A51BDC00A5A659 /* DeleteTagFromItemDbRequest.swift */,
 				B310091C272C0126003FC743 /* DeleteWebDavDeletionsDbRequest.swift */,
+				B36FD9AE2A78FB13002D77E8 /* EditAnnotationFontSizeDbRequest.swift */,
 				B3229FD228C0A09200DAF3B7 /* EditAnnotationPathsDbRequest.swift */,
 				B3229FD028C0A07500DAF3B7 /* EditAnnotationRectsDbRequest.swift */,
 				B37EFDBB2A73EEA8008507C5 /* EditAnnotationRotationDbRequest.swift */,
@@ -3020,6 +3028,9 @@
 				B32CDD3C2AEA9BB100EF5054 /* AnnotationPopoverViewController.xib */,
 				B34C40FD25711C990057D5F5 /* ColorPickerCell.swift */,
 				B3764D9C2574F2DE0024274F /* ColorPickerCircleView.swift */,
+				B36FD9B22A7929C8002D77E8 /* FontSizeCell.swift */,
+				B36FD9B02A7924CB002D77E8 /* FontSizePickerViewController.swift */,
+				B398D6BF2A77F9C60049A296 /* FontSizeView.swift */,
 				B398142C257A649D002C755C /* HighlightEditCell.swift */,
 				B398143E257A8EB2002C755C /* HighlightEditCell.xib */,
 				B34A4B7126E65FC200B3E993 /* LineWidthCell.swift */,
@@ -4664,6 +4675,7 @@
 				B305661B23FC051E003304F2 /* SyncVersionsSyncAction.swift in Sources */,
 				B3593F49241A61C700760E20 /* LibrariesAction.swift in Sources */,
 				B3E8FE032714292E00F51458 /* StorageSettingsState.swift in Sources */,
+				B36FD9B12A7924CB002D77E8 /* FontSizePickerViewController.swift in Sources */,
 				B3DCDF0C240912370039ED0D /* SinglePickerState.swift in Sources */,
 				B30B40652491222000FAAF6D /* AttachmentCreator.swift in Sources */,
 				B3100927272C2441003FC743 /* DeleteWebDavFilesSyncAction.swift in Sources */,
@@ -4732,6 +4744,7 @@
 				B3588C6925FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift in Sources */,
 				B3E8FE3B27142A9900F51458 /* StylePickerState.swift in Sources */,
 				B3E8FE2D271429C300F51458 /* ExportActionHandler.swift in Sources */,
+				B36FD9AF2A78FB13002D77E8 /* EditAnnotationFontSizeDbRequest.swift in Sources */,
 				B300B3352429222B00C1FE1E /* TranslatorMetadata.swift in Sources */,
 				61391B832B3C6F83003B314A /* CopyBibliographyActionHandler.swift in Sources */,
 				B3ADAE4A2833B56F00D46271 /* LookupViewController.swift in Sources */,
@@ -4765,7 +4778,6 @@
 				B37BF0AB25A5E2AD00AE0268 /* SquareAnnotation.swift in Sources */,
 				B3EA5A1B2B7251EE00E283D7 /* CitationLocatorContentView.swift in Sources */,
 				B361820024C9A7C000B30D56 /* LoginAction.swift in Sources */,
-				B37080522AA72135006F56B9 /* Localizable.swift in Sources */,
 				B305660523FC051E003304F2 /* DeletionsRequest.swift in Sources */,
 				B394A0E226A709A900CA307F /* NoteEditorTitleView.swift in Sources */,
 				B305667523FC051F003304F2 /* String+Extensions.swift in Sources */,
@@ -4974,6 +4986,7 @@
 				B32EE26124A092B700442974 /* RUser.swift in Sources */,
 				B305660A23FC051E003304F2 /* RegisterUploadRequest.swift in Sources */,
 				B31CC57F28646D8E0055C114 /* ManualLookupAction.swift in Sources */,
+				B398D6C02A77F9C60049A296 /* FontSizeView.swift in Sources */,
 				B3E8FE582714323200F51458 /* SavingSettingsAction.swift in Sources */,
 				B305662B23FC051F003304F2 /* SyncProgressHandler.swift in Sources */,
 				B3F09AE629CAFF860084E4D8 /* TagFilterActionHandler.swift in Sources */,
@@ -5026,6 +5039,7 @@
 				B32DE61F26320271000287EC /* PopoverNavigationViewController.swift in Sources */,
 				B3CAE1182B0E38BA0000F8CA /* EmojiExtractor.swift in Sources */,
 				B3DEAAA728AD01CA00F72D90 /* URLSession+Extensions.swift in Sources */,
+				B36FD9B32A7929C8002D77E8 /* FontSizeCell.swift in Sources */,
 				B357A28C285B73BD00E73CA1 /* ScannerState.swift in Sources */,
 				B3E8FE5A2714325200F51458 /* SavingSettingsActionHandler.swift in Sources */,
 				B30566B623FC051F003304F2 /* DeletionsResponse.swift in Sources */,

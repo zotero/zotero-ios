@@ -16,6 +16,7 @@ struct AnnotationEditState: ViewModelState {
         let lineWidth: CGFloat
         let pageLabel: String
         let highlightText: String
+        let fontSize: UInt?
     }
 
     struct Changes: OptionSet {
@@ -33,22 +34,24 @@ struct AnnotationEditState: ViewModelState {
     var color: String
     var lineWidth: CGFloat
     var pageLabel: String
+    var fontSize: UInt
     var highlightText: String
     var updateSubsequentLabels: Bool
     var changes: Changes
 
     init(data: Data) {
-        self.type = data.type
-        self.isEditable = data.isEditable
-        self.color = data.color
-        self.lineWidth = data.lineWidth
-        self.pageLabel = data.pageLabel
-        self.highlightText = data.highlightText
-        self.updateSubsequentLabels = false
-        self.changes = []
+        type = data.type
+        isEditable = data.isEditable
+        color = data.color
+        lineWidth = data.lineWidth
+        pageLabel = data.pageLabel
+        highlightText = data.highlightText
+        fontSize = data.fontSize ?? 0
+        updateSubsequentLabels = false
+        changes = []
     }
 
     mutating func cleanup() {
-        self.changes = []
+        changes = []
     }
 }

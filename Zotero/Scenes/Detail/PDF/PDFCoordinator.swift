@@ -564,7 +564,8 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
                 color: annotation.color,
                 lineWidth: annotation.lineWidth ?? 0,
                 pageLabel: annotation.pageLabel,
-                highlightText: annotation.text ?? ""
+                highlightText: annotation.text ?? "",
+                fontSize: annotation.fontSize
             ),
             saveAction: saveAction,
             deleteAction: deleteAction,
