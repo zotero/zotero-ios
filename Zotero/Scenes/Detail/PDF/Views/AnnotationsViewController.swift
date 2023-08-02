@@ -115,12 +115,13 @@ final class AnnotationsViewController: UIViewController {
                 library: self.viewModel.state.library,
                 sender: sender,
                 userInterfaceStyle: self.viewModel.state.interfaceStyle,
-                saveAction: { [weak self] key, color, lineWidth, pageLabel, updateSubsequentLabels, highlightText in
+                saveAction: { [weak self] key, color, lineWidth, fontSize, pageLabel, updateSubsequentLabels, highlightText in
                     self?.viewModel.process(
                         action: .updateAnnotationProperties(
                             key: key.key,
                             color: color,
                             lineWidth: lineWidth,
+                            fontSize: fontSize,
                             pageLabel: pageLabel,
                             updateSubsequentLabels: updateSubsequentLabels,
                             highlightText: highlightText

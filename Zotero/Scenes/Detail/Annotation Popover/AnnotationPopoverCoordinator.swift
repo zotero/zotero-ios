@@ -18,11 +18,13 @@ protocol AnnotationPopoverAnnotationCoordinatorDelegate: AnyObject {
     func createShareAnnotationMenu(sender: UIButton) -> UIMenu?
     func showEdit(annotation: Annotation, userId: Int, library: Library, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
+    func showFontSizePicker(picked: @escaping (UInt) -> Void)
     func didFinish()
 }
 
 protocol AnnotationEditCoordinatorDelegate: AnyObject {
     func showPageLabelEditor(label: String, updateSubsequentPages: Bool, saveAction: @escaping AnnotationPageLabelSaveAction)
+    func showFontSizePicker(picked: @escaping (UInt) -> Void)
 }
 
 final class AnnotationPopoverCoordinator: NSObject, Coordinator {
@@ -58,6 +60,11 @@ final class AnnotationPopoverCoordinator: NSObject, Coordinator {
 }
 
 extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDelegate {
+    func showFontSizePicker(picked: @escaping (UInt) -> Void) {
+        let controller = FontSizePickerViewController(pickAction: picked)
+        self.navigationController?.pushViewController(controller, animated: true)
+    }
+
     func createShareAnnotationMenu(sender: UIButton) -> UIMenu? {
         guard let pdfCoordinator = parentCoordinator as? PDFCoordinator,
               let annotation = viewModel.state.selectedAnnotation
@@ -73,7 +80,7 @@ extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDe
         let state = AnnotationEditState(annotation: annotation, userId: userId, library: library)
         let handler = AnnotationEditActionHandler()
         let viewModel = ViewModel(initialState: state, handler: handler)
-        let controller = AnnotationEditViewController(viewModel: viewModel, includeColorPicker: false, saveAction: saveAction, deleteAction: deleteAction)
+        let controller = AnnotationEditViewController(viewModel: viewModel, includeColorPicker: false, includeFontPicker: false, saveAction: saveAction, deleteAction: deleteAction)
         controller.coordinatorDelegate = self
         self.navigationController?.pushViewController(controller, animated: true)
     }

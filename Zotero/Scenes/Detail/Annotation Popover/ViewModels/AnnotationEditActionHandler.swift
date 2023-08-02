@@ -36,6 +36,11 @@ struct AnnotationEditActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.highlightText = text
             }
+
+        case .setFontSize(let size):
+            self.update(viewModel: viewModel) { state in
+                state.fontSize = size
+            }
         }
     }
 }

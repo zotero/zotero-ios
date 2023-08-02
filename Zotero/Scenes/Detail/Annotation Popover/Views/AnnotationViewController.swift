@@ -140,14 +140,27 @@ final class AnnotationViewController: UIViewController {
 
     private func showSettings() {
         guard let annotation = self.viewModel.state.selectedAnnotation else { return }
-        self.coordinatorDelegate?.showEdit(annotation: annotation, userId: self.viewModel.state.userId, library: self.viewModel.state.library,
-                                           saveAction: { [weak self] key, color, lineWidth, pageLabel, updateSubsequentLabels, highlightText in
-                                               self?.viewModel.process(action: .updateAnnotationProperties(key: key.key, color: color, lineWidth: lineWidth, pageLabel: pageLabel,
-                                                                                                           updateSubsequentLabels: updateSubsequentLabels, highlightText: highlightText))
-                                           },
-                                           deleteAction: { [weak self] key in
-                                               self?.viewModel.process(action: .removeAnnotation(key))
-                                           })
+        self.coordinatorDelegate?.showEdit(
+            annotation: annotation,
+            userId: self.viewModel.state.userId,
+            library: self.viewModel.state.library,
+            saveAction: { [weak self] key, color, lineWidth, fontSize, pageLabel, updateSubsequentLabels, highlightText in
+                self?.viewModel.process(
+                    action: .updateAnnotationProperties(
+                        key: key.key,
+                        color: color,
+                        lineWidth: lineWidth,
+                        fontSize: fontSize,
+                        pageLabel: pageLabel,
+                        updateSubsequentLabels: updateSubsequentLabels,
+                        highlightText: highlightText
+                    )
+                )
+            },
+            deleteAction: { [weak self] key in
+                self?.viewModel.process(action: .removeAnnotation(key))
+            }
+        )
     }
 
     private func set(color: String) {
@@ -270,7 +283,8 @@ final class AnnotationViewController: UIViewController {
             self.containerStackView.addArrangedSubview(colorPickerContainer)
             self.containerStackView.addArrangedSubview(AnnotationViewSeparator())
 
-            if annotation.type == .ink {
+            switch annotation.type {
+            case .ink:
                 // Setup line width slider
                 let lineView = LineWidthView(title: L10n.Pdf.AnnotationPopover.lineWidth, settings: .lineWidth, contentInsets: UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16))
                 lineView.value = Float(annotation.lineWidth ?? 0)
@@ -281,6 +295,28 @@ final class AnnotationViewController: UIViewController {
                         .disposed(by: self.disposeBag)
                 self.containerStackView.addArrangedSubview(lineView)
                 self.containerStackView.addArrangedSubview(AnnotationViewSeparator())
+
+            case .freeText:
+                // Setup font size picker
+                let lineView = FontSizeView(contentInsets: UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16))
+                lineView.value = annotation.fontSize ?? 0
+                lineView.tapObservable
+                    .subscribe(with: self, onNext: { `self`, _ in
+                        self.coordinatorDelegate?.showFontSizePicker(picked: { [weak self] newSize in
+                            self?.viewModel.process(action: .setFontSize(key: annotation.key, size: newSize))
+                        })
+                    })
+                    .disposed(by: self.disposeBag)
+                lineView.valueObservable
+                    .subscribe(with: self, onNext: { `self`, value in
+                        self.viewModel.process(action: .setFontSize(key: annotation.key, size: value))
+                    })
+                    .disposed(by: self.disposeBag)
+                self.containerStackView.addArrangedSubview(lineView)
+                self.containerStackView.addArrangedSubview(AnnotationViewSeparator())
+
+            default:
+                break
             }
         }
 

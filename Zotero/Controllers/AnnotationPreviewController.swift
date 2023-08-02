@@ -76,7 +76,17 @@ extension AnnotationPreviewController {
                 self.subscribers[subscriberKey] = subscriber
             }
 
-            self.enqueue(key: key, parentKey: parentKey, libraryId: libraryId, document: document, pageIndex: page, rect: rect, imageSize: imageSize, imageScale: imageScale, type: .temporary(subscriberKey: subscriberKey))
+            self.enqueue(
+                key: key,
+                parentKey: parentKey,
+                libraryId: libraryId,
+                document: document,
+                pageIndex: page,
+                rect: rect,
+                imageSize: imageSize,
+                imageScale: imageScale,
+                type: .temporary(subscriberKey: subscriberKey)
+            )
 
             return Disposables.create()
         }
@@ -92,8 +102,21 @@ extension AnnotationPreviewController {
 
         // Cache and report original color
         let rect = annotation.previewBoundingBox
-        self.enqueue(key: annotation.previewId, parentKey: parentKey, libraryId: libraryId, document: document, pageIndex: annotation.pageIndex,
-                     rect: rect, imageSize: previewSize, imageScale: 0.0, includeAnnotation: (annotation is PSPDFKit.InkAnnotation), invertColors: false, isDark: isDark, type: .cachedAndReported)
+        let includeAnnotation = annotation is PSPDFKit.InkAnnotation || annotation is PSPDFKit.FreeTextAnnotation
+        self.enqueue(
+            key: annotation.previewId,
+            parentKey: parentKey,
+            libraryId: libraryId,
+            document: document,
+            pageIndex: annotation.pageIndex,
+            rect: rect,
+            imageSize: previewSize,
+            imageScale: 0.0,
+            includeAnnotation: includeAnnotation,
+            invertColors: false,
+            isDark: isDark,
+            type: .cachedAndReported
+        )
 //        // If in dark mode, only cache light mode version, which is required for backend upload
 //        if isDark {
 //            self.enqueue(key: key, parentKey: parentKey, document: document, pageIndex: annotation.pageIndex, rect: rect,
@@ -170,7 +193,20 @@ extension AnnotationPreviewController {
     /// - parameter isDark: `true` if rendered image is in dark mode, `false` otherwise.
     /// - parameter type: Type of preview image. If `temporary`, requested image is temporary and is returned as `Single<UIImage>`. Otherwise image is
     ///                   cached locally and reported through `PublishSubject`.
-    private func enqueue(key: String, parentKey: String, libraryId: LibraryIdentifier, document: Document, pageIndex: PageIndex, rect: CGRect, imageSize: CGSize, imageScale: CGFloat, includeAnnotation: Bool = false, invertColors: Bool = false, isDark: Bool = false, type: PreviewType) {
+    private func enqueue(
+        key: String,
+        parentKey: String,
+        libraryId: LibraryIdentifier,
+        document: Document,
+        pageIndex: PageIndex,
+        rect: CGRect,
+        imageSize: CGSize,
+        imageScale: CGFloat,
+        includeAnnotation: Bool = false,
+        invertColors: Bool = false,
+        isDark: Bool = false,
+        type: PreviewType
+    ) {
         /*
          Workaround for PSPDFKit issue.
 

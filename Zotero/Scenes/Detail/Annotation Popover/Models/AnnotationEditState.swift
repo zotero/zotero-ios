@@ -25,6 +25,7 @@ struct AnnotationEditState: ViewModelState {
     var color: String
     var lineWidth: CGFloat
     var pageLabel: String
+    var fontSize: UInt
     var highlightText: String
     var updateSubsequentLabels: Bool
     var changes: Changes
@@ -37,6 +38,7 @@ struct AnnotationEditState: ViewModelState {
         self.lineWidth = annotation.lineWidth ?? 0
         self.pageLabel = annotation.pageLabel
         self.highlightText = annotation.text ?? ""
+        self.fontSize = annotation.fontSize ?? 0
         self.updateSubsequentLabels = false
         self.changes = []
     }

@@ -93,7 +93,7 @@ struct AnnotationConverter {
         var text: String?
         let paths: [[CGPoint]]
         var lineWidth: CGFloat?
-        var fontSize: CGFloat?
+        var fontSize: UInt?
         var rotation: UInt?
 
         if let annotation = annotation as? PSPDFKit.NoteAnnotation {
@@ -121,7 +121,7 @@ struct AnnotationConverter {
             paths = []
         } else if let annotation = annotation as? PSPDFKit.FreeTextAnnotation {
             type = .freeText
-            fontSize = annotation.fontSize
+            fontSize = UInt(annotation.fontSize)
             rotation = annotation.rotation
             paths = []
             rects = self.rects(fromTextAnnotation: annotation)
@@ -394,7 +394,7 @@ struct AnnotationConverter {
         let text = PSPDFKit.FreeTextAnnotation(contents: annotation.comment)
         text.fontName = "Helvetica"
         text.color = color
-        text.fontSize = annotation.fontSize ?? 0
+        text.fontSize = CGFloat(annotation.fontSize ?? 0)
         text.setRotation(annotation.rotation ?? 0, updateBoundingBox: false)
         text.setBoundingBox(annotation.boundingBox(boundingBoxConverter: boundingBoxConverter).rounded(to: 3), transformSize: true)
         return text

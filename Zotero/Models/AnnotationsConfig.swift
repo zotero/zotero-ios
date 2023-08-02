@@ -26,7 +26,7 @@ struct AnnotationsConfig {
 
     static func colors(for type: AnnotationType) -> [String] {
         switch type {
-        case .ink:
+        case .ink, .freeText:
             return ["#ffd400", "#ff6666", "#5fb236", "#2ea8e5", "#a28ae5", "#e56eee", "#f19837", "#aaaaaa", "#000000"]
 
         default:

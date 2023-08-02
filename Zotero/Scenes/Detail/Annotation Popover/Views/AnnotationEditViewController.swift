@@ -10,12 +10,13 @@ import UIKit
 
 import RxSwift
 
-typealias AnnotationEditSaveAction = (PDFReaderState.AnnotationKey, String, CGFloat, String, Bool, String) -> Void // key, color, lineWidth, pageLabel, updateSubsequentLabels, highlightText
+// key, color, lineWidth, fontSize, pageLabel, updateSubsequentLabels, highlightText
+typealias AnnotationEditSaveAction = (PDFReaderState.AnnotationKey, String, CGFloat, UInt, String, Bool, String) -> Void
 typealias AnnotationEditDeleteAction = (PDFReaderState.AnnotationKey) -> Void
 
 final class AnnotationEditViewController: UIViewController {
     private enum Section {
-        case properties, pageLabel, actions, highlight
+        case properties, pageLabel, actions, highlight, fontSize
 
         func cellId(index: Int) -> String {
             switch self {
@@ -23,6 +24,7 @@ final class AnnotationEditViewController: UIViewController {
             case .actions: return "ActionCell"
             case .pageLabel: return "PageLabelCell"
             case .highlight: return "HighlightCell"
+            case .fontSize: return "FontSizeCell"
             }
         }
     }
@@ -37,13 +39,18 @@ final class AnnotationEditViewController: UIViewController {
 
     weak var coordinatorDelegate: AnnotationEditCoordinatorDelegate?
 
-    init(viewModel: ViewModel<AnnotationEditActionHandler>, includeColorPicker: Bool, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
+    init(viewModel: ViewModel<AnnotationEditActionHandler>, includeColorPicker: Bool, includeFontPicker: Bool, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
         var sections: [Section] = [.pageLabel, .actions]
-        if includeColorPicker && viewModel.state.isEditable {
-            sections.insert(.properties, at: 0)
-        }
-        if viewModel.state.type == .highlight && viewModel.state.isEditable {
-            sections.insert(.highlight, at: 0)
+        if viewModel.state.isEditable {
+            if includeColorPicker {
+                sections.insert(.properties, at: 0)
+            }
+            if includeFontPicker {
+                sections.insert(.fontSize, at: 0)
+            }
+            if viewModel.state.type == .highlight {
+                sections.insert(.highlight, at: 0)
+            }
         }
 
         self.viewModel = viewModel
@@ -167,7 +174,7 @@ final class AnnotationEditViewController: UIViewController {
                .subscribe(onNext: { [weak self] in
                    guard let self = self else { return }
                    let state = self.viewModel.state
-                   self.saveAction(state.key, state.color, state.lineWidth, state.pageLabel, state.updateSubsequentLabels, state.highlightText)
+                   self.saveAction(state.key, state.color, state.lineWidth, state.fontSize, state.pageLabel, state.updateSubsequentLabels, state.highlightText)
                    self.cancel()
                })
                .disposed(by: self.disposeBag)
@@ -182,6 +189,7 @@ final class AnnotationEditViewController: UIViewController {
         self.tableView.register(UINib(nibName: "ColorPickerCell", bundle: nil), forCellReuseIdentifier: Section.properties.cellId(index: 0))
         self.tableView.register(LineWidthCell.self, forCellReuseIdentifier: Section.properties.cellId(index: 1))
         self.tableView.register(UINib(nibName: "HighlightEditCell", bundle: nil), forCellReuseIdentifier: Section.highlight.cellId(index: 0))
+        self.tableView.register(FontSizeCell.self, forCellReuseIdentifier: Section.fontSize.cellId(index: 0))
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.actions.cellId(index: 0))
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.pageLabel.cellId(index: 0))
         self.tableView.setDefaultSizedHeader()
@@ -233,6 +241,12 @@ extension AnnotationEditViewController: UITableViewDataSource {
                     .disposed(by: self.disposeBag)
             }
 
+        case .fontSize:
+            if let cell = cell as? FontSizeCell {
+                cell.set(value: self.viewModel.state.fontSize)
+                cell.valueObservable.subscribe(onNext: { value in self.viewModel.process(action: .setFontSize(value)) }).disposed(by: cell.newDisposeBag)
+            }
+
         case .pageLabel:
             cell.textLabel?.text = L10n.page + " " + self.viewModel.state.pageLabel
             if self.isEditing {
@@ -264,9 +278,17 @@ extension AnnotationEditViewController: UITableViewDelegate {
         case .pageLabel:
             guard self.viewModel.state.isEditable else { return }
 
-            self.coordinatorDelegate?.showPageLabelEditor(label: self.viewModel.state.pageLabel, updateSubsequentPages: self.viewModel.state.updateSubsequentLabels,
-                                                          saveAction: { [weak self] newLabel, shouldUpdateSubsequentPages in
-                self?.viewModel.process(action: .setPageLabel(newLabel, shouldUpdateSubsequentPages))
+            self.coordinatorDelegate?.showPageLabelEditor(
+                label: self.viewModel.state.pageLabel,
+                updateSubsequentPages: self.viewModel.state.updateSubsequentLabels,
+                saveAction: { [weak self] newLabel, shouldUpdateSubsequentPages in
+                    self?.viewModel.process(action: .setPageLabel(newLabel, shouldUpdateSubsequentPages))
+                }
+            )
+
+        case .fontSize:
+            self.coordinatorDelegate?.showFontSizePicker(picked: { [weak self] newSize in
+                self?.viewModel.process(action: .setFontSize(newSize))
             })
         }
     }
