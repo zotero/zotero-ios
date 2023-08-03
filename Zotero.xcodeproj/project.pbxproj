@@ -1193,6 +1193,7 @@
 
 /* Begin PBXFileReference section */
 		614D65812A79C9AC007CF449 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = en; path = en.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		614D65842A7BCC22007CF449 /* ci_post_clone.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ci_post_clone.sh; sourceTree = "<group>"; };
 		61ABA7502A6137D1002A4219 /* ShareableImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareableImage.swift; sourceTree = "<group>"; };
 		61BD13942A5831EF008A0704 /* TextKit1TextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextKit1TextView.swift; sourceTree = "<group>"; };
 		B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTranslatorMetadata.swift; sourceTree = "<group>"; };
@@ -3951,6 +3952,7 @@
 			isa = PBXGroup;
 			children = (
 				B3F6415F2A28B21E00A78CB0 /* ci_pre_xcodebuild.sh */,
+				614D65842A7BCC22007CF449 /* ci_post_clone.sh */,
 			);
 			path = ci_scripts;
 			sourceTree = "<group>";
@@ -3998,10 +4000,10 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = B30D597F2206F60500884C4A /* Build configuration list for PBXNativeTarget "Zotero" */;
 			buildPhases = (
-				B3CF8840266E0FE6009CFC20 /* ShellScript */,
+				B3CF8840266E0FE6009CFC20 /* Run Script */,
 				B3593F142668D37900FA4BB2 /* Run Script */,
 				B34A85AC243CB1E4003D5638 /* ShellScript */,
-				B337A5AD244F229400AFD13D /* ShellScript */,
+				B337A5AD244F229400AFD13D /* SwiftGen */,
 				B30D59512206F60400884C4A /* Sources */,
 				B30D59522206F60400884C4A /* Frameworks */,
 				B30D59532206F60400884C4A /* Resources */,
@@ -4350,7 +4352,7 @@
 			shellPath = /bin/sh;
 			shellScript = "# translators file destination\nZOTERO_DIR=\"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.appex/translation/translate\"\n#translation/translate/modules/utilities/test/runtests.sh\nif [ ! -d \"$ZOTERO_DIR\" ]; then\nexit\nfi\n\n# Remove scripts to avoid code-signing issues\nrm -r \"$ZOTERO_DIR/example\"\nrm -r \"$ZOTERO_DIR/modules/utilities/test\"\nrm -r \"$ZOTERO_DIR/modules/utilities/resource/schema/global\"\nrm -r \"$ZOTERO_DIR/testTranslators\"\n# Remove unused symlinks\nfind \"$ZOTERO_DIR\" -follow -type l -exec rm -f {} \\;\n";
 		};
-		B337A5AD244F229400AFD13D /* ShellScript */ = {
+		B337A5AD244F229400AFD13D /* SwiftGen */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -4359,15 +4361,15 @@
 			inputFileListPaths = (
 			);
 			inputPaths = (
-				"${PROJECT_DIR}/swiftgen/bin/swiftgen",
 			);
+			name = SwiftGen;
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"$SCRIPT_INPUT_FILE_0\" config lint\n\"$SCRIPT_INPUT_FILE_0\" config run\n\n";
+			shellScript = "swiftgen config lint\nswiftgen config run\n\n";
 		};
 		B34A85AC243CB1E4003D5638 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -4408,7 +4410,7 @@
 			shellPath = /bin/sh;
 			shellScript = "python3 \"$SCRIPT_INPUT_FILE_0\"\n";
 		};
-		B3CF8840266E0FE6009CFC20 /* ShellScript */ = {
+		B3CF8840266E0FE6009CFC20 /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 12;
@@ -4419,6 +4421,7 @@
 			inputPaths = (
 				"$(SRCROOT)/scripts/bundle_locales.py",
 			);
+			name = "Run Script";
 			outputFileListPaths = (
 			);
 			outputPaths = (
