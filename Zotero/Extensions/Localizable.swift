@@ -1176,9 +1176,9 @@ internal enum L10n {
       internal static func deleteLibraryQuestion(_ p1: Any) -> String {
         return L10n.tr("Localizable", "settings.storage.delete_library_question", String(describing: p1), fallback: "Are you sure you want to delete all attachment files in %@ from this device?\n\nOther synced devices will not be affected.")
       }
-      /// Plural format key: "%#@files@"
-      internal static func files(_ p1: Int) -> String {
-        return L10n.tr("Localizable", "settings.storage.files", p1, fallback: "Plural format key: \"%#@files@\"")
+      /// Plural format key: "%#@files@ (%.2f %@)"
+      internal static func filesSizeAndUnit(_ p1: Int, _ p2: Float, _ p3: Any) -> String {
+        return L10n.tr("Localizable", "settings.storage.files_size_and_unit", p1, p2, String(describing: p3), fallback: "Plural format key: \"%#@files@ (%.2f %@)\"")
       }
     }
     internal enum Sync {

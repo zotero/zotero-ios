@@ -83,10 +83,10 @@
             <string>Found %d matches</string>
         </dict>
     </dict>
-    <key>settings.storage.files</key>
+    <key>settings.storage.files_size_and_unit</key>
     <dict>
         <key>NSStringLocalizedFormatKey</key>
-        <string>%#@files@</string>
+        <string>%#@files@ (%.2f %@)</string>
         <key>files</key>
         <dict>
             <key>NSStringFormatSpecTypeKey</key>
