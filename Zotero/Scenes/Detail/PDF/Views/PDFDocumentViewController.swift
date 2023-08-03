@@ -534,6 +534,7 @@ final class PDFDocumentViewController: UIViewController {
             builder.overrideClass(PSPDFKit.NoteAnnotation.self, with: NoteAnnotation.self)
             builder.overrideClass(PSPDFKit.SquareAnnotation.self, with: SquareAnnotation.self)
             builder.overrideClass(PSPDFKit.UnderlineAnnotation.self, with: UnderlineAnnotation.self)
+            builder.overrideClass(FreeTextAnnotationView.self, with: CustomFreeTextAnnotationView.self)
         }
 
         let controller = PDFViewController(document: document, configuration: pdfConfiguration)
@@ -634,6 +635,10 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
         if let annotation = annotations.first,
            annotation.type == .freeText,
            let annotationView = pageView.visibleAnnotationViews.first(where: { $0.annotation == annotation }) as? FreeTextAnnotationView {
+            if let annotationView = annotationView as? CustomFreeTextAnnotationView {
+                annotationView.delegate = self
+            }
+
             // Free text annotation is being selected, check whether we should focus text view
             guard annotation.key != nil, // don't focus new annotations, they are already focused
                   self.presentedViewController == nil // don't focus if annotation popup is visible
@@ -893,6 +898,19 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
         }
 
         return textOffset
+    }
+}
+
+extension PDFDocumentViewController: FreeTextInputDelegate {
+    func showColorPicker(sender: UIView) {
+    }
+    
+    func showFontSizePicker(sender: UIView) {
+    }
+    
+    func changeFontSize(size: UInt) {
+        guard let key = self.viewModel.state.selectedAnnotation?.key else { return }
+        self.viewModel.process(action: .setFontSize(key: key, size: size))
     }
 }
 

@@ -107,7 +107,8 @@ struct PDFDatabaseAnnotation {
     }
 
     var rotation: UInt? {
-        return (self.item.fields.filter(.key(FieldKeys.Item.Annotation.Position.rotation)).first?.value).flatMap(UInt.init)
+        guard let rotation = (self.item.fields.filter(.key(FieldKeys.Item.Annotation.Position.rotation)).first?.value).flatMap(Double.init) else { return nil }
+        return UInt(round(rotation))
     }
 
     var sortIndex: String {

@@ -370,7 +370,6 @@ struct AnnotationConverter {
 
     private static func freeTextAnnotation(from annotation: Annotation, color: UIColor, boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.FreeTextAnnotation {
         let text = PSPDFKit.FreeTextAnnotation(contents: annotation.comment)
-        text.fontName = "Helvetica"
         text.color = color
         text.fontSize = CGFloat(annotation.fontSize ?? 0)
         text.setRotation(annotation.rotation ?? 0, updateBoundingBox: false)
