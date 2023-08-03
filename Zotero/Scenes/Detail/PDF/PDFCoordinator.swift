@@ -33,6 +33,8 @@ protocol PdfReaderCoordinatorDelegate: AnyObject {
     func showReader(document: Document, userInterfaceStyle: UIUserInterfaceStyle)
     func showCitation(for itemId: String, libraryId: LibraryIdentifier)
     func copyBibliography(using presenter: UIViewController, for itemId: String, libraryId: LibraryIdentifier)
+    func showPdfExportSettings(sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, completed: @escaping (PDFExportSettings) -> Void)
+    func showFontSizePicker(sender: UIView, picked: @escaping (UInt) -> Void)
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: AnyObject {
@@ -386,6 +388,14 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
 
     func copyBibliography(using presenter: UIViewController, for itemId: String, libraryId: LibraryIdentifier) {
         (parentCoordinator as? DetailCoordinator)?.copyBibliography(using: presenter, for: Set([itemId]), libraryId: libraryId, delegate: self)
+    }
+
+    func showFontSizePicker(sender: UIView, picked: @escaping (UInt) -> Void) {
+        let controller = FontSizePickerViewController(pickAction: picked)
+        controller.preferredContentSize = CGSize(width: 200, height: 400)
+        controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
+        controller.popoverPresentationController?.sourceView = sender
+        self.navigationController?.present(controller, animated: true)
     }
 }
 

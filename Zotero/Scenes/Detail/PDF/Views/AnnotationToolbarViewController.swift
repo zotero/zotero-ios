@@ -274,8 +274,9 @@ class AnnotationToolbarViewController: UIViewController {
 
             let imageName: String
             switch tool {
-            case .ink, .image, .highlight, .note:
+            case .ink, .square, .highlight, .note, .freeText, .underline:
                 imageName = "circle.fill"
+                
             default:
                 imageName = "circle"
             }

@@ -741,10 +741,10 @@
 		B36E4F682751242C001FB99D /* WebDavCreateZoteroDirectoryRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36E4F65275123F4001FB99D /* WebDavCreateZoteroDirectoryRequest.swift */; };
 		B36E9D4925E51B0E00CD1109 /* AnnotationPosition.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36E9D4825E51B0E00CD1109 /* AnnotationPosition.swift */; };
 		B36EBFF5273162DD00CD788D /* bitcoin.zip in Resources */ = {isa = PBXBuildFile; fileRef = B36EBFF4273162DD00CD788D /* bitcoin.zip */; };
-		B37080532AA7216E006F56B9 /* Localizable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37080512AA72135006F56B9 /* Localizable.swift */; };
 		B36FD9AF2A78FB13002D77E8 /* EditAnnotationFontSizeDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36FD9AE2A78FB13002D77E8 /* EditAnnotationFontSizeDbRequest.swift */; };
 		B36FD9B12A7924CB002D77E8 /* FontSizePickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36FD9B02A7924CB002D77E8 /* FontSizePickerViewController.swift */; };
 		B36FD9B32A7929C8002D77E8 /* FontSizeCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36FD9B22A7929C8002D77E8 /* FontSizeCell.swift */; };
+		B37080532AA7216E006F56B9 /* Localizable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37080512AA72135006F56B9 /* Localizable.swift */; };
 		B371494C25D585EA00D6391E /* RestoreDeletionsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340868825D574D6000F4446 /* RestoreDeletionsSyncAction.swift */; };
 		B371494F25D585EF00D6391E /* MarkObjectsAsChangedByUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340868C25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift */; };
 		B372CEE02486504600B423AE /* GroupVersionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372CEDF2486504600B423AE /* GroupVersionsRequest.swift */; };
@@ -1028,6 +1028,7 @@
 		B3DCDF1F240945B40039ED0D /* CollectionsPickerActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDF1E240945B30039ED0D /* CollectionsPickerActionHandler.swift */; };
 		B3DCDF21240945D80039ED0D /* CollectionsPickerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDF20240945D80039ED0D /* CollectionsPickerState.swift */; };
 		B3DCDF23240945FA0039ED0D /* CollectionsPickerAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDF22240945FA0039ED0D /* CollectionsPickerAction.swift */; };
+		B3DD197B2B0CA7840042C46D /* Localizable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37080512AA72135006F56B9 /* Localizable.swift */; };
 		B3DDACE928E6F52E0063407E /* CustomURLController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DDACE828E6F52E0063407E /* CustomURLController.swift */; };
 		B3DDC0CB2667824D00B2DFD1 /* RegularExpression+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DDC0CA2667824D00B2DFD1 /* RegularExpression+Extensions.swift */; };
 		B3DDC0CC2667825E00B2DFD1 /* RegularExpression+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DDC0CA2667824D00B2DFD1 /* RegularExpression+Extensions.swift */; };
@@ -1743,10 +1744,10 @@
 		B36E4F65275123F4001FB99D /* WebDavCreateZoteroDirectoryRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavCreateZoteroDirectoryRequest.swift; sourceTree = "<group>"; };
 		B36E9D4825E51B0E00CD1109 /* AnnotationPosition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPosition.swift; sourceTree = "<group>"; };
 		B36EBFF4273162DD00CD788D /* bitcoin.zip */ = {isa = PBXFileReference; lastKnownFileType = archive.zip; path = bitcoin.zip; sourceTree = "<group>"; };
-		B37080512AA72135006F56B9 /* Localizable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localizable.swift; sourceTree = "<group>"; };
 		B36FD9AE2A78FB13002D77E8 /* EditAnnotationFontSizeDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditAnnotationFontSizeDbRequest.swift; sourceTree = "<group>"; };
 		B36FD9B02A7924CB002D77E8 /* FontSizePickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSizePickerViewController.swift; sourceTree = "<group>"; };
 		B36FD9B22A7929C8002D77E8 /* FontSizeCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSizeCell.swift; sourceTree = "<group>"; };
+		B37080512AA72135006F56B9 /* Localizable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localizable.swift; sourceTree = "<group>"; };
 		B372CEDF2486504600B423AE /* GroupVersionsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupVersionsRequest.swift; sourceTree = "<group>"; };
 		B372CEE22486512500B423AE /* GroupRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupRequest.swift; sourceTree = "<group>"; };
 		B372CEE4248670AF00B423AE /* FetchAndStoreGroupSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchAndStoreGroupSyncAction.swift; sourceTree = "<group>"; };
@@ -5143,6 +5144,7 @@
 				B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */,
 				B310FA4529E5765800FA2F15 /* AddTagsToItemDbRequest.swift in Sources */,
 				B39D42DF29C0CE7D0035CDA9 /* TagsFlowLayout.swift in Sources */,
+				B3DD197B2B0CA7840042C46D /* Localizable.swift in Sources */,
 				B30BDDE628366F1B007034E8 /* CreateTranslatedItemsDbRequest.swift in Sources */,
 				B31A5E51286308960026589F /* LookupIdentifierCell.swift in Sources */,
 				B319D6B8265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift in Sources */,

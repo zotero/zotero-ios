@@ -89,6 +89,7 @@ final class FontSizeView: UIView {
 
         let container = UIStackView(arrangedSubviews: [button, stepper])
         container.axis = .horizontal
+        container.alignment = .center
         container.spacing = 12
         container.translatesAutoresizingMaskIntoConstraints = false
 

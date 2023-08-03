@@ -85,6 +85,10 @@ extension FontSizePickerViewController: UITableViewDelegate {
         tableView.deselectRow(at: indexPath, animated: true)
         guard let size = self.dataSource.itemIdentifier(for: indexPath) else { return }
         self.pickAction(size)
-        self.navigationController?.popViewController(animated: true)
+        if let controller = self.presentingViewController {
+            controller.dismiss(animated: true)
+        } else {
+            self.navigationController?.popViewController(animated: true)
+        }
     }
 }

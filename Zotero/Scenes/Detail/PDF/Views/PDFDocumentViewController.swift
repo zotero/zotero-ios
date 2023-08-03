@@ -530,6 +530,7 @@ final class PDFDocumentViewController: UIViewController {
             builder.scrubberBarType = .horizontal
 //            builder.thumbnailBarMode = .scrubberBar
             builder.markupAnnotationMergeBehavior = .never
+            builder.freeTextAccessoryViewEnabled = false
             builder.overrideClass(PSPDFKit.HighlightAnnotation.self, with: HighlightAnnotation.self)
             builder.overrideClass(PSPDFKit.NoteAnnotation.self, with: NoteAnnotation.self)
             builder.overrideClass(PSPDFKit.SquareAnnotation.self, with: SquareAnnotation.self)
@@ -637,6 +638,7 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
            let annotationView = pageView.visibleAnnotationViews.first(where: { $0.annotation == annotation }) as? FreeTextAnnotationView {
             if let annotationView = annotationView as? CustomFreeTextAnnotationView {
                 annotationView.delegate = self
+                annotationView.annotationKey = annotation.key.flatMap({ .init(key: $0, type: .database) })
             }
 
             // Free text annotation is being selected, check whether we should focus text view
@@ -902,15 +904,21 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
 }
 
 extension PDFDocumentViewController: FreeTextInputDelegate {
-    func showColorPicker(sender: UIView) {
+    func showColorPicker(sender: UIView, key: PDFReaderState.AnnotationKey) {
     }
     
-    func showFontSizePicker(sender: UIView) {
+    func showFontSizePicker(sender: UIView, key: PDFReaderState.AnnotationKey) {
+        self.coordinatorDelegate?.showFontSizePicker(sender: sender, picked: { [weak self] size in
+            self?.viewModel.process(action: .setFontSize(key: key.key, size: size))
+        })
     }
     
-    func changeFontSize(size: UInt) {
-        guard let key = self.viewModel.state.selectedAnnotation?.key else { return }
-        self.viewModel.process(action: .setFontSize(key: key, size: size))
+    func change(fontSize: UInt, for key: PDFReaderState.AnnotationKey) {
+        self.viewModel.process(action: .setFontSize(key: key.key, size: fontSize))
+    }
+    
+    func getFontSize(for key: PDFReaderState.AnnotationKey) -> UInt? {
+        return self.viewModel.state.annotation(for: key)?.fontSize
     }
 }
 
