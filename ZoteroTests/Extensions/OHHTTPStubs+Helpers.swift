@@ -41,7 +41,7 @@ func createStub(for request: ApiRequest, ignoreBody: Bool = false, baseUrl: URL,
 
 extension ApiRequest {
     func stubCondition(with baseUrl: URL, ignoreBody: Bool = false) -> HTTPStubsTestBlock {
-        guard let urlRequest = (try? Convertible(request: self, baseUrl: baseUrl, token: nil).asURLRequest()),
+        guard let urlRequest = (try? Convertible(request: self, baseUrl: baseUrl, token: nil, additionalHeaders: nil).asURLRequest()),
               let url = urlRequest.url,
               let host = url.host else {
             return { _ in false }

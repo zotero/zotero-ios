@@ -80,7 +80,7 @@ final class ZoteroApiClient: ApiClient {
 
     /// Creates and starts a data request, takes care of retrying request in case of failure.
     func send(request: ApiRequest, queue: DispatchQueue) -> Single<(Data?, HTTPURLResponse)> {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
+        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint), additionalHeaders: self.manager.sessionConfiguration.httpAdditionalHeaders)
         return self.createRequestSingle(for: request.endpoint) { $0.request(convertible).validate(acceptableStatusCodes: request.acceptableStatusCodes) }
                    .flatMap({ (dataRequest: DataRequest) -> Single<(Data?, HTTPURLResponse)> in
                        return dataRequest.rx.loggedResponseDataWithResponseError(queue: queue, encoding: request.encoding, logParams: request.logParams)
@@ -121,7 +121,7 @@ final class ZoteroApiClient: ApiClient {
 
     /// Creates download request. Request needs to be started manually.
     func download(request: ApiDownloadRequest, queue: DispatchQueue) -> Observable<DownloadRequest> {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
+        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint), additionalHeaders: self.manager.sessionConfiguration.httpAdditionalHeaders)
         return self.createRequestSingle(for: request.endpoint) { manager -> DownloadRequest in
             return manager.download(convertible) { _, _ in (request.downloadUrl, [.createIntermediateDirectories, .removePreviousFile]) }
                 .validate(statusCode: request.acceptableStatusCodes)
@@ -133,21 +133,21 @@ final class ZoteroApiClient: ApiClient {
     }
 
     func upload(request: ApiRequest, data: Data, queue: DispatchQueue) -> Single<(Data?, HTTPURLResponse)> {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
+        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint), additionalHeaders: self.manager.sessionConfiguration.httpAdditionalHeaders)
         let method = HTTPMethod(rawValue: request.httpMethod.rawValue)
         let headers = HTTPHeaders(convertible.allHeaders)
         return self.createUploadRequest(request: request, queue: queue) { $0.upload(data, to: convertible, method: method, headers: headers) }
     }
 
     func upload(request: ApiRequest, queue: DispatchQueue, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<(Data?, HTTPURLResponse)> {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
+        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint), additionalHeaders: self.manager.sessionConfiguration.httpAdditionalHeaders)
         let method = HTTPMethod(rawValue: request.httpMethod.rawValue)
         let headers = HTTPHeaders(convertible.allHeaders)
         return self.createUploadRequest(request: request, queue: queue) { $0.upload(multipartFormData: multipartFormData, to: convertible, method: method, headers: headers) }
     }
 
     func upload(request: ApiRequest, fromFile file: File, queue: DispatchQueue) -> Single<(Data?, HTTPURLResponse)> {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
+        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint), additionalHeaders: self.manager.sessionConfiguration.httpAdditionalHeaders)
         let method = HTTPMethod(rawValue: request.httpMethod.rawValue)
         let headers = HTTPHeaders(convertible.allHeaders)
         return self.createUploadRequest(request: request, queue: queue) { $0.upload(file.createUrl(), to: convertible, method: method, headers: headers) }
@@ -204,7 +204,7 @@ final class ZoteroApiClient: ApiClient {
 
 extension ZoteroApiClient: ApiRequestCreator {
     func dataRequest(for request: ApiRequest) -> DataRequest {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint))
+        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint), additionalHeaders: self.manager.sessionConfiguration.httpAdditionalHeaders)
         return self.createRequest(for: request.endpoint) { $0.request(convertible).validate(acceptableStatusCodes: request.acceptableStatusCodes) }
     }
 }
