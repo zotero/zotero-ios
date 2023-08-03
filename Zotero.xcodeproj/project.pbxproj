@@ -416,6 +416,7 @@
 		B324278225C841A600567504 /* WsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B324278125C841A600567504 /* WsResponse.swift */; };
 		B3242CCD246ABBAF00D8748F /* AnnotationsConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3242CCC246ABBAF00D8748F /* AnnotationsConfig.swift */; };
 		B3243BC82A5EB2740033A7D6 /* HtmlAttributedStringConverterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3243BC72A5EB2740033A7D6 /* HtmlAttributedStringConverterSpec.swift */; };
+		B325C40A2A7A8DE0008A2F11 /* CustomFreeTextAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B325C4092A7A8DE0008A2F11 /* CustomFreeTextAnnotationView.swift */; };
 		B325DBAC24374F4600EFF0F5 /* AppCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B325DBAB24374F4600EFF0F5 /* AppCoordinator.swift */; };
 		B325DBAD24375C7B00EFF0F5 /* UIViewController+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650E23FC051E003304F2 /* UIViewController+Extensions.swift */; };
 		B325DBAF24375D8D00EFF0F5 /* Conflict.swift in Sources */ = {isa = PBXBuildFile; fileRef = B325DBAE24375D8D00EFF0F5 /* Conflict.swift */; };
@@ -1445,6 +1446,7 @@
 		B324278125C841A600567504 /* WsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WsResponse.swift; sourceTree = "<group>"; };
 		B3242CCC246ABBAF00D8748F /* AnnotationsConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationsConfig.swift; sourceTree = "<group>"; };
 		B3243BC72A5EB2740033A7D6 /* HtmlAttributedStringConverterSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HtmlAttributedStringConverterSpec.swift; sourceTree = "<group>"; };
+		B325C4092A7A8DE0008A2F11 /* CustomFreeTextAnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomFreeTextAnnotationView.swift; sourceTree = "<group>"; };
 		B325DBAB24374F4600EFF0F5 /* AppCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCoordinator.swift; sourceTree = "<group>"; };
 		B325DBAE24375D8D00EFF0F5 /* Conflict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Conflict.swift; sourceTree = "<group>"; };
 		B325DBB124375DAC00EFF0F5 /* ConflictResolution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictResolution.swift; sourceTree = "<group>"; };
@@ -2739,6 +2741,7 @@
 				B340ECA5290FDC9F00EE920D /* AnnotationToolbarViewController.swift */,
 				B38B24B826E7664400BDD1BB /* AnnotationToolOptionsViewController.swift */,
 				B33AB487246D315F00490DDE /* CheckboxButton.swift */,
+				B325C4092A7A8DE0008A2F11 /* CustomFreeTextAnnotationView.swift */,
 				B3A95DA929194BDE00BCCF11 /* DashedView.swift */,
 				B3B953CD245981DA00FC96DB /* PDFDocumentViewController.swift */,
 				B34E3DEB28CF490700B747AE /* PDFExportSettingsView.swift */,
@@ -4644,6 +4647,7 @@
 				B3A47C3629015FCE00E7D90D /* TableOfContentsActionHandler.swift in Sources */,
 				B30565BE23FC051E003304F2 /* CreateItemFromDetailDbRequest.swift in Sources */,
 				B3593F77241A76E600760E20 /* CollectionEditActionHandler.swift in Sources */,
+				B325C40A2A7A8DE0008A2F11 /* CustomFreeTextAnnotationView.swift in Sources */,
 				B3BF7EE728A51BDC00A5A659 /* DeleteTagFromItemDbRequest.swift in Sources */,
 				B305661E23FC051E003304F2 /* DeleteGroupSyncAction.swift in Sources */,
 				B373877328FEA0C7004E5031 /* PDFSidebarViewController.swift in Sources */,
