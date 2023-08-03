@@ -6,4 +6,5 @@
 #  Created by Miltiadis Vasilakis on 3/8/23.
 #  Copyright © 2023 Corporation for Digital Scholarship. All rights reserved.
 
-brew install swiftgen
+which swiftgen || HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install swiftgen
+which swiftlint || HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install swiftlint
