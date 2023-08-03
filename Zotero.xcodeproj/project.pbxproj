@@ -4323,7 +4323,6 @@
 			inputFileListPaths = (
 			);
 			inputPaths = (
-				"${PROJECT_DIR}/swiftlint/bin/swiftlint",
 			);
 			name = SwiftLint;
 			outputFileListPaths = (
@@ -4332,7 +4331,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"$SCRIPT_INPUT_FILE_0\"\n";
+			shellScript = "swiftlint\n";
 		};
 		B3087B87245190F500FF05ED /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -4369,7 +4368,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "swiftgen config lint\nswiftgen config run\n\n";
+			shellScript = "swiftgen config lint\nswiftgen config run\n";
 		};
 		B34A85AC243CB1E4003D5638 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
