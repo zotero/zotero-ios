@@ -20,6 +20,8 @@
 		6144B5DF2A4AE48F00914B3C /* SyncControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */; };
 		6144B5E02A4AE49800914B3C /* TranslatorsControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */; };
 		6144B5E12A4AE95E00914B3C /* WebDavControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3202C6B271048FF00485BE4 /* WebDavControllerSpec.swift */; };
+		614D65822A79C9AC007CF449 /* Localizable.stringsdict in Resources */ = {isa = PBXBuildFile; fileRef = 614D65802A79C9AC007CF449 /* Localizable.stringsdict */; };
+		614D65832A79C9B0007CF449 /* Localizable.stringsdict in Resources */ = {isa = PBXBuildFile; fileRef = 614D65802A79C9AC007CF449 /* Localizable.stringsdict */; };
 		61ABA7512A6137D1002A4219 /* ShareableImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61ABA7502A6137D1002A4219 /* ShareableImage.swift */; };
 		61BD13952A5831EF008A0704 /* TextKit1TextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61BD13942A5831EF008A0704 /* TextKit1TextView.swift */; };
 		61C817F22A49B5D30085B1E6 /* CollectionResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDEE250242E700D8BC1E /* CollectionResponseSpec.swift */; };
@@ -1190,6 +1192,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		614D65812A79C9AC007CF449 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = en; path = en.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		614D65842A7BCC22007CF449 /* ci_post_clone.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ci_post_clone.sh; sourceTree = "<group>"; };
 		61ABA7502A6137D1002A4219 /* ShareableImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareableImage.swift; sourceTree = "<group>"; };
 		61BD13942A5831EF008A0704 /* TextKit1TextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextKit1TextView.swift; sourceTree = "<group>"; };
 		B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTranslatorMetadata.swift; sourceTree = "<group>"; };
@@ -2083,6 +2087,7 @@
 				B30B550224B85A3A00F94B59 /* Colors.xcassets */,
 				B30B550424B85A6200F94B59 /* Images.xcassets */,
 				B337A5AA244F1DEB00AFD13D /* Localizable.strings */,
+				614D65802A79C9AC007CF449 /* Localizable.stringsdict */,
 				B3604FF724769F0900669CB7 /* note.html */,
 				B30566D823FC0769003304F2 /* tinymce */,
 			);
@@ -3947,6 +3952,7 @@
 			isa = PBXGroup;
 			children = (
 				B3F6415F2A28B21E00A78CB0 /* ci_pre_xcodebuild.sh */,
+				614D65842A7BCC22007CF449 /* ci_post_clone.sh */,
 			);
 			path = ci_scripts;
 			sourceTree = "<group>";
@@ -3994,10 +4000,10 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = B30D597F2206F60500884C4A /* Build configuration list for PBXNativeTarget "Zotero" */;
 			buildPhases = (
-				B3CF8840266E0FE6009CFC20 /* ShellScript */,
+				B3CF8840266E0FE6009CFC20 /* Run Script */,
 				B3593F142668D37900FA4BB2 /* Run Script */,
 				B34A85AC243CB1E4003D5638 /* ShellScript */,
-				B337A5AD244F229400AFD13D /* ShellScript */,
+				B337A5AD244F229400AFD13D /* SwiftGen */,
 				B30D59512206F60400884C4A /* Sources */,
 				B30D59522206F60400884C4A /* Frameworks */,
 				B30D59532206F60400884C4A /* Resources */,
@@ -4240,6 +4246,7 @@
 				B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */,
 				B337A5A8244F1DEB00AFD13D /* Localizable.strings in Resources */,
 				B30BA8C4255D415600361D25 /* Bundled in Resources */,
+				614D65822A79C9AC007CF449 /* Localizable.stringsdict in Resources */,
 				B34DF1B625768BB70019CCD1 /* TextFieldCell.xib in Resources */,
 				B31901952629C9CB00209E33 /* ItemsFilterViewController.xib in Resources */,
 				B3486B8C26CFAFEA0036A267 /* SingleCitationViewController.xib in Resources */,
@@ -4294,6 +4301,7 @@
 				B36459DE2644119100A0C2C0 /* TagPickerViewController.xib in Resources */,
 				B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */,
 				B36459E926441A2000A0C2C0 /* TagRow.xib in Resources */,
+				614D65832A79C9B0007CF449 /* Localizable.stringsdict in Resources */,
 				B33E8A4E27B6AAF000CBC7DE /* CollectionCellContentView.xib in Resources */,
 				B355B8FF239951E800E837B9 /* translation in Resources */,
 				B32AB57E25ADCEED003CF0C6 /* Bundled in Resources */,
@@ -4344,7 +4352,7 @@
 			shellPath = /bin/sh;
 			shellScript = "# translators file destination\nZOTERO_DIR=\"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.appex/translation/translate\"\n#translation/translate/modules/utilities/test/runtests.sh\nif [ ! -d \"$ZOTERO_DIR\" ]; then\nexit\nfi\n\n# Remove scripts to avoid code-signing issues\nrm -r \"$ZOTERO_DIR/example\"\nrm -r \"$ZOTERO_DIR/modules/utilities/test\"\nrm -r \"$ZOTERO_DIR/modules/utilities/resource/schema/global\"\nrm -r \"$ZOTERO_DIR/testTranslators\"\n# Remove unused symlinks\nfind \"$ZOTERO_DIR\" -follow -type l -exec rm -f {} \\;\n";
 		};
-		B337A5AD244F229400AFD13D /* ShellScript */ = {
+		B337A5AD244F229400AFD13D /* SwiftGen */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -4353,15 +4361,15 @@
 			inputFileListPaths = (
 			);
 			inputPaths = (
-				"${PROJECT_DIR}/swiftgen/bin/swiftgen",
 			);
+			name = SwiftGen;
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"$SCRIPT_INPUT_FILE_0\" config lint\n\"$SCRIPT_INPUT_FILE_0\" config run\n\n";
+			shellScript = "swiftgen config lint\nswiftgen config run\n\n";
 		};
 		B34A85AC243CB1E4003D5638 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -4402,7 +4410,7 @@
 			shellPath = /bin/sh;
 			shellScript = "python3 \"$SCRIPT_INPUT_FILE_0\"\n";
 		};
-		B3CF8840266E0FE6009CFC20 /* ShellScript */ = {
+		B3CF8840266E0FE6009CFC20 /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 12;
@@ -4413,6 +4421,7 @@
 			inputPaths = (
 				"$(SRCROOT)/scripts/bundle_locales.py",
 			);
+			name = "Run Script";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -5511,6 +5520,14 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
+		614D65802A79C9AC007CF449 /* Localizable.stringsdict */ = {
+			isa = PBXVariantGroup;
+			children = (
+				614D65812A79C9AC007CF449 /* en */,
+			);
+			name = Localizable.stringsdict;
+			sourceTree = "<group>";
+		};
 		B30D59632206F60500884C4A /* LaunchScreen.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (

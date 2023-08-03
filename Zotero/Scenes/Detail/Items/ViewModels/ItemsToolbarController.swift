@@ -123,7 +123,7 @@ final class ItemsToolbarController {
                 filterLabel.isHidden = filters.isEmpty
 
                 if !filterLabel.isHidden {
-                    filterLabel.text = itemCount == 1 ? L10n.Items.toolbarFilterSingle : L10n.Items.toolbarFilterMultiple(itemCount)
+                    filterLabel.text = L10n.Items.toolbarFilter(itemCount)
                     filterLabel.sizeToFit()
                 }
             }

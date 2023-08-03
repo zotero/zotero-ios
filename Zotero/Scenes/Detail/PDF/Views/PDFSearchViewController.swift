@@ -182,10 +182,8 @@ extension PDFSearchViewController: TextSearchDelegate {
 
         if searchTerm.isEmpty {
             self.footerLabel.text = nil
-        } else if searchResults.count == 1 {
-            self.footerLabel.text = L10n.Pdf.Search.oneMatch
         } else {
-            self.footerLabel.text = L10n.Pdf.Search.multipleMatches(searchResults.count)
+            self.footerLabel.text = L10n.Pdf.Search.matches(searchResults.count)
         }
     }
 

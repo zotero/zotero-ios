@@ -1,7 +1,7 @@
 strings:
-  inputs: Zotero/Assets/en.lproj/Localizable.strings
+  inputs: Zotero/Assets/en.lproj
   outputs:
-    templateName: structured-swift4
+    templateName: structured-swift5
     output: Zotero/Extensions/Localizable.swift
 xcassets:
     inputs:

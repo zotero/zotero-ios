@@ -124,16 +124,7 @@ class CollectionsPickerViewController: UICollectionViewController {
     }
 
     private func updateTitle(with selectedCount: Int) {
-        switch selectedCount {
-        case 0:
-            self.title = L10n.Items.zeroCollectionsSelected
-
-        case 1:
-            self.title = L10n.Items.oneCollectionsSelected
-
-        default:
-            self.title = L10n.Items.manyCollectionsSelected(selectedCount)
-        }
+        self.title = L10n.Items.collectionsSelected(selectedCount)
     }
 
     private func updateDataSource(with state: CollectionsPickerState, animated: Bool) {

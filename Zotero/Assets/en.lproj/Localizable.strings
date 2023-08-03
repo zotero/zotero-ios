@@ -61,7 +61,7 @@
 
 "day_suffixes" = "st,nd,rd,th";
 
-"onboarding.access" = "<b>Zotero organizes research</b> however you want. Sort your items into collections and tag them with keywords.";
+"onboarding.access" = "<b>Zotero organizes research</b> however you want. Sort your items into collections and tag them with keywords.";
 "onboarding.sync" = "<b>Synchronize and collaborate</b> across devices, keeping your reading and notes seamlessly up to date.";
 "onboarding.annotate" = "<b>Highlight and take notes</b> directly in your PDFs as you read them.";
 "onboarding.share" = "<b>Tap to collect</b> articles and books directly from the web, including their PDFs and full metadata.";
@@ -124,14 +124,7 @@
 "items.new" = "Add Manually";
 "items.new_note" = "New Standalone Note";
 "items.new_file" = "Add File";
-"items.zero_collections_selected" = "Select a Collection";
-"items.one_collections_selected" = "1 Collection Selected";
-"items.many_collections_selected" = "%d Collections Selected";
-"items.delete_question" = "Are you sure you want to delete the selected item?";
-"items.delete_multiple_question" = "Are you sure you want to delete selected items?";
 "items.remove_from_collection_title" = "Remove from Collection";
-"items.remove_from_collection_question" = "Are you sure you want to remove the selected item from this collection?";
-"items.remove_from_collection_multiple_question" = "Are you sure you want to remove selected items from this collection?";
 "items.action.add_to_collection" = "Add to Collection";
 "items.action.remove_from_collection" = "Remove from Collection";
 "items.action.duplicate" = "Duplicate";
@@ -141,8 +134,6 @@
 "items.filters.title" = "Filters";
 "items.filters.downloads" = "Downloaded Files";
 "items.filters.tags" = "Tags";
-"items.toolbar_filter_single" = "Filter: 1 item";
-"items.toolbar_filter_multiple" = "Filter: %d items";
 "items.toolbar_downloaded" = "Downloaded %d / %d";
 "items.generating_bib" = "Generating Bibliography";
 "items.creator_summary.and" = "%@ and %@";
@@ -205,14 +196,11 @@
 "tag_picker.placeholder" = "Tag name";
 "tag_picker.create_tag" = "Create Tag \“%@\”";
 "tag_picker.confirm_deletion_question" = "Delete Automatic Tags";
-"tag_picker.confirm_deletion" = "Are you sure you want to delete %d automatic tags in this library?\n\nThis action cannot be undone.";
 "tag_picker.search_placeholder" = "Search Tags";
 "tag_picker.deselect_all" = "Deselect All";
 "tag_picker.show_auto" = "Show Automatic Tags";
 "tag_picker.show_all" = "Display All Tags in This Library";
 "tag_picker.delete_automatic" = "Delete Automatic Tags in This Library";
-"tag_picker.one_tag_selected" = "1 tag selected";
-"tag_picker.x_tags_selected" = "%d tags selected";
 
 "creator_editor.creator" = "Creator Type";
 "creator_editor.first_name" = "First Name";
@@ -229,8 +217,6 @@
 "pdf.annotations_sidebar.filter.tags_placeholder" = "Select Tags…";
 "pdf.search.title" = "Search in Document";
 "pdf.search.failed" = "Search failed";
-"pdf.search.one_match" = "Found 1 match";
-"pdf.search.multiple_matches" = "Found %d matches";
 "pdf.annotation_popover.title" = "Edit Annotation";
 "pdf.annotation_popover.delete" = "Delete Annotation";
 "pdf.annotation_popover.update_subsequent_pages" = "Update subsequent pages";
@@ -312,8 +298,6 @@
 "settings.stop_logging" = "Stop Logging";
 "settings.view_output" = "View Output";
 "settings.clear_output" = "Clear Output";
-"settings.lines_logged" = "%d lines logged";
-"settings.lines" = "%d lines";
 "settings.logging_desc1" = "To debug a startup issue, force-quit the app and start it again.";
 "settings.logging_desc2" = "To debug a share extension issue, open the share extension.";
 "settings.send_manually" = "Send Manually";
@@ -332,8 +316,6 @@
 "settings.websocket_disconnect" = "Disconnect from Server";
 "settings.websocket_connect" = "Connect to Server";
 "settings.storage" = "Local Storage";
-"settings.storage.one_file" = "1 file";
-"settings.storage.multiple_files" = "%d files";
 "settings.storage.delete_all" = "Delete All Local Attachment Files";
 "settings.storage.delete_all_question" = "Are you sure you want to delete all attachment files from this device?\n\nOther synced devices will not be affected.";
 "settings.storage.delete_library_question" = "Are you sure you want to delete all attachment files in %@ from this device?\n\nOther synced devices will not be affected.";
@@ -395,8 +377,6 @@
 "errors.sync.reset_group_files" = "Reset Group Files and Sync";
 "errors.sync.skip_group" = "Skip Group";
 "errors.sync_toolbar.finished_with_errors" = "Finished sync (%@)";
-"errors.sync_toolbar.one_error" = "1 issue";
-"errors.sync_toolbar.multiple_errors" = "%d issues";
 "errors.sync_toolbar.attachment_missing" = "Unable to upload attachment: %@. Please try removing and re-adding the attachment.";
 "errors.sync_toolbar.libraries_missing" = "No libraries found. Please sign out and back in again.";
 "errors.sync_toolbar.groups_failed" = "Could not sync groups. Please try again.";
@@ -409,7 +389,6 @@
 "errors.sync_toolbar.quota_reached_short" = "Quota Reached.";
 "errors.sync_toolbar.unavailable" = "Zotero services are temporarily unavailable. Please try again in a few minutes.";
 "errors.sync_toolbar.webdav_error" = "Could not delete files from your WebDAV server: \"%@\".";
-"errors.sync_toolbar.webdav_error2" = "Could not delete %d file(s) from your WebDAV server.";
 "errors.sync_toolbar.webdav_item_prop" = "Invalid prop file: %@";
 "errors.sync_toolbar.show_item" = "Show Item";
 "errors.sync_toolbar.show_items" = "Show Items";
