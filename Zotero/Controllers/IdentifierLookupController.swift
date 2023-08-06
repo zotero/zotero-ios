@@ -216,13 +216,22 @@ final class IdentifierLookupController {
     private func setupObservers() {
         remoteFileDownloader.observable
             .observe(on: backgroundScheduler)
-            .subscribe { update in
+            .subscribe { [weak self] update in
+                var cleanupLookupIfNeeded = false
                 switch update.kind {
                 case .ready(let attachment):
                     finish(download: update.download, attachment: attachment)
+                    cleanupLookupIfNeeded = true
+
+                case .cancelled, .failed:
+                    cleanupLookupIfNeeded = true
                     
-                case .cancelled, .failed, .progress:
+                case .progress:
                     break
+                }
+                guard cleanupLookupIfNeeded else { return }
+                self?.cleanupLookupIfNeeded(force: false) { [weak self] _ in
+                    self?.observable.on(.next(Update(kind: .finishedAllLookups, lookupData: [])))
                 }
             }
             .disposed(by: self.disposeBag)
