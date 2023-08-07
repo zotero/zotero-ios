@@ -287,8 +287,9 @@ extension AnnotationEditViewController: UITableViewDelegate {
             )
 
         case .fontSize:
-            self.coordinatorDelegate?.showFontSizePicker(picked: { [weak self] newSize in
+            self.coordinatorDelegate?.showFontSizePicker(picked: { [weak self, weak tableView] newSize in
                 self?.viewModel.process(action: .setFontSize(newSize))
+                tableView?.reloadRows(at: [indexPath], with: .none)
             })
         }
     }

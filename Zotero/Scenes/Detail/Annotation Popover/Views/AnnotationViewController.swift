@@ -313,8 +313,9 @@ final class AnnotationViewController: UIViewController {
                 lineView.value = annotation.fontSize ?? 0
                 lineView.tapObservable
                     .subscribe(with: self, onNext: { `self`, _ in
-                        self.coordinatorDelegate?.showFontSizePicker(picked: { [weak self] newSize in
+                        self.coordinatorDelegate?.showFontSizePicker(picked: { [weak self, weak lineView] newSize in
                             self?.viewModel.process(action: .setFontSize(key: annotation.key, size: newSize))
+                            lineView?.value = newSize
                         })
                     })
                     .disposed(by: self.disposeBag)

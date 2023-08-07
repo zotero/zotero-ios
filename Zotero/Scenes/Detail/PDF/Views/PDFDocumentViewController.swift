@@ -612,6 +612,23 @@ final class PDFDocumentViewController: UIViewController {
 }
 
 extension PDFDocumentViewController: PDFViewControllerDelegate {
+    func pdfViewController(_ pdfController: PDFViewController, shouldSelect annotations: [PSPDFKit.Annotation], on pageView: PDFPageView) -> [PSPDFKit.Annotation] {
+        guard let annotation = annotations.first,
+              annotation.type == .freeText,
+              let annotationView = pageView.visibleAnnotationViews.first(where: { $0.annotation == annotation }) as? CustomFreeTextAnnotationView
+        else { return annotations }
+
+        annotationView.delegate = self
+        annotationView.annotationKey = annotation.key.flatMap({ .init(key: $0, type: .database) })
+
+        if annotation.key != nil && self.presentedViewController == nil && pageView.selectedAnnotations.contains(annotation) {
+            // Focus only if Zotero annotation is selected, if annotation popup is dismissed and this annotation has been already selected
+            annotationView.beginEditing()
+        }
+
+        return annotations
+    }
+
     func pdfViewController(_ pdfController: PDFViewController, willBeginDisplaying pageView: PDFPageView, forPageAt pageIndex: Int) {
         if !searchResults.isEmpty {
             pdfController.searchHighlightViewManager.addHighlight(searchResults, animated: false)
@@ -633,20 +650,6 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
         appearance: EditMenuAppearance,
         suggestedMenu: UIMenu
     ) -> UIMenu {
-        if let annotation = annotations.first,
-           annotation.type == .freeText,
-           let annotationView = pageView.visibleAnnotationViews.first(where: { $0.annotation == annotation }) as? FreeTextAnnotationView {
-            if let annotationView = annotationView as? CustomFreeTextAnnotationView {
-                annotationView.delegate = self
-                annotationView.annotationKey = annotation.key.flatMap({ .init(key: $0, type: .database) })
-            }
-
-            // Free text annotation is being selected, check whether we should focus text view
-            guard annotation.key != nil, // don't focus new annotations, they are already focused
-                  self.presentedViewController == nil // don't focus if annotation popup is visible
-            else { return UIMenu(children: []) }
-            annotationView.beginEditing()
-        }
         return UIMenu(children: [])
     }
 
@@ -904,12 +907,26 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
 }
 
 extension PDFDocumentViewController: FreeTextInputDelegate {
-    func showColorPicker(sender: UIView, key: PDFReaderState.AnnotationKey) {
+    func showColorPicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping (String) -> Void) {
+        let color = self.viewModel.state.annotation(for: key)?.color
+        self.coordinatorDelegate?.showToolSettings(
+            tool: .freeText,
+            colorHex: color,
+            sizeValue: nil,
+            sender: .view(sender, nil),
+            userInterfaceStyle: self.overrideUserInterfaceStyle,
+            valueChanged: { newColor, _ in
+                guard let newColor else { return }
+                self.viewModel.process(action: .setColor(key: key.key, color: newColor))
+                updated(newColor)
+            }
+        )
     }
     
-    func showFontSizePicker(sender: UIView, key: PDFReaderState.AnnotationKey) {
+    func showFontSizePicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping (UInt) -> Void) {
         self.coordinatorDelegate?.showFontSizePicker(sender: sender, picked: { [weak self] size in
             self?.viewModel.process(action: .setFontSize(key: key.key, size: size))
+            updated(size)
         })
     }
     
@@ -919,6 +936,10 @@ extension PDFDocumentViewController: FreeTextInputDelegate {
     
     func getFontSize(for key: PDFReaderState.AnnotationKey) -> UInt? {
         return self.viewModel.state.annotation(for: key)?.fontSize
+    }
+
+    func getColor(for key: PDFReaderState.AnnotationKey) -> UIColor? {
+        return (self.viewModel.state.annotation(for: key)?.color).flatMap({ UIColor(hex: $0) })
     }
 }
 

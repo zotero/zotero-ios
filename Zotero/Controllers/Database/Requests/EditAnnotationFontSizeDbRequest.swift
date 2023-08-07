@@ -31,5 +31,7 @@ struct EditAnnotationFontSizeDbRequest: DbRequest {
         }
 
         field.value = "\(self.size)"
+        item.changeType = .user
+        item.changes.append(RObjectChange.create(changes: RItemChanges.fields))
     }
 }

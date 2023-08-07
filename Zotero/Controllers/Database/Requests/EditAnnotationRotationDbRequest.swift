@@ -31,5 +31,7 @@ struct EditAnnotationRotationDbRequest: DbRequest {
         }
 
         field.value = "\(self.rotation)"
+        item.changeType = .user
+        item.changes.append(RObjectChange.create(changes: RItemChanges.fields))
     }
 }

@@ -13,9 +13,10 @@ import PSPDFKitUI
 import RxSwift
 
 protocol FreeTextInputDelegate: AnyObject {
-    func showColorPicker(sender: UIView, key: PDFReaderState.AnnotationKey)
-    func showFontSizePicker(sender: UIView, key: PDFReaderState.AnnotationKey)
+    func showColorPicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping (String) -> Void)
+    func showFontSizePicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping (UInt) -> Void)
     func change(fontSize: UInt, for key: PDFReaderState.AnnotationKey)
+    func getColor(for key: PDFReaderState.AnnotationKey) -> UIColor?
     func getFontSize(for key: PDFReaderState.AnnotationKey) -> UInt?
 }
 
@@ -56,13 +57,33 @@ final class FreeTextInputAccessory: UIView {
             .observe(on: MainScheduler.instance)
             .subscribe(with: self, onNext: { [weak sizePicker] `self`, _ in
                 guard let sizePicker else { return }
-                self.delegate?.showFontSizePicker(sender: sizePicker, key: key)
+                self.delegate?.showFontSizePicker(sender: sizePicker, key: key, updated: { [weak sizePicker] size in
+                    guard let sizePicker else { return }
+                    sizePicker.value = size
+                })
             })
             .disposed(by: self.disposeBag)
 
-        let container = UIStackView(arrangedSubviews: [sizePicker])
+        let separator = UIView()
+        separator.backgroundColor = .opaqueSeparator
+
+        let colorButton = UIButton()
+        colorButton.tintColor = self.delegate?.getColor(for: key) ?? Asset.Colors.zoteroBlueWithDarkMode.color
+        colorButton.setImage(UIImage(systemName: "circle.fill", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
+        colorButton.rx.tap
+            .observe(on: MainScheduler.instance)
+            .subscribe(with: self, onNext: { [weak colorButton] `self`, _ in
+                guard let colorButton else { return }
+                self.delegate?.showColorPicker(sender: colorButton, key: key, updated: { [weak colorButton] color in
+                    guard let colorButton else { return }
+                    colorButton.tintColor = UIColor(hex: color)
+                })
+            })
+            .disposed(by: self.disposeBag)
+
+        let container = UIStackView(arrangedSubviews: [sizePicker, separator, colorButton])
         container.translatesAutoresizingMaskIntoConstraints = false
-        container.spacing = 8
+        container.spacing = 20
         container.alignment = .center
         self.addSubview(container)
 
@@ -72,7 +93,8 @@ final class FreeTextInputAccessory: UIView {
             container.centerXAnchor.constraint(equalTo: self.centerXAnchor),
             self.topAnchor.constraint(equalTo: container.topAnchor),
             self.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-            sizePicker.widthAnchor.constraint(equalToConstant: 200)
+            separator.widthAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale),
+            separator.heightAnchor.constraint(equalToConstant: 30)
         ])
     }
     
