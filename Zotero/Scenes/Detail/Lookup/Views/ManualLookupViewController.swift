@@ -155,6 +155,7 @@ class ManualLookupViewController: UIViewController {
         let cancelAllItem = UIBarButtonItem(title: L10n.cancelAll, style: .plain, target: nil, action: nil)
         cancelAllItem.rx.tap.subscribe(onNext: { [weak self] in
             self?.lookupController?.viewModel.process(action: .cancelAllLookups)
+            self?.close()
         }).disposed(by: self.disposeBag)
 
         navigationItem.leftBarButtonItems = [closeItem, fixedSpacer, cancelAllItem]
