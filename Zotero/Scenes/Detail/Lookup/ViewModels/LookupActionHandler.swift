@@ -71,9 +71,15 @@ final class LookupActionHandler: ViewModelActionHandler {
                             }
 
                         case .identifiersDetected(let identifiers):
-                            guard !identifiers.isEmpty else {
-                                self.update(viewModel: viewModel) { state in
-                                    state.lookupState = .failed(LookupState.Error.noIdentifiersDetected)
+                            if identifiers.isEmpty {
+                                if update.lookupData.isEmpty {
+                                    self.update(viewModel: viewModel) { state in
+                                        state.lookupState = .failed(LookupState.Error.noIdentifiersDetectedAndNoLookupData)
+                                    }
+                                } else {
+                                    self.update(viewModel: viewModel) { state in
+                                        state.lookupState = .failed(LookupState.Error.noIdentifiersDetectedWithLookupData)
+                                    }
                                 }
                                 return
                             }

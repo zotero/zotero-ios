@@ -99,11 +99,11 @@ class LookupViewController: UIViewController {
 
     private func update(state: LookupState) {
         switch state.lookupState {
-        case .failed:
+        case .failed(let error):
             self.tableView.isHidden = true
             self.activityIndicator.stopAnimating()
             self.activityIndicator.isHidden = true
-            self.errorLabel.text = L10n.Errors.lookup
+            self.errorLabel.text = error.localizedDescription
             self.errorLabel.isHidden = false
 
         case .waitingInput:

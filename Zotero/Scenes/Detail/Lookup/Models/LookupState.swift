@@ -19,8 +19,19 @@ struct LookupState: ViewModelState {
         case lookup([LookupData])
     }
 
-    enum Error: Swift.Error {
-        case noIdentifiersDetected
+    enum Error: Swift.Error, LocalizedError {
+        case noIdentifiersDetectedAndNoLookupData
+        case noIdentifiersDetectedWithLookupData
+        
+        var errorDescription: String? {
+            switch self {
+            case .noIdentifiersDetectedAndNoLookupData:
+                return L10n.Errors.Lookup.noIdentifiersAndNoLookupData
+                
+            case .noIdentifiersDetectedWithLookupData:
+                return L10n.Errors.Lookup.noIdentifiersWithLookupData
+            }
+        }
     }
 
     let collectionKeys: Set<String>
