@@ -35,6 +35,8 @@ protocol PdfReaderCoordinatorDelegate: AnyObject {
     func copyBibliography(using presenter: UIViewController, for itemId: String, libraryId: LibraryIdentifier)
     func showPdfExportSettings(sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, completed: @escaping (PDFExportSettings) -> Void)
     func showFontSizePicker(sender: UIView, picked: @escaping (UInt) -> Void)
+    func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void)
+    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void)
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: AnyObject {
@@ -350,7 +352,17 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
-    func showSettings(with settings: PDFSettings, sender: UIBarButtonItem) -> ViewModel<ReaderSettingsActionHandler> {
+    func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void) {
+        let controller = UIAlertController(title: nil, message: L10n.Pdf.deleteAnnotation, preferredStyle: .actionSheet)
+        controller.popoverPresentationController?.sourceView = sender
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
+        controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { _ in
+            delete()
+        }))
+        self.navigationController?.present(controller, animated: true, completion: nil)
+    }
+
+    func showSettings(with settings: PDFSettings, sender: UIBarButtonItem) -> ViewModel<ReaderSettingsActionHandler>
         DDLogInfo("PDFCoordinator: show settings")
 
         let state = ReaderSettingsState(settings: settings)

@@ -897,6 +897,8 @@ internal enum L10n {
     internal static let sync = L10n.tr("Localizable", "onboarding.sync", fallback: "<b>Synchronize and collaborate</b> across devices, keeping your reading and notes seamlessly up to date.")
   }
   internal enum Pdf {
+    /// Do you really want to delete annotation?
+    internal static let deleteAnnotation = L10n.tr("Localizable", "pdf.delete_annotation", fallback: "Do you really want to delete annotation?")
     /// This document has been deleted. Do you want to restore it?
     internal static let deletedMessage = L10n.tr("Localizable", "pdf.deleted_message", fallback: "This document has been deleted. Do you want to restore it?")
     /// Deleted

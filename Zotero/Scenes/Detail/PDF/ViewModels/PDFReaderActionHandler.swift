@@ -1450,9 +1450,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
         } else if hasChanges([.boundingBox, .rects]), let rects = AnnotationConverter.rects(from: annotation) {
             requests.append(EditAnnotationRectsDbRequest(key: key, libraryId: viewModel.state.library.identifier, rects: rects, boundingBoxConverter: boundingBoxConverter))
-        } else if hasChanges([.boundingBox]) {
+        } else if hasChanges([.boundingBox]), let rects = AnnotationConverter.rects(from: annotation) {
             // FreeTextAnnotation has only `boundingBox` change, not paired with paths or rects.
-            requests.append(EditAnnotationRectsDbRequest(key: key, libraryId: viewModel.state.library.identifier, rects: [annotation.boundingBox], boundingBoxConverter: boundingBoxConverter))
+            requests.append(EditAnnotationRectsDbRequest(key: key, libraryId: viewModel.state.library.identifier, rects: rects, boundingBoxConverter: boundingBoxConverter))
         }
 
         if let textAnnotation = annotation as? PSPDFKit.FreeTextAnnotation {

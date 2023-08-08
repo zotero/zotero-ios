@@ -158,6 +158,9 @@ struct AnnotationConverter {
         if let annotation = annotation as? PSPDFKit.SquareAnnotation {
             return self.rects(fromSquareAnnotation: annotation)
         }
+        if let annotation = annotation as? PSPDFKit.FreeTextAnnotation {
+            return self.rects(fromTextAnnotation: annotation)
+        }
         return nil
     }
 
@@ -174,7 +177,12 @@ struct AnnotationConverter {
     }
 
     private static func rects(fromTextAnnotation annotation: PSPDFKit.FreeTextAnnotation) -> [CGRect] {
-        return [annotation.boundingBox.rounded(to: 3)]
+        guard annotation.rotation > 0 else { return [annotation.boundingBox] }
+        let originalRotation = annotation.rotation
+        annotation.setRotation(0, updateBoundingBox: true)
+        let boundingBox = annotation.boundingBox.rounded(to: 3)
+        annotation.setRotation(originalRotation, updateBoundingBox: true)
+        return [boundingBox]
     }
 
     private static func createName(from displayName: String, username: String) -> String {
@@ -372,8 +380,8 @@ struct AnnotationConverter {
         let text = PSPDFKit.FreeTextAnnotation(contents: annotation.comment)
         text.color = color
         text.fontSize = CGFloat(annotation.fontSize ?? 0)
-        text.setRotation(annotation.rotation ?? 0, updateBoundingBox: false)
         text.setBoundingBox(annotation.boundingBox(boundingBoxConverter: boundingBoxConverter).rounded(to: 3), transformSize: true)
+        text.setRotation(annotation.rotation ?? 0, updateBoundingBox: true)
         return text
     }
 }

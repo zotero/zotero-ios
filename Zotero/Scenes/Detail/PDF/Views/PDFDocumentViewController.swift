@@ -38,6 +38,8 @@ final class PDFDocumentViewController: UIViewController {
 
     private static var toolHistory: [PSPDFKit.Annotation.Tool] = []
     private var selectionView: SelectionView?
+    // Used to decide whether text annotation should start editing on tap
+    private var selectedAnnotationWasSelectedBefore: Bool
     var scrubberBarHeight: CGFloat {
         return self.pdfController?.userInterfaceView.scrubberBar.frame.height ?? 0
     }
@@ -52,6 +54,7 @@ final class PDFDocumentViewController: UIViewController {
     init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool, initialUIHidden: Bool) {
         self.viewModel = viewModel
         self.initialUIHidden = initialUIHidden
+        self.selectedAnnotationWasSelectedBefore = false
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -322,6 +325,7 @@ final class PDFDocumentViewController: UIViewController {
     private func showPopupAnnotationIfNeeded(state: PDFReaderState) {
         guard !(self.parentDelegate?.isSidebarVisible ?? false),
               let annotation = state.selectedAnnotation,
+              annotation.type != .freeText,
               let pageView = self.pdfController?.pageViewForPage(at: UInt(annotation.page)) else { return }
 
         let key = annotation.readerKey
@@ -612,23 +616,6 @@ final class PDFDocumentViewController: UIViewController {
 }
 
 extension PDFDocumentViewController: PDFViewControllerDelegate {
-    func pdfViewController(_ pdfController: PDFViewController, shouldSelect annotations: [PSPDFKit.Annotation], on pageView: PDFPageView) -> [PSPDFKit.Annotation] {
-        guard let annotation = annotations.first,
-              annotation.type == .freeText,
-              let annotationView = pageView.visibleAnnotationViews.first(where: { $0.annotation == annotation }) as? CustomFreeTextAnnotationView
-        else { return annotations }
-
-        annotationView.delegate = self
-        annotationView.annotationKey = annotation.key.flatMap({ .init(key: $0, type: .database) })
-
-        if annotation.key != nil && self.presentedViewController == nil && pageView.selectedAnnotations.contains(annotation) {
-            // Focus only if Zotero annotation is selected, if annotation popup is dismissed and this annotation has been already selected
-            annotationView.beginEditing()
-        }
-
-        return annotations
-    }
-
     func pdfViewController(_ pdfController: PDFViewController, willBeginDisplaying pageView: PDFPageView, forPageAt pageIndex: Int) {
         if !searchResults.isEmpty {
             pdfController.searchHighlightViewManager.addHighlight(searchResults, animated: false)
@@ -643,6 +630,12 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
         return false
     }
 
+    func pdfViewController(_ pdfController: PDFViewController, shouldSelect annotations: [PSPDFKit.Annotation], on pageView: PDFPageView) -> [PSPDFKit.Annotation] {
+        guard let annotation = annotations.first, annotation.type == .freeText else { return annotations }
+        self.selectedAnnotationWasSelectedBefore = pageView.selectedAnnotations.contains(annotation)
+        return annotations
+    }
+
     func pdfViewController(
         _ sender: PDFViewController,
         menuForAnnotations annotations: [PSPDFKit.Annotation],
@@ -650,6 +643,21 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
         appearance: EditMenuAppearance,
         suggestedMenu: UIMenu
     ) -> UIMenu {
+        guard let annotation = annotations.first,
+              annotation.type == .freeText,
+              let annotationView = pageView.visibleAnnotationViews.first(where: { $0.annotation == annotation }) as? CustomFreeTextAnnotationView
+        else { return UIMenu(children: []) }
+
+        annotationView.delegate = self
+        annotationView.annotationKey = annotation.key.flatMap({ .init(key: $0, type: .database) })
+
+        if annotation.key != nil && self.selectedAnnotationWasSelectedBefore {
+            // Focus only if Zotero annotation is selected, if annotation popup is dismissed and this annotation has been already selected
+            annotationView.beginEditing()
+        }
+
+        self.selectedAnnotationWasSelectedBefore = false
+
         return UIMenu(children: [])
     }
 
@@ -929,7 +937,21 @@ extension PDFDocumentViewController: FreeTextInputDelegate {
             updated(size)
         })
     }
-    
+
+    func showTagPicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping ([Tag]) -> Void) {
+        let tags = Set((self.getTags(for: key) ?? []).compactMap({ $0.name }))
+        self.coordinatorDelegate?.showTagPicker(libraryId: self.viewModel.state.library.identifier, selected: tags, userInterfaceStyle: self.viewModel.state.interfaceStyle, picked: { tags in
+            self.viewModel.process(action: .setTags(key: key.key, tags: tags))
+            updated(tags)
+        })
+    }
+
+    func deleteAnnotation(sender: UIView, key: PDFReaderState.AnnotationKey) {
+        self.coordinatorDelegate?.showDeleteAlertForAnnotation(sender: sender, delete: {
+            self.viewModel.process(action: .removeAnnotation(key))
+        })
+    }
+
     func change(fontSize: UInt, for key: PDFReaderState.AnnotationKey) {
         self.viewModel.process(action: .setFontSize(key: key.key, size: fontSize))
     }
@@ -940,6 +962,10 @@ extension PDFDocumentViewController: FreeTextInputDelegate {
 
     func getColor(for key: PDFReaderState.AnnotationKey) -> UIColor? {
         return (self.viewModel.state.annotation(for: key)?.color).flatMap({ UIColor(hex: $0) })
+    }
+
+    func getTags(for key: PDFReaderState.AnnotationKey) -> [Tag]? {
+        return self.viewModel.state.annotation(for: key)?.tags
     }
 }
 

@@ -269,6 +269,7 @@
 "pdf.export.export_annotated" = "Export Annotated PDF";
 "pdf.sidebar.no_annotations" = "No Annotations";
 "pdf.sidebar.no_outline" = "No Outline";
+"pdf.delete_annotation" = "Do you really want to delete annotation?";
 
 "settings.title" = "Settings";
 "settings.logout" = "Sign Out";
