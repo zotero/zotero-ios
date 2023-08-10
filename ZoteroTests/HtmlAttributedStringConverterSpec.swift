@@ -166,6 +166,27 @@ final class HtmlAttributedStringConverterSpec: QuickSpec {
                 let string = htmlConverter.convert(attributedString: attributedString)
                 expect(string).to(equal(#"abc <b><i>def</i></b> ghi <span style="font-variant:small-caps;">jk<sup>l</sup></span> mno"#))
             }
+            
+            it("converts multiple tags complex") {
+                let attributedStringRaw = #"start_bold_italic_subscript bold bold_superscript bold bold_subscript bold bold\nitalic\nend"#
+                let htmlStringRaw = #"<b><i><sub>start_bold_italic_subscript</sub></i> bold <sup>bold_superscript</sup> bold <sub>bold_subscript</sub> bold <i>bold\nitalic\nend</i></b>"#
+                let attributesAndRanges: [([StringAttribute], NSRange)] = [
+                    ([.bold, .italic, .subscript], NSRange(location: 0, length: 27)),
+                    ([.bold], NSRange(location: 27, length: 6)),
+                    ([.bold, .superscript], NSRange(location: 33, length: 16)),
+                    ([.bold], NSRange(location: 49, length: 6)),
+                    ([.bold, .subscript], NSRange(location: 55, length: 14)),
+                    ([.bold], NSRange(location: 69, length: 6)),
+                    ([.bold, .italic], NSRange(location: 75, length: 17))
+                ]
+                let attributedString = NSMutableAttributedString(string: attributedStringRaw, attributes: [.font: font])
+                expect(attributedString.length).to(equal(attributedStringRaw.count))
+                for (attributes, range) in attributesAndRanges {
+                    attributedString.addAttributes(StringAttribute.nsStringAttributes(from: attributes, baseFont: font), range: range)
+                }
+                let string = htmlConverter.convert(attributedString: attributedString)
+                expect(string).to(equal(htmlStringRaw))
+            }
         }
     }
 }
