@@ -86,7 +86,15 @@ class AnnotationToolOptionsViewController: UIViewController {
             }
 
             if let size = viewModel.state.size {
-                let sizePicker = LineWidthView(title: L10n.size, settings: .lineWidth, contentInsets: UIEdgeInsets())
+                let settings: LineWidthView.Settings
+                switch self.viewModel.state.tool {
+                case .freeText:
+                    settings = .fontSize
+
+                default:
+                    settings = .lineWidth
+                }
+                let sizePicker = LineWidthView(title: L10n.size, settings: settings, contentInsets: UIEdgeInsets())
                 sizePicker.value = size
                 sizePicker.valueObservable
                     .subscribe(with: self, onNext: { `self`, value in
@@ -126,6 +134,8 @@ class AnnotationToolOptionsViewController: UIViewController {
                 case .note: return AnnotationsConfig.colors(for: .note)
                 case .highlight: return AnnotationsConfig.colors(for: .highlight)
                 case .image: return AnnotationsConfig.colors(for: .image)
+                case .freeText: return AnnotationsConfig.colors(for: .freeText)
+                case .underline: return AnnotationsConfig.colors(for: .underline)
                 default: return []
                 }
             }

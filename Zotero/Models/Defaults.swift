@@ -93,6 +93,9 @@ final class Defaults {
     @UserDefault(key: "PdfReaderEraserSize", defaultValue: 10)
     var activeEraserSize: Float
 
+    @UserDefault(key: "PdfReaderFontSize", defaultValue: 12)
+    var activeFontSize: Float
+
     @UserDefault(key: "PDFReaderState.highlightColor", defaultValue: AnnotationsConfig.defaultActiveColor)
     var highlightColorHex: String
 

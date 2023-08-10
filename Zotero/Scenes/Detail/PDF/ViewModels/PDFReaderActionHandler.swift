@@ -638,6 +638,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             case .ink:
                 Defaults.shared.activeLineWidth = Float(size)
+
+            case .freeText:
+                Defaults.shared.activeFontSize = Float(size)
+
             default: break
             }
         }
@@ -657,6 +661,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 case .eraser:
                     state.activeEraserSize = size
                     state.changes = .activeEraserSize
+
+                case .freeText:
+                    state.activeFontSize = size
+                    state.changes = .activeFontSize
+                    
                 default: break
                 }
             }
@@ -1737,7 +1746,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private func observeDocument(in viewModel: ViewModel<PDFReaderActionHandler>) {
         NotificationCenter.default.rx
             .notification(.PSPDFAnnotationChanged)
-            .observe(on: MainScheduler.instance)
+            // Debounce these notifications because FreeTextAnnotation rotation change spams these annotations in milliseconds and it looks bad in sidebar while it's also unnecessary cpu burden
+            .debounce(.milliseconds(100), scheduler: MainScheduler.instance)
             .subscribe(onNext: { [weak self, weak viewModel] notification in
                 guard let self, let viewModel else { return }
                 self.processAnnotationObserving(notification: notification, viewModel: viewModel)

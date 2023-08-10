@@ -42,7 +42,10 @@ extension PDFAnnotation {
         case .ink:
             return AnnotationPreviewBoundingBoxCalculator.inkPreviewRect(from: boundingBox)
 
-        case .note, .highlight, .underline, .freeText:
+        case .freeText:
+            return AnnotationPreviewBoundingBoxCalculator.freeTextPreviewRect(from: boundingBox, rotation: self.rotation ?? 0)
+
+        case .note, .highlight, .underline:
             return boundingBox.rounded(to: 3)
         }
     }

@@ -32,6 +32,12 @@ final class LineWidthView: UIView {
                 return ceil(value)
             })
         }
+
+        static var fontSize: Settings {
+            return LineWidthView.Settings(minValue: 1, maxValue: 300, stepFunction: { value in
+                return round(value)
+            })
+        }
     }
 
     private let contentInsets: UIEdgeInsets

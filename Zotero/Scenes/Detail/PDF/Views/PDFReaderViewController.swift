@@ -511,6 +511,9 @@ class PDFReaderViewController: UIViewController {
         case .eraser:
             size = Float(viewModel.state.activeEraserSize)
 
+        case .freeText:
+            size = Float(self.viewModel.state.activeFontSize)
+
         default:
             size = nil
         }

@@ -175,6 +175,9 @@ final class PDFDocumentViewController: UIViewController {
         case .eraser:
             stateManager.lineWidth = self.viewModel.state.activeEraserSize
 
+        case .freeText:
+            stateManager.fontSize = self.viewModel.state.activeFontSize
+
         default: break
         }
     }
@@ -244,11 +247,15 @@ final class PDFDocumentViewController: UIViewController {
         }
 
         if state.changes.contains(.activeLineWidth) {
-            self.set(lineWidth: state.activeLineWidth, in: pdfController.annotationStateManager)
+            pdfController.annotationStateManager.lineWidth = state.activeLineWidth
         }
 
         if state.changes.contains(.activeEraserSize) {
-            self.set(lineWidth: state.activeEraserSize, in: pdfController.annotationStateManager)
+            pdfController.annotationStateManager.lineWidth = state.activeEraserSize
+        }
+
+        if state.changes.contains(.activeFontSize) {
+            pdfController.annotationStateManager.fontSize = state.activeFontSize
         }
 
         if let notification = state.pdfNotification {
@@ -405,10 +412,6 @@ final class PDFDocumentViewController: UIViewController {
         if stateManager.state == tool {
             stateManager.drawColor = toolColor
         }
-    }
-
-    private func set(lineWidth: CGFloat, in stateManager: AnnotationStateManager) {
-        stateManager.lineWidth = lineWidth
     }
 
     func setInterface(hidden: Bool) {

@@ -49,6 +49,7 @@ struct PDFReaderState: ViewModelState {
         static let visiblePageFromDocument = Changes(rawValue: 1 << 12)
         static let visiblePageFromThumbnailList = Changes(rawValue: 1 << 13)
         static let selectionDeletion = Changes(rawValue: 1 << 14)
+        static let activeFontSize = Changes(rawValue: 1 << 15)
     }
 
     enum Error: Swift.Error {
@@ -100,6 +101,7 @@ struct PDFReaderState: ViewModelState {
     var changedColorForTool: PSPDFKit.Annotation.Tool?
     var activeLineWidth: CGFloat
     var activeEraserSize: CGFloat
+    var activeFontSize: CGFloat
 
     var deletionEnabled: Bool
     var mergingEnabled: Bool
@@ -163,6 +165,7 @@ struct PDFReaderState: ViewModelState {
         ]
         self.activeLineWidth = CGFloat(Defaults.shared.activeLineWidth)
         self.activeEraserSize = CGFloat(Defaults.shared.activeEraserSize)
+        self.activeFontSize = CGFloat(Defaults.shared.activeFontSize)
         self.deletionEnabled = false
         self.mergingEnabled = false
         self.shouldStoreAnnotationPreviewsIfNeeded = false

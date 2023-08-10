@@ -159,7 +159,7 @@ class AnnotationToolbarViewController: UIViewController {
                     type: .underline,
                     title: L10n.Pdf.AnnotationToolbar.underline,
                     accessibilityLabel: L10n.Accessibility.Pdf.underlineAnnotationTool,
-                    image: UIImage(systemName: "underline")!,
+                    image: UIImage(systemName: "underline", withConfiguration: UIImage.SymbolConfiguration(scale: .large))!,
                     isHidden: false
                 )
 
@@ -168,7 +168,7 @@ class AnnotationToolbarViewController: UIViewController {
                     type: .freeText,
                     title: L10n.Pdf.AnnotationToolbar.text,
                     accessibilityLabel: L10n.Accessibility.Pdf.textAnnotationTool,
-                    image: UIImage(systemName: "character")!,
+                    image: UIImage(systemName: "character", withConfiguration: UIImage.SymbolConfiguration(scale: .large))!,
                     isHidden: false
                 )
             }

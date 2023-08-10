@@ -62,9 +62,3 @@ extension PSPDFKit.InkAnnotation {
         return AnnotationPreviewBoundingBoxCalculator.inkPreviewRect(from: self.boundingBox)
     }
 }
-
-extension PSPDFKit.FreeTextAnnotation {
-    override var previewBoundingBox: CGRect {
-        return self.boundingBox
-    }
-}

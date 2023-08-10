@@ -38,4 +38,11 @@ struct AnnotationPreviewBoundingBoxCalculator {
     static func imagePreviewRect(from boundingBox: CGRect, lineWidth: CGFloat) -> CGRect {
         return boundingBox.insetBy(dx: (lineWidth + 1), dy: (lineWidth + 1)).rounded(to: 3)
     }
+
+    static func freeTextPreviewRect(from boundingBox: CGRect, rotation: UInt) -> CGRect {
+        let x = boundingBox.midX
+        let y = boundingBox.midY
+        let transform = CGAffineTransform(translationX: x, y: y).rotated(by: CGFloat(rotation) * .pi / 180).translatedBy(x: -x, y: -y)
+        return boundingBox.applying(transform)
+    }
 }
