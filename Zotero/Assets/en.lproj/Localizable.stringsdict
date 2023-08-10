@@ -32,7 +32,7 @@
             <key>one</key>
             <string>Are you sure you want to delete the selected item?</string>
             <key>other</key>
-            <string>Are you sure you want to delete selected items?</string>
+            <string>Are you sure you want to delete the selected items?</string>
         </dict>
     </dict>
     <key>items.remove_from_collection_question</key>
@@ -48,7 +48,7 @@
             <key>one</key>
             <string>Are you sure you want to remove the selected item from this collection?</string>
             <key>other</key>
-            <string>Are you sure you want to remove selected items from this collection?</string>
+            <string>Are you sure you want to remove the selected items from this collection?</string>
         </dict>
     </dict>
     <key>items.toolbar_filter</key>
@@ -190,9 +190,9 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>Could not delete 1 file from your WebDAV server.</string>
+            <string>Could not delete 1 file from your WebDAV server</string>
             <key>other</key>
-            <string>Could not delete %d files from your WebDAV server.</string>
+            <string>Could not delete %d files from your WebDAV server</string>
         </dict>
     </dict>
   </dict>
