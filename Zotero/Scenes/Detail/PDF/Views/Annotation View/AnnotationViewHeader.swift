@@ -82,7 +82,6 @@ final class AnnotationViewHeader: UIView {
         author: String,
         shareMenu: UIMenu?,
         showsMenuButton: Bool,
-        showsDoneButton: Bool,
         showsLock: Bool,
         accessibilityType: AnnotationView.AccessibilityType
     ) {
@@ -116,7 +115,6 @@ final class AnnotationViewHeader: UIView {
         shareMenuProvider: @escaping ((UIButton) -> UIMenu?),
         isEditable: Bool,
         showsLock: Bool,
-        showDoneButton: Bool,
         accessibilityType: AnnotationView.AccessibilityType,
         displayName: String,
         username: String
@@ -130,7 +128,6 @@ final class AnnotationViewHeader: UIView {
             author: author,
             shareMenu: shareMenuProvider(shareButton),
             showsMenuButton: isEditable,
-            showsDoneButton: showDoneButton,
             showsLock: showsLock,
             accessibilityType: accessibilityType
         )

@@ -101,7 +101,6 @@ final class AnnotationViewController: UIViewController {
             },
             isEditable: (editability == .editable),
             showsLock: (editability != .editable),
-            showDoneButton: false,
             accessibilityType: .view,
             displayName: state.displayName,
             username: state.username
@@ -191,7 +190,6 @@ final class AnnotationViewController: UIViewController {
             },
             isEditable: (editability == .editable),
             showsLock: (editability != .editable),
-            showDoneButton: false,
             accessibilityType: .view,
             displayName: self.viewModel.state.displayName,
             username: self.viewModel.state.username

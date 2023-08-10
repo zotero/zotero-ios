@@ -113,7 +113,6 @@ final class AnnotationView: UIView {
             },
             isEditable: (editability != .notEditable && selected),
             showsLock: editability != .editable,
-            showDoneButton: self.layout.showDoneButton,
             accessibilityType: .cell,
             displayName: displayName,
             username: username
