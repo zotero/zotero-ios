@@ -636,6 +636,7 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                 return action.replacing(handler: { [weak self] _ in
                     guard let self else { return }
                     self.viewModel.process(action: .createHighlight(pageIndex: pageView.pageIndex, rects: rects))
+                    pageView.selectionView.selectedGlyphs = nil
                 })
 
             default:
