@@ -54,7 +54,7 @@ final class HtmlAttributedStringConverter {
     }
 
     /// Finds which attributes are currently opened (don't have closing attribute before them) in given array.
-    /// - parameter attributesL Attributes array to check.
+    /// - parameter attributes: Attributes array to check.
     /// - returns: Array of opened attributes.
     private func openedAttributes(from attributes: [Attribute]) -> [StringAttribute] {
         let allCount = StringAttribute.allCases.count
@@ -68,7 +68,8 @@ final class HtmlAttributedStringConverter {
                 opened.append(attribute.type)
             }
 
-            if (opened.count + closed.count) == allCount {
+            let uniqueAttributes: Set<StringAttribute> = .init(opened).union(closed)
+            if uniqueAttributes.count == allCount {
                 break
             }
         }
