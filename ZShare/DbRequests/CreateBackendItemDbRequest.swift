@@ -24,7 +24,14 @@ struct CreateBackendItemDbRequest: DbResponseRequest {
             throw DbError.objectNotFound
         }
 
-        _ = try StoreItemsDbResponseRequest(responses: [self.item], schemaController: self.schemaController, dateParser: self.dateParser, preferResponseData: true).process(in: database)
+        _ = try StoreItemsDbResponseRequest(
+            responses: [self.item],
+            schemaController: self.schemaController,
+            dateParser: self.dateParser,
+            preferResponseData: true,
+            denyIncorrectCreator: false
+        )
+        .process(in: database)
 
         guard let item = database.objects(RItem.self).filter(.key(self.item.key, in: libraryId)).first else {
             throw DbError.objectNotFound

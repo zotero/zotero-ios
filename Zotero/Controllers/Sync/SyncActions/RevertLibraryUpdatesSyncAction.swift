@@ -61,7 +61,13 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
                     try coordinator.perform(writeRequests: [storeCollectionsRequest, storeSearchesRequest])
 
                     // Force response data here, since we're reverting
-                    let storeItemsRequest = StoreItemsDbResponseRequest(responses: items.responses, schemaController: self.schemaController, dateParser: self.dateParser, preferResponseData: true)
+                    let storeItemsRequest = StoreItemsDbResponseRequest(
+                        responses: items.responses,
+                        schemaController: self.schemaController,
+                        dateParser: self.dateParser,
+                        preferResponseData: true,
+                        denyIncorrectCreator: true
+                    )
                     changes = try coordinator.perform(request: storeItemsRequest).changedFilenames
 
                     failedCollections = collections.failed

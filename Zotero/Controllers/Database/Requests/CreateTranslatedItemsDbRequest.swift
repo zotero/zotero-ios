@@ -20,7 +20,14 @@ struct CreateTranslatedItemsDbRequest: DbRequest {
 
     func process(in database: Realm) throws {
         for response in self.responses {
-            let (item, _) = try StoreItemDbRequest(response: response, schemaController: self.schemaController, dateParser: self.dateParser, preferRemoteData: true).process(in: database)
+            let (item, _) = try StoreItemDbRequest(
+                response: response,
+                schemaController: self.schemaController,
+                dateParser: self.dateParser,
+                preferRemoteData: true,
+                denyIncorrectCreator: false
+            )
+            .process(in: database)
 
             item.changeType = .user
             for field in item.fields {
