@@ -64,7 +64,13 @@ struct RevertLibraryFilesSyncAction: SyncAction {
                     try coordinator.perform(request: DeleteObjectsDbRequest<RItem>(keys: failedKeys, libraryId: self.libraryId))
                     // Store cached objects from backend to local database to get rid of local changes.
                     DDLogError("RevertLibraryFilesSyncAction: restore cached objects")
-                    let request = StoreItemsDbResponseRequest(responses: cachedResponses, schemaController: self.schemaController, dateParser: self.dateParser, preferResponseData: true)
+                    let request = StoreItemsDbResponseRequest(
+                        responses: cachedResponses,
+                        schemaController: self.schemaController,
+                        dateParser: self.dateParser,
+                        preferResponseData: true,
+                        denyIncorrectCreator: true
+                    )
                     changedFilenames = try coordinator.perform(request: request).changedFilenames
                     coordinator.invalidate()
                 }

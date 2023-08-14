@@ -22,6 +22,8 @@ struct StoreItemsResponse {
     enum Error: Swift.Error {
         case itemDeleted(ItemResponse)
         case itemChanged(ItemResponse)
+        case noValidCreators(key: String, itemType: String)
+        case invalidCreator(key: String, creatorType: String)
     }
 
     let changedFilenames: [FilenameChange]
@@ -35,6 +37,7 @@ struct StoreItemsDbResponseRequest: DbResponseRequest {
     unowned let schemaController: SchemaController
     unowned let dateParser: DateParser
     let preferResponseData: Bool
+    let denyIncorrectCreator: Bool
 
     var needsWrite: Bool { return true }
 
@@ -44,7 +47,14 @@ struct StoreItemsDbResponseRequest: DbResponseRequest {
 
         for response in self.responses {
             do {
-                let (_, change) = try StoreItemDbRequest(response: response, schemaController: self.schemaController, dateParser: self.dateParser, preferRemoteData: self.preferResponseData).process(in: database)
+                let (_, change) = try StoreItemDbRequest(
+                    response: response,
+                    schemaController: self.schemaController,
+                    dateParser: self.dateParser,
+                    preferRemoteData: self.preferResponseData,
+                    denyIncorrectCreator: self.denyIncorrectCreator
+                )
+                .process(in: database)
                 if let change = change {
                     filenameChanges.append(change)
                 }
@@ -66,6 +76,7 @@ struct StoreItemDbRequest: DbResponseRequest {
     unowned let schemaController: SchemaController
     unowned let dateParser: DateParser
     let preferRemoteData: Bool
+    let denyIncorrectCreator: Bool
 
     var needsWrite: Bool { return true }
 
@@ -96,10 +107,26 @@ struct StoreItemDbRequest: DbResponseRequest {
             item.attachmentNeedsSync = false
         }
 
-        return StoreItemDbRequest.update(item: item, libraryId: libraryId, with: self.response, schemaController: self.schemaController, dateParser: self.dateParser, database: database)
+        return try StoreItemDbRequest.update(
+            item: item,
+            libraryId: libraryId,
+            with: self.response,
+            denyIncorrectCreator: self.denyIncorrectCreator,
+            schemaController: self.schemaController,
+            dateParser: self.dateParser,
+            database: database
+        )
     }
 
-    static func update(item: RItem, libraryId: LibraryIdentifier, with response: ItemResponse, schemaController: SchemaController, dateParser: DateParser, database: Realm) -> (RItem, StoreItemsResponse.FilenameChange?) {
+    static func update(
+        item: RItem,
+        libraryId: LibraryIdentifier,
+        with response: ItemResponse,
+        denyIncorrectCreator: Bool,
+        schemaController: SchemaController,
+        dateParser: DateParser,
+        database: Realm
+    ) throws -> (RItem, StoreItemsResponse.FilenameChange?) {
         item.key = response.key
         item.rawType = response.rawType
         item.localizedType = schemaController.localized(itemType: response.rawType) ?? ""
@@ -118,7 +145,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         self.syncParent(key: response.parentKey, libraryId: libraryId, item: item, database: database)
         self.syncCollections(keys: response.collectionKeys, libraryId: libraryId, item: item, database: database)
         self.sync(tags: response.tags, libraryId: libraryId, item: item, database: database)
-        self.sync(creators: response.creators, item: item, schemaController: schemaController, database: database)
+        try self.sync(creators: response.creators, item: item, denyIncorrectCreator: denyIncorrectCreator, schemaController: schemaController, database: database)
         self.sync(relations: response.relations, item: item, database: database)
         self.syncLinks(data: response, item: item, database: database)
         self.syncUsers(createdBy: response.createdBy, lastModifiedBy: response.lastModifiedBy, item: item, database: database)
@@ -406,12 +433,21 @@ struct StoreItemDbRequest: DbResponseRequest {
         }
     }
 
-    static func sync(creators: [CreatorResponse], item: RItem, schemaController: SchemaController, database: Realm) {
+    static func sync(creators: [CreatorResponse], item: RItem, denyIncorrectCreator: Bool, schemaController: SchemaController, database: Realm) throws {
+        switch item.rawType {
+        case ItemTypes.annotation, ItemTypes.attachment, ItemTypes.note:
+            // These item types don't support creators, so `validCreators` would always be empty.
+            return
+
+        default:
+            break
+        }
+
         database.delete(item.creators)
 
         guard let validCreators = schemaController.creators(for: item.rawType), !validCreators.isEmpty else {
             DDLogError("StoreItemsDbResponseRequest: can't find valid creators for item type \(item.rawType). Skipping creators.")
-            return
+            throw StoreItemsResponse.Error.noValidCreators(key: item.key, itemType: item.rawType)
         }
 
         for (idx, object) in creators.enumerated() {
@@ -423,6 +459,8 @@ struct StoreItemDbRequest: DbResponseRequest {
 
             if validCreators.contains(where: { $0.creatorType == object.creatorType }) {
                 creator.rawType = object.creatorType
+            } else if denyIncorrectCreator {
+                throw StoreItemsResponse.Error.invalidCreator(key: item.key, creatorType: object.creatorType)
             } else if let primaryCreator = validCreators.first(where: { $0.primary }) {
                 DDLogError("StoreItemsDbResponseRquest: creator type '\(object.creatorType)' isn't valid for \(item.rawType) - changing to primary creator")
                 creator.rawType = primaryCreator.creatorType

@@ -119,7 +119,7 @@ struct MarkItemAsSyncedAndUpdateDbRequest: DbRequest {
         guard let item = database.objects(RItem.self).filter(.key(self.response.key, in: self.libraryId)).first else { return }
 
         item.deleteChanges(uuids: self.changeUuids, database: database)
-        self.updateUnchangedData(of: item, with: self.response, database: database)
+        try self.updateUnchangedData(of: item, with: self.response, database: database)
 
         if let parent = item.parent {
             // This is to mitigate the issue in item detail screen (ItemDetailActionHandler.shouldReloadData) where observing of `children` doesn't report changes between `oldValue` and `newValue`.
@@ -127,11 +127,19 @@ struct MarkItemAsSyncedAndUpdateDbRequest: DbRequest {
         }
     }
 
-    private func updateUnchangedData(of item: RItem, with response: ItemResponse, database: Realm) {
+    private func updateUnchangedData(of item: RItem, with response: ItemResponse, database: Realm) throws {
         let localChanges = item.changedFields
         
         if localChanges.isEmpty {
-            _ = StoreItemDbRequest.update(item: item, libraryId: self.libraryId, with: response, schemaController: self.schemaController, dateParser: self.dateParser, database: database)
+            _ = try StoreItemDbRequest.update(
+                item: item,
+                libraryId: self.libraryId,
+                with: response,
+                denyIncorrectCreator: false,
+                schemaController: self.schemaController,
+                dateParser: self.dateParser,
+                database: database
+            )
             item.changeType = .syncResponse
             return
         }
@@ -168,7 +176,7 @@ struct MarkItemAsSyncedAndUpdateDbRequest: DbRequest {
         }
 
         if !localChanges.contains(.creators) {
-            StoreItemDbRequest.sync(creators: response.creators, item: item, schemaController: self.schemaController, database: database)
+            try StoreItemDbRequest.sync(creators: response.creators, item: item, denyIncorrectCreator: false, schemaController: self.schemaController, database: database)
         }
 
         if !localChanges.contains(.relations) {

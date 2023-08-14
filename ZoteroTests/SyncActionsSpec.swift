@@ -84,7 +84,8 @@ final class SyncActionsSpec: QuickSpec {
                             responses: [itemResponse],
                             schemaController: TestControllers.schemaController,
                             dateParser: TestControllers.dateParser,
-                            preferResponseData: true
+                            preferResponseData: true,
+                            denyIncorrectCreator: true
                         ),
                         on: .main
                     )
@@ -229,7 +230,8 @@ final class SyncActionsSpec: QuickSpec {
                             responses: [itemResponse],
                             schemaController: TestControllers.schemaController,
                             dateParser: TestControllers.dateParser,
-                            preferResponseData: true
+                            preferResponseData: true,
+                            denyIncorrectCreator: true
                         ),
                         on: .main
                     )
@@ -346,7 +348,8 @@ final class SyncActionsSpec: QuickSpec {
                             responses: [itemResponse],
                             schemaController: TestControllers.schemaController,
                             dateParser: TestControllers.dateParser,
-                            preferResponseData: true
+                            preferResponseData: true,
+                            denyIncorrectCreator: false
                         ),
                         on: .main
                     )
