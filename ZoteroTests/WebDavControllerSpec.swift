@@ -130,7 +130,7 @@ final class WebDavControllerSpec: QuickSpec {
                                 switch error {
                                 case .sessionTaskFailed(let error):
                                     let nsError = error as NSError
-                                    if nsError.code == NSURLErrorCannotConnectToHost {
+                                    if nsError.code == NSURLErrorCannotConnectToHost || nsError.code == NSURLErrorAppTransportSecurityRequiresSecureConnection {
                                         finished()
                                         return
                                     }

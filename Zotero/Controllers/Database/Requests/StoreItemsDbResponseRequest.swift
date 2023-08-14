@@ -434,6 +434,15 @@ struct StoreItemDbRequest: DbResponseRequest {
     }
 
     static func sync(creators: [CreatorResponse], item: RItem, denyIncorrectCreator: Bool, schemaController: SchemaController, database: Realm) throws {
+        switch item.rawType {
+        case ItemTypes.annotation, ItemTypes.attachment, ItemTypes.note:
+            // These item types don't support creators, so `validCreators` would always be empty.
+            return
+
+        default:
+            break
+        }
+
         database.delete(item.creators)
 
         guard let validCreators = schemaController.creators(for: item.rawType), !validCreators.isEmpty else {
