@@ -75,7 +75,7 @@ final class TranslatorsAndStylesController {
     weak var coordinator: TranslatorsControllerCoordinatorDelegate?
     private lazy var uuidExpression: NSRegularExpression? = {
         do {
-            return try NSRegularExpression(pattern: #"[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}"#)
+            return try NSRegularExpression(pattern: #"setTranslator\(['"](?<uuid>[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12})['"]\)"#)
         } catch let error {
             DDLogError("TranslatorsAndStylesController: can't create uuid expression - \(error)")
             return nil
@@ -688,7 +688,7 @@ final class TranslatorsAndStylesController {
         guard let uuidRegex = self.uuidExpression else { return [] }
 
         let matches = uuidRegex.matches(in: code, options: [], range: NSRange(code.startIndex..., in: code))
-        return Set(matches.compactMap({ $0.substring(at: 0, in: code).flatMap(String.init) }))
+        return Set(matches.compactMap({ $0.substring(withName: "uuid", in: code).flatMap(String.init) }))
     }
 
     /// Finds `endIndex` of metadata part in translator file (translator file consists of json metadata and code).
