@@ -601,51 +601,70 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
     }
 
     func pdfViewController(_ sender: PDFViewController, menuForText glyphs: GlyphSequence, onPageView pageView: PDFPageView, appearance: EditMenuAppearance, suggestedMenu: UIMenu) -> UIMenu {
-        return self.filterActions(forMenu: suggestedMenu) { menuId, action -> UIAction? in
-            switch menuId {
-            case .standardEdit, .PSPDFKit.accessibility:
-                return action
+        return self.filterActions(
+            forMenu: suggestedMenu,
+            predicate: { menuId, action -> UIAction? in
+                switch menuId {
+                case .standardEdit, .PSPDFKit.accessibility:
+                    return action
 
-            case .share:
-                guard action.identifier == .PSPDFKit.share else { return nil }
-                return action.replacing(handler: { [weak self] _ in
-                    guard let view = self?.pdfController?.view else { return }
-                    self?.coordinatorDelegate?.share(text: glyphs.text, rect: glyphs.boundingBox, view: view)
-                })
-
-            case .pspdfkitActions:
-                switch action.identifier {
-                case .PSPDFKit.define:
-                    return action.replacing(title: L10n.lookUp, handler: { [weak self] _ in
-                        guard let self, let view = self.pdfController?.view else { return }
-                        self.coordinatorDelegate?.lookup(text: glyphs.text, rect: glyphs.boundingBox, view: view, userInterfaceStyle: self.viewModel.state.interfaceStyle)
+                case .share:
+                    guard action.identifier == .PSPDFKit.share else { return nil }
+                    return action.replacing(handler: { [weak self] _ in
+                        guard let view = self?.pdfController?.view else { return }
+                        self?.coordinatorDelegate?.share(text: glyphs.text, rect: glyphs.boundingBox, view: view)
                     })
 
-                case .PSPDFKit.searchDocument:
-                    return action.replacing(handler: { [weak self] _ in
-                        guard let self, let pdfController = self.pdfController else { return }
-                        self.parentDelegate?.showSearch(pdfController: pdfController, text: glyphs.text)
+                case .pspdfkitActions:
+                    switch action.identifier {
+                    case .PSPDFKit.define:
+                        return action.replacing(title: L10n.lookUp, handler: { [weak self] _ in
+                            guard let self, let view = self.pdfController?.view else { return }
+                            self.coordinatorDelegate?.lookup(text: glyphs.text, rect: glyphs.boundingBox, view: view, userInterfaceStyle: self.viewModel.state.interfaceStyle)
+                        })
+
+                    case .PSPDFKit.searchDocument:
+                        return action.replacing(handler: { [weak self] _ in
+                            guard let self, let pdfController = self.pdfController else { return }
+                            self.parentDelegate?.showSearch(pdfController: pdfController, text: glyphs.text)
+                        })
+
+                    default:
+                        return action
+                    }
+
+                case .PSPDFKit.annotate:
+                    let rects = pageView.selectionView.selectionRects.map({ pageView.convert($0.cgRectValue, to: pageView.pdfCoordinateSpace) })
+                    return action.replacing(title: L10n.Pdf.highlight, handler: { [weak self] _ in
+                        guard let self else { return }
+                        self.viewModel.process(action: .createHighlight(pageIndex: pageView.pageIndex, rects: rects))
+                        pageView.selectionView.selectedGlyphs = nil
                     })
 
                 default:
                     return action
                 }
+            },
+            populatingEmptyMenu: { menu -> [UIAction]? in
+                switch menu.identifier {
+                case .PSPDFKit.annotate:
+                    let rects = pageView.selectionView.selectionRects.map({ pageView.convert($0.cgRectValue, to: pageView.pdfCoordinateSpace) })
+                    return [
+                        UIAction(title: L10n.Pdf.highlight, handler: { [weak self] _ in
+                            guard let self else { return }
+                            self.viewModel.process(action: .createHighlight(pageIndex: pageView.pageIndex, rects: rects))
+                            pageView.selectionView.selectedGlyphs = nil
+                        })
+                    ]
 
-            case .PSPDFKit.annotate:
-                let rects = pageView.selectionView.selectionRects.map({ pageView.convert($0.cgRectValue, to: pageView.pdfCoordinateSpace) })
-                return action.replacing(handler: { [weak self] _ in
-                    guard let self else { return }
-                    self.viewModel.process(action: .createHighlight(pageIndex: pageView.pageIndex, rects: rects))
-                    pageView.selectionView.selectedGlyphs = nil
-                })
-
-            default:
-                return action
+                default:
+                    return nil
+                }
             }
-        }
+        )
     }
 
-    private func filterActions(forMenu menu: UIMenu, predicate: (UIMenu.Identifier, UIAction) -> UIAction?) -> UIMenu {
+    private func filterActions(forMenu menu: UIMenu, predicate: (UIMenu.Identifier, UIAction) -> UIAction?, populatingEmptyMenu: (UIMenu) -> [UIAction]?) -> UIMenu {
         return menu.replacingChildren(menu.children.compactMap { element in
             if let action = element as? UIAction {
                 if let action = predicate(menu.identifier, action) {
@@ -654,8 +673,12 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                     return nil
                 }
             } else if let menu = element as? UIMenu {
-                // Filter children of submenus recursively.
-                return self.filterActions(forMenu: menu, predicate: predicate)
+                if menu.children.isEmpty {
+                    return populatingEmptyMenu(menu).flatMap({ menu.replacingChildren($0) }) ?? menu
+                } else {
+                    // Filter children of submenus recursively.
+                    return self.filterActions(forMenu: menu, predicate: predicate, populatingEmptyMenu: populatingEmptyMenu)
+                }
             } else {
                 return element
             }
@@ -817,9 +840,9 @@ extension UIAction {
     fileprivate func replacing(title: String? = nil, handler: @escaping UIActionHandler) -> UIAction {
         if #available(iOS 15.0, *) {
             return UIAction(
-                title: self.title,
+                title: title ?? self.title,
                 subtitle: self.subtitle,
-                image: self.image,
+                image: title != nil ? nil : self.image,
                 identifier: self.identifier,
                 discoverabilityTitle: self.discoverabilityTitle,
                 attributes: self.attributes,
@@ -828,8 +851,8 @@ extension UIAction {
             )
         } else {
             return UIAction(
-                title: self.title,
-                image: self.image,
+                title: title ?? self.title,
+                image: title != nil ? nil : self.image,
                 identifier: self.identifier,
                 discoverabilityTitle: self.discoverabilityTitle,
                 attributes: self.attributes,
