@@ -22,6 +22,8 @@ protocol ItemsTableViewHandlerDelegate: AnyObject {
 final class ItemsTableViewHandler: NSObject {
     enum TapAction {
         case metadata(RItem)
+        case note(RItem)
+        case attachment(attachment: Attachment, parentKey: String?)
         case doi(String)
         case url(URL)
     }
@@ -358,14 +360,20 @@ extension ItemsTableViewHandler: UITableViewDelegate {
         tableView.deselectRow(at: indexPath, animated: true)
 
         guard let accessory = self.viewModel.state.itemAccessories[item.key] else {
-            self.tapObserver.on(.next(.metadata(item)))
+            switch item.rawType {
+            case ItemTypes.note:
+                self.tapObserver.on(.next(.note(item)))
+
+            default:
+                break
+            }
             return
         }
 
         switch accessory {
         case .attachment(let attachment):
             let parentKey = item.key == attachment.key ? nil : item.key
-            self.viewModel.process(action: .openAttachment(attachment: attachment, parentKey: parentKey))
+            self.tapObserver.on(.next(.attachment(attachment: attachment, parentKey: parentKey)))
 
         case .doi(let doi):
             self.tapObserver.on(.next(.doi(doi)))
@@ -377,7 +385,14 @@ extension ItemsTableViewHandler: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, accessoryButtonTappedForRowWith indexPath: IndexPath) {
         guard let item = self.snapshot?[indexPath.row] else { return }
-        self.tapObserver.on(.next(.metadata(item)))
+
+        switch item.rawType {
+        case ItemTypes.note:
+            self.tapObserver.on(.next(.note(item)))
+
+        default:
+            self.tapObserver.on(.next(.metadata(item)))
+        }
     }
 
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
