@@ -192,9 +192,9 @@ final class DetailCoordinator: Coordinator {
                 DDLogInfo("DetailCoordinator: show PDF \(attachment.key)")
                 self.showPdf(at: url, key: attachment.key, library: library)
 
-            case "text/html":
-                DDLogInfo("DetailCoordinator: show HTML \(attachment.key)")
-                self.showWebView(for: url)
+            case "text/html", "application/epub+zip":
+                DDLogInfo("DetailCoordinator: show HTML / EPUB \(attachment.key)")
+                self.showHtmlEpubReader(for: url)
 
             case "text/plain":
                 let text = try? String(contentsOf: url, encoding: .utf8)
@@ -298,7 +298,15 @@ final class DetailCoordinator: Coordinator {
         let controller = createPDFController(key: key, library: library, url: url)
         navigationController?.present(controller, animated: true, completion: nil)
     }
-    
+
+    private func showHtmlEpubReader(for url: URL) {
+        guard let currentNavigationController = self.navigationController else { return }
+        let controller = HtmlEpubReaderViewController(url: url)
+        let navigationController = UINavigationController(rootViewController: controller)
+        navigationController.modalPresentationStyle = .fullScreen
+        currentNavigationController.present(navigationController, animated: true, completion: nil)
+    }
+
     private func showWebView(for url: URL) {
         guard let currentNavigationController = self.navigationController else { return }
         let controller = WebViewController(url: url)
