@@ -74,12 +74,14 @@ final class ItemsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.tableViewHandler = ItemsTableViewHandler(tableView: self.tableView,
-                                                      viewModel: self.viewModel,
-                                                      delegate: self,
-                                                      dragDropController: self.controllers.dragDropController,
-                                                      fileDownloader: self.controllers.userControllers?.fileDownloader,
-                                                      schemaController: self.controllers.schemaController)
+        self.tableViewHandler = ItemsTableViewHandler(
+            tableView: self.tableView,
+            viewModel: self.viewModel,
+            delegate: self,
+            dragDropController: self.controllers.dragDropController,
+            fileDownloader: self.controllers.userControllers?.fileDownloader,
+            schemaController: self.controllers.schemaController
+        )
         self.toolbarController = ItemsToolbarController(viewController: self, initialState: self.viewModel.state, delegate: self)
         self.navigationController?.toolbar.barTintColor = UIColor(dynamicProvider: { traitCollection in
             return traitCollection.userInterfaceStyle == .dark ? .black : .white
@@ -102,29 +104,22 @@ final class ItemsViewController: UIViewController {
             self.startObserving(results: results)
         }
 
-        self.tableViewHandler.tapObserver
-                             .observe(on: MainScheduler.instance)
-                             .subscribe(with: self, onNext: { `self`, action in
-                                switch action {
-                                case .metadata(let item):
-                                    self.showItemDetail(for: item)
-                                    self.resetActiveSearch()
+        self.tableViewHandler
+            .tapObserver
+            .observe(on: MainScheduler.instance)
+            .subscribe(with: self, onNext: { `self`, action in
+                self.resetActiveSearch()
+                self.handle(action: action)
+            })
+            .disposed(by: self.disposeBag)
 
-                                case .doi(let doi):
-                                    self.coordinatorDelegate?.show(doi: doi)
-
-                                case .url(let url):
-                                    self.coordinatorDelegate?.show(url: url)
-                                }
-                             })
-                             .disposed(by: self.disposeBag)
-
-        self.viewModel.stateObservable
-                      .observe(on: MainScheduler.instance)
-                      .subscribe(with: self, onNext: { `self`, state in
-                          self.update(state: state)
-                      })
-                      .disposed(by: self.disposeBag)
+        self.viewModel
+            .stateObservable
+            .observe(on: MainScheduler.instance)
+            .subscribe(with: self, onNext: { `self`, state in
+                self.update(state: state)
+            })
+            .disposed(by: self.disposeBag)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -215,7 +210,12 @@ final class ItemsViewController: UIViewController {
         }
 
         if let key = state.itemKeyToDuplicate {
-            self.coordinatorDelegate?.showItemDetail(for: .duplication(itemKey: key, collectionKey: self.viewModel.state.collection.identifier.key), library: self.viewModel.state.library, scrolledToKey: nil, animated: true)
+            self.coordinatorDelegate?.showItemDetail(
+                for: .duplication(itemKey: key, collectionKey: self.viewModel.state.collection.identifier.key),
+                library: self.viewModel.state.library,
+                scrolledToKey: nil,
+                animated: true
+            )
         }
 
         if state.processingBibliography {
@@ -254,6 +254,38 @@ final class ItemsViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    private func handle(action: ItemsTableViewHandler.TapAction) {
+        switch action {
+        case .metadata(let item):
+            self.coordinatorDelegate?.showItemDetail(for: .preview(key: item.key), library: self.viewModel.state.library, scrolledToKey: nil, animated: true)
+
+        case .attachment(let attachment, let parentKey):
+            self.viewModel.process(action: .openAttachment(attachment: attachment, parentKey: parentKey))
+
+        case .doi(let doi):
+            self.coordinatorDelegate?.show(doi: doi)
+
+        case .url(let url):
+            self.coordinatorDelegate?.show(url: url)
+
+        case .note(let item):
+            guard let note = Note(item: item) else { return }
+            let tags = Array(item.tags.map({ Tag(tag: $0) }))
+            let library = self.viewModel.state.library
+            self.coordinatorDelegate?.showNote(
+                with: note.text,
+                tags: tags,
+                title: nil,
+                key: note.key,
+                libraryId: library.identifier,
+                readOnly: !library.metadataEditable,
+                save: { [weak self] newText, newTags in
+                    self?.viewModel.process(action: .saveNote(note.key, newText, newTags))
+                }
+            )
+        }
+    }
 
     private func updateTagFilter(with state: ItemsState) {
         self.tagFilterDelegate?.itemsDidChange(filters: state.filters, collectionId: state.collection.identifier, libraryId: state.library.identifier)
@@ -328,7 +360,12 @@ final class ItemsViewController: UIViewController {
             default: break
             }
 
-            self.coordinatorDelegate?.showItemDetail(for: .creation(type: ItemTypes.document, child: attachment, collectionKey: collectionKey), library: self.viewModel.state.library, scrolledToKey: nil, animated: true)
+            self.coordinatorDelegate?.showItemDetail(
+                for: .creation(type: ItemTypes.document, child: attachment, collectionKey: collectionKey),
+                library: self.viewModel.state.library,
+                scrolledToKey: nil,
+                animated: true
+            )
 
         case .delete:
             guard !selectedKeys.isEmpty else { return }
@@ -408,29 +445,6 @@ final class ItemsViewController: UIViewController {
         }
     }
 
-    private func showItemDetail(for item: RItem) {
-        switch item.rawType {
-        case ItemTypes.note:
-            guard let note = Note(item: item) else { return }
-            let tags = Array(item.tags.map({ Tag(tag: $0) }))
-            let library = self.viewModel.state.library
-            self.coordinatorDelegate?.showNote(
-                with: note.text,
-                tags: tags,
-                title: nil,
-                key: note.key,
-                libraryId: library.identifier,
-                readOnly: !library.metadataEditable,
-                save: { [weak self] newText, newTags in
-                    self?.viewModel.process(action: .saveNote(note.key, newText, newTags))
-                }
-            )
-
-        default:
-            self.coordinatorDelegate?.showItemDetail(for: .preview(key: item.key), library: self.viewModel.state.library, scrolledToKey: nil, animated: true)
-        }
-    }
-
     private func startObserving(results: Results<RItem>) {
         self.resultsToken = results.observe(keyPaths: RItem.observableKeypathsForItemList, { [weak self] changes in
             guard let self = self else { return }
@@ -498,59 +512,57 @@ final class ItemsViewController: UIViewController {
 
     private func setupAppStateObserver() {
         NotificationCenter.default
-                          .rx
-                          .notification(.willEnterForeground)
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] _ in
-                              guard let self = self else { return }
-                              if self.searchBarNeedsReset {
-                                  self.resetSearchBar()
-                                  self.searchBarNeedsReset = false
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
+            .rx
+            .notification(.willEnterForeground)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] _ in
+                guard let self = self, self.searchBarNeedsReset else { return }
+                self.resetSearchBar()
+                self.searchBarNeedsReset = false
+            })
+            .disposed(by: self.disposeBag)
     }
 
     private func setupFileObservers() {
         NotificationCenter.default
-                          .rx
-                          .notification(.attachmentFileDeleted)
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
-                              if let notification = notification.object as? AttachmentFileDeletedNotification {
-                                  self?.viewModel.process(action: .updateAttachments(notification))
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
+            .rx
+            .notification(.attachmentFileDeleted)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] notification in
+                if let notification = notification.object as? AttachmentFileDeletedNotification {
+                    self?.viewModel.process(action: .updateAttachments(notification))
+                }
+            })
+            .disposed(by: self.disposeBag)
 
         guard let downloader = self.controllers.userControllers?.fileDownloader else { return }
 
         downloader.observable
-                  .observe(on: MainScheduler.instance)
-                  .subscribe(with: self, onNext: { [weak downloader] `self`, update in
-                      if let downloader = downloader {
-                          let (progress, remainingCount, totalCount) = downloader.batchData
-                          let batchData = progress.flatMap({ ItemsState.DownloadBatchData(progress: $0, remaining: remainingCount, total: totalCount) })
-                          self.viewModel.process(action: .updateDownload(update: update, batchData: batchData))
-                      }
+            .observe(on: MainScheduler.instance)
+            .subscribe(with: self, onNext: { [weak downloader] `self`, update in
+                if let downloader = downloader {
+                    let (progress, remainingCount, totalCount) = downloader.batchData
+                    let batchData = progress.flatMap({ ItemsState.DownloadBatchData(progress: $0, remaining: remainingCount, total: totalCount) })
+                    self.viewModel.process(action: .updateDownload(update: update, batchData: batchData))
+                }
 
-                      if case .progress = update.kind { return }
+                if case .progress = update.kind { return }
 
-                      guard self.viewModel.state.attachmentToOpen == update.key else { return }
+                guard self.viewModel.state.attachmentToOpen == update.key else { return }
 
-                      self.viewModel.process(action: .attachmentOpened(update.key))
+                self.viewModel.process(action: .attachmentOpened(update.key))
 
-                      switch update.kind {
-                      case .ready:
-                          self.coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
+                switch update.kind {
+                case .ready:
+                    self.coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
 
-                      case .failed(let error):
-                          self.coordinatorDelegate?.showAttachmentError(error)
+                case .failed(let error):
+                    self.coordinatorDelegate?.showAttachmentError(error)
 
-                      default: break
-                      }
-                  })
-                  .disposed(by: self.disposeBag)
+                default: break
+                }
+            })
+            .disposed(by: self.disposeBag)
     }
 
     private func setupTitle() {
@@ -559,7 +571,9 @@ final class ItemsViewController: UIViewController {
     }
 
     private func updateEmptyTrashButton(toEnabled enabled: Bool) {
-        guard self.viewModel.state.collection.identifier.isTrash, let item = self.navigationItem.rightBarButtonItems?.first(where: { button in RightBarButtonItem(rawValue: button.tag) == .emptyTrash }) else { return }
+        guard self.viewModel.state.collection.identifier.isTrash,
+              let item = self.navigationItem.rightBarButtonItems?.first(where: { button in RightBarButtonItem(rawValue: button.tag) == .emptyTrash })
+        else { return }
         item.isEnabled = enabled
     }
 
@@ -708,13 +722,14 @@ final class ItemsViewController: UIViewController {
     /// - parameter searchBar: `searchBar` to setup and observe.
     private func setup(searchBar: UISearchBar) {
         searchBar.placeholder = L10n.Items.searchTitle
-        searchBar.rx.text.observe(on: MainScheduler.instance)
-                         .skip(1)
-                         .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
-                         .subscribe(onNext: { [weak self] text in
-                             self?.viewModel.process(action: .search(text ?? ""))
-                         })
-                         .disposed(by: self.disposeBag)
+        searchBar.rx
+            .text.observe(on: MainScheduler.instance)
+            .skip(1)
+            .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] text in
+                self?.viewModel.process(action: .search(text ?? ""))
+            })
+            .disposed(by: self.disposeBag)
     }
 
     /// Removes `searchBar` from all positions.
@@ -739,12 +754,12 @@ final class ItemsViewController: UIViewController {
     private func setupSyncObserving() {
         guard let scheduler = self.controllers.userControllers?.syncScheduler else { return }
         scheduler.syncController
-                 .progressObservable
-                 .observe(on: MainScheduler.instance)
-                 .subscribe(onNext: { [weak self] progress in
-                     self?.update(progress: progress)
-                 })
-                 .disposed(by: self.disposeBag)
+            .progressObservable
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] progress in
+                self?.update(progress: progress)
+            })
+            .disposed(by: self.disposeBag)
     }
 
     private func setupOverlay() {
