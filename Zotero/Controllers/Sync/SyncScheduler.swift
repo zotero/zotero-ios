@@ -95,8 +95,7 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
                       if let sync = sync {
                           // We're retrying, enqueue the new sync
                           self.enqueueAndStart(sync: sync)
-                      } else if !self.syncQueue.isEmpty {
-                          // We're not retrying, process next action
+                      } else {
                           self.startNextSync()
                       }
                   })
