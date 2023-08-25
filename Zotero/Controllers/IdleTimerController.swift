@@ -19,6 +19,7 @@ final class IdleTimerController {
             guard let self = self else { return }
             self.activeProcesses += 1
             UIApplication.shared.isIdleTimerDisabled = true
+            DDLogInfo("IdleTimerController: disable idle timer \(self.activeProcesses)")
         }
     }
 
@@ -31,6 +32,8 @@ final class IdleTimerController {
             }
 
             self.activeProcesses -= 1
+
+            DDLogInfo("IdleTimerController: enable idle timer \(self.activeProcesses)")
 
             guard self.activeProcesses == 0 else { return }
             UIApplication.shared.isIdleTimerDisabled = false
