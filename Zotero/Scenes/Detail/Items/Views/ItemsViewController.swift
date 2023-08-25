@@ -269,6 +269,9 @@ final class ItemsViewController: UIViewController {
         case .url(let url):
             self.coordinatorDelegate?.show(url: url)
 
+        case .selectItem(let key):
+            self.viewModel.process(action: .selectItem(key))
+
         case .note(let item):
             guard let note = Note(item: item) else { return }
             let tags = Array(item.tags.map({ Tag(tag: $0) }))
