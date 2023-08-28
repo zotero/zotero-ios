@@ -26,6 +26,7 @@ final class ItemsTableViewHandler: NSObject {
         case attachment(attachment: Attachment, parentKey: String?)
         case doi(String)
         case url(URL)
+        case selectItem(String)
     }
 
     private static let cellId = "ItemCell"
@@ -248,6 +249,36 @@ final class ItemsTableViewHandler: NSObject {
         })
     }
 
+    private func tapAction(for indexPath: IndexPath) -> TapAction? {
+        guard let item = self.snapshot?[indexPath.row] else { return nil }
+
+        if self.viewModel.state.isEditing {
+            return .selectItem(item.key)
+        }
+
+        guard let accessory = self.viewModel.state.itemAccessories[item.key] else {
+            switch item.rawType {
+            case ItemTypes.note:
+                return .note(item)
+
+            default:
+                return .metadata(item)
+            }
+        }
+
+        switch accessory {
+        case .attachment(let attachment):
+            let parentKey = item.key == attachment.key ? nil : item.key
+            return .attachment(attachment: attachment, parentKey: parentKey)
+
+        case .doi(let doi):
+            return .doi(doi)
+
+        case .url(let url):
+            return .url(url)
+        }
+    }
+
     // MARK: - Setups
 
     private func setupTableView() {
@@ -350,37 +381,17 @@ extension ItemsTableViewHandler: UITableViewDataSource {
 
 extension ItemsTableViewHandler: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        guard let item = self.snapshot?[indexPath.row] else { return }
+        guard let action = self.tapAction(for: indexPath) else { return }
 
-        if self.viewModel.state.isEditing {
-            self.viewModel.process(action: .selectItem(item.key))
-            return
+        switch action {
+        case .attachment, .doi, .metadata, .note, .url:
+            tableView.deselectRow(at: indexPath, animated: true)
+
+        case .selectItem:
+            break
         }
 
-        tableView.deselectRow(at: indexPath, animated: true)
-
-        guard let accessory = self.viewModel.state.itemAccessories[item.key] else {
-            switch item.rawType {
-            case ItemTypes.note:
-                self.tapObserver.on(.next(.note(item)))
-
-            default:
-                break
-            }
-            return
-        }
-
-        switch accessory {
-        case .attachment(let attachment):
-            let parentKey = item.key == attachment.key ? nil : item.key
-            self.tapObserver.on(.next(.attachment(attachment: attachment, parentKey: parentKey)))
-
-        case .doi(let doi):
-            self.tapObserver.on(.next(.doi(doi)))
-
-        case .url(let url):
-            self.tapObserver.on(.next(.url(url)))
-        }
+        self.tapObserver.on(.next(action))
     }
 
     func tableView(_ tableView: UITableView, accessoryButtonTappedForRowWith indexPath: IndexPath) {
