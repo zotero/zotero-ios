@@ -262,7 +262,7 @@ final class ItemsTableViewHandler: NSObject {
                 return .note(item)
 
             default:
-                return nil
+                return .metadata(item)
             }
         }
 
@@ -373,7 +373,6 @@ extension ItemsTableViewHandler: UITableViewDataSource {
                 return true
             })
             cell.accessibilityCustomActions = [openInfoAction]
-            cell.selectionStyle = self.tapAction(for: indexPath) != nil ? .default : .none
         }
 
         return cell
