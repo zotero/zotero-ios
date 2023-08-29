@@ -16,4 +16,10 @@ branch: $CI_BRANCH
 commit: $(git log -n 1 --pretty=format:"%h")
 message: $(git log -n 1 --pretty=format:"%s")
 EOF
+
+  # Push version-build tag to origin
+  VERSION=$(cat ../${CI_PRODUCT}.xcodeproj/project.pbxproj | grep -m1 'MARKETING_VERSION' | cut -d'=' -f2 | tr -d ';' | tr -d ' ')
+  TAG="${VERSION}-${CI_BUILD_NUMBER}"
+  git tag -a ${TAG} -m "$TAG"
+  git push $github_pat_repo_url $TAG
 fi
