@@ -24,11 +24,62 @@ versionString=$(echo "$response" | jq -r '.data[0].attributes.versionString')
 if [[ "$versionString" == "null" ]]; then
     echo "Error: versionString is null"
     exit 1
+elif [[ ! "$versionString" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "Error: versionString is not in 'major.minor.patch' format"
+    exit 1
 fi
 
-# Increment version string
-newVersionString=$(awk -F. -v OFS=. '{$NF = $NF + 1; print}' <<< "$versionString")
+bump_version() {
+    local version="$1"
+    local part="$2"
+
+    # Split the version string into major, minor, and patch parts
+    IFS='.' read -r -a version_parts <<< "$version"
+
+    case "$part" in
+        "major")
+            ((version_parts[0]++))
+            version_parts[1]=0
+            version_parts[2]=0
+            ;;
+        "minor")
+            ((version_parts[1]++))
+            version_parts[2]=0
+            ;;
+        "patch")
+            ((version_parts[2]++))
+            ;;
+        *)
+            echo "Error: Invalid version part $part"
+            exit 1
+            ;;
+    esac
+
+    echo "${version_parts[0]}.${version_parts[1]}.${version_parts[2]}"
+}
+
+# Bump version string according to trigger tag
+case "$CI_TAG" in
+    "trigger-build-bump-patch")
+        newVersionString=$(bump_version "$versionString" "patch")
+        ;;
+    "trigger-build-bump-minor")
+        newVersionString=$(bump_version "$versionString" "minor")
+        ;;
+    "trigger-build-bump-major")
+        newVersionString=$(bump_version "$versionString" "major")
+        ;;
+    *)
+        echo "Error: Invalid CI_TAG value $CI_TAG"
+        exit 1
+        ;;
+esac
+
+# Cleanup trigger tag from origin
+echo "Removing trigger tag $CI_TAG from origin"
+git push $github_pat_repo_url --delete $CI_TAG
 
 # Update Info.plist files
+echo "Setting version to $newVersionString"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $newVersionString" ../Zotero/Info.plist
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $newVersionString" ../ZShare/Info.plist
