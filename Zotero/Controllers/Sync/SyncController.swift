@@ -1144,13 +1144,14 @@ final class SyncController: SynchronizationController {
             completion: { [weak self] result in
                 self?.accessQueue.async(flags: .barrier) {
                     self?.batchProcessor = nil
-                    self?.finishBatchesSyncAction(for: libraryId, object: object, result: result)
+                    let keys: [String] = batches.reduce([]) { $0 + $1.keys }
+                    self?.finishBatchesSyncAction(for: libraryId, object: object, result: result, keys: keys)
                 }
             })
         self.batchProcessor?.start()
     }
 
-    private func finishBatchesSyncAction(for libraryId: LibraryIdentifier, object: SyncObject, result: Swift.Result<SyncBatchResponse, Error>) {
+    private func finishBatchesSyncAction(for libraryId: LibraryIdentifier, object: SyncObject, result: Swift.Result<SyncBatchResponse, Error>, keys: [String]) {
         switch result {
         case .success((let failedKeys, let parseErrors, _))://let itemConflicts)):
             let nonFatalErrors = parseErrors.map({
@@ -1194,7 +1195,10 @@ final class SyncController: SynchronizationController {
                 self.abort(error: error)
 
             case .nonFatal(let error):
-                self.handleNonFatal(error: error, libraryId: libraryId, version: nil)
+                self.handleNonFatal(error: error, libraryId: libraryId, version: nil) { [weak self] in
+                    self?.markForResync(keys: keys, libraryId: libraryId, object: object)
+                    return false
+                }
             }
         }
     }
@@ -1647,6 +1651,7 @@ final class SyncController: SynchronizationController {
                 if failedBeforeReachingApi {
                     self.handleAllUploadsFailedBeforeReachingZoteroBackend(in: libraryId)
                 }
+                return true
             })
         }
     }
@@ -1704,6 +1709,7 @@ final class SyncController: SynchronizationController {
             if failedBeforeReachingApi {
                 self.handleAllUploadsFailedBeforeReachingZoteroBackend(in: libraryId)
             }
+            return true
         })
     }
 
@@ -2103,10 +2109,10 @@ final class SyncController: SynchronizationController {
     /// - parameter libraryId: Library identifier.
     /// - parameter version: Optional version number received from backend.
     /// - parameter additionalAction: Optional action taken before next action in queue is processed.
-    private func handleNonFatal(error: SyncError.NonFatal, libraryId: LibraryIdentifier, version: Int?, additionalAction: (() -> Void)? = nil) {
+    private func handleNonFatal(error: SyncError.NonFatal, libraryId: LibraryIdentifier, version: Int?, additionalAction: (() -> Bool)? = nil) {
         let appendAndContinue: () -> Void = {
             self.nonFatalErrors.append(error)
-            additionalAction?()
+            guard additionalAction?() ?? true else { return }
             self.processNextAction()
         }
 
@@ -2121,7 +2127,7 @@ final class SyncController: SynchronizationController {
             if let version = version {
                 self.handleUnchangedFailure(lastVersion: version, libraryId: libraryId, additionalAction: additionalAction)
             } else {
-                additionalAction?()
+                guard additionalAction?() ?? true else { return }
                 self.processNextAction()
             }
 
@@ -2137,7 +2143,7 @@ final class SyncController: SynchronizationController {
     /// - parameter libraryId: Library identifier which reached quota limit.
     /// - parameter error: NonFatal error that caused this
     /// - additiionalAction: Additional actions that should be applied to queue
-    private func removeRemainingUploads(for libraryId: LibraryIdentifier, andAppendError error: SyncError.NonFatal, additionalAction: (() -> Void)?) {
+    private func removeRemainingUploads(for libraryId: LibraryIdentifier, andAppendError error: SyncError.NonFatal, additionalAction: (() -> Bool)?) {
         DDLogInfo("Sync: received quota limit for \(libraryId)")
 
         self.queue.removeAll(where: { action in
@@ -2154,7 +2160,7 @@ final class SyncController: SynchronizationController {
             self.nonFatalErrors.append(error)
         }
 
-        additionalAction?()
+        guard additionalAction?() ?? true else { return }
 
         self.processNextAction()
     }
@@ -2166,13 +2172,16 @@ final class SyncController: SynchronizationController {
     /// - parameter version: Current version number which returned this error.
     /// - parameter libraryId: Identifier of current library, which is being synced.
     /// - returns: `true` if there was a unchanged error, `false` otherwise.
-    private func handleUnchangedFailure(lastVersion: Int, libraryId: LibraryIdentifier, additionalAction: (() -> Void)?) {
+    private func handleUnchangedFailure(lastVersion: Int, libraryId: LibraryIdentifier, additionalAction: (() -> Bool)?) {
         DDLogInfo("Sync: received unchanged error, store version: \(lastVersion)")
         self.lastReturnedVersion = lastVersion
 
         // If current sync type is `.full` we don't want to skip anything.
         guard self.type != .full else {
-            self.processNextAction()
+            let shouldProcessNext = additionalAction?() ?? true
+            if shouldProcessNext {
+                self.processNextAction()
+            }
             return
         }
 
@@ -2199,6 +2208,7 @@ final class SyncController: SynchronizationController {
 
         toDelete.reversed().forEach { self.queue.remove(at: $0) }
 
+        guard additionalAction?() ?? true else { return }
         self.processNextAction()
     }
 

@@ -764,7 +764,79 @@ final class SyncControllerSpec: QuickSpec {
                             syncController.start(type: .normal, libraries: .all, retryAttempt: 0)
                         }
                     }
-                    
+
+                    it("should mark object as outdated if API request returned 500 (or other non 400 response code and syncRetries should be increased)") {
+                        let header = ["last-modified-version": "3"]
+                        let libraryId = userLibraryId
+                        let objects = SyncObject.allCases
+                        let itemKey = "AAAAAAAA"
+
+                        try! realm.write {
+                            let item = RItem()
+                            item.key = itemKey
+                            item.syncState = .synced
+                            item.syncRetries = 0
+                            item.version = 2
+                            item.libraryId = .custom(.myLibrary)
+                            realm.add(item)
+                        }
+
+                        createStub(for: GroupVersionsRequest(userId: userId), baseUrl: baseUrl, headers: header, jsonResponse: [:] as [String: Any])
+                        objects.forEach { object in
+                            if object == .item {
+                                createStub(
+                                    for: VersionsRequest(libraryId: libraryId, userId: userId, objectType: object, version: 0),
+                                    baseUrl: baseUrl,
+                                    headers: header,
+                                    jsonResponse: [itemKey: 3]
+                                )
+                            } else {
+                                createStub(
+                                    for: VersionsRequest(libraryId: libraryId, userId: userId, objectType: object, version: 0),
+                                    baseUrl: baseUrl,
+                                    headers: header,
+                                    jsonResponse: [:] as [String: Any]
+                                )
+                            }
+                        }
+                        createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: Self.self).url(forResource: "test_keys", withExtension: "json")!)
+                        createStub(
+                            for: ObjectsRequest(libraryId: libraryId, userId: userId, objectType: .item, keys: "\(itemKey)"),
+                            baseUrl: baseUrl,
+                            headers: header,
+                            statusCode: 500,
+                            jsonResponse: [:] as [String: Any]
+                        )
+                        createStub(
+                            for: SettingsRequest(libraryId: libraryId, userId: userId, version: 0),
+                            baseUrl: baseUrl,
+                            headers: header,
+                            jsonResponse: ["tagColors": ["value": [] as [Any], "version": 2] as [String: Any]]
+                        )
+                        createStub(
+                            for: DeletionsRequest(libraryId: libraryId, userId: userId, version: 0),
+                            baseUrl: baseUrl,
+                            headers: header,
+                            jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
+                        )
+
+                        waitUntil(timeout: .seconds(10)) { doneAction in
+                            syncController.reportFinish = { _ in
+                                let realm = try! Realm(configuration: realmConfig)
+                                realm.refresh()
+
+                                let item = realm.objects(RItem.self).filter(.key(itemKey, in: .custom(.myLibrary))).first
+                                expect(item).toNot(beNil())
+                                expect(item?.syncState).to(equal(.outdated))
+                                expect(item?.syncRetries).to(equal(1))
+
+                                doneAction()
+                            }
+
+                            syncController.start(type: .normal, libraries: .all, retryAttempt: 0)
+                        }
+                    }
+
                     it("should mark object as needsSync if not parsed correctly and syncRetries should be increased") {
                         let header = ["last-modified-version": "3"]
                         let libraryId = userLibraryId
