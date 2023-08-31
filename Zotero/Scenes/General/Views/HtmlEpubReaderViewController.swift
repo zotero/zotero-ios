@@ -17,6 +17,7 @@ class HtmlEpubReaderViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private weak var webView: WKWebView!
+    private var webViewHandler: WebViewHandler!
 
     init(url: URL) {
         self.url = url
@@ -33,9 +34,39 @@ class HtmlEpubReaderViewController: UIViewController {
 
         self.setupNavigationBar()
         self.setupWebView()
+        self.load(url: self.url)
     }
 
     // MARK: - Actions
+
+    private func load(url: URL) {
+        guard let readerUrl = Bundle.main.url(forResource: "view", withExtension: "html", subdirectory: "Bundled/reader") else {
+            DDLogError("HtmlEpubReaderViewController: can't load reader view.html")
+            return
+        }
+        self.webViewHandler.load(fileUrl: readerUrl)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onSuccess: { _ in
+                loadData()
+            })
+            .disposed(by: self.disposeBag)
+
+        func loadData() {
+            do {
+                let data = try Data(contentsOf: url)
+                let jsArrayData = try JSONSerialization.data(withJSONObject: [UInt8](data))
+                guard let jsArrayString = String(data: jsArrayData, encoding: .utf8) else { return }
+                self.webViewHandler.call(javascript: #"window.createView({type: 'snapshot', data: {buf: "# + jsArrayString + #"}, annotations: []})"#)
+                    .observe(on: MainScheduler.instance)
+                    .subscribe(with: self, onFailure: { _, error in
+                        DDLogError("HtmlEpubReaderViewController: call failed - \(error)")
+                    })
+                    .disposed(by: self.disposeBag)
+            } catch let error {
+                DDLogError("HtmlEpubReaderViewController: could not load file - \(error)")
+            }
+        }
+    }
 
     private func close() {
         self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
@@ -55,13 +86,7 @@ class HtmlEpubReaderViewController: UIViewController {
             self.view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: webView.trailingAnchor)
         ])
         self.webView = webView
-
-        guard let url = Bundle.main.url(forResource: "view", withExtension: "html", subdirectory: "Bundled/reader") else {
-            DDLogError("HtmlEpubReaderViewController: can't load reader view.html")
-            return
-        }
-
-        webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
+        self.webViewHandler = WebViewHandler(webView: webView, javascriptHandlers: nil)
     }
 
     private func setupNavigationBar() {
