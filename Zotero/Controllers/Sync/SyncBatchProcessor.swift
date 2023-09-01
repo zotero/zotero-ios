@@ -34,8 +34,17 @@ final class SyncBatchProcessor {
 
     // MARK: - Lifecycle
 
-    init(batches: [DownloadBatch], userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, dateParser: DateParser,
-         progress: @escaping (Int) -> Void, completion: @escaping (Result<SyncBatchResponse, Error>) -> Void) {
+    init(
+        batches: [DownloadBatch],
+        userId: Int,
+        apiClient: ApiClient,
+        dbStorage: DbStorage,
+        fileStorage: FileStorage,
+        schemaController: SchemaController,
+        dateParser: DateParser,
+        progress: @escaping (Int) -> Void,
+        completion: @escaping (Result<SyncBatchResponse, Error>) -> Void
+    ) {
         let queue = OperationQueue()
         queue.maxConcurrentOperationCount = 4
         queue.qualityOfService = .userInteractive
@@ -68,7 +77,7 @@ final class SyncBatchProcessor {
         let operations = self.batches.map { batch -> ApiOperation in
             let keysString = batch.keys.map({ "\($0)" }).joined(separator: ",")
             let request = ObjectsRequest(libraryId: batch.libraryId, userId: self.userId, objectType: batch.object, keys: keysString)
-            return self.apiClient.operation(from: request, queue: self.storageQueue) { [weak self] result in
+            return ApiOperation(apiRequest: request, apiClient: self.apiClient, responseQueue: self.storageQueue) { [weak self] result in
                 self?.process(result: result, batch: batch)
             }
         }

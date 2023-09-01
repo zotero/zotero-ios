@@ -8,21 +8,21 @@
 
 import Foundation
 
-import Alamofire
+import RxSwift
 
 class ApiOperation: AsynchronousOperation {
     private let apiRequest: ApiRequest
-    private let queue: DispatchQueue
+    private let responseQueue: DispatchQueue
     private let completion: (Swift.Result<(Data?, HTTPURLResponse), Error>) -> Void
-    private unowned let requestCreator: ApiRequestCreator
+    private unowned let apiClient: ApiClient
 
-    private var request: DataRequest?
+    private var disposeBag: DisposeBag?
 
-    init(apiRequest: ApiRequest, requestCreator: ApiRequestCreator, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data?, HTTPURLResponse), Error>) -> Void) {
+    init(apiRequest: ApiRequest, apiClient: ApiClient, responseQueue: DispatchQueue, completion: @escaping (Swift.Result<(Data?, HTTPURLResponse), Error>) -> Void) {
         self.apiRequest = apiRequest
-        self.queue = queue
+        self.apiClient = apiClient
+        self.responseQueue = responseQueue
         self.completion = completion
-        self.requestCreator = requestCreator
 
         super.init()
     }
@@ -30,38 +30,25 @@ class ApiOperation: AsynchronousOperation {
     override func main() {
         super.main()
 
-        if let request = self.request {
-            request.resume()
-            return
+        if self.disposeBag != nil {
+            self.disposeBag = nil
         }
 
-        var logData: ApiLogger.StartData?
-        let request = self.requestCreator.dataRequest(for: self.apiRequest)
-
-        request.onURLRequestCreation(on: self.queue) { request in
-            logData = ApiLogger.log(urlRequest: request, encoding: self.apiRequest.encoding, logParams: self.apiRequest.logParams)
-        }
-
-        request.response(queue: self.queue) { [weak self] response in
-            guard let self = self else { return }
-
-            switch response.logAndCreateResult(logData: logData) {
-            case .success(let data):
+        let disposeBag = DisposeBag()
+        self.apiClient.send(request: apiRequest, queue: self.responseQueue)
+            .subscribe(with: self, onSuccess: { `self`, data in
                 self.completion(.success(data))
-
-            case .failure(let error):
+                self.finish()
+            }, onFailure: { `self`, error in
                 self.completion(.failure(error))
-            }
-
-            self.finish()
-        }
-
-        request.resume()
-        self.request = request
+                self.finish()
+            })
+            .disposed(by: disposeBag)
+        self.disposeBag = disposeBag
     }
 
     override func cancel() {
         super.cancel()
-        self.request?.cancel()
+        self.disposeBag = nil
     }
 }
