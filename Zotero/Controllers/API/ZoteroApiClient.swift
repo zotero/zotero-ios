@@ -114,11 +114,6 @@ final class ZoteroApiClient: ApiClient {
                    }
     }
 
-    /// Creates ApiOperation which performs request.
-    func operation(from request: ApiRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data?, HTTPURLResponse), Error>) -> Void) -> ApiOperation {
-        return ApiOperation(apiRequest: request, requestCreator: self, queue: queue, completion: completion)
-    }
-
     /// Creates download request. Request needs to be started manually.
     func download(request: ApiDownloadRequest, queue: DispatchQueue) -> Observable<DownloadRequest> {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint), additionalHeaders: self.manager.sessionConfiguration.httpAdditionalHeaders)
@@ -199,13 +194,6 @@ final class ZoteroApiClient: ApiClient {
 
     private func token(for endpoint: ApiEndpoint) -> String? {
         return self.tokens[self.endpointType(for: endpoint)]?.authHeader
-    }
-}
-
-extension ZoteroApiClient: ApiRequestCreator {
-    func dataRequest(for request: ApiRequest) -> DataRequest {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint), additionalHeaders: self.manager.sessionConfiguration.httpAdditionalHeaders)
-        return self.createRequest(for: request.endpoint) { $0.request(convertible).validate(acceptableStatusCodes: request.acceptableStatusCodes) }
     }
 }
 
