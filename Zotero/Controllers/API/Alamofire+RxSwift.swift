@@ -59,13 +59,18 @@ extension ObservableType where Element == (Data?, HTTPURLResponse) {
                 switch reason {
                 case .unacceptableStatusCode(let code):
                     if code == 429 || (code >= 500 && code <= 599) {
-                        let delay: RetryDelay
-                        if let retryHeader = responseError.headers?["Retry-After"] as? Double {
-                            delay = .constant(retryHeader)
-                        } else {
-                            delay = .progressive(initial: 2.5, multiplier: 2, maxDelay: 3600)
+                        if let retryHeader = responseError.headers?["Retry-After"] {
+                            if let time = retryHeader as? Double {
+                                return .constant(time)
+                            }
+                            if let time = retryHeader as? Int {
+                                return .constant(Double(time))
+                            }
+                            if let timeStr = retryHeader as? String, let time = Double(timeStr) {
+                                return .constant(time)
+                            }
                         }
-                        return delay
+                        return .progressive(initial: 2.5, multiplier: 2, maxDelay: 3600)
                     }
                     return nil
                 default: return nil

@@ -766,7 +766,7 @@ final class SyncControllerSpec: QuickSpec {
                     }
 
                     it("should mark object as outdated if API request returned 500 (or other non 400 response code and syncRetries should be increased)") {
-                        let header = ["last-modified-version": "3"]
+                        let header = ["last-modified-version": "3", "Retry-After": "0"]
                         let libraryId = userLibraryId
                         let objects = SyncObject.allCases
                         let itemKey = "AAAAAAAA"
