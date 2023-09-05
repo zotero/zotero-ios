@@ -548,8 +548,8 @@ internal enum L10n {
       internal static let apiError = L10n.tr("Localizable", "errors.shareext.api_error", fallback: "Error uploading item. The item was saved to your local library.")
       /// Background uploader not initialized
       internal static let backgroundUploaderFailure = L10n.tr("Localizable", "errors.shareext.background_uploader_failure", fallback: "Background uploader not initialized")
-      /// An error occurred. Please try again.
-      internal static let cantLoadData = L10n.tr("Localizable", "errors.shareext.cant_load_data", fallback: "An error occurred. Please try again.")
+      /// Failed to load data. Please try again.
+      internal static let cantLoadData = L10n.tr("Localizable", "errors.shareext.cant_load_data", fallback: "Failed to load data. Please try again.")
       /// An error occurred. Please open the Zotero app, sync, and try again.
       internal static let cantLoadSchema = L10n.tr("Localizable", "errors.shareext.cant_load_schema", fallback: "An error occurred. Please open the Zotero app, sync, and try again.")
       /// Could not download file
