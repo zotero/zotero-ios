@@ -13,6 +13,11 @@ import CocoaLumberjackSwift
 import RxSwift
 
 class HtmlEpubReaderViewController: UIViewController {
+    enum JSHandlers: String, CaseIterable {
+        case text = "textHandler"
+        case log = "logHandler"
+    }
+
     private let url: URL
     private let disposeBag: DisposeBag
 
@@ -34,29 +39,48 @@ class HtmlEpubReaderViewController: UIViewController {
 
         self.setupNavigationBar()
         self.setupWebView()
-        self.load(url: self.url)
+        self.load()
     }
 
     // MARK: - Actions
 
-    private func load(url: URL) {
+    private func load() {
         guard let readerUrl = Bundle.main.url(forResource: "view", withExtension: "html", subdirectory: "Bundled/reader") else {
             DDLogError("HtmlEpubReaderViewController: can't load reader view.html")
             return
         }
         self.webViewHandler.load(fileUrl: readerUrl)
-            .observe(on: MainScheduler.instance)
-            .subscribe(onSuccess: { _ in
-                loadData()
-            })
+            .subscribe()
             .disposed(by: self.disposeBag)
+    }
+
+    private func process(handler: String, message: Any) {
+        switch handler {
+        case JSHandlers.log.rawValue:
+            DDLogInfo("HtmlEpubReaderViewController: JSLOG \(message)")
+
+        case JSHandlers.text.rawValue:
+            guard let data = message as? [String: Any], let event = data["event"] as? String else { return }
+            switch event {
+            case "onInitialized":
+                DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(3)) {
+                    loadData()
+                }
+
+            default:
+                break
+            }
+
+        default:
+            break
+        }
 
         func loadData() {
             do {
-                let data = try Data(contentsOf: url)
+                let data = try Data(contentsOf: self.url)
                 let jsArrayData = try JSONSerialization.data(withJSONObject: [UInt8](data))
                 guard let jsArrayString = String(data: jsArrayData, encoding: .utf8) else { return }
-                self.webViewHandler.call(javascript: #"window.createView({type: 'snapshot', data: {buf: "# + jsArrayString + #"}, annotations: []})"#)
+                self.webViewHandler.call(javascript: #"tester();"#)
                     .observe(on: MainScheduler.instance)
                     .subscribe(with: self, onFailure: { _, error in
                         DDLogError("HtmlEpubReaderViewController: call failed - \(error)")
@@ -86,7 +110,10 @@ class HtmlEpubReaderViewController: UIViewController {
             self.view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: webView.trailingAnchor)
         ])
         self.webView = webView
-        self.webViewHandler = WebViewHandler(webView: webView, javascriptHandlers: nil)
+        self.webViewHandler = WebViewHandler(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }))
+        self.webViewHandler.receivedMessageHandler = { [weak self] handler, message in
+            self?.process(handler: handler, message: message)
+        }
     }
 
     private func setupNavigationBar() {

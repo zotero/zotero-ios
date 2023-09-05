@@ -27074,6 +27074,24 @@ function closestElement(node) {
     }
     return currentNode;
 }
+const BLOCK_DISPLAYS = new Set(['block', 'list-item', 'table-cell', 'table', 'flex']);
+const BLOCK_ELEMENTS = new Set(['DIV', 'P', 'LI', 'OL', 'UL', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TD', 'TH', 'DL', 'DT', 'DD', 'FORM', 'FIELDSET', 'SECTION', 'HEADER', 'FOOTER', 'ASIDE', 'NAV', 'ARTICLE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HEADER', 'FOOTER', 'ASIDE', 'NAV', 'ARTICLE']);
+function getContainingBlock(element) {
+    let el = element;
+    while (el) {
+        let display = getComputedStyle(el).display;
+        if (display) {
+            if (BLOCK_DISPLAYS.has(display)) {
+                return el;
+            }
+        }
+        else if (BLOCK_ELEMENTS.has(el.tagName)) {
+            return el;
+        }
+        el = el.parentElement;
+    }
+    return null;
+}
 
 ;// CONCATENATED MODULE: ./src/common/lib/utilities.js
 function isMac() {
@@ -27305,27 +27323,48 @@ const AnnotationOverlay = (props) => {
     let { iframe, annotations, selectedAnnotationIDs, onPointerDown, onPointerUp, onDragStart, onResizeStart, onResizeEnd } = props;
     let [isResizing, setResizing] = (0,react.useState)(false);
     let [isPointerDownOutside, setPointerDownOutside] = (0,react.useState)(false);
-    let pointerEventsSuppressed = isResizing || isPointerDownOutside;
+    let [isAltDown, setAltDown] = (0,react.useState)(false);
+    let pointerEventsSuppressed = isResizing || isPointerDownOutside || isAltDown;
     (0,react.useEffect)(() => {
         let win = iframe.contentWindow;
         if (!win) {
             return undefined;
         }
         let handleWindowPointerDown = (event) => {
+            setAltDown(event.altKey);
             if (event.button == 0 && !event.target.closest('.annotation-container')) {
                 setPointerDownOutside(true);
             }
         };
         let handleWindowPointerUp = (event) => {
+            setAltDown(event.altKey);
             if (event.button == 0) {
                 setPointerDownOutside(false);
             }
         };
-        win.addEventListener('pointerdown', handleWindowPointerDown);
-        win.addEventListener('pointerup', handleWindowPointerUp);
+        let handleWindowKeyDownCapture = (event) => {
+            if (event.key == 'Alt') {
+                setAltDown(true);
+            }
+        };
+        let handleWindowKeyUpCapture = (event) => {
+            if (event.key == 'Alt') {
+                setAltDown(false);
+            }
+        };
+        win.addEventListener('pointerdown', handleWindowPointerDown, { passive: true });
+        win.addEventListener('pointerup', handleWindowPointerUp, { passive: true });
+        // Listen for Alt on the iframe window and the root window, because the iframe window doesn't get the event
+        // when an annotation text field is focused
+        win.addEventListener('keydown', handleWindowKeyDownCapture, { capture: true, passive: true });
+        win.addEventListener('keyup', handleWindowKeyUpCapture, { capture: true, passive: true });
+        window.addEventListener('keydown', handleWindowKeyDownCapture, { capture: true, passive: true });
+        window.addEventListener('keyup', handleWindowKeyUpCapture, { capture: true, passive: true });
         return () => {
             win.removeEventListener('pointerdown', handleWindowPointerDown);
             win.removeEventListener('pointerup', handleWindowPointerUp);
+            win.removeEventListener('keydown', handleWindowKeyDownCapture, { capture: true });
+            win.removeEventListener('keyup', handleWindowKeyUpCapture, { capture: true });
         };
     }, [iframe.contentWindow]);
     let handlePointerDown = (0,react.useCallback)((annotation, event) => {
@@ -27464,7 +27503,7 @@ const HighlightOrUnderline = (props) => {
                         width: '100%',
                         height: '100%',
                     }, draggable: true, onPointerDown: onPointerDown && (event => onPointerDown(annotation, event)), onPointerUp: onPointerUp && (event => onPointerUp(annotation, event)), onDragStart: handleDragStart, "data-annotation-id": annotation.id })))),
-            (!pointerEventsSuppressed || isResizing) && selected && singleSelection && !annotation.readOnly && supportsCaretPositionFromPoint() && (react.createElement(Resizer, { annotation: annotation, highlightRects: [...rects.values()], onResizeStart: handleResizeStart, onResizeEnd: handleResizeEnd, onResize: handleResize }))),
+            selected && singleSelection && !annotation.readOnly && supportsCaretPositionFromPoint() && (react.createElement(Resizer, { annotation: annotation, highlightRects: [...rects.values()], onResizeStart: handleResizeStart, onResizeEnd: handleResizeEnd, onResize: handleResize, pointerEventsSuppressed: pointerEventsSuppressed }))),
         widgetContainer && ((selected && !isResizing) || commentIconPosition) && react_dom.createPortal(react.createElement(react.Fragment, null,
             selected && !isResizing && (react.createElement(RangeSelectionBorder, { range: annotation.range })),
             commentIconPosition && (react.createElement(CommentIcon, Object.assign({}, commentIconPosition, { color: annotation.color })))), widgetContainer));
@@ -27540,7 +27579,7 @@ const RangeSelectionBorder = (props) => {
 RangeSelectionBorder.displayName = 'RangeSelectionBorder';
 const Resizer = (props) => {
     let WIDTH = 3;
-    let { annotation, highlightRects, onResize, onResizeEnd, onResizeStart } = props;
+    let { annotation, highlightRects, onResize, onResizeEnd, onResizeStart, pointerEventsSuppressed } = props;
     let [resizingSide, setResizingSide] = (0,react.useState)(false);
     let [pointerCapture, setPointerCapture] = (0,react.useState)(null);
     let rtl = getComputedStyle(closestElement(annotation.range.commonAncestorContainer)).direction == 'rtl';
@@ -27646,8 +27685,8 @@ const Resizer = (props) => {
     let topLeftRect = highlightRects[rtl ? highlightRects.length - 1 : 0];
     let bottomRightRect = highlightRects[rtl ? 0 : highlightRects.length - 1];
     return react.createElement(react.Fragment, null,
-        react.createElement("rect", { x: topLeftRect.left - WIDTH, y: topLeftRect.top, width: WIDTH, height: topLeftRect.height, fill: annotation.color, style: { pointerEvents: 'all', cursor: 'col-resize' }, onPointerDown: event => handlePointerDown(event, true), onPointerUp: event => handlePointerUp(event), onPointerMove: resizingSide == 'start' ? (event => handlePointerMove(event, !rtl)) : undefined }),
-        react.createElement("rect", { x: bottomRightRect.right, y: bottomRightRect.top, width: WIDTH, height: bottomRightRect.height, fill: annotation.color, style: { pointerEvents: 'all', cursor: 'col-resize' }, onPointerDown: event => handlePointerDown(event, false), onPointerUp: event => handlePointerUp(event), onPointerMove: resizingSide == 'end' ? (event => handlePointerMove(event, rtl)) : undefined }));
+        react.createElement("rect", { x: topLeftRect.left - WIDTH, y: topLeftRect.top, width: WIDTH, height: topLeftRect.height, fill: annotation.color, style: { pointerEvents: pointerEventsSuppressed ? 'none' : 'all', cursor: 'col-resize' }, onPointerDown: event => handlePointerDown(event, true), onPointerUp: event => handlePointerUp(event), onPointerMove: resizingSide == 'start' ? (event => handlePointerMove(event, !rtl)) : undefined }),
+        react.createElement("rect", { x: bottomRightRect.right, y: bottomRightRect.top, width: WIDTH, height: bottomRightRect.height, fill: annotation.color, style: { pointerEvents: pointerEventsSuppressed ? 'none' : 'all', cursor: 'col-resize' }, onPointerDown: event => handlePointerDown(event, false), onPointerUp: event => handlePointerUp(event), onPointerMove: resizingSide == 'end' ? (event => handlePointerMove(event, rtl)) : undefined }));
 };
 Resizer.displayName = 'Resizer';
 let CommentIcon = react.forwardRef((props, ref) => {
@@ -28310,10 +28349,15 @@ class DOMView {
     _handlePointerOver(event) {
         let target = event.target;
         const link = target.closest('a');
-        if (link && this._isExternalLink(link)) {
-            this._overlayPopupDelayer.open(link, () => {
-                this._openExternalLinkOverlayPopup(link);
-            });
+        if (link) {
+            if (this._isExternalLink(link)) {
+                this._overlayPopupDelayer.open(link, () => {
+                    this._openExternalLinkOverlayPopup(link);
+                });
+            }
+            else {
+                this._handlePointerOverInternalLink(link);
+            }
         }
         else {
             this._overlayPopupDelayer.close(() => {
@@ -28327,6 +28371,9 @@ class DOMView {
                 this._renderAnnotations();
             }
         }
+    }
+    _handlePointerOverInternalLink(link) {
+        // Do nothing by default
     }
     _handleDragEnter(event) {
         if (!this._draggingNoteAnnotation) {
@@ -28755,7 +28802,7 @@ function sanitizeAndRender(xhtml, options) {
         }
         container.append(...sectionDoc.childNodes);
         // Add table-like class to elements matching selectors that set display: table or display: inline-table
-        for (let selector of styleScoper.tableSelectors) {
+        for (let selector of [...styleScoper.tableSelectors, 'table', 'mtable']) {
             try {
                 for (let table of container.querySelectorAll(selector)) {
                     table.classList.add('table-like');
@@ -28787,16 +28834,17 @@ class StyleScoper {
             }
             let scopeClass = `__scope_${this._sheets.size}`;
             this._sheets.set(css, { scopeClass });
+            let cssModified = this._rewriteEPUBProperties(css);
             let sheet;
             let added = false;
             try {
                 sheet = new this._document.defaultView.CSSStyleSheet();
-                yield sheet.replace(css);
+                yield sheet.replace(cssModified);
             }
             catch (e) {
                 // Constructor not available
                 let style = this._document.createElement('style');
-                style.innerHTML = css;
+                style.innerHTML = cssModified;
                 if (style.sheet) {
                     sheet = style.sheet;
                 }
@@ -28876,7 +28924,53 @@ class StyleScoper {
             }
         }
     }
+    _rewriteEPUBProperties(css) {
+        for (let [re, replacement] of EPUB_CSS_REPLACEMENTS) {
+            css = css.replace(re, replacement);
+        }
+        return css;
+    }
 }
+// Mappings based on https://github.com/JayPanoz/postcss-epub-interceptor/blob/1aca86e1f4f996f9ec3a8735bd70e673f3e0f504/index.js
+const EPUB_CSS_REPLACEMENTS = Object.entries({
+    'text-transform': ['text-transform', {
+            '-epub-fullwidth': 'full-width'
+        }],
+    '-epub-hyphens': ['hyphens', {}],
+    '-epub-line-break': ['line-break', {}],
+    '-epub-text-align-last': ['text-align-last', {}],
+    '-epub-word-break': ['word-break', {}],
+    '-epub-text-emphasis': ['text-emphasis', {}],
+    '-epub-text-emphasis-color': ['text-emphasis-color', {}],
+    '-epub-text-emphasis-style': ['text-emphasis-style', {}],
+    '-epub-text-emphasis-position': ['text-emphasis-position', {}],
+    '-epub-text-underline-position': ['text-underline-position', {
+            alphabetic: 'auto'
+        }],
+    '-epub-ruby-position': ['ruby-position', {}],
+    '-epub-writing-mode': ['writing-mode', {}],
+    '-epub-text-orientation': ['text-orientation', {
+            'vertical-right': 'mixed',
+            'sideways-right': 'sideways',
+            'rotate-right': 'sideways',
+            'rotate-normal': 'sideways'
+        }],
+    '-epub-text-combine': ['text-combine-upright', {
+            horizontal: 'all'
+        }],
+    '-epub-text-combine-horizontal': ['text-combine-upright', {}],
+    '-epub-text-combine-upright': ['text-combine-upright', {}],
+}).flatMap(([rule, [newRule, valueMapping]]) => {
+    // That's right: we're parsing CSS with regular expressions
+    // This is unlikely to cause false positives
+    let ruleRe = new RegExp(`(^|[^a-zA-Z-])${rule}(\\s*:)`, 'gi');
+    let ruleReplacement = '$1' + newRule + '$2';
+    let valueReplacements = Object.entries(valueMapping).map(([value, newValue]) => {
+        let valueRe = new RegExp(`((?:^|[^a-zA-Z-])${newRule}\\s*:\\s*)${value}($|[^a-zA-Z-])`, 'gi');
+        return [valueRe, '$1' + newValue + '$2'];
+    });
+    return [[ruleRe, ruleReplacement], ...valueReplacements];
+});
 
 ;// CONCATENATED MODULE: ./src/dom/epub/section-view.ts
 var section_view_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
@@ -29062,9 +29156,7 @@ class PageMapping {
             throw new Error('Page mapping already populated');
         }
         let startTime = new Date().getTime();
-        let consecutiveSectionsWithoutMatches = 0;
         for (let view of views) {
-            let matchesFound = false;
             for (let matcher of MATCHERS) {
                 let elems = view.container.querySelectorAll(matcher.selector);
                 let successes = 0;
@@ -29080,16 +29172,8 @@ class PageMapping {
                     successes++;
                 }
                 if (successes) {
-                    matchesFound = true;
                     console.log(`Found ${successes} physical page numbers using selector '${matcher.selector}'`);
                 }
-            }
-            if (matchesFound) {
-                consecutiveSectionsWithoutMatches = 0;
-            }
-            else if (++consecutiveSectionsWithoutMatches >= 3) {
-                console.log('Aborting physical page mapping generation after 3 sections without matches');
-                break;
             }
         }
         console.log(`Added ${this.tree.length} physical page mappings in ${((new Date().getTime() - startTime) / 1000).toFixed(2)}s`);
@@ -29194,11 +29278,15 @@ class PageMapping {
         return !!this.tree.length;
     }
 }
-PageMapping.VERSION = 5;
+PageMapping.VERSION = 8;
 const MATCHERS = [
     {
-        selector: 'a[id*="page" i]:empty',
+        selector: '[id*="page" i]:empty',
         extract: el => el.id.replace(/page[-_]?/i, '').replace(/^(.*_)+/, '')
+    },
+    {
+        selector: '[*|type="pagebreak"]',
+        extract: el => { var _a; return (_a = el.getAttribute('title')) !== null && _a !== void 0 ? _a : undefined; }
     }
 ];
 /* harmony default export */ const page_mapping = (PageMapping);
@@ -29234,7 +29322,6 @@ class AbstractFlow {
         this._onUpdateViewStats = options.onUpdateViewStats;
         this._onViewUpdate = options.onViewUpdate;
         let intersectionObserver = new IntersectionObserver(() => this.invalidate(), {
-            root: this._iframe.contentDocument.body,
             threshold: [0, 1]
         });
         for (let range of this._view.pageMapping.tree.keys()) {
@@ -29703,7 +29790,7 @@ class PaginatedFlow extends AbstractFlow {
 }
 
 ;// CONCATENATED MODULE: ./node_modules/raw-loader/dist/cjs.js!./src/dom/epub/stylesheets/content.css
-/* harmony default export */ const content = ("@namespace epub url('http://www.idpf.org/2007/ops');\n\n/*** Layout styles applied in all flow modes: ***/\n\n/* Can't combine the following two or it would make the specificity higher than the body.flow-mode-paginated selector below. */\nhtml {\n\tmargin: 0 !important;\n\tpadding: 0 !important;\n}\n\nbody {\n\tmargin: 0 !important;\n\tpadding: 0 !important;\n}\n\n\n/*** Layout styles applied in scrolled mode: ***/\n\nbody.flow-mode-scrolled, body.flow-mode-scrolled > .sections {\n    overflow-x: visible;\n}\n\nbody.flow-mode-scrolled > .sections {\n\tmargin-inline: 40px;\n}\n\nbody.flow-mode-scrolled > .sections > .section-container {\n\tmargin-inline: auto;\n\tmargin-bottom: 100px;\n\tmax-width: 800px;\n\t/* Try some different permutations of the 'contain' values that we want, because Firefox, at least, seems to throw\n\t   away the whole property when it sees an unknown value. */\n\tcontain: layout paint;\n\tcontain: layout paint style;\n\tcontain: layout paint inline-size;\n\tcontain: layout paint style inline-size;\n}\n\nbody.flow-mode-scrolled > .sections > .section-container.hidden {\n\tvisibility: hidden;\n\tpointer-events: none;\n}\n\nbody.flow-mode-scrolled replaced-body img, body.flow-mode-scrolled replaced-body svg,\nbody.flow-mode-scrolled replaced-body audio, body.flow-mode-scrolled replaced-body video {\n    /* Size the media element's box so it fits within one page */\n\tmax-width: calc(min(100vw - 80px, 100%)) !important;\n\tmax-height: 100vh;\n    /* Contain the content within the box so its aspect ratio doesn't change */\n\tobject-fit: contain;\n}\n\n\n/*** Layout styles applied in paginated mode: ***/\n\nbody.flow-mode-paginated {\n\tmargin: 40px !important;\n\toverflow: hidden;\n\toverscroll-behavior: none;\n}\n\n.swipe-indicator-left, .swipe-indicator-right {\n    display: none;\n}\n\nbody.flow-mode-paginated .swipe-indicator-left, body.flow-mode-paginated .swipe-indicator-right {\n    display: block;\n}\n\n.swipe-indicator-left, .swipe-indicator-right {\n\tposition: fixed;\n\ttop: calc(50% - 50px);\n\twidth: 80px;\n\theight: 100px;\n\tbackground-color: #bdbdbd;\n\tz-index: 9999;\n\tpointer-events: none;\n}\n\n.swipe-indicator-left {\n\tleft: calc((min(var(--swipe-amount, 0), 1) - 1) * 80px);\n\topacity: calc(min(var(--swipe-amount, 0), 1) * 0.8);\n\tborder-radius: 0 80px 80px 0;\n}\n\n.swipe-indicator-right {\n\tleft: calc(100vw + (max(var(--swipe-amount, 0), -1) * 80px));\n\topacity: calc(max(var(--swipe-amount, 0), -1) * -0.8);\n\tborder-radius: 80px 0 0 80px;\n}\n\nbody.flow-mode-paginated > .sections {\n\tmin-height: calc(100vh - 80px);\n\tmax-height: calc(100vh - 80px);\n\tmargin-inline: auto;\n\tcolumn-fill: auto;\n\tcolumn-gap: 60px;\n\toverflow: hidden;\n\toverscroll-behavior: none;\n}\n\nbody.flow-mode-paginated > .sections.spread-mode-none {\n\tmax-width: 800px;\n\tcolumn-count: 1;\n\tcolumn-gap: 100vw;\n}\n\nbody.flow-mode-paginated > .sections.spread-mode-odd {\n\tcolumn-count: 2;\n}\n\n@media (max-width: 800px) {\n\tbody.flow-mode-paginated > .sections {\n\t\tcolumn-count: 1;\n\t}\n}\n\nbody.flow-mode-paginated > .sections > .section-container {\n\t/* See above: Firefox throws away 'contain' properties with unknown values, so we need to set a fallback. */\n\tcontain: layout paint;\n\tcontain: layout paint style;\n}\n\nbody.flow-mode-paginated > .sections > .section-container.hidden {\n\tdisplay: none;\n}\n\nbody.flow-mode-paginated replaced-body img, body.flow-mode-paginated replaced-body svg,\nbody.flow-mode-paginated replaced-body audio, body.flow-mode-paginated replaced-body video {\n\tmax-width: calc(50vw - 80px) !important;\n    max-height: calc(100vh - 80px) !important;\n    object-fit: contain;\n}\n\nbody.flow-mode-paginated replaced-body table, body.flow-mode-paginated replaced-body .table-like {\n\tdisplay: block;\n\toverflow: auto;\n\tmax-height: calc(100vh - 80px);\n}\n\n@media (max-width: 800px) {\n\tbody.flow-mode-paginated replaced-body * {\n\t\tmax-width: 100vw;\n\t}\n}\n\n\n/*** Content Styles ***/\n\nbody > .sections > .section-container ::selection {\n    background-color: var(--selection-color);\n}\n\nreplaced-html {\n\tdisplay: block;\n}\n\nreplaced-body {\n\tdisplay: block;\n\tmargin-left: 0 !important;\n\tmargin-right: 0 !important;\n\tbackground: transparent !important;\n\n\tfont-family: var(--content-font-family, \"Georgia\"), serif;\n\tfont-size: calc(var(--content-scale) * 13pt) !important;\n\tline-height: 1.4;\n\ttext-align: justify;\n}\n\nreplaced-body p {\n\t/* Really enforce some of our formatting choices on body paragraphs */\n\tfont-family: var(--content-font-family, \"Georgia\"), serif !important;\n\tline-height: 1.4 !important;\n\n    widows: 2;\n    orphans: 2;\n}\n\nreplaced-body a {\n\ttext-decoration: none;\n}\n\nreplaced-body sup {\n\t/* Prevent footnote superscripts from affecting the line-height */\n\tline-height: 1 !important;\n\tfont-size: 0.8em !important;\n\tvertical-align: baseline !important;\n\tposition: relative !important;\n\ttop: -0.5em !important;\n}\n\nreplaced-body, replaced-body * {\n    /* Work around a bug in the mapped_hyph crate that causes a segfault when viewing some EPUBs\n       (This is a shame! We want hyphens!) */\n    hyphens: none !important;\n}\n");
+/* harmony default export */ const content = ("@namespace epub url('http://www.idpf.org/2007/ops');\n\n/*** Layout styles applied in all flow modes: ***/\n\n/* Can't combine the following two or it would make the specificity higher than the body.flow-mode-paginated selector below. */\nhtml {\n\tmargin: 0 !important;\n\tpadding: 0 !important;\n}\n\nbody {\n\tmargin: 0 !important;\n\tpadding: 0 !important;\n}\n\n\n/*** Layout styles applied in scrolled mode: ***/\n\nbody.flow-mode-scrolled, body.flow-mode-scrolled > .sections {\n    overflow-x: visible;\n}\n\nbody.flow-mode-scrolled > .sections {\n\tmargin-inline: 40px;\n}\n\nbody.flow-mode-scrolled > .sections > .section-container {\n\tmargin-inline: auto;\n\tmargin-bottom: 100px;\n\tmax-width: 800px;\n\t/* Try some different permutations of the 'contain' values that we want, because Firefox, at least, seems to throw\n\t   away the whole property when it sees an unknown value. */\n\tcontain: layout paint;\n\tcontain: layout paint style;\n\tcontain: layout paint inline-size;\n\tcontain: layout paint style inline-size;\n}\n\nbody.flow-mode-scrolled > .sections > .section-container.hidden {\n\tvisibility: hidden;\n\tpointer-events: none;\n}\n\nbody.flow-mode-scrolled replaced-body img, body.flow-mode-scrolled replaced-body svg,\nbody.flow-mode-scrolled replaced-body audio, body.flow-mode-scrolled replaced-body video {\n    /* Size the media element's box so it fits within one page */\n\tmax-width: calc(min(100vw - 80px, 100%)) !important;\n\tmax-height: 100vh;\n    /* Contain the content within the box so its aspect ratio doesn't change */\n\tobject-fit: contain;\n}\n\n\n/*** Layout styles applied in paginated mode: ***/\n\nbody.flow-mode-paginated {\n\tmargin: 40px !important;\n\toverflow: hidden;\n\toverscroll-behavior: none;\n}\n\n.swipe-indicator-left, .swipe-indicator-right {\n    display: none;\n}\n\nbody.flow-mode-paginated .swipe-indicator-left, body.flow-mode-paginated .swipe-indicator-right {\n    display: block;\n}\n\n.swipe-indicator-left, .swipe-indicator-right {\n\tposition: fixed;\n\ttop: calc(50% - 50px);\n\twidth: 80px;\n\theight: 100px;\n\tbackground-color: #bdbdbd;\n\tz-index: 9999;\n\tpointer-events: none;\n}\n\n.swipe-indicator-left {\n\tleft: calc((min(var(--swipe-amount, 0), 1) - 1) * 80px);\n\topacity: calc(min(var(--swipe-amount, 0), 1) * 0.8);\n\tborder-radius: 0 80px 80px 0;\n}\n\n.swipe-indicator-right {\n\tleft: calc(100vw + (max(var(--swipe-amount, 0), -1) * 80px));\n\topacity: calc(max(var(--swipe-amount, 0), -1) * -0.8);\n\tborder-radius: 80px 0 0 80px;\n}\n\nbody.flow-mode-paginated > .sections {\n\tmin-height: calc(100vh - 80px);\n\tmax-height: calc(100vh - 80px);\n\tmargin-inline: auto;\n\tcolumn-fill: auto;\n\tcolumn-gap: 60px;\n\toverflow: hidden;\n\toverscroll-behavior: none;\n}\n\nbody.flow-mode-paginated > .sections.spread-mode-none {\n\tmax-width: 800px;\n\tcolumn-count: 1;\n\tcolumn-gap: 100vw;\n}\n\nbody.flow-mode-paginated > .sections.spread-mode-odd {\n\tcolumn-count: 2;\n}\n\n@media (max-width: 800px) {\n\tbody.flow-mode-paginated > .sections {\n\t\tcolumn-count: 1;\n\t}\n}\n\nbody.flow-mode-paginated > .sections > .section-container {\n\t/* See above: Firefox throws away 'contain' properties with unknown values, so we need to set a fallback. */\n\tcontain: layout paint;\n\tcontain: layout paint style;\n}\n\nbody.flow-mode-paginated > .sections > .section-container.hidden {\n\tdisplay: none;\n}\n\nbody.flow-mode-paginated replaced-body img, body.flow-mode-paginated replaced-body svg,\nbody.flow-mode-paginated replaced-body audio, body.flow-mode-paginated replaced-body video {\n\tmax-width: calc(50vw - 80px) !important;\n    max-height: calc(100vh - 80px) !important;\n    object-fit: contain;\n}\n\nbody.flow-mode-paginated replaced-body .table-like {\n\tdisplay: block;\n\toverflow: auto;\n\tmax-height: calc(100vh - 80px);\n}\n\n@media (max-width: 800px) {\n\tbody.flow-mode-paginated replaced-body * {\n\t\tmax-width: 100vw;\n\t}\n}\n\n\n/*** Content Styles ***/\n\nbody > .sections > .section-container ::selection {\n    background-color: var(--selection-color);\n}\n\nreplaced-html {\n\tdisplay: block;\n}\n\nreplaced-body {\n    /* https://readium.org/readium-css/docs/CSS08-defaults.html#dynamic-leading-line-height */\n    /* https://github.com/readium/readium-css/blob/583011453612e6f695056ab6c086a2c4f4cac9c0/css/src/modules/ReadiumCSS-base.css#L65 */\n    --content-line-height-compensation: 1;\n    --content-line-height: calc((1em + (2ex - 1ch) - ((1rem - 16px) * 0.1667)) * var(--content-line-height-compensation));\n\n\tdisplay: block;\n\tmargin-left: 0 !important;\n\tmargin-right: 0 !important;\n\tbackground: transparent !important;\n\n\tfont-family: var(--content-font-family, \"Georgia\"), serif;\n\tfont-size: calc(var(--content-scale) * 13pt) !important;\n\tline-height: var(--content-line-height);\n\ttext-align: justify;\n    text-rendering: optimizeLegibility;\n}\n\nreplaced-body:lang(bn),\nreplaced-body:lang(km),\nreplaced-body:lang(ml),\nreplaced-body:lang(ta),\nreplaced-body:lang(th) {\n    --content-line-height-compensation: 1.067;\n}\n\nreplaced-body:lang(he),\nreplaced-body:lang(hi),\nreplaced-body:lang(kn),\nreplaced-body:lang(pa) {\n    --content-line-height-compensation: 1.1;\n}\n\nreplaced-body:lang(am),\nreplaced-body:lang(chr),\nreplaced-body:lang(gu),\nreplaced-body:lang(ja),\nreplaced-body:lang(ko),\nreplaced-body:lang(or),\nreplaced-body:lang(si),\nreplaced-body:lang(zh) {\n    --content-line-height-compensation: 1.167;\n}\n\nreplaced-body p {\n\t/* Really enforce some of our formatting choices on body paragraphs */\n\tfont-family: var(--content-font-family, \"Georgia\"), serif !important;\n\n    widows: 2;\n    orphans: 2;\n}\n\nreplaced-body a {\n\ttext-decoration: none;\n}\n\nreplaced-body sup {\n\t/* Prevent footnote superscripts from affecting the line-height */\n\tline-height: 1 !important;\n\tfont-size: 0.8em !important;\n\tvertical-align: baseline !important;\n\tposition: relative !important;\n\ttop: -0.5em !important;\n}\n\nbody:not(.footnote-popup-content) replaced-body aside[epub|type=\"footnote\"],\nbody:not(.footnote-popup-content) replaced-body aside[epub|type=\"rearnote\"],\nbody:not(.footnote-popup-content) replaced-body aside[epub|type=\"note\"] {\n    display: none;\n}\n\nbody.footnote-popup-content * {\n    list-style-type: none !important;\n}\n\nbody.footnote-popup-content .section-container {\n    padding: 16px;\n}\n\nreplaced-body, replaced-body * {\n    /* Work around a bug in the mapped_hyph crate that causes a segfault when viewing some EPUBs\n       (This is a shame! We want hyphens!) */\n    hyphens: none !important;\n}\n");
 ;// CONCATENATED MODULE: ./src/dom/epub/epub-view.ts
 var epub_view_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -29791,6 +29878,7 @@ class EPUBView extends dom_view {
             this._iframeDocument.body.append(swipeIndicatorRight);
             this._sectionsContainer = this._iframeDocument.createElement('div');
             this._sectionsContainer.classList.add('sections');
+            this._sectionsContainer.lang = this.book.packaging.metadata.language;
             this._sectionsContainer.hidden = true;
             this._iframeDocument.body.append(this._sectionsContainer);
             let styleScoper = new StyleScoper(this._iframeDocument);
@@ -29841,6 +29929,7 @@ class EPUBView extends dom_view {
                 styleScoper,
             });
             yield sectionView.render(this.book.archive.request.bind(this.book.archive));
+            sectionView.body.lang = this.book.packaging.metadata.language;
             this._sectionViews[section.index] = sectionView;
         });
     }
@@ -30033,18 +30122,46 @@ class EPUBView extends dom_view {
         }
         this._handleViewUpdate();
     }
-    _handleInternalLinkClick(link) {
+    _getInternalLinkHref(link) {
         var _a;
+        if (this._isExternalLink(link)) {
+            return null;
+        }
         let href = link.getAttribute('href');
         let section = (_a = this._sectionViews.find(view => view.container.contains(link))) === null || _a === void 0 ? void 0 : _a.section;
         if (!section) {
-            return;
+            return null;
         }
         // This is a hack - we're using the URL constructor to resolve the relative path based on the section's
         // canonical URL, but it'll error without a host. So give it one!
         let url = new URL(href, new URL(section.canonical, 'https://www.example.com/'));
-        href = url.pathname + url.hash;
-        this.navigate({ href: this.book.path.relative(href) });
+        return this.book.path.relative(url.pathname + url.hash);
+    }
+    _handlePointerOverInternalLink(link) {
+        let element = this._getFootnoteTargetElement(link);
+        if (element) {
+            this._overlayPopupDelayer.open(link, () => {
+                this._openFootnoteOverlayPopup(link, element);
+            });
+        }
+        else {
+            this._overlayPopupDelayer.close(() => {
+                this._options.onSetOverlayPopup();
+            });
+        }
+    }
+    _handleInternalLinkClick(link) {
+        // If link goes to footnote wrapped in an <aside>, open it in a popup instead of navigating
+        let element = this._getFootnoteTargetElement(link);
+        if (element && element.closest('aside')) {
+            this._openFootnoteOverlayPopup(link, element);
+            return;
+        }
+        let href = this._getInternalLinkHref(link);
+        if (!href) {
+            return;
+        }
+        this.navigate({ href });
     }
     _handleKeyDown(event) {
         let { key } = event;
@@ -30125,6 +30242,137 @@ class EPUBView extends dom_view {
         if (this._find) {
             this._find.handleViewUpdate();
         }
+    }
+    _openFootnoteOverlayPopup(link, element) {
+        let doc = document.implementation.createHTMLDocument();
+        let cspMeta = this._iframeDocument.createElement('meta');
+        cspMeta.setAttribute('http-equiv', 'Content-Security-Policy');
+        cspMeta.setAttribute('content', this._getCSP());
+        doc.head.prepend(cspMeta);
+        let container = document.createElement('div');
+        let current = element;
+        let currentClone = current.cloneNode(true);
+        while (!current.classList.contains('section-container')) {
+            let parent = current.parentElement;
+            if (!parent) {
+                break;
+            }
+            let parentClone = parent.cloneNode(false);
+            parentClone.appendChild(currentClone);
+            currentClone = parentClone;
+            current = parent;
+        }
+        container.appendChild(currentClone);
+        container.querySelectorAll('a').forEach((link) => {
+            link.removeAttribute('href');
+        });
+        doc.body.append(container);
+        let content = new XMLSerializer().serializeToString(doc);
+        let range = link.ownerDocument.createRange();
+        range.selectNode(link);
+        let domRect = range.getBoundingClientRect();
+        let rect = [domRect.left, domRect.top, domRect.right, domRect.bottom];
+        let css = '';
+        for (let sheet of [...this._iframeDocument.styleSheets, ...this._iframeDocument.adoptedStyleSheets]) {
+            for (let rule of sheet.cssRules) {
+                css += rule.cssText + '\n\n';
+            }
+        }
+        css += `
+			:root {
+				--content-scale: ${this.scale};
+				--content-font-family: ${this._iframeDocument.documentElement.style.getPropertyValue('--content-font-family')};
+			}
+		`;
+        let overlayPopup = {
+            type: 'footnote',
+            content,
+            css,
+            rect,
+            ref: link
+        };
+        this._options.onSetOverlayPopup(overlayPopup);
+    }
+    _isFootnoteLink(link, target) {
+        // Modeled on Calibre's heuristic
+        // https://github.com/kovidgoyal/calibre/blob/87f4c08c16b07058dd25733eb5c30022246a66f2/src/pyj/read_book/footnotes.pyj#L32
+        var _a, _b, _c;
+        if (link.getAttributeNS('http://www.idpf.org/2007/ops', 'type') === 'noteref') {
+            return true;
+        }
+        let roles = (_b = (_a = link.role) === null || _a === void 0 ? void 0 : _a.split(' ')) !== null && _b !== void 0 ? _b : [];
+        if (roles.includes('doc-noteref') || roles.includes('doc-biblioref') || roles.includes('doc-glossref')) {
+            return true;
+        }
+        if (roles.includes('doc-link')) {
+            return false;
+        }
+        // Check if element has super/subscript alignment
+        let elem = link;
+        let remainingDepth = 3;
+        while (elem && remainingDepth > 0) {
+            let style = getComputedStyle(elem);
+            if (!['inline', 'inline-block'].includes(style.display)) {
+                break;
+            }
+            if (['sub', 'super', 'top', 'bottom'].includes(style.verticalAlign)) {
+                return true;
+            }
+            elem = elem.parentElement;
+            remainingDepth--;
+        }
+        // Check if it has a single child with super/subscript alignment
+        if (link.innerText.trim() && link.children.length === 1) {
+            let style = getComputedStyle(link.children[0]);
+            if (['inline', 'inline-block'].includes(style.display)
+                && ['sub', 'super', 'top', 'bottom'].includes(style.verticalAlign)) {
+                return true;
+            }
+        }
+        // Check if it has a link back to the original link
+        let sectionIndex = (_c = link.closest('[data-section-index]')) === null || _c === void 0 ? void 0 : _c.getAttribute('data-section-index');
+        let section = sectionIndex && this.book.spine.get(sectionIndex);
+        if (!section) {
+            return false;
+        }
+        for (let linkInTarget of target.querySelectorAll('a')) {
+            let linkInTargetHref = this._getInternalLinkHref(linkInTarget);
+            if (!linkInTargetHref) {
+                continue;
+            }
+            let [pathname, hash] = linkInTargetHref.split('#');
+            if (pathname === section.href && hash === link.id) {
+                return true;
+            }
+        }
+        return false;
+    }
+    _getFootnoteTargetElement(link) {
+        let href = this._getInternalLinkHref(link);
+        if (!href) {
+            return null;
+        }
+        let [pathname, hash] = href.split('#');
+        if (!pathname || !hash) {
+            return null;
+        }
+        let section = this.book.spine.get(pathname);
+        if (!section) {
+            return null;
+        }
+        let target = this._sectionViews[section.index].container
+            .querySelector('[id="' + CSS.escape(hash) + '"]');
+        if (!target) {
+            return null;
+        }
+        let epubType = target.getAttributeNS('http://www.idpf.org/2007/ops', 'type');
+        if (!epubType || !['footnote', 'rearnote', 'note'].includes(epubType)) {
+            target = getContainingBlock(target) || target;
+        }
+        if (!this._isFootnoteLink(link, target)) {
+            return null;
+        }
+        return target;
     }
     // ***
     // Setters that get called once there are changes in reader._state
@@ -30296,7 +30544,7 @@ class EPUBView extends dom_view {
                 return;
             }
             let target = hash && this._sectionViews[section.index].container
-                .querySelector('[id="' + hash.replace(/"/g, '\\"') + '"]');
+                .querySelector('[id="' + CSS.escape(hash) + '"]');
             if (target) {
                 this.flow.scrollIntoView(target, options);
             }
@@ -31655,7 +31903,7 @@ class AnnotationManager {
         ...x,
         image: undefined
       }));
-      this._onSave(annotations);
+      this._onSave(annotations.map(x => JSON.parse(JSON.stringify(x))));
       for (let annotation of this._unsavedAnnotations) {
         delete annotation.onlyTextOrComment;
       }
@@ -31838,7 +32086,7 @@ class AnnotationManager {
     }
     this._unsavedAnnotations = this._unsavedAnnotations.filter(x => x.id !== annotation.id);
     if (instant) {
-      this._onSave([annotation]);
+      this._onSave([JSON.parse(JSON.stringify(annotation))]);
     } else {
       this._unsavedAnnotations.push(annotation);
       this._debounceSave();
@@ -32101,6 +32349,9 @@ function postMessage(event, params = {}) {
     params
   });
 }
+function log(message) {
+    window.webkit.messageHandlers.logHandler.postMessage(message);
+}
 window.createView = options => {
   window._view = new view({
     ...options,
@@ -32150,7 +32401,6 @@ window.createView = options => {
     }
   });
 };
-
 // Notify when iframe is loaded
 postMessage('onInitialized');
 })();
@@ -32160,3 +32410,7 @@ postMessage('onInitialized');
 ;
 });
 //# sourceMappingURL=view.js.map
+
+function tester() {
+    window.createView({type: 'snapshot', buf: [], annotations: []})
+}
