@@ -66,11 +66,9 @@ class TagFilterViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        switch UIDevice.current.userInterfaceIdiom {
-        case .phone:
-        // Trigger initial load on phone.
-        self.delegate?.tagOptionsDidChange()
-        default: break
+        if traitCollection.horizontalSizeClass == .compact || UIDevice.current.userInterfaceIdiom == .phone {
+            // Trigger initial load on iPhone and compact iPad.
+            self.delegate?.tagOptionsDidChange()
         }
     }
 
@@ -82,7 +80,7 @@ class TagFilterViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
 
-        guard UIDevice.current.userInterfaceIdiom == .pad && !self.didAppear else { return }
+        guard traitCollection.horizontalSizeClass == .regular && UIDevice.current.userInterfaceIdiom == .pad && !self.didAppear else { return }
 
         let height = TagFilterViewController.searchBarHeight + TagFilterViewController.searchBarTopOffset
         self.collectionView.setContentOffset(CGPoint(x: 0, y: height), animated: false)
@@ -168,7 +166,7 @@ class TagFilterViewController: UIViewController {
             self.viewModel.process(action: .setShowAutomatic(!self.viewModel.state.showAutomatic))
         })
         var options: [UIAction] = [showAutomatic]
-        if UIDevice.current.userInterfaceIdiom != .phone {
+        if traitCollection.horizontalSizeClass == .regular && UIDevice.current.userInterfaceIdiom == .pad {
             let displayAll = UIAction(title: L10n.TagPicker.showAll, state: (state.displayAll ? .on : .off), handler: { [weak self] _ in
                 guard let self = self else { return }
                 self.viewModel.process(action: .setDisplayAll(!self.viewModel.state.displayAll))
@@ -228,13 +226,10 @@ class TagFilterViewController: UIViewController {
         self.collectionView = collectionView
         self.view.insertSubview(collectionView, belowSubview: searchContainer)
 
-        switch UIDevice.current.userInterfaceIdiom {
-        case .phone:
-            collectionView.keyboardDismissMode = .onDrag
-
-        case .pad:
+        if traitCollection.horizontalSizeClass == .regular && UIDevice.current.userInterfaceIdiom == .pad {
             collectionView.dropDelegate = self
-        default: break
+        } else {
+            collectionView.keyboardDismissMode = .onDrag
         }
 
         let searchBarTop = searchContainer.topAnchor.constraint(equalTo: self.view.topAnchor, constant: TagFilterViewController.searchBarTopOffset)

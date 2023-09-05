@@ -146,6 +146,7 @@ final class ItemsViewController: UIViewController {
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
 
+        // TODO: Modify this to use trait transitions
         if UIDevice.current.userInterfaceIdiom == .pad {
             let position = self.setupSearchBar(for: size)
             if position == .navigationItem {
@@ -569,7 +570,8 @@ final class ItemsViewController: UIViewController {
     }
 
     private func setupTitle() {
-        guard UIDevice.current.userInterfaceIdiom == .phone else { return }
+        guard traitCollection.horizontalSizeClass == .compact || UIDevice.current.userInterfaceIdiom == .phone else { return }
+        // TODO: Check why it is ignored in compact iPad
         self.title = self.viewModel.state.collection.name
     }
 

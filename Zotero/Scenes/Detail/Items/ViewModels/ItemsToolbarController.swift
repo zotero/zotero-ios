@@ -11,7 +11,7 @@ import UIKit
 import RealmSwift
 import RxSwift
 
-protocol ItemsToolbarControllerDelegate: AnyObject {
+protocol ItemsToolbarControllerDelegate: UITraitEnvironment {
     func process(action: ItemAction.Kind, button: UIBarButtonItem)
 }
 
@@ -78,19 +78,17 @@ final class ItemsToolbarController {
     }
 
     private func deviceSpecificFilters(from filters: [ItemsFilter]) -> [ItemsFilter] {
-        // There is different functionality on iPad and iPhone. iPhone shows tag filters in filter popup in items screen while iPad shows tag filters in master controller.
-        // So filter icon and description should always show up on iPhone, while it should not show up on iPad for tag filters.
-        // Therefore we ignore `.tag` filter on iPad and keep it on iPhone.
-        switch UIDevice.current.userInterfaceIdiom {
-        case .pad:
+        // There is different functionality based on horizontal size class. iPhone and compact iPad show tag filters in filter popup in items screen while iPad shows tag filters in master controller.
+        // So filter icon and description should always show up on iPhone and compact iPad, while it should not show up on regular iPad for tag filters.
+        // Therefore we ignore `.tag` filter on iPhone and compact iPad, and keep it on regular iPad.
+        if delegate?.traitCollection.horizontalSizeClass == .regular && UIDevice.current.userInterfaceIdiom == .pad {
             return filters.filter({
                 switch $0 {
                 case .tags: return false
                 case .downloadedFiles: return true
                 }
             })
-
-        default:
+        } else {
             return filters
         }
     }

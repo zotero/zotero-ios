@@ -61,7 +61,7 @@ class ItemsFilterViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        guard UIDevice.current.userInterfaceIdiom == .pad else { return }
+        guard traitCollection.horizontalSizeClass == .regular && UIDevice.current.userInterfaceIdiom == .pad else { return }
 
         var preferredSize = self.container.systemLayoutSizeFitting(CGSize(width: ItemsFilterViewController.width, height: .greatestFiniteMagnitude))
         preferredSize.width = ItemsFilterViewController.width
@@ -98,7 +98,7 @@ class ItemsFilterViewController: UIViewController {
         self.downloadsTitleLabel.text = L10n.Items.Filters.downloads
         self.downloadsSwitch.isOn = self.downloadsFilterEnabled
 
-        guard UIDevice.current.userInterfaceIdiom == .phone else {
+        guard traitCollection.horizontalSizeClass == .compact || UIDevice.current.userInterfaceIdiom == .phone else {
             self.tagFilterControllerContainer.isHidden = true
             self.separator.isHidden = true
             return

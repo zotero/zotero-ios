@@ -33,10 +33,8 @@ final class ItemDetailTitleContentView: UIView {
 
         let font = self.textView.font!
         self.topConstraint.constant = font.capHeight - font.ascender
-        switch UIDevice.current.userInterfaceIdiom {
-        case .pad:
+        if traitCollection.horizontalSizeClass == .regular && UIDevice.current.userInterfaceIdiom == .pad {
             self.bottomConstraint.constant = -font.descender
-        default: break
         }
     }
 
