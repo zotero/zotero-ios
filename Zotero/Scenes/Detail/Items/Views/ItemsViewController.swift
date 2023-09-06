@@ -143,19 +143,21 @@ final class ItemsViewController: UIViewController {
         self.searchBarContainer?.unfreezeWidth()
     }
 
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        
+        // willTransition(to:with:) seems to not be not called for all transitions, so instead we traitCollectionDidChange(_:) is used w/ a short animation block.
+        guard UIDevice.current.userInterfaceIdiom == .pad, traitCollection.horizontalSizeClass != previousTraitCollection?.horizontalSizeClass else { return }
+        UIView.animate(withDuration: 0.1) {
+            self.toolbarController.reloadToolbarItems(for: self.viewModel.state)
+        }
+    }
+    
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
 
-        // TODO: Modify this to use trait transitions
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            let position = self.setupSearchBar(for: size)
-            if position == .navigationItem {
-                self.resetSearchBar()
-            }
-        } else {
-            coordinator.animate(alongsideTransition: { _ in
-                self.setupSearchBar(for: size)
-            }, completion: nil)
+        coordinator.animate { _ in
+            self.setupSearchBar(for: size)
         }
     }
 
@@ -570,8 +572,6 @@ final class ItemsViewController: UIViewController {
     }
 
     private func setupTitle() {
-        guard traitCollection.horizontalSizeClass == .compact || UIDevice.current.userInterfaceIdiom == .phone else { return }
-        // TODO: Check why it is ignored in compact iPad
         self.title = self.viewModel.state.collection.name
     }
 
@@ -686,66 +686,64 @@ final class ItemsViewController: UIViewController {
     @discardableResult
     private func setupSearchBar(for windowSize: CGSize) -> SearchBarPosition {
         // Detect current position of search bar
-        let current: SearchBarPosition? = self.navigationItem.searchController != nil ? .navigationItem : (self.navigationItem.titleView != nil ? .titleView : nil)
+        let current: SearchBarPosition? = navigationItem.searchController != nil ? .navigationItem : (navigationItem.titleView != nil ? .titleView : nil)
         // The search bar can change position based on current window size. If the window is too narrow, the search bar appears in
         // navigationItem, otherwise it can appear in titleView.
-        let new: SearchBarPosition = UIDevice.current.isCompactWidth(size: windowSize) ? .navigationItem : .titleView
-
+        let new: SearchBarPosition = traitCollection.horizontalSizeClass == .compact ? .navigationItem : .titleView
+        
         // Only change search bar if the position changes.
         guard current != new else { return new }
-
-        self.removeSearchBar()
-        self.setupSearchBar(in: new)
-
+        
+        removeSearchBar()
+        setupSearchBar(in: new)
+        
         return new
-    }
-
-    /// Setup `searchBar` in given position.
-    /// - parameter position: Position of `searchBar`.
-    private func setupSearchBar(in position: SearchBarPosition) {
-        switch position {
-        case .titleView:
-            let searchBar = UISearchBar()
-            self.setup(searchBar: searchBar)
-            // Workaround for broken `titleView` animation, check `SearchBarContainer` for more info.
-            let container = SearchBarContainer(searchBar: searchBar)
-            self.navigationItem.titleView = container
-            self.searchBarContainer = container
-
-        case .navigationItem:
-            let controller = UISearchController(searchResultsController: nil)
-            self.setup(searchBar: controller.searchBar)
-            controller.obscuresBackgroundDuringPresentation = false
-            if UIDevice.current.userInterfaceIdiom == .phone {
-                self.navigationItem.hidesSearchBarWhenScrolling = false
+        
+        /// Removes `searchBar` from all positions.
+        func removeSearchBar() {
+            if navigationItem.searchController != nil {
+                navigationItem.searchController = nil
             }
-            self.navigationItem.searchController = controller
+            if navigationItem.titleView != nil {
+                navigationItem.titleView = nil
+            }
+            searchBarContainer = nil
         }
-    }
-
-    /// Setup `searchBar`, start observing text changes.
-    /// - parameter searchBar: `searchBar` to setup and observe.
-    private func setup(searchBar: UISearchBar) {
-        searchBar.placeholder = L10n.Items.searchTitle
-        searchBar.rx
-            .text.observe(on: MainScheduler.instance)
-            .skip(1)
-            .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] text in
-                self?.viewModel.process(action: .search(text ?? ""))
-            })
-            .disposed(by: self.disposeBag)
-    }
-
-    /// Removes `searchBar` from all positions.
-    private func removeSearchBar() {
-        if self.navigationItem.searchController != nil {
-            self.navigationItem.searchController = nil
+        
+        /// Setup `searchBar` in given position.
+        /// - parameter position: Position of `searchBar`.
+        func setupSearchBar(in position: SearchBarPosition) {
+            switch position {
+            case .titleView:
+                let searchBar = UISearchBar()
+                setup(searchBar: searchBar)
+                // Workaround for broken `titleView` animation, check `SearchBarContainer` for more info.
+                let container = SearchBarContainer(searchBar: searchBar)
+                navigationItem.titleView = container
+                searchBarContainer = container
+                
+            case .navigationItem:
+                let controller = UISearchController(searchResultsController: nil)
+                setup(searchBar: controller.searchBar)
+                controller.obscuresBackgroundDuringPresentation = false
+                navigationItem.hidesSearchBarWhenScrolling = false
+                navigationItem.searchController = controller
+            }
+            
+            /// Setup `searchBar`, start observing text changes.
+            /// - parameter searchBar: `searchBar` to setup and observe.
+            func setup(searchBar: UISearchBar) {
+                searchBar.placeholder = L10n.Items.searchTitle
+                searchBar.rx
+                    .text.observe(on: MainScheduler.instance)
+                    .skip(1)
+                    .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+                    .subscribe(onNext: { [weak self] text in
+                        self?.viewModel.process(action: .search(text ?? ""))
+                    })
+                    .disposed(by: disposeBag)
+            }
         }
-        if self.navigationItem.titleView != nil {
-            self.navigationItem.titleView = nil
-        }
-        self.searchBarContainer = nil
     }
 
     private func setupPullToRefresh() {
@@ -797,7 +795,7 @@ extension ItemsViewController: ItemsToolbarControllerDelegate {
 }
 
 ///
-/// This is a conainer for `UISearchBar` to fix broken UIKit `titleView` animation in navigation bar.
+/// This is a container for `UISearchBar` to fix broken UIKit `titleView` animation in navigation bar.
 /// The `titleView` is assigned an expanding view (`UISearchBar`), so the `titleView` expands to full width on animation to different screen.
 /// For example, if the new screen has fewer `rightBarButtonItems`, the `titleView` width expands and the animation looks as if the search bar is
 /// moving to the right, even though the screen is animating out to the left.
@@ -815,6 +813,9 @@ extension ItemsViewController: ItemsToolbarControllerDelegate {
 private final class SearchBarContainer: UIView {
     unowned let searchBar: UISearchBar
     private var widthConstraint: NSLayoutConstraint!
+    private var maxSize: CGFloat {
+        max(UIScreen.main.bounds.size.width, UIScreen.main.bounds.size.height)
+    }
 
     init(searchBar: UISearchBar) {
         searchBar.translatesAutoresizingMaskIntoConstraints = false
@@ -831,7 +832,6 @@ private final class SearchBarContainer: UIView {
             searchBar.trailingAnchor.constraint(lessThanOrEqualTo: self.trailingAnchor)
         ])
 
-        let maxSize = max(UIScreen.main.bounds.size.width, UIScreen.main.bounds.size.height)
         self.widthConstraint = self.searchBar.widthAnchor.constraint(equalToConstant: maxSize)
         self.widthConstraint.priority = .defaultLow
         self.widthConstraint.isActive = true
@@ -844,7 +844,6 @@ private final class SearchBarContainer: UIView {
     override var intrinsicContentSize: CGSize {
         // Changed from .greatestFiniteValue to this because of error "This NSLayoutConstraint is being configured with a constant that exceeds
         // internal limits." This works fine as well and the debugger doesn't show the error anymore.
-        let maxSize = max(UIScreen.main.bounds.size.width, UIScreen.main.bounds.size.height)
         return CGSize(width: maxSize, height: self.searchBar.bounds.height)
     }
 
@@ -853,8 +852,7 @@ private final class SearchBarContainer: UIView {
     }
 
     func unfreezeWidth() {
-        let size = max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
-        self.widthConstraint.constant = size
+        self.widthConstraint.constant = maxSize
     }
 }
 
