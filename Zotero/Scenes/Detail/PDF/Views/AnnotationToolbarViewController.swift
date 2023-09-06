@@ -26,13 +26,13 @@ struct AnnotationToolOptions: OptionSet {
 
 protocol AnnotationToolbarDelegate: AnyObject {
     var rotation: AnnotationToolbarViewController.Rotation { get }
-    var activeAnnotationTool: PSPDFKit.Annotation.Tool? { get }
+    var activeAnnotationTool: AnnotationToolbarViewController.Tool? { get }
     var canUndo: Bool { get }
     var canRedo: Bool { get }
     var maxAvailableToolbarSize: CGFloat { get }
 
     func isCompactSize(for rotation: AnnotationToolbarViewController.Rotation) -> Bool
-    func toggle(tool: PSPDFKit.Annotation.Tool, options: AnnotationToolOptions)
+    func toggle(tool: AnnotationToolbarViewController.Tool, options: AnnotationToolOptions)
     func showToolOptions(sender: SourceView)
     func closeAnnotationToolbar()
     func performUndo()
@@ -44,15 +44,23 @@ class AnnotationToolbarViewController: UIViewController {
         case horizontal, vertical
     }
 
-    private struct Tool {
-        let type: PSPDFKit.Annotation.Tool
+    enum Tool {
+        case ink
+        case image
+        case note
+        case highlight
+        case eraser
+    }
+
+    private struct ToolButton {
+        let type: Tool
         let title: String
         let accessibilityLabel: String
         let image: UIImage
         let isHidden: Bool
 
-        func copy(isHidden: Bool) -> Tool {
-            return Tool(type: self.type, title: self.title, accessibilityLabel: self.accessibilityLabel, image: self.image, isHidden: isHidden)
+        func copy(isHidden: Bool) -> ToolButton {
+            return ToolButton(type: self.type, title: self.title, accessibilityLabel: self.accessibilityLabel, image: self.image, isHidden: isHidden)
         }
     }
 
@@ -89,13 +97,13 @@ class AnnotationToolbarViewController: UIViewController {
     private var containerToPickerVertical: NSLayoutConstraint!
     private var containerToPickerHorizontal: NSLayoutConstraint!
     private var hairlineView: UIView!
-    private var tools: [Tool]
+    private var toolButtons: [ToolButton]
     weak var delegate: AnnotationToolbarDelegate?
     private var lastGestureRecognizerTouch: UITouch?
 
-    init(size: CGFloat) {
+    init(tools: [Tool], size: CGFloat) {
         self.size = size
-        self.tools = AnnotationToolbarViewController.createTools()
+        self.toolButtons = Self.createButtons(from: tools)
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -104,44 +112,57 @@ class AnnotationToolbarViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
-    private static func createTools() -> [Tool] {
-        return [
-            Tool(
-                type: .highlight,
-                title: L10n.Pdf.AnnotationToolbar.highlight,
-                accessibilityLabel: L10n.Accessibility.Pdf.highlightAnnotationTool,
-                image: Asset.Images.Annotations.highlighterLarge.image,
-                isHidden: false
-            ),
-            Tool(
-                type: .note,
-                title: L10n.Pdf.AnnotationToolbar.note,
-                accessibilityLabel: L10n.Accessibility.Pdf.noteAnnotationTool,
-                image: Asset.Images.Annotations.noteLarge.image,
-                isHidden: false
-            ),
-            Tool(
-                type: .square,
-                title: L10n.Pdf.AnnotationToolbar.image,
-                accessibilityLabel: L10n.Accessibility.Pdf.imageAnnotationTool,
-                image: Asset.Images.Annotations.areaLarge.image,
-                isHidden: false
-            ),
-            Tool(
-                type: .ink,
-                title: L10n.Pdf.AnnotationToolbar.ink,
-                accessibilityLabel: L10n.Accessibility.Pdf.inkAnnotationTool,
-                image: Asset.Images.Annotations.inkLarge.image,
-                isHidden: false
-            ),
-            Tool(
-                type: .eraser,
-                title: L10n.Pdf.AnnotationToolbar.eraser,
-                accessibilityLabel: L10n.Accessibility.Pdf.eraserAnnotationTool,
-                image: Asset.Images.Annotations.eraserLarge.image,
-                isHidden: false
-            )
-        ]
+    private static func createButtons(from tools: [Tool]) -> [ToolButton] {
+        return tools.map({ button(from: $0) })
+
+        func button(from tool: Tool) -> ToolButton {
+            switch tool {
+            case .highlight:
+                ToolButton(
+                    type: .highlight,
+                    title: L10n.Pdf.AnnotationToolbar.highlight,
+                    accessibilityLabel: L10n.Accessibility.Pdf.highlightAnnotationTool,
+                    image: Asset.Images.Annotations.highlighterLarge.image,
+                    isHidden: false
+                )
+
+            case .note:
+                ToolButton(
+                    type: .note,
+                    title: L10n.Pdf.AnnotationToolbar.note,
+                    accessibilityLabel: L10n.Accessibility.Pdf.noteAnnotationTool,
+                    image: Asset.Images.Annotations.noteLarge.image,
+                    isHidden: false
+                )
+
+            case .image:
+                ToolButton(
+                    type: .image,
+                    title: L10n.Pdf.AnnotationToolbar.image,
+                    accessibilityLabel: L10n.Accessibility.Pdf.imageAnnotationTool,
+                    image: Asset.Images.Annotations.areaLarge.image,
+                    isHidden: false
+                )
+
+            case .ink:
+                ToolButton(
+                    type: .ink,
+                    title: L10n.Pdf.AnnotationToolbar.ink,
+                    accessibilityLabel: L10n.Accessibility.Pdf.inkAnnotationTool,
+                    image: Asset.Images.Annotations.inkLarge.image,
+                    isHidden: false
+                )
+
+            case .eraser:
+                ToolButton(
+                    type: .eraser,
+                    title: L10n.Pdf.AnnotationToolbar.eraser,
+                    accessibilityLabel: L10n.Accessibility.Pdf.eraserAnnotationTool,
+                    image: Asset.Images.Annotations.eraserLarge.image,
+                    isHidden: false
+                )
+            }
+        }
     }
 
     override func viewDidLoad() {
@@ -180,8 +201,8 @@ class AnnotationToolbarViewController: UIViewController {
     }
 
     func sizeDidChange() {
-        guard self.stackView.arrangedSubviews.count == self.tools.count + 1 else {
-            DDLogError("AnnotationToolbarViewController: too many views in stack view! Stack view views: \(self.stackView.arrangedSubviews.count). Tools: \(self.tools.count)")
+        guard self.stackView.arrangedSubviews.count == self.toolButtons.count + 1 else {
+            DDLogError("AnnotationToolbarViewController: too many views in stack view! Stack view views: \(self.stackView.arrangedSubviews.count). Tools: \(self.toolButtons.count)")
             return
         }
         guard let button = self.stackView.arrangedSubviews.last, let maxAvailableSize = self.delegate?.maxAvailableToolbarSize, maxAvailableSize > 0 else { return }
@@ -198,18 +219,18 @@ class AnnotationToolbarViewController: UIViewController {
         let pickerToAdditionalOffset = isHorizontal ? self.colorPickerToAdditionalHorizontal.constant : self.colorPickerToAdditionalVertical.constant
         let additionalOffset = isHorizontal ? self.additionalTrailing.constant : self.additionalBottom.constant
         let remainingSize = maxAvailableSize - stackViewOffset - containerToPickerOffset - pickerSize - pickerToAdditionalOffset - additionalSize - additionalOffset
-        let count = max(0, min(Int(floor(remainingSize / buttonSize)), self.tools.count))
+        let count = max(0, min(Int(floor(remainingSize / buttonSize)), self.toolButtons.count))
 
         for idx in 0..<count {
-            guard idx < (count - 1) || count == self.tools.count else { continue }
+            guard idx < (count - 1) || count == self.toolButtons.count else { continue }
             self.stackView.arrangedSubviews[idx].alpha = 1
             self.stackView.arrangedSubviews[idx].isHidden = false
-            self.tools[idx] = self.tools[idx].copy(isHidden: false)
+            self.toolButtons[idx] = self.toolButtons[idx].copy(isHidden: false)
         }
 
-        if count < self.tools.count {
-            for idx in count..<self.tools.count {
-                self.tools[idx] = self.tools[idx].copy(isHidden: true)
+        if count < self.toolButtons.count {
+            for idx in count..<self.toolButtons.count {
+                self.toolButtons[idx] = self.toolButtons[idx].copy(isHidden: true)
             }
         } else {
             self.stackView.arrangedSubviews.last?.alpha = 0
@@ -225,8 +246,8 @@ class AnnotationToolbarViewController: UIViewController {
         self.colorPickerButton.tintColor = activeColor
     }
 
-    func set(selected: Bool, to tool: PSPDFKit.Annotation.Tool, color: UIColor?) {
-        guard let idx = self.tools.firstIndex(where: { $0.type == tool }) else { return }
+    func set(selected: Bool, to tool: Tool, color: UIColor?) {
+        guard let idx = self.toolButtons.firstIndex(where: { $0.type == tool }) else { return }
 
         (self.stackView.arrangedSubviews[idx] as? CheckboxButton)?.isSelected = selected
         (self.stackView.arrangedSubviews.last as? UIButton)?.menu = self.createHiddenToolsMenu()
@@ -238,7 +259,7 @@ class AnnotationToolbarViewController: UIViewController {
 
             let imageName: String
             switch tool {
-            case .ink, .square, .highlight, .note:
+            case .ink, .image, .highlight, .note:
                 imageName = "circle.fill"
             default:
                 imageName = "circle"
@@ -342,7 +363,7 @@ class AnnotationToolbarViewController: UIViewController {
     // MARK: - Setup
 
     private func createHiddenToolsMenu() -> UIMenu {
-        let children = self.tools.filter({ $0.isHidden }).map({ tool in
+        let children = self.toolButtons.filter({ $0.isHidden }).map({ tool in
             let isActive = self.delegate?.activeAnnotationTool == tool.type
             return UIAction(title: tool.title, image: tool.image.withRenderingMode(.alwaysTemplate), discoverabilityTitle: tool.accessibilityLabel, state: (isActive ? .on : .off),
                             handler: { [weak self] _ in
@@ -353,7 +374,7 @@ class AnnotationToolbarViewController: UIViewController {
         return UIMenu(children: children)
     }
 
-    private func createToolButtons(from tools: [Tool]) -> [UIView] {
+    private func createToolButtons(from tools: [ToolButton]) -> [UIView] {
         var showMoreConfig = UIButton.Configuration.plain()
         showMoreConfig.contentInsets = AnnotationToolbarViewController.buttonContentInsets
         showMoreConfig.image = UIImage(systemName: "ellipsis")?.withRenderingMode(.alwaysTemplate)
@@ -483,7 +504,7 @@ class AnnotationToolbarViewController: UIViewController {
     private func setupViews() {
         self.view.translatesAutoresizingMaskIntoConstraints = false
 
-        let stackView = UIStackView(arrangedSubviews: self.createToolButtons(from: self.tools))
+        let stackView = UIStackView(arrangedSubviews: self.createToolButtons(from: self.toolButtons))
         stackView.showsLargeContentViewer = true
         stackView.axis = .vertical
         stackView.spacing = 0

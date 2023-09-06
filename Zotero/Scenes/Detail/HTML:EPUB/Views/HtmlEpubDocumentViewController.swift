@@ -1,8 +1,8 @@
 //
-//  HtmlEpubReaderViewController.swift
+//  HtmlEpubDocumentViewController.swift
 //  Zotero
 //
-//  Created by Michal Rentka on 24.08.2023.
+//  Created by Michal Rentka on 05.09.2023.
 //  Copyright © 2023 Corporation for Digital Scholarship. All rights reserved.
 //
 
@@ -12,7 +12,7 @@ import WebKit
 import CocoaLumberjackSwift
 import RxSwift
 
-class HtmlEpubReaderViewController: UIViewController {
+class HtmlEpubDocumentViewController: UIViewController {
     enum JSHandlers: String, CaseIterable {
         case text = "textHandler"
         case log = "logHandler"
@@ -29,15 +29,19 @@ class HtmlEpubReaderViewController: UIViewController {
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
+    override func loadView() {
+        self.view = UIView()
+        self.view.backgroundColor = .systemBackground
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.setupNavigationBar()
         self.setupWebView()
         self.load()
     }
@@ -61,11 +65,12 @@ class HtmlEpubReaderViewController: UIViewController {
 
         case JSHandlers.text.rawValue:
             guard let data = message as? [String: Any], let event = data["event"] as? String else { return }
+
+            DDLogInfo("HtmlEpubReaderViewController: \(event); \(String(describing: data["params"]))")
+
             switch event {
             case "onInitialized":
-                DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(3)) {
-                    loadData()
-                }
+                loadData()
 
             default:
                 break
@@ -80,7 +85,7 @@ class HtmlEpubReaderViewController: UIViewController {
                 let data = try Data(contentsOf: self.url)
                 let jsArrayData = try JSONSerialization.data(withJSONObject: [UInt8](data))
                 guard let jsArrayString = String(data: jsArrayData, encoding: .utf8) else { return }
-                self.webViewHandler.call(javascript: #"tester();"#)
+                self.webViewHandler.call(javascript: #"start({ type: 'snapshot', buf: "# + jsArrayString + #", annotations: []});"#)
                     .observe(on: MainScheduler.instance)
                     .subscribe(with: self, onFailure: { _, error in
                         DDLogError("HtmlEpubReaderViewController: call failed - \(error)")
@@ -90,10 +95,6 @@ class HtmlEpubReaderViewController: UIViewController {
                 DDLogError("HtmlEpubReaderViewController: could not load file - \(error)")
             }
         }
-    }
-
-    private func close() {
-        self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 
     // MARK: - Setups
@@ -114,13 +115,5 @@ class HtmlEpubReaderViewController: UIViewController {
         self.webViewHandler.receivedMessageHandler = { [weak self] handler, message in
             self?.process(handler: handler, message: message)
         }
-    }
-
-    private func setupNavigationBar() {
-        let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"), style: .plain, target: nil, action: nil)
-        closeButton.title = L10n.close
-        closeButton.accessibilityLabel = L10n.close
-        closeButton.rx.tap.subscribe(with: self, onNext: { `self`, _ in self.close() }).disposed(by: self.disposeBag)
-        self.navigationItem.leftBarButtonItem = closeButton
     }
 }

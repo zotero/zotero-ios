@@ -32349,9 +32349,6 @@ function postMessage(event, params = {}) {
     params
   });
 }
-function log(message) {
-    window.webkit.messageHandlers.logHandler.postMessage(message);
-}
 window.createView = options => {
   window._view = new view({
     ...options,
@@ -32401,6 +32398,7 @@ window.createView = options => {
     }
   });
 };
+
 // Notify when iframe is loaded
 postMessage('onInitialized');
 })();
@@ -32410,7 +32408,6 @@ postMessage('onInitialized');
 ;
 });
 //# sourceMappingURL=view.js.map
-
-function tester() {
-    window.createView({type: 'snapshot', buf: [], annotations: []})
+function start(options) {
+    window.createView(options)
 }
