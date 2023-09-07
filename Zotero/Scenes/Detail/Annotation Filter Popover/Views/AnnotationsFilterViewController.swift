@@ -71,10 +71,8 @@ class AnnotationsFilterViewController: UIViewController {
             self.setupClearButton(visible: (!state.colors.isEmpty || !state.tags.isEmpty))
         }
 
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            self.updateFilter()
-            self.updatePreferredContentSize()
-        }
+        self.updateFilter()
+        self.updatePreferredContentSize()
     }
 
     private func updatePreferredContentSize() {
@@ -104,9 +102,7 @@ class AnnotationsFilterViewController: UIViewController {
     }
 
     private func close() {
-        if UIDevice.current.userInterfaceIdiom == .phone {
-            self.updateFilter()
-        }
+        self.updateFilter()
         self.navigationController?.presentingViewController?.dismiss(animated: true)
     }
 
@@ -149,14 +145,12 @@ class AnnotationsFilterViewController: UIViewController {
     }
 
     private func setupNavigationBar() {
-        if UIDevice.current.userInterfaceIdiom == .phone {
-            let close = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
-            close.rx.tap.subscribe(onNext: { [weak self] _ in
-                self?.close()
-            })
-            .disposed(by: self.disposeBag)
-            self.navigationItem.leftBarButtonItem = close
-        }
+        let close = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
+        close.rx.tap.subscribe(onNext: { [weak self] _ in
+            self?.close()
+        })
+        .disposed(by: self.disposeBag)
+        self.navigationItem.leftBarButtonItem = close
 
         self.setupClearButton(visible: (!self.viewModel.state.colors.isEmpty || !self.viewModel.state.tags.isEmpty))
     }
