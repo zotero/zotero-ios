@@ -56,6 +56,8 @@ class ItemsFilterViewController: UIViewController {
                           self.update(state: state)
                       })
                       .disposed(by: self.disposeBag)
+        
+        parent?.presentationController?.delegate = self
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -65,13 +67,6 @@ class ItemsFilterViewController: UIViewController {
         preferredSize.width = ItemsFilterViewController.width
         self.preferredContentSize = preferredSize
         self.navigationController?.preferredContentSize = preferredSize
-    }
-    
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        UIView.animate(withDuration: 0.1) {
-            self.showHideTagFilter()
-        }
     }
 
     // MARK: - Actions
@@ -129,6 +124,24 @@ class ItemsFilterViewController: UIViewController {
             tagFilterControllerContainer.isHidden = true
             separator.isHidden = true
             containerTop.constant = 15
+        }
+    }
+}
+
+extension ItemsFilterViewController: UIAdaptivePresentationControllerDelegate {
+    func presentationController(
+        _ presentationController: UIPresentationController,
+        willPresentWithAdaptiveStyle style: UIModalPresentationStyle,
+        transitionCoordinator: UIViewControllerTransitionCoordinator?
+    ) {
+        if let transitionCoordinator {
+            transitionCoordinator.animate { _ in
+                self.showHideTagFilter()
+            }
+        } else {
+            UIView.animate(withDuration: 0.1) {
+                self.showHideTagFilter()
+            }
         }
     }
 }
