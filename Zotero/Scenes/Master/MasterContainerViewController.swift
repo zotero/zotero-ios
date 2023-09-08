@@ -53,8 +53,11 @@ final class MasterContainerViewController: UINavigationController {
     private var initialBottomMinY: CGFloat?
     private var keyboardHeight: CGFloat = 0
 
-    init(bottomController: DraggableViewController) {
+    private weak var coordinatorDelegate: MasterContainerCoordinatorDelegate?
+    
+    init(bottomController: DraggableViewController, coordinatorDelegate: MasterContainerCoordinatorDelegate) {
         self.bottomController = bottomController
+        self.coordinatorDelegate = coordinatorDelegate
         self.bottomPosition = .default
         self.didAppear = false
         self.disposeBag = DisposeBag()
@@ -337,9 +340,8 @@ final class MasterContainerViewController: UINavigationController {
     override func separateSecondaryViewController(for splitViewController: UISplitViewController) -> UIViewController? {
         showBottomSheet(true)
         guard topViewController?.isKind(of: UINavigationController.self) == true else {
-            // TODO: Resolve nil detail view controller if needed.
             // When separating from an initially collapsed split view controller, the detail view controller is not yet set.
-            // Detect this here or in the split view controller delegate and set a default, e.g. all items
+            coordinatorDelegate?.showDefaultCollection()
             return nil
         }
         return super.separateSecondaryViewController(for: splitViewController)

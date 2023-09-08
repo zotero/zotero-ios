@@ -10,6 +10,10 @@ import UIKit
 
 import CocoaLumberjackSwift
 
+protocol MasterContainerCoordinatorDelegate: AnyObject {
+    func showDefaultCollection()
+}
+
 final class MasterCoordinator {
     private let controllers: Controllers
     private unowned let mainController: MainViewController
@@ -42,9 +46,8 @@ final class MasterCoordinator {
         let handler = TagFilterActionHandler(dbStorage: dbStorage)
         let viewModel = ViewModel(initialState: state, handler: handler)
         let tagController = TagFilterViewController(viewModel: viewModel, dragDropController: self.controllers.dragDropController)
-        tagController.view.backgroundColor = .systemGreen
 
-        let containerController = MasterContainerViewController(bottomController: tagController)
+        let containerController = MasterContainerViewController(bottomController: tagController, coordinatorDelegate: self)
         let masterController = containerController
         let masterCoordinator = MasterTopCoordinator(navigationController: masterController, mainCoordinatorDelegate: self.mainController, controllers: self.controllers)
         masterCoordinator.start(animated: false)
@@ -60,5 +63,11 @@ final class MasterCoordinator {
         self.topCoordinator = masterCoordinator
 
         self.mainController.viewControllers = [masterController]
+    }
+}
+
+extension MasterCoordinator: MasterContainerCoordinatorDelegate {
+    func showDefaultCollection() {
+        topCoordinator?.showDefaultCollection()
     }
 }

@@ -146,7 +146,7 @@ final class ItemsViewController: UIViewController {
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         
-        // willTransition(to:with:) seems to not be not called for all transitions, so instead we traitCollectionDidChange(_:) is used w/ a short animation block.
+        // willTransition(to:with:) seems to not be not called for all transitions, so instead traitCollectionDidChange(_:) is used w/ a short animation block.
         guard UIDevice.current.userInterfaceIdiom == .pad, traitCollection.horizontalSizeClass != previousTraitCollection?.horizontalSizeClass else { return }
         UIView.animate(withDuration: 0.1) {
             self.toolbarController.reloadToolbarItems(for: self.viewModel.state)
