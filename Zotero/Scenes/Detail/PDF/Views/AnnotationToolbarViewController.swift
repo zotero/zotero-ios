@@ -25,13 +25,11 @@ struct AnnotationToolOptions: OptionSet {
 }
 
 protocol AnnotationToolbarDelegate: AnyObject {
-    var rotation: AnnotationToolbarViewController.Rotation { get }
     var activeAnnotationTool: AnnotationToolbarViewController.Tool? { get }
     var canUndo: Bool { get }
     var canRedo: Bool { get }
     var maxAvailableToolbarSize: CGFloat { get }
 
-    func isCompactSize(for rotation: AnnotationToolbarViewController.Rotation) -> Bool
     func toggle(tool: AnnotationToolbarViewController.Tool, options: AnnotationToolOptions)
     func showToolOptions(sender: SourceView)
     func closeAnnotationToolbar()
@@ -172,11 +170,6 @@ class AnnotationToolbarViewController: UIViewController {
         self.view.addInteraction(UILargeContentViewerInteraction())
 
         self.setupViews()
-        if let delegate = self.delegate {
-            let rotation = delegate.rotation
-            self.set(rotation: rotation, isCompactSize: delegate.isCompactSize(for: rotation))
-            self.view.layoutIfNeeded()
-        }
     }
 
     // MARK: - Undo/Redo state

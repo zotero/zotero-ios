@@ -301,7 +301,7 @@ final class DetailCoordinator: Coordinator {
 
     private func showHtmlEpubReader(for url: URL) {
         guard let currentNavigationController = self.navigationController else { return }
-        let controller = HtmlEpubReaderViewController(url: url)
+        let controller = HtmlEpubReaderViewController(url: url, compactSize: UIDevice.current.isCompactWidth(size: currentNavigationController.view.frame.size))
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .fullScreen
         currentNavigationController.present(navigationController, animated: true, completion: nil)

@@ -64,7 +64,7 @@ class PDFReaderViewController: UIViewController {
     @CodableUserDefault(key: "PDFReaderToolbarState", defaultValue: AnnotationToolbarHandler.State(position: .leading, visible: true), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     var toolbarState: AnnotationToolbarHandler.State
     @UserDefault(key: "PDFReaderStatusBarVisible", defaultValue: true)
-    internal var statusBarVisible: Bool {
+    var statusBarVisible: Bool {
         didSet {
             (self.navigationController as? NavigationViewController)?.statusBarVisible = self.statusBarVisible
         }
@@ -73,7 +73,7 @@ class PDFReaderViewController: UIViewController {
     private var previousTraitCollection: UITraitCollection?
     var isSidebarVisible: Bool { return self.sidebarControllerLeft?.constant == 0 }
     var key: String { return self.viewModel.state.key }
-    private var statusBarHeight: CGFloat
+    var statusBarHeight: CGFloat
     internal var navigationBarHeight: CGFloat {
         return self.navigationController?.navigationBar.frame.height ?? 0.0
     }
@@ -527,6 +527,7 @@ class PDFReaderViewController: UIViewController {
         self.annotationToolbarHandler.didHide = { [weak self] in
             self?.documentController.disableAnnotationTools()
         }
+        self.annotationToolbarHandler.performInitialLayout()
     }
 
     private func setupAccessibility(forSidebarButton button: UIBarButtonItem) {
@@ -623,6 +624,14 @@ extension PDFReaderViewController: AnnotationToolbarHandlerDelegate {
         return self.view.safeAreaLayoutGuide.leadingAnchor
     }
 
+    var containerView: UIView {
+        return self.view
+    }
+
+    var documentView: UIView {
+        return self.documentController.view
+    }
+
     func layoutIfNeeded() {
         self.view.layoutIfNeeded()
     }
@@ -639,14 +648,8 @@ extension PDFReaderViewController: AnnotationToolbarHandlerDelegate {
         self.navigationController?.navigationBar.alpha = alpha
     }
     
-    func topOffsets(statusBarVisible: Bool) -> (statusBarHeight: CGFloat, navigationBarHeight: CGFloat, total: CGFloat) {
-        let statusBarOffset = statusBarVisible || UIDevice.current.userInterfaceIdiom != .pad ? self.statusBarHeight : 0
-        let navigationBarOffset = statusBarVisible ? self.navigationBarHeight : 0
-        return (statusBarOffset, navigationBarOffset, statusBarOffset + navigationBarOffset)
-    }
-    
     func topDidChange(forToolbarState state: AnnotationToolbarHandler.State) {
-        let (statusBarOffset, _, totalOffset) = self.topOffsets(statusBarVisible: self.statusBarVisible)
+        let (statusBarOffset, _, totalOffset) = self.annotationToolbarHandler.topOffsets(statusBarVisible: self.statusBarVisible)
 
         if !state.visible {
             self.documentTop.constant = totalOffset
@@ -677,6 +680,55 @@ extension PDFReaderViewController: AnnotationToolbarHandlerDelegate {
     func updateStatusBar() {
         self.navigationController?.setNeedsStatusBarAppearanceUpdate()
         self.setNeedsStatusBarAppearanceUpdate()
+    }
+}
+
+extension PDFReaderViewController: AnnotationToolbarDelegate {
+    func closeAnnotationToolbar() {
+        (self.toolbarButton.customView as? CheckboxButton)?.isSelected = false
+        self.annotationToolbarHandler.set(hidden: true, animated: true)
+    }
+
+    var activeAnnotationTool: AnnotationToolbarViewController.Tool? {
+        return self.documentController.pdfController?.annotationStateManager.state?.toolbarTool
+    }
+
+    var maxAvailableToolbarSize: CGFloat {
+        guard self.toolbarState.visible, let documentController = self.documentController else { return 0 }
+
+        switch self.toolbarState.position {
+        case .top, .pinned:
+            return self.isCompactWidth ? documentController.view.frame.size.width : (documentController.view.frame.size.width - (2 * AnnotationToolbarHandler.toolbarFullInsetInset))
+
+        case .trailing, .leading:
+            let window = (view.scene as? UIWindowScene)?.windows.first(where: \.isKeyWindow)
+            let topInset = window?.safeAreaInsets.top ?? 0
+            let bottomInset = window?.safeAreaInsets.bottom ?? 0
+            let interfaceIsHidden = self.navigationController?.isNavigationBarHidden ?? false
+            return self.view.frame.size.height - (2 * AnnotationToolbarHandler.toolbarCompactInset) - (interfaceIsHidden ? 0 : (topInset + documentController.scrubberBarHeight)) - bottomInset
+        }
+    }
+
+    func toggle(tool: AnnotationToolbarViewController.Tool, options: AnnotationToolOptions) {
+        let pspdfkitTool = tool.pspdfkitTool
+        let color = self.viewModel.state.toolColors[pspdfkitTool]
+        self.documentController.toggle(annotationTool: pspdfkitTool, color: color, tappedWithStylus: (options == .stylus))
+    }
+
+    var canUndo: Bool {
+        return self.viewModel.state.document.undoController.undoManager.canUndo
+    }
+
+    func performUndo() {
+        self.viewModel.state.document.undoController.undoManager.undo()
+    }
+
+    var canRedo: Bool {
+        return self.viewModel.state.document.undoController.undoManager.canRedo
+    }
+
+    func performRedo() {
+        self.viewModel.state.document.undoController.undoManager.redo()
     }
 }
 
