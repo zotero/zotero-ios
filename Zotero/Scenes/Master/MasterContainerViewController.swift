@@ -38,7 +38,6 @@ final class MasterContainerViewController: UINavigationController {
     private static let bottomContainerTappableHeight: CGFloat = 35
     private static let bottomContainerDraggableHeight: CGFloat = 55
     private static let minVisibleBottomHeight: CGFloat = 200
-    let bottomController: DraggableViewController
     private let disposeBag: DisposeBag
 
     private var bottomContainer: UIView!
@@ -52,11 +51,40 @@ final class MasterContainerViewController: UINavigationController {
     // Used to calculate position and velocity when dragging
     private var initialBottomMinY: CGFloat?
     private var keyboardHeight: CGFloat = 0
+    
+    private var _bottomController: DraggableViewController?
+    var bottomController: DraggableViewController? {
+        if _bottomController != nil {
+            return _bottomController
+        }
+        guard let bottomController = coordinatorDelegate?.bottomController() else { return nil }
+        setupBottomController()
+        _bottomController = bottomController
+        return _bottomController
+        
+        func setupBottomController() {
+            bottomController.view.translatesAutoresizingMaskIntoConstraints = false
+            // Since the instance keeps a strong reference to the bottomController, its view is simply added as a subview.
+            // Adding bottomController as a child view controller, would mess up the navigation stack.
+            bottomContainer.addSubview(bottomController.view)
+            let bottomControllerHeight = bottomController.view.heightAnchor.constraint(greaterThanOrEqualToConstant: 100)
+            bottomControllerHeight.priority = .required
+            let bottomControllerBottom = bottomController.view.bottomAnchor.constraint(equalTo: bottomContainer.bottomAnchor)
+            bottomControllerBottom.priority = UILayoutPriority(999)
+            NSLayoutConstraint.activate([
+                // bottom controller view
+                bottomController.view.topAnchor.constraint(equalTo: bottomContainer.topAnchor, constant: Self.bottomControllerHandleHeight),
+                bottomController.view.leadingAnchor.constraint(equalTo: bottomContainer.leadingAnchor),
+                bottomController.view.trailingAnchor.constraint(equalTo: bottomContainer.trailingAnchor),
+                bottomControllerHeight,
+                bottomControllerBottom
+            ])
+        }
+    }
 
     private weak var coordinatorDelegate: MasterContainerCoordinatorDelegate?
     
-    init(bottomController: DraggableViewController, coordinatorDelegate: MasterContainerCoordinatorDelegate) {
-        self.bottomController = bottomController
+    init(coordinatorDelegate: MasterContainerCoordinatorDelegate) {
         self.coordinatorDelegate = coordinatorDelegate
         self.bottomPosition = .default
         self.didAppear = false
@@ -78,8 +106,6 @@ final class MasterContainerViewController: UINavigationController {
         showBottomSheet(false)
         
         func setupView() {
-            bottomController.view.translatesAutoresizingMaskIntoConstraints = false
-
             let bottomPanRecognizer = UIPanGestureRecognizer()
             bottomPanRecognizer.delegate = self
             bottomPanRecognizer.rx.event
@@ -106,10 +132,6 @@ final class MasterContainerViewController: UINavigationController {
             view.addSubview(bottomContainer)
             self.bottomContainer = bottomContainer
 
-            // Since the instance keeps a strong reference to the bottomController, its view is simply added as a subview.
-            // Adding bottomController as a child view controller, would mess up the navigation stack.
-            bottomContainer.addSubview(bottomController.view)
-
             let handleBackground = UIView()
             handleBackground.translatesAutoresizingMaskIntoConstraints = false
             handleBackground.backgroundColor = .systemBackground
@@ -126,10 +148,6 @@ final class MasterContainerViewController: UINavigationController {
             bottomContainer.addSubview(separator)
 
             let bottomYConstraint = bottomContainer.topAnchor.constraint(equalTo: view.topAnchor)
-            let bottomControllerHeight = bottomController.view.heightAnchor.constraint(greaterThanOrEqualToConstant: 100)
-            bottomControllerHeight.priority = .required
-            let bottomControllerBottom = bottomController.view.bottomAnchor.constraint(equalTo: bottomContainer.bottomAnchor)
-            bottomControllerBottom.priority = UILayoutPriority(999)
             let bottomContainerBottomConstraint = view.bottomAnchor.constraint(equalTo: bottomContainer.bottomAnchor)
 
             // bottom container contains from top to bottom:
@@ -148,12 +166,6 @@ final class MasterContainerViewController: UINavigationController {
                 // drag icon
                 dragIcon.centerXAnchor.constraint(equalTo: bottomContainer.centerXAnchor),
                 dragIcon.topAnchor.constraint(equalTo: bottomContainer.topAnchor, constant: Self.dragHandleTopOffset),
-                // bottom controller view
-                bottomController.view.topAnchor.constraint(equalTo: bottomContainer.topAnchor, constant: Self.bottomControllerHandleHeight),
-                bottomController.view.leadingAnchor.constraint(equalTo: bottomContainer.leadingAnchor),
-                bottomController.view.trailingAnchor.constraint(equalTo: bottomContainer.trailingAnchor),
-                bottomControllerHeight,
-                bottomControllerBottom,
                 // separator
                 separator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale),
                 separator.topAnchor.constraint(equalTo: bottomContainer.topAnchor),
@@ -168,7 +180,7 @@ final class MasterContainerViewController: UINavigationController {
                 switch recognizer.state {
                 case .began:
                     initialBottomMinY = self.bottomContainer.frame.minY
-                    bottomController.disablePanning()
+                    bottomController?.disablePanning()
 
                 case .changed:
                     guard let initialBottomMinY else { return }
@@ -206,7 +218,7 @@ final class MasterContainerViewController: UINavigationController {
                     }
 
                     initialBottomMinY = nil
-                    bottomController.enablePanning()
+                    bottomController?.enablePanning()
 
                 case .cancelled, .possible:
                     break
@@ -349,7 +361,7 @@ final class MasterContainerViewController: UINavigationController {
 
     // MARK: - Bottom panning
     private func showBottomSheet(_ show: Bool) {
-        if show {
+        if show, bottomController != nil {
             bottomContainer.isHidden = false
             additionalSafeAreaInsets = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
         } else {
