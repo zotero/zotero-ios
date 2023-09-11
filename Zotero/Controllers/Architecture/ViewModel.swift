@@ -102,14 +102,13 @@ final class ViewModel<Handler: ViewModelActionHandler>: ObservableObject {
 
     let objectWillChange: ObservableObjectPublisher
 
-    private(set) var stateObservable: BehaviorRelay<Handler.State>
-    var state: Handler.State {
-        return self.stateObservable.value
-    }
+    private(set) var stateObservable: PublishSubject<Handler.State>
+    private(set) var state: Handler.State
 
     init(initialState: Handler.State, handler: Handler) {
         self.handler = handler
-        self.stateObservable = BehaviorRelay(value: initialState)
+        self.state = initialState
+        self.stateObservable = PublishSubject()
         self.objectWillChange = ObservableObjectPublisher()
         self.disposeBag = DisposeBag()
     }
@@ -140,11 +139,12 @@ final class ViewModel<Handler: ViewModelActionHandler>: ObservableObject {
         var state = self.state
         state.cleanup()
         action(&state)
+        self.state = state
 
         guard notifyListeners else { return }
 
         inMainThread {
-            self.stateObservable.accept(state)
+            self.stateObservable.on(.next(state))
             self.objectWillChange.send()
         }
     }
