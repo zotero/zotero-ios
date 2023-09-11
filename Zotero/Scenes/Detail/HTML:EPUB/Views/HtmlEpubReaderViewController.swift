@@ -254,6 +254,7 @@ extension HtmlEpubReaderViewController: AnnotationToolbarDelegate {
     }
     
     func toggle(tool: AnnotationToolbarViewController.Tool, options: AnnotationToolOptions) {
+        self.documentController?.set(tool: tool)
     }
     
     func showToolOptions(sender: SourceView) {

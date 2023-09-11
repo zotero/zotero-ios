@@ -48,6 +48,29 @@ class HtmlEpubDocumentViewController: UIViewController {
 
     // MARK: - Actions
 
+    func set(tool: AnnotationToolbarViewController.Tool?) {
+        if let tool = tool {
+            let toolName: String
+            switch tool {
+            case .highlight:
+                toolName = "highlight"
+
+            case .note:
+                toolName = "note"
+
+            case .eraser, .image, .ink:
+                return
+            }
+            self.webViewHandler.call(javascript: "test();")//"_view.setTool({ type: '\(toolName)', color: '#ffd400' });")
+                .subscribe()
+                .disposed(by: self.disposeBag)
+        } else {
+            self.webViewHandler.call(javascript: "clearTool();")
+                .subscribe()
+                .disposed(by: self.disposeBag)
+        }
+    }
+
     private func load() {
         guard let readerUrl = Bundle.main.url(forResource: "view", withExtension: "html", subdirectory: "Bundled/reader") else {
             DDLogError("HtmlEpubReaderViewController: can't load reader view.html")
@@ -85,7 +108,7 @@ class HtmlEpubDocumentViewController: UIViewController {
                 let data = try Data(contentsOf: self.url)
                 let jsArrayData = try JSONSerialization.data(withJSONObject: [UInt8](data))
                 guard let jsArrayString = String(data: jsArrayData, encoding: .utf8) else { return }
-                self.webViewHandler.call(javascript: #"start({ type: 'snapshot', buf: "# + jsArrayString + #", annotations: []});"#)
+                self.webViewHandler.call(javascript: #"createView({ type: 'snapshot', buf: "# + jsArrayString + #", annotations: []});"#)
                     .observe(on: MainScheduler.instance)
                     .subscribe(with: self, onFailure: { _, error in
                         DDLogError("HtmlEpubReaderViewController: call failed - \(error)")

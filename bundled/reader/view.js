@@ -32349,7 +32349,11 @@ function postMessage(event, params = {}) {
     params
   });
 }
+function log(data) {
+    window.webkit.messageHandlers.logHandler.postMessage(data);
+}
 window.createView = options => {
+    log("Initialize view");
   window._view = new view({
     ...options,
     container: document.getElementById('view'),
@@ -32397,8 +32401,11 @@ window.createView = options => {
       });
     }
   });
+    log(window._view);
 };
-
+window.test = options => {
+    log(window._view);
+};
 // Notify when iframe is loaded
 postMessage('onInitialized');
 })();
@@ -32408,6 +32415,3 @@ postMessage('onInitialized');
 ;
 });
 //# sourceMappingURL=view.js.map
-function start(options) {
-    window.createView(options)
-}
