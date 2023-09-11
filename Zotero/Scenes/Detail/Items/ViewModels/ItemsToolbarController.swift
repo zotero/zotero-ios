@@ -63,7 +63,7 @@ final class ItemsToolbarController {
             self.viewController.toolbarItems = self.createEditingToolbarItems(from: self.editingActions)
             self.updateEditingToolbarItems(for: state.selectedItems, results: state.results)
         } else {
-            let filters = self.deviceSpecificFilters(from: state.filters)
+            let filters = self.sizeClassSpecificFilters(from: state.filters)
             self.viewController.toolbarItems = self.createNormalToolbarItems(for: filters)
             self.updateNormalToolbarItems(for: filters, downloadBatchData: state.downloadBatchData, results: state.results)
         }
@@ -73,24 +73,26 @@ final class ItemsToolbarController {
         if state.isEditing {
             self.updateEditingToolbarItems(for: state.selectedItems, results: state.results)
         } else {
-            self.updateNormalToolbarItems(for: self.deviceSpecificFilters(from: state.filters), downloadBatchData: state.downloadBatchData, results: state.results)
+            self.updateNormalToolbarItems(for: self.sizeClassSpecificFilters(from: state.filters), downloadBatchData: state.downloadBatchData, results: state.results)
         }
     }
 
-    private func deviceSpecificFilters(from filters: [ItemsFilter]) -> [ItemsFilter] {
+    private func sizeClassSpecificFilters(from filters: [ItemsFilter]) -> [ItemsFilter] {
         // There is different functionality based on horizontal size class. iPhone and compact iPad show tag filters in filter popup in items screen while iPad shows tag filters in master controller.
         // So filter icon and description should always show up on iPhone and compact iPad, while it should not show up on regular iPad for tag filters.
         // Therefore we ignore `.tag` filter on iPhone and compact iPad, and keep it on regular iPad.
-        if delegate?.traitCollection.horizontalSizeClass == .regular && UIDevice.current.userInterfaceIdiom == .pad {
-            return filters.filter({
-                switch $0 {
-                case .tags: return false
-                case .downloadedFiles: return true
-                }
-            })
-        } else {
+        if delegate?.traitCollection.horizontalSizeClass == .compact || UIDevice.current.userInterfaceIdiom == .phone {
             return filters
         }
+        return filters.filter({
+            switch $0 {
+            case .tags:
+                return false
+                
+            case .downloadedFiles:
+                return true
+            }
+        })
     }
 
     // MARK: - Helpers
