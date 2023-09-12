@@ -27,6 +27,7 @@ protocol MasterCollectionsCoordinatorDelegate: MainCoordinatorDelegate {
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
     func showCiteExportError()
     func showSearch(for state: CollectionsState, in controller: UIViewController, selectAction: @escaping (Collection) -> Void)
+    func showDefaultCollection()
 }
 
 final class MasterTopCoordinator: NSObject, Coordinator {
@@ -259,5 +260,11 @@ extension MasterTopCoordinator: MasterCollectionsCoordinatorDelegate {
         searchController.isModalInPresentation = true
 
         controller.present(searchController, animated: true, completion: nil)
+    }
+    
+    func showDefaultCollection() {
+        let library = Library(identifier: visibleLibraryId, name: "", metadataEditable: true, filesEditable: true)
+        let collection = Collection(custom: .all)
+        showItems(for: collection, in: library, saveCollectionToDefaults: false)
     }
 }

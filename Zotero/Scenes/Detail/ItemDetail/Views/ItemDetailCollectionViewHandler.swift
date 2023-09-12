@@ -811,6 +811,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
     private func setupCollectionView() {
         self.collectionView.collectionViewLayout = self.createCollectionViewLayout()
         self.collectionView.delegate = self
+        // keyboardDismissMode is device based, regardless of horizontal size class.
         self.collectionView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
         self.collectionView.register(UINib(nibName: "ItemDetailSectionView", bundle: nil), forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: "Header")
         self.collectionView.isEditing = true

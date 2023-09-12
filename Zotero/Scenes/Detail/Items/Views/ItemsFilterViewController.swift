@@ -56,12 +56,12 @@ class ItemsFilterViewController: UIViewController {
                           self.update(state: state)
                       })
                       .disposed(by: self.disposeBag)
+        
+        parent?.presentationController?.delegate = self
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-
-        guard UIDevice.current.userInterfaceIdiom == .pad else { return }
 
         var preferredSize = self.container.systemLayoutSizeFitting(CGSize(width: ItemsFilterViewController.width, height: .greatestFiniteMagnitude))
         preferredSize.width = ItemsFilterViewController.width
@@ -98,13 +98,6 @@ class ItemsFilterViewController: UIViewController {
         self.downloadsTitleLabel.text = L10n.Items.Filters.downloads
         self.downloadsSwitch.isOn = self.downloadsFilterEnabled
 
-        guard UIDevice.current.userInterfaceIdiom == .phone else {
-            self.tagFilterControllerContainer.isHidden = true
-            self.separator.isHidden = true
-            return
-        }
-
-        self.containerTop.constant = 4
         self.tagFilterController.willMove(toParent: self)
         self.tagFilterControllerContainer.addSubview(self.tagFilterController.view)
         self.addChild(self.tagFilterController)
@@ -117,5 +110,38 @@ class ItemsFilterViewController: UIViewController {
             self.tagFilterControllerContainer.bottomAnchor.constraint(equalTo: self.tagFilterController.view.bottomAnchor),
             self.separator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale)
         ])
+        
+        showHideTagFilter()
+    }
+    
+    func showHideTagFilter() {
+        let isCollapsed = (presentingViewController as? MainViewController)?.isCollapsed
+        if UIDevice.current.userInterfaceIdiom == .phone || isCollapsed == true {
+            tagFilterControllerContainer.isHidden = false
+            separator.isHidden = false
+            containerTop.constant = 4
+        } else {
+            tagFilterControllerContainer.isHidden = true
+            separator.isHidden = true
+            containerTop.constant = 15
+        }
+    }
+}
+
+extension ItemsFilterViewController: UIAdaptivePresentationControllerDelegate {
+    func presentationController(
+        _ presentationController: UIPresentationController,
+        willPresentWithAdaptiveStyle style: UIModalPresentationStyle,
+        transitionCoordinator: UIViewControllerTransitionCoordinator?
+    ) {
+        if let transitionCoordinator {
+            transitionCoordinator.animate { _ in
+                self.showHideTagFilter()
+            }
+        } else {
+            UIView.animate(withDuration: 0.1) {
+                self.showHideTagFilter()
+            }
+        }
     }
 }

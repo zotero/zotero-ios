@@ -33,11 +33,11 @@ final class ItemDetailTitleContentView: UIView {
 
         let font = self.textView.font!
         self.topConstraint.constant = font.capHeight - font.ascender
-        switch UIDevice.current.userInterfaceIdiom {
-        case .pad:
-            self.bottomConstraint.constant = -font.descender
-        default: break
-        }
+        setupBottomConstraint()
+    }
+    
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        setupBottomConstraint()
     }
 
     override func layoutSubviews() {
@@ -48,5 +48,14 @@ final class ItemDetailTitleContentView: UIView {
     func setup(with title: String, isEditing: Bool) {
         self.textView.isEditable = isEditing
         self.delegate.set(text: title, to: self.textView)
+    }
+    
+    private func setupBottomConstraint() {
+        if traitCollection.horizontalSizeClass == .regular && UIDevice.current.userInterfaceIdiom == .pad {
+            let font = textView.font!
+            bottomConstraint.constant = -font.descender
+        } else {
+            bottomConstraint.constant = 0
+        }
     }
 }

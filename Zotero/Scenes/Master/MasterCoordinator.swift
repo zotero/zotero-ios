@@ -10,6 +10,11 @@ import UIKit
 
 import CocoaLumberjackSwift
 
+protocol MasterContainerCoordinatorDelegate: AnyObject {
+    func showDefaultCollection()
+    func bottomController() -> DraggableViewController?
+}
+
 final class MasterCoordinator {
     private let controllers: Controllers
     private unowned let mainController: MainViewController
@@ -26,38 +31,25 @@ final class MasterCoordinator {
     }
 
     func start() {
-        switch UIDevice.current.userInterfaceIdiom {
-        case .pad:
-            self.startPad()
-
-        default:
-            self.startPhone()
-        }
-    }
-
-    private func startPad() {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-        
-        let masterController = UINavigationController()
+        let masterController = MasterContainerViewController(coordinatorDelegate: self)
         let masterCoordinator = MasterTopCoordinator(navigationController: masterController, mainCoordinatorDelegate: self.mainController, controllers: self.controllers)
         masterCoordinator.start(animated: false)
         self.topCoordinator = masterCoordinator
+        self.mainController.viewControllers = [masterController]
+    }
+}
 
+extension MasterCoordinator: MasterContainerCoordinatorDelegate {
+    func showDefaultCollection() {
+        topCoordinator?.showDefaultCollection()
+    }
+    
+    func bottomController() -> DraggableViewController? {
+        guard UIDevice.current.userInterfaceIdiom == .pad else { return nil }
+        guard let dbStorage = controllers.userControllers?.dbStorage else { return nil }
         let state = TagFilterState(selectedTags: [], showAutomatic: Defaults.shared.tagPickerShowAutomaticTags, displayAll: Defaults.shared.tagPickerDisplayAllTags)
         let handler = TagFilterActionHandler(dbStorage: dbStorage)
         let viewModel = ViewModel(initialState: state, handler: handler)
-        let tagController = TagFilterViewController(viewModel: viewModel, dragDropController: self.controllers.dragDropController)
-
-        let containerController = MasterContainerViewController(topController: masterController, bottomController: tagController)
-        self.mainController.viewControllers = [containerController]
-    }
-
-    private func startPhone() {
-        let masterController = UINavigationController()
-        let masterCoordinator = MasterTopCoordinator(navigationController: masterController, mainCoordinatorDelegate: self.mainController, controllers: self.controllers)
-        masterCoordinator.start(animated: false)
-        self.topCoordinator = masterCoordinator
-
-        self.mainController.viewControllers = [masterController]
+        return TagFilterViewController(viewModel: viewModel, dragDropController: controllers.dragDropController)
     }
 }
