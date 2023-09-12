@@ -61,7 +61,7 @@ class HtmlEpubDocumentViewController: UIViewController {
             case .eraser, .image, .ink:
                 return
             }
-            self.webViewHandler.call(javascript: "test();")//"_view.setTool({ type: '\(toolName)', color: '#ffd400' });")
+            self.webViewHandler.call(javascript: "setTool('\(toolName)');")
                 .subscribe()
                 .disposed(by: self.disposeBag)
         } else {

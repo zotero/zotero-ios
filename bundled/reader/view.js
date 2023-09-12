@@ -26247,7 +26247,7 @@ class PersistentRange {
         return range;
     }
     toString() {
-        return `${this.startContainer}:${this.startOffset}-${this.endContainer}:${this.endOffset}`;
+        return this.toRange().toString();
     }
 }
 /**
@@ -26528,6 +26528,8 @@ function binarySearch(charDataRanges, pos) {
 
 ;// CONCATENATED MODULE: ./src/dom/common/find.ts
 
+
+
 class DefaultFindProcessor {
     constructor(options) {
         this._pos = null;
@@ -26540,7 +26542,8 @@ class DefaultFindProcessor {
             caseSensitive: this.findState.caseSensitive,
             entireWord: this.findState.entireWord
         });
-        for (let range of ranges) {
+        for (let originalRange of ranges) {
+            let range = new PersistentRange(originalRange);
             let findResult = {
                 range,
                 highlight: {
@@ -26552,7 +26555,7 @@ class DefaultFindProcessor {
                 }
             };
             if (this._initialPos === null && options.startRange) {
-                if (range.compareBoundaryPoints(Range.START_TO_START, options.startRange) >= 0) {
+                if (epub_view.compareBoundaryPoints(Range.START_TO_START, originalRange, options.startRange) >= 0) {
                     this._initialPos = this._buf.length;
                 }
             }
@@ -26642,7 +26645,6 @@ class DefaultFindProcessor {
     }
     getSnippets() {
         return this._buf.map(({ range }) => {
-            range = range.cloneRange();
             let snippet = range.toString();
             if (range.startContainer.nodeValue && range.startOffset > 0) {
                 let textBeforeRange = range.startContainer.nodeValue.substring(0, range.startOffset);
@@ -27143,11 +27145,17 @@ function setCaretToEnd(target) {
 // as much as it can, without ever going more than once per `wait` duration;
 // but if you'd like to disable the execution on the leading edge, pass
 // `{leading: false}`. To disable execution on the trailing edge, ditto.
+// Note: The function is modified to support dynamic wait by accept a function as wait argument
 function throttle(func, wait, options) {
   var context, args, result;
   var timeout = null;
   var previous = 0;
   if (!options) options = {};
+
+  // Helper function to get the wait time dynamically
+  var getWaitTime = function () {
+    return typeof wait === 'function' ? wait() : wait;
+  };
   var later = function () {
     previous = options.leading === false ? 0 : Date.now();
     timeout = null;
@@ -27157,10 +27165,11 @@ function throttle(func, wait, options) {
   return function () {
     var now = Date.now();
     if (!previous && options.leading === false) previous = now;
-    var remaining = wait - (now - previous);
+    var remaining = getWaitTime() - (now - previous); // Use the helper function
     context = this;
     args = arguments;
-    if (remaining <= 0 || remaining > wait) {
+    if (remaining <= 0 || remaining > getWaitTime()) {
+      // Use the helper function
       if (timeout) {
         clearTimeout(timeout);
         timeout = null;
@@ -28198,7 +28207,10 @@ class DOMView {
         this._options.onSetOverlayPopup();
     }
     _renderAnnotations() {
-        var _a, _b, _c;
+        var _a, _b;
+        if (!this._iframeDocument) {
+            return;
+        }
         let container = this._iframeDocument.body.querySelector(':scope > #annotation-overlay');
         if (!this._showAnnotations) {
             if (container) {
@@ -28223,8 +28235,11 @@ class DOMView {
                 key: a.id,
                 range: this.toDisplayedRange(a.position),
             })).filter(a => !!a.range),
-            ...(_b = (_a = this._find) === null || _a === void 0 ? void 0 : _a.getAnnotations()) !== null && _b !== void 0 ? _b : []
         ];
+        let findAnnotations = (_a = this._find) === null || _a === void 0 ? void 0 : _a.getAnnotations();
+        if (findAnnotations) {
+            displayedAnnotations.push(...findAnnotations.map(a => (Object.assign(Object.assign({}, a), { range: a.range.toRange() }))));
+        }
         if (this._highlightedPosition) {
             displayedAnnotations.push({
                 type: 'highlight',
@@ -28235,7 +28250,7 @@ class DOMView {
         }
         if (this._previewAnnotation) {
             displayedAnnotations.push({
-                sourceID: (_c = this._draggingNoteAnnotation) === null || _c === void 0 ? void 0 : _c.id,
+                sourceID: (_b = this._draggingNoteAnnotation) === null || _b === void 0 ? void 0 : _b.id,
                 type: this._previewAnnotation.type,
                 color: this._previewAnnotation.color,
                 sortIndex: this._previewAnnotation.sortIndex,
@@ -29401,7 +29416,7 @@ class ScrolledFlow extends AbstractFlow {
         this._iframeDocument.body.classList.remove('flow-mode-scrolled');
     }
     scrollIntoView(target, options) {
-        let rect = target.getBoundingClientRect();
+        let rect = (target instanceof PersistentRange ? target.toRange() : target).getBoundingClientRect();
         if ((options === null || options === void 0 ? void 0 : options.ifNeeded) && (rect.top >= 0 && rect.bottom < this._iframe.clientHeight)) {
             return;
         }
@@ -29516,35 +29531,37 @@ class PaginatedFlow extends AbstractFlow {
         this._handleKeyDown = (event) => {
             let { key, shiftKey } = event;
             // Left/right arrows are handled in EPUBView
-            if (key == 'ArrowUp') {
-                this.navigateToPreviousPage();
-                event.preventDefault();
-                return;
-            }
-            if (key == 'ArrowDown') {
-                this.navigateToNextPage();
-                event.preventDefault();
-                return;
-            }
-            if (key == 'PageUp') {
-                this.navigateToPreviousPage();
-                event.preventDefault();
-                return;
-            }
-            if (key == 'PageDown') {
-                this.navigateToNextPage();
-                event.preventDefault();
-                return;
-            }
-            if (key == 'Home') {
-                this.navigateToFirstPage();
-                event.preventDefault();
-                return;
-            }
-            if (key == 'End') {
-                this.navigateToLastPage();
-                event.preventDefault();
-                return;
+            if (!shiftKey) {
+                if (key == 'ArrowUp') {
+                    this.navigateToPreviousPage();
+                    event.preventDefault();
+                    return;
+                }
+                if (key == 'ArrowDown') {
+                    this.navigateToNextPage();
+                    event.preventDefault();
+                    return;
+                }
+                if (key == 'PageUp') {
+                    this.navigateToPreviousPage();
+                    event.preventDefault();
+                    return;
+                }
+                if (key == 'PageDown') {
+                    this.navigateToNextPage();
+                    event.preventDefault();
+                    return;
+                }
+                if (key == 'Home') {
+                    this.navigateToFirstPage();
+                    event.preventDefault();
+                    return;
+                }
+                if (key == 'End') {
+                    this.navigateToLastPage();
+                    event.preventDefault();
+                    return;
+                }
             }
             if (key == ' ') {
                 if (shiftKey) {
@@ -29665,7 +29682,7 @@ class PaginatedFlow extends AbstractFlow {
         }
         this.currentSectionIndex = index;
         // Otherwise, center the target horizontally
-        let rect = target.getBoundingClientRect();
+        let rect = (target instanceof PersistentRange ? target.toRange() : target).getBoundingClientRect();
         let x = rect.x + this._sectionsContainer.scrollLeft;
         if ((options === null || options === void 0 ? void 0 : options.block) === 'center') {
             x += rect.width / 2;
@@ -30075,10 +30092,31 @@ class EPUBView extends dom_view {
         if (range.collapsed) {
             return null;
         }
-        let text = type == 'highlight' || type == 'underline' ? range.toString().trim() : undefined;
-        // If this annotation type wants text, but we didn't get any, abort
-        if (text === '') {
-            return null;
+        let text;
+        if (type == 'highlight' || type == 'underline') {
+            text = '';
+            let lastSplitRange;
+            for (let splitRange of splitRangeToTextNodes(range)) {
+                if (lastSplitRange) {
+                    let lastSplitRangeContainer = closestElement(lastSplitRange.commonAncestorContainer);
+                    let lastSplitRangeBlock = lastSplitRangeContainer && getContainingBlock(lastSplitRangeContainer);
+                    let splitRangeContainer = closestElement(splitRange.commonAncestorContainer);
+                    let splitRangeBlock = splitRangeContainer && getContainingBlock(splitRangeContainer);
+                    if (lastSplitRangeBlock !== splitRangeBlock) {
+                        text += '\n\n';
+                    }
+                }
+                text += splitRange.toString().replace(/\s+/g, ' ');
+                lastSplitRange = splitRange;
+            }
+            text = text.trim();
+            // If this annotation type wants text, but we didn't get any, abort
+            if (!text) {
+                return null;
+            }
+        }
+        else {
+            text = undefined;
         }
         let selector = this.toSelector(range);
         if (!selector) {
@@ -30165,25 +30203,27 @@ class EPUBView extends dom_view {
     }
     _handleKeyDown(event) {
         let { key } = event;
-        if (key == 'ArrowLeft') {
-            if (this._pageProgressionRTL) {
-                this.flow.navigateToNextPage();
+        if (!event.shiftKey) {
+            if (key == 'ArrowLeft') {
+                if (this._pageProgressionRTL) {
+                    this.flow.navigateToNextPage();
+                }
+                else {
+                    this.flow.navigateToPreviousPage();
+                }
+                event.preventDefault();
+                return;
             }
-            else {
-                this.flow.navigateToPreviousPage();
+            if (key == 'ArrowRight') {
+                if (this._pageProgressionRTL) {
+                    this.flow.navigateToPreviousPage();
+                }
+                else {
+                    this.flow.navigateToNextPage();
+                }
+                event.preventDefault();
+                return;
             }
-            event.preventDefault();
-            return;
-        }
-        if (key == 'ArrowRight') {
-            if (this._pageProgressionRTL) {
-                this.flow.navigateToPreviousPage();
-            }
-            else {
-                this.flow.navigateToNextPage();
-            }
-            event.preventDefault();
-            return;
         }
         super._handleKeyDown(event);
     }
@@ -32021,8 +32061,9 @@ class AnnotationManager {
       if (annotation.position) {
         annotation.image = undefined;
       }
-      // All parameters in the existing annotation position are preserved except nextPageRects
-      let deleteNextPageRects = !((_annotation$position = annotation.position) !== null && _annotation$position !== void 0 && _annotation$position.nextPageRects);
+      // All properties in the existing annotation position are preserved except nextPageRects,
+      // which isn't preserved only when a new rects property is given
+      let deleteNextPageRects = annotation.rects && !((_annotation$position = annotation.position) !== null && _annotation$position !== void 0 && _annotation$position.nextPageRects);
       annotation = {
         ...existingAnnotation,
         ...annotation,
@@ -32350,10 +32391,13 @@ function postMessage(event, params = {}) {
   });
 }
 function log(data) {
-    window.webkit.messageHandlers.logHandler.postMessage(data);
+  window.webkit.messageHandlers.logHandler.postMessage(data);
 }
+window.setTool = tool => {
+    log("Set tool to " + tool);
+    window._view.setTool({ type: tool, color: '#ffd400' });
+};
 window.createView = options => {
-    log("Initialize view");
   window._view = new view({
     ...options,
     container: document.getElementById('view'),
@@ -32401,11 +32445,8 @@ window.createView = options => {
       });
     }
   });
-    log(window._view);
 };
-window.test = options => {
-    log(window._view);
-};
+
 // Notify when iframe is loaded
 postMessage('onInitialized');
 })();
