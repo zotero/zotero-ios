@@ -330,11 +330,6 @@ final class MasterContainerViewController: UINavigationController {
     override func collapseSecondaryViewController(_ secondaryViewController: UIViewController, for splitViewController: UISplitViewController) {
         setBottomSheet(hidden: true)
         super.collapseSecondaryViewController(secondaryViewController, for: splitViewController)
-        // The search bar is hidden when the app goes to background for unknown reason. This is a workaround to reset it if needed when
-        // the app returns to active state.
-        if let controller = (secondaryViewController as? UINavigationController)?.topViewController as? ItemsViewController {
-            controller.setSearchBarNeedsReset()
-        }
     }
 
     override func separateSecondaryViewController(for splitViewController: UISplitViewController) -> UIViewController? {
