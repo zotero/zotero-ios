@@ -48,8 +48,8 @@ class HtmlEpubDocumentViewController: UIViewController {
 
     // MARK: - Actions
 
-    func set(tool: AnnotationToolbarViewController.Tool?) {
-        if let tool = tool {
+    func set(tool data: (AnnotationTool, UIColor)?) {
+        if let (tool, color) = data {
             let toolName: String
             switch tool {
             case .highlight:
@@ -61,7 +61,7 @@ class HtmlEpubDocumentViewController: UIViewController {
             case .eraser, .image, .ink:
                 return
             }
-            self.webViewHandler.call(javascript: "setTool('\(toolName)');")
+            self.webViewHandler.call(javascript: "setTool({ type: '\(toolName)', color: '\(color.hexString)' });")
                 .subscribe()
                 .disposed(by: self.disposeBag)
         } else {

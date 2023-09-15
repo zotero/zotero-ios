@@ -27959,6 +27959,7 @@ class DOMView {
         this._gotPointerUp = false;
         this._handledPointerIDs = new Set();
         this._previewAnnotation = null;
+        this._touchAnnotationStartPosition = null;
         this._draggingNoteAnnotation = null;
         this._resizing = false;
         this._tryUseToolDebounced = debounce(this._tryUseTool.bind(this), 500);
@@ -28167,7 +28168,9 @@ class DOMView {
         }
         if (this._tool.type == 'highlight' || this._tool.type == 'underline') {
             if (this._gotPointerUp) {
-                let annotation = this._getAnnotationFromTextSelection(this._tool.type, this._tool.color);
+                let annotation = this._touchAnnotationStartPosition
+                    ? this._previewAnnotation
+                    : this._getAnnotationFromTextSelection(this._tool.type, this._tool.color);
                 if (annotation && annotation.text) {
                     this._options.onAddAnnotation(annotation);
                 }
@@ -28337,10 +28340,10 @@ class DOMView {
             this._iframeWindow.addEventListener('keyup', this._options.onKeyUp);
             this._iframeWindow.addEventListener('keydown', this._handleKeyDown.bind(this), true);
             this._iframeWindow.addEventListener('click', this._handleClick.bind(this));
-            this._iframeWindow.addEventListener('pointerover', this._handlePointerOver.bind(this));
-            this._iframeWindow.addEventListener('pointerdown', this._handlePointerDown.bind(this), true);
-            this._iframeWindow.addEventListener('pointerup', this._handlePointerUp.bind(this));
-            this._iframeWindow.addEventListener('pointermove', this._handlePointerMove.bind(this), { passive: true });
+            this._iframeDocument.body.addEventListener('pointerover', this._handlePointerOver.bind(this));
+            this._iframeDocument.body.addEventListener('pointerdown', this._handlePointerDown.bind(this), true);
+            this._iframeDocument.body.addEventListener('pointerup', this._handlePointerUp.bind(this));
+            this._iframeDocument.body.addEventListener('pointermove', this._handlePointerMove.bind(this), { passive: true });
             this._iframeWindow.addEventListener('dragstart', this._handleDragStart.bind(this), { capture: true });
             this._iframeWindow.addEventListener('dragenter', this._handleDragEnter.bind(this));
             this._iframeWindow.addEventListener('dragover', this._handleDragOver.bind(this));
@@ -28619,6 +28622,11 @@ class DOMView {
         if (event.button == 0) {
             this._gotPointerUp = false;
             this._pointerMovedWhileDown = false;
+            if ((event.pointerType === 'touch' || event.pointerType === 'pen')
+                && (this._tool.type === 'highlight' || this._tool.type === 'underline')) {
+                this._touchAnnotationStartPosition = caretPositionFromPoint(this._iframeDocument, event.clientX, event.clientY);
+                event.stopPropagation();
+            }
         }
         this._options.onSetOverlayPopup();
         // Create note annotation on pointer down event, if note tool is active.
@@ -28661,10 +28669,31 @@ class DOMView {
         else {
             this._tryUseTool();
         }
+        this._touchAnnotationStartPosition = null;
     }
     _handlePointerMove(event) {
         if (event.buttons % 1 == 0) {
             this._pointerMovedWhileDown = true;
+            if (this._touchAnnotationStartPosition
+                && (event.pointerType === 'touch' || event.pointerType === 'pen')
+                && (this._tool.type === 'highlight' || this._tool.type === 'underline')) {
+                let endPos = caretPositionFromPoint(this._iframeDocument, event.clientX, event.clientY);
+                if (endPos) {
+                    let range = this._iframeDocument.createRange();
+                    range.setStart(this._touchAnnotationStartPosition.offsetNode, this._touchAnnotationStartPosition.offset);
+                    range.setEnd(endPos.offsetNode, endPos.offset);
+                    if (range.collapsed) {
+                        range.setStart(endPos.offsetNode, endPos.offset);
+                        range.setEnd(this._touchAnnotationStartPosition.offsetNode, this._touchAnnotationStartPosition.offset);
+                    }
+                    let annotation = this._getAnnotationFromRange(range, this._tool.type, this._tool.color);
+                    if (annotation) {
+                        this._previewAnnotation = annotation;
+                        this._renderAnnotations();
+                    }
+                }
+                event.stopPropagation();
+            }
         }
     }
     _handleResize() {
@@ -28681,12 +28710,16 @@ class DOMView {
     // ***
     setTool(tool) {
         this._tool = tool;
+        // When highlighting or underlining, we draw a preview annotation during selection, so set the browser's
+        // selection highlight color to transparent. Otherwise, use the default selection color.
         let selectionColor = tool.type == 'highlight' || tool.type == 'underline' ? 'transparent' : SELECTION_COLOR;
         if (selectionColor.startsWith('#')) {
             // 50% opacity, like annotations -- not needed if we're using a system color
             selectionColor += '80';
         }
         this._iframeDocument.documentElement.style.setProperty('--selection-color', selectionColor);
+        // When using any tool besides pointer, touches should annotate but pinch-zoom should still be allowed
+        this._iframeDocument.documentElement.style.touchAction = tool.type != 'pointer' ? 'pinch-zoom' : 'auto';
         if (this._previewAnnotation && tool.type !== 'note') {
             this._previewAnnotation = null;
         }
@@ -29573,23 +29606,18 @@ class PaginatedFlow extends AbstractFlow {
                 event.preventDefault();
             }
         };
-        this._handleTouchStart = (event) => {
-            if (this._touchStartID !== null) {
+        this._handlePointerDown = (event) => {
+            if (this._touchStartID !== null || event.pointerType !== 'touch') {
                 return;
             }
-            this._touchStartID = event.changedTouches[0].identifier;
-            this._touchStartX = event.changedTouches[0].clientX;
+            this._touchStartID = event.pointerId;
+            this._touchStartX = event.clientX;
         };
-        this._handleTouchMove = (event) => {
-            if (this._touchStartID === null) {
+        this._handlePointerMove = (event) => {
+            if (this._touchStartID === null || event.pointerId !== this._touchStartID) {
                 return;
             }
-            let touch = Array.from(event.changedTouches).find(touch => touch.identifier === this._touchStartID);
-            if (!touch) {
-                return;
-            }
-            event.preventDefault();
-            let swipeAmount = (touch.clientX - this._touchStartX) / 100;
+            let swipeAmount = (event.clientX - this._touchStartX) / 100;
             // If on the first/last page, clamp the CSS variable so the indicator doesn't expand all the way
             if (swipeAmount < 0 && !this.canNavigateToNextPage()) {
                 swipeAmount = Math.max(swipeAmount, -0.6);
@@ -29600,12 +29628,8 @@ class PaginatedFlow extends AbstractFlow {
             this._iframeDocument.body.classList.add('swiping');
             this._iframeDocument.documentElement.style.setProperty('--swipe-amount', swipeAmount.toString());
         };
-        this._handleTouchEnd = (event) => {
-            if (this._touchStartID === null) {
-                return;
-            }
-            let touch = Array.from(event.changedTouches).find(touch => touch.identifier === this._touchStartID);
-            if (!touch) {
+        this._handlePointerUp = (event) => {
+            if (this._touchStartID === null || event.pointerId !== this._touchStartID) {
                 return;
             }
             event.preventDefault();
@@ -29613,7 +29637,7 @@ class PaginatedFlow extends AbstractFlow {
             this._iframeDocument.documentElement.style.setProperty('--swipe-amount', '0');
             this._touchStartID = null;
             // Switch pages after swiping 100px
-            let swipeAmount = (touch.clientX - this._touchStartX) / 100;
+            let swipeAmount = (event.clientX - this._touchStartX) / 100;
             if (swipeAmount <= -1) {
                 this.navigateToNextPage();
             }
@@ -29637,18 +29661,18 @@ class PaginatedFlow extends AbstractFlow {
         }, 100);
         this._sectionsContainer = this._iframeDocument.body.querySelector(':scope > .sections');
         this._iframeDocument.addEventListener('keydown', this._handleKeyDown, { capture: true });
-        this._iframeDocument.body.addEventListener('touchstart', this._handleTouchStart);
-        this._iframeDocument.body.addEventListener('touchmove', this._handleTouchMove);
-        this._iframeDocument.body.addEventListener('touchend', this._handleTouchEnd);
+        this._iframeDocument.addEventListener('pointerdown', this._handlePointerDown);
+        this._iframeDocument.addEventListener('pointermove', this._handlePointerMove);
+        this._iframeDocument.addEventListener('pointerup', this._handlePointerUp);
         this._iframeDocument.addEventListener('wheel', this._handleWheel, { passive: false });
         this._iframe.classList.add('flow-mode-paginated');
         this._iframeDocument.body.classList.add('flow-mode-paginated');
     }
     destroy() {
         this._iframeDocument.removeEventListener('keydown', this._handleKeyDown, { capture: true });
-        this._iframeDocument.body.removeEventListener('touchstart', this._handleTouchStart);
-        this._iframeDocument.body.removeEventListener('touchmove', this._handleTouchMove);
-        this._iframeDocument.body.removeEventListener('touchend', this._handleTouchEnd);
+        this._iframeDocument.removeEventListener('pointerdown', this._handlePointerDown);
+        this._iframeDocument.removeEventListener('pointermove', this._handlePointerMove);
+        this._iframeDocument.removeEventListener('pointerup', this._handlePointerUp);
         this._iframeDocument.removeEventListener('wheel', this._handleWheel);
         this._iframe.classList.remove('flow-mode-paginated');
         this._iframeDocument.body.classList.remove('flow-mode-paginated');
@@ -29807,7 +29831,7 @@ class PaginatedFlow extends AbstractFlow {
 }
 
 ;// CONCATENATED MODULE: ./node_modules/raw-loader/dist/cjs.js!./src/dom/epub/stylesheets/content.css
-/* harmony default export */ const content = ("@namespace epub url('http://www.idpf.org/2007/ops');\n\n/*** Layout styles applied in all flow modes: ***/\n\n/* Can't combine the following two or it would make the specificity higher than the body.flow-mode-paginated selector below. */\nhtml {\n\tmargin: 0 !important;\n\tpadding: 0 !important;\n}\n\nbody {\n\tmargin: 0 !important;\n\tpadding: 0 !important;\n}\n\n\n/*** Layout styles applied in scrolled mode: ***/\n\nbody.flow-mode-scrolled, body.flow-mode-scrolled > .sections {\n    overflow-x: visible;\n}\n\nbody.flow-mode-scrolled > .sections {\n\tmargin-inline: 40px;\n}\n\nbody.flow-mode-scrolled > .sections > .section-container {\n\tmargin-inline: auto;\n\tmargin-bottom: 100px;\n\tmax-width: 800px;\n\t/* Try some different permutations of the 'contain' values that we want, because Firefox, at least, seems to throw\n\t   away the whole property when it sees an unknown value. */\n\tcontain: layout paint;\n\tcontain: layout paint style;\n\tcontain: layout paint inline-size;\n\tcontain: layout paint style inline-size;\n}\n\nbody.flow-mode-scrolled > .sections > .section-container.hidden {\n\tvisibility: hidden;\n\tpointer-events: none;\n}\n\nbody.flow-mode-scrolled replaced-body img, body.flow-mode-scrolled replaced-body svg,\nbody.flow-mode-scrolled replaced-body audio, body.flow-mode-scrolled replaced-body video {\n    /* Size the media element's box so it fits within one page */\n\tmax-width: calc(min(100vw - 80px, 100%)) !important;\n\tmax-height: 100vh;\n    /* Contain the content within the box so its aspect ratio doesn't change */\n\tobject-fit: contain;\n}\n\n\n/*** Layout styles applied in paginated mode: ***/\n\nbody.flow-mode-paginated {\n\tmargin: 40px !important;\n\toverflow: hidden;\n\toverscroll-behavior: none;\n}\n\n.swipe-indicator-left, .swipe-indicator-right {\n    display: none;\n}\n\nbody.flow-mode-paginated .swipe-indicator-left, body.flow-mode-paginated .swipe-indicator-right {\n    display: block;\n}\n\n.swipe-indicator-left, .swipe-indicator-right {\n\tposition: fixed;\n\ttop: calc(50% - 50px);\n\twidth: 80px;\n\theight: 100px;\n\tbackground-color: #bdbdbd;\n\tz-index: 9999;\n\tpointer-events: none;\n}\n\n.swipe-indicator-left {\n\tleft: calc((min(var(--swipe-amount, 0), 1) - 1) * 80px);\n\topacity: calc(min(var(--swipe-amount, 0), 1) * 0.8);\n\tborder-radius: 0 80px 80px 0;\n}\n\n.swipe-indicator-right {\n\tleft: calc(100vw + (max(var(--swipe-amount, 0), -1) * 80px));\n\topacity: calc(max(var(--swipe-amount, 0), -1) * -0.8);\n\tborder-radius: 80px 0 0 80px;\n}\n\nbody.flow-mode-paginated > .sections {\n\tmin-height: calc(100vh - 80px);\n\tmax-height: calc(100vh - 80px);\n\tmargin-inline: auto;\n\tcolumn-fill: auto;\n\tcolumn-gap: 60px;\n\toverflow: hidden;\n\toverscroll-behavior: none;\n}\n\nbody.flow-mode-paginated > .sections.spread-mode-none {\n\tmax-width: 800px;\n\tcolumn-count: 1;\n\tcolumn-gap: 100vw;\n}\n\nbody.flow-mode-paginated > .sections.spread-mode-odd {\n\tcolumn-count: 2;\n}\n\n@media (max-width: 800px) {\n\tbody.flow-mode-paginated > .sections {\n\t\tcolumn-count: 1;\n\t}\n}\n\nbody.flow-mode-paginated > .sections > .section-container {\n\t/* See above: Firefox throws away 'contain' properties with unknown values, so we need to set a fallback. */\n\tcontain: layout paint;\n\tcontain: layout paint style;\n}\n\nbody.flow-mode-paginated > .sections > .section-container.hidden {\n\tdisplay: none;\n}\n\nbody.flow-mode-paginated replaced-body img, body.flow-mode-paginated replaced-body svg,\nbody.flow-mode-paginated replaced-body audio, body.flow-mode-paginated replaced-body video {\n\tmax-width: calc(50vw - 80px) !important;\n    max-height: calc(100vh - 80px) !important;\n    object-fit: contain;\n}\n\nbody.flow-mode-paginated replaced-body .table-like {\n\tdisplay: block;\n\toverflow: auto;\n\tmax-height: calc(100vh - 80px);\n}\n\n@media (max-width: 800px) {\n\tbody.flow-mode-paginated replaced-body * {\n\t\tmax-width: 100vw;\n\t}\n}\n\n\n/*** Content Styles ***/\n\nbody > .sections > .section-container ::selection {\n    background-color: var(--selection-color);\n}\n\nreplaced-html {\n\tdisplay: block;\n}\n\nreplaced-body {\n    /* https://readium.org/readium-css/docs/CSS08-defaults.html#dynamic-leading-line-height */\n    /* https://github.com/readium/readium-css/blob/583011453612e6f695056ab6c086a2c4f4cac9c0/css/src/modules/ReadiumCSS-base.css#L65 */\n    --content-line-height-compensation: 1;\n    --content-line-height: calc((1em + (2ex - 1ch) - ((1rem - 16px) * 0.1667)) * var(--content-line-height-compensation));\n\n\tdisplay: block;\n\tmargin-left: 0 !important;\n\tmargin-right: 0 !important;\n\tbackground: transparent !important;\n\n\tfont-family: var(--content-font-family, \"Georgia\"), serif;\n\tfont-size: calc(var(--content-scale) * 13pt) !important;\n\tline-height: var(--content-line-height);\n\ttext-align: justify;\n    text-rendering: optimizeLegibility;\n}\n\nreplaced-body:lang(bn),\nreplaced-body:lang(km),\nreplaced-body:lang(ml),\nreplaced-body:lang(ta),\nreplaced-body:lang(th) {\n    --content-line-height-compensation: 1.067;\n}\n\nreplaced-body:lang(he),\nreplaced-body:lang(hi),\nreplaced-body:lang(kn),\nreplaced-body:lang(pa) {\n    --content-line-height-compensation: 1.1;\n}\n\nreplaced-body:lang(am),\nreplaced-body:lang(chr),\nreplaced-body:lang(gu),\nreplaced-body:lang(ja),\nreplaced-body:lang(ko),\nreplaced-body:lang(or),\nreplaced-body:lang(si),\nreplaced-body:lang(zh) {\n    --content-line-height-compensation: 1.167;\n}\n\nreplaced-body p {\n\t/* Really enforce some of our formatting choices on body paragraphs */\n\tfont-family: var(--content-font-family, \"Georgia\"), serif !important;\n\n    widows: 2;\n    orphans: 2;\n}\n\nreplaced-body a {\n\ttext-decoration: none;\n}\n\nreplaced-body sup {\n\t/* Prevent footnote superscripts from affecting the line-height */\n\tline-height: 1 !important;\n\tfont-size: 0.8em !important;\n\tvertical-align: baseline !important;\n\tposition: relative !important;\n\ttop: -0.5em !important;\n}\n\nbody:not(.footnote-popup-content) replaced-body aside[epub|type=\"footnote\"],\nbody:not(.footnote-popup-content) replaced-body aside[epub|type=\"rearnote\"],\nbody:not(.footnote-popup-content) replaced-body aside[epub|type=\"note\"] {\n    display: none;\n}\n\nbody.footnote-popup-content * {\n    list-style-type: none !important;\n}\n\nbody.footnote-popup-content .section-container {\n    padding: 16px;\n}\n\nreplaced-body, replaced-body * {\n    /* Work around a bug in the mapped_hyph crate that causes a segfault when viewing some EPUBs\n       (This is a shame! We want hyphens!) */\n    hyphens: none !important;\n}\n");
+/* harmony default export */ const content = ("@namespace epub url('http://www.idpf.org/2007/ops');\n\n/*** Layout styles applied in all flow modes: ***/\n\n/* Can't combine the following two or it would make the specificity higher than the body.flow-mode-paginated selector below. */\nhtml {\n\tmargin: 0 !important;\n\tpadding: 0 !important;\n}\n\nbody {\n\tmargin: 0 !important;\n\tpadding: 0 !important;\n}\n\n\n/*** Layout styles applied in scrolled mode: ***/\n\nbody.flow-mode-scrolled, body.flow-mode-scrolled > .sections {\n    overflow-x: visible;\n}\n\nbody.flow-mode-scrolled > .sections {\n\tmargin-inline: 40px;\n}\n\nbody.flow-mode-scrolled > .sections > .section-container {\n\tmargin-inline: auto;\n\tmargin-bottom: 100px;\n\tmax-width: 800px;\n\t/* Try some different permutations of the 'contain' values that we want, because Firefox, at least, seems to throw\n\t   away the whole property when it sees an unknown value. */\n\tcontain: layout paint;\n\tcontain: layout paint style;\n\tcontain: layout paint inline-size;\n\tcontain: layout paint style inline-size;\n}\n\nbody.flow-mode-scrolled > .sections > .section-container.hidden {\n\tvisibility: hidden;\n\tpointer-events: none;\n}\n\nbody.flow-mode-scrolled replaced-body img, body.flow-mode-scrolled replaced-body svg,\nbody.flow-mode-scrolled replaced-body audio, body.flow-mode-scrolled replaced-body video {\n    /* Size the media element's box so it fits within one page */\n\tmax-width: calc(min(100vw - 80px, 100%)) !important;\n\tmax-height: 100vh;\n    /* Contain the content within the box so its aspect ratio doesn't change */\n\tobject-fit: contain;\n}\n\n\n/*** Layout styles applied in paginated mode: ***/\n\nbody.flow-mode-paginated {\n\tmargin: 40px !important;\n\toverflow: hidden;\n\toverscroll-behavior: none;\n}\n\n.swipe-indicator-left, .swipe-indicator-right {\n    display: none;\n}\n\nbody.flow-mode-paginated .swipe-indicator-left, body.flow-mode-paginated .swipe-indicator-right {\n    display: block;\n}\n\n.swipe-indicator-left, .swipe-indicator-right {\n\tposition: fixed;\n\ttop: calc(50% - 50px);\n\twidth: 80px;\n\theight: 100px;\n\tbackground-color: #bdbdbd;\n\tz-index: 9999;\n\tpointer-events: none;\n}\n\n.swipe-indicator-left {\n\tleft: calc((min(var(--swipe-amount, 0), 1) - 1) * 80px);\n\topacity: calc(min(var(--swipe-amount, 0), 1) * 0.8);\n\tborder-radius: 0 80px 80px 0;\n}\n\n.swipe-indicator-right {\n\tleft: calc(100vw + (max(var(--swipe-amount, 0), -1) * 80px));\n\topacity: calc(max(var(--swipe-amount, 0), -1) * -0.8);\n\tborder-radius: 80px 0 0 80px;\n}\n\nbody.flow-mode-paginated > .sections {\n\tmin-height: calc(100vh - 80px);\n\tmax-height: calc(100vh - 80px);\n\tmargin-inline: auto;\n\tcolumn-fill: auto;\n\tcolumn-gap: 60px;\n\toverflow: hidden;\n\toverscroll-behavior: none;\n}\n\nbody.flow-mode-paginated > .sections.spread-mode-none {\n\tmax-width: 800px;\n\tcolumn-count: 1;\n\tcolumn-gap: 100vw;\n}\n\nbody.flow-mode-paginated > .sections.spread-mode-odd {\n\tcolumn-count: 2;\n}\n\n@media (max-width: 800px) {\n\tbody.flow-mode-paginated > .sections {\n\t\tcolumn-count: 1;\n\t}\n}\n\nbody.flow-mode-paginated > .sections > .section-container {\n\t/* See above: Firefox throws away 'contain' properties with unknown values, so we need to set a fallback. */\n\tcontain: layout paint;\n\tcontain: layout paint style;\n}\n\nbody.flow-mode-paginated > .sections > .section-container.hidden {\n\tdisplay: none;\n}\n\nbody.flow-mode-paginated replaced-body img, body.flow-mode-paginated replaced-body svg,\nbody.flow-mode-paginated replaced-body audio, body.flow-mode-paginated replaced-body video {\n\tmax-width: calc(50vw - 80px) !important;\n    max-height: calc(100vh - 80px) !important;\n    object-fit: contain;\n}\n\nbody.flow-mode-paginated replaced-body .table-like {\n\tdisplay: block;\n\toverflow: auto;\n\tmax-height: calc(100vh - 80px);\n}\n\n@media (max-width: 800px) {\n\tbody.flow-mode-paginated replaced-body * {\n\t\tmax-width: 100vw;\n\t}\n}\n\n\n/*** Content Styles ***/\n\nbody > .sections > .section-container ::selection {\n    background-color: var(--selection-color);\n}\n\nreplaced-html {\n\tdisplay: block;\n}\n\nreplaced-body {\n    /* https://readium.org/readium-css/docs/CSS08-defaults.html#dynamic-leading-line-height */\n    /* https://github.com/readium/readium-css/blob/583011453612e6f695056ab6c086a2c4f4cac9c0/css/src/modules/ReadiumCSS-base.css#L65 */\n    --content-line-height-compensation: 1;\n    --content-line-height: calc((1em + (2ex - 1ch) - ((1rem - 16px) * 0.1667)) * var(--content-line-height-compensation));\n\n\tdisplay: block;\n\tmargin-left: 0 !important;\n\tmargin-right: 0 !important;\n\tbackground: transparent !important;\n\n\tfont-family: var(--content-font-family, \"Georgia\"), serif;\n\tfont-size: calc(var(--content-scale) * 13pt) !important;\n\tline-height: var(--content-line-height);\n\ttext-align: justify;\n    text-rendering: optimizeLegibility;\n}\n\nreplaced-body:lang(bn),\nreplaced-body:lang(km),\nreplaced-body:lang(ml),\nreplaced-body:lang(ta),\nreplaced-body:lang(th) {\n    --content-line-height-compensation: 1.067;\n}\n\nreplaced-body:lang(he),\nreplaced-body:lang(hi),\nreplaced-body:lang(kn),\nreplaced-body:lang(pa) {\n    --content-line-height-compensation: 1.1;\n}\n\nreplaced-body:lang(am),\nreplaced-body:lang(chr),\nreplaced-body:lang(gu),\nreplaced-body:lang(ja),\nreplaced-body:lang(ko),\nreplaced-body:lang(or),\nreplaced-body:lang(si),\nreplaced-body:lang(zh) {\n    --content-line-height-compensation: 1.167;\n}\n\nreplaced-body p {\n\t/* Really enforce some of our formatting choices on body paragraphs */\n\tfont-family: var(--content-font-family, \"Georgia\"), serif !important;\n\n    widows: 2;\n    orphans: 2;\n\thyphens: auto;\n}\n\nreplaced-body a {\n\ttext-decoration: none;\n}\n\nreplaced-body sup {\n\t/* Prevent footnote superscripts from affecting the line-height */\n\tline-height: 1 !important;\n\tfont-size: 0.8em !important;\n\tvertical-align: baseline !important;\n\tposition: relative !important;\n\ttop: -0.5em !important;\n}\n\nbody:not(.footnote-popup-content) replaced-body aside[epub|type=\"footnote\"],\nbody:not(.footnote-popup-content) replaced-body aside[epub|type=\"rearnote\"],\nbody:not(.footnote-popup-content) replaced-body aside[epub|type=\"note\"] {\n    display: none;\n}\n\nbody.footnote-popup-content * {\n    list-style-type: none !important;\n}\n\nbody.footnote-popup-content .section-container {\n    padding: 16px;\n}\n");
 ;// CONCATENATED MODULE: ./src/dom/epub/epub-view.ts
 var epub_view_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -32393,10 +32417,6 @@ function postMessage(event, params = {}) {
 function log(data) {
   window.webkit.messageHandlers.logHandler.postMessage(data);
 }
-window.setTool = tool => {
-    log("Set tool to " + tool);
-    window._view.setTool({ type: tool, color: '#ffd400' });
-};
 window.createView = options => {
   window._view = new view({
     ...options,
@@ -32445,6 +32465,14 @@ window.createView = options => {
       });
     }
   });
+};
+window.setTool = options => {
+  log("Set tool: " + options.type + "; color: " + options.color);
+  window._view.setTool(options);
+};
+window.clearTool = () => {
+  log("Clear tool");
+  window._view.clearTool();
 };
 
 // Notify when iframe is loaded

@@ -13,6 +13,7 @@ import RxSwift
 
 class HtmlEpubReaderViewController: UIViewController {
     private let url: URL
+    private let viewModel: ViewModel<HtmlEpubReaderActionHandler>
     private let disposeBag: DisposeBag
 
     private weak var documentController: HtmlEpubDocumentViewController?
@@ -23,6 +24,7 @@ class HtmlEpubReaderViewController: UIViewController {
         return self.navigationController?.navigationBar.frame.height ?? 0.0
     }
     private(set) var isCompactWidth: Bool
+    private var didAppear: Bool
     var statusBarHeight: CGFloat
     @CodableUserDefault(
         key: "HtmlEpubReaderToolbarState",
@@ -64,9 +66,11 @@ class HtmlEpubReaderViewController: UIViewController {
         return barButton
     }()
 
-    init(url: URL, compactSize: Bool) {
+    init(url: URL, viewModel: ViewModel<HtmlEpubReaderActionHandler>, compactSize: Bool) {
         self.url = url
+        self.viewModel = viewModel
         self.isCompactWidth = compactSize
+        self.didAppear = false
         self.disposeBag = DisposeBag()
         self.statusBarHeight = UIApplication
             .shared
@@ -98,6 +102,35 @@ class HtmlEpubReaderViewController: UIViewController {
         self.setupNavigationBar()
         self.setupViews()
         self.navigationItem.rightBarButtonItem = self.toolbarButton
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        if !self.didAppear {
+            self.annotationToolbarHandler.viewWillAppear(documentIsLocked: false)
+        }
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        self.didAppear = true
+    }
+
+    deinit {
+        DDLogInfo("HtmlEpubReaderViewController deinitialized")
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        if !self.didAppear {
+            self.annotationToolbarHandler.viewDidLayoutSubviews()
+        }
+
+        if (self.documentController?.view.frame.width ?? 0) < AnnotationToolbarHandler.minToolbarWidth && self.toolbarState.visible && self.toolbarState.position == .top {
+            self.closeAnnotationToolbar()
+        }
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -163,49 +196,49 @@ extension HtmlEpubReaderViewController: AnnotationToolbarHandlerDelegate {
     var isNavigationBarHidden: Bool {
         self.navigationController?.navigationBar.isHidden ?? false
     }
-    
+
     var isSidebarHidden: Bool {
         return false
     }
-    
+
     var containerView: UIView {
         return self.view
     }
-    
+
     var documentView: UIView {
         return self.view
     }
-    
+
     var toolbarLeadingAnchor: NSLayoutXAxisAnchor {
         return self.view.leadingAnchor
     }
-    
+
     var toolbarLeadingSafeAreaAnchor: NSLayoutXAxisAnchor {
         return self.view.safeAreaLayoutGuide.leadingAnchor
     }
-    
+
     func layoutIfNeeded() {
         self.view.layoutIfNeeded()
     }
-    
+
     func setNeedsLayout() {
         self.view.setNeedsLayout()
     }
-    
+
     func hideSidebarIfNeeded(forPosition position: AnnotationToolbarHandler.State.Position, isToolbarSmallerThanMinWidth: Bool, animated: Bool) {
     }
-    
+
     func setNavigationBar(hidden: Bool, animated: Bool) {
         self.navigationController?.setNavigationBarHidden(hidden, animated: animated)
     }
-    
+
     func setNavigationBar(alpha: CGFloat) {
         self.navigationController?.navigationBar.alpha = alpha
     }
-    
+
     func setDocumentInterface(hidden: Bool) {
     }
-    
+
     func topDidChange(forToolbarState state: AnnotationToolbarHandler.State) {
         let (statusBarOffset, _, totalOffset) = self.annotationToolbarHandler.topOffsets(statusBarVisible: self.statusBarVisible)
 
@@ -225,7 +258,7 @@ extension HtmlEpubReaderViewController: AnnotationToolbarHandlerDelegate {
             self.documentTop.constant = totalOffset
         }
     }
-    
+
     func updateStatusBar() {
         self.navigationController?.setNeedsStatusBarAppearanceUpdate()
         self.setNeedsStatusBarAppearanceUpdate()
@@ -236,33 +269,46 @@ extension HtmlEpubReaderViewController: AnnotationToolbarDelegate {
     var rotation: AnnotationToolbarViewController.Rotation {
         return .horizontal
     }
-    
-    var activeAnnotationTool: AnnotationToolbarViewController.Tool? {
+
+    var activeAnnotationTool: AnnotationTool? {
         return .highlight
     }
-    
+
     var canUndo: Bool {
         return false
     }
-    
+
     var canRedo: Bool {
         return false
     }
-    
+
     var maxAvailableToolbarSize: CGFloat {
         return self.view.frame.width
     }
-    
-    func toggle(tool: AnnotationToolbarViewController.Tool, options: AnnotationToolOptions) {
-        self.documentController?.set(tool: tool)
+
+    func toggle(tool: AnnotationTool, options: AnnotationToolOptions) {
+        guard let color = self.viewModel.state.toolColors[tool] else { return }
+
+        let oldTool = self.viewModel.state.activeTool
+        self.viewModel.process(action: .toggleTool(tool))
+
+        self.documentController?.set(tool: self.viewModel.state.activeTool.flatMap({ ($0, color) }))
+
+        if let tool = self.viewModel.state.activeTool {
+            self.annotationToolbarController.set(selected: true, to: tool, color: color)
+        } else if let oldTool {
+            self.annotationToolbarController.set(selected: false, to: oldTool, color: color)
+        }
     }
-    
+
     func showToolOptions(sender: SourceView) {
     }
-    
+
     func closeAnnotationToolbar() {
+        (self.toolbarButton.customView as? CheckboxButton)?.isSelected = false
+        self.annotationToolbarHandler.set(hidden: true, animated: true)
     }
-    
+
     func performUndo() {
     }
 

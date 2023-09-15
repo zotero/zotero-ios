@@ -194,7 +194,7 @@ final class DetailCoordinator: Coordinator {
 
             case "text/html", "application/epub+zip":
                 DDLogInfo("DetailCoordinator: show HTML / EPUB \(attachment.key)")
-                self.showHtmlEpubReader(for: url)
+                self.showHtmlEpubReader(for: url, key: attachment.key, library: library)
 
             case "text/plain":
                 let text = try? String(contentsOf: url, encoding: .utf8)
@@ -299,9 +299,10 @@ final class DetailCoordinator: Coordinator {
         navigationController?.present(controller, animated: true, completion: nil)
     }
 
-    private func showHtmlEpubReader(for url: URL) {
-        guard let currentNavigationController = self.navigationController else { return }
-        let controller = HtmlEpubReaderViewController(url: url, compactSize: UIDevice.current.isCompactWidth(size: currentNavigationController.view.frame.size))
+    private func showHtmlEpubReader(for url: URL, key: String, library: Library) {
+        guard let currentNavigationController = self.navigationController, let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+        let viewModel = ViewModel(initialState: HtmlEpubReaderState(key: key, library: library), handler: HtmlEpubReaderActionHandler(dbStorage: dbStorage))
+        let controller = HtmlEpubReaderViewController(url: url, viewModel: viewModel, compactSize: UIDevice.current.isCompactWidth(size: currentNavigationController.view.frame.size))
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .fullScreen
         currentNavigationController.present(navigationController, animated: true, completion: nil)

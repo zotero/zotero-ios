@@ -689,7 +689,7 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
         self.annotationToolbarHandler.set(hidden: true, animated: true)
     }
 
-    var activeAnnotationTool: AnnotationToolbarViewController.Tool? {
+    var activeAnnotationTool: AnnotationTool? {
         return self.documentController.pdfController?.annotationStateManager.state?.toolbarTool
     }
 
@@ -709,7 +709,7 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
         }
     }
 
-    func toggle(tool: AnnotationToolbarViewController.Tool, options: AnnotationToolOptions) {
+    func toggle(tool: AnnotationTool, options: AnnotationToolOptions) {
         let pspdfkitTool = tool.pspdfkitTool
         let color = self.viewModel.state.toolColors[pspdfkitTool]
         self.documentController.toggle(annotationTool: pspdfkitTool, color: color, tappedWithStylus: (options == .stylus))
@@ -940,7 +940,7 @@ extension PDFReaderViewController: PDFSearchDelegate {
 }
 
 extension PSPDFKit.Annotation.Tool {
-    fileprivate var toolbarTool: AnnotationToolbarViewController.Tool? {
+    fileprivate var toolbarTool: AnnotationTool? {
         switch self {
         case .eraser:
             return .eraser
@@ -963,7 +963,7 @@ extension PSPDFKit.Annotation.Tool {
     }
 }
 
-extension AnnotationToolbarViewController.Tool {
+extension AnnotationTool {
     fileprivate var pspdfkitTool: PSPDFKit.Annotation.Tool {
         switch self {
         case .eraser:

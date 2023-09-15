@@ -25,12 +25,12 @@ struct AnnotationToolOptions: OptionSet {
 }
 
 protocol AnnotationToolbarDelegate: AnyObject {
-    var activeAnnotationTool: AnnotationToolbarViewController.Tool? { get }
+    var activeAnnotationTool: AnnotationTool? { get }
     var canUndo: Bool { get }
     var canRedo: Bool { get }
     var maxAvailableToolbarSize: CGFloat { get }
 
-    func toggle(tool: AnnotationToolbarViewController.Tool, options: AnnotationToolOptions)
+    func toggle(tool: AnnotationTool, options: AnnotationToolOptions)
     func showToolOptions(sender: SourceView)
     func closeAnnotationToolbar()
     func performUndo()
@@ -42,16 +42,8 @@ class AnnotationToolbarViewController: UIViewController {
         case horizontal, vertical
     }
 
-    enum Tool {
-        case ink
-        case image
-        case note
-        case highlight
-        case eraser
-    }
-
     private struct ToolButton {
-        let type: Tool
+        let type: AnnotationTool
         let title: String
         let accessibilityLabel: String
         let image: UIImage
@@ -99,7 +91,7 @@ class AnnotationToolbarViewController: UIViewController {
     weak var delegate: AnnotationToolbarDelegate?
     private var lastGestureRecognizerTouch: UITouch?
 
-    init(tools: [Tool], size: CGFloat) {
+    init(tools: [AnnotationTool], size: CGFloat) {
         self.size = size
         self.toolButtons = Self.createButtons(from: tools)
         self.disposeBag = DisposeBag()
@@ -110,10 +102,10 @@ class AnnotationToolbarViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
-    private static func createButtons(from tools: [Tool]) -> [ToolButton] {
+    private static func createButtons(from tools: [AnnotationTool]) -> [ToolButton] {
         return tools.map({ button(from: $0) })
 
-        func button(from tool: Tool) -> ToolButton {
+        func button(from tool: AnnotationTool) -> ToolButton {
             switch tool {
             case .highlight:
                 ToolButton(
@@ -239,7 +231,7 @@ class AnnotationToolbarViewController: UIViewController {
         self.colorPickerButton.tintColor = activeColor
     }
 
-    func set(selected: Bool, to tool: Tool, color: UIColor?) {
+    func set(selected: Bool, to tool: AnnotationTool, color: UIColor?) {
         guard let idx = self.toolButtons.firstIndex(where: { $0.type == tool }) else { return }
 
         (self.stackView.arrangedSubviews[idx] as? CheckboxButton)?.isSelected = selected
