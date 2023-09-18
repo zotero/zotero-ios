@@ -300,7 +300,8 @@ final class WebSocketController {
         DDLogInfo("WebSocketController: WS event - \(self.redact(logMessage: "\(event)"))")
 
         switch event {
-        case .ping, .pong, .viabilityChanged, .reconnectSuggested, .connected, .cancelled, .error: break
+        case .ping, .pong, .viabilityChanged, .reconnectSuggested, .connected, .cancelled, .error, .peerClosed:
+            break
 
         case .disconnected:
             self.reconnect()
