@@ -43,9 +43,9 @@ final class MasterContainerViewController: UINavigationController {
     lazy var bottomController: DraggableViewController? = {
         return coordinatorDelegate?.createBottomController()
     }()
-    private var bottomContainer: UIView?
-    private var bottomYConstraint: NSLayoutConstraint!
-    private var bottomContainerBottomConstraint: NSLayoutConstraint!
+    private weak var bottomContainer: UIView?
+    private weak var bottomYConstraint: NSLayoutConstraint?
+    private weak var bottomContainerBottomConstraint: NSLayoutConstraint?
     // Current position of bottom container
     private var bottomPosition: BottomPosition
     // Previous position of bottom container. Used to return to previous position when drag handle is tapped.
@@ -78,31 +78,11 @@ final class MasterContainerViewController: UINavigationController {
         func setupView() {
             guard let bottomController else { return }
 
-            let bottomPanRecognizer = UIPanGestureRecognizer()
-            bottomPanRecognizer.delegate = self
-            bottomPanRecognizer.rx.event
-                .subscribe(with: self, onNext: { _, recognizer in
-                    toolbarDidPan(recognizer: recognizer)
-                })
-                .disposed(by: disposeBag)
-
-            let tapRecognizer = UITapGestureRecognizer()
-            tapRecognizer.delegate = self
-            tapRecognizer.require(toFail: bottomPanRecognizer)
-            tapRecognizer.rx.event
-                .subscribe(with: self, onNext: { _, _ in
-                    toggleBottomPosition()
-                })
-                .disposed(by: disposeBag)
-
             let bottomContainer = UIView()
             bottomContainer.translatesAutoresizingMaskIntoConstraints = false
             bottomContainer.layer.masksToBounds = true
             bottomContainer.backgroundColor = .systemBackground
-            bottomContainer.addGestureRecognizer(bottomPanRecognizer)
-            bottomContainer.addGestureRecognizer(tapRecognizer)
             view.addSubview(bottomContainer)
-            self.bottomContainer = bottomContainer
 
             let handleBackground = UIView()
             handleBackground.translatesAutoresizingMaskIntoConstraints = false
@@ -160,13 +140,34 @@ final class MasterContainerViewController: UINavigationController {
                 bottomControllerBottom
             ])
 
+            self.bottomContainer = bottomContainer
             self.bottomYConstraint = bottomYConstraint
             self.bottomContainerBottomConstraint = bottomContainerBottomConstraint
+
+            let bottomPanRecognizer = UIPanGestureRecognizer()
+            bottomPanRecognizer.delegate = self
+            bottomPanRecognizer.rx.event
+                .subscribe(with: self, onNext: { _, recognizer in
+                    toolbarDidPan(recognizer: recognizer)
+                })
+                .disposed(by: disposeBag)
+
+            let tapRecognizer = UITapGestureRecognizer()
+            tapRecognizer.delegate = self
+            tapRecognizer.require(toFail: bottomPanRecognizer)
+            tapRecognizer.rx.event
+                .subscribe(with: self, onNext: { _, _ in
+                    toggleBottomPosition()
+                })
+                .disposed(by: disposeBag)
+
+            bottomContainer.addGestureRecognizer(bottomPanRecognizer)
+            bottomContainer.addGestureRecognizer(tapRecognizer)
 
             func toolbarDidPan(recognizer: UIPanGestureRecognizer) {
                 switch recognizer.state {
                 case .began:
-                    initialBottomMinY = self.bottomContainer?.frame.minY ?? 0
+                    initialBottomMinY = bottomContainer.frame.minY
                     bottomController.disablePanning()
 
                 case .changed:
@@ -183,14 +184,14 @@ final class MasterContainerViewController: UINavigationController {
                         minY = hiddenTopOffset
                     }
 
-                    self.bottomYConstraint.constant = minY
+                    bottomYConstraint.constant = minY
                     view.layoutIfNeeded()
 
                 case .ended, .failed:
                     let availableHeight = view.frame.height - keyboardHeight
                     let dragVelocity = recognizer.velocity(in: view)
-                    let newPosition = position(fromYPos: self.bottomYConstraint.constant, containerHeight: availableHeight, velocity: dragVelocity)
-                    let velocity = velocity(from: dragVelocity, currentYPos: self.bottomYConstraint.constant, position: newPosition, availableHeight: availableHeight)
+                    let newPosition = position(fromYPos: bottomYConstraint.constant, containerHeight: availableHeight, velocity: dragVelocity)
+                    let velocity = velocity(from: dragVelocity, currentYPos: bottomYConstraint.constant, position: newPosition, availableHeight: availableHeight)
 
                     set(bottomPosition: newPosition, containerHeight: availableHeight)
 
@@ -266,30 +267,30 @@ final class MasterContainerViewController: UINavigationController {
         
         func setupKeyboardObserving() {
             NotificationCenter.default
-                              .keyboardWillShow
-                              .observe(on: MainScheduler.instance)
-                              .subscribe(onNext: { notification in
-                                  if let data = notification.keyboardData {
-                                      setupKeyboard(with: data)
-                                  }
-                              })
-                              .disposed(by: disposeBag)
+                .keyboardWillShow
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { notification in
+                    if let data = notification.keyboardData {
+                        setupKeyboard(with: data)
+                    }
+                })
+                .disposed(by: disposeBag)
 
             NotificationCenter.default
-                              .keyboardWillHide
-                              .observe(on: MainScheduler.instance)
-                              .subscribe(onNext: { notification in
-                                  if let data = notification.keyboardData {
-                                      setupKeyboard(with: data)
-                                  }
-                              })
-                              .disposed(by: disposeBag)
+                .keyboardWillHide
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { notification in
+                    if let data = notification.keyboardData {
+                        setupKeyboard(with: data)
+                    }
+                })
+                .disposed(by: disposeBag)
             
             func setupKeyboard(with keyboardData: KeyboardData) {
                 keyboardHeight = keyboardData.visibleHeight
 
                 updateBottomPosition()
-                bottomContainerBottomConstraint.constant = keyboardData.visibleHeight
+                bottomContainerBottomConstraint?.constant = keyboardData.visibleHeight
                 UIView.animate(withDuration: 0.5, delay: 0, options: .curveEaseOut, animations: {
                     self.view.layoutIfNeeded()
                 })
@@ -302,7 +303,7 @@ final class MasterContainerViewController: UINavigationController {
 
         updateBottomPosition()
         if let splitViewController {
-            // Split view controller collapsed status when the app launches is correct here, so it's used to show/hide bottom sheet for the first appearance.
+            // Split view controller collapsed status when the app launches is correct here, so it's used to show/hide bottom sheet for the first appearance.q2
             // The app may be launched in collapsed mode, if it was in such mode the last time it was moved to background.
             setBottomSheet(hidden: splitViewController.isCollapsed)
         }
@@ -348,7 +349,7 @@ final class MasterContainerViewController: UINavigationController {
     }
 
     private func set(bottomPosition: BottomPosition, containerHeight: CGFloat) {
-        bottomYConstraint.constant = bottomPosition.topOffset(availableHeight: containerHeight)
+        bottomYConstraint?.constant = bottomPosition.topOffset(availableHeight: containerHeight)
         self.bottomPosition = bottomPosition
     }
     
@@ -364,6 +365,8 @@ final class MasterContainerViewController: UINavigationController {
 
 extension MasterContainerViewController: UIGestureRecognizerDelegate {
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard let bottomContainer else { return false }
+        
         let location = gestureRecognizer.location(in: bottomContainer)
 
         if gestureRecognizer is UITapGestureRecognizer {
