@@ -76,7 +76,7 @@ final class MasterContainerViewController: UINavigationController {
         setBottomSheet(hidden: true)
         
         func setupView() {
-            guard let bottomController = bottomController else { return }
+            guard let bottomController else { return }
 
             let bottomPanRecognizer = UIPanGestureRecognizer()
             bottomPanRecognizer.delegate = self
