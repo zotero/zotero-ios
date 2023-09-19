@@ -25,10 +25,17 @@ final class MasterContainerViewController: UINavigationController {
 
         func topOffset(availableHeight: CGFloat) -> CGFloat {
             switch self {
-            case .mostlyVisible: return 202
-            case .default: return availableHeight * 0.6
-            case .hidden: return availableHeight - MasterContainerViewController.bottomControllerHandleHeight
-            case .custom(let offset): return offset
+            case .mostlyVisible:
+                return 202
+
+            case .default:
+                return availableHeight * 0.6
+            
+            case .hidden:
+                return availableHeight - MasterContainerViewController.bottomControllerHandleHeight
+
+            case .custom(let offset):
+                return availableHeight - offset < MasterContainerViewController.minVisibleBottomHeight ? MasterContainerViewController.minVisibleBottomHeight : offset
             }
         }
     }
@@ -227,7 +234,7 @@ final class MasterContainerViewController: UINavigationController {
                         }
                     }
 
-                    if yPos > (containerHeight - MasterContainerViewController.minVisibleBottomHeight) {
+                    if yPos > (containerHeight - Self.minVisibleBottomHeight) {
                         return velocity.y > 0 ? .hidden : .default
                     }
 
