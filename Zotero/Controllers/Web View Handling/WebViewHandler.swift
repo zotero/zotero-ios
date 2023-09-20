@@ -51,6 +51,10 @@ final class WebViewHandler: NSObject {
                 webView.configuration.userContentController.add(self, name: handler)
             }
         }
+
+        let scriptStr = #"console.log = (function(oriLogFunc){ return function(str) {window.webkit.messageHandlers.logHandler.postMessage(str);oriLogFunc.call(console,str);}})(console.log);"#
+        let script = WKUserScript(source: scriptStr, injectionTime: .atDocumentStart, forMainFrameOnly: true)
+        webView.configuration.userContentController.addUserScript(script)
     }
 
     // MARK: - Actions

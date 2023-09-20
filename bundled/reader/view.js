@@ -27395,15 +27395,7 @@ const AnnotationOverlay = (props) => {
     }, [onResizeEnd]);
     let widgetContainer = (0,react.useRef)(null);
     return react.createElement(react.Fragment, null,
-        react.createElement("svg", { className: "annotation-container", style: {
-                mixBlendMode: 'multiply',
-                zIndex: '9999',
-                pointerEvents: 'none',
-                position: 'absolute',
-                left: '0',
-                top: '0',
-                overflow: 'visible'
-            } },
+        react.createElement("svg", { className: "annotation-container blended" },
             annotations.filter(annotation => annotation.type == 'highlight' || annotation.type == 'underline').map((annotation) => {
                 if (annotation.id) {
                     return (react.createElement(HighlightOrUnderline, { annotation: annotation, key: annotation.key, selected: selectedAnnotationIDs.includes(annotation.id), singleSelection: selectedAnnotationIDs.length == 1, onPointerDown: handlePointerDown, onPointerUp: handlePointerUp, onDragStart: handleDragStart, onResizeStart: handleResizeStart, onResizeEnd: handleResizeEnd, pointerEventsSuppressed: pointerEventsSuppressed, widgetContainer: widgetContainer.current }));
@@ -27413,14 +27405,7 @@ const AnnotationOverlay = (props) => {
                 }
             }),
             annotations.filter(annotation => annotation.type == 'note' && !annotation.id).map(annotation => (react.createElement(NotePreview, { annotation: annotation, key: annotation.key })))),
-        react.createElement("svg", { className: "annotation-container", style: {
-                zIndex: '9999',
-                pointerEvents: 'none',
-                position: 'absolute',
-                left: '0',
-                top: '0',
-                overflow: 'visible'
-            }, ref: widgetContainer },
+        react.createElement("svg", { className: "annotation-container", ref: widgetContainer },
             react.createElement(StaggeredNotes, { annotations: annotations.filter(a => a.type == 'note' && a.id), selectedAnnotationIDs: selectedAnnotationIDs, onPointerDown: handlePointerDown, onPointerUp: handlePointerUp, onDragStart: handleDragStart, pointerEventsSuppressed: pointerEventsSuppressed })));
 };
 AnnotationOverlay.displayName = 'AnnotationOverlay';
@@ -27594,14 +27579,12 @@ const Resizer = (props) => {
     let rtl = getComputedStyle(closestElement(annotation.range.commonAncestorContainer)).direction == 'rtl';
     highlightRects = Array.from(highlightRects)
         .sort((a, b) => (a.bottom - b.bottom) || (a.left - b.left));
-    let handlePointerDown = (event, isStart) => {
+    let handlePointerDown = (event) => {
         if (event.button !== 0) {
             return;
         }
+        event.preventDefault();
         event.target.setPointerCapture(event.pointerId);
-        setResizingSide(isStart ? 'start' : 'end');
-        setPointerCapture({ elem: event.target, pointerId: event.pointerId });
-        onResizeStart(annotation);
     };
     let handlePointerUp = (event) => {
         if (event.button !== 0
@@ -27610,9 +27593,18 @@ const Resizer = (props) => {
             return;
         }
         event.target.releasePointerCapture(event.pointerId);
+    };
+    let handleGotPointerCapture = (event, side) => {
+        setResizingSide(side);
+        setPointerCapture({ elem: event.target, pointerId: event.pointerId });
+        onResizeStart(annotation);
+    };
+    let handleLostPointerCapture = () => {
         setResizingSide(false);
-        setPointerCapture(null);
-        onResizeEnd(annotation, false);
+        if (pointerCapture) {
+            setPointerCapture(null);
+            onResizeEnd(annotation, false);
+        }
     };
     let handleKeyDown = (0,react.useCallback)((event) => {
         if (event.key !== 'Escape' || !resizingSide || !pointerCapture) {
@@ -27694,8 +27686,8 @@ const Resizer = (props) => {
     let topLeftRect = highlightRects[rtl ? highlightRects.length - 1 : 0];
     let bottomRightRect = highlightRects[rtl ? 0 : highlightRects.length - 1];
     return react.createElement(react.Fragment, null,
-        react.createElement("rect", { x: topLeftRect.left - WIDTH, y: topLeftRect.top, width: WIDTH, height: topLeftRect.height, fill: annotation.color, style: { pointerEvents: pointerEventsSuppressed ? 'none' : 'all', cursor: 'col-resize' }, onPointerDown: event => handlePointerDown(event, true), onPointerUp: event => handlePointerUp(event), onPointerMove: resizingSide == 'start' ? (event => handlePointerMove(event, !rtl)) : undefined }),
-        react.createElement("rect", { x: bottomRightRect.right, y: bottomRightRect.top, width: WIDTH, height: bottomRightRect.height, fill: annotation.color, style: { pointerEvents: pointerEventsSuppressed ? 'none' : 'all', cursor: 'col-resize' }, onPointerDown: event => handlePointerDown(event, false), onPointerUp: event => handlePointerUp(event), onPointerMove: resizingSide == 'end' ? (event => handlePointerMove(event, rtl)) : undefined }));
+        react.createElement("rect", { x: topLeftRect.left - WIDTH, y: topLeftRect.top, width: WIDTH, height: topLeftRect.height, fill: annotation.color, className: "resizer", style: { pointerEvents: pointerEventsSuppressed ? 'none' : 'auto' }, onPointerDown: handlePointerDown, onPointerUp: handlePointerUp, onPointerCancel: handlePointerUp, onPointerMove: resizingSide == 'start' ? (event => handlePointerMove(event, !rtl)) : undefined, onGotPointerCapture: event => handleGotPointerCapture(event, 'start'), onLostPointerCapture: handleLostPointerCapture }),
+        react.createElement("rect", { x: bottomRightRect.right, y: bottomRightRect.top, width: WIDTH, height: bottomRightRect.height, fill: annotation.color, className: "resizer", style: { pointerEvents: pointerEventsSuppressed ? 'none' : 'auto' }, onPointerDown: handlePointerDown, onPointerUp: handlePointerUp, onPointerCancel: handlePointerUp, onPointerMove: resizingSide == 'end' ? (event => handlePointerMove(event, rtl)) : undefined, onGotPointerCapture: event => handleGotPointerCapture(event, 'end'), onLostPointerCapture: handleLostPointerCapture }));
 };
 Resizer.displayName = 'Resizer';
 let CommentIcon = react.forwardRef((props, ref) => {
@@ -27932,6 +27924,8 @@ function debounce(func, wait, options) {
   debounced.pending = pending;
   return debounced;
 }
+;// CONCATENATED MODULE: ./node_modules/raw-loader/dist/cjs.js!./src/dom/common/stylesheets/annotation-overlay.css
+/* harmony default export */ const annotation_overlay = (".annotation-container {\n    z-index: 9999;\n    pointer-events: none;\n    position: absolute;\n    left: 0;\n    top: 0;\n    overflow: visible;\n}\n\n.annotation-container.blended {\n    mix-blend-mode: multiply;\n}\n\n.resizer {\n    cursor: col-resize;\n    touch-action: none;\n}\n\n@media (any-pointer: coarse) {\n    .resizer {\n        stroke: transparent;\n        stroke-width: 20px;\n        margin: -10px;\n    }\n}\n");
 ;// CONCATENATED MODULE: ./src/dom/common/dom-view.tsx
 var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -27951,6 +27945,8 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 
 
 
+
+// @ts-ignore
 
 class DOMView {
     constructor(options) {
@@ -28094,11 +28090,11 @@ class DOMView {
         // support the csp attribute (currently all browsers besides Chrome derivatives)
         this._iframe.setAttribute('csp', this._getCSP());
         this.initializedPromise = this._initialize();
-        this._iframe.srcdoc = this._getSrcDoc();
         options.container.append(this._iframe);
     }
     _initialize() {
         return __awaiter(this, void 0, void 0, function* () {
+            this._iframe.srcdoc = yield this._getSrcDoc();
             return new Promise((resolve, reject) => {
                 this._iframe.addEventListener('load', () => {
                     this._handleIFrameLoad().then(resolve, reject);
@@ -28107,15 +28103,15 @@ class DOMView {
         });
     }
     _getCSP() {
-        let baseURI = this._options.data.baseURI ? new URL(this._options.data.baseURI) : null;
-        // When baseURI is http[s], use the origin
-        // In the client, though, baseURI will be a zotero: URI and its origin will be the string "null"
+        let url = this._options.data.url ? new URL(this._options.data.url) : null;
+        // When url is http[s], use the origin
+        // In the client, though, url will be a zotero: URI and its origin will be the string "null"
         // for some reason. In that case, just allow the entire protocol. (In practice zotero:// URIs are always
         // allowed because the protocol is marked as URI_IS_LOCAL_RESOURCE, which exempts it from CSP, but we want
         // to be safe here.)
         // https://bugzilla.mozilla.org/show_bug.cgi?id=1551253
-        let origin = baseURI && (baseURI.protocol.startsWith('http') ? baseURI.origin : baseURI.protocol);
-        // Allow resources from the same origin as the baseURI
+        let origin = url && (url.protocol.startsWith('http') ? url.origin : url.protocol);
+        // Allow resources from the same origin as the URL
         let defaultSrc = origin || "'none'";
         // Allow images from data: and blob: URIs and from that origin
         let imgSrc = (origin || '') + ' data: blob:';
@@ -28355,6 +28351,21 @@ class DOMView {
             this._iframeWindow.addEventListener('focus', this._handleFocus.bind(this));
             this._iframeDocument.addEventListener('scroll', this._handleScroll.bind(this), { passive: true });
             this._iframeDocument.addEventListener('selectionchange', this._handleSelectionChange.bind(this));
+            let style = this._iframeDocument.createElement('style');
+            style.innerHTML = annotation_overlay;
+            this._iframeDocument.head.append(style);
+            this._touchDebug = this._iframeDocument.createElement('div');
+            this._touchDebug.style.position = 'fixed';
+            this._touchDebug.style.top = '0';
+            this._touchDebug.style.left = '0';
+            this._touchDebug.style.backgroundColor = 'red';
+            this._touchDebug.style.color = 'white';
+            this._touchDebug.style.zIndex = '100000';
+            this._touchDebug.append(this._iframeDocument.createElement('span'));
+            this._touchDebug.firstElementChild.append('No touch events yet');
+            this._touchDebug.append(this._iframeDocument.createElement('br'));
+            this._touchDebug.append(this._iframeDocument.createElement('span'));
+            this._iframeDocument.body.append(this._touchDebug);
             // Pass options to setters that were delayed until iframe initialization
             this.setAnnotations(this._options.annotations);
             this.setTool(this._options.tool);
@@ -28625,6 +28636,7 @@ class DOMView {
             if ((event.pointerType === 'touch' || event.pointerType === 'pen')
                 && (this._tool.type === 'highlight' || this._tool.type === 'underline')) {
                 this._touchAnnotationStartPosition = caretPositionFromPoint(this._iframeDocument, event.clientX, event.clientY);
+                this._touchDebug.firstElementChild.textContent = 'Touch start';
                 event.stopPropagation();
             }
         }
@@ -28669,6 +28681,9 @@ class DOMView {
         else {
             this._tryUseTool();
         }
+        if (this._touchAnnotationStartPosition) {
+            this._touchDebug.firstElementChild.textContent = 'Touch end';
+        }
         this._touchAnnotationStartPosition = null;
     }
     _handlePointerMove(event) {
@@ -28690,6 +28705,7 @@ class DOMView {
                     if (annotation) {
                         this._previewAnnotation = annotation;
                         this._renderAnnotations();
+                        this._touchDebug.firstElementChild.textContent = 'Touch move';
                     }
                 }
                 event.stopPropagation();
@@ -28724,6 +28740,7 @@ class DOMView {
             this._previewAnnotation = null;
         }
         this._renderAnnotations();
+        this._touchDebug.lastElementChild.textContent = 'Tool: ' + tool.type;
     }
     setAnnotations(annotations) {
         // Individual annotation object reference changes only if that annotation was modified,
@@ -29873,11 +29890,16 @@ class EPUBView extends dom_view {
             this.book = src(options.data.buf.buffer);
             delete this._options.data.buf;
         }
+        else if (options.data.url) {
+            this.book = src(options.data.url, {
+                openAs: 'epub'
+            });
+        }
         else if (options.data.book) {
             this.book = options.data.book;
         }
         else {
-            throw new Error('buf or book is required');
+            throw new Error('buf, url, or book is required');
         }
     }
     _getSrcDoc() {
@@ -30786,6 +30808,15 @@ function getUniqueSelectorContaining(node, root) {
 ;// CONCATENATED MODULE: ./node_modules/raw-loader/dist/cjs.js!./src/dom/snapshot/stylesheets/content.css
 /* harmony default export */ const stylesheets_content = ("::selection {\n    background-color: var(--selection-color);\n}\n");
 ;// CONCATENATED MODULE: ./src/dom/snapshot/snapshot-view.ts
+var snapshot_view_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 
 
 
@@ -30804,40 +30835,54 @@ class SnapshotView extends dom_view {
         this._searchContext = null;
     }
     _getSrcDoc() {
-        let enc = new TextDecoder('utf-8');
-        if (this._options.data.buf) {
-            let text = enc.decode(this._options.data.buf);
-            delete this._options.data.buf;
-            let doc = new DOMParser().parseFromString(text, 'text/html');
-            for (let base of doc.querySelectorAll('base')) {
-                base.remove();
+        return snapshot_view_awaiter(this, void 0, void 0, function* () {
+            if (this._options.data.srcDoc) {
+                return this._options.data.srcDoc;
             }
-            if (this._options.data.baseURI !== undefined) {
-                let base = doc.createElement('base');
-                base.href = this._options.data.baseURI;
-                doc.head.prepend(base);
+            else if (this._options.data.buf || this._options.data.url !== undefined) {
+                let buf;
+                if (this._options.data.buf) {
+                    buf = this._options.data.buf;
+                }
+                else {
+                    buf = yield fetch(this._options.data.url).then(r => r.arrayBuffer());
+                }
+                let text = new TextDecoder('utf-8').decode(buf);
+                delete this._options.data.buf;
+                let doc = new DOMParser().parseFromString(text, 'text/html');
+                for (let base of doc.querySelectorAll('base')) {
+                    base.remove();
+                }
+                if (this._options.data.url !== undefined) {
+                    let base = doc.createElement('base');
+                    base.href = this._options.data.url;
+                    doc.head.prepend(base);
+                }
+                for (let cspMeta of Array.from(doc.querySelectorAll('meta[http-equiv="Content-Security-Policy" i]'))) {
+                    cspMeta.remove();
+                }
+                let cspMeta = doc.createElement('meta');
+                cspMeta.setAttribute('http-equiv', 'Content-Security-Policy');
+                cspMeta.setAttribute('content', this._getCSP());
+                doc.head.prepend(cspMeta);
+                // Fix Twitter snapshots breaking because of <noscript> styles
+                for (let noscript of Array.from(doc.querySelectorAll('noscript'))) {
+                    noscript.remove();
+                }
+                let doctype = doc.doctype ? new XMLSerializer().serializeToString(doc.doctype) : '';
+                let html = doc.documentElement.outerHTML;
+                return doctype + html;
             }
-            for (let cspMeta of Array.from(doc.querySelectorAll('meta[http-equiv="Content-Security-Policy" i]'))) {
-                cspMeta.remove();
+            else {
+                throw new Error('buf, url, or srcDoc is required');
             }
-            let cspMeta = doc.createElement('meta');
-            cspMeta.setAttribute('http-equiv', 'Content-Security-Policy');
-            cspMeta.setAttribute('content', this._getCSP());
-            doc.head.prepend(cspMeta);
-            return new XMLSerializer().serializeToString(doc);
-        }
-        else if (this._options.data.srcDoc) {
-            return this._options.data.srcDoc;
-        }
-        else {
-            throw new Error('buf or srcDoc is required');
-        }
+        });
     }
     getData() {
         var _a;
         return {
             srcDoc: this._iframe.srcdoc,
-            baseURI: (_a = this._iframeDocument.head.querySelector('base')) === null || _a === void 0 ? void 0 : _a.href
+            url: (_a = this._iframeDocument.head.querySelector('base')) === null || _a === void 0 ? void 0 : _a.href
         };
     }
     _onInitialDisplay(viewState) {
@@ -32407,15 +32452,14 @@ class View {
 }
 /* harmony default export */ const view = (View);
 ;// CONCATENATED MODULE: ./src/index.ios.js
-
+function log(data) {
+  window.webkit.messageHandlers.logHandler.postMessage(data);
+}
 function postMessage(event, params = {}) {
   window.webkit.messageHandlers.textHandler.postMessage({
     event,
     params
   });
-}
-function log(data) {
-  window.webkit.messageHandlers.logHandler.postMessage(data);
 }
 window.createView = options => {
   window._view = new view({
