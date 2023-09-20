@@ -93,9 +93,16 @@ final class MainViewController: UISplitViewController {
 
     private func showItems(for collection: Collection, in library: Library, searchItemKeys: [String]?) {
         let navigationController = UINavigationController()
-        let tagFilterController = (self.viewControllers.first as? MasterContainerViewController)?.bottomController as? TagFilterViewController
+        let tagFilterController = (self.viewControllers.first as? MasterContainerViewController)?.bottomController as? ItemsTagFilterDelegate
 
-        let coordinator = DetailCoordinator(library: library, collection: collection, searchItemKeys: searchItemKeys, navigationController: navigationController, itemsTagFilterDelegate: tagFilterController, controllers: self.controllers)
+        let coordinator = DetailCoordinator(
+            library: library,
+            collection: collection,
+            searchItemKeys: searchItemKeys,
+            navigationController: navigationController,
+            itemsTagFilterDelegate: tagFilterController,
+            controllers: self.controllers
+        )
         coordinator.start(animated: false)
         self.detailCoordinator = coordinator
 
@@ -105,14 +112,15 @@ final class MainViewController: UISplitViewController {
     // MARK: - Setups
 
     private func setupControllers() {
-        let masterCoordinator = MasterCoordinator(mainController: self, controllers: self.controllers)
-        masterCoordinator.start()
+        let masterController = MasterContainerViewController()
+        let masterCoordinator = MasterCoordinator(navigationController: masterController, mainCoordinatorDelegate: self, controllers: self.controllers)
+        masterController.coordinatorDelegate = masterCoordinator
+        masterCoordinator.start(animated: false)
+        self.viewControllers = [masterController]
         self.masterCoordinator = masterCoordinator
 
-        if let progressObservable = self.controllers.userControllers?.syncScheduler.syncController.progressObservable,
-           let dbStorage = self.controllers.userControllers?.dbStorage,
-           let navigationController = masterCoordinator.topCoordinator.navigationController {
-            self.syncToolbarController = SyncToolbarController(parent: navigationController, progressObservable: progressObservable, dbStorage: dbStorage)
+        if let progressObservable = self.controllers.userControllers?.syncScheduler.syncController.progressObservable, let dbStorage = self.controllers.userControllers?.dbStorage {
+            self.syncToolbarController = SyncToolbarController(parent: masterController, progressObservable: progressObservable, dbStorage: dbStorage)
             self.syncToolbarController?.coordinatorDelegate = self
         }
     }
@@ -148,7 +156,7 @@ extension MainViewController: MainCoordinatorSyncToolbarDelegate {
 
             guard let library = library, let collectionType = collectionType else { return }
 
-            self.masterCoordinator?.topCoordinator.showCollections(for: libraryId, preselectedCollection: .custom(collectionType), animated: true)
+            self.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(collectionType), animated: true)
             self.showItems(for: Collection(custom: collectionType), in: library, searchItemKeys: keys)
         } catch let error {
             DDLogError("MainViewController: can't load searched keys - \(error)")

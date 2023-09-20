@@ -119,8 +119,9 @@ final class AppCoordinator: NSObject {
         }
 
         DDLogInfo("AppCoordinator: show main screen logged \(isLogged ? "in" : "out"); animated=\(animated)")
-        self.show(viewController: viewController, in: window, animated: animated)
-        process(urlContext: urlContext, data: data)
+        show(viewController: viewController, in: window, animated: animated) { [weak self] in
+            self?.process(urlContext: urlContext, data: data)
+        }
     }
 
     private func preprocess(connectionOptions: UIScene.ConnectionOptions?, session: UISceneSession?) -> (UIOpenURLContext?, RestoredStateData?) {
@@ -162,7 +163,8 @@ final class AppCoordinator: NSObject {
             self.showItemDetail(key: key, library: library, selectChildKey: preselectedChildKey, animated: animated)
 
         case .pdfReader(let attachment, let library, let page, let annotation, let parentKey, let isAvailable):
-            DDLogInfo("AppCoordinator: show custom url - pdf reader; key=\(attachment.key); library=\(library.identifier); page=\(page.flatMap(String.init) ?? "nil"); annotation=\(annotation ?? "nil"); parentKey=\(parentKey ?? "nil")")
+            DDLogInfo("AppCoordinator: show custom url - pdf reader; key=\(attachment.key); library=\(library.identifier); page=\(page.flatMap(String.init) ?? "nil");" +
+                      " annotation=\(annotation ?? "nil"); parentKey=\(parentKey ?? "nil")")
             if isAvailable {
                 self.open(attachment: attachment, library: library, on: page, annotation: annotation, parentKey: parentKey, animated: animated)
                 return
@@ -194,9 +196,9 @@ final class AppCoordinator: NSObject {
         guard let mainController = self.window?.rootViewController as? MainViewController else { return }
 
         // Show "All" collection in given library/group
-        if mainController.masterCoordinator?.topCoordinator.visibleLibraryId != library.identifier ||
-           (mainController.masterCoordinator?.topCoordinator.navigationController?.visibleViewController as? CollectionsViewController)?.selectedIdentifier != .custom(.all) {
-            mainController.masterCoordinator?.topCoordinator.showCollections(for: library.identifier, preselectedCollection: .custom(.all), animated: animated)
+        if mainController.masterCoordinator?.visibleLibraryId != library.identifier ||
+           (mainController.masterCoordinator?.navigationController?.visibleViewController as? CollectionsViewController)?.selectedIdentifier != .custom(.all) {
+            mainController.masterCoordinator?.showCollections(for: library.identifier, preselectedCollection: .custom(.all), animated: animated)
         }
 
         // Show item detail of given key
@@ -383,12 +385,15 @@ final class AppCoordinator: NSObject {
         self.window?.rootViewController?.present(controller, animated: true, completion: nil)
     }
 
-    private func show(viewController: UIViewController?, in window: UIWindow, animated: Bool = false) {
+    private func show(viewController: UIViewController?, in window: UIWindow, animated: Bool = false, completion: @escaping () -> Void) {
         window.rootViewController = viewController
 
-        guard animated else { return }
+        guard animated else {
+            completion()
+            return
+        }
 
-        UIView.transition(with: window, duration: 0.2, options: .transitionCrossDissolve, animations: {}, completion: { _ in })
+        UIView.transition(with: window, duration: 0.2, options: .transitionCrossDissolve, animations: {}, completion: { _ in completion() })
     }
 
     private func presentActivityViewController(with items: [Any], completed: @escaping () -> Void) {
@@ -449,7 +454,7 @@ final class AppCoordinator: NSObject {
 
 extension AppCoordinator: AppDelegateCoordinatorDelegate {
     func showMainScreen(isLoggedIn: Bool) {
-        self.showMainScreen(isLogged: isLoggedIn, options: self.tmpConnectionOptions, session: self.tmpSession, animated: true)
+        self.showMainScreen(isLogged: isLoggedIn, options: self.tmpConnectionOptions, session: self.tmpSession, animated: false)
         self.tmpConnectionOptions = nil
         self.tmpSession = nil
     }
