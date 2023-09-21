@@ -522,7 +522,7 @@ final class ItemsViewController: UIViewController {
     }
 
     private func setupTitle() {
-        self.title = self.viewModel.state.collection.name
+//        self.title = self.viewModel.state.collection.name
     }
 
     private func updateEmptyTrashButton(toEnabled enabled: Bool) {

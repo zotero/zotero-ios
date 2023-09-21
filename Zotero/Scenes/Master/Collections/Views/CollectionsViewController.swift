@@ -169,7 +169,7 @@ final class CollectionsViewController: UICollectionViewController {
                   })
                   .disposed(by: self.disposeBag)
 
-        self.navigationItem.rightBarButtonItems = [addItem, searchItem]
+        self.navigationItem.rightBarButtonItems = [searchItem, addItem]
     }
 
     private func setupTitleWithContextMenu(_ title: String) {
