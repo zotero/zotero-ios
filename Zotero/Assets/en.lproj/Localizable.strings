@@ -144,6 +144,7 @@
 "items.generating_bib" = "Generating Bibliography";
 "items.creator_summary.and" = "%@ and %@";
 "items.creator_summary.etal" = "%@ et al.";
+"items.restore_open" = "Restore Open Items";
 
 "lookup.title" = "Enter ISBNs, DOls, PMIDs, arXiv IDs, or ADS Bibcodes to add to your library:";
 
@@ -567,3 +568,4 @@
 "accessibility.pdf.undo" = "Undo";
 "accessibility.pdf.toggle_annotation_toolbar" = "Toggle annotation toolbar";
 "accessibility.pdf.show_more_tools" = "Show more";
+"accessibility.pdf.open_items" = "Open Items";
