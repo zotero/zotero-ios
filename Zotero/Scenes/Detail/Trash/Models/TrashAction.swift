@@ -30,4 +30,5 @@ enum TrashAction {
     case toggleSelectionState
     case updateAttachments(AttachmentFileDeletedNotification)
     case updateDownload(update: AttachmentDownloader.Update, batchData: ItemsState.DownloadBatchData?)
+    case updateOpenItems(items: [OpenItem])
 }
