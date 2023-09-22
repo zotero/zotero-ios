@@ -43,6 +43,10 @@ extension NSPredicate {
                                                                    .library(with: libraryId)])
     }
 
+    static func keysByLibraryIdentifier(_ keysByLibraryIdentifier: [LibraryIdentifier: Set<String>]) -> NSPredicate {
+        NSCompoundPredicate(orPredicateWithSubpredicates: keysByLibraryIdentifier.map({ .keys($0.value, in: $0.key) }))
+    }
+
     static func key(notIn keys: [String], in libraryId: LibraryIdentifier) -> NSPredicate {
         return NSCompoundPredicate(andPredicateWithSubpredicates: [.library(with: libraryId), .key(notIn: keys)])
     }

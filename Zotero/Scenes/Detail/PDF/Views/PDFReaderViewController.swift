@@ -60,7 +60,8 @@ class PDFReaderViewController: UIViewController {
     var isToolbarVisible: Bool { return toolbarState.visible }
     var key: String { return viewModel.state.key }
 
-    weak var coordinatorDelegate: (PdfReaderCoordinatorDelegate & PdfAnnotationsCoordinatorDelegate)?
+    private unowned let openItemsController: OpenItemsController
+    weak var coordinatorDelegate: (PdfReaderCoordinatorDelegate & PdfAnnotationsCoordinatorDelegate & OpenItemsPresenter)?
 
     private lazy var shareButton: UIBarButtonItem = {
         var menuChildren: [UIMenuElement] = []
@@ -107,6 +108,21 @@ class PDFReaderViewController: UIViewController {
         }
         share.menu = UIMenu(children: [deferredMenu])
         return share
+    }()
+    private lazy var openItemsButton: UIBarButtonItem = {
+        let openItems = UIBarButtonItem(image: UIImage(systemName: "0.square"), style: .plain, target: nil, action: nil)
+        openItems.isEnabled = true
+        openItems.accessibilityLabel = L10n.Accessibility.Pdf.openItems
+        openItems.title = L10n.Accessibility.Pdf.openItems
+        if let sessionIdentifier = view.scene?.session.persistentIdentifier {
+            let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(for: sessionIdentifier, disableOpenItem: true) { [weak self] item, _ in
+                guard let self, let coordinatorDelegate else { return }
+                openItemsController.restore(item, using: coordinatorDelegate)
+            }
+            let openItemsMenu = UIMenu(title: "Open Items", options: [.displayInline], children: [deferredOpenItemsMenuElement])
+            openItems.menu = UIMenu(children: [openItemsMenu])
+        }
+        return openItems
     }()
     private lazy var settingsButton: UIBarButtonItem = {
         let settings = UIBarButtonItem(image: UIImage(systemName: "gearshape"), style: .plain, target: nil, action: nil)
@@ -194,9 +210,10 @@ class PDFReaderViewController: UIViewController {
         return false
     }
 
-    init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
+    init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool, openItemsController: OpenItemsController) {
         self.viewModel = viewModel
         isCompactWidth = compactSize
+        self.openItemsController = openItemsController
         disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -208,9 +225,13 @@ class PDFReaderViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        set(userActivity: .pdfActivity(for: viewModel.state.key, libraryId: viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId)
-            .set(title: viewModel.state.displayTitle)
-        )
+        if let sessionIdentifier = view.scene?.session.persistentIdentifier {
+            set(userActivity: .pdfActivity(
+                with: openItemsController.getItems(for: sessionIdentifier),
+                libraryId: viewModel.state.library.identifier,
+                collectionId: Defaults.shared.selectedCollectionId
+            ).set(title: viewModel.state.displayTitle))
+        }
         view.backgroundColor = .systemGray6
         // Create intraDocumentNavigationHandler before setting up views, as it may be called by a child view controller, before view has finished loading.
         intraDocumentNavigationHandler = IntraDocumentNavigationButtonsHandler(
@@ -693,6 +714,10 @@ class PDFReaderViewController: UIViewController {
 
     private func createRightBarButtonItems() -> [UIBarButtonItem] {
         var buttons = [settingsButton, shareButton, searchButton]
+        if let sessionIdentifier = view.scene?.session.persistentIdentifier, openItemsController.getItems(for: sessionIdentifier).count > 1 {
+            buttons.insert(openItemsButton, at: 1)
+            openItemsButton.image = .init(systemName: "\(openItemsController.getItems(for: sessionIdentifier).count).square")
+        }
 
         if viewModel.state.library.metadataEditable {
             buttons.append(toolbarButton)

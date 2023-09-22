@@ -21,6 +21,7 @@ final class ItemsViewController: UIViewController {
         case deselectAll
         case add
         case emptyTrash
+        case restoreOpenItems
     }
 
     @IBOutlet private weak var tableView: UITableView!
@@ -39,11 +40,18 @@ final class ItemsViewController: UIViewController {
     weak var tagFilterDelegate: ItemsTagFilterDelegate?
 
     private weak var coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)?
+    private weak var presenter: OpenItemsPresenter?
 
-    init(viewModel: ViewModel<ItemsActionHandler>, controllers: Controllers, coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)) {
+    init(
+        viewModel: ViewModel<ItemsActionHandler>,
+        controllers: Controllers,
+        coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate),
+        presenter: OpenItemsPresenter
+    ) {
         self.viewModel = viewModel
         self.controllers = controllers
         self.coordinatorDelegate = coordinatorDelegate
+        self.presenter = presenter
         self.disposeBag = DisposeBag()
 
         super.init(nibName: "ItemsViewController", bundle: nil)
@@ -79,6 +87,7 @@ final class ItemsViewController: UIViewController {
         self.setupFileObservers()
         self.startObservingSyncProgress()
         self.setupAppStateObserver()
+        setupOpenItemsObserving()
 
         if let term = self.viewModel.state.searchTerm, !term.isEmpty {
             navigationItem.searchController?.searchBar.text = term
@@ -169,6 +178,10 @@ final class ItemsViewController: UIViewController {
 
         if state.changes.contains(.filters) || state.changes.contains(.batchData) {
             self.toolbarController.reloadToolbarItems(for: state)
+        }
+        
+        if state.changes.contains(.openItems) {
+            setupRightBarButtonItems(for: state)
         }
 
         if let key = state.itemKeyToDuplicate {
@@ -464,7 +477,15 @@ final class ItemsViewController: UIViewController {
         item.isEnabled = enabled
     }
 
+    private func updateRestoreOpenItemsButton(withCount count: Int) {
+        guard let item = self.navigationItem.rightBarButtonItems?.first(where: { button in RightBarButtonItem(rawValue: button.tag) == .restoreOpenItems }) else { return }
+        item.image = UIImage(systemName: "\(count).square")
+    }
+    
     private func setupRightBarButtonItems(for state: ItemsState) {
+        defer {
+            updateRestoreOpenItemsButton(withCount: state.openItemsCount)
+        }
         let currentItems = (self.navigationItem.rightBarButtonItems ?? []).compactMap({ RightBarButtonItem(rawValue: $0.tag) })
         let expectedItems = rightBarButtonItemTypes(for: state)
         guard currentItems != expectedItems else { return }
@@ -480,6 +501,9 @@ final class ItemsViewController: UIViewController {
                 items = [.add] + selectItems
             } else {
                 items = selectItems
+            }
+            if state.openItemsCount > 0 {
+                items = [.restoreOpenItems] + items
             }
             return items
             
@@ -547,6 +571,14 @@ final class ItemsViewController: UIViewController {
                 action = { [weak self] _ in
                     self?.emptyTrash()
                 }
+
+            case .restoreOpenItems:
+                image = UIImage(systemName: "0.square")
+                accessibilityLabel = L10n.Items.restoreOpen
+                action = { [weak self] _ in
+                    guard let self, let presenter, let controller = controllers.userControllers?.openItemsController, let sessionIdentifier = view.scene?.session.persistentIdentifier else { return }
+                    controller.restoreMostRecentlyOpenedItem(using: presenter, sessionIdentifier: sessionIdentifier)
+                }
             }
             
             let item: UIBarButtonItem
@@ -584,6 +616,16 @@ final class ItemsViewController: UIViewController {
         controller.delegate = self
         navigationItem.hidesSearchBarWhenScrolling = false
         navigationItem.searchController = controller
+    }
+
+    private func setupOpenItemsObserving() {
+        guard let controller = controllers.userControllers?.openItemsController, let sessionIdentifier = view.scene?.session.persistentIdentifier else { return }
+        controller.observable(for: sessionIdentifier)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] items in
+                self?.viewModel.process(action: .updateOpenItems(items: items))
+            })
+            .disposed(by: disposeBag)
     }
 }
 

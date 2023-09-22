@@ -24,6 +24,7 @@ protocol MainCoordinatorSyncToolbarDelegate: AnyObject {
 
 final class MainViewController: UISplitViewController {
     // Constants
+    private let sessionIdentifier: String
     private let controllers: Controllers
     private let disposeBag: DisposeBag
     // Variables
@@ -32,7 +33,7 @@ final class MainViewController: UISplitViewController {
     private var detailCoordinator: DetailCoordinator? {
         didSet {
             guard let detailCoordinator else { return }
-            set(userActivity: .mainActivity.set(title: detailCoordinator.collection.name))
+            set(userActivity: .mainActivity(with: controllers.userControllers?.openItemsController.getItems(for: sessionIdentifier) ?? []).set(title: detailCoordinator.collection.name))
             if let detailCoordinatorGetter {
                 detailCoordinatorGetter(detailCoordinator)
                 self.detailCoordinatorGetter = nil
@@ -43,7 +44,8 @@ final class MainViewController: UISplitViewController {
 
     // MARK: - Lifecycle
 
-    init(controllers: Controllers) {
+    init(sessionIdentifier: String, controllers: Controllers) {
+        self.sessionIdentifier = sessionIdentifier
         self.controllers = controllers
         self.disposeBag = DisposeBag()
 
@@ -89,7 +91,7 @@ final class MainViewController: UISplitViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         guard let detailCoordinator else { return }
-        set(userActivity: .mainActivity.set(title: detailCoordinator.collection.name))
+        set(userActivity: .mainActivity(with: controllers.userControllers?.openItemsController.getItems(for: sessionIdentifier) ?? []).set(title: detailCoordinator.collection.name))
     }
 
     func getDetailCoordinator(completed: @escaping (DetailCoordinator) -> Void) {
@@ -110,6 +112,7 @@ final class MainViewController: UISplitViewController {
             searchItemKeys: searchItemKeys,
             navigationController: navigationController,
             itemsTagFilterDelegate: tagFilterController,
+            sessionIdentifier: sessionIdentifier,
             controllers: self.controllers
         )
         coordinator.start(animated: false)
