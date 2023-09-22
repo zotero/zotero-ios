@@ -68,7 +68,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     var isDocumentLocked: Bool { return viewModel.state.document.isLocked }
     var key: String { return viewModel.state.key }
 
-    weak var coordinatorDelegate: (PdfReaderCoordinatorDelegate & PdfAnnotationsCoordinatorDelegate)?
+    private unowned let openItemsController: OpenItemsController
+    weak var coordinatorDelegate: (PdfReaderCoordinatorDelegate & PdfAnnotationsCoordinatorDelegate & OpenItemsPresenter)?
 
     private lazy var shareButton: UIBarButtonItem = {
         let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
@@ -115,6 +116,29 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         }
         share.menu = UIMenu(children: [deferredMenu])
         return share
+    }()
+    private lazy var openItemsButton: UIBarButtonItem = {
+        let openItems = UIBarButtonItem.openItemsBarButtonItem()
+        if let sessionIdentifier {
+            let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(
+                for: sessionIdentifier,
+                showMenuForCurrentItem: true,
+                openItemPresenterProvider: { [weak self] in
+                    self?.coordinatorDelegate
+                },
+                completion: { [weak self] changedCurrentItem, openItemsChanged in
+                    guard let self else { return }
+                    if changedCurrentItem {
+                        close(dismiss: false)
+                    } else if openItemsChanged {
+                        openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.title)
+                    }
+                }
+            )
+            let openItemsMenu = UIMenu(title: L10n.Accessibility.Pdf.openItems, options: [.displayInline], children: [deferredOpenItemsMenuElement])
+            openItems.menu = UIMenu(children: [openItemsMenu])
+        }
+        return openItems
     }()
     private lazy var settingsButton: UIBarButtonItem = {
         let settings = UIBarButtonItem(image: UIImage(systemName: "gearshape"), style: .plain, target: nil, action: nil)
@@ -186,10 +210,11 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         return false
     }
 
-    init(viewModel: ViewModel<PDFReaderActionHandler>, pdfWorkerController: PDFWorkerController, compactSize: Bool) {
+    init(viewModel: ViewModel<PDFReaderActionHandler>, pdfWorkerController: PDFWorkerController, compactSize: Bool, openItemsController: OpenItemsController) {
         self.viewModel = viewModel
         self.pdfWorkerController = pdfWorkerController
         isCompactWidth = compactSize
+        self.openItemsController = openItemsController
         disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -201,10 +226,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let openItem = OpenItem(kind: .pdf(libraryId: viewModel.state.library.identifier, key: viewModel.state.key), userIndex: 0)
-        set(userActivity: .contentActivity(with: [openItem], libraryId: viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId)
-            .set(title: viewModel.state.title)
-        )
+        openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.title)
         viewModel.process(action: .changeIdleTimerDisabled(true))
         view.backgroundColor = .systemGray6
         setupViews()
@@ -332,7 +354,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"), style: .plain, target: nil, action: nil)
             closeButton.title = L10n.close
             closeButton.accessibilityLabel = L10n.close
-            closeButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.close() }).disposed(by: disposeBag)
+            closeButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.close(dismiss: true) }).disposed(by: disposeBag)
 
             let accessibilityButton: UIBarButtonItem
             if FeatureGates.enabled.contains(.speech), let accessibilityHandler {
@@ -350,7 +372,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
                     .disposed(by: disposeBag)
             }
             navigationItem.leftBarButtonItems = [closeButton, sidebarButton, accessibilityButton]
-            navigationItem.rightBarButtonItems = createRightBarButtonItems()
+            navigationItem.rightBarButtonItems = createRightBarButtonItems(for: viewModel.state)
         }
 
         func setupObserving() {
@@ -360,6 +382,15 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
                     self?.update(state: state)
                 })
                 .disposed(by: disposeBag)
+
+            if let sessionIdentifier {
+                openItemsController.observable(for: sessionIdentifier)
+                    .observe(on: MainScheduler.instance)
+                    .subscribe(onNext: { [weak self] items in
+                        self?.viewModel.process(action: .updateOpenItems(items: items))
+                    })
+                    .disposed(by: disposeBag)
+            }
 
             NotificationCenter.default.rx
                 .notification(UIApplication.didBecomeActiveNotification)
@@ -461,7 +492,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     private func update(state: PDFReaderState) {
         if state.changes.contains(.md5) {
             coordinatorDelegate?.showDocumentChangedAlert { [weak self] in
-                self?.close()
+                self?.close(dismiss: true)
             }
             return
         }
@@ -509,7 +540,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             }
             annotationToolbarHandler?.set(hidden: hidden, animated: true)
             (toolbarButton.customView as? CheckboxButton)?.isSelected = toolbarState.visible
-            navigationItem.rightBarButtonItems = createRightBarButtonItems()
+        }
+        if state.changes.contains(.library) || state.changes.contains(.openItems) {
+            navigationItem.rightBarButtonItems = createRightBarButtonItems(for: state)
         }
 
         if let tool = state.changedColorForTool, documentController?.pdfController?.annotationStateManager.state == tool, let color = state.toolColors[tool] {
@@ -644,11 +677,12 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             .disposed(by: disposeBag)
     }
 
-    private func close() {
+    private func close(dismiss: Bool) {
         if let page = documentController?.pdfController?.pageIndex {
             viewModel.process(action: .submitPendingPage(Int(page)))
         }
         viewModel.process(action: .clearTmpData)
+        guard dismiss else { return }
         navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 
@@ -694,10 +728,19 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
 
     // MARK: - Setups
 
-    private func createRightBarButtonItems() -> [UIBarButtonItem] {
-        var buttons = [settingsButton, shareButton, searchButton]
+    internal func setupAccessibility(forSidebarButton button: UIBarButtonItem) {
+        button.accessibilityLabel = isSidebarVisible ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
+        button.title = isSidebarVisible ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
+    }
 
-        if viewModel.state.library.metadataEditable {
+    private func createRightBarButtonItems(for state: PDFReaderState) -> [UIBarButtonItem] {
+        var buttons = [settingsButton, shareButton, searchButton]
+        if FeatureGates.enabled.contains(.multipleOpenItems) {
+            buttons.insert(openItemsButton, at: 1)
+            openItemsButton.image = .openItemsImage(count: state.openItemsCount)
+        }
+
+        if state.library.metadataEditable {
             buttons.append(toolbarButton)
         }
 

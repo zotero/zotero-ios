@@ -89,3 +89,15 @@ struct ReadLibraryItemsDbRequest: DbResponseRequest {
         return database.objects(RItem.self).filter(.items(for: libraryId))
     }
 }
+
+struct ReadItemsWithKeysFromMultipleLibrariesDbRequest: DbResponseRequest {
+    typealias Response = Results<RItem>
+
+    let keysByLibraryIdentifier: [LibraryIdentifier: Set<String>]
+
+    var needsWrite: Bool { return false }
+
+    func process(in database: Realm) throws -> Results<RItem> {
+        database.objects(RItem.self).filter(.keysByLibraryIdentifier(keysByLibraryIdentifier))
+    }
+}

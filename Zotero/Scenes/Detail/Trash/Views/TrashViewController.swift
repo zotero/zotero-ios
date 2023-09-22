@@ -24,9 +24,14 @@ final class TrashViewController: BaseItemsViewController {
         return toolbarData(from: viewModel.state)
     }
 
-    init(viewModel: ViewModel<TrashActionHandler>, controllers: Controllers, coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)) {
+    init(
+        viewModel: ViewModel<TrashActionHandler>,
+        controllers: Controllers,
+        coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate),
+        presenter: OpenItemsPresenter
+    ) {
         self.viewModel = viewModel
-        super.init(controllers: controllers, coordinatorDelegate: coordinatorDelegate)
+        super.init(controllers: controllers, coordinatorDelegate: coordinatorDelegate, presenter: presenter)
         viewModel.process(action: .loadData)
     }
 
@@ -47,6 +52,7 @@ final class TrashViewController: BaseItemsViewController {
         toolbarController = ItemsToolbarController(viewController: self, data: toolbarData, collection: collection, library: library, delegate: self)
         setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: viewModel.state))
         setupDownloadObserver()
+        setupOpenItemsObserving()
         dataSource.apply(snapshot: viewModel.state.snapshot)
         updateTagFilter(filters: viewModel.state.filters, collectionId: .custom(.trash), libraryId: viewModel.state.library.identifier)
 
@@ -89,6 +95,16 @@ final class TrashViewController: BaseItemsViewController {
                 })
                 .disposed(by: disposeBag)
         }
+
+        func setupOpenItemsObserving() {
+            guard let controller = controllers.userControllers?.openItemsController, let sessionIdentifier else { return }
+            controller.observable(for: sessionIdentifier)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] items in
+                    self?.viewModel.process(action: .updateOpenItems(items: items))
+                })
+                .disposed(by: disposeBag)
+        }
     }
 
     // MARK: - Actions
@@ -124,6 +140,10 @@ final class TrashViewController: BaseItemsViewController {
 
         if state.changes.contains(.filters) || state.changes.contains(.batchData) {
             toolbarController?.reloadToolbarItems(for: toolbarData(from: state))
+        }
+
+        if state.changes.contains(.openItems) {
+            setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: state))
         }
 
         if let error = state.error {
@@ -213,6 +233,9 @@ final class TrashViewController: BaseItemsViewController {
 
         case .select:
             viewModel.process(action: .startEditing)
+
+        case .restoreOpenItems:
+            super.process(barButtonItemAction: barButtonItemAction, sender: sender)
         }
     }
 
@@ -230,9 +253,24 @@ final class TrashViewController: BaseItemsViewController {
         )
     }
 
+    override func setupRightBarButtonItems(expectedItems: [RightBarButtonItem]) {
+        defer {
+            updateRestoreOpenItemsButton(withCount: viewModel.state.openItemsCount)
+        }
+        super.setupRightBarButtonItems(expectedItems: expectedItems)
+
+        func updateRestoreOpenItemsButton(withCount count: Int) {
+            guard let item = navigationItem.rightBarButtonItems?.first(where: { button in RightBarButtonItem(rawValue: button.tag) == .restoreOpenItems }) else { return }
+            item.image = .openItemsImage(count: count)
+        }
+    }
+
     private func rightBarButtonItemTypes(for state: TrashState) -> [RightBarButtonItem] {
-        let selectItems = rightBarButtonSelectItemTypes(for: state)
-        return selectItems + [.emptyTrash]
+        var items = rightBarButtonSelectItemTypes(for: state) + [.emptyTrash]
+        if FeatureGates.enabled.contains(.multipleOpenItems), state.openItemsCount > 0 {
+            items = [.restoreOpenItems] + items
+        }
+        return items
 
         func rightBarButtonSelectItemTypes(for state: TrashState) -> [RightBarButtonItem] {
             if !state.isEditing {

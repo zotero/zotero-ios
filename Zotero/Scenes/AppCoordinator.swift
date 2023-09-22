@@ -17,9 +17,9 @@ import RxSwift
 protocol AppDelegateCoordinatorDelegate: AnyObject {
     func showMainScreen(isLoggedIn: Bool, options: UIScene.ConnectionOptions, session: UISceneSession, animated: Bool)
     func didRotate(to size: CGSize)
-    @discardableResult
-    func showScreen(for urlContext: UIOpenURLContext, animated: Bool) -> Bool
+    func showScreen(for urlContext: UIOpenURLContext, animated: Bool, completion: ((Bool) -> Void)?)
     func showMainScreen(with data: RestoredStateData, session: UISceneSession) -> Bool
+    func continueUserActivity(_ userActivity: NSUserActivity, for sessionIdentifier: String)
 }
 
 protocol AppOnboardingCoordinatorDelegate: AnyObject {
@@ -139,7 +139,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
 
         DDLogInfo("AppCoordinator: show main screen logged \(isLoggedIn ? "in" : "out"); animated=\(animated)")
         show(viewController: viewController, in: window, animated: animated) {
-            process(urlContext: urlContext, data: data)
+            process(urlContext: urlContext, data: data, sessionIdentifier: session.persistentIdentifier)
         }
 
         func show(viewController: UIViewController?, in window: UIWindow, animated: Bool = false, completion: @escaping () -> Void) {
@@ -158,8 +158,9 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
             var userActivity: NSUserActivity?
             var data: RestoredStateData?
             if connectionOptions.shortcutItem?.type == NSUserActivity.mainId {
-                userActivity = .mainActivity()
-                data = .myLibrary()
+                let openItems: [OpenItem] = session.stateRestorationActivity?.restoredStateData?.openItems ?? []
+                userActivity = .mainActivity(with: openItems)
+                data = .myLibrary(openItems: openItems)
             } else {
                 userActivity = connectionOptions.userActivities.first ?? session.stateRestorationActivity
                 data = userActivity?.restoredStateData
@@ -169,128 +170,68 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                 DDLogInfo("AppCoordinator: Preprocessing restored state - \(data)")
                 Defaults.shared.selectedLibraryId = data.libraryId
                 Defaults.shared.selectedCollectionId = data.collectionId
+                controllers.userControllers?.openItemsController.set(items: data.openItems, for: session.persistentIdentifier, validate: true)
             }
             return (urlContext, data)
         }
 
-        func process(urlContext: UIOpenURLContext?, data: RestoredStateData?) {
-            if let urlContext, showScreen(for: urlContext, animated: false) {
-                 return
+        func process(urlContext: UIOpenURLContext?, data: RestoredStateData?, sessionIdentifier: String) {
+            if let urlContext {
+                showScreen(for: urlContext, animated: false) { success in
+                    guard !success else { return }
+                    process(data: data, sessionIdentifier: sessionIdentifier)
+                }
+            } else {
+                process(data: data, sessionIdentifier: sessionIdentifier)
             }
 
-            if let data {
-                DDLogInfo("AppCoordinator: Processing restored state - \(data)")
-                // If scene had state stored, restore state
-                showRestoredState(for: data)
-            }
-
-            func showRestoredState(for data: RestoredStateData) {
-                DDLogInfo("AppCoordinator: show restored state")
-                guard let mainController = window.rootViewController as? MainViewController else {
-                    DDLogWarn("AppCoordinator: show restored state aborted - invalid root view controller")
-                    return
+            func process(data: RestoredStateData?, sessionIdentifier: String) {
+                if let data {
+                    DDLogInfo("AppCoordinator: Processing restored state - \(data)")
+                    // If scene had state stored, restore state
+                    showRestoredState(for: data, sessionIdentifier: sessionIdentifier)
                 }
-                var collection: Collection
-                if let optionalCollection = loadRestoredStateData(libraryId: data.libraryId, collectionId: data.collectionId) {
-                    DDLogInfo("AppCoordinator: show restored state using restored collection")
-                    collection = optionalCollection
-                    // No need to set selected collection identifier here, this happened already in show main screen / preprocess
-                } else {
-                    DDLogWarn("AppCoordinator: show restored state using all items collection")
-                    // Collection is missing, show all items instead
-                    collection = Collection(custom: .all)
-                }
-                mainController.showItems(for: collection, in: data.libraryId)
-                guard data.restoreMostRecentlyOpenedItem, let item = data.openItems.first else { return }
-                restoreMostRecentlyOpenedItem(using: self, item: item)
 
-                func loadRestoredStateData(libraryId: LibraryIdentifier, collectionId: CollectionIdentifier) -> Collection? {
-                    guard let dbStorage = controllers.userControllers?.dbStorage else { return nil }
-
-                    var collection: Collection?
-
-                    do {
-                        collection = try dbStorage.perform(request: ReadCollectionDbRequest(collectionId: collectionId, libraryId: libraryId), on: .main)
-                    } catch let error {
-                        DDLogError("AppCoordinator: can't load restored data - \(error)")
-                        return nil
+                func showRestoredState(for data: RestoredStateData, sessionIdentifier: String) {
+                    guard let openItemsController = controllers.userControllers?.openItemsController else { return }
+                    DDLogInfo("AppCoordinator: show restored state")
+                    guard let mainController = window.rootViewController as? MainViewController else {
+                        DDLogWarn("AppCoordinator: show restored state aborted - invalid root view controller")
+                        return
+                    }
+                    var collection: Collection
+                    if let optionalCollection = loadRestoredStateData(libraryId: data.libraryId, collectionId: data.collectionId) {
+                        DDLogInfo("AppCoordinator: show restored state using restored collection")
+                        collection = optionalCollection
+                        // No need to set selected collection identifier here, this happened already in show main screen / preprocess
+                    } else {
+                        DDLogWarn("AppCoordinator: show restored state using all items collection")
+                        // Collection is missing, show all items instead
+                        collection = Collection(custom: .all)
+                    }
+                    mainController.showItems(for: collection, in: data.libraryId)
+                    guard data.restoreMostRecentlyOpenedItem else { return }
+                    openItemsController.restoreMostRecentlyOpenedItem(using: self, sessionIdentifier: sessionIdentifier) { item in
+                        if let item {
+                            DDLogInfo("AppCoordinator: restored open item - \(item)")
+                        } else {
+                            DDLogInfo("AppCoordinator: no open item to restore")
+                        }
                     }
 
-                    return collection
-                }
-
-                func restoreMostRecentlyOpenedItem(using presenter: OpenItemsPresenter, item: OpenItem) {
-                    guard let presentation = loadPresentation(for: item) else { return }
-                    presenter.showItem(with: presentation)
-
-                    func loadPresentation(for item: OpenItem) -> ItemPresentation? {
+                    func loadRestoredStateData(libraryId: LibraryIdentifier, collectionId: CollectionIdentifier) -> Collection? {
                         guard let dbStorage = controllers.userControllers?.dbStorage else { return nil }
-                        var presentation: ItemPresentation?
+
+                        var collection: Collection?
+
                         do {
-                            try dbStorage.perform(on: .main) { coordinator in
-                                switch item.kind {
-                                case .pdf, .html, .epub:
-                                    presentation = try loadItemPresentation(kind: item.kind, coordinator: coordinator)
-
-                                case .note(let libraryId, let key):
-                                    presentation = try loadNotePresentation(key: key, libraryId: libraryId, coordinator: coordinator)
-                                }
-                            }
+                            collection = try dbStorage.perform(request: ReadCollectionDbRequest(collectionId: collectionId, libraryId: libraryId), on: .main)
                         } catch let error {
-                            DDLogError("OpenItemsController: can't load item \(item) - \(error)")
-                        }
-                        return presentation
-
-                        func loadItemPresentation(kind: OpenItem.Kind, coordinator: DbCoordinator) throws -> ItemPresentation? {
-                            let libraryId = kind.libraryId
-                            let key = kind.key
-                            let library: Library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
-                            let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-                            let parentKey = rItem.parent?.key
-                            guard let attachment = AttachmentCreator.attachment(for: rItem, fileStorage: controllers.fileStorage, urlDetector: nil) else { return nil }
-                            var presentation: ItemPresentation?
-                            switch attachment.type {
-                            case .file(let filename, let contentType, let location, _, _):
-                                switch location {
-                                case .local, .localAndChangedRemotely:
-                                    presentation = createItemPresentation(kind: kind, parentKey: parentKey, library: library, filename: filename, contentType: contentType)
-
-                                case .remote, .remoteMissing:
-                                    break
-                                }
-
-                            case .url:
-                                break
-                            }
-                            return presentation
-
-                            func createItemPresentation(kind: OpenItem.Kind, parentKey: String?, library: Library, filename: String, contentType: String) -> ItemPresentation? {
-                                let file = Files.attachmentFile(in: library.identifier, key: kind.key, filename: filename, contentType: contentType)
-                                let url = file.createUrl()
-                                switch kind {
-                                case .pdf(_, let key):
-                                    return .pdf(library: library, key: key, parentKey: parentKey, url: url, page: nil, preselectedAnnotationKey: nil, previewRects: nil)
-
-                                case .html(_, let key):
-                                    return .html(library: library, key: key, parentKey: parentKey, url: url, preselectedAnnotationKey: nil)
-
-                                case .epub(_, let key):
-                                    return .epub(library: library, key: key, parentKey: parentKey, url: url, preselectedAnnotationKey: nil)
-
-                                case .note:
-                                    return nil
-                                }
-                            }
+                            DDLogError("AppCoordinator: can't load restored data - \(error)")
+                            return nil
                         }
 
-                        func loadNotePresentation(key: String, libraryId: LibraryIdentifier, coordinator: DbCoordinator) throws -> ItemPresentation? {
-                            let library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
-                            let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-                            let note = Note(item: rItem)
-                            let parentTitleData: NoteEditorState.TitleData? = rItem.parent.flatMap { .init(type: $0.rawType, title: $0.displayTitle) }
-                            guard let note else { return nil }
-                            return .note(library: library, key: note.key, text: note.text, tags: note.tags, parentTitleData: parentTitleData, title: note.title)
-                        }
+                        return collection
                     }
                 }
             }
@@ -303,46 +244,50 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
         debugWindow.frame = debugWindowFrame(for: size, xPos: xPos)
     }
 
-    @discardableResult
-    func showScreen(for urlContext: UIOpenURLContext, animated: Bool) -> Bool {
+    func showScreen(for urlContext: UIOpenURLContext, animated: Bool, completion: ((Bool) -> Void)? = nil) {
         let sourceApp = urlContext.options.sourceApplication ?? "unknown"
         DDLogInfo("AppCoordinator: show screen for \(urlContext.url.absoluteString) from \(sourceApp)")
         guard let window, let mainController = window.rootViewController as? MainViewController else {
             DDLogWarn("AppCoordinator: show screen aborted - invalid root view controller")
-            return false
+            completion?(false)
+            return
         }
-        guard let urlController = controllers.userControllers?.customUrlController, let kind = urlController.process(url: urlContext.url) else { return false }
+        guard let urlController = controllers.userControllers?.customUrlController else {
+            completion?(false)
+            return
+        }
 
-        switch kind {
-        case .itemDetail(let key, let libraryId, let preselectedChildKey):
-            DDLogInfo("AppCoordinator: show screen - item detail; key=\(key); library=\(libraryId)")
-            showItemDetail(in: mainController, key: key, libraryId: libraryId, selectChildKey: preselectedChildKey, animated: animated, dismissIfPresenting: true)
+        urlController.process(url: urlContext.url) { kind in
+            guard let kind else {
+                completion?(false)
+                return
+            }
+            switch kind {
+            case .itemDetail(let key, let libraryId, let preselectedChildKey):
+                DDLogInfo("AppCoordinator: show screen - item detail; key=\(key); library=\(libraryId)")
+                showItemDetail(in: mainController, key: key, libraryId: libraryId, selectChildKey: preselectedChildKey, animated: animated, dismissIfPresenting: true)
 
-        case .itemReader(let presentation, let attachment, let isAvailable):
-            DDLogInfo("AppCoordinator: show screen - item reader; \(presentation)")
-            let key = presentation.key
-            let parentKey = presentation.parentKey
-            let libraryId = presentation.library.identifier
-            if isAvailable {
+            case .itemReader(let presentation):
+                DDLogInfo("AppCoordinator: show screen - item reader; \(presentation)")
+                let key = presentation.key
+                let parentKey = presentation.parentKey
+                let libraryId = presentation.library.identifier
                 mainController.getDetailCoordinator(for: nil, and: nil) { coordinator in
                     guard (coordinator.navigationController?.presentedViewController as? ReaderViewController)?.key != key else { return }
-                    showItem(presentation: presentation, window: window, detailCoordinator: coordinator, animated: animated) {
+                    let show = {
+                        coordinator.showItem(with: presentation)
                         showItemDetail(in: mainController, key: parentKey ?? key, libraryId: libraryId, selectChildKey: key, animated: false, dismissIfPresenting: false)
                     }
-                }
-            } else {
-                showItemDetail(in: mainController, key: parentKey ?? key, libraryId: libraryId, selectChildKey: key, animated: animated, dismissIfPresenting: true) {
-                    download(attachment: attachment, parentKey: parentKey) {
-                        mainController.getDetailCoordinator(for: nil, and: nil) { coordinator in
-                            showItem(presentation: presentation, window: window, detailCoordinator: coordinator, animated: true) {
-                            }
-                        }
+                    if animated {
+                        show()
+                    } else {
+                        // When launching the app, the presentation is dispatched to the next main run loop, otherwise it fails.
+                        DispatchQueue.main.async(execute: show)
                     }
                 }
             }
+            completion?(true)
         }
-
-        return true
 
         func showItemDetail(
             in mainController: MainViewController,
@@ -382,17 +327,6 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
             }
         }
 
-        func download(attachment: Attachment, parentKey: String?, completion: @escaping () -> Void) {
-            guard let downloader = controllers.userControllers?.fileDownloader else {
-                completion()
-                return
-            }
-            downloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey) { result in
-                guard case .success = result else { return }
-                completion()
-            }
-        }
-
         func showItem(
             presentation: ItemPresentation,
             window: UIWindow,
@@ -415,10 +349,24 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
 
     func showMainScreen(with data: RestoredStateData, session: UISceneSession) -> Bool {
         guard let window, let mainController = window.rootViewController as? MainViewController else { return false }
+        controllers.userControllers?.openItemsController.set(items: data.openItems, for: session.persistentIdentifier, validate: true)
         mainController.dismiss(animated: false) {
             mainController.masterCoordinator?.showCollections(for: data.libraryId, preselectedCollection: data.collectionId, animated: false)
         }
         return true
+    }
+
+    func continueUserActivity(_ userActivity: NSUserActivity, for sessionIdentifier: String) {
+        guard userActivity.activityType == NSUserActivity.contentContainerId, let window, let mainController = window.rootViewController as? MainViewController else { return }
+        mainController.getDetailCoordinator(for: nil, and: nil) { [weak self] coordinator in
+            self?.controllers.userControllers?.openItemsController.restoreMostRecentlyOpenedItem(using: coordinator, sessionIdentifier: sessionIdentifier) { item in
+                if let item {
+                    DDLogInfo("AppCoordinator: restored open item for continued user activity - \(item)")
+                } else {
+                    DDLogInfo("AppCoordinator: no open item to restore for continued user activity")
+                }
+            }
+        }
     }
 }
 
