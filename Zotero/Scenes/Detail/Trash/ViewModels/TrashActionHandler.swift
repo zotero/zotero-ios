@@ -142,6 +142,14 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             
         case .cacheItemDataIfNeeded(let key):
             cacheItemData(key: key, viewModel: viewModel)
+
+        case .updateOpenItems(let items):
+            update(viewModel: viewModel) { state in
+                if state.openItemsCount != items.count {
+                    state.openItemsCount = items.count
+                    state.changes = .openItems
+                }
+            }
         }
     }
 

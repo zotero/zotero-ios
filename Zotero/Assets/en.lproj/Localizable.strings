@@ -150,6 +150,7 @@
 "items.creator_summary.etal" = "%@ et al.";
 "items.retrieving_metadata" = "Retrieving Metadata";
 "items.collections_select_prompt" = "Select a Collection";
+"items.restore_open" = "Restore Open Items";
 
 "lookup.title" = "Enter ISBNs, DOIs, PMIDs, arXiv IDs, or ADS Bibcodes to add to your library:";
 
@@ -591,6 +592,13 @@
 "accessibility.pdf.undo" = "Undo";
 "accessibility.pdf.toggle_annotation_toolbar" = "Toggle annotation toolbar";
 "accessibility.pdf.show_more_tools" = "Show more";
+"accessibility.pdf.open_items" = "Open Items";
+"accessibility.pdf.current_item" = "Current Item";
+"accessibility.pdf.current_item_close" = "Close";
+"accessibility.pdf.current_item_move_to_start" = "Move to start";
+"accessibility.pdf.current_item_move_to end" = "Move to end";
+"accessibility.pdf.close_all_open_items" = "Close all";
+"accessibility.pdf.close_other_open_items" = "Close other items";
 "accessibility.htmlepub.search_html" = "Search Website";
 "accessibility.htmlepub.search_epub" = "Search EPUB";
 "accessibility.speech.play" = "Start speaking";

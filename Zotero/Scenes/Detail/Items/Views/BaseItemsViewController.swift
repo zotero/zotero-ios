@@ -22,6 +22,7 @@ class BaseItemsViewController: UIViewController {
         case deselectAll
         case add
         case emptyTrash
+        case restoreOpenItems
     }
 
     private static let itemBatchingLimit = 150
@@ -34,12 +35,14 @@ class BaseItemsViewController: UIViewController {
     var handler: ItemsTableViewHandler?
     weak var tagFilterDelegate: ItemsTagFilterDelegate?
     weak var coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)?
+    weak var presenter: OpenItemsPresenter?
     private let debugReaderQueue: DispatchQueue?
     private var readerURL: URL?
 
-    init(controllers: Controllers, coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)) {
+    init(controllers: Controllers, coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate), presenter: OpenItemsPresenter) {
         self.controllers = controllers
         self.coordinatorDelegate = coordinatorDelegate
+        self.presenter = presenter
         disposeBag = DisposeBag()
         #if DEBUG
         debugReaderQueue = DispatchQueue(label: "org.zotero.DebugReaderQueue", qos: .userInteractive)
@@ -298,7 +301,20 @@ class BaseItemsViewController: UIViewController {
 
     func tagSelectionDidChange(selected: Set<String>) {}
 
-    func process(barButtonItemAction: RightBarButtonItem, sender: UIBarButtonItem) {}
+    func process(barButtonItemAction: RightBarButtonItem, sender: UIBarButtonItem) {
+        switch barButtonItemAction {
+        case .select, .done, .selectAll, .deselectAll, .add, .emptyTrash:
+            break
+
+        case .restoreOpenItems:
+            guard let presenter, let controller = controllers.userControllers?.openItemsController, let sessionIdentifier else { return }
+            controller.restoreMostRecentlyOpenedItem(using: presenter, sessionIdentifier: sessionIdentifier) { item in
+                if item == nil {
+                    DDLogInfo("ItemsViewController: no open item to restore")
+                }
+            }
+        }
+    }
 
     func downloadsFilterDidChange(enabled: Bool) {}
 
@@ -326,7 +342,7 @@ class BaseItemsViewController: UIViewController {
     }
 
     func setupRightBarButtonItems(expectedItems: [RightBarButtonItem]) {
-        let currentItems = (self.navigationItem.rightBarButtonItems ?? []).compactMap({ RightBarButtonItem(rawValue: $0.tag) })
+        let currentItems = (navigationItem.rightBarButtonItems ?? []).compactMap({ RightBarButtonItem(rawValue: $0.tag) })
         guard currentItems != expectedItems else { return }
         self.navigationItem.rightBarButtonItems = expectedItems.compactMap({ createRightBarButtonItem($0) }).reversed()
 
@@ -334,6 +350,7 @@ class BaseItemsViewController: UIViewController {
             var image: UIImage?
             var title: String?
             let accessibilityLabel: String
+            var menu: UIMenu?
 
             switch type {
             case .deselectAll:
@@ -360,13 +377,34 @@ class BaseItemsViewController: UIViewController {
             case .emptyTrash:
                 title = L10n.Collections.emptyTrash
                 accessibilityLabel = L10n.Collections.emptyTrash
+
+            case .restoreOpenItems:
+                image = .openItemsImage(count: 0)
+                accessibilityLabel = L10n.Items.restoreOpen
+                if let controller = controllers.userControllers?.openItemsController, let sessionIdentifier {
+                    let deferredOpenItemsMenuElement = controller.deferredOpenItemsMenuElement(
+                        for: sessionIdentifier,
+                        showMenuForCurrentItem: false,
+                        openItemPresenterProvider: { [weak self] in
+                            self?.presenter
+                        },
+                        completion: { [weak self] _, openItemsChanged in
+                            guard let self, openItemsChanged else { return }
+                            set(userActivity: .mainActivity(with: controllers.userControllers?.openItemsController.getItems(for: sessionIdentifier) ?? [])
+                                .set(title: coordinatorDelegate?.displayTitle)
+                            )
+                        }
+                    )
+                    let openItemsMenu = UIMenu(title: L10n.Accessibility.Pdf.openItems, options: [.displayInline], children: [deferredOpenItemsMenuElement])
+                    menu = UIMenu(children: [openItemsMenu])
+                }
             }
 
             let primaryAction = UIAction { [weak self] action in
                 guard let self, let sender = action.sender as? UIBarButtonItem else { return }
                 process(barButtonItemAction: type, sender: sender)
             }
-            let item = UIBarButtonItem(title: title, image: image, primaryAction: primaryAction)
+            let item = UIBarButtonItem(title: title, image: image, primaryAction: primaryAction, menu: menu)
             item.tag = type.rawValue
             item.accessibilityLabel = accessibilityLabel
             return item

@@ -35,6 +35,7 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
     private let url: URL
     private let readerURL: URL?
     private let preselectedAnnotationKey: String?
+    private let sessionIdentifier: String
     internal unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
@@ -46,6 +47,7 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
         readerURL: URL?,
         preselectedAnnotationKey: String?,
         navigationController: NavigationViewController,
+        sessionIdentifier: String,
         controllers: Controllers
     ) {
         self.key = key
@@ -55,6 +57,7 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
         self.readerURL = readerURL
         self.preselectedAnnotationKey = preselectedAnnotationKey
         self.navigationController = navigationController
+        self.sessionIdentifier = sessionIdentifier
         self.controllers = controllers
         childCoordinators = []
         disposeBag = DisposeBag()
@@ -74,7 +77,8 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
         guard let dbStorage = controllers.userControllers?.dbStorage,
               let userId = controllers.sessionController.sessionData?.userId,
               !username.isEmpty,
-              let parentNavigationController = parentCoordinator?.navigationController
+              let parentNavigationController = parentCoordinator?.navigationController,
+              let openItemsController = controllers.userControllers?.openItemsController
         else { return }
 
         let settings = Defaults.shared.htmlEpubSettings
@@ -97,11 +101,13 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
             libraryId: libraryId,
             userId: userId,
             username: username,
-            interfaceStyle: settings.appearance == .automatic ? parentNavigationController.view.traitCollection.userInterfaceStyle : settings.appearance.userInterfaceStyle
+            interfaceStyle: settings.appearance == .automatic ? parentNavigationController.view.traitCollection.userInterfaceStyle : settings.appearance.userInterfaceStyle,
+            openItemsCount: openItemsController.getItems(for: sessionIdentifier).count
         )
         let controller = HtmlEpubReaderViewController(
             viewModel: ViewModel(initialState: state, handler: handler),
-            compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size)
+            compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size),
+            openItemsController: openItemsController
         )
         controller.coordinatorDelegate = self
         navigationController?.setViewControllers([controller], animated: false)
@@ -156,5 +162,11 @@ extension HtmlEpubCoordinator: HtmlEpubReaderCoordinatorDelegate {
 
     func show(url: URL) {
         (parentCoordinator as? DetailCoordinator)?.show(url: url)
+    }
+}
+
+extension HtmlEpubCoordinator: OpenItemsPresenter {
+    func showItem(with presentation: ItemPresentation?) {
+        (parentCoordinator as? OpenItemsPresenter)?.showItem(with: presentation)
     }
 }

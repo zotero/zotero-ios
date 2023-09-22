@@ -32,6 +32,7 @@ struct HtmlEpubReaderState: ViewModelState {
         static let outline = Changes(rawValue: 1 << 13)
         static let appearance = Changes(rawValue: 1 << 14)
         static let searchResults = Changes(rawValue: 1 << 15)
+        static let openItems = Changes(rawValue: 1 << 16)
     }
 
     struct DocumentData {
@@ -147,6 +148,7 @@ struct HtmlEpubReaderState: ViewModelState {
     var outlines: [Outline]
     var outlineSearch: String
     var interfaceStyle: UIUserInterfaceStyle
+    var openItemsCount: Int
 
     var readerFile: File {
         readerDirectory.copy(withName: "view", ext: "html")
@@ -163,7 +165,8 @@ struct HtmlEpubReaderState: ViewModelState {
         libraryId: LibraryIdentifier,
         userId: Int,
         username: String,
-        interfaceStyle: UIUserInterfaceStyle
+        interfaceStyle: UIUserInterfaceStyle,
+        openItemsCount: Int
     ) {
         self.readerURL = readerURL ?? Bundle.main.url(forResource: "reader", withExtension: nil, subdirectory: "Bundled")
         let originalFile = Files.file(from: url)
@@ -178,6 +181,7 @@ struct HtmlEpubReaderState: ViewModelState {
         self.username = username
         self.interfaceStyle = interfaceStyle
         selectedAnnotationKey = preselectedAnnotationKey
+        self.openItemsCount = openItemsCount
         sortedKeys = []
         annotations = [:]
         comments = [:]

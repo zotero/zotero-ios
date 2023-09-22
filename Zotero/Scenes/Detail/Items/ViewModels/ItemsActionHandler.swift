@@ -185,6 +185,14 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
 
         case .applySettings:
             applySettings(in: viewModel)
+
+        case .updateOpenItems(let items):
+            update(viewModel: viewModel) { state in
+                if state.openItemsCount != items.count {
+                    state.openItemsCount = items.count
+                    state.changes = .openItems
+                }
+            }
         }
     }
 

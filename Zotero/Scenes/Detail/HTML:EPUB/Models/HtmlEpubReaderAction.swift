@@ -42,4 +42,5 @@ enum HtmlEpubReaderAction {
     case toggleTool(AnnotationTool)
     case updateAnnotationProperties(key: String, type: AnnotationType, color: String, lineWidth: CGFloat, pageLabel: String, updateSubsequentLabels: Bool, highlightText: NSAttributedString)
     case userInterfaceStyleChanged(UIUserInterfaceStyle)
+    case updateOpenItems(items: [OpenItem])
 }
