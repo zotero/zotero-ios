@@ -29,6 +29,7 @@
 		61C817F22A49B5D30085B1E6 /* CollectionResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDEE250242E700D8BC1E /* CollectionResponseSpec.swift */; };
 		61FA14CE2B05081D00E7D423 /* TextConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FA14CD2B05081D00E7D423 /* TextConverter.swift */; };
 		61FA14D02B08E24A00E7D423 /* ColorPickerStackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FA14CF2B08E24A00E7D423 /* ColorPickerStackView.swift */; };
+		61E24DCC2ABB385E00D75F50 /* OpenItemsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61E24DCB2ABB385E00D75F50 /* OpenItemsController.swift */; };
 		B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */; };
 		B300B3352429222B00C1FE1E /* TranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */; };
 		B300B3362429234C00C1FE1E /* TranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */; };
@@ -1211,6 +1212,7 @@
 		61BD13942A5831EF008A0704 /* TextKit1TextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextKit1TextView.swift; sourceTree = "<group>"; };
 		61FA14CD2B05081D00E7D423 /* TextConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextConverter.swift; sourceTree = "<group>"; };
 		61FA14CF2B08E24A00E7D423 /* ColorPickerStackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerStackView.swift; sourceTree = "<group>"; };
+		61E24DCB2ABB385E00D75F50 /* OpenItemsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenItemsController.swift; sourceTree = "<group>"; };
 		B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTranslatorMetadata.swift; sourceTree = "<group>"; };
 		B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorMetadata.swift; sourceTree = "<group>"; };
 		B300B3372429254900C1FE1E /* SyncTranslatorsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTranslatorsDbRequest.swift; sourceTree = "<group>"; };
@@ -2162,6 +2164,7 @@
 				B3A17D1827FC33B800322CAD /* LowPowerModeController.swift */,
 				B3C43C1F28589F300007076D /* NotePreviewGenerator.swift */,
 				B305646C23FC051E003304F2 /* ObjectUserChangeObserver.swift */,
+				61E24DCB2ABB385E00D75F50 /* OpenItemsController.swift */,
 				B34A9F6325BF1ABB007C9A4A /* PdfDocumentExporter.swift */,
 				B3C6D551261C9F2E0068B9FE /* PlaceholderTextViewDelegate.swift */,
 				B378F4CC242CD45700B88A05 /* RepoParserDelegate.swift */,
@@ -4832,6 +4835,7 @@
 				B36181EC24C96B0500B30D56 /* SearchableCollection.swift in Sources */,
 				B3830CDB255451AB00910FE0 /* TagPickerAction.swift in Sources */,
 				B3593F40241A61C700760E20 /* ItemCell.swift in Sources */,
+				61E24DCC2ABB385E00D75F50 /* OpenItemsController.swift in Sources */,
 				B305679023FC1D9B003304F2 /* CollectionDifference+Separated.swift in Sources */,
 				B34ACC7A2514EAAB00040C17 /* AnnotationColorGenerator.swift in Sources */,
 				B3ADAE4F2833BEDC00D46271 /* LookupState.swift in Sources */,
