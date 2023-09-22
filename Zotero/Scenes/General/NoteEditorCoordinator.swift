@@ -32,6 +32,7 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
     private let parentTitleData: NoteEditorState.TitleData?
     private let title: String?
     private let library: Library
+    private let sessionIdentifier: String
     private unowned let controllers: Controllers
 
     var viewModel: ViewModel<NoteEditorActionHandler>? {
@@ -46,6 +47,7 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
         parentTitleData: NoteEditorState.TitleData?,
         title: String?,
         navigationController: NavigationViewController,
+        sessionIdentifier: String,
         controllers: Controllers
     ) {
         self.kind = kind
@@ -55,6 +57,7 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
         self.title = title
         self.library = library
         self.navigationController = navigationController
+        self.sessionIdentifier = sessionIdentifier
         self.controllers = controllers
         childCoordinators = []
 
@@ -71,21 +74,29 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
     }
 
     func start(animated: Bool) {
-        guard let dbStorage = controllers.userControllers?.dbStorage, let fileDownloader = controllers.userControllers?.fileDownloader else { return }
-        let state = NoteEditorState(kind: kind, library: library, parentTitleData: parentTitleData, text: initialText, tags: initialTags, title: title)
-        let handler = NoteEditorActionHandler(
-            dbStorage: dbStorage,
-            fileStorage: controllers.fileStorage,
-            schemaController: controllers.schemaController,
-            attachmentDownloader: fileDownloader
+        guard let dbStorage = controllers.userControllers?.dbStorage,
+                let fileDownloader = controllers.userControllers?.fileDownloader,
+                let openItemsController = controllers.userControllers?.openItemsController
+        else { return }
+
+        let state = NoteEditorState(
+            kind: kind,
+            library: library,
+            parentTitleData: parentTitleData,
+            text: initialText,
+            tags: initialTags,
+            openItemsCount: openItemsController.getItems(for: sessionIdentifier).count,
+            title: title
         )
+        let handler = NoteEditorActionHandler(dbStorage: dbStorage, fileStorage: controllers.fileStorage, schemaController: controllers.schemaController, attachmentDownloader: fileDownloader)
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = NoteEditorViewController(
             viewModel: viewModel,
             htmlAttributedStringConverter: controllers.htmlAttributedStringConverter,
             dbStorage: dbStorage,
             fileStorage: controllers.fileStorage,
-            uriConverter: controllers.uriConverter
+            uriConverter: controllers.uriConverter,
+            openItemsController: openItemsController
         )
         controller.coordinatorDelegate = self
         navigationController?.setViewControllers([controller], animated: animated)
@@ -157,5 +168,11 @@ extension NoteEditorCoordinator: NoteEditorCoordinatorDelegate {
                 DDLogError("NoteEditorCoordinator: could not download attachment - \(error)")
             }
         }
+    }
+}
+
+extension NoteEditorCoordinator: OpenItemsPresenter {
+    func showItem(with presentation: ItemPresentation?) {
+        (parentCoordinator as? OpenItemsPresenter)?.showItem(with: presentation)
     }
 }
