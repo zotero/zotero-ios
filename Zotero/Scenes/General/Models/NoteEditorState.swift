@@ -35,6 +35,7 @@ struct NoteEditorState: ViewModelState {
 
         static let tags = Changes(rawValue: 1 << 0)
         static let save = Changes(rawValue: 1 << 1)
+        static let openItems = Changes(rawValue: 1 << 2)
     }
 
     struct TitleData {
@@ -53,14 +54,16 @@ struct NoteEditorState: ViewModelState {
     var text: String
     var tags: [Tag]
     var changes: Changes
+    var openItemsCount: Int
 
-    init(kind: Kind, library: Library, title: TitleData?, text: String, tags: [Tag]) {
+    init(kind: Kind, library: Library, title: TitleData?, text: String, tags: [Tag], openItemsCount: Int) {
         self.kind = kind
         self.text = text
         self.tags = tags
         self.library = library
         self.title = title
         changes = []
+        self.openItemsCount = openItemsCount
     }
 
     mutating func cleanup() {

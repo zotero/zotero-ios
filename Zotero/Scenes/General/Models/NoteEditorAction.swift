@@ -12,4 +12,5 @@ enum NoteEditorAction {
     case save
     case setTags([Tag])
     case setText(String)
+    case updateOpenItems(items: [OpenItem])
 }

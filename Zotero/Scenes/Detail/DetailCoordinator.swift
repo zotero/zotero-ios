@@ -84,19 +84,30 @@ final class DetailCoordinator: Coordinator {
     private var transitionDelegate: EmptyTransitioningDelegate?
     weak var itemsTagFilterDelegate: ItemsTagFilterDelegate?
     weak var navigationController: UINavigationController?
+    var presentedRestoredControllerWindow: UIWindow?
 
     let collection: Collection
     let library: Library
     let searchItemKeys: [String]?
+    let sessionIdentifier: String
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
-    init(library: Library, collection: Collection, searchItemKeys: [String]?, navigationController: UINavigationController, itemsTagFilterDelegate: ItemsTagFilterDelegate?, controllers: Controllers) {
+    init(
+        library: Library,
+        collection: Collection,
+        searchItemKeys: [String]?,
+        navigationController: UINavigationController,
+        itemsTagFilterDelegate: ItemsTagFilterDelegate?,
+        sessionIdentifier: String,
+        controllers: Controllers
+    ) {
         self.library = library
         self.collection = collection
         self.searchItemKeys = searchItemKeys
         self.navigationController = navigationController
         self.itemsTagFilterDelegate = itemsTagFilterDelegate
+        self.sessionIdentifier = sessionIdentifier
         self.controllers = controllers
         self.childCoordinators = []
         self.disposeBag = DisposeBag()
@@ -119,6 +130,7 @@ final class DetailCoordinator: Coordinator {
             syncScheduler: userControllers.syncScheduler,
             citationController: userControllers.citationController,
             fileCleanupController: userControllers.fileCleanupController,
+            openItemsController: userControllers.openItemsController,
             itemsTagFilterDelegate: self.itemsTagFilterDelegate,
             htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter
         )
@@ -135,6 +147,7 @@ final class DetailCoordinator: Coordinator {
         syncScheduler: SynchronizationScheduler,
         citationController: CitationController,
         fileCleanupController: AttachmentFileCleanupController,
+        openItemsController: OpenItemsController,
         itemsTagFilterDelegate: ItemsTagFilterDelegate?,
         htmlAttributedStringConverter: HtmlAttributedStringConverter
     ) -> ItemsViewController {
@@ -153,7 +166,8 @@ final class DetailCoordinator: Coordinator {
             downloadBatchData: downloadBatchData,
             remoteDownloadBatchData: remoteDownloadBatchData,
             identifierLookupBatchData: identifierLookupBatchData,
-            error: nil
+            error: nil,
+            openItemsCount: openItemsController.getItems(for: sessionIdentifier).count
         )
         let handler = ItemsActionHandler(
             dbStorage: dbStorage,
@@ -166,7 +180,7 @@ final class DetailCoordinator: Coordinator {
             syncScheduler: syncScheduler,
             htmlAttributedStringConverter: htmlAttributedStringConverter
         )
-        let controller = ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: self.controllers, coordinatorDelegate: self)
+        let controller = ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: self.controllers, coordinatorDelegate: self, presenter: self)
         controller.tagFilterDelegate = itemsTagFilterDelegate
         itemsTagFilterDelegate?.delegate = controller
         return controller
@@ -192,7 +206,7 @@ final class DetailCoordinator: Coordinator {
             switch contentType {
             case "application/pdf":
                 DDLogInfo("DetailCoordinator: show PDF \(attachment.key)")
-                self.showPdf(at: url, key: attachment.key, parentKey: parentKey, library: library)
+                self.showPDF(at: url, key: attachment.key, parentKey: parentKey, library: library)
 
             case "text/html":
                 DDLogInfo("DetailCoordinator: show HTML \(attachment.key)")
@@ -296,10 +310,20 @@ final class DetailCoordinator: Coordinator {
 
         return navigationController
     }
-    
-    private func showPdf(at url: URL, key: String, parentKey: String?, library: Library) {
-        let controller = createPDFController(key: key, parentKey: parentKey, library: library, url: url)
-        navigationController?.present(controller, animated: true, completion: nil)
+
+    private func showPDF(at url: URL, key: String, parentKey: String?, library: Library) {
+        guard let navigationController else { return }
+        controllers.userControllers?.openItemsController.open(.pdf(libraryId: library.identifier, key: key), for: sessionIdentifier)
+
+        let viewControllerProvider: () -> UIViewController = {
+            self.createPDFController(key: key, parentKey: parentKey, library: library, url: url)
+        }
+        if let presentedViewController = navigationController.presentedViewController {
+            guard let window = presentedViewController.view.window else { return }
+            show(viewControllerProvider: viewControllerProvider, by: navigationController, in: window, animated: false)
+            return
+        }
+        navigationController.present(viewControllerProvider(), animated: true)
     }
 
     private func showWebView(for url: URL) {
@@ -460,6 +484,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             title: title,
             saveCallback: saveCallback,
             navigationController: navigationController,
+            sessionIdentifier: sessionIdentifier,
             controllers: controllers
         )
         coordinator.parentCoordinator = self
@@ -898,15 +923,39 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
         saveCallback: @escaping NoteEditorSaveCallback = { _, _  in }
     ) {
         guard let navigationController else { return }
-        let controller = createNoteController(library: library, kind: kind, text: text, tags: tags, title: title, saveCallback: saveCallback)
+        var amendedSaveCallback = saveCallback
         switch kind {
         case .itemCreation, .standaloneCreation:
             DDLogInfo("DetailCoordinator: show note creation")
-            
+            amendedSaveCallback = { [weak self] key, result in
+                switch result {
+                case .success(let note):
+                    // If indeed a new note is created inform open items controller about it.
+                    if let self {
+                        controllers.userControllers?.openItemsController.open(.note(libraryId: library.identifier, key: note.key), for: sessionIdentifier)
+                    }
+
+                case .failure:
+                    break
+                }
+
+                saveCallback(key, result)
+            }
+
         case .edit(let key), .readOnly(let key):
             DDLogInfo("DetailCoordinator: show note \(key)")
+            controllers.userControllers?.openItemsController.open(.note(libraryId: library.identifier, key: key), for: sessionIdentifier)
         }
-        navigationController.present(controller, animated: true)
+
+        let viewControllerProvider: () -> UIViewController = {
+            self.createNoteController(library: library, kind: kind, text: text, tags: tags, title: title, saveCallback: amendedSaveCallback)
+        }
+        if let presentedViewController = navigationController.presentedViewController {
+            guard let window = presentedViewController.view.window else { return }
+            show(viewControllerProvider: viewControllerProvider, by: navigationController, in: window, animated: false)
+            return
+        }
+        navigationController.present(viewControllerProvider(), animated: true)
     }
 }
 
@@ -948,3 +997,19 @@ extension DetailCoordinator: DetailCitationCoordinatorDelegate {
 }
 
 extension DetailCoordinator: DetailCopyBibliographyCoordinatorDelegate { }
+
+extension DetailCoordinator: OpenItemsPresenter {
+    func showItem(with presentation: ItemPresentation) {
+        switch presentation {
+        case .pdf(let library, let key, let parentKey, let url):
+            showPDF(at: url, key: key, parentKey: parentKey, library: library)
+
+        case .note(let library, let key, let text, let tags, let title):
+            let kind: NoteEditorKind = library.metadataEditable ? .edit(key: key) : .readOnly(key: key)
+            // TODO: Check if a callback is required
+            showNote(library: library, kind: kind, text: text, tags: tags, title: title)
+        }
+    }
+}
+
+extension DetailCoordinator: InstantPresenter { }

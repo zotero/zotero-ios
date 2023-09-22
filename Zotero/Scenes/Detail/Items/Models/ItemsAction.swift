@@ -48,4 +48,5 @@ enum ItemsAction {
     case updateKeys(items: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int])
     case startSync
     case emptyTrash
+    case updateOpenItems(items: [OpenItem])
 }

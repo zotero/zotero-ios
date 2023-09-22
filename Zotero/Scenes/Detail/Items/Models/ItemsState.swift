@@ -23,6 +23,7 @@ struct ItemsState: ViewModelState {
         static let attachmentsRemoved = Changes(rawValue: 1 << 4)
         static let filters = Changes(rawValue: 1 << 5)
         static let batchData = Changes(rawValue: 1 << 6)
+        static let openItems = Changes(rawValue: 1 << 7)
     }
 
     struct DownloadBatchData: Equatable {
@@ -109,6 +110,7 @@ struct ItemsState: ViewModelState {
     var itemTitleFont: UIFont {
         return UIFont.preferredFont(for: .headline, weight: .regular)
     }
+    var openItemsCount: Int
 
     var tagsFilter: Set<String>? {
         let tagFilter = self.filters.first(where: { filter in
@@ -131,7 +133,8 @@ struct ItemsState: ViewModelState {
         downloadBatchData: DownloadBatchData?,
         remoteDownloadBatchData: DownloadBatchData?,
         identifierLookupBatchData: IdentifierLookupBatchData,
-        error: ItemsError?
+        error: ItemsError?,
+        openItemsCount: Int
     ) {
         self.collection = collection
         self.library = library
@@ -149,6 +152,7 @@ struct ItemsState: ViewModelState {
         self.identifierLookupBatchData = identifierLookupBatchData
         self.searchTerm = searchTerm
         self.itemTitles = [:]
+        self.openItemsCount = openItemsCount
     }
 
     mutating func cleanup() {
