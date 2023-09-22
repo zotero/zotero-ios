@@ -15,6 +15,7 @@ enum ItemsAction {
     case addAttachments([URL])
     case assignItemsToCollections(items: Set<String>, collections: Set<String>)
     case cacheItemTitle(key: String, title: String)
+    case clearTitleCache
     case deleteItemsFromCollection(Set<String>)
     case deleteItems(Set<String>)
     case deselectItem(String)

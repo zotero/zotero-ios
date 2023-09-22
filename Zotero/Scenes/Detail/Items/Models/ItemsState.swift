@@ -41,7 +41,6 @@ struct ItemsState: ViewModelState {
 
     let collection: Collection
     let library: Library
-    let itemTitleFont: UIFont
 
     var sortType: ItemsSortType
     var searchTerm: String?
@@ -64,6 +63,9 @@ struct ItemsState: ViewModelState {
     var bibliographyError: Error?
     var attachmentToOpen: String?
     var downloadBatchData: DownloadBatchData?
+    var itemTitleFont: UIFont {
+        return UIFont.preferredFont(for: .headline, weight: .regular)
+    }
 
     var tagsFilter: Set<String>? {
         let tagFilter = self.filters.first(where: { filter in
@@ -92,7 +94,6 @@ struct ItemsState: ViewModelState {
         self.searchTerm = searchTerm
         self.processingBibliography = false
         self.itemTitles = [:]
-        self.itemTitleFont = UIFont.preferredFont(for: .headline, weight: .regular)
     }
 
     mutating func cleanup() {

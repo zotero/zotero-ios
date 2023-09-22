@@ -207,8 +207,10 @@ final class ItemsTableViewHandler: NSObject {
         cell.set(accessory: self.cellAccessory(from: accessory))
     }
 
-    func reloadAll(snapshot: Results<RItem>) {
-        self.snapshot = snapshot
+    func reloadAll(snapshot: Results<RItem>? = nil) {
+        if let snapshot {
+            self.snapshot = snapshot
+        }
         self.tableView.reloadData()
     }
 
