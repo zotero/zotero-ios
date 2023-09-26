@@ -192,6 +192,11 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
             self.update(viewModel: viewModel) { state in
                 state.itemTitles[key] = self.htmlAttributedStringConverter.convert(text: title, baseAttributes: [.font: state.itemTitleFont])
             }
+
+        case .clearTitleCache:
+            self.update(viewModel: viewModel) { state in
+                state.itemTitles = [:]
+            }
         }
     }
 

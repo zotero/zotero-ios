@@ -521,10 +521,20 @@ final class ItemsViewController: UIViewController {
             .rx
             .notification(.willEnterForeground)
             .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] _ in
-                guard let self = self, self.searchBarNeedsReset else { return }
+            .subscribe(with: self, onNext: { `self`, _ in
+                guard self.searchBarNeedsReset else { return }
                 self.resetSearchBar()
                 self.searchBarNeedsReset = false
+            })
+            .disposed(by: self.disposeBag)
+
+        NotificationCenter.default
+            .rx
+            .notification(UIContentSizeCategory.didChangeNotification)
+            .observe(on: MainScheduler.instance)
+            .subscribe(with: self, onNext: { `self`, _ in
+                self.viewModel.process(action: .clearTitleCache)
+                self.tableViewHandler.reloadAll()
             })
             .disposed(by: self.disposeBag)
     }
