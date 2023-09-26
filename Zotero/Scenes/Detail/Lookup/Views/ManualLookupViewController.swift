@@ -228,7 +228,6 @@ class ManualLookupViewController: UIViewController {
             self?.updatePreferredContentSize()
         }
         controller.viewModel.stateObservable
-                  .skip(1)
                   .subscribe(with: self, onNext: { `self`, state in
                       self.update(state: state)
                   })

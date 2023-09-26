@@ -42,7 +42,6 @@ final class AllCollectionPickerViewController: UICollectionViewController {
         self.updateDataSource(with: self.viewModel.state, includeSelection: true)
 
         self.viewModel.stateObservable
-                      .skip(1)
                       .observe(on: MainScheduler.instance)
                       .subscribe(onNext: { [weak self] state in
                           self?.update(to: state)

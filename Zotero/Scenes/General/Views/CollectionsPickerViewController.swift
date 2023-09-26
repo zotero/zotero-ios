@@ -83,7 +83,6 @@ class CollectionsPickerViewController: UICollectionViewController {
         self.updateDataSource(with: self.viewModel.state, animated: false)
 
         self.viewModel.stateObservable
-                      .skip(1)
                       .observe(on: MainScheduler.instance)
                       .subscribe(onNext: { [weak self] state in
                           self?.update(to: state)
