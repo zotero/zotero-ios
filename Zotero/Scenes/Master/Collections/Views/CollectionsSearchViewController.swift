@@ -43,7 +43,6 @@ final class CollectionsSearchViewController: UIViewController {
         self.setupDataSource()
 
         self.viewModel.stateObservable
-                      .skip(1)
                       .observe(on: MainScheduler.instance)
                       .subscribe(onNext: { [weak self] state in
                           self?.update(to: state)
