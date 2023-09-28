@@ -127,6 +127,7 @@ final class ItemsViewController: UIViewController {
         
         // willTransition(to:with:) seems to not be not called for all transitions, so instead traitCollectionDidChange(_:) is used w/ a short animation block.
         guard UIDevice.current.userInterfaceIdiom == .pad, traitCollection.horizontalSizeClass != previousTraitCollection?.horizontalSizeClass else { return }
+        self.setupTitle()
         UIView.animate(withDuration: 0.1) {
             self.toolbarController.reloadToolbarItems(for: self.viewModel.state)
         }
@@ -522,7 +523,7 @@ final class ItemsViewController: UIViewController {
     }
 
     private func setupTitle() {
-//        self.title = self.viewModel.state.collection.name
+        self.title = self.traitCollection.horizontalSizeClass == .compact ? self.viewModel.state.collection.name : nil
     }
 
     private func updateEmptyTrashButton(toEnabled enabled: Bool) {
@@ -600,7 +601,7 @@ final class ItemsViewController: UIViewController {
         case .add:
             image = UIImage(systemName: "plus")
             accessibilityLabel = L10n.Items.new
-            title = nil
+            title = L10n.Items.new
             action = { [weak self] item in
                 guard let self = self else { return }
                 self.coordinatorDelegate?.showAddActions(viewModel: self.viewModel, button: item)
@@ -615,14 +616,18 @@ final class ItemsViewController: UIViewController {
         }
 
         let item: UIBarButtonItem
-        if let title = title {
-            item = UIBarButtonItem(title: title, style: .plain, target: nil, action: nil)
-        } else if let image = image {
-            item = UIBarButtonItem(image: image, style: .plain, target: nil, action: nil)
+        if #available(iOS 16.0, *) {
+            item = UIBarButtonItem(title: title, image: image, target: nil, action: nil)
         } else {
-            fatalError("ItemsViewController: you need a title or image!")
+            if let title = title {
+                item = UIBarButtonItem(title: title, style: .plain, target: nil, action: nil)
+            } else if let image = image {
+                item = UIBarButtonItem(image: image, style: .plain, target: nil, action: nil)
+            } else {
+                fatalError("ItemsViewController: you need a title or image!")
+            }
         }
-
+        
         item.tag = type.rawValue
         item.accessibilityLabel = accessibilityLabel
         item.rx.tap.subscribe(onNext: { _ in action(item) }).disposed(by: self.disposeBag)
