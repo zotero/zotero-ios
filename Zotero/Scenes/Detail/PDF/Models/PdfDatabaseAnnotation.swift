@@ -1,5 +1,5 @@
 //
-//  DatabaseAnnotation.swift
+//  PdfDatabaseAnnotation.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 26.08.2022.
@@ -12,7 +12,7 @@ import CocoaLumberjackSwift
 import PSPDFKit
 import RxSwift
 
-struct DatabaseAnnotation {
+struct PdfDatabaseAnnotation {
     let item: RItem
 
     var key: String {
@@ -154,7 +154,7 @@ struct DatabaseAnnotation {
     }
 }
 
-extension DatabaseAnnotation: Annotation {
+extension PdfDatabaseAnnotation: PdfAnnotation {
     var readerKey: PDFReaderState.AnnotationKey {
         return .init(key: self.key, type: .database)
     }

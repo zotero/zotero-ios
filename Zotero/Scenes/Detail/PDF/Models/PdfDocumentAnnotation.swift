@@ -1,5 +1,5 @@
 //
-//  DocumentAnnotation.swift
+//  PdfDocumentAnnotation.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 26.08.2022.
@@ -8,7 +8,7 @@
 
 import UIKit
 
-struct DocumentAnnotation {
+struct PdfDocumentAnnotation {
     let key: String
     let type: AnnotationType
     let page: Int
@@ -25,7 +25,7 @@ struct DocumentAnnotation {
     let dateModified: Date
 }
 
-extension DocumentAnnotation: Annotation {
+extension PdfDocumentAnnotation: PdfAnnotation {
     var readerKey: PDFReaderState.AnnotationKey {
         return .init(key: self.key, type: .document)
     }

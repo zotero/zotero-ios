@@ -20,7 +20,7 @@ struct EditAnnotationPathsDbRequest: DbRequest {
 
     func process(in database: Realm) throws {
         guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first else { return }
-        let page = UInt(DatabaseAnnotation(item: item).page)
+        let page = UInt(PdfDatabaseAnnotation(item: item).page)
         let dbPaths = self.paths.map { path in
             return path.map({ self.boundingBoxConverter.convertToDb(point: $0, page: page) ?? $0 })
         }

@@ -30,7 +30,7 @@ final class WebViewHandler: NSObject {
 
     // MARK: - Lifecycle
 
-    init(webView: WKWebView, javascriptHandlers: [String]?) {
+    init(webView: WKWebView, javascriptHandlers: [String]?, userAgent: String? = nil) {
         let storage = HTTPCookieStorage.sharedCookieStorage(forGroupContainerIdentifier: AppGroup.identifier)
         storage.cookieAcceptPolicy = .always
 
@@ -45,16 +45,13 @@ final class WebViewHandler: NSObject {
         super.init()
 
         webView.navigationDelegate = self
+        webView.customUserAgent = "Zotero_iOS/\(DeviceInfoProvider.versionString ?? "")-\(DeviceInfoProvider.buildString ?? "")"
 
         if let handlers = javascriptHandlers {
             handlers.forEach { handler in
                 webView.configuration.userContentController.add(self, name: handler)
             }
         }
-
-        let scriptStr = #"console.log = (function(oriLogFunc){ return function(str) {window.webkit.messageHandlers.logHandler.postMessage(str);oriLogFunc.call(console,str);}})(console.log);"#
-        let script = WKUserScript(source: scriptStr, injectionTime: .atDocumentStart, forMainFrameOnly: true)
-        webView.configuration.userContentController.addUserScript(script)
     }
 
     // MARK: - Actions

@@ -86,7 +86,7 @@ struct PDFReaderState: ViewModelState {
     var snapshotKeys: [AnnotationKey]?
     var token: NotificationToken?
     var databaseAnnotations: Results<RItem>!
-    var documentAnnotations: [String: DocumentAnnotation]
+    var documentAnnotations: [String: PdfDocumentAnnotation]
     var comments: [String: NSAttributedString]
     var searchTerm: String?
     var filter: AnnotationsFilter?
@@ -99,7 +99,7 @@ struct PDFReaderState: ViewModelState {
 
     /// Selected annotation when annotations are not being edited in sidebar
     var selectedAnnotationKey: AnnotationKey?
-    var selectedAnnotation: Annotation? {
+    var selectedAnnotation: PdfAnnotation? {
         return self.selectedAnnotationKey.flatMap({ self.annotation(for: $0) })
     }
     var selectedAnnotationCommentActive: Bool
@@ -165,10 +165,10 @@ struct PDFReaderState: ViewModelState {
         self.previewCache.totalCostLimit = 1024 * 1024 * 10 // Cache object limit - 10 MB
     }
 
-    func annotation(for key: AnnotationKey) -> Annotation? {
+    func annotation(for key: AnnotationKey) -> PdfAnnotation? {
         switch key.type {
         case .database:
-            return self.databaseAnnotations.filter(.key(key.key)).first.flatMap({ DatabaseAnnotation(item: $0) })
+            return self.databaseAnnotations.filter(.key(key.key)).first.flatMap({ PdfDatabaseAnnotation(item: $0) })
 
         case .document:
             return self.documentAnnotations[key.key]

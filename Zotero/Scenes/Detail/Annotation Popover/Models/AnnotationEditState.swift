@@ -29,7 +29,7 @@ struct AnnotationEditState: ViewModelState {
     var updateSubsequentLabels: Bool
     var changes: Changes
 
-    init(annotation: Annotation, userId: Int, library: Library) {
+    init(annotation: PdfAnnotation, userId: Int, library: Library) {
         self.key = annotation.readerKey
         self.type = annotation.type
         self.isEditable = annotation.editability(currentUserId: userId, library: library) == .editable

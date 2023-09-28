@@ -95,7 +95,7 @@ final class AnnotationsViewController: UIViewController {
 
     // MARK: - Actions
 
-    private func perform(action: AnnotationView.Action, annotation: Annotation) {
+    private func perform(action: AnnotationView.Action, annotation: PdfAnnotation) {
         let state = self.viewModel.state
 
         guard state.library.metadataEditable else { return }
@@ -274,7 +274,7 @@ final class AnnotationsViewController: UIViewController {
         }
     }
 
-    private func setup(cell: AnnotationCell, with annotation: Annotation, state: PDFReaderState) {
+    private func setup(cell: AnnotationCell, with annotation: PdfAnnotation, state: PDFReaderState) {
         let selected = annotation.key == state.selectedAnnotationKey?.key
 
         let loadPreview: () -> UIImage? = {
@@ -324,7 +324,7 @@ final class AnnotationsViewController: UIViewController {
         _ = cell.disposeBag?.insert(actionSubscription)
     }
 
-    private func loadAttributedComment(for annotation: Annotation) -> NSAttributedString? {
+    private func loadAttributedComment(for annotation: PdfAnnotation) -> NSAttributedString? {
         let comment = annotation.comment
 
         guard !comment.isEmpty else { return nil }
@@ -341,7 +341,7 @@ final class AnnotationsViewController: UIViewController {
         var colors: Set<String> = []
         var tags: Set<Tag> = []
 
-        let processAnnotation: (Annotation) -> Void = { annotation in
+        let processAnnotation: (PdfAnnotation) -> Void = { annotation in
             colors.insert(annotation.color)
             for tag in annotation.tags {
                 tags.insert(tag)
@@ -349,7 +349,7 @@ final class AnnotationsViewController: UIViewController {
         }
 
         for annotation in self.viewModel.state.databaseAnnotations {
-            processAnnotation(DatabaseAnnotation(item: annotation))
+            processAnnotation(PdfDatabaseAnnotation(item: annotation))
         }
         for annotation in self.viewModel.state.documentAnnotations.values {
             processAnnotation(annotation)

@@ -214,19 +214,16 @@ final class AnnotationToolbarHandler: NSObject {
         controller.set(rotation: rotation, isCompactSize: isCompactSize(for: rotation))
         delegate.layoutIfNeeded()
     }
-
-    func viewWillAppear(documentIsLocked: Bool) {
+    
+    func viewIsAppearing(documentIsLocked: Bool) {
+        self.setConstraints(for: self.delegate.toolbarState.position, statusBarVisible: self.delegate.statusBarVisible)
+        self.delegate.topDidChange(forToolbarState: self.delegate.toolbarState)
         self.setAnnotationToolbarHandleMinimumLongPressDuration(forPosition: self.delegate.toolbarState.position)
         if self.delegate.toolbarState.visible && !documentIsLocked {
             self.showAnnotationToolbar(state: self.delegate.toolbarState, statusBarVisible: self.delegate.statusBarVisible, animated: false)
         } else {
             self.hideAnnotationToolbar(newState: self.delegate.toolbarState, statusBarVisible: self.delegate.statusBarVisible, animated: false)
         }
-    }
-
-    func viewDidLayoutSubviews() {
-        self.setConstraints(for: self.delegate.toolbarState.position, statusBarVisible: self.delegate.statusBarVisible)
-        self.delegate.topDidChange(forToolbarState: self.delegate.toolbarState)
     }
 
     func viewWillTransitionToNewSize() {

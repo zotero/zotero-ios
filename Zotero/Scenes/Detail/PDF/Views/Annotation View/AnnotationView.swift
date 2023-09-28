@@ -99,7 +99,7 @@ final class AnnotationView: UIView {
     /// - parameter library: Library of given annotation
     /// - parameter pdfAnnotationsCoordinatorDelegate: Delegate for getting share menu.
     /// - parameter state: State required for setting up share menu.
-    func setup(with annotation: Annotation, comment: Comment?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, library: Library, currentUserId: Int, displayName: String, username: String,
+    func setup(with annotation: PdfAnnotation, comment: Comment?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, library: Library, currentUserId: Int, displayName: String, username: String,
                boundingBoxConverter: AnnotationBoundingBoxConverter, pdfAnnotationsCoordinatorDelegate: PdfAnnotationsCoordinatorDelegate, state: PDFReaderState) {
         let editability = annotation.editability(currentUserId: currentUserId, library: library)
         let color = UIColor(hex: annotation.color)
@@ -132,7 +132,7 @@ final class AnnotationView: UIView {
         self.bottomSeparator.isHidden = (self.tags.isHidden && self.tagsButton.isHidden) || (self.commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden)
     }
 
-    private func setupContent(for annotation: Annotation, preview: UIImage?, color: UIColor, canEdit: Bool, selected: Bool, availableWidth: CGFloat, accessibilityType: AccessibilityType,
+    private func setupContent(for annotation: PdfAnnotation, preview: UIImage?, color: UIColor, canEdit: Bool, selected: Bool, availableWidth: CGFloat, accessibilityType: AccessibilityType,
                               boundingBoxConverter: AnnotationBoundingBoxConverter) {
         guard let highlightContent = self.highlightContent, let imageContent = self.imageContent else { return }
 
@@ -198,7 +198,7 @@ final class AnnotationView: UIView {
         }
     }
 
-    private func setupTags(for annotation: Annotation, canEdit: Bool, accessibilityEnabled: Bool) {
+    private func setupTags(for annotation: PdfAnnotation, canEdit: Bool, accessibilityEnabled: Bool) {
         guard !annotation.tags.isEmpty else {
             self.tagsButton.isHidden = !canEdit
             self.tagsButton.accessibilityLabel = L10n.Pdf.AnnotationsSidebar.addTags

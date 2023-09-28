@@ -116,7 +116,7 @@ final class AnnotationViewHeader: UIView {
     }
 
     func setup(
-        with annotation: Annotation,
+        with annotation: PdfAnnotation,
         libraryId: LibraryIdentifier,
         shareMenuProvider: @escaping ((UIButton) -> UIMenu?),
         isEditable: Bool,

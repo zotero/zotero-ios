@@ -17,22 +17,46 @@ struct HtmlEpubReaderState: ViewModelState {
         static let activeTool = Changes(rawValue: 1 << 0)
     }
 
+    struct DocumentData {
+        let buffer: String
+        let annotationsJson: String
+    }
+
+    enum Error: Swift.Error {
+        case cantDeleteAnnotation
+        case cantAddAnnotations
+        case cantUpdateAnnotation
+        case unknown
+    }
+
+    let url: URL
     let key: String
     let library: Library
+    let userId: Int
+    let username: String
 
+    var documentData: DocumentData?
     var activeTool: AnnotationTool?
     var toolColors: [AnnotationTool: UIColor]
     var changes: Changes
+    var error: Error?
 
-    init(key: String, library: Library) {
+    init(url: URL, key: String, library: Library, userId: Int, username: String) {
+        self.url = url
         self.key = key
         self.library = library
-        self.toolColors = [.highlight: UIColor(hex: Defaults.shared.highlightColorHex),
-                           .note: UIColor(hex: Defaults.shared.noteColorHex)]
+        self.userId = userId
+        self.username = username
+        self.toolColors = [
+            .highlight: UIColor(hex: Defaults.shared.highlightColorHex),
+            .note: UIColor(hex: Defaults.shared.noteColorHex)
+        ]
         self.changes = []
     }
 
     mutating func cleanup() {
-        self.changes = []
+        documentData = nil
+        changes = []
+        error = nil
     }
 }

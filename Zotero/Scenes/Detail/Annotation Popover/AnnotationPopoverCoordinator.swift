@@ -16,7 +16,7 @@ protocol AnnotationPopover: AnyObject {
 
 protocol AnnotationPopoverAnnotationCoordinatorDelegate: AnyObject {
     func createShareAnnotationMenu(sender: UIButton) -> UIMenu?
-    func showEdit(annotation: Annotation, userId: Int, library: Library, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
+    func showEdit(annotation: PdfAnnotation, userId: Int, library: Library, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func didFinish()
 }
@@ -69,7 +69,7 @@ extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDe
         )
     }
     
-    func showEdit(annotation: Annotation, userId: Int, library: Library, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
+    func showEdit(annotation: PdfAnnotation, userId: Int, library: Library, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
         let state = AnnotationEditState(annotation: annotation, userId: userId, library: library)
         let handler = AnnotationEditActionHandler()
         let viewModel = ViewModel(initialState: state, handler: handler)

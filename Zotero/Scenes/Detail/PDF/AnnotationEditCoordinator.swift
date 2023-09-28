@@ -16,7 +16,7 @@ final class AnnotationEditCoordinator: Coordinator {
     var childCoordinators: [Coordinator]
     weak var navigationController: UINavigationController?
 
-    private let annotation: Annotation
+    private let annotation: PdfAnnotation
     private let userId: Int
     private let library: Library
     private let saveAction: AnnotationEditSaveAction
@@ -24,7 +24,7 @@ final class AnnotationEditCoordinator: Coordinator {
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
-    init(annotation: Annotation, userId: Int, library: Library, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction,
+    init(annotation: PdfAnnotation, userId: Int, library: Library, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction,
          navigationController: NavigationViewController, controllers: Controllers) {
         self.annotation = annotation
         self.userId = userId

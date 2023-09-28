@@ -1,5 +1,5 @@
 //
-//  Annotation.swift
+//  PdfAnnotation.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 29/04/2020.
@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol Annotation {
+protocol PdfAnnotation {
     var key: String { get }
     var readerKey: PDFReaderState.AnnotationKey { get }
     var type: AnnotationType { get }
@@ -30,7 +30,7 @@ protocol Annotation {
     func paths(boundingBoxConverter: AnnotationBoundingBoxConverter) -> [[CGPoint]]
 }
 
-extension Annotation {
+extension PdfAnnotation {
     func previewBoundingBox(boundingBoxConverter: AnnotationBoundingBoxConverter) -> CGRect {
         let boundingBox = self.boundingBox(boundingBoxConverter: boundingBoxConverter)
         switch self.type {

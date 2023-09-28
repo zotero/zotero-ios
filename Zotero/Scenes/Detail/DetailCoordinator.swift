@@ -300,12 +300,15 @@ final class DetailCoordinator: Coordinator {
     }
 
     private func showHtmlEpubReader(for url: URL, key: String, library: Library) {
-        guard let currentNavigationController = self.navigationController, let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-        let viewModel = ViewModel(initialState: HtmlEpubReaderState(key: key, library: library), handler: HtmlEpubReaderActionHandler(dbStorage: dbStorage))
-        let controller = HtmlEpubReaderViewController(url: url, viewModel: viewModel, compactSize: UIDevice.current.isCompactWidth(size: currentNavigationController.view.frame.size))
-        let navigationController = UINavigationController(rootViewController: controller)
+        let navigationController = NavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
-        currentNavigationController.present(navigationController, animated: true, completion: nil)
+
+        let coordinator = HtmlEpubCoordinator(key: key, library: library, url: url, navigationController: navigationController, controllers: controllers)
+        coordinator.parentCoordinator = self
+        self.childCoordinators.append(coordinator)
+        coordinator.start(animated: false)
+
+        self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
 
     private func showWebView(for url: URL) {

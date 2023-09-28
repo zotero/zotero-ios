@@ -383,7 +383,7 @@ final class PDFDocumentViewController: UIViewController {
     /// - parameter annotation: Annotation to select. Existing selection will be deselected if set to `nil`.
     /// - parameter pageIndex: Page index of page where (de)selection should happen.
     /// - parameter document: Active `Document` instance.
-    private func select(annotation: Annotation?, pageIndex: PageIndex, document: PSPDFKit.Document) {
+    private func select(annotation: PdfAnnotation?, pageIndex: PageIndex, document: PSPDFKit.Document) {
         guard let pageView = self.pdfController?.pageViewForPage(at: pageIndex) else { return }
 
         self.updateSelection(on: pageView, annotation: annotation)
@@ -400,7 +400,7 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     /// Focuses given annotation and selects it if it's not selected yet.
-    private func focus(annotation: Annotation, at location: AnnotationDocumentLocation, document: PSPDFKit.Document) {
+    private func focus(annotation: PdfAnnotation, at location: AnnotationDocumentLocation, document: PSPDFKit.Document) {
         let pageIndex = PageIndex(location.page)
         self.scrollIfNeeded(to: pageIndex, animated: true) {
             self.select(annotation: annotation, pageIndex: pageIndex, document: document)
@@ -410,7 +410,7 @@ final class PDFDocumentViewController: UIViewController {
     /// Updates `SelectionView` for `PDFPageView` based on selected annotation.
     /// - parameter pageView: `PDFPageView` instance for given page.
     /// - parameter selectedAnnotation: Selected annotation or `nil` if there is no selection.
-    private func updateSelection(on pageView: PDFPageView, annotation: Annotation?) {
+    private func updateSelection(on pageView: PDFPageView, annotation: PdfAnnotation?) {
         // Delete existing custom highlight selection view
         if let view = self.selectionView {
             view.removeFromSuperview()

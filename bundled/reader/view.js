@@ -27107,12 +27107,10 @@ function isWin() {
 }
 
 // https://stackoverflow.com/a/9851769
-let isFirefox = false; //typeof InstallTrigger !== 'undefined';
-let isSafari = true;
-// /constructor/i.test(window.HTMLElement)
-// 	|| (function (p) { return p.toString() === "[object SafariRemoteNotification]"; })(!window['safari'] || (typeof safari !== 'undefined' && window['safari'].pushNotification))
-// || !!navigator && navigator.userAgent.includes('Safari/') && !navigator.userAgent.includes('Chrome/');
-
+let isFirefox = typeof InstallTrigger !== 'undefined';
+let isSafari = /constructor/i.test(window.HTMLElement) || function (p) {
+  return p.toString() === "[object SafariRemoteNotification]";
+}(!window['safari'] || typeof safari !== 'undefined' && window['safari'].pushNotification) || !!navigator && navigator.userAgent.includes('Safari/') && !navigator.userAgent.includes('Chrome/') || !!navigator && navigator.userAgent.includes('Zotero_iOS/');
 function isTextBox(node) {
   return ['INPUT'].includes(node.nodeName) && node.type === 'text' || node.getAttribute('contenteditable') === 'true';
 }
@@ -30651,16 +30649,20 @@ class EPUBView extends dom_view {
     }
     // This is like back/forward navigation in browsers. Try Cmd-ArrowLeft and Cmd-ArrowRight in PDF view
     navigateBack() {
-        this.navigate({ pageNumber: this._navStack.popBack() }, {
-            skipNavStack: true,
-            behavior: 'auto',
-        });
+        if (this._navStack.canPopBack()) {
+            this.navigate({ pageNumber: this._navStack.popBack() }, {
+                skipNavStack: true,
+                behavior: 'auto',
+            });
+        }
     }
     navigateForward() {
-        this.navigate({ pageNumber: this._navStack.popForward() }, {
-            skipNavStack: true,
-            behavior: 'auto',
-        });
+        if (this._navStack.canPopForward()) {
+            this.navigate({ pageNumber: this._navStack.popForward() }, {
+                skipNavStack: true,
+                behavior: 'auto',
+            });
+        }
     }
     navigateToFirstPage() {
         this.flow.navigateToFirstPage();
@@ -31225,12 +31227,16 @@ class SnapshotView extends dom_view {
         super.navigate(location, options);
     }
     navigateBack() {
-        this._iframeWindow.scrollTo(...this._navStack.popBack());
-        this._handleViewUpdate();
+        if (this._navStack.canPopBack()) {
+            this._iframeWindow.scrollTo(...this._navStack.popBack());
+            this._handleViewUpdate();
+        }
     }
     navigateForward() {
-        this._iframeWindow.scrollTo(...this._navStack.popForward());
-        this._handleViewUpdate();
+        if (this._navStack.canPopForward()) {
+            this._iframeWindow.scrollTo(...this._navStack.popForward());
+            this._handleViewUpdate();
+        }
     }
     // Still need to figure out how this is going to work
     print() {

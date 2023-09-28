@@ -83,7 +83,7 @@ final class AnnotationCell: UITableViewCell {
         ])
     }
 
-    func setup(with annotation: Annotation, comment: AnnotationView.Comment?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, library: Library, isEditing: Bool, currentUserId: Int,
+    func setup(with annotation: PdfAnnotation, comment: AnnotationView.Comment?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, library: Library, isEditing: Bool, currentUserId: Int,
                displayName: String, username: String, boundingBoxConverter: AnnotationBoundingBoxConverter, pdfAnnotationsCoordinatorDelegate: PdfAnnotationsCoordinatorDelegate, state: PDFReaderState) {
         if !selected {
             self.annotationView.resignFirstResponder()
@@ -99,7 +99,7 @@ final class AnnotationCell: UITableViewCell {
         self.setupAccessibility(for: annotation, selected: selected, currentUserId: currentUserId, displayName: displayName, username: username)
     }
 
-    private func setupAccessibility(for annotation: Annotation, selected: Bool, currentUserId: Int, displayName: String, username: String) {
+    private func setupAccessibility(for annotation: PdfAnnotation, selected: Bool, currentUserId: Int, displayName: String, username: String) {
         let author = annotation.isAuthor(currentUserId: currentUserId) ? nil : annotation.author(displayName: displayName, username: username)
 
         var label = self.accessibilityLabel(for: annotation.type, pageLabel: annotation.pageLabel, author: author)

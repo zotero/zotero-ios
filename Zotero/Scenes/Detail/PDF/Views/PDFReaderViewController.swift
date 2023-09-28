@@ -69,7 +69,6 @@ class PDFReaderViewController: UIViewController {
             (self.navigationController as? NavigationViewController)?.statusBarVisible = self.statusBarVisible
         }
     }
-    private var didAppear: Bool
     private var previousTraitCollection: UITraitCollection?
     var isSidebarVisible: Bool { return self.sidebarControllerLeft?.constant == 0 }
     var key: String { return self.viewModel.state.key }
@@ -151,7 +150,6 @@ class PDFReaderViewController: UIViewController {
         self.viewModel = viewModel
         self.isCompactWidth = compactSize
         self.disposeBag = DisposeBag()
-        self.didAppear = false
         self.statusBarHeight = UIApplication
             .shared
             .connectedScenes
@@ -187,17 +185,18 @@ class PDFReaderViewController: UIViewController {
         }
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-
-        if !self.didAppear {
-            self.annotationToolbarHandler.viewWillAppear(documentIsLocked: self.viewModel.state.document.isLocked)
-        }
+    override func viewIsAppearing(_ animated: Bool) {
+        super.viewIsAppearing(animated)
+        self.annotationToolbarHandler.viewIsAppearing(documentIsLocked: self.viewModel.state.document.isLocked)
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+<<<<<<< HEAD
         self.didAppear = true
+=======
+        self.isCurrentlyVisible = true
+>>>>>>> 89f5de4d (wip)
     }
 
     deinit {
@@ -206,10 +205,6 @@ class PDFReaderViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-
-        if !self.didAppear {
-            self.annotationToolbarHandler.viewDidLayoutSubviews()
-        }
 
         if self.documentController.view.frame.width < AnnotationToolbarHandler.minToolbarWidth && self.toolbarState.visible && self.toolbarState.position == .top {
             self.closeAnnotationToolbar()
