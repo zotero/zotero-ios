@@ -69,6 +69,7 @@ enum WebDavError {
 
     enum Upload: Swift.Error {
         case cantCreatePropData
+        case apiError(AFError)
     }
 }
 
@@ -151,31 +152,49 @@ final class WebDavControllerImpl: WebDavController {
     func prepareForUpload(key: String, mtime: Int, hash: String, file: File, queue: DispatchQueue) -> Single<WebDavUploadResult> {
         DDLogInfo("WebDavController: prepare for upload")
         return self.checkServerIfNeeded(queue: queue)
-                   .flatMap({ url -> Single<MetadataResult> in
-                       return self.checkMetadata(key: key, mtime: mtime, hash: hash, url: url, queue: queue)
-                   })
-                   .flatMap({ result -> Single<WebDavUploadResult> in
-                       switch result {
-                       case .unchanged:
-                           return Single.just(.exists)
+            .flatMap({ url -> Single<MetadataResult> in
+                return self.checkMetadata(key: key, mtime: mtime, hash: hash, url: url, queue: queue)
+            })
+            .flatMap({ result -> Single<WebDavUploadResult> in
+                switch result {
+                case .unchanged:
+                    return Single.just(.exists)
 
-                       case .new(let url):
-                           return self.zip(file: file, key: key).flatMap({ return Single.just(.new(url, $0)) })
+                case .new(let url):
+                    return self.zip(file: file, key: key).flatMap({ return Single.just(.new(url, $0)) })
 
-                       case .mtimeChanged(let mtime):
-                           return self.update(mtime: mtime, key: key, queue: queue).flatMap({ Single.just(.exists) })
+                case .mtimeChanged(let mtime):
+                    return self.update(mtime: mtime, key: key, queue: queue).flatMap({ Single.just(.exists) })
 
-                       case .changed(let url):
-                           // If metadata were available on WebDAV, but they changed, remove original .prop file.
-                           return self.removeExistingMetadata(key: key, url: url, queue: queue)
-                                      .flatMap({ self.zip(file: file, key: key) })
-                                      .flatMap({ Single.just(.new(url, $0)) })
-                       }
-                   })
+                case .changed(let url):
+                // If metadata were available on WebDAV, but they changed, remove original .prop file.
+                return self.removeExistingMetadata(key: key, url: url, queue: queue)
+                    .flatMap({ self.zip(file: file, key: key) })
+                    .flatMap({ Single.just(.new(url, $0)) })
+                }
+            })
+            .catch { error in
+                if let responseError = error as? AFResponseError {
+                    throw WebDavError.Upload.apiError(responseError.error)
+                }
+                if let alamoError = error as? AFError {
+                    throw WebDavError.Upload.apiError(alamoError)
+                }
+                throw error
+            }
     }
 
     func upload(request: AttachmentUploadRequest, fromFile file: File, queue: DispatchQueue) -> Single<(Data?, HTTPURLResponse)> {
         return self.apiClient.upload(request: request, fromFile: file, queue: queue)
+            .catch { error in
+                if let responseError = error as? AFResponseError {
+                    throw WebDavError.Upload.apiError(responseError.error)
+                }
+                if let alamoError = error as? AFError {
+                    throw WebDavError.Upload.apiError(alamoError)
+                }
+                throw error
+            }
     }
 
     /// Finishes upload to WebDAV. If successful, uploads new metadata .prop file to WebDAV. In both cases removes temporary ZIP file created in `prepareForUpload`.
@@ -315,7 +334,7 @@ final class WebDavControllerImpl: WebDavController {
     private func removeExistingMetadata(key: String, url: URL, queue: DispatchQueue) -> Single<()> {
         DDLogInfo("WebDavController: remove metadata for \(key)")
         return self.apiClient.send(request: WebDavDeleteRequest(url: url.appendingPathComponent(key + ".prop")), queue: queue)
-                   .flatMap({ _ in return Single.just(()) })
+            .flatMap({ _ in return Single.just(()) })
     }
 
     private func uploadMetadata(key: String, mtime: Int, hash: String, url: URL, queue: DispatchQueue) -> Single<()> {
@@ -323,21 +342,30 @@ final class WebDavControllerImpl: WebDavController {
         let metadataProp = "<properties version=\"1\"><mtime>\(mtime)</mtime><hash>\(hash)</hash></properties>"
         guard let data = metadataProp.data(using: .utf8) else { return Single.error(WebDavError.Upload.cantCreatePropData) }
         return self.apiClient.send(request: WebDavWriteRequest(url: url.appendingPathComponent(key + ".prop"), data: data), queue: queue)
-                   .flatMap({ _ in return Single.just(()) })
+            .flatMap({ _ in return Single.just(()) })
+            .catch { error in
+                if let responseError = error as? AFResponseError {
+                    throw WebDavError.Upload.apiError(responseError.error)
+                }
+                if let alamoError = error as? AFError {
+                    throw WebDavError.Upload.apiError(alamoError)
+                }
+                throw error
+            }
     }
 
     private func checkMetadata(key: String, mtime: Int, hash: String, url: URL, queue: DispatchQueue) -> Single<MetadataResult> {
         DDLogInfo("WebDavController: check metadata for \(key)")
         return self.metadata(key: key, url: url, queue: queue)
-                   .flatMap({ remoteData -> Single<MetadataResult> in
-                       guard let (remoteMtime, remoteHash) = remoteData else { return Single.just(.new(url)) }
+            .flatMap({ remoteData -> Single<MetadataResult> in
+                guard let (remoteMtime, remoteHash) = remoteData else { return Single.just(.new(url)) }
 
-                       if hash == remoteHash {
-                           return Single.just(mtime == remoteMtime ? .unchanged : .mtimeChanged(remoteMtime))
-                       } else {
-                           return Single.just(.changed(url))
-                       }
-                   })
+                if hash == remoteHash {
+                    return Single.just(mtime == remoteMtime ? .unchanged : .mtimeChanged(remoteMtime))
+                } else {
+                    return Single.just(.changed(url))
+                }
+            })
     }
 
     /// Loads metadata of item from WebDAV server.

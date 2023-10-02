@@ -439,7 +439,19 @@ final class SyncController: SynchronizationController {
                     retryLibraries.append(libraryId)
                 }
 
-            case .unknown, .schema, .parsing, .apiError, .unchanged, .quotaLimit, .attachmentMissing, .insufficientSpace, .webDavDeletion, .webDavDeletionFailed, .webDavVerification, .webDavDownload:
+            case .unknown,
+                 .schema,
+                 .parsing,
+                 .apiError,
+                 .unchanged,
+                 .quotaLimit,
+                 .attachmentMissing,
+                 .insufficientSpace,
+                 .webDavDeletion,
+                 .webDavDeletionFailed,
+                 .webDavVerification,
+                 .webDavDownload,
+                 .webDavUpload:
                 reportErrors.append(error)
             }
         }
@@ -1967,6 +1979,10 @@ final class SyncController: SynchronizationController {
 
         if let error = error as? WebDavError.Download {
             return .nonFatal(.webDavDownload(error))
+        }
+
+        if let error = error as? WebDavError.Upload {
+            return .nonFatal(.webDavUpload(error))
         }
 
         if let error = error as? ZoteroApiError {
