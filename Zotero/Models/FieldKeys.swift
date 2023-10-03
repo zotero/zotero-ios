@@ -59,6 +59,8 @@ struct FieldKeys {
                 static let rects = "rects"
                 static let paths = "paths"
                 static let lineWidth = "width"
+                static let htmlEpubType = "type"
+                static let htmlEpubValue = "value"
             }
 
             static let type = "annotationType"
@@ -97,7 +99,7 @@ struct FieldKeys {
                 }
             }
 
-            static func allFields(for type: AnnotationType) -> [KeyBaseKeyPair] {
+            static func allPdfFields(for type: AnnotationType) -> [KeyBaseKeyPair] {
                 switch type {
                 case .highlight:
                     return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
@@ -107,6 +109,37 @@ struct FieldKeys {
                             KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil),
                             KeyBaseKeyPair(key: Annotation.text, baseKey: nil),
                             KeyBaseKeyPair(key: Annotation.Position.pageIndex, baseKey: Annotation.position)]
+
+                case .ink:
+                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.Position.pageIndex, baseKey: Annotation.position),
+                            KeyBaseKeyPair(key: Annotation.Position.lineWidth, baseKey: Annotation.position)]
+
+                case .note, .image:
+                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.Position.pageIndex, baseKey: Annotation.position)]
+                }
+            }
+
+            static func allHtmlEpubFields(for type: AnnotationType) -> [KeyBaseKeyPair] {
+                switch type {
+                case .highlight:
+                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.text, baseKey: nil),
+                            KeyBaseKeyPair(key: Annotation.Position.htmlEpubType, baseKey: Annotation.position),
+                            KeyBaseKeyPair(key: Annotation.Position.htmlEpubValue, baseKey: Annotation.position)]
 
                 case .ink:
                     return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),

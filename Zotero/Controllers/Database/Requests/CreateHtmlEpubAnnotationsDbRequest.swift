@@ -62,47 +62,65 @@ struct CreateHtmlEpubAnnotationsDbRequest: DbRequest {
         }
 
         // We need to submit tags on creation even if they are empty, so we need to mark them as changed
-//        var changes: RItemChanges = [.parent, .fields, .type, .tags]
-//        self.addFields(for: annotation, to: item, database: database)
-//        self.add(rects: annotation.rects, to: item, changes: &changes, database: database)
-//        self.add(paths: annotation.paths, to: item, changes: &changes, database: database)
-//        item.changes.append(RObjectChange.create(changes: changes))
+        self.addFields(for: annotation, to: item, database: database)
+        let changes: RItemChanges = [.parent, .fields, .type, .tags]
+        item.changes.append(RObjectChange.create(changes: changes))
     }
 
-//    private func addFields(for annotation: PdfDocumentAnnotation, to item: RItem, database: Realm) {
-//        for field in FieldKeys.Item.Annotation.allFields(for: annotation.type) {
-//            let rField = RItemField()
-//            rField.key = field.key
-//            rField.baseKey = field.baseKey
-//            rField.changed = true
-//
-//            switch field.key {
-//            case FieldKeys.Item.Annotation.type:
-//                rField.value = annotation.type.rawValue
-//
-//            case FieldKeys.Item.Annotation.color:
-//                rField.value = annotation.color
-//
-//            case FieldKeys.Item.Annotation.comment:
-//                rField.value = annotation.comment
-//
-//            case FieldKeys.Item.Annotation.Position.pageIndex where field.baseKey == FieldKeys.Item.Annotation.position:
-//                rField.value = "\(annotation.page)"
-//            case FieldKeys.Item.Annotation.Position.lineWidth where field.baseKey == FieldKeys.Item.Annotation.position:
-//                rField.value = annotation.lineWidth.flatMap({ "\(Decimal($0).rounded(to: 3))" }) ?? ""
-//            case FieldKeys.Item.Annotation.pageLabel:
-//                rField.value = annotation.pageLabel
-//
-//            case FieldKeys.Item.Annotation.sortIndex:
-//                rField.value = annotation.sortIndex
-//                item.annotationSortIndex = annotation.sortIndex
-//
-//            case FieldKeys.Item.Annotation.text:
-//                rField.value = annotation.text ?? ""
-//            default: break
-//            }
-//
-//            item.fields.append(rField)
-//        }
-//    }
+    private func addFields(for annotation: HtmlEpubAnnotation, to item: RItem, database: Realm) {
+        for field in FieldKeys.Item.Annotation.allHtmlEpubFields(for: annotation.type) {
+            let rField = RItemField()
+            rField.key = field.key
+            rField.baseKey = field.baseKey
+            rField.changed = true
+
+            switch (field.key, field.baseKey) {
+            case (FieldKeys.Item.Annotation.type, nil):
+                rField.value = annotation.type.rawValue
+
+            case (FieldKeys.Item.Annotation.color, nil):
+                rField.value = annotation.color
+
+            case (FieldKeys.Item.Annotation.comment, nil):
+                rField.value = annotation.comment
+                
+            case (FieldKeys.Item.Annotation.pageLabel, nil):
+                rField.value = annotation.pageLabel
+
+            case (FieldKeys.Item.Annotation.sortIndex, nil):
+                rField.value = annotation.sortIndex
+                item.annotationSortIndex = annotation.sortIndex
+
+            case (FieldKeys.Item.Annotation.text, nil):
+                rField.value = annotation.text ?? ""
+
+            case (FieldKeys.Item.Annotation.Position.htmlEpubType, FieldKeys.Item.Annotation.position):
+                guard let value = annotation.position[FieldKeys.Item.Annotation.Position.htmlEpubType] as? String else { continue }
+                rField.value = value
+
+            case (FieldKeys.Item.Annotation.Position.htmlEpubValue, FieldKeys.Item.Annotation.position):
+                guard let value = annotation.position[FieldKeys.Item.Annotation.Position.htmlEpubValue] as? String else { continue }
+                rField.value = value
+
+            default: break
+            }
+
+            item.fields.append(rField)
+        }
+    }
+
+    private func addTags(for annotation: HtmlEpubAnnotation, to item: RItem, database: Realm) {
+        let allTags = database.objects(RTag.self)
+
+        for tag in annotation.tags {
+            guard let rTag = allTags.filter(.name(tag.name)).first else { continue }
+
+            let rTypedTag = RTypedTag()
+            rTypedTag.type = .manual
+            database.add(rTypedTag)
+
+            rTypedTag.item = item
+            rTypedTag.tag = rTag
+        }
+    }
 }

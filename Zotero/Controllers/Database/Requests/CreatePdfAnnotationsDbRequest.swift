@@ -71,7 +71,7 @@ struct CreatePdfAnnotationsDbRequest: DbRequest {
     }
 
     private func addFields(for annotation: PdfDocumentAnnotation, to item: RItem, database: Realm) {
-        for field in FieldKeys.Item.Annotation.allFields(for: annotation.type) {
+        for field in FieldKeys.Item.Annotation.allPdfFields(for: annotation.type) {
             let rField = RItemField()
             rField.key = field.key
             rField.baseKey = field.baseKey
