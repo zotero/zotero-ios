@@ -987,7 +987,7 @@ final class SyncController: SynchronizationController {
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] toUpdate, toRemove in
                   guard let self = self else { return }
-                let actions = self.createGroupActions(updateIds: toUpdate, deleteGroups: toRemove, syncType: self.type)
+                  let actions = self.createGroupActions(updateIds: toUpdate, deleteGroups: toRemove, syncType: self.type)
                   self.accessQueue.async(flags: .barrier) { [weak self] in
                     self?.finishSyncGroupVersions(actions: actions, updateCount: toUpdate.count)
                   }
@@ -2125,91 +2125,96 @@ final class SyncController: SynchronizationController {
 
         case .unchanged:
             if let version = version {
-                self.handleUnchangedFailure(lastVersion: version, libraryId: libraryId, additionalAction: additionalAction)
+                handleUnchangedFailure(lastVersion: version, libraryId: libraryId, additionalAction: additionalAction)
             } else {
                 guard additionalAction?() ?? true else { return }
                 self.processNextAction()
             }
 
         case .quotaLimit(let libraryId):
-            self.removeRemainingUploads(for: libraryId, andAppendError: error, additionalAction: additionalAction)
+            handleQuotaLimit(for: libraryId, andAppendError: error, additionalAction: additionalAction)
 
         default:
             appendAndContinue()
         }
-    }
 
-    /// Handle fatal upload errors for given library. If backend returns code 403 or 413 it means that the user can't upload more files to backend, so no further uploads should be attempted.
-    /// - parameter libraryId: Library identifier which reached quota limit.
-    /// - parameter error: NonFatal error that caused this
-    /// - additiionalAction: Additional actions that should be applied to queue
-    private func removeRemainingUploads(for libraryId: LibraryIdentifier, andAppendError error: SyncError.NonFatal, additionalAction: (() -> Bool)?) {
-        DDLogInfo("Sync: received quota limit for \(libraryId)")
+        /// Handle quota limit error. It means that the user can't upload more files to backend, so no further uploads should be attempted. Should enqueue check for remote changes.
+        /// - parameter libraryId: Library identifier which reached quota limit.
+        /// - parameter error: NonFatal error that caused this
+        /// - additiionalAction: Additional actions that should be applied to queue
+        func handleQuotaLimit(for libraryId: LibraryIdentifier, andAppendError error: SyncError.NonFatal, additionalAction: (() -> Bool)?) {
+            DDLogInfo("Sync: received quota limit for \(libraryId)")
 
-        self.queue.removeAll(where: { action in
-            switch action {
-            case .uploadAttachment(let attachment):
-                return attachment.libraryId == libraryId
+            // Remove all other upload actions from queue, our quota is full, so they'll just fail
+            self.queue.removeAll(where: { action in
+                switch action {
+                case .uploadAttachment(let attachment):
+                    return attachment.libraryId == libraryId
 
-            default:
-                return false
-            }
-        })
-
-        if !self.nonFatalErrors.contains(error) {
-            self.nonFatalErrors.append(error)
-        }
-
-        guard additionalAction?() ?? true else { return }
-
-        self.processNextAction()
-    }
-
-    /// Handle unchanged "error". If backend returns response code 304, it is treated as error. If this error is returned,
-    /// we can safely assume, that there are no further remote changes for any object (collections, items, searches, annotations) for this version.
-    /// However, some objects may be out of sync (if sync interrupted previously), so other object versions need to be checked. If other object
-    /// versions match current version, they can be removed from sync, otherwise they need to sync anyway.
-    /// - parameter version: Current version number which returned this error.
-    /// - parameter libraryId: Identifier of current library, which is being synced.
-    /// - returns: `true` if there was a unchanged error, `false` otherwise.
-    private func handleUnchangedFailure(lastVersion: Int, libraryId: LibraryIdentifier, additionalAction: (() -> Bool)?) {
-        DDLogInfo("Sync: received unchanged error, store version: \(lastVersion)")
-        self.lastReturnedVersion = lastVersion
-
-        // If current sync type is `.full` we don't want to skip anything.
-        guard self.type != .full else {
-            let shouldProcessNext = additionalAction?() ?? true
-            if shouldProcessNext {
-                self.processNextAction()
-            }
-            return
-        }
-
-        var toDelete: [Int] = []
-
-        for (index, action) in self.queue.enumerated() {
-            guard action.libraryId == libraryId else { break }
-            switch action {
-            case .syncVersions(let libraryId, let object, let version, _):
-                // If there are no remote changes for previous `Object`, we should check whether current `Object` has been synced up to recent version, so we compare current version with
-                // last returned version. Even if the current object was previously fully synced, we need to check for local unsynced objects anyway.
-                self.queue[index] = .syncVersions(libraryId: libraryId, object: object, version: version, checkRemote: (version < lastVersion))
-
-            case .syncSettings(_, let version),
-                 .syncDeletions(_, let version),
-                 .storeDeletionVersion(_, let version):
-                if lastVersion == version {
-                    toDelete.append(index)
+                default:
+                    return false
                 }
+            })
 
-            default: break
+            // Uploads failed, we need to check for remote changes for this library, in case there were no previous writes.
+            self.queue.insert(.createLibraryActions(.specific([libraryId]), .onlyDownloads), at: 0)
+
+            // Add error
+            if !self.nonFatalErrors.contains(error) {
+                self.nonFatalErrors.append(error)
             }
+
+            guard additionalAction?() ?? true else { return }
+
+            self.processNextAction()
         }
 
-        toDelete.reversed().forEach { self.queue.remove(at: $0) }
+        /// Handle unchanged "error". If backend returns response code 304, it is treated as error. If this error is returned,
+        /// we can safely assume, that there are no further remote changes for any object (collections, items, searches, annotations) for this version.
+        /// However, some objects may be out of sync (if sync interrupted previously), so other object versions need to be checked. If other object
+        /// versions match current version, they can be removed from sync, otherwise they need to sync anyway.
+        /// - parameter version: Current version number which returned this error.
+        /// - parameter libraryId: Identifier of current library, which is being synced.
+        /// - returns: `true` if there was a unchanged error, `false` otherwise.
+        func handleUnchangedFailure(lastVersion: Int, libraryId: LibraryIdentifier, additionalAction: (() -> Bool)?) {
+            DDLogInfo("Sync: received unchanged error, store version: \(lastVersion)")
+            self.lastReturnedVersion = lastVersion
 
-        guard additionalAction?() ?? true else { return }
-        self.processNextAction()
+            // If current sync type is `.full` we don't want to skip anything.
+            guard self.type != .full else {
+                let shouldProcessNext = additionalAction?() ?? true
+                if shouldProcessNext {
+                    self.processNextAction()
+                }
+                return
+            }
+
+            var toDelete: [Int] = []
+
+            for (index, action) in self.queue.enumerated() {
+                guard action.libraryId == libraryId else { break }
+                switch action {
+                case .syncVersions(let libraryId, let object, let version, _):
+                    // If there are no remote changes for previous `Object`, we should check whether current `Object` has been synced up to recent version, so we compare current version with
+                    // last returned version. Even if the current object was previously fully synced, we need to check for local unsynced objects anyway.
+                    self.queue[index] = .syncVersions(libraryId: libraryId, object: object, version: version, checkRemote: (version < lastVersion))
+
+                case .syncSettings(_, let version),
+                     .syncDeletions(_, let version),
+                     .storeDeletionVersion(_, let version):
+                    if lastVersion == version {
+                        toDelete.append(index)
+                    }
+
+                default: break
+                }
+            }
+
+            toDelete.reversed().forEach { self.queue.remove(at: $0) }
+
+            guard additionalAction?() ?? true else { return }
+            self.processNextAction()
+        }
     }
 
     private func addWebDavDeletionsActionIfNeeded(libraryId: LibraryIdentifier) {
