@@ -198,9 +198,9 @@ final class SyncToolbarController {
                 switch error {
                 case .cantCreatePropData: break // Should not happen
 
-                case .apiError(let error):
+                case .apiError(let error, let httpMethod):
                     guard let statusCode = error.unacceptableStatusCode else { break }
-                    return (L10n.Errors.SyncToolbar.webdavRequestFailed(statusCode, error.url?.absoluteString ?? ""), nil)
+                    return (L10n.Errors.SyncToolbar.webdavRequestFailed(statusCode, httpMethod ?? "Unknown"), nil)
                 }
 
             case .annotationDidSplit(let string, let keys, let libraryId):

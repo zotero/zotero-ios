@@ -69,7 +69,7 @@ enum WebDavError {
 
     enum Upload: Swift.Error {
         case cantCreatePropData
-        case apiError(AFError)
+        case apiError(error: AFError, httpMethod: String?)
     }
 }
 
@@ -175,10 +175,10 @@ final class WebDavControllerImpl: WebDavController {
             })
             .catch { error in
                 if let responseError = error as? AFResponseError {
-                    throw WebDavError.Upload.apiError(responseError.error)
+                    throw WebDavError.Upload.apiError(error: responseError.error, httpMethod: responseError.httpMethod)
                 }
                 if let alamoError = error as? AFError {
-                    throw WebDavError.Upload.apiError(alamoError)
+                    throw WebDavError.Upload.apiError(error: alamoError, httpMethod: nil)
                 }
                 throw error
             }
@@ -188,10 +188,10 @@ final class WebDavControllerImpl: WebDavController {
         return self.apiClient.upload(request: request, fromFile: file, queue: queue)
             .catch { error in
                 if let responseError = error as? AFResponseError {
-                    throw WebDavError.Upload.apiError(responseError.error)
+                    throw WebDavError.Upload.apiError(error: responseError.error, httpMethod: responseError.httpMethod)
                 }
                 if let alamoError = error as? AFError {
-                    throw WebDavError.Upload.apiError(alamoError)
+                    throw WebDavError.Upload.apiError(error: alamoError, httpMethod: nil)
                 }
                 throw error
             }
@@ -345,10 +345,10 @@ final class WebDavControllerImpl: WebDavController {
             .flatMap({ _ in return Single.just(()) })
             .catch { error in
                 if let responseError = error as? AFResponseError {
-                    throw WebDavError.Upload.apiError(responseError.error)
+                    throw WebDavError.Upload.apiError(error: responseError.error, httpMethod: responseError.httpMethod)
                 }
                 if let alamoError = error as? AFError {
-                    throw WebDavError.Upload.apiError(alamoError)
+                    throw WebDavError.Upload.apiError(error: alamoError, httpMethod: nil)
                 }
                 throw error
             }
