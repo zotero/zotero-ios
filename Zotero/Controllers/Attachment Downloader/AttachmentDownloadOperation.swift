@@ -172,7 +172,7 @@ class AttachmentDownloadOperation: AsynchronousOperation {
             try? self.fileStorage.remove(zipFile)
             // Rename unzipped file if zip contained only 1 file and the names don't match
             let unzippedFiles: [File] = try self.fileStorage.contentsOfDirectory(at: file.directory)
-            if unzippedFiles.count == 1, let unzipped = unzippedFiles.first, (unzipped.name != file.name || unzipped.ext != file.ext) {
+            if unzippedFiles.count == 1, let unzipped = unzippedFiles.first, (unzipped.name != file.name) || (unzipped.ext != file.ext) {
                 try? self.fileStorage.move(from: unzipped, to: file)
             }
 

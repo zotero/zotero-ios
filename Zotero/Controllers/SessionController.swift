@@ -44,7 +44,7 @@ final class SessionController: ObservableObject {
         var apiToken = self.secureStorage.apiToken
         var userId = self.defaults.userId
 
-        if (apiToken == nil || userId == 0),
+        if (apiToken == nil) || (userId == 0),
            let debugUserId = DebugSessionConstants.userId,
            let debugApiToken = DebugSessionConstants.apiToken {
             apiToken = debugApiToken

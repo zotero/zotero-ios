@@ -74,9 +74,9 @@ struct AttachmentCreator {
         var data: [(Int, String, LinkMode, Bool, Date)] = []
 
         for (idx, child) in item.children.enumerated() {
-            guard (child.rawType == ItemTypes.attachment && child.syncState != .dirty && !child.trash),
+            guard (child.rawType == ItemTypes.attachment) && (child.syncState != .dirty) && !child.trash,
                   let linkMode = child.fields.first(where: { $0.key == FieldKeys.Item.Attachment.linkMode }).flatMap({ LinkMode(rawValue: $0.value) }),
-                  (linkMode == .importedUrl || linkMode == .importedFile),
+                  (linkMode == .importedUrl) || (linkMode == .importedFile),
                   let contentType = self.contentType(for: child),
                   AttachmentCreator.mainAttachmentContentTypes.contains(contentType) else { continue }
 

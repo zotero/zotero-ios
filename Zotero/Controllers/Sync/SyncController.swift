@@ -750,7 +750,7 @@ final class SyncController: SynchronizationController {
                                                       groupDefault: response.defaultGroup,
                                                       groups: response.groups)
 
-                  if let group = permissions.groupDefault, (!group.library || !group.write) {
+                  if let group = permissions.groupDefault, !group.library || !group.write {
                       return Single.error(SyncError.Fatal.missingGroupPermissions)
                   }
                   return Single.just((permissions, response.username, response.displayName))
