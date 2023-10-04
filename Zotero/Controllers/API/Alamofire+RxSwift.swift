@@ -14,6 +14,7 @@ import RxSwift
 
 struct AFResponseError: Error {
     let url: URL?
+    let httpMethod: String?
     let error: AFError
     let headers: [AnyHashable: Any]?
     let response: String
@@ -201,16 +202,25 @@ extension AFDataResponse where Success == Data?, Failure == AFError {
             }
             // Should not happen
             let afError = AFError.responseValidationFailed(reason: .customValidationFailed(error: ZoteroApiError.responseMissing(logData?.id ?? "")))
-            return .failure(self.createResponseError(with: afError, url: self.request?.url, data: data, response: nil, logData: logData))
+            return .failure(self.createResponseError(with: afError, url: self.request?.url, httpMethod: self.request?.httpMethod, data: data, response: nil, logData: logData))
 
         case .failure(let error):
-            return .failure(self.createResponseError(with: error, url: self.request?.url, data: self.data, response: self.response, logData: logData))
+            return .failure(
+                self.createResponseError(
+                    with: error,
+                    url: self.request?.url,
+                    httpMethod: self.request?.httpMethod,
+                    data: self.data,
+                    response: self.response,
+                    logData: logData
+                )
+            )
         }
     }
 
-    private func createResponseError(with error: AFError, url: URL?, data: Data?, response: HTTPURLResponse?, logData: ApiLogger.StartData?) -> AFResponseError {
+    private func createResponseError(with error: AFError, url: URL?, httpMethod: String?, data: Data?, response: HTTPURLResponse?, logData: ApiLogger.StartData?) -> AFResponseError {
         let responseString = data.flatMap({ ResponseCreator.string(from: $0, mimeType: (response?.mimeType ?? "")) }) ?? "No Response"
-        let responseError = AFResponseError(url: url, error: error, headers: response?.allHeaderFields, response: responseString)
+        let responseError = AFResponseError(url: url, httpMethod: httpMethod, error: error, headers: response?.allHeaderFields, response: responseString)
 
         if let data = logData {
             ApiLogger.logFailedresponse(error: responseError, statusCode: (self.response?.statusCode ?? -1), startData: data)
@@ -230,7 +240,13 @@ extension AFDownloadResponse where Success == URL?, Failure == AFError {
             return .success(())
 
         case .failure(let error):
-            let responseError = AFResponseError(url: self.request?.url, error: error, headers: self.response?.allHeaderFields, response: "Download failed")
+            let responseError = AFResponseError(
+                url: self.request?.url,
+                httpMethod: self.request?.httpMethod ?? "Unknown",
+                error: error,
+                headers: self.response?.allHeaderFields,
+                response: "Download failed"
+            )
             if let data = logData {
                 ApiLogger.logFailedresponse(error: responseError, statusCode: (self.response?.statusCode ?? -1), startData: data)
             }
