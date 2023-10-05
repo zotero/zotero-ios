@@ -284,18 +284,26 @@ final class AppCoordinator: NSObject {
     }
     
     private func showRestoredState(for data: RestoredStateData) {
-        guard let mainController = self.window?.rootViewController as? MainViewController,
-              let (url, library, collection) = loadRestoredStateData(forKey: data.key, libraryId: data.libraryId, collectionId: data.collectionId) else { return }
-        if let collection {
-            DDLogInfo("AppCoordinator: show restored state - \(data.key); \(data.libraryId); \(data.collectionId); \(url.relativePath)")
-            Defaults.shared.selectedCollectionId = collection.identifier
-            mainController.showItems(for: collection, in: library)
-        } else {
-            DDLogWarn("AppCoordinator: show restored state using all items collection - \(data.key); \(data.libraryId); \(url.relativePath)")
-            // Collection is missing, show all items instead
-            let collection = Collection(custom: .all)
-            mainController.showItems(for: collection, in: library)
+        DDLogInfo("AppCoordinator: show restored state - \(data.key); \(data.libraryId); \(data.collectionId)")
+        guard let mainController = self.window?.rootViewController as? MainViewController else {
+            DDLogWarn("AppCoordinator: show restored state aborted - invalid root view controller")
+            return
         }
+        guard var (url, library, optionalCollection) = loadRestoredStateData(forKey: data.key, libraryId: data.libraryId, collectionId: data.collectionId) else {
+            DDLogWarn("AppCoordinator: show restored state aborted - invalid restored state data")
+            return
+        }
+        var collection: Collection
+        if let optionalCollection {
+            DDLogInfo("AppCoordinator: show restored state using restored collection - \(url.relativePath)")
+            collection = optionalCollection
+            Defaults.shared.selectedCollectionId = collection.identifier
+        } else {
+            DDLogWarn("AppCoordinator: show restored state using all items collection - \(url.relativePath)")
+            // Collection is missing, show all items instead
+            collection = Collection(custom: .all)
+        }
+        mainController.showItems(for: collection, in: library)
         
         mainController.getDetailCoordinator { [weak self] coordinator in
             guard let self, let window else { return }
