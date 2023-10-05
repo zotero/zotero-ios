@@ -32471,6 +32471,7 @@ function log(data) {
   window.webkit.messageHandlers.logHandler.postMessage(data);
 }
 window.createView = options => {
+    log("Annotations: " + JSON.stringify(options.annotations));
   window._view = new view({
     ...options,
     container: document.getElementById('view'),

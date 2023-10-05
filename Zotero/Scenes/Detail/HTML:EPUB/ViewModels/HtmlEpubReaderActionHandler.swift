@@ -51,7 +51,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         let annotations = parse(annotations: rawAnnotations, author: viewModel.state.username, isAuthor: true)
 
-        guard annotations.isEmpty else {
+        guard !annotations.isEmpty else {
             DDLogError("HtmlEpubReaderActionHandler: could not parse annotations")
             return
         }
@@ -76,8 +76,8 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         func parse(annotations: [[String: Any]], author: String, isAuthor: Bool) -> [HtmlEpubAnnotation] {
             return annotations.compactMap { data -> HtmlEpubAnnotation? in
                 guard let id = data["id"] as? String,
-                      let dateCreated = (data["dateCreated"] as? String).flatMap({ DateFormatter.iso8601.date(from: $0) }),
-                      let dateModified = (data["dateModified"] as? String).flatMap({ DateFormatter.iso8601.date(from: $0) }),
+                      let dateCreated = (data["dateCreated"] as? String).flatMap({ DateFormatter.iso8601WithFractionalSeconds.date(from: $0) }),
+                      let dateModified = (data["dateModified"] as? String).flatMap({ DateFormatter.iso8601WithFractionalSeconds.date(from: $0) }),
                       let color = data["color"] as? String,
                       let comment = data["comment"] as? String,
                       let pageLabel = data["pageLabel"] as? String,
@@ -114,6 +114,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
     private func load(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         do {
+//            try self.dbStorage.perform(request: DeleteObjectsDbRequest<RItem>(keys: ["LDAC2BLR"], libraryId: viewModel.state.library.identifier), on: .main)
             let data = try Data(contentsOf: viewModel.state.url)
             let jsArrayData = try JSONSerialization.data(withJSONObject: [UInt8](data))
             guard let jsArrayString = String(data: jsArrayData, encoding: .utf8) else {
@@ -143,8 +144,8 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 }))
                 var data: [String: Any] = [
                     "id": item.key,
-                    "dateCreated": DateFormatter.iso8601.string(from: item.dateAdded),
-                    "dateModified": DateFormatter.iso8601.string(from: item.dateModified),
+                    "dateCreated": DateFormatter.iso8601WithFractionalSeconds.string(from: item.dateAdded),
+                    "dateModified": DateFormatter.iso8601WithFractionalSeconds.string(from: item.dateModified),
                     "authorName": item.createdBy?.username ?? "",
                     "tags": tags
                 ]
