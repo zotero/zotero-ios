@@ -303,7 +303,7 @@ final class AppCoordinator: NSObject {
         if let optionalCollection {
             DDLogInfo("AppCoordinator: show restored state using restored collection - \(url.relativePath)")
             collection = optionalCollection
-            Defaults.shared.selectedCollectionId = collection.identifier
+            // No need to set selected collection identifier here, this happened already in show main screen / preprocess
         } else {
             DDLogWarn("AppCoordinator: show restored state using all items collection - \(url.relativePath)")
             // Collection is missing, show all items instead
