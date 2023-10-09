@@ -14,7 +14,7 @@ final class AnnotationView: UIView {
     enum Kind {
         case cell, popover
     }
-
+    
     enum Action {
         case tags
         case options(UIButton)
@@ -23,20 +23,20 @@ final class AnnotationView: UIView {
         case setCommentActive(Bool)
         case done
     }
-
+    
     enum AccessibilityType {
         case cell
         case view
     }
-
+    
     struct Comment {
         let attributedString: NSAttributedString?
         let isActive: Bool
     }
-
+    
     private let layout: AnnotationViewLayout
     let actionPublisher: PublishSubject<AnnotationView.Action>
-
+    
     private var header: AnnotationViewHeader!
     private var topSeparator: UIView!
     private var highlightContent: AnnotationViewHighlightContent?
@@ -52,43 +52,47 @@ final class AnnotationView: UIView {
     var tagString: String? {
         return self.tags.textLabel.text
     }
-
+    
     // MARK: - Lifecycle
-
+    
     init(layout: AnnotationViewLayout, commentPlaceholder: String) {
         self.layout = layout
         self.actionPublisher = PublishSubject()
-
+        
         super.init(frame: CGRect())
-
+        
         self.backgroundColor = layout.backgroundColor
         self.translatesAutoresizingMaskIntoConstraints = false
         self.setupView(commentPlaceholder: commentPlaceholder)
     }
-
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
+    
     // MARK: - Actions
-
+    
     @discardableResult
     override func resignFirstResponder() -> Bool {
         self.commentTextView.resignFirstResponder()
     }
-
+    
     func updatePreview(image: UIImage?) {
         guard let imageContent = self.imageContent, !imageContent.isHidden else { return }
         imageContent.setup(with: image)
     }
-
+    
     private func scrollToBottomIfNeeded() {
         guard let scrollView = self.scrollView, let contentView = self.scrollViewContent, contentView.frame.height > scrollView.frame.height else { return }
         let yOffset = scrollView.contentSize.height - scrollView.bounds.height + scrollView.contentInset.bottom
         scrollView.setContentOffset(CGPoint(x: 0, y: yOffset), animated: true)
     }
-
+    
     // MARK: - Setups
+    
+    func setup(with annotation: HtmlEpubAnnotation, comment: Comment?, selected: Bool, availableWidth: CGFloat, library: Library, currentUserId: Int, displayName: String, username: String) {
+        
+    }
 
     /// Setups up annotation view with given annotation and additional data.
     /// - parameter annotation: Annotation to show in view.
@@ -99,8 +103,20 @@ final class AnnotationView: UIView {
     /// - parameter library: Library of given annotation
     /// - parameter pdfAnnotationsCoordinatorDelegate: Delegate for getting share menu.
     /// - parameter state: State required for setting up share menu.
-    func setup(with annotation: PdfAnnotation, comment: Comment?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, library: Library, currentUserId: Int, displayName: String, username: String,
-               boundingBoxConverter: AnnotationBoundingBoxConverter, pdfAnnotationsCoordinatorDelegate: PdfAnnotationsCoordinatorDelegate, state: PDFReaderState) {
+    func setup(
+        with annotation: PdfAnnotation,
+        comment: Comment?,
+        preview: UIImage?,
+        selected: Bool,
+        availableWidth: CGFloat,
+        library: Library,
+        currentUserId: Int,
+        displayName: String,
+        username: String,
+        boundingBoxConverter: AnnotationBoundingBoxConverter,
+        pdfAnnotationsCoordinatorDelegate: PdfAnnotationsCoordinatorDelegate,
+        state: PDFReaderState
+    ) {
         let editability = annotation.editability(currentUserId: currentUserId, library: library)
         let color = UIColor(hex: annotation.color)
         let canEdit = editability == .editable && selected
@@ -117,7 +133,16 @@ final class AnnotationView: UIView {
             displayName: displayName,
             username: username
         )
-        self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth, accessibilityType: .cell, boundingBoxConverter: boundingBoxConverter)
+        self.setupContent(
+            for: annotation,
+            preview: preview,
+            color: color,
+            canEdit: canEdit,
+            selected: selected,
+            availableWidth: availableWidth,
+            accessibilityType: .cell,
+            boundingBoxConverter: boundingBoxConverter
+        )
         self.setup(comment: comment, canEdit: canEdit)
         self.setupTags(for: annotation, canEdit: canEdit, accessibilityEnabled: selected)
         self.setupObserving()
@@ -132,8 +157,16 @@ final class AnnotationView: UIView {
         self.bottomSeparator.isHidden = (self.tags.isHidden && self.tagsButton.isHidden) || (self.commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden)
     }
 
-    private func setupContent(for annotation: PdfAnnotation, preview: UIImage?, color: UIColor, canEdit: Bool, selected: Bool, availableWidth: CGFloat, accessibilityType: AccessibilityType,
-                              boundingBoxConverter: AnnotationBoundingBoxConverter) {
+    private func setupContent(
+        for annotation: PdfAnnotation,
+        preview: UIImage?,
+        color: UIColor,
+        canEdit: Bool,
+        selected: Bool,
+        availableWidth: CGFloat, 
+        accessibilityType: AccessibilityType,
+        boundingBoxConverter: AnnotationBoundingBoxConverter
+    ) {
         guard let highlightContent = self.highlightContent, let imageContent = self.imageContent else { return }
 
         highlightContent.isUserInteractionEnabled = false

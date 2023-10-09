@@ -121,35 +121,40 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 DDLogError("HtmlEpubReaderActionHandler: can't convert data to string")
                 return
             }
-            let annotations = loadAnnotationsJson(in: viewModel)
-            let documentData = HtmlEpubReaderState.DocumentData(buffer: jsArrayString, annotationsJson: annotations)
+            let (annotations, json) = loadAnnotationsAndJson(in: viewModel)
+            let documentData = HtmlEpubReaderState.DocumentData(buffer: jsArrayString, annotationsJson: json)
             self.update(viewModel: viewModel) { state in
+                state.annotations = annotations
                 state.documentData = documentData
+                state.changes = .annotations
             }
         } catch let error {
             DDLogError("HtmlEpubReaderActionHandler: could not load document - \(error)")
         }
     }
 
-    private func loadAnnotationsJson(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) -> String {
+    private func loadAnnotationsAndJson(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) -> ([HtmlEpubAnnotation], String) {
         do {
             let request = ReadAnnotationsDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
             let items = try self.dbStorage.perform(request: request, on: .main)
+            var annotations: [HtmlEpubAnnotation] = []
             var jsons: [[String: Any]] = []
 
             for item in items {
                 let tags = Array(item.tags.map({ typedTag in
                     let color: String? = (typedTag.tag?.color ?? "").isEmpty ? nil : typedTag.tag?.color
-                    return ["name": typedTag.tag?.name ?? "", "color": color]
+                    return Tag(name: typedTag.tag?.name ?? "", color: color ?? "")
                 }))
-                var data: [String: Any] = [
-                    "id": item.key,
-                    "dateCreated": DateFormatter.iso8601WithFractionalSeconds.string(from: item.dateAdded),
-                    "dateModified": DateFormatter.iso8601WithFractionalSeconds.string(from: item.dateModified),
-                    "authorName": item.createdBy?.username ?? "",
-                    "tags": tags
-                ]
+
+                var type: AnnotationType?
                 var position: [String: Any] = [:]
+                var text: String?
+                var sortIndex: String?
+                var pageLabel: String?
+                var comment: String?
+                var color: String?
+                var unknown: [String: String] = [:]
+
                 for field in item.fields {
                     switch (field.key, field.baseKey) {
                     case (FieldKeys.Item.Annotation.Position.htmlEpubType, FieldKeys.Item.Annotation.position):
@@ -159,42 +164,76 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                         position[FieldKeys.Item.Annotation.Position.htmlEpubValue] = field.value
 
                     case (FieldKeys.Item.Annotation.type, nil):
-                        data["type"] = field.value
+                        type = AnnotationType(rawValue: field.value)
 
                     case (FieldKeys.Item.Annotation.text, nil):
-                        data["text"] = field.value
+                        text = field.value
 
                     case (FieldKeys.Item.Annotation.sortIndex, nil):
-                        data["sortIndex"] = field.value
+                        sortIndex = field.value
 
                     case (FieldKeys.Item.Annotation.pageLabel, nil):
-                        data["pageLabel"] = field.value
+                        pageLabel = field.value
 
                     case (FieldKeys.Item.Annotation.comment, nil):
-                        data["comment"] = field.value
+                        comment = field.value
 
                     case (FieldKeys.Item.Annotation.color, nil):
-                        data["color"] = field.value
+                        color = field.value
 
                     default:
-                        data[field.key] = field.value
+                        unknown[field.key] = field.value
                     }
                 }
-                data["position"] = position
-                jsons.append(data)
+
+                guard let type, let sortIndex, !position.isEmpty else { continue }
+
+                jsons.append(
+                    [
+                        "id": item.key,
+                        "dateCreated": DateFormatter.iso8601WithFractionalSeconds.string(from: item.dateAdded),
+                        "dateModified": DateFormatter.iso8601WithFractionalSeconds.string(from: item.dateModified),
+                        "authorName": item.createdBy?.username ?? "",
+                        "type": type.rawValue,
+                        "text": text ?? "",
+                        "sortIndex": sortIndex,
+                        "pageLabel": pageLabel ?? "",
+                        "comment": comment ?? "",
+                        "color": color ?? "",
+                        "position": position,
+                        "tags": tags.map({ ["name": $0.name, "color": $0.color] })
+                    ]
+                )
+                annotations.append(
+                    HtmlEpubAnnotation(
+                        key: item.key,
+                        type: type,
+                        pageLabel: pageLabel ?? "",
+                        position: position,
+                        author: item.createdBy?.username ?? "",
+                        isAuthor: true,
+                        color: color ?? "",
+                        comment: comment ?? "",
+                        text: text,
+                        sortIndex: sortIndex,
+                        dateModified: item.dateModified,
+                        dateCreated: item.dateAdded,
+                        tags: tags
+                    )
+                )
             }
 
             let jsonData = try JSONSerialization.data(withJSONObject: jsons)
 
             guard let jsonString = String(data: jsonData, encoding: .utf8) else {
                 DDLogError("HtmlEpubReaderActionHandler: can't convert json data to string")
-                return "[]"
+                return ([], "[]")
             }
 
-            return jsonString
+            return (annotations, jsonString)
         } catch let error {
             DDLogError("HtmlEpubReaderActionHandler: can't load annotations - \(error)")
-            return "[]"
+            return ([], "[]")
         }
     }
 

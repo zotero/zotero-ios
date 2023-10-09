@@ -1,5 +1,5 @@
 //
-//  AnnotationsViewController.swift
+//  PDFAnnotationsViewController.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 24/04/2020.
@@ -15,7 +15,7 @@ import RxSwift
 
 typealias AnnotationsViewControllerAction = (AnnotationView.Action, Annotation, UIButton) -> Void
 
-final class AnnotationsViewController: UIViewController {
+final class PDFAnnotationsViewController: UIViewController {
     private static let cellId = "AnnotationCell"
     private unowned let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
@@ -405,7 +405,7 @@ final class AnnotationsViewController: UIViewController {
         tableView.separatorStyle = .none
         tableView.backgroundColor = .systemGray6
         tableView.backgroundView?.backgroundColor = .systemGray6
-        tableView.register(AnnotationCell.self, forCellReuseIdentifier: AnnotationsViewController.cellId)
+        tableView.register(AnnotationCell.self, forCellReuseIdentifier: Self.cellId)
         tableView.setEditing(self.viewModel.state.sidebarEditingEnabled, animated: false)
         tableView.allowsMultipleSelectionDuringEditing = true
         self.view.addSubview(tableView)
@@ -457,7 +457,7 @@ final class AnnotationsViewController: UIViewController {
 
     private func setupDataSource() {
         self.dataSource = TableViewDiffableDataSource(tableView: self.tableView, cellProvider: { [weak self] tableView, indexPath, key in
-            let cell = tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
+            let cell = tableView.dequeueReusableCell(withIdentifier: Self.cellId, for: indexPath)
 
             if let self, let cell = cell as? AnnotationCell, let annotation = self.viewModel.state.annotation(for: key) {
                 cell.contentView.backgroundColor = self.view.backgroundColor
@@ -599,7 +599,7 @@ final class AnnotationsViewController: UIViewController {
     }
 }
 
-extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSourcePrefetching {
+extension PDFAnnotationsViewController: UITableViewDelegate, UITableViewDataSourcePrefetching {
     func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
         let keys = indexPaths.compactMap({ self.dataSource.itemIdentifier(for: $0) })
             .filter({ key in

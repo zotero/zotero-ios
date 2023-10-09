@@ -15,6 +15,7 @@ struct HtmlEpubReaderState: ViewModelState {
         let rawValue: UInt8
 
         static let activeTool = Changes(rawValue: 1 << 0)
+        static let annotations = Changes(rawValue: 1 << 1)
     }
 
     struct DocumentData {
@@ -38,6 +39,7 @@ struct HtmlEpubReaderState: ViewModelState {
     var documentData: DocumentData?
     var activeTool: AnnotationTool?
     var toolColors: [AnnotationTool: UIColor]
+    var annotations: [HtmlEpubAnnotation]
     var changes: Changes
     var error: Error?
 
@@ -47,6 +49,7 @@ struct HtmlEpubReaderState: ViewModelState {
         self.library = library
         self.userId = userId
         self.username = username
+        self.annotations = []
         self.toolColors = [
             .highlight: UIColor(hex: Defaults.shared.highlightColorHex),
             .note: UIColor(hex: Defaults.shared.noteColorHex)

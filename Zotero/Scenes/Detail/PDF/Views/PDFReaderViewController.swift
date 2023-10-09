@@ -192,11 +192,6 @@ class PDFReaderViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-<<<<<<< HEAD
-        self.didAppear = true
-=======
-        self.isCurrentlyVisible = true
->>>>>>> 89f5de4d (wip)
     }
 
     deinit {
