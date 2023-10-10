@@ -174,10 +174,15 @@ final class AppCoordinator: NSObject {
     }
     
     func show(customUrl: CustomURLController.Kind, animated: Bool) {
+        guard let window, let mainController = window.rootViewController as? MainViewController else {
+            DDLogWarn("AppCoordinator: show custom url aborted - invalid root view controller")
+            return
+        }
+        
         switch customUrl {
         case .itemDetail(let key, let library, let preselectedChildKey):
             DDLogInfo("AppCoordinator: show custom url - item detail; key=\(key); library=\(library.identifier)")
-            showItemDetail(key: key, library: library, selectChildKey: preselectedChildKey, animated: animated)
+            showItemDetail(in: mainController, key: key, library: library, selectChildKey: preselectedChildKey, animated: animated, dismissIfPresenting: true)
             
         case .pdfReader(let attachment, let library, let page, let annotation, let parentKey, let isAvailable):
             let message = DDLogMessageFormat(
@@ -186,43 +191,45 @@ final class AppCoordinator: NSObject {
                     " page=\(page.flatMap(String.init) ?? "nil"); annotation=\(annotation ?? "nil"); parentKey=\(parentKey ?? "nil")"
             )
             DDLogInfo(message)
-            if isAvailable {
-                open(attachment: attachment, library: library, on: page, annotation: annotation, parentKey: parentKey, animated: animated)
-                return
-            }
-            
-            guard let window, let mainController = window.rootViewController as? MainViewController else { return }
-            
-            mainController.getDetailCoordinator { [weak self] coordinator in
-                guard let self else { return }
-                showItemDetail(key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated)
-                download(attachment: attachment, parentKey: parentKey) {
-                    _open(attachment: attachment, library: library, on: page, annotation: annotation, window: window, detailCoordinator: coordinator, animated: true)
-                }
-            }
-        }
-        
-        func showItemDetail(key: String, library: Library, selectChildKey childKey: String?, animated: Bool) {
-            // Dismiss presented screen if any visible
-            if let mainController = self.window?.rootViewController as? MainViewController, mainController.presentedViewController != nil {
-                _showItemDetail(key: key, library: library, selectChildKey: childKey, animated: false)
-                mainController.dismiss(animated: animated)
-            } else {
-                _showItemDetail(key: key, library: library, selectChildKey: childKey, animated: animated)
-            }
-        }
-        
-        func open(attachment: Attachment, library: Library, on page: Int?, annotation: String?, parentKey: String?, animated: Bool) {
-            guard let window, let mainController = window.rootViewController as? MainViewController else { return }
-            
             mainController.getDetailCoordinator { coordinator in
-                guard (coordinator.navigationController?.presentedViewController as? PDFReaderViewController)?.key != attachment.key else { return }
-                _open(attachment: attachment, library: library, on: page, annotation: annotation, window: window, detailCoordinator: coordinator, animated: animated) {
-                    _showItemDetail(key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated)
+                if isAvailable {
+                    guard (coordinator.navigationController?.presentedViewController as? PDFReaderViewController)?.key != attachment.key else { return }
+                    open(attachment: attachment, library: library, on: page, annotation: annotation, window: window, detailCoordinator: coordinator, animated: animated) {
+                        showItemDetail(in: mainController, key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated, dismissIfPresenting: false)
+                    }
+                } else {
+                    showItemDetail(in: mainController, key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated, dismissIfPresenting: true)
+                    download(attachment: attachment, parentKey: parentKey) {
+                        open(attachment: attachment, library: library, on: page, annotation: annotation, window: window, detailCoordinator: coordinator, animated: true)
+                    }
                 }
             }
         }
-        
+            
+        func showItemDetail(in mainController: MainViewController, key: String, library: Library, selectChildKey childKey: String?, animated: Bool, dismissIfPresenting: Bool) {
+            let dismissPresented = dismissIfPresenting && (mainController.presentedViewController != nil)
+            var itemDetailAnimated = dismissPresented ? false : animated
+            
+            // Show "All" collection in given library/group
+            if let coordinator = mainController.masterCoordinator,
+               coordinator.visibleLibraryId != library.identifier ||
+                (coordinator.navigationController?.visibleViewController as? CollectionsViewController)?.selectedIdentifier != .custom(.all) {
+                coordinator.showCollections(for: library.identifier, preselectedCollection: .custom(.all), animated: itemDetailAnimated)
+            }
+            
+            // Show item detail of given key
+            mainController.getDetailCoordinator { coordinator in
+                if (coordinator.navigationController?.visibleViewController as? ItemDetailViewController)?.key != key {
+                    coordinator.showItemDetail(for: .preview(key: key), library: library, scrolledToKey: childKey, animated: itemDetailAnimated)
+                }
+            }
+            
+            if dismissPresented {
+                // Dismiss presented screen if any visible
+                mainController.dismiss(animated: animated)
+            }
+        }
+            
         func download(attachment: Attachment, parentKey: String?, completion: @escaping () -> Void) {
             guard let downloader = self.controllers.userControllers?.fileDownloader else {
                 completion()
@@ -243,7 +250,9 @@ final class AppCoordinator: NSObject {
                         
                     case .cancelled, .failed:
                         self.downloadDisposeBag = nil
-                    case .progress: break
+                        
+                    case .progress:
+                        break
                     }
                 })
                 .disposed(by: disposeBag)
@@ -252,29 +261,21 @@ final class AppCoordinator: NSObject {
             downloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey)
         }
         
-        func _showItemDetail(key: String, library: Library, selectChildKey childKey: String?, animated: Bool) {
-            guard let mainController = self.window?.rootViewController as? MainViewController else { return }
-            
-            // Show "All" collection in given library/group
-            if mainController.masterCoordinator?.visibleLibraryId != library.identifier ||
-                (mainController.masterCoordinator?.navigationController?.visibleViewController as? CollectionsViewController)?.selectedIdentifier != .custom(.all) {
-                mainController.masterCoordinator?.showCollections(for: library.identifier, preselectedCollection: .custom(.all), animated: animated)
-            }
-            
-            // Show item detail of given key
-            mainController.getDetailCoordinator { coordinator in
-                if (coordinator.navigationController?.visibleViewController as? ItemDetailViewController)?.key != key {
-                    coordinator.showItemDetail(for: .preview(key: key), library: library, scrolledToKey: childKey, animated: animated)
-                }
-            }
-        }
-        
-        func _open(attachment: Attachment, library: Library, on page: Int?, annotation: String?, window: UIWindow, detailCoordinator: DetailCoordinator, animated: Bool, completion: (() -> Void)? = nil) {
+        func open(
+            attachment: Attachment,
+            library: Library,
+            on page: Int?,
+            annotation: String?,
+            window: UIWindow,
+            detailCoordinator: DetailCoordinator,
+            animated: Bool,
+            completion: (() -> Void)? = nil
+        ) {
             switch attachment.type {
             case .file(let filename, let contentType, _, _) where contentType == "application/pdf":
                 let file = Files.attachmentFile(in: library.identifier, key: attachment.key, filename: filename, contentType: contentType)
                 let url = file.createUrl()
-                let controller = self.pdfController(key: attachment.key, library: library, url: url, page: page, preselectedAnnotationKey: annotation, detailCoordinator: detailCoordinator)
+                let controller = detailCoordinator.createPDFController(key: attachment.key, library: library, url: url, page: page, preselectedAnnotationKey: annotation)
                 self.show(pdfController: controller, in: window, animated: animated, completion: completion)
                 
             default:
@@ -289,7 +290,7 @@ final class AppCoordinator: NSObject {
             DDLogWarn("AppCoordinator: show restored state aborted - invalid root view controller")
             return
         }
-        guard var (url, library, optionalCollection) = loadRestoredStateData(forKey: data.key, libraryId: data.libraryId, collectionId: data.collectionId) else {
+        guard let (url, library, optionalCollection) = loadRestoredStateData(forKey: data.key, libraryId: data.libraryId, collectionId: data.collectionId) else {
             DDLogWarn("AppCoordinator: show restored state aborted - invalid restored state data")
             return
         }
@@ -307,7 +308,7 @@ final class AppCoordinator: NSObject {
         
         mainController.getDetailCoordinator { [weak self] coordinator in
             guard let self, let window else { return }
-            let controller = self.pdfController(key: data.key, library: library, url: url, page: nil, preselectedAnnotationKey: nil, detailCoordinator: coordinator)
+            let controller = coordinator.createPDFController(key: data.key, library: library, url: url)
             self.show(pdfController: controller, in: window, animated: false)
         }
         
@@ -350,26 +351,6 @@ final class AppCoordinator: NSObject {
             }
             return nil
         }
-    }
-    
-    private func pdfController(key: String, library: Library, url: URL, page: Int?, preselectedAnnotationKey: String?, detailCoordinator: DetailCoordinator) -> UINavigationController {
-        let navigationController = NavigationViewController()
-        navigationController.modalPresentationStyle = .fullScreen
-        
-        let coordinator = PDFCoordinator(
-            key: key,
-            library: library,
-            url: url,
-            page: page,
-            preselectedAnnotationKey: preselectedAnnotationKey,
-            navigationController: navigationController,
-            controllers: controllers
-        )
-        coordinator.parentCoordinator = detailCoordinator
-        detailCoordinator.childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-        
-        return navigationController
     }
     
     private func show(pdfController: UIViewController, in window: UIWindow, animated: Bool, completion: (() -> Void)? = nil) {
