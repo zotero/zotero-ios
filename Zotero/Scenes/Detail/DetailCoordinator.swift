@@ -284,18 +284,31 @@ final class DetailCoordinator: Coordinator {
         navigationController.present(controller, animated: true, completion: nil)
     }
 
-    private func showPdf(at url: URL, key: String, library: Library) {
+    func createPDFController(key: String, library: Library, url: URL, page: Int? = nil, preselectedAnnotationKey: String? = nil) -> NavigationViewController {
         let navigationController = NavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
-
-        let coordinator = PDFCoordinator(key: key, library: library, url: url, page: nil, preselectedAnnotationKey: nil, navigationController: navigationController, controllers: self.controllers)
+        
+        let coordinator = PDFCoordinator(
+            key: key,
+            library: library,
+            url: url,
+            page: page,
+            preselectedAnnotationKey: preselectedAnnotationKey,
+            navigationController: navigationController,
+            controllers: controllers
+        )
         coordinator.parentCoordinator = self
-        self.childCoordinators.append(coordinator)
+        childCoordinators.append(coordinator)
         coordinator.start(animated: false)
 
-        self.navigationController?.present(navigationController, animated: true, completion: nil)
+        return navigationController
     }
-
+    
+    private func showPdf(at url: URL, key: String, library: Library) {
+        let controller = createPDFController(key: key, library: library, url: url)
+        navigationController?.present(controller, animated: true, completion: nil)
+    }
+    
     private func showWebView(for url: URL) {
         guard let currentNavigationController = self.navigationController else { return }
         let controller = WebViewController(url: url)
