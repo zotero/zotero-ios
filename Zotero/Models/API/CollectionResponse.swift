@@ -22,14 +22,14 @@ struct CollectionResponse: KeyedResponse {
     let version: Int
 
     init(response: [String: Any]) throws {
-        let library: [String: Any] = try response.apiGet(key: "library")
-        let data: [String: Any] = try response.apiGet(key: "data")
-        let key: String = try response.apiGet(key: "key")
+        let library: [String: Any] = try response.apiGet(key: "library", errorLogMessage: "CollectionResponse missing key \"library\"")
+        let data: [String: Any] = try response.apiGet(key: "data", errorLogMessage: "CollectionResponse missing key \"data\"")
+        let key: String = try response.apiGet(key: "key", errorLogMessage: "CollectionResponse missing key \"key\"")
 
         self.key = key
         self.library = try LibraryResponse(response: library)
         self.links = try (response["links"] as? [String: Any]).flatMap({ try LinksResponse(response: $0) })
-        self.version = try response.apiGet(key: "version")
+        self.version = try response.apiGet(key: "version", errorLogMessage: "CollectionResponse missing key \"version\"")
         self.data = try Data(response: data, key: key)
     }
 }
@@ -41,7 +41,7 @@ extension CollectionResponse.Data {
             throw SchemaError.unknownField(key: key, field: unknownKey)
         }
 
-        self.name = try response.apiGet(key: "name")
+        self.name = try response.apiGet(key: "name", errorLogMessage: "CollectionResponse missing key \"name\"")
         self.parentCollection = response["parentCollection"] as? String
         self.isTrash = (response["deleted"] as? Bool) ?? ((response["deleted"] as? Int) == 1)
     }

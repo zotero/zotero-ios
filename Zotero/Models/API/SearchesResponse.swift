@@ -22,14 +22,14 @@ struct SearchResponse {
     let version: Int
 
     init(response: [String: Any]) throws {
-        let key: String = try response.apiGet(key: "key")
-        let library: [String: Any] = try response.apiGet(key: "library")
-        let data: [String: Any] = try response.apiGet(key: "data")
+        let key: String = try response.apiGet(key: "key", errorLogMessage: "SearchResponse missing key \"key\"")
+        let library: [String: Any] = try response.apiGet(key: "library", errorLogMessage: "SearchResponse missing key \"library\"")
+        let data: [String: Any] = try response.apiGet(key: "data", errorLogMessage: "SearchResponse missing key \"data\"")
 
         self.key = key
         self.library = try LibraryResponse(response: library)
         self.links = try (response["links"] as? [String: Any]).flatMap { try LinksResponse(response: $0) }
-        self.version = try response.apiGet(key: "version")
+        self.version = try response.apiGet(key: "version", errorLogMessage: "SearchResponse missing key \"version\"")
         self.data = try Data(response: data, key: key)
     }
 }
@@ -41,9 +41,9 @@ extension SearchResponse.Data {
             throw SchemaError.unknownField(key: key, field: unknownKey)
         }
 
-        let conditions: [[String: Any]] = try response.apiGet(key: "conditions")
+        let conditions: [[String: Any]] = try response.apiGet(key: "conditions", errorLogMessage: "SearchResponse.Data missing key \"conditions\"")
 
-        self.name = try response.apiGet(key: "name")
+        self.name = try response.apiGet(key: "name", errorLogMessage: "SearchResponse.Data missing key \"name\"")
         self.conditions = try conditions.map({ try ConditionResponse(response: $0) })
         self.isTrash = (response["deleted"] as? Bool) ?? ((response["deleted"] as? Int) == 1)
     }
@@ -55,8 +55,8 @@ struct ConditionResponse {
     let value: String
 
     init(response: [String: Any]) throws {
-        self.condition = try response.apiGet(key: "condition")
-        self.`operator` = try response.apiGet(key: "operator")
-        self.value = try response.apiGet(key: "value")
+        self.condition = try response.apiGet(key: "condition", errorLogMessage: "ConditionResponse missing key \"condition\"")
+        self.`operator` = try response.apiGet(key: "operator", errorLogMessage: "ConditionResponse missing key \"operator\"")
+        self.value = try response.apiGet(key: "value", errorLogMessage: "ConditionResponse missing key \"value\"")
     }
 }

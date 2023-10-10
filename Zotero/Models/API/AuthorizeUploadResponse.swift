@@ -8,6 +8,8 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
+
 enum AuthorizeUploadResponse {
     case exists(Int)
     case new(AuthorizeNewUploadResponse)
@@ -31,14 +33,15 @@ struct AuthorizeNewUploadResponse {
     let params: [String: String]
 
     init(from jsonObject: [String: Any]) throws {
-        let urlString: String = try jsonObject.apiGet(key: "url")
+        let urlString: String = try jsonObject.apiGet(key: "url", errorLogMessage: "AuthorizeNewUploadResponse missing key \"url\"")
 
         guard let url = URL(string: urlString.replacingOccurrences(of: "\\", with: "")) else {
+            DDLogError("AuthorizeNewUploadResponse: url invalid format - \(urlString)")
             throw Parsing.Error.missingKey("url")
         }
 
         self.url = url
-        self.uploadKey = try jsonObject.apiGet(key: "uploadKey")
-        self.params = try jsonObject.apiGet(key: "params")
+        self.uploadKey = try jsonObject.apiGet(key: "uploadKey", errorLogMessage: "AuthorizeNewUploadResponse missing key \"uploadKey\"")
+        self.params = try jsonObject.apiGet(key: "params", errorLogMessage: "AuthorizeNewUploadResponse missing key \"params\"")
     }
 }

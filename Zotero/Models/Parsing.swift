@@ -19,8 +19,9 @@ struct Parsing {
         case notUrl
     }
 
-    static func parse<T>(key: String, from data: [String: Any]) throws -> T {
+    static func parse<T>(key: String, from data: [String: Any], errorLogMessage: String) throws -> T {
         guard let parsed = data[key] as? T else {
+            DDLogError("Parsing: \(errorLogMessage)")
             throw Error.missingKey(key)
         }
         return parsed
@@ -56,7 +57,7 @@ struct Parsing {
 }
 
 extension Dictionary where Key == String {
-    func apiGet<T>(key: String) throws -> T {
-        return try Parsing.parse(key: key, from: self)
+    func apiGet<T>(key: String, errorLogMessage: String) throws -> T {
+        return try Parsing.parse(key: key, from: self, errorLogMessage: errorLogMessage)
     }
 }

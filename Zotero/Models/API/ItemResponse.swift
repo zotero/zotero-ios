@@ -39,9 +39,27 @@ struct ItemResponse {
     let rects: [[Double]]?
     let paths: [[Double]]?
 
-    init(rawType: String, key: String, library: LibraryResponse, parentKey: String?, collectionKeys: Set<String>, links: LinksResponse?, parsedDate: String?, isTrash: Bool, version: Int,
-         dateModified: Date, dateAdded: Date, fields: [KeyBaseKeyPair: String], tags: [TagResponse], creators: [CreatorResponse], relations: [String: Any], createdBy: UserResponse?,
-         lastModifiedBy: UserResponse?, rects: [[Double]]?, paths: [[Double]]?) {
+    init(
+        rawType: String,
+        key: String,
+        library: LibraryResponse,
+        parentKey: String?,
+        collectionKeys: Set<String>,
+        links: LinksResponse?,
+        parsedDate: String?,
+        isTrash: Bool,
+        version: Int,
+        dateModified: Date,
+        dateAdded: Date,
+        fields: [KeyBaseKeyPair: String],
+        tags: [TagResponse],
+        creators: [CreatorResponse],
+        relations: [String: Any],
+        createdBy: UserResponse?,
+        lastModifiedBy: UserResponse?,
+        rects: [[Double]]?,
+        paths: [[Double]]?
+    ) {
         self.rawType = rawType
         self.key = key
         self.library = library
@@ -65,15 +83,15 @@ struct ItemResponse {
     }
 
     init(response: [String: Any], schemaController: SchemaController) throws {
-        let data: [String: Any] = try response.apiGet(key: "data")
-        let key: String = try response.apiGet(key: "key")
-        let itemType: String = try data.apiGet(key: "itemType")
+        let data: [String: Any] = try response.apiGet(key: "data", errorLogMessage: "ItemResponse missing key \"data\"")
+        let key: String = try response.apiGet(key: "key", errorLogMessage: "ItemResponse missing key \"key\"")
+        let itemType: String = try data.apiGet(key: "itemType", errorLogMessage: "ItemResponse missing key \"itemType\"")
 
         if !schemaController.itemTypes.contains(itemType) {
             throw SchemaError.invalidValue(value: itemType, field: "itemType", key: key)
         }
 
-        let library = try LibraryResponse(response: (try response.apiGet(key: "library")))
+        let library = try LibraryResponse(response: (try response.apiGet(key: "library", errorLogMessage: "ItemResponse missing key \"library\"")))
         let linksData = response["links"] as? [String: Any]
         let links = try linksData.flatMap { try LinksResponse(response: $0) }
         let meta = response["meta"] as? [String: Any]
@@ -82,22 +100,51 @@ struct ItemResponse {
         let createdBy = try createdByData.flatMap { try UserResponse(response: $0) }
         let lastModifiedByData = meta?["lastModifiedByUser"] as? [String: Any]
         let lastModifiedBy = try lastModifiedByData.flatMap { try UserResponse(response: $0) }
-        let version: Int = try response.apiGet(key: "version")
+        let version: Int = try response.apiGet(key: "version", errorLogMessage: "ItemResponse missing key \"version\"")
 
         switch itemType {
         case ItemTypes.annotation:
-            try self.init(key: key, library: library, links: links, parsedDate: parsedDate, createdBy: createdBy, lastModifiedBy: lastModifiedBy, version: version, annotationData: data,
-                          schemaController: schemaController)
+            try self.init(
+                key: key,
+                library: library,
+                links: links,
+                parsedDate: parsedDate,
+                createdBy: createdBy,
+                lastModifiedBy: lastModifiedBy,
+                version: version,
+                annotationData: data,
+                schemaController: schemaController
+            )
 
         default:
-            try self.init(key: key, rawType: itemType, library: library, links: links, parsedDate: parsedDate, createdBy: createdBy, lastModifiedBy: lastModifiedBy, version: version, data: data,
-                          schemaController: schemaController)
+            try self.init(
+                key: key,
+                rawType: itemType,
+                library: library,
+                links: links,
+                parsedDate: parsedDate,
+                createdBy: createdBy,
+                lastModifiedBy: lastModifiedBy,
+                version: version,
+                data: data,
+                schemaController: schemaController
+            )
         }
     }
 
     // Init any item type except annotation
-    private init(key: String, rawType: String, library: LibraryResponse, links: LinksResponse?, parsedDate: String?, createdBy: UserResponse?, lastModifiedBy: UserResponse?, version: Int,
-                 data: [String: Any], schemaController: SchemaController) throws {
+    private init(
+        key: String,
+        rawType: String,
+        library: LibraryResponse,
+        links: LinksResponse?,
+        parsedDate: String?,
+        createdBy: UserResponse?,
+        lastModifiedBy: UserResponse?,
+        version: Int,
+        data: [String: Any],
+        schemaController: SchemaController
+    ) throws {
         let dateAdded = data["dateAdded"] as? String
         let dateModified = data["dateModified"] as? String
         let tags = (data["tags"] as? [[String: Any]]) ?? []
@@ -133,8 +180,17 @@ struct ItemResponse {
     }
 
     // Init annotation
-    private init(key: String, library: LibraryResponse, links: LinksResponse?, parsedDate: String?, createdBy: UserResponse?, lastModifiedBy: UserResponse?, version: Int,
-                 annotationData data: [String: Any], schemaController: SchemaController) throws {
+    private init(
+        key: String,
+        library: LibraryResponse,
+        links: LinksResponse?,
+        parsedDate: String?,
+        createdBy: UserResponse?,
+        lastModifiedBy: UserResponse?,
+        version: Int,
+        annotationData data: [String: Any],
+        schemaController: SchemaController
+    ) throws {
         let dateAdded = data["dateAdded"] as? String
         let dateModified = data["dateModified"] as? String
         let tags = (data["tags"] as? [[String: Any]]) ?? []
@@ -145,7 +201,7 @@ struct ItemResponse {
         self.key = key
         self.version = version
         self.collectionKeys = []
-        self.parentKey = try data.apiGet(key: "parentItem")
+        self.parentKey = try data.apiGet(key: "parentItem", errorLogMessage: "ItemResponse missing key \"parentItem\"")
         self.dateAdded = dateAdded.flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
         self.dateModified = dateModified.flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
         self.parsedDate = parsedDate
@@ -165,7 +221,7 @@ struct ItemResponse {
 
     init(translatorResponse response: [String: Any], schemaController: SchemaController) throws {
         let key = KeyGenerator.newKey
-        let rawType: String = try response.apiGet(key: "itemType")
+        let rawType: String = try response.apiGet(key: "itemType", errorLogMessage: "ItemResponse missing key \"itemType\"")
         let accessDate = (response["accessDate"] as? String).flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
         let tags = (response["tags"] as? [[String: Any]]) ?? []
         let creators = (response["creators"] as? [[String: Any]]) ?? []
@@ -195,47 +251,51 @@ struct ItemResponse {
     }
 
     func copy(libraryId: LibraryIdentifier, collectionKeys: Set<String>, tags: [TagResponse]) -> ItemResponse {
-        return ItemResponse(rawType: self.rawType,
-                            key: self.key,
-                            library: LibraryResponse(libraryId: libraryId),
-                            parentKey: self.parentKey,
-                            collectionKeys: collectionKeys,
-                            links: self.links,
-                            parsedDate: self.parsedDate,
-                            isTrash: self.isTrash,
-                            version: self.version,
-                            dateModified: self.dateModified,
-                            dateAdded: self.dateAdded,
-                            fields: self.fields,
-                            tags: tags,
-                            creators: self.creators,
-                            relations: self.relations,
-                            createdBy: self.createdBy,
-                            lastModifiedBy: self.lastModifiedBy,
-                            rects: self.rects,
-                            paths: self.paths)
+        return ItemResponse(
+            rawType: self.rawType,
+            key: self.key,
+            library: LibraryResponse(libraryId: libraryId),
+            parentKey: self.parentKey,
+            collectionKeys: collectionKeys,
+            links: self.links,
+            parsedDate: self.parsedDate,
+            isTrash: self.isTrash,
+            version: self.version,
+            dateModified: self.dateModified,
+            dateAdded: self.dateAdded,
+            fields: self.fields,
+            tags: tags,
+            creators: self.creators,
+            relations: self.relations,
+            createdBy: self.createdBy,
+            lastModifiedBy: self.lastModifiedBy,
+            rects: self.rects,
+            paths: self.paths
+        )
     }
 
     var copyWithAutomaticTags: ItemResponse {
-        return ItemResponse(rawType: self.rawType,
-                            key: self.key,
-                            library: self.library,
-                            parentKey: self.parentKey,
-                            collectionKeys: self.collectionKeys,
-                            links: self.links,
-                            parsedDate: self.parsedDate,
-                            isTrash: self.isTrash,
-                            version: self.version,
-                            dateModified: self.dateModified,
-                            dateAdded: self.dateAdded,
-                            fields: self.fields,
-                            tags: self.tags.map({ $0.automaticCopy }),
-                            creators: self.creators,
-                            relations: self.relations,
-                            createdBy: self.createdBy,
-                            lastModifiedBy: self.lastModifiedBy,
-                            rects: self.rects,
-                            paths: self.paths)
+        return ItemResponse(
+            rawType: self.rawType,
+            key: self.key,
+            library: self.library,
+            parentKey: self.parentKey,
+            collectionKeys: self.collectionKeys,
+            links: self.links,
+            parsedDate: self.parsedDate,
+            isTrash: self.isTrash,
+            version: self.version,
+            dateModified: self.dateModified,
+            dateAdded: self.dateAdded,
+            fields: self.fields,
+            tags: self.tags.map({ $0.automaticCopy }),
+            creators: self.creators,
+            relations: self.relations,
+            createdBy: self.createdBy,
+            lastModifiedBy: self.lastModifiedBy,
+            rects: self.rects,
+            paths: self.paths
+        )
     }
 
     /// Parses field values from item data for given type.
@@ -245,8 +305,13 @@ struct ItemResponse {
     /// - parameter key: Key of item.
     /// - parameter ignoreUnknownFields: If set to `false`, when an unknown field is encountered during parsing, an exception `Error.unknownField` is thrown. Otherwise the field is silently ignored and parsing continues.
     /// - returns: Parsed dictionary of fields with their values.
-    private static func parseFields(from data: [String: Any], rawType: String, key: String, schemaController: SchemaController,
-                                    ignoreUnknownFields: Bool = false) throws -> (fields: [KeyBaseKeyPair: String], rects: [[Double]]?, paths: [[Double]]?) {
+    private static func parseFields(
+        from data: [String: Any],
+        rawType: String,
+        key: String,
+        schemaController: SchemaController,
+        ignoreUnknownFields: Bool = false
+    ) throws -> (fields: [KeyBaseKeyPair: String], rects: [[Double]]?, paths: [[Double]]?) {
         let excludedKeys = FieldKeys.Item.knownNonFieldKeys
         var fields: [KeyBaseKeyPair: String] = [:]
         var rects: [[Double]]?
@@ -294,7 +359,11 @@ struct ItemResponse {
         return (fields, rects, paths)
     }
 
-    private static func parsePositionFields(from encoded: String, key: String, fields: inout [KeyBaseKeyPair: String]) throws -> (rects: [[Double]]?, paths: [[Double]]?) {
+    private static func parsePositionFields(
+        from encoded: String,
+        key: String,
+        fields: inout [KeyBaseKeyPair: String]
+    ) throws -> (rects: [[Double]]?, paths: [[Double]]?) {
         guard let data = encoded.data(using: .utf8), let json = (try? JSONSerialization.jsonObject(with: data, options: .allowFragments)) as? [String: Any] else {
             throw SchemaError.invalidValue(value: encoded, field: FieldKeys.Item.Annotation.position, key: key)
         }
@@ -430,13 +499,13 @@ struct TagResponse {
     }
 
     init(response: [String: Any]) throws {
-        let rawType = (try? response.apiGet(key: "type")) ?? 0
+        let rawType = (try? response.apiGet(key: "type", errorLogMessage: "TagResponse missing key \"type\"")) ?? 0
 
         guard let type = RTypedTag.Kind(rawValue: rawType) else {
             throw Error.unknownTagType
         }
 
-        self.tag = try response.apiGet(key: "tag")
+        self.tag = try response.apiGet(key: "tag", errorLogMessage: "TagResponse missing key \"tag\"")
         self.type = type
     }
 
@@ -452,7 +521,7 @@ struct CreatorResponse {
     let name: String?
 
     init(response: [String: Any]) throws {
-        self.creatorType = try response.apiGet(key: "creatorType")
+        self.creatorType = try response.apiGet(key: "creatorType", errorLogMessage: "CreatorResponse missing key \"creatorType\"")
         self.firstName = response["firstName"] as? String
         self.lastName = response["lastName"] as? String
         self.name = response["name"] as? String
@@ -468,8 +537,8 @@ struct UserResponse {
     let username: String
 
     init(response: [String: Any]) throws {
-        self.id = try response.apiGet(key: "id")
-        self.name = try response.apiGet(key: "name")
-        self.username = try response.apiGet(key: "username")
+        self.id = try response.apiGet(key: "id", errorLogMessage: "UserResponse missing key \"id\"")
+        self.name = try response.apiGet(key: "name", errorLogMessage: "UserResponse missing key \"name\"")
+        self.username = try response.apiGet(key: "username", errorLogMessage: "UserResponse missing key \"username\"")
     }
 }
