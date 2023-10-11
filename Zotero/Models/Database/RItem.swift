@@ -75,6 +75,8 @@ final class RItem: Object {
     @Persisted var relations: List<RRelation>
     /// Indicates which local changes need to be synced to backend
     @Persisted var changes: List<RObjectChange>
+    /// Indicates whether `SyncController` should try to sync `changes`
+    @Persisted var changesSyncPaused: Bool
 
     // MARK: - Attachment data
     @Persisted var backendMd5: String

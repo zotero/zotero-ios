@@ -32,6 +32,7 @@ struct EditItemFromDetailDbRequest: DbRequest {
             changes.insert(.type)
         }
         item.dateModified = self.data.dateModified
+        item.changesSyncPaused = false
 
         self.updateCreators(with: self.data, snapshot: self.snapshot, item: item, changes: &changes, database: database)
         self.updateFields(with: self.data, snapshot: self.snapshot, item: item, changes: &changes, typeChanged: typeChanged, database: database)

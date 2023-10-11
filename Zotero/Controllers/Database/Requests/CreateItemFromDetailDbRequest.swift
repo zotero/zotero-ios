@@ -45,6 +45,7 @@ struct CreateItemFromDetailDbRequest: DbResponseRequest {
         item.dateAdded = self.data.dateAdded
         item.dateModified = self.data.dateModified
         item.libraryId = self.libraryId
+        item.changesSyncPaused = true
         database.add(item)
 
         var changes: RItemChanges = [.type, .fields]
@@ -105,6 +106,7 @@ struct CreateItemFromDetailDbRequest: DbResponseRequest {
                                                 collectionKey: nil,
                                                 parentKey: nil).process(in: database)
             rNote.parent = item
+            rNote.changesSyncPaused = true
             rNote.changes.append(RObjectChange.create(changes: RItemChanges.parent))
         }
 
@@ -117,6 +119,7 @@ struct CreateItemFromDetailDbRequest: DbResponseRequest {
                 rAttachment.parent = item
                 rAttachment.changes.append(RObjectChange.create(changes: RItemChanges.parent))
                 rAttachment.changeType = .user
+                rAttachment.changesSyncPaused = true
             } else {
                 let rAttachment = try CreateAttachmentDbRequest(attachment: attachment,
                                                                 parentKey: nil,
@@ -125,6 +128,7 @@ struct CreateItemFromDetailDbRequest: DbResponseRequest {
                                                                 collections: [], tags: []).process(in: database)
                 rAttachment.libraryId = self.libraryId
                 rAttachment.parent = item
+                rAttachment.changesSyncPaused = true
                 rAttachment.changes.append(RObjectChange.create(changes: RItemChanges.parent))
             }
         }

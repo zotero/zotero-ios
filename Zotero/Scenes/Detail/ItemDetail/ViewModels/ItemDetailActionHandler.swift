@@ -162,14 +162,26 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             switch viewModel.state.type {
             case .creation(let itemType, let child, let _collectionKey):
                 collectionKey = _collectionKey
-                data = try ItemDetailDataCreator.createData(from: .new(itemType: itemType, child: child), schemaController: self.schemaController, dateParser: self.dateParser,
-                                                            fileStorage: self.fileStorage, urlDetector: self.urlDetector, doiDetector: FieldKeys.Item.isDoi)
+                data = try ItemDetailDataCreator.createData(
+                    from: .new(itemType: itemType, child: child),
+                    schemaController: self.schemaController,
+                    dateParser: self.dateParser,
+                    fileStorage: self.fileStorage,
+                    urlDetector: self.urlDetector,
+                    doiDetector: FieldKeys.Item.isDoi
+                )
 
             case .duplication(let itemKey, let _collectionKey):
                 collectionKey = _collectionKey
                 let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: itemKey), on: .main)
-                data = try ItemDetailDataCreator.createData(from: .existing(item: item, ignoreChildren: true), schemaController: self.schemaController, dateParser: self.dateParser,
-                                                            fileStorage: self.fileStorage, urlDetector: self.urlDetector, doiDetector: FieldKeys.Item.isDoi)
+                data = try ItemDetailDataCreator.createData(
+                    from: .existing(item: item, ignoreChildren: true),
+                    schemaController: self.schemaController,
+                    dateParser: self.dateParser,
+                    fileStorage: self.fileStorage,
+                    urlDetector: self.urlDetector,
+                    doiDetector: FieldKeys.Item.isDoi
+                )
 
             case .preview:
                 self.reloadData(isEditing: viewModel.state.isEditing, in: viewModel)
@@ -183,8 +195,17 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             return
         }
 
-        let request = CreateItemFromDetailDbRequest(key: key, libraryId: libraryId, collectionKey: collectionKey, data: data.data, attachments: data.attachments, notes: data.notes, tags: data.tags,
-                                                    schemaController: self.schemaController, dateParser: self.dateParser)
+        let request = CreateItemFromDetailDbRequest(
+            key: key,
+            libraryId: libraryId,
+            collectionKey: collectionKey,
+            data: data.data,
+            attachments: data.attachments,
+            notes: data.notes,
+            tags: data.tags,
+            schemaController: self.schemaController,
+            dateParser: self.dateParser
+        )
 
         self.perform(request: request, invalidateRealm: true) { [weak viewModel] result in
             guard let viewModel = viewModel else { return }
@@ -211,8 +232,14 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 self.itemChanged(change, in: viewModel)
             }
 
-            var (data, attachments, notes, tags) = try ItemDetailDataCreator.createData(from: .existing(item: item, ignoreChildren: false), schemaController: self.schemaController, dateParser: self.dateParser,
-                                                                                        fileStorage: self.fileStorage, urlDetector: self.urlDetector, doiDetector: FieldKeys.Item.isDoi)
+            var (data, attachments, notes, tags) = try ItemDetailDataCreator.createData(
+                from: .existing(item: item, ignoreChildren: false),
+                schemaController: self.schemaController,
+                dateParser: self.dateParser,
+                fileStorage: self.fileStorage,
+                urlDetector: self.urlDetector,
+                doiDetector: FieldKeys.Item.isDoi
+            )
 
             if !isEditing {
                 data.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: data.fieldIds, fields: data.fields)
@@ -762,12 +789,34 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
     private func cancelChanges(in viewModel: ViewModel<ItemDetailActionHandler>) {
         switch viewModel.state.type {
-        case .duplication, .creation:
-            self.perform(request: MarkObjectsAsDeletedDbRequest<RItem>(keys: [viewModel.state.key], libraryId: viewModel.state.library.identifier)) { [weak viewModel] error in
+        case .duplication:
+            self.perform(request: DeleteObjectsDbRequest<RItem>(keys: [viewModel.state.key], libraryId: viewModel.state.library.identifier)) { [weak viewModel] error in
                 guard let viewModel = viewModel else { return }
 
                 if let error = error {
-                    DDLogError("ItemDetailActionHandler: can't remove duplicated/cancelled item - \(error)")
+                    DDLogError("ItemDetailActionHandler: can't remove duplicated and cancelled item - \(error)")
+
+                    self.update(viewModel: viewModel) { state in
+                        state.error = .cantRemoveItem
+                    }
+                    return
+                }
+
+                self.update(viewModel: viewModel) { state in
+                    state.hideController = true
+                }
+            }
+
+        case .creation(_, let child, _):
+            var actions: [DbRequest] = [DeleteObjectsDbRequest<RItem>(keys: [viewModel.state.key], libraryId: viewModel.state.library.identifier)]
+            if let child {
+                actions.insert(CancelParentCreationDbRequest(key: child.key, libraryId: child.libraryId), at: 0)
+            }
+            self.perform(writeRequests: actions) { [weak viewModel] error in
+                guard let viewModel = viewModel else { return }
+
+                if let error = error {
+                    DDLogError("ItemDetailActionHandler: can't remove created and cancelled item - \(error)")
 
                     self.update(viewModel: viewModel) { state in
                         state.error = .cantRemoveItem
@@ -829,7 +878,14 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 newState.data.dateModified = Date()
 
                 if let snapshot = state.snapshot {
-                    let request = EditItemFromDetailDbRequest(libraryId: state.library.identifier, itemKey: newState.key, data: newState.data, snapshot: snapshot, schemaController: self.schemaController, dateParser: self.dateParser)
+                    let request = EditItemFromDetailDbRequest(
+                        libraryId: state.library.identifier,
+                        itemKey: newState.key,
+                        data: newState.data,
+                        snapshot: snapshot,
+                        schemaController: self.schemaController,
+                        dateParser: self.dateParser
+                    )
                     try self.dbStorage.perform(request: request, on: queue)
                 }
 
