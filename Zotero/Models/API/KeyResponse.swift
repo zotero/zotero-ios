@@ -18,7 +18,7 @@ struct KeyResponse {
     init(response: Any) throws {
         guard let data = response as? [String: Any] else { throw Parsing.Error.notDictionary }
 
-        let accessData: [String: Any] = try data.apiGet(key: "access", errorLogMessage: "KeyResponse missing key \"access\"")
+        let accessData: [String: Any] = try data.apiGet(key: "access", caller: Self.self)
 
         self.username = (data["username"] as? String) ?? ""
         self.displayName = (data["displayName"] as? String) ?? ""

@@ -33,7 +33,7 @@ struct AuthorizeNewUploadResponse {
     let params: [String: String]
 
     init(from jsonObject: [String: Any]) throws {
-        let urlString: String = try jsonObject.apiGet(key: "url", errorLogMessage: "AuthorizeNewUploadResponse missing key \"url\"")
+        let urlString: String = try jsonObject.apiGet(key: "url", caller: Self.self)
 
         guard let url = URL(string: urlString.replacingOccurrences(of: "\\", with: "")) else {
             DDLogError("AuthorizeNewUploadResponse: url invalid format - \(urlString)")
@@ -41,7 +41,7 @@ struct AuthorizeNewUploadResponse {
         }
 
         self.url = url
-        self.uploadKey = try jsonObject.apiGet(key: "uploadKey", errorLogMessage: "AuthorizeNewUploadResponse missing key \"uploadKey\"")
-        self.params = try jsonObject.apiGet(key: "params", errorLogMessage: "AuthorizeNewUploadResponse missing key \"params\"")
+        self.uploadKey = try jsonObject.apiGet(key: "uploadKey", caller: Self.self)
+        self.params = try jsonObject.apiGet(key: "params", caller: Self.self)
     }
 }

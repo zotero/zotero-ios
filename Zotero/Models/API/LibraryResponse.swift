@@ -15,9 +15,9 @@ struct LibraryResponse {
     let links: LinksResponse?
 
     init(response: [String: Any]) throws {
-        self.id = try response.apiGet(key: "id", errorLogMessage: "LibraryResponse missing key \"id\"")
-        self.name = try response.apiGet(key: "name", errorLogMessage: "LibraryResponse missing key \"name\"")
-        self.type = try response.apiGet(key: "type", errorLogMessage: "LibraryResponse missing key \"type\"")
+        self.id = try response.apiGet(key: "id", caller: Self.self)
+        self.name = try response.apiGet(key: "name", caller: Self.self)
+        self.type = try response.apiGet(key: "type", caller: Self.self)
         self.links = try (response["links"] as? [String: Any]).flatMap({ try LinksResponse(response: $0) })
     }
 

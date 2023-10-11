@@ -48,8 +48,8 @@ struct PageIndexResponse {
         let (key, libraryId) = try PageIndexResponse.parse(key: key)
 
         self.key = key
-        self.value = try Parsing.parse(key: "value", from: dictionary, errorLogMessage: "PageIndexResponse missing key \"value\"")
-        self.version = try Parsing.parse(key: "version", from: dictionary, errorLogMessage: "PageIndexResponse missing key \"version\"")
+        self.value = try Parsing.parse(key: "value", from: dictionary, caller: Self.self)
+        self.version = try Parsing.parse(key: "version", from: dictionary, caller: Self.self)
         self.libraryId = libraryId
     }
 
@@ -85,7 +85,7 @@ struct TagColorsResponse {
     let value: [TagColorResponse]
 
     init(response: [String: Any]) throws {
-        let responses: [[String: Any]] = try Parsing.parse(key: "value", from: response, errorLogMessage: "TagColorsResponse missing key \"value\"")
+        let responses: [[String: Any]] = try Parsing.parse(key: "value", from: response, caller: Self.self)
         self.value = try responses.map({ try TagColorResponse(response: $0) })
     }
 }
@@ -95,7 +95,7 @@ struct TagColorResponse {
     let color: String
 
     init(response: [String: Any]) throws {
-        self.name = try Parsing.parse(key: "name", from: response, errorLogMessage: "TagColorResponse missing key \"name\"")
-        self.color = try Parsing.parse(key: "color", from: response, errorLogMessage: "TagColorResponse missing key \"color\"")
+        self.name = try Parsing.parse(key: "name", from: response, caller: Self.self)
+        self.color = try Parsing.parse(key: "color", from: response, caller: Self.self)
     }
 }

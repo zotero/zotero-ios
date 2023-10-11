@@ -83,15 +83,15 @@ struct ItemResponse {
     }
 
     init(response: [String: Any], schemaController: SchemaController) throws {
-        let data: [String: Any] = try response.apiGet(key: "data", errorLogMessage: "ItemResponse missing key \"data\"")
-        let key: String = try response.apiGet(key: "key", errorLogMessage: "ItemResponse missing key \"key\"")
-        let itemType: String = try data.apiGet(key: "itemType", errorLogMessage: "ItemResponse missing key \"itemType\"")
+        let data: [String: Any] = try response.apiGet(key: "data", caller: Self.self)
+        let key: String = try response.apiGet(key: "key", caller: Self.self)
+        let itemType: String = try data.apiGet(key: "itemType", caller: Self.self)
 
         if !schemaController.itemTypes.contains(itemType) {
             throw SchemaError.invalidValue(value: itemType, field: "itemType", key: key)
         }
 
-        let library = try LibraryResponse(response: (try response.apiGet(key: "library", errorLogMessage: "ItemResponse missing key \"library\"")))
+        let library = try LibraryResponse(response: (try response.apiGet(key: "library", caller: Self.self)))
         let linksData = response["links"] as? [String: Any]
         let links = try linksData.flatMap { try LinksResponse(response: $0) }
         let meta = response["meta"] as? [String: Any]
@@ -100,7 +100,7 @@ struct ItemResponse {
         let createdBy = try createdByData.flatMap { try UserResponse(response: $0) }
         let lastModifiedByData = meta?["lastModifiedByUser"] as? [String: Any]
         let lastModifiedBy = try lastModifiedByData.flatMap { try UserResponse(response: $0) }
-        let version: Int = try response.apiGet(key: "version", errorLogMessage: "ItemResponse missing key \"version\"")
+        let version: Int = try response.apiGet(key: "version", caller: Self.self)
 
         switch itemType {
         case ItemTypes.annotation:
@@ -201,7 +201,7 @@ struct ItemResponse {
         self.key = key
         self.version = version
         self.collectionKeys = []
-        self.parentKey = try data.apiGet(key: "parentItem", errorLogMessage: "ItemResponse missing key \"parentItem\"")
+        self.parentKey = try data.apiGet(key: "parentItem", caller: Self.self)
         self.dateAdded = dateAdded.flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
         self.dateModified = dateModified.flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
         self.parsedDate = parsedDate
@@ -221,7 +221,7 @@ struct ItemResponse {
 
     init(translatorResponse response: [String: Any], schemaController: SchemaController) throws {
         let key = KeyGenerator.newKey
-        let rawType: String = try response.apiGet(key: "itemType", errorLogMessage: "ItemResponse missing key \"itemType\"")
+        let rawType: String = try response.apiGet(key: "itemType", caller: Self.self)
         let accessDate = (response["accessDate"] as? String).flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
         let tags = (response["tags"] as? [[String: Any]]) ?? []
         let creators = (response["creators"] as? [[String: Any]]) ?? []
@@ -499,13 +499,13 @@ struct TagResponse {
     }
 
     init(response: [String: Any]) throws {
-        let rawType = (try? response.apiGet(key: "type", errorLogMessage: "TagResponse missing key \"type\"")) ?? 0
+        let rawType = (try? response.apiGet(key: "type", caller: Self.self)) ?? 0
 
         guard let type = RTypedTag.Kind(rawValue: rawType) else {
             throw Error.unknownTagType
         }
 
-        self.tag = try response.apiGet(key: "tag", errorLogMessage: "TagResponse missing key \"tag\"")
+        self.tag = try response.apiGet(key: "tag", caller: Self.self)
         self.type = type
     }
 
@@ -521,7 +521,7 @@ struct CreatorResponse {
     let name: String?
 
     init(response: [String: Any]) throws {
-        self.creatorType = try response.apiGet(key: "creatorType", errorLogMessage: "CreatorResponse missing key \"creatorType\"")
+        self.creatorType = try response.apiGet(key: "creatorType", caller: Self.self)
         self.firstName = response["firstName"] as? String
         self.lastName = response["lastName"] as? String
         self.name = response["name"] as? String
@@ -537,8 +537,8 @@ struct UserResponse {
     let username: String
 
     init(response: [String: Any]) throws {
-        self.id = try response.apiGet(key: "id", errorLogMessage: "UserResponse missing key \"id\"")
-        self.name = try response.apiGet(key: "name", errorLogMessage: "UserResponse missing key \"name\"")
-        self.username = try response.apiGet(key: "username", errorLogMessage: "UserResponse missing key \"username\"")
+        self.id = try response.apiGet(key: "id", caller: Self.self)
+        self.name = try response.apiGet(key: "name", caller: Self.self)
+        self.username = try response.apiGet(key: "username", caller: Self.self)
     }
 }
