@@ -29,7 +29,7 @@ struct LinkResponse {
     let length: Int?
 
     init(response: [String: Any]) throws {
-        self.href = try response.apiGet(key: "href")
+        self.href = try response.apiGet(key: "href", caller: Self.self)
         self.type = response["type"] as? String
         self.title = response["title"] as? String
         self.length = response["length"] as? Int
