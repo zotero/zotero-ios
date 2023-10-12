@@ -246,7 +246,11 @@ struct StoreItemDbRequest: DbResponseRequest {
             }
         }
 
-        item.setDateFieldMetadata(date, parser: dateParser)
+        if let date {
+            item.setDateFieldMetadata(date, parser: dateParser)
+        } else {
+            item.clearDateFieldMedatada()
+        }
         item.set(publisher: publisher)
         item.set(publicationTitle: publicationTitle)
         item.annotationSortIndex = sortIndex ?? ""

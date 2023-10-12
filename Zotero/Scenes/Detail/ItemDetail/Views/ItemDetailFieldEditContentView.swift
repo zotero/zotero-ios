@@ -8,6 +8,8 @@
 
 import UIKit
 
+import RxSwift
+
 class ItemDetailFieldEditContentView: UIView {
     @IBOutlet private weak var titleWidth: NSLayoutConstraint!
     @IBOutlet private weak var titleLabel: UILabel!
@@ -16,7 +18,9 @@ class ItemDetailFieldEditContentView: UIView {
     @IBOutlet private weak var bottomConstraint: NSLayoutConstraint!
     private var heightConstraint: NSLayoutConstraint?
 
-    var textChanged: ((String) -> Void)?
+    var textObservable: Observable<String> {
+        return self.valueTextField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.valueTextField.text ?? "") })
+    }
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -29,11 +33,6 @@ class ItemDetailFieldEditContentView: UIView {
         self.bottomConstraint.constant = valueFont.descender
 
         self.clipsToBounds = true
-
-        let action = UIAction { [weak self] _ in
-            self?.textChanged?(self?.valueTextField.text ?? "")
-        }
-        self.valueTextField.addAction(action, for: .editingChanged)
     }
 
     func setup(with field: ItemDetailState.Field, titleWidth: CGFloat) {

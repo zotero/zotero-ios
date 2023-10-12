@@ -87,7 +87,7 @@ struct EditItemFromDetailDbRequest: DbRequest {
 
             toRemove.forEach { field in
                 if field.key == FieldKeys.Item.date {
-                    item.setDateFieldMetadata(nil, parser: self.dateParser)
+                    item.clearDateFieldMedatada()
                 } else if field.key == FieldKeys.Item.publisher || field.baseKey == FieldKeys.Item.publisher {
                     item.set(publisher: nil)
                 } else if field.key == FieldKeys.Item.publicationTitle || field.baseKey == FieldKeys.Item.publicationTitle {

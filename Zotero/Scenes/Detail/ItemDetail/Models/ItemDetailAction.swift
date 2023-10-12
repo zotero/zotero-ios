@@ -16,11 +16,12 @@ enum ItemDetailAction {
     case changeType(String)
     case deleteAttachmentFile(Attachment)
     case deleteAttachment(Attachment)
-    case deleteCreator(UUID)
+    case deleteCreator(String)
     case deleteNote(Note)
     case deleteTag(Tag)
+    case endEditing
     case loadInitialData
-    case moveCreators(CollectionDifference<UUID>)
+    case moveCreators(CollectionDifference<String>)
     case moveAttachmentToStandalone(Attachment)
     case openAttachment(String)
     case attachmentOpened(String)
@@ -30,7 +31,6 @@ enum ItemDetailAction {
     case setTags([Tag])
     case setTitle(String)
     case setAbstract(String)
-    case save
     case saveCreator(ItemDetailState.Creator)
     case startEditing
     case toggleAbstractDetailCollapsed

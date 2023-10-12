@@ -515,10 +515,14 @@ final class ItemDetailCollectionViewHandler: NSObject {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
             guard let self = self else { return }
 
-            cell.contentConfiguration = ItemDetailFieldEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath),
-                                                                                     textChanged: { [weak self] text in
-                                                                                         self?.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
-                                                                                     })
+            let configuration = ItemDetailFieldEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath))
+            let disposable = configuration.textObservable
+                .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
+                .subscribe(with: self, onNext: { `self`, text in
+                    self.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
+                })
+            _ = configuration.disposeBag.insert(disposable)
+            cell.contentConfiguration = configuration
         }
     }()
 
@@ -526,10 +530,14 @@ final class ItemDetailCollectionViewHandler: NSObject {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
             guard let self = self else { return }
 
-            cell.contentConfiguration = ItemDetailFieldMultilineEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath),
-                                                                                              textChanged: { [weak self] text in
-                                                                                                  self?.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
-                                                                                              })
+            let configuration = ItemDetailFieldMultilineEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath))
+            let disposable = configuration.textObservable
+                .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
+                .subscribe(with: self, onNext: { `self`, text in
+                    self.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
+                })
+            _ = configuration.disposeBag.insert(disposable)
+            cell.contentConfiguration = configuration
         }
     }()
 
@@ -814,20 +822,24 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
         self.dataSource.reorderingHandlers.canReorderItem = { row -> Bool in
             switch row {
-            case .creator: return true
-            default: return false
+            case .creator:
+                return true
+
+            default:
+                return false
             }
         }
 
         self.dataSource.reorderingHandlers.didReorder = { [weak self] transaction in
             guard let self = self, let difference = transaction.sectionTransactions.first?.difference else { return }
 
-            let changes = difference.compactMap({ change -> CollectionDifference<UUID>.Change? in
+            let changes = difference.compactMap({ change -> CollectionDifference<String>.Change? in
                 switch change {
                 case .insert(let offset, let element, let associatedWith):
                     switch element {
                     case .creator(let creator):
                         return .insert(offset: offset, element: creator.id, associatedWith: associatedWith)
+
                     default: return nil
                     }
 
@@ -835,6 +847,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
                     switch element {
                     case .creator(let creator):
                         return .remove(offset: offset, element: creator.id, associatedWith: associatedWith)
+
                     default: return nil
                     }
                 }

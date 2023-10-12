@@ -78,6 +78,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private unowned let schemaController: SchemaController
     private unowned let fileStorage: FileStorage
     private unowned let idleTimerController: IdleTimerController
+    private unowned let dateParser: DateParser
     let backgroundQueue: DispatchQueue
     private let disposeBag: DisposeBag
 
@@ -85,14 +86,22 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private var pageDebounceDisposeBag: DisposeBag?
     weak var delegate: (PDFReaderContainerDelegate & AnnotationBoundingBoxConverter)?
 
-    init(dbStorage: DbStorage, annotationPreviewController: AnnotationPreviewController, htmlAttributedStringConverter: HtmlAttributedStringConverter, schemaController: SchemaController,
-         fileStorage: FileStorage, idleTimerController: IdleTimerController) {
+    init(
+        dbStorage: DbStorage,
+        annotationPreviewController: AnnotationPreviewController,
+        htmlAttributedStringConverter: HtmlAttributedStringConverter,
+        schemaController: SchemaController,
+        fileStorage: FileStorage,
+        idleTimerController: IdleTimerController,
+        dateParser: DateParser
+    ) {
         self.dbStorage = dbStorage
         self.annotationPreviewController = annotationPreviewController
         self.htmlAttributedStringConverter = htmlAttributedStringConverter
         self.schemaController = schemaController
         self.fileStorage = fileStorage
         self.idleTimerController = idleTimerController
+        self.dateParser = dateParser
         self.backgroundQueue = DispatchQueue(label: "org.zotero.Zotero.PDFReaderActionHandler.queue", qos: .userInteractive)
         self.pdfDisposeBag = DisposeBag()
         self.disposeBag = DisposeBag()
@@ -1163,7 +1172,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func set(highlightText: String, key: String, viewModel: ViewModel<PDFReaderActionHandler>) {
         let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.text, baseKey: nil): highlightText]
-        let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values)
+        let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values, dateParser: dateParser)
         self.perform(request: request) { [weak self, weak viewModel] error in
             guard let error = error, let self = self, let viewModel = viewModel else { return }
 
@@ -1195,7 +1204,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         // Update remaining values directly
         let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.pageLabel, baseKey: nil): pageLabel, KeyBaseKeyPair(key: FieldKeys.Item.Annotation.text, baseKey: nil): highlightText]
-        let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values)
+        let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values, dateParser: dateParser)
         self.perform(request: request) { [weak self, weak viewModel] error in
             guard let error = error, let self = self, let viewModel = viewModel else { return }
 
@@ -1310,7 +1319,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             if hasChanges(.lineWidth) {
                 let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.Position.lineWidth, baseKey: FieldKeys.Item.Annotation.position): "\(inkAnnotation.lineWidth.rounded(to: 3))"]
-                let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values)
+                let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values, dateParser: dateParser)
                 requests.append(request)
             }
         } else if hasChanges([.boundingBox, .rects]), let rects = AnnotationConverter.rects(from: annotation) {
@@ -1319,13 +1328,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         if hasChanges(.color) {
             let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.color, baseKey: nil): annotation.baseColor]
-            let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values)
+            let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values, dateParser: dateParser)
             requests.append(request)
         }
 
         if hasChanges(.contents) {
             let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.comment, baseKey: nil): annotation.contents ?? ""]
-            let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values)
+            let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values, dateParser: dateParser)
             requests.append(request)
         }
 

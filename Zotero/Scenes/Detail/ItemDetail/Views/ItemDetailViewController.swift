@@ -248,7 +248,15 @@ final class ItemDetailViewController: UIViewController {
         self.navigationItem.setHidesBackButton(state.isEditing, animated: false)
 
         if state.isEditing {
-            self.setEditingNavigationBarButtons(isSaving: state.isSaving)
+            let includesCancel: Bool
+            switch state.type {
+            case .preview:
+                includesCancel = false
+
+            case .creation, .duplication:
+                includesCancel = true
+            }
+            self.setEditingNavigationBarButtons(isSaving: state.isSaving, includesCancel: includesCancel)
         } else {
             self.setPreviewNavigationBarButtons(attachmentButtonState: self.mainAttachmentButtonState(from: state))
         }
@@ -321,7 +329,7 @@ final class ItemDetailViewController: UIViewController {
         return items
     }
 
-    private func setEditingNavigationBarButtons(isSaving: Bool) {
+    private func setEditingNavigationBarButtons(isSaving: Bool, includesCancel: Bool) {
         self.navigationItem.setHidesBackButton(true, animated: false)
 
         let saveButton: UIBarButtonItem
@@ -330,21 +338,23 @@ final class ItemDetailViewController: UIViewController {
             indicator.color = .gray
             saveButton = UIBarButtonItem(customView: indicator)
         } else {
-            saveButton = UIBarButtonItem(title: L10n.save, style: .plain, target: nil, action: nil)
+            saveButton = UIBarButtonItem(systemItem: .done)
             saveButton.rx.tap.subscribe(onNext: { [weak self] _ in
-                                 self?.viewModel.process(action: .save)
+                                 self?.viewModel.process(action: .endEditing)
                              })
                              .disposed(by: self.disposeBag)
         }
         self.navigationItem.rightBarButtonItem = saveButton
 
-        let cancelButton = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
-        cancelButton.isEnabled = !isSaving
-        cancelButton.rx.tap.subscribe(onNext: { [weak self] _ in
-                               self?.cancelEditing()
-                           })
-                           .disposed(by: self.disposeBag)
-        self.navigationItem.leftBarButtonItem = cancelButton
+        if includesCancel {
+            let cancelButton = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
+            cancelButton.isEnabled = !isSaving
+            cancelButton.rx.tap.subscribe(onNext: { [weak self] _ in
+                self?.cancelEditing()
+            })
+            .disposed(by: self.disposeBag)
+            self.navigationItem.leftBarButtonItem = cancelButton
+        }
     }
 
     // MARK: - Actions
