@@ -90,8 +90,47 @@ final class AnnotationView: UIView {
     
     // MARK: - Setups
     
-    func setup(with annotation: HtmlEpubAnnotation, comment: Comment?, selected: Bool, availableWidth: CGFloat, library: Library, currentUserId: Int, displayName: String, username: String) {
-        
+    func setup(with annotation: HtmlEpubAnnotation, comment: Comment?, selected: Bool, availableWidth: CGFloat, library: Library, currentUserId: Int) {
+        let editability = AnnotationEditability.editable//annotation.editability(currentUserId: currentUserId, library: library)
+        let color = UIColor(hex: annotation.color)
+        let canEdit = editability == .editable && selected
+
+        self.header.setup(
+            type: annotation.type,
+            authorName: annotation.author,
+            pageLabel: annotation.pageLabel,
+            colorHex: annotation.color,
+            libraryId: library.identifier,
+            shareMenuProvider: { _ in
+//                pdfAnnotationsCoordinatorDelegate.createShareAnnotationMenu(state: state, annotation: annotation, sender: button)
+                return nil
+            },
+            isEditable: (editability != .notEditable && selected),
+            showsLock: editability != .editable,
+            accessibilityType: .cell
+        )
+        self.setupContent(
+            type: annotation.type,
+            comment: annotation.comment,
+            text: annotation.text,
+            color: color,
+            canEdit: canEdit,
+            selected: selected,
+            availableWidth: availableWidth,
+            accessibilityType: .cell
+        )
+        self.setup(comment: comment, canEdit: canEdit)
+        self.setup(tags: annotation.tags, canEdit: canEdit, accessibilityEnabled: selected)
+        self.setupObserving()
+
+        let commentButtonIsHidden = self.commentTextView.isHidden
+        let highlightContentIsHidden = self.highlightContent?.isHidden ?? true
+        let imageContentIsHidden = self.imageContent?.isHidden ?? true
+
+        // Top separator is hidden only if there is only header visible and nothing else
+        self.topSeparator.isHidden = self.commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden && self.tags.isHidden && self.tagsButton.isHidden
+        // Bottom separator is visible, when tags are showing (either actual tags or tags button) and there is something visible above them (other than header, either content or comments/comments button)
+        self.bottomSeparator.isHidden = (self.tags.isHidden && self.tagsButton.isHidden) || (self.commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden)
     }
 
     /// Setups up annotation view with given annotation and additional data.
@@ -122,16 +161,17 @@ final class AnnotationView: UIView {
         let canEdit = editability == .editable && selected
 
         self.header.setup(
-            with: annotation,
+            type: annotation.type,
+            authorName: annotation.author(displayName: displayName, username: username),
+            pageLabel: annotation.pageLabel,
+            colorHex: annotation.color,
             libraryId: library.identifier,
             shareMenuProvider: { button in
                 pdfAnnotationsCoordinatorDelegate.createShareAnnotationMenu(state: state, annotation: annotation, sender: button)
             },
             isEditable: (editability != .notEditable && selected),
             showsLock: editability != .editable,
-            accessibilityType: .cell,
-            displayName: displayName,
-            username: username
+            accessibilityType: .cell
         )
         self.setupContent(
             for: annotation,
@@ -144,7 +184,7 @@ final class AnnotationView: UIView {
             boundingBoxConverter: boundingBoxConverter
         )
         self.setup(comment: comment, canEdit: canEdit)
-        self.setupTags(for: annotation, canEdit: canEdit, accessibilityEnabled: selected)
+        self.setup(tags: annotation.tags, canEdit: canEdit, accessibilityEnabled: selected)
         self.setupObserving()
 
         let commentButtonIsHidden = self.commentTextView.isHidden
@@ -157,13 +197,29 @@ final class AnnotationView: UIView {
         self.bottomSeparator.isHidden = (self.tags.isHidden && self.tagsButton.isHidden) || (self.commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden)
     }
 
+    private func setupContent(type: AnnotationType, comment: String, text: String?, color: UIColor, canEdit: Bool, selected: Bool, availableWidth: CGFloat, accessibilityType: AccessibilityType) {
+        guard let highlightContent = self.highlightContent else { return }
+
+        highlightContent.isUserInteractionEnabled = false
+        highlightContent.isHidden = type != .highlight
+
+        switch type {
+        case .highlight:
+            let bottomInset = self.inset(from: self.layout.highlightLineVerticalInsets, hasComment: !comment.isEmpty, selected: selected, canEdit: canEdit)
+            highlightContent.setup(with: color, text: (text ?? ""), bottomInset: bottomInset, accessibilityType: accessibilityType)
+
+        case .image, .ink, .note:
+            break
+        }
+    }
+
     private func setupContent(
         for annotation: PdfAnnotation,
         preview: UIImage?,
         color: UIColor,
         canEdit: Bool,
         selected: Bool,
-        availableWidth: CGFloat, 
+        availableWidth: CGFloat,
         accessibilityType: AccessibilityType,
         boundingBoxConverter: AnnotationBoundingBoxConverter
     ) {
@@ -231,8 +287,8 @@ final class AnnotationView: UIView {
         }
     }
 
-    private func setupTags(for annotation: PdfAnnotation, canEdit: Bool, accessibilityEnabled: Bool) {
-        guard !annotation.tags.isEmpty else {
+    private func setup(tags: [Tag], canEdit: Bool, accessibilityEnabled: Bool) {
+        guard !tags.isEmpty else {
             self.tagsButton.isHidden = !canEdit
             self.tagsButton.accessibilityLabel = L10n.Pdf.AnnotationsSidebar.addTags
             self.tagsButton.isAccessibilityElement = true
@@ -240,7 +296,7 @@ final class AnnotationView: UIView {
             return
         }
 
-        let tagString = AnnotationView.attributedString(from: annotation.tags, layout: self.layout)
+        let tagString = AnnotationView.attributedString(from: tags, layout: self.layout)
         self.tags.setup(with: tagString)
 
         self.tagsButton.isHidden = true

@@ -9,8 +9,11 @@
 import Foundation
 
 enum HtmlEpubReaderAction {
+    case deselectSelectedAnnotation
     case loadDocument
+    case parseAndCacheComment(key: String, comment: String)
     case saveAnnotations([String: Any])
-    case selectAnnotations([String: Any])
+    case selectAnnotation(String)
+    case selectAnnotationFromDocument([String: Any])
     case toggleTool(AnnotationTool)
 }

@@ -145,7 +145,7 @@ class HtmlEpubDocumentViewController: UIViewController {
                 self.viewModel.process(action: .saveAnnotations(params))
 
             case "onSelectAnnotations":
-                self.viewModel.process(action: .selectAnnotations(params))
+                self.viewModel.process(action: .selectAnnotationFromDocument(params))
 
             default:
                 break

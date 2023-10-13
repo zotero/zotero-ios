@@ -32,6 +32,7 @@ class HtmlEpubSidebarViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        self.view.backgroundColor = .systemGray6
         setupViews()
         setupDataSource()
         setupObserving()
@@ -66,12 +67,12 @@ class HtmlEpubSidebarViewController: UIViewController {
         }
 
         func setupDataSource() {
-            self.dataSource = TableViewDiffableDataSource(tableView: self.tableView, cellProvider: { [weak self] tableView, indexPath, _ in
+            self.dataSource = TableViewDiffableDataSource(tableView: self.tableView, cellProvider: { [weak self] tableView, indexPath, annotation in
                 let cell = tableView.dequeueReusableCell(withIdentifier: Self.cellId, for: indexPath)
 
                 if let self, let cell = cell as? AnnotationCell {
                     cell.contentView.backgroundColor = self.view.backgroundColor
-//                    self.setup(cell: cell, with: annotation, state: self.viewModel.state)
+                    setup(cell: cell, with: annotation, state: self.viewModel.state)
                 }
 
                 return cell
@@ -84,6 +85,39 @@ class HtmlEpubSidebarViewController: UIViewController {
 //                guard let self, let key = self.dataSource.itemIdentifier(for: indexPath) else { return }
 //                self.viewModel.process(action: .removeAnnotation(key))
 //            }
+        }
+
+        func setup(cell: AnnotationCell, with annotation: HtmlEpubAnnotation, state: HtmlEpubReaderState) {
+            let selected = annotation.key == state.selectedAnnotationKey
+            let comment = AnnotationView.Comment(attributedString: loadAttributedComment(for: annotation), isActive: state.selectedAnnotationCommentActive)
+
+            cell.setup(
+                with: annotation,
+                comment: comment,
+                selected: selected,
+                availableWidth: PDFReaderLayout.sidebarWidth,
+                library: state.library,
+                isEditing: false,
+                currentUserId: state.userId,
+                state: state
+            )
+    //        let actionSubscription = cell.actionPublisher.subscribe(onNext: { [weak self] action in
+    //            self?.perform(action: action, annotation: annotation)
+    //        })
+    //        _ = cell.disposeBag.insert(actionSubscription)
+        }
+        
+        func loadAttributedComment(for annotation: HtmlEpubAnnotation) -> NSAttributedString? {
+            let comment = annotation.comment
+
+            guard !comment.isEmpty else { return nil }
+
+            if let attributedComment = self.viewModel.state.comments[annotation.key] {
+                return attributedComment
+            }
+
+            self.viewModel.process(action: .parseAndCacheComment(key: annotation.key, comment: comment))
+            return self.viewModel.state.comments[annotation.key]
         }
     }
 
@@ -107,12 +141,12 @@ extension HtmlEpubSidebarViewController: UITableViewDelegate {
 //        if self.viewModel.state.sidebarEditingEnabled {
 //            self.viewModel.process(action: .selectAnnotationDuringEditing(key))
 //        } else {
-//            self.viewModel.process(action: .selectAnnotation(key))
+        self.viewModel.process(action: .selectAnnotation(annotation.key))
 //        }
     }
 //    func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
 //        guard let annotation = self.dataSource.itemIdentifier(for: indexPath) else { return }
-//        self.viewModel.process(action: .deselectAnnotationDuringEditing(key))
+//        self.viewModel.process(action: .deselectAnnotationDuringEditing(annotation.key))
 //    }
     func tableView(_ tableView: UITableView, shouldBeginMultipleSelectionInteractionAt indexPath: IndexPath) -> Bool {
         return tableView.isEditing

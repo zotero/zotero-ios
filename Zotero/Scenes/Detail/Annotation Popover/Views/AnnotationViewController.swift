@@ -94,16 +94,17 @@ final class AnnotationViewController: UIViewController {
         // Update header
         let editability = annotation.editability(currentUserId: state.userId, library: state.library)
         self.header.setup(
-            with: annotation,
+            type: annotation.type,
+            authorName: annotation.author(displayName: state.displayName, username: state.username),
+            pageLabel: annotation.pageLabel,
+            colorHex: annotation.color,
             libraryId: state.library.identifier,
             shareMenuProvider: { [weak self] button in
                 self?.createShareAnnotationMenu(sender: button)
             },
             isEditable: (editability == .editable),
             showsLock: (editability != .editable),
-            accessibilityType: .view,
-            displayName: state.displayName,
-            username: state.username
+            accessibilityType: .view
         )
 
         // Update selected color
@@ -177,16 +178,17 @@ final class AnnotationViewController: UIViewController {
         let header = AnnotationViewHeader(layout: layout)
         let editability = annotation.editability(currentUserId: self.viewModel.state.userId, library: self.viewModel.state.library)
         header.setup(
-            with: annotation,
+            type: annotation.type,
+            authorName: annotation.author(displayName: self.viewModel.state.displayName, username: self.viewModel.state.username),
+            pageLabel: annotation.pageLabel,
+            colorHex: annotation.color,
             libraryId: self.viewModel.state.library.identifier,
             shareMenuProvider: { [weak self] button in
                 self?.createShareAnnotationMenu(sender: button)
             },
             isEditable: (editability == .editable),
             showsLock: (editability != .editable),
-            accessibilityType: .view,
-            displayName: self.viewModel.state.displayName,
-            username: self.viewModel.state.username
+            accessibilityType: .view
         )
         header.menuTap
               .subscribe(with: self, onNext: { `self`, _ in

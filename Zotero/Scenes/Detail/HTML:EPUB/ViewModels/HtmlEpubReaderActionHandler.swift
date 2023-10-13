@@ -6,7 +6,7 @@
 //  Copyright © 2023 Corporation for Digital Scholarship. All rights reserved.
 //
 
-import Foundation
+import UIKit
 
 import CocoaLumberjackSwift
 
@@ -15,12 +15,14 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
     typealias State = HtmlEpubReaderState
 
     unowned let dbStorage: DbStorage
-    unowned let schemaController: SchemaController
+    private unowned let schemaController: SchemaController
+    private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
     let backgroundQueue: DispatchQueue
 
-    init(dbStorage: DbStorage, schemaController: SchemaController) {
+    init(dbStorage: DbStorage, schemaController: SchemaController, htmlAttributedStringConverter: HtmlAttributedStringConverter) {
         self.dbStorage = dbStorage
         self.schemaController = schemaController
+        self.htmlAttributedStringConverter = htmlAttributedStringConverter
         self.backgroundQueue = DispatchQueue(label: "org.zotero.Zotero.HtmlEpubReaderActionHandler.queue", qos: .userInteractive)
     }
 
@@ -35,12 +37,67 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         case .saveAnnotations(let params):
             saveAnnotations(params: params, in: viewModel)
 
-        case .selectAnnotations(let params):
-            selectAnnotations(params: params, in: viewModel)
+        case .selectAnnotation(let key):
+            select(key: key, didSelectInDocument: false, in: viewModel)
+
+        case .selectAnnotationFromDocument(let params):
+            guard let key = (params["ids"] as? [String])?.first else { return }
+            select(key: key, didSelectInDocument: true, in: viewModel)
+
+        case .deselectSelectedAnnotation:
+            select(key: nil, didSelectInDocument: false, in: viewModel)
+
+        case .parseAndCacheComment(key: let key, comment: let comment):
+            self.update(viewModel: viewModel, notifyListeners: false) { state in
+                state.comments[key] = self.htmlAttributedStringConverter.convert(text: comment, baseAttributes: [.font: viewModel.state.commentFont])
+            }
         }
     }
 
-    private func selectAnnotations(params: [String: Any], in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+    private func select(key: String?, didSelectInDocument: Bool, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            self._select(key: key, didSelectInDocument: didSelectInDocument, state: &state)
+        }
+    }
+
+    private func _select(key: String?, didSelectInDocument: Bool, state: inout HtmlEpubReaderState) {
+        guard key != state.selectedAnnotationKey else { return }
+
+        if let existing = state.selectedAnnotationKey {
+            add(updatedAnnotationKey: existing, state: &state)
+
+            if state.selectedAnnotationCommentActive {
+                state.selectedAnnotationCommentActive = false
+                state.changes.insert(.activeComment)
+            }
+        }
+
+        state.changes.insert(.selection)
+
+        guard let key = key else {
+            state.selectedAnnotationKey = nil
+            return
+        }
+
+        state.selectedAnnotationKey = key
+
+        if !didSelectInDocument {
+//            if let boundingBoxConverter = self.delegate, let annotation = state.annotation(for: key) {
+//                state.focusDocumentLocation = (annotation.page, annotation.boundingBox(boundingBoxConverter: boundingBoxConverter))
+//            }
+        } else {
+            state.focusSidebarKey = key
+        }
+
+        add(updatedAnnotationKey: key, state: &state)
+
+        func add(updatedAnnotationKey key: String, state: inout HtmlEpubReaderState) {
+            if state.annotations.contains(where: { $0.key == key }) {
+                var updatedAnnotationKeys = state.updatedAnnotationKeys ?? []
+                updatedAnnotationKeys.append(key)
+                state.updatedAnnotationKeys = updatedAnnotationKeys
+            }
+        }
     }
 
     private func saveAnnotations(params: [String: Any], in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {

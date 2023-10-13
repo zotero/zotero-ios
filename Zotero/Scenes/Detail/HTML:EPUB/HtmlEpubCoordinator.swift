@@ -52,8 +52,7 @@ final class HtmlEpubCoordinator: Coordinator {
               let parentNavigationController = self.parentCoordinator?.navigationController
         else { return }
 
-        let settings = Defaults.shared.pdfSettings
-        let handler = HtmlEpubReaderActionHandler(dbStorage: dbStorage, schemaController: controllers.schemaController)
+        let handler = HtmlEpubReaderActionHandler(dbStorage: dbStorage, schemaController: controllers.schemaController, htmlAttributedStringConverter: controllers.htmlAttributedStringConverter)
         let state = HtmlEpubReaderState(url: url, key: key, library: library, userId: userId, username: username)
         let controller = HtmlEpubReaderViewController(
             viewModel: ViewModel(initialState: state, handler: handler),

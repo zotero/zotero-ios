@@ -116,21 +116,22 @@ final class AnnotationViewHeader: UIView {
     }
 
     func setup(
-        with annotation: PdfAnnotation,
+        type: AnnotationType,
+        authorName: String,
+        pageLabel: String,
+        colorHex: String,
         libraryId: LibraryIdentifier,
         shareMenuProvider: @escaping ((UIButton) -> UIMenu?),
         isEditable: Bool,
         showsLock: Bool,
-        accessibilityType: AnnotationView.AccessibilityType,
-        displayName: String,
-        username: String
+        accessibilityType: AnnotationView.AccessibilityType
     ) {
-        let color = UIColor(hex: annotation.color)
-        let author = libraryId == .custom(.myLibrary) ? "" : annotation.author(displayName: displayName, username: username)
+        let color = UIColor(hex: colorHex)
+        let author = libraryId == .custom(.myLibrary) ? "" : authorName
         self.setup(
-            type: annotation.type,
+            type: type,
             color: color,
-            pageLabel: annotation.pageLabel,
+            pageLabel: pageLabel,
             author: author,
             shareMenu: shareMenuProvider(shareButton),
             showsMenuButton: isEditable,

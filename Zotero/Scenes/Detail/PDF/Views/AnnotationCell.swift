@@ -84,6 +84,43 @@ final class AnnotationCell: UITableViewCell {
     }
 
     func setup(
+        with annotation: HtmlEpubAnnotation,
+        comment: AnnotationView.Comment?,
+        selected: Bool,
+        availableWidth: CGFloat,
+        library: Library,
+        isEditing: Bool,
+        currentUserId: Int,
+        state: HtmlEpubReaderState
+    ) {
+        if !selected {
+            self.annotationView.resignFirstResponder()
+        }
+
+        self.key = annotation.key
+        self.selectionView.layer.borderWidth = selected ? PDFReaderLayout.cellSelectionLineWidth : 0
+        let availableWidth = availableWidth - (PDFReaderLayout.annotationLayout.horizontalInset * 2)
+        self.annotationView.setup(
+            with: annotation,
+            comment: comment,
+            selected: selected,
+            availableWidth: availableWidth,
+            library: library,
+            currentUserId: currentUserId
+        )
+
+        self.setupAccessibility(
+            isAuthor: annotation.isAuthor,
+            authorName: annotation.author,
+            type: annotation.type,
+            pageLabel: annotation.pageLabel,
+            text: annotation.text,
+            comment: annotation.comment,
+            selected: selected
+        )
+    }
+
+    func setup(
         with annotation: PdfAnnotation,
         comment: AnnotationView.Comment?,
         preview: UIImage?,
@@ -120,21 +157,26 @@ final class AnnotationCell: UITableViewCell {
             state: state
         )
 
-        self.setupAccessibility(for: annotation, selected: selected, currentUserId: currentUserId, displayName: displayName, username: username)
+        self.setupAccessibility(
+            isAuthor: annotation.isAuthor(currentUserId: currentUserId),
+            authorName: annotation.author(displayName: displayName, username: username),
+            type: annotation.type,
+            pageLabel: annotation.pageLabel,
+            text: annotation.text,
+            comment: annotation.comment,
+            selected: selected
+        )
     }
 
-    private func setupAccessibility(for annotation: PdfAnnotation, selected: Bool, currentUserId: Int, displayName: String, username: String) {
-        let author = annotation.isAuthor(currentUserId: currentUserId) ? nil : annotation.author(displayName: displayName, username: username)
-
-        var label = self.accessibilityLabel(for: annotation.type, pageLabel: annotation.pageLabel, author: author)
-
-        if let text = annotation.text {
+    private func setupAccessibility(isAuthor: Bool, authorName: String, type: AnnotationType, pageLabel: String, text: String?, comment: String, selected: Bool) {
+        let author = isAuthor ? nil : authorName
+        var label = self.accessibilityLabel(for: type, pageLabel: pageLabel, author: author)
+        if let text {
             label += ", " + L10n.Accessibility.Pdf.highlightedText + ": " + text
         }
-
         if !selected {
-            if !annotation.comment.isEmpty {
-                label += ", " + L10n.Accessibility.Pdf.comment + ": " + annotation.comment
+            if !comment.isEmpty {
+                label += ", " + L10n.Accessibility.Pdf.comment + ": " + comment
             }
             if let tags = self.annotationView.tagString, !tags.isEmpty {
                 label += ", " + L10n.Accessibility.Pdf.tags + ": " + tags
