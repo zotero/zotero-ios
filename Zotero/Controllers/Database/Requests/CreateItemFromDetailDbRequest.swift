@@ -62,6 +62,7 @@ struct CreateItemFromDetailDbRequest: DbResponseRequest {
             guard let creator = self.data.creators[creatorId] else { continue }
 
             let rCreator = RCreator()
+            rCreator.uuid = UUID().uuidString
             rCreator.rawType = creator.type
             rCreator.firstName = creator.firstName
             rCreator.lastName = creator.lastName

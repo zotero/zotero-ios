@@ -822,25 +822,6 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         }
     }
 
-    private func set(title: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        guard let key = self.schemaController.titleKey(for: viewModel.state.data.type) else {
-            DDLogError("ItemDetailActionHandler: schema controller doesn't contain title key for item type \(viewModel.state.data.type)")
-            return
-        }
-
-        self.update(viewModel: viewModel) { state in
-            state.data.title = title
-            state.reload = .row(.title)
-        }
-
-        let keyPair = KeyBaseKeyPair(key: key, baseKey: (key != FieldKeys.Item.title ? FieldKeys.Item.title : nil))
-        let request = EditItemFieldsDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, fieldValues: [keyPair: title], dateParser: dateParser)
-        self.perform(request: request) { error in
-            guard let error else { return }
-            DDLogError("ItemDetailActionHandler: can't store title - \(error)")
-        }
-    }
-
     private func changeType(to newType: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
         let itemData: ItemDetailState.Data
         do {
@@ -951,8 +932,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             key: viewModel.state.key,
             libraryId: viewModel.state.library.identifier,
             type: viewModel.state.data.type,
-            fieldIds: viewModel.state.data.fieldIds,
-            fields: viewModel.state.data.fields,
+            fields: viewModel.state.data.databaseFields(schemaController: schemaController),
             creatorIds: viewModel.state.data.creatorIds,
             creators: viewModel.state.data.creators,
             dateParser: dateParser
@@ -960,6 +940,25 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         self.perform(request: request) { error in
             guard let error else { return }
             DDLogError("ItemDetailActionHandler: can't change type - \(error)")
+        }
+    }
+
+    private func set(title: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        guard let key = self.schemaController.titleKey(for: viewModel.state.data.type) else {
+            DDLogError("ItemDetailActionHandler: schema controller doesn't contain title key for item type \(viewModel.state.data.type)")
+            return
+        }
+
+        self.update(viewModel: viewModel) { state in
+            state.data.title = title
+            state.reload = .row(.title)
+        }
+
+        let keyPair = KeyBaseKeyPair(key: key, baseKey: (key != FieldKeys.Item.title ? FieldKeys.Item.title : nil))
+        let request = EditItemFieldsDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, fieldValues: [keyPair: title], dateParser: dateParser)
+        self.perform(request: request) { error in
+            guard let error else { return }
+            DDLogError("ItemDetailActionHandler: can't store title - \(error)")
         }
     }
 

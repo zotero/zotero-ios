@@ -14,8 +14,7 @@ struct EditTypeItemDetailDbRequest: DbRequest {
     let key: String
     let libraryId: LibraryIdentifier
     let type: String
-    var fieldIds: [String]
-    var fields: [String: ItemDetailState.Field]
+    var fields: [ItemDetailState.Field]
     let creatorIds: [String]
     let creators: [String: ItemDetailState.Creator]
     let dateParser: DateParser
@@ -28,14 +27,14 @@ struct EditTypeItemDetailDbRequest: DbRequest {
         item.rawType = type
 
         var changes: RItemChanges = [.type]
-        update(fieldIds: fieldIds, fields: fields, item: item, changes: &changes, database: database)
+        update(fields: fields, item: item, changes: &changes, database: database)
         update(creatorIds: creatorIds, creators: creators, item: item, changes: &changes, database: database)
         item.changes.append(RObjectChange.create(changes: changes))
     }
 
-    private func update(fieldIds: [String], fields: [String: ItemDetailState.Field], item: RItem, changes: inout RItemChanges, database: Realm) {
+    private func update(fields: [ItemDetailState.Field], item: RItem, changes: inout RItemChanges, database: Realm) {
         // Remove fields which don't exist for this item type
-        let toRemove = item.fields.filter(.key(notIn: fieldIds))
+        let toRemove = item.fields.filter(.key(notIn: fields.map({ $0.key })))
         if !toRemove.isEmpty {
             changes.insert(.fields)
         }
@@ -62,9 +61,9 @@ struct EditTypeItemDetailDbRequest: DbRequest {
         }
         database.delete(toRemove)
 
-        for fieldId in fieldIds {
+        for field in fields {
             // Existing fields should not change, only new ones can be created
-            guard let field = fields[fieldId], item.fields.filter(.key(fieldId)).first == nil else { continue }
+            guard item.fields.filter(.key(field.key)).first == nil else { continue }
 
             let rField = RItemField()
             rField.key = field.key

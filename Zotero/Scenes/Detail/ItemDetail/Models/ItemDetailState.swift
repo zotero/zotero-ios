@@ -159,11 +159,12 @@ struct ItemDetailState: ViewModelState {
         }
 
         func hash(into hasher: inout Hasher) {
-            hasher.combine(self.type)
-            hasher.combine(self.primary)
-            hasher.combine(self.fullName)
-            hasher.combine(self.firstName)
-            hasher.combine(self.lastName)
+            hasher.combine(id)
+            hasher.combine(type)
+            hasher.combine(primary)
+            hasher.combine(fullName)
+            hasher.combine(firstName)
+            hasher.combine(lastName)
         }
     }
 

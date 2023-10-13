@@ -121,6 +121,7 @@ final class CreatorSummaryFormatterSpec: QuickSpec {
         let list: List<RCreator> = List()
         for index in (0..<count) {
             let creator = RCreator()
+            creator.uuid = UUID().uuidString
             creator.rawType = type
             creator.primary = true
             switch namePresentation {

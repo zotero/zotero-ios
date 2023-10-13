@@ -460,6 +460,7 @@ struct StoreItemDbRequest: DbResponseRequest {
             let name = object.name ?? ""
 
             let creator = RCreator()
+            creator.uuid = UUID().uuidString
 
             if validCreators.contains(where: { $0.creatorType == object.creatorType }) {
                 creator.rawType = object.creatorType

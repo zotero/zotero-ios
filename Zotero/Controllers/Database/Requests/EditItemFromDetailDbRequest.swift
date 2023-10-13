@@ -52,6 +52,7 @@ struct EditItemFromDetailDbRequest: DbRequest {
             guard let creator = data.creators[creatorId] else { continue }
 
             let rCreator = RCreator()
+            rCreator.uuid = UUID().uuidString
             rCreator.rawType = creator.type
             rCreator.orderId = offset
             rCreator.primary = creator.primary

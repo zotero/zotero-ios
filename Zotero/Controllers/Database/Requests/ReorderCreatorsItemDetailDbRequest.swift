@@ -22,5 +22,7 @@ struct ReorderCreatorsItemDetailDbRequest: DbRequest {
         for (orderId, uuid) in ids.enumerated() {
             item.creators.filter("uuid == %@", uuid).first?.orderId = orderId
         }
+        item.updateCreatorSummary()
+        item.changes.append(RObjectChange.create(changes: RItemChanges.creators))
     }
 }

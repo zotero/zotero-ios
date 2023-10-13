@@ -28,8 +28,13 @@ final class CreatorEditCoordinator: Coordinator {
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
-    init(creator: ItemDetailState.Creator, itemType: String, saved: @escaping CreatorEditSaveAction, deleted: CreatorEditDeleteAction?,
-         navigationController: NavigationViewController, controllers: Controllers) {
+    init(
+        creator: ItemDetailState.Creator,
+        itemType: String, saved: @escaping CreatorEditSaveAction,
+        deleted: CreatorEditDeleteAction?,
+        navigationController: NavigationViewController,
+        controllers: Controllers
+    ) {
         self.creator = creator
         self.itemType = itemType
         self.saved = saved
