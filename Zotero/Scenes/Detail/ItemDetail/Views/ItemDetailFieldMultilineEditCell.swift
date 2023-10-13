@@ -68,4 +68,9 @@ class ItemDetailFieldMultilineEditCell: UICollectionViewListCell {
             self.contentView.setup(with: configuration.field, titleWidth: configuration.titleWidth)
         }
     }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        (self.contentConfiguration as? ContentConfiguration)?.disposeBag.dispose()
+    }
 }
