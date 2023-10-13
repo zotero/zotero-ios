@@ -288,10 +288,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
     /// - returns: Array of visible sections.
     private func sections(for data: ItemDetailState.Data, isEditing: Bool) -> [Section] {
         if isEditing {
+            // Only "metadata" sections are visible during editing.
             if data.isAttachment {
                 return [.title, .type, .fields, .dates]
             } else {
-                // Each section is visible during editing, except dates section. Dates are filled automatically and the user can't change them manually.
                 return [.title, .type, .creators, .fields, .dates, .abstract]
             }
         }
