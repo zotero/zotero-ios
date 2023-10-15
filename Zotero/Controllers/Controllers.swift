@@ -383,7 +383,7 @@ final class UserControllers {
         self.translatorsAndStylesController = controllers.translatorsAndStylesController
         self.idleTimerController = controllers.idleTimerController
         self.customUrlController = CustomURLController(dbStorage: dbStorage, fileStorage: controllers.fileStorage)
-        openItemsController = OpenItemsController()
+        openItemsController = OpenItemsController(dbStorage: dbStorage, fileStorage: controllers.fileStorage)
         self.lastBuildNumber = controllers.lastBuildNumber
         self.disposeBag = DisposeBag()
     }
