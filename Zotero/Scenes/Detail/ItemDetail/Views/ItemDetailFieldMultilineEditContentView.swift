@@ -8,6 +8,8 @@
 
 import UIKit
 
+import RxSwift
+
 class ItemDetailFieldMultilineEditContentView: UIView {
     @IBOutlet private weak var titleWidth: NSLayoutConstraint!
     @IBOutlet private weak var titleLabel: UILabel!
@@ -19,7 +21,13 @@ class ItemDetailFieldMultilineEditContentView: UIView {
 
     private static let textViewTapAreaOffset: CGFloat = 8
 
-    var textChanged: ((String) -> Void)?
+    private var observer: AnyObserver<String>?
+    var textObservable: Observable<String> {
+        return Observable.create { observer -> Disposable in
+            self.observer = observer
+            return Disposables.create()
+        }
+    }
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -51,6 +59,6 @@ class ItemDetailFieldMultilineEditContentView: UIView {
 
 extension ItemDetailFieldMultilineEditContentView: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
-        self.textChanged?(textView.text)
+        self.observer?.on(.next(textView.text))
     }
 }

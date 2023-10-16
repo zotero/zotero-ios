@@ -23,7 +23,8 @@ struct CreatorEditActionHandler: ViewModelActionHandler {
             switch action {
             case .setType(let type):
                 state.creator.type = type
-                state.creator.localizedType = self.schemaController.localized(creator: type) ?? ""
+                state.creator.localizedType = schemaController.localized(creator: type) ?? ""
+                state.creator.primary = schemaController.creatorIsPrimary(type, itemType: viewModel.state.itemType)
                 state.changes = .type
 
             case .setNamePresentation(let namePresentation):

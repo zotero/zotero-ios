@@ -13,7 +13,7 @@ import RealmSwift
 import Network
 
 struct Database {
-    private static let schemaVersion: UInt64 = 37
+    private static let schemaVersion: UInt64 = 39
 
     static func mainConfiguration(url: URL, fileStorage: FileStorage) -> Realm.Configuration {
         var config = Realm.Configuration(fileURL: url,
@@ -47,6 +47,15 @@ struct Database {
             if schemaVersion < 37 {
                 self.extractItemHtmlFreeContent(migration: migration)
             }
+            if schemaVersion < 39 {
+                self.addUuidsToCreators(migration: migration)
+            }
+        }
+    }
+
+    private static func addUuidsToCreators(migration: Migration) {
+        migration.enumerateObjects(ofType: RCreator.className()) { _, newObject in
+            newObject?["uuid"] = UUID().uuidString
         }
     }
 

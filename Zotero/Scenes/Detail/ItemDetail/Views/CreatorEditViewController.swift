@@ -11,7 +11,7 @@ import UIKit
 import RxSwift
 
 typealias CreatorEditSaveAction = (ItemDetailState.Creator) -> Void
-typealias CreatorEditDeleteAction = (UUID) -> Void
+typealias CreatorEditDeleteAction = (String) -> Void
 
 final class CreatorEditViewController: UIViewController {
     @IBOutlet private weak var typeTitle: UILabel!

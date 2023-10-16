@@ -11,6 +11,7 @@ import Foundation
 import RealmSwift
 
 final class RCreator: EmbeddedObject {
+    @Persisted var uuid: String
     @Persisted var rawType: String
     @Persisted var firstName: String
     @Persisted var lastName: String

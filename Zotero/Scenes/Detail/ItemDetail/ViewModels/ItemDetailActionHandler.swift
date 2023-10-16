@@ -83,10 +83,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         case .deleteCreator(let id):
             self.deleteCreator(with: id, in: viewModel)
 
-        case .moveCreators(let difference):
-            self.update(viewModel: viewModel) { state in
-                state.data.creatorIds = state.data.creatorIds.applying(difference) ?? []
-            }
+        case .moveCreators(let diff):
+            self.moveCreators(diff: diff, in: viewModel)
 
         case .saveNote(let key, let text, let tags):
             self.saveNote(key: key, text: text, tags: tags, in: viewModel)
@@ -100,20 +98,14 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         case .cancelEditing:
             self.cancelChanges(in: viewModel)
 
-        case .save:
-            self.saveChanges(in: viewModel)
+        case .endEditing:
+            self.endEditing(in: viewModel)
 
         case .setTitle(let title):
-            self.update(viewModel: viewModel) { state in
-                state.data.title = title
-                state.reload = .row(.title)
-            }
+            self.set(title: title, in: viewModel)
 
         case .setAbstract(let abstract):
-            self.update(viewModel: viewModel) { state in
-                state.data.abstract = abstract
-                state.reload = .row(.abstract)
-            }
+            self.set(abstract: abstract, in: viewModel)
 
         case .setFieldValue(let id, let value):
             self.setField(value: value, for: id, in: viewModel)
@@ -162,14 +154,26 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             switch viewModel.state.type {
             case .creation(let itemType, let child, let _collectionKey):
                 collectionKey = _collectionKey
-                data = try ItemDetailDataCreator.createData(from: .new(itemType: itemType, child: child), schemaController: self.schemaController, dateParser: self.dateParser,
-                                                            fileStorage: self.fileStorage, urlDetector: self.urlDetector, doiDetector: FieldKeys.Item.isDoi)
+                data = try ItemDetailDataCreator.createData(
+                    from: .new(itemType: itemType, child: child),
+                    schemaController: self.schemaController,
+                    dateParser: self.dateParser,
+                    fileStorage: self.fileStorage,
+                    urlDetector: self.urlDetector,
+                    doiDetector: FieldKeys.Item.isDoi
+                )
 
             case .duplication(let itemKey, let _collectionKey):
                 collectionKey = _collectionKey
                 let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: itemKey), on: .main)
-                data = try ItemDetailDataCreator.createData(from: .existing(item: item, ignoreChildren: true), schemaController: self.schemaController, dateParser: self.dateParser,
-                                                            fileStorage: self.fileStorage, urlDetector: self.urlDetector, doiDetector: FieldKeys.Item.isDoi)
+                data = try ItemDetailDataCreator.createData(
+                    from: .existing(item: item, ignoreChildren: true),
+                    schemaController: self.schemaController,
+                    dateParser: self.dateParser,
+                    fileStorage: self.fileStorage,
+                    urlDetector: self.urlDetector,
+                    doiDetector: FieldKeys.Item.isDoi
+                )
 
             case .preview:
                 self.reloadData(isEditing: viewModel.state.isEditing, in: viewModel)
@@ -183,8 +187,17 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             return
         }
 
-        let request = CreateItemFromDetailDbRequest(key: key, libraryId: libraryId, collectionKey: collectionKey, data: data.data, attachments: data.attachments, notes: data.notes, tags: data.tags,
-                                                    schemaController: self.schemaController, dateParser: self.dateParser)
+        let request = CreateItemFromDetailDbRequest(
+            key: key,
+            libraryId: libraryId,
+            collectionKey: collectionKey,
+            data: data.data,
+            attachments: data.attachments,
+            notes: data.notes,
+            tags: data.tags,
+            schemaController: self.schemaController,
+            dateParser: self.dateParser
+        )
 
         self.perform(request: request, invalidateRealm: true) { [weak viewModel] result in
             guard let viewModel = viewModel else { return }
@@ -211,8 +224,14 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 self.itemChanged(change, in: viewModel)
             }
 
-            var (data, attachments, notes, tags) = try ItemDetailDataCreator.createData(from: .existing(item: item, ignoreChildren: false), schemaController: self.schemaController, dateParser: self.dateParser,
-                                                                                        fileStorage: self.fileStorage, urlDetector: self.urlDetector, doiDetector: FieldKeys.Item.isDoi)
+            var (data, attachments, notes, tags) = try ItemDetailDataCreator.createData(
+                from: .existing(item: item, ignoreChildren: false),
+                schemaController: self.schemaController,
+                dateParser: self.dateParser,
+                fileStorage: self.fileStorage,
+                urlDetector: self.urlDetector,
+                doiDetector: FieldKeys.Item.isDoi
+            )
 
             if !isEditing {
                 data.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: data.fieldIds, fields: data.fields)
@@ -298,127 +317,6 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                     updateState(&state)
                 }
             }
-        }
-    }
-
-    // MARK: - Type
-
-    private func changeType(to newType: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        let data: ItemDetailState.Data
-        do {
-            data = try self.data(for: newType, from: viewModel.state.data)
-        } catch let error {
-            self.update(viewModel: viewModel) { state in
-                state.error = (error as? ItemDetailError) ?? .typeNotSupported(newType)
-            }
-            return
-        }
-
-        let droppedFields = self.droppedFields(from: viewModel.state.data, to: data)
-        self.update(viewModel: viewModel) { state in
-            if droppedFields.isEmpty {
-                state.data = data
-                state.changes.insert(.type)
-            } else {
-                // Notify the user, that some fields with values will be dropped
-                state.promptSnapshot = data
-                state.error = .droppedFields(droppedFields)
-            }
-        }
-    }
-
-    private func droppedFields(from fromData: ItemDetailState.Data, to toData: ItemDetailState.Data) -> [String] {
-        let newFields = Set(toData.fields.values)
-        var subtracted = Set(fromData.fields.values.filter({ !$0.value.isEmpty }))
-        for field in newFields {
-            guard let oldField = subtracted.first(where: { ($0.baseField ?? $0.name) == (field.baseField ?? field.name) }) else { continue }
-            subtracted.remove(oldField)
-        }
-        return subtracted.map({ $0.name }).sorted()
-    }
-
-    private func data(for type: String, from originalData: ItemDetailState.Data) throws -> ItemDetailState.Data {
-        guard let localizedType = self.schemaController.localized(itemType: type) else {
-            throw ItemDetailError.typeNotSupported(type)
-        }
-
-        let (fieldIds, fields, hasAbstract) = try ItemDetailDataCreator.fieldData(for: type,
-                                                                                  schemaController: self.schemaController,
-                                                                                  dateParser: self.dateParser,
-                                                                                  urlDetector: self.urlDetector,
-                                                                                  doiDetector: FieldKeys.Item.isDoi,
-                                                                                  getExistingData: { key, baseField -> (String?, String?) in
-            if let field = originalData.fields[key] {
-                return (field.name, field.value)
-            } else if let base = baseField, let field = originalData.fields.values.first(where: { $0.baseField == base }) {
-                // We don't return existing name, because fields that are matching just by baseField will most likely have different names
-                return (nil, field.value)
-            }
-            return (nil, nil)
-        })
-
-        var data = originalData
-        data.type = type
-        data.isAttachment = type == ItemTypes.attachment
-        data.localizedType = localizedType
-        data.fields = fields
-        data.fieldIds = fieldIds
-        data.abstract = hasAbstract ? (originalData.abstract ?? "") : nil
-        data.creators = try self.creators(for: type, from: originalData.creators)
-        data.creatorIds = originalData.creatorIds
-        return data
-    }
-
-    private func creators(for type: String, from originalData: [UUID: ItemDetailState.Creator]) throws -> [UUID: ItemDetailState.Creator] {
-        guard let schemas = self.schemaController.creators(for: type),
-              let primary = schemas.first(where: { $0.primary }) else { throw ItemDetailError.typeNotSupported(type) }
-
-        var creators = originalData
-        for (key, originalCreator) in originalData {
-            guard !schemas.contains(where: { $0.creatorType == originalCreator.type }) else { continue }
-
-            var creator = originalCreator
-
-            if originalCreator.primary {
-                creator.type = primary.creatorType
-            } else {
-                creator.type = "contributor"
-            }
-            creator.localizedType = self.schemaController.localized(creator: creator.type) ?? ""
-
-            creators[key] = creator
-        }
-
-        return creators
-    }
-
-    private func acceptPrompt(in viewModel: ViewModel<ItemDetailActionHandler>) {
-        self.update(viewModel: viewModel) { state in
-            guard let snapshot = state.promptSnapshot else { return }
-            state.data = snapshot
-            state.changes.insert(.type)
-            state.promptSnapshot = nil
-        }
-    }
-
-    // MARK: - Creators
-
-    private func deleteCreator(with id: UUID, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        guard let index = viewModel.state.data.creatorIds.firstIndex(of: id) else { return }
-        self.update(viewModel: viewModel) { state in
-            state.data.creatorIds.remove(at: index)
-            state.data.creators[id] = nil
-            state.reload = .section(.creators)
-        }
-    }
-
-    private func save(creator: State.Creator, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        self.update(viewModel: viewModel) { state in
-            if !state.data.creatorIds.contains(creator.id) {
-                state.data.creatorIds.append(creator.id)
-            }
-            state.data.creators[creator.id] = creator
-            state.reload = .section(.creators)
         }
     }
 
@@ -760,46 +658,14 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         }
     }
 
-    private func cancelChanges(in viewModel: ViewModel<ItemDetailActionHandler>) {
-        switch viewModel.state.type {
-        case .duplication, .creation:
-            self.perform(request: MarkObjectsAsDeletedDbRequest<RItem>(keys: [viewModel.state.key], libraryId: viewModel.state.library.identifier)) { [weak viewModel] error in
-                guard let viewModel = viewModel else { return }
-
-                if let error = error {
-                    DDLogError("ItemDetailActionHandler: can't remove duplicated/cancelled item - \(error)")
-
-                    self.update(viewModel: viewModel) { state in
-                        state.error = .cantRemoveItem
-                    }
-                    return
-                }
-
-                self.update(viewModel: viewModel) { state in
-                    state.hideController = true
-                }
-            }
-
-        case .preview:
-            guard let snapshot = viewModel.state.snapshot else { return }
-
-            self.update(viewModel: viewModel) { state in
-                state.data = snapshot
-                state.snapshot = nil
-                state.isEditing = false
-                state.changes.insert(.editing)
-            }
-        }
-    }
-
-    private func saveChanges(in viewModel: ViewModel<ItemDetailActionHandler>) {
+    private func endEditing(in viewModel: ViewModel<ItemDetailActionHandler>) {
         guard viewModel.state.snapshot != viewModel.state.data else { return }
 
         self.update(viewModel: viewModel) { state in
             state.isSaving = true
         }
 
-        self.save(state: viewModel.state, queue: self.backgroundQueue)
+        endEditing(state: viewModel.state, queue: self.backgroundQueue)
             .subscribe(on: self.backgroundScheduler)
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak viewModel] newState in
@@ -817,84 +683,300 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 }
             })
             .disposed(by: self.disposeBag)
+
+        func endEditing(state: ItemDetailState, queue: DispatchQueue) -> Single<ItemDetailState> {
+            return Single.create { subscriber -> Disposable in
+                do {
+                    var newState = state
+
+                    var updatedFields: [KeyBaseKeyPair: String] = [:]
+                    if let field = state.data.fields[FieldKeys.Item.accessDate] {
+                        let updated = updated(accessDateField: field, originalField: state.snapshot?.fields[FieldKeys.Item.accessDate])
+                        if updated.value != field.value {
+                            updatedFields[KeyBaseKeyPair(key: updated.key, baseKey: updated.baseField)] = updated.value
+                            newState.data.fields[updated.key] = updated
+                        }
+                    }
+                    if let field = state.data.fields.values.first(where: { $0.baseField == FieldKeys.Item.date || $0.key == FieldKeys.Item.date }),
+                        let updated = updated(dateField: field),
+                        updated.value != field.value {
+                        updatedFields[KeyBaseKeyPair(key: updated.key, baseKey: updated.baseField)] = updated.value
+                        newState.data.fields[updated.key] = updated
+                    }
+
+                    var requests: [DbRequest] = [EndItemDetailEditingDbRequest(libraryId: state.library.identifier, itemKey: state.key)]
+                    if !updatedFields.isEmpty {
+                        requests.insert(EditItemFieldsDbRequest(key: state.key, libraryId: state.library.identifier, fieldValues: updatedFields, dateParser: dateParser), at: 0)
+                    }
+                    try self.dbStorage.perform(writeRequests: requests, on: queue)
+
+                    newState.data.dateModified = Date()
+                    newState.snapshot = nil
+                    newState.data.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: newState.data.fieldIds, fields: newState.data.fields)
+                    newState.isEditing = false
+                    newState.type = .preview(key: newState.key)
+                    newState.changes.insert(.editing)
+
+                    subscriber(.success(newState))
+                } catch let error {
+                    subscriber(.failure(error))
+                }
+                return Disposables.create()
+            }
+        }
+
+        func updated(accessDateField: ItemDetailState.Field, originalField: ItemDetailState.Field?) -> ItemDetailState.Field {
+            var field = accessDateField
+
+            var date: Date?
+            if let _date = parseDateSpecialValue(from: field.value) {
+                date = _date
+            } else if let _date = Formatter.sqlFormat.date(from: field.value) {
+                date = _date
+            }
+
+            if let date = date {
+                field.value = Formatter.iso8601.string(from: date)
+                field.additionalInfo = [.formattedDate: Formatter.dateAndTime.string(from: date), .formattedEditDate: Formatter.sqlFormat.string(from: date)]
+            } else {
+                if let originalField {
+                    field = originalField
+                } else {
+                    field.value = ""
+                    field.additionalInfo = [:]
+                }
+            }
+
+            return field
+        }
+
+        func updated(dateField: ItemDetailState.Field) -> ItemDetailState.Field? {
+            guard let date = parseDateSpecialValue(from: dateField.value) else { return nil }
+            var field = dateField
+            field.value = Formatter.dateWithDashes.string(from: date)
+            if let order = self.dateParser.parse(string: field.value)?.orderWithSpaces {
+                field.additionalInfo?[.dateOrder] = order
+            }
+            return field
+        }
+
+        func parseDateSpecialValue(from value: String) -> Date? {
+            // TODO: - check for current localization
+            switch value.lowercased() {
+            case "tomorrow":
+                return Calendar.current.date(byAdding: .day, value: 1, to: Date())
+            case "today":
+                return Date()
+            case "yesterday":
+                return Calendar.current.date(byAdding: .day, value: -1, to: Date())
+
+            default:
+                return nil
+            }
+        }
     }
 
-    private func save(state: ItemDetailState, queue: DispatchQueue) -> Single<ItemDetailState> {
-        return Single.create { subscriber -> Disposable in
-            do {
-                var newState = state
+    private func cancelChanges(in viewModel: ViewModel<ItemDetailActionHandler>) {
+        switch viewModel.state.type {
+        case .duplication:
+            self.perform(request: DeleteObjectsDbRequest<RItem>(keys: [viewModel.state.key], libraryId: viewModel.state.library.identifier)) { [weak viewModel] error in
+                guard let viewModel = viewModel else { return }
 
-                self.updateDateFieldIfNeeded(in: &newState)
-                self.updateAccessedFieldIfNeeded(in: &newState)
-                newState.data.dateModified = Date()
+                if let error = error {
+                    DDLogError("ItemDetailActionHandler: can't remove duplicated and cancelled item - \(error)")
 
-                if let snapshot = state.snapshot {
-                    let request = EditItemFromDetailDbRequest(libraryId: state.library.identifier, itemKey: newState.key, data: newState.data, snapshot: snapshot, schemaController: self.schemaController, dateParser: self.dateParser)
-                    try self.dbStorage.perform(request: request, on: queue)
+                    self.update(viewModel: viewModel) { state in
+                        state.error = .cantRemoveItem
+                    }
+                    return
                 }
 
-                newState.snapshot = nil
-                newState.data.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: newState.data.fieldIds, fields: newState.data.fields)
-                newState.isEditing = false
-                newState.type = .preview(key: newState.key)
-                newState.changes.insert(.editing)
-
-                subscriber(.success(newState))
-            } catch let error {
-                subscriber(.failure(error))
+                self.update(viewModel: viewModel) { state in
+                    state.hideController = true
+                }
             }
-            return Disposables.create()
+
+        case .creation(_, let child, _):
+            var actions: [DbRequest] = [DeleteObjectsDbRequest<RItem>(keys: [viewModel.state.key], libraryId: viewModel.state.library.identifier)]
+            if let child {
+                actions.insert(CancelParentCreationDbRequest(key: child.key, libraryId: child.libraryId), at: 0)
+            }
+            self.perform(writeRequests: actions) { [weak viewModel] error in
+                guard let viewModel = viewModel else { return }
+
+                if let error = error {
+                    DDLogError("ItemDetailActionHandler: can't remove created and cancelled item - \(error)")
+
+                    self.update(viewModel: viewModel) { state in
+                        state.error = .cantRemoveItem
+                    }
+                    return
+                }
+
+                self.update(viewModel: viewModel) { state in
+                    state.hideController = true
+                }
+            }
+
+        case .preview: break
         }
     }
 
-    private func updateAccessedFieldIfNeeded(in state: inout State) {
-        guard var field = state.data.fields[FieldKeys.Item.accessDate] else { return }
-
-        var date: Date?
-        if let _date = self.parseDateSpecialValue(from: field.value) {
-            date = _date
-        } else if let _date = Formatter.sqlFormat.date(from: field.value) {
-            date = _date
+    private func changeType(to newType: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        let itemData: ItemDetailState.Data
+        do {
+            itemData = try data(for: newType, from: viewModel.state.data)
+        } catch let error {
+            self.update(viewModel: viewModel) { state in
+                state.error = (error as? ItemDetailError) ?? .typeNotSupported(newType)
+            }
+            return
         }
 
-        if let date = date {
-            field.value = Formatter.iso8601.string(from: date)
-            field.additionalInfo = [.formattedDate: Formatter.dateAndTime.string(from: date),
-                                    .formattedEditDate: Formatter.sqlFormat.string(from: date)]
-        } else {
-            if let snapshotField = state.snapshot?.fields[FieldKeys.Item.accessDate] {
-                field = snapshotField
+        let droppedFields = droppedFields(from: viewModel.state.data, to: itemData)
+        self.update(viewModel: viewModel) { state in
+            if droppedFields.isEmpty {
+                state.data = itemData
+                state.changes.insert(.type)
             } else {
-                field.value = ""
-                field.additionalInfo = [:]
+                // Notify the user, that some fields with values will be dropped
+                state.promptSnapshot = itemData
+                state.error = .droppedFields(droppedFields)
             }
         }
 
-        state.data.fields[field.key] = field
-    }
-
-    private func updateDateFieldIfNeeded(in state: inout State) {
-        guard var field = state.data.fields.values.first(where: { $0.baseField == FieldKeys.Item.date || $0.key == FieldKeys.Item.date }),
-              let date = self.parseDateSpecialValue(from: field.value) else { return }
-        field.value = Formatter.dateWithDashes.string(from: date)
-        if let order = self.dateParser.parse(string: field.value)?.orderWithSpaces {
-            field.additionalInfo?[.dateOrder] = order
+        if droppedFields.isEmpty {
+            self.changeTypeInDb(viewModel: viewModel)
         }
-        state.data.fields[field.key] = field
+
+        func droppedFields(from fromData: ItemDetailState.Data, to toData: ItemDetailState.Data) -> [String] {
+            let newFields = Set(toData.fields.values)
+            var subtracted = Set(fromData.fields.values.filter({ !$0.value.isEmpty }))
+            for field in newFields {
+                guard let oldField = subtracted.first(where: { ($0.baseField ?? $0.name) == (field.baseField ?? field.name) }) else { continue }
+                subtracted.remove(oldField)
+            }
+            return subtracted.map({ $0.name }).sorted()
+        }
+
+        func data(for type: String, from originalData: ItemDetailState.Data) throws -> ItemDetailState.Data {
+            guard let localizedType = self.schemaController.localized(itemType: type) else {
+                throw ItemDetailError.typeNotSupported(type)
+            }
+
+            let (fieldIds, fields, hasAbstract) = try ItemDetailDataCreator.fieldData(
+                for: type,
+                schemaController: self.schemaController,
+                dateParser: self.dateParser,
+                urlDetector: self.urlDetector,
+                doiDetector: FieldKeys.Item.isDoi,
+                getExistingData: { key, baseField -> (String?, String?) in
+                    if let field = originalData.fields[key] {
+                        return (field.name, field.value)
+                    } else if let base = baseField, let field = originalData.fields.values.first(where: { $0.baseField == base }) {
+                        // We don't return existing name, because fields that are matching just by baseField will most likely have different names
+                        return (nil, field.value)
+                    }
+                    return (nil, nil)
+                }
+            )
+
+            var data = originalData
+            data.type = type
+            data.isAttachment = type == ItemTypes.attachment
+            data.localizedType = localizedType
+            data.fields = fields
+            data.fieldIds = fieldIds
+            data.abstract = hasAbstract ? (originalData.abstract ?? "") : nil
+            data.creators = try creators(for: type, from: originalData.creators)
+            data.creatorIds = originalData.creatorIds
+            return data
+        }
+
+        func creators(for type: String, from originalData: [String: ItemDetailState.Creator]) throws -> [String: ItemDetailState.Creator] {
+            guard let schemas = self.schemaController.creators(for: type), let primary = schemas.first(where: { $0.primary }) else { throw ItemDetailError.typeNotSupported(type) }
+
+            var creators = originalData
+            for (key, originalCreator) in originalData {
+                guard !schemas.contains(where: { $0.creatorType == originalCreator.type }) else { continue }
+
+                var creator = originalCreator
+
+                if originalCreator.primary {
+                    creator.type = primary.creatorType
+                } else {
+                    creator.type = "contributor"
+                }
+                creator.localizedType = self.schemaController.localized(creator: creator.type) ?? ""
+
+                creators[key] = creator
+            }
+
+            return creators
+        }
     }
 
-    private func parseDateSpecialValue(from value: String) -> Date? {
-        // TODO: - check for current localization
-        switch value.lowercased() {
-        case "tomorrow":
-            return Calendar.current.date(byAdding: .day, value: 1, to: Date())
-        case "today":
-            return Date()
-        case "yesterday":
-            return Calendar.current.date(byAdding: .day, value: -1, to: Date())
+    private func acceptPrompt(in viewModel: ViewModel<ItemDetailActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            guard let snapshot = state.promptSnapshot else { return }
+            state.data = snapshot
+            state.changes.insert(.type)
+            state.promptSnapshot = nil
+        }
 
-        default:
-            return nil
+        self.changeTypeInDb(viewModel: viewModel)
+    }
+
+    private func changeTypeInDb(viewModel: ViewModel<ItemDetailActionHandler>) {
+        let request = EditTypeItemDetailDbRequest(
+            key: viewModel.state.key,
+            libraryId: viewModel.state.library.identifier,
+            type: viewModel.state.data.type,
+            fields: viewModel.state.data.databaseFields(schemaController: schemaController),
+            creatorIds: viewModel.state.data.creatorIds,
+            creators: viewModel.state.data.creators,
+            dateParser: dateParser
+        )
+        self.perform(request: request) { error in
+            guard let error else { return }
+            DDLogError("ItemDetailActionHandler: can't change type - \(error)")
+        }
+    }
+
+    private func set(title: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        guard let key = self.schemaController.titleKey(for: viewModel.state.data.type) else {
+            DDLogError("ItemDetailActionHandler: schema controller doesn't contain title key for item type \(viewModel.state.data.type)")
+            return
+        }
+
+        self.update(viewModel: viewModel) { state in
+            state.data.title = title
+            state.reload = .row(.title)
+        }
+
+        let keyPair = KeyBaseKeyPair(key: key, baseKey: (key != FieldKeys.Item.title ? FieldKeys.Item.title : nil))
+        let request = EditItemFieldsDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, fieldValues: [keyPair: title], dateParser: dateParser)
+        self.perform(request: request) { error in
+            guard let error else { return }
+            DDLogError("ItemDetailActionHandler: can't store title - \(error)")
+        }
+    }
+
+    private func set(abstract: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            state.data.abstract = abstract
+            state.reload = .row(.abstract)
+        }
+
+        let request = EditItemFieldsDbRequest(
+            key: viewModel.state.key,
+            libraryId: viewModel.state.library.identifier,
+            fieldValues: [KeyBaseKeyPair(key: FieldKeys.Item.abstract, baseKey: nil): abstract],
+            dateParser: dateParser
+        )
+        self.perform(request: request) { error in
+            guard let error else { return }
+            DDLogError("ItemDetailActionHandler: can't store abstract - \(error)")
         }
     }
 
@@ -904,8 +986,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         field.value = value
         field.isTappable = ItemDetailDataCreator.isTappable(key: field.key, value: field.value, urlDetector: self.urlDetector, doiDetector: FieldKeys.Item.isDoi)
 
-        if field.key == FieldKeys.Item.date || field.baseField == FieldKeys.Item.date,
-           let order = self.dateParser.parse(string: value)?.orderWithSpaces {
+        if field.key == FieldKeys.Item.date || field.baseField == FieldKeys.Item.date, let order = self.dateParser.parse(string: value)?.orderWithSpaces {
             var info = field.additionalInfo ?? [:]
             info[.dateOrder] = order
             field.additionalInfo = info
@@ -916,6 +997,62 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         self.update(viewModel: viewModel) { state in
             state.data.fields[id] = field
             state.reload = .row(.field(key: field.key, multiline: (field.id == FieldKeys.Item.extra)))
+        }
+
+        let request = EditItemFieldsDbRequest(
+            key: viewModel.state.key,
+            libraryId: viewModel.state.library.identifier,
+            fieldValues: [KeyBaseKeyPair(key: field.key, baseKey: field.baseField): field.value],
+            dateParser: dateParser
+        )
+        self.perform(request: request) { error in
+            guard let error else { return }
+            DDLogError("ItemDetailActionHandler: can't store field \(error)")
+        }
+    }
+
+    private func deleteCreator(with id: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        guard let index = viewModel.state.data.creatorIds.firstIndex(of: id) else { return }
+        
+        self.update(viewModel: viewModel) { state in
+            state.data.creatorIds.remove(at: index)
+            state.data.creators[id] = nil
+            state.reload = .section(.creators)
+        }
+
+        let request = DeleteCreatorItemDetailDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, creatorId: id)
+        self.perform(request: request) { error in
+            guard let error else { return }
+            DDLogError("ItemDetailActionHandler: can't delete creator \(error)")
+        }
+    }
+
+    private func save(creator: State.Creator, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            if !state.data.creatorIds.contains(creator.id) {
+                state.data.creatorIds.append(creator.id)
+            }
+            state.data.creators[creator.id] = creator
+            state.reload = .section(.creators)
+        }
+
+        guard let orderId = viewModel.state.data.creatorIds.firstIndex(of: creator.id) else { return }
+        let request = EditCreatorItemDetailDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, creator: creator, orderId: orderId)
+        self.perform(request: request) { error in
+            guard let error else { return }
+            DDLogError("ItemDetailActionHandler: can't create creator \(error)")
+        }
+    }
+
+    private func moveCreators(diff: CollectionDifference<String>, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            state.data.creatorIds = state.data.creatorIds.applying(diff) ?? []
+        }
+        
+        let request = ReorderCreatorsItemDetailDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, ids: viewModel.state.data.creatorIds)
+        self.perform(request: request) { error in
+            guard let error else { return }
+            DDLogError("ItemDetailActionHandler: can't reorder creators \(error)")
         }
     }
 }

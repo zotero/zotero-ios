@@ -32,6 +32,7 @@ struct EditItemFromDetailDbRequest: DbRequest {
             changes.insert(.type)
         }
         item.dateModified = self.data.dateModified
+        item.changesSyncPaused = false
 
         self.updateCreators(with: self.data, snapshot: self.snapshot, item: item, changes: &changes, database: database)
         self.updateFields(with: self.data, snapshot: self.snapshot, item: item, changes: &changes, typeChanged: typeChanged, database: database)
@@ -51,6 +52,7 @@ struct EditItemFromDetailDbRequest: DbRequest {
             guard let creator = data.creators[creatorId] else { continue }
 
             let rCreator = RCreator()
+            rCreator.uuid = UUID().uuidString
             rCreator.rawType = creator.type
             rCreator.orderId = offset
             rCreator.primary = creator.primary
@@ -86,7 +88,7 @@ struct EditItemFromDetailDbRequest: DbRequest {
 
             toRemove.forEach { field in
                 if field.key == FieldKeys.Item.date {
-                    item.setDateFieldMetadata(nil, parser: self.dateParser)
+                    item.clearDateFieldMedatada()
                 } else if field.key == FieldKeys.Item.publisher || field.baseKey == FieldKeys.Item.publisher {
                     item.set(publisher: nil)
                 } else if field.key == FieldKeys.Item.publicationTitle || field.baseKey == FieldKeys.Item.publicationTitle {

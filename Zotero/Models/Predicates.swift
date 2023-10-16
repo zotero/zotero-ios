@@ -144,6 +144,10 @@ extension NSPredicate {
         return NSPredicate(format: "changes.@count = 0")
     }
 
+    static var changesNotPaused: NSPredicate {
+        return NSPredicate(format: "changesSyncPaused == false")
+    }
+
     static var attachmentChanged: NSPredicate {
         return NSPredicate(format: "attachmentNeedsSync = true")
     }
@@ -159,7 +163,7 @@ extension NSPredicate {
 
     static var itemUserChanges: NSPredicate {
         let changed = NSCompoundPredicate(orPredicateWithSubpredicates: [.changed, .attachmentChanged, .deleted(true)])
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [.changedByUser, changed])
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.changedByUser, changed, .changesNotPaused])
     }
 
     static var pageIndexUserChanges: NSPredicate {

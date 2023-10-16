@@ -24,14 +24,28 @@ struct ItemDetailDataCreator {
     /// - parameter urlDetector: URL detector.
     /// - parameter doiDetector: DOI detector.
     /// - returns: Populated data for given type.
-    static func createData(from type: Kind, schemaController: SchemaController, dateParser: DateParser, fileStorage: FileStorage, urlDetector: UrlDetector, doiDetector: (String) -> Bool)
-                                                                                                                                        throws -> (ItemDetailState.Data, [Attachment], [Note], [Tag]) {
+    static func createData(
+        from type: Kind,
+        schemaController: SchemaController,
+        dateParser: DateParser,
+        fileStorage: FileStorage,
+        urlDetector: UrlDetector,
+        doiDetector: (String) -> Bool
+    ) throws -> (ItemDetailState.Data, [Attachment], [Note], [Tag]) {
         switch type {
         case .new(let itemType, let child):
             return try creationData(itemType: itemType, child: child, schemaController: schemaController, dateParser: dateParser, urlDetector: urlDetector, doiDetector: doiDetector)
 
         case .existing(let item, let ignoreChildren):
-            return try itemData(item: item, ignoreChildren: ignoreChildren, schemaController: schemaController, dateParser: dateParser, fileStorage: fileStorage, urlDetector: urlDetector, doiDetector: doiDetector)
+            return try itemData(
+                item: item,
+                ignoreChildren: ignoreChildren,
+                schemaController: schemaController,
+                dateParser: dateParser,
+                fileStorage: fileStorage,
+                urlDetector: urlDetector,
+                doiDetector: doiDetector
+            )
         }
     }
 
@@ -52,17 +66,19 @@ struct ItemDetailDataCreator {
         let (fieldIds, fields, hasAbstract) = try fieldData(for: itemType, schemaController: schemaController, dateParser: dateParser, urlDetector: urlDetector, doiDetector: doiDetector)
         let date = Date()
         let attachments: [Attachment] = child.flatMap({ [$0] }) ?? []
-        let data = ItemDetailState.Data(title: "",
-                                        type: itemType,
-                                        isAttachment: (itemType == ItemTypes.attachment),
-                                        localizedType: localizedType,
-                                        creators: [:],
-                                        creatorIds: [],
-                                        fields: fields,
-                                        fieldIds: fieldIds,
-                                        abstract: (hasAbstract ? "" : nil),
-                                        dateModified: date,
-                                        dateAdded: date)
+        let data = ItemDetailState.Data(
+            title: "",
+            type: itemType,
+            isAttachment: (itemType == ItemTypes.attachment),
+            localizedType: localizedType,
+            creators: [:],
+            creatorIds: [],
+            fields: fields,
+            fieldIds: fieldIds,
+            abstract: (hasAbstract ? "" : nil),
+            dateModified: date,
+            dateAdded: date
+        )
 
         return (data, attachments, [], [])
     }
@@ -76,8 +92,15 @@ struct ItemDetailDataCreator {
     /// - parameter urlDetector: URL detector.
     /// - parameter doiDetector: DOI detector.
     /// - returns: Data for item detail state.
-    private static func itemData(item: RItem, ignoreChildren: Bool, schemaController: SchemaController, dateParser: DateParser, fileStorage: FileStorage, urlDetector: UrlDetector, doiDetector: (String) -> Bool)
-                                                                                                                                        throws -> (ItemDetailState.Data, [Attachment], [Note], [Tag]) {
+    private static func itemData(
+        item: RItem,
+        ignoreChildren: Bool,
+        schemaController: SchemaController,
+        dateParser: DateParser,
+        fileStorage: FileStorage,
+        urlDetector: UrlDetector,
+        doiDetector: (String) -> Bool
+    ) throws -> (ItemDetailState.Data, [Attachment], [Note], [Tag]) {
         guard let localizedType = schemaController.localized(itemType: item.rawType) else {
             throw ItemDetailError.typeNotSupported(item.rawType)
         }
@@ -100,17 +123,20 @@ struct ItemDetailDataCreator {
             return (nil, values[key])
         })
 
-        var creatorIds: [UUID] = []
-        var creators: [UUID: ItemDetailState.Creator] = [:]
+        var creatorIds: [String] = []
+        var creators: [String: ItemDetailState.Creator] = [:]
         for creator in item.creators.sorted(byKeyPath: "orderId") {
             guard let localizedType = schemaController.localized(creator: creator.rawType) else { continue }
 
-            let creator = ItemDetailState.Creator(firstName: creator.firstName,
-                                                  lastName: creator.lastName,
-                                                  fullName: creator.name,
-                                                  type: creator.rawType,
-                                                  primary: schemaController.creatorIsPrimary(creator.rawType, itemType: item.rawType),
-                                                  localizedType: localizedType)
+            let creator = ItemDetailState.Creator(
+                uuid: creator.uuid,
+                firstName: creator.firstName,
+                lastName: creator.lastName,
+                fullName: creator.name,
+                type: creator.rawType,
+                primary: schemaController.creatorIsPrimary(creator.rawType, itemType: item.rawType),
+                localizedType: localizedType
+            )
             creatorIds.append(creator.id)
             creators[creator.id] = creator
         }
@@ -166,8 +192,14 @@ struct ItemDetailDataCreator {
     /// - parameter getExistingData: Closure for getting available data for given field. It passes the field key and baseField and receives existing
     ///                              field name and value if available.
     /// - returns: Tuple with 3 values: field keys of new fields, actual fields, `Bool` indicating whether this item type contains an abstract.
-    static func fieldData(for itemType: String, schemaController: SchemaController, dateParser: DateParser, urlDetector: UrlDetector, doiDetector: (String) -> Bool,
-                          getExistingData: ((String, String?) -> (String?, String?))? = nil) throws -> ([String], [String: ItemDetailState.Field], Bool) {
+    static func fieldData(
+        for itemType: String,
+        schemaController: SchemaController,
+        dateParser: DateParser,
+        urlDetector: UrlDetector,
+        doiDetector: (String) -> Bool,
+        getExistingData: ((String, String?) -> (String?, String?))? = nil
+    ) throws -> ([String], [String: ItemDetailState.Field], Bool) {
         guard var fieldSchemas = schemaController.fields(for: itemType) else {
             throw ItemDetailError.typeNotSupported(itemType)
         }

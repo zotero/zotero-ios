@@ -360,6 +360,7 @@ final class ItemTitleFormatterSpec: QuickSpec {
         let count = creators.count
         for index in (0..<count) {
             let creator = RCreator()
+            creator.uuid = UUID().uuidString
             creator.rawType = creators[index].type
             creator.primary = creators[index].isPrimary
             switch creators[index].namePresentation {

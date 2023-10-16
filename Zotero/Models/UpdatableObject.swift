@@ -179,7 +179,7 @@ extension RItem: Updatable {
             parameters["parentItem"] = self.parent?.key ?? false
         }
         if changes.contains(.creators) {
-            parameters["creators"] = Array(self.creators.map({ $0.updateParameters }))
+            parameters["creators"] = Array(self.creators.sorted(byKeyPath: "orderId").map({ $0.updateParameters }))
         }
         if changes.contains(.fields) {
             for field in self.fields.filter("changed = true") {

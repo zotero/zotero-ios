@@ -70,6 +70,7 @@ struct ItemDetailState: ViewModelState {
             }
         }
 
+        let id: String
         var type: String
         var primary: Bool
         var localizedType: String
@@ -108,10 +109,8 @@ struct ItemDetailState: ViewModelState {
             }
         }
 
-        let id: UUID
-
-        init(firstName: String, lastName: String, fullName: String, type: String, primary: Bool, localizedType: String) {
-            self.id = UUID()
+        init(uuid: String, firstName: String, lastName: String, fullName: String, type: String, primary: Bool, localizedType: String) {
+            self.id = uuid
             self.type = type
             self.primary = primary
             self.localizedType = localizedType
@@ -122,7 +121,7 @@ struct ItemDetailState: ViewModelState {
         }
 
         init(type: String, primary: Bool, localizedType: String, namePresentation: NamePresentation) {
-            self.id = UUID()
+            self.id = UUID().uuidString
             self.type = type
             self.primary = primary
             self.localizedType = localizedType
@@ -160,11 +159,12 @@ struct ItemDetailState: ViewModelState {
         }
 
         func hash(into hasher: inout Hasher) {
-            hasher.combine(self.type)
-            hasher.combine(self.primary)
-            hasher.combine(self.fullName)
-            hasher.combine(self.firstName)
-            hasher.combine(self.lastName)
+            hasher.combine(id)
+            hasher.combine(type)
+            hasher.combine(primary)
+            hasher.combine(fullName)
+            hasher.combine(firstName)
+            hasher.combine(lastName)
         }
     }
 
@@ -173,8 +173,8 @@ struct ItemDetailState: ViewModelState {
         var type: String
         var isAttachment: Bool
         var localizedType: String
-        var creators: [UUID: Creator]
-        var creatorIds: [UUID]
+        var creators: [String: Creator]
+        var creatorIds: [String]
         var fields: [String: Field]
         var fieldIds: [String]
         var abstract: String?

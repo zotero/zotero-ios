@@ -75,6 +75,8 @@ final class RItem: Object {
     @Persisted var relations: List<RRelation>
     /// Indicates which local changes need to be synced to backend
     @Persisted var changes: List<RObjectChange>
+    /// Indicates whether `SyncController` should try to sync `changes`
+    @Persisted var changesSyncPaused: Bool
 
     // MARK: - Attachment data
     @Persisted var backendMd5: String
@@ -191,12 +193,19 @@ final class RItem: Object {
         }
     }
 
-    func setDateFieldMetadata(_ date: String?, parser: DateParser) {
-        let components = date.flatMap({ parser.parse(string: $0) })
+    func setDateFieldMetadata(_ date: String, parser: DateParser) {
+        let components = parser.parse(string: date)
         self.parsedYear = components?.year ?? 0
         self.hasParsedYear = self.parsedYear != 0
         self.parsedDate = components?.date
         self.hasParsedDate = self.parsedDate != nil
+    }
+
+    func clearDateFieldMedatada() {
+        self.parsedYear = 0
+        self.hasParsedYear = false
+        self.parsedDate = nil
+        self.hasParsedDate = false
     }
 
     func updateCreatorSummary() {

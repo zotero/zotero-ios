@@ -246,7 +246,11 @@ struct StoreItemDbRequest: DbResponseRequest {
             }
         }
 
-        item.setDateFieldMetadata(date, parser: dateParser)
+        if let date {
+            item.setDateFieldMetadata(date, parser: dateParser)
+        } else {
+            item.clearDateFieldMedatada()
+        }
         item.set(publisher: publisher)
         item.set(publicationTitle: publicationTitle)
         item.annotationSortIndex = sortIndex ?? ""
@@ -456,6 +460,7 @@ struct StoreItemDbRequest: DbResponseRequest {
             let name = object.name ?? ""
 
             let creator = RCreator()
+            creator.uuid = UUID().uuidString
 
             if validCreators.contains(where: { $0.creatorType == object.creatorType }) {
                 creator.rawType = object.creatorType

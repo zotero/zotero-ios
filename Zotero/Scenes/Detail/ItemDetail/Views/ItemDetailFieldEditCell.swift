@@ -8,12 +8,23 @@
 
 import UIKit
 
+import RxSwift
+
 final class ItemDetailFieldEditCell: UICollectionViewListCell {
     struct ContentConfiguration: UIContentConfiguration {
         let field: ItemDetailState.Field
         let titleWidth: CGFloat
         let layoutMargins: UIEdgeInsets
-        let textChanged: (String) -> Void
+        let textObservable: PublishSubject<String>
+        let disposeBag: CompositeDisposable
+
+        init(field: ItemDetailState.Field, titleWidth: CGFloat, layoutMargins: UIEdgeInsets) {
+            self.field = field
+            self.titleWidth = titleWidth
+            self.layoutMargins = layoutMargins
+            self.textObservable = PublishSubject()
+            self.disposeBag = CompositeDisposable()
+        }
 
         func makeContentView() -> UIView & UIContentView {
             return ContentView(configuration: self)
@@ -51,9 +62,16 @@ final class ItemDetailFieldEditCell: UICollectionViewListCell {
         }
 
         private func apply(configuration: ContentConfiguration) {
-            self.contentView.textChanged = configuration.textChanged
+            let disposable = self.contentView.textObservable.bind(to: configuration.textObservable)
+            _ = configuration.disposeBag.insert(disposable)
+
             self.contentView.layoutMargins = configuration.layoutMargins
             self.contentView.setup(with: configuration.field, titleWidth: configuration.titleWidth)
         }
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        (self.contentConfiguration as? ContentConfiguration)?.disposeBag.dispose()
     }
 }

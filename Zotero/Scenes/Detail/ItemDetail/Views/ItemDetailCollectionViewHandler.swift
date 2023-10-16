@@ -65,104 +65,6 @@ final class ItemDetailCollectionViewHandler: NSObject {
         case title
         case type(String)
 
-        static func == (lhs: Row, rhs: Row) -> Bool {
-            switch (lhs, rhs) {
-            case (.addNote, .addNote), (.addCreator, .addCreator), (.addTag, .addTag), (.addAttachment, .addAttachment):
-                return true
-
-            case (.abstract, .abstract):
-                return true
-
-            case (.attachment(let lAttachment, let lType), .attachment(let rAttachment, let rType)):
-                return lAttachment == rAttachment && lType == rType
-
-            case (.creator(let lCreator), .creator(let rCreator)):
-                return lCreator == rCreator
-
-            case (.dateAdded(let lDate), .dateAdded(let rDate)):
-                return lDate == rDate
-
-            case (.dateModified(let lDate), .dateModified(let rDate)):
-                return lDate == rDate
-
-            case (.field(let lKey, let lMultiline), .field(let rKey, let rMultiline)):
-                return lKey == rKey && lMultiline == rMultiline
-
-            case (.note(let lNote, let lIsSaving), .note(let rNote, let rIsSaving)):
-                return lNote == rNote && lIsSaving == rIsSaving
-
-            case (.tag(let lTag, let lIsProcessing), .tag(let rTag, let rIsProcessing)):
-                return lTag == rTag && lIsProcessing == rIsProcessing
-
-            case (.title, .title):
-                return true
-
-            case (.type(let lValue), .type(let rValue)):
-                return lValue == rValue
-
-            default:
-                return false
-            }
-        }
-
-        func hash(into hasher: inout Hasher) {
-            switch self {
-            case .abstract:
-                hasher.combine(1)
-
-            case .attachment(let attachment, let type):
-                hasher.combine(2)
-                hasher.combine(attachment)
-                hasher.combine(type)
-
-            case .creator(let creator):
-                hasher.combine(3)
-                hasher.combine(creator)
-
-            case .dateAdded(let date):
-                hasher.combine(4)
-                hasher.combine(date)
-
-            case .dateModified(let date):
-                hasher.combine(5)
-                hasher.combine(date)
-
-            case .field(let field, let multiline):
-                hasher.combine(6)
-                hasher.combine(field)
-                hasher.combine(multiline)
-
-            case .note(let note, let isSaving):
-                hasher.combine(7)
-                hasher.combine(note)
-                hasher.combine(isSaving)
-
-            case .tag(let tag, let isSaving):
-                hasher.combine(8)
-                hasher.combine(tag)
-                hasher.combine(isSaving)
-
-            case .title:
-                hasher.combine(9)
-
-            case .type(let value):
-                hasher.combine(10)
-                hasher.combine(value)
-
-            case .addTag:
-                hasher.combine(11)
-
-            case .addNote:
-                hasher.combine(12)
-
-            case .addCreator:
-                hasher.combine(13)
-
-            case .addAttachment:
-                hasher.combine(14)
-            }
-        }
-
         func isAttachment(withKey key: String) -> Bool {
             switch self {
             case .attachment(let attachment, _):
@@ -386,11 +288,11 @@ final class ItemDetailCollectionViewHandler: NSObject {
     /// - returns: Array of visible sections.
     private func sections(for data: ItemDetailState.Data, isEditing: Bool) -> [Section] {
         if isEditing {
+            // Only "metadata" sections are visible during editing.
             if data.isAttachment {
-                return [.title, .type, .fields, .dates, .tags, .attachments]
+                return [.title, .type, .fields, .dates]
             } else {
-                // Each section is visible during editing, except dates section. Dates are filled automatically and the user can't change them manually.
-                return [.title, .type, .creators, .fields, .dates, .abstract, .notes, .tags, .attachments]
+                return [.title, .type, .creators, .fields, .dates, .abstract]
             }
         }
 
@@ -613,10 +515,14 @@ final class ItemDetailCollectionViewHandler: NSObject {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
             guard let self = self else { return }
 
-            cell.contentConfiguration = ItemDetailFieldEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath),
-                                                                                     textChanged: { [weak self] text in
-                                                                                         self?.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
-                                                                                     })
+            let configuration = ItemDetailFieldEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath))
+            let disposable = configuration.textObservable
+                .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
+                .subscribe(with: self, onNext: { `self`, text in
+                    self.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
+                })
+            _ = configuration.disposeBag.insert(disposable)
+            cell.contentConfiguration = configuration
         }
     }()
 
@@ -624,10 +530,14 @@ final class ItemDetailCollectionViewHandler: NSObject {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
             guard let self = self else { return }
 
-            cell.contentConfiguration = ItemDetailFieldMultilineEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath),
-                                                                                              textChanged: { [weak self] text in
-                                                                                                  self?.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
-                                                                                              })
+            let configuration = ItemDetailFieldMultilineEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath))
+            let disposable = configuration.textObservable
+                .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
+                .subscribe(with: self, onNext: { `self`, text in
+                    self.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
+                })
+            _ = configuration.disposeBag.insert(disposable)
+            cell.contentConfiguration = configuration
         }
     }()
 
@@ -912,20 +822,24 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
         self.dataSource.reorderingHandlers.canReorderItem = { row -> Bool in
             switch row {
-            case .creator: return true
-            default: return false
+            case .creator:
+                return true
+
+            default:
+                return false
             }
         }
 
         self.dataSource.reorderingHandlers.didReorder = { [weak self] transaction in
             guard let self = self, let difference = transaction.sectionTransactions.first?.difference else { return }
 
-            let changes = difference.compactMap({ change -> CollectionDifference<UUID>.Change? in
+            let changes = difference.compactMap({ change -> CollectionDifference<String>.Change? in
                 switch change {
                 case .insert(let offset, let element, let associatedWith):
                     switch element {
                     case .creator(let creator):
                         return .insert(offset: offset, element: creator.id, associatedWith: associatedWith)
+
                     default: return nil
                     }
 
@@ -933,6 +847,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
                     switch element {
                     case .creator(let creator):
                         return .remove(offset: offset, element: creator.id, associatedWith: associatedWith)
+
                     default: return nil
                     }
                 }
