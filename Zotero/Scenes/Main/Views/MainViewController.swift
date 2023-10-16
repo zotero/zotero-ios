@@ -75,7 +75,7 @@ final class MainViewController: UISplitViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        self.set(userActivity: .mainActivity)
+        self.set(userActivity: .mainActivity(with: controllers.userControllers?.openItemsController.items ?? []))
         self.didAppear = true
     }
 

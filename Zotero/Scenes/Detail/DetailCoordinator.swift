@@ -307,12 +307,6 @@ final class DetailCoordinator: Coordinator {
         return navigationController
     }
     
-    private func showPdf(at url: URL, key: String, library: Library) {
-        let controller = createPDFController(key: key, library: library, url: url)
-        controllers.userControllers?.openItemsController.open(.pdf(library: library, key: key), in: collection)
-        navigationController?.present(controller, animated: true, completion: nil)
-    }
-    
     private func showWebView(for url: URL) {
         guard let currentNavigationController = self.navigationController else { return }
         let controller = WebViewController(url: url)
@@ -955,7 +949,7 @@ extension DetailCoordinator: OpenItemsPresenter {
     func showPDF(at url: URL, key: String, library: Library) {
         guard let navigationController else { return }
         let controller = createPDFController(key: key, library: library, url: url)
-        controllers.userControllers?.openItemsController.open(.pdf(library: library, key: key), in: collection)
+        controllers.userControllers?.openItemsController.open(.pdf(libraryId: library.identifier, key: key))
         if navigationController.presentingViewController != nil {
             navigationController.dismiss(animated: false) {
                 navigationController.present(controller, animated: false)

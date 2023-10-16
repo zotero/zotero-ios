@@ -17,8 +17,50 @@ protocol OpenItemsPresenter: AnyObject {
 
 final class OpenItemsController {
     // MARK: Types
-    enum Item: Hashable, Equatable {
-        case pdf(library: Library, key: String)
+    enum Item: Hashable, Equatable, Codable {
+        case pdf(libraryId: LibraryIdentifier, key: String)
+        
+        // MARK: Types
+        enum ItemType: String, Codable {
+            case pdf
+        }
+        
+        // MARK: Properties
+        var type: ItemType {
+            switch self {
+            case .pdf:
+                return .pdf
+            }
+        }
+        
+        // MARK: Codable
+        enum CodingKeys: CodingKey {
+            case type
+            case libraryId
+            case key
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(type, forKey: .type)
+            switch self {
+            case .pdf(let libraryId, let key):
+                try container.encode(libraryId, forKey: .libraryId)
+                try container.encode(key, forKey: .key)
+            }
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            let type = try container.decode(ItemType.self, forKey: .type)
+
+            switch type {
+            case .pdf:
+                let libraryId = try container.decode(LibraryIdentifier.self, forKey: .libraryId)
+                let key = try container.decode(String.self, forKey: .key)
+                self = .pdf(libraryId: libraryId, key: key)
+            }
+        }
     }
     
     // MARK: Properties
@@ -28,7 +70,6 @@ final class OpenItemsController {
     // TODO: Keep track of user sorted items (for presentation), possibly in a separate list
     // Items are sorted by most recently opened
     private(set) var items: [Item] = []
-    private var collection: Collection?
     let observable: PublishSubject<[Item]>
     private let disposeBag: DisposeBag
     
@@ -41,9 +82,15 @@ final class OpenItemsController {
     }
     
     // MARK: Actions
-    func open(_ item: Item, in collection: Collection) {
-        DDLogInfo("OpenItemsController: opened item \(item) in collection \(collection)")
-        self.collection = collection
+    func setItems(_ items: [Item]) {
+        DDLogInfo("OpenItemsController: setting items \(items)")
+        guard items != self.items else { return }
+        self.items = items
+        observable.on(.next(items))
+    }
+    
+    func open(_ item: Item) {
+        DDLogInfo("OpenItemsController: opened item \(item)")
         guard items.last != item else { return }
         // Since item not last, will certainly need to be appended in the end
         if let index = items.firstIndex(of: item) {
@@ -54,7 +101,6 @@ final class OpenItemsController {
             DDLogInfo("OpenItemsController: appending newly opened item \(item) as most recent")
         }
         items.append(item)
-        DDLogInfo("OpenItemsController: opened item \(item) in collection \(collection)")
         observable.on(.next(items))
     }
     
@@ -68,10 +114,12 @@ final class OpenItemsController {
             }
         }
         var item: Item?
+        var library: Library?
         var url: URL?
         while let _item = items.last {
-            if let _url = load(item: _item) {
+            if let (_library, _url) = load(item: _item) {
                 item = _item
+                library = _library
                 url = _url
                 break
             }
@@ -79,50 +127,48 @@ final class OpenItemsController {
             _ = items.removeLast()
             itemsChanged = true
         }
-        guard let item, let url else { return }
+        guard let item, let library, let url else { return }
         switch item {
-        case .pdf(let library, let key):
+        case .pdf(_, let key):
             presenter.showPDF(at: url, key: key, library: library)
         }
         DDLogInfo("OpenItemsController: restored item \(item) with URL \(url)")
-    }
-    
-    // MARK: Helper Methods
-    private func load(item: Item) -> URL? {
-        var url: URL?
-        
-        switch item {
-        case .pdf(let library, let key):
-            url = loadPDFItem(key: key, libraryId: library.identifier)
-        }
-        
-        return url
-        
-        func loadPDFItem(key: String, libraryId: LibraryIdentifier) -> URL? {
-            var url: URL?
-            do {
-                try dbStorage.perform(on: .main) { coordinator in
-                    let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-                    guard let attachment = AttachmentCreator.attachment(for: rItem, fileStorage: fileStorage, urlDetector: nil) else { return }
-                    switch attachment.type {
-                    case .file(let filename, let contentType, let location, _):
-                        switch location {
-                        case .local, .localAndChangedRemotely:
-                            let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
-                            url = file.createUrl()
+
+        func load(item: Item) -> (Library, URL)? {
+            switch item {
+            case .pdf(let libraryId, let key):
+                return loadPDFItem(key: key, libraryId: libraryId)
+            }
+            
+            func loadPDFItem(key: String, libraryId: LibraryIdentifier) -> (Library, URL)? {
+                var library: Library?
+                var url: URL?
+                do {
+                    try dbStorage.perform(on: .main) { coordinator in
+                        library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
+                        let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
+                        guard let attachment = AttachmentCreator.attachment(for: rItem, fileStorage: fileStorage, urlDetector: nil) else { return }
+                        switch attachment.type {
+                        case .file(let filename, let contentType, let location, _):
+                            switch location {
+                            case .local, .localAndChangedRemotely:
+                                let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
+                                url = file.createUrl()
+                                
+                            case .remote, .remoteMissing:
+                                break
+                            }
                             
-                        case .remote, .remoteMissing:
+                        default:
                             break
                         }
-                        
-                    default:
-                        break
                     }
+                } catch let error {
+                    DDLogError("OpenItemsController: can't load item \(item) - \(error)")
                 }
-            } catch let error {
-                DDLogError("OpenItemsController: can't load item \(item) - \(error)")
+                guard let library, let url else { return nil }
+                return (library, url)
             }
-            return url
         }
     }
 }

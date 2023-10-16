@@ -94,6 +94,7 @@ class PDFReaderViewController: UIViewController {
         return self.navigationController?.navigationBar.frame.height ?? 0.0
     }
 
+    private unowned let openItemsController: OpenItemsController
     weak var coordinatorDelegate: (PdfReaderCoordinatorDelegate & PdfAnnotationsCoordinatorDelegate)?
 
     private lazy var shareButton: UIBarButtonItem = {
@@ -172,11 +173,12 @@ class PDFReaderViewController: UIViewController {
         return barButton
     }()
 
-    init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
+    init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool, openItemsController: OpenItemsController) {
         self.viewModel = viewModel
         self.isSidebarTransitioning = false
         self.isCompactWidth = compactSize
         self.isCurrentlyVisible = false
+        self.openItemsController = openItemsController
         self.disposeBag = DisposeBag()
         self.didAppear = false
         self.previewDashColor = Asset.Colors.zoteroBlueWithDarkMode.color.withAlphaComponent(0.5)
@@ -205,7 +207,7 @@ class PDFReaderViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.set(userActivity: .pdfActivity(for: self.viewModel.state.key, libraryId: self.viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId))
+        self.set(userActivity: .pdfActivity(with: openItemsController.items, libraryId: self.viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId))
 
         self.view.backgroundColor = .systemGray6
         self.setupViews()
