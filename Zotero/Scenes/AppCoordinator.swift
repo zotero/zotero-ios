@@ -43,7 +43,7 @@ final class AppCoordinator: NSObject {
     private var originalDebugWindowFrame: CGRect?
     private var conflictReceiverAlertController: ConflictReceiverAlertController?
     private var conflictAlertQueueController: ConflictAlertQueueController?
-    private var presentedRestoredControllerWindow: UIWindow?
+    var presentedRestoredControllerWindow: UIWindow?
     private var downloadDisposeBag: DisposeBag?
     private var tmpConnectionOptions: UIScene.ConnectionOptions?
     private var tmpSession: UISceneSession?
@@ -199,6 +199,7 @@ final class AppCoordinator: NSObject {
                             viewControllerProvider: {
                                 coordinator.createPDFController(key: data.key, library: library, url: url)
                             },
+                            by: mainController,
                             in: window,
                             animated: false
                         )
@@ -349,12 +350,14 @@ final class AppCoordinator: NSObject {
         ) {
             switch attachment.type {
             case .file(let filename, let contentType, _, _) where contentType == "application/pdf":
+                guard let presenter = window.rootViewController else { return }
                 let file = Files.attachmentFile(in: library.identifier, key: attachment.key, filename: filename, contentType: contentType)
                 let url = file.createUrl()
                 self.show(
                     viewControllerProvider: {
                         detailCoordinator.createPDFController(key: attachment.key, library: library, url: url, page: page, preselectedAnnotationKey: annotation)
                     },
+                    by: presenter,
                     in: window,
                     animated: animated,
                     completion: completion
@@ -362,84 +365,6 @@ final class AppCoordinator: NSObject {
 
             default:
                 completion?()
-            }
-        }
-    }
-    
-    private func show(viewControllerProvider: () -> UIViewController, in window: UIWindow, animated: Bool, completion: (() -> Void)? = nil) {
-        DDLogInfo("AppCoordinator: show pdf controller; animated=\(animated)")
-        
-        if animated {
-            let pdfController = viewControllerProvider()
-            if window.rootViewController?.presentedViewController == nil {
-                DDLogInfo("AppCoordinator: no presented controller, present pdf controller")
-                window.rootViewController?.present(pdfController, animated: true, completion: completion)
-                return
-            }
-            
-            DDLogInfo("AppCoordinator: previously presented controller, dismiss")
-            window.rootViewController?.dismiss(animated: true, completion: {
-                DDLogInfo("AppCoordinator: present pdf controller")
-                window.rootViewController?.present(pdfController, animated: true, completion: completion)
-            })
-            return
-        }
-
-        let screenshotController = viewControllerProvider()
-        show(presentedViewController: screenshotController, in: window) { viewController, completion in
-            let pdfController = viewControllerProvider()
-            // Open PDF reader of given attachment
-            if viewController.presentedViewController == nil {
-                DDLogInfo("AppCoordinator: no presented controller, present pdf controller")
-                viewController.present(pdfController, animated: false, completion: completion)
-                return
-            }
-            
-            DDLogInfo("AppCoordinator: previously presented controller, dismiss")
-            viewController.dismiss(animated: false, completion: {
-                DDLogInfo("AppCoordinator: present pdf controller")
-                viewController.present(pdfController, animated: false, completion: completion)
-            })
-        }
-        
-        completion?()
-
-        /// If the app tries to present a `UIViewController` on a `UIWindow` that is being shown after app launches,
-        /// there is a small delay where the underlying (presenting) `UIViewController` is visible.
-        /// So the launch animation looks bad, since you can see a snapshot of previous state (PDF reader),
-        /// then split view controller with collections and items and then PDF reader again.
-        /// Because of that we fake it a little with this function.
-        func show(presentedViewController: UIViewController, in window: UIWindow, presentAction: (UIViewController, @escaping () -> Void) -> Void) {
-            // Store original `UIViewController`
-            guard let oldController = window.rootViewController else { return }
-            
-            // Show new view controller in the window so that it's layed out properly
-            window.rootViewController = presentedViewController
-            
-            // Make a screenshot of the window
-            UIGraphicsBeginImageContext(window.frame.size)
-            window.layer.render(in: UIGraphicsGetCurrentContext()!)
-            let image = UIGraphicsGetImageFromCurrentImageContext()
-            UIGraphicsEndImageContext()
-            
-            // Create a temporary `UIImageView` with given screenshot
-            let imageView = UIImageView(image: image)
-            imageView.contentMode = .scaleAspectFill
-            imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-            imageView.frame = window.bounds
-            
-            // Create a temporary `UIWindow` which will be shown above current window until it successfully presents the new view controller.
-            let tmpWindow = window.windowScene.flatMap(UIWindow.init) ?? UIWindow(frame: window.frame)
-            tmpWindow.windowScene = window.windowScene
-            tmpWindow.addSubview(imageView)
-            tmpWindow.makeKeyAndVisible()
-            self.presentedRestoredControllerWindow = tmpWindow
-            
-            window.rootViewController = oldController
-            
-            presentAction(oldController) {
-                // New window is visible with a screenshot, return old view controller and present the new one
-                self.presentedRestoredControllerWindow = nil
             }
         }
     }
@@ -923,3 +848,5 @@ extension AppCoordinator: SyncRequestReceiver {
         }
     }
 }
+
+extension AppCoordinator: InstantPresenter {}
