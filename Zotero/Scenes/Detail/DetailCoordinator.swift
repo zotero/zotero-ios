@@ -90,6 +90,7 @@ final class DetailCoordinator: Coordinator {
     private var transitionDelegate: EmptyTransitioningDelegate?
     weak var itemsTagFilterDelegate: ItemsTagFilterDelegate?
     weak var navigationController: UINavigationController?
+    var presentedRestoredControllerWindow: UIWindow?
 
     let collection: Collection
     let library: Library
@@ -950,12 +951,14 @@ extension DetailCoordinator: OpenItemsPresenter {
         guard let navigationController else { return }
         let controller = createPDFController(key: key, library: library, url: url)
         controllers.userControllers?.openItemsController.open(.pdf(libraryId: library.identifier, key: key))
-        if navigationController.presentedViewController != nil {
-            navigationController.dismiss(animated: false) {
-                navigationController.present(controller, animated: false)
-            }
+        
+        if let presentedViewController = navigationController.presentedViewController {
+            guard let window = presentedViewController.view.window else { return }
+            show(controller: controller, by: navigationController, in: window, animated: false)
             return
         }
         navigationController.present(controller, animated: true)
     }
 }
+
+extension DetailCoordinator: InstantPresenter { }
