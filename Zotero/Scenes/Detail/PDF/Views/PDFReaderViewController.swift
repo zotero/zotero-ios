@@ -23,9 +23,8 @@ protocol PDFReaderContainerDelegate: AnyObject {
 
 class PDFReaderViewController: UIViewController {
     private enum NavigationBarButton: Int {
-        case redo = 1
-        case undo = 2
-        case share = 3
+        case share
+        case sidebar
     }
 
     private struct ToolbarState: Codable {
@@ -43,7 +42,6 @@ class PDFReaderViewController: UIViewController {
     private static let toolbarCompactInset: CGFloat = 12
     private static let toolbarFullInsetInset: CGFloat = 20
     private static let minToolbarWidth: CGFloat = 300
-    private static let sidebarButtonTag = 7
     private static let annotationToolbarDragHandleHeight: CGFloat = 50
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
@@ -95,7 +93,7 @@ class PDFReaderViewController: UIViewController {
     }
 
     private unowned let openItemsController: OpenItemsController
-    weak var coordinatorDelegate: (PdfReaderCoordinatorDelegate & PdfAnnotationsCoordinatorDelegate)?
+    weak var coordinatorDelegate: (PdfReaderCoordinatorDelegate & PdfAnnotationsCoordinatorDelegate & OpenItemsPresenter)?
 
     private lazy var shareButton: UIBarButtonItem = {
         let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
@@ -112,6 +110,19 @@ class PDFReaderViewController: UIViewController {
              })
              .disposed(by: self.disposeBag)
         return share
+    }()
+    private lazy var openItemsButton: UIBarButtonItem = {
+        let openItems = UIBarButtonItem(image: UIImage(systemName: "0.square"), style: .plain, target: nil, action: nil)
+        openItems.isEnabled = true
+        openItems.accessibilityLabel = L10n.Accessibility.Pdf.openItems
+        openItems.title = L10n.Accessibility.Pdf.openItems
+        let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(disableOpenItem: true) { [weak self] item, _ in
+            guard let self, let coordinatorDelegate else { return }
+            openItemsController.restore(item, using: coordinatorDelegate)
+        }
+        let openItemsMenu = UIMenu(title: "Open Items", options: [.displayInline], children: [deferredOpenItemsMenuElement])
+        openItems.menu = UIMenu(children: [openItemsMenu])
+        return openItems
     }()
     private lazy var settingsButton: UIBarButtonItem = {
         let settings = UIBarButtonItem(image: UIImage(systemName: "gearshape"), style: .plain, target: nil, action: nil)
@@ -139,8 +150,6 @@ class PDFReaderViewController: UIViewController {
               .disposed(by: self.disposeBag)
         return search
     }()
-    private var undoBarButton: UIBarButtonItem?
-    private var redoBarButton: UIBarButtonItem?
     private lazy var toolbarButton: UIBarButtonItem = {
         var configuration = UIButton.Configuration.plain()
         let image = UIImage(systemName: "pencil.and.outline")?.applyingSymbolConfiguration(.init(scale: .large))
@@ -449,7 +458,7 @@ class PDFReaderViewController: UIViewController {
         }
         self.sidebarControllerLeft.constant = shouldShow ? 0 : -PDFReaderLayout.sidebarWidth
 
-        if let button = self.navigationItem.leftBarButtonItems?.first(where: { $0.tag == PDFReaderViewController.sidebarButtonTag }) {
+        if let button = self.navigationItem.leftBarButtonItems?.first(where: { $0.tag == NavigationBarButton.sidebar.rawValue }) {
             self.setupAccessibility(forSidebarButton: button)
         }
 
@@ -1219,7 +1228,7 @@ class PDFReaderViewController: UIViewController {
         let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"), style: .plain, target: nil, action: nil)
         sidebarButton.isEnabled = !self.viewModel.state.document.isLocked
         self.setupAccessibility(forSidebarButton: sidebarButton)
-        sidebarButton.tag = PDFReaderViewController.sidebarButtonTag
+        sidebarButton.tag = NavigationBarButton.sidebar.rawValue
         sidebarButton.rx.tap.subscribe(with: self, onNext: { `self`, _ in self.toggleSidebar(animated: true) }).disposed(by: self.disposeBag)
 
         let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"), style: .plain, target: nil, action: nil)
@@ -1243,7 +1252,11 @@ class PDFReaderViewController: UIViewController {
     }
 
     private var rightBarButtonItems: [UIBarButtonItem] {
-        var buttons = [self.settingsButton, self.shareButton, self.searchButton]
+        var buttons = [settingsButton, shareButton, searchButton]
+        if openItemsController.items.count > 1 {
+            buttons.insert(openItemsButton, at: 1)
+            openItemsButton.image = .init(systemName: "\(openItemsController.items.count).square")
+        }
 
         if self.viewModel.state.library.metadataEditable {
             buttons.append(self.toolbarButton)

@@ -950,7 +950,7 @@ extension DetailCoordinator: OpenItemsPresenter {
         guard let navigationController else { return }
         let controller = createPDFController(key: key, library: library, url: url)
         controllers.userControllers?.openItemsController.open(.pdf(libraryId: library.identifier, key: key))
-        if navigationController.presentingViewController != nil {
+        if navigationController.presentedViewController != nil {
             navigationController.dismiss(animated: false) {
                 navigationController.present(controller, animated: false)
             }

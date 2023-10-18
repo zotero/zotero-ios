@@ -214,6 +214,8 @@ internal enum L10n {
       internal static let noteAnnotation = L10n.tr("Localizable", "accessibility.pdf.note_annotation", fallback: "Note annotation")
       /// Create note annotation
       internal static let noteAnnotationTool = L10n.tr("Localizable", "accessibility.pdf.note_annotation_tool", fallback: "Create note annotation")
+      /// Open Items
+      internal static let openItems = L10n.tr("Localizable", "accessibility.pdf.open_items", fallback: "Open Items")
       /// Open text reader
       internal static let openReader = L10n.tr("Localizable", "accessibility.pdf.open_reader", fallback: "Open text reader")
       /// Redo

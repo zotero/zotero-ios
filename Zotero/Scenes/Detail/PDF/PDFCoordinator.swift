@@ -524,3 +524,9 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
 }
+
+extension PDFCoordinator: OpenItemsPresenter {
+    func showPDF(at url: URL, key: String, library: Library) {
+        (parentCoordinator as? DetailCoordinator)?.showPDF(at: url, key: key, library: library)
+    }
+}
