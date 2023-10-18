@@ -15,6 +15,13 @@ protocol HtmlEpubReaderCoordinatorDelegate: AnyObject {
     func show(error: HtmlEpubReaderState.Error)
 }
 
+protocol HtmlEpubSidebarCoordinatorDelegate: AnyObject {
+//    func createShareAnnotationMenu(state: PDFReaderState, annotation: PdfAnnotation, sender: UIButton) -> UIMenu?
+    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void)
+//    func showCellOptions(for annotation: PdfAnnotation, userId: Int, library: Library, sender: UIButton, userInterfaceStyle: UIUserInterfaceStyle, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
+//    func showFilterPopup(from barButton: UIBarButtonItem, filter: AnnotationsFilter?, availableColors: [String], availableTags: [Tag], userInterfaceStyle: UIUserInterfaceStyle, completed: @escaping (AnnotationsFilter?) -> Void)
+}
+
 final class HtmlEpubCoordinator: Coordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
@@ -52,13 +59,19 @@ final class HtmlEpubCoordinator: Coordinator {
               let parentNavigationController = self.parentCoordinator?.navigationController
         else { return }
 
-        let handler = HtmlEpubReaderActionHandler(dbStorage: dbStorage, schemaController: controllers.schemaController, htmlAttributedStringConverter: controllers.htmlAttributedStringConverter)
+        let handler = HtmlEpubReaderActionHandler(
+            dbStorage: dbStorage,
+            schemaController: controllers.schemaController,
+            htmlAttributedStringConverter: controllers.htmlAttributedStringConverter,
+            dateParser: controllers.dateParser
+        )
         let state = HtmlEpubReaderState(url: url, key: key, library: library, userId: userId, username: username)
         let controller = HtmlEpubReaderViewController(
             viewModel: ViewModel(initialState: state, handler: handler),
             compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size)
         )
         controller.coordinatorDelegate = self
+        handler.delegate = controller
 
         self.navigationController?.setViewControllers([controller], animated: false)
     }
@@ -91,4 +104,41 @@ extension HtmlEpubCoordinator: HtmlEpubReaderCoordinatorDelegate {
         controller.addAction(UIAlertAction(title: L10n.ok, style: .default))
         self.navigationController?.present(controller, animated: true)
     }
+}
+
+extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
+//    func createShareAnnotationMenu(state: PDFReaderState, annotation: PdfAnnotation, sender: UIButton) -> UIMenu? {
+//    }
+//    
+    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void) {
+        guard let navigationController else { return }
+        (self.parentCoordinator as? DetailCoordinator)?.showTagPicker(
+            libraryId: libraryId,
+            selected: selected,
+            userInterfaceStyle: userInterfaceStyle,
+            navigationController: navigationController,
+            picked: picked
+        )
+    }
+//    
+//    func showCellOptions(
+//        for annotation: PdfAnnotation,
+//        userId: Int,
+//        library: Library,
+//        sender: UIButton,
+//        userInterfaceStyle: UIUserInterfaceStyle,
+//        saveAction: @escaping AnnotationEditSaveAction,
+//        deleteAction: @escaping AnnotationEditDeleteAction
+//    ) {
+//    }
+//    
+//    func showFilterPopup(
+//        from barButton: UIBarButtonItem,
+//        filter: AnnotationsFilter?,
+//        availableColors: [String],
+//        availableTags: [Tag],
+//        userInterfaceStyle: UIUserInterfaceStyle,
+//        completed: @escaping (AnnotationsFilter?) -> Void
+//    ) {
+//    }
 }

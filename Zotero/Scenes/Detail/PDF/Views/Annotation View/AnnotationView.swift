@@ -202,6 +202,7 @@ final class AnnotationView: UIView {
 
         highlightContent.isUserInteractionEnabled = false
         highlightContent.isHidden = type != .highlight
+        self.imageContent?.isHidden = true
 
         switch type {
         case .highlight:

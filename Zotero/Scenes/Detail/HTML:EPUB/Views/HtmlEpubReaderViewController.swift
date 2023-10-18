@@ -11,6 +11,10 @@ import UIKit
 import CocoaLumberjackSwift
 import RxSwift
 
+protocol HtmlEpubReaderContainerDelegate: AnyObject {
+    var isSidebarVisible: Bool { get }
+}
+
 class HtmlEpubReaderViewController: UIViewController {
     private let viewModel: ViewModel<HtmlEpubReaderActionHandler>
     private let disposeBag: DisposeBag
@@ -28,7 +32,7 @@ class HtmlEpubReaderViewController: UIViewController {
     }
     private(set) var isCompactWidth: Bool
     var statusBarHeight: CGFloat
-    weak var coordinatorDelegate: HtmlEpubReaderCoordinatorDelegate?
+    weak var coordinatorDelegate: (HtmlEpubReaderCoordinatorDelegate&HtmlEpubSidebarCoordinatorDelegate)?
     @CodableUserDefault(
         key: "HtmlEpubReaderToolbarState",
         defaultValue: AnnotationToolbarHandler.State(position: .leading, visible: true),
@@ -139,6 +143,7 @@ class HtmlEpubReaderViewController: UIViewController {
             annotationToolbar.delegate = self
 
             let sidebarController = HtmlEpubSidebarViewController(viewModel: self.viewModel)
+            sidebarController.coordinatorDelegate = self.coordinatorDelegate
             sidebarController.view.translatesAutoresizingMaskIntoConstraints = false
 
             let separator = UIView()
@@ -415,3 +420,5 @@ extension HtmlEpubReaderViewController: AnnotationToolbarDelegate {
     func performRedo() {
     }
 }
+
+extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {}

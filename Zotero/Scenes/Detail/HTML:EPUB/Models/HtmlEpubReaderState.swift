@@ -8,6 +8,8 @@
 
 import UIKit
 
+import RealmSwift
+
 struct HtmlEpubReaderState: ViewModelState {
     struct Changes: OptionSet {
         typealias RawValue = UInt8
@@ -18,11 +20,19 @@ struct HtmlEpubReaderState: ViewModelState {
         static let annotations = Changes(rawValue: 1 << 1)
         static let selection = Changes(rawValue: 1 << 2)
         static let activeComment = Changes(rawValue: 1 << 3)
+        static let sidebarEditing = Changes(rawValue: 1 << 4)
+        static let filter = Changes(rawValue: 1 << 5)
     }
 
     struct DocumentData {
         let buffer: String
         let annotationsJson: String
+    }
+
+    struct DocumentUpdate {
+        let deletions: [String]
+        let insertions: [[String: Any]]
+        let modifications: [[String: Any]]
     }
 
     enum Error: Swift.Error {
@@ -42,16 +52,24 @@ struct HtmlEpubReaderState: ViewModelState {
     var documentData: DocumentData?
     var activeTool: AnnotationTool?
     var toolColors: [AnnotationTool: UIColor]
-    var annotations: [HtmlEpubAnnotation]
+    var sortedKeys: [String]
+    var snapshotKeys: [String]?
+    var annotations: [String: HtmlEpubAnnotation]
+    var searchTerm: String?
+    var filter: AnnotationsFilter?
     var selectedAnnotationKey: String?
     var comments: [String: NSAttributedString]
     var changes: Changes
     var error: Error?
+    /// Updates that need to be performed on html/epub document
+    var documentUpdate: DocumentUpdate?
     /// Annotation keys in sidebar that need to reload (for example cell height)
     var updatedAnnotationKeys: [String]?
     /// Annotation key to focus in annotation sidebar
     var focusSidebarKey: String?
     var selectedAnnotationCommentActive: Bool
+    var sidebarEditingEnabled: Bool
+    var notificationToken: NotificationToken?
 
     init(url: URL, key: String, library: Library, userId: Int, username: String) {
         self.url = url
@@ -60,8 +78,10 @@ struct HtmlEpubReaderState: ViewModelState {
         self.userId = userId
         self.username = username
         self.commentFont = PDFReaderLayout.annotationLayout.font
-        self.annotations = []
+        self.sortedKeys = []
+        self.annotations = [:]
         self.comments = [:]
+        self.sidebarEditingEnabled = false
         self.selectedAnnotationCommentActive = false
         self.toolColors = [
             .highlight: UIColor(hex: Defaults.shared.highlightColorHex),
@@ -72,6 +92,7 @@ struct HtmlEpubReaderState: ViewModelState {
 
     mutating func cleanup() {
         documentData = nil
+        documentUpdate = nil
         changes = []
         error = nil
         focusSidebarKey = nil

@@ -1791,7 +1791,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             guard let item = objects.filter(.key(key.key)).first else { continue }
             let annotation = PdfDatabaseAnnotation(item: item)
 
-            if self.canUpdate(key: key, item: item, at: index, viewModel: viewModel) {
+            if canUpdate(key: key, item: item, at: index, viewModel: viewModel) {
                 DDLogInfo("PDFReaderActionHandler: update key \(key)")
                 updatedKeys.append(key)
 
@@ -1965,28 +1965,29 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 state.changes.insert(.sidebarEditing)
             }
         }
-    }
 
-    private func canUpdate(key: PDFReaderState.AnnotationKey, item: RItem, at index: Int, viewModel: ViewModel<PDFReaderActionHandler>) -> Bool {
-        // If there was a sync type change, always update item
-        switch item.changeType {
-        case .sync:
-            // If sync happened and this item changed, always update item
-            return true
+        func canUpdate(key: PDFReaderState.AnnotationKey, item: RItem, at index: Int, viewModel: ViewModel<PDFReaderActionHandler>) -> Bool {
+            // If there was a sync type change, always update item
+            switch item.changeType {
+            case .sync:
+                // If sync happened and this item changed, always update item
+                return true
 
-        case .syncResponse:
-            // This is a response to local changes being synced to backend, can be ignored
-            return false
-        case .user: break
+            case .syncResponse:
+                // This is a response to local changes being synced to backend, can be ignored
+                return false
+                
+            case .user: break
+            }
+
+            // Check whether selected annotation's comment is being edited.
+            guard viewModel.state.selectedAnnotationCommentActive && viewModel.state.selectedAnnotationKey == key else { return true }
+
+            // Check whether the comment actually changed.
+            let newComment = item.fields.filter(.key(FieldKeys.Item.Annotation.comment)).first?.value
+            let oldComment = viewModel.state.databaseAnnotations[index].fields.filter(.key(FieldKeys.Item.Annotation.comment)).first?.value
+            return oldComment == newComment
         }
-
-        // Check whether selected annotation's comment is being edited.
-        guard viewModel.state.selectedAnnotationCommentActive && viewModel.state.selectedAnnotationKey == key else { return true }
-
-        // Check whether the comment actually changed.
-        let newComment = item.fields.filter(.key(FieldKeys.Item.Annotation.comment)).first?.value
-        let oldComment = viewModel.state.databaseAnnotations[index].fields.filter(.key(FieldKeys.Item.Annotation.comment)).first?.value
-        return oldComment == newComment
     }
 
     private func update(pdfAnnotation: PSPDFKit.Annotation, with annotation: PdfDatabaseAnnotation, parentKey: String, libraryId: LibraryIdentifier, interfaceStyle: UIUserInterfaceStyle) {
