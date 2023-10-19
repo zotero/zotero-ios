@@ -12,6 +12,8 @@ import RxCocoa
 import RxSwift
 
 final class AnnotationViewHeader: UIView {
+    let layout: AnnotationViewLayout
+    
     private weak var typeImageView: UIImageView!
     private weak var pageLabel: UILabel!
     private weak var authorLabel: UILabel!
@@ -21,6 +23,7 @@ final class AnnotationViewHeader: UIView {
     private weak var lockIcon: UIImageView?
     private weak var rightBarButtonsStackView: UIStackView!
 
+    private var pageTrailingToAuthor: NSLayoutConstraint!
     private var authorTrailingToContainer: NSLayoutConstraint!
     private var authorTrailingToButton: NSLayoutConstraint!
 
@@ -37,6 +40,7 @@ final class AnnotationViewHeader: UIView {
     }
 
     init(layout: AnnotationViewLayout) {
+        self.layout = layout
         super.init(frame: CGRect())
 
         self.translatesAutoresizingMaskIntoConstraints = false
@@ -102,6 +106,8 @@ final class AnnotationViewHeader: UIView {
         self.menuButton.isHidden = !showsMenuButton
         self.lockIcon?.isHidden = !showsLock
 
+        pageTrailingToAuthor.constant = author.isEmpty ? 0 : layout.horizontalInset
+        
         let hasRightItems = !self.rightBarButtonsStackView.arrangedSubviews.filter({ !$0.isHidden }).isEmpty
         self.authorTrailingToButton.isActive = hasRightItems
         self.authorTrailingToContainer.isActive = !hasRightItems
@@ -226,6 +232,7 @@ final class AnnotationViewHeader: UIView {
         self.addSubview(authorLabel)
         self.addSubview(rightBarButtons)
 
+        pageTrailingToAuthor = authorLabel.leadingAnchor.constraint(greaterThanOrEqualTo: pageLabel.trailingAnchor)
         self.authorTrailingToContainer = self.trailingAnchor.constraint(greaterThanOrEqualTo: authorLabel.trailingAnchor, constant: layout.horizontalInset)
         self.authorTrailingToButton = rightBarButtons.leadingAnchor.constraint(greaterThanOrEqualTo: authorLabel.trailingAnchor, constant: layout.horizontalInset)
         let authorCenter = authorLabel.centerXAnchor.constraint(equalTo: self.centerXAnchor)
@@ -244,7 +251,7 @@ final class AnnotationViewHeader: UIView {
             typeImageView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: layout.horizontalInset),
             pageLabel.leadingAnchor.constraint(equalTo: typeImageView.trailingAnchor, constant: layout.pageLabelLeadingOffset),
             authorCenter,
-            authorLabel.leadingAnchor.constraint(greaterThanOrEqualTo: pageLabel.trailingAnchor, constant: layout.horizontalInset),
+            pageTrailingToAuthor,
             rightBarButtons.trailingAnchor.constraint(equalTo: self.trailingAnchor)
         ])
     }
