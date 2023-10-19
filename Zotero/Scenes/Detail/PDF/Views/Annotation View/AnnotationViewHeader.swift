@@ -176,14 +176,14 @@ final class AnnotationViewHeader: UIView {
         shareButton.setImage(UIImage(systemName: "square.and.arrow.up"), for: .normal)
         shareButton.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         shareButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: layout.horizontalInset, bottom: 0, right: (layout.horizontalInset / 2))
-        shareButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        shareButton.setContentCompressionResistancePriority(.required, for: .horizontal)
         shareButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         
         let menuButton = UIButton()
         menuButton.setImage(UIImage(systemName: "ellipsis"), for: .normal)
         menuButton.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         menuButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: (layout.horizontalInset / 2), bottom: 0, right: (layout.horizontalInset / 2))
-        menuButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        menuButton.setContentCompressionResistancePriority(.required, for: .horizontal)
         menuButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
 
         var rightButtons: [UIView] = [shareButton, menuButton]
@@ -194,7 +194,7 @@ final class AnnotationViewHeader: UIView {
             doneButton.setTitleColor(Asset.Colors.zoteroBlueWithDarkMode.color, for: .normal)
             doneButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: (layout.horizontalInset / 2), bottom: 0, right: layout.horizontalInset)
             doneButton.titleLabel?.adjustsFontForContentSizeCategory = true
-            doneButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+            doneButton.setContentCompressionResistancePriority(.required, for: .horizontal)
             doneButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
             rightButtons.append(doneButton)
             self.doneButton = doneButton
