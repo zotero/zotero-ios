@@ -47,7 +47,7 @@ final class AnnotationView: UIView {
     private var tags: AnnotationViewText!
     private var scrollView: UIScrollView?
     private var scrollViewContent: UIView?
-    private(set) var disposeBag: CompositeDisposable!
+    private(set) var disposeBag: CompositeDisposable?
 
     var tagString: String? {
         return self.tags.textLabel.text

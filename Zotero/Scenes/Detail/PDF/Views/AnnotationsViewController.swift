@@ -321,7 +321,7 @@ final class AnnotationsViewController: UIViewController {
         let actionSubscription = cell.actionPublisher.subscribe(onNext: { [weak self] action in
             self?.perform(action: action, annotation: annotation)
         })
-        _ = cell.disposeBag.insert(actionSubscription)
+        _ = cell.disposeBag?.insert(actionSubscription)
     }
 
     private func loadAttributedComment(for annotation: Annotation) -> NSAttributedString? {
