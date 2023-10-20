@@ -117,6 +117,40 @@ class HtmlEpubDocumentViewController: UIViewController {
             return
         }
 
+        if let update = state.documentUpdate {
+            updateView(modifications: update.modifications, insertions: update.insertions, deletions: update.deletions)
+        }
+
+        func updateView(modifications: [[String: Any]], insertions: [[String: Any]], deletions: [String]) {
+            do {
+                let insertionsData = try JSONSerialization.data(withJSONObject: insertions)
+                let modificationsData = try JSONSerialization.data(withJSONObject: modifications)
+                let deletionsData = try JSONSerialization.data(withJSONObject: deletions)
+
+                guard let insertionsJson = String(data: insertionsData, encoding: .utf8) else {
+                    DDLogError("HtmlEpubReaderViewController: can't create insertions json - \(insertions)")
+                    return
+                }
+                guard let deletionsJson = String(data: deletionsData, encoding: .utf8) else {
+                    DDLogError("HtmlEpubReaderViewController: can't create deletions json - \(insertions)")
+                    return
+                }
+                guard let modificationsJson = String(data: modificationsData, encoding: .utf8) else {
+                    DDLogError("HtmlEpubReaderViewController: can't create modifications json - \(insertions)")
+                    return
+                }
+
+                webViewHandler.call(javascript: "updateAnnotations({ deletions: \(deletionsJson), insertions: \(insertionsJson), modifications: \(modificationsJson)});")
+                    .observe(on: MainScheduler.instance)
+                    .subscribe(with: self, onFailure: { _, error in
+                        DDLogError("HtmlEpubReaderViewController: updating document failed - \(error)")
+                    })
+                    .disposed(by: self.disposeBag)
+            } catch let error {
+                DDLogError("HtmlEpubReaderViewController: can't create update jsons - \(error)")
+            }
+        }
+
         func load(documentData data: HtmlEpubReaderState.DocumentData) {
             webViewHandler.call(javascript: "createView({ type: 'snapshot', buf: \(data.buffer), annotations: \(data.annotationsJson)});")
                 .observe(on: MainScheduler.instance)

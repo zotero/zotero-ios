@@ -12,6 +12,7 @@ enum HtmlEpubReaderAction {
     case deselectSelectedAnnotation
     case loadDocument
     case parseAndCacheComment(key: String, comment: String)
+    case removeAnnotation(String)
     case saveAnnotations([String: Any])
     case selectAnnotation(String)
     case selectAnnotationFromDocument([String: Any])
@@ -19,4 +20,5 @@ enum HtmlEpubReaderAction {
     case setCommentActive(Bool)
     case setTags(key: String, tags: [Tag])
     case toggleTool(AnnotationTool)
+    case updateAnnotationProperties(key: String, color: String, lineWidth: CGFloat, pageLabel: String, updateSubsequentLabels: Bool, highlightText: String)
 }

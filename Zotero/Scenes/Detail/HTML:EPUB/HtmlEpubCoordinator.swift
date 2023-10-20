@@ -18,7 +18,14 @@ protocol HtmlEpubReaderCoordinatorDelegate: AnyObject {
 protocol HtmlEpubSidebarCoordinatorDelegate: AnyObject {
 //    func createShareAnnotationMenu(state: PDFReaderState, annotation: PdfAnnotation, sender: UIButton) -> UIMenu?
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void)
-//    func showCellOptions(for annotation: PdfAnnotation, userId: Int, library: Library, sender: UIButton, userInterfaceStyle: UIUserInterfaceStyle, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
+    func showCellOptions(
+        for annotation: HtmlEpubAnnotation,
+        library: Library,
+        sender: UIButton,
+        userInterfaceStyle: UIUserInterfaceStyle,
+        saveAction: @escaping AnnotationEditSaveAction,
+        deleteAction: @escaping AnnotationEditDeleteAction
+    )
 //    func showFilterPopup(from barButton: UIBarButtonItem, filter: AnnotationsFilter?, availableColors: [String], availableTags: [Tag], userInterfaceStyle: UIUserInterfaceStyle, completed: @escaping (AnnotationsFilter?) -> Void)
 }
 
@@ -120,17 +127,44 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
             picked: picked
         )
     }
-//    
-//    func showCellOptions(
-//        for annotation: PdfAnnotation,
-//        userId: Int,
-//        library: Library,
-//        sender: UIButton,
-//        userInterfaceStyle: UIUserInterfaceStyle,
-//        saveAction: @escaping AnnotationEditSaveAction,
-//        deleteAction: @escaping AnnotationEditDeleteAction
-//    ) {
-//    }
+    
+    func showCellOptions(
+        for annotation: HtmlEpubAnnotation,
+        library: Library,
+        sender: UIButton,
+        userInterfaceStyle: UIUserInterfaceStyle,
+        saveAction: @escaping AnnotationEditSaveAction,
+        deleteAction: @escaping AnnotationEditDeleteAction
+    ) {
+        let navigationController = NavigationViewController()
+        navigationController.overrideUserInterfaceStyle = userInterfaceStyle
+
+        let coordinator = AnnotationEditCoordinator(
+            data: AnnotationEditState.AnnotationData(
+                type: annotation.type,
+                isEditable: library.metadataEditable,
+                color: annotation.color,
+                lineWidth: 0,
+                pageLabel: annotation.pageLabel,
+                highlightText: annotation.text ?? ""
+            ),
+            saveAction: saveAction,
+            deleteAction: deleteAction,
+            navigationController: navigationController,
+            controllers: self.controllers
+        )
+        coordinator.parentCoordinator = self
+        self.childCoordinators.append(coordinator)
+        coordinator.start(animated: false)
+
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            navigationController.modalPresentationStyle = .popover
+            navigationController.popoverPresentationController?.sourceView = sender
+            navigationController.popoverPresentationController?.permittedArrowDirections = .left
+        }
+
+        self.navigationController?.present(navigationController, animated: true, completion: nil)
+    }
 //    
 //    func showFilterPopup(
 //        from barButton: UIBarButtonItem,

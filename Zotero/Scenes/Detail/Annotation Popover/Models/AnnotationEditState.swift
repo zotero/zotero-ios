@@ -9,6 +9,15 @@
 import UIKit
 
 struct AnnotationEditState: ViewModelState {
+    struct AnnotationData {
+        let type: AnnotationType
+        let isEditable: Bool
+        let color: String
+        let lineWidth: CGFloat
+        let pageLabel: String
+        let highlightText: String
+    }
+
     struct Changes: OptionSet {
         typealias RawValue = UInt8
 
@@ -18,7 +27,6 @@ struct AnnotationEditState: ViewModelState {
         static let pageLabel = Changes(rawValue: 1 << 1)
     }
 
-    let key: PDFReaderState.AnnotationKey
     let type: AnnotationType
     let isEditable: Bool
 
@@ -29,14 +37,13 @@ struct AnnotationEditState: ViewModelState {
     var updateSubsequentLabels: Bool
     var changes: Changes
 
-    init(annotation: PdfAnnotation, userId: Int, library: Library) {
-        self.key = annotation.readerKey
-        self.type = annotation.type
-        self.isEditable = annotation.editability(currentUserId: userId, library: library) == .editable
-        self.color = annotation.color
-        self.lineWidth = annotation.lineWidth ?? 0
-        self.pageLabel = annotation.pageLabel
-        self.highlightText = annotation.text ?? ""
+    init(data: AnnotationData) {
+        self.type = data.type
+        self.isEditable = data.isEditable
+        self.color = data.color
+        self.lineWidth = data.lineWidth
+        self.pageLabel = data.pageLabel
+        self.highlightText = data.highlightText
         self.updateSubsequentLabels = false
         self.changes = []
     }

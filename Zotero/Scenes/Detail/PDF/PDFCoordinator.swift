@@ -521,9 +521,14 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         navigationController.overrideUserInterfaceStyle = userInterfaceStyle
 
         let coordinator = AnnotationEditCoordinator(
-            annotation: annotation,
-            userId: userId,
-            library: library,
+            data: AnnotationEditState.AnnotationData(
+                type: annotation.type,
+                isEditable: annotation.editability(currentUserId: userId, library: library) == .editable,
+                color: annotation.color,
+                lineWidth: annotation.lineWidth ?? 0,
+                pageLabel: annotation.pageLabel,
+                highlightText: annotation.text ?? ""
+            ),
             saveAction: saveAction,
             deleteAction: deleteAction,
             navigationController: navigationController,

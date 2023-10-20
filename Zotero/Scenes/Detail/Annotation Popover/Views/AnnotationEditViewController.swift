@@ -10,8 +10,8 @@ import UIKit
 
 import RxSwift
 
-typealias AnnotationEditSaveAction = (PDFReaderState.AnnotationKey, String, CGFloat, String, Bool, String) -> Void // key, color, lineWidth, pageLabel, updateSubsequentLabels, highlightText
-typealias AnnotationEditDeleteAction = (PDFReaderState.AnnotationKey) -> Void
+typealias AnnotationEditSaveAction = (String, CGFloat, String, Bool, String) -> Void // key, color, lineWidth, pageLabel, updateSubsequentLabels, highlightText
+typealias AnnotationEditDeleteAction = () -> Void
 
 final class AnnotationEditViewController: UIViewController {
     private enum Section {
@@ -167,7 +167,7 @@ final class AnnotationEditViewController: UIViewController {
                .subscribe(onNext: { [weak self] in
                    guard let self = self else { return }
                    let state = self.viewModel.state
-                   self.saveAction(state.key, state.color, state.lineWidth, state.pageLabel, state.updateSubsequentLabels, state.highlightText)
+                   self.saveAction(state.color, state.lineWidth, state.pageLabel, state.updateSubsequentLabels, state.highlightText)
                    self.cancel()
                })
                .disposed(by: self.disposeBag)
@@ -259,7 +259,7 @@ extension AnnotationEditViewController: UITableViewDelegate {
         case .properties, .highlight: break
 
         case .actions:
-            self.deleteAction(self.viewModel.state.key)
+            self.deleteAction()
 
         case .pageLabel:
             guard self.viewModel.state.isEditable else { return }
@@ -272,8 +272,4 @@ extension AnnotationEditViewController: UITableViewDelegate {
     }
 }
 
-extension AnnotationEditViewController: AnnotationPopover {
-    var annotationKey: PDFReaderState.AnnotationKey? {
-        return self.viewModel.state.key
-    }
-}
+extension AnnotationEditViewController: AnnotationPopover {}

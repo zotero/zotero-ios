@@ -38,6 +38,9 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         case .loadDocument:
             load(in: viewModel)
 
+        case .removeAnnotation(let key):
+            remove(keys: [key], in: viewModel)
+
         case .saveAnnotations(let params):
             saveAnnotations(params: params, in: viewModel)
 
@@ -66,12 +69,51 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             update(viewModel: viewModel, notifyListeners: false) { state in
                 state.comments[key] = self.htmlAttributedStringConverter.convert(text: comment, baseAttributes: [.font: viewModel.state.commentFont])
             }
+
+        case .updateAnnotationProperties(let key, let color, let lineWidth, let pageLabel, let updateSubsequentLabels, let highlightText):
+            set(color: color, lineWidth: lineWidth, pageLabel: pageLabel, updateSubsequentLabels: updateSubsequentLabels, highlightText: highlightText, key: key, viewModel: viewModel)
+        }
+    }
+
+    private func remove(keys: [String], in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        DDLogInfo("HtmlEpubReaderActionHandler: annotations deleted - keys=\(keys)")
+
+        guard !keys.isEmpty else { return }
+
+        let request = MarkObjectsAsDeletedDbRequest<RItem>(keys: keys, libraryId: viewModel.state.library.identifier)
+        self.perform(request: request) { [weak self, weak viewModel] error in
+            guard let self = self, let viewModel = viewModel else { return }
+
+            if let error = error {
+                DDLogError("HtmlEpubReaderActionHandler: can't remove annotations \(keys) - \(error)")
+
+                self.update(viewModel: viewModel) { state in
+                    state.error = .cantDeleteAnnotation
+                }
+            }
+        }
+    }
+
+    private func set(color: String, lineWidth: CGFloat, pageLabel: String, updateSubsequentLabels: Bool, highlightText: String, key: String, viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        let values = [
+            KeyBaseKeyPair(key: FieldKeys.Item.Annotation.pageLabel, baseKey: nil): pageLabel,
+            KeyBaseKeyPair(key: FieldKeys.Item.Annotation.text, baseKey: nil): highlightText,
+            KeyBaseKeyPair(key: FieldKeys.Item.Annotation.color, baseKey: nil): color,
+            KeyBaseKeyPair(key: FieldKeys.Item.Annotation.Position.lineWidth, baseKey: FieldKeys.Item.Annotation.position): "\(Decimal(lineWidth).rounded(to: 3))"
+        ]
+        let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values, dateParser: dateParser)
+        self.perform(request: request) { [weak self, weak viewModel] error in
+            guard let error = error, let self = self, let viewModel = viewModel else { return }
+
+            DDLogError("HtmlEpubReaderActionHandler: can't update annotation \(key) - \(error)")
+
+            self.update(viewModel: viewModel) { state in
+                state.error = .cantUpdateAnnotation
+            }
         }
     }
 
     private func set(comment: NSAttributedString, key: String, viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
-        guard let annotation = viewModel.state.annotations[key] else { return }
-
         let htmlComment = htmlAttributedStringConverter.convert(attributedString: comment)
 
         update(viewModel: viewModel) { state in
@@ -399,10 +441,13 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             let key = keys[index]
             guard let item = objects.filter(.key(key)).first, let (annotation, json) = item.htmlEpubAnnotation else { continue }
 
+            DDLogInfo("HtmlEpubReaderActionHandler: update Html/Epub annotation \(key)")
+            annotations[key] = annotation
+            updatedPdfAnnotations.append(json)
+
             if canUpdate(key: key, item: item, viewModel: viewModel) {
-                DDLogInfo("HtmlEpubReaderActionHandler: update key \(key)")
+                DDLogInfo("HtmlEpubReaderActionHandler: update sidebar key \(key)")
                 updatedKeys.append(key)
-                annotations[key] = annotation
 
                 if item.changeType == .sync {
                     // Update comment if it's remote sync change
@@ -410,11 +455,6 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                     comments[key] = htmlAttributedStringConverter.convert(text: annotation.comment, baseAttributes: [.font: viewModel.state.commentFont])
                 }
             }
-
-            guard item.changeType == .sync else { continue }
-
-            DDLogInfo("HtmlEpubReaderActionHandler: update Html/Epub annotation")
-            updatedPdfAnnotations.append(json)
         }
 
         var shouldCancelUpdate = false

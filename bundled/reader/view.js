@@ -27110,7 +27110,7 @@ function isWin() {
 let isFirefox = typeof InstallTrigger !== 'undefined';
 let isSafari = /constructor/i.test(window.HTMLElement) || function (p) {
   return p.toString() === "[object SafariRemoteNotification]";
-}(!window['safari'] || typeof safari !== 'undefined' && window['safari'].pushNotification) || !!navigator && navigator.userAgent.includes('Safari/') && !navigator.userAgent.includes('Chrome/') || !!navigator && navigator.userAgent.includes('Zotero_iOS/');
+}(!window['safari'] || typeof safari !== 'undefined' && window['safari'].pushNotification) || !!navigator && (navigator.userAgent.includes('Safari/') || navigator.userAgent.includes('Zotero_iOS/')) && !navigator.userAgent.includes('Chrome/');
 function isTextBox(node) {
   return ['INPUT'].includes(node.nodeName) && node.type === 'text' || node.getAttribute('contenteditable') === 'true';
 }
@@ -28083,9 +28083,10 @@ class DOMView {
         // unless the allow-scripts permission is added to the frame's sandbox. We prevent scripts in the frame from
         // running via the CSP.
         // https://bugs.webkit.org/show_bug.cgi?id=218086
-        if (isSafari) {
-            this._iframe.sandbox.add('allow-scripts');
-        }
+        // TEMP: Add allow-scripts on all browsers until we can reliably detect Safari on all platforms
+        // if (isSafari) {
+        this._iframe.sandbox.add('allow-scripts');
+        // }
         // Set the CSP directly on the iframe; we also add it as a <meta> tag in the srcdoc for browsers that don't
         // support the csp attribute (currently all browsers besides Chrome derivatives)
         this._iframe.setAttribute('csp', this._getCSP());
@@ -28354,18 +28355,6 @@ class DOMView {
             let style = this._iframeDocument.createElement('style');
             style.innerHTML = annotation_overlay;
             this._iframeDocument.head.append(style);
-            this._touchDebug = this._iframeDocument.createElement('div');
-            this._touchDebug.style.position = 'fixed';
-            this._touchDebug.style.top = '0';
-            this._touchDebug.style.left = '0';
-            this._touchDebug.style.backgroundColor = 'red';
-            this._touchDebug.style.color = 'white';
-            this._touchDebug.style.zIndex = '100000';
-            this._touchDebug.append(this._iframeDocument.createElement('span'));
-            this._touchDebug.firstElementChild.append('No touch events yet');
-            this._touchDebug.append(this._iframeDocument.createElement('br'));
-            this._touchDebug.append(this._iframeDocument.createElement('span'));
-            this._iframeDocument.body.append(this._touchDebug);
             // Pass options to setters that were delayed until iframe initialization
             this.setAnnotations(this._options.annotations);
             this.setTool(this._options.tool);
@@ -28636,7 +28625,6 @@ class DOMView {
             if ((event.pointerType === 'touch' || event.pointerType === 'pen')
                 && (this._tool.type === 'highlight' || this._tool.type === 'underline')) {
                 this._touchAnnotationStartPosition = caretPositionFromPoint(this._iframeDocument, event.clientX, event.clientY);
-                this._touchDebug.firstElementChild.textContent = 'Touch start';
                 event.stopPropagation();
             }
         }
@@ -28681,9 +28669,6 @@ class DOMView {
         else {
             this._tryUseTool();
         }
-        if (this._touchAnnotationStartPosition) {
-            this._touchDebug.firstElementChild.textContent = 'Touch end';
-        }
         this._touchAnnotationStartPosition = null;
     }
     _handlePointerMove(event) {
@@ -28705,7 +28690,6 @@ class DOMView {
                     if (annotation) {
                         this._previewAnnotation = annotation;
                         this._renderAnnotations();
-                        this._touchDebug.firstElementChild.textContent = 'Touch move';
                     }
                 }
                 event.stopPropagation();
@@ -28740,7 +28724,6 @@ class DOMView {
             this._previewAnnotation = null;
         }
         this._renderAnnotations();
-        this._touchDebug.lastElementChild.textContent = 'Tool: ' + tool.type;
     }
     setAnnotations(annotations) {
         // Individual annotation object reference changes only if that annotation was modified,
@@ -32284,6 +32267,7 @@ class View {
     this._view = this._createView();
     this._annotationManager = new annotation_manager({
       readOnly: options.readOnly,
+      authorName: options.authorName,
       annotations: options.annotations,
       onSave: options.onSaveAnnotations,
       onDelete: nop,
@@ -32471,8 +32455,8 @@ function log(data) {
   window.webkit.messageHandlers.logHandler.postMessage(data);
 }
 window.createView = options => {
-    log("Annotations: " + JSON.stringify(options.annotations));
-  window._view = new view({
+  log("Annotations: " + JSON.stringify(options.annotations));
+  window._view = new View({
     ...options,
     container: document.getElementById('view'),
     data: {
@@ -32527,6 +32511,15 @@ window.setTool = options => {
 window.clearTool = () => {
   log("Clear tool");
   window._view.setTool();
+};
+window.updateAnnotations = options => {
+  if (options.deletions.length > 0) {
+    window._view.unsetAnnotation(options.deletions);
+  }
+  let updates = options.insertions + options.modifications;
+  if (updates.length > 0) {
+    window._view.setAnnotations(updates);
+  }
 };
 
 // Notify when iframe is loaded

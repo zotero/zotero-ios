@@ -10,9 +10,7 @@ import UIKit
 
 import RxSwift
 
-protocol AnnotationPopover: AnyObject {
-    var annotationKey: PDFReaderState.AnnotationKey? { get }
-}
+protocol AnnotationPopover: AnyObject {}
 
 protocol AnnotationPopoverAnnotationCoordinatorDelegate: AnyObject {
     func createShareAnnotationMenu(sender: UIButton) -> UIMenu?
@@ -70,7 +68,15 @@ extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDe
     }
     
     func showEdit(annotation: PdfAnnotation, userId: Int, library: Library, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
-        let state = AnnotationEditState(annotation: annotation, userId: userId, library: library)
+        let data = AnnotationEditState.AnnotationData(
+            type: annotation.type,
+            isEditable: annotation.editability(currentUserId: userId, library: library) == .editable,
+            color: annotation.color,
+            lineWidth: annotation.lineWidth ?? 0,
+            pageLabel: annotation.pageLabel,
+            highlightText: annotation.text ?? ""
+        )
+        let state = AnnotationEditState(data: data)
         let handler = AnnotationEditActionHandler()
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = AnnotationEditViewController(viewModel: viewModel, includeColorPicker: false, saveAction: saveAction, deleteAction: deleteAction)
