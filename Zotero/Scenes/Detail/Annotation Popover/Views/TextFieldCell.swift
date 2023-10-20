@@ -22,7 +22,8 @@ final class TextFieldCell: RxTableViewCell {
         self.textField.becomeFirstResponder()
     }
 
-    func setup(with text: String) {
-        self.textField.text = text
+    func setup(with text: String, delegate: UITextFieldDelegate? = nil) {
+        textField.text = text
+        textField.delegate = delegate
     }
 }

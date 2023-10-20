@@ -97,7 +97,7 @@ extension AnnotationPageLabelViewController: UITableViewDataSource {
         let cell = tableView.dequeueReusableCell(withIdentifier: section.cellId, for: indexPath)
 
         if let cell = cell as? TextFieldCell {
-            cell.setup(with: self.viewModel.state.label)
+            cell.setup(with: self.viewModel.state.label, delegate: self)
             cell.textObservable
                 .subscribe(onNext: { [weak self] text in
                     self?.viewModel.process(action: .setLabel(text))
@@ -113,5 +113,12 @@ extension AnnotationPageLabelViewController: UITableViewDataSource {
         }
 
         return cell
+    }
+}
+
+extension AnnotationPageLabelViewController: UITextFieldDelegate {
+    static let maxLength = 16
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        (textField.text?.count ?? 0) + string.count - range.length <= Self.maxLength
     }
 }

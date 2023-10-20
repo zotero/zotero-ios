@@ -13,7 +13,7 @@ import RealmSwift
 import Network
 
 struct Database {
-    private static let schemaVersion: UInt64 = 39
+    private static let schemaVersion: UInt64 = 40
 
     static func mainConfiguration(url: URL, fileStorage: FileStorage) -> Realm.Configuration {
         var config = Realm.Configuration(fileURL: url,
@@ -50,9 +50,46 @@ struct Database {
             if schemaVersion < 39 {
                 self.addUuidsToCreators(migration: migration)
             }
+            if schemaVersion < 40 {
+                truncateAnnotationPageLabels(migration: migration)
+            }
         }
     }
 
+    private static func truncateAnnotationPageLabels(migration: Migration) {
+        migration.enumerateObjects(ofType: RItem.className()) { oldObject, newObject in
+            let maxLength = 16
+            guard let oldObject,
+                  let newObject,
+                  oldObject["rawType"] as? String == ItemTypes.annotation,
+                  var fields = oldObject["fields"] as? List<MigrationObject>,
+                  let index = fields.firstIndex(where: { $0["key"] as? String == FieldKeys.Item.Annotation.pageLabel }),
+                  let pageLabel = fields[index]["value"] as? String,
+                  pageLabel.count > maxLength
+            else { return }
+            
+            (newObject["fields"] as? List<MigrationObject>)?[index]["value"] = pageLabel.prefix(maxLength)
+            (newObject["fields"] as? List<MigrationObject>)?[index]["changed"] = true
+            
+            let itemChange = RItemChanges.fields
+            var newChanges = List<RObjectChange>()
+            newChanges.append(RObjectChange.create(changes: itemChange))
+            if let oldChanges = oldObject["changes"] as? List<MigrationObject> {
+                for oldChange in oldChanges {
+                    if let oldIdentifier = oldChange["identifier"] as? String,
+                       let oldRawChanges = oldChange["rawChanges"] as? Int16,
+                       oldRawChanges != itemChange.rawValue {
+                        let existingChange = RObjectChange()
+                        existingChange.identifier = oldIdentifier
+                        existingChange.rawChanges = oldRawChanges
+                        newChanges.append(existingChange)
+                    }
+                }
+            }
+            newObject["changes"] = newChanges
+        }
+    }
+    
     private static func addUuidsToCreators(migration: Migration) {
         migration.enumerateObjects(ofType: RCreator.className()) { _, newObject in
             newObject?["uuid"] = UUID().uuidString
