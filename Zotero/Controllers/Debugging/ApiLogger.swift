@@ -55,8 +55,11 @@ struct ApiLogger {
         if startData.logParams.contains(.headers) {
             self.log(headers: headers ?? [:])
         }
-        if startData.logParams.contains(.response), let data = data, let string = String(data: data, encoding: .utf8) {
-            DDLogInfo(string)
+        if startData.logParams.contains(.response), let data = data, var string = String(data: data, encoding: .utf8) {
+            if string.count > 5000 {
+                string = String(string.prefix(5000))
+            }
+            DDLogInfo(DDLogMessageFormat(stringLiteral: string))
         }
     }
 
@@ -70,7 +73,7 @@ struct ApiLogger {
         if error.response.isEmpty || error.response == "No Response" {
             DDLogError("\(error.error)")
         } else {
-            DDLogError(error.response)
+            DDLogError(DDLogMessageFormat(stringLiteral: error.response))
         }
     }
 
@@ -84,7 +87,7 @@ struct ApiLogger {
         let method = urlRequest.httpMethod ?? "-"
         let url = urlRequest.url?.absoluteString ?? "-"
         let identifier = ApiLogger.identifier(method: method, url: url)
-        DDLogInfo(identifier)
+        DDLogInfo(DDLogMessageFormat(stringLiteral: identifier))
         return identifier
     }
 
@@ -103,7 +106,8 @@ struct ApiLogger {
         switch encoding {
         case .json, .array:
             if let data = urlRequest.httpBody, let string = String(data: data, encoding: .utf8) {
-                DDLogInfo(self.redact(parameters: string))
+                let message = DDLogMessageFormat(stringLiteral: self.redact(parameters: string))
+                DDLogInfo(message)
             }
 
         case .data:
@@ -119,7 +123,7 @@ struct ApiLogger {
         guard !headers.isEmpty,
               let data = try? JSONSerialization.data(withJSONObject: self.redact(headers: headers), options: .prettyPrinted),
               let string = String(data: data, encoding: .utf8) else { return }
-        DDLogInfo(string)
+        DDLogInfo(DDLogMessageFormat(stringLiteral: string))
     }
 
     // MARK: - Redacting

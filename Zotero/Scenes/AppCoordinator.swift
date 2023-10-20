@@ -163,8 +163,12 @@ final class AppCoordinator: NSObject {
             self.showItemDetail(key: key, library: library, selectChildKey: preselectedChildKey, animated: animated)
 
         case .pdfReader(let attachment, let library, let page, let annotation, let parentKey, let isAvailable):
-            DDLogInfo("AppCoordinator: show custom url - pdf reader; key=\(attachment.key); library=\(library.identifier); page=\(page.flatMap(String.init) ?? "nil");" +
-                      " annotation=\(annotation ?? "nil"); parentKey=\(parentKey ?? "nil")")
+            let message = DDLogMessageFormat(
+                stringLiteral:
+                    "AppCoordinator: show custom url - pdf reader; key=\(attachment.key); library=\(library.identifier);" +
+                    " page=\(page.flatMap(String.init) ?? "nil"); annotation=\(annotation ?? "nil"); parentKey=\(parentKey ?? "nil")"
+            )
+            DDLogInfo(message)
             if isAvailable {
                 self.open(attachment: attachment, library: library, on: page, annotation: annotation, parentKey: parentKey, animated: animated)
                 return
