@@ -18,7 +18,7 @@ final class AnnotationCell: UITableViewCell {
     var actionPublisher: PublishSubject<AnnotationView.Action> {
         return self.annotationView.actionPublisher
     }
-    var disposeBag: CompositeDisposable {
+    var disposeBag: CompositeDisposable? {
         return self.annotationView.disposeBag
     }
 
@@ -37,7 +37,7 @@ final class AnnotationCell: UITableViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         self.key = ""
-        disposeBag.dispose()
+        disposeBag?.dispose()
     }
 
     // MARK: - Actions
