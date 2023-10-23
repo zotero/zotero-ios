@@ -418,7 +418,7 @@ final class TranslatorsAndStylesController {
     /// - parameter translators: Array of tuples. Each tuple consists of translator id and translator filename.
     private func unzip(translators: [(id: String, filename: String)]) throws {
         guard let zipUrl = self.bundle.path(forResource: "Bundled/translators/translators", ofType: "zip").flatMap({ URL(fileURLWithPath: $0) }),
-              let archive = Archive(url: zipUrl, accessMode: .read) else {
+                let archive = try? Archive(url: zipUrl, accessMode: .read, pathEncoding: nil) else {
             throw Error.bundleMissing
         }
 
@@ -517,7 +517,7 @@ final class TranslatorsAndStylesController {
         // Load bundled data
         guard let zipUrl = self.bundle.path(forResource: "Bundled/translators/translators", ofType: "zip")
                                       .flatMap({ URL(fileURLWithPath: $0) }),
-              let archive = Archive(url: zipUrl, accessMode: .read) else {
+              let archive = try? Archive(url: zipUrl, accessMode: .read, pathEncoding: nil) else {
             throw Error.bundleMissing
         }
         DDLogInfo("TranslatorsAndStylesController: load index")
