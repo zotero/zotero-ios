@@ -6020,7 +6020,7 @@
 			repositoryURL = "https://github.com/RxSwiftCommunity/RxSwiftExt";
 			requirement = {
 				kind = exactVersion;
-				version = 6.2.0;
+				version = 6.2.1;
 			};
 		};
 		B356A3792524A63D003F1943 /* XCRemoteSwiftPackageReference "SwiftyGif" */ = {
@@ -6036,7 +6036,7 @@
 			repositoryURL = "https://github.com/weichsel/ZIPFoundation";
 			requirement = {
 				kind = exactVersion;
-				version = 0.9.16;
+				version = 0.9.17;
 			};
 		};
 		B356A3882524A698003F1943 /* XCRemoteSwiftPackageReference "Nimble" */ = {
@@ -6076,7 +6076,7 @@
 			repositoryURL = "https://github.com/realm/realm-cocoa";
 			requirement = {
 				kind = exactVersion;
-				version = 10.42.2;
+				version = 10.43.1;
 			};
 		};
 		B35E4B8B25248B3C000EA134 /* XCRemoteSwiftPackageReference "RxSwift" */ = {
@@ -6092,7 +6092,7 @@
 			repositoryURL = "https://github.com/PSPDFKit/PSPDFKit-SP";
 			requirement = {
 				kind = exactVersion;
-				version = 12.3.1;
+				version = 13.0.1;
 			};
 		};
 		B3D84BEE27919FDE005DDD7C /* XCRemoteSwiftPackageReference "Starscream" */ = {
