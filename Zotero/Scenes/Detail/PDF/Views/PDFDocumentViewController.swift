@@ -838,27 +838,15 @@ extension UIMenu.Identifier {
 
 extension UIAction {
     fileprivate func replacing(title: String? = nil, handler: @escaping UIActionHandler) -> UIAction {
-        if #available(iOS 15.0, *) {
-            return UIAction(
-                title: title ?? self.title,
-                subtitle: self.subtitle,
-                image: title != nil ? nil : self.image,
-                identifier: self.identifier,
-                discoverabilityTitle: self.discoverabilityTitle,
-                attributes: self.attributes,
-                state: self.state,
-                handler: handler
-            )
-        } else {
-            return UIAction(
-                title: title ?? self.title,
-                image: title != nil ? nil : self.image,
-                identifier: self.identifier,
-                discoverabilityTitle: self.discoverabilityTitle,
-                attributes: self.attributes,
-                state: self.state,
-                handler: handler
-            )
-        }
+        UIAction(
+            title: title ?? self.title,
+            subtitle: self.subtitle,
+            image: title != nil ? nil : self.image,
+            identifier: self.identifier,
+            discoverabilityTitle: self.discoverabilityTitle,
+            attributes: self.attributes,
+            state: self.state,
+            handler: handler
+        )
     }
 }

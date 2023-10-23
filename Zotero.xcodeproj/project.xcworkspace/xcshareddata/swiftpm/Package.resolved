@@ -77,8 +77,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/PSPDFKit/PSPDFKit-SP",
       "state" : {
-        "revision" : "33f91d1c5cac1a68876582bf05b561a9155a410c",
-        "version" : "12.3.1"
+        "revision" : "324c9a623e879e7a1ff8aa8e1968739619ae538d",
+        "version" : "13.0.1"
       }
     },
     {
@@ -95,8 +95,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/realm/realm-cocoa",
       "state" : {
-        "revision" : "2ce1ef9a5d48d34470bfd21d3b722fa9c05c0b4e",
-        "version" : "10.42.2"
+        "revision" : "a3da8c91ee44c7610d4b1100bd3079ddca26ab84",
+        "version" : "10.43.1"
       }
     },
     {
@@ -104,8 +104,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/realm/realm-core",
       "state" : {
-        "revision" : "1eb93c9619f6a05b5a91c2719690606016802e0b",
-        "version" : "13.20.1"
+        "revision" : "c569bec4d04da84030d94f376437bc4efda3686b",
+        "version" : "13.23.1"
       }
     },
     {
@@ -122,8 +122,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/RxSwiftCommunity/RxSwiftExt",
       "state" : {
-        "revision" : "a8065d19acbdee55c6e2b2d9a17a420e34ab8d83",
-        "version" : "6.2.0"
+        "revision" : "eb4adf9f00a21b3efc3869a5218a6d7517e95222",
+        "version" : "6.2.1"
       }
     },
     {
@@ -158,8 +158,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/weichsel/ZIPFoundation",
       "state" : {
-        "revision" : "43ec568034b3731101dbf7670765d671c30f54f3",
-        "version" : "0.9.16"
+        "revision" : "a3f5c2bae0f04b0bce9ef3c4ba6bd1031a0564c4",
+        "version" : "0.9.17"
       }
     }
   ],

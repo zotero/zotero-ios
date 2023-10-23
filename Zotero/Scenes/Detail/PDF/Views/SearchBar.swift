@@ -109,15 +109,10 @@ final class SearchBar: UIView {
 
         let clearImage = UIImage(systemName: "xmark.circle.fill", withConfiguration: UIImage.SymbolConfiguration(scale: .medium))?.withRenderingMode(.alwaysTemplate)
 
-        if #available(iOS 15.0, *) {
-            var clearConfiguration = UIButton.Configuration.plain()
-            clearConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: self.cornerRadius, bottom: 8, trailing: self.cornerRadius)
-            clearConfiguration.image = clearImage
-            clear.configuration = clearConfiguration
-        } else {
-            clear.setImage(clearImage, for: .normal)
-            clear.contentEdgeInsets = UIEdgeInsets(top: 8, left: self.cornerRadius, bottom: 8, right: self.cornerRadius)
-        }
+        var clearConfiguration = UIButton.Configuration.plain()
+        clearConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: self.cornerRadius, bottom: 8, trailing: self.cornerRadius)
+        clearConfiguration.image = clearImage
+        clear.configuration = clearConfiguration
 
         let cancel = UIButton(type: .custom)
         cancel.translatesAutoresizingMaskIntoConstraints = false

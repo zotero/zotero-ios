@@ -10,6 +10,7 @@ import Combine
 import Foundation
 import MobileCoreServices
 import WebKit
+import UniformTypeIdentifiers
 
 import Alamofire
 import CocoaLumberjackSwift
@@ -377,13 +378,13 @@ final class ExtensionViewModel {
     }
 
     private func loadProviderData(from itemProvider: NSItemProvider) -> Observable<Result<State.RawAttachment, State.AttachmentState.Error>> {
-        if itemProvider.hasItemConformingToTypeIdentifier(kUTTypePropertyList as String) {
+        if itemProvider.hasItemConformingToTypeIdentifier(UTType.propertyList.identifier) {
             DDLogInfo("ExtensionViewModel: item provider for property list")
             return self.loadWebData(from: itemProvider)
-        } else if itemProvider.hasItemConformingToTypeIdentifier(kUTTypeURL as String) {
+        } else if itemProvider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
             DDLogInfo("ExtensionViewModel: item provider for URL")
             return self.loadUrl(from: itemProvider)
-        } else if itemProvider.hasItemConformingToTypeIdentifier(kUTTypePlainText as String) {
+        } else if itemProvider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
             DDLogInfo("ExtensionViewModel: item provider for plain text")
             return self.loadPlainText(from: itemProvider)
         }
@@ -498,7 +499,7 @@ final class ExtensionViewModel {
 
             DDLogInfo("ExtensionViewModel: load item provider")
 
-            itemProvider.loadItem(forTypeIdentifier: (kUTTypeURL as String), options: nil, completionHandler: { item, error -> Void in
+            itemProvider.loadItem(forTypeIdentifier: (UTType.url.identifier), options: nil, completionHandler: { item, error -> Void in
                 DDLogInfo("ExtensionViewModel: loaded item provider")
                 if let error = error {
                     DDLogError("ExtensionViewModel: url load error - \(error)")
@@ -533,7 +534,7 @@ final class ExtensionViewModel {
 
             DDLogInfo("ExtensionViewModel: load item provider")
 
-            itemProvider.loadItem(forTypeIdentifier: (kUTTypePropertyList as String), options: nil, completionHandler: { item, error -> Void in
+            itemProvider.loadItem(forTypeIdentifier: (UTType.propertyList.identifier), options: nil, completionHandler: { item, error -> Void in
                 DDLogInfo("ExtensionViewModel: loaded item provider")
                 if let error = error {
                     DDLogError("ExtensionViewModel: web data load error - \(error)")
@@ -583,7 +584,7 @@ final class ExtensionViewModel {
 
             DDLogInfo("ExtensionViewModel: load item provider")
 
-            itemProvider.loadItem(forTypeIdentifier: (kUTTypePlainText as String), options: nil, completionHandler: { item, error -> Void in
+            itemProvider.loadItem(forTypeIdentifier: (UTType.plainText.identifier), options: nil, completionHandler: { item, error -> Void in
                 DDLogInfo("ExtensionViewModel: loaded item provider")
                 if let error = error {
                     DDLogError("ExtensionViewModel: url plaintext error - \(error)")

@@ -122,8 +122,8 @@ enum StringAttribute: CaseIterable {
 
             case .smallcaps:
                 descriptorAttributes[.featureSettings] = [
-                    [UIFontDescriptor.FeatureKey.featureIdentifier: kLowerCaseType, UIFontDescriptor.FeatureKey.typeIdentifier: kLowerCaseSmallCapsSelector],
-                    [UIFontDescriptor.FeatureKey.featureIdentifier: kUpperCaseType, UIFontDescriptor.FeatureKey.typeIdentifier: kUpperCaseSmallCapsSelector]
+                    [UIFontDescriptor.FeatureKey.type: kLowerCaseType, UIFontDescriptor.FeatureKey.selector: kLowerCaseSmallCapsSelector],
+                    [UIFontDescriptor.FeatureKey.type: kUpperCaseType, UIFontDescriptor.FeatureKey.selector: kUpperCaseSmallCapsSelector]
                 ]
             }
         }
