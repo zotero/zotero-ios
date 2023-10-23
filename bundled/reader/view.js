@@ -32513,12 +32513,17 @@ window.clearTool = () => {
   window._view.setTool();
 };
 window.updateAnnotations = options => {
+    log("Modifications: " + JSON.stringify(options.modifications));
+    log("Insertions: " + JSON.stringify(options.insertions));
+    log("Deletions: " + JSON.stringify(options.deletions));
   if (options.deletions.length > 0) {
     window._view.unsetAnnotation(options.deletions);
   }
-  let updates = options.insertions + options.modifications;
+  let updates = [...options.insertions, ...options.modifications];
   if (updates.length > 0) {
+      log("Set annotations: " + JSON.stringify(updates));
     window._view.setAnnotations(updates);
+      log("Did set");
   }
 };
 

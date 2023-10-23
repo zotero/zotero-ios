@@ -532,7 +532,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 state.sortedKeys = keys
             } else {
                 state.snapshotKeys = keys
-//                state.sortedKeys = self.filteredKeys(from: keys, term: state.searchTerm, filter: state.filter, state: state)
+                state.sortedKeys = self.filteredKeys(from: keys, term: state.searchTerm, filter: state.filter, state: state)
             }
             state.annotations = annotations
             state.documentUpdate = HtmlEpubReaderState.DocumentUpdate(deletions: deletedPdfAnnotations, insertions: insertedPdfAnnotations, modifications: updatedPdfAnnotations)
