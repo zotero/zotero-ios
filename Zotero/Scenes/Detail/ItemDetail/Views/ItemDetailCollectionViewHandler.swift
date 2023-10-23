@@ -594,7 +594,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
     // MARK: - Layout
 
     private func layoutMargins(for indexPath: IndexPath) -> UIEdgeInsets {
-        guard let section = self.dataSource.section(for: indexPath.section)?.section else { return UIEdgeInsets() }
+        guard let section = dataSource.sectionIdentifier(for: indexPath.section)?.section else { return UIEdgeInsets() }
 
         let isEditing = self.viewModel.state.isEditing
         let isFirstRow = indexPath.row == 0
@@ -609,7 +609,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
             var supplementaryItems: [NSCollectionLayoutBoundarySupplementaryItem] = []
 
-            if let section = self.dataSource.section(for: index) {
+            if let section = dataSource.sectionIdentifier(for: index) {
                 self.setupSeparators(in: &configuration, section: section)
                 self.setupSwipeActions(in: &configuration)
                 if let header = self.createHeader(for: section.section) {
@@ -945,7 +945,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
 
     func collectionView(_ collectionView: UICollectionView, targetIndexPathForMoveOfItemFromOriginalIndexPath originalIndexPath: IndexPath, atCurrentIndexPath currentIndexPath: IndexPath,
                         toProposedIndexPath proposedIndexPath: IndexPath) -> IndexPath {
-        let section = self.dataSource.section(for: proposedIndexPath.section)?.section
+        let section = dataSource.sectionIdentifier(for: proposedIndexPath.section)?.section
         if section != .creators { return originalIndexPath }
         if let row = self.dataSource.itemIdentifier(for: proposedIndexPath) {
             switch row {

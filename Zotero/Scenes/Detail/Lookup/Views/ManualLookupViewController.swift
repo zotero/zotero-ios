@@ -185,7 +185,7 @@ class ManualLookupViewController: UIViewController {
 
         let responder = LiveTextResponder(viewModel: self.viewModel)
 
-        if #available(iOS 15.0, *), responder.canPerformAction(#selector(UIResponder.captureTextFromCamera), withSender: self.scanButton) {
+        if responder.canPerformAction(#selector(UIResponder.captureTextFromCamera), withSender: self.scanButton) {
             var configuration = self.scanButton.configuration ?? UIButton.Configuration.bordered()
             configuration.title = L10n.scanText
             configuration.image = UIImage(systemName: "text.viewfinder")
@@ -195,8 +195,6 @@ class ManualLookupViewController: UIViewController {
 
             self.scanButton.addAction(.captureTextFromCamera(responder: responder, identifier: nil), for: .touchUpInside)
             self.liveTextResponder = responder
-        } else {
-            self.scanButton.isHidden = true
         }
 
         let isPhone = UIDevice.current.userInterfaceIdiom == .phone

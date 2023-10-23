@@ -774,7 +774,6 @@
 		B3830CEA255451DC00910FE0 /* TagPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CE8255451DC00910FE0 /* TagPickerViewController.swift */; };
 		B3830CF625545EE400910FE0 /* TagPickerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CF425545EE400910FE0 /* TagPickerCell.swift */; };
 		B3830CF725545EE400910FE0 /* TagPickerCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3830CF525545EE400910FE0 /* TagPickerCell.xib */; };
-		B3841080281AC752006751B0 /* UITableViewDiffableDataSource+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B384107F281AC752006751B0 /* UITableViewDiffableDataSource+Extensions.swift */; };
 		B385B70E25C03E7E0073CA6F /* PDFExportState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385B70D25C03E7E0073CA6F /* PDFExportState.swift */; };
 		B386328626C5499900183062 /* TranslatorsAndStylesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsAndStylesController.swift */; };
 		B3863FC82AD819AB005082F0 /* EndItemDetailEditingDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3863FC72AD819AB005082F0 /* EndItemDetailEditingDbRequest.swift */; };
@@ -1720,7 +1719,6 @@
 		B3830CE8255451DC00910FE0 /* TagPickerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagPickerViewController.swift; sourceTree = "<group>"; };
 		B3830CF425545EE400910FE0 /* TagPickerCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagPickerCell.swift; sourceTree = "<group>"; };
 		B3830CF525545EE400910FE0 /* TagPickerCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TagPickerCell.xib; sourceTree = "<group>"; };
-		B384107F281AC752006751B0 /* UITableViewDiffableDataSource+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UITableViewDiffableDataSource+Extensions.swift"; sourceTree = "<group>"; };
 		B385B70D25C03E7E0073CA6F /* PDFExportState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFExportState.swift; sourceTree = "<group>"; };
 		B3863FC72AD819AB005082F0 /* EndItemDetailEditingDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EndItemDetailEditingDbRequest.swift; sourceTree = "<group>"; };
 		B3863FC92AD830DE005082F0 /* DeleteCreatorItemDetailDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteCreatorItemDetailDbRequest.swift; sourceTree = "<group>"; };
@@ -2433,7 +2431,6 @@
 				B3593ADB24B60A7600CA0B57 /* UISearchBar+Extensions.swift */,
 				B36C07DD26FB264800C855A9 /* UITableView+Extensions.swift */,
 				B3B953D12459B4D800FC96DB /* UITableViewCell+SwiftUI.swift */,
-				B384107F281AC752006751B0 /* UITableViewDiffableDataSource+Extensions.swift */,
 				B305651223FC051E003304F2 /* UIView+Extensions.swift */,
 				B305650E23FC051E003304F2 /* UIViewController+Extensions.swift */,
 				B340831228F983CF0087D1A1 /* URL+Extensions.swift */,
@@ -4821,7 +4818,6 @@
 				B305660A23FC051E003304F2 /* RegisterUploadRequest.swift in Sources */,
 				B31CC57F28646D8E0055C114 /* ManualLookupAction.swift in Sources */,
 				B3E8FE582714323200F51458 /* SavingSettingsAction.swift in Sources */,
-				B3841080281AC752006751B0 /* UITableViewDiffableDataSource+Extensions.swift in Sources */,
 				B3ADBCB827CFB64B00B7041F /* PDFSettingsViewController.swift in Sources */,
 				B305662B23FC051F003304F2 /* SyncProgressHandler.swift in Sources */,
 				B3F09AE629CAFF860084E4D8 /* TagFilterActionHandler.swift in Sources */,
