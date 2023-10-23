@@ -8,6 +8,7 @@
 
 import MobileCoreServices
 import UIKit
+import UniformTypeIdentifiers
 
 import CocoaLumberjackSwift
 
@@ -19,12 +20,12 @@ extension UIPasteboard {
             return
         }
 
-        var item: [String: Any] = [(kUTTypePlainText as String): plaintext, (kUTTypeHTML as String): htmlData]
+        var item: [String: Any] = [UTType.plainText.identifier: plaintext, UTType.html.identifier: htmlData]
 
         do {
             let attrString = try NSAttributedString(data: htmlData, options: [.documentType: NSAttributedString.DocumentType.html], documentAttributes: nil)
             let data = try attrString.data(from: NSRange(location: 0, length: attrString.length), documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf])
-            item[kUTTypeRTF as String] = data
+            item[UTType.rtf.identifier] = data
         } catch let error {
             DDLogError("UIPasteboard: can't convert html to attributed string or rtf - \(error)")
         }

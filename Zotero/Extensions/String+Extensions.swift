@@ -8,15 +8,11 @@
 
 import Foundation
 import CoreServices
+import UniformTypeIdentifiers
 
 extension String {
     var mimeTypeFromExtension: String? {
-        if let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, self as NSString, nil)?.takeRetainedValue() {
-            if let mimetype = UTTypeCopyPreferredTagWithClass(uti, kUTTagClassMIMEType)?.takeRetainedValue() {
-                return mimetype as String
-            }
-        }
-        return nil
+        UTType(tag: self, tagClass: .filenameExtension, conformingTo: nil)?.preferredMIMEType
     }
 
     var extensionFromMimeType: String? {
@@ -36,10 +32,7 @@ extension String {
         default: break
         }
 
-        guard let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, self as CFString, nil),
-              let ext = UTTypeCopyPreferredTagWithClass(uti.takeRetainedValue(), kUTTagClassFilenameExtension)
-        else { return nil }
-        return ext.takeRetainedValue() as String
+        return UTType(tag: self, tagClass: .mimeType, conformingTo: nil)?.preferredFilenameExtension
     }
 
     var strippedHtmlTags: String {
