@@ -55,10 +55,7 @@ struct ApiLogger {
         if startData.logParams.contains(.headers) {
             self.log(headers: headers ?? [:])
         }
-        if startData.logParams.contains(.response), let data = data, var string = String(data: data, encoding: .utf8) {
-            if string.count > 5000 {
-                string = String(string.prefix(5000))
-            }
+        if #available(iOS 17.0, *), startData.logParams.contains(.response), let data = data, let string = String(data: data, encoding: .utf8) {
             DDLogInfo(DDLogMessageFormat(stringLiteral: string))
         }
     }
