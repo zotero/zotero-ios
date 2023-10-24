@@ -211,8 +211,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             self.pageDebounceDisposeBag = nil
             self.store(page: page, in: viewModel)
 
-        case .export(let settings):
-            self.export(settings: settings, viewModel: viewModel)
+        case .export(let includeAnnotations):
+            self.export(includeAnnotations: includeAnnotations, viewModel: viewModel)
 
         case .clearTmpData:
             /// Annotations which originate from document and are not synced generate their previews based on annotation UUID, which is in-memory and is not stored in PDF. So these previews are only
@@ -503,7 +503,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func export(settings: PDFExportSettings, viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func export(includeAnnotations: Bool, viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let boundingBoxConverter = self.delegate, let url = viewModel.state.document.fileURL else { return }
 
         self.update(viewModel: viewModel) { state in
@@ -513,7 +513,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         let annotations: [PSPDFKit.Annotation]
 
-        if !settings.includeAnnotations {
+        if !includeAnnotations {
             annotations = []
         } else {
             annotations = AnnotationConverter.annotations(from: viewModel.state.databaseAnnotations, type: .export, interfaceStyle: .light, currentUserId: viewModel.state.userId,

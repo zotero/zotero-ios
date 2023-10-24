@@ -92,18 +92,21 @@ class PDFReaderViewController: UIViewController {
 
     private lazy var shareButton: UIBarButtonItem = {
         let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
-        share.isEnabled = !self.viewModel.state.document.isLocked
-        share.accessibilityLabel = L10n.Accessibility.Pdf.export
-        share.title = L10n.Accessibility.Pdf.export
+        share.accessibilityLabel = L10n.Accessibility.Pdf.share
+        share.title = L10n.Accessibility.Pdf.share
         share.tag = NavigationBarButton.share.rawValue
-        share.rx.tap
-             .subscribe(onNext: { [weak self, weak share] _ in
-                 guard let self, let share else { return }
-                 self.coordinatorDelegate?.showPdfExportSettings(sender: share, userInterfaceStyle: self.viewModel.state.interfaceStyle) { [weak self] settings in
-                     self?.viewModel.process(action: .export(settings))
-                 }
-             })
-             .disposed(by: self.disposeBag)
+        let exportAttributes: UIMenuElement.Attributes = viewModel.state.document.isLocked ? [.disabled] : []
+        let exportIncludingAnnotationsAction = UIAction(title: L10n.Pdf.Export.includeAnnotations, attributes: exportAttributes) { [weak self] _ in
+            self?.viewModel.process(action: .export(includeAnnotations: true))
+        }
+        exportIncludingAnnotationsAction.accessibilityValue = L10n.Accessibility.Pdf.exportIncludingAnnotations
+        let exportWithoutAnnotationsAction = UIAction(title: L10n.Pdf.Export.withoutAnnotations, attributes: exportAttributes) { [weak self] _ in
+            self?.viewModel.process(action: .export(includeAnnotations: false))
+        }
+        exportWithoutAnnotationsAction.accessibilityValue = L10n.Accessibility.Pdf.exportWithoutAnnotations
+        let exportMenuChildren: [UIMenuElement] = [exportIncludingAnnotationsAction, exportWithoutAnnotationsAction]
+        let exportMenu = UIMenu(title: L10n.Pdf.Export.export, options: [.displayInline], children: exportMenuChildren)
+        share.menu = UIMenu(children: [exportMenu])
         return share
     }()
     private lazy var settingsButton: UIBarButtonItem = {

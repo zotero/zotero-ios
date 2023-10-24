@@ -26,7 +26,6 @@ protocol PdfReaderCoordinatorDelegate: AnyObject {
     func showDeletedAlertForPdf(completion: @escaping (Bool) -> Void)
     func showSettings(with settings: PDFSettings, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (PDFSettings) -> Void)
     func showReader(document: Document, userInterfaceStyle: UIUserInterfaceStyle)
-    func showPdfExportSettings(sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, completed: @escaping (PDFExportSettings) -> Void)
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: AnyObject {
@@ -339,21 +338,6 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         navigationController.overrideUserInterfaceStyle = userInterfaceStyle
         navigationController.modalPresentationStyle = .fullScreen
         self.navigationController?.present(navigationController, animated: true, completion: nil)
-    }
-
-    func showPdfExportSettings(sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, completed: @escaping (PDFExportSettings) -> Void) {
-        DDLogInfo("PDFCoordinator: show PDF export")
-        let view = PDFExportSettingsView(settings: PDFExportSettings(includeAnnotations: true), exportHandler: { [weak self] settings in
-            self?.navigationController?.dismiss(animated: true, completion: {
-                completed(settings)
-            })
-        })
-        let controller = UIHostingController(rootView: view)
-        controller.overrideUserInterfaceStyle = userInterfaceStyle
-        controller.preferredContentSize = CGSize(width: 400, height: 140)
-        controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
-        controller.popoverPresentationController?.barButtonItem = sender
-        self.navigationController?.present(controller, animated: true)
     }
 }
 
