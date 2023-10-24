@@ -192,3 +192,5 @@ extension CollectionsViewController: UIContextMenuInteractionDelegate {
         })
     }
 }
+
+extension CollectionsViewController: BottomSheetObserver { }
