@@ -17,7 +17,9 @@ class HtmlEpubSidebarViewController: UIViewController {
 
     private weak var tableView: UITableView!
     private var dataSource: TableViewDiffableDataSource<Int, String>!
+    private var searchController: UISearchController!
     weak var coordinatorDelegate: HtmlEpubSidebarCoordinatorDelegate?
+    weak var parentDelegate: HtmlEpubReaderContainerDelegate?
 
     init(viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         self.viewModel = viewModel
@@ -35,6 +37,7 @@ class HtmlEpubSidebarViewController: UIViewController {
 
         self.view.backgroundColor = .systemGray6
         setupViews()
+        setupSearchController()
         setupDataSource()
         setupObserving()
 
@@ -45,6 +48,28 @@ class HtmlEpubSidebarViewController: UIViewController {
                               self.update(state: state)
                           })
                           .disposed(by: self.disposeBag)
+        }
+
+        func setupSearchController() {
+            let insets = UIEdgeInsets(
+                top: PDFReaderLayout.searchBarVerticalInset,
+                left: PDFReaderLayout.annotationLayout.horizontalInset,
+                bottom: PDFReaderLayout.searchBarVerticalInset - PDFReaderLayout.cellSelectionLineWidth,
+                right: PDFReaderLayout.annotationLayout.horizontalInset
+            )
+
+            var frame = self.tableView.frame
+            frame.size.height = 65
+
+            let searchBar = SearchBar(frame: frame, insets: insets, cornerRadius: 10)
+            searchBar.text
+                .observe(on: MainScheduler.instance)
+                .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+                .subscribe(with: self, onNext: { `self`, text in
+                    self.viewModel.process(action: .searchAnnotations(text))
+                })
+                .disposed(by: self.disposeBag)
+            self.tableView.tableHeaderView = searchBar
         }
 
         func setupViews() {
@@ -82,10 +107,10 @@ class HtmlEpubSidebarViewController: UIViewController {
             self.dataSource.canEditRow = { _ in
                 return true
             }
-//            self.dataSource.commitEditingStyle = { [weak self] editingStyle, indexPath in
-//                guard let self, let key = self.dataSource.itemIdentifier(for: indexPath) else { return }
-//                self.viewModel.process(action: .removeAnnotation(key))
-//            }
+            self.dataSource.commitEditingStyle = { [weak self] editingStyle, indexPath in
+                guard let self, editingStyle == .delete, let key = self.dataSource.itemIdentifier(for: indexPath) else { return }
+                self.viewModel.process(action: .removeAnnotation(key))
+            }
         }
 
         func setup(cell: AnnotationCell, with annotation: HtmlEpubAnnotation, state: HtmlEpubReaderState) {
@@ -105,7 +130,7 @@ class HtmlEpubSidebarViewController: UIViewController {
             let actionSubscription = cell.actionPublisher.subscribe(onNext: { [weak self] action in
                 self?.perform(action: action, annotation: annotation)
             })
-            _ = cell.disposeBag.insert(actionSubscription)
+            _ = cell.disposeBag?.insert(actionSubscription)
         }
         
         func loadAttributedComment(for annotation: HtmlEpubAnnotation) -> NSAttributedString? {
@@ -138,11 +163,11 @@ class HtmlEpubSidebarViewController: UIViewController {
                     snapshot.reloadItems(keys)
                 }
 
-                let isVisible = false//self.parentDelegate?.isSidebarVisible ?? false
+                let isVisible = self.parentDelegate?.isSidebarVisible ?? false
 
-//                if state.changes.contains(.sidebarEditing) {
-//                    self.tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
-//                }
+                if state.changes.contains(.sidebarEditing) {
+                    self.tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
+                }
                 self.dataSource.apply(snapshot, animatingDifferences: isVisible, completion: completion)
 
                 return
@@ -165,18 +190,19 @@ class HtmlEpubSidebarViewController: UIViewController {
                 self.updateCellHeight()
                 self.focusSelectedCell()
 
-//                if state.changes.contains(.sidebarEditing) {
-//                    self.tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
-//                }
+                if state.changes.contains(.sidebarEditing) {
+                    let isVisible = self.parentDelegate?.isSidebarVisible ?? false
+                    self.tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
+                }
 
                 completion()
 
                 return
             }
 
-//            if state.changes.contains(.sidebarEditing) {
-//                self.tableView.setEditing(state.sidebarEditingEnabled, animated: true)
-//            }
+            if state.changes.contains(.sidebarEditing) {
+                self.tableView.setEditing(state.sidebarEditingEnabled, animated: true)
+            }
 
             completion()
         }

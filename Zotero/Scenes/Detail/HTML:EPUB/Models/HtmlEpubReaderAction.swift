@@ -14,6 +14,8 @@ enum HtmlEpubReaderAction {
     case parseAndCacheComment(key: String, comment: String)
     case removeAnnotation(String)
     case saveAnnotations([String: Any])
+    case searchAnnotations(String)
+    case searchDocument(String)
     case selectAnnotation(String)
     case selectAnnotationFromDocument([String: Any])
     case setComment(key: String, comment: NSAttributedString)

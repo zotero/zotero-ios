@@ -55,9 +55,10 @@ struct HtmlEpubReaderState: ViewModelState {
     var sortedKeys: [String]
     var snapshotKeys: [String]?
     var annotations: [String: HtmlEpubAnnotation]
-    var searchTerm: String?
-    var filter: AnnotationsFilter?
+    var annotationSearchTerm: String?
+    var annotationFilter: AnnotationsFilter?
     var selectedAnnotationKey: String?
+    var documentSearchTerm: String?
     var comments: [String: NSAttributedString]
     var changes: Changes
     var error: Error?

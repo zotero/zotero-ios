@@ -32526,6 +32526,10 @@ window.updateAnnotations = options => {
       log("Did set");
   }
 };
+window.search = options => {
+    log("Search document: " + options.term);
+    window._view.find({ query: options.term, highlightAll: true, caseSensitive: false, entireWord: false });
+}
 
 // Notify when iframe is loaded
 postMessage('onInitialized');

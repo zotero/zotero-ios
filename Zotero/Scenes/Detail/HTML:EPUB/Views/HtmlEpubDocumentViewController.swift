@@ -121,6 +121,19 @@ class HtmlEpubDocumentViewController: UIViewController {
             updateView(modifications: update.modifications, insertions: update.insertions, deletions: update.deletions)
         }
 
+        if let term = state.documentSearchTerm {
+            search(term: term)
+        }
+
+        func search(term: String) {
+            webViewHandler.call(javascript: "search({ term: '\(term)' });")
+                .observe(on: MainScheduler.instance)
+                .subscribe(with: self, onFailure: { _, error in
+                    DDLogError("HtmlEpubReaderViewController: searching document failed - \(error)")
+                })
+                .disposed(by: self.disposeBag)
+        }
+
         func updateView(modifications: [[String: Any]], insertions: [[String: Any]], deletions: [String]) {
             do {
                 let insertionsData = try JSONSerialization.data(withJSONObject: insertions)
@@ -167,7 +180,10 @@ class HtmlEpubDocumentViewController: UIViewController {
             DDLogInfo("HtmlEpubReaderViewController: JSLOG \(message)")
 
         case JSHandlers.text.rawValue:
-            guard let data = message as? [String: Any], let event = data["event"] as? String, let params = data["params"] as? [String: Any] else { return }
+            guard let data = message as? [String: Any], let event = data["event"] as? String, let params = data["params"] as? [String: Any] else {
+                DDLogWarn("HtmlEpubReaderViewController: unknown message - \(message)")
+                return
+            }
 
             DDLogInfo("HtmlEpubReaderViewController: \(event); \(params)")
 

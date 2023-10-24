@@ -109,6 +109,7 @@ class HtmlEpubReaderViewController: UIViewController {
 
         observeViewModel()
         setupNavigationBar()
+        setupSearch()
         setupViews()
         navigationItem.rightBarButtonItem = toolbarButton
 
@@ -135,6 +136,25 @@ class HtmlEpubReaderViewController: UIViewController {
             self.navigationItem.leftBarButtonItems = [closeButton, sidebarButton]
         }
 
+        func setupSearch() {
+            let searchController = UISearchController()
+            searchController.obscuresBackgroundDuringPresentation = false
+            searchController.hidesNavigationBarDuringPresentation = false
+            searchController.searchBar.placeholder = "Search Document"
+            searchController.searchBar.autocapitalizationType = .none
+
+            searchController.searchBar
+                .rx
+                .text
+                .observe(on: MainScheduler.instance)
+                .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] text in
+                    self?.viewModel.process(action: .searchDocument(text ?? ""))
+                })
+                .disposed(by: self.disposeBag)
+            self.navigationItem.searchController = searchController
+        }
+
         func setupViews() {
             let documentController = HtmlEpubDocumentViewController(viewModel: self.viewModel)
             documentController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -143,6 +163,7 @@ class HtmlEpubReaderViewController: UIViewController {
             annotationToolbar.delegate = self
 
             let sidebarController = HtmlEpubSidebarViewController(viewModel: self.viewModel)
+            sidebarController.parentDelegate = self
             sidebarController.coordinatorDelegate = self.coordinatorDelegate
             sidebarController.view.translatesAutoresizingMaskIntoConstraints = false
 

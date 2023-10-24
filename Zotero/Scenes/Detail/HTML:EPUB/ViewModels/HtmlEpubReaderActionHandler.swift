@@ -44,6 +44,14 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         case .saveAnnotations(let params):
             saveAnnotations(params: params, in: viewModel)
 
+        case .searchAnnotations(let term):
+            searchAnnotations(for: term, in: viewModel)
+
+        case .searchDocument(let term):
+            update(viewModel: viewModel) { state in
+                state.documentSearchTerm = term
+            }
+
         case .selectAnnotation(let key):
             select(key: key, didSelectInDocument: false, in: viewModel)
 
@@ -202,15 +210,15 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
     }
 
     private func set(filter: AnnotationsFilter?, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
-        guard filter != viewModel.state.filter else { return }
-        self.filterAnnotations(with: viewModel.state.searchTerm, filter: filter, in: viewModel)
+        guard filter != viewModel.state.annotationFilter else { return }
+        self.filterAnnotations(with: viewModel.state.annotationSearchTerm, filter: filter, in: viewModel)
     }
 
-    private func search(for term: String, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+    private func searchAnnotations(for term: String, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         let trimmedTerm = term.trimmingCharacters(in: .whitespacesAndNewlines)
         let newTerm = trimmedTerm.isEmpty ? nil : trimmedTerm
-        guard newTerm != viewModel.state.searchTerm else { return }
-        self.filterAnnotations(with: newTerm, filter: viewModel.state.filter, in: viewModel)
+        guard newTerm != viewModel.state.annotationSearchTerm else { return }
+        self.filterAnnotations(with: newTerm, filter: viewModel.state.annotationFilter, in: viewModel)
     }
 
     /// Filters annotations based on given term and filer parameters.
@@ -227,12 +235,12 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 state.sortedKeys = snapshot
                 state.changes = .annotations
 
-                if state.filter != nil {
+                if state.annotationFilter != nil {
                     state.changes.insert(.filter)
                 }
 
-                state.searchTerm = nil
-                state.filter = nil
+                state.annotationSearchTerm = nil
+                state.annotationFilter = nil
             }
             return
         }
@@ -249,12 +257,12 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             state.sortedKeys = filteredKeys
             state.changes = .annotations
 
-            if filter != state.filter {
+            if filter != state.annotationFilter {
                 state.changes.insert(.filter)
             }
 
-            state.searchTerm = term
-            state.filter = filter
+            state.annotationSearchTerm = term
+            state.annotationFilter = filter
         }
     }
 
@@ -471,15 +479,13 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
             let key = keys.remove(at: index)
             annotations[key] = nil
+            deletedPdfAnnotations.append(key)
             DDLogInfo("HtmlEpubReaderActionHandler: delete key \(key)")
 
             if viewModel.state.selectedAnnotationKey == key {
                 DDLogInfo("HtmlEpubReaderActionHandler: deleted selected annotation")
                 selectionDeleted = true
             }
-
-            DDLogInfo("HtmlEpubReaderActionHandler: delete Html/Epub annotation")
-            deletedPdfAnnotations.append(key)
         }
 
         if shouldCancelUpdate {
@@ -532,7 +538,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 state.sortedKeys = keys
             } else {
                 state.snapshotKeys = keys
-                state.sortedKeys = self.filteredKeys(from: keys, term: state.searchTerm, filter: state.filter, state: state)
+                state.sortedKeys = self.filteredKeys(from: keys, term: state.annotationSearchTerm, filter: state.annotationFilter, state: state)
             }
             state.annotations = annotations
             state.documentUpdate = HtmlEpubReaderState.DocumentUpdate(deletions: deletedPdfAnnotations, insertions: insertedPdfAnnotations, modifications: updatedPdfAnnotations)
