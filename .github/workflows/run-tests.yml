@@ -15,7 +15,9 @@ jobs:
     strategy:
       matrix:
         xcode: ["15.0.0"]
-
+        destination: 
+          - platform=iOS Simulator,OS=latest,name=iPhone 15
+        
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -42,9 +44,9 @@ jobs:
             ${{ runner.os }}-iOS_derived_data
 
       - name: Build & Test
-        uses: sersoft-gmbh/xcodebuild-action@v2
+        uses: sersoft-gmbh/xcodebuild-action@v3.1
         with:
           project: Zotero.xcodeproj
           scheme: Zotero
-          destination: platform=iOS Simulator,name=iPhone 14
+          destination: ${{ matrix.destination }}
           action: test
