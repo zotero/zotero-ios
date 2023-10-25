@@ -333,9 +333,6 @@ final class MasterContainerViewController: UINavigationController {
 
         set(bottomPosition: bottomPosition, containerHeight: size.height, keyboardHeight: keyboardHeight)
 
-        coordinator.animate(alongsideTransition: { _ in
-            self.view.layoutIfNeeded()
-        }, completion: nil)
         coordinator.animate { _ in
             self.view.layoutIfNeeded()
         } completion: { _ in
