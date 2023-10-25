@@ -160,11 +160,14 @@ final class OpenItemsController {
             do {
                 try dbStorage.perform(on: .main) { coordinator in
                     for item in items {
-                        do {
-                            let rItem = try coordinator.perform(request: ReadItemGloballyDbRequest(key: item.key))
-                            itemTuples.append((item, rItem))
-                        } catch let itemError {
-                            DDLogError("OpenItemsController: can't load globally item \(item) - \(itemError)")
+                        switch item {
+                        case .pdf(let libraryId, let key):
+                            do {
+                                let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
+                                itemTuples.append((item, rItem))
+                            } catch let itemError {
+                                DDLogError("OpenItemsController: can't load item \(item) - \(itemError)")
+                            }
                         }
                     }
                 }

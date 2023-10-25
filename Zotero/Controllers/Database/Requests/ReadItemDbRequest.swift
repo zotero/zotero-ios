@@ -25,18 +25,3 @@ struct ReadItemDbRequest: DbResponseRequest {
         return item
     }
 }
-
-struct ReadItemGloballyDbRequest: DbResponseRequest {
-    typealias Response = RItem
-
-    let key: String
-
-    var needsWrite: Bool { return false }
-
-    func process(in database: Realm) throws -> RItem {
-        guard let item = database.objects(RItem.self).filter(.key(key)).first else {
-            throw DbError.objectNotFound
-        }
-        return item
-    }
-}
