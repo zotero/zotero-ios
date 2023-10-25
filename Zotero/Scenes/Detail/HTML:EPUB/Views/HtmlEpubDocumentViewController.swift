@@ -23,6 +23,7 @@ class HtmlEpubDocumentViewController: UIViewController {
 
     private weak var webView: WKWebView!
     private var webViewHandler: WebViewHandler!
+    private weak var selectionView: SelectionView?
 
     init(viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         self.viewModel = viewModel
@@ -125,6 +126,23 @@ class HtmlEpubDocumentViewController: UIViewController {
             search(term: term)
         }
 
+        if let rect = state.selectedAnnotationRect {
+            showSelection(in: rect)
+        } else {
+            selectionView?.removeFromSuperview()
+        }
+
+        func showSelection(in rect: CGRect) {
+            if let selectionView {
+                selectionView.removeFromSuperview()
+            }
+
+            let view = SelectionView()
+            view.frame = rect
+            self.view.addSubview(view)
+            self.selectionView = view
+        }
+
         func search(term: String) {
             webViewHandler.call(javascript: "search({ term: '\(term)' });")
                 .observe(on: MainScheduler.instance)
@@ -180,22 +198,33 @@ class HtmlEpubDocumentViewController: UIViewController {
             DDLogInfo("HtmlEpubReaderViewController: JSLOG \(message)")
 
         case JSHandlers.text.rawValue:
-            guard let data = message as? [String: Any], let event = data["event"] as? String, let params = data["params"] as? [String: Any] else {
+            guard let data = message as? [String: Any], let event = data["event"] as? String else {
                 DDLogWarn("HtmlEpubReaderViewController: unknown message - \(message)")
                 return
             }
 
-            DDLogInfo("HtmlEpubReaderViewController: \(event); \(params)")
+            DDLogInfo("HtmlEpubReaderViewController: \(event)")
 
             switch event {
             case "onInitialized":
                 self.viewModel.process(action: .loadDocument)
 
             case "onSaveAnnotations":
+                guard let params = data["params"] as? [String: Any] else {
+                    DDLogWarn("HtmlEpubReaderViewController: event \(event) missing params - \(message)")
+                    return
+                }
+                DDLogInfo("HtmlEpubReaderViewController: \(params)")
                 self.viewModel.process(action: .saveAnnotations(params))
 
-            case "onSelectAnnotations":
-                self.viewModel.process(action: .selectAnnotationFromDocument(params))
+            case "onSetAnnotationPopup":
+                if data["params"] is NSNull {
+                    DDLogInfo("HtmlEpubReaderViewController: params null")
+                    self.viewModel.process(action: .deselectSelectedAnnotation)
+                } else if let params = data["params"] as? [String: Any] {
+                    DDLogInfo("HtmlEpubReaderViewController: \(params)")
+                    self.viewModel.process(action: .selectAnnotationFromDocument(params))
+                }
 
             default:
                 break

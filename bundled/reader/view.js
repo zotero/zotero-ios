@@ -27110,7 +27110,7 @@ function isWin() {
 let isFirefox = typeof InstallTrigger !== 'undefined';
 let isSafari = /constructor/i.test(window.HTMLElement) || function (p) {
   return p.toString() === "[object SafariRemoteNotification]";
-}(!window['safari'] || typeof safari !== 'undefined' && window['safari'].pushNotification) || !!navigator && (navigator.userAgent.includes('Safari/') || navigator.userAgent.includes('Zotero_iOS/')) && !navigator.userAgent.includes('Chrome/');
+}(!window['safari'] || typeof safari !== 'undefined' && window['safari'].pushNotification) || !!navigator && navigator.userAgent.includes('Safari/') && !navigator.userAgent.includes('Chrome/');
 function isTextBox(node) {
   return ['INPUT'].includes(node.nodeName) && node.type === 'text' || node.getAttribute('contenteditable') === 'true';
 }
@@ -27972,13 +27972,19 @@ class DOMView {
                         return;
                     }
                     this._options.onSelectAnnotations([idsHere[0]], event.nativeEvent);
-                    if (this._selectedAnnotationIDs.length == 1) {
+                    // In view mode (mobile), we assume that there's no special processing inside
+                    // onSelectAnnotations() for e.g. the Shift key that might result in multiple annotations
+                    // being selected, annotations being deselected, and so on. On desktop, there might be,
+                    // but we can also count on onSelectAnnotations() being handled synchronously.
+                    // Revisit if either assumption no longer holds true.
+                    if (this._options.mobile || this._selectedAnnotationIDs.length == 1) {
                         this._openAnnotationPopup(this._annotationsByID.get(idsHere[0]));
                     }
                 }
                 else {
                     this._options.onSelectAnnotations([id], event.nativeEvent);
-                    if (this._selectedAnnotationIDs.length == 1) {
+                    // See above
+                    if (this._options.mobile || this._selectedAnnotationIDs.length == 1) {
                         this._openAnnotationPopup(this._annotationsByID.get(id));
                     }
                 }
@@ -32183,8 +32189,8 @@ class AnnotationManager {
       this._annotations.splice(oldIndex, 1, annotation);
     } else {
       this._annotations.push(annotation);
-      this._annotations.sort((a, b) => (a.sortIndex > b.sortIndex) - (a.sortIndex < b.sortIndex));
     }
+    this._annotations.sort((a, b) => (a.sortIndex > b.sortIndex) - (a.sortIndex < b.sortIndex));
     this._unsavedAnnotations = this._unsavedAnnotations.filter(x => x.id !== annotation.id);
     if (instant) {
       this._onSave([JSON.parse(JSON.stringify(annotation))]);
@@ -32456,7 +32462,7 @@ function log(data) {
 }
 window.createView = options => {
   log("Annotations: " + JSON.stringify(options.annotations));
-  window._view = new View({
+  window._view = new view({
     ...options,
     container: document.getElementById('view'),
     data: {
@@ -32513,23 +32519,23 @@ window.clearTool = () => {
   window._view.setTool();
 };
 window.updateAnnotations = options => {
-    log("Modifications: " + JSON.stringify(options.modifications));
-    log("Insertions: " + JSON.stringify(options.insertions));
-    log("Deletions: " + JSON.stringify(options.deletions));
   if (options.deletions.length > 0) {
-    window._view.unsetAnnotation(options.deletions);
+    window._view.unsetAnnotations(options.deletions);
   }
-  let updates = [...options.insertions, ...options.modifications];
+  let updates = options.insertions + options.modifications;
   if (updates.length > 0) {
-      log("Set annotations: " + JSON.stringify(updates));
     window._view.setAnnotations(updates);
-      log("Did set");
   }
 };
 window.search = options => {
-    log("Search document: " + options.term);
-    window._view.find({ query: options.term, highlightAll: true, caseSensitive: false, entireWord: false });
-}
+  log("Search document: " + options.term);
+  window._view.find({
+    query: options.term,
+    highlightAll: true,
+    caseSensitive: false,
+    entireWord: false
+  });
+};
 
 // Notify when iframe is loaded
 postMessage('onInitialized');

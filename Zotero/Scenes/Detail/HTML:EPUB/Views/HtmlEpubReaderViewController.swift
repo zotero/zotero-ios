@@ -252,6 +252,12 @@ class HtmlEpubReaderViewController: UIViewController {
             show(error: error)
         }
 
+        if state.selectedAnnotationKey == nil &&
+           (self.navigationController?.presentedViewController is AnnotationPopover ||
+           (self.navigationController?.presentedViewController as? UINavigationController)?.topViewController is AnnotationPopover) {
+            self.navigationController?.dismiss(animated: true)
+        }
+
         func show(error: HtmlEpubReaderState.Error) {
         }
     }

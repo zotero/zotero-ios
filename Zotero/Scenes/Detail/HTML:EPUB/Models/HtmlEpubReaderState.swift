@@ -58,6 +58,7 @@ struct HtmlEpubReaderState: ViewModelState {
     var annotationSearchTerm: String?
     var annotationFilter: AnnotationsFilter?
     var selectedAnnotationKey: String?
+    var selectedAnnotationRect: CGRect?
     var documentSearchTerm: String?
     var comments: [String: NSAttributedString]
     var changes: Changes

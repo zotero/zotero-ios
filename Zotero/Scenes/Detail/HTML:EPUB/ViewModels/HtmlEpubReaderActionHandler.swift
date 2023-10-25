@@ -53,11 +53,12 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             }
 
         case .selectAnnotation(let key):
-            select(key: key, didSelectInDocument: false, in: viewModel)
+            self.update(viewModel: viewModel) { state in
+                _select(data: (key, CGRect()), didSelectInDocument: false, state: &state)
+            }
 
         case .selectAnnotationFromDocument(let params):
-            guard let key = (params["ids"] as? [String])?.first else { return }
-            select(key: key, didSelectInDocument: true, in: viewModel)
+            selectFromDocument(params: params, in: viewModel)
 
         case .setComment(let key, let comment):
             set(comment: comment, key: key, viewModel: viewModel)
@@ -71,7 +72,9 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             set(tags: tags, to: key, in: viewModel)
 
         case .deselectSelectedAnnotation:
-            select(key: nil, didSelectInDocument: false, in: viewModel)
+            self.update(viewModel: viewModel) { state in
+                _select(data: nil, didSelectInDocument: false, state: &state)
+            }
 
         case .parseAndCacheComment(key: let key, comment: let comment):
             update(viewModel: viewModel, notifyListeners: false) { state in
@@ -165,14 +168,20 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         }
     }
 
-    private func select(key: String?, didSelectInDocument: Bool, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
-        self.update(viewModel: viewModel) { state in
-            self._select(key: key, didSelectInDocument: didSelectInDocument, state: &state)
+    private func selectFromDocument(params: [String: Any], in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        guard let rectArray = params["rect"] as? [CGFloat], let key = (params["annotation"] as? [String: Any])?["id"] as? String else {
+            DDLogError("HtmlEpubReaderActionHandler: incorrect params for document selection - \(params)")
+            return
+        }
+
+        let rect = CGRect(x: rectArray[0], y: rectArray[1], width: rectArray[2] - rectArray[0], height: rectArray[3] - rectArray[1])
+        update(viewModel: viewModel) { state in
+            _select(data: (key, rect), didSelectInDocument: true, state: &state)
         }
     }
 
-    private func _select(key: String?, didSelectInDocument: Bool, state: inout HtmlEpubReaderState) {
-        guard key != state.selectedAnnotationKey else { return }
+    private func _select(data: (String, CGRect)?, didSelectInDocument: Bool, state: inout HtmlEpubReaderState) {
+        guard data?.0 != state.selectedAnnotationKey else { return }
 
         if let existing = state.selectedAnnotationKey {
             add(updatedAnnotationKey: existing, state: &state)
@@ -185,12 +194,14 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         state.changes.insert(.selection)
 
-        guard let key = key else {
+        guard let (key, rect) = data else {
             state.selectedAnnotationKey = nil
+            state.selectedAnnotationRect = nil
             return
         }
 
         state.selectedAnnotationKey = key
+        state.selectedAnnotationRect = rect
 
         if !didSelectInDocument {
             // TODO: - focus location in document
@@ -550,9 +561,9 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
             // Update selection
             if let key = selectKey {
-                self._select(key: key, didSelectInDocument: true, state: &state)
+                self._select(data: (key, CGRect()), didSelectInDocument: true, state: &state)
             } else if selectionDeleted {
-                self._select(key: nil, didSelectInDocument: true, state: &state)
+                self._select(data: nil, didSelectInDocument: true, state: &state)
             }
 
             // Disable sidebar editing if there are no results
