@@ -207,3 +207,5 @@ extension LibrariesViewController: UITableViewDataSource, UITableViewDelegate {
         }
     }
 }
+
+extension LibrariesViewController: BottomSheetObserver { }

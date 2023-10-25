@@ -15,8 +15,8 @@ jobs:
     strategy:
       matrix:
         xcode: ["15.0.0"]
-        destination: 
-          - platform=iOS Simulator,OS=latest,name=iPhone 15
+        ios_version: ["17.0"]
+        device_name: ["iPhone 15"]
         
     steps:
       - name: Checkout
@@ -35,18 +35,10 @@ jobs:
         with:
           xcode-version: ${{ matrix.xcode }}
 
-      - name: Cache DerivedData
-        uses: actions/cache@v3
-        with:
-          path: ~/Library/Developer/Xcode/DerivedData
-          key: ${{ runner.os }}-iOS_derived_data-xcode_${{ matrix.xcode }}
-          restore-keys: |
-            ${{ runner.os }}-iOS_derived_data
-
-      - name: Build & Test
+      - name: Clean & Build & Test
         uses: sersoft-gmbh/xcodebuild-action@v3.1
         with:
           project: Zotero.xcodeproj
           scheme: Zotero
-          destination: ${{ matrix.destination }}
-          action: test
+          destination: platform=iOS Simulator,OS=${{ matrix.ios_version }},name=${{ matrix.device_name }}
+          action: clean test
