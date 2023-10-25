@@ -23,8 +23,8 @@ protocol PDFReaderContainerDelegate: AnyObject {
 
 class PDFReaderViewController: UIViewController {
     private enum NavigationBarButton: Int {
-        case share
-        case sidebar
+        case share = 1
+        case sidebar = 7
     }
 
     private struct ToolbarState: Codable {
