@@ -58,7 +58,7 @@ struct ApiLogger {
         // TODO: Fix crashing log
 //        if startData.logParams.contains(.response), let data, let string = String(data: data, encoding: .utf8) {
 //            DDLogInfo(DDLogMessageFormat(stringLiteral: string))
-        if startData.logParams.contains(.response), let data, let _ = String(data: data, encoding: .utf8) {
+        if startData.logParams.contains(.response), let data, String(data: data, encoding: .utf8) != nil {
             DDLogInfo(DDLogMessageFormat(stringLiteral: "Response omitted due to crashing bug"))
         }
     }
