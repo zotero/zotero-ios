@@ -100,9 +100,7 @@ final class AnnotationView: UIView {
             authorName: annotation.author,
             pageLabel: annotation.pageLabel,
             colorHex: annotation.color,
-            libraryId: library.identifier,
             shareMenuProvider: { _ in
-//                pdfAnnotationsCoordinatorDelegate.createShareAnnotationMenu(state: state, annotation: annotation, sender: button)
                 return nil
             },
             isEditable: (editability != .notEditable && selected),
@@ -159,13 +157,13 @@ final class AnnotationView: UIView {
         let editability = annotation.editability(currentUserId: currentUserId, library: library)
         let color = UIColor(hex: annotation.color)
         let canEdit = editability == .editable && selected
+        let author = library.identifier == .custom(.myLibrary) ? "" : annotation.author(displayName: displayName, username: username)
 
         self.header.setup(
             type: annotation.type,
-            authorName: annotation.author(displayName: displayName, username: username),
+            authorName: author,
             pageLabel: annotation.pageLabel,
             colorHex: annotation.color,
-            libraryId: library.identifier,
             shareMenuProvider: { button in
                 pdfAnnotationsCoordinatorDelegate.createShareAnnotationMenu(state: state, annotation: annotation, sender: button)
             },

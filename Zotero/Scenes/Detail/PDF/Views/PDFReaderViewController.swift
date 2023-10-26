@@ -44,6 +44,7 @@ class PDFReaderViewController: UIViewController {
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
 
+    var state: PDFReaderState { return viewModel.state }
     private weak var sidebarController: PDFSidebarViewController!
     private weak var sidebarControllerLeft: NSLayoutConstraint!
     private weak var documentController: PDFDocumentViewController!

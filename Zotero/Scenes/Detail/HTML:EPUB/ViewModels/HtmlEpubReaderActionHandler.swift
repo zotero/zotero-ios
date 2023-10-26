@@ -83,6 +83,9 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         case .updateAnnotationProperties(let key, let color, let lineWidth, let pageLabel, let updateSubsequentLabels, let highlightText):
             set(color: color, lineWidth: lineWidth, pageLabel: pageLabel, updateSubsequentLabels: updateSubsequentLabels, highlightText: highlightText, key: key, viewModel: viewModel)
+
+        case .setColor(key: let key, color: let color):
+            set(color: color, key: key, viewModel: viewModel)
         }
     }
 
@@ -117,6 +120,20 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             guard let error = error, let self = self, let viewModel = viewModel else { return }
 
             DDLogError("HtmlEpubReaderActionHandler: can't update annotation \(key) - \(error)")
+
+            self.update(viewModel: viewModel) { state in
+                state.error = .cantUpdateAnnotation
+            }
+        }
+    }
+
+    private func set(color: String, key: String, viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.color, baseKey: nil): color]
+        let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values, dateParser: dateParser)
+        self.perform(request: request) { [weak self, weak viewModel] error in
+            guard let error = error, let self = self, let viewModel = viewModel else { return }
+
+            DDLogError("HtmlEpubReaderActionHandler: can't set color \(key) - \(error)")
 
             self.update(viewModel: viewModel) { state in
                 state.error = .cantUpdateAnnotation

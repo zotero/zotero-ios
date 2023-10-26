@@ -32483,6 +32483,7 @@ window.createView = options => {
       postMessage('onSelectAnnotations', {
         ids
       });
+      window._view.selectAnnotations(ids);
     },
     onSetSelectionPopup: params => {
       postMessage('onSetSelectionPopup', params);
@@ -32520,10 +32521,12 @@ window.clearTool = () => {
 };
 window.updateAnnotations = options => {
   if (options.deletions.length > 0) {
+    log("Delete: " + JSON.stringify(options.deletions));
     window._view.unsetAnnotations(options.deletions);
   }
-  let updates = options.insertions + options.modifications;
+  let updates = [...options.insertions, ...options.modifications];
   if (updates.length > 0) {
+    log("Add/Update: " + JSON.stringify(updates));
     window._view.setAnnotations(updates);
   }
 };

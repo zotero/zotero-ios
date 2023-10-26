@@ -17,7 +17,12 @@ import RxSwift
 protocol PdfReaderCoordinatorDelegate: AnyObject {
     func showToolSettings(tool: PSPDFKit.Annotation.Tool, colorHex: String?, sizeValue: Float?, sender: SourceView, userInterfaceStyle: UIUserInterfaceStyle, valueChanged: @escaping (String?, Float?) -> Void)
     func showSearch(pdfController: PDFViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, delegate: PDFSearchDelegate)
-    func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate, userInterfaceStyle: UIUserInterfaceStyle)
+    func showAnnotationPopover(
+        viewModel: ViewModel<PDFReaderActionHandler>,
+        sourceRect: CGRect,
+        popoverDelegate: UIPopoverPresentationControllerDelegate,
+        userInterfaceStyle: UIUserInterfaceStyle
+    ) -> PublishSubject<AnnotationPopoverState>?
     func show(error: PDFReaderState.Error)
     func show(error: PDFDocumentExporter.Error)
     func share(url: URL, barButton: UIBarButtonItem)
@@ -149,19 +154,41 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         }
     }
 
-    func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate, userInterfaceStyle: UIUserInterfaceStyle) {
-        guard let currentNavigationController = self.navigationController else { return }
+    func showAnnotationPopover(
+        viewModel: ViewModel<PDFReaderActionHandler>,
+        sourceRect: CGRect,
+        popoverDelegate: UIPopoverPresentationControllerDelegate,
+        userInterfaceStyle: UIUserInterfaceStyle
+    ) -> PublishSubject<AnnotationPopoverState>? {
+        guard let currentNavigationController = self.navigationController, let annotation = viewModel.state.selectedAnnotation else { return nil }
 
         DDLogInfo("PDFCoordinator: show annotation popover")
 
         if let coordinator = self.childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
-            return
+            return nil
         }
 
         let navigationController = NavigationViewController()
         navigationController.overrideUserInterfaceStyle = userInterfaceStyle
 
-        let coordinator = AnnotationPopoverCoordinator(navigationController: navigationController, controllers: self.controllers, viewModel: viewModel)
+        let author = viewModel.state.library.identifier == .custom(.myLibrary) ? "" : annotation.author(displayName: viewModel.state.displayName, username: viewModel.state.username)
+        let comment = viewModel.state.comments[annotation.key] ?? NSAttributedString()
+        let editability = annotation.editability(currentUserId: viewModel.state.userId, library: viewModel.state.library)
+
+        let data = AnnotationPopoverState.Data(
+            libraryId: viewModel.state.library.identifier,
+            type: annotation.type,
+            isEditable: editability == .editable,
+            author: author,
+            comment: comment,
+            color: annotation.color,
+            lineWidth: annotation.lineWidth ?? 0,
+            pageLabel: annotation.pageLabel,
+            highlightText: annotation.text ?? "",
+            tags: annotation.tags,
+            showsDeleteButton: editability != .notEditable
+        )
+        let coordinator = AnnotationPopoverCoordinator(data: data, navigationController: navigationController, controllers: self.controllers)
         coordinator.parentCoordinator = self
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)
@@ -175,6 +202,8 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         }
 
         currentNavigationController.present(navigationController, animated: true, completion: nil)
+
+        return coordinator.viewModelObservable
     }
 
     func showSearch(pdfController: PDFViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, delegate: PDFSearchDelegate) {
@@ -413,7 +442,12 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
             .disposed(by: self.disposeBag)
         }
     }
-        
+
+    func createShareAnnotationMenuForSelectedAnnotation(sender: UIButton) -> UIMenu? {
+        guard let pdfController = self.navigationController?.viewControllers.first as? PDFReaderViewController, let annotation = pdfController.state.selectedAnnotation else { return nil }
+        return createShareAnnotationMenu(state: pdfController.state, annotation: annotation, sender: sender)
+    }
+
     func createShareAnnotationMenu(state: PDFReaderState, annotation: PdfAnnotation, sender: UIButton) -> UIMenu? {
         guard annotation.type == .image, let boundingBoxConverter = self.navigationController?.viewControllers.last as? AnnotationBoundingBoxConverter else { return nil }
         var children: [UIMenuElement] = []

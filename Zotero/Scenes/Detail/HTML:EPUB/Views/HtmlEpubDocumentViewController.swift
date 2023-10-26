@@ -23,7 +23,6 @@ class HtmlEpubDocumentViewController: UIViewController {
 
     private weak var webView: WKWebView!
     private var webViewHandler: WebViewHandler!
-    private weak var selectionView: SelectionView?
 
     init(viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         self.viewModel = viewModel
@@ -126,23 +125,6 @@ class HtmlEpubDocumentViewController: UIViewController {
             search(term: term)
         }
 
-        if let rect = state.selectedAnnotationRect {
-            showSelection(in: rect)
-        } else {
-            selectionView?.removeFromSuperview()
-        }
-
-        func showSelection(in rect: CGRect) {
-            if let selectionView {
-                selectionView.removeFromSuperview()
-            }
-
-            let view = SelectionView()
-            view.frame = rect
-            self.view.addSubview(view)
-            self.selectionView = view
-        }
-
         func search(term: String) {
             webViewHandler.call(javascript: "search({ term: '\(term)' });")
                 .observe(on: MainScheduler.instance)
@@ -218,13 +200,11 @@ class HtmlEpubDocumentViewController: UIViewController {
                 self.viewModel.process(action: .saveAnnotations(params))
 
             case "onSetAnnotationPopup":
-                if data["params"] is NSNull {
-                    DDLogInfo("HtmlEpubReaderViewController: params null")
-                    self.viewModel.process(action: .deselectSelectedAnnotation)
-                } else if let params = data["params"] as? [String: Any] {
-                    DDLogInfo("HtmlEpubReaderViewController: \(params)")
-                    self.viewModel.process(action: .selectAnnotationFromDocument(params))
+                guard let params = data["params"] as? [String: Any] else {
+                    DDLogWarn("HtmlEpubReaderViewController: event \(event) missing params - \(message)")
+                    return
                 }
+                self.viewModel.process(action: params.isEmpty ? .deselectSelectedAnnotation : .selectAnnotationFromDocument(params))
 
             default:
                 break

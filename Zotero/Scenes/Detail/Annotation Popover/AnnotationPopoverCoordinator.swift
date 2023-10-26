@@ -14,7 +14,7 @@ protocol AnnotationPopover: AnyObject {}
 
 protocol AnnotationPopoverAnnotationCoordinatorDelegate: AnyObject {
     func createShareAnnotationMenu(sender: UIButton) -> UIMenu?
-    func showEdit(annotation: PdfAnnotation, userId: Int, library: Library, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
+    func showEdit(state: AnnotationPopoverState, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func didFinish()
 }
@@ -28,14 +28,18 @@ final class AnnotationPopoverCoordinator: NSObject, Coordinator {
     var childCoordinators: [Coordinator]
     weak var navigationController: UINavigationController?
 
-    private unowned let viewModel: ViewModel<PDFReaderActionHandler>
+    var viewModelObservable: PublishSubject<AnnotationPopoverState>? {
+        return (navigationController?.viewControllers.first as? AnnotationPopoverViewController)?.viewModel.stateObservable
+    }
+
+    private let data: AnnotationPopoverState.Data
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
-    init(navigationController: NavigationViewController, controllers: Controllers, viewModel: ViewModel<PDFReaderActionHandler>) {
+    init(data: AnnotationPopoverState.Data, navigationController: NavigationViewController, controllers: Controllers) {
+        self.data = data
         self.navigationController = navigationController
         self.controllers = controllers
-        self.viewModel = viewModel
         self.childCoordinators = []
         self.disposeBag = DisposeBag()
 
@@ -48,7 +52,9 @@ final class AnnotationPopoverCoordinator: NSObject, Coordinator {
     }
 
     func start(animated: Bool) {
-        let controller = AnnotationViewController(viewModel: self.viewModel, attributedStringConverter: self.controllers.htmlAttributedStringConverter)
+        let state = AnnotationPopoverState(data: data)
+        let handler = AnnotationPopoverActionHandler()
+        let controller = AnnotationPopoverViewController(viewModel: ViewModel(initialState: state, handler: handler))
         controller.coordinatorDelegate = self
         self.navigationController?.isNavigationBarHidden = true
         self.navigationController?.setViewControllers([controller], animated: animated)
@@ -57,24 +63,17 @@ final class AnnotationPopoverCoordinator: NSObject, Coordinator {
 
 extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDelegate {
     func createShareAnnotationMenu(sender: UIButton) -> UIMenu? {
-        guard let pdfCoordinator = parentCoordinator as? PDFCoordinator,
-              let annotation = viewModel.state.selectedAnnotation
-        else { return nil }
-        return pdfCoordinator.createShareAnnotationMenu(
-            state: viewModel.state,
-            annotation: annotation,
-            sender: sender
-        )
+        return (parentCoordinator as? PDFCoordinator)?.createShareAnnotationMenuForSelectedAnnotation(sender: sender)
     }
     
-    func showEdit(annotation: PdfAnnotation, userId: Int, library: Library, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
+    func showEdit(state: AnnotationPopoverState, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
         let data = AnnotationEditState.AnnotationData(
-            type: annotation.type,
-            isEditable: annotation.editability(currentUserId: userId, library: library) == .editable,
-            color: annotation.color,
-            lineWidth: annotation.lineWidth ?? 0,
-            pageLabel: annotation.pageLabel,
-            highlightText: annotation.text ?? ""
+            type: state.type,
+            isEditable: state.isEditable,
+            color: state.color,
+            lineWidth: state.lineWidth,
+            pageLabel: state.pageLabel,
+            highlightText: state.highlightText
         )
         let state = AnnotationEditState(data: data)
         let handler = AnnotationEditActionHandler()
@@ -113,6 +112,6 @@ extension AnnotationPopoverCoordinator: AnnotationEditCoordinatorDelegate {
 
 extension AnnotationPopoverCoordinator: UINavigationControllerDelegate {
     func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
-        navigationController.setNavigationBarHidden((viewController is AnnotationViewController), animated: animated)
+        navigationController.setNavigationBarHidden((viewController is AnnotationPopoverViewController), animated: animated)
     }
 }

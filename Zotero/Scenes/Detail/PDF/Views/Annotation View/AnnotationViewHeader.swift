@@ -120,19 +120,17 @@ final class AnnotationViewHeader: UIView {
         authorName: String,
         pageLabel: String,
         colorHex: String,
-        libraryId: LibraryIdentifier,
         shareMenuProvider: @escaping ((UIButton) -> UIMenu?),
         isEditable: Bool,
         showsLock: Bool,
         accessibilityType: AnnotationView.AccessibilityType
     ) {
         let color = UIColor(hex: colorHex)
-        let author = libraryId == .custom(.myLibrary) ? "" : authorName
         self.setup(
             type: type,
             color: color,
             pageLabel: pageLabel,
-            author: author,
+            author: authorName,
             shareMenu: shareMenuProvider(shareButton),
             showsMenuButton: isEditable,
             showsLock: showsLock,

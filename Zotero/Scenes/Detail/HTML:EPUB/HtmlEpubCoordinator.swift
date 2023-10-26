@@ -16,7 +16,6 @@ protocol HtmlEpubReaderCoordinatorDelegate: AnyObject {
 }
 
 protocol HtmlEpubSidebarCoordinatorDelegate: AnyObject {
-//    func createShareAnnotationMenu(state: PDFReaderState, annotation: PdfAnnotation, sender: UIButton) -> UIMenu?
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void)
     func showCellOptions(
         for annotation: HtmlEpubAnnotation,
@@ -26,6 +25,12 @@ protocol HtmlEpubSidebarCoordinatorDelegate: AnyObject {
         saveAction: @escaping AnnotationEditSaveAction,
         deleteAction: @escaping AnnotationEditDeleteAction
     )
+    func showAnnotationPopover(
+        viewModel: ViewModel<HtmlEpubReaderActionHandler>,
+        sourceRect: CGRect,
+        popoverDelegate: UIPopoverPresentationControllerDelegate,
+        userInterfaceStyle: UIUserInterfaceStyle
+    ) -> PublishSubject<AnnotationPopoverState>?
 //    func showFilterPopup(from barButton: UIBarButtonItem, filter: AnnotationsFilter?, availableColors: [String], availableTags: [Tag], userInterfaceStyle: UIUserInterfaceStyle, completed: @escaping (AnnotationsFilter?) -> Void)
 }
 
@@ -114,9 +119,6 @@ extension HtmlEpubCoordinator: HtmlEpubReaderCoordinatorDelegate {
 }
 
 extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
-//    func createShareAnnotationMenu(state: PDFReaderState, annotation: PdfAnnotation, sender: UIButton) -> UIMenu? {
-//    }
-//    
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void) {
         guard let navigationController else { return }
         (self.parentCoordinator as? DetailCoordinator)?.showTagPicker(
@@ -165,7 +167,58 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
 
         self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
-//    
+
+    func showAnnotationPopover(
+        viewModel: ViewModel<HtmlEpubReaderActionHandler>,
+        sourceRect: CGRect,
+        popoverDelegate: UIPopoverPresentationControllerDelegate,
+        userInterfaceStyle: UIUserInterfaceStyle
+    ) -> PublishSubject<AnnotationPopoverState>? {
+        guard let currentNavigationController = self.navigationController, let annotation = viewModel.state.selectedAnnotationKey.flatMap({ viewModel.state.annotations[$0] }) else { return nil }
+
+        DDLogInfo("HtmlEpubCoordinator: show annotation popover")
+
+        if let coordinator = self.childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
+            return nil
+        }
+
+        let navigationController = NavigationViewController()
+        navigationController.overrideUserInterfaceStyle = userInterfaceStyle
+
+        let author = viewModel.state.library.identifier == .custom(.myLibrary) ? "" : annotation.author
+        let comment = viewModel.state.comments[annotation.key] ?? NSAttributedString()
+
+        let data = AnnotationPopoverState.Data(
+            libraryId: viewModel.state.library.identifier,
+            type: annotation.type,
+            isEditable: viewModel.state.library.metadataEditable,
+            author: author,
+            comment: comment,
+            color: annotation.color,
+            lineWidth: 0,
+            pageLabel: annotation.pageLabel,
+            highlightText: annotation.text ?? "",
+            tags: annotation.tags,
+            showsDeleteButton: library.metadataEditable
+        )
+        let coordinator = AnnotationPopoverCoordinator(data: data, navigationController: navigationController, controllers: self.controllers)
+        coordinator.parentCoordinator = self
+        self.childCoordinators.append(coordinator)
+        coordinator.start(animated: false)
+
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            navigationController.modalPresentationStyle = .popover
+            navigationController.popoverPresentationController?.sourceView = currentNavigationController.view
+            navigationController.popoverPresentationController?.sourceRect = sourceRect
+            navigationController.popoverPresentationController?.permittedArrowDirections = [.left, .right]
+            navigationController.popoverPresentationController?.delegate = popoverDelegate
+        }
+
+        currentNavigationController.present(navigationController, animated: true, completion: nil)
+
+        return coordinator.viewModelObservable
+    }
+//
 //    func showFilterPopup(
 //        from barButton: UIBarButtonItem,
 //        filter: AnnotationsFilter?,

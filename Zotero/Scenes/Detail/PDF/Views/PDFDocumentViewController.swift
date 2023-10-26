@@ -327,9 +327,40 @@ final class PDFDocumentViewController: UIViewController {
               let annotation = state.selectedAnnotation,
               let pageView = self.pdfController?.pageViewForPage(at: UInt(annotation.page)) else { return }
 
+        let key = annotation.readerKey
         let frame = self.view.convert(annotation.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
+        let observable = self.coordinatorDelegate?.showAnnotationPopover(viewModel: self.viewModel, sourceRect: frame, popoverDelegate: self, userInterfaceStyle: self.viewModel.state.interfaceStyle)
 
-        self.coordinatorDelegate?.showAnnotationPopover(viewModel: self.viewModel, sourceRect: frame, popoverDelegate: self, userInterfaceStyle: self.viewModel.state.interfaceStyle)
+        guard let observable else { return }
+        observable.subscribe(with: self) { `self`, state in
+            if state.changes.contains(.color) {
+                self.viewModel.process(action: .setColor(key: key.key, color: state.color))
+            }
+            if state.changes.contains(.comment) {
+                self.viewModel.process(action: .setComment(key: key.key, comment: state.comment))
+            }
+            if state.changes.contains(.deletion) {
+                self.viewModel.process(action: .removeAnnotation(key))
+            }
+            if state.changes.contains(.lineWidth) {
+                self.viewModel.process(action: .setLineWidth(key: key.key, width: state.lineWidth))
+            }
+            if state.changes.contains(.tags) {
+                self.viewModel.process(action: .setTags(key: key.key, tags: state.tags))
+            }
+            if state.changes.contains(.pageLabel) || state.changes.contains(.highlight) {
+                self.viewModel.process(action:
+                        .updateAnnotationProperties(
+                            key: key.key,
+                            color: state.color,
+                            lineWidth: state.lineWidth,
+                            pageLabel: state.pageLabel,
+                            updateSubsequentLabels: state.updateSubsequentLabels,
+                            highlightText: state.highlightText)
+                )
+            }
+        }
+        .disposed(by: disposeBag)
     }
 
     private func updatePencilSettingsIfNeeded() {

@@ -18,6 +18,7 @@ enum HtmlEpubReaderAction {
     case searchDocument(String)
     case selectAnnotation(String)
     case selectAnnotationFromDocument([String: Any])
+    case setColor(key: String, color: String)
     case setComment(key: String, comment: NSAttributedString)
     case setCommentActive(Bool)
     case setTags(key: String, tags: [Tag])

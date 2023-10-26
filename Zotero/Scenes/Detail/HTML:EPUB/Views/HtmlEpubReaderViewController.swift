@@ -252,13 +252,51 @@ class HtmlEpubReaderViewController: UIViewController {
             show(error: error)
         }
 
-        if state.selectedAnnotationKey == nil &&
-           (self.navigationController?.presentedViewController is AnnotationPopover ||
-           (self.navigationController?.presentedViewController as? UINavigationController)?.topViewController is AnnotationPopover) {
-            self.navigationController?.dismiss(animated: true)
-        }
+        handleAnnotationPopover()
 
         func show(error: HtmlEpubReaderState.Error) {
+        }
+
+        func handleAnnotationPopover() {
+            if let key = state.selectedAnnotationKey {
+                if !isSidebarVisible, let rect = state.selectedAnnotationRect {
+                    let observable = coordinatorDelegate?.showAnnotationPopover(viewModel: viewModel, sourceRect: rect, popoverDelegate: self, userInterfaceStyle: .light)
+                    observe(key: key, popoverObservable: observable)
+                }
+            } else if self.navigationController?.presentedViewController is AnnotationPopover ||
+               (self.navigationController?.presentedViewController as? UINavigationController)?.topViewController is AnnotationPopover {
+                self.navigationController?.dismiss(animated: true)
+            }
+        }
+
+        func observe(key: String, popoverObservable observable: PublishSubject<AnnotationPopoverState>?) {
+            guard let observable else { return }
+            observable.subscribe(with: self) { `self`, state in
+                if state.changes.contains(.color) {
+                    self.viewModel.process(action: .setColor(key: key, color: state.color))
+                }
+                if state.changes.contains(.comment) {
+                    self.viewModel.process(action: .setComment(key: key, comment: state.comment))
+                }
+                if state.changes.contains(.deletion) {
+                    self.viewModel.process(action: .removeAnnotation(key))
+                }
+                if state.changes.contains(.tags) {
+                    self.viewModel.process(action: .setTags(key: key, tags: state.tags))
+                }
+                if state.changes.contains(.pageLabel) || state.changes.contains(.highlight) {
+                    self.viewModel.process(action:
+                            .updateAnnotationProperties(
+                                key: key,
+                                color: state.color,
+                                lineWidth: state.lineWidth,
+                                pageLabel: state.pageLabel,
+                                updateSubsequentLabels: state.updateSubsequentLabels,
+                                highlightText: state.highlightText)
+                    )
+                }
+            }
+            .disposed(by: disposeBag)
         }
     }
 
@@ -330,7 +368,7 @@ extension HtmlEpubReaderViewController: AnnotationToolbarHandlerDelegate {
     }
 
     var isSidebarHidden: Bool {
-        return false
+        return !isSidebarVisible
     }
 
     var containerView: UIView {
@@ -358,6 +396,8 @@ extension HtmlEpubReaderViewController: AnnotationToolbarHandlerDelegate {
     }
 
     func hideSidebarIfNeeded(forPosition position: AnnotationToolbarHandler.State.Position, isToolbarSmallerThanMinWidth: Bool, animated: Bool) {
+        guard self.isSidebarVisible && (position == .pinned || (position == .top && isToolbarSmallerThanMinWidth)) else { return }
+        self.toggleSidebar(animated: animated)
     }
 
     func setNavigationBar(hidden: Bool, animated: Bool) {
@@ -445,6 +485,12 @@ extension HtmlEpubReaderViewController: AnnotationToolbarDelegate {
     }
 
     func performRedo() {
+    }
+}
+
+extension HtmlEpubReaderViewController: UIPopoverPresentationControllerDelegate {
+    func popoverPresentationControllerDidDismissPopover(_ popoverPresentationController: UIPopoverPresentationController) {
+        self.viewModel.process(action: .deselectSelectedAnnotation)
     }
 }
 
