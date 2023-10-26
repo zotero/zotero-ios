@@ -815,7 +815,14 @@ extension AppCoordinator: SyncRequestReceiver {
 }
 
 extension AppCoordinator: OpenItemsPresenter {
-    func showPDF(at url: URL, key: String, library: Library) {
+    func showItem(with presentation: ItemPresentation) {
+        switch presentation {
+        case .pdf(let library, let key, let url):
+            showPDF(at: url, key: key, library: library)
+        }
+    }
+    
+    private func showPDF(at url: URL, key: String, library: Library) {
         guard let window, let mainController = window.rootViewController as? MainViewController else { return }
         mainController.getDetailCoordinator { [weak self] coordinator in
             guard let self else { return }

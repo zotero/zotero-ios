@@ -11,75 +11,91 @@ import RxSwift
 
 import CocoaLumberjackSwift
 
+typealias OpenItem = OpenItemsController.Item
+typealias ItemPresentation = OpenItemsController.Presentation
+
 protocol OpenItemsPresenter: AnyObject {
-    func showPDF(at url: URL, key: String, library: Library)
+    func showItem(with presentation: ItemPresentation)
 }
 
 final class OpenItemsController {
     // MARK: Types
-    enum Item: Hashable, Equatable, Codable {
-        case pdf(libraryId: LibraryIdentifier, key: String)
-        
-        // MARK: Types
-        enum ItemType: String, Codable {
-            case pdf
-        }
-        
-        // MARK: Properties
-        var key: String {
-            switch self {
-            case .pdf(_, let key):
-                return key
+    struct Item: Hashable, Equatable, Codable {
+        enum Kind: Hashable, Equatable, Codable {
+            case pdf(libraryId: LibraryIdentifier, key: String)
+
+            // MARK: Types
+            enum `Type`: String, Codable {
+                case pdf
             }
-        }
-        
-        var type: ItemType {
-            switch self {
-            case .pdf:
-                return .pdf
+
+            // MARK: Properties
+            var type: `Type` {
+                switch self {
+                case .pdf:
+                    return .pdf
+                }
             }
-        }
-        
-        // MARK: Codable
-        enum CodingKeys: CodingKey {
-            case type
-            case libraryId
-            case key
+
+            // MARK: Codable
+            enum CodingKeys: CodingKey {
+                case type
+                case libraryId
+                case key
+            }
+
+            func encode(to encoder: Encoder) throws {
+                var container = encoder.container(keyedBy: CodingKeys.self)
+                try container.encode(type, forKey: .type)
+                switch self {
+                case .pdf(let libraryId, let key):
+                    try container.encode(libraryId, forKey: .libraryId)
+                    try container.encode(key, forKey: .key)
+                }
+            }
+
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                let type = try container.decode(`Type`.self, forKey: .type)
+
+                switch type {
+                case .pdf:
+                    let libraryId = try container.decode(LibraryIdentifier.self, forKey: .libraryId)
+                    let key = try container.decode(String.self, forKey: .key)
+                    self = .pdf(libraryId: libraryId, key: key)
+                }
+            }
         }
 
-        func encode(to encoder: Encoder) throws {
-            var container = encoder.container(keyedBy: CodingKeys.self)
-            try container.encode(type, forKey: .type)
-            switch self {
-            case .pdf(let libraryId, let key):
-                try container.encode(libraryId, forKey: .libraryId)
-                try container.encode(key, forKey: .key)
-            }
-        }
+        let kind: Kind
+        var userIndex: Int
+        var lastOpened: Date
 
-        init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
-            let type = try container.decode(ItemType.self, forKey: .type)
-
-            switch type {
-            case .pdf:
-                let libraryId = try container.decode(LibraryIdentifier.self, forKey: .libraryId)
-                let key = try container.decode(String.self, forKey: .key)
-                self = .pdf(libraryId: libraryId, key: key)
-            }
+        init(kind: Kind, userIndex: Int, lastOpened: Date = .now) {
+            self.kind = kind
+            self.userIndex = userIndex
+            self.lastOpened = lastOpened
         }
+    }
+
+    enum Presentation {
+        case pdf(library: Library, key: String, url: URL)
     }
     
     // MARK: Properties
     private unowned let dbStorage: DbStorage
     private unowned let fileStorage: FileStorage
     // TODO: Use a better data structure, such as an ordered set
-    // TODO: Keep track of user sorted items (for presentation), possibly in a separate list
-    // Items are sorted by most recently opened
     private(set) var items: [Item] = []
+    public var itemsSortedByUserOrder: [Item] {
+        items.sorted(by: { $0.userIndex < $1.userIndex })
+    }
+    public var itemsSortedByLastOpen: [Item] {
+        items.sorted(by: { $0.lastOpened > $1.lastOpened })
+    }
     let observable: PublishSubject<[Item]>
     private let disposeBag: DisposeBag
-    
+
     // MARK: Object Lifecycle
     init(dbStorage: DbStorage, fileStorage: FileStorage) {
         self.dbStorage = dbStorage
@@ -96,25 +112,23 @@ final class OpenItemsController {
         observable.on(.next(items))
     }
     
-    func open(_ item: Item) {
-        DDLogInfo("OpenItemsController: opened item \(item)")
-        guard items.last != item else { return }
-        // Since item not last, will certainly need to be appended in the end
-        if let index = items.firstIndex(of: item) {
-            // Item already open, remove it to be appended
-            items.remove(at: index)
-            DDLogInfo("OpenItemsController: moving already opened item \(item) to most recent")
+    func open(_ kind: Item.Kind) {
+        DDLogInfo("OpenItemsController: opened item \(kind)")
+        if let index = items.firstIndex(where: { $0.kind == kind }) {
+            items[index].lastOpened = .now
+            DDLogInfo("OpenItemsController: already opened item \(kind) became most recent")
         } else {
-            DDLogInfo("OpenItemsController: appending newly opened item \(item) as most recent")
+            DDLogInfo("OpenItemsController: newly opened item \(kind) set as most recent")
+            let item = Item(kind: kind, userIndex: items.count)
+            items.append(item)
         }
-        items.append(item)
         observable.on(.next(items))
     }
     
     @discardableResult
     func restore(_ item: Item, using presenter: OpenItemsPresenter) -> Bool {
-        guard let (library, url) = load(item: item) else { return false }
-        presentItem(item, at: url, library: library, using: presenter)
+        guard let presentation = loadPresentation(for: item) else { return false }
+        presentItem(with: presentation, using: presenter)
         return true
     }
     
@@ -129,21 +143,20 @@ final class OpenItemsController {
             }
         }
         var item: Item?
-        var library: Library?
-        var url: URL?
-        while let _item = items.last {
-            if let (_library, _url) = load(item: _item) {
+        var presentation: Presentation?
+        let itemsSortedByLastOpen = itemsSortedByLastOpen
+        for _item in itemsSortedByLastOpen {
+            if let _presentation = loadPresentation(for: _item) {
                 item = _item
-                library = _library
-                url = _url
+                presentation = _presentation
                 break
             }
             DDLogWarn("OpenItemsController: removing not loaded item \(_item)")
-            _ = items.removeLast()
+            items.removeAll(where: { $0 == _item })
             itemsChanged = true
         }
-        guard let item, let library, let url else { return nil }
-        presentItem(item, at: url, library: library, using: presenter)
+        guard let item, let presentation else { return nil }
+        presentItem(with: presentation, using: presenter)
         return item
     }
     
@@ -154,13 +167,13 @@ final class OpenItemsController {
                 return
             }
             var actions: [UIAction] = []
-            let items = self.items
-            let openItem: Item? = disableOpenItem ? items.last : nil
+            let openItem: Item? = disableOpenItem ? itemsSortedByLastOpen.first : nil
+            let itemsSortedByUserOrder = itemsSortedByUserOrder
             var itemTuples: [(Item, RItem)] = []
             do {
                 try dbStorage.perform(on: .main) { coordinator in
-                    for item in items {
-                        switch item {
+                    for item in itemsSortedByUserOrder {
+                        switch item.kind {
                         case .pdf(let libraryId, let key):
                             do {
                                 let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
@@ -191,13 +204,13 @@ final class OpenItemsController {
     }
     
     // MARK: Helper Methods
-    private func load(item: Item) -> (Library, URL)? {
-        switch item {
+    private func loadPresentation(for item: Item) -> Presentation? {
+        switch item.kind {
         case .pdf(let libraryId, let key):
-            return loadPDFItem(key: key, libraryId: libraryId)
+            return loadPDFPresentation(key: key, libraryId: libraryId)
         }
-        
-        func loadPDFItem(key: String, libraryId: LibraryIdentifier) -> (Library, URL)? {
+
+        func loadPDFPresentation(key: String, libraryId: LibraryIdentifier) -> Presentation? {
             var library: Library?
             var url: URL?
             do {
@@ -224,15 +237,12 @@ final class OpenItemsController {
                 DDLogError("OpenItemsController: can't load item \(item) - \(error)")
             }
             guard let library, let url else { return nil }
-            return (library, url)
+            return .pdf(library: library, key: key, url: url)
         }
     }
-    
-    private func presentItem(_ item: Item, at url: URL, library: Library, using presenter: OpenItemsPresenter) {
-        switch item {
-        case .pdf(_, let key):
-            presenter.showPDF(at: url, key: key, library: library)
-        }
-        DDLogInfo("OpenItemsController: presented item \(item) at URL \(url)")
+
+    private func presentItem(with presentation: Presentation, using presenter: OpenItemsPresenter) {
+        presenter.showItem(with: presentation)
+        DDLogInfo("OpenItemsController: presented item with presentation \(presentation)")
     }
 }

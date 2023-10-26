@@ -526,7 +526,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
 }
 
 extension PDFCoordinator: OpenItemsPresenter {
-    func showPDF(at url: URL, key: String, library: Library) {
-        (parentCoordinator as? DetailCoordinator)?.showPDF(at: url, key: key, library: library)
+    func showItem(with presentation: ItemPresentation) {
+        (parentCoordinator as? OpenItemsPresenter)?.showItem(with: presentation)
     }
 }

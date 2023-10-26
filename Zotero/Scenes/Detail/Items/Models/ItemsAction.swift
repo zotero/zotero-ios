@@ -49,5 +49,5 @@ enum ItemsAction {
     case quickCopyBibliography(Set<String>, LibraryIdentifier, WKWebView)
     case startSync
     case emptyTrash
-    case updateOpenItems(items: [OpenItemsController.Item])
+    case updateOpenItems(items: [OpenItem])
 }

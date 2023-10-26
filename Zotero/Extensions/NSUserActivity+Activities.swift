@@ -11,7 +11,7 @@ import Foundation
 struct RestoredStateData {
     let libraryId: LibraryIdentifier
     let collectionId: CollectionIdentifier
-    let openItems: [OpenItemsController.Item]
+    let openItems: [OpenItem]
     let restoreMostRecentlyOpenedItem: Bool
 }
 
@@ -24,7 +24,7 @@ extension NSUserActivity {
     private static let openItemsKey = "openItems"
     private static let restoreMostRecentlyOpenedItemKey = "restoreMostRecentlyOpenedItem"
     
-    static func mainActivity(with openItems: [OpenItemsController.Item]) -> NSUserActivity {
+    static func mainActivity(with openItems: [OpenItem]) -> NSUserActivity {
         let activity = NSUserActivity(activityType: self.mainId)
         activity.addUserInfoEntries(from: openItemsToUserInfo(openItems: openItems))
         let userInfo: [AnyHashable: Any] = [restoreMostRecentlyOpenedItemKey: false]
@@ -32,7 +32,7 @@ extension NSUserActivity {
         return activity
     }
 
-    static func pdfActivity(with openItems: [OpenItemsController.Item], libraryId: LibraryIdentifier, collectionId: CollectionIdentifier) -> NSUserActivity {
+    static func pdfActivity(with openItems: [OpenItem], libraryId: LibraryIdentifier, collectionId: CollectionIdentifier) -> NSUserActivity {
         let activity = NSUserActivity(activityType: self.pdfId)
         activity.addUserInfoEntries(from: openItemsToUserInfo(openItems: openItems))
         var userInfo: [AnyHashable: Any] = [libraryIdKey: libraryIdToString(libraryId), restoreMostRecentlyOpenedItemKey: true]
@@ -43,7 +43,7 @@ extension NSUserActivity {
         return activity
     }
     
-    private static func openItemsToUserInfo(openItems: [OpenItemsController.Item]) -> [AnyHashable: Any] {
+    private static func openItemsToUserInfo(openItems: [OpenItem]) -> [AnyHashable: Any] {
         var userInfo: [AnyHashable: Any] = [:]
         let encoder = JSONEncoder()
         userInfo[openItemsKey] = openItems.compactMap { try? encoder.encode($0) }
@@ -79,7 +79,7 @@ extension NSUserActivity {
         guard let userInfo else { return nil }
         var libraryId: LibraryIdentifier = Defaults.shared.selectedLibrary
         var collectionId: CollectionIdentifier = Defaults.shared.selectedCollectionId
-        var openItems: [OpenItemsController.Item] = []
+        var openItems: [OpenItem] = []
         var restoreMostRecentlyOpenedItem = false
         if let libraryString = userInfo[Self.libraryIdKey] as? String, let _libraryId = stringToLibraryId(libraryString) {
             libraryId = _libraryId
@@ -89,7 +89,7 @@ extension NSUserActivity {
             collectionId = _collectionId
         }
         if let openItemsDataArray = userInfo[Self.openItemsKey] as? [Data] {
-            openItems = openItemsDataArray.compactMap { try? decoder.decode(OpenItemsController.Item.self, from: $0) }
+            openItems = openItemsDataArray.compactMap { try? decoder.decode(OpenItem.self, from: $0) }
         }
         if let _restoreMostRecentlyOpenedItem = userInfo[Self.restoreMostRecentlyOpenedItemKey] as? Bool {
             restoreMostRecentlyOpenedItem = _restoreMostRecentlyOpenedItem
