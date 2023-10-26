@@ -55,8 +55,11 @@ struct ApiLogger {
         if startData.logParams.contains(.headers) {
             self.log(headers: headers ?? [:])
         }
-        if #available(iOS 17.0, *), startData.logParams.contains(.response), let data = data, let string = String(data: data, encoding: .utf8) {
-            DDLogInfo(DDLogMessageFormat(stringLiteral: string))
+        // TODO: Fix crashing log
+//        if startData.logParams.contains(.response), let data, let string = String(data: data, encoding: .utf8) {
+//            DDLogInfo(DDLogMessageFormat(stringLiteral: string))
+        if startData.logParams.contains(.response), let data, let _ = String(data: data, encoding: .utf8) {
+            DDLogInfo(DDLogMessageFormat(stringLiteral: "Response omitted due to crashing bug"))
         }
     }
 
