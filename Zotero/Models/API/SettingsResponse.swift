@@ -34,7 +34,7 @@ struct PageIndicesResponse {
 
 struct PageIndexResponse {
     let key: String
-    let value: Int
+    let value: String
     let version: Int
     let libraryId: LibraryIdentifier
 
@@ -48,9 +48,21 @@ struct PageIndexResponse {
         let (key, libraryId) = try PageIndexResponse.parse(key: key)
 
         self.key = key
-        self.value = try Parsing.parse(key: "value", from: dictionary, caller: Self.self)
+        self.value = try Self.parseValue(from: dictionary)
         self.version = try Parsing.parse(key: "version", from: dictionary, caller: Self.self)
         self.libraryId = libraryId
+    }
+
+    private static func parseValue(from dictionary: [String: Any]) throws -> String {
+        // Value can be Int, Double or String, so we convert all values to String which can be stored in database
+        if let value = dictionary["value"] as? Int {
+            return "\(value)"
+        } else if let value = dictionary["value"] as? Double {
+            return "\(Decimal(value).rounded(to: 1))"
+        } else if let value = dictionary["value"] as? String {
+            return value
+        }
+        throw Parsing.Error.missingKey("value")
     }
 
     static func parse(key: String) throws -> (String, LibraryIdentifier) {

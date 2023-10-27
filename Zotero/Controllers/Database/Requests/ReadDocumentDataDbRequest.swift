@@ -11,15 +11,15 @@ import Foundation
 import RealmSwift
 
 struct ReadDocumentDataDbRequest: DbResponseRequest {
-    typealias Response = Int
+    typealias Response = String
 
     let attachmentKey: String
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
 
-    func process(in database: Realm) throws -> Int {
-        guard let pageIndex = database.objects(RPageIndex.self).filter(.key(self.attachmentKey, in: self.libraryId)).first else { return 0 }
+    func process(in database: Realm) throws -> String {
+        guard let pageIndex = database.objects(RPageIndex.self).filter(.key(self.attachmentKey, in: self.libraryId)).first else { return "0" }
         return pageIndex.index
     }
 }

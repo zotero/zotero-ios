@@ -26,7 +26,7 @@ extension RPageIndexChanges {
 
 final class RPageIndex: Object {
     @Persisted(indexed: true) var key: String
-    @Persisted var index: Int
+    @Persisted var index: String
     @Persisted var changed: Bool
     @Persisted var customLibraryKey: RCustomLibraryType?
     @Persisted var groupKey: Int?

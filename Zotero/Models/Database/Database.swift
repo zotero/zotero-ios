@@ -13,24 +13,48 @@ import RealmSwift
 import Network
 
 struct Database {
-    private static let schemaVersion: UInt64 = 40
+    private static let schemaVersion: UInt64 = 41
 
     static func mainConfiguration(url: URL, fileStorage: FileStorage) -> Realm.Configuration {
-        var config = Realm.Configuration(fileURL: url,
-                                         schemaVersion: schemaVersion,
-                                         migrationBlock: createMigrationBlock(fileStorage: fileStorage),
-                                         deleteRealmIfMigrationNeeded: false)
-        config.objectTypes = [RCollection.self, RCreator.self, RCustomLibrary.self, RGroup.self, RItem.self, RItemField.self, RLink.self, RPageIndex.self, RPath.self, RPathCoordinate.self, RRect.self,
-                              RRelation.self, RSearch.self, RCondition.self, RTag.self, RTypedTag.self, RUser.self, RWebDavDeletion.self, RVersions.self, RObjectChange.self]
+        var config = Realm.Configuration(
+            fileURL: url,
+            schemaVersion: schemaVersion,
+            migrationBlock: createMigrationBlock(fileStorage: fileStorage),
+            deleteRealmIfMigrationNeeded: false
+        )
+        config.objectTypes = [
+            RCollection.self,
+            RCreator.self,
+            RCustomLibrary.self,
+            RGroup.self,
+            RItem.self,
+            RItemField.self,
+            RLink.self,
+            RPageIndex.self,
+            RPath.self,
+            RPathCoordinate.self,
+            RRect.self,
+            RRelation.self,
+            RSearch.self,
+            RCondition.self,
+            RTag.self,
+            RTypedTag.self,
+            RUser.self,
+            RWebDavDeletion.self,
+            RVersions.self,
+            RObjectChange.self
+        ]
         return config
     }
 
     static func bundledDataConfiguration(fileStorage: FileStorage) -> Realm.Configuration {
         let url = Files.bundledDataDbFile.createUrl()
-        var config = Realm.Configuration(fileURL: url,
-                                         schemaVersion: schemaVersion,
-                                         migrationBlock: createMigrationBlock(fileStorage: fileStorage),
-                                         deleteRealmIfMigrationNeeded: false)
+        var config = Realm.Configuration(
+            fileURL: url,
+            schemaVersion: schemaVersion,
+            migrationBlock: createMigrationBlock(fileStorage: fileStorage),
+            deleteRealmIfMigrationNeeded: false
+        )
         config.objectTypes = [RTranslatorMetadata.self, RStyle.self]
         return config
     }
@@ -38,21 +62,30 @@ struct Database {
     private static func createMigrationBlock(fileStorage: FileStorage) -> MigrationBlock {
         return { migration, schemaVersion in
             if schemaVersion < 35 {
-                // Migrate to new object change model.
-                self.migrateObjectChange(migration: migration)
+                migrateObjectChange(migration: migration)
             }
             if schemaVersion < 36 {
-                self.migrateTagNames(migration: migration)
+                migrateTagNames(migration: migration)
             }
             if schemaVersion < 37 {
-                self.extractItemHtmlFreeContent(migration: migration)
+                extractItemHtmlFreeContent(migration: migration)
             }
             if schemaVersion < 39 {
-                self.addUuidsToCreators(migration: migration)
+                addUuidsToCreators(migration: migration)
             }
             if schemaVersion < 40 {
                 truncateAnnotationPageLabels(migration: migration)
             }
+            if schemaVersion < 41 {
+                migratePageIndexToString(migration: migration)
+            }
+        }
+    }
+
+    private static func migratePageIndexToString(migration: Migration) {
+        migration.enumerateObjects(ofType: RPageIndex.className()) { oldObject, newObject in
+            guard let oldValue = oldObject?["index"] as? Int else { return }
+            newObject?["index"] = "\(oldValue)"
         }
     }
 
