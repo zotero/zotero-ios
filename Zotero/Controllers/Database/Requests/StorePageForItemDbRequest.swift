@@ -13,7 +13,7 @@ import RealmSwift
 struct StorePageForItemDbRequest: DbRequest {
     let key: String
     let libraryId: LibraryIdentifier
-    let page: Int
+    let page: String
 
     var needsWrite: Bool { return true }
 

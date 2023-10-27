@@ -363,7 +363,16 @@ extension RPageIndex: Updatable {
             libraryPart = "g\(groupId)"
         }
 
-        return ["lastPageIndex_\(libraryPart)_\(self.key)": ["value": self.index]]
+        let value: Any
+        if let _value = Int(index) {
+            value = _value
+        } else if let _value = Double(index) {
+            value = Decimal(_value).rounded(to: 3)
+        } else {
+            value = index
+        }
+
+        return ["lastPageIndex_\(libraryPart)_\(self.key)": ["value": value]]
     }
 
     var selfOrChildChanged: Bool {

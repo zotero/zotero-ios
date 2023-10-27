@@ -67,6 +67,7 @@ struct PDFReaderState: ViewModelState {
         case cantAddAnnotations
         case cantUpdateAnnotation
         case mergeTooBig
+        case pageNotInt
         case unknown
     }
 

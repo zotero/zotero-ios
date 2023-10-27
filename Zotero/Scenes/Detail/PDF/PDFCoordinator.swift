@@ -242,6 +242,10 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
             title = L10n.error
             message = L10n.Errors.Pdf.cantUpdateAnnotation
 
+        case .pageNotInt:
+            title = L10n.error
+            message = L10n.Errors.Pdf.pageIndexNotInt
+
         case .unknown:
             title = L10n.error
             message = L10n.Errors.unknown

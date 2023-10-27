@@ -486,7 +486,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             state.visiblePage = page
         }
 
-        let request = StorePageForItemDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, page: page)
+        let request = StorePageForItemDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, page: "\(page)")
         self.perform(request: request) { error in
             guard let error = error else { return }
             // TODO: - handle error
@@ -1669,12 +1669,16 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private func loadAnnotationsAndPage(for key: String, library: Library) -> Result<(Results<RItem>, Int), Error> {
         do {
             var results: Results<RItem>!
-            var page = 0
+            var pageStr = "0"
 
             try self.dbStorage.perform(on: .main, with: { coordinator in
-                page = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: library.identifier))
+                pageStr = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: library.identifier))
                 results = try coordinator.perform(request: ReadAnnotationsDbRequest(attachmentKey: key, libraryId: library.identifier))
             })
+
+            guard let page = Int(pageStr) else {
+                return .failure(PDFReaderState.Error.pageNotInt)
+            }
 
             return .success((results, page))
         } catch let error {

@@ -506,6 +506,8 @@ internal enum L10n {
       internal static let mergeTooBig = L10n.tr("Localizable", "errors.pdf.merge_too_big", fallback: "The combined annotation would be too large.")
       /// Unable to merge annotations
       internal static let mergeTooBigTitle = L10n.tr("Localizable", "errors.pdf.merge_too_big_title", fallback: "Unable to merge annotations")
+      /// Incorrect format of page stored for this document.
+      internal static let pageIndexNotInt = L10n.tr("Localizable", "errors.pdf.page_index_not_int", fallback: "Incorrect format of page stored for this document.")
     }
     internal enum Settings {
       /// Could not collect storage data
