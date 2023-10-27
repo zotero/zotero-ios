@@ -58,7 +58,7 @@ struct PageIndexResponse {
         if let value = dictionary["value"] as? Int {
             return "\(value)"
         } else if let value = dictionary["value"] as? Double {
-            return "\(Decimal(value).rounded(to: 3))"
+            return "\(Decimal(value).rounded(to: 1))"
         } else if let value = dictionary["value"] as? String {
             return value
         }

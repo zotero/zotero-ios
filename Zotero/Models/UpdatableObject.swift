@@ -367,7 +367,7 @@ extension RPageIndex: Updatable {
         if let _value = Int(index) {
             value = _value
         } else if let _value = Double(index) {
-            value = Decimal(_value).rounded(to: 3)
+            value = Decimal(_value).rounded(to: 1)
         } else {
             value = index
         }
