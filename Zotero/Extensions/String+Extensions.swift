@@ -12,23 +12,97 @@ import UniformTypeIdentifiers
 
 extension String {
     var mimeTypeFromExtension: String? {
-        UTType(tag: self, tagClass: .filenameExtension, conformingTo: nil)?.preferredMIMEType
+        // The `UTType.preferredMIMEType` sometimes crashes in background. For that reason here are some hardoced mostly used values in our app to avoid using code below.
+
+        switch self.lowercased() {
+        case "pdf":
+            return "application/pdf"
+
+        case "zip":
+            return "application/zip"
+
+        case "html", "htm":
+            return "text/html"
+
+        case "xhtml":
+            return "application/xhtml+xml"
+
+        case "jpg", "jpeg":
+            return "image/jpeg"
+
+        case "png":
+            return "image/png"
+
+        case "txt":
+            return "text/plain"
+
+        case "gif":
+            return "image/gif"
+
+        case "css":
+            return "text/css"
+
+        case "epub":
+            return "application/epub+zip"
+
+        case "js":
+            return "text/javascript"
+
+        case "json":
+            return "application/json"
+
+        case "xml":
+            return "application/xml"
+
+        default: break
+        }
+
+        return UTType(tag: self, tagClass: .filenameExtension, conformingTo: nil)?.preferredMIMEType
     }
 
     var extensionFromMimeType: String? {
-        // The `UTTypeCopyPreferredTagWithClass` sometimes crashes in background. For that reason here are some hardoced mostly used values in our app to avoid using code below.
+        // The `UTType.preferredFilenameExtension` sometimes crashes in background. For that reason here are some hardoced mostly used values in our app to avoid using code below.
 
         switch self {
         case "application/pdf":
             return "pdf"
+
         case "application/zip":
             return "zip"
+
         case "text/html":
             return "html"
+
+        case "application/xhtml+xml":
+            return "xhtml"
+
         case "image/jpeg":
             return "jpg"
+
+        case "image/png":
+            return "png"
+
         case "text/plain":
             return "txt"
+
+        case "image/gif":
+            return "gif"
+
+        case "text/css":
+            return "css"
+
+        case "application/epub+zip":
+            return "epub"
+
+        case "text/javascript":
+            return "js"
+
+        case "application/json":
+            return "json"
+
+        case "text/xml", "application/xml":
+            return "xml"
+
         default: break
         }
 
