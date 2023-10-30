@@ -71,7 +71,7 @@ final class SettingsResponseSpec: QuickSpec {
 
                         if let index = decoded.pageIndices.indices.first(where: { $0.key == "ZYI76ILG" }) {
                             expect(index.libraryId).to(equal(.custom(.myLibrary)))
-                            expect(index.value).to(equal("2.233"))
+                            expect(index.value).to(equal("2.2"))
                         } else {
                             fail("Missing page index ZYI76ILE")
                         }
