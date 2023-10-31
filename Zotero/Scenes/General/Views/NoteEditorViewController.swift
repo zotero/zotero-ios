@@ -25,7 +25,7 @@ final class NoteEditorViewController: UIViewController {
     weak var coordinatorDelegate: NoteEditorCoordinatorDelegate?
 
     private var htmlUrl: URL? {
-        if self.viewModel.state.readOnly {
+        if viewModel.state.readOnly {
             return Bundle.main.url(forResource: "note", withExtension: "html")
         } else {
             return Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "tinymce")
@@ -34,7 +34,7 @@ final class NoteEditorViewController: UIViewController {
 
     init(viewModel: ViewModel<NoteEditorActionHandler>) {
         self.viewModel = viewModel
-        self.disposeBag = DisposeBag()
+        disposeBag = DisposeBag()
         super.init(nibName: "NoteEditorViewController", bundle: nil)
     }
     
@@ -45,53 +45,73 @@ final class NoteEditorViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        if let data = self.viewModel.state.title {
-            self.navigationItem.titleView = NoteEditorTitleView(type: data.type, title: data.title)
+        if let data = viewModel.state.title {
+            navigationItem.titleView = NoteEditorTitleView(type: data.type, title: data.title)
         }
 
-        self.view.backgroundColor = .systemBackground
-        self.setupNavbarItems()
-        self.setupWebView()
-        self.update(tags: self.viewModel.state.tags)
+        view.backgroundColor = .systemBackground
+        setupNavbarItems()
+        setupWebView()
+        update(tags: viewModel.state.tags)
 
-        self.viewModel.stateObservable
-                      .subscribe(with: self, onNext: { `self`, state in
-                          self.process(state: state)
-                      })
-                      .disposed(by: self.disposeBag)
+        viewModel.stateObservable
+            .subscribe(with: self, onNext: { _, state in
+                process(state: state)
+            })
+            .disposed(by: disposeBag)
+
+        func setupNavbarItems() {
+            let done = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
+            done.rx.tap
+                .subscribe(with: self, onNext: { `self`, _ in
+                    forceSaveIfNeeded()
+                    self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
+                })
+                .disposed(by: disposeBag)
+            navigationItem.rightBarButtonItem = done
+
+            func forceSaveIfNeeded() {
+                guard debounceDisposeBag != nil else { return }
+                debounceDisposeBag = nil
+                viewModel.process(action: .save)
+            }
+        }
+
+        func setupWebView() {
+            webView.navigationDelegate = self
+            webView.configuration.userContentController.add(self, name: NoteEditorViewController.jsHandler)
+
+            guard let url = htmlUrl, var data = try? String(contentsOf: url, encoding: .utf8) else { return }
+            data = data.replacingOccurrences(of: "#initialnote", with: viewModel.state.text)
+            webView.loadHTMLString(data, baseURL: url)
+        }
+
+        func process(state: NoteEditorState) {
+            if state.changes.contains(.tags) {
+                update(tags: state.tags)
+            }
+            if state.changes.contains(.save) {
+                debounceSave()
+            }
+
+            func debounceSave() {
+                debounceDisposeBag = nil
+                let disposeBag = DisposeBag()
+
+                Single<Int>.timer(.seconds(1), scheduler: MainScheduler.instance)
+                    .subscribe(onSuccess: { [weak self] _ in
+                        guard let self else { return }
+                        viewModel.process(action: .save)
+                        debounceDisposeBag = nil
+                    })
+                    .disposed(by: disposeBag)
+
+                debounceDisposeBag = disposeBag
+            }
+        }
     }
 
     // MARK: - Actions
-
-    private func process(state: NoteEditorState) {
-        if state.changes.contains(.tags) {
-            self.update(tags: state.tags)
-        }
-        if state.changes.contains(.save) {
-            self.debounceSave()
-        }
-    }
-
-    private func forceSaveIfNeeded() {
-        guard self.debounceDisposeBag != nil else { return }
-        self.debounceDisposeBag = nil
-        self.viewModel.process(action: .save)
-    }
-
-    private func debounceSave() {
-        self.debounceDisposeBag = nil
-        let disposeBag = DisposeBag()
-
-        Single<Int>.timer(.seconds(1), scheduler: MainScheduler.instance)
-                   .subscribe(onSuccess: { [weak self] _ in
-                       self?.viewModel.process(action: .save)
-                       self?.debounceDisposeBag = nil
-                   })
-                   .disposed(by: disposeBag)
-
-        self.debounceDisposeBag = disposeBag
-    }
-
     private func update(tags: [Tag]) {
         let attributedString = NSMutableAttributedString()
 
@@ -113,37 +133,15 @@ final class NoteEditorViewController: UIViewController {
         }
 
         attributedString.addAttribute(.font, value: UIFont.preferredFont(forTextStyle: .body), range: NSRange(location: 0, length: attributedString.string.count))
-        self.tagsLabel.attributedText = attributedString
+        tagsLabel.attributedText = attributedString
     }
 
     @IBAction private func changeTags() {
-        guard !self.viewModel.state.readOnly else { return }
-        let selected = Set(self.viewModel.state.tags.map({ $0.name }))
-        self.coordinatorDelegate?.showTagPicker(libraryId: self.viewModel.state.libraryId, selected: selected, picked: { [weak self] tags in
+        guard !viewModel.state.readOnly else { return }
+        let selected = Set(viewModel.state.tags.map({ $0.name }))
+        coordinatorDelegate?.showTagPicker(libraryId: viewModel.state.libraryId, selected: selected, picked: { [weak self] tags in
             self?.viewModel.process(action: .setTags(tags))
         })
-    }
-    
-    // MARK: - Setups
-
-    private func setupNavbarItems() {
-        let done = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
-        done.rx.tap
-               .subscribe(with: self, onNext: { `self`, _ in
-                   self.forceSaveIfNeeded()
-                   self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
-               })
-               .disposed(by: self.disposeBag)
-        self.navigationItem.rightBarButtonItem = done
-    }
-
-    private func setupWebView() {
-        self.webView.navigationDelegate = self
-        self.webView.configuration.userContentController.add(self, name: NoteEditorViewController.jsHandler)
-
-        guard let url = self.htmlUrl, var data = try? String(contentsOf: url, encoding: .utf8) else { return }
-        data = data.replacingOccurrences(of: "#initialnote", with: self.viewModel.state.text)
-        self.webView.loadHTMLString(data, baseURL: url)
     }
 }
 
@@ -162,7 +160,7 @@ extension NoteEditorViewController: WKNavigationDelegate {
         default:
             // Try opening other URLs
             decisionHandler(.cancel)
-            self.coordinatorDelegate?.show(url: url)
+            coordinatorDelegate?.show(url: url)
         }
     }
 }
@@ -170,6 +168,6 @@ extension NoteEditorViewController: WKNavigationDelegate {
 extension NoteEditorViewController: WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard message.name == NoteEditorViewController.jsHandler, let text = message.body as? String else { return }
-        self.viewModel.process(action: .setText(text))
+        viewModel.process(action: .setText(text))
     }
 }
