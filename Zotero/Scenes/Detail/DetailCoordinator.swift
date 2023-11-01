@@ -911,15 +911,29 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
         saveCallback: @escaping NoteEditorSaveCallback = { _ in }
     ) {
         guard let navigationController else { return }
-        let controller = createNoteController(library: library, kind: kind, text: text, tags: tags, title: title, saveCallback: saveCallback)
+        var amendedSaveCallback = saveCallback
         switch kind {
         case .itemCreation, .standaloneCreation:
             DDLogInfo("DetailCoordinator: show note creation")
-            
+            amendedSaveCallback = { [weak self] result in
+                switch result {
+                case .success(let note):
+                    // If indeed a new note is created inform open items controller about it.
+                    self?.controllers.userControllers?.openItemsController.open(.note(libraryId: library.identifier, key: note.key))
+
+                case .failure:
+                    break
+                }
+
+                saveCallback(result)
+            }
+
         case .edit(let key), .readOnly(let key):
             DDLogInfo("DetailCoordinator: show note \(key)")
+            controllers.userControllers?.openItemsController.open(.note(libraryId: library.identifier, key: key))
         }
 
+        let controller = createNoteController(library: library, kind: kind, text: text, tags: tags, title: title, saveCallback: amendedSaveCallback)
         if let presentedViewController = navigationController.presentedViewController {
             guard let window = presentedViewController.view.window else { return }
             show(controller: controller, by: navigationController, in: window, animated: false)
@@ -956,6 +970,11 @@ extension DetailCoordinator: OpenItemsPresenter {
         switch presentation {
         case .pdf(let library, let key, let url):
             showPDF(at: url, key: key, library: library)
+
+        case .note(let library, let key, let text, let tags, let title):
+            let kind: NoteEditorKind = library.metadataEditable ? .edit(key: key) : .readOnly(key: key)
+            // TODO: Check if a callback is required
+            showNote(library: library, kind: kind, text: text, tags: tags, title: title)
         }
     }
 }

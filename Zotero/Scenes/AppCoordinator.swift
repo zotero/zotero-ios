@@ -816,18 +816,21 @@ extension AppCoordinator: SyncRequestReceiver {
 
 extension AppCoordinator: OpenItemsPresenter {
     func showItem(with presentation: ItemPresentation) {
-        switch presentation {
-        case .pdf(let library, let key, let url):
-            showPDF(at: url, key: key, library: library)
-        }
-    }
-    
-    private func showPDF(at url: URL, key: String, library: Library) {
         guard let window, let mainController = window.rootViewController as? MainViewController else { return }
         mainController.getDetailCoordinator { [weak self] coordinator in
             guard let self else { return }
-            let controller = coordinator.createPDFController(key: key, library: library, url: url)
-            self.show(controller: controller, by: mainController, in: window, animated: false)
+            var controller: UIViewController
+            switch presentation {
+            case .pdf(let library, let key, let url):
+                controller = coordinator.createPDFController(key: key, library: library, url: url)
+                
+            case .note(let library, let key, let text, let tags, let title):
+                let kind: NoteEditorKind = library.metadataEditable ? .edit(key: key) : .readOnly(key: key)
+                // TODO: Check if a callback is required
+                controller = coordinator.createNoteController(library: library, kind: kind, text: text, tags: tags, title: title) { _ in
+                }
+            }
+            show(controller: controller, by: mainController, in: window, animated: false)
         }
     }
 }

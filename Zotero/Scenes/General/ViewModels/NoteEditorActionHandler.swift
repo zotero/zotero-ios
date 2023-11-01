@@ -45,6 +45,14 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 state.tags = tags
                 state.changes = [.tags, .save]
             }
+
+        case .updateOpenItems(let items):
+            update(viewModel: viewModel) { state in
+                if state.openItemsCount != items.count {
+                    state.openItemsCount = items.count
+                    state.changes = .openItems
+                }
+            }
         }
 
         func save(viewModel: ViewModel<NoteEditorActionHandler>) {

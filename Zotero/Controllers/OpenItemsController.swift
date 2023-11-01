@@ -23,10 +23,12 @@ final class OpenItemsController {
     struct Item: Hashable, Equatable, Codable {
         enum Kind: Hashable, Equatable, Codable {
             case pdf(libraryId: LibraryIdentifier, key: String)
+            case note(libraryId: LibraryIdentifier, key: String)
 
             // MARK: Types
             enum `Type`: String, Codable {
                 case pdf
+                case note
             }
 
             // MARK: Properties
@@ -34,6 +36,9 @@ final class OpenItemsController {
                 switch self {
                 case .pdf:
                     return .pdf
+
+                case .note:
+                    return .note
                 }
             }
 
@@ -48,7 +53,7 @@ final class OpenItemsController {
                 var container = encoder.container(keyedBy: CodingKeys.self)
                 try container.encode(type, forKey: .type)
                 switch self {
-                case .pdf(let libraryId, let key):
+                case .pdf(let libraryId, let key), .note(let libraryId, let key):
                     try container.encode(libraryId, forKey: .libraryId)
                     try container.encode(key, forKey: .key)
                 }
@@ -63,6 +68,11 @@ final class OpenItemsController {
                     let libraryId = try container.decode(LibraryIdentifier.self, forKey: .libraryId)
                     let key = try container.decode(String.self, forKey: .key)
                     self = .pdf(libraryId: libraryId, key: key)
+
+                case .note:
+                    let libraryId = try container.decode(LibraryIdentifier.self, forKey: .libraryId)
+                    let key = try container.decode(String.self, forKey: .key)
+                    self = .note(libraryId: libraryId, key: key)
                 }
             }
         }
@@ -80,6 +90,7 @@ final class OpenItemsController {
 
     enum Presentation {
         case pdf(library: Library, key: String, url: URL)
+        case note(library: Library, key: String, text: String, tags: [Tag], title: NoteEditorState.TitleData?)
     }
     
     // MARK: Properties
@@ -174,7 +185,7 @@ final class OpenItemsController {
                 try dbStorage.perform(on: .main) { coordinator in
                     for item in itemsSortedByUserOrder {
                         switch item.kind {
-                        case .pdf(let libraryId, let key):
+                        case .pdf(let libraryId, let key), .note(let libraryId, let key):
                             do {
                                 let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
                                 itemTuples.append((item, rItem))
@@ -208,6 +219,9 @@ final class OpenItemsController {
         switch item.kind {
         case .pdf(let libraryId, let key):
             return loadPDFPresentation(key: key, libraryId: libraryId)
+
+        case .note(let libraryId, let key):
+            return loadNotePresentation(key: key, libraryId: libraryId)
         }
 
         func loadPDFPresentation(key: String, libraryId: LibraryIdentifier) -> Presentation? {
@@ -224,11 +238,11 @@ final class OpenItemsController {
                         case .local, .localAndChangedRemotely:
                             let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
                             url = file.createUrl()
-                            
+
                         case .remote, .remoteMissing:
                             break
                         }
-                        
+
                     default:
                         break
                     }
@@ -238,6 +252,26 @@ final class OpenItemsController {
             }
             guard let library, let url else { return nil }
             return .pdf(library: library, key: key, url: url)
+        }
+
+        func loadNotePresentation(key: String, libraryId: LibraryIdentifier) -> Presentation? {
+            var library: Library?
+            var note: Note?
+            var title: NoteEditorState.TitleData?
+            do {
+                try dbStorage.perform(on: .main) { coordinator in
+                    library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
+                    let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
+                    note = Note(item: rItem)
+                    if let parent = rItem.parent {
+                        title = NoteEditorState.TitleData(type: parent.rawType, title: parent.displayTitle)
+                    }
+                }
+            } catch let error {
+                DDLogError("OpenItemsController: can't load item \(item) - \(error)")
+            }
+            guard let library, let note else { return nil }
+            return .note(library: library, key: note.key, text: note.text, tags: note.tags, title: title)
         }
     }
 

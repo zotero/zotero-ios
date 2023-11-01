@@ -70,12 +70,12 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
     }
 
     func start(animated: Bool) {
-        guard let dbStorage = controllers.userControllers?.dbStorage else { return }
+        guard let dbStorage = controllers.userControllers?.dbStorage, let openItemsController = controllers.userControllers?.openItemsController else { return }
 
-        let state = NoteEditorState(kind: kind, library: library, title: title, text: initialText, tags: initialTags)
+        let state = NoteEditorState(kind: kind, library: library, title: title, text: initialText, tags: initialTags, openItemsCount: openItemsController.items.count)
         let handler = NoteEditorActionHandler(dbStorage: dbStorage, schemaController: controllers.schemaController, saveCallback: saveCallback)
         let viewModel = ViewModel(initialState: state, handler: handler)
-        let controller = NoteEditorViewController(viewModel: viewModel)
+        let controller = NoteEditorViewController(viewModel: viewModel, openItemsController: openItemsController)
         controller.coordinatorDelegate = self
         navigationController?.setViewControllers([controller], animated: animated)
     }
@@ -111,5 +111,11 @@ extension NoteEditorCoordinator: NoteEditorCoordinatorDelegate {
         controller.transitioningDelegate = self.transitionDelegate
         transitionDelegate = nil
         navigationController.present(controller, animated: true, completion: nil)
+    }
+}
+
+extension NoteEditorCoordinator: OpenItemsPresenter {
+    func showItem(with presentation: ItemPresentation) {
+        (parentCoordinator as? OpenItemsPresenter)?.showItem(with: presentation)
     }
 }
