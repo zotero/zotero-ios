@@ -28,7 +28,7 @@ enum ItemsAction {
     case observingFailed
     case removeDownloads(Set<String>)
     case restoreItems(Set<String>)
-    case saveNote(String, String, [Tag])
+    case processNoteSaveResult(NoteEditorSaveResult)
     case search(String)
     case selectItem(String)
     case setSortField(ItemsSortType.Field)

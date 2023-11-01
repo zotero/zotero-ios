@@ -86,8 +86,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         case .moveCreators(let diff):
             self.moveCreators(diff: diff, in: viewModel)
 
-        case .saveNote(let key, let text, let tags):
-            self.saveNote(key: key, text: text, tags: tags, in: viewModel)
+        case .processNoteSaveResult(let key, let result):
+            self.processNoteSaveResult(key: key, result: result, in: viewModel)
 
         case .setTags(let tags):
             self.set(tags: tags, in: viewModel)
@@ -322,60 +322,44 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
     // MARK: - Notes
 
-    private func saveNote(key: String, text: String, tags: [Tag], in viewModel: ViewModel<ItemDetailActionHandler>) {
-        let oldNote = viewModel.state.notes.first(where: { $0.key == key })
-        let note = Note(key: key, text: text, tags: tags)
+    private func processNoteSaveResult(key: String?, result: NoteEditorSaveResult, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        var oldIndex: Int?
+        var oldNote: Note?
+        if let key {
+            oldIndex = viewModel.state.notes.firstIndex(where: { $0.key == key })
+            if let oldIndex {
+                oldNote = viewModel.state.notes[oldIndex]
+            }
+        }
+        switch result {
+        case .success((let key, let text, let tags)):
+            let note = Note(key: key, text: text, tags: tags)
+            update(viewModel: viewModel) { state in
+                if let oldIndex {
+                    state.notes[oldIndex] = note
+                } else {
+                    state.notes.append(note)
+                }
 
-        self.update(viewModel: viewModel) { state in
-            if let index = state.notes.firstIndex(where: { $0.key == key }) {
-                state.notes[index] = note
-            } else {
-                state.notes.append(note)
+                state.reload = .section(.notes)
             }
 
-            state.backgroundProcessedItems.insert(key)
-            state.reload = .section(.notes)
-        }
-
-        let finishSave: (Error?) -> Void = { [weak viewModel] error in
-            guard let viewModel = viewModel else { return }
-
-            self.update(viewModel: viewModel) { state in
-                state.backgroundProcessedItems.remove(key)
+        case .failure(let error):
+            if let key {
+                DDLogError("ItemDetailActionHandler: Can't update item note \(key) - \(error)")
+            } else {
+                DDLogError("ItemDetailActionHandler: Can't create item note - \(error)")
+            }
+            update(viewModel: viewModel) { state in
                 state.reload = .section(.notes)
-
-                guard let error = error else { return }
-
-                DDLogError("Can't edit/save note \(key) - \(error)")
                 state.error = .cantSaveNote
 
-                guard let index = state.notes.firstIndex(where: { $0.key == key }) else { return }
-
-                if let oldNote = oldNote {
-                    state.notes[index] = oldNote
+                guard let oldIndex else { return }
+                if let oldNote {
+                    state.notes[oldIndex] = oldNote
                 } else {
-                    state.notes.remove(at: index)
+                    state.notes.remove(at: oldIndex)
                 }
-            }
-        }
-
-        if oldNote != nil {
-            let request = EditNoteDbRequest(note: note, libraryId: viewModel.state.library.identifier)
-            self.perform(request: request) { error in
-                finishSave(error)
-            }
-            return
-        }
-
-        let type = self.schemaController.localized(itemType: ItemTypes.note) ?? ItemTypes.note
-        let request = CreateNoteDbRequest(note: note, localizedType: type, libraryId: viewModel.state.library.identifier, collectionKey: nil, parentKey: viewModel.state.key)
-        self.perform(request: request, invalidateRealm: true) { result in
-            switch result {
-            case .success:
-                finishSave(nil)
-
-            case .failure(let error):
-                finishSave(error)
             }
         }
     }

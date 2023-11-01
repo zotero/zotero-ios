@@ -34,7 +34,7 @@ final class ItemDetailViewController: UIViewController {
         return self.viewModel.state.key
     }
 
-    weak var coordinatorDelegate: DetailItemDetailCoordinatorDelegate?
+    weak var coordinatorDelegate: (DetailItemDetailCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)?
 
     init(viewModel: ViewModel<ItemDetailActionHandler>, controllers: Controllers) {
         self.viewModel = viewModel
@@ -121,20 +121,23 @@ final class ItemDetailViewController: UIViewController {
             })
 
         case .openNoteEditor(let note):
-            let library = self.viewModel.state.library
-            let key = note?.key ?? KeyGenerator.newKey
-            let title = NoteEditorState.TitleData(type: self.viewModel.state.data.type, title: self.viewModel.state.data.title)
-            self.coordinatorDelegate?.showNote(
-                with: (note?.text ?? ""),
-                tags: (note?.tags ?? []),
-                title: title,
-                key: note?.key,
-                library: library,
-                readOnly: !library.metadataEditable,
-                save: { [weak self] text, tags in
-                    self?.viewModel.process(action: .saveNote(key: key, text: text, tags: tags))
+            let library = viewModel.state.library
+            var kind: NoteEditorKind = .itemCreation(parentKey: viewModel.state.key)
+            var text: String = ""
+            var tags: [Tag] = []
+            let title = NoteEditorState.TitleData(type: viewModel.state.data.type, title: viewModel.state.data.title)
+            if let note {
+                if library.metadataEditable {
+                    kind = .edit(key: note.key)
+                } else {
+                    kind = .readOnly(key: note.key)
                 }
-            )
+                text = note.text
+                tags = note.tags
+            }
+            coordinatorDelegate?.showNote(library: library, kind: kind, text: text, tags: tags, title: title) { [weak self] result in
+                self?.viewModel.process(action: .processNoteSaveResult(key: note?.key, result: result))
+            }
 
         case .openTagPicker:
             self.coordinatorDelegate?.showTagPicker(libraryId: self.viewModel.state.library.identifier,

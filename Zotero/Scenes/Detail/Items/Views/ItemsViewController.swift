@@ -47,9 +47,9 @@ final class ItemsViewController: UIViewController {
     private weak var webView: WKWebView?
     weak var tagFilterDelegate: ItemsTagFilterDelegate?
 
-    private weak var coordinatorDelegate: DetailItemsCoordinatorDelegate?
+    private weak var coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)?
 
-    init(viewModel: ViewModel<ItemsActionHandler>, controllers: Controllers, coordinatorDelegate: DetailItemsCoordinatorDelegate) {
+    init(viewModel: ViewModel<ItemsActionHandler>, controllers: Controllers, coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)) {
         self.viewModel = viewModel
         self.controllers = controllers
         self.coordinatorDelegate = coordinatorDelegate
@@ -245,17 +245,9 @@ final class ItemsViewController: UIViewController {
             guard let note = Note(item: item) else { return }
             let tags = Array(item.tags.map({ Tag(tag: $0) }))
             let library = self.viewModel.state.library
-            self.coordinatorDelegate?.showNote(
-                with: note.text,
-                tags: tags,
-                title: nil,
-                key: note.key,
-                library: library,
-                readOnly: !library.metadataEditable,
-                save: { [weak self] newText, newTags in
-                    self?.viewModel.process(action: .saveNote(note.key, newText, newTags))
-                }
-            )
+            self.coordinatorDelegate?.showNote(library: library, kind: .edit(key: note.key), text: note.text, tags: tags, title: nil) { [weak self] result in
+                self?.viewModel.process(action: .processNoteSaveResult(result))
+            }
         }
     }
 
