@@ -74,7 +74,7 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 let note = Note(key: key, text: text, tags: tags)
                 let type = schemaController.localized(itemType: ItemTypes.note) ?? ItemTypes.note
                 let request = CreateNoteDbRequest(note: note, localizedType: type, libraryId: library.identifier, collectionKey: nil, parentKey: parentKey)
-                createNote(request: request, key: key, text: text, tags: tags)
+                createNote(note, with: request)
             }
 
             func createStandaloneNote(library: Library, collection: Collection, text: String, tags: [Tag]) {
@@ -92,17 +92,17 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 }
 
                 let request = CreateNoteDbRequest(note: note, localizedType: type, libraryId: library.identifier, collectionKey: collectionKey, parentKey: nil)
-                createNote(request: request, key: key, text: text, tags: tags)
+                createNote(note, with: request)
             }
 
-            func createNote<Request: DbResponseRequest>(request: Request, key: String, text: String, tags: [Tag]) {
+            func createNote<Request: DbResponseRequest>(_ note: Note, with request: Request) {
                 perform(request: request, invalidateRealm: true) { result in
                     switch result {
                     case .success:
                         update(viewModel: viewModel) { state in
-                            state.kind = .edit(key: key)
+                            state.kind = .edit(key: note.key)
                         }
-                        saveCallback(.success((key, text, tags)))
+                        saveCallback(.success(note))
 
                     case .failure(let error):
                         DDLogError("NoteEditorActionHandler: can't create item note: \(error)")
@@ -120,7 +120,7 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                         DDLogError("NoteEditorActionHandler: can't update existing note: \(error)")
                         saveCallback(.failure(error))
                     } else {
-                        saveCallback(.success((key, text, tags)))
+                        saveCallback(.success(note))
                     }
                 }
             }
