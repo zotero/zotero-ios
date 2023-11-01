@@ -9,6 +9,8 @@
 import UIKit
 import SafariServices
 
+import CocoaLumberjackSwift
+
 protocol NoteEditorCoordinatorDelegate: AnyObject {
     func showWeb(url: URL)
     func show(url: URL)
@@ -24,16 +26,16 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
     private let initialText: String
     private let initialTags: [Tag]
     private let title: NoteEditorState.TitleData?
-    private let libraryId: LibraryIdentifier
+    private let library: Library
     private let readOnly: Bool
     private let saveAction: (String, [Tag]) -> Void
     private unowned let controllers: Controllers
 
-    init(text: String, tags: [Tag], title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void, navigationController: NavigationViewController, controllers: Controllers) {
+    init(text: String, tags: [Tag], title: NoteEditorState.TitleData?, library: Library, readOnly: Bool, save: @escaping (String, [Tag]) -> Void, navigationController: NavigationViewController, controllers: Controllers) {
         self.initialText = text
         self.initialTags = tags
         self.title = title
-        self.libraryId = libraryId
+        self.library = library
         self.readOnly = readOnly
         self.saveAction = save
         self.navigationController = navigationController
@@ -43,38 +45,42 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
         super.init()
 
         navigationController.dismissHandler = { [weak self] in
-            guard let self = self else { return }
-            self.parentCoordinator?.childDidFinish(self)
+            guard let self else { return }
+            parentCoordinator?.childDidFinish(self)
         }
     }
 
+    deinit {
+        DDLogInfo("NoteEditorCoordinator: deinitialized")
+    }
+
     func start(animated: Bool) {
-        let state = NoteEditorState(title: self.title, text: self.initialText, tags: self.initialTags, libraryId: self.libraryId, readOnly: self.readOnly)
-        let handler = NoteEditorActionHandler(saveAction: self.saveAction)
+        let state = NoteEditorState(title: title, text: initialText, tags: initialTags, libraryId: library.identifier, readOnly: readOnly)
+        let handler = NoteEditorActionHandler(saveAction: saveAction)
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = NoteEditorViewController(viewModel: viewModel)
         controller.coordinatorDelegate = self
-        self.navigationController?.setViewControllers([controller], animated: animated)
+        navigationController?.setViewControllers([controller], animated: animated)
     }
 }
 
 extension NoteEditorCoordinator: NoteEditorCoordinatorDelegate {
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void) {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+        guard let dbStorage = controllers.userControllers?.dbStorage else { return }
 
         let state = TagPickerState(libraryId: libraryId, selectedTags: selected)
         let handler = TagPickerActionHandler(dbStorage: dbStorage)
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = TagPickerViewController(viewModel: viewModel, saveAction: picked)
 
-        self.navigationController?.pushViewController(controller, animated: true)
+        navigationController?.pushViewController(controller, animated: true)
     }
 
     func show(url: URL) {
         if let scheme = url.scheme, scheme != "http" && scheme != "https" {
             UIApplication.shared.open(url)
         } else {
-            self.showWeb(url: url)
+            showWeb(url: url)
         }
     }
 
@@ -82,9 +88,9 @@ extension NoteEditorCoordinator: NoteEditorCoordinatorDelegate {
         let controller = SFSafariViewController(url: url.withHttpSchemeIfMissing)
         controller.modalPresentationStyle = .fullScreen
         // Changes transition to normal modal transition instead of push from right.
-        self.transitionDelegate = EmptyTransitioningDelegate()
+        transitionDelegate = EmptyTransitioningDelegate()
         controller.transitioningDelegate = self.transitionDelegate
-        self.transitionDelegate = nil
-        self.navigationController?.present(controller, animated: true, completion: nil)
+        transitionDelegate = nil
+        navigationController?.present(controller, animated: true, completion: nil)
     }
 }
