@@ -25,7 +25,7 @@ final class NoteEditorViewController: UIViewController {
     weak var coordinatorDelegate: NoteEditorCoordinatorDelegate?
 
     private var htmlUrl: URL? {
-        if viewModel.state.readOnly {
+        if viewModel.state.kind.readOnly {
             return Bundle.main.url(forResource: "note", withExtension: "html")
         } else {
             return Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "tinymce")
@@ -137,9 +137,9 @@ final class NoteEditorViewController: UIViewController {
     }
 
     @IBAction private func changeTags() {
-        guard !viewModel.state.readOnly else { return }
+        guard !viewModel.state.kind.readOnly else { return }
         let selected = Set(viewModel.state.tags.map({ $0.name }))
-        coordinatorDelegate?.showTagPicker(libraryId: viewModel.state.libraryId, selected: selected, picked: { [weak self] tags in
+        coordinatorDelegate?.showTagPicker(libraryId: viewModel.state.library.identifier, selected: selected, picked: { [weak self] tags in
             self?.viewModel.process(action: .setTags(tags))
         })
     }

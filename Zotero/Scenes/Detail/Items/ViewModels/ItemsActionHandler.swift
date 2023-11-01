@@ -96,8 +96,8 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
                 state.error = .dataLoading
             }
 
-        case .saveNote(let key, let text, let tags):
-            self.saveNote(text: text, tags: tags, key: key, in: viewModel)
+        case .processNoteSaveResult(let result):
+            self.processNoteSaveResult(result: result, in: viewModel)
 
         case .search(let text):
             self.search(for: (text.isEmpty ? nil : text), ignoreOriginal: false, in: viewModel)
@@ -516,41 +516,18 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         Defaults.shared.itemsSortType = sortType
     }
 
-    private func saveNote(text: String, tags: [Tag], key: String, in viewModel: ViewModel<ItemsActionHandler>) {
-        let note = Note(key: key, text: text, tags: tags)
-        let libraryId = viewModel.state.library.identifier
-        let collectionKey: String?
+    private func processNoteSaveResult(result: NoteEditorSaveResult, in viewModel: ViewModel<ItemsActionHandler>) {
+        switch result {
+        case .success:
+            break
 
-        switch viewModel.state.collection.identifier {
-        case .collection(let key):
-            collectionKey = key
-
-        case .custom, .search:
-            collectionKey = nil
-        }
-
-        let handleError: (Error) -> Void = { [weak viewModel] error in
-            DispatchQueue.main.async {
+        case .failure(let error):
+            DispatchQueue.main.async { [weak viewModel] in
                 DDLogError("ItemsStore: can't save note: \(error)")
-                guard let viewModel = viewModel else { return }
-                self.update(viewModel: viewModel) { state in
+                guard let viewModel else { return }
+                update(viewModel: viewModel) { state in
                     state.error = .noteSaving
                 }
-            }
-        }
-
-        self.backgroundQueue.async {
-            do {
-                try self.dbStorage.perform(request: EditNoteDbRequest(note: note, libraryId: libraryId), on: self.backgroundQueue)
-            } catch let error as DbError where error.isObjectNotFound {
-                do {
-                    let request = CreateNoteDbRequest(note: note, localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""), libraryId: libraryId, collectionKey: collectionKey, parentKey: nil)
-                    _ = try self.dbStorage.perform(request: request, on: self.backgroundQueue, invalidateRealm: true)
-                } catch let error {
-                    handleError(error)
-                }
-            } catch let error {
-                handleError(error)
             }
         }
     }

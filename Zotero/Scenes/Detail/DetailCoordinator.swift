@@ -25,7 +25,6 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showCollectionsPicker(in library: Library, completed: @escaping (Set<String>) -> Void)
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library, scrolledToKey childKey: String?, animated: Bool)
     func showAttachmentError(_ error: Error)
-    func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, key: String?, library: Library, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func show(url: URL)
@@ -42,7 +41,6 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
 }
 
 protocol DetailItemDetailCoordinatorDelegate: AnyObject {
-    func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, key: String?, library: Library, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
     func showAttachmentPicker(save: @escaping ([URL]) -> Void)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func showTypePicker(selected: String, picked: @escaping (String) -> Void)
@@ -58,9 +56,7 @@ protocol DetailItemDetailCoordinatorDelegate: AnyObject {
 }
 
 protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
-    func showWeb(url: URL)
-    func show(url: URL)
-    func pushTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
+    func showNote(library: Library, kind: NoteEditorKind, text: String, tags: [Tag], title: NoteEditorState.TitleData?, saveCallback: @escaping NoteEditorSaveCallback)
 }
 
 protocol DetailCitationCoordinatorDelegate: AnyObject {
@@ -380,9 +376,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
         controller.addAction(UIAlertAction(title: L10n.Items.newNote, style: .default, handler: { [weak self, weak viewModel] _ in
             guard let self, let viewModel else { return }
-            let key = KeyGenerator.newKey
-            showNote(with: "", tags: [], title: nil, key: nil, library: viewModel.state.library, readOnly: false) { [weak viewModel] text, tags in
-                viewModel?.process(action: .saveNote(key, text, tags))
+            showNote(library: viewModel.state.library, kind: .standaloneCreation(collection: viewModel.state.collection)) { [weak viewModel] result in
+                viewModel?.process(action: .processNoteSaveResult(result))
             }
         }))
 
@@ -455,25 +450,24 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     }
 
     func createNoteController(
-        key: String?,
         library: Library,
-        text: String = "",
-        tags: [Tag] = [],
-        title: NoteEditorState.TitleData? = nil,
-        readOnly: Bool = false,
-        save: @escaping (String, [Tag]) -> Void = { _, _ in }
+        kind: NoteEditorKind,
+        text: String,
+        tags: [Tag],
+        title: NoteEditorState.TitleData?,
+        saveCallback: @escaping NoteEditorSaveCallback
     ) -> NavigationViewController {
         let navigationController = NavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
         navigationController.isModalInPresentation = true
 
         let coordinator = NoteEditorCoordinator(
+            library: library,
+            kind: kind,
             text: text,
             tags: tags,
             title: title,
-            library: library,
-            readOnly: readOnly,
-            save: save,
+            saveCallback: saveCallback,
             navigationController: navigationController,
             controllers: controllers
         )
@@ -482,21 +476,6 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         coordinator.start(animated: false)
 
         return navigationController
-    }
-
-    func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, key: String?, library: Library, readOnly: Bool, save: @escaping (String, [Tag]) -> Void) {
-        if let key {
-            DDLogInfo("DetailCoordinator: show note \(key)")
-        } else {
-            DDLogInfo("DetailCoordinator: show note creation")
-        }
-
-        if let presentedViewController = navigationController.presentedViewController {
-            guard let window = presentedViewController.view.window else { return }
-            show(controller: controller, by: navigationController, in: window, animated: false)
-            return
-        }
-        navigationController.present(controller, animated: true)
     }
 
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library, scrolledToKey childKey: String?, animated: Bool) {
@@ -923,18 +902,30 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 }
 
 extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
-    func pushTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void) {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+    func showNote(
+        library: Library,
+        kind: NoteEditorKind,
+        text: String = "",
+        tags: [Tag] = [],
+        title: NoteEditorState.TitleData? = nil,
+        saveCallback: @escaping NoteEditorSaveCallback = { _ in }
+    ) {
+        guard let navigationController else { return }
+        let controller = createNoteController(library: library, kind: kind, text: text, tags: tags, title: title, saveCallback: saveCallback)
+        switch kind {
+        case .itemCreation, .standaloneCreation:
+            DDLogInfo("DetailCoordinator: show note creation")
+            
+        case .edit(let key), .readOnly(let key):
+            DDLogInfo("DetailCoordinator: show note \(key)")
+        }
 
-        DDLogInfo("DetailCoordinator: push tag picker for \(libraryId)")
-
-        let state = TagPickerState(libraryId: libraryId, selectedTags: selected)
-        let handler = TagPickerActionHandler(dbStorage: dbStorage)
-        let viewModel = ViewModel(initialState: state, handler: handler)
-        let controller = TagPickerViewController(viewModel: viewModel, saveAction: picked)
-
-        let navigationController = (self.navigationController?.presentedViewController as? UINavigationController) ?? self.navigationController
-        navigationController?.pushViewController(controller, animated: true)
+        if let presentedViewController = navigationController.presentedViewController {
+            guard let window = presentedViewController.view.window else { return }
+            show(controller: controller, by: navigationController, in: window, animated: false)
+            return
+        }
+        navigationController.present(controller, animated: true)
     }
 }
 
