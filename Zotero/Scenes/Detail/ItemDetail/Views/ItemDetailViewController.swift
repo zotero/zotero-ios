@@ -129,7 +129,7 @@ final class ItemDetailViewController: UIViewController {
                 tags: (note?.tags ?? []),
                 title: title,
                 key: note?.key,
-                libraryId: library.identifier,
+                library: library,
                 readOnly: !library.metadataEditable,
                 save: { [weak self] text, tags in
                     self?.viewModel.process(action: .saveNote(key: key, text: text, tags: tags))

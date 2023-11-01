@@ -250,7 +250,7 @@ final class ItemsViewController: UIViewController {
                 tags: tags,
                 title: nil,
                 key: note.key,
-                libraryId: library.identifier,
+                library: library,
                 readOnly: !library.metadataEditable,
                 save: { [weak self] newText, newTags in
                     self?.viewModel.process(action: .saveNote(note.key, newText, newTags))

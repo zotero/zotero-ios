@@ -25,7 +25,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showCollectionsPicker(in library: Library, completed: @escaping (Set<String>) -> Void)
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library, scrolledToKey childKey: String?, animated: Bool)
     func showAttachmentError(_ error: Error)
-    func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, key: String?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
+    func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, key: String?, library: Library, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func show(url: URL)
@@ -42,7 +42,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
 }
 
 protocol DetailItemDetailCoordinatorDelegate: AnyObject {
-    func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, key: String?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
+    func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, key: String?, library: Library, readOnly: Bool, save: @escaping (String, [Tag]) -> Void)
     func showAttachmentPicker(save: @escaping ([URL]) -> Void)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func showTypePicker(selected: String, picked: @escaping (String) -> Void)
@@ -369,7 +369,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         controller.addAction(UIAlertAction(title: L10n.Items.newNote, style: .default, handler: { [weak self, weak viewModel] _ in
             guard let self, let viewModel else { return }
             let key = KeyGenerator.newKey
-            showNote(with: "", tags: [], title: nil, key: nil, libraryId: viewModel.state.library.identifier, readOnly: false) { [weak viewModel] text, tags in
+            showNote(with: "", tags: [], title: nil, key: nil, library: viewModel.state.library, readOnly: false) { [weak viewModel] text, tags in
                 viewModel?.process(action: .saveNote(key, text, tags))
             }
         }))
@@ -442,13 +442,15 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         return ("\(L10n.Items.sortBy): \(sortType.field.title)", "\(L10n.Items.sortOrder): \(sortOrderTitle)")
     }
 
-    func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, key: String?, libraryId: LibraryIdentifier, readOnly: Bool, save: @escaping (String, [Tag]) -> Void) {
-        if let key = key {
-            DDLogInfo("DetailCoordinator: show note \(key)")
-        } else {
-            DDLogInfo("DetailCoordinator: show note creation")
-        }
-
+    func createNoteController(
+        key: String?,
+        library: Library,
+        text: String = "",
+        tags: [Tag] = [],
+        title: NoteEditorState.TitleData? = nil,
+        readOnly: Bool = false,
+        save: @escaping (String, [Tag]) -> Void = { _, _ in }
+    ) -> NavigationViewController {
         let navigationController = NavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
         navigationController.isModalInPresentation = true
@@ -457,17 +459,27 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             text: text,
             tags: tags,
             title: title,
-            libraryId: libraryId,
+            library: library,
             readOnly: readOnly,
             save: save,
             navigationController: navigationController,
-            controllers: self.controllers
+            controllers: controllers
         )
         coordinator.parentCoordinator = self
-        self.childCoordinators.append(coordinator)
+        childCoordinators.append(coordinator)
         coordinator.start(animated: false)
 
-        self.navigationController?.present(navigationController, animated: true, completion: nil)
+        return navigationController
+    }
+
+    func showNote(with text: String, tags: [Tag], title: NoteEditorState.TitleData?, key: String?, library: Library, readOnly: Bool, save: @escaping (String, [Tag]) -> Void) {
+        if let key {
+            DDLogInfo("DetailCoordinator: show note \(key)")
+        } else {
+            DDLogInfo("DetailCoordinator: show note creation")
+        }
+        let controller = createNoteController(key: key, library: library, text: text, tags: tags, title: title, readOnly: readOnly, save: save)
+        navigationController?.present(controller, animated: true)
     }
 
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library, scrolledToKey childKey: String?, animated: Bool) {
