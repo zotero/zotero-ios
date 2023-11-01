@@ -63,12 +63,6 @@ protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
     func pushTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
 }
 
-protocol DetailItemActionSheetCoordinatorDelegate: AnyObject {
-    func showNoteCreation(title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, save: @escaping (String, [Tag]) -> Void)
-    func showAttachmentPicker(save: @escaping ([URL]) -> Void)
-    func showItemCreation(library: Library, collectionKey: String?)
-}
-
 protocol DetailCitationCoordinatorDelegate: AnyObject {
     func showLocatorPicker(for values: [SinglePickerModel], selected: String, picked: @escaping (String) -> Void)
     func showCitationPreview(errorMessage: String)
@@ -358,7 +352,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         }))
 
         controller.addAction(UIAlertAction(title: L10n.Items.new, style: .default, handler: { [weak self, weak viewModel] _ in
-            guard let self = self, let viewModel = viewModel else { return }
+            guard let self, let viewModel else { return }
             let collectionKey: String?
             switch viewModel.state.collection.identifier {
             case .collection(let key):
@@ -367,15 +361,17 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             case .search, .custom:
                 collectionKey = nil
             }
-            self.showItemCreation(library: viewModel.state.library, collectionKey: collectionKey)
+            showTypePicker(selected: "") { [weak self] type in
+                self?.showItemDetail(for: .creation(type: type, child: nil, collectionKey: collectionKey), library: viewModel.state.library, scrolledToKey: nil, animated: true)
+            }
         }))
 
         controller.addAction(UIAlertAction(title: L10n.Items.newNote, style: .default, handler: { [weak self, weak viewModel] _ in
-            guard let self = self, let viewModel = viewModel else { return }
+            guard let self, let viewModel else { return }
             let key = KeyGenerator.newKey
-            self.showNoteCreation(title: nil, libraryId: viewModel.state.library.identifier, save: { [weak viewModel] text, tags in
+            showNote(with: "", tags: [], title: nil, key: nil, libraryId: viewModel.state.library.identifier, readOnly: false) { [weak viewModel] text, tags in
                 viewModel?.process(action: .saveNote(key, text, tags))
-            })
+            }
         }))
 
         controller.addAction(UIAlertAction(title: L10n.Items.newFile, style: .default, handler: { [weak self, weak viewModel] _ in
@@ -679,11 +675,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     }
 }
 
-extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
-    func showNoteCreation(title: NoteEditorState.TitleData?, libraryId: LibraryIdentifier, save: @escaping (String, [Tag]) -> Void) {
-        self.showNote(with: "", tags: [], title: title, key: nil, libraryId: libraryId, readOnly: false, save: save)
-    }
-
+extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
     func showAttachmentPicker(save: @escaping ([URL]) -> Void) {
         guard let navigationController else { return }
         let controller = DocumentPickerViewController(forOpeningContentTypes: [.pdf, .png, .jpeg], asCopy: true)
@@ -697,14 +689,6 @@ extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
         navigationController.present(controller, animated: true, completion: nil)
     }
 
-    func showItemCreation(library: Library, collectionKey: String?) {
-        self.showTypePicker(selected: "") { [weak self] type in
-            self?.showItemDetail(for: .creation(type: type, child: nil, collectionKey: collectionKey), library: library, scrolledToKey: nil, animated: true)
-        }
-    }
-}
-
-extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
     func showAttachmentError(_ error: Error) {
         let (message, additionalActions) = self.attachmentMessageAndActions(for: error)
         let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
