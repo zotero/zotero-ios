@@ -160,7 +160,7 @@ final class ItemsToolbarController {
                 var progress: Float?
                 let remoteDownloading = remoteDownloadBatchData != nil
                 let defaultAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: UIColor.label, .font: UIFont.preferredFont(forTextStyle: .footnote)]
-                if identifierLookupBatchData != .zero, (!identifierLookupBatchData.isFinished || remoteDownloading) {
+                if identifierLookupBatchData != .zero, !identifierLookupBatchData.isFinished || remoteDownloading {
                     // Show "Saved x / y" only if lookup hasn't finished, or there are also ongoing remote downloads
                     isUserInteractionEnabled = true
                     let identifierLookupText = L10n.Items.toolbarSaved(identifierLookupBatchData.saved, identifierLookupBatchData.total)
