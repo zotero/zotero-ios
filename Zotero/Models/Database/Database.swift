@@ -95,7 +95,7 @@ struct Database {
             guard let oldObject,
                   let newObject,
                   oldObject["rawType"] as? String == ItemTypes.annotation,
-                  var fields = oldObject["fields"] as? List<MigrationObject>,
+                  let fields = oldObject["fields"] as? List<MigrationObject>,
                   let index = fields.firstIndex(where: { $0["key"] as? String == FieldKeys.Item.Annotation.pageLabel }),
                   let pageLabel = fields[index]["value"] as? String,
                   pageLabel.count > maxLength
@@ -105,7 +105,7 @@ struct Database {
             (newObject["fields"] as? List<MigrationObject>)?[index]["changed"] = true
             
             let itemChange = RItemChanges.fields
-            var newChanges = List<RObjectChange>()
+            let newChanges = List<RObjectChange>()
             newChanges.append(RObjectChange.create(changes: itemChange))
             if let oldChanges = oldObject["changes"] as? List<MigrationObject> {
                 for oldChange in oldChanges {
