@@ -206,6 +206,12 @@ class HtmlEpubDocumentViewController: UIViewController {
                 }
                 self.viewModel.process(action: params.isEmpty ? .deselectSelectedAnnotation : .selectAnnotationFromDocument(params))
 
+            case "onChangeViewState":
+                DDLogInfo("Test")
+
+            case "onChangeViewStats":
+                DDLogInfo("Test2")
+
             default:
                 break
             }

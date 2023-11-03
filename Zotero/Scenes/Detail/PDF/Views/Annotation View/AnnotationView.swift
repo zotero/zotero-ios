@@ -91,20 +91,20 @@ final class AnnotationView: UIView {
     // MARK: - Setups
     
     func setup(with annotation: HtmlEpubAnnotation, comment: Comment?, selected: Bool, availableWidth: CGFloat, library: Library, currentUserId: Int) {
-        let editability = AnnotationEditability.editable//annotation.editability(currentUserId: currentUserId, library: library)
         let color = UIColor(hex: annotation.color)
-        let canEdit = editability == .editable && selected
+        let canEdit = library.metadataEditable && selected
+        let author = library.identifier == .custom(.myLibrary) ? "" : annotation.author
 
         self.header.setup(
             type: annotation.type,
-            authorName: annotation.author,
+            authorName: author,
             pageLabel: annotation.pageLabel,
             colorHex: annotation.color,
             shareMenuProvider: { _ in
                 return nil
             },
-            isEditable: (editability != .notEditable && selected),
-            showsLock: editability != .editable,
+            isEditable: canEdit,
+            showsLock: !library.metadataEditable,
             accessibilityType: .cell
         )
         self.setupContent(
