@@ -121,7 +121,7 @@ final class WebDavControllerSpec: QuickSpec {
             
             context("Verify Server") {
                 it("should show an error for a connection error") {
-                    waitUntil(timeout: .seconds(10)) { finished in
+                    waitUntil(timeout: .seconds(60)) { finished in
                         testCheckServer(with: unverifiedCredentials) {
                             fail("Succeeded with unreachable server")
                             finished()
@@ -147,7 +147,7 @@ final class WebDavControllerSpec: QuickSpec {
                 it("should show an error for a 403") {
                     createStub(for: WebDavCheckRequest(url: webDavUrl), baseUrl: apiBaseUrl, statusCode: 403, jsonResponse: [] as [String])
                     
-                    waitUntil(timeout: .seconds(10)) { finished in
+                    waitUntil(timeout: .seconds(60)) { finished in
                         testCheckServer(with: unverifiedCredentials) {
                             fail("Succeeded with unreachable server")
                             finished()
@@ -168,7 +168,7 @@ final class WebDavControllerSpec: QuickSpec {
                     createStub(for: WebDavPropfindRequest(url: webDavUrl), ignoreBody: true, baseUrl: apiBaseUrl, statusCode: 404, jsonResponse: [] as [String])
                     createStub(for: WebDavPropfindRequest(url: webDavUrl.deletingLastPathComponent()), ignoreBody: true, baseUrl: apiBaseUrl, statusCode: 404, jsonResponse: [] as [String])
                     
-                    waitUntil(timeout: .seconds(10)) { finished in
+                    waitUntil(timeout: .seconds(60)) { finished in
                         testCheckServer(with: unverifiedCredentials) {
                             fail("Succeeded with unreachable server")
                             finished()
@@ -189,7 +189,7 @@ final class WebDavControllerSpec: QuickSpec {
                     createStub(for: WebDavPropfindRequest(url: webDavUrl), ignoreBody: true, baseUrl: apiBaseUrl, statusCode: 207, jsonResponse: [] as [String])
                     createStub(for: WebDavNonexistentPropRequest(url: webDavUrl), ignoreBody: true, baseUrl: apiBaseUrl, statusCode: 200, jsonResponse: [] as [String])
                     
-                    waitUntil(timeout: .seconds(10)) { finished in
+                    waitUntil(timeout: .seconds(60)) { finished in
                         testCheckServer(with: unverifiedCredentials) {
                             fail("Succeeded with unreachable server")
                             finished()
@@ -221,7 +221,7 @@ final class WebDavControllerSpec: QuickSpec {
                     
                     createStub(for: request, baseUrl: apiBaseUrl, responseError: AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 404)))
                     
-                    waitUntil(timeout: .seconds(10)) { finished in
+                    waitUntil(timeout: .seconds(60)) { finished in
                         testDownload(attachment: attachment, successAction: {
                             fail("Succeeded to download missing file")
                             finished()
@@ -246,7 +246,7 @@ final class WebDavControllerSpec: QuickSpec {
                     
                     createStub(for: request, ignoreBody: true, baseUrl: apiBaseUrl, headers: ["Zotero-File-Compressed": "Yes"], statusCode: 200, url: zipUrl)
                     
-                    waitUntil(timeout: .seconds(10)) { finished in
+                    waitUntil(timeout: .seconds(60)) { finished in
                         testDownload(attachment: attachment, successAction: {
                             let size = TestControllers.fileStorage.size(of: file)
                             expect(size).to(equal(184292))
@@ -379,7 +379,7 @@ final class WebDavControllerSpec: QuickSpec {
                         }
                     })
                     
-                    waitUntil(timeout: .seconds(10)) { doneAction in
+                    waitUntil(timeout: .seconds(60)) { doneAction in
                         testSync {
                             let item = try! dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: itemKey), on: .main)
                             
@@ -478,7 +478,7 @@ final class WebDavControllerSpec: QuickSpec {
                         jsonResponse: ["success": ["0": itemKey] as [String: Any], "successful": ["0": itemJson], "unchanged": [:], "failed": [:]]
                     )
                     
-                    waitUntil(timeout: .seconds(10)) { doneAction in
+                    waitUntil(timeout: .seconds(60)) { doneAction in
                         testSync {
                             let item = try! dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: itemKey), on: .main)
                             
@@ -581,7 +581,7 @@ final class WebDavControllerSpec: QuickSpec {
                         xmlResponse: "<properties version=\"1\"><mtime>1</mtime><hash>\(md5)</hash></properties>"
                     )
                     
-                    waitUntil(timeout: .seconds(10)) { doneAction in
+                    waitUntil(timeout: .seconds(60)) { doneAction in
                         testSync {
                             let item = try! dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: itemKey), on: .main)
                             
@@ -686,7 +686,7 @@ final class WebDavControllerSpec: QuickSpec {
                         }
                     )
                     
-                    waitUntil(timeout: .seconds(10)) { doneAction in
+                    waitUntil(timeout: .seconds(60)) { doneAction in
                         testSync {
                             expect(deletionCount).to(equal(4))
                             

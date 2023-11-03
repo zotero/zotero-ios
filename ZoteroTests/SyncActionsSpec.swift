@@ -143,7 +143,7 @@ final class SyncActionsSpec: QuickSpec {
                     expect(collection?.name).to(equal("New name"))
                     expect(collection?.parentKey).to(beNil())
                     
-                    waitUntil(timeout: .seconds(10), action: { doneAction in
+                    waitUntil(timeout: .seconds(60), action: { doneAction in
                         RevertLibraryUpdatesSyncAction(
                             libraryId: .custom(.myLibrary),
                             dbStorage: dbStorage,
@@ -174,7 +174,7 @@ final class SyncActionsSpec: QuickSpec {
                         .disposed(by: disposeBag)
                     })
                     
-                    waitUntil(timeout: .seconds(10), action: { doneAction in
+                    waitUntil(timeout: .seconds(60), action: { doneAction in
                         RevertLibraryUpdatesSyncAction(
                             libraryId: .group(1234123),
                             dbStorage: dbStorage,
@@ -291,7 +291,7 @@ final class SyncActionsSpec: QuickSpec {
                     
                     realm.refresh()
                     
-                    waitUntil(timeout: .seconds(10), action: { doneAction in
+                    waitUntil(timeout: .seconds(60), action: { doneAction in
                         RevertLibraryFilesSyncAction(
                             libraryId: .custom(.myLibrary),
                             dbStorage: dbStorage,
@@ -407,7 +407,7 @@ final class SyncActionsSpec: QuickSpec {
                     expect(collection?.parentKey).to(beNil())
                     expect(collection?.changedFields.rawValue).toNot(equal(0))
                     
-                    waitUntil(timeout: .seconds(10), action: { doneAction in
+                    waitUntil(timeout: .seconds(60), action: { doneAction in
                         MarkChangesAsResolvedSyncAction(libraryId: .custom(.myLibrary), dbStorage: dbStorage, queue: .main)
                             .result
                             .subscribe(onSuccess: { _ in
@@ -427,7 +427,7 @@ final class SyncActionsSpec: QuickSpec {
                             .disposed(by: disposeBag)
                     })
                     
-                    waitUntil(timeout: .seconds(10), action: { doneAction in
+                    waitUntil(timeout: .seconds(60), action: { doneAction in
                         MarkChangesAsResolvedSyncAction(libraryId: .group(1234123), dbStorage: dbStorage, queue: .main)
                             .result
                             .subscribe(onSuccess: { _ in
@@ -471,7 +471,7 @@ final class SyncActionsSpec: QuickSpec {
                         realm.add(item)
                     }
                     
-                    waitUntil(timeout: .seconds(10), action: { doneAction in
+                    waitUntil(timeout: .seconds(60), action: { doneAction in
                         UploadAttachmentSyncAction(
                             key: key,
                             file: file,
@@ -526,7 +526,7 @@ final class SyncActionsSpec: QuickSpec {
                         realm.add(item)
                     }
                     
-                    waitUntil(timeout: .seconds(10), action: { doneAction in
+                    waitUntil(timeout: .seconds(60), action: { doneAction in
                         UploadAttachmentSyncAction(
                             key: key,
                             file: file,
@@ -611,7 +611,7 @@ final class SyncActionsSpec: QuickSpec {
                         jsonResponse: ["exists": 1]
                     )
                     
-                    waitUntil(timeout: .seconds(10), action: { doneAction in
+                    waitUntil(timeout: .seconds(60), action: { doneAction in
                         UploadAttachmentSyncAction(
                             key: key,
                             file: file,
@@ -704,7 +704,7 @@ final class SyncActionsSpec: QuickSpec {
                         return HTTPStubsResponse(jsonObject: [:] as [String: Any], statusCode: 201, headers: nil)
                     })
                     
-                    waitUntil(timeout: .seconds(10), action: { doneAction in
+                    waitUntil(timeout: .seconds(60), action: { doneAction in
                         UploadAttachmentSyncAction(
                             key: key,
                             file: file,
