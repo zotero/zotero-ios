@@ -17,7 +17,7 @@ final class NoteAnnotation: PSPDFKit.NoteAnnotation {
 
     override func drawImage(in context: CGContext, boundingBox: CGRect, options: RenderOptions?) {
         let outlineImage = Asset.Images.Annotations.annotationNote.image
-        let colorizedImage = Asset.Images.Annotations.annotationNoteColor.image
+        let colorizedImage = Asset.Images.Annotations.annotationNoteColored.image
 
         guard let colorizedCgImage = colorizedImage.cgImage, let outlineCgImage = outlineImage.cgImage, let color = self.color else { return }
 
