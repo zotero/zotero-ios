@@ -12,4 +12,12 @@ extension UIView {
     static var nibName: String {
         return String(describing: self)
     }
+
+    @objc override var scene: UIScene? {
+        if let window {
+            window.windowScene
+        } else {
+            next?.scene
+        }
+    }
 }
