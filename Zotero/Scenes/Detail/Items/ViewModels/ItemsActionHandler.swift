@@ -716,6 +716,8 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
                     if state.selectedItems.remove(key) != nil {
                         state.changes.insert(.selection)
                     }
+                    state.itemAccessories[key] = nil
+                    state.itemTitles[key] = nil
                 }
             }
 
