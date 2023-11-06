@@ -19,6 +19,7 @@ struct RemoveItemFromParentDbRequest: DbRequest {
     func process(in database: Realm) throws {
         guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first, item.parent != nil else { return }
         // Update the parent item, so that it's updated in the item list to hide attachment/note marker
+        item.parent?.baseTitle = item.parent?.baseTitle ?? ""
         item.parent?.changeType = .user
         item.parent = nil
         item.changes.append(RObjectChange.create(changes: RItemChanges.parent))
